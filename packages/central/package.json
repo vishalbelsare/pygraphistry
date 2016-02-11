@@ -4,8 +4,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "clean-tmp": "rm -rf /tmp/npm && mkdir -p /tmp/npm",
-    "preinstall": "npm run clean-tmp",
+    "preinstall": "BABEL_CACHE_PATH=./tmp/babel-cache.json",
     "start": "node ./bin/central",
     "test": "echo \"No tests available.\""
   },
