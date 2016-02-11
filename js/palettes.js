@@ -63,7 +63,10 @@ function convertRGBAToABGR (value) {
  * @return {Number}
  */
 function hexToABGR (hexColor) {
-    var out = parseInt(hexColor.replace('#', '0x'), 16);
+    var out = hexColor;
+    if (typeof hexColor === 'string') {
+        out = parseInt(hexColor.replace('#', '0x'), 16);
+    }
 
     //sadness, rgba => abgr
     var r = (out >> 16) & 255,
@@ -152,12 +155,13 @@ module.exports = {
         if (intValues.length === 0) { return true; }
         var paletteNumbers = _.map(intValues, function (intValue) { return Math.floor(intValue / 1000); }),
             offsets = _.map(intValues, function (intValue) { return intValue % 1000; }),
-            firstPaletteNumber = paletteNumbers[0];
+            firstPaletteNumber = paletteNumbers[0]/*,
+            firstPalette = palettesToColorInts[palettes[firstPaletteNumber]]*/;
         if (firstPaletteNumber >= encounteredPalettes) {
             return false;
         }
         return _.every(intValues, function (intValue, idx) {
-            return paletteNumbers[idx] === firstPaletteNumber && offsets[idx] < 11; // HACK: largest palette size
+            return paletteNumbers[idx] === firstPaletteNumber && offsets[idx] < 12; // HACK: largest palette size
         });
     },
 
