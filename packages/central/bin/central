@@ -2,6 +2,15 @@
 'use strict';
 /// <reference path="../typings/node/node.d.ts"/>
 
+var config = JSON.parse(require('fs')
+    .readFileSync('./node_modules/config/babel-config.json'));
+
+config.presets = (config.presets || []).map(function(preset) {
+    return require.resolve('babel-preset-' + preset);
+});
+
+require('babel-register')(config);
+
 var server = require('../lib/server.js');
 var logger = server.logger;
 

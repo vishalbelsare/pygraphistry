@@ -3,9 +3,27 @@
 /// <reference path="../typings/rx/rx.d.ts"/>
 'use strict';
 
+var Rx          = require('rxjs/Rx.KitchenSink');
+var Observable  = Rx.Observable;
+
+Rx.Observable.return = function (value) {
+    return Rx.Observable.of(value);
+};
+
+Rx.Subject.prototype.onNext = Rx.Subject.prototype.next;
+Rx.Subject.prototype.onError = Rx.Subject.prototype.error;
+Rx.Subject.prototype.onCompleted = Rx.Subject.prototype.complete;
+Rx.Subject.prototype.dispose = Rx.Subscriber.prototype.unsubscribe;
+
+Rx.Subscriber.prototype.onNext = Rx.Subscriber.prototype.next;
+Rx.Subscriber.prototype.onError = Rx.Subscriber.prototype.error;
+Rx.Subscriber.prototype.onCompleted = Rx.Subscriber.prototype.complete;
+Rx.Subscriber.prototype.dispose = Rx.Subscriber.prototype.unsubscribe;
+
+Rx.Subscription.prototype.dispose = Rx.Subscription.prototype.unsubscribe;
+
 var os          = require('os');
 var _           = require('underscore');
-var Rx          = require('rx');
 var request     = require('request');
 var MongoClient = require('mongodb').MongoClient;
 
@@ -14,7 +32,7 @@ var config      = require('config')();
 var Log         = require('common/logger.js');
 var logger      = Log.createLogger('central:worker-router');
 
-var mongoClientConnect = Rx.Observable.fromNodeCallback(MongoClient.connect, MongoClient);
+var mongoClientConnect = Rx.Observable.bindNodeCallback(MongoClient.connect.bind(MongoClient));
 var dbObs = (config.ENVIRONMENT === 'local') ?
     (Rx.Observable.return()) :
     (mongoClientConnect(config.MONGO_SERVER, {auto_reconnect: true})
@@ -67,7 +85,8 @@ function getIPs() {
                     {'sort': [['gpu_memory_free', 'desc']]}
                 );
 
-            return Rx.Observable.fromNodeCallback(workerServers.toArray, workerServers)()
+            return Rx.Observable
+                .bindNodeCallback(workerServers.toArray.bind(workerServers))()
                 .flatMap(function (ips) {
                     if (ips.length < 1) {
                         logger.info('No worker currently registered to this cluster.');
@@ -81,7 +100,8 @@ function getIPs() {
                         'updated': {'$gt': freshDate}
                     });
 
-                    return Rx.Observable.fromNodeCallback(nodeCollection.toArray, nodeCollection)()
+                    return Rx.Observable
+                        .bindNodeCallback(nodeCollection.toArray.bind(nodeCollection))()
                         .map(function (results) {
                             if (!results.length) {
                                 logger.info('All workers are currently busy');
@@ -106,10 +126,14 @@ function getIPs() {
  * is available (and, consequently, has been reserved for the current user.)
  */
 function handshakeIp (workerNfo) {
+
     var url = 'http://' + workerNfo.hostname + ':' + workerNfo.port + '/claim';
     var cfg = {url: url, json: true, timeout: 250};
+
     logger.info('Trying worker', cfg, workerNfo);
-    return Rx.Observable.fromNodeCallback(request.get.bind(request))(cfg)
+
+    return Rx.Observable
+        .bindNodeCallback(request.get.bind(request))(cfg)
         .pluck(1)
         .map(function (resp) {
             logger.debug('Worker response', resp);
@@ -156,66 +180,73 @@ function combineWorkerInfo (servers, workers) {
  * short period of time), and calls the callback with the address of the assigned worker, or an
  * error if this process was unsuccessful.
  */
-function pickWorker (cb) {
-    var ips;
 
-    if(config.ENVIRONMENT !== 'local') {
-        ips = getIPs()
-            .flatMap(function (o) {
-                return Rx.Observable.fromArray(combineWorkerInfo(o.servers, o.workers));
+function pickWorker(cb) {
+
+    const ips = Observable.defer(() => {
+
+        if (config.ENVIRONMENT !== 'local') {
+            return getIPs().flatMap(({ servers, workers }) => {
+                return Observable.from(combineWorkerInfo(servers, workers))
             });
-    } else {
+        }
+
         var numWorkers = config.VIZ_LISTEN_PORTS.length;
         var port = config.VIZ_LISTEN_PORTS[nextLocalWorker];
+
         nextLocalWorker = (nextLocalWorker + 1) % numWorkers;
+
         logger.debug('Using local hostname/port', VIZ_SERVER_HOST, port);
-        ips = Rx.Observable.return({hostname: VIZ_SERVER_HOST, port: port});
-    }
 
+        return Observable.of({ port, hostname: VIZ_SERVER_HOST });
+    });
 
-    // Create a controlled Observable of IPs so that it only emits an item when we ask it to,
-    // instead of emitting them all at once. (Warning: keep a reference to the Observable right
-    // after `controlled` is applied, as further operators will mask the `request()` method.)
-    var ipsControlled = ips.controlled();
-
-    // Emit one IP to start
-    ipsControlled.request(1);
-
-    var ip = ipsControlled
-        .flatMap(function (workerNfo) {
-            return handshakeIp(workerNfo)
-                .map(function(success) { return (success) ? workerNfo : false; });
-        })
-        .filter(function filterWorkerAndRequest(workerNfo) {
-            // If we're going to reject this worker, also request the next one
-            if(!workerNfo) {
-                ipsControlled.request(1);
-                return false;
-            } else {
-                return workerNfo;
-            }
-        })
-        .take(1);
-
-    var count = 0;
-    ip.do(function (worker) {
+    // `concatMap` ensures we subscribe to each successive handshakeIp
+    // Observable sequentially. Since we unsubscribe as soon as we receive the
+    // first valid result, we don't execute any more handshakes than we need to.
+    return ips.concatMap(
+        (workerNfo) => handshakeIp(workerNfo),
+        (workerNfo, success) => success ? workerNfo : false
+    )
+    // Skip events until workerNfo isn't false
+    .skipWhile((workerNfo) => workerNfo === false)
+    // Coerce any errors into a format we can digest
+    .catch((err) => Observable.throw({
+        type: 'unhandled',
+        message: 'assign_worker error',
+        error: err || new Error('Unexpected error while assigning workers.'),
+    }))
+    // take the first workerNfo to succeed
+    .take(1)
+    // throw an error if the source completes without yielding a workerNfo
+    .last()
+    // If `last` throws an error, coerce it into a format we can digest, otherwise re-throw.
+    .catch((err) => {
+        if (!err || err.type !== 'unhandled') {
+            err = {
+                type: 'exhausted', message: 'assign_worker exhausted search (too many users?)',
+                error: new Error('Too many users, please contact help@graphistry.com for private access.')
+            };
+        }
+        return Observable.throw(err);
+    })
+    .subscribe(
+        // If we get a worker, we know everything succeeded.
+        (worker) => {
             logger.debug("Assigning worker on %s, port %d", worker.hostname, worker.port);
             cb(null, worker);
-        })
-        .subscribe(
-            function () { count++; },
-            function (err) {
-                logger.error(err, 'assign_worker error');
-                cb(err || new Error('Unexpected error while assigning workers.'));
-            },
-            function () {
-                if (!count) {
-                    logger.error('assign_worker exhausted search (too many users?)');
-                    cb(new Error('Too many users, please contact help@graphistry.com for private access.'));
-                }
-            });
+        },
+        // If we get a message, log it and send it back.
+        ({ type, error, message }) => {
+            if (type === 'exhausted') {
+                logger.error(message);
+            } else {
+                logger.error(error, message);
+            }
+            cb(error);
+        }
+    );
 }
-
 
 module.exports = {
     pickWorker: pickWorker
