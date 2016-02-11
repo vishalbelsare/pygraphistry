@@ -28,7 +28,7 @@
     "protobufjs": "~3.8.0",
     "q": "~1.1.0",
     "request": "~2.54.0",
-    "rx": "~3.1.2",
+    "rxjs": "graphistry/RxJS-v5",
     "socket.io-client": "~1.3.5",
     "splunk-viz": "graphistry/splunk-viz",
     "sprintf-js": "~1.0.0",
