@@ -1,7 +1,7 @@
 'use strict';
 
 var path    = require('path');
-var Rx      = require('rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
 
 var persist     = require('./persist.js');
 
