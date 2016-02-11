@@ -4,8 +4,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "preinstall": "BABEL_CACHE_PATH=./tmp/babel-cache.json",
-    "start": "node ./bin/central",
+    "start": "BABEL_CACHE_PATH=./tmp/babel-cache.json node ./bin/central",
     "test": "echo \"No tests available.\""
   },
   "bin": {
