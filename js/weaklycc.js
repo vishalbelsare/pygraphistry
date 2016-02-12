@@ -1,7 +1,8 @@
 'use strict';
 
 var _ = require('underscore');
-var debug = require('debug')('graphistry:graph-viz:weaklycc');
+var log         = require('common/logger.js');
+var logger      = log.createLogger('graphistry:graph-viz:weaklycc');
 var perf = require('common/perfStats.js').createPerfMonitor();
 
 
@@ -70,7 +71,7 @@ function enqueueEdges (edgeList, label, src, q, done) {
 //TODO: worth cutting search @ some depth in case few clusters?
 // [ [ int ] ] * int * int * [ int ]-> int
 function traverse (edgeList, root, label, depth, done, nodeToComponent) {
-
+    logger.debug('Starting traversal');
     var traversed = 0;
 
     //[ int ]
