@@ -100,13 +100,14 @@ palettes.forEach(function (palette) {
         //use to create palette.out
         //console.log('palette', palette, encounteredPalettes * 1000, brewer[palette][dim].length, brewer[palette][dim].join(','))
 
+        var paletteOffset = encounteredPalettes * 1000;
         palettesToColorInts[palette][dim] = brewer[palette][dim].map(hexToABGR);
         palettesToColorInts[palette][dim].forEach(function (color, idx) {
-            categoryToColorInt[encounteredPalettes * 1000 + idx] = color;
+            categoryToColorInt[paletteOffset + idx] = color;
         });
 
         all[palette][dim] = {
-            offset: encounteredPalettes * 1000,
+            offset: paletteOffset,
             hexes: brewer[palette][dim]
         };
 
@@ -154,14 +155,14 @@ module.exports = {
     valuesFitOnePaletteCategory: function (intValues) {
         if (intValues.length === 0) { return true; }
         var paletteNumbers = _.map(intValues, function (intValue) { return Math.floor(intValue / 1000); }),
-            offsets = _.map(intValues, function (intValue) { return intValue % 1000; }),
-            firstPaletteNumber = paletteNumbers[0]/*,
-            firstPalette = palettesToColorInts[palettes[firstPaletteNumber]]*/;
+            firstPaletteNumber = paletteNumbers[0],
+            firstPaletteOffset = firstPaletteNumber * 1000;
         if (firstPaletteNumber >= encounteredPalettes) {
             return false;
         }
         return _.every(intValues, function (intValue, idx) {
-            return paletteNumbers[idx] === firstPaletteNumber && offsets[idx] < 12; // HACK: largest palette size
+            return paletteNumbers[idx] === firstPaletteNumber &&
+                categoryToColorInt[firstPaletteOffset + idx] !== undefined;
         });
     },
 
