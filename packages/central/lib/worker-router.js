@@ -37,8 +37,8 @@ var dbObs = (config.ENVIRONMENT === 'local') ?
     (Rx.Observable.return()) :
     (mongoClientConnect(config.MONGO_SERVER, {auto_reconnect: true})
         .map(function(database) { return  database.db(config.DATABASE); })
-        .publishReplay(1));
-
+        .publishReplay(1)
+        .refCount());
 
 /**
  * Uses a naive heuristic to find this machines IP address
@@ -219,7 +219,7 @@ function pickWorker(cb) {
     // take the first workerNfo to succeed
     .take(1)
     // throw an error if the source completes without yielding a workerNfo
-    .last()
+    .single()
     // If `last` throws an error, coerce it into a format we can digest, otherwise re-throw.
     .catch((err) => {
         if (!err || err.type !== 'unhandled') {
