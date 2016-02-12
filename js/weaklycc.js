@@ -76,6 +76,8 @@ function traverse (edgeList, root, label, depth, done, nodeToComponent) {
     //[ int ]
     var roots = [ root ];
 
+    // This builds the edgeList, but can exhaust the memory heap if not careful.
+    // We throw Errors a little aggressively to avoid this.
     for (var level = 0; level < depth && roots.length; level++) {
         var nextLevel = [];
         while (roots.length > 0) {
@@ -83,10 +85,13 @@ function traverse (edgeList, root, label, depth, done, nodeToComponent) {
             done[src] = 1;
             nodeToComponent[src] = label;
             enqueueEdges(edgeList, label, src, nextLevel, done);
+            if (_.reduce(edgeList, function (accum, e) {return accum+e.length; }, 0) > 100000) {
+                throw new Error('Too much traversal at the current level; assuming super-nodes');
+            }
             traversed++;
         }
         if (nextLevel.length > 50000) {
-            throw new Error('Too many roots at the next level; assuming a super-node.');
+            throw new Error('Too many roots at the next level; assuming super-nodes.');
         }
         roots = nextLevel;
     }
