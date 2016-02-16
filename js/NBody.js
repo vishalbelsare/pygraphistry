@@ -319,17 +319,17 @@ var setEdges = Q.promised(function(graph, edges) {
 
 function setEdgeColors(graph, edgeColors) {
     logger.trace('Loading edgeColors');
-    var nedges = graph.simulator.dataframe.getNumElements('edge');
+    var edgeCount = graph.simulator.dataframe.getNumElements('edge');
 
     if (!edgeColors) // Use default Colors
         return graph.simulator.setEdgeColors(undefined);
 
-    if (edgeColors.length != nedges)
+    if (edgeColors.length != edgeCount)
        logger.error('setEdgeColors expects one color per edge');
 
     // Internaly we have two colors, one per endpoint.
-    var ec = new Uint32Array(nedges * 2);
-    for (var edge = 0; edge < nedges; edge++) {
+    var ec = new Uint32Array(edgeCount * 2);
+    for (var edge = 0; edge < edgeCount; edge++) {
         ec[2*edge] = edgeColors[edge];
         ec[2*edge + 1] = edgeColors[edge];
     }
@@ -339,13 +339,13 @@ function setEdgeColors(graph, edgeColors) {
 
 function setEdgeWeight(graph, edgeWeights) {
     logger.trace('Loading edgeWeights');
-    var nedges = graph.simulator.dataframe.getNumElements('edge');
+    var edgeCount = graph.simulator.dataframe.getNumElements('edge');
 
     if (!edgeWeights) {
       return graph.simulator.setEdgeWeight(undefined);
     }
 
-    if (edgeWeights.length !== nedges) {
+    if (edgeWeights.length !== edgeCount) {
        logger.error('setEdgeWeights expects one weight per edge');
     }
 

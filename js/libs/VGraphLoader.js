@@ -294,15 +294,15 @@ function loadDataframe(graph, attrs, numPoints, numEdges, aliases, graphInfo) {
 
 function decode0(graph, vg, metadata)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
-          vg.version, vg.name, vg.nvertices, vg.nedges);
+          vg.version, vg.name, vg.nvertices, vg.edgeCount);
 
-    notifyClientOfSizesForAllocation(graph.socket, vg.nedges, vg.nvertices);
+    notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.nvertices);
 
     var attrs = getAttributes0(vg);
-    loadDataframe(graph, attrs, vg.nvertices, vg.nedges, {}, {});
+    loadDataframe(graph, attrs, vg.nvertices, vg.edgeCount, {}, {});
     logger.debug('Graph has attribute: %o', _.pluck(attrs, 'name'));
 
-    var edges = new Array(vg.nedges);
+    var edges = new Array(vg.edgeCount);
     var dimensions = [1, 1];
 
     for (var i = 0; i < vg.edges.length; i++) {
@@ -661,7 +661,7 @@ function checkMetadata(metadata, vg, vgAttributes) {
         !sameKeys(edgesMetadata.attributes, vgAttributes.edges)) {
         throw new Error('Discrepenties between metadata and VGraph attributes');
     }
-    if (nodesMetadata.count !== vg.nvertices || edgesMetadata.count !== vg.nedges) {
+    if (nodesMetadata.count !== vg.nvertices || edgesMetadata.count !== vg.edgeCount) {
         throw new Error('Discrepenties in number of nodes/edges between metadata and VGraph');
     }
 
@@ -674,13 +674,13 @@ function checkMetadata(metadata, vg, vgAttributes) {
 
 function decode1(graph, vg, metadata)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
-                 vg.version, vg.name, vg.nvertices, vg.nedges);
+                 vg.version, vg.name, vg.nvertices, vg.edgeCount);
 
     var vgAttributes = getAttributes1(vg);
     var graphInfo = checkMetadata(metadata, vg, vgAttributes);
-    notifyClientOfSizesForAllocation(graph.socket, vg.nedges, vg.nvertices);
+    notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.nvertices);
 
-    var edges = new Array(vg.nedges);
+    var edges = new Array(vg.edgeCount);
     for (var i = 0; i < vg.edges.length; i++) {
         var e = vg.edges[i];
         edges[i] = [e.src, e.dst];
@@ -709,7 +709,7 @@ function decode1(graph, vg, metadata)  {
 
     var flatAttributeArray = _.values(vgAttributes.nodes).concat(_.values(vgAttributes.edges));
     var allEncodings =  _.extend({}, nodeEncodings, edgeEncodings);
-    loadDataframe(graph, flatAttributeArray, vg.nvertices, vg.nedges, allEncodings, graphInfo);
+    loadDataframe(graph, flatAttributeArray, vg.nvertices, vg.edgeCount, allEncodings, graphInfo);
 
     _.each(loaders, function (loaderArray, graphProperty) {
         _.each(loaderArray, function (loader) {
@@ -741,10 +741,10 @@ function decode1(graph, vg, metadata)  {
         }).fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
 }
 
-function notifyClientOfSizesForAllocation (socket, nedges, nvertices) {
+function notifyClientOfSizesForAllocation (socket, edgeCount, nvertices) {
     var MAX_SIZE_TO_ALLOCATE = 2000000;
     var numElements = {
-        edge: Math.min(nedges, MAX_SIZE_TO_ALLOCATE),
+        edge: Math.min(edgeCount, MAX_SIZE_TO_ALLOCATE),
         point: Math.min(nvertices, MAX_SIZE_TO_ALLOCATE)
     };
     socket.emit('sizes_for_memory_allocation', numElements);
