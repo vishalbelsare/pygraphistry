@@ -1,20 +1,25 @@
 {
   "name": "central-app",
+  "main": "dist/server.js",
   "description": "central-app",
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "BABEL_CACHE_PATH=./tmp/babel-cache.json node ./bin/central",
-    "test": "echo \"No tests available.\""
+    "clean": "rm -rf ./dist && mkdir -p ./dist",
+    "build": "npm run clean && babel lib -d dist --source-maps --presets es2015,stage-0",
+    "start": "npm run build && node ./bin/central",
+    "debug": "npm run build && node --debug ./bin/central",
+    "test": "echo \"No tests available.\"",
+    "postinstall": "npm run build"
   },
   "bin": {
     "graphistry-central": "./bin/central"
   },
   "dependencies": {
     "StreamGL": "graphistry/StreamGL",
-    "babel-preset-es2015": "^6.5.0",
-    "babel-preset-stage-0": "^6.5.0",
-    "babel-register": "^6.5.1",
+    "babel-cli": "^6.5.1",
+    "babel-preset-es2015": "~6.5.0",
+    "babel-preset-stage-0": "~6.5.0",
     "body-parser": "~1.14.0",
     "common": "graphistry/common",
     "compression": "~1.4.0",
@@ -34,6 +39,5 @@
     "sprintf-js": "~1.0.0",
     "uber-viz": "graphistry/uber-viz",
     "underscore": "~1.8.0"
-  },
-  "main": "server.js"
+  }
 }
