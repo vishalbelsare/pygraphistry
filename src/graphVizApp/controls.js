@@ -623,7 +623,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     createLegend($('#graph-legend'), urlParams);
     toggleLogo($('.logo-container'), urlParams);
     var popoutClicks = clicksFromPopoutControls($elt);
-    externalLink($('#externalLinkButton'), urlParams);
+    externalLink($('#externalLinkButtonContainer'), $('#externalLinkButton'), urlParams);
 
     var $graph = $('#simulate');
     // TODO: More general version for all toggle-able buttons?
