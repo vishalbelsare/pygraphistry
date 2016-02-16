@@ -323,7 +323,19 @@ function createLabelDom(instance, dim, labelObj) {
             var $row = $('<tr>').addClass('graph-label-pair'),
                 $key = $('<td>').addClass('graph-label-key').text(key);
 
-            var $wrap = $('<div>').addClass('graph-label-value-wrapper').html(displayName);
+            var $wrap = $('<div>').addClass('graph-label-value-wrapper');
+
+            if (col.dataType === 'color') {
+                $wrap
+                    .text(displayName)
+                    .append($('<span>')
+                        .addClass('label-color-pill')
+                        .css('background-color', new Color(displayName).rgbString()));
+
+            } else {
+                //FIXME .text(..) in secured mode?
+                $wrap.html(displayName);
+            }
 
             var $icons = $('<div>').addClass('graph-label-icons');
             $wrap.append($icons);
@@ -348,9 +360,6 @@ function createLabelDom(instance, dim, labelObj) {
             $icons.append($exclude).append($filter);
 
             var $val = $('<td>').addClass('graph-label-value').append($wrap);
-            if (col.dataType === 'color') {
-                $val.css('background-color', new Color(displayName).rgbString());
-            }
             $row.append($key).append($val);
             $table.append($row);
         });
