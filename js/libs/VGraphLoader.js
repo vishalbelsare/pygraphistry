@@ -35,20 +35,6 @@ var decoders = {
 //introduce mapping names, and for each, how to send mapped buffer to NBody.js
 var attributeLoaders = function(graph) {
     return {
-        pointTag: {
-            load: graph.setPointTags,
-            type: 'number',
-            default: graph.setPointTags,
-            target: VERTEX,
-            values: undefined
-        },
-        edgeTag: {
-            load: graph.setEdgeTags,
-            type: 'number',
-            default: graph.setEdgeTags,
-            target: EDGE,
-            values: undefined
-        },
         pointSize: {
             load: graph.setSizes,
             type : 'number',
@@ -126,12 +112,6 @@ var attributeLoaders = function(graph) {
 
 var opentsdbMapper = {
     mappings: {
-        pointTag: {
-            name: 'nodeTag'
-        },
-        edgeTag: {
-            name: 'edgeTag'
-        },
         pointSize: {
             name: 'degree',
             transform: function (v) {
@@ -209,18 +189,6 @@ var defaultMapper = {
         },
         edgeHeight: {
             name: 'edgeHeight'
-        },
-        pointTag: {
-            name: 'pointType',
-            transform: function (v) {
-                return normalize(v, 0, 2);
-            }
-        },
-        edgeTag: {
-            name: 'edgeType',
-            transform: function (v) {
-                return normalize(v, 0, 2);
-            }
         },
         edgeWeight: {
             name: 'edgeWeight',
