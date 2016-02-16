@@ -268,7 +268,53 @@ function load(graph, dataset) {
     return decoders[vg.version](graph, vg, dataset.metadata);
 }
 
+/** @typedef {Object} DataframeMetadataByColumn
+ * @property {String} ctype
+ * @property {String} userType
+ * @property {String} originalType
+ * @property {Aggregations} aggregations
+ */
 
+/** @typedef {Object} EdgeEncodings
+ * @property source
+ * @property destination
+ */
+
+/** @typedef {Object} NodeEncodings
+ * @property nodeId
+ * @property pointColor
+ * @property pointSize
+ * @property pointTitle
+ * @property pointLabel
+ */
+
+/** @typedef {Object} DataframeMetadataByComponent
+ * @property {Object.<DataframeMetadataByColumn>} attributes
+ * @property {Number} count
+ * @property {NodeEncodings|EdgeEncodings} encodings
+ */
+
+/** @typedef {Object} DataframeMetadata
+ * @property {DataframeMetadataByComponent} nodes
+ * @property {DataframeMetadataByComponent} edges
+ */
+
+/** @typedef {Object} AttrObject
+ * @property {String} name
+ * @property {Number} target
+ * @property {String} type
+ * @property {Array} values
+ */
+
+
+/**
+ * @param graph
+ * @param {AttrObject[]} attrs
+ * @param {Number} numPoints
+ * @param {Number} numEdges
+ * @param {Object} aliases column names by encoding.
+ * @param {DataframeMetadata} graphInfo
+ */
 function loadDataframe(graph, attrs, numPoints, numEdges, aliases, graphInfo) {
     var edgeAttrsList = _.filter(attrs, function (value) {
         return value.target === EDGE;
@@ -640,6 +686,12 @@ function getSimpleEncodings(encodings, loaders, target) {
 }
 
 
+/**
+ * @param {DataframeMetadata} metadata
+ * @param {VGraph} vg
+ * @param {Object} vgAttributes
+ * @returns {{nodes: *, edges: *}}
+ */
 function checkMetadata(metadata, vg, vgAttributes) {
     if (metadata.nodes.length === 0 || metadata.edges.length === 0) {
         throw new Error('Nodes or edges missing!');
