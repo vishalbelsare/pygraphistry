@@ -109,7 +109,7 @@ var palettes = {
 function int2color(values, palette) {
     palette = palette || palettes.palette1;
 
-    logger.trace("Palette: %o", palette)
+    logger.trace("Palette: %o", palette);
 
     var ncolors = palette.length;
     return _.map(values, function (val) {
@@ -121,10 +121,10 @@ function int2color(values, palette) {
 // (->) * string * (->) * ... -> ()
 // Run function and print timing data
 // Curry to create a timed function wrapper
-function perf (perf, name, fn /* args */) {
+function perf (perfCallback, name, fn /* args */) {
     var t0 = Date.now();
     var res = fn.apply({}, Array.prototype.slice.call(arguments, 3));
-    perf(name, Date.now() - t0, 'ms');
+    perfCallback(name, Date.now() - t0, 'ms');
     return res;
 }
 

@@ -1,7 +1,7 @@
 'use strict';
 
 
-var Rx = require("rx");
+var Rx = require("rxjs/Rx.KitchenSink");
 var request = require('request');
 var config = require('config')();
 var _ = require('underscore');

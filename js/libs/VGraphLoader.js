@@ -4,6 +4,8 @@ var Q = require('q');
 var _ = require('underscore');
 var pb = require('protobufjs');
 var path = require('path');
+var moment = require('moment');
+var Color = require('color');
 
 var util = require('../util.js');
 var weakcc = require('../weaklycc.js');
@@ -27,26 +29,12 @@ var EDGE   = pb_root.VectorGraph.AttributeTarget.EDGE;
 var decoders = {
     0: decode0,
     1: decode1
-}
+};
 
 
 //introduce mapping names, and for each, how to send mapped buffer to NBody.js
 var attributeLoaders = function(graph) {
     return {
-        pointTag: {
-            load: graph.setPointTags,
-            type: 'number',
-            default: graph.setPointTags,
-            target: VERTEX,
-            values: undefined
-        },
-        edgeTag: {
-            load: graph.setEdgeTags,
-            type: 'number',
-            default: graph.setEdgeTags,
-            target: EDGE,
-            values: undefined
-        },
         pointSize: {
             load: graph.setSizes,
             type : 'number',
@@ -101,7 +89,7 @@ var attributeLoaders = function(graph) {
           default: graph.setEdgeWeight,
           values: undefined
         },
-        // PoinTitle and edgeTitle are handled in their own special hacky way.
+        // PointTitle and edgeTitle are handled in their own special way.
         // They are loaded outside of the loader mechanism
         // Without these two dummy entries, decode1 would discard encodings for
         // PointTitle and edgeTitle as invalid.
@@ -119,21 +107,15 @@ var attributeLoaders = function(graph) {
 
         }
     };
-}
+};
 
 
 var opentsdbMapper = {
     mappings: {
-        pointTag: {
-            name: 'nodeTag'
-        },
-        edgeTag: {
-            name: 'edgeTag'
-        },
         pointSize: {
             name: 'degree',
             transform: function (v) {
-                return normalize(logTransform(v), 5, Math.pow(2, 8))
+                return normalize(logTransform(v), 5, Math.pow(2, 8));
             }
         },
         pointTitle: {
@@ -156,11 +138,11 @@ var opentsdbMapper = {
         edgeWeight: {
             name: 'weight',
             transform: function (v) {
-                return normalizeFloat(logTransform(v), 0.5, 1.5)
+                return normalizeFloat(logTransform(v), 0.5, 1.5);
             }
         }
-    },
-}
+    }
+};
 
 
 var misMapper = {
@@ -168,11 +150,11 @@ var misMapper = {
         pointSize: {
             name: 'betweeness',
             transform: function (v) {
-                return normalize(v, 5, Math.pow(2, 8))
+                return normalize(v, 5, Math.pow(2, 8));
             }
         }
     })
-}
+};
 
 
 var defaultMapper = {
@@ -180,7 +162,7 @@ var defaultMapper = {
         pointSize: {
             name: 'pointSize',
             transform: function (v) {
-                return normalize(v, 5, Math.pow(2, 8))
+                return normalize(v, 5, Math.pow(2, 8));
             }
         },
         pointLabel: {
@@ -208,26 +190,14 @@ var defaultMapper = {
         edgeHeight: {
             name: 'edgeHeight'
         },
-        pointTag: {
-            name: 'pointType',
-            transform: function (v) {
-                return normalize(v, 0, 2);
-            }
-        },
-        edgeTag: {
-            name: 'edgeType',
-            transform: function (v) {
-                return normalize(v, 0, 2);
-            }
-        },
         edgeWeight: {
             name: 'edgeWeight',
             transform: function (v) {
-                return normalizeFloat(v, 0.5, 1.5)
+                return normalizeFloat(v, 0.5, 1.5);
             }
         }
     }
-}
+};
 
 
 var mappers = {
@@ -235,11 +205,11 @@ var mappers = {
     'miserables': misMapper,
     'splunk': defaultMapper,
     'default': defaultMapper
-}
+};
 
 
 function wrap(mappings, loaders) {
-    var res = {}
+    var res = {};
     for (var a in loaders) {
         if (a in mappings) {
             var loader = loaders[a];
@@ -263,7 +233,7 @@ function doWrap(res, mapping, loader) {
         var oldLoad = loader.load;
         loader.load = function (data) {
             return oldLoad(mapping.transform(data));
-        }
+        };
     }
 
     mapped.push(loader);
@@ -366,9 +336,9 @@ function decode0(graph, vg, metadata)  {
         var loaderArray = loaders[vname];
 
         _.each(loaderArray, function (loader) {
-            if (attr.target != loader.target) {
+            if (attr.target !== loader.target) {
                 logger.warn('Vertex/Node attribute mismatch for ' + vname);
-            } else if (attr.type != loader.type) {
+            } else if (attr.type !== loader.type) {
                 logger.warn('Expected type ' + loader.type + ' but got ' + attr.type + ' for ' + vname);
             } else {
                 loader.values = attr.values;
@@ -481,21 +451,88 @@ function getVectors0(vg) {
                                     vg.double_vectors);
 }
 
+function castToMoment (value) {
+    var momentVal;
+    if (typeof(value) === 'number') {
+        // First attempt unix seconds constructor
+        momentVal = moment.unix(value);
+
+        // If not valid, or unreasonable year, try milliseconds constructor
+        if (!momentVal.isValid() || momentVal.year() > 5000 || momentVal.year() < 500) {
+            momentVal = moment(value);
+        }
+
+    } else {
+        momentVal = moment(value);
+    }
+
+    return momentVal;
+}
+
+function dateAsNumber (val) {
+    var date = castToMoment(val);
+    return date.valueOf(); // Represent date as a number
+}
+
 
 function getAttributes0(vg) {
     var vectors = getVectors0(vg);
     var attrs = [];
+
     for (var i = 0; i < vectors.length; i++) {
         var v = vectors[i];
         if (v.values.length > 0) {
+            var type = typeof(v.values[0]);
+
+            // Attempt to infer date types when possible
+            // Check if name contains time or date
+            if ((/time/i).test(v.name) || (/date/i).test(v.name)) {
+                logger.debug('Attempting to cast ' + v.name + ' to a moment object.');
+                var testMoment = castToMoment(v.values[0]);
+                var isValidMoment = testMoment.isValid();
+
+                if (isValidMoment) {
+                    logger.debug('Successfully cast ' + v.name + ' as a moment.');
+                    type = 'date';
+
+                    var newValues = v.values.map(dateAsNumber);
+                    v.values = newValues;
+
+                } else {
+                    logger.debug('Failed to cast ' + v.name + ' as a moment.');
+                }
+            }
+
+            if ((/color/i).test(v.name)) {
+                var isValidColor = false, sampleValue = v.values[0];
+                if (type === 'number') {
+                    if (sampleValue > 0 && sampleValue <= 0xFFFFFFFF) {
+                        isValidColor = true;
+                    }
+                } else if (type === 'string') {
+                    try {
+                        var testColor = new Color(sampleValue);
+                        isValidColor = testColor !== undefined && testColor.rgbaString() !== undefined;
+                    } catch (e) {
+                        logger.debug('Failed to cast ' + v.name + ' as a color: ' + e.message);
+                    }
+                }
+                if (isValidColor) {
+                    type = 'color';
+                } else {
+                    logger.debug('Failed to cast ' + v.name + ' as a color.');
+                }
+            }
+
             attrs.push({
                 name: v.name,
                 target : v.target,
-                type: typeof(v.values[0]),
+                type: type,
                 values: v.values
             });
         }
     }
+
     return attrs;
 }
 
@@ -566,7 +603,7 @@ function getAttributes1(vg) {
 
 function sameKeys(o1, o2){
     var k1 = _.keys(o1);
-    var k2 = _.keys(o2)
+    var k2 = _.keys(o2);
     var ki = _.intersection(k1, k2);
     return k1.length === k2.length && k2.length === ki.length;
 }

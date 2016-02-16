@@ -1,9 +1,9 @@
 'use strict';
 
 var _        = require('underscore');
-var d3Scale  = require('d3-scale');
-
-var palettes = require('./palettes');
+var d3Scale       = require('d3-scale');
+var d3Interpolate = require('d3-interpolate');
+var Color         = require('color');
 
 var defaults = {
     color: {
@@ -30,33 +30,91 @@ var defaults = {
     }
 };
 
+function inferColorScalingFor(summary, variation, defaultDomain, distinctValues, binning) {
+    var domain;
+    var defaultSequentialRange = defaults.color.isQuantitative.sequential.range;
+    if (summary.isCategorical) {
+        if (variation === 'quantitative' && summary.isOrdered) {
+            // User can request a quantitative interpretation of ordered categorical domains.
+            if (summary.isNumeric) {
+                return d3Scale.linear()
+                    .domain(defaultDomain)
+                    .range(defaultSequentialRange);
+            } else if (binning.bins && _.size(binning.bins) > 0) {
+                // A linear ordering has to trust bin order to make visual sense.
+                if (binning.type === 'countBy') {
+                    domain = _.sortBy(_.keys(binning.bins), function (key) {
+                        return binning.bins[key];
+                    });
+                } else {
+                    domain = distinctValues;
+                }
+            } else {
+                domain = distinctValues;
+            }
+            var interpolation = d3Interpolate.interpolate(defaultSequentialRange[0], defaultSequentialRange[1]),
+                numValues = domain.length,
+                range = _.map(_.range(numValues), function (idx) { return Color(interpolation(idx / numValues)).hexString(); });
+            return d3Scale.ordinal()
+                .domain(domain)
+                .range(range);
+        } else if (summary.countDistinct < 10) {
+            return d3Scale.category10()
+                .domain(distinctValues);
+        } else { //if (summary.countDistinct < 20) {
+            return d3Scale.category20()
+                .domain(distinctValues);
+        }
+    }
+    if (summary.isOrdered) {
+        if (summary.isDiverging) {
+            return d3Scale.linear()
+                .domain(defaultDomain)
+                .range(defaults.color.isQuantitative.diverging.range);
+        } else {
+            return d3Scale.linear()
+                .domain(defaultDomain)
+                .range(defaultSequentialRange);
+        }
+    }
+    return undefined;
+}
+
+
 module.exports = {
+    inferEncodingType: function (dataframe, type, attributeName) {
+        var aggregations = dataframe.getColumnAggregations(attributeName, type, true);
+        var summary = aggregations.getSummary();
+        switch (type) {
+            case 'point':
+                if (summary.isPositive) {
+                    return 'pointSize';
+                } else {
+                    return 'pointColor';
+                }
+                break;
+            case 'edge':
+                if (summary.isPositive) {
+                    return 'edgeSize';
+                } else {
+                    return 'edgeColor';
+                }
+        }
+        return undefined;
+    },
+    bufferNameForEncodingType: function (encodingType) {
+        return encodingType && (encodingType + 's');
+    },
     inferEncoding: function (dataframe, type, attributeName, encodingType, variation, binning) {
         var aggregations = dataframe.getColumnAggregations(attributeName, type, true);
         var summary = aggregations.getSummary();
         var scaling;
         var defaultDomain = [summary.minValue, summary.maxValue];
-        if (!encodingType) {
-            switch (type) {
-                case 'point':
-                    if (summary.isQuantitative && !summary.isDiverging) {
-                        encodingType = 'pointSize';
-                    } else {
-                        encodingType = 'pointColor';
-                    }
-                    break;
-                case 'edge':
-                    if (summary.isQuantitative && !summary.isDiverging) {
-                        encodingType = 'edgeSize';
-                    } else {
-                        encodingType = 'edgeColor';
-                    }
-            }
-        }
+        var distinctValues = _.keys(summary.distinctValues).sort();
         switch (encodingType) {
             case 'pointSize':
                 // Has to have a magnitude, not negative:
-                if (summary.isOrdered && !summary.isDiverging) {
+                if (summary.isPositive) {
                     // Square root because point size/radius yields a point area:
                     scaling = d3Scale.sqrt()
                         .domain(defaultDomain)
@@ -65,7 +123,7 @@ module.exports = {
                 break;
             case 'pointOpacity':
                 // Has to have a magnitude, not negative:
-                if (summary.isOrdered && !summary.isDiverging) {
+                if (summary.isPositive) {
                     scaling = d3Scale.linear()
                         .domain(defaultDomain)
                         .range(defaults.pointOpacity.range);
@@ -76,41 +134,11 @@ module.exports = {
                 // Assumes direct RGBA int32 values for now.
                 if (attributeName.match(/color/i)) {
                     return {
-                        encodingType: encodingType,
-                        bufferName: encodingType + 's',
-                        palette: summary.distinctValues,
+                        legend: distinctValues,
                         scaling: _.identity
                     };
                 }
-                if (summary.isCategorical) {
-                    if (variation === 'quantitative' && summary.isOrdered) {
-                        // User can request a quantitative interpretation of ordered categorical domains.
-                        scaling = undefined;
-                    } else if (summary.countDistinct <= 10) {
-                        scaling = d3Scale.category10()
-                            .domain(summary.distinctValues);
-                    } else if (summary.countDistinct <= 20) {
-                        scaling = d3Scale.category20()
-                            .domain(summary.distinctValues);
-                    } else {
-                        // TODO ensure wraparound
-                        scaling = d3Scale.category20()
-                            .domain(summary.distinctValues);
-                    }
-                }
-                if (scaling === undefined) {
-                    if (summary.isOrdered) {
-                        if (summary.isDiverging) {
-                            scaling = d3Scale.linear()
-                                .domain(defaultDomain)
-                                .range(defaults.color.isQuantitative.diverging.range);
-                        } else {
-                            scaling = d3Scale.linear()
-                                .domain(defaultDomain)
-                                .range(defaults.color.isQuantitative.sequential.range);
-                        }
-                    }
-                }
+                scaling = inferColorScalingFor(summary, variation, defaultDomain, distinctValues, binning);
                 break;
             case 'pointTitle':
                 break;
@@ -118,7 +146,7 @@ module.exports = {
                 break;
             case 'edgeSize':
                 // TODO ensure sizes are binned/scaled so that they may be visually distinguished.
-                if (summary.isQuantitative && !summary.isDiverging) {
+                if (summary.isPositive) {
                     scaling = d3Scale.linear()
                         .domain(defaultDomain)
                         .range(defaults.edgeSize.range);
@@ -129,37 +157,15 @@ module.exports = {
                 // Assumes direct RGBA int32 values for now.
                 if (attributeName.match(/color/i)) {
                     return {
-                        encodingType: encodingType,
-                        bufferName: encodingType + 's',
-                        palette: summary.distinctValues,
+                        legend: distinctValues,
                         scaling: _.identity
                     };
                 }
-                if (summary.isCategorical) {
-                    if (summary.countDistinct < 10) {
-                        scaling = d3Scale.category10()
-                            .domain(summary.distinctValues);
-                    } else if (summary.countDistinct < 20) {
-                        scaling = d3Scale.category20()
-                            .domain(summary.distinctValues);
-                    }
-                }
-                if (scaling === undefined) {
-                    if (summary.isOrdered) {
-                        if (summary.isDiverging) {
-                            scaling = d3Scale.linear()
-                                .domain(defaultDomain)
-                                .range(defaults.color.isQuantitative.diverging.range);
-                        } else {
-                            scaling = d3Scale.linear()
-                                .domain(defaultDomain)
-                                .range(defaults.color.isQuantitative.sequential.range);
-                        }
-                    }
-                }
+                scaling = inferColorScalingFor(summary, variation, defaultDomain, distinctValues, binning);
                 break;
             case 'edgeOpacity':
-                if (summary.isQuantitative && !summary.isDiverging) {
+                // Has to have a magnitude, not negative:
+                if (summary.isPositive) {
                     scaling = d3Scale.linear()
                         .domain(defaultDomain)
                         .range(defaults.edgeOpacity.range);
@@ -168,28 +174,48 @@ module.exports = {
             default:
                 throw new Error('No encoding found for: ' + encodingType);
         }
-        var scaleAndEncode = scaling;
-        var palette;
-        if (scaling && encodingType.substr(encodingType.length - 5) === 'Color') {
-            scaleAndEncode = function (x) { return palettes.hexToInt(scaling(x)); };
-            if (binning !== undefined && scaling !== undefined) {
-                var minValue = summary.minValue,
-                    step = binning.binWidth;
-                palette = _.map(binning.bins, function (itemCount, index) {
-                    // Use the scaling to get hex string, not machine integer, for D3/color.
-                    if (summary.isQuantitative) {
-                        return scaling(minValue + step * index);
+        /** A legend per the binning. @type <Array> */
+        var legend;
+        if (scaling !== undefined && binning !== undefined) {
+            // All this just handles many shapes of binning metadata, kind of messy.
+            var minValue = summary.minValue,
+                step = binning.binWidth || 0,
+                binValues = binning.binValues;
+            // NOTE: Use the scaling to get hex string / number, not machine integer, for D3 color/size.
+            if (binning.bins && _.size(binning.bins) > 0) {
+                if (binning.type === 'countBy') {
+                    if (_.isArray(binning.bins)) {
+                        legend = _.map(binning.bins, function (itemCount, index) {
+                            return scaling(index);
+                        });
                     } else {
-                        return scaling(index);
+                        var sortedBinKeys = _.sortBy(_.keys(binning.bins), function (key) {
+                            return binning.bins[key];
+                        });
+                        legend = _.map(sortedBinKeys, function (key) {
+                            return (key === '_other') ? undefined : scaling(key);
+                        });
                     }
-                });
+                } else if (summary.isNumeric) {
+                    legend = _.map(binning.bins, function (itemCount, index) {
+                        return scaling(minValue + step * index);
+                    });
+                } else {
+                    legend = _.map(binning.bins, function (itemCount, index) {
+                        var value = binValues !== undefined && binValues[index] ? binValues[index] : index;
+                        return scaling(value);
+                    });
+                }
+            } else {
+                legend = new Array(binning.numBins);
+                for (var i = 0; i < binning.numBins; i++) {
+                    legend[i] = scaling(minValue + step * i);
+                }
             }
         }
         return {
-            encodingType: encodingType,
-            bufferName: encodingType && (encodingType + 's'),
-            palette: palette,
-            scaling: scaleAndEncode
+            legend: legend,
+            scaling: scaling
         };
     }
 };

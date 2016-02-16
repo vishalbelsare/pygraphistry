@@ -1,7 +1,6 @@
 "use strict";
 
 var Q = require('q');
-var glMatrix = require('gl-matrix');
 var lConf = require('./layout.config.js');
 var events = require('./SimpleEvents.js');
 var _ = require('underscore');
@@ -12,6 +11,13 @@ var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:graph-viz:graph:nbody');
 
 var ELEMENTS_PER_POINTS = 2;
+
+var DimCodes = {
+    point: 1,
+    edge: 2
+};
+
+var NumElementsByDim = DimCodes;
 
 var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
 
@@ -27,12 +33,9 @@ var boundBuffers = {};
  * @param document - parent document DOM
  * @param canvas - the canvas DOM element to draw the graph in
  * @param bgColor - [0--255,0--255,0--255,0--1]
- * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal posituin calculations.
+ * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal position calculations.
  */
-function create(renderer, device, vendor, controls, socket) {
-
-
-    var dataframe = new Dataframe();
+function create(renderer, simulator, dataframe, device, vendor, controls, socket) {
 
     var graph = {
         renderer: renderer,
@@ -65,24 +68,12 @@ function create(renderer, device, vendor, controls, socket) {
 
     return clientNotification.loadingStatus(socket, 'Creating physics simulator')
     .then(function () {
-        return createSimulator(dataframe, renderer, device, vendor, controls);
-    }).then(function (simulator) {
         graph.simulator = simulator;
         graph.globalControls = simulator.controls.global;
     }).then(function () {
         Object.seal(graph);
         return graph;
     }).fail(log.makeQErrorHandler(logger, 'Cannot initialize nbody'));
-}
-
-function createSimulator(dataframe, renderer, device, vendor, controls) {
-    logger.trace('Creating Simulator')
-
-    // Hack, but making simulator depend on CL device it not worth the work.
-    var simulator = controls[0].simulator;
-
-    return simulator.create(dataframe, renderer, device, vendor, controls)
-        .fail(log.makeQErrorHandler(logger, 'Cannot create simulator'));
 }
 
 function updateSettings(graph, newCfg) {
@@ -128,57 +119,57 @@ function updateSettings(graph, newCfg) {
 
 
 
-function passthroughSetter(simulator, dimName, arr, passthrough) {
-    simulator[passthrough](arr);
+function passThroughSetter(simulator, dimName, arr, passThrough) {
+    simulator[passThrough](arr);
 }
 
 //str * TypedArrayConstructor * {'point', 'edge'} * {'set...'} * ?(simulator * array * len -> ())
 //  -> simulator -> Q simulator
 //Create default setter
-function makeDefaultSetter (name, arrConstructor, dimName, passthrough, f) {
+function makeDefaultSetter (name, arrConstructor, dimName, passThrough, f) {
     return function (simulator) {
         logger.trace("Using default %s", name);
-        var elts = simulator.dataframe.getNumElements(dimName);
-        var arr = new arrConstructor(elts * (dimName == 'point' ? 1 : 2));
+        var numByDim = simulator.dataframe.getNumElements(dimName);
+        var arr = new arrConstructor(numByDim * NumElementsByDim[dimName]);
         if (f) {
-            f(simulator, arr, elts);
+            f(simulator, arr, numByDim);
         }
-        return passthroughSetter(simulator, dimName, arr, passthrough);
+        return passThroughSetter(simulator, dimName, arr, passThrough);
     };
 }
 
 
-function makeSetter (name, defSetter, arrConstructor, dimName, passthrough) {
+function makeSetter (name, defSetter, arrConstructor, dimName, passThrough) {
 
-    return function (graph, rawArr) {
+    return function (graph, rawArray) {
 
         logger.trace('Loading %s', name);
 
-        if (!rawArr) {
+        if (!rawArray) {
             return defSetter(graph.simulator);
         }
 
         // TODO: Decide if the following setters are still relevant.
-        var arr;
-        if (rawArr.constructor == arrConstructor && dimName == 'point') {
-            arr = rawArr;
-        } else if (dimName == 'edge') {
-            var len = graph.simulator.dataframe.getNumElements(dimName) * 2;
-            arr = new arrConstructor(len);
+        var len = graph.simulator.dataframe.getNumElements(dimName) * NumElementsByDim[dimName],
+            array, i;
+        if (rawArray.constructor === arrConstructor && dimName === 'point') {
+            array = rawArray;
+        } else if (dimName === 'edge') {
+            array = new arrConstructor(len);
             var map = graph.simulator.dataframe.getHostBuffer('forwardsEdges').edgePermutation;
-            for (var i = 0; i < len/2; i++) {
-                arr[2 * map[i]] = rawArr[i];
-                arr[2 * map[i] + 1] = rawArr[i];
+            for (i = 0; i < len/2; i++) {
+                array[2 * map[i]] = rawArray[i];
+                array[2 * map[i] + 1] = rawArray[i];
             }
         } else {
-            var len = graph.simulator.dataframe.getNumElements(dimName);
-            arr = new arrConstructor(len);
-            for (var i = 0; i < len; i++) {
-                arr[i] = rawArr[i];
+            len = graph.simulator.dataframe.getNumElements(dimName);
+            array = new arrConstructor(len);
+            for (i = 0; i < len; i++) {
+                array[i] = rawArray[i];
             }
         }
 
-        return passthroughSetter(graph.simulator, dimName, arr, passthrough);
+        return passThroughSetter(graph.simulator, dimName, array, passThrough);
 
     };
 }
@@ -354,8 +345,8 @@ function setEdgeWeight(graph, edgeWeights) {
       return graph.simulator.setEdgeWeight(undefined);
     }
 
-    if (edgeWeights.length != nedges) {
-       logger.error('setEdgeWeigts expects one weight per edge');
+    if (edgeWeights.length !== nedges) {
+       logger.error('setEdgeWeights expects one weight per edge');
     }
 
     return graph.simulator.setEdgeWeight(edgeWeights);
@@ -370,10 +361,11 @@ function setMidEdgeColors(graph, midEdgeColors) {
 
     var numMidEdges = graph.simulator.dataframe.getNumElements('midEdges');
 
-    if (midEdgeColors.length != numMidEdges)
-       logger.error('setMidEdgeColors expects one color per midEdge');
+    if (midEdgeColors.length !== numMidEdges) {
+        logger.error('setMidEdgeColors expects one color per midEdge');
+    }
 
-    // Internaly we have two colors, one per endpoint.
+    // Internally we have two colors, one per endpoint.
     var ec = new Uint32Array(numMidEdges * 2);
     for (var i = 0; i < numMidEdges; i++) {
         ec[2*i] = midEdgeColors[i];

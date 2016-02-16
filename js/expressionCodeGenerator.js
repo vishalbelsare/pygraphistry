@@ -56,7 +56,10 @@ if (!Math.trunc) {
 
 //</editor-fold>
 
-function literalExpressionFor (value) {
+function literalExpressionFor (value, dataType) {
+    if (dataType === 'number' && typeof value === 'string') {
+        value = Number(value);
+    }
     if (_.isNumber(value)) {
         return value.toString();
     }
@@ -74,6 +77,7 @@ var InputPropertiesByShape = {
     ConditionalExpression: ['cases', 'elseClause'],
     CaseBranch: ['condition', 'result'],
     UnaryExpression: ['argument'],
+    MemberAccess: ['object', 'property'],
     NotExpression: ['value'],
     ListExpression: ['elements'],
     FunctionCall: ['arguments']
@@ -829,7 +833,7 @@ ExpressionCodeGenerator.prototype = {
             case 'CaseBranch':
                 return this.expressionForConditions([ast], undefined, bindings, depth2);
             case 'Literal':
-                return literalExpressionFor(ast.value);
+                return literalExpressionFor(ast.value, ast.dataType);
             case 'ListExpression':
                 args = _.map(ast.elements, function (arg) {
                     return this.expressionStringForAST(arg, bindings, depth2, this.precedenceOf('('));
@@ -840,6 +844,13 @@ ExpressionCodeGenerator.prototype = {
                     return this.expressionStringForAST(arg, bindings, depth2, this.precedenceOf('('));
                 }, this);
                 return this.expressionForFunctionCall(ast.callee.name, args, outerPrecedence);
+            case 'MemberAccess':
+                precedence = this.precedenceOf('[');
+                args = _.mapObject(_.pick(ast, InputPropertiesByShape.MemberAccess), function (arg) {
+                    return this.expressionStringForAST(arg, bindings, depth2, precedence);
+                }, this);
+                subExprString = args.object + '[' + args.property + ']';
+                return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'Identifier':
                 if (this.hasMultipleBindings(bindings)) {
                     var unsafeInputName = ast.name;

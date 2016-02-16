@@ -267,6 +267,10 @@ DataframeMask.prototype = {
         return this[type] !== undefined ? this[type].length : this.dataframe.getOriginalNumElements(type);
     },
 
+    isEmptyByType: function (type) {
+        return this.numByType(type) === 0;
+    },
+
     isEmpty: function () {
         return this.numPoints() === 0 && this.numEdges() === 0;
     },
@@ -324,7 +328,7 @@ DataframeMask.prototype = {
      * @param {DataframeMask} other
      */
     assertSameDataframe: function (other) {
-        if (other.dataframe !== this.dataframe) {
+        if (other !== undefined && other.dataframe !== this.dataframe) {
             throw new Error('Support for working with masks across dataframes is not yet implemented.');
         }
     },
@@ -350,6 +354,9 @@ DataframeMask.prototype = {
      * @returns {DataframeMask}
      */
     union: function (other) {
+        if (other === undefined) {
+            return this;
+        }
         this.assertSameDataframe(other);
         return new DataframeMask(this.dataframe,
             this.unionForType(GraphComponentTypes[0], other),

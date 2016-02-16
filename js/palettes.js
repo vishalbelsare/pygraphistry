@@ -6,6 +6,7 @@
 
 var _      = require('underscore');
 var brewer = require('colorbrewer');
+var sprintf = require('sprintf-js').sprintf;
 
 
 //////////// SORT PALETTES
@@ -37,19 +38,41 @@ brewer.PairedRepeat = {
 
 ////////////// BIND PALETTES
 
-//'#AABBCC' -> int
-//TODO: this returns ABGR as that's what vgraphloader sends to the client
-function hexToInt (hexStr) {
-    var out = parseInt(hexStr.replace('#', '0x'), 16);
+// int -> '#RRGGBB'
+function intToHex (value) {
+    return sprintf('#%02x%02x%02x', value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF);
+}
+
+/**
+ * Convert RGBA color to WebGL buffer-compatible output.
+ * #sadness, rgba => abgr
+ * @param {Number} value
+ * @return {Number}
+ */
+function convertRGBAToABGR (value) {
+    return ((value & 0xFF) << 24)
+        | ((value & 0xFF00) << 8)
+        | ((value >> 8) & 0xFF00)
+        | ((value >> 24) & 0xFF);
+}
+
+/**
+ * '#AABBCC' -> int
+ * TODO: this returns ABGR as that's what vgraphloader sends to the client
+ * @param {String} hexColor
+ * @return {Number}
+ */
+function hexToABGR (hexColor) {
+    var out = hexColor;
+    if (typeof hexColor === 'string') {
+        out = parseInt(hexColor.replace('#', '0x'), 16);
+    }
 
     //sadness, rgba => abgr
-    var c = {
-        r: (out >> 16) & 255,
-        g: (out >> 8) & 255,
-        b: out & 255
-    };
-
-    return (c.b << 16) | (c.g << 8) | c.r;
+    var r = (out >> 16) & 255,
+        g = (out >> 8) & 255,
+        b = out & 255;
+    return (b << 16) | (g << 8) | r;
 }
 
 //{<string> -> {<int> -> [int]_int}}
@@ -77,13 +100,14 @@ palettes.forEach(function (palette) {
         //use to create palette.out
         //console.log('palette', palette, encounteredPalettes * 1000, brewer[palette][dim].length, brewer[palette][dim].join(','))
 
-        palettesToColorInts[palette][dim] = brewer[palette][dim].map(hexToInt);
+        var paletteOffset = encounteredPalettes * 1000;
+        palettesToColorInts[palette][dim] = brewer[palette][dim].map(hexToABGR);
         palettesToColorInts[palette][dim].forEach(function (color, idx) {
-            categoryToColorInt[encounteredPalettes * 1000 + idx] = color;
+            categoryToColorInt[paletteOffset + idx] = color;
         });
 
         all[palette][dim] = {
-            offset: encounteredPalettes * 1000,
+            offset: paletteOffset,
             hexes: brewer[palette][dim]
         };
 
@@ -127,5 +151,21 @@ module.exports = {
     //Ex: bindings[9 * 1000 + 3] == 3383340
     bindings: categoryToColorInt,
 
-    hexToInt: hexToInt
+    // Find out if a set of [unique] values fits one category's integer space we've defined for palettes.
+    valuesFitOnePaletteCategory: function (intValues) {
+        if (intValues.length === 0) { return true; }
+        var paletteNumbers = _.map(intValues, function (intValue) { return Math.floor(intValue / 1000); }),
+            firstPaletteNumber = paletteNumbers[0],
+            firstPaletteOffset = firstPaletteNumber * 1000;
+        if (firstPaletteNumber >= encounteredPalettes) {
+            return false;
+        }
+        return _.every(intValues, function (intValue, idx) {
+            return paletteNumbers[idx] === firstPaletteNumber &&
+                categoryToColorInt[firstPaletteOffset + idx] !== undefined;
+        });
+    },
+
+    hexToABGR: hexToABGR,
+    intToHex: intToHex
 };

@@ -5,7 +5,6 @@ var Q = require('q');
 var sprintf = require('sprintf-js').sprintf;
 var dijkstra = require('dijkstra');
 var util = require('./util.js');
-var cljs = require('./cl.js');
 var MoveNodes = require('./moveNodes.js');
 var SelectNodesInRect = require('./SelectNodesInRect.js');
 var SelectNodesInCircle = require('./SelectNodesInCircle.js');
@@ -26,8 +25,8 @@ var randLength = 73;
 
 var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
 
-function create(dataframe, renderer, device, vendor, cfg) {
-    return cljs.create(renderer, device, vendor).then(function (cl) {
+function create(dataframe, renderer, cl, device, vendor, cfg) {
+    return Q().then(function () {
         // Pick the first layout algorithm that matches our device type
         var type, // GPU device type
             availableControls, // Available controls for device type

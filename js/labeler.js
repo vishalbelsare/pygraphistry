@@ -1,6 +1,7 @@
 'use strict';
 
 var _ = require('underscore');
+var palettes = require('./palettes');
 
 var DimCodes = {
     point: 1,
@@ -20,16 +21,41 @@ function pickTitleField (attribs, prioritized) {
 
 function defaultLabels(graph, indices, type) {
 
-    var rows = graph.dataframe.getRows(indices, type);
-    return rows.map(function (row) {
+    /** @type Dataframe */
+    var dataframe = graph.dataframe;
+    var rows = dataframe.getRows(indices, type);
+
+    var structuredData = rows.map(function (row) {
+        var title = row._title;
+        var filteredRow = _.omit(row, '_title');
+
+        var unsortedColumns = _.map(_.keys(filteredRow), function (columnName) {
+            var dataType = dataframe.getDataType(columnName, type);
+            var value = filteredRow[columnName],
+                displayName;
+            if (dataType !== undefined && dataframe.doesColumnRepresentColorPaletteMap(type, columnName)) {
+                displayName = palettes.intToHex(palettes.bindings[value]);
+            }
+
+            return {
+                value: value,
+                displayName: displayName,
+                key: columnName,
+                dataType: dataType
+            };
+        });
+
+        var sortedColumns = _.sortBy(unsortedColumns, function (obj) {
+            return obj.key;
+        });
+
         return {
-            title: row._title,
-            columns: _.sortBy(
-                _.pairs(_.omit(row, '_title')),
-                function (kvPair) { return kvPair[0]; }
-            )
+            title: title,
+            columns: sortedColumns
         };
     });
+
+    return structuredData;
 }
 
 
