@@ -692,7 +692,7 @@ function getSimpleEncodings(encodings, loaders, target) {
  * @param {Object} vgAttributes
  * @returns {{nodes: *, edges: *}}
  */
-function checkMetadata(metadata, vg, vgAttributes) {
+function checkMetadataAgainstVGraph(metadata, vg, vgAttributes) {
     if (metadata.nodes.length === 0 || metadata.edges.length === 0) {
         throw new Error('Nodes or edges missing!');
     }
@@ -711,10 +711,10 @@ function checkMetadata(metadata, vg, vgAttributes) {
 
     if (!sameKeys(nodesMetadata.attributes, vgAttributes.nodes) ||
         !sameKeys(edgesMetadata.attributes, vgAttributes.edges)) {
-        throw new Error('Discrepenties between metadata and VGraph attributes');
+        throw new Error('Discrepancies between metadata and VGraph attributes');
     }
     if (nodesMetadata.count !== vg.nvertices || edgesMetadata.count !== vg.edgeCount) {
-        throw new Error('Discrepenties in number of nodes/edges between metadata and VGraph');
+        throw new Error('Discrepancies in number of nodes/edges between metadata and VGraph');
     }
 
     return {
@@ -729,7 +729,7 @@ function decode1(graph, vg, metadata)  {
                  vg.version, vg.name, vg.nvertices, vg.edgeCount);
 
     var vgAttributes = getAttributes1(vg);
-    var graphInfo = checkMetadata(metadata, vg, vgAttributes);
+    var graphInfo = checkMetadataAgainstVGraph(metadata, vg, vgAttributes);
     notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.nvertices);
 
     var edges = new Array(vg.edgeCount);
