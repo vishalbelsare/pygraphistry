@@ -340,12 +340,12 @@ function loadDataframe(dataframe, attributeObjects, numPoints, numEdges, aliases
 
 function decode0(graph, vg, metadata)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
-          vg.version, vg.name, vg.nvertices, vg.edgeCount);
+          vg.version, vg.name, vg.vertexCount, vg.edgeCount);
 
-    notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.nvertices);
+    notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.vertexCount);
 
     var attrs = getAttributes0(vg);
-    loadDataframe(graph.dataframe, attrs, vg.nvertices, vg.edgeCount, {}, {});
+    loadDataframe(graph.dataframe, attrs, vg.vertexCount, vg.edgeCount, {}, {});
     logger.debug('Graph has attribute: %o', _.pluck(attrs, 'name'));
 
     var edges = new Array(vg.edgeCount);
@@ -360,7 +360,7 @@ function decode0(graph, vg, metadata)  {
 
     if (vertices === undefined) {
         clientNotification.loadingStatus(graph.socket, 'Initializing positions');
-        vertices = computeInitialPositions(vg.nvertices, edges, dimensions, graph.socket);
+        vertices = computeInitialPositions(vg.vertexCount, edges, dimensions, graph.socket);
     }
 
     var loaders = attributeLoaders(graph);
@@ -410,11 +410,11 @@ function decode0(graph, vg, metadata)  {
 }
 
 
-function computeInitialPositions(nvertices, edges, dimensions) {
+function computeInitialPositions(vertexCount, edges, dimensions) {
     logger.trace('Running component analysis');
 
-    var components = weakcc(nvertices, edges, 2);
-    var pointsPerRow = nvertices / (Math.round(Math.sqrt(components.components.length)) + 1);
+    var components = weakcc(vertexCount, edges, 2);
+    var pointsPerRow = vertexCount / (Math.round(Math.sqrt(components.components.length)) + 1);
 
     perf.startTiming('graph-viz:data:vgraphloader, weakcc postprocess');
     var componentOffsets = [];
@@ -459,13 +459,13 @@ function computeInitialPositions(nvertices, edges, dimensions) {
                     0);
     }
 
-    var initSize = 5 * Math.sqrt(nvertices);
-    for (var i = 0; i < nvertices; i++) {
+    var initSize = 5 * Math.sqrt(vertexCount);
+    for (var i = 0; i < vertexCount; i++) {
         var c = components.nodeToComponent[i];
         var offset = componentOffsets[c];
-        var vertex = [ initSize * (offset.rowRollingSum + 0.9 * components.components[c].size * Math.random()) / nvertices ];
+        var vertex = [ initSize * (offset.rowRollingSum + 0.9 * components.components[c].size * Math.random()) / vertexCount ];
         for (var j = 1; j < dimensions.length; j++) {
-            vertex.push(initSize * (offset.rowYOffset + 0.9 * components.components[c].size * Math.random()) / nvertices);
+            vertex.push(initSize * (offset.rowYOffset + 0.9 * components.components[c].size * Math.random()) / vertexCount);
         }
         vertices.push(vertex);
     }
@@ -480,8 +480,8 @@ function lookupInitialPosition(vg, vectors) {
 
     if (x && y) {
         logger.trace('Loading previous vertices from xObj');
-        var vertices = new Array(vg.nvertices);
-        for (var i = 0; i < vg.nvertices; i++) {
+        var vertices = new Array(vg.vertexCount);
+        for (var i = 0; i < vg.vertexCount; i++) {
             vertices[i] = [x.values[i], y.values[i]];
         }
         return vertices;
@@ -713,7 +713,7 @@ function checkMetadataAgainstVGraph(metadata, vg, vgAttributes) {
         !sameKeys(edgesMetadata.attributes, vgAttributes.edges)) {
         throw new Error('Discrepancies between metadata and VGraph attributes');
     }
-    if (nodesMetadata.count !== vg.nvertices || edgesMetadata.count !== vg.edgeCount) {
+    if (nodesMetadata.count !== vg.vertexCount || edgesMetadata.count !== vg.edgeCount) {
         throw new Error('Discrepancies in number of nodes/edges between metadata and VGraph');
     }
 
@@ -726,11 +726,11 @@ function checkMetadataAgainstVGraph(metadata, vg, vgAttributes) {
 
 function decode1(graph, vg, metadata)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
-                 vg.version, vg.name, vg.nvertices, vg.edgeCount);
+                 vg.version, vg.name, vg.vertexCount, vg.edgeCount);
 
     var vgAttributes = getAttributes1(vg);
     var graphInfo = checkMetadataAgainstVGraph(metadata, vg, vgAttributes);
-    notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.nvertices);
+    notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.vertexCount);
 
     var edges = new Array(vg.edgeCount);
     for (var i = 0; i < vg.edges.length; i++) {
@@ -743,7 +743,7 @@ function decode1(graph, vg, metadata)  {
     var vertices = lookupInitialPosition(vg, _.values(vgAttributes.nodes));
     if (vertices === undefined) {
         clientNotification.loadingStatus(graph.socket, 'Initializing positions');
-        vertices = computeInitialPositions(vg.nvertices, edges, dimensions, graph.socket);
+        vertices = computeInitialPositions(vg.vertexCount, edges, dimensions, graph.socket);
     }
 
     var loaders = attributeLoaders(graph);
@@ -761,7 +761,7 @@ function decode1(graph, vg, metadata)  {
 
     var flatAttributeArray = _.values(vgAttributes.nodes).concat(_.values(vgAttributes.edges));
     var allEncodings =  _.extend({}, nodeEncodings, edgeEncodings);
-    loadDataframe(graph.dataframe, flatAttributeArray, vg.nvertices, vg.edgeCount, allEncodings, graphInfo);
+    loadDataframe(graph.dataframe, flatAttributeArray, vg.vertexCount, vg.edgeCount, allEncodings, graphInfo);
 
     _.each(loaders, function (loaderArray, graphProperty) {
         _.each(loaderArray, function (loader) {
@@ -793,11 +793,11 @@ function decode1(graph, vg, metadata)  {
         }).fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
 }
 
-function notifyClientOfSizesForAllocation (socket, edgeCount, nvertices) {
+function notifyClientOfSizesForAllocation (socket, edgeCount, vertexCount) {
     var MAX_SIZE_TO_ALLOCATE = 2000000;
     var numElements = {
         edge: Math.min(edgeCount, MAX_SIZE_TO_ALLOCATE),
-        point: Math.min(nvertices, MAX_SIZE_TO_ALLOCATE)
+        point: Math.min(vertexCount, MAX_SIZE_TO_ALLOCATE)
     };
     socket.emit('sizes_for_memory_allocation', numElements);
 }
