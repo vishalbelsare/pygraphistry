@@ -1468,6 +1468,7 @@ Dataframe.prototype.valueSignifiesUndefined = valueSignifiedUndefined;
  * @property {Object.<Number>} distinctValues count of instances by value
  * @property {Object} maxValue
  * @property {Object} minValue
+ * @property {Number} standardDeviation
  * @property {Number} averageValue
  * @property {Number} sum
  * @property {Object} binning
@@ -1560,6 +1561,13 @@ ColumnAggregation.prototype.runAggregationForAggType = function (aggType) {
                 this.updateAggregationTo('averageValue', null);
             }
             break;
+        case 'standardDeviation':
+            if (this.getAggregationByType('isNumeric')) {
+                this.computeStandardDeviation();
+            } else {
+                this.updateAggregationTo('standardDeviation', null);
+            }
+            break;
         case 'countDistinct':
         case 'distinctValues':
         case 'isCategorical':
@@ -1617,6 +1625,19 @@ ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
     this.updateAggregationTo('maxValue', maxValue);
     this.updateAggregationTo('sum', sum);
     this.updateAggregationTo('averageValue', sum / numValues);
+};
+
+ColumnAggregation.prototype.computeStandardDeviation = function () {
+    var avg = this.getAggregationByType('averageValue'),
+        value = 0, values = this.column.values, numValues = this.getAggregationByType('count'),
+        sumSquareDiffs = 0, diff;
+    for (var i=0; i < numValues; i++) {
+        value = values[i];
+        if (numberSignifiesUndefined(value)) { continue; }
+        diff = value - avg;
+        sumSquareDiffs += diff * diff;
+    }
+    this.updateAggregationTo('standardDeviation', Math.sqrt(sumSquareDiffs / numValues));
 };
 
 var MaxDistinctValues = 400;
