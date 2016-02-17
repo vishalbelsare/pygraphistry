@@ -308,14 +308,14 @@ function load(graph, dataset) {
 
 
 /**
- * @param graph
+ * @param {Dataframe} dataframe
  * @param {AttrObject[]} attributeObjects
  * @param {Number} numPoints
  * @param {Number} numEdges
  * @param {Object} aliases column names by encoding.
  * @param {DataframeMetadata} graphInfo
  */
-function loadDataframe(graph, attributeObjects, numPoints, numEdges, aliases, graphInfo) {
+function loadDataframe(dataframe, attributeObjects, numPoints, numEdges, aliases, graphInfo) {
     var edgeAttributeObjects = _.filter(attributeObjects, function (value) {
         return value.target === EDGE;
     });
@@ -331,10 +331,10 @@ function loadDataframe(graph, attributeObjects, numPoints, numEdges, aliases, gr
         return [value.name, value];
     }));
 
-    _.extend(graph.dataframe.bufferAliases, aliases);
-    _.extend(graph.dataframe.metadata, graphInfo);
-    graph.dataframe.loadAttributesForType(edgeAttributeObjectsByName, 'edge', numEdges);
-    graph.dataframe.loadAttributesForType(pointAttributeObjectsByName, 'point', numPoints);
+    _.extend(dataframe.bufferAliases, aliases);
+    _.extend(dataframe.metadata, graphInfo);
+    dataframe.loadAttributesForType(edgeAttributeObjectsByName, 'edge', numEdges);
+    dataframe.loadAttributesForType(pointAttributeObjectsByName, 'point', numPoints);
 }
 
 
@@ -345,7 +345,7 @@ function decode0(graph, vg, metadata)  {
     notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.nvertices);
 
     var attrs = getAttributes0(vg);
-    loadDataframe(graph, attrs, vg.nvertices, vg.edgeCount, {}, {});
+    loadDataframe(graph.dataframe, attrs, vg.nvertices, vg.edgeCount, {}, {});
     logger.debug('Graph has attribute: %o', _.pluck(attrs, 'name'));
 
     var edges = new Array(vg.edgeCount);
@@ -761,7 +761,7 @@ function decode1(graph, vg, metadata)  {
 
     var flatAttributeArray = _.values(vgAttributes.nodes).concat(_.values(vgAttributes.edges));
     var allEncodings =  _.extend({}, nodeEncodings, edgeEncodings);
-    loadDataframe(graph, flatAttributeArray, vg.nvertices, vg.edgeCount, allEncodings, graphInfo);
+    loadDataframe(graph.dataframe, flatAttributeArray, vg.nvertices, vg.edgeCount, allEncodings, graphInfo);
 
     _.each(loaders, function (loaderArray, graphProperty) {
         _.each(loaderArray, function (loader) {
