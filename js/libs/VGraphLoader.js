@@ -37,54 +37,54 @@ var attributeLoaders = function(graph) {
     return {
         pointSize: {
             load: graph.setSizes,
-            type : 'number',
+            type : ['number'],
             default: graph.setSizes,
             target: VERTEX,
             values: undefined
         },
         pointColor: {
             load: graph.setColors,
-            type: 'number',
+            type: ['number', 'color'],
             default: graph.setColors,
             target: VERTEX,
             values: undefined
         },
         edgeColor: {
             load: graph.setEdgeColors,
-            type: 'number',
+            type: ['number', 'color'],
             default: graph.setEdgeColors,
             target: EDGE,
             values: undefined
         },
         edgeHeight: {
             load: graph.setEdgeHeights,
-            type: 'number',
+            type: ['number'],
             default: graph.setEdgeHeights,
             target: EDGE,
             values: undefined
         },
         midEdgeColor: {
             load: graph.setMidEdgeColors,
-            type: 'number',
+            type: ['number', 'color'],
             default: graph.setMidEdgeColors,
             target: EDGE,
             values: undefined
         },
         pointLabel: {
             load: graph.setPointLabels,
-            type: 'string',
+            type: ['string'],
             target: VERTEX,
             values: undefined
         },
         edgeLabel: {
             load: graph.setEdgeLabels,
-            type: 'string',
+            type: ['string'],
             target: EDGE,
             values: undefined
         },
         edgeWeight: {
           load: graph.setEdgeWeight,
-          type: 'number',
+          type: ['number'],
           target: EDGE,
           default: graph.setEdgeWeight,
           values: undefined
@@ -95,13 +95,13 @@ var attributeLoaders = function(graph) {
         // PointTitle and edgeTitle as invalid.
         pointTitle: {
             load: function () { return Q(); },
-            type: 'string',
+            type: ['string'],
             target: VERTEX,
             default: function () { return Q(); }
         },
         edgeTitle: {
             load: function () { return Q(); },
-            type: 'string',
+            type: ['string'],
             target: EDGE,
             default: function () { return Q(); }
 
@@ -384,8 +384,8 @@ function decode0(graph, vg, metadata)  {
         _.each(loaderArray, function (loader) {
             if (attr.target !== loader.target) {
                 logger.warn('Vertex/Node attribute mismatch for ' + vname);
-            } else if (attr.type !== loader.type) {
-                logger.warn('Expected type ' + loader.type + ' but got ' + attr.type + ' for ' + vname);
+            } else if (!_.contains(loader.type, attr.type)) {
+                logger.warn('Expected type in ' + loader.type + ', but got ' + attr.type + ' for ' + vname);
             } else {
                 loader.values = attr.values;
             }
