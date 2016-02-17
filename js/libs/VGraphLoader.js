@@ -295,8 +295,8 @@ function load(graph, dataset) {
  */
 
 /** @typedef {Object} DataframeMetadata
- * @property {DataframeMetadataByComponent} nodes
- * @property {DataframeMetadataByComponent} edges
+ * @property {DataframeMetadataByComponent[]} nodes
+ * @property {DataframeMetadataByComponent[]} edges
  */
 
 /** @typedef {Object} AttrObject
