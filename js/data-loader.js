@@ -151,7 +151,7 @@ function loadJSONMeta(graph, rawDataset) {
             throw new Error('For now only datasources of type "vgraph" are supported');
         }
 
-        var data = dataset.datasources[0].data
+        var data = dataset.datasources[0].data;
         return VGraphLoader.load(graph, {body: data, metadata: dataset});
     });
 }
