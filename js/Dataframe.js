@@ -888,48 +888,53 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
 // Data Loading
 //////////////////////////////////////////////////////////////////////////////
 
+var SystemAttributeNames = [
+    'pointColor', 'pointSize', 'pointTitle', 'pointLabel',
+    'edgeLabel', 'edgeTitle', 'edgeHeight',
+    'degree'
+];
+
 /**
  * TODO: Implicit degrees for points and src/dst for edges.
- * @param {Object} attributes
+ * @param {Object.<AttrObject>} attributeObjectsByName
  * @param {string} type - any of [TYPES]{@link BufferTypeKeys}
- * @param {Number} numElements - prescribe or describe? number present
+ * @param {Number} numElements - prescribe or describe? number present by type.
  */
-Dataframe.prototype.load = function (attributes, type, numElements) {
+Dataframe.prototype.loadAttributesForType = function (attributeObjectsByName, type, numElements) {
 
     // Case of loading with no data.
-    // if (_.keys(attributes).length === 0) {
+    // if (_.keys(attributeObjectsByName).length === 0) {
     //     return;
     // }
 
     // TODO: Decoding at the presentation layer.
-    // decodeStrings(attributes);
-    // decodeDates(attributes);
+    // decodeStrings(attributeObjectsByName);
+    // decodeDates(attributeObjectsByName);
 
-    var nodeTitleField = pickTitleField(this.bufferAliases, attributes, 'pointTitle');
-    var edgeTitleField = pickTitleField(this.bufferAliases, attributes, 'edgeTitle');
+    var nodeTitleField = pickTitleField(this.bufferAliases, attributeObjectsByName, 'pointTitle');
+    var edgeTitleField = pickTitleField(this.bufferAliases, attributeObjectsByName, 'edgeTitle');
 
-    var filteredKeys = _.keys(attributes)
+    var userDefinedAttributeKeys = _.keys(attributeObjectsByName)
         .filter(function (name) {
-            return ['pointColor', 'pointSize', 'pointTitle', 'pointLabel',
-                    'edgeLabel', 'edgeTitle', 'edgeHeight', 'degree'].indexOf(name) === -1;
+            return SystemAttributeNames.indexOf(name) === -1;
         })
         .filter(function (name) { return name !== nodeTitleField && name !== edgeTitleField; });
 
-    var filteredAttributes = _.pick(attributes, function (value, key) {
-        return filteredKeys.indexOf(key) > -1;
+    var userDefinedAttributesByName = _.pick(attributeObjectsByName, function (value, key) {
+        return userDefinedAttributeKeys.indexOf(key) > -1;
     });
 
     this.rawdata.numElements[type] = numElements;
 
     if (nodeTitleField) {
-        filteredAttributes._title = attributes[nodeTitleField];
+        userDefinedAttributesByName._title = attributeObjectsByName[nodeTitleField];
     } else if (edgeTitleField) {
-        filteredAttributes._title = attributes[edgeTitleField];
+        userDefinedAttributesByName._title = attributeObjectsByName[edgeTitleField];
     } else {
-        filteredAttributes._title = {type: 'number', name: 'label', values: _.range(numElements)};
+        userDefinedAttributesByName._title = {type: 'number', name: 'label', values: _.range(numElements)};
     }
 
-    _.extend(this.rawdata.attributes[type], filteredAttributes);
+    _.extend(this.rawdata.attributes[type], userDefinedAttributesByName);
     // TODO: Case where data != raw data.
 };
 

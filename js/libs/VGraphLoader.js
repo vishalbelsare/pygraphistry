@@ -309,32 +309,32 @@ function load(graph, dataset) {
 
 /**
  * @param graph
- * @param {AttrObject[]} attrs
+ * @param {AttrObject[]} attributeObjects
  * @param {Number} numPoints
  * @param {Number} numEdges
  * @param {Object} aliases column names by encoding.
  * @param {DataframeMetadata} graphInfo
  */
-function loadDataframe(graph, attrs, numPoints, numEdges, aliases, graphInfo) {
-    var edgeAttrsList = _.filter(attrs, function (value) {
+function loadDataframe(graph, attributeObjects, numPoints, numEdges, aliases, graphInfo) {
+    var edgeAttributeObjects = _.filter(attributeObjects, function (value) {
         return value.target === EDGE;
     });
-    var pointAttrsList = _.filter(attrs, function (value) {
+    var pointAttributeObjects = _.filter(attributeObjects, function (value) {
         return value.target === VERTEX;
     });
 
-    var edgeAttrs = _.object(_.map(edgeAttrsList, function (value) {
+    var edgeAttributeObjectsByName = _.object(_.map(edgeAttributeObjects, function (value) {
         return [value.name, value];
     }));
 
-    var pointAttrs = _.object(_.map(pointAttrsList, function (value) {
+    var pointAttributeObjectsByName = _.object(_.map(pointAttributeObjects, function (value) {
         return [value.name, value];
     }));
 
     _.extend(graph.dataframe.bufferAliases, aliases);
     _.extend(graph.dataframe.metadata, graphInfo);
-    graph.dataframe.load(edgeAttrs, 'edge', numEdges);
-    graph.dataframe.load(pointAttrs, 'point', numPoints);
+    graph.dataframe.loadAttributesForType(edgeAttributeObjectsByName, 'edge', numEdges);
+    graph.dataframe.loadAttributesForType(pointAttributeObjectsByName, 'point', numPoints);
 }
 
 
