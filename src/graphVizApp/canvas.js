@@ -230,24 +230,43 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
      * stops when idle for a second and starts again at the next render update.
      */
     function startRenderingLoop() {
+        var SLOW_EFFECT_DELAY = 125;
+        var PAUSE_RENDERING_DELAY = 1000;
+
         var lastRenderTime = 0;
         var quietSignaled = true;
+
+        // Communication between render loops about whether to update lastRenderTime,
+        // or to check the delta against it to see if we should render slow effects.
+        var shouldUpdateRenderTime = true;
 
         function loop() {
             var nextFrameId = window.requestAnimationFrame(loop);
 
             // Nothing to render
             if (_.keys(renderQueue).length === 0) {
-                var timeDelta = Date.now() - lastRenderTime;
-                if (timeDelta > 75 && !quietSignaled) {
-                    quietCallback();
-                    quietSignaled = true;
-                    isAnimating.onNext(false);
+
+                if (shouldUpdateRenderTime) {
+                    // Just update render time, leave delta checks for next loop
+                    lastRenderTime = Date.now();
+                    shouldUpdateRenderTime = false;
+                } else {
+                    // Check time since last render. Based on duration, render slow effects and/or
+                    // pause the rendering loop.
+
+                    var timeDelta = Date.now() - lastRenderTime;
+                    if (timeDelta > SLOW_EFFECT_DELAY && !quietSignaled) {
+                        quietCallback();
+                        quietSignaled = true;
+                        isAnimating.onNext(false);
+                    }
+
+                    if (timeDelta > PAUSE_RENDERING_DELAY) {
+                        pauseRenderingLoop(nextFrameId);
+                    }
+
                 }
 
-                if (timeDelta > 1000) {
-                    pauseRenderingLoop(nextFrameId);
-                }
                 return;
             }
 
@@ -261,7 +280,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
 
             // Rest render queue
             if (_.keys(renderQueue).length > 0) {
-                lastRenderTime = Date.now();
+                shouldUpdateRenderTime = true;
                 if (quietSignaled) {
                     isAnimating.onNext(true);
                     quietSignaled = false;
