@@ -42,10 +42,13 @@ ColumnAggregation.prototype.getAggregationByType = function (aggType) {
 };
 
 var AggTypes = [
+    // Data type characterization:
     'jsType', 'dataType',
     'isNumeric', 'isIntegral', 'isContinuous', 'isQuantitative', 'isOrdered',
     'isDiverging', 'hasPositive', 'hasNegative', 'isPositive',
-    'count', 'sum', 'minValue', 'maxValue', 'averageValue',
+    // Computable in a single iteration pass:
+    'count', 'countMissing', 'countValid', 'sum', 'minValue', 'maxValue', 'averageValue',
+    // Computable only using data-aggregation:
     'countDistinct', 'distinctValues', 'isCategorical'
 ];
 
@@ -81,10 +84,12 @@ ColumnAggregation.prototype.runAggregationForAggType = function (aggType) {
         case 'maxValue':
         case 'sum':
         case 'averageValue':
+        case 'countMissing':
+        case 'countValid':
             if (this.getAggregationByType('isNumeric')) {
                 this.fixedAllocationNumericAggregations();
             } else {
-                this.minMaxGenericAggregations();
+                this.genericSinglePassFixedMemoryAggregations();
                 this.updateAggregationTo('sum', null);
                 this.updateAggregationTo('averageValue', null);
             }
@@ -112,29 +117,40 @@ ColumnAggregation.prototype.isIntegral = function (value) {
     return parseInt(value) == value; // jshint ignore:line
 };
 
-ColumnAggregation.prototype.minMaxGenericAggregations = function () {
-    var minValue = null, maxValue = null, value, values = this.column.values, numValues = this.getAggregationByType('count');
+ColumnAggregation.prototype.genericSinglePassFixedMemoryAggregations = function () {
+    var minValue = null, maxValue = null, countMissing = 0,
+        value, values = this.column.values, numValues = this.getAggregationByType('count');
     var isLessThan = dataTypeUtil.isLessThanForDataType(this.getAggregationByType('dataType'));
     for (var i=0; i < numValues; i++) {
         value = values[i];
-        if (dataTypeUtil.valueSignifiesUndefined(value)) { continue; }
+        if (dataTypeUtil.valueSignifiesUndefined(value)) {
+            countMissing++;
+            continue;
+        }
         if (minValue === null || isLessThan(value, minValue)) { minValue = value; }
         if (maxValue === null || isLessThan(maxValue, value)) { maxValue = value; }
     }
+    this.updateAggregationTo('countValid', numValues - countMissing);
+    this.updateAggregationTo('countMissing', countMissing);
     this.updateAggregationTo('minValue', minValue);
     this.updateAggregationTo('maxValue', maxValue);
 };
 
 ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
-    var minValue = Infinity, maxValue = -Infinity, sum = 0,
+    var minValue = Infinity, maxValue = -Infinity, sum = 0, countMissing = 0,
         value = 0, values = this.column.values, numValues = this.getAggregationByType('count');
     for (var i=0; i < numValues; i++) {
         value = values[i];
-        if (dataTypeUtil.numberSignifiesUndefined(value)) { continue; }
+        if (dataTypeUtil.numberSignifiesUndefined(value)) {
+            countMissing++;
+            continue;
+        }
         if (value < minValue) { minValue = value; }
         else if (value > maxValue) { maxValue = value; }
         sum += parseFloat(value);
     }
+    this.updateAggregationTo('countValid', numValues - countMissing);
+    this.updateAggregationTo('countMissing', countMissing);
     this.updateAggregationTo('minValue', minValue);
     this.updateAggregationTo('maxValue', maxValue);
     this.updateAggregationTo('sum', sum);
