@@ -63,6 +63,7 @@ function Dataframe () {
     this.bufferAliases = {};
     this.data = this.rawdata;
     this.bufferOverlays = {};
+    /** @type {DataframeMetadata} */
     this.metadata = {};
 }
 
@@ -1446,6 +1447,25 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
  */
 
 
+Dataframe.prototype.metadataForColumn = function (columnName, type) {
+    var metadata;
+    if (this.metadata !== undefined) {
+        switch (type) {
+            case 'point':
+                if (this.metadata.nodes !== undefined && this.metadata.nodes[columnName] !== undefined) {
+                    metadata = this.metadata.nodes[columnName];
+                }
+                break;
+            case 'edge':
+                if (this.metadata.edges !== undefined && this.metadata.edges[columnName] !== undefined) {
+                    metadata = this.metadata.edges[columnName];
+                }
+                break;
+        }
+    }
+    return metadata;
+};
+
 
 /**
  * @returns {ColumnAggregation}
@@ -1456,6 +1476,13 @@ Dataframe.prototype.getColumnAggregations = function(columnName, type, unfiltere
     if (column === undefined) { return undefined; }
     if (column.aggregations === undefined) {
         column.aggregations = new ColumnAggregation(this, column);
+        var aggregations = this.metadataForColumn(columnName, type);
+        if (aggregations !== undefined) {
+            if (aggregations.aggregations !== undefined) {
+                aggregations = aggregations.aggregations;
+            }
+            column.aggregations.updateAggregations(aggregations);
+        }
     }
     return column.aggregations;
 };
