@@ -249,8 +249,8 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
     vg.version = 0;
     vg.name = name;
     vg.type = pb_root.VectorGraph.GraphType.DIRECTED;
-    vg.nvertices = nodeCount;
-    vg.nedges = edges.length;
+    vg.vertexCount = nodeCount;
+    vg.edgeCount = edges.length;
     vg.edges = edges;
 
     _.each(_.omit(evectors, srcField, dstField), function (vector) {

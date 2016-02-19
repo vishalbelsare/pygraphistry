@@ -43,7 +43,7 @@ function etl(msg, params) {
         creator: apiKey.decrypt(params.key),
         name: msg.metadata.name,
         nodes: msg.metadata.nodes,
-        edges: msg.metadata.edges,
+        edges: msg.metadata.edges
     };
 
     var qDatasources = _.map(msg.metadata.datasources, function (datasource) {
@@ -57,7 +57,7 @@ function etl(msg, params) {
                     size: buffer.length,
                     sha1: sha1,
                     url: url
-                }
+                };
                 return _.extend({}, datasource, extra);
             });
         } else {
@@ -68,10 +68,10 @@ function etl(msg, params) {
     return Q.all(qDatasources).then(function (datasources) {
         desc.datasources = datasources;
         logger.debug('Dataset', desc);
-        var nnodes = _.pluck(desc.nodes, 'count').join('+');
-        var nedges = _.pluck(desc.edges, 'count').join('+');
+        var nodeCount = _.pluck(desc.nodes, 'count').join('+');
+        var edgeCount = _.pluck(desc.edges, 'count').join('+');
         return uploadJSON(desc, sprintf('%s/dataset.json', folder)).then(function (url) {
-            return {name: url, nnodes: nnodes, nedges: nedges};
+            return {name: url, nodeCount: nodeCount, edgeCount: edgeCount};
         });
     });
 }

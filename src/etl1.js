@@ -35,10 +35,10 @@ function etl(msg) {
         throw new Error('Invalid edgelist');
     }
 
-    logger.info('VGraph created with', vg.nvertices, 'nodes and', vg.nedges, 'edges');
+    logger.info('VGraph created with', vg.vertexCount, 'nodes and', vg.edgeCount, 'edges');
 
     return publish(vg, name).then(function () {
-        return {name: name, nnodes: vg.nvertices, nedges: vg.nedges};
+        return {name: name, nodeCount: vg.vertexCount, edgeCount: vg.edgeCount};
     });
 }
 
