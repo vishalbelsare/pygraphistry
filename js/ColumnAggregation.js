@@ -22,25 +22,8 @@ function ColumnAggregation(dataframe, column) {
     };
 }
 
-ColumnAggregation.prototype.updateAggregationTo = function (aggType, value) {
-    this.aggregations[aggType] = value;
-};
-
-ColumnAggregation.prototype.updateAggregations = function (valuesByAggType) {
-    _.extend(this.aggregations, valuesByAggType);
-};
-
-ColumnAggregation.prototype.hasAggregationByType = function (aggType) {
-    return this.aggregations[aggType] !== undefined;
-};
-
-ColumnAggregation.prototype.getAggregationByType = function (aggType) {
-    if (!this.hasAggregationByType(aggType)) {
-        this.runAggregationForAggType(aggType);
-    }
-    return this.aggregations[aggType];
-};
-
+/** Legible enumeration of all aggregations supported, for getSummary.
+ */
 var AggTypes = [
     // Data type characterization:
     'jsType', 'dataType',
@@ -48,9 +31,65 @@ var AggTypes = [
     'isDiverging', 'hasPositive', 'hasNegative', 'isPositive',
     // Computable in a single iteration pass:
     'count', 'countMissing', 'countValid', 'sum', 'minValue', 'maxValue', 'averageValue',
-    // Computable only using data-aggregation:
-    'countDistinct', 'distinctValues', 'isCategorical'
+    // Computable only using distinct value aggregation:
+    'countDistinct', 'distinctValues', 'isCategorical',
+    // Statistical:
+    'variance', 'standardDeviation'
 ];
+
+/** Maps external naming/abbreviations for aggregations to AggTypes values.
+ * @type {Object.<String>}
+ */
+var AggAliases = {
+    avg: 'averageValue',
+    mean: 'averageValue',
+    min: 'minValue',
+    max: 'maxValue',
+    std: 'standardDeviation',
+    stddev: 'standardDeviation',
+    stdev: 'standardDeviation',
+    var: 'variance',
+    distinct: 'countDistinct',
+    valid: 'countValid',
+    missing: 'countMissing'
+};
+
+ColumnAggregation.prototype.resolveAggregationType = function (aggType) {
+    if (AggAliases[aggType] === undefined) {
+        return aggType;
+    } else {
+        return AggAliases[aggType];
+    }
+};
+
+ColumnAggregation.prototype.isAggregationType = function (aggType) {
+    return AggTypes.indexOf(aggType) !== -1;
+};
+
+ColumnAggregation.prototype.updateAggregationTo = function (aggType, value) {
+    aggType = this.resolveAggregationType(aggType);
+    if (this.isAggregationType(aggType)) {
+        this.aggregations[aggType] = value;
+    }
+};
+
+ColumnAggregation.prototype.updateAggregations = function (valuesByAggType) {
+    _.each(valuesByAggType, function (aggValue, aggType) {
+        this.updateAggregationTo(aggType, aggValue);
+    }, this);
+};
+
+ColumnAggregation.prototype.hasAggregationByType = function (aggType) {
+    return this.aggregations[this.resolveAggregationType(aggType)] !== undefined;
+};
+
+ColumnAggregation.prototype.getAggregationByType = function (aggType) {
+    aggType = this.resolveAggregationType(aggType);
+    if (!this.hasAggregationByType(aggType)) {
+        this.runAggregationForAggType(aggType);
+    }
+    return this.aggregations[aggType];
+};
 
 /**
  * @returns {Aggregations}
@@ -94,6 +133,7 @@ ColumnAggregation.prototype.runAggregationForAggType = function (aggType) {
                 this.updateAggregationTo('averageValue', null);
             }
             break;
+        case 'variance':
         case 'standardDeviation':
             if (this.getAggregationByType('isNumeric')) {
                 this.computeStandardDeviation();
@@ -167,7 +207,9 @@ ColumnAggregation.prototype.computeStandardDeviation = function () {
         diff = value - avg;
         sumSquareDiffs += diff * diff;
     }
-    this.updateAggregationTo('standardDeviation', Math.sqrt(sumSquareDiffs / numValues));
+    var variance = sumSquareDiffs / numValues;
+    this.updateAggregationTo('variance', variance);
+    this.updateAggregationTo('standardDeviation', Math.sqrt(variance));
 };
 
 var MaxDistinctValues = 400;
