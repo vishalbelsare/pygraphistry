@@ -31,8 +31,18 @@ var decoders = {
     1: decode1
 };
 
+/** @typedef {Object} AttributeLoader
+ * @property {Function} load
+ * @property {String[]} type
+ * @property {Function} default
+ * @property {Number} target VERTEX or EDGE
+ * @property values
+ */
 
-//introduce mapping names, and for each, how to send mapped buffer to NBody.js
+/** introduce mapping names, and for each, how to send mapped buffer to NBody.js
+ * @param graph
+ * @returns {Object.<AttributeLoader>}
+ */
 var attributeLoaders = function(graph) {
     return {
         pointSize: {
@@ -654,13 +664,19 @@ function sameKeys(o1, o2){
     return k1.length === k2.length && k2.length === ki.length;
 }
 
+/** These encodings are handled in their own special way. */
+var GraphShapeProperties = ['source', 'destination', 'nodeId'];
 
+/**
+ * @param {EdgeEncodings|NodeEncodings} encodings
+ * @param {Object.<AttributeLoader>} loaders
+ * @param {Number} target VERTEX or EDGE
+ * @returns {Object.<DataframeMetadataByColumn>}
+ */
 function getSimpleEncodings(encodings, loaders, target) {
-    // These encodings are handled in their own special way.
-    var blacklist = ['source', 'destination', 'nodeId'];
 
-    var sane = _.pick(encodings, function (enc, graphProperty) {
-        if (_.contains(blacklist, graphProperty)) {
+    var supportedEncodings = _.pick(encodings, function (enc, graphProperty) {
+        if (_.contains(GraphShapeProperties, graphProperty)) {
             return false;
         }
 
@@ -680,7 +696,7 @@ function getSimpleEncodings(encodings, loaders, target) {
         return true;
     });
 
-    return _.object(_.map(sane, function (enc, graphProperty) {
+    return _.object(_.map(supportedEncodings, function (enc, graphProperty) {
         return [graphProperty, enc.attributes[0]];
     }));
 }
