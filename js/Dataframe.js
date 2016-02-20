@@ -1448,20 +1448,20 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
 
 
 Dataframe.prototype.metadataForColumn = function (columnName, type) {
-    var metadata;
+    var metadata, defs, defsContainer;
     if (this.metadata !== undefined) {
         switch (type) {
             case 'point':
-                if (this.metadata.nodes !== undefined && this.metadata.nodes[columnName] !== undefined) {
-                    metadata = this.metadata.nodes[columnName];
-                }
+                defsContainer = this.metadata.nodes;
                 break;
             case 'edge':
-                if (this.metadata.edges !== undefined && this.metadata.edges[columnName] !== undefined) {
-                    metadata = this.metadata.edges[columnName];
-                }
+                defsContainer = this.metadata.edges;
                 break;
         }
+    }
+    defs = _.find(defsContainer, function (eachDefs) { return eachDefs[columnName] !== undefined; });
+    if (defs !== undefined) {
+        metadata = defs[columnName];
     }
     return metadata;
 };
