@@ -24,7 +24,13 @@ function parseParts(parts) {
     return _.object(_.map(parts, function (content, key) {
         var buf = content[0].buffer;
         if (key == 'metadata') {
-            return ['metadata', JSON.parse(buf.toString('utf8'))];
+            var bufString = buf.toString('utf8'), metadata;
+            try {
+                metadata = JSON.parse(bufString);
+            } catch (e) {
+                logger.debug('Error parsing metadata as JSON: ', e.message);
+            }
+            return ['metadata', metadata];
         } else {
             return [key, buf];
         }
