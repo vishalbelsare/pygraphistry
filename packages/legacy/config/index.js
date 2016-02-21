@@ -105,6 +105,10 @@ function defaults() {
         // Where Bunyan should write its logs. If undefined, uses stdout.
         LOG_FILE: undefined,
 
+        // Whether to include source file location in logging information. This should only be used
+        // for debugging as it likely destroys performance.
+        LOG_SOURCE: false,
+
         // If defined, etl-worker posts notification on slack
         SLACK_BOT_ETL_TOKEN: 'xoxb-7736668449-X6kR1n3omF4CoQ6VeNiXhZSc',
 
