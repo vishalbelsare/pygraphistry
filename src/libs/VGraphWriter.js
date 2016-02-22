@@ -10,7 +10,10 @@ var s3      = require('common/s3.js');
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:data:vgraphwriter');
 
-var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
+// var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
+// var graphVectorProtoPath = require.resolve('graph-viz/src/libs/graph_vector.proto');
+var graphVectorProtoPath = path.resolve(__dirname, '../../src/libs/graph_vector.proto');
+var builder = pb.loadProtoFile(graphVectorProtoPath);
 if (builder === null) {
     logger.die('Could not find protobuf definition');
 }

@@ -4,7 +4,8 @@
 //Set jshint to ignore `predef:'io'` in .jshintrc so we can manually define io here
 /* global -io */
 
-var Rx          = require('rxjs/Rx.KitchenSink');
+import Rx from 'rxjs/Rx.KitchenSink';
+
 var Observable  = Rx.Observable;
 
 Rx.Observable.return = function (value) {
@@ -28,27 +29,27 @@ var Q           = require('q');
 var fs          = require('fs');
 var path        = require('path');
 var extend      = require('node.extend');
-var rConf       = require('./js/renderer.config.js');
-var lConf       = require('./js/layout.config.js');
-var cljs        = require('./js/cl.js');
-var loader      = require('./js/data-loader.js');
-var driver      = require('./js/node-driver.js');
-var persist     = require('./js/persist.js');
-var workbook    = require('./js/workbook.js');
-var labeler     = require('./js/labeler.js');
-var encodings   = require('./js/encodings.js');
-var palettes    = require('./js/palettes.js');
-var dataTypeUtil = require('./js/dataTypes.js');
-var DataframeMask = require('./js/DataframeMask.js');
-var Dataframe   = require('./js/Dataframe.js');
-var TransactionalIdentifier = require('./js/TransactionalIdentifier');
-var vgwriter    = require('./js/libs/VGraphWriter.js');
+var rConf       = require('./renderer.config.js');
+var lConf       = require('./layout.config.js');
+var cljs        = require('./cl.js');
+var loader      = require('./data-loader.js');
+var driver      = require('./node-driver.js');
+var persist     = require('./persist.js');
+var workbook    = require('./workbook.js');
+var labeler     = require('./labeler.js');
+var encodings   = require('./encodings.js');
+var palettes    = require('./palettes.js');
+var dataTypeUtil = require('./dataTypes.js');
+var DataframeMask = require('./DataframeMask.js');
+var Dataframe   = require('./Dataframe.js');
+var TransactionalIdentifier = require('./TransactionalIdentifier');
+var vgwriter    = require('./libs/VGraphWriter.js');
 var compress    = require('node-pigz');
 var config      = require('config')();
-var util        = require('./js/util.js');
-var ExpressionCodeGenerator = require('./js/expressionCodeGenerator');
-var RenderNull  = require('./js/RenderNull.js');
-var NBody = require('./js/NBody.js');
+var util        = require('./util.js');
+var ExpressionCodeGenerator = require('./expressionCodeGenerator');
+var RenderNull  = require('./RenderNull.js');
+var NBody = require('./NBody.js');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:driver:viz-server');
@@ -1170,7 +1171,7 @@ VizServer.prototype.workbookForQuery = function (observableResult, query) {
 
 VizServer.prototype.setupColorTexture = function () {
     this.colorTexture = new Rx.ReplaySubject(1);
-    var imgPath = path.resolve(__dirname, 'test-colormap2.rgba');
+    var imgPath = path.resolve(__dirname, '../test-colormap2.rgba');
     var img =
         Rx.Observable.bindNodeCallback(fs.readFile)(imgPath)
             .flatMap(function (buffer) {
