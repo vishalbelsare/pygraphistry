@@ -13,7 +13,7 @@ var HistogramKernel = require('./histogramKernel.js');
 var Color = require('color');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:data:simcl');
+var logger      = log.createLogger('graph-viz','graph-viz/js/SimCL.js');
 
 //var webcl = require('node-webcl');
 

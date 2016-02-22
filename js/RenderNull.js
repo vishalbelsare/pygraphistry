@@ -7,7 +7,7 @@ var RenderBase = require('./RenderBase.js');
 var Q = require('q');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:render:rendernull');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/RenderNull.js');
 
 //[string] * document -> Promise Renderer
 var create = Q.promised(function(document) {

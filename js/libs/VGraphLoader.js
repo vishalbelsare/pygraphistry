@@ -13,7 +13,7 @@ var palettes = require('../palettes.js');
 var clientNotification = require('../clientNotification.js');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:data:vgraphloader');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/libs/VGraphLoader.js');
 var perf        = require('common/perfStats.js').createPerfMonitor();
 
 

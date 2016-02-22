@@ -3,7 +3,7 @@
 var _ = require('underscore');
 
 var log = require('common/logger.js');
-var logger = log.createLogger('graph-viz:expressionCodeGenerator');
+var logger = log.createLogger('graph-viz', 'graph-viz:expressionCodeGenerator');
 
 
 function ExpressionCodeGenerator(language) {
@@ -350,13 +350,15 @@ ExpressionCodeGenerator.prototype = {
     functionForAST: function (ast, bindings) {
         var source;
         var body = this.expressionStringForAST(ast, bindings);
+        source = '(function () { return ' + body + '; })';
+        var logMsg
         if (this.hasMultipleBindings(bindings)) {
-            source = '(function () { return ' + body + '; })';
-            logger.warn('Evaluating (multi-column)', ast.type, source);
-        } else {
-            source = '(function (value) { return ' + body + '; })';
-            logger.warn('Evaluating (single-column)', ast.type, source);
+           logMsg = 'Evaluating (multi-column)'; 
+        } else { 
+           logMsg = 'Evaluating (single-columns'
         }
+        logger.debug({astType: ast.type, source:source}, logMsg);
+        logger.info({ast: ast, source:source}, logMsg);
         return eval(source); // jshint ignore:line
     },
 

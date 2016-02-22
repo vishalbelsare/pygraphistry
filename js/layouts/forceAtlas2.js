@@ -7,7 +7,7 @@ var _     = require('underscore'),
     LayoutAlgo = require('../layoutAlgo.js'),
     Kernel = require('../kernel.js'),
     log        = require('common/logger.js'),
-    logger     = log.createLogger('graph-viz:cl:forceatlas2barnes');
+    logger     = log.createLogger('graph-viz', 'graph-viz/js/layouts/forceAtlas2.js');
 
 var argsType = { 
         ONE: cljs.types.uint_t,

@@ -8,7 +8,7 @@ var _ = require('underscore');
 var dns = require('dns');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('metrics');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/metrics.js');
 logger.fields.name = 'boundary';
 
 

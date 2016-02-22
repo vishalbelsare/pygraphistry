@@ -11,7 +11,7 @@ var util = require('./util.js');
 var Cache = require('common/cache.js');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:data:data-loader');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/data-loader.js');
 
 var VGraphLoader = require('./libs/VGraphLoader.js');
 

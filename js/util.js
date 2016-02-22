@@ -6,7 +6,7 @@ var path = require('path'),
     Q = require('q'),
     _ = require('underscore'),
     log = require('common/logger.js'),
-    logger = log.createLogger('util');
+    logger = log.createLogger('graph-viz', 'graph-viz/js/util');
 
 
 function getShaderSource(id) {

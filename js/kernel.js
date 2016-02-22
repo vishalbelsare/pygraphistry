@@ -12,7 +12,7 @@ var ocl = require('node-opencl');
 var config = require('config')();
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:cl:kernel');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/kernel.js');
 
 // Disable debug logging since this file is responsible for 90% of log output.
 // Comment me for local debugging.

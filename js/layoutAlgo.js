@@ -2,7 +2,7 @@
 
 var     _ = require('underscore');
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:cl:layoutalgo');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/layoutAlgo.js');
 
 /* Abtract class for layout algorithms
  * GaussSeidel, ForceAtlas, etc. are subclasses of it */

@@ -17,7 +17,7 @@ var Q = require("q"),
     clientNotification = require('./clientNotification.js');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:data:node-driver');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/node-driver');
 var perf        = require('common/perfStats.js').createPerfMonitor();
 
 
