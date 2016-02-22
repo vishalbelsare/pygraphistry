@@ -355,7 +355,7 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
         var normalization = this.normalizeAttributeName(attribute, type);
         if (normalization === undefined) {
             errors.push('Unknown frame element');
-            return undefined;
+            return this.fullDataframeMask();
         } else {
             type = normalization.type;
             attribute = normalization.attribute;
