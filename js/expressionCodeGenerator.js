@@ -750,16 +750,29 @@ ExpressionCodeGenerator.prototype = {
                 subExprString = [args[0], operator, args[1]].join(' ');
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'UnaryExpression':
-                operator = this.translateOperator(ast.operator);
-                precedence = this.precedenceOf(operator, ast.fixity);
-                arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
-                switch (ast.fixity) {
-                    case 'prefix':
-                        subExprString = operator + ' ' + arg;
-                        break;
-                    case 'postfix':
-                        subExprString = arg + ' ' + operator;
-                        break;
+                operator = ast.operator.toUpperCase();
+                if (operator === 'ISNULL') {
+                    operator = '===';
+                    precedence = this.precedenceOf(operator);
+                    arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
+                    subExprString = [arg, operator, 'null'].join(' ');
+                } else if (operator === 'NOTNULL') {
+                    operator = '!==';
+                    precedence = this.precedenceOf(operator);
+                    arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
+                    subExprString = [arg, operator, 'null'].join(' ');
+                } else {
+                    operator = this.translateOperator(ast.operator);
+                    precedence = this.precedenceOf(operator, ast.fixity);
+                    arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
+                    switch (ast.fixity) {
+                        case 'prefix':
+                            subExprString = operator + ' ' + arg;
+                            break;
+                        case 'postfix':
+                            subExprString = arg + ' ' + operator;
+                            break;
+                    }
                 }
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'CastExpression':
