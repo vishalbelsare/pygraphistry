@@ -352,10 +352,10 @@ ExpressionCodeGenerator.prototype = {
         var body = this.expressionStringForAST(ast, bindings);
         if (this.hasMultipleBindings(bindings)) {
             source = '(function () { return ' + body + '; })';
-            logger.warn('Evaluating (multi-column)', ast.type, source);
+            logger.info('Evaluating (multi-column)', ast.type, source);
         } else {
             source = '(function (value) { return ' + body + '; })';
-            logger.warn('Evaluating (single-column)', ast.type, source);
+            logger.info('Evaluating (single-column)', ast.type, source);
         }
         return eval(source); // jshint ignore:line
     },
@@ -461,7 +461,7 @@ ExpressionCodeGenerator.prototype = {
     functionForPlanNode: function (planNode, bindings) {
         var result = this.planNodeExpressionStringForAST(planNode.ast, bindings);
         var source = '(function () { return ' + result.expr + '; })';
-        logger.warn('Evaluating (multi-column)', planNode.ast.type, source);
+        logger.info('Evaluating (multi-column)', planNode.ast.type, source);
         result.executor = eval(source); // jshint ignore:line
         return result;
     },
