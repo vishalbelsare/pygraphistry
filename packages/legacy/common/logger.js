@@ -4,63 +4,6 @@ var bunyan = require('bunyan');
 var _ = require('underscore');
 var config = require('config')();
 
-
-////////////////////////////////////////////////////////////////////////////////
-// Error serializer
-//
-// A custom Bunyan serializer for `err` fields. Acts exactly like the regular Bunyan err serializer,
-// except that the stack trace of the error is made an array by splitting the string on newlines.
-////////////////////////////////////////////////////////////////////////////////
-
-
-
-var _stackRegExp = /at (?:(.+)\s+)?(?:\()?(?:(.+?):(\d+):(\d+)|([^)]+))(?:\))?/;
-
-function getFullErrorStack(ex) {
-    var framesStr = (ex.stack || ex.toString()).split('\n');
-    var framesObj = [];
-
-    for(var i = 1; i < framesStr.length; i++) {
-        var matches = framesStr[i].match(_stackRegExp);
-
-        if(matches) {
-            framesObj.push({
-                file: matches[2] || null,
-                line: parseInt(matches[3], 10) || null,
-                column: parseInt(matches[4], 10) || null,
-                function: matches[1] || null
-            });
-        }
-    }
-
-    return framesObj;
-}
-
-
-// Serialize an Error object
-// (Core error properties are enumerable in node 0.4, not in 0.6).
-// Modified error serializer
-function errSerializer(e) {
-    if (!e || !e.stack) {
-        return e;
-    }
-
-    var obj = {
-        message: e.message,
-        name: e.name,
-        stack: getFullErrorStack(e),
-        code: e.code,
-        signal: e.signal
-    };
-
-    if (e.cause && typeof (e.cause) === 'function') {
-        obj.cause = errSerializer(e.cause);
-    }
-
-    return obj;
-}
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // Parent logger
 //
@@ -68,9 +11,6 @@ function errSerializer(e) {
 ////////////////////////////////////////////////////////////////////////////////
 
 function createParentLogger() {
-    var serializers = _.extend({}, bunyan.stdSerializers, {
-        err: errSerializer
-    });
 
     // Always starts with a stream that writes fatal errors to STDERR
     var streams = [];
@@ -85,11 +25,11 @@ function createParentLogger() {
     }
 
     return bunyan.createLogger({
+        src: config.LOG_SOURCE,
         name: 'graphistry',
         metadata: {
             userInfo: { }
         },
-        serializers: serializers,
         streams: streams
     });
 }
