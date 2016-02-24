@@ -94,7 +94,7 @@ function defaults() {
 
         PYGRAPHISTRY: {
             minVersion: '0.9.0',
-            latestVersion: '0.9.19'
+            latestVersion: '0.9.20'
         },
 
         LOCAL_CACHE: true,
