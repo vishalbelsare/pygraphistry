@@ -17,7 +17,7 @@ var Q = require("q"),
     clientNotification = require('./clientNotification.js');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:data:node-driver');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/node-driver');
 var perf        = require('common/perfStats.js').createPerfMonitor();
 
 
@@ -158,7 +158,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                 // This will create another array (of type buffersLocal[name]) on top
                 // of the exisiting array
 
-                logger.debug('Copying hostBuffer[' + name + ']. Orig Buffer len: ', localBuffer.length, 'counts: ', counts[name]);
+                logger.debug({counts: counts[name]}, 'Copying hostBuffer[' + name + ']. Orig Buffer len: ', localBuffer.length);
                 logger.debug('constructor: ', localBuffer.constructor);
 
                 targetArrays[name] = {

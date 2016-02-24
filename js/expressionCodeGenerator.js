@@ -3,7 +3,7 @@
 var _ = require('underscore');
 
 var log = require('common/logger.js');
-var logger = log.createLogger('graph-viz:expressionCodeGenerator');
+var logger = log.createLogger('graph-viz', 'graph-viz:expressionCodeGenerator');
 
 
 function ExpressionCodeGenerator(language) {
@@ -357,6 +357,7 @@ ExpressionCodeGenerator.prototype = {
             source = '(function (value) { return ' + body + '; })';
             logger.info('Evaluating (single-column)', ast.type, source);
         }
+        logger.trace({ast: ast}, 'AST');
         return eval(source); // jshint ignore:line
     },
 

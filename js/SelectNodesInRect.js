@@ -5,7 +5,7 @@ var    cljs = require('./cl.js'),
      Kernel = require('./kernel.js');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:cl:selectNodesInRect');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/selectNodesInRect.js');
 
 function SelectNodesInRect(clContext) {
     logger.trace('Creating selectNodesInRect kernel');

@@ -8,11 +8,11 @@ var _ = require('underscore');
 var dns = require('dns');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('metrics');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/metrics.js');
 logger.fields.name = 'boundary';
 
 
-logger.info('FIXME reject expired certs (currently relaxing for Boundary)');
+logger.warn('FIXME reject expired certs (currently relaxing for Boundary)');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 

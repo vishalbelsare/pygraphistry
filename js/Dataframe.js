@@ -7,7 +7,7 @@ var fs = require('fs');
 var csv = require('csv');
 
 var log = require('common/logger.js');
-var logger = log.createLogger('graph-viz:dataframe');
+var logger = log.createLogger('graph-viz', 'graph-viz/js/DataFrame.js');
 
 var ExpressionCodeGenerator = require('./expressionCodeGenerator');
 var ExpressionPlan = require('./ExpressionPlan.js');

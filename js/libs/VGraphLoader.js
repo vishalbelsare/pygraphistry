@@ -13,7 +13,7 @@ var palettes = require('../palettes.js');
 var clientNotification = require('../clientNotification.js');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:data:vgraphloader');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/libs/VGraphLoader.js');
 var perf        = require('common/perfStats.js').createPerfMonitor();
 
 
@@ -359,7 +359,7 @@ function decode0(graph, vg, metadata)  {
 
     var attrs = getAttributes0(vg);
     loadDataframe(graph.dataframe, attrs, vg.vertexCount, vg.edgeCount, {}, {});
-    logger.debug('Graph has attribute: %o', _.pluck(attrs, 'name'));
+    logger.info({attributes: _.pluck(attrs, 'name')}, 'Successfully loaded dataframe');
 
     var edges = new Array(vg.edgeCount);
     var dimensions = [1, 1];

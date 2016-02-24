@@ -12,7 +12,7 @@ var ocl = require('node-opencl');
 var config = require('config')();
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:cl:kernel');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/kernel.js');
 
 // Disable debug logging since this file is responsible for 90% of log output.
 // Comment me for local debugging.
@@ -22,7 +22,8 @@ var logger      = log.createLogger('graph-viz:cl:kernel');
 
 // String * [String] * {String: Type} * String * clCtx
 var Kernel = function (name, argNames, argTypes, file, clContext) {
-    logger.trace('Creating Kernel', name);
+    logger.trace({kernelName: name,
+                file: file}, 'Creating Kernel: %s', name);
 
     var that = this;
     this.name = name;
@@ -71,7 +72,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
     // {String -> Value} -> Kernel
     this.set = function (args) {
-        logger.trace('Setting args for kernel', this.name);
+        logger.trace({'kernelName': this.name, 'arguements': args}, 'Setting args for kernel: %s', this.name);
 
         var mustRecompile = false;
         _.each(args, function (val, arg) {
@@ -146,7 +147,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     }
 
     function setAllArgs(kernel) {
-        logger.trace('Setting arguments for kernel', name);
+        logger.trace({kernelName: name}, 'Setting arguments for kernel');
         var i;
         try {
             for (i = 0; i < args.length; i++) {
@@ -174,7 +175,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         // TODO: Consider acquires and releases of buffers.
 
         var queue = clContext.queue;
-        logger.trace('Enqueuing kernel %s', that.name, kernel);
+        logger.trace({kernelName: that.name}, 'Enqueuing kernel %s', that.name);
         var start = process.hrtime();
         ocl.enqueueNDRangeKernel(queue, kernel, 1, null, workItems, workGroupSize || null);
         if (synchronous) {
