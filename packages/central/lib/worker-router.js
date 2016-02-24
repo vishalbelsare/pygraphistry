@@ -33,12 +33,13 @@ var Log         = require('common/logger.js');
 var logger      = Log.createLogger('central:worker-router');
 
 var mongoClientConnect = Rx.Observable.bindNodeCallback(MongoClient.connect.bind(MongoClient));
-var dbObs = (config.ENVIRONMENT === 'local') ?
-    (Rx.Observable.return()) :
+var dbObs = ((config.ENVIRONMENT === 'local') ?
+    (Rx.Observable.empty()) :
     (mongoClientConnect(config.MONGO_SERVER, {auto_reconnect: true})
-        .map(function(database) { return  database.db(config.DATABASE); })
-        .publishReplay(1)
-        .refCount());
+        .map(function(database) { return  database.db(config.DATABASE); }))
+).publishReplay(1);
+
+dbObs.connect();
 
 /**
  * Uses a naive heuristic to find this machines IP address
