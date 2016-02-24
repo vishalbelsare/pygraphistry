@@ -8,7 +8,7 @@ var Dataframe = require('./Dataframe.js');
 var clientNotification = require('./clientNotification.js');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:graph-viz:graph:nbody');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/NBody');
 
 var ELEMENTS_PER_POINTS = 2;
 

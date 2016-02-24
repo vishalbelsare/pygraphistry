@@ -3,7 +3,7 @@
 var _ = require('underscore');
 
 var log = require('common/logger.js');
-var logger = log.createLogger('graph-viz:expressionCodeGenerator');
+var logger = log.createLogger('graph-viz', 'graph-viz:expressionCodeGenerator');
 
 
 function ExpressionCodeGenerator(language) {
@@ -352,11 +352,12 @@ ExpressionCodeGenerator.prototype = {
         var body = this.expressionStringForAST(ast, bindings);
         if (this.hasMultipleBindings(bindings)) {
             source = '(function () { return ' + body + '; })';
-            logger.warn('Evaluating (multi-column)', ast.type, source);
+            logger.info('Evaluating (multi-column)', ast.type, source);
         } else {
             source = '(function (value) { return ' + body + '; })';
-            logger.warn('Evaluating (single-column)', ast.type, source);
+            logger.info('Evaluating (single-column)', ast.type, source);
         }
+        logger.trace({ast: ast}, 'AST');
         return eval(source); // jshint ignore:line
     },
 
@@ -461,7 +462,7 @@ ExpressionCodeGenerator.prototype = {
     functionForPlanNode: function (planNode, bindings) {
         var result = this.planNodeExpressionStringForAST(planNode.ast, bindings);
         var source = '(function () { return ' + result.expr + '; })';
-        logger.warn('Evaluating (multi-column)', planNode.ast.type, source);
+        logger.info('Evaluating (multi-column)', planNode.ast.type, source);
         result.executor = eval(source); // jshint ignore:line
         return result;
     },
@@ -750,16 +751,29 @@ ExpressionCodeGenerator.prototype = {
                 subExprString = [args[0], operator, args[1]].join(' ');
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'UnaryExpression':
-                operator = this.translateOperator(ast.operator);
-                precedence = this.precedenceOf(operator, ast.fixity);
-                arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
-                switch (ast.fixity) {
-                    case 'prefix':
-                        subExprString = operator + ' ' + arg;
-                        break;
-                    case 'postfix':
-                        subExprString = arg + ' ' + operator;
-                        break;
+                operator = ast.operator.toUpperCase();
+                if (operator === 'ISNULL') {
+                    operator = '===';
+                    precedence = this.precedenceOf(operator);
+                    arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
+                    subExprString = [arg, operator, 'null'].join(' ');
+                } else if (operator === 'NOTNULL') {
+                    operator = '!==';
+                    precedence = this.precedenceOf(operator);
+                    arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
+                    subExprString = [arg, operator, 'null'].join(' ');
+                } else {
+                    operator = this.translateOperator(ast.operator);
+                    precedence = this.precedenceOf(operator, ast.fixity);
+                    arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
+                    switch (ast.fixity) {
+                        case 'prefix':
+                            subExprString = operator + ' ' + arg;
+                            break;
+                        case 'postfix':
+                            subExprString = arg + ' ' + operator;
+                            break;
+                    }
                 }
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'CastExpression':

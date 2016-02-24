@@ -13,7 +13,7 @@ var palettes = require('../palettes.js');
 var clientNotification = require('../clientNotification.js');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:data:vgraphloader');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/libs/VGraphLoader.js');
 var perf        = require('common/perfStats.js').createPerfMonitor();
 
 // var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
@@ -32,6 +32,9 @@ var decoders = {
     0: decode0,
     1: decode1
 };
+
+/** @typedef {ProtoBuf.Message} VectorGraph
+ */
 
 /** @typedef {Object} AttributeLoader
  * @property {Function} load
@@ -358,7 +361,7 @@ function decode0(graph, vg, metadata)  {
 
     var attrs = getAttributes0(vg);
     loadDataframe(graph.dataframe, attrs, vg.vertexCount, vg.edgeCount, {}, {});
-    logger.debug('Graph has attribute: %o', _.pluck(attrs, 'name'));
+    logger.info({attributes: _.pluck(attrs, 'name')}, 'Successfully loaded dataframe');
 
     var edges = new Array(vg.edgeCount);
     var dimensions = [1, 1];
@@ -486,6 +489,11 @@ function computeInitialPositions(vertexCount, edges, dimensions) {
 }
 
 
+/**
+ * @param {VectorGraph} vg
+ * @param {AttrObject[]} vectors
+ * @returns {Array.<Array.<Number>>}
+ */
 function lookupInitialPosition(vg, vectors) {
     var x = _.find(vectors, function (o) { return o.name === 'x'; });
     var y = _.find(vectors, function (o) { return o.name === 'y'; });
@@ -533,9 +541,13 @@ function dateAsNumber (val) {
 }
 
 
+/**
+ * @param {VectorGraph} vg
+ * @returns {AttrObject[]}
+ */
 function getAttributes0(vg) {
     var vectors = getVectors0(vg);
-    var attrs = [];
+    var attributeObjects = [];
 
     for (var i = 0; i < vectors.length; i++) {
         var v = vectors[i];
@@ -582,7 +594,7 @@ function getAttributes0(vg) {
                 }
             }
 
-            attrs.push({
+            attributeObjects.push({
                 name: v.name,
                 target : v.target,
                 type: type,
@@ -591,7 +603,7 @@ function getAttributes0(vg) {
         }
     }
 
-    return attrs;
+    return attributeObjects;
 }
 
 
@@ -625,7 +637,10 @@ function normalizeFloat(array, minimum, maximum) {
     });
 }
 
-
+/**
+ * @param {VectorGraph} vg
+ * @returns {any[]}
+ */
 function getVectors1(vg) {
     return _.flatten([
             vg.uint32_vectors, vg.int32_vectors, vg.int64_vectors,
@@ -634,16 +649,19 @@ function getVectors1(vg) {
         ], false);
 }
 
-
+/**
+ * @param {VectorGraph} vg
+ * @returns {{nodes: Object.<AttrObject>, edges: Object.<AttrObject>}}
+ */
 function getAttributes1(vg) {
     var vectors = getVectors1(vg);
-    var nattrs = {};
-    var eattrs = {};
+    var nodeAttributeObjects = {};
+    var edgeAttributeObjects = {};
 
     _.each(vectors, function (v) {
         if (v.values.length > 0) {
-            var attrs = v.target === VERTEX ? nattrs : eattrs;
-            attrs[v.name] = {
+            var attributeObjects = v.target === VERTEX ? nodeAttributeObjects : edgeAttributeObjects;
+            attributeObjects[v.name] = {
                 name: v.name,
                 target : v.target,
                 type: typeof(v.values[0]),
@@ -653,8 +671,8 @@ function getAttributes1(vg) {
     });
 
     return {
-        nodes: nattrs,
-        edges: eattrs
+        nodes: nodeAttributeObjects,
+        edges: edgeAttributeObjects
     };
 }
 
@@ -706,8 +724,8 @@ function getSimpleEncodings(encodings, loaders, target) {
 
 /**
  * @param {DataframeMetadata} metadata
- * @param {VGraph} vg
- * @param {Object} vgAttributes
+ * @param {VectorGraph} vg
+ * @param {{nodes: Object.<AttrObject>, edges: Object.<AttrObject>}} vgAttributes
  * @returns {{nodes: *, edges: *}}
  */
 function checkMetadataAgainstVGraph(metadata, vg, vgAttributes) {
@@ -742,6 +760,12 @@ function checkMetadataAgainstVGraph(metadata, vg, vgAttributes) {
 }
 
 
+/**
+ * @param graph
+ * @param {VectorGraph} vg
+ * @param {DataframeMetadata} metadata
+ * @returns {Promise<U>}
+ */
 function decode1(graph, vg, metadata)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
                  vg.version, vg.name, vg.vertexCount, vg.edgeCount);

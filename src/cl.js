@@ -7,7 +7,7 @@ var path = require('path');
 var util = require('./util.js');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:cl:cl');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/cl.js');
 
 var perf        = require('common/perfStats.js').createPerfMonitor();
 

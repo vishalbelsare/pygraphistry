@@ -11,7 +11,7 @@ var util = require('./util.js');
 var Cache = require('common/cache.js');
 
 var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:data:data-loader');
+var logger      = log.createLogger('graph-viz', 'graph-viz/js/data-loader.js');
 
 var VGraphLoader = require('./libs/VGraphLoader.js');
 
@@ -130,7 +130,7 @@ function unzipBufferIfCompressed(buffer, twice) {
 
 // Run appropriate loader based on dataset type
 function loadDatasetIntoSim(graph, dataset) {
-    logger.debug('Loading dataset: %o', dataset);
+    logger.debug({dataset: dataset.metadata}, 'Loading dataset');
 
     var loader = loaders[dataset.metadata.type];
     return unzipBufferIfCompressed(dataset.body).then(function (body) {

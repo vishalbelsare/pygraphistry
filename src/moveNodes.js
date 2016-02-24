@@ -4,7 +4,7 @@ var    cljs = require('./cl.js'),
           Q = require('q'),
      Kernel = require('./kernel.js'),
         log = require('common/logger.js'),
-     logger = log.createLogger('graph-viz:cl:moveNodes');
+     logger = log.createLogger('graph-viz', 'graph-viz/js/moveNodes.js');
 
 function MoveNodes(clContext) {
     logger.trace('Creating moveNodes kernel');
