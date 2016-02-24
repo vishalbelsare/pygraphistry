@@ -55,14 +55,18 @@ var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz', 'graph-viz/viz-server.js');
 var perf        = require('common/perfStats.js').createPerfMonitor();
 
-var memoryWatcher = require('memwatch');
-if (memoryWatcher !== undefined) {
-    memoryWatcher.on('leak', function (info) {
-        logger.warn({memory_leak: info});
-    });
-    memoryWatcher.on('stats', function (stats) {
-        logger.info({memory_stats: stats});
-    });
+try {
+    var memoryWatcher = require('memwatch');
+    if (memoryWatcher !== undefined) {
+        memoryWatcher.on('leak', function (info) {
+            logger.warn({memory_leak: info});
+        });
+        memoryWatcher.on('stats', function (stats) {
+            logger.info({memory_stats: stats});
+        });
+    }
+} catch (e) {
+    logger.warn({message: 'Error while loading memwatch', error: e});
 }
 
 /**** GLOBALS ****************************************************/
