@@ -59,9 +59,9 @@ process.on('SIGUSR2', function () {
 ////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
-    createLogger: function(name) {
+    createLogger: function(module, fileName) {
         return (function () {
-            var childLogger = parentLogger.child({module: name}, true);
+            var childLogger = parentLogger.child({module: module, fileName:fileName}, true);
 
             //add any additional logging methods here
 
