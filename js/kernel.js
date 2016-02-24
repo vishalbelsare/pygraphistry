@@ -72,7 +72,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
     // {String -> Value} -> Kernel
     this.set = function (args) {
-        logger.trace({'kernelName': this.name, 'arguements': Object.keys(args)}, 'Setting args for kernel: %s', this.name);
+        logger.trace({'kernelName': this.name, 'arguements': args}, 'Setting args for kernel: %s', this.name);
 
         var mustRecompile = false;
         _.each(args, function (val, arg) {

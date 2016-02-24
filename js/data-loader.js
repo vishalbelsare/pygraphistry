@@ -130,7 +130,7 @@ function unzipBufferIfCompressed(buffer, twice) {
 
 // Run appropriate loader based on dataset type
 function loadDatasetIntoSim(graph, dataset) {
-    logger.debug('Loading dataset: %o', dataset);
+    logger.debug({dataset: dataset.metadata}, 'Loading dataset');
 
     var loader = loaders[dataset.metadata.type];
     return unzipBufferIfCompressed(dataset.body).then(function (body) {

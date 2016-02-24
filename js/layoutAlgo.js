@@ -23,7 +23,7 @@ LayoutAlgo.prototype.runtimeStats = function(extraKernels) {
  * Methods to override when creating new layout algorithms.
  */
 LayoutAlgo.prototype.setPhysics = function (cfg) {
-    logger.trace('Default implementation for setPhysics', cfg);
+    logger.trace({layoutConfig: cfg}, 'Default implementation for setPhysics', cfg);
     // Set all kernel args matching with matching entry
     _.each(this.kernels, function (k) {
         k.set(_.pick(cfg, k.argNames))

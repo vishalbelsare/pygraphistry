@@ -463,7 +463,7 @@ ExpressionCodeGenerator.prototype = {
     functionForPlanNode: function (planNode, bindings) {
         var result = this.planNodeExpressionStringForAST(planNode.ast, bindings);
         var source = '(function () { return ' + result.expr + '; })';
-        logger.warn('Evaluating (multi-column)', planNode.ast.type, source);
+        logger.info('Evaluating (multi-column)', planNode.ast.type, source);
         result.executor = eval(source); // jshint ignore:line
         return result;
     },

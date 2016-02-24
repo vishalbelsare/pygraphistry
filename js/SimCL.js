@@ -62,7 +62,7 @@ function create(dataframe, renderer, cl, device, vendor, cfg) {
 
 
         return new Q().then(function () {
-            logger.debug('Instantiating layout algorithms: %o', layoutAlgorithms);
+            logger.debug({layoutAlgorithms: layoutAlgorithms}, 'Instantiating layout algorithms');
             return _.map(layoutAlgorithms, function (la) {
                 var algo = new la.algo(cl);
                 algo.setPhysics(_.object(_.map(la.params, function (p, name) {
@@ -1120,7 +1120,7 @@ function setTimeSubset(renderer, simulator, range) {
 
         var firstEdge = workItemsTyped[4 * idx];
 
-        logger.debug('pointToEdgeIdx', {ptIdx: ptIdx, workItem: workItem, idx: idx, firstEdge: firstEdge, isBeginning: isBeginning});
+        logger.debug({ptIdx: ptIdx, workItem: workItem, idx: idx, firstEdge: firstEdge, isBeginning: isBeginning}, "Set point to edge indices");
 
         if (idx === 0 && firstEdge === -1) {
             return 0;
@@ -1153,7 +1153,7 @@ function setTimeSubset(renderer, simulator, range) {
                 startIdx: startEdgeIdx * 2 * (1 + numSplits),
                 len: numEdges * 2          * (1 + numSplits)}};
 
-    logger.debug('subset args', {numPoints: renderer.numPoints, numEdges: renderer.numEdges, startEdgeIdx: startEdgeIdx, endIdx: endIdx, endEdgeIdx: endEdgeIdx, numSplits:numSplits});
+    logger.debug({numPoints: renderer.numPoints, numEdges: renderer.numEdges, startEdgeIdx: startEdgeIdx, endIdx: endIdx, endEdgeIdx: endEdgeIdx, numSplits:numSplits}, "Set time subset");
 
 
     simulator.tickBuffers([

@@ -356,7 +356,7 @@ function decode0(graph, vg, metadata)  {
 
     var attrs = getAttributes0(vg);
     loadDataframe(graph.dataframe, attrs, vg.vertexCount, vg.edgeCount, {}, {});
-    logger.debug('Graph has attribute: %o', _.pluck(attrs, 'name'));
+    logger.info({attributes: _.pluck(attrs, 'name')}, 'Successfully loaded dataframe');
 
     var edges = new Array(vg.edgeCount);
     var dimensions = [1, 1];
