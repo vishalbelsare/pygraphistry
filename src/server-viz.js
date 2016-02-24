@@ -66,7 +66,7 @@ try {
         });
     }
 } catch (e) {
-    logger.warn({message: 'Error while loading memwatch', error: e});
+    logger.debug({message: 'memwatch unavailable', error: e});
 }
 
 /**** GLOBALS ****************************************************/
