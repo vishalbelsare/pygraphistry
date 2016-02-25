@@ -5,11 +5,18 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+
     "clean": "rm -rf ./dist && mkdir -p ./dist",
+
     "build": "npm run clean && babel lib -d dist --source-maps --presets es2015,stage-0",
-    "start": "npm run build && node ./bin/central",
-    "debug": "npm run build && node --debug ./bin/central",
+    "build-graph-viz": "cd ./node_modules/graph-viz && npm run build",
+
+    "watch": "npm run clean && babel lib -d dist --source-maps --presets es2015,stage-0 --watch",
+
     "test": "echo \"No tests available.\"",
+    "start": "node ./bin/central",
+    "debug": "node --debug ./bin/central",
+
     "postinstall": "npm run build"
   },
   "bin": {
