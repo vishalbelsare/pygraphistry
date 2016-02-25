@@ -307,7 +307,6 @@ Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, lim
         [],
         []
     );
-    var resultMasks = {point: [], edge: []};
 
     _.each(GraphComponentTypes, function (type) {
         var limit = limits[type],
@@ -369,7 +368,10 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
             masks = this.getAttributeMask(type, attribute, filterFunc);
         } else if (plan.isRedundant()) {
             type = plan.rootNode.iterationType();
-            attribute = this.normalizeAttributeName(_.keys(plan.rootNode.identifierNodes())[0], type).attribute;
+            var normalizedAttribute = this.normalizeAttributeName(_.keys(plan.rootNode.identifierNodes())[0], type);
+            if (normalizedAttribute !== undefined) {
+                attribute = normalizedAttribute.attribute;
+            }
             _.defaults(query, {attribute: attribute, type: type});
             filterFunc = this.filterFuncForQueryObject(query);
             masks = this.getAttributeMask(type, attribute, filterFunc);
@@ -700,7 +702,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // Copy Buffer Overlays
     ///////////////////////////////////////////////////////////////////////////
 
-    _.each(this.bufferOverlays, function (val, key) {
+    _.each(this.bufferOverlays, function (val/*, key*/) {
         var alias = val.alias;
         var type = val.type;
         var originalName = val.originalName;
@@ -1267,7 +1269,6 @@ Dataframe.prototype.getBuffer = function (name, type) {
     // It should be treated differently, since we manually load the buffers
     var buffers = this.data.buffers[type];
     var res = buffers[name];
-    var that = this;
 
     if (type === 'simulator') {
         return res;
@@ -1496,10 +1497,10 @@ Dataframe.prototype.doesColumnRepresentColorPaletteMap = function (type, columnN
     var aggregations = this.getColumnAggregations(columnName, type, true);
     var aggType = 'fitsColorPaletteMap';
     if (!aggregations.hasAggregationByType(aggType)) {
+        var fits = false;
         if (this.getDataType(columnName, type) === 'color' &&
             aggregations.getAggregationByType('dataType') === 'integer') {
-            var distinctValues = _.keys(aggregations.getAggregationByType('distinctValues')),
-                fits = false;
+            var distinctValues = _.keys(aggregations.getAggregationByType('distinctValues'));
             if (_.isEmpty(distinctValues)) {
                 distinctValues = [aggregations.getAggregationByType('minValue'),
                     aggregations.getAggregationByType('maxValue')];
@@ -1971,15 +1972,16 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     var estimatedNumberBins = (endDate.getTime() - startDate.getTime())/binWidth;
     var MAX_BINS_TIME_HISTOGRAM = 2500;
 
-    var approximated = false;
+    var approximated = false,
+        runningDate, newDate;
     if (estimatedNumberBins > MAX_BINS_TIME_HISTOGRAM) {
 
         var diff = endDate.getTime() - startDate.getTime();
         var startNum = startDate.getTime();
         var step = Math.floor(diff / MAX_BINS_TIME_HISTOGRAM);
-        var runningDate = startNum + step;
+        runningDate = startNum + step;
         while (runningDate < endDate) {
-            var newDate = new Date(runningDate);
+            newDate = new Date(runningDate);
             cutoffs.push(newDate);
             runningDate += step;
         }
@@ -1987,10 +1989,10 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
 
     } else {
 
-        var runningDate = startDate;
+        runningDate = startDate;
         var backupCount = 0;
         while (runningDate < endDate && backupCount < 100000) {
-            var newDate = new Date(runningDate.getTime());
+            newDate = new Date(runningDate.getTime());
             incFunction(newDate);
             if (newDate < endDate) {
                 cutoffs.push(newDate);
@@ -2002,7 +2004,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     }
 
     cutoffs.push(endDate);
-    var cutoffNumbers = cutoffs.map(function (val, i) {
+    var cutoffNumbers = cutoffs.map(function (val/*, i*/) {
         return val.getTime();
     });
 
@@ -2030,7 +2032,6 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     }
 
 
-    var binId, value;
     mask.mapIndexes(timeType, function (idx) {
         var value = timeValues[idx];
         var valueDate = new Date(value);
@@ -2058,13 +2059,14 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     //////////////////////////////////////////////////////////////////////////
 
     var widths = [];
-    for (var i = 0; i < cutoffNumbers.length - 1; i++) {
+    var i;
+    for (i = 0; i < cutoffNumbers.length - 1; i++) {
         widths[i] = (cutoffNumbers[i+1] - cutoffNumbers[i])/binWidth;
     }
 
     var rawOffsets = [];
     // Compute scan of widths
-    for (var i = 0; i < widths.length; i++) {
+    for (i = 0; i < widths.length; i++) {
         var prev = (i > 0) ? rawOffsets[i-1] : 0;
         rawOffsets[i] = prev + widths[i];
     }
@@ -2072,7 +2074,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     // Normalize rawOffsets so that they are out of 1.0;
     var denom = rawOffsets[rawOffsets.length - 1];
     var offsets = [];
-    for (var i = 0; i < rawOffsets.length; i++) {
+    for (i = 0; i < rawOffsets.length; i++) {
         var raw = (i > 0) ? rawOffsets[i-1] : 0;
         offsets[i] = (raw / denom);
     }
