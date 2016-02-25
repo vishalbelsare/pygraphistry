@@ -175,7 +175,7 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
                 return;
             }
             try {
-                var responseData = JSON.parse(oReq.responseText), responseTabular;
+                var responseData = JSON.parse(oReq.responseText);
                 // Dynamically transform deprecated/obsolete label response format of {attribute: value, ...}
                 if (!responseData.hasOwnProperty('columns')) {
                     var title = responseData._title;
