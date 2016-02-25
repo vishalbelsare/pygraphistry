@@ -297,8 +297,11 @@ function createLabelDom(instance, dim, labelObj) {
     } else {
         // Filter out 'hidden' columns
         // TODO: Encode this in a proper schema instead of hungarian-ish notation
+        // Deprecated column format retained by older persist-based static exports of [key, value].
+        var oldFormat = _.any(labelObj.columns, function (col) { return !col.hasOwnProperty('key'); });
         labelObj.columns = _.filter(labelObj.columns, function (col) {
-            return (col.key[0] !== '_');
+            var key = oldFormat ? col[0] : col.key;
+            return key[0] !== '_';
         });
 
         $cont.addClass('graph-label-default');
@@ -307,7 +310,8 @@ function createLabelDom(instance, dim, labelObj) {
         var $table= $('<table>');
         var labelRequests = instance.state.labelRequests;
         labelObj.columns.forEach(function (col) {
-            var key = col.key, val = col.value;
+            var key = oldFormat ? col[0] : col.key,
+                val = oldFormat ? col[1] : col.value;
 
             // Basic null guards:
             if (key === undefined || val === undefined || val === null) {

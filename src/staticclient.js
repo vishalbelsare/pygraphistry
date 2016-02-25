@@ -175,16 +175,20 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
                 return;
             }
             try {
-                var responseData = JSON.parse(oReq.responseText);
-                var responseTabular = _.pairs(_.omit(responseData, '_title'));
+                var responseData = JSON.parse(oReq.responseText), responseTabular;
+                // Dynamically transform deprecated/obsolete label response format of {attribute: value, ...}
+                if (!responseData.hasOwnProperty('columns')) {
+                    var title = responseData._title;
+                    responseData = {
+                        formatted: false,
+                        title: decodeURIComponent(title),
+                        columns: _.pairs(_.omit(responseData, '_title'))
+                    };
+                }
 
                 debug('Label fetched', responseData);
                 labelsByType[type][index] = responseData;
-                res.onNext([{
-                    formatted: false,
-                    title: decodeURIComponent(responseData._title),
-                    columns: responseTabular
-                }]);
+                res.onNext([responseData]);
             } catch (e) {
                 console.error('Error on loading ranged data: ', e, e.stack);
             }
