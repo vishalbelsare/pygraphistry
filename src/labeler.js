@@ -90,5 +90,6 @@ function getLabels(graph, indices, dim) {
 
 
 module.exports = {
+    getDefaultLabels: defaultLabels,
     getLabels: getLabels
 };

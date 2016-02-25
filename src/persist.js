@@ -15,6 +15,8 @@ var CHECK_AT_EACH_SAVE = true;
 
 var baseDirPath = path.join(__dirname, '/../assets/viz/');
 
+var labeler     = require('./labeler.js');
+
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz:persist');
 
@@ -57,17 +59,17 @@ function checkWrite (snapshotName, vboPath, raw, buff) {
 }
 
 function staticContentForDataframe (dataframe, type) {
-    var rows = dataframe.getRows(undefined, type),
-        rowContents = new Array(rows.length),
-        //offsetsBuffer = new Buffer(rows.length * 4),
-        offsetsView = new Uint32Array(rows.length),
-        //offsets = new Array(rows.length),
+    // Delegate label data to the labeler for structural compatibility.
+    // TODO support custom labels; requires a graph object.
+    var rowCount = dataframe.getNumElements(type),
+        labels = labeler.getDefaultLabels({dataframe: dataframe}, undefined, type),
+        rowContents = new Array(rowCount),
+        offsetsView = new Uint32Array(rowCount),
         currentContentOffset = 0,
         lastContentOffset = currentContentOffset;
-    _.each(rows, function (row, rowIndex) {
-        var content = new Buffer(JSON.stringify(row), 'utf8');
+    _.each(labels, function (label, rowIndex) {
+        var content = new Buffer(JSON.stringify(label), 'utf8');
         var contentLength = content.length;
-        //offsets[rowIndex] = currentContentOffset;
         offsetsView[rowIndex] = currentContentOffset;
         rowContents[rowIndex] = content;
         lastContentOffset = currentContentOffset;
