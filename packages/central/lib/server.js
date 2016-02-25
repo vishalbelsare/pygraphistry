@@ -3,6 +3,8 @@
 /// <reference path="../typings/rx/rx.d.ts"/>
 'use strict';
 
+require('source-map-support').install();
+
 var Rx          = require('rxjs/Rx.KitchenSink');
 
 Rx.Observable.return = function (value) {
