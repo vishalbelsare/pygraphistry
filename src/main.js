@@ -2,6 +2,7 @@
 
 /* global FPSMeter */
 
+require('source-map-support').install();
 
 /**
  * Simple use of client.js with UI bindings
