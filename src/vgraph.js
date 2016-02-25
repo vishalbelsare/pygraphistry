@@ -11,7 +11,7 @@ var logger      = Log.createLogger('etlworker:vgraph');
 
 //TODO: Lines 60-261 instances of console should be changed to pipe output to client
 
-var protoFile = path.resolve(__dirname, '../../graph-viz/js/libs/graph_vector.proto');
+var protoFile = path.resolve(__dirname, '../../graph-viz/src/libs/graph_vector.proto');
 var builder = pb.loadProtoFile(protoFile);
 if (builder === null) {
     logger.die(new Error(), 'error: could not build proto');
