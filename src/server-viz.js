@@ -46,7 +46,6 @@ var TransactionalIdentifier = require('./TransactionalIdentifier');
 var vgwriter    = require('./libs/VGraphWriter.js');
 var compress    = require('node-pigz');
 var config      = require('config')();
-var util        = require('./util.js');
 var ExpressionCodeGenerator = require('./expressionCodeGenerator');
 var RenderNull  = require('./RenderNull.js');
 var NBody = require('./NBody.js');
@@ -237,7 +236,9 @@ VizServer.prototype.resetState = function (dataset, socket) {
     this.ticksMulti = this.animationStep.ticks.publish();
     this.ticksMulti.connect();
 
-    //most recent tick
+    /** most recent tick
+     * @type {Rx.ReplaySubject}
+     */
     this.graph = new Rx.ReplaySubject(1);
     //make available to all clients
     this.ticksMulti.take(1).subscribe(this.graph, log.makeRxErrorHandler(logger, logger, 'ticksMulti failure'));
@@ -433,7 +434,7 @@ function failWithMessage (cb, message) {
 function VizServer(app, socket, cachedVBOs) {
 
     var socketLogger = logger.child({
-        socketID: socket.id, 
+        socketID: socket.id
     });
 
     socketLogger.info('Client connected');
@@ -994,8 +995,6 @@ function VizServer(app, socket, cachedVBOs) {
                 try {
                     var filterFunc = dataframe.filterFuncForQueryObject(data);
                     var masks = dataframe.getAttributeMask(type, attribute, filterFunc);
-                    // Record the size of the filtered set for UI feedback:
-                    filter.maskSizes = masks.maskSize();
                     selectionMasks.push(masks);
                 } catch (e) {
                     errors.push(e.message);
@@ -1426,7 +1425,6 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
         requestedTextures = activeTextures;
 
     //Knowing this helps overlap communication and computations
-    var that = this;
     this.socket.on('planned_binary_requests', function (request) {
         //console.log(that.socket);
         logger.trace({buffers: request.buffers, textures: request.textures}, 'Client sending planned requests');
@@ -1657,7 +1655,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                 ).then(function() {
                     cb({success: true, name: cleanContentKey});
                 }).catch(function (error) {
-                    cb({success: false, name: cleanContentKey});
+                    cb({success: false, errors: [error], name: cleanContentKey});
                 }).done(
                     _.identity,
                     log.makeQErrorHandler(logger, 'persist_current_vbo')
@@ -1727,8 +1725,6 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     var graphObservable = graph;
     graph.expand(function (graph) {
         step++;
-
-        var ticker = {step: step};
 
         logger.trace({activeBuffers: activeBuffers, step:step}, '0. Prefetch VBOs');
 

@@ -429,7 +429,8 @@ function computeInitialPositions(vertexCount, edges, dimensions) {
     logger.trace('Running component analysis');
 
     var components = weakcc(vertexCount, edges, 2);
-    var pointsPerRow = vertexCount / (Math.round(Math.sqrt(components.components.length)) + 1);
+    var numComponents = components.components.length;
+    var pointsPerRow = vertexCount / (Math.round(Math.sqrt(numComponents)) + 1);
 
     perf.startTiming('graph-viz:data:vgraphloader, weakcc postprocess');
     var componentOffsets = [];
@@ -441,8 +442,10 @@ function computeInitialPositions(vertexCount, edges, dimensions) {
     var rowYOffset = 0;
     var vertices = [];
 
-    for (var i = 0; i < components.components.length; i++) {
-        maxPointsInRow = Math.max(maxPointsInRow, components.components[i].size);
+    var i, component;
+    for (i = 0; i < numComponents; i++) {
+        component = components.components[i];
+        maxPointsInRow = Math.max(maxPointsInRow, component.size);
 
         componentOffsets.push({
             rollingSum: cumulativePoints,
@@ -453,7 +456,7 @@ function computeInitialPositions(vertexCount, edges, dimensions) {
             col: col
         });
 
-        cumulativePoints += components.components[i].size;
+        cumulativePoints += component.size;
         if (pointsInRow > pointsPerRow) {
             row++;
             rowYOffset += maxPointsInRow;
@@ -462,20 +465,21 @@ function computeInitialPositions(vertexCount, edges, dimensions) {
             maxPointsInRow = 0;
         } else {
             col++;
-            pointsInRow += components.components[i].size;
+            pointsInRow += component.size;
         }
     }
-    for (var i = components.components.length - 1; i >= 0; i--) {
-        components.components[i].rowHeight =
-            Math.max(components.components[i].size,
-                i + 1 < components.components.length
-                && components.components[i+1].row == components.components[i].row ?
-                    components.components[i].rollingMaxInRow :
+    for (i = numComponents - 1; i >= 0; i--) {
+        component = components.components[i];
+        component.rowHeight =
+            Math.max(component.size,
+                i + 1 < numComponents
+                && components.components[i+1].row == component.row ?
+                    component.rollingMaxInRow :
                     0);
     }
 
     var initSize = 5 * Math.sqrt(vertexCount);
-    for (var i = 0; i < vertexCount; i++) {
+    for (i = 0; i < vertexCount; i++) {
         var c = components.nodeToComponent[i];
         var offset = componentOffsets[c];
         var vertex = [ initSize * (offset.rowRollingSum + 0.9 * components.components[c].size * Math.random()) / vertexCount ];
