@@ -81,12 +81,8 @@ HistogramBrush.prototype.initializeGlobalData = function(socket, filtersPanel, u
         checkReply(sparkLinesReply);
         return {histograms: histogramsReply.data, sparkLines: sparkLinesReply.data};
     }).do(function (data) {
-        var attributes = _.filter(_.keys(data.histograms), function (val) {
-            return (val !== '_title');
-        });
-
         this.histogramsPanel = new HistogramsPanel(
-            data, attributes, filtersPanel,
+            data, filtersPanel,
             this.dataframeAttributeChange, updateDataframeAttributeSubject);
         data.histogramPanel = this.histogramsPanel;
 

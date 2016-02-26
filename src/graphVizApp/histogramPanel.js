@@ -105,13 +105,12 @@ var HistogramCollection = Backbone.Collection.extend({
 
 /**
  * @param globalStats
- * @param attributes
  * @param {FiltersPanel} filtersPanel
  * @param attrChangeSubject
  * @param updateAttributeSubject
  * @constructor
  */
-function HistogramsPanel(globalStats, attributes, filtersPanel,
+function HistogramsPanel(globalStats, filtersPanel,
                          attrChangeSubject, updateAttributeSubject) {
     this.filtersPanel = filtersPanel;
     // How the model-view communicate back to underlying Rx.
@@ -124,6 +123,10 @@ function HistogramsPanel(globalStats, attributes, filtersPanel,
 
     this.histograms = new HistogramCollection();
     var panel = this;
+
+    var attributes = _.filter(_.keys(globalStats.histograms), function (val) {
+        return (val !== '_title');
+    });
 
     // TODO: Replace this with a proper data transfer through the HTML5
     // drag and drop spec. It seems to be pretty broken outside of firefox,
