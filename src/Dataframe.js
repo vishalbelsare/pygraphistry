@@ -483,6 +483,9 @@ Dataframe.prototype.getAttributeMask = function (type, columnName, filterFunc) {
  */
 Dataframe.prototype.getEdgeAttributeMask = function (columnName, filterFunc) {
     var attr = this.rawdata.attributes.edge[columnName];
+    if (attr === undefined) {
+        return this.fullDataframeMask();
+    }
     var edgeMask = this.getMaskForPredicateOnAttributeValues(attr.values, filterFunc);
     // Convert to sorted order
     var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
@@ -501,6 +504,9 @@ Dataframe.prototype.getEdgeAttributeMask = function (columnName, filterFunc) {
  */
 Dataframe.prototype.getPointAttributeMask = function (columnName, filterFunc) {
     var attr = this.rawdata.attributes.point[columnName];
+    if (attr === undefined) {
+        return this.fullDataframeMask();
+    }
     return this.getMaskForPredicateOnAttributeValues(attr.values, filterFunc);
 };
 
@@ -1133,7 +1139,7 @@ Dataframe.prototype.getKeyFromName = function (maybeName, type) {
 
     var attributes = this.rawdata.attributes[type];
     var matchKeys = _.filter(_.keys(attributes), function (key) {
-        return (attributes[key].name === maybeName);
+        return attributes[key].name === maybeName || key === maybeName;
     });
 
     if (matchKeys.length > 1) {
@@ -1559,7 +1565,11 @@ Dataframe.prototype.getColumnsByType = function () {
         var typeResult = {};
         var columnNamesPerType = that.getAttributeKeys(typeName);
         _.each(columnNamesPerType, function (columnName) {
-            typeResult[columnName] = that.getColumn(columnName, typeName);
+            var column = that.getColumn(columnName, typeName);
+            typeResult[columnName] = column;
+            if (column.name !== undefined && column.name !== columnName) {
+                typeResult[column.name] = column;
+            }
         });
         result[typeName] = typeResult;
     });
