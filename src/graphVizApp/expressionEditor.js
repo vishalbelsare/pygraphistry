@@ -25,6 +25,13 @@ DataframeCompleter.prototype.setNamespaceMetadata = function (namespaceMetadata)
             if (newNamespaceAttributes[attributeName] === undefined) {
                 newNamespaceAttributes[attributeName] = column;
             }
+            var columnName = column.name;
+            if (columnName !== undefined && columnName !== attributeName) {
+                if (newNamespaceAttributes[columnName] === undefined) {
+                    newNamespaceAttributes[columnName] = column;
+                    newNamespaceAttributes[type + ':' + columnName] = column;
+                }
+            }
         });
     });
     /** @type {Array.<String>} */
