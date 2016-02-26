@@ -78,7 +78,7 @@ To log the source line numbers (with `-o long`), you must enable `LOG_SOURCE`. U
 ##### By Level
 To filter at `info` level:
 
-```
+```bash
 ... | bunyan -l 30
 ```
 Quick reminder: `trace=10, debug=20, info=30, warning=40, error=50, fatal=60`
@@ -108,7 +108,7 @@ You may find useful to look at the whole log entry using `-o inspect` when creat
   "fileName": "graph-viz/js/kernel.js",
   "level": 30,
   "msg": "This properly logs the object for search and filtering",
-  "myField": "myValue"
+  "myField": "myValue",
   "time": "2016-02-24T03:50:38.643Z",
   "src": {
     "file": "/Users/padentomasello/graphistry/graph-viz/js/kernel.js",
@@ -119,7 +119,7 @@ You may find useful to look at the whole log entry using `-o inspect` when creat
 }
 ```
 
-See [Bunyan docs](https://github.com/trentm/node-bunyan#cli-usage) for more details.
+See [Bunyan filtering docs](https://github.com/trentm/node-bunyan#cli-usage) for more details.
 
 ## Api key
 
