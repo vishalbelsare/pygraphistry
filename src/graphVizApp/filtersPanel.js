@@ -345,7 +345,7 @@ function FiltersPanel(socket, labelRequests, settingsChanges) {
             // Setup add filter button.
             var addFilterTemplate = Handlebars.compile($('#addFilterTemplate').html());
             // TODO flatten the namespace into selectable elements:
-            var fields = [];
+            var fields = [], fieldsByName = {};
             _.each(data.dataframeAttributes, function (columns, typeName) {
                 _.each(columns, function (column, attributeName) {
                     // PATCH rename "type" to "dataType" to avoid collisions:
@@ -353,7 +353,14 @@ function FiltersPanel(socket, labelRequests, settingsChanges) {
                         column.dataType = column.type;
                         delete column.type;
                     }
-                    fields.push(_.extend({type: typeName, name: attributeName}, column));
+                    if (fieldsByName[attributeName] === undefined) {
+                        fields.push(_.extend({type: typeName}, column, {name: attributeName}));
+                        fieldsByName[attributeName] = column;
+                    }
+                    if (column.name !== undefined && column.name !== attributeName) {
+                        fields.push(_.extend({type: typeName}, column));
+                        fieldsByName[column.name] = column;
+                    }
                 });
             });
             var params = {fields: fields};
