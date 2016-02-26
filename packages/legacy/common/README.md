@@ -88,7 +88,7 @@ Quick reminder: `trace=10, debug=20, info=30, warning=40, error=50, fatal=60`
 Bunyan can filter logs based on an arbitrary JavaScript expression. For instance,
 
 ```bash
-... | bunyan -c 'this.myField=='myValue'
+... | bunyan -c 'this.myField=="myValue"'
 ```
 
 will only print logs which have `myField` set with value `myValue`. The following code would generate such entries
