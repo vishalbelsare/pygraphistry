@@ -699,8 +699,9 @@ ExpressionCodeGenerator.prototype = {
                         arg = this.expressionStringForAST(ast.left, bindings, depth2, precedence);
                         var prefix, suffix;
                         var lastPatternIndex = pattern.length - 1;
-                        if (pattern.startsWith('%') && pattern.endsWith('%')) {
-                            var substring = pattern.slice(0, lastPatternIndex);
+                        if (pattern.startsWith('%') && pattern.endsWith('%') &&
+                            pattern.length > 2 && pattern.match(/%/g).length === 2) {
+                            var substring = pattern.slice(1, lastPatternIndex);
                             // ES6 could replace with String.includes():
                             precedence = this.precedenceOf('!==');
                             subExprString = arg + '.indexOf(' + literalExpressionFor(substring) + ') !== -1';
