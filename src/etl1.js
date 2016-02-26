@@ -88,7 +88,7 @@ function s3Upload(binaryBuffer, metadata) {
 
 // (Int -> ()) * Request * Response * Object -> Promise()
 function process(req, res, params) {
-    logger.info('ETL1 request submitted', params);
+    logger.info({etlparams: params}, 'ETL1 request submitted');
 
     return Q(req.body).then(function (msg) {
         return etl(msg)

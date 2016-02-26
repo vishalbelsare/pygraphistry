@@ -14,7 +14,7 @@ var logger      = Log.createLogger('etlworker:vgraph');
 var protoFile = path.resolve(__dirname, '../../graph-viz/src/libs/graph_vector.proto');
 var builder = pb.loadProtoFile(protoFile);
 if (builder === null) {
-    logger.die(new Error(), 'error: could not build proto');
+    logger.die(new Error('Could not build proto'));
 }
 var pb_root = builder.build();
 
