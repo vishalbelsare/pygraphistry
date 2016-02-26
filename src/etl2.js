@@ -28,7 +28,7 @@ function parseParts(parts) {
             try {
                 metadata = JSON.parse(bufString);
             } catch (e) {
-                logger.error('Error parsing metadata as JSON: ', e.message);
+                e.message = "Error parsing metadata as JSON: " + e.message
                 throw e
             }
             return ['metadata', metadata];
