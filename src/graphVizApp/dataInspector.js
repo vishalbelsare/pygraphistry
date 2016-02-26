@@ -100,13 +100,13 @@ function createColumns(header, title) {
         name: '_title', // The key of the model attribute
         label: title, // The name to display in the header
         cell: 'string',
-        editable: false,
+        editable: false
     }].concat(_.map(_.without(header, '_title'), function (key) {
         return {
             name: key,
             label: key,
             cell: 'string',
-            editable: false,
+            editable: false
         };
     }));
 }
