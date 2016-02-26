@@ -706,7 +706,7 @@ ExpressionCodeGenerator.prototype = {
                             precedence = this.precedenceOf('!==');
                             subExprString = arg + '.indexOf(' + literalExpressionFor(substring) + ') !== -1';
                         } else if (pattern.indexOf('%') !== pattern.lastIndexOf('%')) {
-                            return this.regexExpressionForLikeOperator(args, bindings, depth, outerPrecedence);
+                            return this.regexExpressionForLikeOperator(ast, bindings, depth, outerPrecedence);
                         } else if (pattern.startsWith('%')) {
                             suffix = pattern.slice(-lastPatternIndex);
                             subExprString = arg + '.endsWith(' + literalExpressionFor(suffix) + ')';
