@@ -146,20 +146,22 @@ PlanNode.prototype = {
             }
             return resultValues;
         } else if (this.canRunOnOneColumn()) {
-            var executor = this.executor;
             var attributeName = _.find(this.attributeData);
             if (valuesRequired && returnType === ReturnTypes.Positions) {
                 returnType = ReturnTypes.Values;
             }
             switch (returnType) {
-                case ReturnTypes.Positions:
-                    return dataframe.getAttributeMask(attributeName.type, attributeName.attribute, executor);
                 case ReturnTypes.Values:
                     if (this.ast.type === 'Identifier') {
                         return dataframe.getUnfilteredColumnValues(attributeName.type, attributeName.attribute);
                     } else {
-                        return dataframe.mapUnfilteredColumnValues(attributeName.type, attributeName.attribute, executor);
+                        return dataframe.mapUnfilteredColumnValues(attributeName.type, attributeName.attribute, this.executor);
                     }
+                    break;
+                case ReturnTypes.Positions:
+                /* falls through */
+                default:
+                    return dataframe.getAttributeMask(attributeName.type, attributeName.attribute, this.executor);
             }
         } else {
             var j, attribute, bindings;
@@ -216,7 +218,7 @@ PlanNode.prototype = {
                 }
             }
         }
-        return undefined;
+        throw new Error('Unable to execute plan node', this);
     },
 
     iterationType: function () {
