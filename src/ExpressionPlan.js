@@ -193,6 +193,8 @@ PlanNode.prototype = {
                     resultValues[i] = this.executor.call(perElementBindings);
                 }
                 return resultValues;
+            } else if (this.isLocalized) {
+                return this.executor.call(bindings);
             } else {
                 var mask = [];
                 for (i=0; i<numElements; i++) {
