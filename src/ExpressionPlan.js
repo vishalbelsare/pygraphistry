@@ -195,9 +195,11 @@ PlanNode.prototype = {
                     resultValues[i] = this.executor.call(perElementBindings);
                 }
                 return resultValues;
-            } else if (this.isLocalized) {
-                return this.executor.call(bindings);
             } else {
+                // TODO FIXME Terrible way to signal that we want to union/intersect/etc some set results:
+                if (_.every(bindings, function (arg) { return arg instanceof DataframeMask; })) {
+                    return this.executor.call(bindings);
+                }
                 var mask = [];
                 for (i=0; i<numElements; i++) {
                     for (j=0; j<bindingKeys.length; j++) {
