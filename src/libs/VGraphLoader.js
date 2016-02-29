@@ -290,23 +290,14 @@ function load(graph, dataset) {
  * @property {Aggregations} aggregations
  */
 
-/** @typedef {Object} EdgeEncodings
- * @property source
- * @property destination
- */
-
-/** @typedef {Object} NodeEncodings
- * @property nodeId
- * @property pointColor
- * @property pointSize
- * @property pointTitle
- * @property pointLabel
+/** @typedef {Object} EncodingSpec
+ * @property {String[]} attributes
  */
 
 /** @typedef {Object} DataframeMetadataByComponent
  * @property {Object.<DataframeMetadataByColumn>} attributes
  * @property {Number} count
- * @property {NodeEncodings|EdgeEncodings} encodings
+ * @property {Object.<EncodingSpec>} encodings
  */
 
 /** @typedef {Object} DataframeMetadata
@@ -692,7 +683,7 @@ function sameKeys(o1, o2){
 var GraphShapeProperties = ['source', 'destination', 'nodeId'];
 
 /**
- * @param {EdgeEncodings|NodeEncodings} encodings
+ * @param {Object.<EncodingSpec>} encodings
  * @param {Object.<AttributeLoader>} loaders
  * @param {Number} target VERTEX or EDGE
  * @returns {Object.<DataframeMetadataByColumn>}
@@ -709,7 +700,7 @@ function getSimpleEncodings(encodings, loaders, target) {
             return false;
         }
 
-        if (!_.all(loaders[graphProperty], function (loader) { return loader.target == target; })) {
+        if (!_.all(loaders[graphProperty], function (loader) { return loader.target === target; })) {
             console.warn('Wrong target type (node/edge) for graph property', graphProperty);
             return false;
         }
@@ -811,8 +802,8 @@ function decode1(graph, vg, metadata)  {
 
     _.each(loaders, function (loaderArray, graphProperty) {
         _.each(loaderArray, function (loader) {
-            var encodings = loader.target == VERTEX ? nodeEncodings : edgeEncodings;
-            var attributes = loader.target == VERTEX ? vgAttributes.nodes : vgAttributes.edges;
+            var encodings = loader.target === VERTEX ? nodeEncodings : edgeEncodings;
+            var attributes = loader.target === VERTEX ? vgAttributes.nodes : vgAttributes.edges;
             if (graphProperty in encodings) {
                 var attributeName = encodings[graphProperty];
                 logger.debug('Loading values for', graphProperty, 'from attribute', attributeName);
