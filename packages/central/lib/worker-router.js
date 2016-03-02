@@ -182,7 +182,7 @@ function combineWorkerInfo (servers, workers) {
  * error if this process was unsuccessful.
  */
 
-function pickWorker(cb) {
+export function pickWorker(cb) {
 
     const ips = Observable.defer(() => {
 
@@ -231,24 +231,25 @@ function pickWorker(cb) {
         }
         return Observable.throw(err);
     })
-    .subscribe(
-        // If we get a worker, we know everything succeeded.
-        (worker) => {
+    .do({
+        next(worker) {
+            // If we get a worker, we know everything succeeded.
             logger.debug("Assigning worker on %s, port %d", worker.hostname, worker.port);
-            cb(null, worker);
         },
-        // If we get a message, log it and send it back.
-        ({ type, error, message }) => {
+        error({ type, error, message }) {
+            // If we get a message, log it and send it back.
             if (type === 'exhausted') {
                 logger.error(message);
             } else {
                 logger.error(error, message);
             }
-            cb(error);
         }
-    );
+    });
 }
 
-module.exports = {
-    pickWorker: pickWorker
-};
+export function pickWorkerCB(cb) {
+    return pickWorker().subscribe(
+        (worker) => cb(null, worker),
+        ({ type, error, message }) => cb(error)
+    );
+}
