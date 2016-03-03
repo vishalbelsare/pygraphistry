@@ -643,7 +643,6 @@ ExpressionCodeGenerator.prototype = {
             case 'ListExpression':
             case 'FunctionCall':
             case 'Literal':
-                return {ast: ast, expr: this.expressionStringForAST(ast, bindings, depth2, outerPrecedence)};
             case 'Identifier':
                 return {ast: ast, expr: this.expressionStringForAST(ast, bindings, depth2, outerPrecedence)};
             default:
