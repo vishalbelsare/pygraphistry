@@ -10,16 +10,16 @@ var path = require('path'),
 
 
 function getShaderSource(id) {
-    var shader_path = path.resolve(__dirname, '..' ,'shaders', id);
-    logger.trace('Fetching source for shader %s at path %s, using fs read', id, shader_path);
-    return Q.denodeify(fs.readFile)(shader_path, {encoding: 'utf8'});
+    var shaderPath = path.resolve(__dirname, '..' ,'shaders', id);
+    logger.trace('Fetching source for shader %s at path %s, using fs read', id, shaderPath);
+    return Q.denodeify(fs.readFile)(shaderPath, {encoding: 'utf8'});
 }
 
 
 function getKernelSource(id) {
-    var kernel_path = path.resolve(__dirname, '..' ,'kernels', id);
-    logger.trace('Fetching source for kernel %s at path %s, using fs read', id, kernel_path);
-    return Q.denodeify(fs.readFile)(kernel_path, {encoding: 'utf8'});
+    var kernelPath = path.resolve(__dirname, '..' ,'kernels', id);
+    logger.trace('Fetching source for kernel %s at path %s, using fs read', id, kernelPath);
+    return Q.denodeify(fs.readFile)(kernelPath, {encoding: 'utf8'});
 }
 
 // Should be used as a (mostly) drop in replacement for Q.all when you want each promise to run sequentially
@@ -55,14 +55,14 @@ function getImage(url) {
         var img = new Image();
 
         img.onload = function() {
-            logger.trace("Done loading <img>");
+            logger.trace('Done loading <img>');
 
             deferred.resolve(img);
         };
 
-        logger.trace("Loading <img> from src %s", url);
+        logger.trace('Loading <img> from src %s', url);
         img.src = url;
-        logger.trace("  <img> src set");
+        logger.trace('  <img> src set');
     } catch (e) {
         deferred.reject(e);
     }
@@ -72,8 +72,7 @@ function getImage(url) {
 
 
 function rgb(r, g, b, a) {
-    if (a === undefined)
-        a = 255;
+    if (a === undefined) { a = 255; }
     // Assume little endian machines
     return (a << 24) | (b << 16) | (g << 8) | r;
 }
@@ -109,11 +108,11 @@ var palettes = {
 function int2color(values, palette) {
     palette = palette || palettes.palette1;
 
-    logger.trace("Palette: %o", palette);
+    logger.trace('Palette: %o', palette);
 
-    var ncolors = palette.length;
+    var numColors = palette.length;
     return _.map(values, function (val) {
-        return palette[val % ncolors];
+        return palette[val % numColors];
     });
 }
 

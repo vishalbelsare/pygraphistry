@@ -992,7 +992,7 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
     var destination = new Array(numElements);
 
     for (var i = 0; i < numElements; i++) {
-        source[i] = nodeTitles[unsortedEdges[2*i]]
+        source[i] = nodeTitles[unsortedEdges[2*i]];
         destination[i] = nodeTitles[unsortedEdges[2*i + 1]];
     }
 
@@ -1167,7 +1167,7 @@ Dataframe.prototype.getBufferKeys = function (type) {
 Dataframe.prototype.getOriginalNumElements = function (type) {
     var res = this.rawdata.numElements[type];
     if (!res && res !== 0) {
-        throw new Error("Invalid Num Elements: " + type);
+        throw new Error('Invalid Num Elements: ' + type);
     }
     return res;
 };
@@ -1175,7 +1175,7 @@ Dataframe.prototype.getOriginalNumElements = function (type) {
 Dataframe.prototype.getNumElements = function (type) {
     var res = this.data.numElements[type];
     if (!res && res !== 0) {
-        throw new Error("Invalid Num Elements: " + type);
+        throw new Error('Invalid Num Elements: ' + type);
     }
     return res;
 };
@@ -1248,7 +1248,7 @@ Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
     }
     var res = data.localBuffers[name];
     if (!res) {
-        throw new Error("Invalid Local Buffer: " + name);
+        throw new Error('Invalid Local Buffer: ' + name);
     }
     return res;
 };
@@ -1256,7 +1256,7 @@ Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
 Dataframe.prototype.getHostBuffer = function (name) {
     var res = this.data.hostBuffers[name];
     if (!res) {
-        throw new Error("Invalid Host Buffer: " + name);
+        throw new Error('Invalid Host Buffer: ' + name);
     }
     return res;
 };
@@ -1287,7 +1287,7 @@ Dataframe.prototype.getBuffer = function (name, type) {
         var dataType = this.getDataType(name, type);
 
         if (dataType !== 'number') {
-            throw new Error("Attempting to get buffer that is non-numeric");
+            throw new Error('Attempting to get buffer that is non-numeric; data type is: ' + dataType);
         }
 
         var typedData = new Float32Array(data);
@@ -2263,7 +2263,7 @@ function decodeDates (attributes) {
     _.each(_.keys(attributes), function (key) {
         var isDate = key.indexOf('Date') > -1;
         var decoded = _.map(attributes[key].values, function (val) {
-            return isDate && typeof(val) === "number" ?
+            return isDate && typeof(val) === 'number' ?
                     dateFormat(val, 'mm-dd-yyyy') : val;
         });
         attributes[key].values = decoded;

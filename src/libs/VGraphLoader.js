@@ -234,8 +234,9 @@ function wrap(mappings, loaders) {
             doWrap(res, mapping, loader);
 
             logger.trace('Mapping ' + mapping.name + ' to ' + a);
-        } else
+        } else {
             res[a] = [loaders[a]];
+        }
     }
     return res;
 }
@@ -463,8 +464,8 @@ function computeInitialPositions(vertexCount, edges, dimensions) {
         component = components.components[i];
         component.rowHeight =
             Math.max(component.size,
-                i + 1 < numComponents
-                && components.components[i+1].row == component.row ?
+                i + 1 < numComponents &&
+                components.components[i+1].row === component.row ?
                     component.rollingMaxInRow :
                     0);
     }

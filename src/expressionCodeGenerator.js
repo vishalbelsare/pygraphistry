@@ -780,15 +780,15 @@ ExpressionCodeGenerator.prototype = {
                 var value = ast.value;
                 var castValue = value;
                 // This is a load of silly guards because the PEG production for TypeIdentifier needs cleanup:
-                var type_name = ast.type_name;
-                while (typeof type_name !== 'string') {
-                    if (type_name.length) {
-                        type_name = type_name[0];
-                    } else if (type_name.name) {
-                        type_name = type_name.name;
+                var typeName = ast.type_name;
+                while (typeof typeName !== 'string') {
+                    if (typeName.length) {
+                        typeName = typeName[0];
+                    } else if (typeName.name) {
+                        typeName = typeName.name;
                     }
                 }
-                switch (type_name.toLowerCase()) {
+                switch (typeName.toLowerCase()) {
                     case 'string':
                         precedence = this.precedenceOf('.');
                         castValue = this.expressionStringForAST(value, bindings, depth2, precedence) + '.toString()';
@@ -824,7 +824,7 @@ ExpressionCodeGenerator.prototype = {
                         castValue = 'new Date(' + this.expressionStringForAST(value, bindings, depth2, precedence) + ').getTime()';
                         break;
                     default:
-                        throw Error('Unrecognized type: ' + type_name);
+                        throw Error('Unrecognized type: ' + typeName);
                 }
                 return castValue;
             case 'CaseExpression':

@@ -1185,105 +1185,123 @@ var scenes = {
 
 function saneProgram(program, progName) {
     _.each(['sources', 'attributes', 'camera', 'uniforms'], function (field) {
-        if (!(field in program))
+        if (!(field in program)) {
             logger.die('Program "%s" must have field "%s"', progName, field);
+        }
     });
 }
 
 function saneTexture(texture, texName) {
     _.each(['datasource'], function (field) {
-        if (!(field in texture))
+        if (!(field in texture)) {
             logger.die('Texture "%s" must have field "%s"', texName, field);
+        }
     });
 }
 
 function saneModel(model, modName) {
     _.each(model, function (buffer, bufName) {
         _.each(['datasource', 'type', 'count', 'offset', 'stride', 'normalize'], function (field) {
-            if (!(field in buffer))
+            if (!(field in buffer)) {
                 logger.die('Buffer "%s" in model "%s" must have field "%s"', bufName, modName, field);
+            }
         });
     });
 }
 
 function saneItem(programs, textures, models, item, itemName) {
     _.each(['program', 'bindings', 'drawType', 'glOptions'], function (field) {
-        if (!(field in item))
+        if (!(field in item)) {
             logger.die('Item "%s" must have field "%s"', itemName, field);
+        }
     });
 
-    if ('renderTarget' in item)
-        if (!('readTarget' in item))
-            logger.die('Item "%s" must specify readTarget with renderTarget', itemName);
+    if ('renderTarget' in item && !('readTarget' in item)) {
+        logger.die('Item "%s" must specify readTarget with renderTarget', itemName);
+    }
 
     var progName = item.program;
-    if (!(progName in programs))
+    if (!(progName in programs)) {
         logger.die('In item "%s", undeclared program "%s"', itemName, progName);
+    }
     var program = programs[progName];
 
     if (program.textures) {
         _.each(program.textures, function (texName){
-            if (!item.textureBindings)
+            if (!item.textureBindings) {
                 logger.die('Item "%s", must have textureBindings for program "%s"',
-                        itemName, progName);
-            if (!_.contains(_.keys(item.textureBindings), texName))
+                    itemName, progName);
+            }
+            if (!_.contains(_.keys(item.textureBindings), texName)) {
                 logger.die('In item "%s", no bindings for texture "%s" (of program "%s")',
-                        itemName, texName, progName);
+                    itemName, texName, progName);
+            }
         });
         _.each(item.textureBindings, function (texName, texPname) {
-            if (!_.contains(program.textures, texPname))
+            if (!_.contains(program.textures, texPname)) {
                 logger.die('Program "%s" does not declare texture named "%s" bound by item "%s"',
-                        progName, texPname, itemName);
-            if (!(texName in textures))
+                    progName, texPname, itemName);
+            }
+            if (!(texName in textures)) {
                 logger.die('In item "%s", undeclared texture "%s"', itemName, texName);
+            }
         });
     }
 
     _.each(program.uniforms, function (uniform) {
-        if (!(item.uniforms) || !(uniform in item.uniforms))
+        if (!(item.uniforms) || !(uniform in item.uniforms)) {
             logger.die('Item "%s" does not bind uniform "%s"', itemName, uniform);
+        }
     });
 
     _.each(item.uniforms, function (binding, uniform) {
-        if (!_.contains(program.uniforms, uniform))
+        if (!_.contains(program.uniforms, uniform)) {
             logger.die('Item "%s" binds uniform "%s" not declared by program "%s"',
-                     itemName, uniform, progName)
-    })
+                itemName, uniform, progName);
+        }
+    });
 
     _.each(program.attributes, function (attr) {
-        if (!(attr in item.bindings))
+        if (!(attr in item.bindings)) {
             logger.die('In item "%s", program attribute "%s" (of program "%s") is not bound',
-                    itemName, progName, attr);
+                itemName, progName, attr);
+        }
     });
     _.each(item.bindings, function (modelNames, attr) {
-        if (!_.contains(program.attributes, attr))
+        if (!_.contains(program.attributes, attr)) {
             logger.die('Program %s does not declare attribute %s bound by item %s',
-                        progName, attr, itemName);
-        if (!(modelNames[0] in models) || !(modelNames[1] in models[modelNames[0]]))
+                progName, attr, itemName);
+        }
+        if (!(modelNames[0] in models) || !(modelNames[1] in models[modelNames[0]])) {
             logger.die('In item "%s", undeclared model "%s"', itemName, modelNames);
+        }
     });
     _.each(item.otherBuffers, function (modelNames) {
-        if (!(modelNames[0] in models) || !(modelNames[1] in models[modelNames[0]]))
+        if (!(modelNames[0] in models) || !(modelNames[1] in models[modelNames[0]])) {
             logger.die('In item "%s.otherBuffers", undeclared model "%s"', itemName, modelNames);
+        }
     });
 
 
     if (item.renderTarget) {
         var texName = item.renderTarget;
-        if (!_.contains(_.keys(textures), texName))
+        if (!_.contains(_.keys(textures), texName)) {
             logger.die('In item "%s", underclared renderTarget texture "%s"', itemName, texName);
+        }
     }
 }
 
 function saneScene(items, scene, sceneName) {
     _.each(['options', 'camera', 'render'], function (field) {
-        if (!(field in scene))
+        if (!(field in scene)) {
             logger.die('Scene "%s", must have field "%s"', sceneName, field);
+        }
     });
 
     _.each(scene.render, function (itemName) {
-        if (!(itemName in items))
+        if (!(itemName in items)) {
             logger.die('In scene "%s", undeclared render item "%s"', sceneName, itemName);
+        }
     });
 }
 
@@ -1301,7 +1319,7 @@ function generateAllConfigs(programs, textures, models, items, scenes) {
     return _.object(_.map(scenes, function (scene, name) {
         var config = _.extend({}, scene);
 
-        var citems = {}
+        var citems = {};
         var cprograms = {};
         var cmodels = {};
         var ctextures = {};
@@ -1315,9 +1333,9 @@ function generateAllConfigs(programs, textures, models, items, scenes) {
             cprograms[progName] = program;
 
             if (program.textures) {
-                _.each(item.textureBindings, function (texName, texPname) {
+                _.each(item.textureBindings, function (texName/*, texPname*/) {
                     ctextures[texName] = textures[texName];
-                })
+                });
             }
 
             var buffers = [].concat(_.values(item.bindings),
@@ -1354,8 +1372,9 @@ function gl2Bytes(type) {
         'UNSIGNED_SHORT': 2,
         'UNSIGNED_INT': 4
     };
-    if (!(type in types))
+    if (!(type in types)) {
         logger.die('Unknown GL type "%s"', type);
+    }
     return types[type];
 }
 

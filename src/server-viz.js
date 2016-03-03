@@ -214,7 +214,7 @@ VizServer.prototype.resetState = function (dataset, socket) {
         }).fail(log.makeQErrorHandler(logger, 'Failure in CLJS creation'));
 
         var qSimulator = Q.all([qNullRenderer, qCl]).spread(function (renderer, cl) {
-            return controls[0].simulator.create(dataframe, renderer, cl, device, vendor, controls)
+            return controls[0].simulator.create(dataframe, renderer, cl, device, vendor, controls);
         }).fail(log.makeQErrorHandler(logger, 'Cannot create simulator'));
 
         var nBodyInstance = Q.all([qNullRenderer, qSimulator]).spread(function (renderer, simulator) {
@@ -508,8 +508,8 @@ function VizServer(app, socket, cachedVBOs) {
 
     this.socket.on('render_config', function(_, cb) {
         this.qRenderConfig.then(function (renderConfig) {
-            socketLogger.info("Socket on render_config (sending render_config to client");
-            socketLogger.trace({renderConfig : renderConfig}, "renderConfig");
+            socketLogger.info('Socket on render_config (sending render_config to client)');
+            socketLogger.trace({renderConfig : renderConfig}, 'renderConfig');
             cb({success: true, renderConfig: renderConfig});
 
             if (saveAtEachStep) {
@@ -707,7 +707,7 @@ function VizServer(app, socket, cachedVBOs) {
                 success: true,
                 max: maxTime.getTime(),
                 min: minTime.getTime()
-            }
+            };
 
             cb(resp);
 
@@ -1258,7 +1258,7 @@ VizServer.prototype.setupAggregationRequestHandling = function () {
                     },
                     function handleErrorResponse(err) {
                         logErrorGlobally(err);
-                        sendErrorResponse(err)
+                        sendErrorResponse(err);
                     }
                 )
                 .catch(Observable.empty);
