@@ -9,9 +9,10 @@ Utility functions for server-side code
 Graphistry utilizes the [node-bunyan](https://github.com/trentm/node-bunyan) logger.
 
 ### Writing Logging Statements
+
 It is important that we pass objects to the logger as opposed to already serialized strings. Bunyan will take care of serializing and create easily searchable and filterable logs. The golden rule is: *Serializable objects must all go in the first argument.*
 
-##### Examples
+###### Examples
 
 * **Simple statement:** When logging a single string, it goes as the first and only argument.
 
