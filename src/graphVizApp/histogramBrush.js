@@ -234,6 +234,7 @@ HistogramBrush.prototype.updateHistogramData = function (data, globalStats, empt
 
     _.each(data, function (val, key) {
         var histogram = new Model();
+        var attributeName = key;
         var params = {
             data: empty ? {} : val,
             globalStats: globalStats,
@@ -241,21 +242,24 @@ HistogramBrush.prototype.updateHistogramData = function (data, globalStats, empt
             position: length++
         };
 
-        if (val.sparkLines !== undefined) {
-            params.sparkLines = val.sparkLines;
-        } else {
+        if (val.sparkLines === undefined) {
             // TODO: Make sure that sparkLines is always passed in, so we don't have
             // to do this check.
             _.each(this.activeDataframeAttributes, function (attr) {
                 if (attr.name === key) {
                     params.sparkLines = (attr.type === 'sparkLines');
+                } else if (attr.name.match(/:/) && attr.name.split(/:/, 2)[1] === key) {
+                    params.sparkLines = (attr.type === 'sparkLines');
+                    attributeName = attr.name;
                 }
             });
+        } else {
+            params.sparkLines = val.sparkLines;
         }
 
         histogram.set(params);
-        histogram.id = key;
-        histogram.set('attribute', key);
+        histogram.id = attributeName;
+        histogram.set('attribute', attributeName);
         histograms.push(histogram);
 
     }.bind(this));
