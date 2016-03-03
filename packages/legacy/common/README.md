@@ -11,9 +11,9 @@ Graphistry utilizes the [node-bunyan](https://github.com/trentm/node-bunyan) log
 ### Writing Logging Statements
 It is important that we log objects as opposed to strings, so that our logs are properly formatted. To make log searchable and parseable, please follow the rules below:
 
-1. If logging a single string, it goes as the first and only argument.
-2. If logging an `Error` object, **it must go in the first argument**. Follow up arguments (if any) must all be strings.
-3. If logging complex data-structures (eg., Objects, Arrays), **they must be all be grouped into a single object passed as the first argument**. Keep in mind the object keys are search terms in Bunyan CLI. Follow up arguments (if any) must all be strings.
+1. To log an object, it can only go in the first position. Special objects like `Errors` get handled as expected.
+2. Additional arguments can be strings.
+3. Keep in mind the object keys are search terms in Bunyan CLI. Follow up arguments (if any) must all be strings.
 
 ##### Examples
 
