@@ -43,11 +43,13 @@ It is important that we pass objects to the logger as opposed to already seriali
 | `logger.fatal` | 60           | The service/app is going to stop/die or become unusable.
 | `logger.error` | 50           | Fatal for a particular request, but the service/app continues servicing other requests.
 | `logger.warn`  | 40			  | A problem that will likely cause a failure down the line.
-| `logger.info`  | 30           | Information on regular operation.
+| `logger.info`  | 30           | Information on regular operation. 
 | `logger.debug` | 20           | Debug level information on normal operation
 | `logger.trace` | 10           | Detailed debug information. Too verbose for general debugging.
 
 As a general rule, try to log only flat objects at levels info or above. (Flat objects can be pretty printed in one line)
+
+Messages in `info` and higher are logged in production.
 
 ### Creating a New Logger
 
