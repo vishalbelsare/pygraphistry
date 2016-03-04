@@ -10,7 +10,7 @@ Graphistry utilizes the [node-bunyan](https://github.com/trentm/node-bunyan) log
 
 ### Writing Logging Statements
 
-It is important that we pass objects to the logger as opposed to already serialized strings. Bunyan will take care of serializing and create easily searchable and filterable logs. The golden rule is: *Serializable objects must all go in the first argument.*
+It is important that we pass objects to the logger as opposed to already serialized strings. Bunyan will take care of serializing and create easily searchable and filterable logs. The golden rule is: *Serializable objects must all go in the first argument and any thereafter are strings.*
 
 ###### Examples
 
