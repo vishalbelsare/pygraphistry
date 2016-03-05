@@ -8,9 +8,11 @@ var dataTypeUtil = require('./dataTypes.js');
  * @param {Object} column
  * @constructor
  */
-function ColumnAggregation(dataframe, column) {
+function ColumnAggregation(dataframe, column, values) {
+
     this.dataframe = dataframe;
     this.column = column;
+    this.values = values;
     /* @type Aggregations */
     this.aggregations = {
         count: undefined,
@@ -117,7 +119,7 @@ ColumnAggregation.prototype.runAggregationForAggType = function (aggType) {
             this.inferDivergence();
             break;
         case 'count':
-            this.aggregations.count = this.column.values.length;
+            this.aggregations.count = this.values.length;
             break;
         case 'minValue':
         case 'maxValue':
@@ -159,7 +161,7 @@ ColumnAggregation.prototype.isIntegral = function (value) {
 
 ColumnAggregation.prototype.genericSinglePassFixedMemoryAggregations = function () {
     var minValue = null, maxValue = null, countMissing = 0,
-        value, values = this.column.values, numValues = this.getAggregationByType('count');
+        value, values = this.values, numValues = this.getAggregationByType('count');
     var isLessThan = dataTypeUtil.isLessThanForDataType(this.getAggregationByType('dataType'));
     for (var i=0; i < numValues; i++) {
         value = values[i];
@@ -178,7 +180,7 @@ ColumnAggregation.prototype.genericSinglePassFixedMemoryAggregations = function 
 
 ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
     var minValue = Infinity, maxValue = -Infinity, sum = 0, countMissing = 0,
-        value = 0, values = this.column.values, numValues = this.getAggregationByType('count');
+        value = 0, values = this.values, numValues = this.getAggregationByType('count');
     for (var i=0; i < numValues; i++) {
         value = values[i];
         if (dataTypeUtil.numberSignifiesUndefined(value)) {
@@ -199,7 +201,7 @@ ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
 
 ColumnAggregation.prototype.computeStandardDeviation = function () {
     var avg = this.getAggregationByType('averageValue'),
-        value = 0, values = this.column.values, numValues = this.getAggregationByType('count'),
+        value = 0, values = this.values, numValues = this.getAggregationByType('count'),
         sumSquareDiffs = 0, diff;
     for (var i=0; i < numValues; i++) {
         value = values[i];
@@ -215,7 +217,7 @@ ColumnAggregation.prototype.computeStandardDeviation = function () {
 var MaxDistinctValues = 400;
 
 ColumnAggregation.prototype.countDistinct = function (limit) {
-    var values = this.column.values;
+    var values = this.values;
     var numValues = this.getAggregationByType('count');
     if (limit === undefined) {
         limit = MaxDistinctValues;
@@ -255,7 +257,7 @@ ColumnAggregation.prototype.countDistinct = function (limit) {
 var OrderedDataTypes = ['number', 'integer', 'string', 'date'];
 
 ColumnAggregation.prototype.inferDataType = function () {
-    var values = this.column.values;
+    var values = this.values;
     var numValues = this.getAggregationByType('count');
     var value, isNumeric = true, isIntegral = true, jsType;
     for (var i=0; i<numValues; i++) {

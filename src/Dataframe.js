@@ -872,6 +872,37 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
             }
         });
 
+        // Copy in attributes from raw data
+        // Bump versions of every attribute because it's versioned.
+        // Also mark as dirty, due to filter.
+        var attributePropertiesToSkip = ['values'];
+        // Each namespace of columns
+        _.each(rawdata.attributes, function (cols, colCategoryKey) {
+
+            newData.attributes[colCategoryKey] = {};
+            // Each column
+            _.each(cols, function (col, colName) {
+                newData.attributes[colCategoryKey][colName] = {};
+
+                // Each key of column object
+                _.each(col, function (prop, propName) {
+                    if (attributePropertiesToSkip.indexOf(propName) !== -1) {
+                        return;
+                    }
+                    newData.attributes[colCategoryKey][colName][propName] = prop;
+                });
+
+                // Bump Version
+                newData.attributes[colCategoryKey][colName].version = newData.attributes[colCategoryKey][colName].version + 1 || 1;
+                // Mark dirty so that computed columns and lazy eval can work.
+                newData.attributes[colCategoryKey][colName].dirty = {
+                    cause: 'filter'
+                };
+
+            });
+
+        });
+
         // Bump versions of every buffer.
         // TODO: Decide if this is really necessary.
         _.each(_.keys(simulator.versions.buffers), function (key) {
@@ -940,6 +971,12 @@ Dataframe.prototype.loadAttributesForType = function (attributeObjectsByName, ty
         userDefinedAttributesByName._title = {type: 'number', name: 'label', values: _.range(numElements)};
     }
 
+    // Mark version as 0, and that they're not dirty.
+    _.each(userDefinedAttributesByName, function (obj, key) {
+        obj.version = 0;
+        obj.dirty = false;
+    });
+
     _.extend(this.rawdata.attributes[type], userDefinedAttributesByName);
     // TODO: Case where data != raw data.
 };
@@ -968,9 +1005,9 @@ Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
         degree[i] = inDegrees[i] + outDegrees[i];
     }
 
-    attributes.degree = {values: degree, name: 'degree', type: 'number'};
-    attributes.degree_in = {values: degree_in, name: 'degree_in', type: 'number'};
-    attributes.degree_out = {values: degree_out, name: 'degree_out', type: 'number'};
+    attributes.degree = {values: degree, name: 'degree', type: 'number', version: 0, dirty: false};
+    attributes.degree_in = {values: degree_in, name: 'degree_in', type: 'number', version: 0, dirty: false};
+    attributes.degree_out = {values: degree_out, name: 'degree_out', type: 'number', version: 0, dirty: false};
 };
 
 
@@ -990,13 +1027,13 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
         destination[i] = nodeTitles[unsortedEdges[2*i + 1]];
     }
 
-    attributes.Source = {values: source, name: 'Source', type: 'string'};
-    attributes.Destination = {values: destination, name: 'Destination', type: 'string'};
+    attributes.Source = {values: source, name: 'Source', type: 'string', version: 0, dirty: false};
+    attributes.Destination = {values: destination, name: 'Destination', type: 'string', version: 0, dirty: false};
 
     // If no title has been set, just make title the index.
     // TODO: Is there a more appropriate place to put this?
     if (!attributes._title) {
-        attributes._title = {type: 'string', name: 'label', values: _.range(numElements)};
+        attributes._title = {type: 'string', name: 'label', values: _.range(numElements), version: 0, dirty: false};
     }
 
 };
@@ -1229,6 +1266,7 @@ Dataframe.prototype.hasLocalBuffer = function (name) {
 };
 
 Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
+
     var data = unfiltered ? this.rawdata : this.data;
 
     if (this.canResetLocalBuffer(name)) {
@@ -1244,6 +1282,7 @@ Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
     if (!res) {
         throw new Error("Invalid Local Buffer: " + name);
     }
+
     return res;
 };
 
@@ -1304,14 +1343,13 @@ Dataframe.prototype.globalize = function(index, type) {
     return this.lastMasks.getIndexByType(type, index);
 };
 
-
-/** Returns one row object.
+/** Returns the contents of one cell
  * @param {double} index - which element to extract.
  * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
+ * @param {string} attrName - the name of the column you want
  * @param {Object?} attributes - which attributes to extract from the row.
  */
-Dataframe.prototype.getRowAt = function (index, type, attributes) {
-    var origIndex = index; // For client-side metadata.
+Dataframe.prototype.getCell = function (index, type, attrName) {
 
     // Convert from sorted into unsorted edge indices.
     if (index && type === 'edge') {
@@ -1319,14 +1357,42 @@ Dataframe.prototype.getRowAt = function (index, type, attributes) {
         index = forwardsEdgePermutationInverse[index];
     }
 
-    index = this.lastMasks.getIndexByType(type, index);
+    var attributes = this.data.attributes[type];
 
-    attributes = attributes || this.rawdata.attributes[type];
+    // First try to see if have values already calculated / cached for this frame
+
+    if (!attributes[attrName].dirty && attributes[attrName].values) {
+        return attributes[attrName].values[index];
+    }
+
+    // If it's calculated...TODO
+
+
+    // If it's not calculated / cached, and filtered use last masks (parent) to index into already
+    // calculated values
+    if (attributes[attrName].dirty && attributes[attrName].dirty.cause === 'filter') {
+        var parentIndex = this.lastMasks.getIndexByType(type, index);
+        return this.rawdata.attributes[type][attrName].values[parentIndex];
+    }
+
+    // Default to undefined
+    return undefined;
+};
+
+
+/** Returns one row object.
+ * @param {double} index - which element to extract.
+ * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
+ * @param {Object?} attributes - which attributes to extract from the row.
+ */
+Dataframe.prototype.getRowAt = function (index, type) {
+    var origIndex = index; // For clientside metadata
+    var that = this;
+
     var row = {};
-    _.each(_.keys(attributes), function (key) {
-        row[key] = attributes[key].values[index];
+    _.each(_.keys(that.data.attributes[type]), function (key) {
+        row[key] = that.getCell(index, type, key);
     });
-
     row._index = origIndex;
     return row;
 };
@@ -1337,13 +1403,12 @@ Dataframe.prototype.getRowAt = function (index, type, attributes) {
  * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  */
 Dataframe.prototype.getRows = function (indices, type) {
-    var attributes = this.rawdata.attributes[type],
-        that = this;
+    var that = this;
 
     indices = indices || _.range(that.data.numElements[type]);
 
     return _.map(indices, function (index) {
-        return that.getRowAt(index, type, attributes);
+        return that.getRowAt(index, type);
     });
 };
 
@@ -1355,7 +1420,10 @@ Dataframe.prototype.getRows = function (indices, type) {
  * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  * @returns {{header, values}}
  */
-Dataframe.prototype.getRowsCompact = function (indices, type) {
+Dataframe.prototype.getRowsCompactUnfiltered = function (indices, type) {
+
+    // TODO: Should this be generalized for non-serializing purposes? E.g., it's not in
+    // the standard lookup path.
     var attributes = this.rawdata.attributes[type],
         keys = this.getAttributeKeys(type);
 
@@ -1399,28 +1467,42 @@ Dataframe.prototype.getColumn = function (columnName, type) {
  */
 
 
-// TODO: Have this return edge attributes in sorted order, unless
+ // TODO: Have this return edge attributes in sorted order, unless
 // explicitly requested to be unsorted (for internal performance reasons)
 Dataframe.prototype.getColumnValues = function (columnName, type) {
 
-    // A filter has been done, and we need to apply the
-    // mask and compact.
-    if (!this.data.attributes[type][columnName]) {
+
+    var attributes = this.data.attributes[type];
+
+    // First try to see if have values already calculated / cached for this frame
+
+    if (!attributes[columnName].dirty && attributes[columnName].values) {
+        return attributes[columnName].values;
+    }
+
+    // If it's calculated...TODO
+
+
+    // If it's not calculated / cached, and filtered, apply the mask and compact
+    // then cache the result.
+    if (attributes[columnName].dirty && attributes[columnName].dirty.cause === 'filter') {
+
         var rawAttributes = this.rawdata.attributes[type];
         var newValues = [];
         this.lastMasks.mapIndexes(type, function (idx) {
             newValues.push(rawAttributes[columnName].values[idx]);
         });
-        this.data.attributes[type][columnName] = {
-            values: newValues,
-            type: rawAttributes[columnName].type,
-            target: rawAttributes[columnName].target
-        };
+
+        attributes[columnName].values = newValues;
+        attributes[columnName].dirty = false;
+
+        return newValues;
     }
 
-    var attributes = this.data.attributes[type];
-    return attributes[columnName].values;
+    // Default to undefined
+    return undefined;
 };
+
 
 /**
  * @typedef {Object} Aggregations
@@ -1476,7 +1558,8 @@ Dataframe.prototype.getColumnAggregations = function(columnName, type, unfiltere
     var column = dataframeData.attributes[type][columnName];
     if (column === undefined) { return undefined; }
     if (column.aggregations === undefined) {
-        column.aggregations = new ColumnAggregation(this, column);
+        var values = this.getColumnValues(columnName, type);
+        column.aggregations = new ColumnAggregation(this, column, values);
         var aggregations = this.metadataForColumn(columnName, type);
         if (aggregations !== undefined) {
             if (aggregations.aggregations !== undefined) {
@@ -1583,7 +1666,7 @@ Dataframe.prototype.serializeRows = function (target, options) {
 
     _.each(BufferTypeKeys, function (type) {
         if (options.compact) {
-            toSerialize[type] = that.getRowsCompact(undefined, type);
+            toSerialize[type] = that.getRowsCompactUnfiltered(undefined, type);
         } else {
             toSerialize[type] = that.getRows(undefined, type);
         }
@@ -1617,7 +1700,7 @@ Dataframe.prototype.serializeColumns = function (target, options) {
 Dataframe.prototype.formatAsCsv = function (type) {
     var that = this;
 
-    var compact = that.getRowsCompact(undefined, type);
+    var compact = that.getRowsCompactUnfiltered(undefined, type);
     var promiseStringify = Q.denodeify(csv.stringify);
     console.log('compact header: ', compact.header);
     var structuredArrays = [compact.header].concat(compact.values);
