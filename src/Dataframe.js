@@ -13,6 +13,7 @@ var ExpressionCodeGenerator = require('./expressionCodeGenerator');
 var ExpressionPlan = require('./ExpressionPlan.js');
 var DataframeMask = require('./DataframeMask.js');
 var ColumnAggregation = require('./ColumnAggregation.js');
+var ComputedColumnManager = require('./ComputedColumnManager.js');
 
 var dataTypeUtil = require('./dataTypes.js');
 
@@ -51,6 +52,7 @@ function Dataframe () {
     };
     this.typedArrayCache = {};
     this.lastPointPositions = null;
+    this.computedColumnManager = null;
     /** The last mask applied as a result of in-place filtering. Full by default. */
     this.lastMasks = new DataframeMask(
         this,
@@ -65,6 +67,12 @@ function Dataframe () {
     this.bufferOverlays = {};
     /** @type {DataframeMetadata} */
     this.metadata = {};
+
+    // TODO: Move this out of data frame constructor.
+    var computedColumnManager = new ComputedColumnManager();
+    computedColumnManager.loadDefaultColumns();
+    this.loadComputedColumnManager(computedColumnManager);
+
 }
 
 Dataframe.prototype.newEmptyMask = function () {
@@ -931,6 +939,34 @@ var SystemAttributeNames = [
     'degree'
 ];
 
+Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager) {
+    this.computedColumnManager = computedColumnManager;
+
+    var attrs = this.data.attributes;
+    var activeColumns = computedColumnManager.getActiveColumns();
+
+    _.each(activeColumns, function (cols, colType) {
+        // If no columns exist in category, make obj
+        attrs[colType] = attrs[colType] || {};
+
+        _.each(cols, function (colDesc, name) {
+            var col = {
+                name: name,
+                type: colDesc.type,
+                version: 0,
+                dirty: true,
+                computed: true,
+                numberPerGraphComponent: colDesc.numberPerGraphComponent,
+                arrType: colDesc.arrType
+            };
+
+            attrs[colType][name] = col;
+        });
+
+    });
+
+};
+
 /**
  * TODO: Implicit degrees for points and src/dst for edges.
  * @param {Object.<AttrObject>} attributeObjectsByName
@@ -975,6 +1011,7 @@ Dataframe.prototype.loadAttributesForType = function (attributeObjectsByName, ty
     _.each(userDefinedAttributesByName, function (obj, key) {
         obj.version = 0;
         obj.dirty = false;
+        obj.numberPerGraphComponent = 1;
     });
 
     _.extend(this.rawdata.attributes[type], userDefinedAttributesByName);
@@ -1005,9 +1042,9 @@ Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
         degree[i] = inDegrees[i] + outDegrees[i];
     }
 
-    attributes.degree = {values: degree, name: 'degree', type: 'number', version: 0, dirty: false};
-    attributes.degree_in = {values: degree_in, name: 'degree_in', type: 'number', version: 0, dirty: false};
-    attributes.degree_out = {values: degree_out, name: 'degree_out', type: 'number', version: 0, dirty: false};
+    attributes.degree = {values: degree, name: 'degree', type: 'number', version: 0, dirty: false, numberPerGraphComponent: 1};
+    attributes.degree_in = {values: degree_in, name: 'degree_in', type: 'number', version: 0, dirty: false, numberPerGraphComponent: 1};
+    attributes.degree_out = {values: degree_out, name: 'degree_out', type: 'number', version: 0, dirty: false, numberPerGraphComponent: 1};
 };
 
 
@@ -1027,13 +1064,13 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
         destination[i] = nodeTitles[unsortedEdges[2*i + 1]];
     }
 
-    attributes.Source = {values: source, name: 'Source', type: 'string', version: 0, dirty: false};
-    attributes.Destination = {values: destination, name: 'Destination', type: 'string', version: 0, dirty: false};
+    attributes.Source = {values: source, name: 'Source', type: 'string', version: 0, dirty: false, numberPerGraphComponent: 1};
+    attributes.Destination = {values: destination, name: 'Destination', type: 'string', version: 0, dirty: false, numberPerGraphComponent: 1};
 
     // If no title has been set, just make title the index.
     // TODO: Is there a more appropriate place to put this?
     if (!attributes._title) {
-        attributes._title = {type: 'string', name: 'label', values: _.range(numElements), version: 0, dirty: false};
+        attributes._title = {type: 'string', name: 'label', values: _.range(numElements), version: 0, dirty: false, numberPerGraphComponent: 1};
     }
 
 };
@@ -1358,21 +1395,49 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
     }
 
     var attributes = this.data.attributes[type];
+    var numberPerGraphComponent = attributes[attrName].numberPerGraphComponent;
 
     // First try to see if have values already calculated / cached for this frame
 
     if (!attributes[attrName].dirty && attributes[attrName].values) {
-        return attributes[attrName].values[index];
+        // TODO: Deduplicate this code from dataframe and computed column manager
+        if (numberPerGraphComponent === 1) {
+            return attributes[attrName].values[index];
+        } else {
+            var arrType = attributes[attrName].arrType || Array;
+            var returnArr = new arrType(numberPerGraphComponent);
+            for (var j = 0; j < returnArr.length; j++) {
+                returnArr[j] = attributes[attrName].values[index*numberPerGraphComponent + j];
+            }
+            return returnArr;
+        }
     }
 
     // If it's calculated...TODO
+    if (attributes[attrName].dirty && attributes[attrName].computed) {
 
+        console.log('\n\nGETTING COMPUTED COLUMN CELL');
+
+        var returnval = this.computedColumnManager.getValue(this, type, attrName, index);
+        console.log('VALUE: ', returnval);
+        return returnval;
+    }
 
     // If it's not calculated / cached, and filtered use last masks (parent) to index into already
     // calculated values
     if (attributes[attrName].dirty && attributes[attrName].dirty.cause === 'filter') {
         var parentIndex = this.lastMasks.getIndexByType(type, index);
         return this.rawdata.attributes[type][attrName].values[parentIndex];
+        if (numberPerGraphComponent === 1) {
+            return this.rawdata.attributes[type][attrName].values[parentIndex];
+        } else {
+            var arrType = attributes[attrName].arrType || Array;
+            var returnArr = new arrType(numberPerGraphComponent);
+            for (var j = 0; j < returnArr.length; j++) {
+                returnArr[j] = this.rawdata.attributes[attrName].values[parentIndex*numberPerGraphComponent + j];
+            }
+            return returnArr;
+        }
     }
 
     // Default to undefined
@@ -1394,6 +1459,7 @@ Dataframe.prototype.getRowAt = function (index, type) {
         row[key] = that.getCell(index, type, key);
     });
     row._index = origIndex;
+    console.log('GOT ROW: ', row);
     return row;
 };
 
@@ -1481,6 +1547,17 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     }
 
     // If it's calculated...TODO
+    if (attributes[columnName].dirty && attributes[columnName].computed) {
+        console.log('\n\nGETTING COMPUTED COLUMN FULL');
+
+        var newValues = this.computedColumnManager.getArray(this, type, columnName);
+        attributes[columnName].values = newValues;
+        attributes[columnName].dirty = false;
+
+        console.log('Result: ', newValues);
+
+        return newValues;
+    }
 
 
     // If it's not calculated / cached, and filtered, apply the mask and compact
@@ -1488,9 +1565,16 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     if (attributes[columnName].dirty && attributes[columnName].dirty.cause === 'filter') {
 
         var rawAttributes = this.rawdata.attributes[type];
-        var newValues = [];
-        this.lastMasks.mapIndexes(type, function (idx) {
-            newValues.push(rawAttributes[columnName].values[idx]);
+        var arrType = rawAttributes[columnName].arrType || Array;
+        var numNewValues = this.lastMasks.numByType(type);
+        var numberPerGraphComponent = rawAttributes[columnName].numberPerGraphComponent;
+        var newValues = new arrType(numberPerGraphComponent * numNewValues);
+
+        this.lastMasks.mapIndexes(type, function (idx, i) {
+            for (var j = 0; j < numberPerGraphComponent; j++) {
+                newValues[numberPerGraphComponent*i + j] = rawAttributes[columnName].values[numberPerGraphComponent*idx + j];
+            }
+            // newValues.push(rawAttributes[columnName].values[idx]);
         });
 
         attributes[columnName].values = newValues;
