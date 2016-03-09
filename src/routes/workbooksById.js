@@ -14,6 +14,7 @@ import 'rxjs/add/operator/mergeMap';
 
 import { loadDataset } from './support/loadDataset';
 import { loadWorkbook } from './support/loadWorkbook';
+import { renderGraphDataset } from './support/renderGraphDataset';
 
 export function views(workbooksById) {
     return [{
@@ -97,26 +98,37 @@ export function datasets(workbooksById, datasetsById) {
                     }
                 );
         }
-    }, {
-        route: `workbooksById[{keys: workbookIds}].datasetsById[{keys: datasetIds}]`,
-        get({ workbookIds, datasetIds }) {
+    }];
+}
+
+export function datasetsById(workbooksById, datasetsById, graphsById) {
+    return [{
+        route: `workbooksById[{keys: workbookIds}].datasetsById[{keys: datasetIds}].graph[{keys: graphKeys}]`,
+        get({ workbookIds, datasetIds, graphKeys }) {
             return Observable
                 .from(workbookIds)
                 .mergeMap((workbookId) => loadWorkbook(workbooksById, workbookId))
                 .mergeMap(
-                    (workbook) =>
-                        Observable.from(datasetIds)
-                            .map((datasetId) => workbook.datasetsById[datasetId]),
-                    (workbook, dataset) =>
-                        loadDataset(datasetsById, dataset.id, dataset)
-                            .map((dataset) => ({ workbook, dataset }))
+                    (workbook) => Observable.from(datasetIds),
+                    (workbook, datasetId) => ({ workbook, datasetId })
                 )
-                .mergeAll()
-                .map(({ workbook, dataset }) => {
-                    const ref = $ref(`datasetsById['${dataset.id}']`);
-                    const path = `workbooksById['${workbook.id}'].datasetsById['${dataset.id}']`;
-                    return $pathValue(path, ref);
-                });
+                .mergeMap(
+                    ({ workbook, datasetId }) =>
+                        loadDataset(datasetsById, datasetId, workbook.datasetsById[datasetId]),
+                    ({ workbook, datasetId }, dataset) => ({ workbook, dataset })
+                )
+                .mergeMap(
+                    ({ workbook, dataset }) => renderGraphDataset(dataset),
+                    ({ workbook, dataset }, graph) => ({ workbook, dataset, graph })
+                )
+                .mergeMap(
+                    ({ workbook, dataset, graph }) => Observable.from(graphKeys),
+                    ({ workbook, dataset, graph }, key) => {
+                        const val = graph[key];
+                        const path = `workbooksById['${workbook.id}'].datasetsById['${dataset.id}'].graph['${key}']`;
+                        return $pathValue(path, $atom(val));
+                    }
+                );
         }
     }];
 }

@@ -24,9 +24,8 @@ export function renderer(datasetsById) {
                 .from(datasetIds)
                 .mergeMap(
                     (datasetId) => loadDataset(datasetsById, datasetId),
-                    (datasetId, dataset) => {
+                    (datasetId, { metadata }) => {
 
-                        const { metadata } = dataset;
                         if (!(metadata.scene in rendererScenes)) {
                             socketLogger.warn('WARNING Unknown scene "%s", using default', metadata.scene);
                             metadata.scene = 'default';
@@ -38,7 +37,29 @@ export function renderer(datasetsById) {
                         renderConfig.next(val);
 
                         return $pathValue(path, $atom(val));
-                    });
+                    }
+                );
+        }
+    }];
+}
+
+export function metadata(datasetsById) {
+    return [{
+        route: `datasetsById[{keys: datasetIds}]['controls', 'device', 'vendor']`,
+        get(pathSet) {
+            const { datasetIds } = pathSet;
+            const metadataKeys = pathSet[2];
+            return Observable
+                .from(datasetIds)
+                .mergeMap((datasetId) => loadDataset(datasetsById, datasetId))
+                .mergeMap(
+                    ({ metadata }) => Observable.from(metadataKeys),
+                    ({ metadata, id }, key) => {
+                        const val = $atom(metadata[key]);
+                        const path = `datasetsById['${id}']['${key}']`;
+                        return $pathValue(path, val);
+                    }
+                );
         }
     }];
 }
