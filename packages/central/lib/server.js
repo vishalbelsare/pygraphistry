@@ -23,6 +23,10 @@ Rx.Subscriber.prototype.dispose = Rx.Subscriber.prototype.unsubscribe;
 
 Rx.Subscription.prototype.dispose = Rx.Subscription.prototype.unsubscribe;
 
+import FalcorServer from 'falcor-express';
+import { FalcorRouter } from './falcor-router';
+import { ensureValidUrl } from './support/ensureValidUrl';
+
 var fs          = require('fs');
 var path        = require('path');
 var url         = require('url');
@@ -82,6 +86,8 @@ var SPLUNK_STATIC_PATH  = path.resolve(require('splunk-viz').staticFilePath(), '
 var STREAMGL_PATH       = require.resolve('StreamGL/dist/StreamGL.js');
 var STREAMGL_MAP_PATH   = require.resolve('StreamGL/dist/StreamGL.map');
 
+var STREAMGL_DIST_PATH  = require.resolve('StreamGL');
+STREAMGL_DIST_PATH = path.resolve(STREAMGL_DIST_PATH.slice(0, STREAMGL_DIST_PATH.lastIndexOf('/')), 'dist');
 
 var HTTP_SERVER_LISTEN_ADDRESS = config.HTTP_LISTEN_ADDRESS;
 var HTTP_SERVER_LISTEN_PORT = config.HTTP_LISTEN_PORT;
@@ -111,31 +117,11 @@ function logClientError(req, res) {
 }
 
 /**
- * Converts ad-hoc URL object(s) (i.e., one we constructed by hand, possibly incomplete or
- * invalid) into as complete a URL object as node's URL module can muster. This is done by
- * converting the ad-hoc URL to a formatted string, then re-parsing it into a URL object.
- *
- * @param {...Object} url - One or more URL-like objects. Multiple arguments will be combined into
- * a single URL object, with later arguments overwriting earlier ones.
- *
- * @returns {Object} A valid Node.js URL object.
- */
-function ensureValidUrl() {
-    var args = [{}];
-    for(var i in arguments) { args.push(arguments[i]); }
-
-    var adHocUrl = _.extend.apply(_, args);
-
-    return url.parse(url.format(adHocUrl), true, true);
-}
-
-
-/**
  * Handles a `/vizaddr` HTTP request by finding a viz worker server process, reserving it for the
  * the user, and returning the worker's address to the user so she can connect to it.
  */
 function assignWorker(req, res) {
-    router.pickWorker(function (err, worker) {
+    router.pickWorkerCB(function (err, worker) {
         if (err) {
             logger.error(err, 'Error while assigning visualization worker');
             return res.json({
@@ -168,23 +154,33 @@ function assignWorker(req, res) {
     });
 }
 
-
 app.get('/vizaddr/graph', function(req, res) {
     assignWorker(req, res);
 });
 
 // Serve the StreamGL client library
-app.get('*/StreamGL.js', function(req, res) {
-    res.sendFile(STREAMGL_PATH);
-});
-app.get('*/StreamGL.map', function(req, res) {
-    res.sendFile(STREAMGL_MAP_PATH);
-});
+// app.get('*/StreamGL.js', function(req, res) {
+//     res.sendFile(STREAMGL_PATH);
+// });
+// app.get('*/StreamGL.map', function(req, res) {
+//     res.sendFile(STREAMGL_MAP_PATH);
+// });
 
 // Serve graph static assets
-app.use('/graph', function (req, res, next) {
-    return express.static(GRAPH_STATIC_PATH)(req, res, next);
-});
+// app.use('/graph', function (req, res, next) {
+//     return express.static(GRAPH_STATIC_PATH)(req, res, next);
+// });
+
+app.use(bodyParser.urlencoded({ extended: false }));
+
+// middleware to handle Falcor get/put/post requests
+app.use('/model.json', FalcorServer.dataSourceRoute(function(request, response) {
+    return new FalcorRouter({ config, logger, request });
+}));
+
+app.use('/graph', express.static(GRAPH_STATIC_PATH, { fallthrough: true }));
+app.use('/graph', express.static(STREAMGL_DIST_PATH, { fallthrough: true }));
+
 app.use(rewrite('/dataset/:datasetName', '/graph/graph.html?dataset=:datasetName'));
 app.use(rewrite('/dataset/:datasetName\\?*', '/graph/graph.html?dataset=:datasetName?$1'));
 app.use(rewrite('/workbook/:workbookName', '/graph/graph.html?workbook=:workbookName'));
@@ -218,7 +214,7 @@ function propagatePostToWorker (route, workerName) {
             }
         }
 
-        router.pickWorker(function (err, worker) {
+        router.pickWorkerCB(function (err, worker) {
             logger.debug('picked worker', req.ip, worker);
 
             if (err) {
