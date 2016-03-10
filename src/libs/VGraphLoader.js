@@ -537,6 +537,52 @@ function dateAsNumber (val) {
 }
 
 
+function punnedTypeFromVector(v) {
+    var type = typeof(v.values[0]);
+
+    // Attempt to infer date types when possible
+    // Check if name contains time or date
+    if ((/time/i).test(v.name) || (/date/i).test(v.name)) {
+        logger.debug('Attempting to cast ' + v.name + ' to a moment object.');
+        var testMoment = castToMoment(v.values[0]);
+        var isValidMoment = testMoment.isValid();
+
+        if (isValidMoment) {
+            logger.debug('Successfully cast ' + v.name + ' as a moment.');
+            type = 'date';
+
+            var newValues = v.values.map(dateAsNumber);
+            v.values = newValues;
+
+        } else {
+            logger.debug('Failed to cast ' + v.name + ' as a moment.');
+        }
+    }
+
+    if ((/color/i).test(v.name)) {
+        var isValidColor = false, sampleValue = v.values[0];
+        if (type === 'number') {
+            if (sampleValue > 0 && sampleValue <= 0xFFFFFFFF) {
+                isValidColor = true;
+            }
+        } else if (type === 'string') {
+            try {
+                var testColor = new Color(sampleValue);
+                isValidColor = testColor !== undefined && testColor.rgbaString() !== undefined;
+            } catch (e) {
+                logger.debug('Failed to cast ' + v.name + ' as a color: ' + e.message);
+            }
+        }
+        if (isValidColor) {
+            type = 'color';
+        } else {
+            logger.debug('Failed to cast ' + v.name + ' as a color.');
+        }
+    }
+    return type;
+}
+
+
 /**
  * @param {VectorGraph} vg
  * @returns {AttrObject[]}
@@ -545,59 +591,18 @@ function getAttributes0(vg) {
     var vectors = getVectors0(vg);
     var attributeObjects = [];
 
-    for (var i = 0; i < vectors.length; i++) {
-        var v = vectors[i];
-        if (v.values.length > 0) {
-            var type = typeof(v.values[0]);
-
-            // Attempt to infer date types when possible
-            // Check if name contains time or date
-            if ((/time/i).test(v.name) || (/date/i).test(v.name)) {
-                logger.debug('Attempting to cast ' + v.name + ' to a moment object.');
-                var testMoment = castToMoment(v.values[0]);
-                var isValidMoment = testMoment.isValid();
-
-                if (isValidMoment) {
-                    logger.debug('Successfully cast ' + v.name + ' as a moment.');
-                    type = 'date';
-
-                    var newValues = v.values.map(dateAsNumber);
-                    v.values = newValues;
-
-                } else {
-                    logger.debug('Failed to cast ' + v.name + ' as a moment.');
-                }
-            }
-
-            if ((/color/i).test(v.name)) {
-                var isValidColor = false, sampleValue = v.values[0];
-                if (type === 'number') {
-                    if (sampleValue > 0 && sampleValue <= 0xFFFFFFFF) {
-                        isValidColor = true;
-                    }
-                } else if (type === 'string') {
-                    try {
-                        var testColor = new Color(sampleValue);
-                        isValidColor = testColor !== undefined && testColor.rgbaString() !== undefined;
-                    } catch (e) {
-                        logger.debug('Failed to cast ' + v.name + ' as a color: ' + e.message);
-                    }
-                }
-                if (isValidColor) {
-                    type = 'color';
-                } else {
-                    logger.debug('Failed to cast ' + v.name + ' as a color.');
-                }
-            }
-
-            attributeObjects.push({
-                name: v.name,
-                target : v.target,
-                type: type,
-                values: v.values
-            });
+    _.each(vectors, function (v) {
+        if (v.values.length === 0) {
+            return;
         }
-    }
+
+        attributeObjects.push({
+            name: v.name,
+            target : v.target,
+            type: punnedTypeFromVector(v),
+            values: v.values
+        });
+    });
 
     return attributeObjects;
 }
@@ -655,15 +660,16 @@ function getAttributes1(vg) {
     var edgeAttributeObjects = {};
 
     _.each(vectors, function (v) {
-        if (v.values.length > 0) {
-            var attributeObjects = v.target === VERTEX ? nodeAttributeObjects : edgeAttributeObjects;
-            attributeObjects[v.name] = {
-                name: v.name,
-                target : v.target,
-                type: typeof(v.values[0]),
-                values: v.values
-            };
+        if (v.values.length === 0) {
+            return;
         }
+        var attributeObjects = v.target === VERTEX ? nodeAttributeObjects : edgeAttributeObjects;
+        attributeObjects[v.name] = {
+            name: v.name,
+            target: v.target,
+            type: punnedTypeFromVector(v),
+            values: v.values
+        };
     });
 
     return {
