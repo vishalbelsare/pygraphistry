@@ -208,6 +208,7 @@ function legendForBins (aggregations, scaling, binning) {
                     });
                 } else {
                     var sortedBinKeys = _.sortBy(_.keys(binning.bins), function (key) {
+                        if (key === '_other') { return Infinity; } // always shows last
                         return -binning.bins[key];
                     });
                     legend = _.map(sortedBinKeys, function (key) {
