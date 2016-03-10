@@ -4,7 +4,7 @@ var _       = require('underscore');
 var util    = require('./util.js');
 
 
-function getDegree(forwardsEdges, backwardsEdge, i) {
+function getDegree(forwardsEdges, backwardsEdges, i) {
     return forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
 }
 
@@ -41,7 +41,10 @@ var defaultLocalBuffers = {
             ['forwardsEdges', 'hostBuffer'],
             ['backwardsEdges', 'hostBuffer']
         ],
-        computeSingleValue: function (forwardsEdges, backwardsEdges, idx, numGraphElements) {
+        computeAllValues: function (forwardsEdges, backwardsEdges, outArr, numGraphElements) {
+
+            console.log('COMPUTING POINT COLORS');
+
             //use hash of highest degree neighbor
             var compare = function (initBest, buffers, i) {
                 var best = initBest;
@@ -51,7 +54,7 @@ var defaultLocalBuffers = {
                 var numEdges = buffers.workItemsTyped[i * 4 + 1];
                 for (var j = 0; j < numEdges; j++) {
                     var dst = buffers.edgesTyped[firstEdge*2 + j*2 + 1];
-                    var degree = getDegree(forwardsEdge, backwardsEdges, dst);
+                    var degree = getDegree(forwardsEdges, backwardsEdges, dst);
                     if (   (degree > best.degree)
                         || (degree == best.degree && dst > best.id)) {
                         best = {id: dst, degree: degree};
@@ -64,14 +67,49 @@ var defaultLocalBuffers = {
             var palette = util.palettes.qual_palette2;
             var pLen = palette.length;
 
-            var best = {id: idx, degree: getDegree(forwardsEdges, backwardsEdges, idx)};
+            for (var idx = 0; idx < numGraphElements; idx++) {
+                var best = {id: idx, degree: getDegree(forwardsEdges, backwardsEdges, idx)};
+                var bestOut = compare(best, forwardsEdges, idx);
+                var bestIn = compare(bestOut, backwardsEdges, idx);
+                var color = palette[bestIn.id % pLen];
+                outArr[idx] = color;
+            }
 
-            var bestOut = compare(best, forwardsEdges, idx);
-            var bestIn = compare(bestOut, backwardsEdges, idx);
-
-            var color = palette[bestIn.id % pLen];
-            return color;
+            return outArr;
         }
+    },
+
+    edgeColors: {
+        arrType: Uint32Array,
+        type: 'color',
+        filterable: true,
+        numberPerGraphComponent: 2,
+        graphComponentType: 'edge',
+        version: 0,
+        dependencies: [
+            ['forwardsEdges', 'hostBuffer'],
+            ['pointColors', 'localBuffer']
+        ],
+
+        computeAllValues: function (forwardsEdges, pointColors, outArr, numGraphElements) {
+
+            console.log('COMPUTING EDGE COLORS');
+            var edgesTyped = forwardsEdges.edgesTyped;
+
+            for (var idx = 0; idx < outArr.length; idx++) {
+                var nodeIdx = edgesTyped[idx];
+                outArr[idx] = pointColors[nodeIdx];
+            }
+
+            return outArr;
+
+            // var firstNodeIdx = unsortedEdges[idx*2];
+            // var secondNodeIdx = unsortedEdges[idx*2 + 1];
+            // var outputArray = [pointColors[firstNodeIdx], pointColors[secondNodeIdx]];
+            // return outputArray;
+
+        }
+
     },
 
     pointSizes: {
@@ -111,7 +149,7 @@ var defaultLocalBuffers = {
         arrType: Float32Array,
         type: 'number',
         filterable: true,
-        numberPerGraphComponent: 1,
+        numberPerGraphComponent: 2,
         graphComponentType: 'edge',
         version: 0,
         dependencies: [
@@ -121,29 +159,6 @@ var defaultLocalBuffers = {
             // TODO: Do we need this?
             return 0;
         }
-    },
-
-    edgeColors: {
-        arrType: Uint32Array,
-        type: 'color',
-        filterable: true,
-        numberPerGraphComponent: 2,
-        graphComponentType: 'edge',
-        version: 0,
-        dependencies: [
-            ['unsortedEdges', 'hostBuffer'],
-            ['pointColors', 'localBuffer']
-        ],
-
-        computeSingleValue: function (unsortedEdges, pointColors, idx, numGraphElements) {
-
-            var firstNodeIdx = unsortedEdges[idx*2];
-            var secondNodeIdx = unsortedEdges[idx*2 + 1];
-            var outputArray = [pointColors[firstNodeIdx], pointColors[secondNodeIdx]];
-            return outputArray;
-
-        }
-
     }
 
 }
@@ -191,19 +206,25 @@ var defaultColumns = {
 };
 
 var defaultEncodingColumns = {
-    localBuffers: defaultLocalBuffers
+    localBuffer: defaultLocalBuffers
 };
 
 function ComputedColumnManager () {
     this.activeComputedColumns = {};
 }
 
+
+ComputedColumnManager.prototype.setComputeAllValues = function (deps, func) {
+
+};
+
+
 ComputedColumnManager.prototype.loadDefaultColumns = function () {
     var that = this;
 
     // copy in defaults. Copy so we can recover defaults when encodings change
     _.each(defaultColumns, function (cols, colType) {
-        that.activeComputedColumns[colType] = {};
+        that.activeComputedColumns[colType] = that.activeComputedColumns[colType] || {};
 
         _.each(cols, function (colDesc, name) {
             that.activeComputedColumns[colType][name] = colDesc;
@@ -215,12 +236,11 @@ ComputedColumnManager.prototype.loadDefaultColumns = function () {
 
 
 ComputedColumnManager.prototype.loadEncodingColumns = function () {
-    return;
     var that = this;
 
     // copy in defaults. Copy so we can recover defaults when encodings change
     _.each(defaultEncodingColumns, function (cols, colType) {
-        that.activeComputedColumns[colType] = {};
+        that.activeComputedColumns[colType] = that.activeComputedColumns[colType] || {};
 
         _.each(cols, function (colDesc, name) {
             that.activeComputedColumns[colType][name] = colDesc;

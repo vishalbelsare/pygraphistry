@@ -915,22 +915,29 @@ function setSelectedPointIndexes(simulator, selectedPointIndexes) {
  */
 function setEdgeColors(simulator, edgeColors) {
     if (!edgeColors) {
-        logger.trace('Using default edge colors');
-        // Using unsorted edges so it can be consistent with provided edge colors.
-        var unsortedEdges = simulator.dataframe.getHostBuffer('unsortedEdges');
-        var pointColorsBuffer = simulator.dataframe.getLocalBuffer('pointColors');
-
-        edgeColors = new Uint32Array(unsortedEdges.length);
-        for (var i = 0; i < edgeColors.length; i++) {
-            var nodeIdx = unsortedEdges[i];
-            edgeColors[i] = pointColorsBuffer[nodeIdx];
-        }
+        return Q(simulator);
     }
 
-    simulator.dataframe.loadLocalBuffer('edgeColors', edgeColors);
-    simulator.tickBuffers(['edgeColors']);
+    throw new Error ('Did not implement explicit values yet');
 
-    return Q(simulator);
+
+    // if (!edgeColors) {
+    //     logger.trace('Using default edge colors');
+    //     // Using unsorted edges so it can be consistent with provided edge colors.
+    //     var unsortedEdges = simulator.dataframe.getHostBuffer('unsortedEdges');
+    //     var pointColorsBuffer = simulator.dataframe.getLocalBuffer('pointColors');
+
+    //     edgeColors = new Uint32Array(unsortedEdges.length);
+    //     for (var i = 0; i < edgeColors.length; i++) {
+    //         var nodeIdx = unsortedEdges[i];
+    //         edgeColors[i] = pointColorsBuffer[nodeIdx];
+    //     }
+    // }
+
+    // simulator.dataframe.loadLocalBuffer('edgeColors', edgeColors);
+    // simulator.tickBuffers(['edgeColors']);
+
+    // return Q(simulator);
 }
 
 // TODO Write kernel for this.

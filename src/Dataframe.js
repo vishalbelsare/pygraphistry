@@ -666,37 +666,37 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // TODO: Figured out what pointTags is used for
     // TODO: Figure out what edgeTags are used for.
 
-    var newPointSizes = new Uint8Array(this.typedArrayCache.newPointSizes.buffer, 0, numPoints);
-    var newPointColors = new Uint32Array(this.typedArrayCache.newPointColors.buffer, 0, numPoints);
+    // var newPointSizes = new Uint8Array(this.typedArrayCache.newPointSizes.buffer, 0, numPoints);
+    // var newPointColors = new Uint32Array(this.typedArrayCache.newPointColors.buffer, 0, numPoints);
 
     masks.mapPointIndexes(function (pointIndex, i) {
-        newPointSizes[i] = rawdata.localBuffers.pointSizes[pointIndex];
-        newPointColors[i] = rawdata.localBuffers.pointColors[pointIndex];
+        // newPointSizes[i] = rawdata.localBuffers.pointSizes[pointIndex];
+        // newPointColors[i] = rawdata.localBuffers.pointColors[pointIndex];
     });
-    newData.localBuffers.pointSizes = newPointSizes;
-    newData.localBuffers.pointColors = newPointColors;
+    // newData.localBuffers.pointSizes = newPointSizes;
+    // newData.localBuffers.pointColors = newPointColors;
 
     var numRenderedSplits = rawdata.numElements.renderedSplits;
     var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
     var numMidEdgeColors = numMidEdgeColorsPerEdge * numEdges;
-    var newEdgeColors = new Uint32Array(this.typedArrayCache.newEdgeColors.buffer, 0, numEdges * 2);
-    var newEdgeHeights = new Uint32Array(this.typedArrayCache.newEdgeHeights.buffer, 0, numEdges * 2);
+    // var newEdgeColors = new Uint32Array(this.typedArrayCache.newEdgeColors.buffer, 0, numEdges * 2);
+    // var newEdgeHeights = new Uint32Array(this.typedArrayCache.newEdgeHeights.buffer, 0, numEdges * 2);
     var newMidEdgeColors = new Uint32Array(this.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
 
     masks.mapEdgeIndexes(function (edgeIndex, i) {
-        newEdgeColors[i * 2] = rawdata.localBuffers.edgeColors[edgeIndex * 2];
-        newEdgeColors[i * 2 + 1] = rawdata.localBuffers.edgeColors[edgeIndex * 2 + 1];
+        // newEdgeColors[i * 2] = rawdata.localBuffers.edgeColors[edgeIndex * 2];
+        // newEdgeColors[i * 2 + 1] = rawdata.localBuffers.edgeColors[edgeIndex * 2 + 1];
 
-        newEdgeHeights[i * 2] = rawdata.localBuffers.edgeHeights[edgeIndex * 2];
-        newEdgeHeights[i * 2 + 1] = rawdata.localBuffers.edgeHeights[edgeIndex * 2 + 1];
+        // newEdgeHeights[i * 2] = rawdata.localBuffers.edgeHeights[edgeIndex * 2];
+        // newEdgeHeights[i * 2 + 1] = rawdata.localBuffers.edgeHeights[edgeIndex * 2 + 1];
 
         for (var j = 0; j < numMidEdgeColorsPerEdge; j++) {
             newMidEdgeColors[i * numMidEdgeColorsPerEdge + j] =
                 rawdata.localBuffers.midEdgeColors[edgeIndex * numMidEdgeColorsPerEdge + j];
         }
     });
-    newData.localBuffers.edgeColors = newEdgeColors;
-    newData.localBuffers.edgeHeights = newEdgeHeights;
+    // newData.localBuffers.edgeColors = newEdgeColors;
+    // newData.localBuffers.edgeHeights = newEdgeHeights;
     newData.localBuffers.midEdgeColors = newMidEdgeColors;
 
     // numElements;
@@ -952,7 +952,8 @@ Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager)
     var activeColumns = computedColumnManager.getActiveColumns();
 
 
-    // TODO: Don't require them to be explicitly loaded in like this
+    // TODO: Don't require them to be explicitly loaded in like this with knowldge
+    // of internal structure
     // Functions that look up available column names and fetch values
     // should know how to look aside at this.
     _.each(activeColumns, function (cols, colType) {
@@ -967,6 +968,7 @@ Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager)
                 dirty: true,
                 computed: true,
                 computedVersion: colDesc.version,
+                filterable: colDesc.filterable,
                 numberPerGraphComponent: colDesc.numberPerGraphComponent,
                 arrType: colDesc.arrType
             };
@@ -1125,7 +1127,7 @@ Dataframe.prototype.loadHostBuffer = function (name, buffer) {
 
 Dataframe.prototype.loadLocalBuffer = function (name, buffer) {
     // TODO: Generalize
-    if (name === 'edgeColors' || name === 'edgeHeights') {
+    if (/*name === 'edgeColors' || */name === 'edgeHeights') {
         var sortedBuffer = new buffer.constructor(buffer.length);
         var permutation = this.rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
         for (var i = 0; i < buffer.length / 2; i++) {
@@ -1403,6 +1405,11 @@ Dataframe.prototype.globalize = function(index, type) {
     return this.lastMasks.getIndexByType(type, index);
 };
 
+Dataframe.prototype.getVersion = function (type, attrName) {
+    var attributes = this.data.attributes[type];
+    return attributes[attrName].version;
+}
+
 /** Returns the contents of one cell
  * @param {double} index - which element to extract.
  * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
@@ -1419,6 +1426,20 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
 
     var attributes = this.data.attributes[type];
     var numberPerGraphComponent = attributes[attrName].numberPerGraphComponent;
+
+    // TODO FIXME HACK:
+    // So computed column manager can work, we need to pass through calls from here
+    // to getHostBuffer.
+
+    if (type === 'hostBuffer' && (!attributes || !attributes[columnName])) {
+        return this.getHostBuffer(columnName)[index];
+    }
+
+    if (type === 'localBuffer' && (!attributes || !attributes[columnName])) {
+        return this.getLocalBuffer(columnName)[index];
+    }
+
+
 
     // First try to see if have values already calculated / cached for this frame
 
@@ -1485,7 +1506,6 @@ Dataframe.prototype.getRowAt = function (index, type) {
         row[key] = that.getCell(index, type, key);
     });
     row._index = origIndex;
-    console.log('GOT ROW: ', row);
     return row;
 };
 
@@ -1563,8 +1583,24 @@ Dataframe.prototype.getColumn = function (columnName, type) {
 // explicitly requested to be unsorted (for internal performance reasons)
 Dataframe.prototype.getColumnValues = function (columnName, type) {
 
+    if (columnName === 'pointColors') {
+        console.log('\n\n\n\n====GOT REQUEST FOR POINT COLORS\n\n\n\n');
+    }
 
     var attributes = this.data.attributes[type];
+
+    // TODO FIXME HACK:
+    // So computed column manager can work, we need to pass through calls from here
+    // to getHostBuffer.
+
+    if (type === 'hostBuffer' && (!attributes || !attributes[columnName])) {
+        return this.getHostBuffer(columnName);
+    }
+
+    if (type === 'localBuffer' && (!attributes || !attributes[columnName])) {
+        return this.getLocalBuffer(columnName);
+    }
+
 
     // First try to see if have values already calculated / cached for this frame
 
@@ -1575,11 +1611,14 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     );
 
     if (computedVersionMatches && !attributes[columnName].dirty && attributes[columnName].values) {
+        console.log('Returning Cached');
         return attributes[columnName].values;
     }
 
     // If it's calculated...TODO
     if (attributes[columnName].dirty && attributes[columnName].computed) {
+
+        console.log('Recalculating');
 
         var newValues = this.computedColumnManager.getArray(this, type, columnName);
         attributes[columnName].values = newValues;
@@ -1592,6 +1631,8 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     // If it's not calculated / cached, and filtered, apply the mask and compact
     // then cache the result.
     if (attributes[columnName].dirty && attributes[columnName].dirty.cause === 'filter') {
+
+        console.log('in dirty filter path');
 
         var rawAttributes = this.rawdata.attributes[type];
         var arrType = rawAttributes[columnName].arrType || Array;

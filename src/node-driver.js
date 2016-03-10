@@ -98,11 +98,19 @@ function graphCounts(graph) {
 
 
 function getBufferVersion (graph, bufferName) {
-    var buffers = graph.simulator.versions.buffers;
-    if (!(bufferName in buffers))
-        logger.die('Cannot find version of buffer %s', bufferName);
+    var deprecatedSimulatorBuffers = graph.simulator.versions.buffers;
+    if (bufferName in deprecatedSimulatorBuffers) {
+        return deprecatedSimulatorBuffers[bufferName]
+    }
 
-    return buffers[bufferName];
+    var dataframeVersion = graph.dataframe.getVersion('localBuffer', bufferName);
+    if (dataframeVersion !== undefined) {
+        return dataframeVersion;
+    }
+
+    // Could not find a version number anywhere.
+    // Fatal exception, kill process.
+    logger.die('Cannot find version of buffer %s', bufferName);
 }
 
 
