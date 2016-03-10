@@ -12,17 +12,17 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/mergeAll';
 import 'rxjs/add/operator/mergeMap';
 
-import { loadDataset } from './support/loadDataset';
-import { loadWorkbook } from './support/loadWorkbook';
-import { renderGraphDataset } from './support/renderGraphDataset';
+import { loadDatasets } from './support/loadDataset';
+import { loadGraphDriver } from './support/loadGraphDriver';
+import { loadWorkbook, loadWorkbooks, loadViews } from './support/loadWorkbook';
 
 export function views(workbooksById) {
     return [{
         route: `workbooksById[{keys: workbookIds}].views[{keys: viewsKeys}]`,
         get({ workbookIds, viewsKeys }) {
-            return Observable
-                .from(workbookIds)
-                .mergeMap((workbookId) => loadWorkbook(workbooksById, workbookId))
+            return loadWorkbooks({
+                    workbooksById, workbookIds
+                })
                 .mergeMap(
                     (workbook) => Observable.from(viewsKeys),
                     (workbook, viewsKey) => {
@@ -40,44 +40,33 @@ export function viewsById(workbooksById) {
         route: `workbooksById[{keys: workbookIds}].viewsById[{keys: viewIds}][{keys: viewKeys}]`,
         get({ workbookIds, viewIds, viewKeys }) {
             const { viewConfig } = this.server;
-            return Observable
-                .from(workbookIds)
-                .mergeMap((workbookId) => loadWorkbook(workbooksById, workbookId))
+            return loadViews({
+                    workbooksById, workbookIds, viewIds
+                })
+                .do(({ view }) => viewConfig.next(view))
                 .mergeMap(
-                    (workbook) =>
-                        Observable.from(viewIds)
-                            .map((viewId) => workbook.viewsById[viewId]),
-                    (workbook, view) => {
-                        viewConfig.next(view);
-                        return Observable.from(viewKeys).map((viewKey) => {
-                            const val = view[viewKey];
-                            const path = `workbooksById['${workbook.id}'].viewsById['${view.id}']['${viewKey}']`;
-                            return $pathValue(path, $atom(val));
-                        });
+                    ({ workbook, view }) => Observable.from(viewKeys),
+                    ({ workbook, view }, viewKey) => {
+                        const val = view[viewKey];
+                        const path = `workbooksById['${workbook.id}'].viewsById['${view.id}']['${viewKey}']`;
+                        return $pathValue(path, $atom(val));
                     }
-                )
-                .mergeAll();
+                );
         }
     }, {
         route: `workbooksById[{keys: workbookIds}].viewsById[{keys: viewIds}].legend[{keys: legendKeys}]`,
         get({ workbookIds, viewIds, legendKeys }) {
-            return Observable
-                .from(workbookIds)
-                .mergeMap((workbookId) => loadWorkbook(workbooksById, workbookId))
+            return loadViews({
+                    workbooksById, workbookIds, viewIds
+                })
                 .mergeMap(
-                    (workbook) =>
-                        Observable.from(viewIds)
-                            .map((viewId) => workbook.viewsById[viewId]),
-                    (workbook, view) => {
-                        const legend = view.legend;
-                        return Observable.from(legendKeys).map((legendKey) => {
-                            const val = legend[legendKey];
-                            const path = `workbooksById['${workbook.id}'].viewsById['${view.id}'].legend['${legendKey}']`;
-                            return $pathValue(path, $atom(val));
-                        });
+                    ({ workbook, view }) => Observable.from(legendKeys),
+                    ({ workbook, view }, legendKey) => {
+                        const val = view.legend[legendKey];
+                        const path = `workbooksById['${workbook.id}'].viewsById['${view.id}'].legend['${legendKey}']`;
+                        return $pathValue(path, $atom(val));
                     }
-                )
-                .mergeAll();
+                );
         }
     }];
 }
@@ -86,9 +75,9 @@ export function datasets(workbooksById, datasetsById) {
     return [{
         route: `workbooksById[{keys: workbookIds}].datasets[{keys: datasetsKeys}]`,
         get({ workbookIds, datasetsKeys }) {
-            return Observable
-                .from(workbookIds)
-                .mergeMap((workbookId) => loadWorkbook(workbooksById, workbookId))
+            return loadWorkbooks({
+                    workbooksById, workbookIds
+                })
                 .mergeMap(
                     (workbook) => Observable.from(datasetsKeys),
                     (workbook, datasetsKey) => {
@@ -105,20 +94,15 @@ export function datasetsById(workbooksById, datasetsById, graphsById) {
     return [{
         route: `workbooksById[{keys: workbookIds}].datasetsById[{keys: datasetIds}].graph[{keys: graphKeys}]`,
         get({ workbookIds, datasetIds, graphKeys }) {
-            return Observable
-                .from(workbookIds)
-                .mergeMap((workbookId) => loadWorkbook(workbooksById, workbookId))
+            const { server } = this;
+            const { socket } = server;
+            return loadDatasets({
+                    workbooksById, workbookIds, datasetsById, datasetIds
+                })
                 .mergeMap(
-                    (workbook) => Observable.from(datasetIds),
-                    (workbook, datasetId) => ({ workbook, datasetId })
-                )
-                .mergeMap(
-                    ({ workbook, datasetId }) =>
-                        loadDataset(datasetsById, datasetId, workbook.datasetsById[datasetId]),
-                    ({ workbook, datasetId }, dataset) => ({ workbook, dataset })
-                )
-                .mergeMap(
-                    ({ workbook, dataset }) => renderGraphDataset(dataset),
+                    ({ workbook, dataset }) => loadGraphDriver({
+                        graphsById, workbook, dataset, socket, server
+                    }),
                     ({ workbook, dataset }, graph) => ({ workbook, dataset, graph })
                 )
                 .mergeMap(

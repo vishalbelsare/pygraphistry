@@ -48,6 +48,14 @@ var clDeviceType = {
     'default': ocl.DEVICE_TYPE_ALL
 };
 
+function createSync(renderer, device = 'all', vendor = 'default') {
+    var clDevice = clDeviceType[device.toLowerCase()];
+    if (!clDevice) {
+        logger.warn('Unknown device %s, using "all"', device);
+        clDevice = clDeviceType.all;
+    }
+    return createCLContextNode(renderer, clDevice, vendor.toLowerCase());
+}
 
 // TODO: in call() and setargs(), we currently requires a `argTypes` argument becuase older WebCL
 // versions require us to pass in the type of kernel args. However, current versions do not. We want
@@ -55,17 +63,7 @@ var clDeviceType = {
 // that argument, even on old versions. Instead, we should query the kernel for the types of each
 // argument and fill in that information automatically, when required by old WebCL versions.
 
-var create = Q.promised(function(renderer, device, vendor) {
-    vendor = vendor || 'default';
-    device = device || 'all';
-    var clDevice = clDeviceType[device.toLowerCase()];
-    if (!clDevice) {
-        logger.warn('Unknown device %s, using "all"', device);
-        clDevice = clDeviceType.all;
-    }
-    return createCLContextNode(renderer, clDevice, vendor.toLowerCase());
-});
-
+var create = Q.promised(createSync);
 
 function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
     if (ocl === undefined) {
@@ -493,6 +491,7 @@ module.exports = {
     "call": call,
     "compile": compile,
     "create": create,
+    "createSync": createSync,
     "createBuffer": createBuffer,
     "createBufferGL": createBufferGL,
     "release": release,

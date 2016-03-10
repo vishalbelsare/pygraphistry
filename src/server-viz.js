@@ -451,6 +451,7 @@ function VizServer(app, socket, cachedVBOs) {
     /** @type {GraphistryURLParams} */
     var query = this.socket.handshake.query;
 
+    this.graph = new Rx.ReplaySubject(1);
     this.viewConfig = new Rx.ReplaySubject(1);
     this.workbookDoc = new Rx.ReplaySubject(1);
     this.dataset = new Rx.ReplaySubject(1);
@@ -484,13 +485,21 @@ function VizServer(app, socket, cachedVBOs) {
         this.workbookForQuery(query)
             .concat(Observable.never())
             .subscribe(this.workbookDoc);
+
+        this.dataset.subscribe((dataset) => {
+            this.resetState(dataset, socket);
+        });
+
+    } else {
+        this.graph = new Rx.ReplaySubject(1);
+        this.ticks = new Rx.ReplaySubject(1);
+        this.ticksMulti = new Rx.ReplaySubject(1);
+        this.updateVboSubject = new Rx.ReplaySubject(1);
+
+        this.ticks.switch().subscribe(this.ticksMulti);
     }
 
     this.setupColorTexture();
-
-    this.dataset.subscribe((dataset) => {
-        this.resetState(dataset, socket);
-    });
 
     this.socket.on('get_view_config', function (ignore, cb) {
         this.viewConfig.take(1).do(function (viewConfig) {

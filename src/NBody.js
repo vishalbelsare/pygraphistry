@@ -25,6 +25,32 @@ var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
 //for each named_clgl_buffer, its setter
 var boundBuffers = {};
 
+export function createSync(graph) {
+
+    _.each({
+        setPoints: setPoints,
+        setVertices: setVertices,
+        setPointLabels: setPointLabels,
+        setEdgeLabels: setEdgeLabels,
+        setEdges: setEdges,
+        setEdgesAndColors: setEdgesAndColors,
+        setEdgeColors: setEdgeColors,
+        setEdgeWeight: setEdgeWeight,
+        setMidEdgeColors: setMidEdgeColors,
+        setColorMap: setColorMap,
+        tick: tick,
+        updateSettings: updateSettings
+    }, function (setter, setterName) {
+        graph[setterName] = setter.bind('', graph);
+    });
+
+    _.each(NAMED_CLGL_BUFFERS, function (cfg, name) {
+        graph[cfg.setterName] = boundBuffers[name].setter.bind('', graph);
+    });
+
+    return graph;
+}
+
 /**
  * Create a new N-body graph and return a promise for the graph object
  *
@@ -35,7 +61,7 @@ var boundBuffers = {};
  * @param bgColor - [0--255,0--255,0--255,0--1]
  * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal position calculations.
  */
-function create(renderer, simulator, dataframe, device, vendor, controls, socket) {
+export function create(renderer, simulator, dataframe, device, vendor, controls, socket) {
 
     var graph = {
         renderer: renderer,
@@ -426,8 +452,3 @@ function tick(graph, cfg) {
         return graph;
     });
 }
-
-
-module.exports = {
-    create: create
-};

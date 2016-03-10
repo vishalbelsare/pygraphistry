@@ -12,6 +12,7 @@ import 'rxjs/add/observable/from';
 import 'rxjs/add/operator/do';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
+import 'rxjs/add/operator/mergeMap';
 
 import { createID } from './createID';
 import { loadDocument } from '../../workbook';
@@ -30,6 +31,23 @@ export function loadWorkbook(workbooksById, workbookId, options) {
             workbooksById[workbookId] = workbook;
         });
 }
+
+export function loadWorkbooks({ workbooksById, workbookIds }) {
+    return Observable
+        .from(workbookIds)
+        .mergeMap((workbookId) => loadWorkbook(workbooksById, workbookId))
+}
+
+export function loadViews({ workbooksById, workbookIds, viewIds }) {
+    return loadWorkbooks({
+            workbooksById, workbookIds
+        })
+        .mergeMap(
+            (workbook) => Observable.from(viewIds),
+            (workbook, viewId) => ({ workbook, view: workbook.viewsById[viewId] })
+        );
+}
+
 
 function migrateWorkbook(workbook) {
     if (!workbook.id) {

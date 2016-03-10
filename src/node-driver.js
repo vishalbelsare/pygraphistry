@@ -242,8 +242,100 @@ function delayObservableGenerator(delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
+export function createInteractionsLoop({
+        dataset, socket, graph,
+        //Observable {play: bool, layout: bool, ... cfg settings ...}
+        //  play: animation stream
+        //  layout: whether to actually call layout algs (e.g., don't for filtering)
+        interactions
+    }) {
 
-function create(dataset, socket, nBodyInstance) {
+    const { globalControls: { simulationTime = 1 }} = graph;
+    const { Observable, Scheduler, Subscription, ReplaySubject } = Rx;
+
+    const renderTriggers = Observable.concat(
+            Observable.of({ play: true, layout: false }),
+            Observable
+                .of({ play: false, layout: false })
+                .delay(simulationTime),
+            Observable
+                .of({ play: false, layout: false })
+                .delay(4), // <-- todo: magic numbers?
+            interactions
+                .filter((x = { play: false }) => x && x.play)
+        )
+        .multicast(() => new ReplaySubject(1));
+
+    let rtConnection;
+
+    return Observable
+        .using(connectRenderTriggers, notifyClientLoadingDataset)
+        .mergeMapTo(loader.loadDatasetIntoSim(graph, dataset))
+        .mergeMap(loadDataFrameAndUpdateBuffers)
+        .expand(runInteractionLoop);
+
+    function connectRenderTriggers() {
+        if(!rtConnection) {
+            logger.trace("STARTING DRIVER");
+            rtConnection = new Subscription(() => {
+                rtConnection = null;
+            });
+            rtConnection.add(renderTriggers.subscribe((v) => {
+                logger.trace('=============================isRunningRecent:', v);
+            }));
+            rtConnection.add(renderTriggers.connect());
+        }
+        return rtConnection;
+    }
+
+    function notifyClientLoadingDataset() {
+        logger.trace('LOADING DATASET');
+        return Observable.from(clientNotification
+            .loadingStatus(socket, 'Loading dataset'));
+    }
+
+    function loadDataFrameAndUpdateBuffers({ dataframe, simulator }) {
+
+        // Load into dataframe data attributes that rely on the simulator existing.
+        const inDegrees = dataframe.getHostBuffer('backwardsEdges').degreesTyped;
+        const outDegrees = dataframe.getHostBuffer('forwardsEdges').degreesTyped;
+        const unsortedEdges = dataframe.getHostBuffer('unsortedEdges');
+
+        dataframe.loadDegrees(outDegrees, inDegrees);
+        dataframe.loadEdgeDestinations(unsortedEdges);
+
+        // Tell all layout algorithms to load buffers from dataframe, now that
+        // we're about to enable ticking
+        simulator.layoutAlgorithms.forEach((algo) => {
+            algo.updateDataframeBuffers(graph.simulator);
+        });
+
+        return clientNotification.loadingStatus(socket, 'Graph created', null, graph); // returns graph
+    }
+
+    function runInteractionLoop(graph) {
+        return Observable.defer(() => {
+                perf.startTiming('tick_durationMS');
+                return renderTriggers;
+            })
+            .filter(({ play }) => play)
+            .take(1)
+            .mergeMap(
+                (x) => graph.updateSettings(x),
+                (x) => x
+            )
+            .mergeMap(
+                (x) => graph.tick(x),
+                (x) => {
+                    perf.endTiming('tick_durationMS');
+                    return graph;
+                }
+            )
+            .subscribeOn(Scheduler.async);
+    }
+}
+
+export function create(dataset, socket, nBodyInstance) {
     logger.trace("STARTING DRIVER");
 
     //Observable {play: bool, layout: bool, ... cfg settings ...}
@@ -383,7 +475,7 @@ function extendDataVersions (data, bufferVersions, graph) {
  * property set to an Object mapping buffer names to ArrayBuffer data; and the 'elements' Object
  * mapping render item names to number of elements that should be rendered for the given buffers.
  */
-function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, programNames) {
+export function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, programNames) {
     var counts = graphCounts(graph);
 
 
@@ -485,9 +577,5 @@ function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, p
             extendDataVersions(bundledData, bufferVersions, graph);
             return bundledData;
         });
-});
+    });
 }
-
-
-exports.create = create;
-exports.fetchData = fetchData;
