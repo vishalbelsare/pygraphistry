@@ -8,11 +8,11 @@ var dataTypeUtil = require('./dataTypes.js');
  * @param {Object} column
  * @constructor
  */
-function ColumnAggregation(dataframe, column, values) {
+function ColumnAggregation(dataframe, column, attrName, graphType) {
 
     this.dataframe = dataframe;
     this.column = column;
-    this.values = values;
+    this.values = dataframe.getColumnValues(attrName, graphType);
     /* @type Aggregations */
     this.aggregations = {
         count: undefined,

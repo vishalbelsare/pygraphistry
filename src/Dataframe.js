@@ -68,9 +68,15 @@ function Dataframe () {
     /** @type {DataframeMetadata} */
     this.metadata = {};
 
+    // TODO: Move this out of data frame constructor
+    // var encodingsManager = new ComputedColumnManager();
+    // encodingsManager.loadEncodingColumns();
+    // this.loadEncodingsManager(encodingsManager);
+
     // TODO: Move this out of data frame constructor.
     var computedColumnManager = new ComputedColumnManager();
     computedColumnManager.loadDefaultColumns();
+    computedColumnManager.loadEncodingColumns();
     this.loadComputedColumnManager(computedColumnManager);
 
 }
@@ -945,6 +951,10 @@ Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager)
     var attrs = this.data.attributes;
     var activeColumns = computedColumnManager.getActiveColumns();
 
+
+    // TODO: Don't require them to be explicitly loaded in like this
+    // Functions that look up available column names and fetch values
+    // should know how to look aside at this.
     _.each(activeColumns, function (cols, colType) {
         // If no columns exist in category, make obj
         attrs[colType] = attrs[colType] || {};
@@ -956,6 +966,7 @@ Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager)
                 version: 0,
                 dirty: true,
                 computed: true,
+                computedVersion: colDesc.version,
                 numberPerGraphComponent: colDesc.numberPerGraphComponent,
                 arrType: colDesc.arrType
             };
@@ -966,6 +977,7 @@ Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager)
     });
 
 };
+
 
 /**
  * TODO: Implicit degrees for points and src/dst for edges.
@@ -1299,7 +1311,9 @@ Dataframe.prototype.resetLocalBuffer = function (name) {
 };
 
 Dataframe.prototype.hasLocalBuffer = function (name) {
-    return this.data.localBuffers[name] !== undefined || this.rawdata.localBuffers[name] !== undefined;
+    var hasDeprecatedExplicitLocalBuffer = this.data.localBuffers[name] !== undefined || this.rawdata.localBuffers[name] !== undefined;
+    var hasComputedLocalBuffer = this.computedColumnManager.hasColumn('localBuffer', name);
+    return (hasDeprecatedExplicitLocalBuffer || hasComputedLocalBuffer);
 };
 
 Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
@@ -1315,7 +1329,16 @@ Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
             this.resetLocalBuffer(alias);
         }
     }
-    var res = data.localBuffers[name];
+
+    var deprecatedExplicitlySetValues = data.localBuffers[name];
+    if (deprecatedExplicitlySetValues) {
+        return deprecatedExplicitlySetValues;
+    }
+
+    // Get values via normal path where they're treated as computed columns.
+    // TODO: Deal with "unfiltered code" path. Do we need it with computed columns?
+    var res = this.getColumnValues(name, 'localBuffer');
+
     if (!res) {
         throw new Error("Invalid Local Buffer: " + name);
     }
@@ -1399,7 +1422,14 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
 
     // First try to see if have values already calculated / cached for this frame
 
-    if (!attributes[attrName].dirty && attributes[attrName].values) {
+    // Check to see if it's computed and version matches that of computed column.
+    // Computed column versions reflect dependencies between computed columns.
+    var computedVersionMatches = !(attributes[attrName].computed &&
+        (attributes[attrName].computedVersion !== this.computedColumnManager.getColumnVersion(type, attrName))
+    );
+
+    if (computedVersionMatches && !attributes[attrName].dirty && attributes[attrName].values) {
+
         // TODO: Deduplicate this code from dataframe and computed column manager
         if (numberPerGraphComponent === 1) {
             return attributes[attrName].values[index];
@@ -1415,11 +1445,7 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
 
     // If it's calculated...TODO
     if (attributes[attrName].dirty && attributes[attrName].computed) {
-
-        console.log('\n\nGETTING COMPUTED COLUMN CELL');
-
         var returnval = this.computedColumnManager.getValue(this, type, attrName, index);
-        console.log('VALUE: ', returnval);
         return returnval;
     }
 
@@ -1440,8 +1466,8 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
         }
     }
 
-    // Default to undefined
-    return undefined;
+    // Nothing was found, so throw error.
+    throw new Error("Couldn't get cell value for: " + attrName + ' ' + index);
 };
 
 
@@ -1542,19 +1568,22 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
 
     // First try to see if have values already calculated / cached for this frame
 
-    if (!attributes[columnName].dirty && attributes[columnName].values) {
+    // Check to see if it's computed and version matches that of computed column.
+    // Computed column versions reflect dependencies between computed columns.
+    var computedVersionMatches = !(attributes[columnName].computed &&
+        (attributes[columnName].computedVersion !== this.computedColumnManager.getColumnVersion(type, columnName))
+    );
+
+    if (computedVersionMatches && !attributes[columnName].dirty && attributes[columnName].values) {
         return attributes[columnName].values;
     }
 
     // If it's calculated...TODO
     if (attributes[columnName].dirty && attributes[columnName].computed) {
-        console.log('\n\nGETTING COMPUTED COLUMN FULL');
 
         var newValues = this.computedColumnManager.getArray(this, type, columnName);
         attributes[columnName].values = newValues;
         attributes[columnName].dirty = false;
-
-        console.log('Result: ', newValues);
 
         return newValues;
     }
@@ -1583,8 +1612,8 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
         return newValues;
     }
 
-    // Default to undefined
-    return undefined;
+    // Nothing was found, so throw error.
+    throw new Error("Couldn't get column values for: " + columnName);
 };
 
 
@@ -1642,8 +1671,7 @@ Dataframe.prototype.getColumnAggregations = function(columnName, type, unfiltere
     var column = dataframeData.attributes[type][columnName];
     if (column === undefined) { return undefined; }
     if (column.aggregations === undefined) {
-        var values = this.getColumnValues(columnName, type);
-        column.aggregations = new ColumnAggregation(this, column, values);
+        column.aggregations = new ColumnAggregation(this, column, columnName, type);
         var aggregations = this.metadataForColumn(columnName, type);
         if (aggregations !== undefined) {
             if (aggregations.aggregations !== undefined) {

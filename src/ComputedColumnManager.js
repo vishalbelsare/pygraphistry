@@ -36,6 +36,7 @@ var defaultLocalBuffers = {
         filterable: true,
         numberPerGraphComponent: 1,
         graphComponentType: 'point',
+        version: 0,
         dependencies: [
             ['forwardsEdges', 'hostBuffer'],
             ['backwardsEdges', 'hostBuffer']
@@ -79,6 +80,7 @@ var defaultLocalBuffers = {
         filterable: true,
         numberPerGraphComponent: 1,
         graphComponentType: 'point',
+        version: 0,
         dependencies: [
             ['forwardsEdges', 'hostBuffer'],
             ['backwardsEdges', 'hostBuffer']
@@ -111,6 +113,7 @@ var defaultLocalBuffers = {
         filterable: true,
         numberPerGraphComponent: 1,
         graphComponentType: 'edge',
+        version: 0,
         dependencies: [
 
         ],
@@ -126,6 +129,7 @@ var defaultLocalBuffers = {
         filterable: true,
         numberPerGraphComponent: 2,
         graphComponentType: 'edge',
+        version: 0,
         dependencies: [
             ['unsortedEdges', 'hostBuffer'],
             ['pointColors', 'localBuffer']
@@ -152,6 +156,7 @@ var defaultPointColumns = {
         filterable: true,
         numberPerGraphComponent: 1,
         graphComponentType: 'point',
+        version: 0,
         dependencies: [
             ['closeness', 'point']
         ],
@@ -167,6 +172,7 @@ var defaultPointColumns = {
         filterable: true,
         numberPerGraphComponent: 1,
         graphComponentType: 'point',
+        version: 0,
         dependencies: [
             ['doubleCloseness', 'point']
         ],
@@ -184,6 +190,9 @@ var defaultColumns = {
     point: defaultPointColumns
 };
 
+var defaultEncodingColumns = {
+    localBuffers: defaultLocalBuffers
+};
 
 function ComputedColumnManager () {
     this.activeComputedColumns = {};
@@ -204,9 +213,38 @@ ComputedColumnManager.prototype.loadDefaultColumns = function () {
 
 };
 
+
+ComputedColumnManager.prototype.loadEncodingColumns = function () {
+    return;
+    var that = this;
+
+    // copy in defaults. Copy so we can recover defaults when encodings change
+    _.each(defaultEncodingColumns, function (cols, colType) {
+        that.activeComputedColumns[colType] = {};
+
+        _.each(cols, function (colDesc, name) {
+            that.activeComputedColumns[colType][name] = colDesc;
+        });
+
+    });
+
+};
+
 ComputedColumnManager.prototype.getActiveColumns = function () {
     return this.activeComputedColumns;
 };
+
+ComputedColumnManager.prototype.getColumnVersion = function (columnType, columnName) {
+    return this.activeComputedColumns[columnType][columnName].version;
+};
+
+ComputedColumnManager.prototype.hasColumn = function (columnType, columnName) {
+    if (this.activeComputedColumns[columnType] && this.activeComputedColumns[columnType][columnName]) {
+        return true;
+    }
+    return false;
+};
+
 
 ComputedColumnManager.prototype.getValue = function (dataframe, columnType, columnName, idx) {
 
