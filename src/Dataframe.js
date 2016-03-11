@@ -1822,7 +1822,7 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
     var range = max - min;
     var isCountBy;
     var countDistinct = aggregations.getAggregationByType('countDistinct');
-    if (isNaN(range)) { // Implies non-numerical domain.
+    if (isNaN(range) || min === false) { // Implies non-numerical domain. Boolean needs special logic, har.
         numBins = Math.min(countDistinct, maxBinCount);
         bottomVal = min;
         topVal = max;
