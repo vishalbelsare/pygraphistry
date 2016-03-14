@@ -8,6 +8,7 @@ var PEGUtil = require('pegjs-util');
 
 var util    = require('./util.js');
 var Command = require('./command.js');
+var Identifier = require('./Identifier');
 var parser  = require('./expression.pegjs');
 // var parser  = require('./expressionParser.js');
 
@@ -98,19 +99,7 @@ FilterControl.prototype.printedExpressionOf = function (value) {
     }
 };
 
-/**
- * @param {String} attributeName
- * @returns {String}
- */
-FilterControl.prototype.identifierToExpression = function (attributeName) {
-    if (attributeName.match(/[^A-Za-z0-9:_]/)) {
-        return '[' + attributeName.replace(']', '\\]') + ']';
-    } else {
-        return attributeName;
-    }
-};
-
-FilterControl.prototype.queryToExpression = function(query) {
+FilterControl.prototype.queryToExpression = function (query) {
     if (!query) { return undefined; }
     if (query.inputString) {
         return query.inputString;
@@ -119,11 +108,8 @@ FilterControl.prototype.queryToExpression = function(query) {
     if (!attribute) {
         attribute = '<unknown>';
     }
-    // Basic namespace-indication:
-    if (query.type) {
-        attribute = query.type + ':' + attribute;
-    }
-    var printedAttribute = this.identifierToExpression(attribute);
+    attribute = Identifier.clarifyWithPrefixSegment(attribute, query.type);
+    var printedAttribute = Identifier.identifierToExpression(attribute);
     // Should quote inner brackets if we commit to this:
     // attribute = '[' + attribute + ']';
     if (query.start !== undefined && query.stop !== undefined) {

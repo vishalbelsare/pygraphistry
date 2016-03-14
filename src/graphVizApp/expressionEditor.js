@@ -2,6 +2,7 @@
 /* globals ace */
 
 var _       = require('underscore');
+var Identifier = require('./Identifier.js');
 
 /**
  * @param {Object} namespaceMetadata
@@ -21,7 +22,8 @@ DataframeCompleter.prototype.setNamespaceMetadata = function (namespaceMetadata)
     var newNamespaceAttributes = {};
     _.each(namespaceMetadata, function (columnsByName, type) {
         _.each(columnsByName, function (column, attributeName) {
-            newNamespaceAttributes[type + ':' + attributeName] = column;
+            var prefixedAttribute = Identifier.clarifyWithPrefixSegment(attributeName, type);
+            newNamespaceAttributes[prefixedAttribute] = column;
             if (newNamespaceAttributes[attributeName] === undefined) {
                 newNamespaceAttributes[attributeName] = column;
             }
@@ -29,7 +31,7 @@ DataframeCompleter.prototype.setNamespaceMetadata = function (namespaceMetadata)
             if (columnName !== undefined && columnName !== attributeName) {
                 if (newNamespaceAttributes[columnName] === undefined) {
                     newNamespaceAttributes[columnName] = column;
-                    newNamespaceAttributes[type + ':' + columnName] = column;
+                    newNamespaceAttributes[Identifier.clarifyWithPrefixSegment(columnName, type)] = column;
                 }
             }
         });

@@ -11,6 +11,7 @@ var Backbone = require('backbone');
 var FilterControl       = require('./FilterControl.js');
 var QuerySelectionModel = require('./QuerySelectionModel.js');
 var ExpressionEditor    = require('./expressionEditor.js');
+var Identifier          = require('./Identifier.js');
 var util          = require('./util.js');
 
 
@@ -266,7 +267,7 @@ var AllFiltersView = Backbone.View.extend({
             var parts = attribute.match(/^(?:([-A-z_]+):)?([^()]+)(?:[ ]+\(.+\))?$/);
             attributes.attribute = attribute;
             attributes.type = parts[1] || 'point';
-            attributes.attribute = attributes.type + ':' + parts[2];
+            attributes.attribute = Identifier.clarifyWithPrefixSegment(parts[2], attributes.type);
             if (parts.length > 3) {
                 attributes.dataType = parts[3];
             }

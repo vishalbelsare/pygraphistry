@@ -14,6 +14,7 @@ var Rx          = require('rxjs/Rx.KitchenSink');
 var Color       = require('color');
 
 var picking     = require('./picking.js');
+var Identifier  = require('./graphVizApp/Identifier');
 var contentFormatter = require('./graphVizApp/contentFormatter.js');
 
 //0--1: the closer to 1, the more likely that unsampled points disappear
@@ -281,7 +282,7 @@ function escapeIdentifier (identifier) {
 }
 
 function queryForKeyAndValue(type, key, value) {
-    var identifier = type + ':' + key;
+    var identifier = Identifier.clarifyWithPrefixSegment(key, type);
     return {
         ast: {
             type: 'BinaryExpression',
@@ -289,7 +290,7 @@ function queryForKeyAndValue(type, key, value) {
             left: {type: 'Identifier', name: identifier},
             right: {type: 'Literal', value: value}
         },
-        inputString: escapeIdentifier(identifier) + ' = ' + JSON.stringify(value)
+        inputString: Identifier.identifierToExpression(identifier) + ' = ' + JSON.stringify(value)
     };
 }
 
@@ -357,7 +358,7 @@ function createLabelDom(instance, dim, labelObj) {
             var $icons = $('<div>').addClass('graph-label-icons');
             $wrap.append($icons);
             var dataOptions = {placement: 'bottom', toggle: 'tooltip'};
-            var keyValueEqn = type + ':' + $key.text() + '=' + displayName;
+            var keyValueEqn = Identifier.clarifyWithPrefixSegment($key.text(), type) + '=' + displayName;
             var $exclude = $('<a class="exclude-by-key-value">').html('<i class="fa fa-ban"></i>');
             $exclude.data(dataOptions);
             $exclude.attr('title', 'Exclude if ' + keyValueEqn);
