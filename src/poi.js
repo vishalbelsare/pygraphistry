@@ -260,7 +260,7 @@ function fetchLabel (instance, labelCacheEntry, idx, dim) {
             return;
         }
         // TODO: Represent this in a cleaner way from the server
-        if (labels[0].title) {
+        if (labels[0].title !== undefined) {
             labelCacheEntry.onNext(labels[0]);
         } else {
             // Invalid label request/response
