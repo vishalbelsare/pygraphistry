@@ -268,15 +268,28 @@ function fetchLabel (instance, labelCacheEntry, idx, dim) {
     });
 }
 
-function queryForKeyAndValue(key, value) {
+/**
+ * @param {String} identifier
+ * @returns {String}
+ */
+function escapeIdentifier (identifier) {
+    if (identifier.match(/[^A-Za-z:_]/)) {
+        return '[' + identifier.replace(/([^A-Za-z:_])/, function (char) { return '\\' + char; }, 'g') + ']';
+    } else {
+        return identifier;
+    }
+}
+
+function queryForKeyAndValue(type, key, value) {
+    var identifier = type + ':' + key;
     return {
         ast: {
             type: 'BinaryExpression',
             operator: '=',
-            left: {type: 'Identifier', name: key},
+            left: {type: 'Identifier', name: identifier},
             right: {type: 'Literal', value: value}
         },
-        inputString: key + ' = ' + JSON.stringify(value)
+        inputString: escapeIdentifier(identifier) + ' = ' + JSON.stringify(value)
     };
 }
 
@@ -344,14 +357,14 @@ function createLabelDom(instance, dim, labelObj) {
             var $icons = $('<div>').addClass('graph-label-icons');
             $wrap.append($icons);
             var dataOptions = {placement: 'bottom', toggle: 'tooltip'};
-            var keyValueEqn = $key.text() + '=' + displayName;
+            var keyValueEqn = type + ':' + $key.text() + '=' + displayName;
             var $exclude = $('<a class="exclude-by-key-value">').html('<i class="fa fa-ban"></i>');
             $exclude.data(dataOptions);
             $exclude.attr('title', 'Exclude if ' + keyValueEqn);
             $exclude.tooltip({container: 'body'})
                 .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
             $exclude.on('click', function () {
-                labelRequests.onNext({excludeQuery: {query: queryForKeyAndValue(key, val)}});
+                labelRequests.onNext({excludeQuery: {query: queryForKeyAndValue(type, key, val)}});
             });
             var $filter = $('<a class="filter-by-key-value">').html('<i class="fa fa-filter"></i>');
             $filter.data(dataOptions);
@@ -359,7 +372,7 @@ function createLabelDom(instance, dim, labelObj) {
             $filter.tooltip({container: 'body'})
                 .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
             $filter.on('click', function () {
-                labelRequests.onNext({filterQuery: {query: queryForKeyAndValue(key, val)}});
+                labelRequests.onNext({filterQuery: {query: queryForKeyAndValue(type, key, val)}});
             });
             $icons.append($exclude).append($filter);
 
