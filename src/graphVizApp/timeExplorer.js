@@ -12,6 +12,7 @@ var d3 = require('d3');
 var Command = require('./command.js');
 var util    = require('./util.js');
 var FilterControl = require('./FilterControl.js');
+var Identifier = require('./Identifier');
 var contentFormatter = require('./contentFormatter.js');
 
 
@@ -172,7 +173,7 @@ TimeExplorer.prototype.updateGraphTimeFilter = function (newTimeFilter) {
 
     if (newTimeFilter) {
 
-        var combinedAttr = '' + this.timeDescription.timeType + ':' + this.timeDescription.timeAttr;
+        var combinedAttr = '' + Identifier.clarifyWithPrefixSegment(this.timeDescription.timeAttr, this.timeDescription.timeType);
         var timeFilterQuery = combinedAttr + ' >= ' + newTimeFilter.start + ' AND ' + combinedAttr + ' <= ' + newTimeFilter.stop;
 
         var query = that.makeQuery(this.timeDescription.timeType, this.timeDescription.timeAttr, timeFilterQuery).query;
@@ -233,7 +234,7 @@ TimeExplorer.prototype.getTimeData = function (timeType, timeAttr, start, stop, 
 
     // console.log('GET TIME DATA');
 
-    var combinedAttr = '' + timeType + ':' + timeAttr;
+    var combinedAttr = '' + Identifier.clarifyWithPrefixSegment(timeAttr, timeType);
     var timeFilterQuery = combinedAttr + ' >= ' + start + ' AND ' + combinedAttr + ' <= ' + stop;
 
     var timeFilter = {

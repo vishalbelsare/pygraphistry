@@ -110,8 +110,6 @@ FilterControl.prototype.queryToExpression = function (query) {
     }
     attribute = Identifier.clarifyWithPrefixSegment(attribute, query.type);
     var printedAttribute = Identifier.identifierToExpression(attribute);
-    // Should quote inner brackets if we commit to this:
-    // attribute = '[' + attribute + ']';
     if (query.start !== undefined && query.stop !== undefined) {
         return printedAttribute + ' BETWEEN ' + this.printedExpressionOf(query.start) +
             ' AND ' + this.printedExpressionOf(query.stop);

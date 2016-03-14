@@ -11,6 +11,7 @@ var Backbone = require('backbone');
 var d3 = require('d3');
 
 var util    = require('./util.js');
+var Identifier = require('./Identifier');
 var contentFormatter = require('./contentFormatter.js');
 
 
@@ -75,11 +76,14 @@ var HistogramModel = Backbone.Model.extend({
         if (histogramsByName.hasOwnProperty(attributeName)) {
             return histogramsByName[attributeName];
         } else if (type !== undefined) {
-            return histogramsByName[type + ':' + attributeName];
-        } else if (histogramsByName.hasOwnProperty('point:' + attributeName)) {
-            return histogramsByName['point:' + attributeName];
+            return histogramsByName[Identifier.clarifyWithPrefixSegment(attributeName, type)];
         } else {
-            return histogramsByName['edge:' + attributeName];
+            var pointPrefixAttribute = Identifier.clarifyWithPrefixSegment(attributeName, 'point');
+            if (histogramsByName.hasOwnProperty(pointPrefixAttribute)) {
+                return histogramsByName[pointPrefixAttribute];
+            } else {
+                return histogramsByName[Identifier.clarifyWithPrefixSegment(attributeName, 'edge')];
+            }
         }
     },
     getSparkLineData: function () {
@@ -89,11 +93,14 @@ var HistogramModel = Backbone.Model.extend({
         if (sparkLinesByName.hasOwnProperty(attributeName)) {
             return sparkLinesByName[attributeName];
         } else if (type !== undefined) {
-            return sparkLinesByName[type + ':' + attributeName];
-        } else if (sparkLinesByName.hasOwnProperty('point:' + attributeName)) {
-            return sparkLinesByName['point:' + attributeName];
+            return sparkLinesByName[Identifier.clarifyWithPrefixSegment(attributeName, type)];
         } else {
-            return sparkLinesByName['edge:' + attributeName];
+            var pointPrefixAttribute = Identifier.clarifyWithPrefixSegment(attributeName, 'point');
+            if (sparkLinesByName.hasOwnProperty(pointPrefixAttribute)) {
+                return sparkLinesByName[pointPrefixAttribute];
+            } else {
+                return sparkLinesByName[Identifier.clarifyWithPrefixSegment(attributeName, 'edge')];
+            }
         }
     }
 });
