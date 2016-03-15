@@ -40,7 +40,6 @@ function create(renderer, simulator, dataframe, device, vendor, controls, socket
     };
 
     _.each({
-        setPoints: setPoints,
         setVertices: setVertices,
         setEdges: setEdges,
         setEdgesAndColors: setEdgesAndColors,
@@ -158,31 +157,6 @@ function makeSetter (name, defSetter, arrConstructor, dimName, passThrough) {
         return passThroughSetter(graph.simulator, dimName, array, passThrough);
 
     };
-}
-
-// TODO Deprecate and remove. Left for Uber compatibitily
-function setPoints(graph, points, pointSizes, pointColors) {
-    logger.trace('setPoints (DEPRECATED)');
-
-    // FIXME: If there is already data loaded, we should to free it before loading new data
-    return setVertices(graph, points)
-    .then(function (simulator) {
-        if (pointSizes) {
-            return boundBuffers.setSizes.setter(graph, pointSizes);
-        } else {
-            logger.trace('no point sizes, deferring');
-        }
-
-    }).then(function (simulator) {
-        if (pointColors) {
-            return boundBuffers.setColors.setter(graph, pointColors);
-        } else {
-            logger.trace('no point colors, deferring');
-        }
-    })
-    .then(function() {
-        return graph;
-    }).fail(log.makeQErrorHandler(logger, 'Failure in setPoints'));
 }
 
 function setVertices(graph, points) {
