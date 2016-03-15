@@ -657,40 +657,20 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // Copy non-GPU buffers
     ///////////////////////////////////////////////////////////////////////////
 
-    // TODO: Figured out what pointTags is used for
-    // TODO: Figure out what edgeTags are used for.
-
-    // var newPointSizes = new Uint8Array(this.typedArrayCache.newPointSizes.buffer, 0, numPoints);
-    // var newPointColors = new Uint32Array(this.typedArrayCache.newPointColors.buffer, 0, numPoints);
-
-    masks.mapPointIndexes(function (pointIndex, i) {
-        // newPointSizes[i] = rawdata.localBuffers.pointSizes[pointIndex];
-        // newPointColors[i] = rawdata.localBuffers.pointColors[pointIndex];
-    });
-    // newData.localBuffers.pointSizes = newPointSizes;
-    // newData.localBuffers.pointColors = newPointColors;
-
     var numRenderedSplits = rawdata.numElements.renderedSplits;
     var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
     var numMidEdgeColors = numMidEdgeColorsPerEdge * numEdges;
-    // var newEdgeColors = new Uint32Array(this.typedArrayCache.newEdgeColors.buffer, 0, numEdges * 2);
-    // var newEdgeHeights = new Uint32Array(this.typedArrayCache.newEdgeHeights.buffer, 0, numEdges * 2);
     var newMidEdgeColors = new Uint32Array(this.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
 
     masks.mapEdgeIndexes(function (edgeIndex, i) {
-        // newEdgeColors[i * 2] = rawdata.localBuffers.edgeColors[edgeIndex * 2];
-        // newEdgeColors[i * 2 + 1] = rawdata.localBuffers.edgeColors[edgeIndex * 2 + 1];
-
-        // newEdgeHeights[i * 2] = rawdata.localBuffers.edgeHeights[edgeIndex * 2];
-        // newEdgeHeights[i * 2 + 1] = rawdata.localBuffers.edgeHeights[edgeIndex * 2 + 1];
 
         for (var j = 0; j < numMidEdgeColorsPerEdge; j++) {
             newMidEdgeColors[i * numMidEdgeColorsPerEdge + j] =
                 rawdata.localBuffers.midEdgeColors[edgeIndex * numMidEdgeColorsPerEdge + j];
         }
+
     });
-    // newData.localBuffers.edgeColors = newEdgeColors;
-    // newData.localBuffers.edgeHeights = newEdgeHeights;
+
     newData.localBuffers.midEdgeColors = newMidEdgeColors;
 
     // numElements;
