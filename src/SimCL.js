@@ -87,13 +87,10 @@ function create(dataframe, renderer, cl, device, vendor, cfg) {
             simObj.tick = tick.bind(this, simObj);
             simObj.setPoints = setPoints.bind(this, simObj);
             simObj.setEdges = setEdges.bind(this, renderer, simObj);
+            simObj.setEdgeWeight = setEdgeWeight.bind(this, simObj);
             simObj.setSelectedPointIndexes = setSelectedPointIndexes.bind(this, simObj);
             simObj.setSelectedEdgeIndexes = setSelectedEdgeIndexes.bind(this, simObj);
-            simObj.setEdgeColors = setEdgeColors.bind(this, simObj);
-            simObj.setEdgeWeight = setEdgeWeight.bind(this, simObj);
             simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
-            simObj.setPointLabels = setPointLabels.bind(this, simObj);
-            simObj.setEdgeLabels = setEdgeLabels.bind(this, simObj);
             simObj.setLocks = setLocks.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
@@ -560,17 +557,6 @@ function createSetters (simulator) {
     });
 }
 
-//Simulator * ?[HtmlString] -> ()
-function setPointLabels(simulator, labels) {
-    simulator.dataframe.loadLabels('point', (labels || []));
-    return Q();
-}
-
-//Simulator * ?[HtmlString] -> ()
-function setEdgeLabels(simulator, labels) {
-    simulator.dataframe.loadLabels('edge', (labels || []));
-    return Q();
-}
 
 function setMidEdges( simulator ) {
     logger.debug("In set midedges");
@@ -903,41 +889,6 @@ function setSelectedPointIndexes(simulator, selectedPointIndexes) {
     // TODO call in same promise chain as other set calls.
     simulator.dataframe.loadLocalBuffer('selectedPointIndexes', selectedPointIndexes);
     simulator.tickBuffers(['selectedPointIndexes']);
-}
-
-
-/**
- * Sets the edge colors for the graph. With logical edges, edge colors are defined indirectly,
- * by giving a color for the source point and destination point.
- *
- * @param simulator - the simulator object to set the edges for
- * @param {Uint32Array} edgeColors - dense array of edge start and end colors
- */
-function setEdgeColors(simulator, edgeColors) {
-    if (!edgeColors) {
-        return Q(simulator);
-    }
-
-    throw new Error ('Did not implement explicit values yet');
-
-
-    // if (!edgeColors) {
-    //     logger.trace('Using default edge colors');
-    //     // Using unsorted edges so it can be consistent with provided edge colors.
-    //     var unsortedEdges = simulator.dataframe.getHostBuffer('unsortedEdges');
-    //     var pointColorsBuffer = simulator.dataframe.getLocalBuffer('pointColors');
-
-    //     edgeColors = new Uint32Array(unsortedEdges.length);
-    //     for (var i = 0; i < edgeColors.length; i++) {
-    //         var nodeIdx = unsortedEdges[i];
-    //         edgeColors[i] = pointColorsBuffer[nodeIdx];
-    //     }
-    // }
-
-    // simulator.dataframe.loadLocalBuffer('edgeColors', edgeColors);
-    // simulator.tickBuffers(['edgeColors']);
-
-    // return Q(simulator);
 }
 
 // TODO Write kernel for this.

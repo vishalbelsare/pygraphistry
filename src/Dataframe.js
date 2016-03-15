@@ -981,6 +981,28 @@ Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager)
 };
 
 
+Dataframe.prototype.registerNewComputedColumn = function (computedColumnManager, columnType, columnName) {
+    var activeColumns = computedColumnManager.getActiveColumns();
+    var colDesc = activeColumns[columnType][columnName];
+    var attrs = this.data.attributes;
+    attrs[columnType] = attrs[columnType] || {};
+
+    var col = {
+        name: columnName,
+        type: colDesc.type,
+        version: 0,
+        dirty: true,
+        computed: true,
+        computedVersion: colDesc.version,
+        filterable: colDesc.filterable,
+        numberPerGraphComponent: colDesc.numberPerGraphComponent,
+        arrType: colDesc.arrType
+    };
+
+    attrs[columnType][columnName] = col;
+};
+
+
 /**
  * TODO: Implicit degrees for points and src/dst for edges.
  * @param {Object.<AttrObject>} attributeObjectsByName
@@ -1030,6 +1052,15 @@ Dataframe.prototype.loadAttributesForType = function (attributeObjectsByName, ty
 
     _.extend(this.rawdata.attributes[type], userDefinedAttributesByName);
     // TODO: Case where data != raw data.
+};
+
+
+Dataframe.prototype.loadColumn = function (name, type, valueObj) {
+    valueObj.version = 0;
+    valueObj.dirty = false;
+    valueObj.numberPerGraphComponent = valueObj.numberPerGraphComponent || 1;
+
+    this.rawdata.attributes[type][name] = valueObj;
 };
 
 
@@ -1349,11 +1380,27 @@ Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
 };
 
 Dataframe.prototype.getHostBuffer = function (name) {
-    var res = this.data.hostBuffers[name];
+
+    var deprecatedExplicitlySetValues = this.data.hostBuffers[name];
+    if (deprecatedExplicitlySetValues) {
+        return deprecatedExplicitlySetValues;
+    }
+
+    var res = this.getColumnValues(name, 'hostBuffer');
+
     if (!res) {
         throw new Error("Invalid Host Buffer: " + name);
     }
+
     return res;
+};
+
+Dataframe.prototype.hasHostBuffer = function (name) {
+
+    var hasDeprecatedExplicitHostBuffer = this.data.hostBuffers[name] !== undefined || this.rawdata.hostBuffers[name] !== undefined;
+    var hasComputedHostBuffer = this.computedColumnManager.hasColumn('hostBuffer', name);
+    return (hasDeprecatedExplicitHostBuffer || hasComputedHostBuffer);
+
 };
 
 Dataframe.prototype.getLabels = function (type) {
@@ -1431,12 +1478,12 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
     // So computed column manager can work, we need to pass through calls from here
     // to getHostBuffer.
 
-    if (type === 'hostBuffer' && (!attributes || !attributes[columnName])) {
-        return this.getHostBuffer(columnName)[index];
+    if (type === 'hostBuffer' && (!attributes || !attributes[attrName])) {
+        return this.getHostBuffer(attrName)[index];
     }
 
-    if (type === 'localBuffer' && (!attributes || !attributes[columnName])) {
-        return this.getLocalBuffer(columnName)[index];
+    if (type === 'localBuffer' && (!attributes || !attributes[attrName])) {
+        return this.getLocalBuffer(attrName)[index];
     }
 
 
@@ -1583,10 +1630,6 @@ Dataframe.prototype.getColumn = function (columnName, type) {
 // explicitly requested to be unsorted (for internal performance reasons)
 Dataframe.prototype.getColumnValues = function (columnName, type) {
 
-    if (columnName === 'pointColors') {
-        console.log('\n\n\n\n====GOT REQUEST FOR POINT COLORS\n\n\n\n');
-    }
-
     var attributes = this.data.attributes[type];
 
     // TODO FIXME HACK:
@@ -1632,7 +1675,7 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     // then cache the result.
     if (attributes[columnName].dirty && attributes[columnName].dirty.cause === 'filter') {
 
-        console.log('in dirty filter path');
+        console.log('in dirty filter path for ', type, columnName);
 
         var rawAttributes = this.rawdata.attributes[type];
         var arrType = rawAttributes[columnName].arrType || Array;

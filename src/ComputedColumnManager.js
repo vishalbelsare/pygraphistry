@@ -161,9 +161,18 @@ var defaultLocalBuffers = {
         }
     }
 
-}
+};
+
+
+var defaultHostBuffers = {
+
+
+};
+
 
 var defaultPointColumns = {
+
+    /*
 
     doubleCloseness: {
         arrType: Array,
@@ -197,12 +206,14 @@ var defaultPointColumns = {
         }
     }
 
+    */
+
 };
 
 // TODO: Allow users to specify which view to pull dependencies from.
 var defaultColumns = {
-    // localBuffers: defaultLocalBuffers,
-    point: defaultPointColumns
+    point: defaultPointColumns,
+    hostBuffer: defaultHostBuffers
 };
 
 var defaultEncodingColumns = {
@@ -213,9 +224,11 @@ function ComputedColumnManager () {
     this.activeComputedColumns = {};
 }
 
-
-ComputedColumnManager.prototype.setComputeAllValues = function (deps, func) {
-
+// TODO: Instead of using generic JSON blobs, make computed col desc a class.
+ComputedColumnManager.prototype.addComputedColumn = function (dataframe, columnType, columnName, desc) {
+    this.activeComputedColumns[columnType] = this.activeComputedColumns[columnType] || {};
+    this.activeComputedColumns[columnType][columnName] = desc;
+    dataframe.registerNewComputedColumn(this, columnType, columnName);
 };
 
 

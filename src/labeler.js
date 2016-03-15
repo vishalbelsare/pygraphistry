@@ -59,32 +59,31 @@ function defaultLabels(graph, indices, type) {
 }
 
 
-function presetLabels (labels, indices, range) {
-    var offset = range.startIdx;
+function presetLabels (dataframe, indices, type) {
+
+    var name =  (type === 'point') ? 'pointLabels' :
+                (type === 'edge') ? 'edgeLabels' :
+                '';
 
     return indices.map(function (idx) {
-        return { formatted: labels[offset + idx] };
+        var label = dataframe.getCell(idx, 'hostBuffer', name);
+        return { formatted: label };
     });
+
 }
 
 
 function getLabels(graph, indices, dim) {
     var type = _.findKey(DimCodes, function (dimCode) { return dimCode === dim; });
-    var simulator = graph.simulator;
 
-    var precomputedLabels = simulator.dataframe.getLabels(type);
-    if (precomputedLabels && precomputedLabels.length) {
-        var range;
-        switch (type) {
-            case 'point':
-                range = simulator.timeSubset.pointsRange;
-                break;
-            case 'edge':
-                range = simulator.timeSubset.edgeRange;
-                break;
-        }
-        return presetLabels(precomputedLabels, indices, range);
+    var hasPrecomputedLabels =  (type === 'point') ? graph.dataframe.hasHostBuffer('pointLabels') :
+                                (type === 'edge') ? graph.dataframe.hasHostBuffer('edgeLabels') :
+                                false;
+
+    if (hasPrecomputedLabels) {
+        return presetLabels(graph.dataframe, indices, type);
     }
+
     return defaultLabels(graph, indices, type);
 }
 

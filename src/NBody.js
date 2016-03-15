@@ -48,11 +48,8 @@ function create(renderer, simulator, dataframe, device, vendor, controls, socket
     _.each({
         setPoints: setPoints,
         setVertices: setVertices,
-        setPointLabels: setPointLabels,
-        setEdgeLabels: setEdgeLabels,
         setEdges: setEdges,
         setEdgesAndColors: setEdgesAndColors,
-        setEdgeColors: setEdgeColors,
         setEdgeWeight: setEdgeWeight,
         setMidEdgeColors: setMidEdgeColors,
         setColorMap: setColorMap,
@@ -317,26 +314,6 @@ var setEdges = Q.promised(function(graph, edges) {
         }).fail(log.makeQErrorHandler(logger, 'Failure in setEdges'));
 });
 
-function setEdgeColors(graph, edgeColors) {
-    logger.trace('Loading edgeColors');
-    var edgeCount = graph.simulator.dataframe.getNumElements('edge');
-
-    if (!edgeColors) // Use default Colors
-        return graph.simulator.setEdgeColors(undefined);
-
-    if (edgeColors.length != edgeCount)
-       logger.error('setEdgeColors expects one color per edge');
-
-    // Internaly we have two colors, one per endpoint.
-    var ec = new Uint32Array(edgeCount * 2);
-    for (var edge = 0; edge < edgeCount; edge++) {
-        ec[2*edge] = edgeColors[edge];
-        ec[2*edge + 1] = edgeColors[edge];
-    }
-
-    return graph.simulator.setEdgeColors(ec);
-}
-
 function setEdgeWeight(graph, edgeWeights) {
     logger.trace('Loading edgeWeights');
     var edgeCount = graph.simulator.dataframe.getNumElements('edge');
@@ -373,17 +350,6 @@ function setMidEdgeColors(graph, midEdgeColors) {
     }
 
     return graph.simulator.setMidEdgeColors(ec);
-}
-
-function setPointLabels(graph, pointLabels) {
-    logger.trace('setPointLabels', pointLabels ? pointLabels.length : 'none');
-    return graph.simulator.setPointLabels(pointLabels);
-}
-
-
-function setEdgeLabels(graph, edgeLabels) {
-    logger.trace('setEdgeLabels', edgeLabels ? edgeLabels.length : 'none');
-    return graph.simulator.setEdgeLabels(edgeLabels);
 }
 
 function setColorMap(graph, imageURL, maybeClusters) {

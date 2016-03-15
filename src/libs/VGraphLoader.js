@@ -51,30 +51,108 @@ var decoders = {
 var attributeLoaders = function(graph) {
     return {
         pointSize: {
-            load: graph.setSizes,
+            load: function (values) {
+
+                var valueObj = {name: 'pointSizes', values: values, type: 'number'};
+                graph.dataframe.loadColumn('pointSizes', 'point', valueObj);
+
+                var ccManager = graph.dataframe.computedColumnManager;
+                var desc = {
+                    arrType: Uint8Array,
+                    type: 'number',
+                    filterable: true,
+                    numberPerGraphComponent: 1,
+                    graphComponentType: 'point',
+                    version: 0,
+                    dependencies: [
+                        ['pointSizes', 'point']
+                    ],
+                    computeSingleValue: function (pointSize, idx, numGraphElements) {
+                        return pointSize;
+                    }
+                };
+                ccManager.addComputedColumn(graph.dataframe, 'localBuffer', 'pointSizes', desc);
+
+                console.log('\n\n\nSET POINT SIZE LOADER\n\n\n');
+
+            },
             type : ['number'],
-            default: graph.setSizes,
             target: VERTEX,
             values: undefined
         },
         pointColor: {
-            load: graph.setColors,
+            load: function (values) {
+                var valueObj = {name: 'pointColors', values: values, type: 'color'};
+                graph.dataframe.loadColumn('pointColors', 'point', valueObj);
+
+                var ccManager = graph.dataframe.computedColumnManager;
+                var desc = {
+                    arrType: Uint32Array,
+                    type: 'color',
+                    filterable: true,
+                    numberPerGraphComponent: 1,
+                    graphComponentType: 'point',
+                    version: 0,
+                    dependencies: [
+                        ['pointColors', 'point']
+                    ],
+                    computeSingleValue: function (pointColor, idx, numGraphElements) {
+                        return pointColor;
+                    }
+                };
+                ccManager.addComputedColumn(graph.dataframe, 'localBuffer', 'pointColors', desc);
+
+                console.log('\n\n\nSET POINT COLOR LOADER\n\n\n');
+
+            },
             type: ['number', 'color'],
-            default: graph.setColors,
             target: VERTEX,
             values: undefined
         },
         edgeColor: {
-            load: graph.setEdgeColors,
+            load: function (values) {
+
+                var valueObj = {name: 'edgeColors', values: values, type: 'color', numberPerGraphComponent: 1};
+                graph.dataframe.loadColumn('edgeColors', 'edge', valueObj);
+
+                var ccManager = graph.dataframe.computedColumnManager;
+                var desc = {
+                    arrType: Uint32Array,
+                    type: 'color',
+                    filterable: true,
+                    numberPerGraphComponent: 2,
+                    graphComponentType: 'edge',
+                    version: 0,
+                    dependencies: [
+                        ['edgeColors', 'edge']
+                    ],
+                    computeAllValues: function (edgeColors, outArr, numGraphElements) {
+
+                        console.log('edgeColors: ', edgeColors.length);
+                        console.log('outArr: ', outArr.length);
+
+                        for (var i = 0; i < edgeColors.length; i++) {
+                            outArr[i*2] = edgeColors[i];
+                            outArr[i*2 + 1] = edgeColors[i];
+                        }
+                        return outArr;
+                    }
+                };
+                ccManager.addComputedColumn(graph.dataframe, 'localBuffer', 'edgeColors', desc);
+
+                console.log('\n\n\nSET EDGE COLOR LOADER\n\n\n');
+
+            },
             type: ['number', 'color'],
-            default: graph.setEdgeColors,
             target: EDGE,
             values: undefined
         },
         edgeHeight: {
-            load: graph.setEdgeHeights,
+            load: function (values) {
+                // NOT IMPLEMENTED OR USED YET
+                console.log('\n\n\ LOADING EDGE HEIGHTS NOT SUPPORTED\n\n\n');
+            },
             type: ['number'],
-            default: graph.setEdgeHeights,
             target: EDGE,
             values: undefined
         },
@@ -86,13 +164,61 @@ var attributeLoaders = function(graph) {
             values: undefined
         },
         pointLabel: {
-            load: graph.setPointLabels,
+            load: function (values) {
+
+                var valueObj = {name: 'pointLabels', values: values, type: 'string'};
+                graph.dataframe.loadColumn('pointLabels', 'point', valueObj);
+
+                var ccManager = graph.dataframe.computedColumnManager;
+                var desc = {
+                    arrType: Array,
+                    type: 'string',
+                    filterable: true,
+                    numberPerGraphComponent: 1,
+                    graphComponentType: 'point',
+                    version: 0,
+                    dependencies: [
+                        ['pointLabels', 'point']
+                    ],
+                    computeSingleValue: function (pointLabel, idx, numGraphElements) {
+                        return pointLabel;
+                    }
+                };
+                ccManager.addComputedColumn(graph.dataframe, 'hostBuffer', 'pointLabels', desc);
+
+                console.log('\n\n\nSET POINT LABEL LOADER\n\n\n');
+
+            },
             type: ['string'],
             target: VERTEX,
             values: undefined
         },
         edgeLabel: {
-            load: graph.setEdgeLabels,
+            load: function (values) {
+
+                var valueObj = {name: 'edgeLabels', values: values, type: 'string'};
+                graph.dataframe.loadColumn('edgeLabels', 'edge', valueObj);
+
+                var ccManager = graph.dataframe.computedColumnManager;
+                var desc = {
+                    arrType: Array,
+                    type: 'string',
+                    filterable: true,
+                    numberPerGraphComponent: 1,
+                    graphComponentType: 'edge',
+                    version: 0,
+                    dependencies: [
+                        ['edgeLabels', 'edge']
+                    ],
+                    computeSingleValue: function (edgeLabel, idx, numGraphElements) {
+                        return edgeLabel;
+                    }
+                };
+                ccManager.addComputedColumn(graph.dataframe, 'hostBuffer', 'edgeLabels', desc);
+
+                console.log('\n\n\nSET EDGE LABEL LOADER\n\n\n');
+
+            },
             type: ['string'],
             target: EDGE,
             values: undefined
@@ -247,6 +373,7 @@ function doWrap(res, mapping, loader) {
     if ('transform' in mapping) {
         var oldLoad = loader.load;
         loader.load = function (data) {
+            console.log('MAPPING: ', mapping.name);
             return oldLoad(mapping.transform(data));
         };
     }
