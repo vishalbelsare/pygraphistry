@@ -269,18 +269,6 @@ function fetchLabel (instance, labelCacheEntry, idx, dim) {
     });
 }
 
-/**
- * @param {String} identifier
- * @returns {String}
- */
-function escapeIdentifier (identifier) {
-    if (identifier.match(/[^A-Za-z:_]/)) {
-        return '[' + identifier.replace(/([^A-Za-z:_])/, function (char) { return '\\' + char; }, 'g') + ']';
-    } else {
-        return identifier;
-    }
-}
-
 function queryForKeyAndValue(type, key, value) {
     var identifier = Identifier.clarifyWithPrefixSegment(key, type);
     return {
