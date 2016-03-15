@@ -51,6 +51,7 @@ function Dataframe () {
         simulator: {}
     };
     this.typedArrayCache = {};
+    this.clBufferCache = {};
     this.lastPointPositions = null;
     this.computedColumnManager = null;
     /** The last mask applied as a result of in-place filtering. Full by default. */
@@ -532,14 +533,10 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
     var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
     var numMidEdgeColors = numMidEdgeColorsPerEdge * oldNumEdges;
     this.typedArrayCache.newMidEdgeColors = new Uint32Array(numMidEdgeColors);
-    this.typedArrayCache.newBackwardsEdgeWeights = new Float32Array(oldNumEdges);
-    this.typedArrayCache.newForwardsEdgeWeights = new Float32Array(oldNumEdges);
 
     this.typedArrayCache.tempPrevForces = new Float32Array(oldNumPoints * 2);
     this.typedArrayCache.tempDegrees = new Uint32Array(oldNumPoints);
     this.typedArrayCache.tempSpringsPos = new Float32Array(oldNumEdges * 4);
-    this.typedArrayCache.tempBackwardsEdgeWeights = new Float32Array(oldNumEdges);
-    this.typedArrayCache.tempForwardsEdgeWeights = new Float32Array(oldNumEdges);
     this.typedArrayCache.tempCurPoints = new Float32Array(oldNumPoints * 2);
 
     this.typedArrayCache.newPrevForces = new Float32Array(oldNumPoints * 2);
@@ -567,11 +564,8 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
 
     var rawdata = this.rawdata;
 
-    // TODO: These buffers are initialized in a different event loop and we want to no-op before they're ready.
     var rawSimBuffers = rawdata.buffers.simulator;
-    if (rawSimBuffers.forwardsEdgeWeights === undefined || rawSimBuffers.backwardsEdgeWeights === undefined) {
-        return Q(false);
-    }
+
     /** @type {DataframeData} */
     var newData = makeEmptyData();
     var numPoints = masks.numPoints();
@@ -737,15 +731,11 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
 
     var tempPrevForces = new Float32Array(this.typedArrayCache.tempPrevForces.buffer, 0, oldNumPoints * 2);
     var tempSpringsPos = new Float32Array(this.typedArrayCache.tempSpringsPos.buffer, 0, oldNumEdges * 4);
-    var tempForwardsEdgeWeights = new Float32Array(this.typedArrayCache.tempForwardsEdgeWeights.buffer, 0, oldNumEdges);
-    var tempBackwardsEdgeWeights = new Float32Array(this.typedArrayCache.tempBackwardsEdgeWeights.buffer, 0, oldNumEdges);
     var tempCurPoints = new Float32Array(this.typedArrayCache.tempCurPoints.buffer, 0, oldNumPoints * 2);
 
     var newPrevForces = new Float32Array(this.typedArrayCache.newPrevForces.buffer, 0, numPoints * 2);
     var newDegrees = new Uint32Array(this.typedArrayCache.newDegrees.buffer, 0, numPoints);
     var newSpringsPos = new Float32Array(this.typedArrayCache.newSpringsPos.buffer, 0, numEdges * 4);
-    var newForwardsEdgeWeights = new Float32Array(this.typedArrayCache.newForwardsEdgeWeights.buffer, 0, numEdges);
-    var newBackwardsEdgeWeights = new Float32Array(this.typedArrayCache.newBackwardsEdgeWeights.buffer, 0, numEdges);
     var newCurPoints = new Float32Array(this.typedArrayCache.newCurPoints.buffer, 0, numPoints * 2);
 
     var filteredSimBuffers = this.data.buffers.simulator;
@@ -753,8 +743,6 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     return Q.all([
         rawSimBuffers.prevForces.read(tempPrevForces),
         rawSimBuffers.springsPos.read(tempSpringsPos),
-        rawSimBuffers.forwardsEdgeWeights.read(tempForwardsEdgeWeights),
-        rawSimBuffers.backwardsEdgeWeights.read(tempBackwardsEdgeWeights),
         filteredSimBuffers.curPoints.read(tempCurPoints)
     ]).spread(function () {
 
@@ -804,15 +792,12 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
             newSpringsPos[i*4 + 1] = tempSpringsPos[oldEdgeIdx*4 + 1];
             newSpringsPos[i*4 + 2] = tempSpringsPos[oldEdgeIdx*4 + 2];
             newSpringsPos[i*4 + 3] = tempSpringsPos[oldEdgeIdx*4 + 3];
-
-            newForwardsEdgeWeights[i] = tempForwardsEdgeWeights[oldEdgeIdx];
-            newBackwardsEdgeWeights[i] = tempBackwardsEdgeWeights[oldEdgeIdx];
         });
 
         var someBufferPropertyNames = ['curPoints', 'prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
             'forwardsWorkItems', 'forwardsEdgeStartEndIdxs', 'backwardsEdges',
             'backwardsDegrees', 'backwardsWorkItems', 'backwardsEdgeStartEndIdxs',
-            'springsPos', 'forwardsEdgeWeights', 'backwardsEdgeWeights'
+            'springsPos'
         ];
         _.each(someBufferPropertyNames, function (key) {
             newData.buffers.simulator[key] = that.filteredBufferCache.simulator[key];
@@ -824,8 +809,6 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
             newBuffers.prevForces.write(newPrevForces),
             newBuffers.degrees.write(newDegrees),
             newBuffers.springsPos.write(newSpringsPos),
-            newBuffers.forwardsEdgeWeights.write(newForwardsEdgeWeights),
-            newBuffers.backwardsEdgeWeights.write(newBackwardsEdgeWeights),
             newBuffers.forwardsEdges.write(forwardsEdges.edgesTyped),
             newBuffers.forwardsDegrees.write(forwardsEdges.degreesTyped),
             newBuffers.forwardsWorkItems.write(forwardsEdges.workItemsTyped),
@@ -969,6 +952,7 @@ Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager)
                 computed: true,
                 computedVersion: colDesc.version,
                 filterable: colDesc.filterable,
+                graphComponentType: colDesc.graphComponentType,
                 numberPerGraphComponent: colDesc.numberPerGraphComponent,
                 arrType: colDesc.arrType
             };
@@ -995,6 +979,7 @@ Dataframe.prototype.registerNewComputedColumn = function (computedColumnManager,
         computed: true,
         computedVersion: colDesc.version,
         filterable: colDesc.filterable,
+        graphComponentType: colDesc.graphComponentType,
         numberPerGraphComponent: colDesc.numberPerGraphComponent,
         arrType: colDesc.arrType
     };
@@ -1626,7 +1611,7 @@ Dataframe.prototype.getColumn = function (columnName, type) {
  */
 
 
- // TODO: Have this return edge attributes in sorted order, unless
+// TODO: Have this return edge attributes in sorted order, unless
 // explicitly requested to be unsorted (for internal performance reasons)
 Dataframe.prototype.getColumnValues = function (columnName, type) {
 
@@ -1698,6 +1683,86 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
 
     // Nothing was found, so throw error.
     throw new Error("Couldn't get column values for: " + columnName);
+};
+
+
+// TODO: Track modifications to underlying GPU buffer,
+// so we can flag them as dirty='CL' or something and know to copy off GPU.
+Dataframe.prototype.getClBuffer = function (cl, columnName, type) {
+
+    var that = this;
+    var attributes = this.data.attributes[type];
+
+    // TODO FIXME HACK:
+    // So computed column manager can work, we need to pass through calls from here
+    // to getHostBuffer.
+
+    // if (type === 'hostBuffer' && (!attributes || !attributes[columnName])) {
+    //     return this.getHostBuffer(columnName);
+    // }
+
+    // if (type === 'localBuffer' && (!attributes || !attributes[columnName])) {
+    //     return this.getLocalBuffer(columnName);
+    // }
+
+    // Check to see if our buffer is not dirty, and that we have buffer values.
+    var computedVersionMatches = !(attributes[columnName].computed &&
+        (attributes[columnName].computedVersion !== this.computedColumnManager.getColumnVersion(type, columnName))
+    );
+
+    if (computedVersionMatches && !attributes[columnName].dirty && attributes[columnName].clBuffer) {
+        console.log('Returning Cached CL Buffer');
+        return Q(attributes[columnName].clBuffer);
+    }
+
+    // Need to fix CL Buffer. Today, naively get all columns and do a full copy.
+    // In the future, do this more cleverly (e.g., GPU filter + compact)
+
+    var newValues = this.getColumnValues(columnName, type);
+
+    // TODO: Add eviction to generic CL Buffer caching.
+    return this.getCachedCLBuffer(cl, columnName, type)
+        .then(function (buffer) {
+            return buffer.write(newValues);
+        }).then(function (buffer) {
+            attributes[columnName].clBuffer = buffer;
+            return buffer;
+        });
+};
+
+
+// TODO: Add eviction to generic CL Buffer caching.
+Dataframe.prototype.getCachedCLBuffer = function (cl, columnName, type) {
+    var desc = this.data.attributes[type][columnName];
+    var arrType = desc.arrType;
+
+    if (arrType === Array) {
+        throw new Error('Attempted to make CL Buffer for non-typed array: ', columnName, type);
+    }
+
+    var graphComponentType = desc.graphComponentType || type;
+    var numElements = this.getNumElements(graphComponentType);
+
+    this.clBufferCache[type] = this.clBufferCache[type] || {};
+    var cache = this.clBufferCache[type];
+
+    // TODO: Deal with size not being sufficient.
+    if (cache[columnName]) {
+
+        if (cache[columnName].size < arrType.BYTES_PER_ELEMENT * numElements) {
+            // TODO: Evict from cache and do necessary GC
+            throw new Error('Did not implement resizing of cached CL buffers yet for: ', columnName, type);
+        }
+
+        return Q(cache[columnName]);
+    }
+
+    // Not cached, so create and cache
+    return cl.createBuffer(numElements * arrType.BYTES_PER_ELEMENT, 'clBuffer_' + type + '_' + columnName)
+        .then(function (buffer) {
+            cache[columnName] = buffer;
+            return buffer;
+        });
 };
 
 

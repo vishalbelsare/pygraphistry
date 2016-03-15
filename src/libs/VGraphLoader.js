@@ -224,10 +224,57 @@ var attributeLoaders = function(graph) {
             values: undefined
         },
         edgeWeight: {
-          load: graph.setEdgeWeight,
+          load: function (values) {
+
+                var valueObj = {name: 'edgeWeights', values: values, type: 'number'};
+                graph.dataframe.loadColumn('edgeWeights', 'edge', valueObj);
+
+                var computeAllEdgeWeightFunction = function (edgeWeights, edges, outArr, numGraphElements) {
+                    var perm = edges.edgePermutationInverseTyped;
+                    for (var i = 0; i < edgeWeights.length; i++) {
+                        outArr[i] = edgeWeights[perm[i]];
+                    }
+                    return outArr;
+                };
+
+                var ccManager = graph.dataframe.computedColumnManager;
+
+                var forwardsDesc = {
+                    arrType: Float32Array,
+                    type: 'number',
+                    filterable: true,
+                    numberPerGraphComponent: 1,
+                    graphComponentType: 'edge',
+                    version: 0,
+                    dependencies: [
+                        ['edgeWeights', 'edge'],
+                        ['forwardsEdges', 'hostBuffer']
+                    ],
+                    computeAllValues: computeAllEdgeWeightFunction
+                };
+
+                var backwardsDesc = {
+                    arrType: Float32Array,
+                    type: 'number',
+                    filterable: true,
+                    numberPerGraphComponent: 1,
+                    graphComponentType: 'edge',
+                    version: 0,
+                    dependencies: [
+                        ['edgeWeights', 'edge'],
+                        ['backwardsEdges', 'hostBuffer']
+                    ],
+                    computeAllValues: computeAllEdgeWeightFunction
+                };
+
+                ccManager.addComputedColumn(graph.dataframe, 'hostBuffer', 'forwardsEdgeWeights', forwardsDesc);
+                ccManager.addComputedColumn(graph.dataframe, 'hostBuffer', 'backwardsEdgeWeights', backwardsDesc);
+
+                console.log('\n\n\nSET EDGE WEIGHTS LOADER\n\n\n');
+
+          },
           type: ['number'],
           target: EDGE,
-          default: graph.setEdgeWeight,
           values: undefined
         },
         // PointTitle and edgeTitle are handled in their own special way.

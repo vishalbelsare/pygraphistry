@@ -166,6 +166,39 @@ var defaultLocalBuffers = {
 
 var defaultHostBuffers = {
 
+    forwardsEdgeWeights: {
+        arrType: Float32Array,
+        type: 'number',
+        filterable: true,
+        numberPerGraphComponent: 1,
+        graphComponentType: 'edge',
+        version: 0,
+        dependencies: [
+        ],
+        computeAllValues: function (outArr, numGraphElements) {
+            for (var i = 0; i < outArr.length; i++) {
+                outArr[i] = 1.0;
+            }
+            return outArr;
+        }
+    },
+
+    backwardsEdgeWeights: {
+        arrType: Float32Array,
+        type: 'number',
+        filterable: true,
+        numberPerGraphComponent: 1,
+        graphComponentType: 'edge',
+        version: 0,
+        dependencies: [
+        ],
+        computeAllValues: function (outArr, numGraphElements) {
+            for (var i = 0; i < outArr.length; i++) {
+                outArr[i] = 1.0;
+            }
+            return outArr;
+        }
+    },
 
 };
 
