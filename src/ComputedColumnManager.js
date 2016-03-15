@@ -102,12 +102,6 @@ var defaultLocalBuffers = {
             }
 
             return outArr;
-
-            // var firstNodeIdx = unsortedEdges[idx*2];
-            // var secondNodeIdx = unsortedEdges[idx*2 + 1];
-            // var outputArray = [pointColors[firstNodeIdx], pointColors[secondNodeIdx]];
-            // return outputArray;
-
         }
 
     },

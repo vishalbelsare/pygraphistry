@@ -19,12 +19,6 @@ var DimCodes = {
 
 var NumElementsByDim = DimCodes;
 
-var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
-
-
-//for each named_clgl_buffer, its setter
-var boundBuffers = {};
-
 /**
  * Create a new N-body graph and return a promise for the graph object
  *
@@ -56,10 +50,6 @@ function create(renderer, simulator, dataframe, device, vendor, controls, socket
         updateSettings: updateSettings
     }, function (setter, setterName) {
         graph[setterName] = setter.bind('', graph);
-    });
-
-    _.each(NAMED_CLGL_BUFFERS, function (cfg, name) {
-        graph[cfg.setterName] = boundBuffers[name].setter.bind('', graph);
     });
 
     return clientNotification.loadingStatus(socket, 'Creating physics simulator')
@@ -169,15 +159,6 @@ function makeSetter (name, defSetter, arrConstructor, dimName, passThrough) {
 
     };
 }
-
-//Create stock setters
-//other setters may use, must do here
-_.each(NAMED_CLGL_BUFFERS, function (cfg, name) {
-    var defaultSetter = makeDefaultSetter(name, cfg.arrType, cfg.dims, cfg.setterName, cfg.defV);
-    var setter = makeSetter(name, defaultSetter, cfg.arrType, cfg.dims, cfg.setterName);
-    boundBuffers[name] = {setter: setter}
-});
-
 
 // TODO Deprecate and remove. Left for Uber compatibitily
 function setPoints(graph, points, pointSizes, pointColors) {

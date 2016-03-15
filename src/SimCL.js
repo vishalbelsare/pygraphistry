@@ -22,9 +22,6 @@ var logger      = log.createLogger('graph-viz','graph-viz/js/SimCL.js');
 // Q.longStackSupport = true;
 var randLength = 73;
 
-
-var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
-
 function create(dataframe, renderer, cl, device, vendor, cfg) {
     return Q().then(function () {
         // Pick the first layout algorithm that matches our device type
@@ -82,7 +79,6 @@ function create(dataframe, renderer, cl, device, vendor, cfg) {
             };
             simObj.tilesPerIteration = 1;
             simObj.buffersLocal = {};
-            createSetters(simObj);
 
             simObj.tick = tick.bind(this, simObj);
             simObj.setPoints = setPoints.bind(this, simObj);
@@ -153,12 +149,6 @@ function create(dataframe, renderer, cl, device, vendor, cfg) {
                 segStart: null,
                 edgeWeights: null
             };
-            _.extend(
-                simObj.buffers,
-                _.object(_.keys(NAMED_CLGL_BUFFERS).map(function (name) { return [name, null]; })),
-                _.object(_.keys(NAMED_CLGL_BUFFERS)
-                    .filter(function (name) { return NAMED_CLGL_BUFFERS[name].dims === 'numEdges'; })
-                    .map(function (name) { return [name + '_reverse', null]; })));
 
             simObj.timeSubset = {
                 relRange: {min: 0, max: 100},
@@ -546,16 +536,6 @@ function makeSetter(simulator, name/*, dimName*/) {
         }).fail(log.makeQErrorHandler(logger, 'ERROR Failure in SimCl.set %s', buffName));
     };
 }
-
-
-
-// ex:  simulator.setSizes(pointSizes).then(...)
-function createSetters (simulator) {
-    _.each(NAMED_CLGL_BUFFERS, function (cfg, bufferName) {
-        simulator[cfg.setterName] = makeSetter(simulator, bufferName, cfg.dims);
-    });
-}
-
 
 function setMidEdges( simulator ) {
     logger.debug("In set midedges");
@@ -1084,7 +1064,7 @@ function setTimeSubset(renderer, simulator, range) {
         //midpoints/midedges
         'curMidPoints', 'nextMidPoints', 'curMidPoints', 'midSpringsPos', 'midSpringsColorCoord'
 
-        ].concat(_.keys(NAMED_CLGL_BUFFERS)));
+        ]);
 
     return Q();
 
