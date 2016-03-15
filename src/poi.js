@@ -260,11 +260,11 @@ function fetchLabel (instance, labelCacheEntry, idx, dim) {
             return;
         }
         // TODO: Represent this in a cleaner way from the server
-        if (labels[0].title !== undefined) {
-            labelCacheEntry.onNext(labels[0]);
-        } else {
+        if (labels[0].title === undefined && labels[0].formatted === undefined) {
             // Invalid label request/response
             labelCacheEntry.onNext(false);
+        } else {
+            labelCacheEntry.onNext(labels[0]);
         }
     });
 }
@@ -304,7 +304,8 @@ function createLabelDom(instance, dim, labelObj) {
     var type = _.findKey(DimCodes, function (dimCode) { return dimCode === dim; });
     $cont.addClass('graph-label-' + type);
 
-    if (labelObj.formatted) {
+    // TODO FIXME HACK labelObj.formatted is injected as HTML; XSS vulnerability assumed (<script> tag)
+    if (labelObj.formatted !== undefined) {
         $cont.addClass('graph-label-preset');
         $title = $('<span>').addClass('graph-label-title').append(labelObj.formatted)
                 .append($labelType);
