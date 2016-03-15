@@ -42,9 +42,7 @@ function create(renderer, simulator, dataframe, device, vendor, controls, socket
     _.each({
         setVertices: setVertices,
         setEdges: setEdges,
-        setEdgesAndColors: setEdgesAndColors,
         setMidEdgeColors: setMidEdgeColors,
-        setColorMap: setColorMap,
         tick: tick,
         updateSettings: updateSettings
     }, function (setter, setterName) {
@@ -103,62 +101,6 @@ function updateSettings(graph, newCfg) {
 }
 
 
-
-function passThroughSetter(simulator, dimName, arr, passThrough) {
-    simulator[passThrough](arr);
-}
-
-//str * TypedArrayConstructor * {'point', 'edge'} * {'set...'} * ?(simulator * array * len -> ())
-//  -> simulator -> Q simulator
-//Create default setter
-function makeDefaultSetter (name, arrConstructor, dimName, passThrough, f) {
-    return function (simulator) {
-        logger.trace("Using default %s", name);
-        var numByDim = simulator.dataframe.getNumElements(dimName);
-        var arr = new arrConstructor(numByDim * NumElementsByDim[dimName]);
-        if (f) {
-            f(simulator, arr, numByDim);
-        }
-        return passThroughSetter(simulator, dimName, arr, passThrough);
-    };
-}
-
-
-function makeSetter (name, defSetter, arrConstructor, dimName, passThrough) {
-
-    return function (graph, rawArray) {
-
-        logger.trace('Loading %s', name);
-
-        if (!rawArray) {
-            return defSetter(graph.simulator);
-        }
-
-        // TODO: Decide if the following setters are still relevant.
-        var len = graph.simulator.dataframe.getNumElements(dimName) * NumElementsByDim[dimName],
-            array, i;
-        if (rawArray.constructor === arrConstructor && dimName === 'point') {
-            array = rawArray;
-        } else if (dimName === 'edge') {
-            array = new arrConstructor(len);
-            var map = graph.simulator.dataframe.getHostBuffer('forwardsEdges').edgePermutation;
-            for (i = 0; i < len/2; i++) {
-                array[2 * map[i]] = rawArray[i];
-                array[2 * map[i] + 1] = rawArray[i];
-            }
-        } else {
-            len = graph.simulator.dataframe.getNumElements(dimName);
-            array = new arrConstructor(len);
-            for (i = 0; i < len; i++) {
-                array[i] = rawArray[i];
-            }
-        }
-
-        return passThroughSetter(graph.simulator, dimName, array, passThrough);
-
-    };
-}
-
 function setVertices(graph, points) {
     logger.trace('Loading Vertices');
 
@@ -172,15 +114,6 @@ function setVertices(graph, points) {
 
     graph.stepNumber = 0;
     return graph.simulator.setPoints(points);
-}
-
-
-// TODO Deprecate and remove. Left for Uber compatibility
-function setEdgesAndColors(graph, edges, edgeColors) {
-    return setEdges(graph, edges)
-    .then(function () {
-        return setMidEdgeColors(graph, edgeColors);
-    });
 }
 
 
@@ -289,11 +222,6 @@ function setMidEdgeColors(graph, midEdgeColors) {
     }
 
     return graph.simulator.setMidEdgeColors(ec);
-}
-
-function setColorMap(graph, imageURL, maybeClusters) {
-    return graph.renderer.setColorMap(imageURL, maybeClusters)
-        .then(_.constant(graph));
 }
 
 
