@@ -50,7 +50,6 @@ function create(renderer, simulator, dataframe, device, vendor, controls, socket
         setVertices: setVertices,
         setEdges: setEdges,
         setEdgesAndColors: setEdgesAndColors,
-        setEdgeWeight: setEdgeWeight,
         setMidEdgeColors: setMidEdgeColors,
         setColorMap: setColorMap,
         tick: tick,
@@ -313,21 +312,6 @@ var setEdges = Q.promised(function(graph, edges) {
             return graph;
         }).fail(log.makeQErrorHandler(logger, 'Failure in setEdges'));
 });
-
-function setEdgeWeight(graph, edgeWeights) {
-    logger.trace('Loading edgeWeights');
-    var edgeCount = graph.simulator.dataframe.getNumElements('edge');
-
-    if (!edgeWeights) {
-      return graph.simulator.setEdgeWeight(undefined);
-    }
-
-    if (edgeWeights.length !== edgeCount) {
-       logger.error('setEdgeWeights expects one weight per edge');
-    }
-
-    return graph.simulator.setEdgeWeight(edgeWeights);
-}
 
 function setMidEdgeColors(graph, midEdgeColors) {
     logger.trace("Loading midEdgeColors");
