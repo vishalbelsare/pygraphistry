@@ -578,18 +578,6 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
         this.initializeTypedArrayCache(oldNumPoints, oldNumEdges);
     }
 
-    // labels;
-    _.each(GraphComponentTypes, function (type) {
-        if (rawdata.labels[type]) {
-            var newLabels = [];
-            _.each(masks[type], function (idx) {
-                newLabels.push(rawdata.labels[type][idx]);
-            });
-            newData.labels[type] = newLabels;
-        }
-    });
-
-    // TODO: Regular Data GPU Buffers
     // TODO: Figure out how GC/memory management works.
 
     ///////////////////////////////////////////////////////////////////////////
@@ -643,7 +631,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     var backwardsEdges = this.encapsulateEdges(edgesFlipped, numPoints, rawdata.hostBuffers.backwardsEdges, unsortedMasks, pointOriginalLookup);
     newData.hostBuffers.forwardsEdges = forwardsEdges;
     newData.hostBuffers.backwardsEdges = backwardsEdges;
-    newData.hostBuffers.points = rawdata.hostBuffers.points;
+    // newData.hostBuffers.points = rawdata.hostBuffers.points;
 
     // TODO index translation (filter scope)
     newData.localBuffers.selectedEdgeIndexes = this.lastSelectionMasks.typedEdgeIndexes();

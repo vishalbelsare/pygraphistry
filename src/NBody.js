@@ -35,7 +35,6 @@ function create(renderer, simulator, dataframe, device, vendor, controls, socket
         renderer: renderer,
         socket: socket,
         stepNumber: 0,
-        __pointsHostBuffer: undefined,
         dataframe: dataframe
     };
 
@@ -109,9 +108,6 @@ function setVertices(graph, points) {
         points = _toTypedArray(points, Float32Array);
     }
 
-    graph.__pointsHostBuffer = points;
-    graph.dataframe.loadHostBuffer('points', points);
-
     graph.stepNumber = 0;
     return graph.simulator.setPoints(points);
 }
@@ -136,7 +132,7 @@ function scatterEdgePos(edges, curPos) {
 
 
 
-var setEdges = Q.promised(function(graph, edges) {
+var setEdges = Q.promised(function(graph, edges, points) {
     logger.trace('Loading Edges');
     if (edges.length < 1)
         return Q.fcall(function() { return graph; });
@@ -173,8 +169,8 @@ var setEdges = Q.promised(function(graph, edges) {
             var src = forwardEdges.edgesTyped[i];
             var dst = forwardEdges.edgesTyped[i + 1];
             for (var d = 0; d < nDim; d++) {
-                var start = graph.__pointsHostBuffer[(src * nDim) + d];
-                var end = graph.__pointsHostBuffer[(dst * nDim) + d];
+                var start = points[(src * nDim) + d];
+                var end = points[(dst * nDim) + d];
                 var step = (end - start) / (numSplits + 1);
                 for (var q = 0; q < numSplits; q++) {
                     midPoints[((((i/2) * numSplits) + q) * nDim) + d] = start + step * (q + 1);
@@ -183,14 +179,15 @@ var setEdges = Q.promised(function(graph, edges) {
         }
     }
 
-    var endPoints = scatterEdgePos(edges, graph.__pointsHostBuffer);
+    var endPoints = scatterEdgePos(edges, points);
 
     logger.info('Dataset    nodes:%d  edges:%d  splits:%d',
                 numPoints, edges.length, numSplits);
 
     return graph.simulator.setEdges(edges, forwardEdges, backwardsEdges,
-                                    degrees, midPoints, endPoints, graph.__pointsHostBuffer)
+                                    degrees, midPoints, endPoints, points)
         .then(function () {
+            // TODO: THESE SHOULDN'T BE HERE
             return graph.simulator.setSelectedPointIndexes(new Uint32Array());
         })
         .then(function () {

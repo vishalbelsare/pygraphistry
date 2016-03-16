@@ -588,7 +588,7 @@ function decode0(graph, vg, metadata)  {
         }).then(function () {
             return clientNotification.loadingStatus(graph.socket, 'Binding edges');
         }).then(function () {
-            return graph.setEdges(edges);
+            return graph.setEdges(edges, vertices);
         }).then(function () {
             return clientNotification.loadingStatus(graph.socket, 'Binding everything else');
         }).then(function () {
@@ -1003,7 +1003,7 @@ function decode1(graph, vg, metadata)  {
         }).then(function () {
             return clientNotification.loadingStatus(graph.socket, 'Binding edges');
         }).then(function () {
-            return graph.setEdges(edges);
+            return graph.setEdges(edges, vertices);
         }).then(function () {
             return clientNotification.loadingStatus(graph.socket, 'Binding everything else');
         }).then(function () {
