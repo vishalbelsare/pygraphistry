@@ -390,7 +390,7 @@ function FiltersPanel(socket, labelRequests, settingsChanges) {
             });
             var bindingsList = [];
             _.each(bindingsByName, function (binding, name) {
-                bindingsList.push(_.extend(binding, {name: name}));
+                bindingsList.push(_.defaults({name: name}, binding));
             });
             var params = {fields: bindingsList};
             var html = addFilterTemplate(params);
