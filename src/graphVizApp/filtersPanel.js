@@ -17,6 +17,11 @@ var util          = require('./util.js');
 
 var COLLAPSED_FILTER_HEIGHT = 80;
 
+/**
+ * @readonly
+ * @type {string[]}
+ */
+var GraphComponentTypes = ['point', 'edge'];
 
 var FilterModel = QuerySelectionModel.extend({
     isSystem: function () {
@@ -345,26 +350,49 @@ function FiltersPanel(socket, labelRequests, settingsChanges) {
         }).do(function (data) {
             // Setup add filter button.
             var addFilterTemplate = Handlebars.compile($('#addFilterTemplate').html());
-            // TODO flatten the namespace into selectable elements:
-            var fields = [], fieldsByName = {};
-            _.each(data.dataframeAttributes, function (columns, typeName) {
-                _.each(columns, function (column, attributeName) {
+            // Flatten the keys used to access the column with the 'name' property stored on the column.
+            var namespaceByType = {point: {}, edge: {}};
+            _.each(data.dataframeAttributes, function (columnsByName, type) {
+                var typeNamespace = namespaceByType[type];
+                _.each(columnsByName, function (column, attributeName) {
                     // PATCH rename "type" to "dataType" to avoid collisions:
                     if (column.hasOwnProperty('type') && !column.hasOwnProperty('dataType')) {
                         column.dataType = column.type;
                         delete column.type;
                     }
-                    if (fieldsByName[attributeName] === undefined) {
-                        fields.push(_.extend({type: typeName}, column, {name: attributeName}));
-                        fieldsByName[attributeName] = column;
-                    }
-                    if (column.name !== undefined && column.name !== attributeName) {
-                        fields.push(_.extend({type: typeName}, column));
-                        fieldsByName[column.name] = column;
+                    _.defaults(column, {type: type});
+                    typeNamespace[attributeName] = column;
+                    if (column.name !== attributeName && typeNamespace[column.name] === undefined) {
+                        typeNamespace[column.name] = column;
                     }
                 });
             });
-            var params = {fields: fields};
+            // TODO flatten the namespace into selectable elements:
+            var bindingsByName = {};
+            // Depends on point columns handled before edge columns:
+            _.each(GraphComponentTypes, function (type) {
+                _.each(namespaceByType[type], function (column, attributeName) {
+                    var prefixedName = Identifier.clarifyWithPrefixSegment(attributeName, type);
+                    if (type === GraphComponentTypes[0]) {
+                        var otherType = GraphComponentTypes[1];
+                        if (namespaceByType[otherType].hasOwnProperty(attributeName)) {
+                            bindingsByName[prefixedName] = column;
+                            var otherColumn = namespaceByType[otherType][attributeName],
+                                otherName = Identifier.clarifyWithPrefixSegment(attributeName, otherType);
+                            bindingsByName[otherName] = otherColumn;
+                        } else if (!bindingsByName.hasOwnProperty(attributeName)) {
+                            bindingsByName[prefixedName] = column;
+                        }
+                    } else if (!bindingsByName.hasOwnProperty(attributeName)) {
+                        bindingsByName[prefixedName] = column;
+                    }
+                });
+            });
+            var bindingsList = [];
+            _.each(bindingsByName, function (binding, name) {
+                bindingsList.push(_.extend(binding, {name: name}));
+            });
+            var params = {fields: bindingsList};
             var html = addFilterTemplate(params);
             $('#addFilter').addClass('container-fluid').html(html);
         }).subscribe(_.identity, function (err) {
