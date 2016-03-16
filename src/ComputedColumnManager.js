@@ -30,6 +30,57 @@ function getDegree(forwardsEdges, backwardsEdges, i) {
 
 var defaultLocalBuffers = {
 
+    logicalEdges: {
+        arrType: Uint32Array,
+        type: 'number',
+        numberPerGraphComponent: 2,
+        graphComponentType: 'edge',
+        version: 0,
+        dependencies: [
+            ['forwardsEdges', 'hostBuffer']
+        ],
+        computeAllValues: function (forwardsEdges, outArr, numGraphElements) {
+            for (var i = 0; i < outArr.length; i++) {
+                outArr[i] = forwardsEdges.edgesTyped[i];
+            }
+            return outArr;
+        }
+    },
+
+    forwardsEdgeStartEndIdxs: {
+        arrType: Uint32Array,
+        type: 'number',
+        numberPerGraphComponent: 2,
+        graphComponentType: 'point',
+        version: 0,
+        dependencies: [
+            ['forwardsEdges', 'hostBuffer']
+        ],
+        computeAllValues: function (forwardsEdges, outArr, numGraphElements) {
+            for (var i = 0; i < outArr.length; i++) {
+                outArr[i] = forwardsEdges.edgeStartEndIdxsTyped[i];
+            }
+            return outArr;
+        }
+    },
+
+    backwardsEdgeStartEndIdxs: {
+        arrType: Uint32Array,
+        type: 'number',
+        numberPerGraphComponent: 2,
+        graphComponentType: 'point',
+        version: 0,
+        dependencies: [
+            ['backwardsEdges', 'hostBuffer']
+        ],
+        computeAllValues: function (backwardsEdges, outArr, numGraphElements) {
+            for (var i = 0; i < outArr.length; i++) {
+                outArr[i] = backwardsEdges.edgeStartEndIdxsTyped[i];
+            }
+            return outArr;
+        }
+    },
+
     pointColors: {
         arrType: Uint32Array,
         type: 'color',

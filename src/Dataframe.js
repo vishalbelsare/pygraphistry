@@ -645,10 +645,6 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     newData.hostBuffers.backwardsEdges = backwardsEdges;
     newData.hostBuffers.points = rawdata.hostBuffers.points;
 
-
-    newData.localBuffers.logicalEdges = forwardsEdges.edgesTyped;
-    newData.localBuffers.forwardsEdgeStartEndIdxs = forwardsEdges.edgeStartEndIdxsTyped;
-    newData.localBuffers.backwardsEdgeStartEndIdxs = backwardsEdges.edgeStartEndIdxsTyped;
     // TODO index translation (filter scope)
     newData.localBuffers.selectedEdgeIndexes = this.lastSelectionMasks.typedEdgeIndexes();
     newData.localBuffers.selectedPointIndexes = this.lastSelectionMasks.typedPointIndexes();
@@ -1594,6 +1590,8 @@ Dataframe.prototype.getColumn = function (columnName, type) {
 // TODO: Have this return edge attributes in sorted order, unless
 // explicitly requested to be unsorted (for internal performance reasons)
 Dataframe.prototype.getColumnValues = function (columnName, type) {
+
+    console.log('GETTING COLUMN VALUES: ', columnName, type);
 
     var attributes = this.data.attributes[type];
 
