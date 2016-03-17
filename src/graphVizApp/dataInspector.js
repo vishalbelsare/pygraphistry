@@ -147,7 +147,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         rowClick: function (evt) {
             var ctrl = evt.ctrlKey || evt.metaKey;
             var shift = evt.shiftKey;
-            var selection = {idx: this.model.attributes._index, dim: dim, source: 'dataInspector'};
+            var selection = {idx: +this.model.attributes._index, dim: dim, source: 'dataInspector'};
             if (ctrl) {
                 // TODO: Is there a cleaner way to do this sort of "in place"
                 // operation on a replay subject?
@@ -232,7 +232,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
                 return;
             }
             row.model.set('selected', false);
-            if (grid.selection.containsIndexByDim(row.model.attributes._index, dim)) {
+            if (grid.selection.containsIndexByDim(+row.model.attributes._index, dim)) {
                 grid.selectedModels.push(row.model);
                 row.model.set('selected', true);
             }
@@ -291,7 +291,7 @@ function setupSelectionRerender(activeSelection, grid, whichDim) {
             }
             row.model.set('selected', false);
             selection.forEachIndexAndDim(function (idx, dim) {
-                if (row.model.attributes._index === idx && whichDim === dim) {
+                if ((+row.model.attributes._index) === idx && whichDim === dim) {
                     grid.selectedModels.push(row.model);
                     row.model.set('selected', true);
                 }
