@@ -1358,7 +1358,8 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                 otherIsSelected = true;
                 continue;
             }
-            if (stats.binValues && stats.binValues[binName] !== undefined) {
+            if (stats.binValues && stats.binValues[binName] &&
+                stats.binValues[binName].representative !== undefined) {
                 binName = stats.binValues[binName].representative;
             }
             binValues.push(isNumeric ? Number(binName) : binName);
