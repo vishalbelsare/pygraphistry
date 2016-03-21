@@ -81,6 +81,14 @@ function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, ap
 
     var latestHighlightedObject = new Rx.ReplaySubject(1);
 
+    var labelsAreEnabled = new Rx.ReplaySubject(1);
+    labelsAreEnabled.onNext(urlParams.hasOwnProperty('labels') ? urlParams.labels : true);
+    apiActions
+        .filter(function (msg) { return msg && (msg.setting === 'labels'); })
+        .do(function (msg) {
+            labelsAreEnabled.onNext(msg.value);
+        }).subscribe(_.identity, util.makeErrorHandler('Error updating label enabling'));
+
     var poiIsEnabled = new Rx.ReplaySubject(1);
     poiIsEnabled.onNext(urlParams.hasOwnProperty('poi') ? urlParams.poi : true);
     apiActions
@@ -103,6 +111,9 @@ function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, ap
         if (parameters !== undefined) {
             if (parameters.poiEnabled !== undefined) {
                 poiIsEnabled.onNext(parameters.poiEnabled);
+            }
+            if (parameters.labelsEnabled !== undefined) {
+                labelsAreEnabled.onNext(parameters.labelsEnabled);
             }
         }
     });
@@ -131,6 +142,7 @@ function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, ap
         apiEvents: apiEvents,
         apiActions: apiActions,
         poiIsEnabled: poiIsEnabled,
+        labelsAreEnabled: labelsAreEnabled,
         clickEvents: new Rx.ReplaySubject(0)
     };
 

@@ -145,8 +145,8 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
         return;
     }
 
-    appState.poiIsEnabled.do(function (v) {
-        $('html').toggleClass('poiIsDisabled', !v);
+    appState.labelsAreEnabled.do(function (v) {
+        $('html').toggleClass('labelsDisabled', !v);
     }).subscribe(_.identity, util.makeErrorHandler('poi -> html status'));
 
     appState.cameraChanges.combineLatest(
