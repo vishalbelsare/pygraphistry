@@ -1320,7 +1320,7 @@ Dataframe.prototype.getRowAt = function (index, type, attributes) {
     var origIndex = index; // For client-side metadata.
 
     // Convert from sorted into unsorted edge indices.
-    if (index && type === 'edge') {
+    if (index !== undefined && type === 'edge') {
         var forwardsEdgePermutationInverse = this.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
         index = forwardsEdgePermutationInverse[index];
     }
