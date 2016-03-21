@@ -2406,7 +2406,7 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
         }
 
         Array.prototype.sort.call(mapped, function (a, b) {
-            return (edges[a*2] - edges[b*2] || (edges[a*2 + 1] - edges[b*2 + 1]));
+            return (edges[a*2] - edges[b*2] || (edges[a*2 + 1] - edges[b*2 + 1]) || (a - b));
         });
 
         for (i = 0; i < edges.length/2; i++) {
