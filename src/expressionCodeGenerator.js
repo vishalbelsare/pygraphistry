@@ -181,7 +181,7 @@ ExpressionCodeGenerator.prototype = {
      * @returns {String}
      */
     translateOperator: function (operatorString) {
-        switch (operatorString.toUpperCase()) {
+        switch (operatorString) {
             case 'AND':
                 return '&&';
             case 'OR':
@@ -419,7 +419,7 @@ ExpressionCodeGenerator.prototype = {
                         // TODO distinguish float/double from integer.
                         guards.push({
                             type: 'BinaryPredicate',
-                            operator: '=',
+                            operator: 'IS',
                             left: identifier,
                             right: {type: 'Literal', dataType: 'number', value: NaN}
                         });
@@ -735,20 +735,34 @@ ExpressionCodeGenerator.prototype = {
             case 'EqualityPredicate':
             case 'BinaryPredicate':
             case 'BinaryExpression':
+                operator = ast.operator.toUpperCase();
                 // Maybe InExpression would be a better logic branch:
-                if (ast.operator.toUpperCase() === 'IN') {
+                if (operator === 'IN') {
+                    precedence = this.precedenceOf('!==');
                     args = _.map([ast.left, ast.right], function (arg) {
                         return this.expressionStringForAST(arg, bindings, depth2, precedence);
                     }, this);
                     subExprString = args[1] + '.indexOf(' + args[0] + ') !== -1';
-                    return this.wrapSubExpressionPerPrecedences(subExprString, this.precedenceOf('!=='), outerPrecedence);
                 }
                 operator = this.translateOperator(ast.operator);
                 precedence = this.precedenceOf(operator);
                 args = _.map([ast.left, ast.right], function (arg) {
                     return this.expressionStringForAST(arg, bindings, depth2, precedence);
                 }, this);
-                subExprString = [args[0], operator, args[1]].join(' ');
+                // Special-case NAN equality/comparison:
+                if (ast.right.type === 'Literal' && ast.right.dataType === 'number' &&
+                    isNaN(ast.right.value)) {
+                    precedence = this.precedenceOf('(');
+                    if (operator === '===') {
+                        subExprString = 'isNaN(' + args[0] + ')';
+                    } else if (operator === '!==') {
+                        subExprString = '!isNaN(' + args[0] + ')';
+                    } else {
+                        subExprString = [args[0], operator, args[1]].join(' ');
+                    }
+                } else {
+                    subExprString = [args[0], operator, args[1]].join(' ');
+                }
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'UnaryExpression':
                 operator = ast.operator.toUpperCase();
@@ -763,7 +777,7 @@ ExpressionCodeGenerator.prototype = {
                     arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
                     subExprString = [arg, operator, 'null'].join(' ');
                 } else {
-                    operator = this.translateOperator(ast.operator);
+                    operator = this.translateOperator(operator);
                     precedence = this.precedenceOf(operator, ast.fixity);
                     arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
                     switch (ast.fixity) {
