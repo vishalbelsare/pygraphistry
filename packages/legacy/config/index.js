@@ -59,6 +59,7 @@ function defaults() {
         // The number of seconds a worker waits for an assigned user to connect. During this time,
         // no other connections will be assigned to this worker.
         WORKER_CONNECT_TIMEOUT: 10,
+        WORKER_RESTART: false,
 
         HTTP_LISTEN_ADDRESS: 'localhost',
         HTTP_LISTEN_PORT: 3000,
@@ -175,8 +176,8 @@ function deployEnv(options) {
         MONGO_REPLICA_SET: 'set-545152bc461811298c009c03',
         ALLOW_MULTIPLE_VIZ_CONNECTIONS: false,
 
-
-        PINGER_ENABLED: true
+        PINGER_ENABLED: true,
+        WORKER_RESTART: true
     };
 
     var stagingOptions = {
