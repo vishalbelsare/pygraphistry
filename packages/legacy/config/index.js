@@ -79,14 +79,6 @@ function defaults() {
         MONGO_SERVER: 'mongodb://localhost/graphistry-local',
         PINGER_ENABLED: false,
 
-        BOUNDARY: {
-            ENDPOINT: 'https://api.graphdat.com/v1/measurements',
-            AUTH: {
-                user: 'boundary@graphistry.com',
-                pass: 'api.62fb69d814-3713'
-            }
-        },
-
         API: {
             ALGORITHM: 'aes-256-cbc',
             CANARY: 'Validated',
