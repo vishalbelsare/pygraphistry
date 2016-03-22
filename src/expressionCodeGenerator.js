@@ -188,10 +188,10 @@ ExpressionCodeGenerator.prototype = {
                 return '||';
             case 'NOT':
                 return '!';
-            case 'IS':
             case '!=':
             case '<>':
                 return '!==';
+            case 'IS':
             case '=':
             case '==':
                 return '===';
