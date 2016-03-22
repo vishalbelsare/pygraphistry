@@ -69,11 +69,6 @@ function Dataframe () {
     /** @type {DataframeMetadata} */
     this.metadata = {};
 
-    // TODO: Move this out of data frame constructor
-    // var encodingsManager = new ComputedColumnManager();
-    // encodingsManager.loadEncodingColumns();
-    // this.loadEncodingsManager(encodingsManager);
-
     // TODO: Move this out of data frame constructor.
     var computedColumnManager = new ComputedColumnManager();
     computedColumnManager.loadDefaultColumns();
@@ -1106,17 +1101,6 @@ Dataframe.prototype.loadHostBuffer = function (name, buffer) {
 
 
 Dataframe.prototype.loadLocalBuffer = function (name, buffer) {
-    // TODO: Generalize
-    if (/*name === 'edgeColors' || */name === 'edgeHeights') {
-        var sortedBuffer = new buffer.constructor(buffer.length);
-        var permutation = this.rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
-        for (var i = 0; i < buffer.length / 2; i++) {
-            sortedBuffer[i*2] = buffer[permutation[i]*2];
-            sortedBuffer[i*2 + 1] = buffer[permutation[i]*2 +1];
-        }
-        buffer = sortedBuffer;
-    }
-
     var localBuffers = this.rawdata.localBuffers;
     localBuffers[name] = buffer;
 };

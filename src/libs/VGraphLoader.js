@@ -297,6 +297,46 @@ var attributeLoaders = function(graph) {
     };
 };
 
+function calculateAndStoreCommunities(graph) {
+    var dataframe = graph.dataframe;
+    var forwardsEdges = dataframe.getColumnValues('forwardsEdges', 'hostBuffer');
+    var backwardsEdges = dataframe.getColumnValues('backwardsEdges', 'hostBuffer');
+
+    var outArr = new Array(dataframe.getNumElements('point'));
+
+    var getDegree = function (forwardsEdges, backwardsEdges, i) {
+        return forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
+    };
+
+    var compare = function (initBest, buffers, i) {
+        var best = initBest;
+
+        var worklist = buffers.srcToWorkItem[i];
+        var firstEdge = buffers.workItemsTyped[i * 4];
+        var numEdges = buffers.workItemsTyped[i * 4 + 1];
+        for (var j = 0; j < numEdges; j++) {
+            var dst = buffers.edgesTyped[firstEdge*2 + j*2 + 1];
+            var degree = getDegree(forwardsEdges, backwardsEdges, dst);
+            if (   (degree > best.degree)
+                || (degree == best.degree && dst > best.id)) {
+                best = {id: dst, degree: degree};
+            }
+        }
+
+        return best;
+    };
+
+    for (var idx = 0; idx < outArr.length; idx++) {
+        var best = {id: idx, degree: getDegree(forwardsEdges, backwardsEdges, idx)};
+        var bestOut = compare(best, forwardsEdges, idx);
+        var bestIn = compare(bestOut, backwardsEdges, idx);
+        outArr[idx] = bestIn.id;
+    }
+
+    var valueObj = {name: 'pointCommunity', values: outArr, type: 'number'};
+    graph.dataframe.loadColumn('pointCommunity', 'point', valueObj);
+}
+
 
 var opentsdbMapper = {
     mappings: {
@@ -592,6 +632,7 @@ function decode0(graph, vg, metadata)  {
         }).then(function () {
             return clientNotification.loadingStatus(graph.socket, 'Binding everything else');
         }).then(function () {
+            calculateAndStoreCommunities(graph);
             return runLoaders(loaders);
         }).then(function () {
             return graph;
@@ -1007,6 +1048,7 @@ function decode1(graph, vg, metadata)  {
         }).then(function () {
             return clientNotification.loadingStatus(graph.socket, 'Binding everything else');
         }).then(function () {
+            calculateAndStoreCommunities(graph);
             return runLoaders(loaders);
         }).then(function () {
             return graph;

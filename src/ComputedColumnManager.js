@@ -28,6 +28,12 @@ function getDegree(forwardsEdges, backwardsEdges, i) {
 // stacking goes. Adding/changing computed col should impact only the newest dataframe
 // frame, but changing encoding should impact everything.
 
+// TODO: Replace aggregate dependencies that point to "raw" dataset with
+// some sort of pointer to a base dataframe view
+
+// Only aggregates can point to specific dataframe view (otherwise indexing doesn't make sense);
+// TODO: Implement aggregates across computed columns too.
+
 var defaultLocalBuffers = {
 
     logicalEdges: {
@@ -89,45 +95,18 @@ var defaultLocalBuffers = {
         graphComponentType: 'point',
         version: 0,
         dependencies: [
-            ['forwardsEdges', 'hostBuffer'],
-            ['backwardsEdges', 'hostBuffer']
+            ['pointCommunity', 'point']
         ],
-        computeAllValues: function (forwardsEdges, backwardsEdges, outArr, numGraphElements) {
 
-            console.log('COMPUTING POINT COLORS');
-
-            //use hash of highest degree neighbor
-            var compare = function (initBest, buffers, i) {
-                var best = initBest;
-
-                var worklist = buffers.srcToWorkItem[i];
-                var firstEdge = buffers.workItemsTyped[i * 4];
-                var numEdges = buffers.workItemsTyped[i * 4 + 1];
-                for (var j = 0; j < numEdges; j++) {
-                    var dst = buffers.edgesTyped[firstEdge*2 + j*2 + 1];
-                    var degree = getDegree(forwardsEdges, backwardsEdges, dst);
-                    if (   (degree > best.degree)
-                        || (degree == best.degree && dst > best.id)) {
-                        best = {id: dst, degree: degree};
-                    }
-                }
-
-                return best;
-            };
+        computeSingleValue: function (pointCommunity, idx, numGraphElements) {
 
             var palette = util.palettes.qual_palette2;
             var pLen = palette.length;
+            var color = palette[pointCommunity % pLen];
 
-            for (var idx = 0; idx < numGraphElements; idx++) {
-                var best = {id: idx, degree: getDegree(forwardsEdges, backwardsEdges, idx)};
-                var bestOut = compare(best, forwardsEdges, idx);
-                var bestIn = compare(bestOut, backwardsEdges, idx);
-                var color = palette[bestIn.id % pLen];
-                outArr[idx] = color;
-            }
-
-            return outArr;
+            return color;
         }
+
     },
 
     edgeColors: {
