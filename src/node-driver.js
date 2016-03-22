@@ -11,8 +11,6 @@ var Q = require("q"),
     _ = require('underscore'),
     request = require('request'),
     rConf = require('./renderer.config.js'),
-//    webcl = require('node-webcl'),
-    metrics = require("./metrics.js"),
     loader = require("./data-loader.js"),
     clientNotification = require('./clientNotification.js');
 
