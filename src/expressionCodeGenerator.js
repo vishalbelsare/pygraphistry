@@ -743,6 +743,7 @@ ExpressionCodeGenerator.prototype = {
                         return this.expressionStringForAST(arg, bindings, depth2, precedence);
                     }, this);
                     subExprString = args[1] + '.indexOf(' + args[0] + ') !== -1';
+                    return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
                 }
                 operator = this.translateOperator(ast.operator);
                 precedence = this.precedenceOf(operator);
