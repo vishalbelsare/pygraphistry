@@ -181,7 +181,7 @@ ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
         value = 0, values = this.column.values, numValues = this.getAggregationByType('count');
     for (var i=0; i < numValues; i++) {
         value = values[i];
-        if (dataTypeUtil.numberSignifiesUndefined(value)) {
+        if (dataTypeUtil.numberSignifiesUndefined(value) || dataTypeUtil.int32SignifiesUndefined(value)) {
             countMissing++;
             continue;
         }
