@@ -181,17 +181,17 @@ ExpressionCodeGenerator.prototype = {
      * @returns {String}
      */
     translateOperator: function (operatorString) {
-        switch (operatorString.toUpperCase()) {
+        switch (operatorString) {
             case 'AND':
                 return '&&';
             case 'OR':
                 return '||';
             case 'NOT':
                 return '!';
-            case 'IS':
             case '!=':
             case '<>':
                 return '!==';
+            case 'IS':
             case '=':
             case '==':
                 return '===';
@@ -419,7 +419,7 @@ ExpressionCodeGenerator.prototype = {
                         // TODO distinguish float/double from integer.
                         guards.push({
                             type: 'BinaryPredicate',
-                            operator: '=',
+                            operator: 'IS',
                             left: identifier,
                             right: {type: 'Literal', dataType: 'number', value: NaN}
                         });
@@ -643,7 +643,6 @@ ExpressionCodeGenerator.prototype = {
             case 'ListExpression':
             case 'FunctionCall':
             case 'Literal':
-                return {ast: ast, expr: this.expressionStringForAST(ast, bindings, depth2, outerPrecedence)};
             case 'Identifier':
                 return {ast: ast, expr: this.expressionStringForAST(ast, bindings, depth2, outerPrecedence)};
             default:
@@ -699,13 +698,14 @@ ExpressionCodeGenerator.prototype = {
                         arg = this.expressionStringForAST(ast.left, bindings, depth2, precedence);
                         var prefix, suffix;
                         var lastPatternIndex = pattern.length - 1;
-                        if (pattern.startsWith('%') && pattern.endsWith('%')) {
-                            var substring = pattern.slice(0, lastPatternIndex);
+                        if (pattern.startsWith('%') && pattern.endsWith('%') &&
+                            pattern.length > 2 && pattern.match(/%/g).length === 2) {
+                            var substring = pattern.slice(1, lastPatternIndex);
                             // ES6 could replace with String.includes():
                             precedence = this.precedenceOf('!==');
                             subExprString = arg + '.indexOf(' + literalExpressionFor(substring) + ') !== -1';
                         } else if (pattern.indexOf('%') !== pattern.lastIndexOf('%')) {
-                            return this.regexExpressionForLikeOperator(args, bindings, depth, outerPrecedence);
+                            return this.regexExpressionForLikeOperator(ast, bindings, depth, outerPrecedence);
                         } else if (pattern.startsWith('%')) {
                             suffix = pattern.slice(-lastPatternIndex);
                             subExprString = arg + '.endsWith(' + literalExpressionFor(suffix) + ')';
@@ -735,20 +735,35 @@ ExpressionCodeGenerator.prototype = {
             case 'EqualityPredicate':
             case 'BinaryPredicate':
             case 'BinaryExpression':
+                operator = ast.operator.toUpperCase();
                 // Maybe InExpression would be a better logic branch:
-                if (ast.operator.toUpperCase() === 'IN') {
+                if (operator === 'IN') {
+                    precedence = this.precedenceOf('!==');
                     args = _.map([ast.left, ast.right], function (arg) {
                         return this.expressionStringForAST(arg, bindings, depth2, precedence);
                     }, this);
                     subExprString = args[1] + '.indexOf(' + args[0] + ') !== -1';
-                    return this.wrapSubExpressionPerPrecedences(subExprString, this.precedenceOf('!=='), outerPrecedence);
+                    return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
                 }
                 operator = this.translateOperator(ast.operator);
                 precedence = this.precedenceOf(operator);
                 args = _.map([ast.left, ast.right], function (arg) {
                     return this.expressionStringForAST(arg, bindings, depth2, precedence);
                 }, this);
-                subExprString = [args[0], operator, args[1]].join(' ');
+                // Special-case NAN equality/comparison:
+                if (ast.right.type === 'Literal' && ast.right.dataType === 'number' &&
+                    isNaN(ast.right.value)) {
+                    precedence = this.precedenceOf('(');
+                    if (operator === '===') {
+                        subExprString = 'isNaN(' + args[0] + ')';
+                    } else if (operator === '!==') {
+                        subExprString = '!isNaN(' + args[0] + ')';
+                    } else {
+                        subExprString = [args[0], operator, args[1]].join(' ');
+                    }
+                } else {
+                    subExprString = [args[0], operator, args[1]].join(' ');
+                }
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'UnaryExpression':
                 operator = ast.operator.toUpperCase();
@@ -763,7 +778,7 @@ ExpressionCodeGenerator.prototype = {
                     arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
                     subExprString = [arg, operator, 'null'].join(' ');
                 } else {
-                    operator = this.translateOperator(ast.operator);
+                    operator = this.translateOperator(operator);
                     precedence = this.precedenceOf(operator, ast.fixity);
                     arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
                     switch (ast.fixity) {
@@ -780,15 +795,15 @@ ExpressionCodeGenerator.prototype = {
                 var value = ast.value;
                 var castValue = value;
                 // This is a load of silly guards because the PEG production for TypeIdentifier needs cleanup:
-                var type_name = ast.type_name;
-                while (typeof type_name !== 'string') {
-                    if (type_name.length) {
-                        type_name = type_name[0];
-                    } else if (type_name.name) {
-                        type_name = type_name.name;
+                var typeName = ast.type_name;
+                while (typeof typeName !== 'string') {
+                    if (typeName.length) {
+                        typeName = typeName[0];
+                    } else if (typeName.name) {
+                        typeName = typeName.name;
                     }
                 }
-                switch (type_name.toLowerCase()) {
+                switch (typeName.toLowerCase()) {
                     case 'string':
                         precedence = this.precedenceOf('.');
                         castValue = this.expressionStringForAST(value, bindings, depth2, precedence) + '.toString()';
@@ -824,7 +839,7 @@ ExpressionCodeGenerator.prototype = {
                         castValue = 'new Date(' + this.expressionStringForAST(value, bindings, depth2, precedence) + ').getTime()';
                         break;
                     default:
-                        throw Error('Unrecognized type: ' + type_name);
+                        throw Error('Unrecognized type: ' + typeName);
                 }
                 return castValue;
             case 'CaseExpression':

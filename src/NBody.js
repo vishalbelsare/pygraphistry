@@ -19,6 +19,21 @@ var DimCodes = {
 
 var NumElementsByDim = DimCodes;
 
+export function createSync(graph) {
+
+    _.each({
+        setVertices: setVertices,
+        setEdges: setEdges,
+        setMidEdgeColors: setMidEdgeColors,
+        tick: tick,
+        updateSettings: updateSettings
+    }, function (setter, setterName) {
+        graph[setterName] = setter.bind('', graph);
+    });
+
+    return graph;
+}
+
 /**
  * Create a new N-body graph and return a promise for the graph object
  *
@@ -29,7 +44,7 @@ var NumElementsByDim = DimCodes;
  * @param bgColor - [0--255,0--255,0--255,0--1]
  * @param [dimensions=\[1,1\]] - a two element array [width,height] used for internal position calculations.
  */
-function create(renderer, simulator, dataframe, device, vendor, controls, socket) {
+export function create(renderer, simulator, dataframe, device, vendor, controls, socket) {
 
     var graph = {
         renderer: renderer,
@@ -256,8 +271,3 @@ function tick(graph, cfg) {
         return graph;
     });
 }
-
-
-module.exports = {
-    create: create
-};

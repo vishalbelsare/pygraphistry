@@ -24,6 +24,10 @@ Rx.Subscriber.prototype.dispose = Rx.Subscriber.prototype.unsubscribe;
 
 Rx.Subscription.prototype.dispose = Rx.Subscription.prototype.unsubscribe;
 
+import bodyParser from 'body-parser';
+import FalcorServer from 'falcor-express';
+import { FalcorRouter } from './falcor-router';
+
 var _           = require('underscore');
 var Q           = require('q');
 var fs          = require('fs');
@@ -214,7 +218,7 @@ VizServer.prototype.resetState = function (dataset, socket) {
         }).fail(log.makeQErrorHandler(logger, 'Failure in CLJS creation'));
 
         var qSimulator = Q.all([qNullRenderer, qCl]).spread(function (renderer, cl) {
-            return controls[0].simulator.create(dataframe, renderer, cl, device, vendor, controls)
+            return controls[0].simulator.create(dataframe, renderer, cl, device, vendor, controls);
         }).fail(log.makeQErrorHandler(logger, 'Cannot create simulator'));
 
         var nBodyInstance = Q.all([qNullRenderer, qSimulator]).spread(function (renderer, simulator) {
@@ -438,6 +442,7 @@ function VizServer(app, socket, cachedVBOs) {
     });
 
     socketLogger.info('Client connected');
+    this.socketLogger = socketLogger;
 
     this.isActive = true;
     this.defineRoutesInApp(app);
@@ -445,31 +450,56 @@ function VizServer(app, socket, cachedVBOs) {
     this.cachedVBOs = cachedVBOs;
     /** @type {GraphistryURLParams} */
     var query = this.socket.handshake.query;
-    this.viewConfig = new Rx.BehaviorSubject(workbook.blankViewTemplate);
+
+    this.graph = new Rx.ReplaySubject(1);
+    this.viewConfig = new Rx.ReplaySubject(1);
     this.workbookDoc = new Rx.ReplaySubject(1);
-    this.workbookForQuery(this.workbookDoc, query);
-    this.workbookDoc.subscribe(function (workbookDoc) {
-        this.viewConfig.onNext(this.getViewToLoad(workbookDoc, query));
-    }.bind(this), log.makeRxErrorHandler(socketLogger, 'Getting View from Workbook'));
+    this.dataset = new Rx.ReplaySubject(1);
+    this.renderConfig = new Rx.ReplaySubject(1);
+
+    if (!query.falcorClient) {
+
+        this.dataset
+            .map((dataset) => {
+                const { metadata } = dataset;
+                if (!(metadata.scene in rConf.scenes)) {
+                    socketLogger.warn('WARNING Unknown scene "%s", using default', metadata.scene);
+                    metadata.scene = 'default';
+                }
+                return rConf.scenes[metadata.scene];
+            })
+            .concat(Observable.never())
+            .subscribe(this.renderConfig);
+
+        this.workbookDoc
+            .mergeMap((workbookDoc) => this.setupDataset(workbookDoc, query))
+            .concat(Observable.never())
+            .subscribe(this.dataset);
+
+        this.workbookDoc
+            .map((workbookDoc) => this.getViewToLoad(workbookDoc, query))
+            .do(null, log.makeRxErrorHandler(socketLogger, 'Getting View from Workbook'))
+            .concat(Observable.never())
+            .subscribe(this.viewConfig);
+
+        this.workbookForQuery(query)
+            .concat(Observable.never())
+            .subscribe(this.workbookDoc);
+
+        this.dataset.subscribe((dataset) => {
+            this.resetState(dataset, socket);
+        });
+
+    } else {
+        this.graph = new Rx.ReplaySubject(1);
+        this.ticks = new Rx.ReplaySubject(1);
+        this.ticksMulti = new Rx.ReplaySubject(1);
+        this.updateVboSubject = new Rx.ReplaySubject(1);
+
+        this.ticks.switch().subscribe(this.ticksMulti);
+    }
 
     this.setupColorTexture();
-
-    var renderConfigDeferred = Q.defer();
-    this.qRenderConfig = renderConfigDeferred.promise;
-    this.workbookDoc.take(1).do(function (workbookDoc) {
-        this.qDataset = this.setupDataset(workbookDoc, query);
-        this.qDataset.then(function (dataset) {
-            var metadata = dataset.metadata;
-
-            if (!(metadata.scene in rConf.scenes)) {
-                socketLogger.warn('WARNING Unknown scene "%s", using default', metadata.scene);
-                metadata.scene = 'default';
-            }
-
-            this.resetState(dataset, socket);
-            renderConfigDeferred.resolve(rConf.scenes[metadata.scene]);
-        }.bind(this)).fail(log.makeQErrorHandler(socketLogger, 'resetting state'));
-    }.bind(this)).subscribe(_.identity, log.makeRxErrorHandler(socketLogger, 'Get render config'));
 
     this.socket.on('get_view_config', function (ignore, cb) {
         this.viewConfig.take(1).do(function (viewConfig) {
@@ -506,42 +536,48 @@ function VizServer(app, socket, cachedVBOs) {
         });
     }.bind(this));
 
-    this.socket.on('render_config', function(_, cb) {
-        this.qRenderConfig.then(function (renderConfig) {
-            socketLogger.info("Socket on render_config (sending render_config to client");
-            socketLogger.trace({renderConfig : renderConfig}, "renderConfig");
-            cb({success: true, renderConfig: renderConfig});
+    this.socket.on('render_config', (_, cb) => {
+        this.renderConfig.take(1).subscribe(
+            (renderConfig) => {
+                socketLogger.info('Socket on render_config (sending render_config to client)');
+                socketLogger.trace({renderConfig : renderConfig}, 'renderConfig');
+                cb({success: true, renderConfig: renderConfig});
 
-            if (saveAtEachStep) {
-                persist.saveConfig(defaultSnapshotName, renderConfig);
+                if (saveAtEachStep) {
+                    persist.saveConfig(defaultSnapshotName, renderConfig);
+                }
+
+                this.lastRenderConfig = renderConfig;
+            },
+            (err) => {
+                failWithMessage(cb, 'Render config read error');
+                log.makeQErrorHandler(socketLogger, 'sending render_config')(err);
             }
+        );
+    });
 
-            this.lastRenderConfig = renderConfig;
-        }.bind(this)).fail(function (err) {
-            failWithMessage(cb, 'Render config read error');
-            log.makeQErrorHandler(socketLogger, 'sending render_config')(err);
-        });
-    }.bind(this));
+    this.socket.on('update_render_config', (newValues, cb) => {
+        this.renderConfig.take(1).subscribe(
+            (renderConfig) => {
+                socketLogger.info('Socket on update_render_config (Updating render-config from client values)');
+                socketLogger.trace({renderConfig: renderConfig}, 'renderConfig [before]');
 
-    this.socket.on('update_render_config', function(newValues, cb) {
-        this.qRenderConfig.then(function (renderConfig) {
-            socketLogger.info('Socket on update_render_config (Updating render-config from client values)');
-            socketLogger.trace({renderConfig: renderConfig}, 'renderConfig [before]');
+                extend(true, renderConfig, newValues);
 
-            extend(true, renderConfig, newValues);
+                cb({success: true, renderConfig: renderConfig});
 
-            cb({success: true, renderConfig: renderConfig});
+                if (saveAtEachStep) {
+                    persist.saveConfig(defaultSnapshotName, renderConfig);
+                }
 
-            if (saveAtEachStep) {
-                persist.saveConfig(defaultSnapshotName, renderConfig);
+                this.lastRenderConfig = renderConfig;
+            },
+            (err) => {
+                failWithMessage(cb, 'Render config update error');
+                log.makeQErrorHandler(socketLogger, 'updating render_config')(err);
             }
-
-            this.lastRenderConfig = renderConfig;
-        }.bind(this)).fail(function (err) {
-            failWithMessage(cb, 'Render config update error');
-            log.makeQErrorHandler(socketLogger, 'updating render_config')(err);
-        });
-    }.bind(this));
+        );
+    });
 
     /**
      * @typedef {Object} Point2D
@@ -707,7 +743,7 @@ function VizServer(app, socket, cachedVBOs) {
                 success: true,
                 max: maxTime.getTime(),
                 min: minTime.getTime()
-            }
+            };
 
             cb(resp);
 
@@ -904,22 +940,27 @@ function VizServer(app, socket, cachedVBOs) {
         });
     }.bind(this));
 
-    this.socket.on('begin_streaming', function(_, cb) {
-        this.qRenderConfig.then(function (renderConfig) {
-            this.beginStreaming(renderConfig, this.colorTexture);
-            if (cb) {
-                cb({success: true});
-            }
-        }.bind(this)).fail(log.makeQErrorHandler(logger, 'begin_streaming'));
-    }.bind(this));
+    this.socket.on('begin_streaming', (_, cb) => {
+        this.renderConfig.take(1).subscribe(
+            (renderConfig) => {
+                this.beginStreaming(renderConfig, this.colorTexture);
+                if (cb) {
+                    cb({success: true});
+                }
+            },
+            log.makeQErrorHandler(logger, 'begin_streaming')
+        );
+    });
 
-    this.socket.on('reset_graph', function (_, cb) {
+    this.socket.on('reset_graph', (_, cb) => {
         logger.info('reset_graph command');
-        this.qDataset.then(function (dataset) {
-            this.resetState(dataset, this.socket);
-            cb();
-        }.bind(this)).fail(log.makeQErrorHandler(logger, 'reset_graph request'));
-    }.bind(this));
+        this.dataset.take(1).subscribe((dataset) => {
+                this.resetState(dataset, this.socket);
+                cb();
+            },
+            log.makeQErrorHandler(logger, 'reset_graph request')
+        );
+    });
 
     this.socket.on('inspect_header', function (nothing, cb) {
         logger.info('inspect header');
@@ -962,15 +1003,18 @@ function VizServer(app, socket, cachedVBOs) {
 
     this.socket.on('update_namespace_metadata', function (updates, cb) {
         logger.trace('Updating Namespace metadata from client');
-        this.graph.take(1).do(function (graph) {
-            var metadata = getNamespaceFromGraph(graph);
-            // set success to true when we support update and it succeeds:
-            cb({success: false, metadata: metadata});
-        }).fail(function (/*err*/) {
-            failWithMessage(cb, 'Namespace metadata update error');
-            log.makeQErrorHandler(logger, 'updating namespace metadata');
-        });
-    }.bind(this));
+        this.graph.take(1).subscribe(
+            (graph) => {
+                var metadata = getNamespaceFromGraph(graph);
+                // set success to true when we support update and it succeeds:
+                cb({success: false, metadata: metadata});
+            },
+            (/*err*/) => {
+                failWithMessage(cb, 'Namespace metadata update error');
+                log.makeQErrorHandler(logger, 'updating namespace metadata');
+            }
+        );
+    });
 
     // Legacy method for timeslider.js only; refactor that to work with newer code and kill this.
     this.socket.on('filter', function (query, cb) {
@@ -1175,19 +1219,23 @@ VizServer.prototype.setupDataset = function (workbookDoc, query) {
     return loader.downloadDataset(datasetConfig);
 };
 
-VizServer.prototype.workbookForQuery = function (observableResult, query) {
-    if (query.workbook) {
-        logger.debug({workbook: query.workbook}, 'Loading workbook');
-        workbook.loadDocument(decodeURIComponent(query.workbook)).subscribe(function (workbookDoc) {
-            observableResult.onNext(workbookDoc);
-        }, function (error) {
-            log.makeRxErrorHandler(logger, 'Loading Workbook')(error);
+VizServer.prototype.workbookForQuery = function (query) {
+    return Observable.create((subscriber) => {
+
+        if (query.workbook) {
+            logger.debug({workbook: query.workbook}, 'Loading workbook');
+
             // TODO report to user if authenticated and can know of this workbook's existence.
-        });
-    } else {
-        // Create a new workbook here with a default view:
-        observableResult.onNext(workbook.blankWorkbookTemplate);
-    }
+            return workbook
+                .loadDocument(decodeURIComponent(query.workbook))
+                .do(null, log.makeRxErrorHandler(logger, 'Loading Workbook'))
+                .subscribe(subscriber);
+        } else {
+            // Create a new workbook here with a default view:
+            subscriber.next(workbook.blankWorkbookTemplate);
+            subscriber.complete();
+        }
+    });
 };
 
 VizServer.prototype.setupColorTexture = function () {
@@ -1258,7 +1306,7 @@ VizServer.prototype.setupAggregationRequestHandling = function () {
                     },
                     function handleErrorResponse(err) {
                         logErrorGlobally(err);
-                        sendErrorResponse(err)
+                        sendErrorResponse(err);
                     }
                 )
                 .catch(Observable.empty);
@@ -1386,6 +1434,16 @@ VizServer.prototype.defineRoutesInApp = function (app) {
             }
         );
     });
+
+    app.use(bodyParser.urlencoded({ extended: false }));
+
+    // middleware to handle Falcor get/put/post requests
+    app.use('/model.json', FalcorServer.dataSourceRoute(function(request, response) {
+        return new FalcorRouter({
+            config, logger, request, server: appRouteResponder,
+            socketLogger: appRouteResponder.socketLogger
+        });
+    }));
 };
 
 VizServer.prototype.rememberVBOs = function (VBOs) {

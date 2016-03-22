@@ -7,7 +7,6 @@ var _ = require('underscore');
 var config  = require('config')();
 var zlib = require('zlib');
 var urllib = require('url');
-var util = require('./util.js');
 var Cache = require('common/cache.js');
 
 var log         = require('common/logger.js');
@@ -83,7 +82,7 @@ function s3Downloader(url) {
     // Attempt to download headers
     config.S3.headObject(params, function (err, data) {
         if (err) {
-            logger.trace('Could not fetch S3 header', err.message)
+            logger.trace('Could not fetch S3 header', err.message);
             logger.trace('Falling back on local cache');
             // Try to load from cache regardless of timestamp.
             res.resolve(tmpCache.get(url, new Date(0)));

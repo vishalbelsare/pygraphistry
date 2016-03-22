@@ -493,6 +493,9 @@ Dataframe.prototype.getAttributeMask = function (type, columnName, filterFunc) {
  */
 Dataframe.prototype.getEdgeAttributeMask = function (columnName, filterFunc) {
     var attr = this.rawdata.attributes.edge[columnName];
+    if (attr === undefined) {
+        return this.fullDataframeMask();
+    }
     var edgeMask = this.getMaskForPredicateOnAttributeValues(attr.values, filterFunc);
     // Convert to sorted order
     var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
@@ -511,6 +514,9 @@ Dataframe.prototype.getEdgeAttributeMask = function (columnName, filterFunc) {
  */
 Dataframe.prototype.getPointAttributeMask = function (columnName, filterFunc) {
     var attr = this.rawdata.attributes.point[columnName];
+    if (attr === undefined) {
+        return this.fullDataframeMask();
+    }
     return this.getMaskForPredicateOnAttributeValues(attr.values, filterFunc);
 };
 
@@ -1051,7 +1057,7 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
     var destination = new Array(numElements);
 
     for (var i = 0; i < numElements; i++) {
-        source[i] = nodeTitles[unsortedEdges[2*i]]
+        source[i] = nodeTitles[unsortedEdges[2*i]];
         destination[i] = nodeTitles[unsortedEdges[2*i + 1]];
     }
 
@@ -1187,7 +1193,7 @@ Dataframe.prototype.getKeyFromName = function (maybeName, type) {
 
     var attributes = this.rawdata.attributes[type];
     var matchKeys = _.filter(_.keys(attributes), function (key) {
-        return (attributes[key].name === maybeName);
+        return attributes[key].name === maybeName || key === maybeName;
     });
 
     if (matchKeys.length > 1) {
@@ -1215,7 +1221,7 @@ Dataframe.prototype.getBufferKeys = function (type) {
 Dataframe.prototype.getOriginalNumElements = function (type) {
     var res = this.rawdata.numElements[type];
     if (!res && res !== 0) {
-        throw new Error("Invalid Num Elements: " + type);
+        throw new Error('Invalid Num Elements: ' + type);
     }
     return res;
 };
@@ -1223,7 +1229,7 @@ Dataframe.prototype.getOriginalNumElements = function (type) {
 Dataframe.prototype.getNumElements = function (type) {
     var res = this.data.numElements[type];
     if (!res && res !== 0) {
-        throw new Error("Invalid Num Elements: " + type);
+        throw new Error('Invalid Num Elements: ' + type);
     }
     return res;
 };
@@ -1308,7 +1314,7 @@ Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
     var res = this.getColumnValues(name, 'localBuffer');
 
     if (!res) {
-        throw new Error("Invalid Local Buffer: " + name);
+        throw new Error('Invalid Local Buffer: ' + name);
     }
 
     return res;
@@ -1324,7 +1330,7 @@ Dataframe.prototype.getHostBuffer = function (name) {
     var res = this.getColumnValues(name, 'hostBuffer');
 
     if (!res) {
-        throw new Error("Invalid Host Buffer: " + name);
+        throw new Error('Invalid Host Buffer: ' + name);
     }
 
     return res;
@@ -1364,7 +1370,7 @@ Dataframe.prototype.getBuffer = function (name, type) {
         var dataType = this.getDataType(name, type);
 
         if (dataType !== 'number') {
-            throw new Error("Attempting to get buffer that is non-numeric");
+            throw new Error('Attempting to get buffer that is non-numeric; data type is: ' + dataType);
         }
 
         var typedData = new Float32Array(data);
@@ -1401,7 +1407,7 @@ Dataframe.prototype.getVersion = function (type, attrName) {
 Dataframe.prototype.getCell = function (index, type, attrName) {
 
     // Convert from sorted into unsorted edge indices.
-    if (index && type === 'edge') {
+    if (index !== undefined && type === 'edge') {
         var forwardsEdgePermutationInverse = this.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
         index = forwardsEdgePermutationInverse[index];
     }
@@ -1860,7 +1866,11 @@ Dataframe.prototype.getColumnsByType = function () {
         var typeResult = {};
         var columnNamesPerType = that.getAttributeKeys(typeName);
         _.each(columnNamesPerType, function (columnName) {
-            typeResult[columnName] = that.getColumn(columnName, typeName);
+            var column = that.getColumn(columnName, typeName);
+            typeResult[columnName] = column;
+            if (column.name !== undefined && column.name !== columnName) {
+                typeResult[column.name] = column;
+            }
         });
         result[typeName] = typeResult;
     });
@@ -2113,7 +2123,7 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
     var range = max - min;
     var isCountBy;
     var countDistinct = aggregations.getAggregationByType('countDistinct');
-    if (isNaN(range)) { // Implies non-numerical domain.
+    if (isNaN(range) || min === false) { // Implies non-numerical domain. Boolean needs special logic, har.
         numBins = Math.min(countDistinct, maxBinCount);
         bottomVal = min;
         topVal = max;
@@ -2554,7 +2564,7 @@ function decodeDates (attributes) {
     _.each(_.keys(attributes), function (key) {
         var isDate = key.indexOf('Date') > -1;
         var decoded = _.map(attributes[key].values, function (val) {
-            return isDate && typeof(val) === "number" ?
+            return isDate && typeof(val) === 'number' ?
                     dateFormat(val, 'mm-dd-yyyy') : val;
         });
         attributes[key].values = decoded;
@@ -2697,7 +2707,7 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
         }
 
         Array.prototype.sort.call(mapped, function (a, b) {
-            return (edges[a*2] - edges[b*2] || (edges[a*2 + 1] - edges[b*2 + 1]));
+            return (edges[a*2] - edges[b*2] || (edges[a*2 + 1] - edges[b*2 + 1]) || (a - b));
         });
 
         for (i = 0; i < edges.length/2; i++) {

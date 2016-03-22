@@ -30,8 +30,8 @@ var prevHeader = {elements: {}, bufferByteLengths: {}};
 
 
 function ensurePath(path) {
-    fs.exists(path, function (does_exist) {
-        if (!does_exist) {
+    fs.exists(path, function (doesExist) {
+        if (!doesExist) {
             fs.mkdir(path);
         }
     });
@@ -151,7 +151,7 @@ module.exports =
 
         },
 
-        saveVBOs: function (snapshotName, VBOs, step) {
+        saveVBOs: function (snapshotName, VBOs/*, step*/) {
 
             logger.trace('serializing vbo');
             prevHeader = {

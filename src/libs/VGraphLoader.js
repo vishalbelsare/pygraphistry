@@ -365,8 +365,9 @@ function wrap(mappings, loaders) {
             doWrap(res, mapping, loader);
 
             logger.trace('Mapping ' + mapping.name + ' to ' + a);
-        } else
+        } else {
             res[a] = [loaders[a]];
+        }
     }
     return res;
 }
@@ -422,23 +423,14 @@ function load(graph, dataset) {
  * @property {Aggregations} aggregations
  */
 
-/** @typedef {Object} EdgeEncodings
- * @property source
- * @property destination
- */
-
-/** @typedef {Object} NodeEncodings
- * @property nodeId
- * @property pointColor
- * @property pointSize
- * @property pointTitle
- * @property pointLabel
+/** @typedef {Object} EncodingSpec
+ * @property {String[]} attributes
  */
 
 /** @typedef {Object} DataframeMetadataByComponent
  * @property {Object.<DataframeMetadataByColumn>} attributes
  * @property {Number} count
- * @property {NodeEncodings|EdgeEncodings} encodings
+ * @property {Object.<EncodingSpec>} encodings
  */
 
 /** @typedef {Object} DataframeMetadata
@@ -605,8 +597,8 @@ function computeInitialPositions(vertexCount, edges, dimensions) {
         component = components.components[i];
         component.rowHeight =
             Math.max(component.size,
-                i + 1 < numComponents
-                && components.components[i+1].row == component.row ?
+                i + 1 < numComponents &&
+                components.components[i+1].row === component.row ?
                     component.rollingMaxInRow :
                     0);
     }
@@ -678,6 +670,52 @@ function dateAsNumber (val) {
 }
 
 
+function punnedTypeFromVector(v) {
+    var type = typeof(v.values[0]);
+
+    // Attempt to infer date types when possible
+    // Check if name contains time or date
+    if ((/time/i).test(v.name) || (/date/i).test(v.name)) {
+        logger.debug('Attempting to cast ' + v.name + ' to a moment object.');
+        var testMoment = castToMoment(v.values[0]);
+        var isValidMoment = testMoment.isValid();
+
+        if (isValidMoment) {
+            logger.debug('Successfully cast ' + v.name + ' as a moment.');
+            type = 'date';
+
+            var newValues = v.values.map(dateAsNumber);
+            v.values = newValues;
+
+        } else {
+            logger.debug('Failed to cast ' + v.name + ' as a moment.');
+        }
+    }
+
+    if ((/color/i).test(v.name)) {
+        var isValidColor = false, sampleValue = v.values[0];
+        if (type === 'number') {
+            if (sampleValue > 0 && sampleValue <= 0xFFFFFFFF) {
+                isValidColor = true;
+            }
+        } else if (type === 'string') {
+            try {
+                var testColor = new Color(sampleValue);
+                isValidColor = testColor !== undefined && testColor.rgbaString() !== undefined;
+            } catch (e) {
+                logger.debug('Failed to cast ' + v.name + ' as a color: ' + e.message);
+            }
+        }
+        if (isValidColor) {
+            type = 'color';
+        } else {
+            logger.debug('Failed to cast ' + v.name + ' as a color.');
+        }
+    }
+    return type;
+}
+
+
 /**
  * @param {VectorGraph} vg
  * @returns {AttrObject[]}
@@ -686,59 +724,18 @@ function getAttributes0(vg) {
     var vectors = getVectors0(vg);
     var attributeObjects = [];
 
-    for (var i = 0; i < vectors.length; i++) {
-        var v = vectors[i];
-        if (v.values.length > 0) {
-            var type = typeof(v.values[0]);
-
-            // Attempt to infer date types when possible
-            // Check if name contains time or date
-            if ((/time/i).test(v.name) || (/date/i).test(v.name)) {
-                logger.debug('Attempting to cast ' + v.name + ' to a moment object.');
-                var testMoment = castToMoment(v.values[0]);
-                var isValidMoment = testMoment.isValid();
-
-                if (isValidMoment) {
-                    logger.debug('Successfully cast ' + v.name + ' as a moment.');
-                    type = 'date';
-
-                    var newValues = v.values.map(dateAsNumber);
-                    v.values = newValues;
-
-                } else {
-                    logger.debug('Failed to cast ' + v.name + ' as a moment.');
-                }
-            }
-
-            if ((/color/i).test(v.name)) {
-                var isValidColor = false, sampleValue = v.values[0];
-                if (type === 'number') {
-                    if (sampleValue > 0 && sampleValue <= 0xFFFFFFFF) {
-                        isValidColor = true;
-                    }
-                } else if (type === 'string') {
-                    try {
-                        var testColor = new Color(sampleValue);
-                        isValidColor = testColor !== undefined && testColor.rgbaString() !== undefined;
-                    } catch (e) {
-                        logger.debug('Failed to cast ' + v.name + ' as a color: ' + e.message);
-                    }
-                }
-                if (isValidColor) {
-                    type = 'color';
-                } else {
-                    logger.debug('Failed to cast ' + v.name + ' as a color.');
-                }
-            }
-
-            attributeObjects.push({
-                name: v.name,
-                target : v.target,
-                type: type,
-                values: v.values
-            });
+    _.each(vectors, function (v) {
+        if (v.values.length === 0) {
+            return;
         }
-    }
+
+        attributeObjects.push({
+            name: v.name,
+            target : v.target,
+            type: punnedTypeFromVector(v),
+            values: v.values
+        });
+    });
 
     return attributeObjects;
 }
@@ -796,15 +793,16 @@ function getAttributes1(vg) {
     var edgeAttributeObjects = {};
 
     _.each(vectors, function (v) {
-        if (v.values.length > 0) {
-            var attributeObjects = v.target === VERTEX ? nodeAttributeObjects : edgeAttributeObjects;
-            attributeObjects[v.name] = {
-                name: v.name,
-                target : v.target,
-                type: typeof(v.values[0]),
-                values: v.values
-            };
+        if (v.values.length === 0) {
+            return;
         }
+        var attributeObjects = v.target === VERTEX ? nodeAttributeObjects : edgeAttributeObjects;
+        attributeObjects[v.name] = {
+            name: v.name,
+            target: v.target,
+            type: punnedTypeFromVector(v),
+            values: v.values
+        };
     });
 
     return {
@@ -825,7 +823,7 @@ function sameKeys(o1, o2){
 var GraphShapeProperties = ['source', 'destination', 'nodeId'];
 
 /**
- * @param {EdgeEncodings|NodeEncodings} encodings
+ * @param {Object.<EncodingSpec>} encodings
  * @param {Object.<AttributeLoader>} loaders
  * @param {Number} target VERTEX or EDGE
  * @returns {Object.<DataframeMetadataByColumn>}
@@ -842,7 +840,7 @@ function getSimpleEncodings(encodings, loaders, target) {
             return false;
         }
 
-        if (!_.all(loaders[graphProperty], function (loader) { return loader.target == target; })) {
+        if (!_.all(loaders[graphProperty], function (loader) { return loader.target === target; })) {
             console.warn('Wrong target type (node/edge) for graph property', graphProperty);
             return false;
         }
@@ -944,8 +942,8 @@ function decode1(graph, vg, metadata)  {
 
     _.each(loaders, function (loaderArray, graphProperty) {
         _.each(loaderArray, function (loader) {
-            var encodings = loader.target == VERTEX ? nodeEncodings : edgeEncodings;
-            var attributes = loader.target == VERTEX ? vgAttributes.nodes : vgAttributes.edges;
+            var encodings = loader.target === VERTEX ? nodeEncodings : edgeEncodings;
+            var attributes = loader.target === VERTEX ? vgAttributes.nodes : vgAttributes.edges;
             if (graphProperty in encodings) {
                 var attributeName = encodings[graphProperty];
                 logger.debug('Loading values for', graphProperty, 'from attribute', attributeName);

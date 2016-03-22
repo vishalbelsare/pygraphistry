@@ -146,20 +146,22 @@ PlanNode.prototype = {
             }
             return resultValues;
         } else if (this.canRunOnOneColumn()) {
-            var executor = this.executor;
             var attributeName = _.find(this.attributeData);
             if (valuesRequired && returnType === ReturnTypes.Positions) {
                 returnType = ReturnTypes.Values;
             }
             switch (returnType) {
-                case ReturnTypes.Positions:
-                    return dataframe.getAttributeMask(attributeName.type, attributeName.attribute, executor);
                 case ReturnTypes.Values:
                     if (this.ast.type === 'Identifier') {
                         return dataframe.getUnfilteredColumnValues(attributeName.type, attributeName.attribute);
                     } else {
-                        return dataframe.mapUnfilteredColumnValues(attributeName.type, attributeName.attribute, executor);
+                        return dataframe.mapUnfilteredColumnValues(attributeName.type, attributeName.attribute, this.executor);
                     }
+                    break;
+                case ReturnTypes.Positions:
+                /* falls through */
+                default:
+                    return dataframe.getAttributeMask(attributeName.type, attributeName.attribute, this.executor);
             }
         } else {
             var j, attribute, bindings;
@@ -194,6 +196,10 @@ PlanNode.prototype = {
                 }
                 return resultValues;
             } else {
+                // TODO FIXME Terrible way to signal that we want to union/intersect/etc some set results:
+                if (_.every(bindings, function (arg) { return arg instanceof DataframeMask; })) {
+                    return this.executor.call(bindings);
+                }
                 var mask = [];
                 for (i=0; i<numElements; i++) {
                     for (j=0; j<bindingKeys.length; j++) {
@@ -214,7 +220,7 @@ PlanNode.prototype = {
                 }
             }
         }
-        return undefined;
+        throw new Error('Unable to execute plan node', this);
     },
 
     iterationType: function () {

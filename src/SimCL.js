@@ -22,7 +22,165 @@ var logger      = log.createLogger('graph-viz','graph-viz/js/SimCL.js');
 // Q.longStackSupport = true;
 var randLength = 73;
 
-function create(dataframe, renderer, cl, device, vendor, cfg) {
+export function createSync(dataframe, renderer, cl, device, vendor, cfg) {
+
+    // Pick the first layout algorithm that matches our device type
+    var type, // GPU device type
+        availableControls, // Available controls for device type
+        controls,
+        layoutAlgorithms,
+        simObj;
+
+    type = cl.deviceProps.TYPE.trim();
+
+    availableControls = _.filter(cfg, function (algo) {
+        return _.contains(algo.devices, type);
+    });
+
+    if (availableControls.length === 0) {
+        logger.die('No layout controls satisfying device/vendor requirements', device, vendor);
+    }
+
+    controls = availableControls[0];
+    layoutAlgorithms = controls.layoutAlgorithms;
+
+    simObj = {
+        renderer: renderer,
+        cl: cl,
+        elementsPerPoint: 2,
+        versions: {
+            tick: 0,
+            buffers: { }
+        },
+        controls: controls,
+        dataframe: dataframe
+    };
+
+    // Give dataframe pointer to simObj
+    dataframe.simulator = simObj;
+
+    logger.debug({layoutAlgorithms: layoutAlgorithms}, 'Instantiating layout algorithms');
+
+    const algos = _.map(layoutAlgorithms, function (la) {
+        var algo = new la.algo(cl);
+        algo.setPhysics(_.object(_.map(la.params, function (p, name) {
+            return [name, p.value];
+        })));
+        return algo;
+    });
+
+    logger.trace("Creating SimCL...");
+
+    simObj.layoutAlgorithms = algos;
+    simObj.otherKernels = {
+        moveNodes: new MoveNodes(cl),
+        selectNodesInRect: new SelectNodesInRect(cl),
+        selectNodesInCircle: new SelectNodesInCircle(cl)
+        //histogramKernel: new HistogramKernel(cl),
+    };
+    simObj.tilesPerIteration = 1;
+    simObj.buffersLocal = {};
+    createSetters(simObj);
+
+    simObj.tick = tick.bind(this, simObj);
+    simObj.setPoints = setPoints.bind(this, simObj);
+    simObj.setEdges = setEdges.bind(this, renderer, simObj);
+    simObj.setSelectedPointIndexes = setSelectedPointIndexes.bind(this, simObj);
+    simObj.setSelectedEdgeIndexes = setSelectedEdgeIndexes.bind(this, simObj);
+    simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
+    simObj.setLocks = setLocks.bind(this, simObj);
+    simObj.setPhysics = setPhysics.bind(this, simObj);
+    simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
+    simObj.recolor = recolor.bind(this, simObj);
+    simObj.moveNodes = moveNodes.bind(this, simObj);
+    simObj.selectNodesInRect = selectNodesInRect.bind(this, simObj);
+    simObj.selectNodesInCircle = selectNodesInCircle.bind(this, simObj);
+    simObj.connectedEdges = connectedEdges.bind(this, simObj);
+    simObj.resetBuffers = resetBuffers.bind(this, simObj);
+    simObj.tickBuffers = tickBuffers.bind(this, simObj);
+    simObj.highlightShortestPaths = highlightShortestPaths.bind(this, renderer, simObj);
+    simObj.setColor = setColor.bind(this, renderer, simObj);
+    simObj.setMidEdges = setMidEdges.bind(this, simObj);
+
+    simObj.numPoints = 0;
+    simObj.numEdges = 0;
+    simObj.numForwardsWorkItems = 0;
+    simObj.numBackwardsWorkItems = 0;
+    simObj.numMidPoints = 0;
+    simObj.numMidEdges = 0;
+    simObj.numSplits = controls.global.numSplits;
+    simObj.numRenderedSplits = controls.global.numRenderedSplits;
+    simObj.pointLabels = [];
+    simObj.edgeLabels = [];
+
+    simObj.bufferHostCopies = {
+        unsortedEdges: null,
+        forwardsEdges: null,
+        backwardsEdges: null
+    };
+
+    simObj.vgraph = null;
+
+    simObj.buffers = {
+        nextPoints: null,
+        randValues: null,
+        curPoints: null,
+        degrees: null,
+        forwardsEdges: null,
+        forwardsDegrees: null,
+        forwardsWorkItems: null,
+        backwardsEdges: null,
+        backwardsDegrees: null,
+        backwardsWorkItems: null,
+        springsPos: null,
+        midSpringsPos: null,
+        midSpringsColorCoord: null,
+        midEdgeColors: null,
+        nextMidPoints: null,
+        curMidPoints: null,
+        partialForces1: null,
+        partialForces2: null,
+        curForces: null,
+        prevForces: null,
+        swings: null,
+        tractions: null,
+        outputEdgeForcesMap: null,
+        globalCarryOut: null,
+        forwardsEdgeStartEndIdxs: null,
+        backwardsEdgeStartEndIdxs: null,
+        segStart: null,
+        edgeWeights: null
+    };
+
+    simObj.timeSubset = {
+        relRange: {min: 0, max: 100},
+        pointsRange:    {startIdx: 0, len: renderer.numPoints},
+        edgeRange:      {startIdx: 0, len: renderer.numEdges},
+        midPointsRange: {
+            startIdx: 0,
+            len: renderer.numPoints * controls.global.numSplits
+        },
+        midEdgeRange:   {
+            startIdx: 0,
+            len: renderer.numEdges * controls.global.numSplits
+        }
+    };
+
+    dataframe.setNumElements('point', renderer.numPoints);
+    dataframe.setNumElements('edge', renderer.numEdges);
+    dataframe.setNumElements('splits', controls.global.numSplits);
+    dataframe.setNumElements('renderedSplits', controls.global.numRenderedSplits || 0);
+
+    Object.seal(simObj.buffers);
+    Object.seal(simObj);
+
+    logger.trace('Simulator created');
+
+    return simObj;
+
+}
+
+export function create(dataframe, renderer, cl, device, vendor, cfg) {
     return Q().then(function () {
         // Pick the first layout algorithm that matches our device type
         var type, // GPU device type
@@ -1255,8 +1413,3 @@ function tick(simulator, stepNumber, cfg) {
         simulator.renderer.finish();
     }).fail(log.makeQErrorHandler(logger, 'SimCl tick failed'));
 }
-
-
-module.exports = {
-    'create': create
-};
