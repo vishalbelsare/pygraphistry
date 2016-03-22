@@ -281,7 +281,7 @@ function getBufferBindings(simulator, stepNumber) {
         inputPositions: simulator.dataframe.getBuffer('curPoints', 'simulator').buffer,
         mass:layoutBuffers.mass.buffer,
         maxDepth:layoutBuffers.maxdepth.buffer,
-        numBodies:layoutBuffers.numBodies,
+        numBodies:simulator.dataframe.getNumElements('point'),
         numEdges: simulator.dataframe.getNumElements('edge'),
         numNodes:layoutBuffers.numNodes,
         numPoints:simulator.dataframe.getNumElements('point'),
