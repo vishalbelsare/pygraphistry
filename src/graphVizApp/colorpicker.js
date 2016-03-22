@@ -88,7 +88,7 @@ module.exports = {
                         $('#simulation').css('backgroundColor', backgroundColor.rgbaString());
                         // Update the server render config:
                         var newValue = renderConfigValueForColor(backgroundColor);
-                        socket.emit('update_render_config', {'options': {'clearColor': [newValue]}});
+                        socket.emit('update_render_config', {'options': {'clearColor': [newValue]}}, _.identity);
                         // Update the color picker swatch affordance:
                         $('.colorSelector div', $bg).css('background-color', backgroundColor && backgroundColor.hexString());
                     })
