@@ -903,6 +903,9 @@ Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager)
         attrs[colType] = attrs[colType] || {};
 
         _.each(cols, function (colDesc, name) {
+
+            console.log('REGISTERING: ', name, colType);
+
             var col = {
                 name: name,
                 type: colDesc.type,
@@ -925,8 +928,7 @@ Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager)
 
 
 Dataframe.prototype.registerNewComputedColumn = function (computedColumnManager, columnType, columnName) {
-    var activeColumns = computedColumnManager.getActiveColumns();
-    var colDesc = activeColumns[columnType][columnName];
+    var colDesc = computedColumnManager.getComputedColumnSpec(columnType, columnName);
     var attrs = this.data.attributes;
     attrs[columnType] = attrs[columnType] || {};
 
@@ -1483,6 +1485,11 @@ Dataframe.prototype.getRowAt = function (index, type) {
 
     var row = {};
     _.each(_.keys(that.data.attributes[type]), function (key) {
+        // Skip columns that are prepended with __
+        if (key[0] === '_' && key[1] === '_') {
+            return;
+        }
+
         row[key] = that.getCell(index, type, key);
     });
     row._index = origIndex;

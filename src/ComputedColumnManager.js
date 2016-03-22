@@ -2,6 +2,7 @@
 
 var _       = require('underscore');
 var util    = require('./util.js');
+var ComputedColumnSpec = require('./ComputedColumnSpec.js');
 
 
 function getDegree(forwardsEdges, backwardsEdges, i) {
@@ -36,7 +37,7 @@ function getDegree(forwardsEdges, backwardsEdges, i) {
 
 var defaultLocalBuffers = {
 
-    logicalEdges: {
+    logicalEdges: new ComputedColumnSpec({
         arrType: Uint32Array,
         type: 'number',
         numberPerGraphComponent: 2,
@@ -51,9 +52,9 @@ var defaultLocalBuffers = {
             }
             return outArr;
         }
-    },
+    }),
 
-    forwardsEdgeStartEndIdxs: {
+    forwardsEdgeStartEndIdxs: new ComputedColumnSpec({
         arrType: Uint32Array,
         type: 'number',
         numberPerGraphComponent: 2,
@@ -68,9 +69,9 @@ var defaultLocalBuffers = {
             }
             return outArr;
         }
-    },
+    }),
 
-    backwardsEdgeStartEndIdxs: {
+    backwardsEdgeStartEndIdxs: new ComputedColumnSpec({
         arrType: Uint32Array,
         type: 'number',
         numberPerGraphComponent: 2,
@@ -85,9 +86,9 @@ var defaultLocalBuffers = {
             }
             return outArr;
         }
-    },
+    }),
 
-    pointColors: {
+    pointColors: new ComputedColumnSpec({
         arrType: Uint32Array,
         type: 'color',
         filterable: true,
@@ -95,7 +96,7 @@ var defaultLocalBuffers = {
         graphComponentType: 'point',
         version: 0,
         dependencies: [
-            ['pointCommunity', 'point']
+            ['__pointCommunity', 'point']
         ],
 
         computeSingleValue: function (pointCommunity, idx, numGraphElements) {
@@ -107,9 +108,9 @@ var defaultLocalBuffers = {
             return color;
         }
 
-    },
+    }),
 
-    edgeColors: {
+    edgeColors: new ComputedColumnSpec({
         arrType: Uint32Array,
         type: 'color',
         filterable: true,
@@ -134,9 +135,9 @@ var defaultLocalBuffers = {
             return outArr;
         }
 
-    },
+    }),
 
-    pointSizes: {
+    pointSizes: new ComputedColumnSpec({
         arrType: Uint8Array,
         type: 'number',
         filterable: true,
@@ -167,9 +168,9 @@ var defaultLocalBuffers = {
 
             return outArr;
         }
-    },
+    }),
 
-    edgeHeights: {
+    edgeHeights: new ComputedColumnSpec({
         arrType: Float32Array,
         type: 'number',
         filterable: true,
@@ -183,14 +184,14 @@ var defaultLocalBuffers = {
             // TODO: Do we need this?
             return 0;
         }
-    }
+    })
 
 };
 
 
 var defaultHostBuffers = {
 
-    forwardsEdgeWeights: {
+    forwardsEdgeWeights: new ComputedColumnSpec({
         arrType: Float32Array,
         type: 'number',
         filterable: true,
@@ -205,9 +206,9 @@ var defaultHostBuffers = {
             }
             return outArr;
         }
-    },
+    }),
 
-    backwardsEdgeWeights: {
+    backwardsEdgeWeights: new ComputedColumnSpec({
         arrType: Float32Array,
         type: 'number',
         filterable: true,
@@ -222,7 +223,7 @@ var defaultHostBuffers = {
             }
             return outArr;
         }
-    },
+    }),
 
 };
 
@@ -231,7 +232,7 @@ var defaultPointColumns = {
 
     /*
 
-    doubleCloseness: {
+    doubleCloseness: new ComputedColumnSpec({
         arrType: Array,
         type: 'number',
         filterable: true,
@@ -245,9 +246,9 @@ var defaultPointColumns = {
             // TODO: Do we need this?
             return closeness * 2;
         }
-    },
+    }),
 
-    doubleDoubleCloseness: {
+    doubleDoubleCloseness: new ComputedColumnSpec({
         arrType: Array,
         type: 'number',
         filterable: true,
@@ -261,7 +262,7 @@ var defaultPointColumns = {
             // TODO: Do we need this?
             return doubleCloseness * 2;
         }
-    }
+    })
 
     */
 
@@ -320,6 +321,10 @@ ComputedColumnManager.prototype.loadEncodingColumns = function () {
 
 };
 
+ComputedColumnManager.prototype.getComputedColumnSpec = function (columnType, columnName) {
+    return this.activeComputedColumns[columnType][columnName];
+};
+
 ComputedColumnManager.prototype.getActiveColumns = function () {
     return this.activeComputedColumns;
 };
@@ -340,9 +345,8 @@ ComputedColumnManager.prototype.getValue = function (dataframe, columnType, colu
 
     var columnDesc = this.activeComputedColumns[columnType][columnName];
     // Check to see if we have have column registered
-    if (!columnDesc) {
-        // TODO should it throw?
-        return undefined;
+    if (!columnDesc || !columnDesc.isCompletelyDefined()) {
+        throw new Error('Invalid column creation function for: ', columnType, columnName);
     }
 
     // Check if the computation can't be done on a single one (quickly)
@@ -387,9 +391,8 @@ ComputedColumnManager.prototype.getArray = function (dataframe, columnType, colu
     var columnDesc = this.activeComputedColumns[columnType][columnName];
 
     // Check to see if we have have column registered
-    if (!columnDesc) {
-        // TODO should it throw?
-        return undefined;
+    if (!columnDesc || !columnDesc.isCompletelyDefined()) {
+        throw new Error('Invalid column creation function for: ', columnType, columnName);
     }
 
     // Get dependencies
