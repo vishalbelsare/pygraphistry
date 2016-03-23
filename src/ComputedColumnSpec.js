@@ -1,11 +1,18 @@
 'use strict';
 
 var _       = require('underscore');
+var flake = require('simpleflake');
+
+function getUniqueId () {
+    var id = flake();
+    var stringId = id.toString('hex');
+    return stringId;
+}
 
 function ComputedColumnSpec (optionalInitializationSpec) {
 
     // Initialize with default values;
-    this.version = 0;
+    this.version = getUniqueId();
     this.numberPerGraphComponent = 1;
     this.arrType = Array;
     this.dependencies = [];
@@ -92,6 +99,14 @@ ComputedColumnSpec.prototype.setDataType = function (dataType) {
 
 ComputedColumnSpec.prototype.setNumberPerGraphComponent = function (numberPerGraphComponent) {
     this.numberPerGraphComponent = numberPerGraphComponent;
+};
+
+ComputedColumnSpec.prototype.setVersion = function (version) {
+    this.version = version;
+};
+
+ComputedColumnSpec.prototype.bumpVersion = function () {
+    this.version = getUniqueId();
 };
 
 

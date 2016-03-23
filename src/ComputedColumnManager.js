@@ -1,9 +1,22 @@
 'use strict';
 
 var _       = require('underscore');
+var graphlib = require('graphlib');
+var Graph = graphlib.Graph;
+var flake = require('simpleflake');
+
 var util    = require('./util.js');
 var ComputedColumnSpec = require('./ComputedColumnSpec.js');
 
+function getUniqueId () {
+    var id = flake();
+    var stringId = id.toString('hex');
+    return stringId;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// DEFAULT ENCODINGS (TODO: Should these move into another file?)
+//////////////////////////////////////////////////////////////////////////////
 
 function getDegree(forwardsEdges, backwardsEdges, i) {
     return forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
@@ -278,14 +291,80 @@ var defaultEncodingColumns = {
     localBuffer: defaultLocalBuffers
 };
 
+//////////////////////////////////////////////////////////////////////////////
+// Constructor
+//////////////////////////////////////////////////////////////////////////////
+
 function ComputedColumnManager () {
+    // We maintain a depenency graph between columns. dependency -> CC
+    this.dependencyGraph = new Graph();
     this.activeComputedColumns = {};
 }
 
-// TODO: Instead of using generic JSON blobs, make computed col desc a class.
-ComputedColumnManager.prototype.addComputedColumn = function (dataframe, columnType, columnName, desc) {
+//////////////////////////////////////////////////////////////////////////////
+// Loading / Adding functions
+//////////////////////////////////////////////////////////////////////////////
+
+function keyFromColumn (columnType, columnName) {
+    var key = '' + columnType + ':' + columnName;
+    return key;
+}
+
+function typeAndNameFromKey (key) {
+    var parts = key.split(':');
+    return {
+        columnType: parts[0],
+        columnName: parts[1]
+    };
+}
+
+ComputedColumnManager.prototype.removeComputedColumnInternally = function (columnType, columnName) {
+    // TODO: Validate that we don't remove a dependency
+
+    delete this.activeComputedColumns[columnType][columnName];
+
+    // Remove node from graph.
+    // TODO: Do we want to deal with dangling nodes in the graph at all,
+    // or is it a non concern (since they won't be reachable)
+    var columnKey = keyFromColumn(columnType, columnName);
+    this.dependencyGraph.removeNode(columnKey);
+};
+
+ComputedColumnManager.prototype.loadComputedColumnSpecInternally = function (columnType, columnName, spec) {
+    // TODO: Validate that we don't form a cycle
+
+    // Check to see if we're updating an existing one, or simply adding a new one.
+    // This is mostly for internal dependency bookkeeping.
+    var hasColumn = this.hasColumn(columnType, columnName);
+
+    if (hasColumn) {
+        this.removeComputedColumnInternally(columnType, columnName);
+    }
+
+    var columnKey = keyFromColumn(columnType, columnName);
+    var dependencyGraph = this.dependencyGraph;
+
     this.activeComputedColumns[columnType] = this.activeComputedColumns[columnType] || {};
-    this.activeComputedColumns[columnType][columnName] = desc;
+    this.activeComputedColumns[columnType][columnName] = spec;
+
+    // Add to graph
+    dependencyGraph.setNode(columnKey);
+
+    // Add dependencies to graph if they're not already there.
+    // Add edge from dependency to this column
+    _.each(spec.dependencies, function (dep) {
+        var depKey = keyFromColumn(dep[1], dep[0]);
+        if (!dependencyGraph.hasNode(depKey)) {
+            dependencyGraph.setNode(depKey);
+        }
+
+        dependencyGraph.setEdge(depKey, columnKey);
+    });
+};
+
+// Public facing function, because it handles registering with the dataframe too.
+ComputedColumnManager.prototype.addComputedColumn = function (dataframe, columnType, columnName, desc) {
+    this.loadComputedColumnSpecInternally(columnType, columnName, desc);
     dataframe.registerNewComputedColumn(this, columnType, columnName);
 };
 
@@ -295,12 +374,9 @@ ComputedColumnManager.prototype.loadDefaultColumns = function () {
 
     // copy in defaults. Copy so we can recover defaults when encodings change
     _.each(defaultColumns, function (cols, colType) {
-        that.activeComputedColumns[colType] = that.activeComputedColumns[colType] || {};
-
         _.each(cols, function (colDesc, name) {
-            that.activeComputedColumns[colType][name] = colDesc;
+            that.loadComputedColumnSpecInternally(colType, name, colDesc);
         });
-
     });
 
 };
@@ -311,15 +387,16 @@ ComputedColumnManager.prototype.loadEncodingColumns = function () {
 
     // copy in defaults. Copy so we can recover defaults when encodings change
     _.each(defaultEncodingColumns, function (cols, colType) {
-        that.activeComputedColumns[colType] = that.activeComputedColumns[colType] || {};
-
         _.each(cols, function (colDesc, name) {
-            that.activeComputedColumns[colType][name] = colDesc;
+            that.loadComputedColumnSpecInternally(colType, name, colDesc);
         });
-
     });
 
 };
+
+//////////////////////////////////////////////////////////////////////////////
+// Lightweight Getters
+//////////////////////////////////////////////////////////////////////////////
 
 ComputedColumnManager.prototype.getComputedColumnSpec = function (columnType, columnName) {
     return this.activeComputedColumns[columnType][columnName];
@@ -340,6 +417,9 @@ ComputedColumnManager.prototype.hasColumn = function (columnType, columnName) {
     return false;
 };
 
+//////////////////////////////////////////////////////////////////////////////
+// Value Getters (where the magic happens)
+//////////////////////////////////////////////////////////////////////////////
 
 ComputedColumnManager.prototype.getValue = function (dataframe, columnType, columnName, idx) {
 
