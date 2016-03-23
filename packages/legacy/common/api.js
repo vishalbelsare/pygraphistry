@@ -50,12 +50,7 @@ function makeVizToken(key, datasetName) {
 
 
 function checkSSL(req) {
-    //TODO make an error once prod ssl server enabled
-    if (!req.secure && (config.ENVIRONMENT !== 'local')) {
-        logger.warn('/encrypt needs https when not local');
-        //return res.json({success: false, error: 'requires https'});
-    }
-}
+   }
 
 
 function init (app) {
@@ -64,11 +59,13 @@ function init (app) {
 
     // https://.../api/encrypt?text=... => {encrypted: string} + {error: string}
     // allow at most 1 req per second
-    // allow unsecure local
     app.get('/api/encrypt', function(req, res) {
         logger.info('encrypting', req.query.text);
 
-        checkSSL(req);
+        if (!req.secure && req.hostname !== 'localhost') {
+            return res.json({success: false, error: 'HTTPS required'});
+        }
+
 
         //immediate if not used in awhile, otherwise in 1s after next queued
         var now = Date.now();
@@ -91,7 +88,9 @@ function init (app) {
     function decryptOrCheck(checkOnly, req, res) {
         logger.info('decrypting', req.query.text);
 
-        checkSSL(req);
+        if (!req.secure && req.hostname !== 'localhost') {
+            return res.json({success: false, error: 'HTTPS required'});
+        }
 
         //immediate if not used in awhile, otherwise in 1s after next queued
         var now = Date.now();
