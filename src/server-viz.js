@@ -564,13 +564,13 @@ function VizServer(app, socket, cachedVBOs) {
 
                 extend(true, renderConfig, newValues);
 
-                cb({success: true, renderConfig: renderConfig});
-
                 if (saveAtEachStep) {
                     persist.saveConfig(defaultSnapshotName, renderConfig);
                 }
 
                 this.lastRenderConfig = renderConfig;
+
+                cb({success: true, renderConfig: renderConfig});
             },
             (err) => {
                 failWithMessage(cb, 'Render config update error');
