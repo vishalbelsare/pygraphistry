@@ -311,6 +311,15 @@ function typeAndNameFromKey (key) {
     };
 }
 
+// TODO: No special function name for local buffer
+ComputedColumnManager.prototype.loadDefaultLocalBuffer = function (dataframe, name) {
+    if (defaultLocalBuffers[name]) {
+        this.addComputedColumn(dataframe, 'localBuffer', name, defaultLocalBuffers[name]);
+    } else {
+        throw new Error('Attempted to reset a local buffer that does not exist');
+    }
+};
+
 ComputedColumnManager.prototype.bumpVersionsOnDependencies = function (columnType, columnName) {
     var columnKey = keyFromColumn(columnType, columnName);
 
