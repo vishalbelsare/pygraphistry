@@ -90,7 +90,6 @@ export function createSync(dataframe, renderer, cl, device, vendor, cfg) {
     simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
     simObj.setLocks = setLocks.bind(this, simObj);
     simObj.setPhysics = setPhysics.bind(this, simObj);
-    simObj.recolor = recolor.bind(this, simObj);
     simObj.moveNodes = moveNodes.bind(this, simObj);
     simObj.selectNodesInRect = selectNodesInRect.bind(this, simObj);
     simObj.selectNodesInCircle = selectNodesInCircle.bind(this, simObj);
@@ -234,7 +233,6 @@ export function create(dataframe, renderer, cl, device, vendor, cfg) {
             simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
             simObj.setLocks = setLocks.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
-            simObj.recolor = recolor.bind(this, simObj);
             simObj.moveNodes = moveNodes.bind(this, simObj);
             simObj.selectNodesInRect = selectNodesInRect.bind(this, simObj);
             simObj.selectNodesInCircle = selectNodesInCircle.bind(this, simObj);
@@ -312,7 +310,7 @@ export function create(dataframe, renderer, cl, device, vendor, cfg) {
     }).fail(log.makeQErrorHandler(logger, 'Cannot create SimCL'));
 }
 
-
+// TODO: Deprecate this in favor of encodings.
 function setColor (renderer, simulator, colorObj) {
 
     //TODO why are these reversed?
@@ -323,18 +321,20 @@ function setColor (renderer, simulator, colorObj) {
 
     for (var v = 0; v < renderer.numPoints; v++) {
         simulator.dataframe.setLocalBufferValue('pointColors', v, rgb);
-        // simulator.buffersLocal.pointColors[v] = rgb;
     }
     for (var e = 0; e < renderer.numEdges; e++) {
         simulator.dataframe.setLocalBufferValue('edgeColors', 2*e, rgb);
         simulator.dataframe.setLocalBufferValue('edgeColors', 2*e+1, rgb);
-        // simulator.buffersLocal.edgeColors[2*e] = rgb;
-        // simulator.buffersLocal.edgeColors[2*e+1] = rgb;
     }
     simulator.tickBuffers(['pointColors', 'edgeColors']);
     return Q();
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+// Highlight shortest path code
+// TODO: Bring it back in terms of encodings, toss somewhere besides simulator
+//////////////////////////////////////////////////////////////////////////////
 
 //Simulator * int * int -> int U exn
 function findEdgeDirected (simulator, src, dst) {
@@ -379,7 +379,6 @@ function highlightPath (renderer, simulator, path, i) {
     points.forEach(function (point) {
         if (point !== path[0] && point !== path[path.length -1]) {
             simulator.dataframe.setLocalBufferValue('pointColors', point, COLOR);
-            // simulator.buffersLocal.pointColors[point] = COLOR;
         }
     });
 
@@ -388,8 +387,6 @@ function highlightPath (renderer, simulator, path, i) {
         var edge = findEdgeUndirected(simulator, pair[0], pair[1]);
         simulator.dataframe.setLocalBufferValue('edgeColors', 2 * edge, COLOR);
         simulator.dataframe.setLocalBufferValue('edgeColors', 2 * edge + 1, COLOR);
-        // simulator.buffersLocal.edgeColors[2 * edge] = COLOR;
-        // simulator.buffersLocal.edgeColors[2 * edge + 1] = COLOR;
     });
 }
 
@@ -447,9 +444,6 @@ function highlightShortestPaths (renderer, simulator, pair) {
     }
     simulator.dataframe.setLocalBufferValue('pointSizes', pair[0], biggestPoint);
     simulator.dataframe.setLocalBufferValue('pointSizes', pair[1], biggestPoint);
-
-    // simulator.buffersLocal.pointSizes[pair[0]] = biggestPoint;
-    // simulator.buffersLocal.pointSizes[pair[1]] = biggestPoint;
 
     simulator.tickBuffers(['pointSizes', 'pointColors', 'edgeColors']);
 }
@@ -512,8 +506,6 @@ function resetBuffers (simulator, buffers) {
     //delete old
     buffNames.forEach(function(buffName) {
         simulator.dataframe.deleteBuffer(buffName);
-        // simulator.buffers[buffName].delete();
-        // simulator.buffers[buffName] = null;
     });
 }
 
@@ -546,7 +538,6 @@ function setPoints(simulator, points) {
         simulator.dataframe.getBuffer('tractions', 'simulator')
     ]);
 
-    // simulator.numPoints = points.length / simulator.elementsPerPoint;
     var numPoints = points.length / simulator.elementsPerPoint;
     simulator.dataframe.setNumElements('point', numPoints);
 
@@ -582,14 +573,6 @@ function setPoints(simulator, points) {
 
         logger.trace('Created most of the points');
 
-        // simulator.buffers.nextPoints = nextPointsBuf;
-        // simulator.buffers.partialForces1 = partialForces1Buf;
-        // simulator.buffers.partialForces2 = partialForces2Buf;
-        // simulator.buffers.curForces = curForcesBuf;
-        // simulator.buffers.prevForces = prevForcesBuf;
-        // simulator.buffers.swings = swingsBuf;
-        // simulator.buffers.tractions = tractionsBuf;
-
         simulator.dataframe.loadBuffer('nextPoints', 'simulator', nextPointsBuf);
         simulator.dataframe.loadBuffer('partialForces1', 'simulator', partialForces1Buf);
         simulator.dataframe.loadBuffer('partialForces2', 'simulator', partialForces2Buf);
@@ -599,10 +582,8 @@ function setPoints(simulator, points) {
         simulator.dataframe.loadBuffer('tractions', 'simulator', tractionsBuf);
 
         simulator.dataframe.loadRendererBuffer('curPoints', pointsVBO);
-        // simulator.renderer.buffers.curPoints = pointsVBO;
 
         // Generate an array of random values we will write to the randValues buffer
-        // simulator.buffers.randValues = randBuf;
         simulator.dataframe.loadBuffer('randValues', 'simulator', randBuf);
         var rands = new Float32Array(randLength * simulator.elementsPerPoint);
         for(var i = 0; i < rands.length; i++) {
@@ -633,7 +614,6 @@ function setPoints(simulator, points) {
     })
     .spread(function(pointsBuf) {
         simulator.dataframe.loadBuffer('curPoints', 'simulator', pointsBuf);
-        // simulator.buffers.curPoints = pointsBuf;
     })
     .then(function () {
         _.each(simulator.layoutAlgorithms, function (la) {
@@ -641,34 +621,6 @@ function setPoints(simulator, points) {
         });
         return simulator;
     }).fail(log.makeQErrorHandler(logger, 'Failure in SimCl.setPoints'));
-}
-
-
-//string -> simulator * typedarray -> Q simulator
-// Create and store buffer on host and device with passed in defaults
-// returns corresponding setter
-function makeSetter(simulator, name/*, dimName*/) {
-
-    return function (data) {
-
-        var buffName = name;
-
-        simulator.dataframe.loadLocalBuffer(buffName, data);
-
-        simulator.resetBuffers([simulator.dataframe.getBuffer(buffName, 'simulator')]);
-        simulator.tickBuffers([buffName]);
-
-        return simulator.renderer.createBuffer(data, buffName)
-        .then(function(vbo) {
-            logger.debug('Created %s VBO', buffName);
-            simulator.dataframe.loadRendererBuffer(buffName, vbo);
-            return simulator.cl.createBufferGL(vbo, buffName);
-        }).then(function (buffer) {
-            // simulator.buffers[buffName] = buffer;
-            simulator.dataframe.loadBuffer(buffName, 'simulator', buffer);
-            return simulator;
-        }).fail(log.makeQErrorHandler(logger, 'ERROR Failure in SimCl.set %s', buffName));
-    };
 }
 
 function setMidEdges( simulator ) {
@@ -687,23 +639,18 @@ function setMidEdges( simulator ) {
     bytesPerEdge = 2 * bytesPerPoint;
     numMidPoints = ( numEdges * (numSplits) );
 
-    // simulator.numMidPoints = numMidPoints;
     simulator.dataframe.setNumElements('midPoints', numMidPoints);
     var numRenderedSplits = simulator.dataframe.getNumElements('renderedSplits');
 
     var numMidEdges = ( numRenderedSplits + 1 ) * numEdges;
-    // simulator.numMidEdges = ( numRenderedSplits + 1 ) * simulator.numEdges;
     simulator.dataframe.setNumElements('midEdges', numMidEdges);
     simulator.dataframe.setNumElements('numRenderedSplits', simulator.numRenderedSplits);
-    // simulator.renderer.numRenderedSplits = simulator.numRenderedSplits;
     midPointsByteLength = numMidPoints * bytesPerPoint;
     springsByteLength = numEdges * bytesPerEdge;
 
     simulator.dataframe.deleteBuffer('curMidPoints');
     simulator.dataframe.deleteBuffer('nextMidPoints');
 
-    // simulator.buffers.curMidPoints.delete();
-    // simulator.buffers.nextMidPoints.delete();
     simulator.tickBuffers(['curMidPoints']);
 
     return Q.all( [
@@ -719,10 +666,6 @@ function setMidEdges( simulator ) {
         simulator.dataframe.loadRendererBuffer('midSprings', midSpringsVBO);
         simulator.dataframe.loadRendererBuffer('midSpringsColorCoord', midSpringsColorCoordVBO);
 
-        // simulator.buffers.nextMidPoints = nextMidPointsBuffer;
-        // simulator.renderer.buffers.curMidPoints = curMidPointsVBO;
-        // simulator.renderer.buffers.midSprings = midSpringsVBO;
-        // simulator.renderer.buffers.midSpringsColorCoord = midSpringsColorCoordVBO;
         return Q.all( [
             simulator.cl.createBufferGL( curMidPointsVBO , 'curMidPoints' ),
             simulator.cl.createBufferGL( midSpringsVBO , 'midSpringsPos' ),
@@ -734,10 +677,6 @@ function setMidEdges( simulator ) {
         simulator.dataframe.loadBuffer('midSpringsPos', 'simulator', midSpringsBuf);
         simulator.dataframe.loadBuffer('curMidPoints', 'simulator', midPointsBuf);
         simulator.dataframe.loadBuffer('midSpringsColorCoord', 'simulator', midSpringsColorCoordBuf);
-
-        // simulator.buffers.midSpringsPos = midSpringsBuf;
-        // simulator.buffers.curMidPoints = midPointsBuf;
-        // simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuf;
 
         return simulator;
     } )
@@ -801,15 +740,7 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
     simulator.dataframe.loadHostBuffer('forwardsEdges', forwardsEdges);
     simulator.dataframe.loadHostBuffer('backwardsEdges', backwardsEdges);
 
-    // simulator.bufferHostCopies.unsortedEdges = unsortedEdges;
-    // simulator.bufferHostCopies.forwardsEdges = forwardsEdges;
-    // simulator.bufferHostCopies.backwardsEdges = backwardsEdges;
-
     var logicalEdges = forwardsEdges.edgesTyped;
-    // simulator.buffersLocal.logicalEdges = logicalEdges;
-    // simulator.dataframe.loadLocalBuffer('logicalEdges', logicalEdges);
-    // simulator.dataframe.loadLocalBuffer('forwardsEdgeStartEndIdxs', forwardsEdges.edgeStartEndIdxsTyped);
-    // simulator.dataframe.loadLocalBuffer('backwardsEdgeStartEndIdxs', backwardsEdges.edgeStartEndIdxsTyped);
     simulator.tickBuffers(['logicalEdges', 'forwardsEdgeStartEndIdxs', 'backwardsEdgeStartEndIdxs']);
 
     simulator.resetBuffers([
@@ -829,43 +760,16 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
         simulator.dataframe.getBuffer('midSpringsColorCoord', 'simulator')
     ]);
 
-    // simulator.resetBuffers([
-    //     simulator.buffers.degrees,
-    //     simulator.buffers.forwardsEdges,
-    //     simulator.buffers.forwardsDegrees,
-    //     simulator.buffers.forwardsWorkItems,
-    //     simulator.buffers.backwardsEdges,
-    //     simulator.buffers.backwardsDegrees,
-    //     simulator.buffers.backwardsWorkItems,
-    //     simulator.buffers.outputEdgeForcesMap,
-    //     simulator.buffers.springsPos,
-    //     simulator.buffers.midSpringsPos,
-    //     simulator.buffers.forwardsEdgeStartEndIdxs,
-    //     simulator.buffers.backwardsStartEndIdxs,
-    //     simulator.buffers.midSpringsColorCoord
-    // ]);
-
-    // console.log('endPoints: ', endPoints, endPoints.constructor);
-
     return Q().then(function() {
 
         // Init constant
         simulator.dataframe.setNumElements('edge', numEdges);
         logger.debug("Number of edges in simulation: %d", numEdges);
 
-        // simulator.renderer.numEdges = simulator.numEdges;
-        // simulator.numForwardsWorkItems = forwardsEdges.workItemsTyped.length / elementsPerWorkItem;
-        // simulator.numBackwardsWorkItems = backwardsEdges.workItemsTyped.length / elementsPerWorkItem;
-
         simulator.dataframe.setNumElements('forwardsWorkItems', forwardsEdges.workItemsTyped.length / elementsPerWorkItem);
         simulator.dataframe.setNumElements('backwardsWorkItems', backwardsEdges.workItemsTyped.length / elementsPerWorkItem);
         simulator.dataframe.setNumElements('midPoints', midPoints.length / simulator.elementsPerPoint);
         simulator.dataframe.setNumElements('midEdges', numMidEdges);
-
-        // simulator.numMidPoints = midPoints.length / simulator.elementsPerPoint;
-        // simulator.renderer.numMidPoints = simulator.numMidPoints;
-        // simulator.numMidEdges = (simulator.numSplits + 1) * simulator.numEdges;
-        // simulator.renderer.numMidEdges = simulator.numMidEdges;
 
         // Create buffers
         return Q.all([
@@ -895,25 +799,6 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
                      outputEdgeForcesMap, globalCarryOut, forwardsEdgeStartEndIdxs, backwardsEdgeStartEndIdxs,
                      segStart) {
         // Bind buffers
-        // simulator.buffers.degrees = degreesBuffer;
-        // simulator.buffers.forwardsEdges = forwardsEdgesBuffer;
-        // simulator.buffers.forwardsDegrees = forwardsDegreesBuffer;
-        // simulator.buffers.forwardsWorkItems = forwardsWorkItemsBuffer;
-        // simulator.buffers.backwardsEdges = backwardsEdgesBuffer;
-        // simulator.buffers.backwardsDegrees = backwardsDegreesBuffer;
-        // simulator.buffers.backwardsWorkItems = backwardsWorkItemsBuffer;
-        // simulator.buffers.nextMidPoints = nextMidPointsBuffer;
-        // simulator.buffers.outputEdgeForcesMap = outputEdgeForcesMap;
-        // simulator.buffers.globalCarryOut = globalCarryOut;
-        // simulator.buffers.forwardsEdgeStartEndIdxs = forwardsEdgeStartEndIdxs;
-        // simulator.buffers.backwardsEdgeStartEndIdxs = backwardsEdgeStartEndIdxs;
-        // simulator.buffers.segStart = segStart;
-
-        // simulator.renderer.buffers.springs = springsVBO;
-        // simulator.renderer.buffers.curMidPoints = midPointsVBO;
-        // simulator.renderer.buffers.midSprings = midSpringsVBO;
-        // simulator.renderer.buffers.midSpringsColorCoord = midSpringsColorCoordVBO;
-
         simulator.dataframe.loadBuffer('degrees', 'simulator', degreesBuffer);
         simulator.dataframe.loadBuffer('forwardsEdges', 'simulator', forwardsEdgesBuffer);
         simulator.dataframe.loadBuffer('forwardsDegrees', 'simulator', forwardsDegreesBuffer);
@@ -938,15 +823,6 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
             simulator.cl.createBufferGL(midPointsVBO, 'curMidPoints'),
             simulator.cl.createBufferGL(midSpringsVBO, 'midSpringsPos'),
             simulator.cl.createBufferGL(midSpringsColorCoordVBO, 'midSpringsColorCoord'),
-            // simulator.buffers.degrees.write(degrees),
-            // simulator.buffers.forwardsEdges.write(forwardsEdges.edgesTyped),
-            // simulator.buffers.forwardsDegrees.write(forwardsEdges.degreesTyped),
-            // simulator.buffers.forwardsWorkItems.write(forwardsEdges.workItemsTyped),
-            // simulator.buffers.backwardsEdges.write(backwardsEdges.edgesTyped),
-            // simulator.buffers.backwardsDegrees.write(backwardsEdges.degreesTyped),
-            // simulator.buffers.backwardsWorkItems.write(backwardsEdges.workItemsTyped),
-            // simulator.buffers.forwardsEdgeStartEndIdxs.write(forwardsEdges.edgeStartEndIdxsTyped),
-            // simulator.buffers.backwardsEdgeStartEndIdxs.write(backwardsEdges.edgeStartEndIdxsTyped),
             simulator.dataframe.writeBuffer('degrees', 'simulator', degrees, simulator),
             simulator.dataframe.writeBuffer('forwardsEdges', 'simulator', forwardsEdges.edgesTyped, simulator),
             simulator.dataframe.writeBuffer('forwardsDegrees', 'simulator', forwardsEdges.degreesTyped, simulator),
@@ -964,15 +840,9 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
         simulator.dataframe.loadBuffer('midSpringsPos', 'simulator', midSpringsBuffer);
         simulator.dataframe.loadBuffer('curMidPoints', 'simulator', midPointsBuf);
         simulator.dataframe.loadBuffer('midSpringsColorCoord', 'simulator', midSpringsColorCoordBuffer);
-
-        // simulator.buffers.springsPos = springsBuffer;
-        // simulator.buffers.midSpringsPos = midSpringsBuffer;
-        // simulator.buffers.curMidPoints = midPointsBuf;
-        // simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuffer;
     })
     .then(function () {
         return Q.all([
-            // simulator.buffers.springsPos.write(endPoints),
             simulator.dataframe.writeBuffer('springsPos', 'simulator', endPoints, simulator)
         ]);
     })
@@ -1084,9 +954,6 @@ function setMidEdgeColors(simulator, midEdgeColors) {
             srcColorInt = pointColorsBuffer[srcNodeIdx];
             dstColorInt = pointColorsBuffer[dstNodeIdx];
 
-            // srcColorInt = simulator.buffersLocal.pointColors[srcNodeIdx];
-            // dstColorInt = simulator.buffersLocal.pointColors[dstNodeIdx];
-
             srcColor = convertRGBInt2Color(srcColorInt);
             dstColor = convertRGBInt2Color(dstColorInt);
 
@@ -1103,7 +970,6 @@ function setMidEdgeColors(simulator, midEdgeColors) {
             }
         }
     }
-    // simulator.buffersLocal.midEdgeColors = midEdgeColors;
     simulator.dataframe.loadLocalBuffer('midEdgeColors', midEdgeColors);
     simulator.tickBuffers(['midEdgeColors']);
     return Q(simulator);
@@ -1192,9 +1058,6 @@ function connectedEdges(simulator, nodeIndices) {
     var backwardsBuffers = simulator.dataframe.getHostBuffer('backwardsEdges');
     var forwardsPermutation = forwardsBuffers.edgePermutation;
 
-    // var forwardsBuffers = simulator.bufferHostCopies.forwardsEdges;
-    // var backwardsBuffers = simulator.bufferHostCopies.backwardsEdges;
-
     var setOfEdges = [];
     var edgeHash = {};
 
@@ -1232,33 +1095,6 @@ function tickInitialBufferVersions(simulator) {
         //midpoints/midedges
         'curMidPoints', 'nextMidPoints', 'curMidPoints', 'midSpringsPos', 'midSpringsColorCoord'
     ]);
-}
-
-function recolor(simulator, marquee) {
-    logger.debug('Recoloring', marquee);
-    var numPoints = simulator.dataframe.getNumElements('point');
-
-    var positions = new ArrayBuffer(numPoints * 4 * 2);
-
-    var selectedIdx = [];
-    var bounds = marquee.selection;
-    var curPointsBuffer = simulator.dataframe.getBuffer('curPoints', 'simulator');
-    curPointsBuffer.read(new Float32Array(positions), 0).then(function () {
-        var pos = new Float32Array(positions);
-        for (var i = 0; i < numPoints; i++) {
-            var x = pos[2*i];
-            var y = pos[2*i + 1];
-            if (x > bounds.tl.x && x < bounds.br.x && y < bounds.tl.y && y > bounds.br.y) {
-                selectedIdx.push(i);
-            }
-        }
-
-        _.each(selectedIdx, function (idx) {
-            simulator.dataframe.setLocalBufferValue('pointSizes', idx, 255);
-        });
-
-        simulator.tickBuffers(['pointSizes']);
-    }).fail(log.makeQErrorHandler(logger, 'Read failed'));
 }
 
 
