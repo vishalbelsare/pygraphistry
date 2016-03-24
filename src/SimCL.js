@@ -90,7 +90,6 @@ export function createSync(dataframe, renderer, cl, device, vendor, cfg) {
     simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
     simObj.setLocks = setLocks.bind(this, simObj);
     simObj.setPhysics = setPhysics.bind(this, simObj);
-    simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
     simObj.recolor = recolor.bind(this, simObj);
     simObj.moveNodes = moveNodes.bind(this, simObj);
     simObj.selectNodesInRect = selectNodesInRect.bind(this, simObj);
@@ -101,6 +100,7 @@ export function createSync(dataframe, renderer, cl, device, vendor, cfg) {
     simObj.highlightShortestPaths = highlightShortestPaths.bind(this, renderer, simObj);
     simObj.setColor = setColor.bind(this, renderer, simObj);
     simObj.setMidEdges = setMidEdges.bind(this, simObj);
+    simObj.tickInitialBufferVersions = tickInitialBufferVersions.bind(this, simObj);
 
     simObj.numPoints = 0;
     simObj.numEdges = 0;
@@ -152,24 +152,12 @@ export function createSync(dataframe, renderer, cl, device, vendor, cfg) {
         edgeWeights: null
     };
 
-    simObj.timeSubset = {
-        relRange: {min: 0, max: 100},
-        pointsRange:    {startIdx: 0, len: renderer.numPoints},
-        edgeRange:      {startIdx: 0, len: renderer.numEdges},
-        midPointsRange: {
-            startIdx: 0,
-            len: renderer.numPoints * controls.global.numSplits
-        },
-        midEdgeRange:   {
-            startIdx: 0,
-            len: renderer.numEdges * controls.global.numSplits
-        }
-    };
-
     dataframe.setNumElements('point', renderer.numPoints);
     dataframe.setNumElements('edge', renderer.numEdges);
     dataframe.setNumElements('splits', controls.global.numSplits);
     dataframe.setNumElements('renderedSplits', controls.global.numRenderedSplits || 0);
+
+    simObj.tickInitialBufferVersions();
 
     Object.seal(simObj.buffers);
     Object.seal(simObj);
@@ -246,7 +234,6 @@ export function create(dataframe, renderer, cl, device, vendor, cfg) {
             simObj.setMidEdgeColors = setMidEdgeColors.bind(this, simObj);
             simObj.setLocks = setLocks.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
-            simObj.setTimeSubset = setTimeSubset.bind(this, renderer, simObj);
             simObj.recolor = recolor.bind(this, simObj);
             simObj.moveNodes = moveNodes.bind(this, simObj);
             simObj.selectNodesInRect = selectNodesInRect.bind(this, simObj);
@@ -257,6 +244,7 @@ export function create(dataframe, renderer, cl, device, vendor, cfg) {
             simObj.highlightShortestPaths = highlightShortestPaths.bind(this, renderer, simObj);
             simObj.setColor = setColor.bind(this, renderer, simObj);
             simObj.setMidEdges = setMidEdges.bind(this, simObj);
+            simObj.tickInitialBufferVersions = tickInitialBufferVersions.bind(this, simObj);
 
             simObj.numPoints = 0;
             simObj.numEdges = 0;
@@ -308,24 +296,12 @@ export function create(dataframe, renderer, cl, device, vendor, cfg) {
                 edgeWeights: null
             };
 
-            simObj.timeSubset = {
-                relRange: {min: 0, max: 100},
-                pointsRange:    {startIdx: 0, len: renderer.numPoints},
-                edgeRange:      {startIdx: 0, len: renderer.numEdges},
-                midPointsRange: {
-                    startIdx: 0,
-                    len: renderer.numPoints * controls.global.numSplits
-                },
-                midEdgeRange:   {
-                    startIdx: 0,
-                    len: renderer.numEdges * controls.global.numSplits
-                }
-            };
-
             dataframe.setNumElements('point', renderer.numPoints);
             dataframe.setNumElements('edge', renderer.numEdges);
             dataframe.setNumElements('splits', controls.global.numSplits);
             dataframe.setNumElements('renderedSplits', controls.global.numRenderedSplits || 0);
+
+            simObj.tickInitialBufferVersions();
 
             Object.seal(simObj.buffers);
             Object.seal(simObj);
@@ -762,7 +738,7 @@ function setMidEdges( simulator ) {
         // simulator.buffers.midSpringsPos = midSpringsBuf;
         // simulator.buffers.curMidPoints = midPointsBuf;
         // simulator.buffers.midSpringsColorCoord = midSpringsColorCoordBuf;
-        setTimeSubset( simulator.renderer , simulator , simulator.timeSubset.relRange );
+
         return simulator;
     } )
     .then( function () {
@@ -1008,7 +984,6 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
                 }));
     })
     .then(function () {
-        setTimeSubset(renderer, simulator, simulator.timeSubset.relRange);
         return simulator;
     })
     .fail(log.makeQErrorHandler(logger, 'Failure in SimCL.setEdges'));
@@ -1151,82 +1126,6 @@ function setPhysics(simulator, cfg) {
     return Q();
 }
 
-//renderer * simulator * {min: 0--100, max: 0--100}
-function setTimeSubset(renderer, simulator, range) {
-
-
-    //first point
-    var startIdx = Math.round(renderer.numPoints * 0.01 * range.min);
-
-
-    //all points before this
-    var endIdx = Math.round((renderer.numPoints) * (0.01 * range.max));
-
-    var numPoints = endIdx - startIdx;
-
-    var pointToEdgeIdx = function (ptIdx, isBeginning) {
-
-        var workItem = simulator.dataframe.getHostBuffer('forwardsEdges').srcToWorkItem[ptIdx];
-        var workItemsTyped = simulator.dataframe.getHostBuffer('forwardsEdges').workItemsTyped;
-        // var workItem = simulator.bufferHostCopies.forwardsEdges.srcToWorkItem[ptIdx];
-        var idx = workItem;
-        while (idx > 0 && (workItemsTyped[4 * idx] === -1)) {
-            idx--;
-        }
-
-        var firstEdge = workItemsTyped[4 * idx];
-
-        logger.debug({ptIdx: ptIdx, workItem: workItem, idx: idx, firstEdge: firstEdge, isBeginning: isBeginning}, "Set point to edge indices");
-
-        if (idx === 0 && firstEdge === -1) {
-            return 0;
-        } else {
-            if (!isBeginning) {
-                var len = workItemsTyped[4 * idx + 1];
-                firstEdge += len - 1;
-            }
-            return firstEdge;
-        }
-    };
-
-    //first edge
-    var startEdgeIdx = pointToEdgeIdx(startIdx, true);
-
-    //all edges before this
-    var endEdgeIdx = endIdx > 0 ? (pointToEdgeIdx(endIdx - 1, false) + 1) : startEdgeIdx;
-
-    var numEdges = endEdgeIdx - startEdgeIdx;
-    var numSplits = simulator.controls.global.numSplits;
-
-    simulator.timeSubset =
-        {relRange: range, //%
-         pointsRange:       {startIdx: startIdx, len: numPoints},
-         edgeRange:         {startIdx: startEdgeIdx * 2, len: numEdges * 2},
-         midPointsRange:    {
-                startIdx: startEdgeIdx *  numSplits,
-                len: numEdges          *  numSplits},
-         midEdgeRange:      {
-                startIdx: startEdgeIdx * 2 * (1 + numSplits),
-                len: numEdges * 2          * (1 + numSplits)}};
-
-    logger.debug({numPoints: renderer.numPoints, numEdges: renderer.numEdges, startEdgeIdx: startEdgeIdx, endIdx: endIdx, endEdgeIdx: endEdgeIdx, numSplits:numSplits}, "Set time subset");
-
-
-    simulator.tickBuffers([
-        //points/edges
-        'curPoints', 'nextPoints', 'springsPos',
-
-        //style
-        'edgeColors',
-
-        //midpoints/midedges
-        'curMidPoints', 'nextMidPoints', 'curMidPoints', 'midSpringsPos', 'midSpringsColorCoord'
-
-        ]);
-
-    return Q();
-
-}
 
 function moveNodes(simulator, marqueeEvent) {
     logger.debug('marqueeEvent', marqueeEvent);
@@ -1320,6 +1219,19 @@ function connectedEdges(simulator, nodeIndices) {
     addOutgoingEdgesToSet(backwardsBuffers, nodeIndices);
 
     return new Uint32Array(setOfEdges);
+}
+
+// TODO: Deprecate this fully once we don't have any versioned buffers
+// attached directly to the simulator.
+function tickInitialBufferVersions(simulator) {
+    simulator.tickBuffers([
+        //points/edges
+        'curPoints', 'nextPoints', 'springsPos',
+        //style
+        'edgeColors',
+        //midpoints/midedges
+        'curMidPoints', 'nextMidPoints', 'curMidPoints', 'midSpringsPos', 'midSpringsColorCoord'
+    ]);
 }
 
 function recolor(simulator, marquee) {

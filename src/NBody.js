@@ -105,11 +105,6 @@ function updateSettings(graph, newCfg) {
         }
     }
 
-
-    if (newCfg.timeSubset) {
-        graph.simulator.setTimeSubset(newCfg.timeSubset);
-    }
-
     // By default return empty promise
     return Q();
 }

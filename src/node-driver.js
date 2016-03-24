@@ -27,15 +27,6 @@ var perf        = require('common/perfStats.js').createPerfMonitor();
 function graphCounts(graph) {
     var numRenderedSplits = graph.simulator.dataframe.getNumElements('renderedSplits');
 
-    // var numPoints       = graph.simulator.timeSubset.pointsRange.len;
-    // var numEdges        = graph.simulator.timeSubset.edgeRange.len;
-    // var offsetPoint     = graph.simulator.timeSubset.pointsRange.startIdx;
-    // var offsetEdge      = graph.simulator.timeSubset.edgeRange.startIdx;
-    // var numMidPoints    = graph.simulator.timeSubset.midPointsRange.len;
-    // var numMidEdges     = graph.simulator.timeSubset.midEdgeRange.len;
-    // var offsetMidPoints = graph.simulator.timeSubset.midPointsRange.startIdx;
-    // var offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
-
     var numPoints       = graph.dataframe.getNumElements('point');
     var numEdges        = graph.dataframe.getNumElements('edge')*2;
     var offsetPoint     = 0;
