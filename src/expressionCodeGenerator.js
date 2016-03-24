@@ -435,14 +435,14 @@ ExpressionCodeGenerator.prototype = {
                             type: 'BinaryPredicate',
                             operator: '=',
                             left: identifier,
-                            right: {type: 'Literal', dataType: 'number', value: '\0'}
+                            right: {type: 'Literal', dataType: 'string', value: '\0'}
                         });
                         // TODO retire 'n/a'
                         guards.push({
                             type: 'BinaryPredicate',
                             operator: '=',
                             left: identifier,
-                            right: {type: 'Literal', dataType: 'integer', value: 'n/a'}
+                            right: {type: 'Literal', dataType: 'string', value: 'n/a'}
                         });
                         break;
                 }

@@ -503,8 +503,8 @@ function decode0(graph, vg, metadata)  {
     }
 
     var loaders = attributeLoaders(graph);
-    var mapper = mappers[metadata.mapper];
-    if (!mapper) {
+    var mapper = mappers[metadata.mapper || 'default'];
+    if (mapper === undefined) {
         logger.warn('Unknown mapper', metadata.mapper, 'using "default"');
         mapper = mappers['default'];
     }
