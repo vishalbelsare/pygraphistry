@@ -215,6 +215,38 @@ var attributeLoaders = function(graph) {
     };
 };
 
+function getDegree(forwardsEdges, backwardsEdges, i) {
+    return forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
+}
+
+function calculateAndStoreDefaultPointSizeColumns (graph) {
+    var dataframe = graph.dataframe;
+    var forwardsEdges = dataframe.getColumnValues('forwardsEdges', 'hostBuffer');
+    var backwardsEdges = dataframe.getColumnValues('backwardsEdges', 'hostBuffer');
+
+    var numGraphElements = dataframe.getNumElements('point');
+    var outArr = new Array(numGraphElements);
+
+    var minDegree = Number.MAX_VALUE;
+    var maxDegree = 0;
+    for (var i = 0; i < numGraphElements; i++) {
+        var degree = getDegree(forwardsEdges, backwardsEdges, i);
+        minDegree = Math.min(minDegree, degree);
+        maxDegree = Math.max(maxDegree, degree);
+    }
+
+    var offset = 5 - minDegree;
+    var scalar = 20 / Math.max((maxDegree - minDegree),1);
+
+    for (var i = 0; i < numGraphElements; i++) {
+        var degree = getDegree(forwardsEdges, backwardsEdges, i);
+        outArr[i] = (degree + offset) + (degree - minDegree) * scalar;
+    }
+
+    var valueObj = {name: 'defaultPointSize', values: outArr, type: 'number'};
+    graph.dataframe.loadColumn('__defaultPointSize', 'point', valueObj);
+}
+
 function calculateAndStoreCommunities(graph) {
     var dataframe = graph.dataframe;
     var forwardsEdges = dataframe.getColumnValues('forwardsEdges', 'hostBuffer');
@@ -543,6 +575,7 @@ function decode0(graph, vg, metadata)  {
             return clientNotification.loadingStatus(graph.socket, 'Binding everything else');
         }).then(function () {
             calculateAndStoreCommunities(graph);
+            calculateAndStoreDefaultPointSizeColumns(graph);
             return runLoaders(loaders);
         }).then(function () {
             return graph;
@@ -965,6 +998,7 @@ function decode1(graph, vg, metadata)  {
             return clientNotification.loadingStatus(graph.socket, 'Binding everything else');
         }).then(function () {
             calculateAndStoreCommunities(graph);
+            calculateAndStoreDefaultPointSizeColumns(graph);
             return runLoaders(loaders);
         }).then(function () {
             return graph;

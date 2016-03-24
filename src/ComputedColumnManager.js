@@ -150,29 +150,9 @@ var defaultLocalBuffers = {
         numberPerGraphComponent: 1,
         graphComponentType: 'point',
         version: 0,
-        dependencies: [
-            ['forwardsEdges', 'hostBuffer'],
-            ['backwardsEdges', 'hostBuffer']
-        ],
-        computeAllValues: function (forwardsEdges, backwardsEdges, outArr, numGraphElements) {
-
-            var minDegree = Number.MAX_VALUE;
-            var maxDegree = 0;
-            for (var i = 0; i < numGraphElements; i++) {
-                var degree = getDegree(forwardsEdges, backwardsEdges, i);
-                minDegree = Math.min(minDegree, degree);
-                maxDegree = Math.max(maxDegree, degree);
-            }
-
-            var offset = 5 - minDegree;
-            var scalar = 20 / Math.max((maxDegree - minDegree),1);
-
-            for (var i = 0; i < numGraphElements; i++) {
-                var degree = getDegree(forwardsEdges, backwardsEdges, i);
-                outArr[i] = (degree + offset) + (degree - minDegree) * scalar;
-            }
-
-            return outArr;
+        dependencies: [['__defaultPointSize', 'point']],
+        computeSingleValue: function (defaultPointSize, idx, numGraphElements) {
+            return defaultPointSize;
         }
     }),
 
