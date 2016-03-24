@@ -1395,6 +1395,17 @@ Dataframe.prototype.globalize = function(index, type) {
 
 Dataframe.prototype.getVersion = function (type, attrName) {
     var attributes = this.data.attributes[type];
+
+    if (!attributes[attrName]) {
+        return undefined;
+    }
+
+    // If it's a computed column, provide the combination of CC spec version + dataframe version.
+    if (attributes[attrName].computed) {
+        var ccVersion = this.computedColumnManager.getColumnVersion(type, attrName);
+        return '' + ccVersion + ':' + attributes[attrName].version;
+    }
+
     return attributes[attrName].version;
 }
 
@@ -1452,8 +1463,8 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
         }
     }
 
-    // If it's calculated...TODO
-    if (attributes[attrName].dirty && attributes[attrName].computed) {
+    // If it's calculated and needs to be recomputed
+    if (attributes[attrName].computed && (!computedVersionMatches || attributes[attrName].dirty)) {
         var returnval = this.computedColumnManager.getValue(this, type, attrName, index);
         return returnval;
     }
@@ -1576,8 +1587,6 @@ Dataframe.prototype.getColumn = function (columnName, type) {
 // explicitly requested to be unsorted (for internal performance reasons)
 Dataframe.prototype.getColumnValues = function (columnName, type) {
 
-    console.log('GETTING COLUMN VALUES: ', columnName, type);
-
     var attributes = this.data.attributes[type];
 
     // TODO FIXME HACK:
@@ -1602,14 +1611,11 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     );
 
     if (computedVersionMatches && !attributes[columnName].dirty && attributes[columnName].values) {
-        console.log('Returning Cached');
         return attributes[columnName].values;
     }
 
-    // If it's calculated...TODO
-    if (attributes[columnName].dirty && attributes[columnName].computed) {
-
-        console.log('Recalculating');
+    // If it's calculated and needs to be recomputed
+    if (attributes[columnName].computed && (!computedVersionMatches || attributes[columnName].dirty)) {
 
         var newValues = this.computedColumnManager.getArray(this, type, columnName);
         attributes[columnName].values = newValues;
@@ -1622,8 +1628,6 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     // If it's not calculated / cached, and filtered, apply the mask and compact
     // then cache the result.
     if (attributes[columnName].dirty && attributes[columnName].dirty.cause === 'filter') {
-
-        console.log('in dirty filter path for ', type, columnName);
 
         var rawAttributes = this.rawdata.attributes[type];
         var arrType = rawAttributes[columnName].arrType || Array;

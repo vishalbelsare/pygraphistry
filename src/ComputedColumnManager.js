@@ -3,16 +3,9 @@
 var _       = require('underscore');
 var graphlib = require('graphlib');
 var Graph = graphlib.Graph;
-var flake = require('simpleflake');
 
 var util    = require('./util.js');
 var ComputedColumnSpec = require('./ComputedColumnSpec.js');
-
-function getUniqueId () {
-    var id = flake();
-    var stringId = id.toString('hex');
-    return stringId;
-}
 
 //////////////////////////////////////////////////////////////////////////////
 // DEFAULT ENCODINGS (TODO: Should these move into another file?)
@@ -318,6 +311,30 @@ function typeAndNameFromKey (key) {
     };
 }
 
+ComputedColumnManager.prototype.bumpVersionsOnDependencies = function (columnType, columnName) {
+    var columnKey = keyFromColumn(columnType, columnName);
+
+    var keysToBump = [columnKey];
+    // Walk through all dependencies of the provided column, to make sure they're also bumped
+    var queue = [columnKey]; // push, shift
+    while (queue.length > 0) {
+        var workingKey = queue.shift();
+        var outEdges = this.dependencyGraph.outEdges(workingKey);
+
+        var newNodeKeys = _.pluck(outEdges, 'w');
+        _.each(newNodeKeys, (key) => {
+            keysToBump.push(key);
+            queue.push(key);
+        });
+    }
+
+    _.each(keysToBump, (key) => {
+        var {columnType, columnName} = typeAndNameFromKey(key);
+        var spec = this.getComputedColumnSpec(columnType, columnName);
+        spec.bumpVersion();
+    });
+};
+
 ComputedColumnManager.prototype.removeComputedColumnInternally = function (columnType, columnName) {
     // TODO: Validate that we don't remove a dependency
 
@@ -330,6 +347,18 @@ ComputedColumnManager.prototype.removeComputedColumnInternally = function (colum
     this.dependencyGraph.removeNode(columnKey);
 };
 
+// Remove edges in dependency graph for a given columns dependencies.
+ComputedColumnManager.prototype.removeInwardColumnDependencyEdges = function (columnType, columnName) {
+
+    var columnKey = keyFromColumn(columnType, columnName);
+    var inEdges = this.dependencyGraph.inEdges(columnKey);
+
+    _.each(inEdges, (edge) => {
+        this.dependencyGraph.removeEdge(edge.v, edge.w);
+    });
+
+};
+
 ComputedColumnManager.prototype.loadComputedColumnSpecInternally = function (columnType, columnName, spec) {
     // TODO: Validate that we don't form a cycle
 
@@ -338,7 +367,8 @@ ComputedColumnManager.prototype.loadComputedColumnSpecInternally = function (col
     var hasColumn = this.hasColumn(columnType, columnName);
 
     if (hasColumn) {
-        this.removeComputedColumnInternally(columnType, columnName);
+        this.removeInwardColumnDependencyEdges(columnType, columnName);
+        // this.removeComputedColumnInternally(columnType, columnName);
     }
 
     var columnKey = keyFromColumn(columnType, columnName);
@@ -354,12 +384,16 @@ ComputedColumnManager.prototype.loadComputedColumnSpecInternally = function (col
     // Add edge from dependency to this column
     _.each(spec.dependencies, function (dep) {
         var depKey = keyFromColumn(dep[1], dep[0]);
+
         if (!dependencyGraph.hasNode(depKey)) {
             dependencyGraph.setNode(depKey);
         }
 
         dependencyGraph.setEdge(depKey, columnKey);
     });
+
+    // Walk through dependency tree and bump versions based on this change
+    this.bumpVersionsOnDependencies(columnType, columnName);
 };
 
 // Public facing function, because it handles registering with the dataframe too.
@@ -530,18 +564,6 @@ ComputedColumnManager.prototype.getArray = function (dataframe, columnType, colu
     }
 
 };
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

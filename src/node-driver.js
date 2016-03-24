@@ -96,14 +96,17 @@ function graphCounts(graph) {
 
 
 function getBufferVersion (graph, bufferName) {
-    var deprecatedSimulatorBuffers = graph.simulator.versions.buffers;
-    if (bufferName in deprecatedSimulatorBuffers) {
-        return deprecatedSimulatorBuffers[bufferName]
-    }
 
+    // First check newer, data frame based version
     var dataframeVersion = graph.dataframe.getVersion('localBuffer', bufferName);
     if (dataframeVersion !== undefined) {
         return dataframeVersion;
+    }
+
+    // If that failed, attempt to get in the deprecated simulator method
+    var deprecatedSimulatorBuffers = graph.simulator.versions.buffers;
+    if (bufferName in deprecatedSimulatorBuffers) {
+        return deprecatedSimulatorBuffers[bufferName]
     }
 
     // Could not find a version number anywhere.
@@ -172,7 +175,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                         localBuffer.buffer,
                         counts[name].offset * bytes_per_element,
                         counts[name].num),
-                    version: graph.simulator.versions.buffers[name]
+                    version: getBufferVersion(graph, name)
                 };
             });
             return targetArrays;
@@ -494,7 +497,7 @@ export function fetchData(graph, renderConfig, compress, bufferNames, bufferVers
         bufferNames.filter(function (name) {
             var clientVersion = bufferVersions[name];
             var liveVersion = getBufferVersion(graph, name);
-            return clientVersion < liveVersion;
+            return clientVersion !== liveVersion;
         });
     bufferNames = neededBuffers;
 
