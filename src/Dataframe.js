@@ -5,6 +5,7 @@ var dateFormat = require('dateformat');
 var Q = require('q');
 var fs = require('fs');
 var csv = require('csv');
+var flake = require('simpleflake');
 
 var log = require('common/logger.js');
 var logger = log.createLogger('graph-viz', 'graph-viz/js/DataFrame.js');
@@ -20,6 +21,13 @@ var dataTypeUtil = require('./dataTypes.js');
 var palettes    = require('./palettes');
 
 var baseDirPath = __dirname + '/../assets/dataframe/';
+
+function getUniqueId () {
+    var id = flake();
+    var stringId = id.toString('hex');
+    return stringId;
+}
+
 /**
  * @readonly
  * @type {string[]}
@@ -855,7 +863,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
                 });
 
                 // Bump Version
-                newData.attributes[colCategoryKey][colName].version = newData.attributes[colCategoryKey][colName].version + 1 || 1;
+                newData.attributes[colCategoryKey][colName].version = getUniqueId();
                 // Mark dirty so that computed columns and lazy eval can work.
                 newData.attributes[colCategoryKey][colName].dirty = {
                     cause: 'filter'
@@ -909,8 +917,6 @@ Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager)
         attrs[colType] = attrs[colType] || {};
 
         _.each(cols, function (colDesc, name) {
-
-            console.log('REGISTERING: ', name, colType);
 
             var col = {
                 name: name,
