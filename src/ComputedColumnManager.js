@@ -11,11 +11,6 @@ var ComputedColumnSpec = require('./ComputedColumnSpec.js');
 // DEFAULT ENCODINGS (TODO: Should these move into another file?)
 //////////////////////////////////////////////////////////////////////////////
 
-function getDegree(forwardsEdges, backwardsEdges, i) {
-    return forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
-}
-
-
 // Required fields in an encoding
 //
 // key: name of resulting local buffer
@@ -325,14 +320,20 @@ ComputedColumnManager.prototype.bumpVersionsOnDependencies = function (columnTyp
 };
 
 ComputedColumnManager.prototype.removeComputedColumnInternally = function (columnType, columnName) {
-    // TODO: Validate that we don't remove a dependency
+    var columnKey = keyFromColumn(columnType, columnName);
+
+    // Check if there's something that depends on this column.
+    // In the dependency graph, that's represented by an outgoing edge
+    var outEdges = this.dependencyGraph.outEdges(columnKey);
+    if (outEdges.length > 0) {
+        throw new Error('Attempted to remove computed column that is required for another');
+    }
 
     delete this.activeComputedColumns[columnType][columnName];
 
     // Remove node from graph.
     // TODO: Do we want to deal with dangling nodes in the graph at all,
     // or is it a non concern (since they won't be reachable)
-    var columnKey = keyFromColumn(columnType, columnName);
     this.dependencyGraph.removeNode(columnKey);
 };
 
@@ -380,6 +381,11 @@ ComputedColumnManager.prototype.loadComputedColumnSpecInternally = function (col
 
         dependencyGraph.setEdge(depKey, columnKey);
     });
+
+    // Assert that no dependency cycles were created
+    if (!graphlib.alg.isAcyclic(dependencyGraph)) {
+        throw new Error('Attempted to add a computed column that created a cycle');
+    }
 
     // Walk through dependency tree and bump versions based on this change
     this.bumpVersionsOnDependencies(columnType, columnName);
