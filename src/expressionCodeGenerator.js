@@ -745,7 +745,7 @@ ExpressionCodeGenerator.prototype = {
                     subExprString = args[1] + '.indexOf(' + args[0] + ') !== -1';
                     return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
                 }
-                operator = this.translateOperator(ast.operator);
+                operator = this.translateOperator(operator);
                 precedence = this.precedenceOf(operator);
                 args = _.map([ast.left, ast.right], function (arg) {
                     return this.expressionStringForAST(arg, bindings, depth2, precedence);

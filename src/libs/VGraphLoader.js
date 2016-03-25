@@ -326,7 +326,7 @@ var opentsdbMapper = {
 var misMapper = {
     mappings: _.extend({}, opentsdbMapper.mappings, {
         pointSize: {
-            name: 'betweeness',
+            name: 'betweenness',
             transform: function (v) {
                 return normalize(v, 5, Math.pow(2, 8));
             }
