@@ -1623,7 +1623,7 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     // If it's calculated and needs to be recomputed
     if (attributes[columnName].computed && (!computedVersionMatches || attributes[columnName].dirty)) {
 
-        var newValues = this.computedColumnManager.getArray(this, type, columnName);
+        var newValues = this.computedColumnManager.getDenseMaterializedArray(this, type, columnName);
         attributes[columnName].values = newValues;
         attributes[columnName].dirty = false;
 
@@ -1684,7 +1684,6 @@ Dataframe.prototype.getClBuffer = function (cl, columnName, type) {
     );
 
     if (computedVersionMatches && !attributes[columnName].dirty && attributes[columnName].clBuffer) {
-        console.log('Returning Cached CL Buffer');
         return Q(attributes[columnName].clBuffer);
     }
 

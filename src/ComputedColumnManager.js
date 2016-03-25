@@ -125,7 +125,6 @@ var defaultLocalBuffers = {
 
         computeAllValues: function (forwardsEdges, pointColors, outArr, numGraphElements) {
 
-            console.log('COMPUTING EDGE COLORS');
             var edgesTyped = forwardsEdges.edgesTyped;
 
             for (var idx = 0; idx < outArr.length; idx++) {
@@ -208,50 +207,8 @@ var defaultHostBuffers = {
 
 };
 
-
-var defaultPointColumns = {
-
-    /*
-
-    doubleCloseness: new ComputedColumnSpec({
-        arrType: Array,
-        type: 'number',
-        filterable: true,
-        numberPerGraphComponent: 1,
-        graphComponentType: 'point',
-        version: 0,
-        dependencies: [
-            ['closeness', 'point']
-        ],
-        computeSingleValue: function (closeness, idx, numGraphElements) {
-            // TODO: Do we need this?
-            return closeness * 2;
-        }
-    }),
-
-    doubleDoubleCloseness: new ComputedColumnSpec({
-        arrType: Array,
-        type: 'number',
-        filterable: true,
-        numberPerGraphComponent: 1,
-        graphComponentType: 'point',
-        version: 0,
-        dependencies: [
-            ['doubleCloseness', 'point']
-        ],
-        computeSingleValue: function (doubleCloseness, idx, numGraphElements) {
-            // TODO: Do we need this?
-            return doubleCloseness * 2;
-        }
-    })
-
-    */
-
-};
-
 // TODO: Allow users to specify which view to pull dependencies from.
 var defaultColumns = {
-    point: defaultPointColumns,
     hostBuffer: defaultHostBuffers
 };
 
@@ -495,7 +452,7 @@ ComputedColumnManager.prototype.getValue = function (dataframe, columnType, colu
 
 
 
-ComputedColumnManager.prototype.getArray = function (dataframe, columnType, columnName, optionalArray) {
+ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe, columnType, columnName, optionalArray) {
 
     var columnDesc = this.activeComputedColumns[columnType][columnName];
 
