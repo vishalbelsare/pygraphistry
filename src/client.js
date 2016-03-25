@@ -329,7 +329,7 @@ function handleVboUpdates(socket, uri, renderState) {
 
             bufferVBOs
                 .subscribe(function (vbos) {
-                    vbos.shift();
+                    vbos.shift(); // Remove empty stub observable from the beginning
 
                     debug('4a. Got VBOs:', vbos.length, thisStep);
                     var bindings = _.object(_.zip(changedBufferNames, vbos));
