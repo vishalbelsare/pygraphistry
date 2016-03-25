@@ -27,15 +27,6 @@ var perf        = require('common/perfStats.js').createPerfMonitor();
 function graphCounts(graph) {
     var numRenderedSplits = graph.simulator.dataframe.getNumElements('renderedSplits');
 
-    // var numPoints       = graph.simulator.timeSubset.pointsRange.len;
-    // var numEdges        = graph.simulator.timeSubset.edgeRange.len;
-    // var offsetPoint     = graph.simulator.timeSubset.pointsRange.startIdx;
-    // var offsetEdge      = graph.simulator.timeSubset.edgeRange.startIdx;
-    // var numMidPoints    = graph.simulator.timeSubset.midPointsRange.len;
-    // var numMidEdges     = graph.simulator.timeSubset.midEdgeRange.len;
-    // var offsetMidPoints = graph.simulator.timeSubset.midPointsRange.startIdx;
-    // var offsetMidEdges  = graph.simulator.timeSubset.midEdgeRange.startIdx;
-
     var numPoints       = graph.dataframe.getNumElements('point');
     var numEdges        = graph.dataframe.getNumElements('edge')*2;
     var offsetPoint     = 0;
@@ -96,11 +87,22 @@ function graphCounts(graph) {
 
 
 function getBufferVersion (graph, bufferName) {
-    var buffers = graph.simulator.versions.buffers;
-    if (!(bufferName in buffers))
-        logger.die('Cannot find version of buffer %s', bufferName);
 
-    return buffers[bufferName];
+    // First check newer, data frame based version
+    var dataframeVersion = graph.dataframe.getVersion('localBuffer', bufferName);
+    if (dataframeVersion !== undefined) {
+        return dataframeVersion;
+    }
+
+    // If that failed, attempt to get in the deprecated simulator method
+    var deprecatedSimulatorBuffers = graph.simulator.versions.buffers;
+    if (bufferName in deprecatedSimulatorBuffers) {
+        return deprecatedSimulatorBuffers[bufferName]
+    }
+
+    // Could not find a version number anywhere.
+    // Fatal exception, kill process.
+    logger.die('Cannot find version of buffer %s', bufferName);
 }
 
 
@@ -164,7 +166,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                         localBuffer.buffer,
                         counts[name].offset * bytes_per_element,
                         counts[name].num),
-                    version: graph.simulator.versions.buffers[name]
+                    version: getBufferVersion(graph, name)
                 };
             });
             return targetArrays;
@@ -486,7 +488,7 @@ export function fetchData(graph, renderConfig, compress, bufferNames, bufferVers
         bufferNames.filter(function (name) {
             var clientVersion = bufferVersions[name];
             var liveVersion = getBufferVersion(graph, name);
-            return clientVersion < liveVersion;
+            return clientVersion !== liveVersion;
         });
     bufferNames = neededBuffers;
 

@@ -1084,8 +1084,10 @@ function VizServer(app, socket, cachedVBOs) {
                 bufferName = encodings.bufferNameForEncodingType(encodingType);
                 if (query.reset) {
                     if (bufferName) {
-                        dataframe.resetLocalBuffer(bufferName);
-                        graph.simulator.tickBuffers([bufferName]);
+                        var ccManager = dataframe.computedColumnManager;
+                        var originalDesc = ccManager.overlayBufferSpecs[bufferName];
+                        ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName, originalDesc);
+                        delete ccManager.overlayBufferSpecs[bufferName];
                     }
                     this.tickGraph(cb);
                     cb({
@@ -1122,29 +1124,49 @@ function VizServer(app, socket, cachedVBOs) {
                     wrappedScaling = function (x) { return palettes.hexToABGR(encoding.scaling(x)); };
                 }
             }
-            // TODO fix how we map to and recolor edges.
-            if (bufferName === 'edgeColors') {
-                encodedColumnValues = new sourceValues.constructor(sourceValues.length * 2);
-                _.each(sourceValues, function (value, i) {
-                    // Protect against encoding undefined values by letting them fall past the scaling.
-                    if (!dataTypeUtil.valueSignifiesUndefined(value)) {
-                        var scaledValue = wrappedScaling(value);
-                        encodedColumnValues[2 * i] = scaledValue;
-                        encodedColumnValues[2 * i + 1] = scaledValue;
-                    }
-                });
-            } else {
-                encodedColumnValues = new sourceValues.constructor(sourceValues.length);
-                _.each(sourceValues, function (value, i) {
-                    // Protect against encoding undefined values by letting them fall past the scaling.
-                    if (!dataTypeUtil.valueSignifiesUndefined(value)) {
-                        encodedColumnValues[i] = wrappedScaling(value);
-                    }
-                });
-                // TODO Compute edge color blends from point colors if no edge color otherwise specified.
+
+
+
+            // Now that we have an encoding function, store it as a computed column;
+            var ccManager = dataframe.computedColumnManager;
+            var oldDesc = ccManager.getComputedColumnSpec('localBuffer', bufferName);
+
+            // If this is the first encoding for a buffer type, store the original
+            // spec so we can recover it.
+            if (!ccManager.overlayBufferSpecs[bufferName]) {
+                ccManager.overlayBufferSpecs[bufferName] = oldDesc;
             }
-            dataframe.overlayLocalBuffer(type, bufferName, encodedAttributeName, encodedColumnValues);
-            graph.simulator.tickBuffers([bufferName]);
+
+            var desc = oldDesc.clone();
+            desc.setDependencies([[attributeName, type]]);
+            var computeAllValuesFunc;
+            if (bufferName === 'edgeColors') {
+                computeAllValuesFunc = function (values, outArr, numGraphElements) {
+                    for (var i = 0; i < numGraphElements; i++) {
+                        var val = values[i];
+                        if (!dataTypeUtil.valueSignifiesUndefined(val)) {
+                            var scaledValue = wrappedScaling(val);
+                            outArr[i*2] = scaledValue;
+                            outArr[i*2 + 1] = scaledValue;
+                        }
+                    }
+                    return outArr;
+                };
+            } else {
+                computeAllValuesFunc = function (values, outArr, numGraphElements) {
+                    for (var i = 0; i < numGraphElements; i++) {
+                        var val = values[i];
+                        if (!dataTypeUtil.valueSignifiesUndefined(val)) {
+                            outArr[i] = wrappedScaling(val);
+                        }
+                    }
+                    return outArr;
+                };
+            }
+
+            desc.setComputeAllValues(computeAllValuesFunc);
+            ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName, desc);
+
             this.tickGraph(cb);
             cb({
                 success: true,
@@ -1153,6 +1175,7 @@ function VizServer(app, socket, cachedVBOs) {
                 bufferName: bufferName,
                 legend: encoding.legend
             });
+
         }.bind(this)).subscribe(
             _.identity,
             function (err) {

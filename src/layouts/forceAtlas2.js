@@ -9,7 +9,7 @@ var _     = require('underscore'),
     log        = require('common/logger.js'),
     logger     = log.createLogger('graph-viz', 'graph-viz/js/layouts/forceAtlas2.js');
 
-var argsType = { 
+var argsType = {
         ONE: cljs.types.uint_t,
         ZERO: cljs.types.uint_t,
         THREADS_BOUND: cljs.types.define,
@@ -130,7 +130,7 @@ var kernelSpecs = {
         fileName: 'layouts/forceAtlas2/barnesHut/boundBox.cl'
     },
     buildTree: {
-        kernelName: 'build_tree', 
+        kernelName: 'build_tree',
         args: barnesHutCommonArgs,
         fileName: 'layouts/forceAtlas2/barnesHut/buildTree.cl'
     },
@@ -152,30 +152,30 @@ var kernelSpecs = {
     // Edge force mapper and segmented reduce kernels used to calculate edge forces
     forwardsEdgeForceMapper : {
         kernelName: 'faEdgeMap',
-        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'forwardsEdges', 
-            'numEdges', 'pointDegrees', 'inputPositions', 'forwardsEdgeWeights', 'outputForcesMap' 
+        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'forwardsEdges',
+            'numEdges', 'pointDegrees', 'inputPositions', 'forwardsEdgeWeights', 'outputForcesMap'
         ],
         fileName: 'layouts/forceAtlas2/faEdgeMap.cl'
     },
     reduceForwardsEdgeForces : {
         kernelName: 'segReduce',
         args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numEdges', 'outputForcesMap',
-        'forwardsEdgeStartEndIdxs', 'segStart', 'forwardsWorkItems', 'numPoints', 'carryOutGlobal', 
+        'forwardsEdgeStartEndIdxs', 'segStart', 'forwardsWorkItems', 'numPoints', 'carryOutGlobal',
         'partialForces', 'pointForces'
         ],
         fileName: 'segReduce.cl'
     },
     backwardsEdgeForceMapper : {
         kernelName: 'faEdgeMap',
-        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'backwardsEdges', 
-            'numEdges', 'pointDegrees', 'inputPositions', 'backwardsEdgeWeights', 'outputForcesMap' 
+        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'backwardsEdges',
+            'numEdges', 'pointDegrees', 'inputPositions', 'backwardsEdgeWeights', 'outputForcesMap'
         ],
         fileName: 'layouts/forceAtlas2/faEdgeMap.cl'
     },
     reduceBackwardsEdgeForces : {
         kernelName: 'segReduce',
         args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numEdges', 'outputForcesMap',
-        'backwardsEdgeStartEndIdxs', 'segStart', 'backwardsWorkItems', 'numPoints', 
+        'backwardsEdgeStartEndIdxs', 'segStart', 'backwardsWorkItems', 'numPoints',
         'carryOutGlobal', 'curForces', 'partialForces'
         ],
         fileName: 'segReduce.cl'
@@ -198,7 +198,7 @@ function ForceAtlas2Barnes(clContext) {
     logger.trace('Creating ForceAtlasBarnes kernels');
     var that = this;
     _.each(kernelSpecs, function (kernel, name) {
-        var newKernel = 
+        var newKernel =
             new Kernel(kernel.kernelName, kernel.args, argsType, kernel.fileName, clContext)
         that[name] = newKernel;
         that.kernels.push(newKernel);
@@ -212,12 +212,12 @@ ForceAtlas2Barnes.prototype.constructor = ForceAtlas2Barnes;
 ForceAtlas2Barnes.name = 'ForceAtlas2Barnes';
 
 // ForceAtlas2 uses a bitmask flag in order to set settings preventOverlap, strongGravity,
-// dissuadeHubs, and linLog. layoutFlags keeps track of the current state of these settings. 
+// dissuadeHubs, and linLog. layoutFlags keeps track of the current state of these settings.
 var layoutFlags = 0;
 
 // The LayoutAlgo class will set all the configuration settings from the client that have
 // the corresponding arguement name. For some settings, we use a boolean flag, which we must
-// extract and set manually here. 
+// extract and set manually here.
 ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
@@ -237,7 +237,7 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
             }
         }
     });
-    
+
     // Set the flags arguement for those kernels that have it.
     _.each(_.filter(this.kernels, function(k) {return k.argNames.indexOf('flags') > 0}), function(k) {
         k.set({flags: layoutFlags});
@@ -257,7 +257,7 @@ function getBufferBindings(simulator, stepNumber) {
         accX:layoutBuffers.accx.buffer,
         accY:layoutBuffers.accy.buffer,
         backwardsEdges: simulator.dataframe.getBuffer('backwardsEdges', 'simulator').buffer,
-        backwardsEdgeWeights: simulator.dataframe.getBuffer('backwardsEdgeWeights', 'simulator').buffer,
+        backwardsEdgeWeights: simulator.dataframe.getClBuffer(simulator.cl, 'backwardsEdgeWeights', 'hostBuffer').then( obj => obj.buffer ),
         backwardsWorkItems: simulator.dataframe.getBuffer('backwardsWorkItems', 'simulator').buffer,
         backwardsEdgeStartEndIdxs: simulator.dataframe.getBuffer('backwardsEdgeStartEndIdxs', 'simulator').buffer,
         blocked:layoutBuffers.blocked.buffer,
@@ -267,7 +267,7 @@ function getBufferBindings(simulator, stepNumber) {
         count:layoutBuffers.count.buffer,
         curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
         forwardsEdges: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
-        forwardsEdgeWeights: simulator.dataframe.getBuffer('forwardsEdgeWeights', 'simulator').buffer,
+        forwardsEdgeWeights: simulator.dataframe.getClBuffer(simulator.cl, 'forwardsEdgeWeights', 'hostBuffer').then( obj => obj.buffer ),
         forwardsWorkItems: simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator').buffer,
         forwardsEdgeStartEndIdxs: simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator').buffer,
         globalSpeed: layoutBuffers.globalSpeed.buffer,
@@ -290,7 +290,7 @@ function getBufferBindings(simulator, stepNumber) {
         pointForces: layoutBuffers.pointForces.buffer,
         prevForces: simulator.dataframe.getBuffer('prevForces', 'simulator').buffer,
         outputPositions: simulator.dataframe.getBuffer('nextPoints', 'simulator').buffer,
-        // TODO This should not be in simulator... 
+        // TODO This should not be in simulator...
         outputForcesMap: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer,
         radius:layoutBuffers.radius.buffer,
         segStart: simulator.dataframe.getBuffer('segStart', 'simulator').buffer,
@@ -432,8 +432,21 @@ ForceAtlas2Barnes.prototype.integrate = function(simulator, workItems) {
 }
 
 ForceAtlas2Barnes.prototype.updateDataframeBuffers = function(simulator) {
-    var bufferBindings = getBufferBindings(simulator, 0);
-    return this.updateBufferBindings(bufferBindings);
+    var that = this;
+
+    var unresolvedBufferBindings = getBufferBindings(simulator, 0);
+    var pairs = _.pairs(unresolvedBufferBindings);
+    var keys = _.map(pairs, (p) => p[0]);
+    var values = _.map(pairs, (p) => p[1]);
+
+    return Q.all(values).then(function (results) {
+        var resultHash = {};
+        for (var i = 0; i < results.length; i++) {
+            resultHash[keys[i]] = results[i];
+        }
+
+        return that.updateBufferBindings(resultHash);
+    });
 };
 
 ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
@@ -491,7 +504,7 @@ ForceAtlas2Barnes.prototype.edgeForces = function(simulator, workItemsSize) {
         }).then(function () {
             return that.reduceBackwardsEdgeForces.exec([workItemsSize.segReduce[0]], resources, [workItemsSize.segReduce[1]])
         });
-} 
+}
 
 ForceAtlas2Barnes.prototype.updateBufferBindings = function(bufferBindings) {
     _.each(this.kernels, function(kernel) {

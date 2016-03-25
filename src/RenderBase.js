@@ -5,26 +5,21 @@
 
 var _ = require('underscore');
 
-var NAMED_CLGL_BUFFERS = require('./buffers.js').NAMED_CLGL_BUFFERS;
-
 //[string] -> Renderer
 function create() {
+
     var renderer = {
         gl: null,
         document: null,
         canvas: null,
 
-        buffers: _.extend({
-                curPoints: null,
-                springs: null,
-                curMidPoints: null,
-                midSprings: null,
-                midSpringsColorCoord: null
-            },
-            _.object(_.keys(NAMED_CLGL_BUFFERS).map(function (name) { return [name, null]; })),
-            _.object(_.keys(NAMED_CLGL_BUFFERS)
-                    .filter(function (name) { return NAMED_CLGL_BUFFERS[name].dims === 'numEdges'})
-                    .map(function (name) { return [name + '_reverse', null]; }))),
+        buffers: {
+            curPoints: null,
+            springs: null,
+            curMidPoints: null,
+            midSprings: null,
+            midSpringsColorCoord: null
+        },
 
         programs: {
             points: null,

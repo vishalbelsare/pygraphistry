@@ -11,6 +11,7 @@ var util = require('../util.js');
 var weakcc = require('../weaklycc.js');
 var palettes = require('../palettes.js');
 var clientNotification = require('../clientNotification.js');
+var ComputedColumnSpec = require('../ComputedColumnSpec.js');
 
 var log         = require('common/logger.js');
 var logger      = log.createLogger('graph-viz', 'graph-viz/js/libs/VGraphLoader.js');
@@ -51,30 +52,67 @@ var decoders = {
 var attributeLoaders = function(graph) {
     return {
         pointSize: {
-            load: graph.setSizes,
+            load: function (values) {
+
+                var valueObj = {name: 'pointSizes', values: values, type: 'number'};
+                graph.dataframe.loadColumn('__pointSizes', 'point', valueObj);
+                var ccManager = graph.dataframe.computedColumnManager;
+
+                var desc = ccManager.getComputedColumnSpec('localBuffer', 'pointSizes').clone();
+                desc.setDependencies([['__pointSizes', 'point']]);
+                desc.setComputeSingleValue(_.identity);
+
+                ccManager.addComputedColumn(graph.dataframe, 'localBuffer', 'pointSizes', desc);
+            },
             type : ['number'],
-            default: graph.setSizes,
             target: VERTEX,
             values: undefined
         },
         pointColor: {
-            load: graph.setColors,
+            load: function (values) {
+                var valueObj = {name: 'pointColors', values: values, type: 'color'};
+                graph.dataframe.loadColumn('__pointColors', 'point', valueObj);
+                var ccManager = graph.dataframe.computedColumnManager;
+
+                var desc = ccManager.getComputedColumnSpec('localBuffer', 'pointColors').clone();
+                desc.setDependencies([['__pointColors', 'point']]);
+                desc.setComputeSingleValue(_.identity);
+
+                ccManager.addComputedColumn(graph.dataframe, 'localBuffer', 'pointColors', desc);
+            },
             type: ['number', 'color'],
-            default: graph.setColors,
             target: VERTEX,
             values: undefined
         },
         edgeColor: {
-            load: graph.setEdgeColors,
+            load: function (values) {
+
+                var valueObj = {name: 'edgeColors', values: values, type: 'color', numberPerGraphComponent: 1};
+                graph.dataframe.loadColumn('__edgeColors', 'edge', valueObj);
+                var ccManager = graph.dataframe.computedColumnManager;
+
+                var desc = ccManager.getComputedColumnSpec('localBuffer', 'edgeColors').clone();
+                desc.setDependencies([['__edgeColors', 'edge']]);
+                desc.setComputeAllValues(function (edgeColors, outArr, numGraphElements) {
+                    for (var i = 0; i < edgeColors.length; i++) {
+                        outArr[i*2] = edgeColors[i];
+                        outArr[i*2 + 1] = edgeColors[i];
+                    }
+                    return outArr;
+                });
+
+                ccManager.addComputedColumn(graph.dataframe, 'localBuffer', 'edgeColors', desc);
+            },
             type: ['number', 'color'],
-            default: graph.setEdgeColors,
             target: EDGE,
             values: undefined
         },
         edgeHeight: {
-            load: graph.setEdgeHeights,
+            load: function (values) {
+                // NOT IMPLEMENTED OR USED YET
+                console.log('\n\n\ LOADING EDGE HEIGHTS NOT SUPPORTED\n\n\n');
+            },
             type: ['number'],
-            default: graph.setEdgeHeights,
             target: EDGE,
             values: undefined
         },
@@ -86,22 +124,75 @@ var attributeLoaders = function(graph) {
             values: undefined
         },
         pointLabel: {
-            load: graph.setPointLabels,
+            load: function (values) {
+
+                var valueObj = {name: 'pointLabels', values: values, type: 'string'};
+                graph.dataframe.loadColumn('__pointLabels', 'point', valueObj);
+                var ccManager = graph.dataframe.computedColumnManager;
+
+                var desc = ccManager.getComputedColumnSpec('hostBuffer', 'pointLabels').clone();
+                desc.setDependencies([['__pointLabels', 'point']]);
+                desc.setComputeSingleValue(_.identity);
+
+                ccManager.addComputedColumn(graph.dataframe, 'hostBuffer', 'pointLabels', desc);
+            },
             type: ['string'],
             target: VERTEX,
             values: undefined
         },
         edgeLabel: {
-            load: graph.setEdgeLabels,
+            load: function (values) {
+
+                var valueObj = {name: 'edgeLabels', values: values, type: 'string'};
+                graph.dataframe.loadColumn('__edgeLabels', 'edge', valueObj);
+                var ccManager = graph.dataframe.computedColumnManager;
+
+                var desc = ccManager.getComputedColumnSpec('hostBuffer', 'edgeLabels').clone();
+                desc.setDependencies([['__edgeLabels', 'edge']]);
+                desc.setComputeSingleValue(_.identity);
+
+                ccManager.addComputedColumn(graph.dataframe, 'hostBuffer', 'edgeLabels', desc);
+            },
             type: ['string'],
             target: EDGE,
             values: undefined
         },
         edgeWeight: {
-          load: graph.setEdgeWeight,
+          load: function (values) {
+
+                var valueObj = {name: 'edgeWeights', values: values, type: 'number'};
+                graph.dataframe.loadColumn('__edgeWeights', 'edge', valueObj);
+
+                var computeAllEdgeWeightFunction = function (edgeWeights, edges, outArr, numGraphElements) {
+                    var perm = edges.edgePermutationInverseTyped;
+                    for (var i = 0; i < edgeWeights.length; i++) {
+                        outArr[i] = edgeWeights[perm[i]];
+                    }
+                    return outArr;
+                };
+
+                var ccManager = graph.dataframe.computedColumnManager;
+                var forwardsDesc = ccManager.getComputedColumnSpec('hostBuffer', 'forwardsEdgeWeights').clone();
+                var backwardsDesc = ccManager.getComputedColumnSpec('hostBuffer', 'backwardsEdgeWeights').clone();
+
+                forwardsDesc.setDependencies([
+                    ['__edgeWeights', 'edge'],
+                    ['forwardsEdges', 'hostBuffer']
+                ]);
+
+                backwardsDesc.setDependencies([
+                    ['__edgeWeights', 'edge'],
+                    ['backwardsEdges', 'hostBuffer']
+                ]);
+
+                forwardsDesc.setComputeAllValues(computeAllEdgeWeightFunction);
+                backwardsDesc.setComputeAllValues(computeAllEdgeWeightFunction);
+
+                ccManager.addComputedColumn(graph.dataframe, 'hostBuffer', 'forwardsEdgeWeights', forwardsDesc);
+                ccManager.addComputedColumn(graph.dataframe, 'hostBuffer', 'backwardsEdgeWeights', backwardsDesc);
+          },
           type: ['number'],
           target: EDGE,
-          default: graph.setEdgeWeight,
           values: undefined
         },
         // PointTitle and edgeTitle are handled in their own special way.
@@ -123,6 +214,78 @@ var attributeLoaders = function(graph) {
         }
     };
 };
+
+function getDegree(forwardsEdges, backwardsEdges, i) {
+    return forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
+}
+
+function calculateAndStoreDefaultPointSizeColumns (graph) {
+    var dataframe = graph.dataframe;
+    var forwardsEdges = dataframe.getColumnValues('forwardsEdges', 'hostBuffer');
+    var backwardsEdges = dataframe.getColumnValues('backwardsEdges', 'hostBuffer');
+
+    var numGraphElements = dataframe.getNumElements('point');
+    var outArr = new Array(numGraphElements);
+
+    var minDegree = Number.MAX_VALUE;
+    var maxDegree = 0;
+    for (var i = 0; i < numGraphElements; i++) {
+        var degree = getDegree(forwardsEdges, backwardsEdges, i);
+        minDegree = Math.min(minDegree, degree);
+        maxDegree = Math.max(maxDegree, degree);
+    }
+
+    var offset = 5 - minDegree;
+    var scalar = 20 / Math.max((maxDegree - minDegree),1);
+
+    for (var i = 0; i < numGraphElements; i++) {
+        var degree = getDegree(forwardsEdges, backwardsEdges, i);
+        outArr[i] = (degree + offset) + (degree - minDegree) * scalar;
+    }
+
+    var valueObj = {name: 'defaultPointSize', values: outArr, type: 'number'};
+    graph.dataframe.loadColumn('__defaultPointSize', 'point', valueObj);
+}
+
+function calculateAndStoreCommunities(graph) {
+    var dataframe = graph.dataframe;
+    var forwardsEdges = dataframe.getColumnValues('forwardsEdges', 'hostBuffer');
+    var backwardsEdges = dataframe.getColumnValues('backwardsEdges', 'hostBuffer');
+
+    var outArr = new Array(dataframe.getNumElements('point'));
+
+    var getDegree = function (forwardsEdges, backwardsEdges, i) {
+        return forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
+    };
+
+    var compare = function (initBest, buffers, i) {
+        var best = initBest;
+
+        var worklist = buffers.srcToWorkItem[i];
+        var firstEdge = buffers.workItemsTyped[i * 4];
+        var numEdges = buffers.workItemsTyped[i * 4 + 1];
+        for (var j = 0; j < numEdges; j++) {
+            var dst = buffers.edgesTyped[firstEdge*2 + j*2 + 1];
+            var degree = getDegree(forwardsEdges, backwardsEdges, dst);
+            if (   (degree > best.degree)
+                || (degree == best.degree && dst > best.id)) {
+                best = {id: dst, degree: degree};
+            }
+        }
+
+        return best;
+    };
+
+    for (var idx = 0; idx < outArr.length; idx++) {
+        var best = {id: idx, degree: getDegree(forwardsEdges, backwardsEdges, idx)};
+        var bestOut = compare(best, forwardsEdges, idx);
+        var bestIn = compare(bestOut, backwardsEdges, idx);
+        outArr[idx] = bestIn.id;
+    }
+
+    var valueObj = {name: 'pointCommunity', values: outArr, type: 'number'};
+    graph.dataframe.loadColumn('__pointCommunity', 'point', valueObj);
+}
 
 
 var opentsdbMapper = {
@@ -248,6 +411,7 @@ function doWrap(res, mapping, loader) {
     if ('transform' in mapping) {
         var oldLoad = loader.load;
         loader.load = function (data) {
+            console.log('MAPPING: ', mapping.name);
             return oldLoad(mapping.transform(data));
         };
     }
@@ -406,10 +570,12 @@ function decode0(graph, vg, metadata)  {
         }).then(function () {
             return clientNotification.loadingStatus(graph.socket, 'Binding edges');
         }).then(function () {
-            return graph.setEdges(edges);
+            return graph.setEdges(edges, vertices);
         }).then(function () {
             return clientNotification.loadingStatus(graph.socket, 'Binding everything else');
         }).then(function () {
+            calculateAndStoreCommunities(graph);
+            calculateAndStoreDefaultPointSizeColumns(graph);
             return runLoaders(loaders);
         }).then(function () {
             return graph;
@@ -827,10 +993,12 @@ function decode1(graph, vg, metadata)  {
         }).then(function () {
             return clientNotification.loadingStatus(graph.socket, 'Binding edges');
         }).then(function () {
-            return graph.setEdges(edges);
+            return graph.setEdges(edges, vertices);
         }).then(function () {
             return clientNotification.loadingStatus(graph.socket, 'Binding everything else');
         }).then(function () {
+            calculateAndStoreCommunities(graph);
+            calculateAndStoreDefaultPointSizeColumns(graph);
             return runLoaders(loaders);
         }).then(function () {
             return graph;

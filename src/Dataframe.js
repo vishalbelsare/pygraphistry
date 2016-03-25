@@ -5,6 +5,7 @@ var dateFormat = require('dateformat');
 var Q = require('q');
 var fs = require('fs');
 var csv = require('csv');
+var flake = require('simpleflake');
 
 var log = require('common/logger.js');
 var logger = log.createLogger('graph-viz', 'graph-viz/js/DataFrame.js');
@@ -13,12 +14,20 @@ var ExpressionCodeGenerator = require('./expressionCodeGenerator');
 var ExpressionPlan = require('./ExpressionPlan.js');
 var DataframeMask = require('./DataframeMask.js');
 var ColumnAggregation = require('./ColumnAggregation.js');
+var ComputedColumnManager = require('./ComputedColumnManager.js');
 
 var dataTypeUtil = require('./dataTypes.js');
 
 var palettes    = require('./palettes');
 
 var baseDirPath = __dirname + '/../assets/dataframe/';
+
+function getUniqueId () {
+    var id = flake();
+    var stringId = id.toString('hex');
+    return stringId;
+}
+
 /**
  * @readonly
  * @type {string[]}
@@ -50,7 +59,9 @@ function Dataframe () {
         simulator: {}
     };
     this.typedArrayCache = {};
+    this.clBufferCache = {};
     this.lastPointPositions = null;
+    this.computedColumnManager = null;
     /** The last mask applied as a result of in-place filtering. Full by default. */
     this.lastMasks = new DataframeMask(
         this,
@@ -65,6 +76,13 @@ function Dataframe () {
     this.bufferOverlays = {};
     /** @type {DataframeMetadata} */
     this.metadata = {};
+
+    // TODO: Move this out of data frame constructor.
+    var computedColumnManager = new ComputedColumnManager();
+    computedColumnManager.loadDefaultColumns();
+    computedColumnManager.loadEncodingColumns();
+    this.loadComputedColumnManager(computedColumnManager);
+
 }
 
 Dataframe.prototype.newEmptyMask = function () {
@@ -524,14 +542,10 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
     var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
     var numMidEdgeColors = numMidEdgeColorsPerEdge * oldNumEdges;
     this.typedArrayCache.newMidEdgeColors = new Uint32Array(numMidEdgeColors);
-    this.typedArrayCache.newBackwardsEdgeWeights = new Float32Array(oldNumEdges);
-    this.typedArrayCache.newForwardsEdgeWeights = new Float32Array(oldNumEdges);
 
     this.typedArrayCache.tempPrevForces = new Float32Array(oldNumPoints * 2);
     this.typedArrayCache.tempDegrees = new Uint32Array(oldNumPoints);
     this.typedArrayCache.tempSpringsPos = new Float32Array(oldNumEdges * 4);
-    this.typedArrayCache.tempBackwardsEdgeWeights = new Float32Array(oldNumEdges);
-    this.typedArrayCache.tempForwardsEdgeWeights = new Float32Array(oldNumEdges);
     this.typedArrayCache.tempCurPoints = new Float32Array(oldNumPoints * 2);
 
     this.typedArrayCache.newPrevForces = new Float32Array(oldNumPoints * 2);
@@ -559,11 +573,8 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
 
     var rawdata = this.rawdata;
 
-    // TODO: These buffers are initialized in a different event loop and we want to no-op before they're ready.
     var rawSimBuffers = rawdata.buffers.simulator;
-    if (rawSimBuffers.forwardsEdgeWeights === undefined || rawSimBuffers.backwardsEdgeWeights === undefined) {
-        return Q(false);
-    }
+
     /** @type {DataframeData} */
     var newData = makeEmptyData();
     var numPoints = masks.numPoints();
@@ -576,18 +587,6 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
         this.initializeTypedArrayCache(oldNumPoints, oldNumEdges);
     }
 
-    // labels;
-    _.each(GraphComponentTypes, function (type) {
-        if (rawdata.labels[type]) {
-            var newLabels = [];
-            _.each(masks[type], function (idx) {
-                newLabels.push(rawdata.labels[type][idx]);
-            });
-            newData.labels[type] = newLabels;
-        }
-    });
-
-    // TODO: Regular Data GPU Buffers
     // TODO: Figure out how GC/memory management works.
 
     ///////////////////////////////////////////////////////////////////////////
@@ -641,12 +640,8 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     var backwardsEdges = this.encapsulateEdges(edgesFlipped, numPoints, rawdata.hostBuffers.backwardsEdges, unsortedMasks, pointOriginalLookup);
     newData.hostBuffers.forwardsEdges = forwardsEdges;
     newData.hostBuffers.backwardsEdges = backwardsEdges;
-    newData.hostBuffers.points = rawdata.hostBuffers.points;
+    // newData.hostBuffers.points = rawdata.hostBuffers.points;
 
-
-    newData.localBuffers.logicalEdges = forwardsEdges.edgesTyped;
-    newData.localBuffers.forwardsEdgeStartEndIdxs = forwardsEdges.edgeStartEndIdxsTyped;
-    newData.localBuffers.backwardsEdgeStartEndIdxs = backwardsEdges.edgeStartEndIdxsTyped;
     // TODO index translation (filter scope)
     newData.localBuffers.selectedEdgeIndexes = this.lastSelectionMasks.typedEdgeIndexes();
     newData.localBuffers.selectedPointIndexes = this.lastSelectionMasks.typedPointIndexes();
@@ -655,40 +650,20 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // Copy non-GPU buffers
     ///////////////////////////////////////////////////////////////////////////
 
-    // TODO: Figured out what pointTags is used for
-    // TODO: Figure out what edgeTags are used for.
-
-    var newPointSizes = new Uint8Array(this.typedArrayCache.newPointSizes.buffer, 0, numPoints);
-    var newPointColors = new Uint32Array(this.typedArrayCache.newPointColors.buffer, 0, numPoints);
-
-    masks.mapPointIndexes(function (pointIndex, i) {
-        newPointSizes[i] = rawdata.localBuffers.pointSizes[pointIndex];
-        newPointColors[i] = rawdata.localBuffers.pointColors[pointIndex];
-    });
-    newData.localBuffers.pointSizes = newPointSizes;
-    newData.localBuffers.pointColors = newPointColors;
-
     var numRenderedSplits = rawdata.numElements.renderedSplits;
     var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
     var numMidEdgeColors = numMidEdgeColorsPerEdge * numEdges;
-    var newEdgeColors = new Uint32Array(this.typedArrayCache.newEdgeColors.buffer, 0, numEdges * 2);
-    var newEdgeHeights = new Uint32Array(this.typedArrayCache.newEdgeHeights.buffer, 0, numEdges * 2);
     var newMidEdgeColors = new Uint32Array(this.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
 
     masks.mapEdgeIndexes(function (edgeIndex, i) {
-        newEdgeColors[i * 2] = rawdata.localBuffers.edgeColors[edgeIndex * 2];
-        newEdgeColors[i * 2 + 1] = rawdata.localBuffers.edgeColors[edgeIndex * 2 + 1];
-
-        newEdgeHeights[i * 2] = rawdata.localBuffers.edgeHeights[edgeIndex * 2];
-        newEdgeHeights[i * 2 + 1] = rawdata.localBuffers.edgeHeights[edgeIndex * 2 + 1];
 
         for (var j = 0; j < numMidEdgeColorsPerEdge; j++) {
             newMidEdgeColors[i * numMidEdgeColorsPerEdge + j] =
                 rawdata.localBuffers.midEdgeColors[edgeIndex * numMidEdgeColorsPerEdge + j];
         }
+
     });
-    newData.localBuffers.edgeColors = newEdgeColors;
-    newData.localBuffers.edgeHeights = newEdgeHeights;
+
     newData.localBuffers.midEdgeColors = newMidEdgeColors;
 
     // numElements;
@@ -729,15 +704,11 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
 
     var tempPrevForces = new Float32Array(this.typedArrayCache.tempPrevForces.buffer, 0, oldNumPoints * 2);
     var tempSpringsPos = new Float32Array(this.typedArrayCache.tempSpringsPos.buffer, 0, oldNumEdges * 4);
-    var tempForwardsEdgeWeights = new Float32Array(this.typedArrayCache.tempForwardsEdgeWeights.buffer, 0, oldNumEdges);
-    var tempBackwardsEdgeWeights = new Float32Array(this.typedArrayCache.tempBackwardsEdgeWeights.buffer, 0, oldNumEdges);
     var tempCurPoints = new Float32Array(this.typedArrayCache.tempCurPoints.buffer, 0, oldNumPoints * 2);
 
     var newPrevForces = new Float32Array(this.typedArrayCache.newPrevForces.buffer, 0, numPoints * 2);
     var newDegrees = new Uint32Array(this.typedArrayCache.newDegrees.buffer, 0, numPoints);
     var newSpringsPos = new Float32Array(this.typedArrayCache.newSpringsPos.buffer, 0, numEdges * 4);
-    var newForwardsEdgeWeights = new Float32Array(this.typedArrayCache.newForwardsEdgeWeights.buffer, 0, numEdges);
-    var newBackwardsEdgeWeights = new Float32Array(this.typedArrayCache.newBackwardsEdgeWeights.buffer, 0, numEdges);
     var newCurPoints = new Float32Array(this.typedArrayCache.newCurPoints.buffer, 0, numPoints * 2);
 
     var filteredSimBuffers = this.data.buffers.simulator;
@@ -745,8 +716,6 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     return Q.all([
         rawSimBuffers.prevForces.read(tempPrevForces),
         rawSimBuffers.springsPos.read(tempSpringsPos),
-        rawSimBuffers.forwardsEdgeWeights.read(tempForwardsEdgeWeights),
-        rawSimBuffers.backwardsEdgeWeights.read(tempBackwardsEdgeWeights),
         filteredSimBuffers.curPoints.read(tempCurPoints)
     ]).spread(function () {
 
@@ -796,15 +765,12 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
             newSpringsPos[i*4 + 1] = tempSpringsPos[oldEdgeIdx*4 + 1];
             newSpringsPos[i*4 + 2] = tempSpringsPos[oldEdgeIdx*4 + 2];
             newSpringsPos[i*4 + 3] = tempSpringsPos[oldEdgeIdx*4 + 3];
-
-            newForwardsEdgeWeights[i] = tempForwardsEdgeWeights[oldEdgeIdx];
-            newBackwardsEdgeWeights[i] = tempBackwardsEdgeWeights[oldEdgeIdx];
         });
 
         var someBufferPropertyNames = ['curPoints', 'prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
             'forwardsWorkItems', 'forwardsEdgeStartEndIdxs', 'backwardsEdges',
             'backwardsDegrees', 'backwardsWorkItems', 'backwardsEdgeStartEndIdxs',
-            'springsPos', 'forwardsEdgeWeights', 'backwardsEdgeWeights'
+            'springsPos'
         ];
         _.each(someBufferPropertyNames, function (key) {
             newData.buffers.simulator[key] = that.filteredBufferCache.simulator[key];
@@ -816,8 +782,6 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
             newBuffers.prevForces.write(newPrevForces),
             newBuffers.degrees.write(newDegrees),
             newBuffers.springsPos.write(newSpringsPos),
-            newBuffers.forwardsEdgeWeights.write(newForwardsEdgeWeights),
-            newBuffers.backwardsEdgeWeights.write(newBackwardsEdgeWeights),
             newBuffers.forwardsEdges.write(forwardsEdges.edgesTyped),
             newBuffers.forwardsDegrees.write(forwardsEdges.degreesTyped),
             newBuffers.forwardsWorkItems.write(forwardsEdges.workItemsTyped),
@@ -878,6 +842,37 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
             }
         });
 
+        // Copy in attributes from raw data
+        // Bump versions of every attribute because it's versioned.
+        // Also mark as dirty, due to filter.
+        var attributePropertiesToSkip = ['values'];
+        // Each namespace of columns
+        _.each(rawdata.attributes, function (cols, colCategoryKey) {
+
+            newData.attributes[colCategoryKey] = {};
+            // Each column
+            _.each(cols, function (col, colName) {
+                newData.attributes[colCategoryKey][colName] = {};
+
+                // Each key of column object
+                _.each(col, function (prop, propName) {
+                    if (attributePropertiesToSkip.indexOf(propName) !== -1) {
+                        return;
+                    }
+                    newData.attributes[colCategoryKey][colName][propName] = prop;
+                });
+
+                // Bump Version
+                newData.attributes[colCategoryKey][colName].version = getUniqueId();
+                // Mark dirty so that computed columns and lazy eval can work.
+                newData.attributes[colCategoryKey][colName].dirty = {
+                    cause: 'filter'
+                };
+
+            });
+
+        });
+
         // Bump versions of every buffer.
         // TODO: Decide if this is really necessary.
         _.each(_.keys(simulator.versions.buffers), function (key) {
@@ -905,6 +900,66 @@ var SystemAttributeNames = [
     'edgeLabel', 'edgeTitle', 'edgeHeight',
     'degree'
 ];
+
+Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager) {
+    this.computedColumnManager = computedColumnManager;
+
+    var attrs = this.data.attributes;
+    var activeColumns = computedColumnManager.getActiveColumns();
+
+
+    // TODO: Don't require them to be explicitly loaded in like this with knowldge
+    // of internal structure
+    // Functions that look up available column names and fetch values
+    // should know how to look aside at this.
+    _.each(activeColumns, function (cols, colType) {
+        // If no columns exist in category, make obj
+        attrs[colType] = attrs[colType] || {};
+
+        _.each(cols, function (colDesc, name) {
+
+            var col = {
+                name: name,
+                type: colDesc.type,
+                version: 0,
+                dirty: true,
+                computed: true,
+                computedVersion: colDesc.version,
+                filterable: colDesc.filterable,
+                graphComponentType: colDesc.graphComponentType,
+                numberPerGraphComponent: colDesc.numberPerGraphComponent,
+                arrType: colDesc.arrType
+            };
+
+            attrs[colType][name] = col;
+        });
+
+    });
+
+};
+
+
+Dataframe.prototype.registerNewComputedColumn = function (computedColumnManager, columnType, columnName) {
+    var colDesc = computedColumnManager.getComputedColumnSpec(columnType, columnName);
+    var attrs = this.data.attributes;
+    attrs[columnType] = attrs[columnType] || {};
+
+    var col = {
+        name: columnName,
+        type: colDesc.type,
+        version: 0,
+        dirty: true,
+        computed: true,
+        computedVersion: colDesc.version,
+        filterable: colDesc.filterable,
+        graphComponentType: colDesc.graphComponentType,
+        numberPerGraphComponent: colDesc.numberPerGraphComponent,
+        arrType: colDesc.arrType
+    };
+
+    attrs[columnType][columnName] = col;
+};
+
 
 /**
  * TODO: Implicit degrees for points and src/dst for edges.
@@ -946,8 +1001,24 @@ Dataframe.prototype.loadAttributesForType = function (attributeObjectsByName, ty
         userDefinedAttributesByName._title = {type: 'number', name: 'label', values: _.range(numElements)};
     }
 
+    // Mark version as 0, and that they're not dirty.
+    _.each(userDefinedAttributesByName, function (obj, key) {
+        obj.version = 0;
+        obj.dirty = false;
+        obj.numberPerGraphComponent = 1;
+    });
+
     _.extend(this.rawdata.attributes[type], userDefinedAttributesByName);
     // TODO: Case where data != raw data.
+};
+
+
+Dataframe.prototype.loadColumn = function (name, type, valueObj) {
+    valueObj.version = 0;
+    valueObj.dirty = false;
+    valueObj.numberPerGraphComponent = valueObj.numberPerGraphComponent || 1;
+
+    this.rawdata.attributes[type][name] = valueObj;
 };
 
 
@@ -974,9 +1045,9 @@ Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
         degree[i] = inDegrees[i] + outDegrees[i];
     }
 
-    attributes.degree = {values: degree, name: 'degree', type: 'number'};
-    attributes.degree_in = {values: degree_in, name: 'degree_in', type: 'number'};
-    attributes.degree_out = {values: degree_out, name: 'degree_out', type: 'number'};
+    attributes.degree = {values: degree, name: 'degree', type: 'number', version: 0, dirty: false, numberPerGraphComponent: 1};
+    attributes.degree_in = {values: degree_in, name: 'degree_in', type: 'number', version: 0, dirty: false, numberPerGraphComponent: 1};
+    attributes.degree_out = {values: degree_out, name: 'degree_out', type: 'number', version: 0, dirty: false, numberPerGraphComponent: 1};
 };
 
 
@@ -996,13 +1067,13 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
         destination[i] = nodeTitles[unsortedEdges[2*i + 1]];
     }
 
-    attributes.Source = {values: source, name: 'Source', type: 'string'};
-    attributes.Destination = {values: destination, name: 'Destination', type: 'string'};
+    attributes.Source = {values: source, name: 'Source', type: 'string', version: 0, dirty: false, numberPerGraphComponent: 1};
+    attributes.Destination = {values: destination, name: 'Destination', type: 'string', version: 0, dirty: false, numberPerGraphComponent: 1};
 
     // If no title has been set, just make title the index.
     // TODO: Is there a more appropriate place to put this?
     if (!attributes._title) {
-        attributes._title = {type: 'string', name: 'label', values: _.range(numElements)};
+        attributes._title = {type: 'string', name: 'label', values: _.range(numElements), version: 0, dirty: false, numberPerGraphComponent: 1};
     }
 
 };
@@ -1044,17 +1115,6 @@ Dataframe.prototype.loadHostBuffer = function (name, buffer) {
 
 
 Dataframe.prototype.loadLocalBuffer = function (name, buffer) {
-    // TODO: Generalize
-    if (name === 'edgeColors' || name === 'edgeHeights') {
-        var sortedBuffer = new buffer.constructor(buffer.length);
-        var permutation = this.rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
-        for (var i = 0; i < buffer.length / 2; i++) {
-            sortedBuffer[i*2] = buffer[permutation[i]*2];
-            sortedBuffer[i*2 + 1] = buffer[permutation[i]*2 +1];
-        }
-        buffer = sortedBuffer;
-    }
-
     var localBuffers = this.rawdata.localBuffers;
     localBuffers[name] = buffer;
 };
@@ -1231,10 +1291,13 @@ Dataframe.prototype.resetLocalBuffer = function (name) {
 };
 
 Dataframe.prototype.hasLocalBuffer = function (name) {
-    return this.data.localBuffers[name] !== undefined || this.rawdata.localBuffers[name] !== undefined;
+    var hasDeprecatedExplicitLocalBuffer = this.data.localBuffers[name] !== undefined || this.rawdata.localBuffers[name] !== undefined;
+    var hasComputedLocalBuffer = this.computedColumnManager.hasColumn('localBuffer', name);
+    return (hasDeprecatedExplicitLocalBuffer || hasComputedLocalBuffer);
 };
 
 Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
+
     var data = unfiltered ? this.rawdata : this.data;
 
     if (this.canResetLocalBuffer(name)) {
@@ -1246,19 +1309,45 @@ Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
             this.resetLocalBuffer(alias);
         }
     }
-    var res = data.localBuffers[name];
+
+    var deprecatedExplicitlySetValues = data.localBuffers[name];
+    if (deprecatedExplicitlySetValues) {
+        return deprecatedExplicitlySetValues;
+    }
+
+    // Get values via normal path where they're treated as computed columns.
+    // TODO: Deal with "unfiltered code" path. Do we need it with computed columns?
+    var res = this.getColumnValues(name, 'localBuffer');
+
     if (!res) {
         throw new Error('Invalid Local Buffer: ' + name);
     }
+
     return res;
 };
 
 Dataframe.prototype.getHostBuffer = function (name) {
-    var res = this.data.hostBuffers[name];
+
+    var deprecatedExplicitlySetValues = this.data.hostBuffers[name];
+    if (deprecatedExplicitlySetValues) {
+        return deprecatedExplicitlySetValues;
+    }
+
+    var res = this.getColumnValues(name, 'hostBuffer');
+
     if (!res) {
         throw new Error('Invalid Host Buffer: ' + name);
     }
+
     return res;
+};
+
+Dataframe.prototype.hasHostBuffer = function (name) {
+
+    var hasDeprecatedExplicitHostBuffer = this.data.hostBuffers[name] !== undefined || this.rawdata.hostBuffers[name] !== undefined;
+    var hasComputedHostBuffer = this.computedColumnManager.hasColumn('hostBuffer', name);
+    return (hasDeprecatedExplicitHostBuffer || hasComputedHostBuffer);
+
 };
 
 Dataframe.prototype.getLabels = function (type) {
@@ -1310,14 +1399,29 @@ Dataframe.prototype.globalize = function(index, type) {
     return this.lastMasks.getIndexByType(type, index);
 };
 
+Dataframe.prototype.getVersion = function (type, attrName) {
+    var attributes = this.data.attributes[type];
 
-/** Returns one row object.
+    if (!attributes[attrName]) {
+        return undefined;
+    }
+
+    // If it's a computed column, provide the combination of CC spec version + dataframe version.
+    if (attributes[attrName].computed) {
+        var ccVersion = this.computedColumnManager.getColumnVersion(type, attrName);
+        return '' + ccVersion + ':' + attributes[attrName].version;
+    }
+
+    return attributes[attrName].version;
+}
+
+/** Returns the contents of one cell
  * @param {double} index - which element to extract.
  * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
+ * @param {string} attrName - the name of the column you want
  * @param {Object?} attributes - which attributes to extract from the row.
  */
-Dataframe.prototype.getRowAt = function (index, type, attributes) {
-    var origIndex = index; // For client-side metadata.
+Dataframe.prototype.getCell = function (index, type, attrName) {
 
     // Convert from sorted into unsorted edge indices.
     if (index !== undefined && type === 'edge') {
@@ -1325,14 +1429,92 @@ Dataframe.prototype.getRowAt = function (index, type, attributes) {
         index = forwardsEdgePermutationInverse[index];
     }
 
-    index = this.lastMasks.getIndexByType(type, index);
+    var attributes = this.data.attributes[type];
+    var numberPerGraphComponent = attributes[attrName].numberPerGraphComponent;
 
-    attributes = attributes || this.rawdata.attributes[type];
+    // TODO FIXME HACK:
+    // So computed column manager can work, we need to pass through calls from here
+    // to getHostBuffer.
+
+    if (type === 'hostBuffer' && (!attributes || !attributes[attrName])) {
+        return this.getHostBuffer(attrName)[index];
+    }
+
+    if (type === 'localBuffer' && (!attributes || !attributes[attrName])) {
+        return this.getLocalBuffer(attrName)[index];
+    }
+
+
+
+    // First try to see if have values already calculated / cached for this frame
+
+    // Check to see if it's computed and version matches that of computed column.
+    // Computed column versions reflect dependencies between computed columns.
+    var computedVersionMatches = !(attributes[attrName].computed &&
+        (attributes[attrName].computedVersion !== this.computedColumnManager.getColumnVersion(type, attrName))
+    );
+
+    if (computedVersionMatches && !attributes[attrName].dirty && attributes[attrName].values) {
+
+        // TODO: Deduplicate this code from dataframe and computed column manager
+        if (numberPerGraphComponent === 1) {
+            return attributes[attrName].values[index];
+        } else {
+            var arrType = attributes[attrName].arrType || Array;
+            var returnArr = new arrType(numberPerGraphComponent);
+            for (var j = 0; j < returnArr.length; j++) {
+                returnArr[j] = attributes[attrName].values[index*numberPerGraphComponent + j];
+            }
+            return returnArr;
+        }
+    }
+
+    // If it's calculated and needs to be recomputed
+    if (attributes[attrName].computed && (!computedVersionMatches || attributes[attrName].dirty)) {
+        var returnval = this.computedColumnManager.getValue(this, type, attrName, index);
+        return returnval;
+    }
+
+    // If it's not calculated / cached, and filtered use last masks (parent) to index into already
+    // calculated values
+    if (attributes[attrName].dirty && attributes[attrName].dirty.cause === 'filter') {
+        var parentIndex = this.lastMasks.getIndexByType(type, index);
+        return this.rawdata.attributes[type][attrName].values[parentIndex];
+        if (numberPerGraphComponent === 1) {
+            return this.rawdata.attributes[type][attrName].values[parentIndex];
+        } else {
+            var arrType = attributes[attrName].arrType || Array;
+            var returnArr = new arrType(numberPerGraphComponent);
+            for (var j = 0; j < returnArr.length; j++) {
+                returnArr[j] = this.rawdata.attributes[attrName].values[parentIndex*numberPerGraphComponent + j];
+            }
+            return returnArr;
+        }
+    }
+
+    // Nothing was found, so throw error.
+    throw new Error("Couldn't get cell value for: " + attrName + ' ' + index);
+};
+
+
+/** Returns one row object.
+ * @param {double} index - which element to extract.
+ * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
+ * @param {Object?} attributes - which attributes to extract from the row.
+ */
+Dataframe.prototype.getRowAt = function (index, type) {
+    var origIndex = index; // For clientside metadata
+    var that = this;
+
     var row = {};
-    _.each(_.keys(attributes), function (key) {
-        row[key] = attributes[key].values[index];
-    });
+    _.each(_.keys(that.data.attributes[type]), function (key) {
+        // Skip columns that are prepended with __
+        if (key[0] === '_' && key[1] === '_') {
+            return;
+        }
 
+        row[key] = that.getCell(index, type, key);
+    });
     row._index = origIndex;
     return row;
 };
@@ -1343,13 +1525,12 @@ Dataframe.prototype.getRowAt = function (index, type, attributes) {
  * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  */
 Dataframe.prototype.getRows = function (indices, type) {
-    var attributes = this.rawdata.attributes[type],
-        that = this;
+    var that = this;
 
     indices = indices || _.range(that.data.numElements[type]);
 
     return _.map(indices, function (index) {
-        return that.getRowAt(index, type, attributes);
+        return that.getRowAt(index, type);
     });
 };
 
@@ -1361,7 +1542,10 @@ Dataframe.prototype.getRows = function (indices, type) {
  * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  * @returns {{header, values}}
  */
-Dataframe.prototype.getRowsCompact = function (indices, type) {
+Dataframe.prototype.getRowsCompactUnfiltered = function (indices, type) {
+
+    // TODO: Should this be generalized for non-serializing purposes? E.g., it's not in
+    // the standard lookup path.
     var attributes = this.rawdata.attributes[type],
         keys = this.getAttributeKeys(type);
 
@@ -1409,24 +1593,150 @@ Dataframe.prototype.getColumn = function (columnName, type) {
 // explicitly requested to be unsorted (for internal performance reasons)
 Dataframe.prototype.getColumnValues = function (columnName, type) {
 
-    // A filter has been done, and we need to apply the
-    // mask and compact.
-    if (!this.data.attributes[type][columnName]) {
-        var rawAttributes = this.rawdata.attributes[type];
-        var newValues = [];
-        this.lastMasks.mapIndexes(type, function (idx) {
-            newValues.push(rawAttributes[columnName].values[idx]);
-        });
-        this.data.attributes[type][columnName] = {
-            values: newValues,
-            type: rawAttributes[columnName].type,
-            target: rawAttributes[columnName].target
-        };
+    var attributes = this.data.attributes[type];
+
+    // TODO FIXME HACK:
+    // So computed column manager can work, we need to pass through calls from here
+    // to getHostBuffer.
+
+    if (type === 'hostBuffer' && (!attributes || !attributes[columnName])) {
+        return this.getHostBuffer(columnName);
     }
 
-    var attributes = this.data.attributes[type];
-    return attributes[columnName].values;
+    if (type === 'localBuffer' && (!attributes || !attributes[columnName])) {
+        return this.getLocalBuffer(columnName);
+    }
+
+
+    // First try to see if have values already calculated / cached for this frame
+
+    // Check to see if it's computed and version matches that of computed column.
+    // Computed column versions reflect dependencies between computed columns.
+    var computedVersionMatches = !(attributes[columnName].computed &&
+        (attributes[columnName].computedVersion !== this.computedColumnManager.getColumnVersion(type, columnName))
+    );
+
+    if (computedVersionMatches && !attributes[columnName].dirty && attributes[columnName].values) {
+        return attributes[columnName].values;
+    }
+
+    // If it's calculated and needs to be recomputed
+    if (attributes[columnName].computed && (!computedVersionMatches || attributes[columnName].dirty)) {
+
+        var newValues = this.computedColumnManager.getDenseMaterializedArray(this, type, columnName);
+        attributes[columnName].values = newValues;
+        attributes[columnName].dirty = false;
+
+        return newValues;
+    }
+
+
+    // If it's not calculated / cached, and filtered, apply the mask and compact
+    // then cache the result.
+    if (attributes[columnName].dirty && attributes[columnName].dirty.cause === 'filter') {
+
+        var rawAttributes = this.rawdata.attributes[type];
+        var arrType = rawAttributes[columnName].arrType || Array;
+        var numNewValues = this.lastMasks.numByType(type);
+        var numberPerGraphComponent = rawAttributes[columnName].numberPerGraphComponent;
+        var newValues = new arrType(numberPerGraphComponent * numNewValues);
+
+        this.lastMasks.mapIndexes(type, function (idx, i) {
+            for (var j = 0; j < numberPerGraphComponent; j++) {
+                newValues[numberPerGraphComponent*i + j] = rawAttributes[columnName].values[numberPerGraphComponent*idx + j];
+            }
+            // newValues.push(rawAttributes[columnName].values[idx]);
+        });
+
+        attributes[columnName].values = newValues;
+        attributes[columnName].dirty = false;
+
+        return newValues;
+    }
+
+    // Nothing was found, so throw error.
+    throw new Error("Couldn't get column values for: " + columnName);
 };
+
+
+// TODO: Track modifications to underlying GPU buffer,
+// so we can flag them as dirty='CL' or something and know to copy off GPU.
+Dataframe.prototype.getClBuffer = function (cl, columnName, type) {
+
+    var that = this;
+    var attributes = this.data.attributes[type];
+
+    // TODO FIXME HACK:
+    // So computed column manager can work, we need to pass through calls from here
+    // to getHostBuffer.
+
+    // if (type === 'hostBuffer' && (!attributes || !attributes[columnName])) {
+    //     return this.getHostBuffer(columnName);
+    // }
+
+    // if (type === 'localBuffer' && (!attributes || !attributes[columnName])) {
+    //     return this.getLocalBuffer(columnName);
+    // }
+
+    // Check to see if our buffer is not dirty, and that we have buffer values.
+    var computedVersionMatches = !(attributes[columnName].computed &&
+        (attributes[columnName].computedVersion !== this.computedColumnManager.getColumnVersion(type, columnName))
+    );
+
+    if (computedVersionMatches && !attributes[columnName].dirty && attributes[columnName].clBuffer) {
+        return Q(attributes[columnName].clBuffer);
+    }
+
+    // Need to fix CL Buffer. Today, naively get all columns and do a full copy.
+    // In the future, do this more cleverly (e.g., GPU filter + compact)
+
+    var newValues = this.getColumnValues(columnName, type);
+
+    // TODO: Add eviction to generic CL Buffer caching.
+    return this.getCachedCLBuffer(cl, columnName, type)
+        .then(function (buffer) {
+            return buffer.write(newValues);
+        }).then(function (buffer) {
+            attributes[columnName].clBuffer = buffer;
+            return buffer;
+        });
+};
+
+
+// TODO: Add eviction to generic CL Buffer caching.
+Dataframe.prototype.getCachedCLBuffer = function (cl, columnName, type) {
+    var desc = this.data.attributes[type][columnName];
+    var arrType = desc.arrType;
+
+    if (arrType === Array) {
+        throw new Error('Attempted to make CL Buffer for non-typed array: ', columnName, type);
+    }
+
+    var graphComponentType = desc.graphComponentType || type;
+    var numElements = this.getNumElements(graphComponentType);
+
+    this.clBufferCache[type] = this.clBufferCache[type] || {};
+    var cache = this.clBufferCache[type];
+
+    // TODO: Deal with size not being sufficient.
+    if (cache[columnName]) {
+
+        if (cache[columnName].size < arrType.BYTES_PER_ELEMENT * numElements) {
+            // TODO: Evict from cache and do necessary GC
+            throw new Error('Did not implement resizing of cached CL buffers yet for: ', columnName, type);
+        }
+
+        return Q(cache[columnName]);
+    }
+
+    // Not cached, so create and cache
+    return cl.createBuffer(numElements * arrType.BYTES_PER_ELEMENT, 'clBuffer_' + type + '_' + columnName)
+        .then(function (buffer) {
+            cache[columnName] = buffer;
+            return buffer;
+        });
+};
+
 
 /**
  * @typedef {Object} Aggregations
@@ -1482,7 +1792,7 @@ Dataframe.prototype.getColumnAggregations = function(columnName, type, unfiltere
     var column = dataframeData.attributes[type][columnName];
     if (column === undefined) { return undefined; }
     if (column.aggregations === undefined) {
-        column.aggregations = new ColumnAggregation(this, column);
+        column.aggregations = new ColumnAggregation(this, column, columnName, type);
         var aggregations = this.metadataForColumn(columnName, type);
         if (aggregations !== undefined) {
             if (aggregations.aggregations !== undefined) {
@@ -1593,7 +1903,7 @@ Dataframe.prototype.serializeRows = function (target, options) {
 
     _.each(BufferTypeKeys, function (type) {
         if (options.compact) {
-            toSerialize[type] = that.getRowsCompact(undefined, type);
+            toSerialize[type] = that.getRowsCompactUnfiltered(undefined, type);
         } else {
             toSerialize[type] = that.getRows(undefined, type);
         }
@@ -1627,7 +1937,7 @@ Dataframe.prototype.serializeColumns = function (target, options) {
 Dataframe.prototype.formatAsCsv = function (type) {
     var that = this;
 
-    var compact = that.getRowsCompact(undefined, type);
+    var compact = that.getRowsCompactUnfiltered(undefined, type);
     var promiseStringify = Q.denodeify(csv.stringify);
     console.log('compact header: ', compact.header);
     var structuredArrays = [compact.header].concat(compact.values);
