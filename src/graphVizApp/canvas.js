@@ -60,11 +60,33 @@ function setupKeyInteractions(appState, $eventTarget) {
 
 }
 
+function setupCameraInteractionRenderUpdates(renderingScheduler, cameraStream, settingsChanges, simulateOn) {
+    const interactionRenderDelay = 200;
+    var timeOutFunction;
 
-function setupRenderUpdates(renderingScheduler, cameraStream, settingsChanges) {
+    var renderFullIfNotSimulating = function () {
+        simulateOn.take(1).do(function (simulateIsOn) {
+            if (!simulateIsOn) {
+                renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFull'});
+                timeOutFunction = null;
+            }
+        }).subscribe(_.identity, util.makeErrorHandler('rendering full from camera interactions'));
+    };
+
+    var resetDelayedFullRender = function () {
+        // Clear previously set timeout if it exists
+        if (timeOutFunction) {
+            clearTimeout(timeOutFunction);
+        }
+
+        // Request new timeout
+        timeOutFunction = setTimeout(renderFullIfNotSimulating, interactionRenderDelay);
+    };
+
     settingsChanges
         .combineLatest(cameraStream, _.identity)
         .do(function () {
+            resetDelayedFullRender();
             renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFast'});
         }).subscribe(_.identity, util.makeErrorHandler('render updates'));
 }
@@ -130,6 +152,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         simulating: false,
         quietState: false,
         interpolateMidPoints : true,
+        fullScreenBufferDirty: true,
 
         //{ <activeBufferName> -> undefined}
         // Seem to be client-defined local buffers
@@ -199,12 +222,13 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
             });
         });
 
+        // TODO: This can end up firing renderSceneFull multiple times at the end of
+        // a simulation session, since multiple VBOs will continue to come in
+        // while simulateIsOn = false
         var triggerToUse = simulateIsOn ? 'renderSceneFast' : 'renderSceneFull';
-        var tagToUse = simulateIsOn ? 'vboupdate' : 'vboupdatefull';
 
         that.appSnapshot.vboUpdated = true;
-        that.renderScene('vboupdate', {trigger: 'renderSceneFast'});
-        // that.renderScene(tagToUse, {trigger: triggerToUse});
+        that.renderScene('vboupdate', {trigger: triggerToUse});
         that.renderScene('vboupdate_picking', {
             items: ['pointsampling'],
             callback: function () {
@@ -245,7 +269,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
      */
     function startRenderingLoop() {
         var SLOW_EFFECT_DELAY = 125;
-        var PAUSE_RENDERING_DELAY = 1000;
+        var PAUSE_RENDERING_DELAY = 500;
 
         var lastRenderTime = 0;
         var quietSignaled = true;
@@ -257,26 +281,22 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         function loop() {
             var nextFrameId = window.requestAnimationFrame(loop);
 
-            // TODO: Handle this naturally, instead of hack here
-            var explictlyToldToRenderAll = _.keys(renderQueue).indexOf('vboupdatefull') > -1;
-
             // Nothing to render
-            if (_.keys(renderQueue).length === 0 || explictlyToldToRenderAll) {
+            if (_.keys(renderQueue).length === 0) {
+
+                // TODO: Generalize this
+                if (!quietSignaled) {
+                    quietSignaled = true;
+                    isAnimating.onNext(false);
+                }
 
                 if (shouldUpdateRenderTime) {
                     // Just update render time, leave delta checks for next loop
                     lastRenderTime = Date.now();
                     shouldUpdateRenderTime = false;
                 } else {
-                    // Check time since last render. Based on duration, render slow effects and/or
-                    // pause the rendering loop.
-
+                    // Check time since last render. Based on duration, pause the rendering loop.
                     var timeDelta = Date.now() - lastRenderTime;
-                    if (explictlyToldToRenderAll || (timeDelta > SLOW_EFFECT_DELAY && !quietSignaled)) {
-                        quietCallback();
-                        quietSignaled = true;
-                        isAnimating.onNext(false);
-                    }
 
                     if (timeDelta > PAUSE_RENDERING_DELAY) {
                         pauseRenderingLoop(nextFrameId);
@@ -284,25 +304,53 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
 
                 }
 
-                renderQueue = {};
                 return;
+            }
+
+            // Handle "slow effects request"
+            // TODO: Handle this naturally, instead of hack here
+            var tagsWithRenderFull = _.filter(_.keys(renderQueue), (key) => {
+                var task = renderQueue[key];
+                return (task.trigger === 'renderSceneFull');
+            });
+
+            if (tagsWithRenderFull.length > 0) {
+                // TODO: Generalize this code block
+                shouldUpdateRenderTime = true;
+                that.appSnapshot.fullScreenBufferDirty = true;
+                if (quietSignaled) {
+                    isAnimating.onNext(true);
+                    quietSignaled = false;
+                }
+
+                that.renderSlowEffects();
+                that.appSnapshot.vboUpdated = false;
+                _.each(tagsWithRenderFull, (tag) => {
+                    delete renderQueue[tag];
+                });
             }
 
             // Mouseover interactions
             // TODO: Generalize this as a separate category?
             if (_.keys(renderQueue).indexOf('mouseOver') > -1) {
-                // TODO: Handle mouseover interaction
-                that.renderMouseoverEffects(renderQueue.mouseOver);
+
+                // Only handle mouseovers if the fullscreen buffer
+                // from rendering all edges (full scene) is clean
+                if (!that.appSnapshot.fullScreenBufferDirty) {
+                    shouldUpdateRenderTime = true;
+                    that.renderMouseoverEffects(renderQueue.mouseOver);
+                }
                 delete renderQueue.mouseOver;
             }
 
             // Rest render queue
             if (_.keys(renderQueue).length > 0) {
+                // TODO: Generalize this code block
                 shouldUpdateRenderTime = true;
+                that.appSnapshot.fullScreenBufferDirty = true;
                 if (quietSignaled) {
                     isAnimating.onNext(true);
                     quietSignaled = false;
-                    that.appSnapshot.quietState = false;
                 }
 
                 renderer.setCamera(renderState);
@@ -334,16 +382,6 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         debug('Pausing rendering loop');
         window.cancelAnimationFrame(nextFrameId);
         renderingPaused = true;
-    }
-
-    /* Called when a quiet/steady state is detected, to render expensive features such as edges */
-    function quietCallback() {
-        if (!that.appSnapshot.simulating) {
-            debug('Quiet state');
-            that.renderSlowEffects();
-            that.appSnapshot.quietState = true;
-            that.appSnapshot.vboUpdated = false;
-        }
     }
 }
 
@@ -979,6 +1017,8 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
     renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
     renderer.setupFullscreenBuffer(renderState);
     that.renderMouseoverEffects();
+
+    that.appSnapshot.fullScreenBufferDirty = false;
 };
 
 /*
@@ -1336,7 +1376,7 @@ RenderingScheduler.prototype.getLargestModelSize = function (config, numElements
 module.exports = {
     setupBackgroundColor: setupBackgroundColor,
     setupCameraInteractions: setupCameraInteractions,
-    setupRenderUpdates: setupRenderUpdates,
+    setupCameraInteractionRenderUpdates: setupCameraInteractionRenderUpdates,
     RenderingScheduler: RenderingScheduler,
     getEdgeLabelPos: getEdgeLabelPos
 };

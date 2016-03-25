@@ -175,7 +175,9 @@ function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, ap
     );
 
     labels.setupLabelsAndCursor(appState, urlParams, $simCont);
-    canvas.setupRenderUpdates(appState.renderingScheduler, appState.cameraChanges, appState.settingsChanges);
+    canvas.setupCameraInteractionRenderUpdates(appState.renderingScheduler, appState.cameraChanges,
+            appState.settingsChanges, appState.simulateOn);
+
     highlight.setupHighlight(appState);
 
     var backgroundColorObservable = colorPicker.backgroundColorObservable(initialRenderState, urlParams);
