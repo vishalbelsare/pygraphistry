@@ -224,6 +224,12 @@ function ComputedColumnManager () {
     // We maintain a depenency graph between columns. dependency -> CC
     this.dependencyGraph = new Graph();
     this.activeComputedColumns = {};
+
+    // TODO FIXME HACK: Computed Column Manager should not understand logic of
+    // knowing which specs to swap between, or even what defaults are.
+    // Until we have a proper encodings manager, it will be a storing place for
+    // that kind of basic information.
+    this.overlayBufferSpecs = {};
 }
 
 //////////////////////////////////////////////////////////////////////////////

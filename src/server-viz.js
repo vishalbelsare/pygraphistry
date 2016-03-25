@@ -1085,7 +1085,9 @@ function VizServer(app, socket, cachedVBOs) {
                 if (query.reset) {
                     if (bufferName) {
                         var ccManager = dataframe.computedColumnManager;
-                        ccManager.loadDefaultLocalBuffer(dataframe, bufferName);
+                        var originalDesc = ccManager.overlayBufferSpecs[bufferName];
+                        ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName, originalDesc);
+                        delete ccManager.overlayBufferSpecs[bufferName];
                     }
                     this.tickGraph(cb);
                     cb({
@@ -1127,7 +1129,15 @@ function VizServer(app, socket, cachedVBOs) {
 
             // Now that we have an encoding function, store it as a computed column;
             var ccManager = dataframe.computedColumnManager;
-            var desc = ccManager.getComputedColumnSpec('localBuffer', bufferName).clone();
+            var oldDesc = ccManager.getComputedColumnSpec('localBuffer', bufferName);
+
+            // If this is the first encoding for a buffer type, store the original
+            // spec so we can recover it.
+            if (!ccManager.overlayBufferSpecs[bufferName]) {
+                ccManager.overlayBufferSpecs[bufferName] = oldDesc;
+            }
+
+            var desc = oldDesc.clone();
             desc.setDependencies([[attributeName, type]]);
             var computeAllValuesFunc;
             if (bufferName === 'edgeColors') {
