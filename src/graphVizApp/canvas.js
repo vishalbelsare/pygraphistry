@@ -154,7 +154,6 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
      */
     renderer.setupFullscreenBuffer(renderState);
 
-
     /*
      * Rx hooks to maintain the appSnapshot up-to-date
      */
@@ -166,11 +165,13 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         return status === 'received';
     }).switchMap(function () {
         var hostBuffers = renderState.get('hostBuffers');
+
         // FIXME handle selection update buffers here.
         Rx.Observable.combineLatest(hostBuffers.selectedPointIndexes, hostBuffers.selectedEdgeIndexes,
             function (pointIndexes, edgeIndexes) {
                 activeSelection.onNext(new VizSlice({point: pointIndexes, edge: edgeIndexes}));
             }).take(1).subscribe(_.identity, util.makeErrorHandler('Getting indexes of selections.'));
+
         var bufUpdates = ['curPoints', 'logicalEdges', 'edgeColors', 'pointSizes', 'curMidPoints'].map(function (bufName) {
             var bufUpdate = hostBuffers[bufName] || Rx.Observable.return();
             return bufUpdate.do(function (data) {
@@ -178,8 +179,17 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
             });
         });
         return vboVersions
-            .combineLatest(bufUpdates[0], bufUpdates[1], bufUpdates[2], bufUpdates[3], bufUpdates[4], _.identity);
-    }).do(function (vboVersions) {
+            .zip(bufUpdates[0], bufUpdates[1], bufUpdates[2], bufUpdates[3], bufUpdates[4]);
+
+    }).switchMap(function (zippedArray) {
+        var vboVersions = zippedArray[0];
+
+        return simulateOn.map((simulateIsOn) => {
+            return {vboVersions, simulateIsOn};
+        });
+
+    }).do(function (vboVersionAndSimulateStatus) {
+        var {vboVersions, simulateIsOn} = vboVersionAndSimulateStatus;
 
         _.each(vboVersions, function (buffersByType) {
             _.each(buffersByType, function (versionNumber, name) {
@@ -189,8 +199,12 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
             });
         });
 
+        var triggerToUse = simulateIsOn ? 'renderSceneFast' : 'renderSceneFull';
+        var tagToUse = simulateIsOn ? 'vboupdate' : 'vboupdatefull';
+
         that.appSnapshot.vboUpdated = true;
         that.renderScene('vboupdate', {trigger: 'renderSceneFast'});
+        // that.renderScene(tagToUse, {trigger: triggerToUse});
         that.renderScene('vboupdate_picking', {
             items: ['pointsampling'],
             callback: function () {
@@ -243,8 +257,11 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         function loop() {
             var nextFrameId = window.requestAnimationFrame(loop);
 
+            // TODO: Handle this naturally, instead of hack here
+            var explictlyToldToRenderAll = _.keys(renderQueue).indexOf('vboupdatefull') > -1;
+
             // Nothing to render
-            if (_.keys(renderQueue).length === 0) {
+            if (_.keys(renderQueue).length === 0 || explictlyToldToRenderAll) {
 
                 if (shouldUpdateRenderTime) {
                     // Just update render time, leave delta checks for next loop
@@ -255,7 +272,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
                     // pause the rendering loop.
 
                     var timeDelta = Date.now() - lastRenderTime;
-                    if (timeDelta > SLOW_EFFECT_DELAY && !quietSignaled) {
+                    if (explictlyToldToRenderAll || (timeDelta > SLOW_EFFECT_DELAY && !quietSignaled)) {
                         quietCallback();
                         quietSignaled = true;
                         isAnimating.onNext(false);
@@ -267,6 +284,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
 
                 }
 
+                renderQueue = {};
                 return;
             }
 
@@ -897,7 +915,7 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
         var shouldRecomputeEdgeColors =
             (!appSnapshot.buffers.midEdgesColors ||
             (appSnapshot.buffers.midEdgesColors.length !== expectedNumMidEdgeColors) ||
-            appSnapshot.bufferReceivedVersions.edgeColors > appSnapshot.bufferComputedVersions.edgeColors);
+            appSnapshot.bufferReceivedVersions.edgeColors !== appSnapshot.bufferComputedVersions.edgeColors);
 
         if (shouldRecomputeEdgeColors) {
             midEdgesColors = that.getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);
