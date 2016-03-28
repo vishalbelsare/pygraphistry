@@ -293,7 +293,7 @@ function createLabelDom(instance, dim, labelObj) {
     $cont.addClass('graph-label-' + type);
 
     // TODO FIXME HACK labelObj.formatted is injected as HTML; XSS vulnerability assumed (<script> tag)
-    if (labelObj.formatted !== undefined) {
+    if (labelObj.formatted !== undefined && labelObj.formatted !== false) {
         $cont.addClass('graph-label-preset');
         $title = $('<span>').addClass('graph-label-title').append(labelObj.formatted)
                 .append($labelType);
