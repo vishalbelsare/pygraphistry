@@ -1793,12 +1793,12 @@ Dataframe.prototype.getColumnAggregations = function(columnName, type, unfiltere
     if (column === undefined) { return undefined; }
     if (column.aggregations === undefined) {
         column.aggregations = new ColumnAggregation(this, column, columnName, type);
-        var aggregations = this.metadataForColumn(columnName, type);
-        if (aggregations !== undefined) {
-            if (aggregations.aggregations !== undefined) {
-                aggregations = aggregations.aggregations;
+        var columnMetadata = this.metadataForColumn(columnName, type);
+        if (columnMetadata !== undefined) {
+            if (columnMetadata.aggregations !== undefined) {
+                columnMetadata = columnMetadata.aggregations;
             }
-            column.aggregations.updateAggregations(aggregations);
+            column.aggregations.updateAggregations(columnMetadata);
         }
     }
     return column.aggregations;
@@ -2531,6 +2531,9 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
                 }
             }
             binId |= 0;
+        }
+        if (binId > numBins) {
+            throw new Error('Calculated an invalid bin ID:' + binId + ' for value: ' + value);
         }
         bins[binId]++;
         if (binValues[binId] === undefined) {

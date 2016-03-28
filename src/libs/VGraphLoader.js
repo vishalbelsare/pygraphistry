@@ -703,7 +703,12 @@ function dateAsNumber (val) {
 }
 
 
-function punnedTypeFromVector(v) {
+/**
+ * @param {AttrObject} v
+ * @param {DataframeMetadataByColumn} attributeMetadata
+ * @returns {string}
+ */
+function punnedTypeFromVector(v, attributeMetadata) {
     var type = typeof(v.values[0]);
 
     // Attempt to infer date types when possible
@@ -720,6 +725,14 @@ function punnedTypeFromVector(v) {
             var newValues = v.values.map(dateAsNumber);
             v.values = newValues;
 
+            // Invalidate attributeMetadata aggregations that are value-based:
+            if (attributeMetadata !== undefined && attributeMetadata.aggregations !== undefined) {
+                // See also ColumnAggregation's AggAliases and AggTypes:
+                attributeMetadata.aggregations = _.omit(attributeMetadata.aggregations, [
+                    'min', 'minValue', 'max', 'maxValue', 'avg', 'averageValue', 'sum',
+                    'std', 'standardDeviation', 'stddev', 'stdev', 'var', 'variance'
+                ]);
+            }
         } else {
             logger.debug('Failed to cast ' + v.name + ' as a moment.');
         }
@@ -753,7 +766,7 @@ function punnedTypeFromVector(v) {
  * @param {VectorGraph} vg
  * @returns {AttrObject[]}
  */
-function getAttributes0(vg) {
+function getAttributes0(vg/*, metadata*/) {
     var vectors = getVectors0(vg);
     var attributeObjects = [];
 
@@ -818,9 +831,10 @@ function getVectors1(vg) {
 
 /**
  * @param {VectorGraph} vg
+ * @param {DataframeMetadata} metadata
  * @returns {{nodes: Object.<AttrObject>, edges: Object.<AttrObject>}}
  */
-function getAttributes1(vg) {
+function getAttributes1(vg, metadata) {
     var vectors = getVectors1(vg);
     var nodeAttributeObjects = {};
     var edgeAttributeObjects = {};
@@ -830,10 +844,20 @@ function getAttributes1(vg) {
             return;
         }
         var attributeObjects = v.target === VERTEX ? nodeAttributeObjects : edgeAttributeObjects;
+        var typeAccessor = v.target === VERTEX ? 'nodes' : (v.target === EDGE ? 'edges' : undefined);
+        var attributeMetadata;
+        if (metadata !== undefined && metadata[typeAccessor] !== undefined) {
+            var relevantMetadata = _.find(metadata[typeAccessor], function (metadataByComponent) {
+                return metadataByComponent.attributes.hasOwnProperty(v.name);
+            });
+            if (relevantMetadata !== undefined) {
+                attributeMetadata = relevantMetadata.attributes[v.name];
+            }
+        }
         attributeObjects[v.name] = {
             name: v.name,
             target: v.target,
-            type: punnedTypeFromVector(v),
+            type: punnedTypeFromVector(v, attributeMetadata),
             values: v.values
         };
     });
@@ -938,7 +962,7 @@ function decode1(graph, vg, metadata)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
                  vg.version, vg.name, vg.vertexCount, vg.edgeCount);
 
-    var vgAttributes = getAttributes1(vg);
+    var vgAttributes = getAttributes1(vg, metadata);
     var graphInfo = checkMetadataAgainstVGraph(metadata, vg, vgAttributes);
     notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.vertexCount);
 
