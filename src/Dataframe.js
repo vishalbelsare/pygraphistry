@@ -2532,9 +2532,6 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
             }
             binId |= 0;
         }
-        if (binId > numBins) {
-            throw new Error('Calculated an invalid bin ID:' + binId + ' for value: ' + value);
-        }
         bins[binId]++;
         if (binValues[binId] === undefined) {
             binValues[binId] = {min: value, max: value, representative: value, isSingular: true};
