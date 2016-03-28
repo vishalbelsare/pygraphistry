@@ -130,7 +130,12 @@ var attributeLoaders = function(graph) {
                 graph.dataframe.loadColumn('__pointLabels', 'point', valueObj);
                 var ccManager = graph.dataframe.computedColumnManager;
 
-                var desc = ccManager.getComputedColumnSpec('hostBuffer', 'pointLabels').clone();
+                var desc = new ComputedColumnSpec({
+                    type: 'string',
+                    filterable: true,
+                    graphComponentType: 'point'
+                });
+
                 desc.setDependencies([['__pointLabels', 'point']]);
                 desc.setComputeSingleValue(_.identity);
 
@@ -147,7 +152,12 @@ var attributeLoaders = function(graph) {
                 graph.dataframe.loadColumn('__edgeLabels', 'edge', valueObj);
                 var ccManager = graph.dataframe.computedColumnManager;
 
-                var desc = ccManager.getComputedColumnSpec('hostBuffer', 'edgeLabels').clone();
+                var desc = new ComputedColumnSpec({
+                    type: 'string',
+                    filterable: true,
+                    graphComponentType: 'edge'
+                });
+
                 desc.setDependencies([['__edgeLabels', 'edge']]);
                 desc.setComputeSingleValue(_.identity);
 
@@ -411,7 +421,6 @@ function doWrap(res, mapping, loader) {
     if ('transform' in mapping) {
         var oldLoad = loader.load;
         loader.load = function (data) {
-            console.log('MAPPING: ', mapping.name);
             return oldLoad(mapping.transform(data));
         };
     }
