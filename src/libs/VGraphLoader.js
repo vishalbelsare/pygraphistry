@@ -54,7 +54,7 @@ var attributeLoaders = function(graph) {
         pointSize: {
             load: function (values) {
 
-                var valueObj = {name: 'pointSizes', values: values, type: 'number'};
+                var valueObj = {name: '__pointSizes', values: values, type: 'number'};
                 graph.dataframe.loadColumn('__pointSizes', 'point', valueObj);
                 var ccManager = graph.dataframe.computedColumnManager;
 
@@ -70,7 +70,7 @@ var attributeLoaders = function(graph) {
         },
         pointColor: {
             load: function (values) {
-                var valueObj = {name: 'pointColors', values: values, type: 'color'};
+                var valueObj = {name: '__pointColors', values: values, type: 'color'};
                 graph.dataframe.loadColumn('__pointColors', 'point', valueObj);
                 var ccManager = graph.dataframe.computedColumnManager;
 
@@ -87,7 +87,7 @@ var attributeLoaders = function(graph) {
         edgeColor: {
             load: function (values) {
 
-                var valueObj = {name: 'edgeColors', values: values, type: 'color', numberPerGraphComponent: 1};
+                var valueObj = {name: '__edgeColors', values: values, type: 'color', numberPerGraphComponent: 1};
                 graph.dataframe.loadColumn('__edgeColors', 'edge', valueObj);
                 var ccManager = graph.dataframe.computedColumnManager;
 
@@ -126,7 +126,7 @@ var attributeLoaders = function(graph) {
         pointLabel: {
             load: function (values) {
 
-                var valueObj = {name: 'pointLabels', values: values, type: 'string'};
+                var valueObj = {name: '__pointLabels', values: values, type: 'string'};
                 graph.dataframe.loadColumn('__pointLabels', 'point', valueObj);
                 var ccManager = graph.dataframe.computedColumnManager;
 
@@ -148,7 +148,7 @@ var attributeLoaders = function(graph) {
         edgeLabel: {
             load: function (values) {
 
-                var valueObj = {name: 'edgeLabels', values: values, type: 'string'};
+                var valueObj = {name: '__edgeLabels', values: values, type: 'string'};
                 graph.dataframe.loadColumn('__edgeLabels', 'edge', valueObj);
                 var ccManager = graph.dataframe.computedColumnManager;
 
@@ -170,7 +170,7 @@ var attributeLoaders = function(graph) {
         edgeWeight: {
           load: function (values) {
 
-                var valueObj = {name: 'edgeWeights', values: values, type: 'number'};
+                var valueObj = {name: '__edgeWeights', values: values, type: 'number'};
                 graph.dataframe.loadColumn('__edgeWeights', 'edge', valueObj);
 
                 var computeAllEdgeWeightFunction = function (edgeWeights, edges, outArr, numGraphElements) {
@@ -253,7 +253,7 @@ function calculateAndStoreDefaultPointSizeColumns (graph) {
         outArr[i] = (degree + offset) + (degree - minDegree) * scalar;
     }
 
-    var valueObj = {name: 'defaultPointSize', values: outArr, type: 'number'};
+    var valueObj = {name: '__defaultPointSize', values: outArr, type: 'number'};
     graph.dataframe.loadColumn('__defaultPointSize', 'point', valueObj);
 }
 
@@ -293,7 +293,7 @@ function calculateAndStoreCommunities(graph) {
         outArr[idx] = bestIn.id;
     }
 
-    var valueObj = {name: 'pointCommunity', values: outArr, type: 'number'};
+    var valueObj = {name: '__pointCommunity', values: outArr, type: 'number'};
     graph.dataframe.loadColumn('__pointCommunity', 'point', valueObj);
 }
 
