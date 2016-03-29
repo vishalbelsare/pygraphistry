@@ -926,6 +926,7 @@ Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager)
                 computed: true,
                 computedVersion: colDesc.version,
                 filterable: colDesc.filterable,
+                index: colDesc.index,
                 graphComponentType: colDesc.graphComponentType,
                 numberPerGraphComponent: colDesc.numberPerGraphComponent,
                 arrType: colDesc.arrType
@@ -952,6 +953,7 @@ Dataframe.prototype.registerNewComputedColumn = function (computedColumnManager,
         computed: true,
         computedVersion: colDesc.version,
         filterable: colDesc.filterable,
+        index: colDesc.index,
         graphComponentType: colDesc.graphComponentType,
         numberPerGraphComponent: colDesc.numberPerGraphComponent,
         arrType: colDesc.arrType
@@ -1588,6 +1590,35 @@ Dataframe.prototype.getColumn = function (columnName, type) {
  * @property {Object} target
  */
 
+Dataframe.prototype.reIndexArray = function (columnName, type, arr, indexType, attributeDesc) {
+
+    if (!indexType) {
+        return arr;
+    }
+
+    // Return an array indexed/sorted on the sorted array indexing.
+    if (indexType === 'sortedEdge') {
+        // Unsorted -> Sorted
+        var forwardsEdgePermutation = this.getColumnValues('forwardsEdges', 'hostBuffer').edgePermutation;
+        var numberPerGraphComponent = attributeDesc.numberPerGraphComponent || 1;
+
+        var newArr = new arr.constructor(arr.length);
+        for (var i = 0; i < arr.length; i++) {
+            var sortedIdx = forwardsEdgePermutation[i];
+
+            for (var j = 0; j < numberPerGraphComponent; j++) {
+                newArr[sortedIdx*numberPerGraphComponent + j] = arr[i*numberPerGraphComponent + j];
+            }
+
+        }
+
+        return newArr;
+    }
+
+    // Nothing was found, so throw error.
+    throw new Error("Attempted to reindex array with invalid index type: ", columnName, type, indexType);
+}
+
 
 // TODO: Have this return edge attributes in sorted order, unless
 // explicitly requested to be unsorted (for internal performance reasons)
@@ -1600,12 +1631,18 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     // to getHostBuffer.
 
     if (type === 'hostBuffer' && (!attributes || !attributes[columnName])) {
+        // Don't reindex because legacy
         return this.getHostBuffer(columnName);
     }
 
     if (type === 'localBuffer' && (!attributes || !attributes[columnName])) {
+        // Don't reindex because legacy
         return this.getLocalBuffer(columnName);
     }
+
+    // This lets us know if we need to reindex the values,
+    // e.g., go from unsorted to sorted.
+    var indexType = attributes[columnName].index;
 
 
     // First try to see if have values already calculated / cached for this frame
@@ -1617,7 +1654,7 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     );
 
     if (computedVersionMatches && !attributes[columnName].dirty && attributes[columnName].values) {
-        return attributes[columnName].values;
+        return this.reIndexArray(columnName, type, attributes[columnName].values, indexType, attributes[columnName]);
     }
 
     // If it's calculated and needs to be recomputed
@@ -1627,7 +1664,7 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
         attributes[columnName].values = newValues;
         attributes[columnName].dirty = false;
 
-        return newValues;
+        return this.reIndexArray(columnName, type, newValues, indexType, attributes[columnName]);
     }
 
 
@@ -1651,7 +1688,7 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
         attributes[columnName].values = newValues;
         attributes[columnName].dirty = false;
 
-        return newValues;
+        return this.reIndexArray(columnName, type, newValues, indexType, attributes[columnName]);
     }
 
     // Nothing was found, so throw error.
