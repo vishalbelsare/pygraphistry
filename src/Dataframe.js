@@ -1007,7 +1007,7 @@ Dataframe.prototype.loadAttributesForType = function (attributeObjectsByName, ty
     _.each(userDefinedAttributesByName, function (obj, key) {
         obj.version = 0;
         obj.dirty = false;
-        obj.numberPerGraphComponent = 1;
+        obj.numberPerGraphComponent = obj.numberPerGraphComponent || 1;
     });
 
     _.extend(this.rawdata.attributes[type], userDefinedAttributesByName);

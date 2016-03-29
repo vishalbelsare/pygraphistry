@@ -426,7 +426,7 @@ ComputedColumnManager.prototype.getValue = function (dataframe, columnType, colu
     // Check if the computation can't be done on a single one (quickly)
     // E.g., requires an aggregate, so might as well compute all.
     if (!columnDesc.computeSingleValue) {
-        var resultArray = this.getArray(dataframe, columnType, columnName);
+        var resultArray = this.getDenseMaterializedArray(dataframe, columnType, columnName);
         if (columnDesc.numberPerGraphComponent === 1) {
             return resultArray[idx];
         } else {
@@ -504,7 +504,16 @@ ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe,
 
             // set dependencies for this call
             _.each(dependencies, function (arr, idx) {
-                singleDependencies[idx] = arr[i];
+                if (columnDesc.numberPerGraphComponent === 1) {
+                    singleDependencies[idx] = arr[i];
+
+                } else {
+                    var valueArray = new arr.constructor(columnDesc.numberPerGraphComponent);
+                    for (var j = 0; j < columnDesc.numberPerGraphComponent; j++) {
+                        valueArray[j] = arr[i*columnDesc.numberPerGraphComponent + j];
+                    }
+                    singleDependencies[idx] = valueArray;
+                }
             });
             singleDependencies[singleDependencies.length - 2] = i;
 
