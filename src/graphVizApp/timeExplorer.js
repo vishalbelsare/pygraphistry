@@ -1802,11 +1802,18 @@ function setupSvg (el, margin, width, height) {
 }
 
 function setupBinScale (width, numBins, data) {
+
     // console.log('DATA: ', data);
     // Because we know that the first and last bins may be cutoff, we use a linear scale
     // across a longer range that we have, and wrap it to cut off the first bit
 
     var extra = (1 - data.widths[0]) + (1 - data.widths[data.widths.length - 1]);
+
+    // Different calc for 1 bin, since we'd end up double counting the 'extra' for that.
+    if (numBins === 1) {
+        extra = extra / 2;
+    }
+
     var ratio = (numBins / (numBins - extra));
     var expandedWidth = width * ratio;
 
