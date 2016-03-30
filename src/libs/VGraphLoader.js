@@ -70,6 +70,7 @@ var attributeLoaders = function(graph) {
         },
         pointColor: {
             load: function (values) {
+
                 var valueObj = {name: '__pointColors', values: values, type: 'color'};
                 graph.dataframe.loadColumn('__pointColors', 'point', valueObj);
                 var ccManager = graph.dataframe.computedColumnManager;
@@ -100,6 +101,7 @@ var attributeLoaders = function(graph) {
                     }
                     return outArr;
                 });
+                desc.setIndex('sortedEdge');
 
                 ccManager.addComputedColumn(graph.dataframe, 'localBuffer', 'edgeColors', desc);
             },

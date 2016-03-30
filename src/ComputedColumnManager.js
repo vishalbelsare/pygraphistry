@@ -115,7 +115,6 @@ var defaultLocalBuffers = {
         arrType: Uint32Array,
         type: 'color',
         filterable: true,
-        index: 'sortedEdge',
         numberPerGraphComponent: 2,
         graphComponentType: 'edge',
         version: 0,
