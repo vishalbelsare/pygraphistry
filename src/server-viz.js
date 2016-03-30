@@ -1108,7 +1108,7 @@ function VizServer(app, socket, cachedVBOs) {
                 failWithMessage(cb, 'No scaling inferred for: ' + encodingType + ' on ' + attributeName);
                 return;
             }
-            var sourceValues = dataframe.getUnfilteredColumnValues(type, attributeName);
+
             var encodedAttributeName = bufferName + '_' + attributeName;
             var encodedColumnValues;
             var wrappedScaling = encoding.scaling;

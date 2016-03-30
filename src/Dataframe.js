@@ -1868,33 +1868,6 @@ Dataframe.prototype.doesColumnRepresentColorPaletteMap = function (type, columnN
     return aggregations.getAggregationByType(aggType);
 };
 
-Dataframe.prototype.sortEdgeColumnValues = function (type, values) {
-    if (type === 'edge') {
-        // Convert to sorted order
-        var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
-        for (var i = 0; i < values.length; i++) {
-            // FIXME
-            values[i] = values[map[i]];
-        }
-    }
-};
-
-
-Dataframe.prototype.mapUnfilteredColumnValues = function (type, columnName, func) {
-    var attr = this.rawdata.attributes[type][columnName];
-    var results = func === undefined ? attr.values : _.map(attr.values, func);
-    this.sortEdgeColumnValues(type, results);
-    return results;
-};
-
-
-Dataframe.prototype.getUnfilteredColumnValues = function (type, columnName) {
-    return this.mapUnfilteredColumnValues(type, columnName, undefined);
-};
-
-
-
-
 Dataframe.prototype.getAttributeKeys = function (type) {
     // Assumes that filtering doesn't add/remove columns
     // TODO: Generalize so that we can add/remove columns
