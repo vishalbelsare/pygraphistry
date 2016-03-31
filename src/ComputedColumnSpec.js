@@ -101,6 +101,10 @@ ComputedColumnSpec.prototype.setNumberPerGraphComponent = function (numberPerGra
     this.numberPerGraphComponent = numberPerGraphComponent;
 };
 
+ComputedColumnSpec.prototype.setIndex = function (newIndex) {
+    this.index = newIndex;
+};
+
 ComputedColumnSpec.prototype.setVersion = function (version) {
     this.version = version;
 };
