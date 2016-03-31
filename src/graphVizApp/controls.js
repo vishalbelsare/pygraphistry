@@ -21,7 +21,7 @@ var persist         = require('./persist.js');
 var goLiveButton    = require('./goLiveButton.js');
 var colorPicker     = require('./colorpicker.js');
 var externalLink    = require('./externalLink.js');
-var TimeExplorer    = require('./timeExplorer.js');
+var TimeExplorer    = require('./timeExplorer/timeExplorer.js');
 var contentFormatter = require('./contentFormatter.js');
 
 function logScaling(minPos, maxPos, minVal, maxVal) {
