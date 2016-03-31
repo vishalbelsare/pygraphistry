@@ -721,7 +721,7 @@
                     Add Filter
                     <span class="caret"></span>
                 </button>
-                <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
+                <ul class="dropdown-menu scrollable-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
                     {{#each fields}}
                     <li role="presentation"><a class="addFilterDropdownField" role="menuitem" tabindex="-1" href="#"
                             data-attributes="{{json this}}">
@@ -766,7 +766,7 @@ Note: this release does not support expressions with multiple fields nor changin
                     {{attribute}}
                     <span class="caret"></span>
                 </button>
-                <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
+                <ul class="dropdown-menu scrollable-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
                     {{#each fields}}
                         <li role="presentation"><a class="histogramDropdownField" role="menuitem" tabindex="-1" href="#">
                             {{this}}
@@ -838,7 +838,7 @@ Note: this release does not support expressions with multiple fields nor changin
             Add Histogram
             <span class="caret"></span>
         </button>
-        <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
+        <ul class="dropdown-menu scrollable-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
             {{#each fields}}
                 <li role="presentation"><a class="addHistogramDropdownField" role="menuitem" tabindex="-1" href="#">
                     {{this}}
