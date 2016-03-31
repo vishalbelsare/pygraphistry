@@ -2222,6 +2222,7 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
 
 // Counts occurrences of type that matches type of time attr.
 Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, start, stop, timeAggregation) {
+    var that = this;
 
     // Compute binning
     var startDate = new Date(start);
@@ -2361,8 +2362,20 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
         binWidth = top - bottom;
     }
 
+    // TODO FIXME HACK Why??
+    // Understand why this permutation is necessary here.
+    var permuteIndex = _.identity;
+    if (timeType === 'edge') {
+        var forwardsEdgePermutationInverse = that.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
+        permuteIndex = function (idx) {
+            return forwardsEdgePermutationInverse[idx];
+        };
+    }
 
     mask.mapIndexes(timeType, function (idx) {
+
+        idx = permuteIndex(idx);
+
         var value = timeValues[idx];
         var valueDate = new Date(value);
         var valueNum = valueDate.getTime();
