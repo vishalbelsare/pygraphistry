@@ -1014,6 +1014,21 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
     that.appSnapshot.fullScreenBufferDirty = false;
 };
 
+function getSortedConnectedEdges (nodeId, forwardsEdgeStartEndIdxs) {
+    var resultSet = [];
+
+    var stride = 2 * nodeId;
+    var start = forwardsEdgeStartEndIdxs[stride];
+    var end = forwardsEdgeStartEndIdxs[stride + 1];
+    while (start < end) {
+        var edgeIdx = start;
+        resultSet.push(edgeIdx);
+        start++;
+    }
+
+    return resultSet;
+}
+
 /*
  * Render mouseover effects. These should only occur during a quiet state.
  *
@@ -1071,6 +1086,8 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
     var hostBuffers = renderState.get('hostBuffersCache');
     var forwardsEdgeStartEndIdxs = new Uint32Array(hostBuffers.forwardsEdgeStartEndIdxs.buffer);
 
+    var forwardsEdgeToUnsortedEdge = new Uint32Array(hostBuffers.forwardsEdgeToUnsortedEdge.buffer);
+
     var hostNodePositions = new Float32Array(hostBuffers.curPoints.buffer);
     var hostNodeSizes = hostBuffers.pointSizes;
     var hostNodeColors = new Uint32Array(hostBuffers.pointColors.buffer);
@@ -1094,19 +1111,14 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
         // Extend edges with neighbors of nodes
         // BAD because uses pushes.
 
+        _.each(highlightedNodeIndices, function (val) {
+            var sortedConnectedEdges = getSortedConnectedEdges(val, forwardsEdgeStartEndIdxs);
+            _.each(sortedConnectedEdges, (sortedEdge) => {
+                var unsortedEdge = forwardsEdgeToUnsortedEdge[sortedEdge];
+                highlightedEdgeIndices.push(unsortedEdge);
+            });
 
-        // TODO FIXME: Reenable neighbor highlights
-
-        // _.each(highlightedNodeIndices, function (val) {
-        //     var stride = 2 * val;
-        //     var start = forwardsEdgeStartEndIdxs[stride];
-        //     var end = forwardsEdgeStartEndIdxs[stride + 1];
-        //     while (start < end) {
-        //         var edgeIdx = start;
-        //         highlightedEdgeIndices.push(edgeIdx);
-        //         start++;
-        //     }
-        // });
+        });
 
         // Extend node indices with edge endpoints
         _.each(highlightedEdgeIndices, function (val) {
