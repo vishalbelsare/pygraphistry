@@ -632,6 +632,9 @@ ShiftExpression
     rest:(__ ShiftOperator __ AdditiveExpression)*
     { return buildBinaryExpression(first, rest); }
 
+ArithmeticExpression "arithmetic"
+  = ShiftExpression
+
 ComparisonOperator "comparison"
   = lte
   / gte
@@ -639,8 +642,8 @@ ComparisonOperator "comparison"
   / $(greaterthan !greaterthan)
 
 ComparisonPredicate
-  = first:ShiftExpression
-    rest:(__ ComparisonOperator __ ShiftExpression)*
+  = first:ArithmeticExpression
+    rest:(__ ComparisonOperator __ ArithmeticExpression)*
     { return buildBinaryPredicate(first, rest); }
   / LikePredicate
 
