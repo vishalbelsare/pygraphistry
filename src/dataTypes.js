@@ -5,6 +5,17 @@ var DefaultLocale = 'en-US';
 // TODO customize based on user/content preferences, and/or per column.
 var LocaleCompareOptions = {usage: 'sort', numeric: true};
 
+var SupportedDataTypes = [
+    'number',
+    'integer',
+    'string',
+    'array',
+    'date',
+    'datetime',
+    /*'money',*/
+    'object'
+];
+
 var DataTypesUtils = {
     numberSignifiesUndefined: function (value) {
         return isNaN(value);
@@ -33,11 +44,33 @@ var DataTypesUtils = {
             case 'number':
                 return this.numberSignifiesUndefined(value) || this.int32SignifiesUndefined(value);
             case 'date':
+            case 'datetime':
                 return this.dateSignifiesUndefined(value);
             case 'object':
-                return value === null;
+            case 'array':
+                return false;
             default:
                 return false;
+        }
+    },
+
+    keyMakerForDataType: function (dataType) {
+        switch (dataType) {
+            case 'undefined':
+            case 'number':
+            case 'integer':
+                return function (value) { return value.toString(); };
+            case 'string':
+                return function (value) { return value; };
+            case 'date':
+                return function (value) { return value.toDateString(); };
+            case 'datetime':
+                return function (value) { return value.toISOString(); };
+            case 'object':
+            case 'array':
+                return function (value) { return value === null ? value.toString() : JSON.stringify(value); };
+            default:
+                return function (value) { return value.toString(); };
         }
     },
 

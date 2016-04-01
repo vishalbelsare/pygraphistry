@@ -130,7 +130,7 @@ function inferEncodingSpec (aggregations, attributeName, encodingType, variation
     var summary = aggregations.getSummary();
     var scalingType, domain, range;
     var defaultDomain = [summary.minValue, summary.maxValue];
-    var distinctValues = _.keys(summary.distinctValues).sort();
+    var distinctValues = _.map(summary.distinctValues, function (x) { return x.distinctValue; });
     switch (encodingType) {
         case 'size':
         case 'pointSize':

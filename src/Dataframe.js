@@ -1779,6 +1779,11 @@ Dataframe.prototype.getCachedCLBuffer = function (cl, columnName, type) {
         });
 };
 
+/** @typedef {Object} ValueCount
+ * @property {Object} distinctValue
+ * @property {Number} count
+ */
+
 
 /**
  * @typedef {Object} Aggregations
@@ -1796,7 +1801,7 @@ Dataframe.prototype.getCachedCLBuffer = function (cl, columnName, type) {
  * @property {Boolean} isPositive Has positive values and no negative ones.
  * @property {Number} count
  * @property {Number} countDistinct
- * @property {Object.<Number>} distinctValues count of instances by value
+ * @property {ValueCount[]} distinctValues count of instances by value, sorted by count descending.
  * @property {Object} maxValue
  * @property {Object} minValue
  * @property {Number} standardDeviation
@@ -1858,7 +1863,7 @@ Dataframe.prototype.doesColumnRepresentColorPaletteMap = function (type, columnN
         var fits = false;
         if (this.getDataType(columnName, type) === 'color' &&
             aggregations.getAggregationByType('dataType') === 'integer') {
-            var distinctValues = _.keys(aggregations.getAggregationByType('distinctValues'));
+            var distinctValues = _.map(aggregations.getAggregationByType('distinctValues'), function (x) { return x.distinctValue; });
             if (_.isEmpty(distinctValues)) {
                 distinctValues = [aggregations.getAggregationByType('minValue'),
                     aggregations.getAggregationByType('maxValue')];

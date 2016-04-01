@@ -6,6 +6,8 @@ var dataTypeUtil = require('./dataTypes.js');
 /**
  * @param {Dataframe} dataframe
  * @param {Object} column
+ * @param {String} attrName
+ * @param {String} graphType
  * @constructor
  */
 function ColumnAggregation(dataframe, column, attrName, graphType) {
@@ -57,10 +59,10 @@ var AggAliases = {
 };
 
 ColumnAggregation.prototype.resolveAggregationType = function (aggType) {
-    if (AggAliases[aggType] === undefined) {
-        return aggType;
-    } else {
+    if (AggAliases.hasOwnProperty(aggType)) {
         return AggAliases[aggType];
+    } else {
+        return aggType;
     }
 };
 
@@ -97,9 +99,11 @@ ColumnAggregation.prototype.getAggregationByType = function (aggType) {
  * @returns {Aggregations}
  */
 ColumnAggregation.prototype.getSummary = function () {
-    return _.object(AggTypes, _.map(AggTypes, function (aggType) {
-        return this.getAggregationByType(aggType);
-    }, this));
+    var summary = {};
+    _.each(AggTypes, function (aggType) {
+        summary[aggType] = this.getAggregationByType(aggType);
+    }, this);
+    return summary;
 };
 
 ColumnAggregation.prototype.runAggregationForAggType = function (aggType) {
@@ -161,17 +165,16 @@ ColumnAggregation.prototype.isIntegral = function (value) {
 
 ColumnAggregation.prototype.genericSinglePassFixedMemoryAggregations = function () {
     var minValue = null, maxValue = null, countMissing = 0,
-        value, values = this.values, numValues = this.getAggregationByType('count');
+        numValues = this.getAggregationByType('count');
     var isLessThan = dataTypeUtil.isLessThanForDataType(this.getAggregationByType('dataType'));
-    for (var i=0; i < numValues; i++) {
-        value = values[i];
+    _.each(this.values, function (value) {
         if (dataTypeUtil.valueSignifiesUndefined(value)) {
             countMissing++;
-            continue;
+            return;
         }
         if (minValue === null || isLessThan(value, minValue)) { minValue = value; }
         if (maxValue === null || isLessThan(maxValue, value)) { maxValue = value; }
-    }
+    });
     this.updateAggregationTo('countValid', numValues - countMissing);
     this.updateAggregationTo('countMissing', countMissing);
     this.updateAggregationTo('minValue', minValue);
@@ -180,17 +183,16 @@ ColumnAggregation.prototype.genericSinglePassFixedMemoryAggregations = function 
 
 ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
     var minValue = Infinity, maxValue = -Infinity, sum = 0, countMissing = 0,
-        value = 0, values = this.values, numValues = this.getAggregationByType('count');
-    for (var i=0; i < numValues; i++) {
-        value = values[i];
+        numValues = this.getAggregationByType('count');
+    _.each(this.values, function (value) {
         if (dataTypeUtil.numberSignifiesUndefined(value) || dataTypeUtil.int32SignifiesUndefined(value)) {
             countMissing++;
-            continue;
+            return;
         }
         if (value < minValue) { minValue = value; }
         else if (value > maxValue) { maxValue = value; }
         sum += parseFloat(value);
-    }
+    });
     this.updateAggregationTo('countValid', numValues - countMissing);
     this.updateAggregationTo('countMissing', countMissing);
     this.updateAggregationTo('minValue', minValue);
@@ -201,14 +203,13 @@ ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
 
 ColumnAggregation.prototype.computeStandardDeviation = function () {
     var avg = this.getAggregationByType('averageValue'),
-        value = 0, values = this.values, numValues = this.getAggregationByType('count'),
-        sumSquareDiffs = 0, diff;
-    for (var i=0; i < numValues; i++) {
-        value = values[i];
-        if (dataTypeUtil.numberSignifiesUndefined(value)) { continue; }
+        numValues = this.getAggregationByType('count'),
+        diff, sumSquareDiffs = 0;
+    _.each(this.values, function (value) {
+        if (dataTypeUtil.numberSignifiesUndefined(value)) { return; }
         diff = value - avg;
         sumSquareDiffs += diff * diff;
-    }
+    });
     var variance = sumSquareDiffs / numValues;
     this.updateAggregationTo('variance', variance);
     this.updateAggregationTo('standardDeviation', Math.sqrt(variance));
@@ -217,27 +218,31 @@ ColumnAggregation.prototype.computeStandardDeviation = function () {
 var MaxDistinctValues = 400;
 
 ColumnAggregation.prototype.countDistinct = function (limit) {
-    var values = this.values;
-    var numValues = this.getAggregationByType('count');
     if (limit === undefined) {
         limit = MaxDistinctValues;
     }
-    var distinctCounts = {}, numDistinct = 0, minValue = Infinity, maxValue = -Infinity;
-    for (var i = 0; i < numValues; i++) {
-        var value = values[i];
-        if (dataTypeUtil.valueSignifiesUndefined(value)) { continue; }
+    var countsByValue = {}, numDistinct = 0, minValue = Infinity, maxValue = -Infinity,
+        keyMaker = dataTypeUtil.keyMakerForDataType(this.getAggregationByType('dataType')), valueKey;
+    _.each(this.values, function (value) {
+        if (dataTypeUtil.valueSignifiesUndefined(value)) { return; }
         if (value < minValue) { minValue = value; }
         else if (value > maxValue) { maxValue = value; }
+        valueKey = keyMaker(value);
         if (numDistinct < limit) {
-            var key = value.toString();
-            if (distinctCounts[key] === undefined) {
+            if (countsByValue[valueKey] === undefined) {
                 numDistinct++;
-                distinctCounts[key] = 1;
+                countsByValue[valueKey] = 1;
             } else {
-                distinctCounts[key] += 1;
+                countsByValue[valueKey] += 1;
             }
         }
-    }
+    });
+    var distinctCounts = [];
+    _.each(countsByValue, function (key, value) {
+        return {distinctValue: key, count: value};
+    });
+    // Sort by count descending so the most common elements are first:
+    distinctCounts.sort(function (a, b) { return b.count - a.count; });
     this.updateAggregationTo('countDistinct', numDistinct);
     this.updateAggregationTo('distinctValues', distinctCounts);
     var isCategorical = false;
@@ -257,18 +262,15 @@ ColumnAggregation.prototype.countDistinct = function (limit) {
 var OrderedDataTypes = ['number', 'integer', 'string', 'date'];
 
 ColumnAggregation.prototype.inferDataType = function () {
-    var values = this.values;
-    var numValues = this.getAggregationByType('count');
-    var value, isNumeric = true, isIntegral = true, jsType;
-    for (var i=0; i<numValues; i++) {
-        value = values[i];
-        if (dataTypeUtil.valueSignifiesUndefined(value)) { continue; }
+    var isNumeric = true, isIntegral = true, jsType;
+    _.each(this.values, function (value) {
+        if (dataTypeUtil.valueSignifiesUndefined(value)) { return; }
         jsType = typeof value;
         if (isNumeric) {
             isNumeric = isNumeric && !isNaN(value);
             isIntegral = isNumeric && this.isIntegral(value);
         }
-    }
+    }, this);
     var summary = {
         jsType: jsType,
         isNumeric: isNumeric,
