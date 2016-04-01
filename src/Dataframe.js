@@ -493,6 +493,9 @@ Dataframe.prototype.getAttributeMask = function (type, columnName, filterFunc) {
 };
 
 
+function numericSort (a, b) { return a > b ? 1 : (a < b ? -1 : 0); }
+
+
 /**
  * Returns sorted edge mask
  * @param {String} columnName
@@ -510,6 +513,8 @@ Dataframe.prototype.getEdgeAttributeMask = function (columnName, filterFunc) {
     for (var i = 0; i < edgeMask.length; i++) {
         edgeMask[i] = map[edgeMask[i]];
     }
+    // Make sure the mapped values are still presented integer-sorted
+    edgeMask.sort(numericSort);
     return edgeMask;
 };
 
