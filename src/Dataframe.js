@@ -508,13 +508,6 @@ Dataframe.prototype.getEdgeAttributeMask = function (columnName, filterFunc) {
         return this.fullDataframeMask();
     }
     var edgeMask = this.getMaskForPredicateOnAttributeValues(attr.values, filterFunc);
-    // Convert to sorted order
-    var map = this.rawdata.hostBuffers.forwardsEdges.edgePermutation;
-    for (var i = 0; i < edgeMask.length; i++) {
-        edgeMask[i] = map[edgeMask[i]];
-    }
-    // Make sure the mapped values are still presented integer-sorted
-    edgeMask.sort(numericSort);
     return edgeMask;
 };
 
@@ -606,22 +599,23 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // We start unsorted because we're working with the rawdata first.
     var unsortedEdgeMask = new Uint32Array(this.typedArrayCache.unsortedEdgeMask.buffer, 0, numEdges);
 
-    var map = rawdata.hostBuffers.forwardsEdges.edgePermutationInverseTyped;
     masks.mapEdgeIndexes(function(edgeIndex, i) {
-        unsortedEdgeMask[i] = map[edgeIndex];
+        unsortedEdgeMask[i] = edgeIndex;
     });
 
     // TODO: See if there's a way to do this without sorting.
     // Sorting is slow as all hell.
-    Array.prototype.sort.call(unsortedEdgeMask, function (a, b) {
-        return a - b;
-    });
+    // Array.prototype.sort.call(unsortedEdgeMask, function (a, b) {
+    //     return a - b;
+    // });
 
-    var unsortedMasks = new DataframeMask(
-        this,
-        masks.point,
-        unsortedEdgeMask
-    );
+    var unsortedMasks = masks;
+
+    // var unsortedMasks = new DataframeMask(
+    //     this,
+    //     masks.point,
+    //     unsortedEdgeMask
+    // );
 
     var pointOriginalLookup = [];
     masks.mapPointIndexes(function (pointIndex, i) {
@@ -650,6 +644,10 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // TODO index translation (filter scope)
     newData.localBuffers.selectedEdgeIndexes = this.lastSelectionMasks.typedEdgeIndexes();
     newData.localBuffers.selectedPointIndexes = this.lastSelectionMasks.typedPointIndexes();
+
+    // Copy in edge heights and seqLens
+    newData.localBuffers.edgeHeights = forwardsEdges.heights;
+    newData.localBuffers.edgeSeqLens = forwardsEdges.seqLens;
 
     ///////////////////////////////////////////////////////////////////////////
     // Copy non-GPU buffers
@@ -1430,12 +1428,6 @@ Dataframe.prototype.getVersion = function (type, attrName) {
  */
 Dataframe.prototype.getCell = function (index, type, attrName) {
 
-    // Convert from sorted into unsorted edge indices.
-    if (index !== undefined && type === 'edge') {
-        var forwardsEdgePermutationInverse = this.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
-        index = forwardsEdgePermutationInverse[index];
-    }
-
     var attributes = this.data.attributes[type];
     var numberPerGraphComponent = attributes[attrName].numberPerGraphComponent;
 
@@ -1596,28 +1588,14 @@ Dataframe.prototype.getColumn = function (columnName, type) {
  */
 
 Dataframe.prototype.reIndexArray = function (columnName, type, arr, indexType, attributeDesc) {
-
     if (!indexType) {
         return arr;
     }
 
     // Return an array indexed/sorted on the sorted array indexing.
+    // TODO: Kill this
     if (indexType === 'sortedEdge') {
-        // Unsorted -> Sorted
-        var forwardsEdgePermutation = this.getColumnValues('forwardsEdges', 'hostBuffer').edgePermutation;
-        var numberPerGraphComponent = attributeDesc.numberPerGraphComponent || 1;
-
-        var newArr = new arr.constructor(arr.length);
-        for (var i = 0; i < arr.length; i++) {
-            var sortedIdx = forwardsEdgePermutation[i];
-
-            for (var j = 0; j < numberPerGraphComponent; j++) {
-                newArr[sortedIdx*numberPerGraphComponent + j] = arr[i*numberPerGraphComponent + j];
-            }
-
-        }
-
-        return newArr;
+        return arr;
     }
 
     // Nothing was found, so throw error.
@@ -1977,15 +1955,6 @@ Dataframe.prototype.formatAsCsv = function (type) {
 Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, type) {
 
     var that = this;
-    // convert indices for edges from sorted to unsorted;
-    if (type === 'edge') {
-        var unsortedIndices = [];
-        var forwardsEdgePermutationInverse = this.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
-        _.each(indices, function (v) {
-            unsortedIndices.push(forwardsEdgePermutationInverse[v]);
-        });
-        indices = unsortedIndices;
-    }
 
     var processAgg = function (attribute, indices) {
 
@@ -2372,19 +2341,8 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
         binWidth = top - bottom;
     }
 
-    // TODO FIXME HACK Why??
-    // Understand why this permutation is necessary here.
-    var permuteIndex = _.identity;
-    if (timeType === 'edge') {
-        var forwardsEdgePermutationInverse = that.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
-        permuteIndex = function (idx) {
-            return forwardsEdgePermutationInverse[idx];
-        };
-    }
 
     mask.mapIndexes(timeType, function (idx) {
-
-        idx = permuteIndex(idx);
 
         var value = timeValues[idx];
         var valueDate = new Date(value);
@@ -2837,6 +2795,53 @@ function computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoint
     return edgeStartEndIdxsTyped;
 }
 
+function computeEdgeHeightInfo (edges) {
+
+    var numEdges = edges.length / 2;
+
+    var heights = new Uint32Array(numEdges);
+    var seqLens = new Uint32Array(numEdges);
+
+
+    var prevSrcIdx = -1;
+    var prevDstIdx = -1;
+    var edgeSeqLen = 1;
+    var heightCounter = 0;
+    var edgeSeqLen = 1;
+
+    for (var i = 0; i < numEdges; i ++) {
+
+        var srcIdx = edges[i*2];
+        var dstIdx = edges[i*2 + 1];
+
+        if (prevSrcIdx === srcIdx && prevDstIdx === dstIdx) {
+            heightCounter++;
+        } else {
+            heightCounter = 0;
+            var j;
+
+            // TODO: Make this faster and clearer
+            for (j = i + 1;
+                    j < numEdges &&
+                    srcIdx === edges[2 * j] &&
+                    dstIdx === edges[2 * j + 1];
+                    j++) {
+            }
+            edgeSeqLen = j - i + 1;
+        }
+
+        heights[i] = heightCounter;
+        seqLens[i] = edgeSeqLen;
+
+        prevSrcIdx = srcIdx;
+        prevDstIdx = dstIdx;
+    }
+
+    return {
+        heights,
+        seqLens
+    };
+}
 
 Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulated, masks, pointOriginalLookup) {
 
@@ -2866,6 +2871,9 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
 
     var edgeStartEndIdxsTyped = computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoints);
 
+    var {heights, seqLens} = computeEdgeHeightInfo(edgesTyped);
+
+
     return {
         //Uint32Array
         //out degree by node idx
@@ -2892,7 +2900,11 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
         //Uint32Array [work item number by node idx]
         srcToWorkItem: srcToWorkItem,
 
-        edgeStartEndIdxsTyped: edgeStartEndIdxsTyped
+        edgeStartEndIdxsTyped: edgeStartEndIdxsTyped,
+
+        heights,
+
+        seqLens
     };
 };
 
