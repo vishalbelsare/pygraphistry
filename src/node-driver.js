@@ -52,6 +52,7 @@ function graphCounts(graph) {
     var selectedPointIndexes = {num: numSelectedPointIndexes, offset: offsetSelectedPointIndexes};
     var forwardsEdgeStartEndIdxs = {num: numForwardsEdgeStartEndIdxs, offset: offsetEdgeStartEndIdxs};
     var backwardsEdgeStartEndIdxs = {num: numBackwardsEdgeStartEndIdxs, offset: offsetEdgeStartEndIdxs};
+    var onePerEdge = {num: numEdges/2, offset: 0};
 
     var counts = {
         curPoints: point,
@@ -60,7 +61,9 @@ function graphCounts(graph) {
         pointSizes: point,
         pointColors: point,
         edgeColors: edge,
-        edgeHeights: edge,
+        edgeHeights: onePerEdge,
+        edgeSeqLens: onePerEdge,
+        forwardsEdgeToUnsortedEdge: onePerEdge,
         curMidPoints: midPoint,
         midSpringsPos: midEdge,
         midSpringsColorCoord: midEdge,
