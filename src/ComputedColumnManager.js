@@ -45,11 +45,11 @@ var defaultLocalBuffers = {
         graphComponentType: 'edge',
         version: 0,
         dependencies: [
-            ['forwardsEdges', 'hostBuffer']
+            ['unsortedEdges', 'hostBuffer']
         ],
-        computeAllValues: function (forwardsEdges, outArr, numGraphElements) {
+        computeAllValues: function (unsortedEdges, outArr, numGraphElements) {
             for (var i = 0; i < outArr.length; i++) {
-                outArr[i] = forwardsEdges.edgesTyped[i];
+                outArr[i] = unsortedEdges[i];
             }
             return outArr;
         }
@@ -119,16 +119,14 @@ var defaultLocalBuffers = {
         graphComponentType: 'edge',
         version: 0,
         dependencies: [
-            ['forwardsEdges', 'hostBuffer'],
+            ['unsortedEdges', 'hostBuffer'],
             ['pointColors', 'localBuffer']
         ],
 
-        computeAllValues: function (forwardsEdges, pointColors, outArr, numGraphElements) {
-
-            var edgesTyped = forwardsEdges.edgesTyped;
+        computeAllValues: function (unsortedEdges, pointColors, outArr, numGraphElements) {
 
             for (var idx = 0; idx < outArr.length; idx++) {
-                var nodeIdx = edgesTyped[idx];
+                var nodeIdx = unsortedEdges[idx];
                 outArr[idx] = pointColors[nodeIdx];
             }
 
@@ -148,25 +146,7 @@ var defaultLocalBuffers = {
         computeSingleValue: function (defaultPointSize, idx, numGraphElements) {
             return defaultPointSize;
         }
-    }),
-
-    edgeHeights: new ComputedColumnSpec({
-        arrType: Float32Array,
-        type: 'number',
-        filterable: true,
-        index: 'sortedEdge',
-        numberPerGraphComponent: 2,
-        graphComponentType: 'edge',
-        version: 0,
-        dependencies: [
-
-        ],
-        computeSingleValue: function (idx, numGraphElements) {
-            // TODO: Do we need this?
-            return 0;
-        }
     })
-
 };
 
 

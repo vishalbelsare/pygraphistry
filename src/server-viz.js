@@ -137,14 +137,8 @@ function sliceSelection(dataFrame, type, indices, start, end, sort_by, ascending
     // TODO: Speed this up / cache sorting. Actually, put this into dataframe itself.
     // Only using permutation out here because this should be pushed into dataframe.
     var sortCol = dataFrame.getColumnValues(sort_by, type);
-    var sortToUnsortedIdx = dataFrame.getHostBuffer('forwardsEdges').edgePermutationInverseTyped;
     var taggedSortCol = _.map(indices, function (idx) {
-        if (type === 'edge') {
-            return [sortCol[sortToUnsortedIdx[idx]], idx];
-        } else {
-            return [sortCol[idx], idx];
-        }
-
+        return [sortCol[idx], idx];
     });
 
     var sortedTags = taggedSortCol.sort(function (val1, val2) {

@@ -744,8 +744,7 @@ function setEdges(renderer, simulator, unsortedEdges, forwardsEdges, backwardsEd
     simulator.dataframe.loadLocalBuffer('edgeHeights', forwardsEdges.heights);
     simulator.dataframe.loadLocalBuffer('edgeSeqLens', forwardsEdges.seqLens);
 
-    var logicalEdges = forwardsEdges.edgesTyped;
-    simulator.tickBuffers(['logicalEdges', 'forwardsEdgeStartEndIdxs', 'backwardsEdgeStartEndIdxs',
+    simulator.tickBuffers(['forwardsEdgeStartEndIdxs', 'backwardsEdgeStartEndIdxs',
             'edgeHeights', 'edgeSeqLens'
     ]);
 

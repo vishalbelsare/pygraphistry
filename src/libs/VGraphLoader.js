@@ -101,7 +101,6 @@ var attributeLoaders = function(graph) {
                     }
                     return outArr;
                 });
-                desc.setIndex('sortedEdge');
 
                 ccManager.addComputedColumn(graph.dataframe, 'localBuffer', 'edgeColors', desc);
             },
@@ -176,9 +175,8 @@ var attributeLoaders = function(graph) {
                 graph.dataframe.loadColumn('__edgeWeights', 'edge', valueObj);
 
                 var computeAllEdgeWeightFunction = function (edgeWeights, edges, outArr, numGraphElements) {
-                    var perm = edges.edgePermutationInverseTyped;
                     for (var i = 0; i < edgeWeights.length; i++) {
-                        outArr[i] = edgeWeights[perm[i]];
+                        outArr[i] = edgeWeights[i];
                     }
                     return outArr;
                 };
