@@ -236,6 +236,18 @@ var models = {
             'normalize': false
         }
     },
+    'forwardsEdgeToUnsortedEdge': {
+        'forwardsEdgeToUnsortedEdge': {
+            'datasource': VBODataSources.HOST,
+            'index': true,
+            'type': 'UNSIGNED_INT',
+            'hint': DrawOptions.STATIC_DRAW,
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
     'selectedPointIndexes': {
         'curIdx': {
             'datasource': VBODataSources.HOST,
@@ -774,6 +786,7 @@ var items = {
             'logicalEdges': ['logicalEdges', 'curIdx'],
             'edgeHeights': ['edgeHeights', 'edgeHeight'],
             'edgeSeqLens': ['edgeSeqLens', 'edgeSeqLen'],
+            'forwardsEdgeToUnsortedEdge': ['forwardsEdgeToUnsortedEdge', 'forwardsEdgeToUnsortedEdge'],
             'curMidPoints': ['curMidPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor'],
             'startPos': ['midSpringsStarts', 'startPos'],
@@ -799,6 +812,7 @@ var items = {
             'logicalEdges': ['logicalEdges', 'curIdx'],
             'edgeHeights': ['edgeHeights', 'edgeHeight'],
             'edgeSeqLens': ['edgeSeqLens', 'edgeSeqLen'],
+            'forwardsEdgeToUnsortedEdge': ['forwardsEdgeToUnsortedEdge', 'forwardsEdgeToUnsortedEdge'],
             'curMidPoints': ['curMidPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor'],
             'startPos': ['midSpringsStarts', 'startPos'],

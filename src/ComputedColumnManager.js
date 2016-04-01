@@ -55,6 +55,26 @@ var defaultLocalBuffers = {
         }
     }),
 
+    forwardsEdgeToUnsortedEdge: new ComputedColumnSpec({
+        arrType: Uint32Array,
+        type: 'number',
+        numberPerGraphComponent: 1,
+        graphComponentType: 'edge',
+        version: 0,
+        dependencies: [
+            ['forwardsEdges', 'hostBuffer']
+        ],
+        computeAllValues: function (forwardsEdges, outArr, numGraphElements) {
+
+            var map = forwardsEdges.edgePermutationInverseTyped;
+
+            for (var i = 0; i < outArr.length; i++) {
+                outArr[i] = map[i];
+            }
+            return outArr;
+        }
+    }),
+
     forwardsEdgeStartEndIdxs: new ComputedColumnSpec({
         arrType: Uint32Array,
         type: 'number',

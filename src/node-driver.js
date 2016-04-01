@@ -63,6 +63,7 @@ function graphCounts(graph) {
         edgeColors: edge,
         edgeHeights: onePerEdge,
         edgeSeqLens: onePerEdge,
+        forwardsEdgeToUnsortedEdge: onePerEdge,
         curMidPoints: midPoint,
         midSpringsPos: midEdge,
         midSpringsColorCoord: midEdge,
