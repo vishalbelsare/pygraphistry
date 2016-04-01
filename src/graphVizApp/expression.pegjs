@@ -168,7 +168,7 @@ MemberOfOperator =
   IN / MEMBEROF
 
 MemberOfSetPredicate "in set"
-  = operator:MemberOfOperator !IdentifierPart __ value:Expression {
+  = operator:MemberOfOperator !IdentifierPart __ value:MemberAccess {
     return {
       type: 'MemberOfExpression',
       operator: operator,
@@ -716,7 +716,7 @@ IsPredicate
   }
 
 InPredicate
-  = left:MemberAccess __ operator:IN __ right:Expression {
+  = left:MemberAccess __ operator:IN __ right:UnaryExpression {
     return {
       type: 'BinaryPredicate',
       operator: joinWords(operator),
@@ -732,7 +732,7 @@ InPredicate
       right: elements
     };
   }
-  / left:MemberAccess __ negation:NOT __ operator:IN __ right:Expression {
+  / left:MemberAccess __ negation:NOT __ operator:IN __ right:UnaryExpression {
     return {
       type: 'NotExpression',
       operator: negation,
