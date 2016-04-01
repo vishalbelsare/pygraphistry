@@ -126,7 +126,7 @@ function scalingFromSpec (scalingSpec) {
     return scaling;
 }
 
-function inferEncodingSpec (aggregations, attributeName, encodingType, variation, binning) {
+function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingType, variation, binning) {
     var summary = aggregations.getSummary();
     var scalingType, domain, range;
     var defaultDomain = [summary.minValue, summary.maxValue];
@@ -168,8 +168,11 @@ function inferEncodingSpec (aggregations, attributeName, encodingType, variation
             if (attributeName.match(/color/i)) {
                 scalingType = 'identity';
                 domain = distinctValues;
+                range = distinctValues;
+            } else {
+                return inferColorScalingSpecFor(summary, variation, defaultDomain, distinctValues, binning);
             }
-            return inferColorScalingSpecFor(summary, variation, defaultDomain, distinctValues, binning);
+            break;
         case 'title':
         case 'pointTitle':
         case 'edgeTitle':
@@ -181,11 +184,11 @@ function inferEncodingSpec (aggregations, attributeName, encodingType, variation
         default:
             throw new Error('No encoding found for: ' + encodingType);
     }
-    return {
+    return _.defaults(encodingSpec || {}, {
         scalingType: scalingType,
         domain: domain,
         range: range
-    };
+    });
 }
 
 /** A legend per the binning.
@@ -235,9 +238,52 @@ function legendForBins (aggregations, scaling, binning) {
     return legend;
 }
 
+/** @typedef {Object} EncodingSpec
+ *
+ */
+
+/**
+ * @param {Dataframe} dataframe
+ * @param {String} columnName
+ * @param {String} type
+ * @param {String} encodingType
+ * @returns {EncodingSpec}
+ */
+function getEncodingSpecFor (dataframe, columnName, type, encodingType) {
+    var column = dataframe.getColumn(columnName, type);
+    if (column === undefined) { return undefined; }
+    var encodingPreferences = column.encodingPreferences;
+    if (encodingPreferences === undefined) { return undefined; }
+    if (encodingType === undefined) {
+        return undefined;
+    } else if (encodingPreferences.hasOwnProperty(encodingType)) {
+        return encodingPreferences[encodingType];
+    } else {
+        return undefined;
+    }
+}
+
+
+/**
+ * @param {Dataframe} dataframe
+ * @param {String} columnName
+ * @param {String} type
+ * @param {String} encodingType
+ * @param {EncodingSpec} encodingSpec
+ */
+function saveEncodingSpec (dataframe, columnName, type, encodingType, encodingSpec) {
+    var column = dataframe.getColumn(columnName, type);
+    if (column === undefined) { return undefined; }
+    if (column.encodingPreferences === undefined) { column.encodingPreferences = {}; }
+    var encodingPreferences = column.encodingPreferences;
+    encodingPreferences[encodingType] = encodingSpec;
+}
+
+
 function inferEncoding (dataframe, type, attributeName, encodingType, variation, binning) {
     var aggregations = dataframe.getColumnAggregations(attributeName, type, true);
-    var encodingSpec = inferEncodingSpec(aggregations, attributeName, encodingType, variation, binning);
+    var encodingSpec = getEncodingSpecFor(dataframe, attributeName, type, encodingType);
+    encodingSpec = inferEncodingSpec(encodingSpec, aggregations, attributeName, encodingType, variation, binning);
     var scaling = scalingFromSpec(encodingSpec);
     var legend = legendForBins(aggregations, scaling, binning);
     return {
@@ -251,6 +297,8 @@ module.exports = {
     inferEncoding: inferEncoding,
     scalingFromSpec: scalingFromSpec,
     inferEncodingSpec: inferEncodingSpec,
+    getEncodingSpecFor: getEncodingSpecFor,
+    saveEncodingSpec: saveEncodingSpec,
     legendForBins: legendForBins,
     bufferNameForEncodingType: function (encodingType) {
         return encodingType && (encodingType + 's');
