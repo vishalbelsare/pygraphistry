@@ -744,6 +744,13 @@ ExpressionCodeGenerator.prototype = {
                     }, this);
                     subExprString = args[1] + '.indexOf(' + args[0] + ') !== -1';
                     return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+                } else if (operator === '**') {
+                    precedence = this.precedenceOf('(');
+                    args = _.map([ast.left, ast.right], function (arg) {
+                        return this.expressionStringForAST(arg, bindings, depth2, precedence);
+                    }, this);
+                    subExprString = 'Math.pow(' + args[0] + ', ' + args[1] + ')';
+                    return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
                 }
                 operator = this.translateOperator(operator);
                 precedence = this.precedenceOf(operator);
