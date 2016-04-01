@@ -965,11 +965,24 @@ function VizServer(app, socket, cachedVBOs) {
     this.socket.on('inspect_header', function (nothing, cb) {
         logger.info('inspect header');
         this.graph.take(1).do(function (graph) {
+
+            // Exclude prepended with __
+            // TODO FIXME treat this in a generic way across UI elements
+            var nodeKeys = graph.dataframe.getAttributeKeys('point')
+                .filter((key) => {
+                    return !(key[0] === '_' && key[1] === '_');
+                });
+            var edgeKeys = graph.dataframe.getAttributeKeys('edge')
+                .filter((key) => {
+                    return !(key[0] === '_' && key[1] === '_');
+                });
+
+
             cb({
                 success: true,
                 header: {
-                    nodes: graph.dataframe.getAttributeKeys('point'),
-                    edges: graph.dataframe.getAttributeKeys('edge')
+                    nodes: nodeKeys,
+                    edges: edgeKeys
                 },
                 urns: {
                     nodes: 'read_node_selection',
