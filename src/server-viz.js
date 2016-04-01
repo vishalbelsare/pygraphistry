@@ -1514,7 +1514,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     });
 
 
-    logger.debug({activeBuffers: activeBuffers, activeTextures: activeTextures, activePrograms: activePrograms}, "Begining stream");
+    logger.debug({activeBuffers: activeBuffers, activeTextures: activeTextures, activePrograms: activePrograms}, 'Beginning stream');
 
     var graph = this.graph;
     var animationStep = this.animationStep;
