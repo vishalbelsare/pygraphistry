@@ -1093,16 +1093,20 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
     if (initialHighlightLengths <= 1) {
         // Extend edges with neighbors of nodes
         // BAD because uses pushes.
-        _.each(highlightedNodeIndices, function (val) {
-            var stride = 2 * val;
-            var start = forwardsEdgeStartEndIdxs[stride];
-            var end = forwardsEdgeStartEndIdxs[stride + 1];
-            while (start < end) {
-                var edgeIdx = start;
-                highlightedEdgeIndices.push(edgeIdx);
-                start++;
-            }
-        });
+
+
+        // TODO FIXME: Reenable neighbor highlights
+
+        // _.each(highlightedNodeIndices, function (val) {
+        //     var stride = 2 * val;
+        //     var start = forwardsEdgeStartEndIdxs[stride];
+        //     var end = forwardsEdgeStartEndIdxs[stride + 1];
+        //     while (start < end) {
+        //         var edgeIdx = start;
+        //         highlightedEdgeIndices.push(edgeIdx);
+        //         start++;
+        //     }
+        // });
 
         // Extend node indices with edge endpoints
         _.each(highlightedEdgeIndices, function (val) {
