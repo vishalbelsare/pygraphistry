@@ -546,6 +546,7 @@ minusminus = '--'
 minus = '-'
 plus = '+'
 times = '*'
+power = '**'
 divide = '/'
 modulo = '%'
 not_op = '~'
@@ -912,7 +913,8 @@ MultiplicativeExpression
     { return buildBinaryExpression(first, rest); }
 
 MultiplicativeOperator "multiplicative operator"
-  = times
+  = power
+  / times
   / divide
   / modulo
 
