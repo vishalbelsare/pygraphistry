@@ -268,7 +268,7 @@ Dataframe.prototype.presentVizSet = function (vizSet) {
  * There may be other, smarter solutions if we cache strategically, or use a query planner.
  * @param {?DataframeMask[]} selectionMasks
  * @param {?DataframeMask[]} exclusionMasks
- * @param {Object.<Number=Infinity>} limits
+ * @param {Object.<Number>} limits
  * @returns ?DataframeMask
  */
 Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, limits) {

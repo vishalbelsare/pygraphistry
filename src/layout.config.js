@@ -54,7 +54,7 @@ DiscreteParam.prototype.constructor = DiscreteParam;
 DiscreteParam.prototype.toClient = function (name, algoName) {
     var base = Param.prototype.toClient.call(this, name, algoName);
     return _.extend(base, {min: this.min, max: this.max, step: this.step});
-}
+};
 
 function BoolParam(name, value) {
     Param.call(this, 'bool', name, value);
