@@ -646,6 +646,10 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     newData.localBuffers.selectedEdgeIndexes = this.lastSelectionMasks.typedEdgeIndexes();
     newData.localBuffers.selectedPointIndexes = this.lastSelectionMasks.typedPointIndexes();
 
+    // Copy in edge heights and seqLens
+    newData.localBuffers.edgeHeights = forwardsEdges.heights;
+    newData.localBuffers.edgeSeqLens = forwardsEdges.seqLens;
+
     ///////////////////////////////////////////////////////////////////////////
     // Copy non-GPU buffers
     ///////////////////////////////////////////////////////////////////////////
@@ -2827,6 +2831,53 @@ function computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoint
     return edgeStartEndIdxsTyped;
 }
 
+function computeEdgeHeightInfo (edges) {
+
+    var numEdges = edges.length / 2;
+
+    var heights = new Uint32Array(numEdges);
+    var seqLens = new Uint32Array(numEdges);
+
+
+    var prevSrcIdx = -1;
+    var prevDstIdx = -1;
+    var edgeSeqLen = 1;
+    var heightCounter = 0;
+    var edgeSeqLen = 1;
+
+    for (var i = 0; i < numEdges; i ++) {
+
+        var srcIdx = edges[i*2];
+        var dstIdx = edges[i*2 + 1];
+
+        if (prevSrcIdx === srcIdx && prevDstIdx === dstIdx) {
+            heightCounter++;
+        } else {
+            heightCounter = 0;
+            var j;
+
+            // TODO: Make this faster and clearer
+            for (j = i + 1;
+                    j < numEdges &&
+                    srcIdx === edges[2 * j] &&
+                    dstIdx === edges[2 * j + 1];
+                    j++) {
+            }
+            edgeSeqLen = j - i + 1;
+        }
+
+        heights[i] = heightCounter;
+        seqLens[i] = edgeSeqLen;
+
+        prevSrcIdx = srcIdx;
+        prevDstIdx = dstIdx;
+    }
+
+    return {
+        heights,
+        seqLens
+    };
+}
 
 Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulated, masks, pointOriginalLookup) {
 
@@ -2856,6 +2907,9 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
 
     var edgeStartEndIdxsTyped = computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoints);
 
+    var {heights, seqLens} = computeEdgeHeightInfo(edgesTyped);
+
+
     return {
         //Uint32Array
         //out degree by node idx
@@ -2882,7 +2936,11 @@ Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulat
         //Uint32Array [work item number by node idx]
         srcToWorkItem: srcToWorkItem,
 
-        edgeStartEndIdxsTyped: edgeStartEndIdxsTyped
+        edgeStartEndIdxsTyped: edgeStartEndIdxsTyped,
+
+        heights,
+
+        seqLens
     };
 };
 

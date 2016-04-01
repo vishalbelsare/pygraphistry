@@ -212,6 +212,30 @@ var models = {
             'normalize': false
         }
     },
+    'edgeHeights': {
+        'edgeHeight': {
+            'datasource': VBODataSources.HOST,
+            'index': true,
+            'type': 'UNSIGNED_INT',
+            'hint': DrawOptions.STATIC_DRAW,
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
+    'edgeSeqLens': {
+        'edgeSeqLen': {
+            'datasource': VBODataSources.HOST,
+            'index': true,
+            'type': 'UNSIGNED_INT',
+            'hint': DrawOptions.STATIC_DRAW,
+            'count': 1,
+            'offset': 0,
+            'stride': 0,
+            'normalize': false
+        }
+    },
     'selectedPointIndexes': {
         'curIdx': {
             'datasource': VBODataSources.HOST,
@@ -541,17 +565,6 @@ var models = {
             'normalize': false
         }
     },
-    'edgeHeights': {
-        'edgeHeight':  {
-            'datasource': VBODataSources.HOST,
-            'type': 'FLOAT',
-            'hint': 'STATIC_DRAW',
-            'count': 1,
-            'offset': 0,
-            'stride': 0,
-            'normalize': true
-        }
-    },
     'arrowPointSizes': {
         'pointSize':  {
             'datasource': VBODataSources.CLIENT,
@@ -759,6 +772,8 @@ var items = {
         },
         'otherBuffers': {
             'logicalEdges': ['logicalEdges', 'curIdx'],
+            'edgeHeights': ['edgeHeights', 'edgeHeight'],
+            'edgeSeqLens': ['edgeSeqLens', 'edgeSeqLen'],
             'curMidPoints': ['curMidPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor'],
             'startPos': ['midSpringsStarts', 'startPos'],
@@ -782,6 +797,8 @@ var items = {
         },
         'otherBuffers': {
             'logicalEdges': ['logicalEdges', 'curIdx'],
+            'edgeHeights': ['edgeHeights', 'edgeHeight'],
+            'edgeSeqLens': ['edgeSeqLens', 'edgeSeqLen'],
             'curMidPoints': ['curMidPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor'],
             'startPos': ['midSpringsStarts', 'startPos'],
