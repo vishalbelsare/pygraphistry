@@ -195,14 +195,14 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
                 activeSelection.onNext(new VizSlice({point: pointIndexes, edge: edgeIndexes}));
             }).take(1).subscribe(_.identity, util.makeErrorHandler('Getting indexes of selections.'));
 
-        var bufUpdates = ['curPoints', 'logicalEdges', 'edgeColors', 'pointSizes', 'curMidPoints'].map(function (bufName) {
+        var bufUpdates = ['curPoints', 'logicalEdges', 'edgeColors', 'pointSizes', 'curMidPoints', 'edgeHeights', 'edgeSeqLens'].map(function (bufName) {
             var bufUpdate = hostBuffers[bufName] || Rx.Observable.return();
             return bufUpdate.do(function (data) {
                 that.appSnapshot.buffers[bufName] = data;
             });
         });
         return vboVersions
-            .zip(bufUpdates[0], bufUpdates[1], bufUpdates[2], bufUpdates[3], bufUpdates[4]);
+            .zip(bufUpdates[0], bufUpdates[1], bufUpdates[2], bufUpdates[3], bufUpdates[4], bufUpdates[5], bufUpdates[6]);
 
     }).switchMap(function (zippedArray) {
         var vboVersions = zippedArray[0];
@@ -478,6 +478,10 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
     var that = this;
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
+
+    var edgeHeightBuffer = new Uint32Array(bufferSnapshots.edgeHeights.buffer);
+    var edgeSeqLenBuffer = new Uint32Array(bufferSnapshots.edgeSeqLens.buffer);
+
     var numEdges = logicalEdges.length / 2;
 
     var numVertices = (2 * numEdges) * (numRenderedSplits + 1);
@@ -536,20 +540,9 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
         dstPointX = curPoints[2 * dstPointIdx];
         dstPointY = curPoints[2 * dstPointIdx + 1];
 
-        //edgeHeight +/- 50%
-        if (prevSrcIdx === srcPointIdx && prevDstIdx === dstPointIdx) {
-            heightCounter++;
-        } else {
-            heightCounter = 0;
-            var i;
-            for (i = edgeIndex + 1;
-                    i < numEdges &&
-                    srcPointIdx === logicalEdges[2 * i] &&
-                    dstPointIdx === logicalEdges[2 * i + 1];
-                    i++) {
-            }
-            edgeSeqLen = i - edgeIndex + 1;
-        }
+        heightCounter = edgeHeightBuffer[edgeIndex];
+        edgeSeqLen = edgeSeqLenBuffer[edgeIndex];
+
         prevSrcIdx = srcPointIdx;
         prevDstIdx = dstPointIdx;
 
@@ -1021,6 +1014,21 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
     that.appSnapshot.fullScreenBufferDirty = false;
 };
 
+function getSortedConnectedEdges (nodeId, forwardsEdgeStartEndIdxs) {
+    var resultSet = [];
+
+    var stride = 2 * nodeId;
+    var start = forwardsEdgeStartEndIdxs[stride];
+    var end = forwardsEdgeStartEndIdxs[stride + 1];
+    while (start < end) {
+        var edgeIdx = start;
+        resultSet.push(edgeIdx);
+        start++;
+    }
+
+    return resultSet;
+}
+
 /*
  * Render mouseover effects. These should only occur during a quiet state.
  *
@@ -1078,6 +1086,8 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
     var hostBuffers = renderState.get('hostBuffersCache');
     var forwardsEdgeStartEndIdxs = new Uint32Array(hostBuffers.forwardsEdgeStartEndIdxs.buffer);
 
+    var forwardsEdgeToUnsortedEdge = new Uint32Array(hostBuffers.forwardsEdgeToUnsortedEdge.buffer);
+
     var hostNodePositions = new Float32Array(hostBuffers.curPoints.buffer);
     var hostNodeSizes = hostBuffers.pointSizes;
     var hostNodeColors = new Uint32Array(hostBuffers.pointColors.buffer);
@@ -1100,15 +1110,14 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
     if (initialHighlightLengths <= 1) {
         // Extend edges with neighbors of nodes
         // BAD because uses pushes.
+
         _.each(highlightedNodeIndices, function (val) {
-            var stride = 2 * val;
-            var start = forwardsEdgeStartEndIdxs[stride];
-            var end = forwardsEdgeStartEndIdxs[stride + 1];
-            while (start < end) {
-                var edgeIdx = start;
-                highlightedEdgeIndices.push(edgeIdx);
-                start++;
-            }
+            var sortedConnectedEdges = getSortedConnectedEdges(val, forwardsEdgeStartEndIdxs);
+            _.each(sortedConnectedEdges, (sortedEdge) => {
+                var unsortedEdge = forwardsEdgeToUnsortedEdge[sortedEdge];
+                highlightedEdgeIndices.push(unsortedEdge);
+            });
+
         });
 
         // Extend node indices with edge endpoints
