@@ -237,7 +237,7 @@ ORExpression
     { return buildBinaryPredicate(first, rest); }
 
 LimitClause "limit"
-  = LIMIT __ limit:Expression
+  = LIMIT __ limit:ArithmeticExpression
     { return { type: 'Limit', value: limit } }
 
 Expression
@@ -322,7 +322,7 @@ FunctionInvocation "function call"
   }
 
 AggregateInvocation "aggregate invocations"
-  = callee:FunctionIdentifier __ OF __ argument:Expression __ PER __ partition:Expression
+  = callee:FunctionIdentifier __ OF __ argument:PrimaryExpression __ PER __ partition:PrimaryExpression
   {
     return {
       type: 'AggregateInvocation',
@@ -331,7 +331,7 @@ AggregateInvocation "aggregate invocations"
       argument: argument
     };
   }
-  / callee:FunctionIdentifier __ OF __ Expression
+  / callee:FunctionIdentifier __ OF __ PrimaryExpression
   {
     return {
       type: 'AggregateInvocation',
@@ -347,7 +347,7 @@ TimeTypeName "time type name"
   / TIMESTAMP
 
 TimeExpression "time"
-  = typeName:TimeTypeName __ expression:Expression
+  = typeName:TimeTypeName __ expression:PrimaryExpression
   {
     return {
       type: 'FunctionCall',
