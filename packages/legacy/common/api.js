@@ -49,10 +49,6 @@ function makeVizToken(key, datasetName) {
 }
 
 
-function checkSSL(req) {
-   }
-
-
 function init (app) {
     var nextEta = Date.now();
     var maxReqRate = 1000;
@@ -61,10 +57,6 @@ function init (app) {
     // allow at most 1 req per second
     app.get('/api/encrypt', function(req, res) {
         logger.info('encrypting', req.query.text);
-
-        if (!req.secure && req.hostname !== 'localhost') {
-            return res.json({success: false, error: 'HTTPS required'});
-        }
 
 
         //immediate if not used in awhile, otherwise in 1s after next queued
@@ -87,10 +79,6 @@ function init (app) {
     // allow unsecure local
     function decryptOrCheck(checkOnly, req, res) {
         logger.info('decrypting', req.query.text);
-
-        if (!req.secure && req.hostname !== 'localhost') {
-            return res.json({success: false, error: 'HTTPS required'});
-        }
 
         //immediate if not used in awhile, otherwise in 1s after next queued
         var now = Date.now();
