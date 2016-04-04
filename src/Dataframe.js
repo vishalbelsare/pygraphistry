@@ -141,7 +141,6 @@ function makeEmptyData () {
  * Takes in a DataframeMask, and returns a new DataframeMask
  * that is pruned to remove dangling edges. The result's edges
  * must all begin and end in the set of points.
- * Relative to forwardsEdges (so sorted)
  * @param {DataframeMask} oldMask - The mask to be pruned
  * @returns DataframeMask
  */
@@ -594,7 +593,6 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // Filter out to new edges/points arrays.
     var filteredEdges = new Uint32Array(this.typedArrayCache.filteredEdges.buffer, 0, numEdges * 2);
     var originalEdges = rawdata.hostBuffers.unsortedEdges;
-    //var originalForwardsEdges = rawdata.hostBuffers.forwardsEdges.edgesTyped;
 
     // We start unsorted because we're working with the rawdata first.
     var unsortedEdgeMask = new Uint32Array(this.typedArrayCache.unsortedEdgeMask.buffer, 0, numEdges);
@@ -644,10 +642,6 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // TODO index translation (filter scope)
     newData.localBuffers.selectedEdgeIndexes = this.lastSelectionMasks.typedEdgeIndexes();
     newData.localBuffers.selectedPointIndexes = this.lastSelectionMasks.typedPointIndexes();
-
-    // Copy in edge heights and seqLens
-    newData.localBuffers.edgeHeights = forwardsEdges.heights;
-    newData.localBuffers.edgeSeqLens = forwardsEdges.seqLens;
 
     ///////////////////////////////////////////////////////////////////////////
     // Copy non-GPU buffers

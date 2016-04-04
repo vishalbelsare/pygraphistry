@@ -92,6 +92,42 @@ var defaultLocalBuffers = {
         }
     }),
 
+    edgeHeights: new ComputedColumnSpec({
+        arrType: Uint32Array,
+        type: 'number',
+        numberPerGraphComponent: 1,
+        graphComponentType: 'edge',
+        version: 0,
+        dependencies: [
+            ['forwardsEdges', 'hostBuffer']
+        ],
+        computeAllValues: function (forwardsEdges, outArr, numGraphElements) {
+            var perm = forwardsEdges.edgePermutation;
+            for (var i = 0; i < outArr.length; i++) {
+                outArr[i] = forwardsEdges.heights[perm[i]];
+            }
+            return outArr;
+        }
+    }),
+
+    edgeSeqLens: new ComputedColumnSpec({
+        arrType: Uint32Array,
+        type: 'number',
+        numberPerGraphComponent: 1,
+        graphComponentType: 'edge',
+        version: 0,
+        dependencies: [
+            ['forwardsEdges', 'hostBuffer']
+        ],
+        computeAllValues: function (forwardsEdges, outArr, numGraphElements) {
+            var perm = forwardsEdges.edgePermutation;
+            for (var i = 0; i < outArr.length; i++) {
+                outArr[i] = forwardsEdges.seqLens[perm[i]];
+            }
+            return outArr;
+        }
+    }),
+
     backwardsEdgeStartEndIdxs: new ComputedColumnSpec({
         arrType: Uint32Array,
         type: 'number',
