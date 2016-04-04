@@ -295,12 +295,18 @@ ExclusionsPanel.prototype.toggleVisibility = function (newVisibility) {
     $panel.css('visibility', newVisibility ? 'visible': 'hidden');
 };
 
-ExclusionsPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButton) {
+ExclusionsPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButton, $resetElements) {
     var panelToggles = toolbarClicks.filter(function (elt) {
-        return elt === $panelButton[0];
-    }).map(function () {
+        return elt === $panelButton[0] || $resetElements.find(elt);
+    }).map(function (elt) {
         // return the target state (boolean negate)
-        return !this.isVisible();
+        if (elt === $panelButton[0]) {
+            return !this.isVisible();
+        } else if ($resetElements.find(elt)) {
+            return false;
+        } else {
+            return false;
+        }
     }.bind(this));
     this.togglesSubscription = panelToggles.do(function (newVisibility) {
         $panelButton.children('i').toggleClass('toggle-on', newVisibility);
