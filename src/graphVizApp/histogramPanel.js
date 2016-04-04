@@ -203,9 +203,6 @@ function HistogramsPanel(globalStats, filtersPanel,
                 panel.updateHistogram(vizContainer, histogram, attribute);
             }
 
-            if (!$.urlParam('beta')) {
-                $('.encode-attribute', this.$el).hide();
-            }
             $('[data-toggle="tooltip"]', this.$el).tooltip();
 
             return this;
