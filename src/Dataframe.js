@@ -154,7 +154,7 @@ Dataframe.prototype.pruneMaskEdges = function (oldMask) {
     });
 
     var edgeMask = [];
-    var edges = this.rawdata.hostBuffers.forwardsEdges.edgesTyped;
+    var edges = this.rawdata.hostBuffers.unsortedEdges;
 
     oldMask.mapEdgeIndexes(function (edgeIdx) {
         var src = edges[2*edgeIdx];
