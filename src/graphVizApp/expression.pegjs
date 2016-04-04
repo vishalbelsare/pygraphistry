@@ -164,18 +164,6 @@ CASEExpression "case"
       };
     }
 
-MemberOfOperator =
-  IN / MEMBEROF
-
-MemberOfSetPredicate "in set"
-  = operator:MemberOfOperator !IdentifierPart __ value:MemberAccess {
-    return {
-      type: 'MemberOfExpression',
-      operator: operator,
-      value: value
-    };
-  }
-
 ConditionalBranchExpression
   = first:(
     IF __ condition:Expression __ THEN __ result:Expression {
@@ -216,35 +204,56 @@ ConditionalExpression "conditional"
       };
     }
 
-NOTExpression "not"
-  = operator:NOT __ argument:NOTExpression {
+NOTPredicate "not"
+  = operator:NOT __ argument:NOTPredicate {
       return {
         type: 'NotExpression',
         operator: operator,
         value: argument
       };
     }
-  / EqualityPredicate
+  / KeywordPredicate
 
-ANDExpression
-  = first:NOTExpression
-    rest:(__ AND __ NOTExpression)*
+ANDPredicate
+  = first:NOTPredicate
+    rest:(__ AND __ NOTPredicate)*
     { return buildBinaryPredicate(first, rest); }
 
-ORExpression
-  = first:ANDExpression
-    rest:(__ OR __ ANDExpression)*
+ORPredicate
+  = first:ANDPredicate
+    rest:(__ OR __ ANDPredicate)*
     { return buildBinaryPredicate(first, rest); }
 
 LimitClause "limit"
   = LIMIT __ limit:ArithmeticExpression
     { return { type: 'Limit', value: limit } }
 
+MemberOfOperator =
+  IN / MEMBEROF
+
+MemberOfSetPredicate "in set"
+  = operator:MemberOfOperator !IdentifierPart __ value:ArithmeticExpression {
+    return {
+      type: 'MemberOfExpression',
+      operator: operator,
+      value: value
+    };
+  }
+
+KeywordPredicate
+  = LikePredicate
+  / MemberOfSetPredicate
+  / RegexPredicate
+  / BetweenPredicate
+  / InPredicate
+  / PostfixExpression
+  / IsPredicate
+  / EqualityPredicate
+
 Expression
   = CASEExpression
   / ConditionalExpression
-  / MemberOfSetPredicate
-  / ORExpression
+  / ORPredicate
 
 // Syntactically, predicates and expressions are mixable.
 
@@ -322,7 +331,7 @@ FunctionInvocation "function call"
   }
 
 AggregateInvocation "aggregate invocations"
-  = callee:FunctionIdentifier __ OF __ argument:PrimaryExpression __ PER __ partition:PrimaryExpression
+  = callee:FunctionIdentifier __ OF __ argument:ArithmeticExpression __ PER __ partition:ArithmeticExpression
   {
     return {
       type: 'AggregateInvocation',
@@ -331,7 +340,7 @@ AggregateInvocation "aggregate invocations"
       argument: argument
     };
   }
-  / callee:FunctionIdentifier __ OF __ PrimaryExpression
+  / callee:FunctionIdentifier __ OF __ argument:ArithmeticExpression
   {
     return {
       type: 'AggregateInvocation',
@@ -347,7 +356,7 @@ TimeTypeName "time type name"
   / TIMESTAMP
 
 TimeExpression "time"
-  = typeName:TimeTypeName __ expression:PrimaryExpression
+  = typeName:TimeTypeName __ expression:ArithmeticExpression
   {
     return {
       type: 'FunctionCall',
@@ -355,16 +364,6 @@ TimeExpression "time"
       arguments: [expression]
     };
   }
-
-PrimaryExpression
-  = BracketedIdentifier
-  / CastExpression
-  / TimeExpression
-  / FunctionInvocation
-  / Identifier
-  / LiteralValue
-  / lparen __ expression:Predicate __ rparen { return expression; }
-  / ListLiteral
 
 DecimalDigit
   = [0-9]
@@ -646,7 +645,7 @@ ComparisonPredicate
   = first:ArithmeticExpression
     rest:(__ ComparisonOperator __ ArithmeticExpression)*
     { return buildBinaryPredicate(first, rest); }
-  / LikePredicate
+  / ArithmeticExpression
 
 EqualityPredicate
   = first:ComparisonPredicate
@@ -688,7 +687,7 @@ PostfixKeyword "postfix keyword"
   / NOTNULL
 
 PostfixExpression
-  = argument:MemberAccess __ operator:PostfixKeyword {
+  = argument:ArithmeticExpression __ operator:PostfixKeyword {
       return {
         type: 'UnaryExpression',
         operator: operator,
@@ -698,7 +697,7 @@ PostfixExpression
     }
 
 IsPredicate
-  = left:MemberAccess __ operator:IS __ right:UnaryExpression {
+  = left:ArithmeticExpression __ operator:IS __ right:ArithmeticExpression {
       return {
         type: 'BinaryPredicate',
         operator: operator,
@@ -706,7 +705,7 @@ IsPredicate
         right: right
       };
     }
-  / left:MemberAccess __ operator:IS __ negation:NOT __ right:UnaryExpression {
+  / left:ArithmeticExpression __ operator:IS __ negation:NOT __ right:ArithmeticExpression {
     return {
       type: 'NotExpression',
       operator: negation,
@@ -720,7 +719,7 @@ IsPredicate
   }
 
 InPredicate
-  = left:MemberAccess __ operator:IN __ right:UnaryExpression {
+  = left:ArithmeticExpression __ operator:IN __ right:ArithmeticExpression {
     return {
       type: 'BinaryPredicate',
       operator: joinWords(operator),
@@ -728,7 +727,7 @@ InPredicate
       right: right
     };
   }
-  / left:MemberAccess __ operator:IN __ lparen ( ( elements:ElementList comma __ )+ )? __ rparen {
+  / left:ArithmeticExpression __ operator:IN __ lparen ( ( elements:ElementList comma __ )+ )? __ rparen {
     return {
       type: 'BinaryPredicate',
       operator: joinWords(operator),
@@ -736,7 +735,7 @@ InPredicate
       right: elements
     };
   }
-  / left:MemberAccess __ negation:NOT __ operator:IN __ right:UnaryExpression {
+  / left:ArithmeticExpression __ negation:NOT __ operator:IN __ right:ArithmeticExpression {
     return {
       type: 'NotExpression',
       operator: negation,
@@ -748,7 +747,7 @@ InPredicate
       }
     };
   }
-  / left:MemberAccess __ negation:NOT __ operator:IN __ lparen ( ( elements:ElementList comma __ )+ )? __ rparen {
+  / left:ArithmeticExpression __ negation:NOT __ operator:IN __ lparen ( ( elements:ElementList comma __ )+ )? __ rparen {
     return {
       type: 'NotExpression',
       operator: negation,
@@ -762,7 +761,7 @@ InPredicate
   }
 
 BetweenPredicate
-  = value:MemberAccess __ BETWEEN __ low:MemberAccess __ AND __ high:MemberAccess
+  = value:ArithmeticExpression __ BETWEEN __ low:ArithmeticExpression __ AND __ high:ArithmeticExpression
     {
       return {
           type: 'BetweenPredicate',
@@ -771,7 +770,7 @@ BetweenPredicate
           stop:  high
       };
     }
-  / value:MemberAccess __ operator:NOT __ BETWEEN __ low:MemberAccess __ AND __ high:MemberAccess
+  / value:ArithmeticExpression __ operator:NOT __ BETWEEN __ low:ArithmeticExpression __ AND __ high:ArithmeticExpression
     {
       return {
         type: 'NotExpression',
@@ -789,8 +788,8 @@ LikeOperator "text comparison"
   = LIKE / ILIKE
 
 LikePredicate "text comparison"
-  = value:MemberAccess
-    __ operator:LikeOperator __ like:MemberAccess __ ESCAPE __ escapeChar:StringLiteral
+  = value:ArithmeticExpression
+    __ operator:LikeOperator __ like:ArithmeticExpression __ ESCAPE __ escapeChar:StringLiteral
     {
       return {
         type: 'LikePredicate',
@@ -800,8 +799,8 @@ LikePredicate "text comparison"
         escapeChar: escapeChar
       };
     }
-  / value:MemberAccess
-    __ operator:LikeOperator __ like:MemberAccess
+  / value:ArithmeticExpression
+    __ operator:LikeOperator __ like:ArithmeticExpression
     {
       return {
         type: 'LikePredicate',
@@ -810,8 +809,8 @@ LikePredicate "text comparison"
         right: like
       };
     }
-  / value:MemberAccess __ negation:NOT
-    __ operator:LikeOperator __ like:MemberAccess __ ESCAPE __ escapeChar:StringLiteral
+  / value:ArithmeticExpression __ negation:NOT
+    __ operator:LikeOperator __ like:ArithmeticExpression __ ESCAPE __ escapeChar:StringLiteral
     {
       return {
         type: 'NotExpression',
@@ -825,8 +824,8 @@ LikePredicate "text comparison"
         }
       };
     }
-  / value:MemberAccess __ negation:NOT
-    __ operator:LikeOperator __ like:MemberAccess
+  / value:ArithmeticExpression __ negation:NOT
+    __ operator:LikeOperator __ like:ArithmeticExpression
     {
       return {
         type: 'NotExpression',
@@ -844,8 +843,8 @@ RegexOperator
   = REGEXP / SIMILAR __ TO
 
 RegexPredicate "regex expression"
-  = value:MemberAccess
-    __ operator:RegexOperator __ matcher:MemberAccess
+  = value:ArithmeticExpression
+    __ operator:RegexOperator __ matcher:ArithmeticExpression
     {
       return {
         type: 'RegexPredicate',
@@ -854,8 +853,8 @@ RegexPredicate "regex expression"
         right: matcher
       };
     }
-  / value:MemberAccess __ negation:NOT
-    __ operator:RegexOperator __ matcher:MemberAccess
+  / value:ArithmeticExpression __ negation:NOT
+    __ operator:RegexOperator __ matcher:ArithmeticExpression
     {
       return {
         type: 'NotExpression',
@@ -869,8 +868,18 @@ RegexPredicate "regex expression"
       };
     }
 
+PrimaryExpression
+  = BracketedIdentifier
+  / CastExpression
+  / TimeExpression
+  / FunctionInvocation
+  / Identifier
+  / LiteralValue
+  / lparen __ expression:Predicate __ rparen { return expression; }
+  / ListLiteral
+
 MemberAccess
-  = first: PrimaryExpression
+  = first:PrimaryExpression
     rest: ( __ lbracket __ property:Expression __ rbracket { return { property: property }; } )*
     {
       return buildTree(first, rest, function(result, element) {
@@ -882,22 +891,13 @@ MemberAccess
       });
     }
 
-KeywordPredicate
-  = LikePredicate
-  / RegexPredicate
-  / BetweenPredicate
-  / InPredicate
-  / PostfixExpression
-  / IsPredicate
-  / MemberAccess
-
 PrefixOperator "prefix operator"
   = minus
   / plus
   / not_op
 
 UnaryExpression
-  = operator:PrefixOperator __ argument:KeywordPredicate {
+  = operator:PrefixOperator __ argument:MemberAccess {
     return {
       type: 'UnaryExpression',
       operator: operator,
@@ -905,7 +905,7 @@ UnaryExpression
       fixity: 'prefix'
     };
   }
-  / KeywordPredicate
+  / MemberAccess
 
 MultiplicativeExpression
   = first:UnaryExpression
