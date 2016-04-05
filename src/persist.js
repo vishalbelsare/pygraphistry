@@ -211,7 +211,9 @@ module.exports =
                 'backwardsEdgeStartEndIdxs',
                 'pointSizes',
                 'pointColors',
-                'logicalEdges'
+                'logicalEdges', // Obsolete, transitioned to edgeSeqLens and forwardsEdgeToUnsortedEdge (following).
+                'edgeSeqLens',
+                'forwardsEdgeToUnsortedEdge'
             ];
             // Stage the uploads so that partial failure maximizes available features:
             // TODO report partial failure sensibly (e.g. "everything exported but labels").
