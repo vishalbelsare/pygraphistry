@@ -105,7 +105,7 @@ var encodingForLabelParams = [
         cb: (function () {
             var sheet = createStyleElement();
             return function (stream) {
-                stream.inspectTime(20).subscribe(function (c) {
+                stream.inspectTime(20).subscribe((c) => {
                     sheet.text('.graph-label, .graph-label table { color: ' + c.rgbaString() + ' }');
                 });
             };
@@ -119,7 +119,7 @@ var encodingForLabelParams = [
         cb: (function () {
             var sheet = createStyleElement();
             return function (stream) {
-                stream.inspectTime(20).subscribe(function (c) {
+                stream.inspectTime(20).subscribe((c) => {
                     sheet.text('.graph-label .graph-label-container  { background-color: ' + c.rgbaString() + ' }');
                 });
             };
@@ -177,17 +177,15 @@ function setLayoutParameter(socket, algorithm, param, value, settingsChanges) {
 function setupMarquee(appState, isOn) {
     var camera = appState.renderState.get('camera');
     var cnv = appState.renderState.get('canvas');
-    var transform = function (point) {
-        return camera.canvas2WorldCoords(point.x, point.y, cnv);
-    };
+    var transform = (point) => camera.canvas2WorldCoords(point.x, point.y, cnv);
 
     var marquee = marqueeFact.initMarquee(appState, $('#marquee'), isOn, {transform: transform});
 
-    marquee.selections.subscribe(function (sel) {
+    marquee.selections.subscribe((sel) => {
         debug('marquee selected bounds', sel);
     }, util.makeErrorHandler('bad marquee selections'));
 
-    marquee.drags.subscribe(function (drag) {
+    marquee.drags.subscribe((drag) => {
         debug('marquee drag action', drag.start, drag.end);
     }, util.makeErrorHandler('bad marquee drags'));
 
@@ -213,17 +211,15 @@ function setupMarquee(appState, isOn) {
 function setupBrush(appState, isOn) {
     var camera = appState.renderState.get('camera');
     var cnv = appState.renderState.get('canvas');
-    var transform = function (point) {
-        return camera.canvas2WorldCoords(point.x, point.y, cnv);
-    };
+    var transform = (point) => camera.canvas2WorldCoords(point.x, point.y, cnv);
 
     var brush = marqueeFact.initBrush(appState, $('#brush'), isOn, {transform: transform});
 
-    brush.selections.subscribe(function (sel) {
+    brush.selections.subscribe((sel) => {
         debug('brush selected bounds', sel);
     }, util.makeErrorHandler('bad brush selections'));
 
-    brush.drags.subscribe(function (drag) {
+    brush.drags.subscribe((drag) => {
         debug('brush drag action', drag.start, drag.end);
     }, util.makeErrorHandler('bad brush drags'));
 
@@ -237,15 +233,13 @@ function clicksFromPopoutControls($elt) {
     var mouseElements = $('.panel-button, .modal-button', $elt);
 
     return Rx.Observable.merge.apply(Rx.Observable,
-        mouseElements.get().map(function (elt) {
+        mouseElements.get().map((elt) => {
             return Rx.Observable.fromEvent(elt, 'mousedown')
-                .do(function (evt) {
+                .do((evt) => {
                     // Stop from propagating to canvas
                     evt.stopPropagation();
                 })
-                .switchMap(function () {
-                    return Rx.Observable.fromEvent(elt, 'mouseup');
-                })
+                .switchMap(() => Rx.Observable.fromEvent(elt, 'mouseup'))
                 .map(_.constant(elt));
         }));
 }
@@ -393,7 +387,7 @@ function createControlHeader($anchor, name) {
 function createControls(socket, appState, trigger, urlParams) {
 
     var rxControls = Rx.Observable.bindCallback(socket.emit.bind(socket))('layout_controls', null)
-        .map(function (res) {
+        .map((res) => {
             if (res && res.success) {
                 debug('Received layout controls from server', res.controls);
                 return res.controls;
@@ -407,32 +401,32 @@ function createControls(socket, appState, trigger, urlParams) {
 
     $renderingItems.css({'display': 'block', 'left': '100%'});
 
-    Rx.Observable.combineLatest(rxControls, appState.viewConfigChanges, function (controls, viewConfig) {
+    Rx.Observable.combineLatest(rxControls, appState.viewConfigChanges, (controls, viewConfig) => {
         var parameters = viewConfig.parameters;
         // TODO fix this so whitelisted urlParams can update viewConfig.parameters, and then those affect/init values.
         _.extend(urlParams, parameters);
 
         //workaround: https://github.com/nostalgiaz/bootstrap-switch/issues/446
-        setTimeout(function () {
+        setTimeout(() => {
             $('#renderingItems').css({'display': 'none', 'left': '5em'});
         }, 2000);
 
         //APPEARANCE
         createControlHeader($anchor, 'Appearance');
-        _.each(encodingPerElementParams, function (param) {
+        _.each(encodingPerElementParams, (param) => {
             $anchor.append(controlMaker(parameters, param, 'local'));
         });
 
         //LABELS
         createControlHeader($anchor, 'Labels');
-        _.each(encodingForLabelParams, function (param) {
+        _.each(encodingForLabelParams, (param) => {
             $anchor.append(controlMaker(parameters, param, 'local'));
         });
 
         //LAYOUT
-        _.each(controls, function (la) {
+        _.each(controls, (la) => {
             createControlHeader($anchor, la.name);
-            _.each(la.params, function (param) {
+            _.each(la.params, (param) => {
                 $anchor.append(controlMaker(parameters, param, 'layout'));
             });
         });
@@ -443,7 +437,7 @@ function createControls(socket, appState, trigger, urlParams) {
             $(input).bootstrapSwitch();
             var param = $(input).data('param');
             $(input).onAsObservable('switchChange.bootstrapSwitch').subscribe(
-                function () {
+                () => {
                     if ($that.hasClass('layout-checkbox')) {
                         setLayoutParameter(socket, param.algoName, param.name, input.checked, appState.settingsChanges);
                     } else if ($that.hasClass('local-checkbox')) {
@@ -466,7 +460,7 @@ function createControls(socket, appState, trigger, urlParams) {
             ).distinctUntilChanged()
             .inspectTime(50)
             .subscribe(
-                function () {
+                () => {
                     if ($that.hasClass('layout-menu-slider')) {
                         setLayoutParameter(socket, param.algoName,
                                     param.name, Number($slider.val()), appState.settingsChanges);
@@ -482,7 +476,7 @@ function createControls(socket, appState, trigger, urlParams) {
             var input = this;
 
             $(input).onAsObservable('click')
-                .do(function (evt) {
+                .do((evt) => {
                     var $button = $(evt.target);
                     var $input = $button.parent().siblings('.inputWrapper').first()
                         .children('.control-textbox').first();
@@ -511,7 +505,7 @@ function setViewParameter(socket, name, pos, appState) {
 
     function setUniform(name, value) {
         var uniforms = appState.renderState.get('uniforms');
-        _.each(uniforms, function (map) {
+        _.each(uniforms, (map) => {
             if (name in map) {
                 map[name] = value;
             }
@@ -558,7 +552,7 @@ function setViewParameter(socket, name, pos, appState) {
             break;
     }
 
-    socket.emit('update_view_parameter', {name: name, value: val}, function (response) {
+    socket.emit('update_view_parameter', {name: name, value: val}, (response) => {
         if (!response.success) {
             throw Error('Update view parameter failed.');
         }
@@ -586,9 +580,7 @@ function togglePanel ($panelButton, $panel, newVisibility) {
 //Return toggle status stream
 function setupPanelControl (toolbarClicks, $panelButton, $panel, errorLogLabel) {
     var neverOpened = true;
-    var panelToggles = toolbarClicks.filter(function (elt) {
-        return elt === $panelButton[0];
-    }).map(function () {
+    var panelToggles = toolbarClicks.filter((elt) => elt === $panelButton[0]).map(() => {
         // HACK Make sure the first click always opens even if technically :visible already for D3/etc.
         if (neverOpened) {
             neverOpened = false;
@@ -597,7 +589,7 @@ function setupPanelControl (toolbarClicks, $panelButton, $panel, errorLogLabel) 
         // return the target state (boolean negate)
         return !$panel.is(':visible');
     });
-    panelToggles.do(function (newVisibility) {
+    panelToggles.do((newVisibility) => {
         togglePanel($panelButton, $panel, newVisibility);
     }).subscribe(_.identity, util.makeErrorHandler(errorLogLabel));
     return panelToggles;
@@ -609,8 +601,8 @@ function setupCameraApi (appState) {
     var camera = renderState.get('camera');
 
     appState.apiActions
-        .filter(function (e) { return e.event === 'updateCamera'; })
-        .do(function (e) {
+        .filter((e) => e.event === 'updateCamera')
+        .do((e) => {
             console.log('RECEIVED API UPDATE CAMERA: ', e.cameraPosition);
             camera.setPosition(e.cameraPosition);
             renderingScheduler.renderScene('cameraApi', {trigger: 'renderSceneFast'});
@@ -631,12 +623,12 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var $viewSelectionButton = $('#viewSelectionButton');
     var turnOnMarquee =
         Rx.Observable.merge(
-            popoutClicks.filter(function (elt) {
+            popoutClicks.filter((elt) => {
                 return elt === $viewSelectionButton[0]; })
-                .map(function () { return !marqueeIsOn; }),
+                .map(() => !marqueeIsOn),
             Rx.Observable.fromEvent($graph, 'click')
                 .map(_.constant(false)))
-        .do(function (isTurnOn) {
+        .do((isTurnOn) => {
             marqueeIsOn = isTurnOn;
             toggleButton($viewSelectionButton, marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
@@ -647,9 +639,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     var dataInspectorOnSubject = new Rx.Subject();
     var $dataInspectorButton = $('#dataInspectorButton');
     dataInspectorOnSubject.onNext(false);
-    popoutClicks.filter(function (elt) {
-        return elt === $dataInspectorButton[0];
-    }).do(function () {
+    popoutClicks.filter((elt) => elt === $dataInspectorButton[0]).do(() => {
         dataInspectorIsVisible = !dataInspectorIsVisible;
         dataInspectorOnSubject.onNext(dataInspectorIsVisible);
         toggleButton($dataInspectorButton, dataInspectorIsVisible);
@@ -659,9 +649,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     // Visibility for time explorer
     var $timeExplorerButton = $('#timeExplorerButton');
     var timeExplorerIsVisible = false;
-    popoutClicks.filter(function (elt) {
-        return elt === $timeExplorerButton[0];
-    }).do(function () {
+    popoutClicks.filter((elt) => elt === $timeExplorerButton[0]).do(() => {
         timeExplorerIsVisible = !timeExplorerIsVisible;
         toggleButton($timeExplorerButton, timeExplorerIsVisible);
         $('#timeExplorer').css('visibility', timeExplorerIsVisible ? 'visible' : 'hidden');
@@ -677,7 +665,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .merge(
             Rx.Observable.fromEvent($graph, 'click')
             .map(_.constant($graph[0])))
-        .map(function (elt) {
+        .map((elt) => {
             var $brushButton = $('#brushButton');
             if (elt === $brushButton[0]) {
                 toggleButton($(elt));
@@ -722,7 +710,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             $('#zoomin').onAsObservable('click'),
             $('#zoomout').onAsObservable('click'))
         //skip events autoplay triggers
-        .filter(function (evt){ return evt.originalEvent !== undefined; })
+        .filter((evt) => evt.originalEvent !== undefined)
         .merge(Rx.Observable.timer(numTicks))
         .map(_.constant(finalCenter));
 
@@ -741,7 +729,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
     histogramBrush.setupApiInteraction(appState.apiActions);
-    turnOnBrush.first(function (value) { return value === true; }).do(function () {
+    turnOnBrush.first((value) => value === true).do(() => {
         togglePanel($('#histogramPanelControl'), $('#histogram.panel'), true);
     }).subscribe(_.identity, util.makeErrorHandler('Enabling the histogram on first brush use.'));
     dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle, filtersResponses, dataInspectorOnSubject);
@@ -760,17 +748,15 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         socket,
         appState,
         popoutClicks
-            .filter(function (elt) { return elt === $('#layoutSettingsButton')[0]; })
+            .filter((elt) => elt === $('#layoutSettingsButton')[0])
             .take(1),
         urlParams);
 
     Rx.Observable.zip(
         marquee.drags,
-        marquee.drags.switchMap(function () {
-            return marquee.selections.take(1);
-        }),
-        function(a, b) { return {drag: a, selection: b}; }
-    ).subscribe(function (move) {
+        marquee.drags.switchMap(() => marquee.selections.take(1)),
+        (a, b) => ({drag: a, selection: b})
+    ).subscribe((move) => {
         var payload = {marquee: move};
         socket.emit('move_nodes', payload);
     }, util.makeErrorHandler('marquee error'));
@@ -778,9 +764,9 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     //tick stream until canceled/timed out (ends with finalCenter)
     var autoCentering =
-        doneLoading.switchMap(function () {
+        doneLoading.switchMap(() => {
             return Rx.Observable.interval(50)
-                .do(function () { debug('auto center interval'); })
+                .do(() => { debug('auto center interval'); })
                 .merge(centeringDone)
                 .takeUntil(centeringDone.delay(1));
         });
@@ -789,7 +775,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     autoCentering.subscribe(isAutoCentering, util.makeErrorHandler('bad auto-center'));
 
     autoCentering.subscribe(
-        function (count) {
+        (count) => {
             if (count === true ||
                 typeof count === 'number' && ((count % 2 && count < 10) ||
                                              (count % 20 === 0 && count < 100) ||
@@ -798,12 +784,12 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             }
         },
         util.makeErrorHandler('autoCentering error'),
-        function () {
+        () => {
             $shrinkToFit.toggleClass('automode', false).toggleClass('toggle-on', false);
         });
 
 
-    doneLoading.take(1).subscribe(function () {
+    doneLoading.take(1).subscribe(() => {
         if (numTicks > 0) {
             $tooltips.tooltip('show');
             $bolt.toggleClass('automode', true).toggleClass('toggle-on', true);
@@ -818,8 +804,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .subscribe(_.identity, util.makeErrorHandler('layout button'));
 
     appState.apiActions
-        .filter(function (e) { return e.event === 'updateSetting'; })
-        .do(function (e) {
+        .filter((e) => e.event === 'updateSetting')
+        .do((e) => {
             setViewParameter(socket, e.setting, e.value, appState);
         }).subscribe(_.identity, util.makeErrorHandler('updateSetting'));
 

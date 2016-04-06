@@ -154,17 +154,20 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
         appState.isAnimating,
         latestHighlightedObject,
         appState.activeSelection,
+        appState.labelsAreEnabled,
         appState.poiIsEnabled,
-        function (camera, vboUpdates, isAnimating, highlighted, selection, poiIsEnabled) {
+        function (camera, vboUpdates, isAnimating, highlighted, selection, labelsAreEnabled, poiIsEnabled) {
             return {
                 highlighted: highlighted,
                 selection: selection,
+                labelsAreEnabled: labelsAreEnabled,
                 poiIsEnabled: poiIsEnabled,
                 doneAnimating: !isAnimating
             };
         }
     ).do(function (toShow) {
-        renderLabels(appState, $labelCont, toShow.highlighted, toShow.selection, toShow.doneAnimating, toShow.poiIsEnabled);
+        renderLabels(appState, $labelCont, toShow.highlighted, toShow.selection, toShow.doneAnimating,
+            toShow.labelsAreEnabled, toShow.poiIsEnabled);
     })
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
@@ -173,7 +176,7 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
 
 // AppState * $DOM * {dim:int, idx:int} * {dim:int, idx:int} -> ()
 // Immediately reposition each label based on camera and curPoints buffer
-function renderLabels(appState, $labelCont, highlighted, selected, doneAnimating, poiIsEnabled) {
+function renderLabels(appState, $labelCont, highlighted, selected, doneAnimating, labelsAreEnabled, poiIsEnabled) {
     debug('rendering labels');
 
     // TODO: Simplify this so we don't have to have this separate call for getting
@@ -186,12 +189,13 @@ function renderLabels(appState, $labelCont, highlighted, selected, doneAnimating
 
     curPoints.take(1)
         .do(function (curPoints) {
-            renderLabelsImmediate(appState, $labelCont, curPoints, highlighted, selected, doneAnimating, poiIsEnabled);
+            renderLabelsImmediate(appState, $labelCont, curPoints, highlighted, selected, doneAnimating,
+                labelsAreEnabled, poiIsEnabled);
         })
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
 
-function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, selected, doneAnimating, poiIsEnabled) {
+function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, selected, doneAnimating, labelsAreEnabled, poiIsEnabled) {
 
     // Trying to handle set highlight/selection, but badly:
     var elementsToExpand = selected.size() > 1 ? [] : selected.getVizSliceElements();

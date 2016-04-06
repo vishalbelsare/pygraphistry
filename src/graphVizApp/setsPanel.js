@@ -55,7 +55,7 @@ var VizSetModel = Backbone.Model.extend({
         return new VizSlice({point: mask.point, edge: mask.edge});
     },
     updateMaskFromVizSlice: function (mask, slice) {
-        slice.forEachIndexAndDim(function (idx, dim) {
+        slice.forEachIndexAndDim((idx, dim) => {
             switch (dim) {
                 case 1:
                     mask.point.push(idx);
@@ -199,9 +199,7 @@ var VizSetModel = Backbone.Model.extend({
                 panel.getAllSets().take(1).subscribe(
                     function (latestSets) {
                         if (model.isNew()) { return; }
-                        var match = _.find(latestSets, function (vizSet) {
-                            return vizSet.id === model.id;
-                        });
+                        var match = _.find(latestSets, (vizSet) => vizSet.id === model.id);
                         if (match !== undefined) {
                             model.set(match);
                         }
@@ -209,7 +207,7 @@ var VizSetModel = Backbone.Model.extend({
                     util.makeErrorHandler('Getting latest Sets'));
                 break;
             case 'delete':
-                panel.deleteSet(model.toJSON()).subscribe(function (response) {
+                panel.deleteSet(model.toJSON()).subscribe((response) => {
                     if (typeof success === 'function') {
                         success.call(options.context, model, response, options);
                     }
@@ -217,7 +215,7 @@ var VizSetModel = Backbone.Model.extend({
                 break;
             case 'update':
                 // TODO handle options.patch
-                panel.updateSet(model.toJSON()).subscribe(function (response) {
+                panel.updateSet(model.toJSON()).subscribe((response) => {
                     if (response.success === true && response.set !== undefined) {
                         model.set(response.set);
                     }
@@ -284,20 +282,20 @@ var VizSetView = Backbone.View.extend({
             $status.css('display', 'none');
             var $input = $('.modal-body input', this.$renameDialog);
             $input.val(this.model.get('title'));
-            this.$renameDialog.on('shown.bs.modal', function () {
+            this.$renameDialog.on('shown.bs.modal', () => {
                 $('input', this.$renameDialog).first().focus();
-            }.bind(this));
+            });
             this.$renameDialog.modal('show');
             this.renameDialogSubscription = Rx.Observable.fromEvent($('.modal-footer button', this.$renameDialog), 'click')
-                .map(_.constant(this.$renameDialog)).subscribe(function (/*$modal*/) {
+                .map(_.constant(this.$renameDialog)).subscribe((/*$modal*/) => {
                     var setTag = $input.val();
                     this.model.save('title', setTag, {panel: this.panel});
                     this.closeRenameDialog();
-                }.bind(this),
-                function (err) {
+                },
+                (err) => {
                     util.makeErrorHandler('Exception while naming Set', err);
                     this.closeRenameDialog();
-                }.bind(this));
+                });
         }
     },
     closeRenameDialog: function () {
@@ -356,14 +354,13 @@ var AllVizSetsView = Backbone.View.extend({
         return !vizSet.isSystem();
     },
     visibleSets: function () {
-        return this.collection.select(function (vizSet) {
-            return this.shouldShow(vizSet);
-        }.bind(this));
+        return this.collection.select((vizSet) => this.shouldShow(vizSet));
     },
     selectedSets: function () {
-        return this.collection.select(function (vizSet) {
-            return vizSet.isSelected();
-        });
+        return this.collection.select((vizSet) => vizSet.isSelected());
+    },
+    systemSets: function () {
+        return this.collection.select((vizSet) => vizSet.isSystem());
     },
     updateVizSelectionFromSelectedSets: function () {
         var currentlySelectedSets = this.selectedSets();
@@ -405,7 +402,7 @@ var AllVizSetsView = Backbone.View.extend({
     },
     refreshCreateSet: function (activeSelection) {
         if (activeSelection !== undefined) {
-            this.collection.each(function (vizSet) {
+            this.collection.each((vizSet) => {
                 if (vizSet.representsActiveSelection()) {
                     vizSet.fromVizSlice(activeSelection);
                 }
@@ -416,9 +413,7 @@ var AllVizSetsView = Backbone.View.extend({
         var $createSet = $(this.createSetTemplate({
             disabled: initialSelection.isEmpty() && 'disabled',
             selectedOption: VizSetView.prototype.bindingsFor(initialSelection),
-            options: this.collection.select(function (vizSet) { return vizSet.isSystem(); }).map(function (vizSet) {
-                return VizSetView.prototype.bindingsFor(vizSet);
-            })
+            options: this.systemSets().map((vizSet) => VizSetView.prototype.bindingsFor(vizSet))
         }));
         $('.createSetDropdown', this.$createSetContainer).remove();
         this.$createSetContainer.append($createSet);
@@ -431,19 +426,17 @@ var AllVizSetsView = Backbone.View.extend({
     updateCreateSetSelection: function (evt) {
         var $target = $(evt.currentTarget);
         var vizSetID = $target.data('id');
-        var vizSet = this.collection.find(function (vizSet) { return vizSet.id === vizSetID; });
+        var vizSet = this.collection.find((vizSet) => vizSet.id === vizSetID);
         if (vizSet !== undefined) {
             this.createSetSelectionID = vizSet.id;
             $('.createSetSelectionTitle', this.$createSetContainer).text(vizSet.title);
-            this.panel.activeSelection.take(1).do(function (activeSelection) {
+            this.panel.activeSelection.take(1).do((activeSelection) => {
                 this.refreshCreateSet(activeSelection);
-            }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Refreshing Create Set'));
+            }).subscribe(_.identity, util.makeErrorHandler('Refreshing Create Set'));
         }
     },
     createSet: function (/*evt*/) {
-        var srcSystemSet = this.collection.find(function (vizSet) {
-            return vizSet.id === this.createSetSelectionID;
-        }.bind(this));
+        var srcSystemSet = this.collection.find((vizSet) => vizSet.id === this.createSetSelectionID);
         if (srcSystemSet === undefined) {
             throw Error('Set creation failed; unknown source: ' + this.createSetSelectionID);
         }
@@ -477,28 +470,28 @@ SetsPanel.prototype = {
         var sourceType = srcSystemSet.id;
         switch (sourceType) {
             case 'selection':
-                this.activeSelection.take(1).switchMap(function (activeSelection) {
+                this.activeSelection.take(1).switchMap((activeSelection) => {
                     var specification = {masks: VizSetModel.prototype.maskFromVizSlice(activeSelection)};
-                    return this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
+                    return this.commands.create.sendWithObservableResult(sourceType, specification).do((createSetResult) => {
                         this.handleCreateSetResult(createSetResult);
                         // Reset selection now that we've captured them in a Set:
                         this.activeSelection.onNext(activeSelection.newEmpty());
-                    }.bind(this));
-                }.bind(this)).subscribe(
+                    });
+                }).subscribe(
                     _.identity, util.makeErrorHandler('Creating a Set from Selection'));
                 break;
             case 'filtered':
-                this.filtersSubject.take(1).switchMap(function (filtersCollection) {
-                    var userFilters = filtersCollection.select(function (filter) { return !filter.isSystem(); });
+                this.filtersSubject.take(1).switchMap((filtersCollection) => {
+                    var userFilters = filtersCollection.select((filter) => !filter.isSystem());
                     var specification = {
-                        title: _.map(userFilters, function (filter) { return filter.get('query').inputString; }).join(' and '),
+                        title: _.map(userFilters, (filter) => filter.get('query').inputString).join(' and '),
                         filters: userFilters,
                         masks: _.clone(srcSystemSet.get(MasksProperty))
                     };
-                    return this.commands.create.sendWithObservableResult(sourceType, specification).do(function (createSetResult) {
+                    return this.commands.create.sendWithObservableResult(sourceType, specification).do((createSetResult) => {
                         this.handleCreateSetResult(createSetResult);
-                    }.bind(this));
-                }.bind(this)).subscribe(
+                    });
+                }).subscribe(
                     _.identity, util.makeErrorHandler('Creating a Set from Filters'));
                 break;
             case 'dataframe':
@@ -521,9 +514,9 @@ SetsPanel.prototype = {
         Rx.Observable.combineLatest(
             this.getAllSets(),
             this.activeSelection,
-            function (response, activeSelection) {
+            (response, activeSelection) => {
                 var sets = response.sets;
-                this.collection.reset(_.map(sets, function (vizSet) {
+                this.collection.reset(_.map(sets, (vizSet) => {
                     var setModel = new VizSetModel(vizSet);
                     if (setModel.representsActiveSelection()) {
                         setModel.fromVizSlice(activeSelection);
@@ -531,7 +524,7 @@ SetsPanel.prototype = {
                     return setModel;
                 }));
                 this.view.refreshCreateSet(activeSelection);
-            }.bind(this)).take(1).subscribe(
+            }).take(1).subscribe(
             _.identity,
             util.makeErrorHandler(this.commands.getAll.description));
     },
@@ -548,16 +541,12 @@ SetsPanel.prototype = {
     },
 
     setupToggleControl: function (toolbarClicks, $panelButton) {
-        var panelToggles = toolbarClicks.filter(function (elt) {
-            return elt === $panelButton[0];
-        }).map(function () {
-            // return the target state (boolean negate)
-            return !this.isVisible();
-        }.bind(this));
-        this.togglesSubscription = panelToggles.do(function (newVisibility) {
+        // return the target state (boolean negate)
+        var panelToggles = toolbarClicks.filter((elt) => elt === $panelButton[0]).map(() => !this.isVisible());
+        this.togglesSubscription = panelToggles.do((newVisibility) => {
             $panelButton.children('i').toggleClass('toggle-on', newVisibility);
             this.toggleVisibility(newVisibility);
-        }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Turning on/off the sets panel'));
+        }).subscribe(_.identity, util.makeErrorHandler('Turning on/off the sets panel'));
     },
 
     dispose: function () {
@@ -581,30 +570,30 @@ SetsPanel.prototype = {
         this.activeSelection = activeSelection;
         /** @type {Rx.ReplaySubject} */
         this.latestHighlightedObject = latestHighlightedObject;
-        this.activeSelection.do(function (activeSelection) {
+        this.activeSelection.do((activeSelection) => {
             if (activeSelection.isEmpty()) {
-                this.collection.each(function (vizSet) { vizSet.isSelected(false); });
+                this.collection.each((vizSet) => { vizSet.isSelected(false); });
             }
             this.view.refreshCreateSet(activeSelection);
-        }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Clearing selection from canvas'));
+        }).subscribe(_.identity, util.makeErrorHandler('Clearing selection from canvas'));
     },
 
     setupFiltersPanelInteraction: function (filtersPanel) {
         this.filtersSubject = filtersPanel.filtersSubject;
-        filtersPanel.control.setsResponsesSubject.do(function (setsResponse) {
-            _.each(setsResponse, function (updatedSet) {
-                var match = this.collection.find(function (existingSet) {return existingSet.id === updatedSet.id; });
+        filtersPanel.control.setsResponsesSubject.do((setsResponse) => {
+            _.each(setsResponse, (updatedSet) => {
+                var match = this.collection.find((existingSet) => existingSet.id === updatedSet.id);
                 if (match !== undefined) {
                     match.set(updatedSet);
                 }
-            }.bind(this));
+            });
             this.view.refreshCreateSet();
-        }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Updating Sets from filter updates'));
+        }).subscribe(_.identity, util.makeErrorHandler('Updating Sets from filter updates'));
     },
 
     vizSliceFromSetModels: function (setModels) {
         if (setModels.length > 1) {
-            var resultSetModel = _.reduce(setModels, function (firstSet, secondSet) {
+            var resultSetModel = _.reduce(setModels, (firstSet, secondSet) => {
                 return firstSet.union(secondSet);
             });
             return resultSetModel.asVizSlice();
@@ -616,12 +605,12 @@ SetsPanel.prototype = {
     },
 
     highlightSetModels: function (setModels) {
-        var allConcrete = _.every(setModels, function (vizSet) { return vizSet.isConcrete(); });
+        var allConcrete = _.every(setModels, (vizSet) => vizSet.isConcrete());
         if (allConcrete) {
             this.latestHighlightedObject.onNext(this.vizSliceFromSetModels(setModels));
         }
         if (false && setModels.length === 0 || !allConcrete) {
-            var setIDs = _.map(setModels, function (setModel) { return setModel.id; });
+            var setIDs = _.map(setModels, (setModel) => setModel.id);
             this.commands.highlight.sendWithObservableResult({gesture: 'sets', action: 'replace', setIDs: setIDs}).do(
                 Command.prototype.logErrorFromResponse
             ).subscribe(_.identity, util.makeErrorHandler('highlighting sets'));
@@ -629,12 +618,12 @@ SetsPanel.prototype = {
     },
 
     selectSetModels: function (setModels) {
-        var allConcrete = _.every(setModels, function (vizSet) { return vizSet.isConcrete(); });
+        var allConcrete = _.every(setModels, (vizSet) => vizSet.isConcrete());
         if (allConcrete) {
             this.activeSelection.onNext(this.vizSliceFromSetModels(setModels));
         }
         if (setModels.length === 0 || !allConcrete) {
-            var setIDs = _.map(setModels, function (setModel) { return setModel.id; });
+            var setIDs = _.map(setModels, (setModel) => setModel.id);
             this.commands.select.sendWithObservableResult({gesture: 'sets', action: 'replace', setIDs: setIDs});
         }
     }

@@ -29,9 +29,7 @@ var ExclusionCollection = Backbone.Collection.extend({
             attributes.title = attributes.attribute;
         }
         var newExclusion = new ExclusionModel(attributes);
-        var match = this.find(function (exclusion) {
-            return _.isEqual(newExclusion.get('query'), exclusion.get('query'));
-        });
+        var match = this.find((exclusion) => _.isEqual(newExclusion.get('query'), exclusion.get('query')));
         if (match === undefined) {
             this.push(newExclusion);
         } else {
@@ -61,9 +59,8 @@ var ExclusionView = Backbone.View.extend({
     render: function () {
         var bindings = {
             model: _.extend({
-                    placeholder: this.control.queryToExpression(this.model.placeholderQuery())
-                },
-                this.model.toJSON())
+                placeholder: this.control.queryToExpression(this.model.placeholderQuery())
+            }, this.model.toJSON())
         };
         var html = this.template(bindings);
         this.$el.html(html);
@@ -93,18 +90,17 @@ var ExclusionView = Backbone.View.extend({
         this.editor.setReadOnly(readOnly);
         this.$expressionArea.toggleClass('disabled', readOnly);
         this.$el.toggleClass('disabled', readOnly);
-        this.control.namespaceMetadataObservable().filter(function (namespaceMetadata) {
-            return namespaceMetadata !== undefined;
-        }).subscribe(function (namespaceMetadata) {
-            this.editor.dataframeCompleter.setNamespaceMetadata(namespaceMetadata);
-        }.bind(this));
+        this.control.namespaceMetadataObservable().filter((namespaceMetadata) => namespaceMetadata !== undefined)
+            .subscribe((namespaceMetadata) => {
+                this.editor.dataframeCompleter.setNamespaceMetadata(namespaceMetadata);
+            });
         var expression = this.model.getExpression(this.control);
         if (expression) {
             this.editor.session.setValue(expression);
         }
-        this.editor.session.on('change', function (aceEvent) {
+        this.editor.session.on('change', (aceEvent) => {
             this.updateQuery(this.editor.editor.getValue(), aceEvent);
-        }.bind(this));
+        });
     },
     updateQuery: function (expressionString, aceEvent) {
         var annotation;
@@ -190,9 +186,7 @@ var AllExclusionsView = Backbone.View.extend({
     },
     render: function () {
         var $exclusionButton = $('#exclusionButton');
-        var numActiveElements = this.collection.filter(function (filterModel) {
-            return !!filterModel.get('enabled');
-        }).length;
+        var numActiveElements = this.collection.filter((filterModel) => !!filterModel.get('enabled')).length;
         $('.badge', $exclusionButton).text(numActiveElements > 0 ? numActiveElements : '');
         return this;
     },
@@ -227,9 +221,7 @@ var AllExclusionsView = Backbone.View.extend({
 });
 
 // Used to attach attributes to Add Exclusion dropdown:
-Handlebars.registerHelper('json', function(context) {
-    return JSON.stringify(context);
-});
+Handlebars.registerHelper('json', (context) => JSON.stringify(context));
 
 
 function ExclusionsPanel(socket, control, labelRequests) {
@@ -240,22 +232,20 @@ function ExclusionsPanel(socket, control, labelRequests) {
     }
     this.control = control;
 
-    var that = this;
-
-    this.labelRequestSubscription = labelRequests.filter(function (labelRequest) {
-        return labelRequest.excludeQuery !== undefined;
-    }).do(function (labelRequest) {
+    this.labelRequestSubscription = labelRequests.filter(
+        (labelRequest) => labelRequest.excludeQuery !== undefined
+    ).do((labelRequest) => {
         var exclusion = labelRequest.excludeQuery;
-        that.collection.addExclusion(exclusion);
+        this.collection.addExclusion(exclusion);
     }).subscribe(_.identity, util.makeErrorHandler('Handling an exclusion from a label'));
 
     // Initial exclusions list, after which adds should pop open the panel:
-    this.control.exclusionsResponsesSubject.take(1).do(function (exclusions) {
-        _.each(exclusions, function (exclusion) {
-            that.collection.add(new ExclusionModel(exclusion));
+    this.control.exclusionsResponsesSubject.take(1).do((exclusions) => {
+        _.each(exclusions, (exclusion) => {
+            this.collection.add(new ExclusionModel(exclusion));
         });
-        that.collection.on('add', function () {
-            that.toggleVisibility(true);
+        this.collection.on('add', () => {
+            this.toggleVisibility(true);
         });
     }).subscribe(_.identity, util.makeErrorHandler('Reading exclusions from workbook'));
     this.collection = new ExclusionCollection([], {
@@ -267,15 +257,13 @@ function ExclusionsPanel(socket, control, labelRequests) {
     /** Exposes changes to the ExclusionCollection. */
     this.exclusionsSubject = new Rx.ReplaySubject(1);
     // Seed with a fresh exclusions list. Should come from persisted state.
-    this.collection.on('change reset add remove', function (/*model, options*/) {
-        that.exclusionsSubject.onNext(that.collection);
+    this.collection.on('change reset add remove', (/*model, options*/) => {
+        this.exclusionsSubject.onNext(this.collection);
     });
 
     this.exclusionsSubject.subscribe(
-        function (collection) {
-            that.control.updateExclusions(collection.map(function (model) {
-                return _.omit(model.toJSON(), '$el');
-            }));
+        (collection) => {
+            this.control.updateExclusions(collection.map((model) => _.omit(model.toJSON(), '$el')));
         },
         util.makeErrorHandler('updateExclusions on exclusions change event')
     );
@@ -296,9 +284,9 @@ ExclusionsPanel.prototype.toggleVisibility = function (newVisibility) {
 };
 
 ExclusionsPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButton, $resetElements) {
-    var panelToggles = toolbarClicks.filter(function (elt) {
-        return elt === $panelButton[0] || $resetElements.find(elt);
-    }).map(function (elt) {
+    var panelToggles = toolbarClicks.filter(
+        (elt) => elt === $panelButton[0] || $resetElements.find(elt)
+    ).map((elt) => {
         // return the target state (boolean negate)
         if (elt === $panelButton[0]) {
             return !this.isVisible();
@@ -307,11 +295,11 @@ ExclusionsPanel.prototype.setupToggleControl = function (toolbarClicks, $panelBu
         } else {
             return false;
         }
-    }.bind(this));
-    this.togglesSubscription = panelToggles.do(function (newVisibility) {
+    });
+    this.togglesSubscription = panelToggles.do((newVisibility) => {
         $panelButton.children('i').toggleClass('toggle-on', newVisibility);
         this.toggleVisibility(newVisibility);
-    }.bind(this)).subscribe(_.identity, util.makeErrorHandler('Turning on/off the exclusion panel'));
+    }).subscribe(_.identity, util.makeErrorHandler('Turning on/off the exclusion panel'));
 };
 
 ExclusionsPanel.prototype.dispose = function () {

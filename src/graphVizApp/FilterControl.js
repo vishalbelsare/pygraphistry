@@ -39,32 +39,32 @@ function FilterControl(socket) {
     this.setsResponsesSubject = new Rx.ReplaySubject(1);
     // Get initial filters values:
     this.getFiltersCommand.sendWithObservableResult()
-        .do(function (reply) {
+        .do((reply) => {
             this.filtersResponsesSubject.onNext(reply.filters);
             this.exclusionsResponsesSubject.onNext(reply.exclusions);
             if (reply.sets !== undefined) {
                 this.setsResponsesSubject.onNext(reply.sets);
             }
-        }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.getFiltersCommand.description));
+        }).subscribe(_.identity, util.makeErrorHandler(this.getFiltersCommand.description));
 
-    util.bufferUntilReady(this.updateFiltersRequests).do(function (hash) {
+    util.bufferUntilReady(this.updateFiltersRequests).do((hash) => {
         this.updateFiltersCommand.sendWithObservableResult(hash.data)
-            .do(function (reply) {
+            .do((reply) => {
                 this.filtersResponsesSubject.onNext(reply);
                 if (reply.sets !== undefined) {
                     this.setsResponsesSubject.onNext(reply.sets);
                 }
                 hash.ready();
-            }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.updateFiltersCommand.description));
-    }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.updateFiltersCommand.description));
+            }).subscribe(_.identity, util.makeErrorHandler(this.updateFiltersCommand.description));
+    }).subscribe(_.identity, util.makeErrorHandler(this.updateFiltersCommand.description));
 }
 
 FilterControl.prototype.namespaceMetadataObservable = function () {
     if (this.namespaceSubscription === undefined) {
         this.namespaceSubscription = this.namespaceCommand.sendWithObservableResult()
-            .do(function (reply) {
+            .do((reply) => {
                 this.namespaceMetadataSubject.onNext(reply.metadata);
-            }.bind(this)).subscribe(_.identity, util.makeErrorHandler(this.namespaceCommand.description));
+            }).subscribe(_.identity, util.makeErrorHandler(this.namespaceCommand.description));
     }
     return this.namespaceMetadataSubject;
 };
@@ -91,9 +91,7 @@ FilterControl.prototype.printedExpressionOf = function (value) {
     } else if (typeof value === 'undefined' || value === null) {
         return 'NULL';
     } else if (Array.isArray(value)) {
-        return '(' + _.map(value, function (each) {
-                return this.printedExpressionOf(each);
-            }, this).join(', ') + ')';
+        return '(' + _.map(value, (each) => this.printedExpressionOf(each)).join(', ') + ')';
     } else {
         return '<unknown>';
     }
@@ -227,12 +225,12 @@ FilterControl.prototype.filterExactValuesParameters = function (type, attribute,
 
 FilterControl.prototype.filterObservable = function (params) {
     return this.runFilterCommand.sendWithObservableResult(params)
-        .do(function (reply) {
+        .do((reply) => {
             this.filtersResponsesSubject.onNext(reply.filters);
             if (reply.sets !== undefined) {
                 this.setsResponsesSubject.onNext(reply.sets);
             }
-        }.bind(this)).subscribe(_.identity);
+        }).subscribe(_.identity);
 };
 
 FilterControl.prototype.dispose = function () {

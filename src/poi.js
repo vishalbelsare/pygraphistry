@@ -29,7 +29,7 @@ var DimCodes = {
 
 
 function makeErrorHandler(name) {
-    return function (err) {
+    return (err) => {
         console.error(name, err, (err || {}).stack);
     };
 }
@@ -44,9 +44,7 @@ function markHits(samples32) {
 
     // Approach one (sort -> count)
     // O(NlogN), but less slamming memory
-    Array.prototype.sort.call(samples32, function (a, b) {
-        return a - b;
-    });
+    Array.prototype.sort.call(samples32, (a, b) => a - b);
     var sortedSamples = samples32;
 
 
@@ -84,9 +82,7 @@ function markHits(samples32) {
 
 function sortedHits(hits) {
     var indices = _.keys(hits);
-    var sortedIndices = indices.sort(function (a, b) {
-        return hits[b] - hits[a];
-    });
+    var sortedIndices = indices.sort((a, b) => hits[b] - hits[a]);
 
     return sortedIndices;
 }
@@ -142,7 +138,7 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
 
     var cnvCached = {width: cnv.width, height: cnv.height};
 
-    _.values(activeLabels).forEach(function (lbl) {
+    _.values(activeLabels).forEach((lbl) => {
         if (!hits[cacheKey(lbl.idx, lbl.dim)]) {
 
             var pos = camera.canvasCoords(points[2 * lbl.idx], points[2 * lbl.idx + 1], cnvCached, mtx);
@@ -168,7 +164,7 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
 function finishAll(activeLabels, inactiveLabels, hits) {
     var toClear = [];
 
-    _.values(activeLabels).forEach(function (lbl) {
+    _.values(activeLabels).forEach((lbl) => {
         if (!hits[cacheKey(lbl.idx, lbl.dim)]) {
             inactiveLabels.push(lbl);
             delete activeLabels[cacheKey(lbl.idx, lbl.dim)];
@@ -219,13 +215,13 @@ function genLabel (instance, $labelCont, idx, info) {
 
     setter
         .inspectTime(3)
-        .do(function (data) {
+        .do((data) => {
             res.dim = data.dim;
             res.idx = data.idx;
             $elt.empty();
         })
         .switchMap(instance.getLabelDom)
-        .do(function (domTree) {
+        .do((domTree) => {
             if (domTree) {
                 $elt.append(domTree);
             } else {
@@ -250,7 +246,7 @@ function cacheKey(idx, dim) {
 
 
 function fetchLabel (instance, labelCacheEntry, idx, dim) {
-    instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, function (err, labels) {
+    instance.state.socket.emit('get_labels', {dim: dim, indices: [idx]}, (err, labels) => {
         if (err) {
             console.error('get_labels', err);
             return;
@@ -289,7 +285,7 @@ function createLabelDom(instance, dim, labelObj) {
     var $content;
     var $labelType = $('<span>').addClass('label-type').addClass('pull-right');
 
-    var type = _.findKey(DimCodes, function (dimCode) { return dimCode === dim; });
+    var type = _.findKey(DimCodes, (dimCode) => dimCode === dim);
     $cont.addClass('graph-label-' + type);
 
     // TODO FIXME HACK labelObj.formatted is injected as HTML; XSS vulnerability assumed (<script> tag)
@@ -301,8 +297,8 @@ function createLabelDom(instance, dim, labelObj) {
         // Filter out 'hidden' columns
         // TODO: Encode this in a proper schema instead of hungarian-ish notation
         // Deprecated column format retained by older persist-based static exports of [key, value].
-        var oldFormat = _.any(labelObj.columns, function (col) { return !col.hasOwnProperty('key'); });
-        labelObj.columns = _.filter(labelObj.columns, function (col) {
+        var oldFormat = _.any(labelObj.columns, (col) => !col.hasOwnProperty('key'));
+        labelObj.columns = _.filter(labelObj.columns, (col) => {
             var key = oldFormat ? col[0] : col.key;
             return key[0] !== '_';
         });
@@ -312,7 +308,7 @@ function createLabelDom(instance, dim, labelObj) {
                 .append($labelType);
         var $table= $('<table>');
         var labelRequests = instance.state.labelRequests;
-        labelObj.columns.forEach(function (col) {
+        labelObj.columns.forEach((col) => {
             var key = oldFormat ? col[0] : col.key,
                 val = oldFormat ? col[1] : col.value;
 
@@ -348,12 +344,20 @@ function createLabelDom(instance, dim, labelObj) {
             $wrap.append($icons);
             var dataOptions = {placement: 'bottom', toggle: 'tooltip'};
             var keyValueEqn = Identifier.clarifyWithPrefixSegment($key.text(), type) + '=' + displayName;
+            var $tag = $('<a class="tag-by-key-value">').html('<i class="fa fa-tag"></i>');
+            $tag.data(dataOptions);
+            $tag.attr('title', 'Tag as ' + keyValueEqn);
+            $tag.tooltip({container: 'body'})
+                .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
+            $tag.on('click', () => {
+                labelRequests.onNext({tagQuery: {query: queryForKeyAndValue(type, key, val)}});
+            });
             var $exclude = $('<a class="exclude-by-key-value">').html('<i class="fa fa-ban"></i>');
             $exclude.data(dataOptions);
             $exclude.attr('title', 'Exclude if ' + keyValueEqn);
             $exclude.tooltip({container: 'body'})
                 .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
-            $exclude.on('click', function () {
+            $exclude.on('click', () => {
                 labelRequests.onNext({excludeQuery: {query: queryForKeyAndValue(type, key, val)}});
             });
             var $filter = $('<a class="filter-by-key-value">').html('<i class="fa fa-filter"></i>');
@@ -361,10 +365,10 @@ function createLabelDom(instance, dim, labelObj) {
             $filter.attr('title', 'Filter for ' + keyValueEqn);
             $filter.tooltip({container: 'body'})
                 .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
-            $filter.on('click', function () {
+            $filter.on('click', () => {
                 labelRequests.onNext({filterQuery: {query: queryForKeyAndValue(type, key, val)}});
             });
-            $icons.append($exclude).append($filter);
+            $icons.append($tag).append($exclude).append($filter);
 
             var $val = $('<td>').addClass('graph-label-value').append($wrap);
             $row.append($key).append($val);
@@ -398,19 +402,19 @@ function getLabel(instance, data) {
 
 //instance * int -> ReplaySubject_1 ?DOM
 function getLabelDom (instance, data) {
-   return getLabel(instance, data).map(function (l) {
-       if (!l) {
-           return l;
-       }
-       return createLabelDom(instance, data.dim, l);
-   });
+    return getLabel(instance, data).map((l) => {
+        if (!l) {
+            return l;
+        }
+        return createLabelDom(instance, data.dim, l);
+    });
 }
 
 // instance ->
 // Invalidates Cache but does not attempt to refill.
 function emptyCache (instance) {
     instance.state.labelCache = {};
-    _.each(instance.state.activeLabels, function (val, key) {
+    _.each(instance.state.activeLabels, (val, key) => {
         instance.state.inactiveLabels.push(val);
         val.elt.css('display', 'none');
         delete instance.state.activeLabels[key];

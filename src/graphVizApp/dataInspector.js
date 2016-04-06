@@ -31,7 +31,7 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filter
 
     var $inspectorOverlay = $('#inspector-overlay');
     // Grey out data inspector when marquee is being dragged.
-    appState.brushOn.do(function (state) {
+    appState.brushOn.do((state) => {
         // TODO: Don't rely on CSS state here.
         if (state === 'dragging' && $('#inspector').css('visibility') === 'visible') {
             $inspectorOverlay.css('visibility', 'visible');
@@ -42,8 +42,8 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filter
 
     // Change sizes based on whether or not histogram is open.
     // TODO: Separate this into some sort of control/window manager.
-    histogramPanelToggle.do(function (histogramsOn) {
-        // TODO: Why is this inversed here?
+    histogramPanelToggle.do((histogramsOn) => {
+        // TODO: Why is this inverted here?
         $('#inspector').toggleClass('with-histograms', !histogramsOn);
         $inspectorOverlay.toggleClass('with-histograms', !histogramsOn);
     }).subscribe(_.identity, util.makeErrorHandler('change width on inspectorOverlay'));
@@ -56,37 +56,33 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filter
 
     // Grab header.
     Rx.Observable.bindCallback(socket.emit.bind(socket))('inspect_header', null)
-    .do(function (reply) {
+    .do((reply) => {
         if (!reply || !reply.success) {
             console.error('Server error on inspectHeader', (reply||{}).error);
         }
-    }).filter(function (reply) { return reply && reply.success; })
-    .map(function (data) {
-        return {
-            nodes: {
-                columns: createColumns(data.header.nodes, 'Node'),
-                urn: data.urns.nodes
-            },
-            edges: {
-                columns: createColumns(data.header.edges, 'Edge'),
-                urn: data.urns.edges
-            }
-        };
-    }).map(function (data) {
-        return {
-            nodes: initPageableGrid(workerUrl, data.nodes.columns, data.nodes.urn, $nodesInspector, appState.activeSelection, 1),
-            edges: initPageableGrid(workerUrl, data.edges.columns, data.edges.urn, $edgesInspector, appState.activeSelection, 2)
-        };
-    }).do(function (grids) {
+    }).filter((reply) => reply && reply.success)
+    .map((data) => ({
+        nodes: {
+            columns: createColumns(data.header.nodes, 'Node'),
+            urn: data.urns.nodes
+        },
+        edges: {
+            columns: createColumns(data.header.edges, 'Edge'),
+            urn: data.urns.edges
+        }
+    })).map((data) => ({
+        nodes: initPageableGrid(workerUrl, data.nodes.columns, data.nodes.urn, $nodesInspector, appState.activeSelection, 1),
+        edges: initPageableGrid(workerUrl, data.edges.columns, data.edges.urn, $edgesInspector, appState.activeSelection, 2)
+    })).do((grids) => {
 
         // Now that we have grids, we need to process updates.
         // TODO: This triggers on simulate, when it shouldn't have to (should it?)
-        Rx.Observable.combineLatest(marqueeTriggers, filtersResponses, isOnSubject, function (sel, filters, isOn) {
-            return {sel: sel, filters: filters, isOn: isOn};
-        }).filter(function (data) {
+        Rx.Observable.combineLatest(marqueeTriggers, filtersResponses, isOnSubject, (sel, filters, isOn) => ({
+            sel: sel, filters: filters, isOn: isOn
+        })).filter((data) => {
             // Filter so it only triggers a fetch when inspector is visible.
             return data.isOn;
-        }).do(function (data) {
+        }).do((data) => {
             updateGrid(grids.nodes, data.sel);
             updateGrid(grids.edges, data.sel);
         }).subscribe(_.identity, util.makeErrorHandler('fetch data for inspector'));
@@ -101,14 +97,12 @@ function createColumns(header, title) {
         label: title, // The name to display in the header
         cell: 'string',
         editable: false
-    }].concat(_.map(_.without(header, '_title'), function (key) {
-        return {
-            name: key,
-            label: key,
-            cell: 'string',
-            editable: false
-        };
-    }));
+    }].concat(_.map(_.without(header, '_title'), (key) => ({
+        name: key,
+        label: key,
+        cell: 'string',
+        editable: false
+    })));
 }
 
 function updateGrid(grid, sel) {
@@ -130,7 +124,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         },
 
         // Give pointer back to view from model.
-        // TODO: This doesn't appear to ever fire? What does backgrid do?
+        // TODO FIXME: This doesn't fire because it has a typo; but fixing it causes backgrid.cells to be undefined.
         initalize: function () {
             this.model.view = this;
         },
@@ -151,11 +145,11 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
             if (ctrl) {
                 // TODO: Is there a cleaner way to do this sort of "in place"
                 // operation on a replay subject?
-                activeSelection.take(1).do(function (sel) {
+                activeSelection.take(1).do((sel) => {
                     activeSelection.onNext(sel.removeOrAdd(selection));
                 }).subscribe(_.identity, util.makeErrorHandler('Multiselect in dataInspector'));
             } else if (shift) {
-                activeSelection.take(1).do(function (sel) {
+                activeSelection.take(1).do((sel) => {
                     if (sel.isEmpty()) {
                         sel = sel.newFrom([selection]);
                     } else {
@@ -194,8 +188,8 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
 
         parseRecords: function (resp) {
             // Transform response values for presentation.
-            _.each(resp.values, function (rowContents) {
-                _.each(_.keys(rowContents), function (attrName) {
+            _.each(resp.values, (rowContents) => {
+                _.each(_.keys(rowContents), (attrName) => {
                     var dataType = resp.dataTypes[attrName];
                     var formatted = contentFormatter.defaultFormat(rowContents[attrName], dataType);
                     rowContents[attrName] = formatted;
@@ -279,18 +273,18 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
 
 
 function setupSelectionRerender(activeSelection, grid, whichDim) {
-    activeSelection.do(function (selection) {
+    activeSelection.do((selection) => {
         grid.selectedModels = [];
         grid.selection = selection;
 
-        _.each(grid.body.rows, function (row) {
+        _.each(grid.body.rows, (row) => {
             // Guard against initialization issues.
             // TODO: Figure out instantiation order.
             if (!row.model) {
                 return;
             }
             row.model.set('selected', false);
-            selection.forEachIndexAndDim(function (idx, dim) {
+            selection.forEachIndexAndDim((idx, dim) => {
                 if ((+row.model.attributes._index) === idx && whichDim === dim) {
                     grid.selectedModels.push(row.model);
                     row.model.set('selected', true);
@@ -304,7 +298,7 @@ function setupSelectionRerender(activeSelection, grid, whichDim) {
 
 function setupSearchStreams(searchRequests) {
 
-    util.bufferUntilReady(searchRequests).do(function (hash) {
+    util.bufferUntilReady(searchRequests).do((hash) => {
         var req = hash.data;
 
         if (Backbone.PageableCollection &&
