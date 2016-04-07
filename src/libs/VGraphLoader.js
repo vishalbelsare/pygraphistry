@@ -989,7 +989,7 @@ function decode1(graph, vg, metadata)  {
     notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.vertexCount);
 
     const edges = new Array(vg.edgeCount);
-    for (const i = 0; i < vg.edges.length; i++) {
+    for (let i = 0; i < vg.edges.length; i++) {
         const e = vg.edges[i];
         edges[i] = [e.src, e.dst];
     }
