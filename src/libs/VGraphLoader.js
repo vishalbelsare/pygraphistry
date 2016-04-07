@@ -94,7 +94,7 @@ const attributeLoaders = function(graph) {
 
                 const desc = ccManager.getComputedColumnSpec('localBuffer', 'edgeColors').clone();
                 desc.setDependencies([['__edgeColors', 'edge']]);
-                desc.setComputeAllValues(function (edgeColors, outArr, numGraphElements) {
+                desc.setComputeAllValues((edgeColors, outArr/*, numGraphElements*/) => {
                     for (let i = 0; i < edgeColors.length; i++) {
                         outArr[i*2] = edgeColors[i];
                         outArr[i*2 + 1] = edgeColors[i];
@@ -362,17 +362,13 @@ const defaultMapper = {
         pointColor: {
             name: 'pointColor',
             transform: function (v) {
-                return _.map(v, function (cat) {
-                    return palettes.bindings[cat];
-                });
+                return _.map(v, (cat) => palettes.bindings[cat]);
             }
         },
         edgeColor: {
             name: 'edgeColor',
             transform: function (v) {
-                return _.map(v, function (cat) {
-                    return palettes.bindings[cat];
-                });
+                return _.map(v, (cat) => palettes.bindings[cat]);
             }
         },
         edgeHeight: {
@@ -431,8 +427,8 @@ function doWrap(res, mapping, loader) {
 
 
 function runLoaders(loaders) {
-    const promises = _.map(loaders, function (loaderArray) {
-        return _.map(loaderArray, function (loader) {
+    const promises = _.map(loaders, (loaderArray) => {
+        return _.map(loaderArray, (loader) => {
             if (loader.values) {
                 return loader.load(loader.values);
             } else if (loader.default) {
@@ -496,20 +492,12 @@ function load(graph, dataset) {
  * @param {DataframeMetadata} graphInfo
  */
 function loadDataframe(dataframe, attributeObjects, numPoints, numEdges, aliases, graphInfo) {
-    const edgeAttributeObjects = _.filter(attributeObjects, function (value) {
-        return value.target === EDGE;
-    });
-    const pointAttributeObjects = _.filter(attributeObjects, function (value) {
-        return value.target === VERTEX;
-    });
+    const edgeAttributeObjects = _.filter(attributeObjects, (value) => value.target === EDGE);
+    const pointAttributeObjects = _.filter(attributeObjects, (value) => value.target === VERTEX);
 
-    const edgeAttributeObjectsByName = _.object(_.map(edgeAttributeObjects, function (value) {
-        return [value.name, value];
-    }));
+    const edgeAttributeObjectsByName = _.object(_.map(edgeAttributeObjects, (value) => [value.name, value]));
 
-    const pointAttributeObjectsByName = _.object(_.map(pointAttributeObjects, function (value) {
-        return [value.name, value];
-    }));
+    const pointAttributeObjectsByName = _.object(_.map(pointAttributeObjects, (value) => [value.name, value]));
 
     _.extend(dataframe.bufferAliases, aliases);
     _.extend(dataframe.metadata, graphInfo);
@@ -552,20 +540,20 @@ function decode0(graph, vg, metadata)  {
     loaders = wrap(mapper.mappings, loaders);
     logger.trace('Attribute loaders:', loaders);
 
-    _.each(attributes, function (attr) {
-        const vname = attr.name;
-        if (!(vname in loaders)) {
-            logger.debug('Skipping unmapped attribute', vname);
+    _.each(attributes, (attr) => {
+        const attributeName = attr.name;
+        if (!(attributeName in loaders)) {
+            logger.debug('Skipping unmapped attribute', attributeName);
             return;
         }
 
-        const loaderArray = loaders[vname];
+        const loaderArray = loaders[attributeName];
 
-        _.each(loaderArray, function (loader) {
+        _.each(loaderArray, (loader) => {
             if (attr.target !== loader.target) {
-                logger.warn('Vertex/Node attribute mismatch for ' + vname);
+                logger.warn('Vertex/Node attribute mismatch for ' + attributeName);
             } else if (!_.contains(loader.type, attr.type)) {
-                logger.warn('Expected type in ' + loader.type + ', but got ' + attr.type + ' for ' + vname);
+                logger.warn('Expected type in ' + loader.type + ', but got ' + attr.type + ' for ' + attributeName);
             } else {
                 loader.values = attr.values;
             }
@@ -574,21 +562,16 @@ function decode0(graph, vg, metadata)  {
     });
 
     return clientNotification.loadingStatus(graph.socket, 'Binding nodes')
-        .then(function () {
-            return graph.setVertices(vertices);
-        }).then(function () {
-            return clientNotification.loadingStatus(graph.socket, 'Binding edges');
-        }).then(function () {
-            return graph.setEdges(edges, vertices);
-        }).then(function () {
-            return clientNotification.loadingStatus(graph.socket, 'Binding everything else');
-        }).then(function () {
+        .then(() => graph.setVertices(vertices))
+        .then(() => clientNotification.loadingStatus(graph.socket, 'Binding edges'))
+        .then(() => graph.setEdges(edges, vertices))
+        .then(() => clientNotification.loadingStatus(graph.socket, 'Binding everything else'))
+        .then(() => {
             calculateAndStoreCommunities(graph);
             calculateAndStoreDefaultPointSizeColumns(graph);
             return runLoaders(loaders);
-        }).then(function () {
-            return graph;
-        }).fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
+        }).then(() => graph)
+        .fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
 }
 
 
@@ -663,8 +646,8 @@ function computeInitialPositions(vertexCount, edges, dimensions) {
  * @returns {Array.<Array.<Number>>}
  */
 function lookupInitialPosition(vg, vectors) {
-    const x = _.find(vectors, function (o) { return o.name === 'x'; });
-    const y = _.find(vectors, function (o) { return o.name === 'y'; });
+    const x = _.find(vectors, (o) => o.name === 'x');
+    const y = _.find(vectors, (o) => o.name === 'y');
 
     if (x && y) {
         logger.trace('Loading previous vertices from xObj');
@@ -776,7 +759,7 @@ function getAttributes0(vg/*, metadata*/) {
     const vectors = getVectors0(vg);
     const attributeObjects = [];
 
-    _.each(vectors, function (v) {
+    _.each(vectors, (v) => {
         if (v.values.length === 0) {
             return;
         }
@@ -794,9 +777,7 @@ function getAttributes0(vg/*, metadata*/) {
 
 
 function scaleValuesLog(values) {
-    return _.map(values, function (val) {
-        return val <= 0 ? 0 : Math.log(val);
-    });
+    return _.map(values, (val) => val <= 0 ? 0 : Math.log(val));
 }
 
 
@@ -811,9 +792,7 @@ function scaleValuesLinearIntegral(values, minimum, maximum) {
     const min = _.min(values);
     const scaleFactor = (maximum - minimum) / (max - min + 1);
 
-    return _.map(values, function (val) {
-        return minimum + Math.floor((val - min) * scaleFactor);
-    });
+    return _.map(values, (val) => minimum + Math.floor((val - min) * scaleFactor));
 }
 
 
@@ -828,9 +807,7 @@ function scaleValuesLinear(values, minimum, maximum) {
     const min = _.min(values);
     const scaleFactor = (maximum - minimum) / (max - min + 1);
 
-    return _.map(values, function (val) {
-        return minimum + (val - min) * scaleFactor;
-    });
+    return _.map(values, (val) => minimum + (val - min) * scaleFactor);
 }
 
 /**
@@ -855,7 +832,7 @@ function getAttributes1(vg, metadata) {
     const nodeAttributeObjects = {};
     const edgeAttributeObjects = {};
 
-    _.each(vectors, function (v) {
+    _.each(vectors, (v) => {
         if (v.values.length === 0) {
             return;
         }
@@ -863,7 +840,7 @@ function getAttributes1(vg, metadata) {
         const typeAccessor = v.target === VERTEX ? 'nodes' : (v.target === EDGE ? 'edges' : undefined);
         let attributeMetadata;
         if (metadata !== undefined && metadata[typeAccessor] !== undefined) {
-            const relevantMetadata = _.find(metadata[typeAccessor], function (metadataByComponent) {
+            const relevantMetadata = _.find(metadata[typeAccessor], (metadataByComponent) => {
                 return metadataByComponent.attributes.hasOwnProperty(v.name);
             });
             if (relevantMetadata !== undefined) {
@@ -909,7 +886,7 @@ function getShapeMappings(nodeEncodings, edgeEncodings) {
  */
 function getSimpleEncodings(encodings, loaders, target) {
 
-    const supportedEncodings = _.pick(encodings, function (enc, graphProperty) {
+    const supportedEncodings = _.pick(encodings, (enc, graphProperty) => {
         if (_.contains(GraphShapeProperties, graphProperty)) {
             return false;
         }
@@ -919,7 +896,7 @@ function getSimpleEncodings(encodings, loaders, target) {
             return false;
         }
 
-        if (!_.all(loaders[graphProperty], function (loader) { return loader.target === target; })) {
+        if (!_.all(loaders[graphProperty], (loader) => loader.target === target)) {
             console.warn('Wrong target type (node/edge) for graph property', graphProperty);
             return false;
         }
@@ -930,9 +907,7 @@ function getSimpleEncodings(encodings, loaders, target) {
         return true;
     });
 
-    return _.object(_.map(supportedEncodings, function (enc, graphProperty) {
-        return [graphProperty, enc.attributes[0]];
-    }));
+    return _.object(_.map(supportedEncodings, (enc, graphProperty) => [graphProperty, enc.attributes[0]]));
 }
 
 
@@ -1019,8 +994,8 @@ function decode1(graph, vg, metadata)  {
     const allEncodings =  _.extend({}, nodeEncodings, edgeEncodings, shapeMappings);
     loadDataframe(graph.dataframe, flatAttributeArray, vg.vertexCount, vg.edgeCount, allEncodings, graphInfo);
 
-    _.each(loaders, function (loaderArray, graphProperty) {
-        _.each(loaderArray, function (loader) {
+    _.each(loaders, (loaderArray, graphProperty) => {
+        _.each(loaderArray, (loader) => {
             const encodings = loader.target === VERTEX ? nodeEncodings : edgeEncodings;
             const attributes = loader.target === VERTEX ? vgAttributes.nodes : vgAttributes.edges;
             if (graphProperty in encodings) {
@@ -1034,21 +1009,16 @@ function decode1(graph, vg, metadata)  {
     });
 
     return clientNotification.loadingStatus(graph.socket, 'Binding nodes')
-        .then(function () {
-            return graph.setVertices(vertices);
-        }).then(function () {
-            return clientNotification.loadingStatus(graph.socket, 'Binding edges');
-        }).then(function () {
-            return graph.setEdges(edges, vertices);
-        }).then(function () {
-            return clientNotification.loadingStatus(graph.socket, 'Binding everything else');
-        }).then(function () {
+        .then(() => graph.setVertices(vertices))
+        .then(() => clientNotification.loadingStatus(graph.socket, 'Binding edges'))
+        .then(() => graph.setEdges(edges, vertices))
+        .then(() => clientNotification.loadingStatus(graph.socket, 'Binding everything else'))
+        .then(() => {
             calculateAndStoreCommunities(graph);
             calculateAndStoreDefaultPointSizeColumns(graph);
             return runLoaders(loaders);
-        }).then(function () {
-            return graph;
-        }).fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
+        }).then(() => graph)
+        .fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
 }
 
 function notifyClientOfSizesForAllocation (socket, edgeCount, vertexCount) {
