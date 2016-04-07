@@ -1,35 +1,35 @@
 'use strict';
 
-var Q = require('q');
-var _ = require('underscore');
-var pb = require('protobufjs');
-var path = require('path');
-var moment = require('moment');
-var Color = require('color');
+const Q = require('q');
+const _ = require('underscore');
+const pb = require('protobufjs');
+const path = require('path');
+const moment = require('moment');
+const Color = require('color');
 
-var util = require('../util.js');
-var weakcc = require('../weaklycc.js');
-var palettes = require('../palettes.js');
-var clientNotification = require('../clientNotification.js');
-var ComputedColumnSpec = require('../ComputedColumnSpec.js');
+const util = require('../util.js');
+const weaklycc = require('../weaklycc.js');
+const palettes = require('../palettes.js');
+const clientNotification = require('../clientNotification.js');
+const ComputedColumnSpec = require('../ComputedColumnSpec.js');
 
-var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz', 'graph-viz/js/libs/VGraphLoader.js');
-var perf        = require('common/perfStats.js').createPerfMonitor();
+const log         = require('common/logger.js');
+const logger      = log.createLogger('graph-viz', 'graph-viz/js/libs/VGraphLoader.js');
+const perf        = require('common/perfStats.js').createPerfMonitor();
 
-// var builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
-// var graphVectorProtoPath = require.resolve('graph-viz/src/libs/graph_vector.proto');
-var graphVectorProtoPath = path.resolve(__dirname, '../../src/libs/graph_vector.proto');
-var builder = pb.loadProtoFile(graphVectorProtoPath);
-if (builder === null) {
+// const builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
+// const graphVectorProtoPath = require.resolve('graph-viz/src/libs/graph_vector.proto');
+const graphVectorProtoPath = path.resolve(__dirname, '../../src/libs/graph_vector.proto');
+const protoBufBuilder = pb.loadProtoFile(graphVectorProtoPath);
+if (protoBufBuilder === null) {
     logger.die('Could not find protobuf definition');
 }
-var pb_root = builder.build();
+const protoBufDefinitions = protoBufBuilder.build();
 
-var VERTEX = pb_root.VectorGraph.AttributeTarget.VERTEX;
-var EDGE   = pb_root.VectorGraph.AttributeTarget.EDGE;
+const VERTEX = protoBufDefinitions.VectorGraph.AttributeTarget.VERTEX;
+const EDGE   = protoBufDefinitions.VectorGraph.AttributeTarget.EDGE;
 
-var decoders = {
+const decoders = {
     0: decode0,
     1: decode1
 };
@@ -49,16 +49,16 @@ var decoders = {
  * @param graph
  * @returns {Object.<AttributeLoader>}
  */
-var attributeLoaders = function(graph) {
+const attributeLoaders = function(graph) {
     return {
         pointSize: {
             load: function (values) {
 
-                var valueObj = {name: '__pointSizes', values: values, type: 'number'};
+                const valueObj = {name: '__pointSizes', values: values, type: 'number'};
                 graph.dataframe.loadColumn('__pointSizes', 'point', valueObj);
-                var ccManager = graph.dataframe.computedColumnManager;
+                const ccManager = graph.dataframe.computedColumnManager;
 
-                var desc = ccManager.getComputedColumnSpec('localBuffer', 'pointSizes').clone();
+                const desc = ccManager.getComputedColumnSpec('localBuffer', 'pointSizes').clone();
                 desc.setDependencies([['__pointSizes', 'point']]);
                 desc.setComputeSingleValue(_.identity);
 
@@ -71,11 +71,11 @@ var attributeLoaders = function(graph) {
         pointColor: {
             load: function (values) {
 
-                var valueObj = {name: '__pointColors', values: values, type: 'color'};
+                const valueObj = {name: '__pointColors', values: values, type: 'color'};
                 graph.dataframe.loadColumn('__pointColors', 'point', valueObj);
-                var ccManager = graph.dataframe.computedColumnManager;
+                const ccManager = graph.dataframe.computedColumnManager;
 
-                var desc = ccManager.getComputedColumnSpec('localBuffer', 'pointColors').clone();
+                const desc = ccManager.getComputedColumnSpec('localBuffer', 'pointColors').clone();
                 desc.setDependencies([['__pointColors', 'point']]);
                 desc.setComputeSingleValue(_.identity);
 
@@ -88,14 +88,14 @@ var attributeLoaders = function(graph) {
         edgeColor: {
             load: function (values) {
 
-                var valueObj = {name: '__edgeColors', values: values, type: 'color', numberPerGraphComponent: 1};
+                const valueObj = {name: '__edgeColors', values: values, type: 'color', numberPerGraphComponent: 1};
                 graph.dataframe.loadColumn('__edgeColors', 'edge', valueObj);
-                var ccManager = graph.dataframe.computedColumnManager;
+                const ccManager = graph.dataframe.computedColumnManager;
 
-                var desc = ccManager.getComputedColumnSpec('localBuffer', 'edgeColors').clone();
+                const desc = ccManager.getComputedColumnSpec('localBuffer', 'edgeColors').clone();
                 desc.setDependencies([['__edgeColors', 'edge']]);
                 desc.setComputeAllValues(function (edgeColors, outArr, numGraphElements) {
-                    for (var i = 0; i < edgeColors.length; i++) {
+                    for (let i = 0; i < edgeColors.length; i++) {
                         outArr[i*2] = edgeColors[i];
                         outArr[i*2 + 1] = edgeColors[i];
                     }
@@ -127,11 +127,11 @@ var attributeLoaders = function(graph) {
         pointLabel: {
             load: function (values) {
 
-                var valueObj = {name: '__pointLabels', values: values, type: 'string'};
+                const valueObj = {name: '__pointLabels', values: values, type: 'string'};
                 graph.dataframe.loadColumn('__pointLabels', 'point', valueObj);
-                var ccManager = graph.dataframe.computedColumnManager;
+                const ccManager = graph.dataframe.computedColumnManager;
 
-                var desc = new ComputedColumnSpec({
+                const desc = new ComputedColumnSpec({
                     type: 'string',
                     filterable: true,
                     graphComponentType: 'point'
@@ -149,11 +149,11 @@ var attributeLoaders = function(graph) {
         edgeLabel: {
             load: function (values) {
 
-                var valueObj = {name: '__edgeLabels', values: values, type: 'string'};
+                const valueObj = {name: '__edgeLabels', values: values, type: 'string'};
                 graph.dataframe.loadColumn('__edgeLabels', 'edge', valueObj);
-                var ccManager = graph.dataframe.computedColumnManager;
+                const ccManager = graph.dataframe.computedColumnManager;
 
-                var desc = new ComputedColumnSpec({
+                const desc = new ComputedColumnSpec({
                     type: 'string',
                     filterable: true,
                     graphComponentType: 'edge'
@@ -169,21 +169,21 @@ var attributeLoaders = function(graph) {
             values: undefined
         },
         edgeWeight: {
-          load: function (values) {
+            load: function (values) {
 
-                var valueObj = {name: '__edgeWeights', values: values, type: 'number'};
+                const valueObj = {name: '__edgeWeights', values: values, type: 'number'};
                 graph.dataframe.loadColumn('__edgeWeights', 'edge', valueObj);
 
-                var computeAllEdgeWeightFunction = function (edgeWeights, edges, outArr, numGraphElements) {
-                    for (var i = 0; i < edgeWeights.length; i++) {
+                const computeAllEdgeWeightFunction = function (edgeWeights, edges, outArr, numGraphElements) {
+                    for (let i = 0; i < edgeWeights.length; i++) {
                         outArr[i] = edgeWeights[i];
                     }
                     return outArr;
                 };
 
-                var ccManager = graph.dataframe.computedColumnManager;
-                var forwardsDesc = ccManager.getComputedColumnSpec('hostBuffer', 'forwardsEdgeWeights').clone();
-                var backwardsDesc = ccManager.getComputedColumnSpec('hostBuffer', 'backwardsEdgeWeights').clone();
+                const ccManager = graph.dataframe.computedColumnManager;
+                const forwardsDesc = ccManager.getComputedColumnSpec('hostBuffer', 'forwardsEdgeWeights').clone();
+                const backwardsDesc = ccManager.getComputedColumnSpec('hostBuffer', 'backwardsEdgeWeights').clone();
 
                 forwardsDesc.setDependencies([
                     ['__edgeWeights', 'edge'],
@@ -200,10 +200,10 @@ var attributeLoaders = function(graph) {
 
                 ccManager.addComputedColumn(graph.dataframe, 'hostBuffer', 'forwardsEdgeWeights', forwardsDesc);
                 ccManager.addComputedColumn(graph.dataframe, 'hostBuffer', 'backwardsEdgeWeights', backwardsDesc);
-          },
-          type: ['number'],
-          target: EDGE,
-          values: undefined
+            },
+            type: ['number'],
+            target: EDGE,
+            values: undefined
         },
         // PointTitle and edgeTitle are handled in their own special way.
         // They are loaded outside of the loader mechanism
@@ -230,55 +230,55 @@ function getDegree(forwardsEdges, backwardsEdges, i) {
 }
 
 function calculateAndStoreDefaultPointSizeColumns (graph) {
-    var dataframe = graph.dataframe;
-    var forwardsEdges = dataframe.getColumnValues('forwardsEdges', 'hostBuffer');
-    var backwardsEdges = dataframe.getColumnValues('backwardsEdges', 'hostBuffer');
+    const dataframe = graph.dataframe;
+    const forwardsEdges = dataframe.getColumnValues('forwardsEdges', 'hostBuffer');
+    const backwardsEdges = dataframe.getColumnValues('backwardsEdges', 'hostBuffer');
 
-    var numGraphElements = dataframe.getNumElements('point');
-    var outArr = new Array(numGraphElements);
+    const numGraphElements = dataframe.getNumElements('point');
+    const outArr = new Array(numGraphElements);
 
-    var minDegree = Number.MAX_VALUE;
-    var maxDegree = 0;
-    for (var i = 0; i < numGraphElements; i++) {
-        var degree = getDegree(forwardsEdges, backwardsEdges, i);
+    let minDegree = Number.MAX_VALUE;
+    let maxDegree = 0;
+    for (let i = 0; i < numGraphElements; i++) {
+        const degree = getDegree(forwardsEdges, backwardsEdges, i);
         minDegree = Math.min(minDegree, degree);
         maxDegree = Math.max(maxDegree, degree);
     }
 
-    var offset = 5 - minDegree;
-    var scalar = 20 / Math.max((maxDegree - minDegree),1);
+    const offset = 5 - minDegree;
+    const scalar = 20 / Math.max((maxDegree - minDegree),1);
 
-    for (var i = 0; i < numGraphElements; i++) {
-        var degree = getDegree(forwardsEdges, backwardsEdges, i);
+    for (let i = 0; i < numGraphElements; i++) {
+        const degree = getDegree(forwardsEdges, backwardsEdges, i);
         outArr[i] = (degree + offset) + (degree - minDegree) * scalar;
     }
 
-    var valueObj = {name: '__defaultPointSize', values: outArr, type: 'number'};
+    const valueObj = {name: '__defaultPointSize', values: outArr, type: 'number'};
     graph.dataframe.loadColumn('__defaultPointSize', 'point', valueObj);
 }
 
 function calculateAndStoreCommunities(graph) {
-    var dataframe = graph.dataframe;
-    var forwardsEdges = dataframe.getColumnValues('forwardsEdges', 'hostBuffer');
-    var backwardsEdges = dataframe.getColumnValues('backwardsEdges', 'hostBuffer');
+    const dataframe = graph.dataframe;
+    const forwardsEdges = dataframe.getColumnValues('forwardsEdges', 'hostBuffer');
+    const backwardsEdges = dataframe.getColumnValues('backwardsEdges', 'hostBuffer');
 
-    var outArr = new Array(dataframe.getNumElements('point'));
+    const outArr = new Array(dataframe.getNumElements('point'));
 
-    var getDegree = function (forwardsEdges, backwardsEdges, i) {
+    const getDegree = function (forwardsEdges, backwardsEdges, i) {
         return forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
     };
 
-    var compare = function (initBest, buffers, i) {
-        var best = initBest;
+    const compare = function (initBest, buffers, i) {
+        let best = initBest;
 
-        var worklist = buffers.srcToWorkItem[i];
-        var firstEdge = buffers.workItemsTyped[i * 4];
-        var numEdges = buffers.workItemsTyped[i * 4 + 1];
-        for (var j = 0; j < numEdges; j++) {
-            var dst = buffers.edgesTyped[firstEdge*2 + j*2 + 1];
-            var degree = getDegree(forwardsEdges, backwardsEdges, dst);
+        // const workList = buffers.srcToWorkItem[i];
+        const firstEdge = buffers.workItemsTyped[i * 4];
+        const numEdges = buffers.workItemsTyped[i * 4 + 1];
+        for (let j = 0; j < numEdges; j++) {
+            const dst = buffers.edgesTyped[firstEdge*2 + j*2 + 1];
+            const degree = getDegree(forwardsEdges, backwardsEdges, dst);
             if (   (degree > best.degree)
-                || (degree == best.degree && dst > best.id)) {
+                || (degree === best.degree && dst > best.id)) {
                 best = {id: dst, degree: degree};
             }
         }
@@ -286,24 +286,24 @@ function calculateAndStoreCommunities(graph) {
         return best;
     };
 
-    for (var idx = 0; idx < outArr.length; idx++) {
-        var best = {id: idx, degree: getDegree(forwardsEdges, backwardsEdges, idx)};
-        var bestOut = compare(best, forwardsEdges, idx);
-        var bestIn = compare(bestOut, backwardsEdges, idx);
+    for (let idx = 0; idx < outArr.length; idx++) {
+        const best = {id: idx, degree: getDegree(forwardsEdges, backwardsEdges, idx)};
+        const bestOut = compare(best, forwardsEdges, idx);
+        const bestIn = compare(bestOut, backwardsEdges, idx);
         outArr[idx] = bestIn.id;
     }
 
-    var valueObj = {name: '__pointCommunity', values: outArr, type: 'number'};
+    const valueObj = {name: '__pointCommunity', values: outArr, type: 'number'};
     graph.dataframe.loadColumn('__pointCommunity', 'point', valueObj);
 }
 
 
-var opentsdbMapper = {
+const opentsdbMapper = {
     mappings: {
         pointSize: {
             name: 'degree',
             transform: function (v) {
-                return normalize(logTransform(v), 5, Math.pow(2, 8));
+                return scaleValuesLinearIntegral(scaleValuesLog(v), 5, Math.pow(2, 8));
             }
         },
         pointTitle: {
@@ -312,45 +312,45 @@ var opentsdbMapper = {
         pointColor: {
             name: 'community_spinglass',
             transform: function (v) {
-                var palette = util.palettes.qual_palette2;
-                return util.int2color(normalize(v, 0, palette.length - 1), palette);
+                const palette = util.palettes.qual_palette2;
+                return util.int2color(scaleValuesLinearIntegral(v, 0, palette.length - 1), palette);
             }
         },
         edgeColor: {
             name: 'bytes',
             transform: function (v) {
-                var palette = util.palettes.green2red_palette;
-                return util.int2color(normalize(logTransform(v), 0, palette.length - 1), palette);
+                const palette = util.palettes.green2red_palette;
+                return util.int2color(scaleValuesLinearIntegral(scaleValuesLog(v), 0, palette.length - 1), palette);
             }
         },
         edgeWeight: {
             name: 'weight',
             transform: function (v) {
-                return normalizeFloat(logTransform(v), 0.5, 1.5);
+                return scaleValuesLinear(scaleValuesLog(v), 0.5, 1.5);
             }
         }
     }
 };
 
 
-var misMapper = {
+const misMapper = {
     mappings: _.extend({}, opentsdbMapper.mappings, {
         pointSize: {
             name: 'betweenness',
             transform: function (v) {
-                return normalize(v, 5, Math.pow(2, 8));
+                return scaleValuesLinearIntegral(v, 5, Math.pow(2, 8));
             }
         }
     })
 };
 
 
-var defaultMapper = {
+const defaultMapper = {
     mappings: {
         pointSize: {
             name: 'pointSize',
             transform: function (v) {
-                return normalize(v, 5, Math.pow(2, 8));
+                return scaleValuesLinearIntegral(v, 5, Math.pow(2, 8));
             }
         },
         pointLabel: {
@@ -381,14 +381,14 @@ var defaultMapper = {
         edgeWeight: {
             name: 'edgeWeight',
             transform: function (v) {
-                return normalizeFloat(v, 0.5, 1.5);
+                return scaleValuesLinear(v, 0.5, 1.5);
             }
         }
     }
 };
 
 
-var mappers = {
+const mappers = {
     'opentsdb': opentsdbMapper,
     'miserables': misMapper,
     'splunk': defaultMapper,
@@ -397,11 +397,11 @@ var mappers = {
 
 
 function wrap(mappings, loaders) {
-    var res = {};
-    for (var a in loaders) {
-        if (a in mappings) {
-            var loader = loaders[a];
-            var mapping = mappings[a];
+    const res = {};
+    for (let a in loaders) {
+        if (loaders.hasOwnProperty(a) && a in mappings) {
+            const loader = loaders[a];
+            const mapping = mappings[a];
 
             // Helper function to work around dubious JS scoping
             doWrap(res, mapping, loader);
@@ -416,10 +416,10 @@ function wrap(mappings, loaders) {
 
 
 function doWrap(res, mapping, loader) {
-    var mapped = res[mapping.name] || [];
+    const mapped = res[mapping.name] || [];
 
     if ('transform' in mapping) {
-        var oldLoad = loader.load;
+        const oldLoad = loader.load;
         loader.load = function (data) {
             return oldLoad(mapping.transform(data));
         };
@@ -431,7 +431,7 @@ function doWrap(res, mapping, loader) {
 
 
 function runLoaders(loaders) {
-    var promises = _.map(loaders, function (loaderArray) {
+    const promises = _.map(loaders, function (loaderArray) {
         return _.map(loaderArray, function (loader) {
             if (loader.values) {
                 return loader.load(loader.values);
@@ -442,7 +442,7 @@ function runLoaders(loaders) {
             }
         });
     });
-    var flatPromises = _.flatten(promises, true);
+    const flatPromises = _.flatten(promises, true);
     return Q.all(flatPromises);
 }
 
@@ -451,7 +451,7 @@ function runLoaders(loaders) {
  * Load the raw data from the dataset object from S3
 **/
 function load(graph, dataset) {
-    var vg = pb_root.VectorGraph.decode(dataset.body);
+    const vg = protoBufDefinitions.VectorGraph.decode(dataset.body);
     logger.trace('attaching vgraph to simulator');
     graph.simulator.vgraph = vg;
     return decoders[vg.version](graph, vg, dataset.metadata);
@@ -496,18 +496,18 @@ function load(graph, dataset) {
  * @param {DataframeMetadata} graphInfo
  */
 function loadDataframe(dataframe, attributeObjects, numPoints, numEdges, aliases, graphInfo) {
-    var edgeAttributeObjects = _.filter(attributeObjects, function (value) {
+    const edgeAttributeObjects = _.filter(attributeObjects, function (value) {
         return value.target === EDGE;
     });
-    var pointAttributeObjects = _.filter(attributeObjects, function (value) {
+    const pointAttributeObjects = _.filter(attributeObjects, function (value) {
         return value.target === VERTEX;
     });
 
-    var edgeAttributeObjectsByName = _.object(_.map(edgeAttributeObjects, function (value) {
+    const edgeAttributeObjectsByName = _.object(_.map(edgeAttributeObjects, function (value) {
         return [value.name, value];
     }));
 
-    var pointAttributeObjectsByName = _.object(_.map(pointAttributeObjects, function (value) {
+    const pointAttributeObjectsByName = _.object(_.map(pointAttributeObjects, function (value) {
         return [value.name, value];
     }));
 
@@ -524,27 +524,27 @@ function decode0(graph, vg, metadata)  {
 
     notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.vertexCount);
 
-    var attrs = getAttributes0(vg);
-    loadDataframe(graph.dataframe, attrs, vg.vertexCount, vg.edgeCount, {}, {});
-    logger.info({attributes: _.pluck(attrs, 'name')}, 'Successfully loaded dataframe');
+    const attributes = getAttributes0(vg);
+    loadDataframe(graph.dataframe, attributes, vg.vertexCount, vg.edgeCount, {}, {});
+    logger.info({attributes: _.pluck(attributes, 'name')}, 'Successfully loaded dataframe');
 
-    var edges = new Array(vg.edgeCount);
-    var dimensions = [1, 1];
+    const edges = new Array(vg.edgeCount);
+    const dimensions = [1, 1];
 
-    for (var i = 0; i < vg.edges.length; i++) {
-        var e = vg.edges[i];
+    for (let i = 0; i < vg.edges.length; i++) {
+        const e = vg.edges[i];
         edges[i] = [e.src, e.dst];
     }
 
-    var vertices = lookupInitialPosition(vg, attrs);
+    let vertices = lookupInitialPosition(vg, attributes);
 
     if (vertices === undefined) {
         clientNotification.loadingStatus(graph.socket, 'Initializing positions');
         vertices = computeInitialPositions(vg.vertexCount, edges, dimensions, graph.socket);
     }
 
-    var loaders = attributeLoaders(graph);
-    var mapper = mappers[metadata.mapper || 'default'];
+    let loaders = attributeLoaders(graph);
+    let mapper = mappers[metadata.mapper || 'default'];
     if (mapper === undefined) {
         logger.warn('Unknown mapper', metadata.mapper, 'using "default"');
         mapper = mappers['default'];
@@ -552,14 +552,14 @@ function decode0(graph, vg, metadata)  {
     loaders = wrap(mapper.mappings, loaders);
     logger.trace('Attribute loaders:', loaders);
 
-    _.each(attrs, function (attr) {
-        var vname = attr.name;
+    _.each(attributes, function (attr) {
+        const vname = attr.name;
         if (!(vname in loaders)) {
             logger.debug('Skipping unmapped attribute', vname);
             return;
         }
 
-        var loaderArray = loaders[vname];
+        const loaderArray = loaders[vname];
 
         _.each(loaderArray, function (loader) {
             if (attr.target !== loader.target) {
@@ -595,23 +595,21 @@ function decode0(graph, vg, metadata)  {
 function computeInitialPositions(vertexCount, edges, dimensions) {
     logger.trace('Running component analysis');
 
-    var components = weakcc(vertexCount, edges, 2);
-    var numComponents = components.components.length;
-    var pointsPerRow = vertexCount / (Math.round(Math.sqrt(numComponents)) + 1);
+    const {components, nodeToComponent} = weaklycc(vertexCount, edges, 2);
+    const numComponents = components.length;
+    const pointsPerRow = vertexCount / (Math.round(Math.sqrt(numComponents)) + 1);
 
-    perf.startTiming('graph-viz:data:vgraphloader, weakcc postprocess');
-    var componentOffsets = [];
-    var cumulativePoints = 0;
-    var row = 0;
-    var col = 0;
-    var pointsInRow = 0;
-    var maxPointsInRow = 0;
-    var rowYOffset = 0;
-    var vertices = [];
+    perf.startTiming('graph-viz:data:vgraphloader, weaklycc postprocess');
+    let componentOffsets = [];
+    let cumulativePoints = 0;
+    let row = 0;
+    let col = 0;
+    let pointsInRow = 0;
+    let maxPointsInRow = 0;
+    let rowYOffset = 0;
+    const vertices = [];
 
-    var i, component;
-    for (i = 0; i < numComponents; i++) {
-        component = components.components[i];
+    _.each(components, (component) => {
         maxPointsInRow = Math.max(maxPointsInRow, component.size);
 
         componentOffsets.push({
@@ -634,28 +632,27 @@ function computeInitialPositions(vertexCount, edges, dimensions) {
             col++;
             pointsInRow += component.size;
         }
-    }
-    for (i = numComponents - 1; i >= 0; i--) {
-        component = components.components[i];
+    });
+    _.each(components, (component, i) => {
         component.rowHeight =
             Math.max(component.size,
                 i + 1 < numComponents &&
-                components.components[i+1].row === component.row ?
+                components[i+1].row === component.row ?
                     component.rollingMaxInRow :
                     0);
-    }
+    });
 
-    var initSize = 5 * Math.sqrt(vertexCount);
-    for (i = 0; i < vertexCount; i++) {
-        var c = components.nodeToComponent[i];
-        var offset = componentOffsets[c];
-        var vertex = [ initSize * (offset.rowRollingSum + 0.9 * components.components[c].size * Math.random()) / vertexCount ];
-        for (var j = 1; j < dimensions.length; j++) {
-            vertex.push(initSize * (offset.rowYOffset + 0.9 * components.components[c].size * Math.random()) / vertexCount);
+    const initSize = 5 * Math.sqrt(vertexCount);
+    for (let i = 0; i < vertexCount; i++) {
+        const c = nodeToComponent[i];
+        const offset = componentOffsets[c];
+        const vertex = [ initSize * (offset.rowRollingSum + 0.9 * components[c].size * Math.random()) / vertexCount ];
+        for (let j = 1; j < dimensions.length; j++) {
+            vertex.push(initSize * (offset.rowYOffset + 0.9 * components[c].size * Math.random()) / vertexCount);
         }
         vertices.push(vertex);
     }
-    perf.endTiming('graph-viz:data:vgraphloader, weakcc postprocess');
+    perf.endTiming('graph-viz:data:vgraphloader, weaklycc postprocess');
     return vertices;
 }
 
@@ -666,13 +663,13 @@ function computeInitialPositions(vertexCount, edges, dimensions) {
  * @returns {Array.<Array.<Number>>}
  */
 function lookupInitialPosition(vg, vectors) {
-    var x = _.find(vectors, function (o) { return o.name === 'x'; });
-    var y = _.find(vectors, function (o) { return o.name === 'y'; });
+    const x = _.find(vectors, function (o) { return o.name === 'x'; });
+    const y = _.find(vectors, function (o) { return o.name === 'y'; });
 
     if (x && y) {
         logger.trace('Loading previous vertices from xObj');
-        var vertices = new Array(vg.vertexCount);
-        for (var i = 0; i < vg.vertexCount; i++) {
+        const vertices = new Array(vg.vertexCount);
+        for (let i = 0; i < vg.vertexCount; i++) {
             vertices[i] = [x.values[i], y.values[i]];
         }
         return vertices;
@@ -689,7 +686,7 @@ function getVectors0(vg) {
 }
 
 function castToMoment (value) {
-    var momentVal;
+    let momentVal;
     if (typeof(value) === 'number') {
         // First attempt unix seconds constructor
         momentVal = moment.unix(value);
@@ -707,7 +704,7 @@ function castToMoment (value) {
 }
 
 function dateAsNumber (val) {
-    var date = castToMoment(val);
+    const date = castToMoment(val);
     return date.valueOf(); // Represent date as a number
 }
 
@@ -718,20 +715,20 @@ function dateAsNumber (val) {
  * @returns {string}
  */
 function punnedTypeFromVector(v, attributeMetadata) {
-    var type = typeof(v.values[0]);
+    let type = typeof(v.values[0]);
 
     // Attempt to infer date types when possible
     // Check if name contains time or date
     if ((/time/i).test(v.name) || (/date/i).test(v.name)) {
         logger.debug('Attempting to cast ' + v.name + ' to a moment object.');
-        var testMoment = castToMoment(v.values[0]);
-        var isValidMoment = testMoment.isValid();
+        const testMoment = castToMoment(v.values[0]);
+        const isValidMoment = testMoment.isValid();
 
         if (isValidMoment) {
             logger.debug('Successfully cast ' + v.name + ' as a moment.');
             type = 'date';
 
-            var newValues = v.values.map(dateAsNumber);
+            const newValues = v.values.map(dateAsNumber);
             v.values = newValues;
 
             // Invalidate attributeMetadata aggregations that are value-based:
@@ -748,20 +745,20 @@ function punnedTypeFromVector(v, attributeMetadata) {
     }
 
     if ((/color/i).test(v.name)) {
-        var isValidColor = false, sampleValue = v.values[0];
+        let isColorInAPalette = false, sampleValue = v.values[0];
         if (type === 'number') {
             if (sampleValue > 0 && sampleValue <= 0xFFFFFFFF) {
-                isValidColor = true;
+                isColorInAPalette = true;
             }
         } else if (type === 'string') {
             try {
-                var testColor = new Color(sampleValue);
-                isValidColor = testColor !== undefined && testColor.rgbaString() !== undefined;
+                const testColor = new Color(sampleValue);
+                isColorInAPalette = testColor !== undefined && testColor.rgbaString() !== undefined;
             } catch (e) {
                 logger.debug('Failed to cast ' + v.name + ' as a color: ' + e.message);
             }
         }
-        if (isValidColor) {
+        if (isColorInAPalette) {
             type = 'color';
         } else {
             logger.debug('Failed to cast ' + v.name + ' as a color.');
@@ -773,11 +770,11 @@ function punnedTypeFromVector(v, attributeMetadata) {
 
 /**
  * @param {VectorGraph} vg
- * @returns {AttrObject[]}
+ * @returns {List<AttrObject>}
  */
 function getAttributes0(vg/*, metadata*/) {
-    var vectors = getVectors0(vg);
-    var attributeObjects = [];
+    const vectors = getVectors0(vg);
+    const attributeObjects = [];
 
     _.each(vectors, function (v) {
         if (v.values.length === 0) {
@@ -796,32 +793,42 @@ function getAttributes0(vg/*, metadata*/) {
 }
 
 
-function logTransform(values) {
+function scaleValuesLog(values) {
     return _.map(values, function (val) {
         return val <= 0 ? 0 : Math.log(val);
     });
 }
 
 
-// rescale array of [a,b] range values to [minimum, maximum]
-function normalize(array, minimum, maximum) {
-    var max = _.max(array);
-    var min = _.min(array);
-    var scaleFactor = (maximum - minimum) / (max - min + 1);
+/** rescale values from their full range to integral values in [minimum, maximum]
+ * @param {Number[]} values values to rescale
+ * @param {Number} minimum
+ * @param {Number} maximum
+ * @returns {Number[]}
+ */
+function scaleValuesLinearIntegral(values, minimum, maximum) {
+    const max = _.max(values);
+    const min = _.min(values);
+    const scaleFactor = (maximum - minimum) / (max - min + 1);
 
-    return _.map(array, function (val) {
+    return _.map(values, function (val) {
         return minimum + Math.floor((val - min) * scaleFactor);
     });
 }
 
 
-// rescale array of [a,b] range value to [minimum, maximum] with floats
-function normalizeFloat(array, minimum, maximum) {
-    var max = _.max(array);
-    var min = _.min(array);
-    var scaleFactor = (maximum - minimum) / (max - min + 1);
+/** rescale values from their full range to full-precision values in [minimum, maximum]
+ * @param {Number[]} values values to rescale
+ * @param {Number} minimum
+ * @param {Number} maximum
+ * @returns {Number[]}
+ */
+function scaleValuesLinear(values, minimum, maximum) {
+    const max = _.max(values);
+    const min = _.min(values);
+    const scaleFactor = (maximum - minimum) / (max - min + 1);
 
-    return _.map(array, function (val) {
+    return _.map(values, function (val) {
         return minimum + (val - min) * scaleFactor;
     });
 }
@@ -832,10 +839,10 @@ function normalizeFloat(array, minimum, maximum) {
  */
 function getVectors1(vg) {
     return _.flatten([
-            vg.uint32_vectors, vg.int32_vectors, vg.int64_vectors,
-            vg.float_vectors, vg.double_vectors,
-            vg.string_vectors, vg.bool_vectors
-        ], false);
+        vg.uint32_vectors, vg.int32_vectors, vg.int64_vectors,
+        vg.float_vectors, vg.double_vectors,
+        vg.string_vectors, vg.bool_vectors
+    ], false);
 }
 
 /**
@@ -844,19 +851,19 @@ function getVectors1(vg) {
  * @returns {{nodes: Object.<AttrObject>, edges: Object.<AttrObject>}}
  */
 function getAttributes1(vg, metadata) {
-    var vectors = getVectors1(vg);
-    var nodeAttributeObjects = {};
-    var edgeAttributeObjects = {};
+    const vectors = getVectors1(vg);
+    const nodeAttributeObjects = {};
+    const edgeAttributeObjects = {};
 
     _.each(vectors, function (v) {
         if (v.values.length === 0) {
             return;
         }
-        var attributeObjects = v.target === VERTEX ? nodeAttributeObjects : edgeAttributeObjects;
-        var typeAccessor = v.target === VERTEX ? 'nodes' : (v.target === EDGE ? 'edges' : undefined);
-        var attributeMetadata;
+        const attributeObjects = v.target === VERTEX ? nodeAttributeObjects : edgeAttributeObjects;
+        const typeAccessor = v.target === VERTEX ? 'nodes' : (v.target === EDGE ? 'edges' : undefined);
+        let attributeMetadata;
         if (metadata !== undefined && metadata[typeAccessor] !== undefined) {
-            var relevantMetadata = _.find(metadata[typeAccessor], function (metadataByComponent) {
+            const relevantMetadata = _.find(metadata[typeAccessor], function (metadataByComponent) {
                 return metadataByComponent.attributes.hasOwnProperty(v.name);
             });
             if (relevantMetadata !== undefined) {
@@ -879,14 +886,20 @@ function getAttributes1(vg, metadata) {
 
 
 function sameKeys(o1, o2){
-    var k1 = _.keys(o1);
-    var k2 = _.keys(o2);
-    var ki = _.intersection(k1, k2);
+    const k1 = _.keys(o1);
+    const k2 = _.keys(o2);
+    const ki = _.intersection(k1, k2);
     return k1.length === k2.length && k2.length === ki.length;
 }
 
 /** These encodings are handled in their own special way. */
-var GraphShapeProperties = ['source', 'destination', 'nodeId'];
+const GraphShapeProperties = ['source', 'destination', 'nodeId'];
+
+function getShapeMappings(nodeEncodings, edgeEncodings) {
+    const mappings = _.pick(edgeEncodings, [GraphShapeProperties[0], GraphShapeProperties[1]]);
+    mappings.nodeId = nodeEncodings.nodeId;
+    return mappings;
+}
 
 /**
  * @param {Object.<EncodingSpec>} encodings
@@ -896,7 +909,7 @@ var GraphShapeProperties = ['source', 'destination', 'nodeId'];
  */
 function getSimpleEncodings(encodings, loaders, target) {
 
-    var supportedEncodings = _.pick(encodings, function (enc, graphProperty) {
+    const supportedEncodings = _.pick(encodings, function (enc, graphProperty) {
         if (_.contains(GraphShapeProperties, graphProperty)) {
             return false;
         }
@@ -938,8 +951,8 @@ function checkMetadataAgainstVGraph(metadata, vg, vgAttributes) {
         throw new Error('K-partite graphs support not implemented yet!');
     }
 
-    var nodesMetadata = metadata.nodes[0];
-    var edgesMetadata = metadata.edges[0];
+    const nodesMetadata = metadata.nodes[0];
+    const edgesMetadata = metadata.edges[0];
 
     logger.debug('Node attributes metadata:', nodesMetadata.attributes);
     logger.debug('Edge attributes metadata:', edgesMetadata.attributes);
@@ -971,26 +984,26 @@ function decode1(graph, vg, metadata)  {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
                  vg.version, vg.name, vg.vertexCount, vg.edgeCount);
 
-    var vgAttributes = getAttributes1(vg, metadata);
-    var graphInfo = checkMetadataAgainstVGraph(metadata, vg, vgAttributes);
+    const vgAttributes = getAttributes1(vg, metadata);
+    const graphInfo = checkMetadataAgainstVGraph(metadata, vg, vgAttributes);
     notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.vertexCount);
 
-    var edges = new Array(vg.edgeCount);
-    for (var i = 0; i < vg.edges.length; i++) {
-        var e = vg.edges[i];
+    const edges = new Array(vg.edgeCount);
+    for (const i = 0; i < vg.edges.length; i++) {
+        const e = vg.edges[i];
         edges[i] = [e.src, e.dst];
     }
     // TODO Check if x/y are bound in graphInfo.nodes.encodings
-    var dimensions = [1, 1];
+    const dimensions = [1, 1];
 
-    var vertices = lookupInitialPosition(vg, _.values(vgAttributes.nodes));
+    let vertices = lookupInitialPosition(vg, _.values(vgAttributes.nodes));
     if (vertices === undefined) {
         clientNotification.loadingStatus(graph.socket, 'Initializing positions');
         vertices = computeInitialPositions(vg.vertexCount, edges, dimensions, graph.socket);
     }
 
-    var loaders = attributeLoaders(graph);
-    var mapper = mappers[metadata.mapper];
+    let loaders = attributeLoaders(graph);
+    let mapper = mappers[metadata.mapper];
     if (!mapper) {
         logger.warn('Unknown mapper', metadata.mapper, 'using "default"');
         mapper = mappers['default'];
@@ -998,20 +1011,20 @@ function decode1(graph, vg, metadata)  {
     loaders = wrap(mapper.mappings, loaders);
     logger.trace('Attribute loaders:', loaders);
 
-    var nodeEncodings = getSimpleEncodings(graphInfo.nodes.encodings, loaders, VERTEX);
-    var edgeEncodings = getSimpleEncodings(graphInfo.edges.encodings, loaders, EDGE);
+    const nodeEncodings = getSimpleEncodings(graphInfo.nodes.encodings, loaders, VERTEX);
+    const edgeEncodings = getSimpleEncodings(graphInfo.edges.encodings, loaders, EDGE);
+    const shapeMappings = getShapeMappings(graphInfo.nodes.encodings, graphInfo.edges.encodings);
 
-
-    var flatAttributeArray = _.values(vgAttributes.nodes).concat(_.values(vgAttributes.edges));
-    var allEncodings =  _.extend({}, nodeEncodings, edgeEncodings);
+    const flatAttributeArray = _.values(vgAttributes.nodes).concat(_.values(vgAttributes.edges));
+    const allEncodings =  _.extend({}, nodeEncodings, edgeEncodings, shapeMappings);
     loadDataframe(graph.dataframe, flatAttributeArray, vg.vertexCount, vg.edgeCount, allEncodings, graphInfo);
 
     _.each(loaders, function (loaderArray, graphProperty) {
         _.each(loaderArray, function (loader) {
-            var encodings = loader.target === VERTEX ? nodeEncodings : edgeEncodings;
-            var attributes = loader.target === VERTEX ? vgAttributes.nodes : vgAttributes.edges;
+            const encodings = loader.target === VERTEX ? nodeEncodings : edgeEncodings;
+            const attributes = loader.target === VERTEX ? vgAttributes.nodes : vgAttributes.edges;
             if (graphProperty in encodings) {
-                var attributeName = encodings[graphProperty];
+                const attributeName = encodings[graphProperty];
                 logger.debug('Loading values for', graphProperty, 'from attribute', attributeName);
                 loader.values = attributes[attributeName].values;
             } else {
@@ -1039,8 +1052,8 @@ function decode1(graph, vg, metadata)  {
 }
 
 function notifyClientOfSizesForAllocation (socket, edgeCount, vertexCount) {
-    var MAX_SIZE_TO_ALLOCATE = 2000000;
-    var numElements = {
+    const MAX_SIZE_TO_ALLOCATE = 2000000;
+    const numElements = {
         edge: Math.min(edgeCount, MAX_SIZE_TO_ALLOCATE),
         point: Math.min(vertexCount, MAX_SIZE_TO_ALLOCATE)
     };
