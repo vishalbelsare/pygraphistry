@@ -43,17 +43,26 @@ const SelectedOpacity = 0.25;
 const Transparent = 0;
 
 // TODO: Pull these into the created histogram object, away from globals.
-const color = d3.scale.ordinal()
-        .range(['#0FA5C5', '#929292', '#0FA5C5', '#00BBFF'])
-        .domain(['local', 'global', 'globalSmaller', 'localBigger']);
+const colorsByType = {
+    local: '#0FA5C5',
+    global: '#929292',
+    globalSmaller: '#0FA5C5',
+    localBigger: '#00BBFF'
+};
 
-const colorUnselected = d3.scale.ordinal()
-        .range(['#96D8E6', '#C8C8C8', '#0FA5C5', '#00BBFF'])
-        .domain(['local', 'global', 'globalSmaller', 'localBigger']);
+const colorsUnselectedByType = {
+    local: '#96D8E6',
+    global: '#C8C8C8',
+    globalSmaller: '#0FA5C5',
+    localBigger: '#00BBFF'
+};
 
-const colorHighlighted = d3.scale.ordinal()
-        .range(['#E35E13', '#6B6868', '#E35E13', '#FF3000'])
-        .domain(['local', 'global', 'globalSmaller', 'localBigger']);
+const colorsHighlightedByType = {
+    local: '#E35E13',
+    global: '#6B6868',
+    globalSmaller: '#E35E13',
+    localBigger: '#FF3000'
+};
 
 const margin = {top: 10, right: 70, bottom: 20, left:20};
 const marginSparklines = {top: 15, right: 10, bottom: 15, left: 10};
@@ -736,21 +745,19 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
 HistogramsPanel.prototype.highlight = function (selection, toggle) {
     _.each(selection[0], (sel) => {
         const data = sel.__data__;
-        let colorWithoutHighlight;
+        let colorWithoutHighlight = colorsByType;
         if (this.histogramFilters[data.attr] !== undefined) {
-            const min = this.histogramFilters[data.attr].firstBin;
-            const max = this.histogramFilters[data.attr].lastBin;
-            if (data.binId >= min && data.binId <= max) {
-                colorWithoutHighlight = color;
+            const firstBin = this.histogramFilters[data.attr].firstBin;
+            const lastBin = this.histogramFilters[data.attr].lastBin;
+            if (data.binId >= firstBin && data.binId <= lastBin) {
+                colorWithoutHighlight = colorsByType;
             } else {
-                colorWithoutHighlight = colorUnselected;
+                colorWithoutHighlight = colorsUnselectedByType;
             }
-        } else {
-            colorWithoutHighlight = color;
         }
 
-        const colorScale = (toggle) ? colorHighlighted : colorWithoutHighlight;
-        $(sel).css('fill', colorScale(data.type));
+        let colorScale = toggle ? colorsHighlightedByType : colorWithoutHighlight;
+        $(sel).css('fill', colorScale[data.type]);
     });
 };
 
@@ -848,7 +855,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
         .attr('y', height + marginSparklines.bottom - 4)
         .attr('x', 0)
         .attr('opacity', Transparent)
-        .attr('fill', color('global'))
+        .attr('fill', colorsByType.global)
         .attr('font-size', '0.7em');
 
     const upperTooltip = svg.selectAll('.upperTooltip')
@@ -863,13 +870,13 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     upperTooltip.selectAll('.globalTooltip').data([''])
         .enter().append('tspan')
         .attr('class', 'globalTooltip')
-        .attr('fill', colorHighlighted('global'))
+        .attr('fill', colorsHighlightedByType.global)
         .text('global, ');
 
     upperTooltip.selectAll('.localTooltip').data([''])
         .enter().append('tspan')
         .attr('class', 'localTooltip')
-        .attr('fill', colorHighlighted('local'))
+        .attr('fill', colorsHighlightedByType.local)
         .text('local');
 
     //////////////////////////////////////////////////////////////////////////
@@ -1036,12 +1043,12 @@ HistogramsPanel.prototype.reColor = function (d) {
         const min = this.histogramFilters[d.attr].firstBin;
         const max = this.histogramFilters[d.attr].lastBin;
         if (d.binId >= min && d.binId <= max) {
-            return color(d.type);
+            return colorsByType[d.type];
         } else {
-            return colorUnselected(d.type);
+            return colorsUnselectedByType[d.type];
         }
     } else {
-        return color(d.type);
+        return colorsByType[d.type];
     }
 };
 
@@ -1058,7 +1065,7 @@ HistogramsPanel.prototype.applyAttrBars = function (bars, globalPos, localPos) {
 
         .attr('data-html', true)
         .attr('data-template', (d) => {
-            const fill = colorHighlighted(d.type);
+            const fill = colorsHighlightedByType[d.type];
             return '<div class="tooltip" role="tooltip"><div class="tooltip-arrow"></div>' +
                 '<div class="tooltip-inner" style="background-color: ' + fill + '; border-style: solid; border-width: 1px"></div></div>';
         })
