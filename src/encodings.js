@@ -1,11 +1,11 @@
 'use strict';
 
-var _        = require('underscore');
-var d3Scale       = require('d3-scale');
-var d3Interpolate = require('d3-interpolate');
-var Color         = require('color');
+const _             = require('underscore');
+const d3Scale       = require('d3-scale');
+const d3Interpolate = require('d3-interpolate');
+const Color         = require('color');
 
-var defaults = {
+const defaults = {
     color: {
         isQuantitative: {
             sequential: {
@@ -31,8 +31,8 @@ var defaults = {
 };
 
 function inferColorScalingSpecFor(summary, variation, defaultDomain, distinctValues, binning) {
-    var scalingType, domain, range;
-    var defaultSequentialRange = defaults.color.isQuantitative.sequential.range;
+    let scalingType, domain, range;
+    const defaultSequentialRange = defaults.color.isQuantitative.sequential.range;
     if (summary.isCategorical) {
         if (variation === 'quantitative' && summary.isOrdered) {
             // User can request a quantitative interpretation of ordered categorical domains.
@@ -53,9 +53,9 @@ function inferColorScalingSpecFor(summary, variation, defaultDomain, distinctVal
                 domain = distinctValues;
             }
             if (range === undefined) {
-                var interpolation = d3Interpolate.interpolate(defaultSequentialRange[0], defaultSequentialRange[1]),
+                const interpolation = d3Interpolate.interpolate(defaultSequentialRange[0], defaultSequentialRange[1]),
                     numValues = domain.length;
-                range = _.map(_.range(numValues), function (idx) { return Color(interpolation(idx / numValues)).hexString(); });
+                range = _.map(_.range(numValues), (idx) => Color(interpolation(idx / numValues)).hexString());
                 scalingType = 'ordinal';
             }
         } else if (summary.countDistinct < 10) {
@@ -85,9 +85,9 @@ function inferColorScalingSpecFor(summary, variation, defaultDomain, distinctVal
 
 
 function inferEncodingType (dataframe, type, attributeName) {
-    var aggregations = dataframe.getColumnAggregations(attributeName, type, true);
-    var summary = aggregations.getSummary();
-    var encodingType;
+    const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
+    const summary = aggregations.getSummary();
+    let encodingType;
     switch (type) {
         case 'point':
             if (summary.isPositive) {
@@ -107,7 +107,7 @@ function inferEncodingType (dataframe, type, attributeName) {
 }
 
 function scalingFromSpec (scalingSpec) {
-    var scalingType = scalingSpec.scalingType,
+    let scalingType = scalingSpec.scalingType,
         scaling;
     if (typeof d3Scale[scalingType] === 'function') {
         scaling = d3Scale[scalingType]();
@@ -127,10 +127,10 @@ function scalingFromSpec (scalingSpec) {
 }
 
 function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingType, variation, binning) {
-    var summary = aggregations.getSummary();
-    var scalingType, domain, range;
-    var defaultDomain = [summary.minValue, summary.maxValue];
-    var distinctValues = _.map(summary.distinctValues, function (x) { return x.distinctValue; });
+    const summary = aggregations.getSummary();
+    let scalingType, domain, range;
+    const defaultDomain = [summary.minValue, summary.maxValue];
+    const distinctValues = _.map(summary.distinctValues, function (x) { return x.distinctValue; });
     switch (encodingType) {
         case 'size':
         case 'pointSize':
@@ -195,11 +195,11 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
  * @returns <Array>
  */
 function legendForBins (aggregations, scaling, binning) {
-    var legend;
-    var summary = aggregations.getSummary();
+    let legend;
+    const summary = aggregations.getSummary();
     if (scaling !== undefined && binning !== undefined) {
         // All this just handles many shapes of binning metadata, kind of messy.
-        var minValue = summary.minValue,
+        const minValue = summary.minValue,
             step = binning.binWidth || 0,
             binValues = binning.binValues;
         // NOTE: Use the scaling to get hex string / number, not machine integer, for D3 color/size.
@@ -210,7 +210,7 @@ function legendForBins (aggregations, scaling, binning) {
                         return scaling(index);
                     });
                 } else {
-                    var sortedBinKeys = _.sortBy(_.keys(binning.bins), function (key) {
+                    const sortedBinKeys = _.sortBy(_.keys(binning.bins), function (key) {
                         if (key === '_other') { return Infinity; } // always shows last
                         return -binning.bins[key];
                     });
@@ -224,13 +224,13 @@ function legendForBins (aggregations, scaling, binning) {
                 });
             } else {
                 legend = _.map(binning.bins, function (itemCount, index) {
-                    var value = binValues !== undefined && binValues[index] ? binValues[index] : index;
+                    const value = binValues !== undefined && binValues[index] ? binValues[index] : index;
                     return scaling(value);
                 });
             }
         } else {
             legend = new Array(binning.numBins);
-            for (var i = 0; i < binning.numBins; i++) {
+            for (let i = 0; i < binning.numBins; i++) {
                 legend[i] = scaling(minValue + step * i);
             }
         }
@@ -250,9 +250,9 @@ function legendForBins (aggregations, scaling, binning) {
  * @returns {EncodingSpec}
  */
 function getEncodingSpecFor (dataframe, columnName, type, encodingType) {
-    var column = dataframe.getColumn(columnName, type);
+    const column = dataframe.getColumn(columnName, type);
     if (column === undefined) { return undefined; }
-    var encodingPreferences = column.encodingPreferences;
+    const encodingPreferences = column.encodingPreferences;
     if (encodingPreferences === undefined) { return undefined; }
     if (encodingType === undefined) {
         return undefined;
@@ -272,20 +272,20 @@ function getEncodingSpecFor (dataframe, columnName, type, encodingType) {
  * @param {EncodingSpec} encodingSpec
  */
 function saveEncodingSpec (dataframe, columnName, type, encodingType, encodingSpec) {
-    var column = dataframe.getColumn(columnName, type);
-    if (column === undefined) { return undefined; }
+    const column = dataframe.getColumn(columnName, type);
+    if (column === undefined) { return; }
     if (column.encodingPreferences === undefined) { column.encodingPreferences = {}; }
-    var encodingPreferences = column.encodingPreferences;
+    const encodingPreferences = column.encodingPreferences;
     encodingPreferences[encodingType] = encodingSpec;
 }
 
 
 function inferEncoding (dataframe, type, attributeName, encodingType, variation, binning) {
-    var aggregations = dataframe.getColumnAggregations(attributeName, type, true);
-    var encodingSpec = getEncodingSpecFor(dataframe, attributeName, type, encodingType);
+    const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
+    let encodingSpec = getEncodingSpecFor(dataframe, attributeName, type, encodingType);
     encodingSpec = inferEncodingSpec(encodingSpec, aggregations, attributeName, encodingType, variation, binning);
-    var scaling = scalingFromSpec(encodingSpec);
-    var legend = legendForBins(aggregations, scaling, binning);
+    const scaling = scalingFromSpec(encodingSpec);
+    const legend = legendForBins(aggregations, scaling, binning);
     return {
         legend: legend,
         scaling: scaling
