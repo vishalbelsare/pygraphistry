@@ -1,7 +1,7 @@
 'use strict';
 
-var _ = require('underscore');
-var dataTypeUtil = require('./dataTypes.js');
+const _ = require('underscore');
+const dataTypeUtil = require('./dataTypes.js');
 
 /**
  * @param {Dataframe} dataframe
@@ -28,7 +28,7 @@ function ColumnAggregation(dataframe, column, attrName, graphType) {
 
 /** Legible enumeration of all aggregations supported, for getSummary.
  */
-var AggTypes = [
+const AggTypes = [
     // Data type characterization:
     'jsType', 'dataType',
     'isNumeric', 'isIntegral', 'isContinuous', 'isQuantitative', 'isOrdered',
@@ -44,7 +44,7 @@ var AggTypes = [
 /** Maps external naming/abbreviations for aggregations to AggTypes values.
  * @type {Object.<String>}
  */
-var AggAliases = {
+const AggAliases = {
     avg: 'averageValue',
     mean: 'averageValue',
     min: 'minValue',
@@ -78,9 +78,9 @@ ColumnAggregation.prototype.updateAggregationTo = function (aggType, value) {
 };
 
 ColumnAggregation.prototype.updateAggregations = function (valuesByAggType) {
-    _.each(valuesByAggType, function (aggValue, aggType) {
+    _.each(valuesByAggType, (aggValue, aggType) => {
         this.updateAggregationTo(aggType, aggValue);
-    }, this);
+    });
 };
 
 ColumnAggregation.prototype.hasAggregationByType = function (aggType) {
@@ -99,10 +99,10 @@ ColumnAggregation.prototype.getAggregationByType = function (aggType) {
  * @returns {Aggregations}
  */
 ColumnAggregation.prototype.getSummary = function () {
-    var summary = {};
-    _.each(AggTypes, function (aggType) {
+    const summary = {};
+    _.each(AggTypes, (aggType) => {
         summary[aggType] = this.getAggregationByType(aggType);
-    }, this);
+    });
     return summary;
 };
 
@@ -182,9 +182,9 @@ ColumnAggregation.prototype.genericSinglePassFixedMemoryAggregations = function 
 };
 
 ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
-    var minValue = Infinity, maxValue = -Infinity, sum = 0, countMissing = 0,
-        numValues = this.getAggregationByType('count');
-    _.each(this.values, function (value) {
+    const numValues = this.getAggregationByType('count');
+    let minValue = Infinity, maxValue = -Infinity, sum = 0, countMissing = 0;
+    _.each(this.values, (value) => {
         if (dataTypeUtil.numberSignifiesUndefined(value) || dataTypeUtil.int32SignifiesUndefined(value)) {
             countMissing++;
             return;
@@ -202,20 +202,20 @@ ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
 };
 
 ColumnAggregation.prototype.computeStandardDeviation = function () {
-    var avg = this.getAggregationByType('averageValue'),
-        numValues = this.getAggregationByType('count'),
-        diff, sumSquareDiffs = 0;
-    _.each(this.values, function (value) {
+    const avg = this.getAggregationByType('averageValue'),
+        numValues = this.getAggregationByType('count');
+    let diff, sumSquareDiffs = 0;
+    _.each(this.values, (value) => {
         if (dataTypeUtil.numberSignifiesUndefined(value)) { return; }
         diff = value - avg;
         sumSquareDiffs += diff * diff;
     });
-    var variance = sumSquareDiffs / numValues;
+    const variance = sumSquareDiffs / numValues;
     this.updateAggregationTo('variance', variance);
     this.updateAggregationTo('standardDeviation', Math.sqrt(variance));
 };
 
-var MaxDistinctValues = 400;
+const MaxDistinctValues = 40000;
 
 ColumnAggregation.prototype.countDistinct = function (limit) {
     if (limit === undefined) {
@@ -259,19 +259,19 @@ ColumnAggregation.prototype.countDistinct = function (limit) {
     this.updateAggregationTo('isCategorical' , isCategorical);
 };
 
-var OrderedDataTypes = ['number', 'integer', 'string', 'date'];
+const OrderedDataTypes = ['number', 'integer', 'string', 'date'];
 
 ColumnAggregation.prototype.inferDataType = function () {
-    var isNumeric = true, isIntegral = true, jsType;
-    _.each(this.values, function (value) {
+    let isNumeric = true, isIntegral = true, jsType;
+    _.each(this.values, (value) => {
         if (dataTypeUtil.valueSignifiesUndefined(value)) { return; }
         jsType = typeof value;
         if (isNumeric) {
             isNumeric = isNumeric && !isNaN(value);
             isIntegral = isNumeric && this.isIntegral(value);
         }
-    }, this);
-    var summary = {
+    });
+    const summary = {
         jsType: jsType,
         isNumeric: isNumeric,
         isIntegral: isIntegral,
@@ -290,7 +290,7 @@ ColumnAggregation.prototype.inferDataType = function () {
 };
 
 ColumnAggregation.prototype.inferDivergence = function () {
-    var isNumeric = this.getAggregationByType('isNumeric'),
+    const isNumeric = this.getAggregationByType('isNumeric'),
         hasNegative = isNumeric && this.getAggregationByType('minValue') < 0,
         hasPositive = isNumeric && this.getAggregationByType('maxValue') > 0,
         summary = {
