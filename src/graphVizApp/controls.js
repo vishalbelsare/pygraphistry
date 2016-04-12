@@ -21,6 +21,7 @@ var persist         = require('./persist.js');
 var goLiveButton    = require('./goLiveButton.js');
 var colorPicker     = require('./colorpicker.js');
 var externalLink    = require('./externalLink.js');
+var fullscreenLink  = require('./fullscreenLink.js');
 var TimeExplorer    = require('./timeExplorer/timeExplorer.js');
 var contentFormatter = require('./contentFormatter.js');
 
@@ -616,6 +617,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     toggleLogo($('.logo-container'), urlParams);
     var popoutClicks = clicksFromPopoutControls($elt);
     externalLink($('#externalLinkButtonContainer'), $('#externalLinkButton'), urlParams);
+    fullscreenLink($('#externalLinkButtonContainer'), $('#fullscreenButton'), urlParams);
 
     var $graph = $('#simulate');
     // TODO: More general version for all toggle-able buttons?
