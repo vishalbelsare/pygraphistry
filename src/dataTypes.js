@@ -59,27 +59,28 @@ var DataTypesUtils = {
             case 'undefined':
             case 'number':
             case 'integer':
-                return function (value) { return value.toString(); };
+                return (value) => value.toString();
             case 'string':
-                return function (value) { return value; };
+                return (value) => value;
             case 'date':
-                return function (value) { return value.toDateString(); };
+                return (value) => value.toDateString();
             case 'datetime':
-                return function (value) { return value.toISOString(); };
+                return (value) => value.toISOString();
             case 'object':
+                return (value) => value === null ? value.toString() : JSON.stringify(value);
             case 'array':
-                return function (value) { return value === null ? value.toString() : JSON.stringify(value); };
+                return (value) => JSON.stringify(value);
             default:
-                return function (value) { return value.toString(); };
+                return (value) => value.toString();
         }
     },
 
     isLessThanForDataType: function (dataType) {
         switch (dataType) {
             case 'string':
-                return function (a, b) { return a.localeCompare(b, DefaultLocale, LocaleCompareOptions) < 0; };
+                return (a, b) => a.localeCompare(b, DefaultLocale, LocaleCompareOptions) < 0;
             default:
-                return function (a, b) { return a < b; };
+                return (a, b) => a < b;
         }
     }
 };
