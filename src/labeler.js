@@ -25,11 +25,11 @@ function defaultLabels(graph, indices, type) {
     var dataframe = graph.dataframe;
     var rows = dataframe.getRows(indices, type);
 
-    var structuredData = rows.map(function (row) {
+    var structuredData = rows.map((row) => {
         var title = row._title;
         var filteredRow = _.omit(row, '_title');
 
-        var unsortedColumns = _.map(_.keys(filteredRow), function (columnName) {
+        var unsortedColumns = _.map(_.keys(filteredRow), (columnName) => {
             var dataType = dataframe.getDataType(columnName, type);
             var value = filteredRow[columnName],
                 displayName;
@@ -45,9 +45,7 @@ function defaultLabels(graph, indices, type) {
             };
         });
 
-        var sortedColumns = _.sortBy(unsortedColumns, function (obj) {
-            return obj.key;
-        });
+        var sortedColumns = _.sortBy(unsortedColumns, (obj) => obj.key);
 
         return {
             title: title,
@@ -65,7 +63,7 @@ function presetLabels (dataframe, indices, type) {
                 (type === 'edge') ? 'edgeLabels' :
                 '';
 
-    return indices.map(function (idx) {
+    return indices.map((idx) => {
         var label = dataframe.getCell(idx, 'hostBuffer', name);
         return { formatted: label };
     });
@@ -74,7 +72,7 @@ function presetLabels (dataframe, indices, type) {
 
 
 function getLabels(graph, indices, dim) {
-    var type = _.findKey(DimCodes, function (dimCode) { return dimCode === dim; });
+    var type = _.findKey(DimCodes, (dimCode) => dimCode === dim);
 
     var hasPrecomputedLabels =  (type === 'point') ? graph.dataframe.hasHostBuffer('pointLabels') :
                                 (type === 'edge') ? graph.dataframe.hasHostBuffer('edgeLabels') :

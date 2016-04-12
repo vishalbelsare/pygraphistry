@@ -1,21 +1,21 @@
 'use strict';
 
-var    cljs = require('./cl.js'),
+const  cljs = require('./cl.js'),
           Q = require('q'),
      Kernel = require('./kernel.js');
 
-var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:cl:histogramKernel');
+const log         = require('common/logger.js');
+const logger      = log.createLogger('graph-viz:cl:histogramKernel');
 
-var MAX_NUM_BINS = 256;
+const MAX_NUM_BINS = 256;
 
 function HistogramKernel(clContext) {
     logger.trace('Creating histogram kernel');
 
-    var args = ['numBins', 'dataSize', 'check', 'binStart', 'indices', 'data', 'output',
+    const args = ['numBins', 'dataSize', 'check', 'binStart', 'indices', 'data', 'output',
             'outputSum', 'outputMean', 'outputMax', 'outputMin'
     ];
-    var argsType = {
+    const argsType = {
         numBins: cljs.types.uint_t,
         dataSize: cljs.types.uint_t,
         check: null,
@@ -41,9 +41,9 @@ HistogramKernel.prototype = {
         // TODO: Use a proper lookup table by name instead of arbitrary indexing.
         // TODO: Figure out why this turns into a regular buffer from a promise on second call.
         // HACK. Check if it's a promise or not.
-        var maybePromise = this.qBuffers[6];
+        const maybePromise = this.qBuffers[6];
         if (typeof maybePromise.then === 'function') {
-            return maybePromise.then(function (indexBuffer) {
+            return maybePromise.then((indexBuffer) => {
                 return indexBuffer.write(indices);
             });
         } else {
@@ -52,10 +52,10 @@ HistogramKernel.prototype = {
     },
 
     initializeBuffers: function (simulator) {
-        var maxSizeInput = Math.max(simulator.dataframe.numPoints(), simulator.dataframe.numEdges());
-        var maxSizeOutput = MAX_NUM_BINS;
-        var maxBytesInput = maxSizeInput * Float32Array.BYTES_PER_ELEMENT;
-        var maxBytesOutput = maxSizeOutput * Float32Array.BYTES_PER_ELEMENT;
+        const maxSizeInput = Math.max(simulator.dataframe.numPoints(), simulator.dataframe.numEdges());
+        const maxSizeOutput = MAX_NUM_BINS;
+        const maxBytesInput = maxSizeInput * Float32Array.BYTES_PER_ELEMENT;
+        const maxBytesOutput = maxSizeOutput * Float32Array.BYTES_PER_ELEMENT;
         this.outputZeros = new Uint32Array(maxSizeOutput);
         this.qBuffers = [
             simulator.cl.createBuffer(maxBytesOutput, 'histogram_output'),
@@ -73,18 +73,18 @@ HistogramKernel.prototype = {
 
     run: function (simulator, numBins, dataSize, dataBuffer, indicesTyped, bins) {
         logger.debug('Running histogram kernel.');
-        var that = this;
+        const that = this;
 
         // TODO: Take in type(s) to run as an argument.
-        var checkTyped = new Uint32Array([0]);
-        checkTyped[0] = checkTyped[0] | (1);
-        checkTyped[0] = checkTyped[0] | (1 << 5);
+        const checkTyped = new Uint32Array([0]);
+        checkTyped[0] |= (1);
+        checkTyped[0] |= (1 << 5);
 
         if (!that.qBuffers) {
             that.initializeBuffers(simulator);
         }
 
-        return Q.all(that.qBuffers).spread(function (output, outputSum, outputMean, outputMax, outputMin, data, indices, binStart, check) {
+        return Q.all(that.qBuffers).spread((output, outputSum, outputMean, outputMax, outputMin, data, indices, binStart, check) => {
             that.buffers = {
                 output: output,
                 outputSum: outputSum,
@@ -118,20 +118,20 @@ HistogramKernel.prototype = {
                 check.write(checkTyped)
                 // indices.write(indicesTyped)
             ]).fail(log.makeQErrorHandler(logger, 'Writing to buffers for histogram kernel failed'));
-        }).then(function () {
+        }).then(() => {
 
-            var workGroupSize = Math.min(256, simulator.cl.deviceProps.MAX_WORK_GROUP_SIZE);
-            // var VT = 16;
-            var numWorkItems = dataSize + (workGroupSize - (dataSize % workGroupSize));
+            const workGroupSize = Math.min(256, simulator.cl.deviceProps.MAX_WORK_GROUP_SIZE);
+            // const VT = 16;
+            const numWorkItems = dataSize + (workGroupSize - (dataSize % workGroupSize));
             // numWorkItems = numWorkItems + (VT - (numWorkItems % VT));
             // console.log(numWorkItems, workGroupSize, simulator.cl.deviceProps.MAX_WORK_GROUP_SIZE);
             return that.histogramKernel.exec([numWorkItems], [], [workGroupSize])
-                .then(function () {
+                .then(() => {
 
-                    var retOutput = new Int32Array(MAX_NUM_BINS * Int32Array.BYTES_PER_ELEMENT);
+                    const retOutput = new Int32Array(MAX_NUM_BINS * Int32Array.BYTES_PER_ELEMENT);
 
                     // TODO: Return all outputs, not just count;
-                    return that.buffers.output.read(retOutput).then(function () {
+                    return that.buffers.output.read(retOutput).then(() => {
                         return new Int32Array(retOutput.buffer, 0, numBins);
                     }).fail(log.makeQErrorHandler(logger, 'Reading histogram output failed'));
 
