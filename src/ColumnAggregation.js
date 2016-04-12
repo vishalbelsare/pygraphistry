@@ -2,6 +2,7 @@
 
 const _ = require('underscore');
 const dataTypeUtil = require('./dataTypes.js');
+const HashTable = require('ht');
 
 /**
  * @param {Dataframe} dataframe
@@ -149,8 +150,10 @@ ColumnAggregation.prototype.runAggregationForAggType = function (aggType) {
             break;
         case 'countDistinct':
         case 'distinctValues':
+            this.countDistinct();
+            break;
         case 'isCategorical':
-            this.countDistinct(500);
+            this.isCategorical();
             break;
         case 'binning':
             break;
@@ -164,10 +167,10 @@ ColumnAggregation.prototype.isIntegral = function (value) {
 };
 
 ColumnAggregation.prototype.genericSinglePassFixedMemoryAggregations = function () {
-    var minValue = null, maxValue = null, countMissing = 0,
+    let minValue = null, maxValue = null, countMissing = 0,
         numValues = this.getAggregationByType('count');
-    var isLessThan = dataTypeUtil.isLessThanForDataType(this.getAggregationByType('dataType'));
-    _.each(this.values, function (value) {
+    const isLessThan = dataTypeUtil.isLessThanForDataType(this.getAggregationByType('dataType'));
+    _.each(this.values, (value) => {
         if (dataTypeUtil.valueSignifiesUndefined(value)) {
             countMissing++;
             return;
@@ -217,35 +220,42 @@ ColumnAggregation.prototype.computeStandardDeviation = function () {
 
 const MaxDistinctValues = 40000;
 
-ColumnAggregation.prototype.countDistinct = function (limit) {
-    if (limit === undefined) {
-        limit = MaxDistinctValues;
-    }
-    var countsByValue = {}, numDistinct = 0, minValue = Infinity, maxValue = -Infinity,
-        keyMaker = dataTypeUtil.keyMakerForDataType(this.getAggregationByType('dataType')), valueKey;
-    _.each(this.values, function (value) {
+ColumnAggregation.prototype.countDistinct = function (limit=MaxDistinctValues) {
+    let countsByValue = new HashTable(),
+        numDistinct = 0, minValue = null, maxValue = null;
+    const isLessThan = dataTypeUtil.isLessThanForDataType(this.getAggregationByType('dataType'));
+    _.each(this.values, (value) => {
         if (dataTypeUtil.valueSignifiesUndefined(value)) { return; }
-        if (value < minValue) { minValue = value; }
-        else if (value > maxValue) { maxValue = value; }
-        valueKey = keyMaker(value);
+        if (minValue === null || isLessThan(value, minValue)) { minValue = value; }
+        else if (maxValue === null || isLessThan(maxValue, value)) { maxValue = value; }
         if (numDistinct < limit) {
-            if (countsByValue[valueKey] === undefined) {
-                numDistinct++;
-                countsByValue[valueKey] = 1;
+            if (countsByValue.contains(value)) {
+                countsByValue.put(value, countsByValue.get(value) + 1);
             } else {
-                countsByValue[valueKey] += 1;
+                numDistinct++;
+                countsByValue.put(value, 1);
             }
         }
     });
-    var distinctCounts = [];
-    _.each(countsByValue, function (key, value) {
-        return {distinctValue: key, count: value};
+    let distinctCounts = new Array(numDistinct), idx = 0;
+    countsByValue.forEach((key, value) => {
+        distinctCounts[idx++] = {distinctValue: key, count: value};
     });
     // Sort by count descending so the most common elements are first:
-    distinctCounts.sort(function (a, b) { return b.count - a.count; });
+    distinctCounts.sort((a, b) => b.count - a.count);
+    this.updateAggregationTo('minValue', minValue);
+    this.updateAggregationTo('maxValue', maxValue);
     this.updateAggregationTo('countDistinct', numDistinct);
     this.updateAggregationTo('distinctValues', distinctCounts);
-    var isCategorical = false;
+};
+
+const MaxCategoricalValues = MaxDistinctValues;
+
+ColumnAggregation.prototype.isCategorical = function (limit=MaxCategoricalValues) {
+    const numDistinct = this.getAggregationByType('countDistinct'),
+        minValue = this.getAggregationByType('minValue'),
+        maxValue = this.getAggregationByType('maxValue');
+    let isCategorical = false;
     switch (this.getAggregationByType('dataType')) {
         case 'string':
             isCategorical = numDistinct <= limit;
