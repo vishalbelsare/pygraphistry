@@ -24,11 +24,11 @@ const contentFormatter = require('./contentFormatter.js');
 const DIST = false;
 const DRAG_SAMPLE_INTERVAL = 200;
 const BAR_THICKNESS = 16;
-const SPARKLINE_HEIGHT = 65;
-const SPARKLINE_BACKGROUND_HEIGHT = 5;
-const NUM_SPARKLINES = 30;
-const NUM_COUNTBY_SPARKLINES = NUM_SPARKLINES - 1;
-const NUM_COUNTBY_HISTOGRAM = NUM_COUNTBY_SPARKLINES;
+const HORIZONTAL_HEIGHT = 65;
+const HORIZONTAL_BACKGROUND_HEIGHT = 5;
+const MAX_HORIZONTAL_BINS = 30;
+const MAX_HORIZONTAL_ELEMENTS = MAX_HORIZONTAL_BINS - 1;
+const MAX_VERTICAL_ELEMENTS = MAX_HORIZONTAL_ELEMENTS;
 
 const DefaultHistogramBarFillColor = '#FCFCFC';
 const FilterHistogramBarFillColor = '#556ED4';
@@ -64,8 +64,8 @@ const colorsHighlightedByType = {
     localBigger: '#FF3000'
 };
 
-const margin = {top: 10, right: 70, bottom: 20, left:20};
-const marginSparklines = {top: 15, right: 10, bottom: 15, left: 10};
+const histogramMarginsVertical = {top: 10, right: 70, bottom: 20, left:20};
+const histogramMarginsHorizontal = {top: 15, right: 10, bottom: 15, left: 10};
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -198,7 +198,7 @@ function HistogramsPanel(globalStats, filtersPanel,
             const vizContainer = this.$el.children('.vizContainer');
             histogram.set('vizContainer', vizContainer); // TODO: Do we ever use this attribute?
 
-            let vizHeight = SPARKLINE_HEIGHT;
+            let vizHeight = HORIZONTAL_HEIGHT;
             histogram.set('d3Data', {});
             if (histogram.get('sparkLines')) {
                 vizContainer.height(String(vizHeight) + 'px');
@@ -206,7 +206,7 @@ function HistogramsPanel(globalStats, filtersPanel,
                 panel.updateSparkline(vizContainer, histogram, attribute);
             } else {
                 const histogramData = histogram.getHistogramData();
-                vizHeight = histogramData.numBins * BAR_THICKNESS + margin.top + margin.bottom;
+                vizHeight = histogramData.numBins * BAR_THICKNESS + histogramMarginsVertical.top + histogramMarginsVertical.bottom;
                 vizContainer.height(String(vizHeight) + 'px');
                 initializeHistogramViz(vizContainer, histogram); // TODO: Link to data?
                 panel.updateHistogram(vizContainer, histogram, attribute);
@@ -256,7 +256,7 @@ function HistogramsPanel(globalStats, filtersPanel,
             const vizContainer = this.model.get('vizContainer');
             const attribute = this.model.get('attribute');
             const d3Data = this.model.get('d3Data');
-            const vizHeight = SPARKLINE_HEIGHT;
+            const vizHeight = HORIZONTAL_HEIGHT;
             d3Data.svg.selectAll('*').remove();
             vizContainer.empty();
             vizContainer.height(String(vizHeight) + 'px');
@@ -272,8 +272,8 @@ function HistogramsPanel(globalStats, filtersPanel,
             const d3Data = this.model.get('d3Data');
             const histogram = this.model.getHistogramData();
             const numBins = (histogram.type === 'countBy') ?
-                Math.min(NUM_COUNTBY_HISTOGRAM, histogram.numBins) : histogram.numBins;
-            const vizHeight = numBins * BAR_THICKNESS + margin.top + margin.bottom;
+                Math.min(MAX_VERTICAL_ELEMENTS, histogram.numBins) : histogram.numBins;
+            const vizHeight = numBins * BAR_THICKNESS + histogramMarginsVertical.top + histogramMarginsVertical.bottom;
             d3Data.svg.selectAll('*').remove();
             vizContainer.empty();
             vizContainer.height(String(vizHeight) + 'px');
@@ -762,14 +762,14 @@ HistogramsPanel.prototype.highlight = function (selection, toggle) {
 };
 
 HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
-    const height = $el.height() - margin.top - margin.bottom;
-    const width = $el.width() - margin.left - margin.right;
+    const height = $el.height() - histogramMarginsVertical.top - histogramMarginsVertical.bottom;
+    const width = $el.width() - histogramMarginsVertical.left - histogramMarginsVertical.right;
     const data = model.get('data');
     const globalStats = model.getHistogramData(attribute);
     const bins = data.bins || []; // Guard against empty bins.
     const type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     const d3Data = model.get('d3Data');
-    const numBins = (type === 'countBy' ? Math.min(NUM_COUNTBY_HISTOGRAM, globalStats.numBins) : globalStats.numBins);
+    const numBins = (type === 'countBy' ? Math.min(MAX_VERTICAL_ELEMENTS, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
 
     const svg = d3Data.svg;
@@ -778,7 +778,7 @@ HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
 
     const barPadding = 2;
     const stackedBins = toStackedBins(bins, globalStats, type, attribute, data.numValues, globalStats.numValues,
-            DIST, (type === 'countBy' ? NUM_COUNTBY_HISTOGRAM : 0));
+            DIST, (type === 'countBy' ? MAX_VERTICAL_ELEMENTS : 0));
     const barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/numBins) - barPadding;
 
     //////////////////////////////////////////////////////////////////////////
@@ -817,15 +817,15 @@ HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
 
 
 HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
-    const width = $el.width() - marginSparklines.left - marginSparklines.right;
-    const height = $el.height() - marginSparklines.top - marginSparklines.bottom;
+    const width = $el.width() - histogramMarginsHorizontal.left - histogramMarginsHorizontal.right;
+    const height = $el.height() - histogramMarginsHorizontal.top - histogramMarginsHorizontal.bottom;
     const data = model.get('data');
     const id = model.cid;
     const globalStats = model.getSparkLineData();
     const bins = data.bins || []; // Guard against empty bins.
     const type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     const d3Data = model.get('d3Data');
-    const numBins = (type === 'countBy' ? Math.min(NUM_COUNTBY_SPARKLINES, globalStats.numBins) : globalStats.numBins);
+    const numBins = (type === 'countBy' ? Math.min(MAX_HORIZONTAL_ELEMENTS, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
 
     const svg = d3Data.svg;
@@ -834,7 +834,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
 
     const barPadding = 1;
     const stackedBins = toStackedBins(bins, globalStats, type, attribute, data.numValues, globalStats.numValues,
-            DIST, (type === 'countBy' ? NUM_COUNTBY_SPARKLINES : 0));
+            DIST, (type === 'countBy' ? MAX_HORIZONTAL_ELEMENTS : 0));
 
     // const barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/numBins) - barPadding;
     const barWidth = (type === 'countBy') ? xScale.rangeBand() : (width / numBins) - barPadding;
@@ -852,7 +852,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
         .data([''])
         .enter().append('text')
         .attr('class', 'lowerTooltip')
-        .attr('y', height + marginSparklines.bottom - 4)
+        .attr('y', height + histogramMarginsHorizontal.bottom - 4)
         .attr('x', 0)
         .attr('opacity', Transparent)
         .attr('fill', colorsByType.global)
@@ -951,7 +951,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     this.applyAttrBars(bars.enter().append('rect'), 'left', 'right')
         .attr('class', 'bar-rect')
         .attr('width', barWidth)
-        .attr('transform', 'translate(0,' + SPARKLINE_BACKGROUND_HEIGHT + ')')
+        .attr('transform', 'translate(0,' + HORIZONTAL_BACKGROUND_HEIGHT + ')')
         .attr('height', (d) => yScale(d.y0) - yScale(d.y1) + heightDelta(d, yScale))
         .attr('y', (d) => yScale(d.y1) - heightDelta(d, yScale));
 
@@ -1143,15 +1143,15 @@ function initializeHistogramViz($el, model) {
     const bins = data.bins || []; // Guard against empty bins.
     const type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     const d3Data = model.get('d3Data');
-    const numBins = (type === 'countBy' ? Math.min(NUM_COUNTBY_HISTOGRAM, globalStats.numBins) : globalStats.numBins);
+    const numBins = (type === 'countBy' ? Math.min(MAX_VERTICAL_ELEMENTS, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
     const stackedBins = toStackedBins(bins, globalStats, type, attribute, data.numValues, globalStats.numValues,
-        DIST, (type === 'countBy' ? NUM_COUNTBY_HISTOGRAM : 0));
+        DIST, (type === 'countBy' ? MAX_VERTICAL_ELEMENTS : 0));
 
-    width = width - margin.left - margin.right;
-    height = height - margin.top - margin.bottom;
+    width = width - histogramMarginsVertical.left - histogramMarginsVertical.right;
+    height = height - histogramMarginsVertical.top - histogramMarginsVertical.bottom;
 
     const yScale = setupBinScale(type, height, numBins);
     const xScale = setupAmountScale(width, stackedBins, DIST);
@@ -1175,7 +1175,7 @@ function initializeHistogramViz($el, model) {
             }
         });
 
-    const svg = setupSvg($el[0], margin, width, height);
+    const svg = setupSvg($el[0], histogramMarginsVertical, width, height);
 
     svg.append('g')
         .attr('class', 'y axis')
@@ -1221,19 +1221,19 @@ function initializeSparklineViz($el, model) {
     const bins = data.bins || []; // Guard against empty bins.
     const type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     const d3Data = model.get('d3Data');
-    const numBins = (type === 'countBy' ? Math.min(NUM_COUNTBY_SPARKLINES, globalStats.numBins) : globalStats.numBins);
+    const numBins = (type === 'countBy' ? Math.min(MAX_HORIZONTAL_ELEMENTS, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
     const stackedBins = toStackedBins(bins, globalStats, type, attribute, data.numValues, globalStats.numValues,
-        DIST, (type === 'countBy' ? NUM_COUNTBY_SPARKLINES : 0));
+        DIST, (type === 'countBy' ? MAX_HORIZONTAL_ELEMENTS : 0));
 
-    width = width - marginSparklines.left - marginSparklines.right;
-    height = height - marginSparklines.top - marginSparklines.bottom;
+    width = width - histogramMarginsHorizontal.left - histogramMarginsHorizontal.right;
+    height = height - histogramMarginsHorizontal.top - histogramMarginsHorizontal.bottom;
 
     const xScale = setupBinScale(type, width, numBins);
-    const yScale = setupAmountScale(height - SPARKLINE_BACKGROUND_HEIGHT, stackedBins, DIST);
-    const svg = setupSvg($el[0], marginSparklines, width, height);
+    const yScale = setupAmountScale(height - HORIZONTAL_BACKGROUND_HEIGHT, stackedBins, DIST);
+    const svg = setupSvg($el[0], histogramMarginsHorizontal, width, height);
 
     _.extend(d3Data, {
         vizType: 'sparkLines',
@@ -1380,7 +1380,7 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
 };
 
 
-HistogramsPanel.NUM_SPARKLINES = NUM_SPARKLINES;
+HistogramsPanel.MAX_HORIZONTAL_BINS = MAX_HORIZONTAL_BINS;
 
 
 module.exports = HistogramsPanel;

@@ -75,7 +75,7 @@ HistogramBrush.prototype.initializeGlobalData = function(socket, filtersPanel, u
         all: true});
     const globalStreamSparklines = this.aggregatePointsAndEdges({
         all: true,
-        binning: {'_goalNumberOfBins': HistogramsPanel.NUM_SPARKLINES}});
+        binning: {'_goalNumberOfBins': HistogramsPanel.MAX_HORIZONTAL_BINS}});
     Rx.Observable.zip(globalStream, globalStreamSparklines, (histogramsReply, sparkLinesReply) => {
         checkReply(histogramsReply);
         checkReply(sparkLinesReply);
