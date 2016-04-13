@@ -1946,6 +1946,20 @@ VizServer.prototype.dispose = function () {
 };
 
 
+VizServer.clHealthCheck = function() {
+    try {
+        var ctx = cljs.createSync(null);
+        if (ctx !== null && ctx !== undefined) {
+            return {success: true};
+        } else {
+            return {success: false, error: 'Null/Undefined CL context'};
+        }
+    } catch (err) {
+        return {success: false, error: err.message};
+    }
+};
+
+
 if (require.main === module) {
 
     var url     = require('url');
