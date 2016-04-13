@@ -765,6 +765,10 @@ function VizServer(app, socket, cachedVBOs) {
                 if (!query.attribute) {
                     query.attribute = filter.attribute;
                 }
+
+                // Signify that the query is based against the filtered dataframe
+                query.basedOnCurrentDataframe = true;
+
                 var masks = dataframe.getMasksForQuery(query, errors);
                 if (masks !== undefined) {
                     // Record the size of the filtered set for UI feedback:
