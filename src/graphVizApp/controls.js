@@ -102,29 +102,29 @@ var encodingForLabelParams = [
         name: 'labelForegroundColor',
         displayName: 'Text Color',
         type: 'color',
-        def: new Color('#1f1f33'),
-        cb: (function () {
+        def: new Color('#1f1f33').rgbaString(),
+        cb: (() => {
             var sheet = createStyleElement();
             return function (stream) {
                 stream.inspectTime(20).subscribe((c) => {
                     sheet.text('.graph-label, .graph-label table { color: ' + c.rgbaString() + ' }');
                 });
             };
-        }())
+        })()
     },
     {
         name: 'labelBackgroundColor',
         displayName: 'Background Color',
         type: 'color',
-        def: (new Color('#fff')).alpha(0.9),
-        cb: (function () {
+        def: (new Color('#fff')).alpha(0.9).rgbaString(),
+        cb: (() => {
             var sheet = createStyleElement();
             return function (stream) {
                 stream.inspectTime(20).subscribe((c) => {
                     sheet.text('.graph-label .graph-label-container  { background-color: ' + c.rgbaString() + ' }');
                 });
             };
-        }())
+        })()
     },
     {
         name: 'labelTransparency',
