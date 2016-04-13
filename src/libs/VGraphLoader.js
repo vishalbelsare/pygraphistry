@@ -250,7 +250,7 @@ function calculateAndStoreDefaultPointSizeColumns (graph) {
 
     for (let i = 0; i < numGraphElements; i++) {
         const degree = getDegree(forwardsEdges, backwardsEdges, i);
-        outArr[i] = (degree + offset) + (degree - minDegree) * scalar;
+        outArr[i] = Math.min(255, (degree + offset) + (degree - minDegree) * scalar);
     }
 
     const valueObj = {name: '__defaultPointSize', values: outArr, type: 'number'};
