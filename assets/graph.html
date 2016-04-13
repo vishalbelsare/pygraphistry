@@ -938,17 +938,21 @@ Note: this release does not support expressions with multiple fields nor changin
 
     <div class="row">
 
-        <div class="col-xs-8">
+        <div class="col-xs-4">
 
-            <form class="form-inline">
-                <div class="form-group">
-                    <input type="text" class="form-control" id="timeType" placeholder="type (point|edge)">
-                </div>
-                <div class="form-group">
-                    <input type="text" class="form-control" id="timeAttr" placeholder="timeColumn">
-                </div>
-                <button id="timeAttrSubmitButton" type="submit" class="btn btn-default">Initialize</button>
-            </form>
+            <div class="dropup">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="selectTimeAttrButton" data-toggle="dropdown" aria-expanded="true">
+                    Select Time Attribute
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu scrollable-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
+                    {{#each fields}}
+                        <li role="presentation"><a class="selectTimeAttrDropdownField" role="menuitem" tabindex="-1" href="#" data-graph-type="{{graphType}}" data-attr-name="{{attrName}}">
+                            {{displayName}}
+                        </a></li>
+                    {{/each}}
+                </ul>
+            </div>
 
         </div>
 
