@@ -36,6 +36,7 @@ function TimeExplorer (socket, $div, filtersPanel) {
 
     this.getTimeDataCommand = new Command('getting time data', 'timeAggregation', socket);
     this.getTimeBoundsCommand = new Command('getting time bounds', 'getTimeBoundaries', socket);
+    this.namespaceMetadataCommand = new Command('getting namespace metadata', 'get_namespace_metadata', socket);
 
     this.activeQueries = [];
     this.timeDescription = {
@@ -100,7 +101,10 @@ function TimeExplorer (socket, $div, filtersPanel) {
     this.queryChangeSubject.onNext(this.timeDescription);
     this.setupZoom();
 
-    this.panel = new TimeExplorerPanel(socket, $div, this);
+    // Get data necessary to render timeExplorerPanel
+    this.namespaceMetadataCommand.sendWithObservableResult().do((metadata) => {
+        this.panel = new TimeExplorerPanel(socket, $div, metadata.metadata, this);
+    }).subscribe(_.identity, util.makeErrorHandler('Error grabbing metadata for time explorer'));
 
 
     debug('Initialized Time Explorer');

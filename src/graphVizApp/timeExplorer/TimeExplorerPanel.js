@@ -34,7 +34,7 @@ var INTERACTION_MODE = 'FILTER';
 // Explorer Panel
 //////////////////////////////////////////////////////////////////////////////
 
-function TimeExplorerPanel (socket, $parent, explorer) {
+function TimeExplorerPanel (socket, $parent, metadata, explorer) {
     var that = this;
 
     this.userBars = new userTimeBars.collection({explorer: explorer});
@@ -68,7 +68,7 @@ function TimeExplorerPanel (socket, $parent, explorer) {
             'mousemove #timeExplorerVizContainer': 'mousemove',
             'mouseout #timeExplorerVizContainer': 'mouseout',
             'mousedown #timeExplorerVizContainer': 'handleMouseDown',
-            'click #timeAttrSubmitButton': 'submitTimeAttr'
+            'click .selectTimeAttrDropdownField': 'submitTimeAttr'
         },
 
         initialize: function () {
@@ -86,15 +86,35 @@ function TimeExplorerPanel (socket, $parent, explorer) {
 
         renderInitializationMenu: function () {
             this.userBarsView.$el.addClass('hidden');
-            var params = {};
+
+            var fields = [];
+            _.each(metadata, function (attributes, graphType) {
+                _.each(attributes, function (attrDesc, attrName) {
+                    if (attrDesc.type === 'date') {
+                        fields.push({
+                            graphType, attrName,
+                            displayName: '' + graphType + ':' + attrName
+                        });
+                    }
+                });
+            });
+
+            var params = {fields};
             var html = this.timeBarInitializationMenuTemplate(params);
             this.$timeExplorerMain.append(html);
         },
 
         submitTimeAttr: function (evt) {
+            var target = $(evt.currentTarget);
             evt.preventDefault();
-            var timeType = $('#timeType').val();
-            var timeAttr = $('#timeAttr').val();
+
+            var timeType = target.data('graph-type');
+            var timeAttr = target.data('attr-name');
+
+            console.log('timeType, timeAttr: ', timeType, timeAttr);
+
+            // var timeType = $('#timeType').val();
+            // var timeAttr = $('#timeAttr').val();
 
             this.render();
 
