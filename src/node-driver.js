@@ -75,7 +75,7 @@ function graphCounts(graph) {
     };
 
     // console.log('counts: ', counts);
-    // _.each(_.keys(graph.dataframe.rawdata), function (key1) {
+    // _.each(_.keys(graph.dataframe.rawdata), (key1) => {
     //     console.log(key1 + ': ' + _.keys(graph.dataframe.rawdata[key1]));
     // });
     // console.log('Simulator Buffer Keys: ', _.keys(graph.dataframe.rawdata.buffers.simulator));
@@ -115,7 +115,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
     var bufferSizes = fetchBufferByteLengths(counts, renderConfig);
     var targetArrays = {};
 
-    var layouts = _.object(_.map(bufferNames, function (name) {
+    var layouts = _.object(_.map(bufferNames, (name) => {
         var model = renderConfig.models[name];
         if (_.values(model).length != 1) {
             logger.die('Currently assumes one view per model');
@@ -124,10 +124,10 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
         return [name, _.values(model)[0]];
 
     }));
-    var hostBufs = _.omit(layouts, function (layout) {
+    var hostBufs = _.omit(layouts, (layout) => {
         return layout.datasource !== rConf.VBODataSources.HOST;
     });
-    var devBufs = _.omit(layouts, function (layout) {
+    var devBufs = _.omit(layouts, (layout) => {
         return layout.datasource !== rConf.VBODataSources.DEVICE;
     });
 
@@ -135,7 +135,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
     // node-webcl's event arguments to enqueue commands seems busted at the moment, but
     // maybe enqueueing a event barrier and using its event might work?
     return Q.all(
-            _.map(devBufs, function (layout, name) {
+            _.map(devBufs, (layout, name) => {
                 var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
 
                 targetArrays[name] = {
@@ -150,8 +150,8 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                         counts[name].offset * stride,
                         counts[name].num * stride);
             })
-        ).then(function () {
-            _.each(hostBufs, function (layout, name) {
+        ).then(() => {
+            _.each(hostBufs, (layout, name) => {
                 var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
 
                 logger.trace('Fetching host buffer %s', name);
@@ -183,14 +183,14 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
 function fetchNumElements(counts, renderConfig) {
     return _.object(
         _.keys(renderConfig.items)
-            .map(function (item) {
+            .map((item) => {
                 var itemDef = renderConfig.items[item];
                 var aServersideModelName;
                 if (itemDef.index) {
                     aServersideModelName = itemDef.index[0];
                 } else {
                     var serversideModelBindings = _.values(renderConfig.items[item].bindings)
-                        .filter(function (binding) {
+                        .filter((binding) => {
                             var model = renderConfig.models[binding[0]];
                             return rConf.isBufServerSide(model);
                         });
@@ -207,9 +207,9 @@ function fetchNumElements(counts, renderConfig) {
 //Find num bytes needed for each model
 function fetchBufferByteLengths(counts, renderConfig) {
 
-    return _.chain(renderConfig.models).omit(function (model, name) {
+    return _.chain(renderConfig.models).omit((model, name) => {
         return rConf.isBufClientSide(model);
-    }).map(function (model, name) {
+    }).map((model, name) => {
         var layout = _.values(model)[0];
         var count = counts[name].num;
         return [name, count * (layout.stride || (rConf.gl2Bytes(layout.type) * layout.count))];
@@ -234,9 +234,9 @@ function delayObservableGenerator(delay, value, cb) {
 
     return Rx.Observable.return(value)
         .delay(delay)
-        .flatMap(function(v1) {
-            return Rx.Observable.bindNodeCallback(function(v2, cb) {
-                setImmediate(function() { cb(v2); });
+        .flatMap((v1) => {
+            return Rx.Observable.bindNodeCallback((v2, cb) => {
+                setImmediate(() => { cb(v2); });
             })(v1);
         });
 }
@@ -249,7 +249,7 @@ export function createInteractionsLoop({
         dataset, socket, graph,
         //Observable {play: bool, layout: bool, ... cfg settings ...}
         //  play: animation stream
-        //  layout: whether to actually call layout algs (e.g., don't for filtering)
+        //  layout: whether to actually call layout algorithms (e.g., don't for filtering)
         interactions
     }) {
 
@@ -279,7 +279,7 @@ export function createInteractionsLoop({
 
     function connectRenderTriggers() {
         if(!rtConnection) {
-            logger.trace("STARTING DRIVER");
+            logger.trace('STARTING DRIVER');
             rtConnection = new Subscription(() => {
                 rtConnection = null;
             });
@@ -309,8 +309,8 @@ export function createInteractionsLoop({
 
         // Tell all layout algorithms to load buffers from dataframe, now that
         // we're about to enable ticking
-        simulator.layoutAlgorithms.forEach((algo) => {
-            algo.updateDataframeBuffers(graph.simulator);
+        simulator.layoutAlgorithms.forEach((layoutAlgorithm) => {
+            layoutAlgorithm.updateDataframeBuffers(graph.simulator);
         });
 
         return clientNotification.loadingStatus(socket, 'Graph created', null, graph); // returns graph
@@ -318,9 +318,9 @@ export function createInteractionsLoop({
 
     function runInteractionLoop(graph) {
         return Observable.defer(() => {
-                perf.startTiming('tick_durationMS');
-                return renderTriggers;
-            })
+            perf.startTiming('tick_durationMS');
+            return renderTriggers;
+        })
             .filter(({ play }) => play)
             .take(1)
             .mergeMap(
@@ -329,7 +329,7 @@ export function createInteractionsLoop({
             )
             .mergeMap(
                 (x) => graph.tick(x),
-                (x) => {
+                (/*x*/) => {
                     perf.endTiming('tick_durationMS');
                     return graph;
                 }
@@ -339,7 +339,7 @@ export function createInteractionsLoop({
 }
 
 export function create(dataset, socket, nBodyInstance) {
-    logger.trace("STARTING DRIVER");
+    logger.trace('STARTING DRIVER');
 
     //Observable {play: bool, layout: bool, ... cfg settings ...}
     //  play: animation stream
@@ -350,13 +350,13 @@ export function create(dataset, socket, nBodyInstance) {
     // the contents of each VBO
     var animStepSubj = new Rx.BehaviorSubject(null);
 
-    var graph = nBodyInstance.then(function (graph) {
+    var graph = nBodyInstance.then((graph) => {
         logger.trace('LOADING DATASET');
         return Q.all([
             loader.loadDatasetIntoSim(graph, dataset),
             clientNotification.loadingStatus(socket, 'Loading dataset')
         ]);
-    }).spread(function (graph) {
+    }).spread((graph) => {
         // Load into dataframe data attributes that rely on the simulator existing.
         var outDegrees = graph.simulator.dataframe.getHostBuffer('forwardsEdges').degreesTyped;
         var inDegrees = graph.simulator.dataframe.getHostBuffer('backwardsEdges').degreesTyped;
@@ -365,18 +365,18 @@ export function create(dataset, socket, nBodyInstance) {
         graph.dataframe.loadDegrees(outDegrees, inDegrees);
         graph.dataframe.loadEdgeDestinations(unsortedEdges);
         return graph;
-    }).then(function (graph) {
+    }).then((graph) => {
         // Tell all layout algorithms to load buffers from dataframe, now that
         // we're about to enable ticking
-        _.each(graph.simulator.layoutAlgorithms, function (algo) {
-            algo.updateDataframeBuffers(graph.simulator);
+        _.each(graph.simulator.layoutAlgorithms, (layoutAlgorithm) => {
+            layoutAlgorithm.updateDataframeBuffers(graph.simulator);
         });
 
         return graph;
-    }).then(function (graph) {
+    }).then((graph) => {
         logger.trace('ANIMATING');
 
-        var play = userInteractions.filter(function (o) { return o && o.play; });
+        var play = userInteractions.filter((o) => o && o.play);
 
         //Observable {play: bool, layout: bool}
         var isRunning =
@@ -384,18 +384,18 @@ export function create(dataset, socket, nBodyInstance) {
                 //run beginning & after every interaction
                 play.merge(Rx.Observable.return({play: true, layout: false})),
                 //...  but stop a bit after last one
-                play.filter(function (o) { return o && o.layout; })
+                play.filter((o) => o && o.layout)
                     .merge(Rx.Observable.return())
                     .delay(graph.globalControls.simulationTime)
                     .map(_.constant({play: false, layout: false})),
-                play.filter(function (o) { return !o || !o.layout; })
+                play.filter((o) => !o || !o.layout)
                     .merge(Rx.Observable.return())
                     .delay(4)
                     .map(_.constant({play: false, layout: false})));
 
         var isRunningRecent = new Rx.ReplaySubject(1);
 
-        isRunningRecent.subscribe(function (v) {
+        isRunningRecent.subscribe((v) => {
             logger.trace('=============================isRunningRecent:', v);
         });
 
@@ -404,25 +404,25 @@ export function create(dataset, socket, nBodyInstance) {
         // Loop simulation by recursively expanding each tick event into a new sequence
         // Gate by isRunning
         Rx.Observable.return(graph)
-            //.flatMap(function () {
+            //.flatMap(() => {
             //    return Rx.Observable.fromPromise(graph.tick(0, {play: true, layout: false}));
             //})
-            .expand(function(graph) {
+            .expand((graph) => {
                 perf.startTiming('tick_durationMS');
                 //return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
                 return Rx.Observable.return()
-                    // Add in a delay to allow nodejs' event loop some breathing room
-                    .flatMap(function() {
+                    // Add in a delay to allow Node's event loop some breathing room
+                    .flatMap(() => {
                         return delayObservableGenerator(1, false);
                     })
-                    .flatMap(function () {
-                        return isRunningRecent.filter(function (o) { return o.play; }).take(1);
+                    .flatMap(() => {
+                        return isRunningRecent.filter((o) => o.play).take(1);
                     })
-                    .flatMap(function(v) {
+                    .flatMap((v) => {
                         return Rx.Observable.fromPromise(
-                            graph.updateSettings(v).then(function () {
+                            graph.updateSettings(v).then(() => {
                                 return graph.tick(v);
-                            }).then(function () {
+                            }).then(() => {
                                 perf.endTiming('tick_durationMS');
                             })
                         );
@@ -437,10 +437,10 @@ export function create(dataset, socket, nBodyInstance) {
         logger.trace('Graph created');
         return graph;
     })
-    .then(function (graph) {
+    .then((graph) => {
         return clientNotification.loadingStatus(socket, 'Graph created', null, graph); // returns graph
     })
-    .fail(function (err) {
+    .fail((err) => {
         logger.die(err, 'Driver initialization error');
     })
     .done();
@@ -457,12 +457,12 @@ export function create(dataset, socket, nBodyInstance) {
 function extendDataVersions (data, bufferVersions, graph) {
     var versions = data.versions;
 
-    _.each(_.keys(bufferVersions), function (key) {
+    _.each(_.keys(bufferVersions), (key) => {
         if (versions[key] === undefined) {
             versions[key] = bufferVersions[key];
         }
     });
-    _.each(_.keys(graph.simulator.versions.buffers), function (key) {
+    _.each(_.keys(graph.simulator.versions.buffers), (key) => {
         if (versions[key] === undefined) {
             versions[key] = graph.simulator.versions.buffers[key];
         }
@@ -482,13 +482,13 @@ export function fetchData(graph, renderConfig, compress, bufferNames, bufferVers
     var counts = graphCounts(graph);
 
 
-    bufferVersions = bufferVersions || _.object(bufferNames.map(function (name) { return [name, -1]}));
+    bufferVersions = bufferVersions || _.object(bufferNames.map((name) => [name, -1]));
     var bufferByteLengths = _.pick(fetchBufferByteLengths(counts, renderConfig),
                                           bufferNames);
 
     var elements = _.pick(fetchNumElements(counts, renderConfig), programNames);
     var neededBuffers =
-        bufferNames.filter(function (name) {
+        bufferNames.filter((name) => {
             var clientVersion = bufferVersions[name];
             var liveVersion = getBufferVersion(graph, name);
             return clientVersion !== liveVersion;
@@ -510,17 +510,17 @@ export function fetchData(graph, renderConfig, compress, bufferNames, bufferVers
 
     perf.startTiming('fetchVBOs_durationMS');
     return Rx.Observable.fromPromise(fetchVBOs(graph, renderConfig, bufferNames, counts))
-        .flatMap(function (vbos) {
+        .flatMap((vbos) => {
             //perf.getMetric({metric: {'fetchVBOs_lastVersions': bufferVersions}});
             perf.endTiming('fetchVBOs_durationMS');
 
-            bufferNames.forEach(function (bufferName) {
+            bufferNames.forEach((bufferName) => {
                 if (!vbos.hasOwnProperty(bufferName)) {
                     logger.die('Vbos does not have buffer %s', bufferName);
                 }
             });
 
-            _.each(bufferNames, function (bufferName) {
+            _.each(bufferNames, (bufferName) => {
                 var actualByteLength = vbos[bufferName].buffer.byteLength;
                 var expectedByteLength = bufferByteLengths[bufferName];
                 if( actualByteLength !== expectedByteLength) {
@@ -532,13 +532,13 @@ export function fetchData(graph, renderConfig, compress, bufferNames, bufferVers
             //[ {buffer, version, compressed} ] ordered by bufferName
             perf.startTiming('compressAll_durationMS');
             var compressed =
-                bufferNames.map(function (bufferName) {
+                bufferNames.map((bufferName) => {
                     perf.startTiming('compress_durationMS');
                     return Rx.Observable.bindNodeCallback(compress.deflate)(
                         vbos[bufferName].buffer,//binary,
                         {output: new Buffer(
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
-                        .map(function (compressed) {
+                        .map((compressed) => {
                             logger.trace('compress bufferName %s (size %d)', bufferName, vbos[bufferName].buffer.byteLength);
                             perf.histogram('compress_inputBytes', vbos[bufferName].buffer.byteLength);
                             perf.histogram('compress_outputBytes', compressed.length);
@@ -548,25 +548,25 @@ export function fetchData(graph, renderConfig, compress, bufferNames, bufferVers
                 });
 
             return Rx.Observable.combineLatest(compressed).take(1)
-                .do(function () { perf.endTiming('compressAll_durationMS');
+                .do(() => { perf.endTiming('compressAll_durationMS');
 
         })
-        .map(function(compressedVbos) {
+        .map((compressedVBOs) => {
 
             var buffers =
                 _.object(_.zip(
                         bufferNames,
-                        bufferNames.map(function (_, i) {  return compressedVbos[i].compressed[0]; })));
+                        bufferNames.map((_, i) => {  return compressedVBOs[i].compressed[0]; })));
 
             var uncompressed =
                 _.object(_.zip(
                         bufferNames,
-                        bufferNames.map(function (_, i) {  return compressedVbos[i].buffer.buffer || compressedVbos[i].buffer; })));
+                        bufferNames.map((_, i) => {  return compressedVBOs[i].buffer.buffer || compressedVBOs[i].buffer; })));
 
             var versions =
                 _.object(_.zip(
                         bufferNames,
-                        bufferNames.map(function (_, i) {  return compressedVbos[i].version; })));
+                        bufferNames.map((_, i) => {  return compressedVBOs[i].version; })));
 
             var bundledData = {
                 compressed: buffers,

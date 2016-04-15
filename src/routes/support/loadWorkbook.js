@@ -35,13 +35,13 @@ export function loadWorkbook(workbooksById, workbookId, options) {
 export function loadWorkbooks({ workbooksById, workbookIds }) {
     return Observable
         .from(workbookIds)
-        .mergeMap((workbookId) => loadWorkbook(workbooksById, workbookId))
+        .mergeMap((workbookId) => loadWorkbook(workbooksById, workbookId));
 }
 
 export function loadViews({ workbooksById, workbookIds, viewIds }) {
     return loadWorkbooks({
-            workbooksById, workbookIds
-        })
+        workbooksById, workbookIds
+    })
         .mergeMap(
             (workbook) => Observable.from(viewIds),
             (workbook, viewId) => ({ workbook, view: workbook.viewsById[viewId] })

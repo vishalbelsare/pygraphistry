@@ -1,10 +1,10 @@
 'use strict';
 
-var Rx      = require('rxjs/Rx.KitchenSink');
+const Rx      = require('rxjs/Rx.KitchenSink');
 
-var persist     = require('./persist.js');
+const persist = require('./persist.js');
 
-var WorkbookDocName = 'workbook.json';
+const WorkbookDocName = 'workbook.json';
 
 function getBlankLegendTemplate() {
     return {

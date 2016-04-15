@@ -1,66 +1,66 @@
 'use strict';
 
-var http = require('http');
-var https = require('https');
-var Q = require('q');
-var _ = require('underscore');
-var config  = require('config')();
-var zlib = require('zlib');
-var urllib = require('url');
-var Cache = require('common/cache.js');
+const http = require('http');
+const https = require('https');
+const Q = require('q');
+const _ = require('underscore');
+const config  = require('config')();
+const zlib = require('zlib');
+const urllib = require('url');
+const Cache = require('common/cache.js');
 
-var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz', 'graph-viz/js/data-loader.js');
+const log         = require('common/logger.js');
+const logger      = log.createLogger('graph-viz', 'graph-viz/js/data-loader.js');
 
-var VGraphLoader = require('./libs/VGraphLoader.js');
+const VGraphLoader = require('./libs/VGraphLoader.js');
 
-var loaders = {
+const loaders = {
     'default': VGraphLoader.load,
     'vgraph': VGraphLoader.load,
     'jsonMeta': loadJSONMeta
 };
 
-var downloaders = {
-    'http:': httpDownloader.bind(undefined, http),
-    'https:': httpDownloader.bind(undefined, https),
+const downloaders = {
+    'http:': downloader.bind(undefined, http),
+    'https:': downloader.bind(undefined, https),
     's3:': s3Downloader,
     'null': s3Downloader // For legacy compatibility
 };
 
-var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
+const tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
 
-function httpDownloader(http, url) {
-    logger.trace('Attempting to download dataset using HTTP');
-    var result = Q.defer();
+function downloader(transport, url) {
+    logger.trace('Attempting to download dataset');
+    const result = Q.defer();
 
     // Q.denodeify fails http.get because it does not follow
     // the usual nodejs conventions
-    http.request(_.extend(url, {method: 'HEAD'}), function (res) {
-        var lastModifiedTime = new Date(res.headers['last-modified']);
+    transport.request(_.extend(url, {method: 'HEAD'}), (res) => {
+        const lastModifiedTime = new Date(res.headers['last-modified']);
         // Try to read from cache otherwise download the dataset
-        tmpCache.get(url, lastModifiedTime).then(function (data) {
-            result.resolve(data);
-        }).fail(function () {
-            http.get(url.href, function (res) {
-                res.setEncoding('binary');
-                //var lastModifiedTime = new Date(res.headers['last-modified']);
+        tmpCache.get(url, lastModifiedTime).then((cacheResponse) => {
+            result.resolve(cacheResponse);
+        }).fail(() => {
+            transport.get(url.href, (getResponse) => {
+                getResponse.setEncoding('binary');
+                //const lastModifiedTime = new Date(getResponse.headers['last-modified']);
 
-                var data = '';
-                res.on('data', function (chunk) {
+                let data = '';
+                getResponse.on('data', (chunk) => {
                     data += chunk;
                 });
 
-                res.on('end', function () {
-                    var buffer = new Buffer(data, 'binary');
+                getResponse.on('end', () => {
+                    const buffer = new Buffer(data, 'binary');
                     tmpCache.put(url, buffer);
                     result.resolve(buffer);
                 });
-            }).on('error', function (err) {
+            }).on('error', (err) => {
                 logger.error(err, 'Cannot download dataset at', url.href);
                 result.reject(err);
             });
         });
-    }).on('error', function (err) {
+    }).on('error', (err) => {
         logger.error(err, 'Cannot fetch headers from', url.href);
         result.reject(err);
     }).end();
@@ -73,33 +73,33 @@ function httpDownloader(http, url) {
  * modified time and fetches from S3 accordingly.
 **/
 function s3Downloader(url) {
-    var params = {
+    const params = {
         Bucket: url.host || config.BUCKET,  // Defaults to Graphistry's bucket
         Key: decodeURIComponent(url.pathname.replace(/^\//,'')) // Strip leading slash if there is one
     };
-    var res = Q.defer();
+    const res = Q.defer();
 
     // Attempt to download headers
-    config.S3.headObject(params, function (err, data) {
-        if (err) {
-            logger.trace('Could not fetch S3 header', err.message);
+    config.S3.headObject(params, (headError, headResponse) => {
+        if (headError) {
+            logger.trace('Could not fetch S3 header', headError.message);
             logger.trace('Falling back on local cache');
             // Try to load from cache regardless of timestamp.
             res.resolve(tmpCache.get(url, new Date(0)));
         } else {
-            var mtime = new Date(data.LastModified);
-            logger.debug('Got S3 headers, dataset was last modified on', mtime);
-            tmpCache.get(url, mtime).then(function (data) {
-                res.resolve(data);
-            }).fail(function () { // Not in cache of stale
-                config.S3.getObject(params, function(err, data) {
-                    if (err) {
-                        logger.error(err, 'S3 Download failed');
+            const modifiedTime = new Date(headResponse.LastModified);
+            logger.debug('Got S3 headers, dataset was last modified on', modifiedTime);
+            tmpCache.get(url, modifiedTime).then((getResponse) => {
+                res.resolve(getResponse);
+            }).fail(() => { // Not in cache of stale
+                config.S3.getObject(params, (getError, getResponse) => {
+                    if (getError) {
+                        logger.error(getError, 'S3 Download failed');
                         res.reject();
                     } else {
                         logger.trace('Successful S3 download');
-                        tmpCache.put(url, data.Body);
-                        res.resolve(data.Body);
+                        tmpCache.put(url, getResponse.Body);
+                        res.resolve(getResponse.Body);
                     }
                 });
             });
@@ -118,8 +118,8 @@ function unzipBufferIfCompressed(buffer, twice) {
             console.warn('Data blob is zipped at least twice!');
         }
 
-        return Q.denodeify(zlib.gunzip)(buffer).then(function (gunzipped) {
-            return unzipBufferIfCompressed(gunzipped, true);
+        return Q.denodeify(zlib.gunzip)(buffer).then((decompressedResponse) => {
+            return unzipBufferIfCompressed(decompressedResponse, true);
         });
     } else {
         return Q(buffer);
@@ -131,8 +131,8 @@ function unzipBufferIfCompressed(buffer, twice) {
 function loadDatasetIntoSim(graph, dataset) {
     logger.debug({dataset: dataset.metadata}, 'Loading dataset');
 
-    var loader = loaders[dataset.metadata.type];
-    return unzipBufferIfCompressed(dataset.body).then(function (body) {
+    const loader = loaders[dataset.metadata.type];
+    return unzipBufferIfCompressed(dataset.body).then((body) => {
         dataset.body = body;
         return loader(graph, dataset);
     });
@@ -141,42 +141,45 @@ function loadDatasetIntoSim(graph, dataset) {
 
 // Parse the json dataset description, download then load data.
 function loadJSONMeta(graph, rawDataset) {
-    var dataset = JSON.parse(rawDataset.body.toString('utf8'));
-    return downloadDatasources(dataset).then(function (dataset) {
-        if (dataset.datasources.length !== 1) {
+    const dataset = JSON.parse(rawDataset.body.toString('utf8'));
+    return downloadDatasources(dataset).then((datasetWithData) => {
+        if (datasetWithData.datasources.length !== 1) {
             throw new Error('For now only datasets with one single datasource are supported');
         }
-        if (dataset.datasources[0].type !== 'vgraph') {
+        if (datasetWithData.datasources[0].type !== 'vgraph') {
             throw new Error('For now only datasources of type "vgraph" are supported');
         }
 
-        var data = dataset.datasources[0].data;
-        return VGraphLoader.load(graph, {body: data, metadata: dataset});
+        const data = datasetWithData.datasources[0].data;
+        return VGraphLoader.load(graph, {body: data, metadata: datasetWithData});
     });
 }
 
 
 // Download all datasources in dataset
 function downloadDatasources(dataset) {
-    var qBlobs = _.map(dataset.datasources, function (datasource) {
-        var url = urllib.parse(datasource.url);
+    const qBlobs = _.map(dataset.datasources, (datasource) => {
+        const url = urllib.parse(datasource.url);
         if (_.contains(_.keys(downloaders), url.protocol)) {
-            return downloaders[url.protocol](url).then(function (blob) {
+            return downloaders[url.protocol](url).then((blob) => {
                 return unzipBufferIfCompressed(blob);
             });
         } else {
-            throw new Error('Fetching datasouces: protocol not yet supported' + url.href);
+            throw new Error('Fetching datasources: protocol not yet supported' + url.href);
         }
     });
 
-    return Q.all(qBlobs).then(function (blobs) {
-        _.each(blobs, function (blob, i) {
+    return Q.all(qBlobs).then((blobs) => {
+        _.each(blobs, (blob, i) => {
             dataset.datasources[i].data = blob;
         });
 
         return dataset;
     });
 }
+
+
+const datasetConfigParams = ['scene', 'controls', 'mapper', 'device', 'vendor', 'type'];
 
 
 module.exports = {
@@ -186,25 +189,21 @@ module.exports = {
         return urllib.parse(decodeURIComponent(query.dataset));
     },
     datasetConfigFromQuery: function datasetConfigFromQuery(query) {
-        function hasParam(param) { return param !== undefined && param !== 'undefined'; }
-        var config = {};
+        function paramValue(param, defaultValue = 'default') {
+            return param !== undefined && param !== 'undefined' ? param : defaultValue;
+        }
 
-        config.scene    = hasParam(query.scene)    ? query.scene    : 'default';
-        config.controls = hasParam(query.controls) ? query.controls : 'default';
-        config.mapper   = hasParam(query.mapper)   ? query.mapper   : 'default';
-        config.device   = hasParam(query.device)   ? query.device   : 'default';
-        config.vendor   = hasParam(query.vendor)   ? query.vendor   : 'default';
-        config.type     = hasParam(query.type)     ? query.type     : 'default';
-        return config;
+        return _.mapObject(_.pick(query, datasetConfigParams,
+            (val/*, key*/) => paramValue(val)));
     },
-    downloadDataset: function downloadDataset(config) {
+    downloadDataset: function (datasetConfig) {
         logger.info('scene:%s  controls:%s  mapper:%s  device:%s',
-            config.scene, config.controls, config.mapper, config.device);
-        var url = urllib.parse(config.url);
+            datasetConfig.scene, datasetConfig.controls, datasetConfig.mapper, datasetConfig.device);
+        const url = urllib.parse(datasetConfig.url);
 
-        return downloaders[url.protocol](url).then(function (data) {
-            return {body: data, metadata: config};
-        }).fail(log.makeQErrorHandler(logger, 'Failure while retrieving dataset'));
+        return downloaders[url.protocol](url).then(
+            (data) => ({body: data, metadata: datasetConfig})
+        ).fail(log.makeQErrorHandler(logger, 'Failure while retrieving dataset'));
     }
 };
 

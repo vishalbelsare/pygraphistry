@@ -78,7 +78,7 @@ var DataTypesUtils = {
     isLessThanForDataType: function (dataType) {
         switch (dataType) {
             case 'string':
-                return (a, b) => a.localeCompare(b, DefaultLocale, LocaleCompareOptions) < 0;
+                return (a, b) => a.localeCompare(b, DefaultLocale, LocaleCompareOptions) === -1;
             default:
                 return (a, b) => a < b;
         }
