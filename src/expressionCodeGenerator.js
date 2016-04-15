@@ -1,15 +1,16 @@
 'use strict';
 
-const _ = require('underscore');
+var _ = require('underscore');
 
-const log = require('common/logger.js');
-let cachedLogger;
+var log = require('common/logger.js');
+var logger = log.createLogger('graph-viz', 'graph-viz:expressionCodeGenerator');
 
 
-function ExpressionCodeGenerator({language = 'JavaScript', logger}) {
+function ExpressionCodeGenerator(language) {
+    if (language === undefined) {
+        language = 'JavaScript';
+    }
     this.language = language;
-    this.logger = logger || cachedLogger || log.createLogger('graph-viz', 'graph-viz:expressionCodeGenerator');
-    if (!cachedLogger) { cachedLogger = this.logger; }
 }
 
 function escapeRegexNonPattern (lastPatternSegment) {
@@ -335,8 +336,7 @@ ExpressionCodeGenerator.prototype = {
                     elseClause: args[1]
                 });
             case 'COALESCE':
-                return this.wrapSubExpressionPerPrecedences(args.join(' || '),
-                    this.precedenceOf('||'), outerPrecedence);
+                return this.wrapSubExpressionPerPrecedences(args.join(' || '), this.precedenceOf('||'), outerPrecedence);
             default:
                 throw new Error('Unrecognized function: ' + inputFunctionName);
         }
@@ -352,12 +352,12 @@ ExpressionCodeGenerator.prototype = {
         var body = this.expressionStringForAST(ast, bindings);
         if (this.hasMultipleBindings(bindings)) {
             source = '(function () { return ' + body + '; })';
-            this.logger.info('Evaluating (multi-column)', ast.type, source);
+            logger.info('Evaluating (multi-column)', ast.type, source);
         } else {
             source = '(function (value) { return ' + body + '; })';
-            this.logger.info('Evaluating (single-column)', ast.type, source);
+            logger.info('Evaluating (single-column)', ast.type, source);
         }
-        this.logger.trace({ast: ast}, 'AST');
+        logger.trace({ast: ast}, 'AST');
         return eval(source); // jshint ignore:line
     },
 
@@ -462,7 +462,7 @@ ExpressionCodeGenerator.prototype = {
     functionForPlanNode: function (planNode, bindings) {
         var result = this.planNodeExpressionStringForAST(planNode.ast, bindings);
         var source = '(function () { return ' + result.expr + '; })';
-        this.logger.info('Evaluating (multi-column)', planNode.ast.type, source);
+        logger.info('Evaluating (multi-column)', planNode.ast.type, source);
         result.executor = eval(source); // jshint ignore:line
         return result;
     },
