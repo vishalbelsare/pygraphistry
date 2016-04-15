@@ -31,7 +31,7 @@ function Cache(cacheDir, enabled) {
         Q.denodeify(fs.stat)(filePath).then(function (stats) {
             if (!stats.isFile()) {
                 res.reject('Error: Cached dataset is not a file!');
-            } else if (stats.mtime.getTime() > timestamp.getTime()) {
+            } else if (timestamp === undefined || stats.mtime.getTime() > timestamp.getTime()) {
                 logger.debug('Found up-to-date dataset in cache');
                 res.resolve(fs.readFileSync(filePath));
             } else {
