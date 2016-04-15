@@ -52,11 +52,11 @@ function Cache(cacheDir, enabled) {
             return Q();
         }
 
-        var path = getCacheFile(url);
-        return Q.denodeify(fs.writeFile)(path, data, {encoding: 'utf8'}).then(
+        var pathInCache = getCacheFile(url);
+        return Q.denodeify(fs.writeFile)(pathInCache, data, {encoding: 'utf8'}).then(
             function () {
-                logger.debug('Dataset saved in cache:', path);
-                return path;
+                logger.debug('Dataset saved in cache:', pathInCache);
+                return pathInCache;
             },
             function (e) {
                 logger.error(e, 'Failure while caching dataset');
