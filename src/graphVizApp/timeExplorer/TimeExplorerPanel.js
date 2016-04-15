@@ -132,6 +132,10 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             this.$timeExplorerMain.append(this.mainBarView.el);
             this.$timeExplorerAxisContainer.append(this.bottomAxisView.el);
 
+            // Make time slider visible
+            $('#time-panel-filter-slider').bootstrapSlider({tooltip: 'hide'});
+            // $('#timeFilterSliderRow').css('visibility', 'visible');
+
             this.userBarsView.$el.removeClass('hidden');
         },
 
@@ -180,7 +184,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             // Return early if it's a UI element
             // TODO: Figure out how to represent this in terms of the selector
             var $target = $(evt.target);
-            if ($target.hasClass('btn') || $target.hasClass('form-control')) {
+            if ($target.hasClass('btn') || $target.hasClass('form-control') || $target.hasClass('slider-handle')) {
                 return;
             }
 
