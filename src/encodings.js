@@ -17,7 +17,7 @@ const defaults = {
         }
     },
     pointSize: {
-        range: [0, 30]
+        range: [0, 30] // Range of diameters supported, per VGraphLoader
     },
     pointOpacity: {
         range: [0, 1]
@@ -123,12 +123,15 @@ function scalingFromSpec (scalingSpec) {
     if (scalingSpec.range !== undefined) {
         scaling.range(scalingSpec.range);
     }
+    if (scalingSpec.clamp !== undefined) {
+        scaling.clamp(scalingSpec.clamp);
+    }
     return scaling;
 }
 
 function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingType, variation, binning) {
     const summary = aggregations.getSummary();
-    let scalingType, domain, range;
+    let scalingType, domain, range, clamp;
     const defaultDomain = [summary.minValue, summary.maxValue];
     const distinctValues = _.map(summary.distinctValues, function (x) { return x.distinctValue; });
     switch (encodingType) {
@@ -140,6 +143,7 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
                 scalingType = 'sqrt';
                 domain = defaultDomain;
                 range = defaults.pointSize.range;
+                clamp = true;
             }
             break;
         case 'edgeSize':
@@ -148,6 +152,7 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
                 scalingType = 'linear';
                 domain = defaultDomain;
                 range = defaults.edgeSize.range;
+                clamp = true;
             }
             break;
         case 'opacity':
@@ -187,7 +192,8 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
     return _.defaults(encodingSpec || {}, {
         scalingType: scalingType,
         domain: domain,
-        range: range
+        range: range,
+        clamp: clamp
     });
 }
 
