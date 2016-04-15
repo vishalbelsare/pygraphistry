@@ -189,12 +189,16 @@ module.exports = {
         return urllib.parse(decodeURIComponent(query.dataset));
     },
     datasetConfigFromQuery: function datasetConfigFromQuery(query) {
-        function paramValue(param, defaultValue = 'default') {
-            return param !== undefined && param !== 'undefined' ? param : defaultValue;
-        }
+        function hasParam(param) { return param !== undefined && param !== 'undefined'; }
+        var config = {};
 
-        return _.mapObject(_.pick(query, datasetConfigParams,
-            (val/*, key*/) => paramValue(val)));
+        config.scene    = hasParam(query.scene)    ? query.scene    : 'default';
+        config.controls = hasParam(query.controls) ? query.controls : 'default';
+        config.mapper   = hasParam(query.mapper)   ? query.mapper   : 'default';
+        config.device   = hasParam(query.device)   ? query.device   : 'default';
+        config.vendor   = hasParam(query.vendor)   ? query.vendor   : 'default';
+        config.type     = hasParam(query.type)     ? query.type     : 'default';
+        return config;
     },
     downloadDataset: function (datasetConfig) {
         logger.info('scene:%s  controls:%s  mapper:%s  device:%s',
