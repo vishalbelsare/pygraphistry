@@ -766,7 +766,7 @@ Note: this release does not support expressions with multiple fields nor changin
             <div class="dropdown">
                 <button class="btn btn-default btn-block dropdown-toggle pull-right" type="button" id="dropdownMenu{{id}}"
                         data-toggle="dropdown" aria-expanded="true">
-                    {{attribute}}
+                    {{#if type}}{{type}}:{{/if}}{{attribute}}
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu scrollable-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
@@ -813,7 +813,9 @@ Note: this release does not support expressions with multiple fields nor changin
                 <i class="fa fa-caret-right interactive histogramButton expandHistogramButton" id="expandHistogramButton{{id}}" cid="{{id}}"></i>
             </a>
         </div>
-        <div class="col-xs-4 attributeName">{{attribute}}</div>
+        <div class="col-xs-4 attributeName">
+            {{#if type}}{{type}}:{{/if}}{{attribute}}
+        </div>
         <div class="col-xs-6">
             <a href="#">
                 <i class="encode-attribute interactive encode-color-categorical fa fa-square"
