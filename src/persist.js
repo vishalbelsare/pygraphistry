@@ -4,7 +4,8 @@ const Cache = require('common/cache.js');
 const fs          = require('fs');
 const path        = require('path');
 const Q           = require('q');
-const S3URLEncoder = require('node-s3-url-encode');
+const url         = require('url');
+const encodeS3URI = require('node-s3-url-encode');
 
 const _           = require('underscore');
 
@@ -124,7 +125,7 @@ ContentSchema.prototype = {
     },
 
     getURL: function (subPath) {
-        return new S3URLEncoder(this.pathFor(subPath));
+        return url.parse(encodeS3URI(this.pathFor(subPath)));
     },
 
     uploadPublic: function (subPath, buffer, params) {
@@ -138,6 +139,22 @@ ContentSchema.prototype = {
 
     download: function (subPath) {
         return s3.download(this.options.S3, this.options.BUCKET, this.pathFor(subPath), {expectCompressed: true});
+    },
+
+    get: function (subPath) {
+        const result = Q.defer();
+        const contentURL = this.getURL(subPath);
+        tmpCache.get(contentURL).then((cacheResponse) => {
+            result.resolve(cacheResponse);
+        }).fail(() => {
+            this.download(subPath).then((downloadResponse) => {
+                tmpCache.put(contentURL, downloadResponse);
+                result.resolve(downloadResponse);
+            }).fail((downloadResponse) => {
+                result.reject(downloadResponse);
+            });
+        });
+        return result.promise;
     }
 };
 
