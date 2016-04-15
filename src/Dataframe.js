@@ -1021,58 +1021,73 @@ Dataframe.prototype.loadColumn = function (name, type, valueObj) {
 };
 
 
+Dataframe.prototype.defineAttributeOn = function (attributes, name, dataType, values, keyName=undefined) {
+    const result = {
+        name: name,
+        type: dataType,
+        values: values,
+        version: 0,
+        dirty: false,
+        numberPerGraphComponent: 1
+    };
+    attributes[keyName || name] = result;
+    return result;
+};
+
+
 /** Load in degrees as a universal (independent of data source) value
  * @param {Uint32Array} outDegrees - degrees going out of nodes
  * @param {Uint32Array} inDegrees - degrees going into nodes
  */
 Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
-    var numElements = this.numPoints();
-    var attributes = this.rawdata.attributes.point;
+    const numElements = this.numPoints();
+    let attributes = this.rawdata.attributes.point;
 
     // TODO: Error handling
     if (numElements !== outDegrees.length || numElements !== inDegrees.length) {
         return;
     }
 
-    var degree = new Array(numElements);
-    var degree_in = new Array(numElements);
-    var degree_out = new Array(numElements);
+    let degree = new Array(numElements);
+    let degreeIn = new Array(numElements);
+    let degreeOut = new Array(numElements);
 
     for (var i = 0; i < numElements; i++) {
-        degree_in[i] = inDegrees[i];
-        degree_out[i] = outDegrees[i];
+        degreeIn[i] = inDegrees[i];
+        degreeOut[i] = outDegrees[i];
         degree[i] = inDegrees[i] + outDegrees[i];
     }
 
-    attributes.degree = {values: degree, name: 'degree', type: 'number', version: 0, dirty: false, numberPerGraphComponent: 1};
-    attributes.degree_in = {values: degree_in, name: 'degree_in', type: 'number', version: 0, dirty: false, numberPerGraphComponent: 1};
-    attributes.degree_out = {values: degree_out, name: 'degree_out', type: 'number', version: 0, dirty: false, numberPerGraphComponent: 1};
+    this.defineAttributeOn(attributes, 'degree', 'number', degree);
+    this.defineAttributeOn(attributes, 'degree_in', 'number', degreeIn);
+    this.defineAttributeOn(attributes, 'degree_out', 'number', degreeOut);
 };
 
 
 /** Load in edge source/destinations as a universal (independent of data source) value
- * @param {Uint32Array} unsortedEdges - unsorted list of edges.
+ * @param {Uint32Array} unsortedEdges - unsorted list of edge src/dst indexes.
  */
 Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
-    var numElements = this.numEdges() || unsortedEdges.length / 2;
-    var attributes = this.rawdata.attributes.edge;
-    var nodeTitles = this.rawdata.attributes.point._title.values;
+    const n = unsortedEdges.length;
+    const numElements = this.numEdges() || n / 2;
+    let attributes = this.rawdata.attributes.edge;
+    const nodeTitles = this.rawdata.attributes.point._title.values;
 
-    var source = new Array(numElements);
-    var destination = new Array(numElements);
+    let source = new Array(numElements);
+    let destination = new Array(numElements);
 
-    for (var i = 0; i < numElements; i++) {
-        source[i] = nodeTitles[unsortedEdges[2*i]];
-        destination[i] = nodeTitles[unsortedEdges[2*i + 1]];
+    for (let i = 0; i < n; i += 2) {
+        source[i] = nodeTitles[unsortedEdges[i]];
+        destination[i] = nodeTitles[unsortedEdges[i + 1]];
     }
 
-    attributes.Source = {values: source, name: 'Source', type: 'string', version: 0, dirty: false, numberPerGraphComponent: 1};
-    attributes.Destination = {values: destination, name: 'Destination', type: 'string', version: 0, dirty: false, numberPerGraphComponent: 1};
+    this.defineAttributeOn(attributes, 'Source', 'string', source);
+    this.defineAttributeOn(attributes, 'Destination', 'string', destination);
 
     // If no title has been set, just make title the index.
     // TODO: Is there a more appropriate place to put this?
     if (!attributes._title) {
-        attributes._title = {type: 'string', name: 'label', values: _.range(numElements), version: 0, dirty: false, numberPerGraphComponent: 1};
+        this.defineAttributeOn(attributes, 'label', 'string', _.range(numElements), '_title');
     }
 
 };
@@ -1084,20 +1099,19 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
  *  @param {Object} buffer - a raw OpenCL buffer object
  */
 Dataframe.prototype.loadBuffer = function (name, type, buffer) {
-    var buffers = this.rawdata.buffers[type];
+    const buffers = this.rawdata.buffers[type];
     buffers[name] = buffer;
 };
 
 Dataframe.prototype.writeBuffer = function (name, type, values, simulator) {
-    var that = this;
-    var byteLength = values.byteLength;
-    var buffer = this.rawdata.buffers[type][name];
+    const byteLength = values.byteLength;
+    const buffer = this.rawdata.buffers[type][name];
 
     // If it's written to directly, we assume we want to also
     // have a buffer to write to during filters.
     return simulator.cl.createBuffer(byteLength, name+'Filtered')
-        .then(function (filteredBuffer) {
-            that.filteredBufferCache.simulator[name] = filteredBuffer;
+        .then((filteredBuffer) => {
+            this.filteredBufferCache.simulator[name] = filteredBuffer;
             return buffer.write(values);
         });
 };
@@ -2167,8 +2181,8 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
             numBins = range / binWidth;
         }
 
-        bottomVal = round_down(min, binWidth);
-        topVal = round_up(max, binWidth);
+        bottomVal = roundDownBy(min, binWidth);
+        topVal = roundUpBy(max, binWidth);
         numBins = Math.floor((topVal - bottomVal) / binWidth) + 1;
     }
 
@@ -2250,7 +2264,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     // decFunction(startDate);
 
     // // Before incrementing endDate, check to see if it's already a boundary (in which case we don't)
-    // // want to incremement
+    // // want to increment
     // var testDate = new Date(endDate.getTime());
     // decFunction(testDate);
     // if (testDate.getTime() !== endDate.getTime()) {
@@ -2423,10 +2437,10 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     // VGraph types.
     // values = _.filter(values, function (x) { return !isNaN(x)});
 
-    var values = this.getColumnValues(attribute, type);
-    var aggregations = this.getColumnAggregations(attribute, type);
+    const values = this.getColumnValues(attribute, type);
+    const aggregations = this.getColumnAggregations(attribute, type);
 
-    var numValues = aggregations.getAggregationByType('countDistinct');
+    const numValues = aggregations.getAggregationByType('countDistinct');
     if (numValues === 0) {
         return Q({type: 'nodata'});
     }
@@ -2435,31 +2449,27 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     if (!binning) {
         binning = this.calculateBinning(aggregations, numValues, goalNumberOfBins);
     }
-    var numBins = binning.numBins;
-    var binWidth = binning.binWidth;
-    var bottomVal = binning.minValue;
-    var topVal = binning.maxValue;
-    var min = binning.minValue;
-    var max = binning.maxValue;
+    let {numBins, binWidth, minValue, maxValue} = binning;
+    let bottomVal = minValue;
+    let topVal = maxValue;
 
     // Guard against 0 width case
-    if (max === min) {
+    if (maxValue === minValue) {
         binWidth = 1;
         numBins = 1;
-        topVal = min + 1;
-        bottomVal = min;
+        topVal = minValue + 1;
+        bottomVal = minValue;
     }
 
     //var qDataBuffer = this.getBuffer(attribute, type);
-    var binStart = new Float32Array(numBins);
-    var i;
-    for (i = 0; i < numBins; i++) {
+    const binStart = new Float32Array(numBins);
+    for (let i = 0; i < numBins; i++) {
         binStart[i] = bottomVal + (binWidth * i);
     }
 
     //var dataSize = indices.length;
 
-    var retObj = {
+    const result = {
         type: binning.isCountBy ? 'countBy' : 'histogram',
         dataType: dataType,
         numBins: numBins,
@@ -2469,23 +2479,23 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
         minValue: bottomVal
     };
 
-    var bins, binValues;
+    let bins, binValues;
 
     // Fast path for case of only one bin.
     if (numBins === 1) {
         bins = [numValues];
         if (binning.isCountBy) {
-            binValues = [{min: min, max: min, representative: min, isSingular: true}];
+            binValues = [{min: minValue, max: minValue, representative: minValue, isSingular: true}];
         }
-        _.extend(retObj, {bins: bins, binValues: binValues});
-        return Q(retObj);
+        _.extend(result, {bins: bins, binValues: binValues});
+        return Q(result);
     }
 
-    // return qDataBuffer.then(function (dataBuffer) {
-    //         return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataBuffer, indices, binStart);
-    //     }).then(function (bins) {
-    //         return _.extend(retObj, {bins: bins});
-    //     }).fail(log.makeQErrorHandler(logger, 'Failure trying to run histogramKernel'));
+    // return qDataBuffer.then((dataBuffer) => {
+    //     return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataBuffer, indices, binStart);
+    // }).then((bins) => {
+    //     return _.extend(result, {bins: bins});
+    // }).fail(log.makeQErrorHandler(logger, 'Failure trying to run histogramKernel'));
 
     // Dead code, exists solely for timing.
     // TODO: Make this a config option.
@@ -2493,28 +2503,23 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
     binValues = new Array(numBins);
 
-
     // When iterating through values, we make sure to use the full value array and an
     // indices "mask" over it. This is because each histogram brush move produces a single
     // new (large) array of indices. Then each separate histogram can use the already existing
     // values array and the single indices array to compute bins without any large allocations.
-    var binId, value;
-    var isLessThan = dataTypeUtil.isLessThanForDataType(aggregations.getAggregationByType('dataType'));
-    for (i = 0; i < indices.length; i++) {
+    const isLessThan = dataTypeUtil.isLessThanForDataType(aggregations.getAggregationByType('dataType'));
+    for (let i = 0; i < indices.length; i++) {
         // Here we use an optimized "Floor" because we know it's a smallish, positive number.
         // TODO: Have to be careful because floating point error.
         // In particular, we need to match math as closely as possible in expressions.
-        value = values[indices[i]];
+        let value = values[indices[i]], binId;
         if (dataTypeUtil.valueSignifiesUndefined(value)) { continue; }
         if (_.isNumber(value)) {
             binId = ((value - bottomVal) / binWidth) | 0;
         } else {
-            for (var eachBinId = 0; eachBinId < numBins; eachBinId++) {
-                if (!isLessThan(binValues[eachBinId])) {
-                    binId = eachBinId;
-                    break;
-                }
-            }
+            // Least greater-than:
+            binId = _.findIndex(binValues, (binValue) => { return isLessThan(value, binValue); });
+            if (binId < 0) { binId = 0; }
             binId |= 0;
         }
         if (binId > 1e6) {
@@ -2533,8 +2538,8 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
         if (isLessThan(binDescription.max, value)) { binDescription.max = value; }
     }
 
-    _.extend(retObj, {bins: bins, binValues: binValues});
-    return Q(retObj);
+    _.extend(result, {bins: bins, binValues: binValues});
+    return Q(result);
 };
 
 
@@ -2542,32 +2547,6 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
 //////////////////////////////////////////////////////////////////////////////
 // Helper Functions
 //////////////////////////////////////////////////////////////////////////////
-
-
-function decodeStrings (attributes) {
-    _.each(_.keys(attributes), function (key) {
-        var decoded = _.map(attributes[key].values, function (val) {
-            try {
-                return (typeof val === 'string') ? decodeURIComponent(val) : val;
-            } catch (e) {
-                console.error('bad read val', val);
-                return val;
-            }
-        });
-        attributes[key].values = decoded;
-    });
-}
-
-function decodeDates (attributes) {
-    _.each(_.keys(attributes), function (key) {
-        var isDate = key.indexOf('Date') > -1;
-        var decoded = _.map(attributes[key].values, function (val) {
-            return isDate && typeof(val) === 'number' ?
-                    dateFormat(val, 'mm-dd-yyyy') : val;
-        });
-        attributes[key].values = decoded;
-    });
-}
 
 
 function pickTitleField (aliases, attributes, field) {
@@ -2580,7 +2559,7 @@ function pickTitleField (aliases, attributes, field) {
     }
 }
 
-function round_down(num, multiple) {
+function roundDownBy(num, multiple) {
     if (multiple === 0) {
         return num;
     }
@@ -2589,34 +2568,13 @@ function round_down(num, multiple) {
     return multiple * Math.floor(div);
 }
 
-function round_up(num, multiple) {
+function roundUpBy(num, multiple) {
     if (multiple === 0) {
         return num;
     }
 
     var div = num / multiple;
     return multiple * Math.ceil(div);
-}
-
-/**
- * @param {Array<Number>} values
- * @param {Mask} indices
- * @returns {{max: number, min: Number}}
- */
-function minMaxMasked(values, indices) {
-    var min = Infinity;
-    var max = -Infinity;
-
-    _.each(indices, function (valueIdx) {
-        var val = values[valueIdx];
-        if (val < min) {
-            min = val;
-        }
-        if (val > max) {
-            max = val;
-        }
-    });
-    return {max: max, min: min};
 }
 
 function serialize(data, compressFunction, target) {
@@ -2627,12 +2585,6 @@ function serialize(data, compressFunction, target) {
     }
 
     fs.writeFileSync(baseDirPath + target, serialized);
-}
-
-function pad(n, width, z) {
-    z = z || '0';
-    n = n + '';
-    return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }
 
 function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
@@ -2760,31 +2712,31 @@ function computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoint
     //var index = 0;
     var edgeStartEndIdxsTyped = new Uint32Array(numPoints * 2);
     for(var i = 0; i < (workItemsTyped.length/4) - 1; i++) {
-      var start = workItemsTyped[i*4];
-      if (start === -1) {
-        edgeStartEndIdxsTyped[i*2] = -1;
-        edgeStartEndIdxsTyped[i*2 + 1] = -1;
-      } else {
-        var end = workItemsTyped[(i+1)*4];
-        var j = i+1;
-        while (end < 0 && ((j + 1) < (workItemsTyped.length/4))) {
-          end = workItemsTyped[(j + 1)*4];
-          j = j + 1;
-        }
+        var start = workItemsTyped[i * 4];
+        if (start === -1) {
+            edgeStartEndIdxsTyped[i * 2] = -1;
+            edgeStartEndIdxsTyped[i * 2 + 1] = -1;
+        } else {
+            var end = workItemsTyped[(i + 1) * 4];
+            var j = i + 1;
+            while (end < 0 && ((j + 1) < (workItemsTyped.length / 4))) {
+                end = workItemsTyped[(j + 1) * 4];
+                j++;
+            }
 
-        if (end === -1) {
-            end = edgesTyped.length / 2; // Special case for last work item
+            if (end === -1) {
+                end = edgesTyped.length / 2; // Special case for last work item
+            }
+            edgeStartEndIdxsTyped[i * 2] = start;
+            edgeStartEndIdxsTyped[i * 2 + 1] = end;
         }
-        edgeStartEndIdxsTyped[i*2] = start;
-        edgeStartEndIdxsTyped[i*2 + 1] = end;
-      }
     }
     if (workItemsTyped[(workItemsTyped.length - 4)] !== -1) {
-      edgeStartEndIdxsTyped[edgeStartEndIdxsTyped.length - 2] = workItemsTyped[workItemsTyped.length - 4];
-      edgeStartEndIdxsTyped[edgeStartEndIdxsTyped.length - 1] = edgesTyped.length/2;
+        edgeStartEndIdxsTyped[edgeStartEndIdxsTyped.length - 2] = workItemsTyped[workItemsTyped.length - 4];
+        edgeStartEndIdxsTyped[edgeStartEndIdxsTyped.length - 1] = edgesTyped.length/2;
     } else {
-      edgeStartEndIdxsTyped[edgeStartEndIdxsTyped.length - 2] = -1;
-      edgeStartEndIdxsTyped[edgeStartEndIdxsTyped.length - 1] = -1;
+        edgeStartEndIdxsTyped[edgeStartEndIdxsTyped.length - 2] = -1;
+        edgeStartEndIdxsTyped[edgeStartEndIdxsTyped.length - 1] = -1;
     }
     return edgeStartEndIdxsTyped;
 }
@@ -2799,7 +2751,6 @@ function computeEdgeHeightInfo (edges) {
 
     var prevSrcIdx = -1;
     var prevDstIdx = -1;
-    var edgeSeqLen = 1;
     var heightCounter = 0;
     var edgeSeqLen = 1;
 
