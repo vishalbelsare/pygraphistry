@@ -6,10 +6,12 @@ const pb = require('protobufjs');
 const path = require('path');
 const moment = require('moment');
 const Color = require('color');
+const d3Scale = require('d3-scale');
 
 const util = require('../util.js');
 const weaklycc = require('../weaklycc.js');
 const palettes = require('../palettes.js');
+const encodingsUtil = require('../encodings.js');
 const clientNotification = require('../clientNotification.js');
 const ComputedColumnSpec = require('../ComputedColumnSpec.js');
 
@@ -29,9 +31,14 @@ const protoBufDefinitions = protoBufBuilder.build();
 const VERTEX = protoBufDefinitions.VectorGraph.AttributeTarget.VERTEX;
 const EDGE   = protoBufDefinitions.VectorGraph.AttributeTarget.EDGE;
 
-const decoders = {
+const decodersByVersion = {
     0: decode0,
     1: decode1
+};
+
+const customAttributeNameByGraphIntType = {
+    [VERTEX]: 'nodes',
+    [EDGE]: 'edges'
 };
 
 /** @typedef {ProtoBuf.Message} VectorGraph
@@ -109,7 +116,7 @@ const attributeLoaders = function(graph) {
             values: undefined
         },
         edgeHeight: {
-            load: function (values) {
+            load: function (/*values*/) {
                 // NOT IMPLEMENTED OR USED YET
                 console.log('\n\n\ LOADING EDGE HEIGHTS NOT SUPPORTED\n\n\n');
             },
@@ -174,7 +181,7 @@ const attributeLoaders = function(graph) {
                 const valueObj = {name: '__edgeWeights', values: values, type: 'number'};
                 graph.dataframe.loadColumn('__edgeWeights', 'edge', valueObj);
 
-                const computeAllEdgeWeightFunction = function (edgeWeights, edges, outArr, numGraphElements) {
+                const computeAllEdgeWeightFunction = function (edgeWeights, edges, outArr/*, numGraphElements*/) {
                     for (let i = 0; i < edgeWeights.length; i++) {
                         outArr[i] = edgeWeights[i];
                     }
@@ -229,44 +236,52 @@ function getDegree(forwardsEdges, backwardsEdges, i) {
     return forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
 }
 
+var MIN_VERTEX_PIXEL_DIAMETER = 5; // Minimum hit target we've decided on.
+var MAX_VERTEX_PIXEL_DIAMETER = 30; // Destination of this data is a UInt8Array, so don't overflow!
+
 function calculateAndStoreDefaultPointSizeColumns (graph) {
     const dataframe = graph.dataframe;
     const forwardsEdges = dataframe.getColumnValues('forwardsEdges', 'hostBuffer');
     const backwardsEdges = dataframe.getColumnValues('backwardsEdges', 'hostBuffer');
 
-    const numGraphElements = dataframe.getNumElements('point');
-    const outArr = new Array(numGraphElements);
+    const numPoints = dataframe.getNumElements('point');
+    const outArr = new Array(numPoints);
 
     let minDegree = Number.MAX_VALUE;
     let maxDegree = 0;
-    for (let i = 0; i < numGraphElements; i++) {
+    for (let i = 0; i < numPoints; i++) {
         const degree = getDegree(forwardsEdges, backwardsEdges, i);
         minDegree = Math.min(minDegree, degree);
         maxDegree = Math.max(maxDegree, degree);
     }
 
-    const offset = 5 - minDegree;
-    const scalar = 20 / Math.max((maxDegree - minDegree),1);
+    const scaling = encodingsUtil.scalingFromSpec({
+        scalingType: 'sqrt',
+        domain: [minDegree, maxDegree],
+        range: [MIN_VERTEX_PIXEL_DIAMETER, MAX_VERTEX_PIXEL_DIAMETER],
+        clamp: true
+    });
 
-    for (let i = 0; i < numGraphElements; i++) {
+    for (let i = 0; i < numPoints; i++) {
         const degree = getDegree(forwardsEdges, backwardsEdges, i);
-        outArr[i] = Math.min(255, (degree + offset) + (degree - minDegree) * scalar);
+        outArr[i] = Math.floor(scaling(degree));
     }
 
     const valueObj = {name: '__defaultPointSize', values: outArr, type: 'number'};
     graph.dataframe.loadColumn('__defaultPointSize', 'point', valueObj);
 }
 
+
+/**
+ * This computes a community identified by the node in {self} ∪ {neighbors} with the highest degree.
+ */
 function calculateAndStoreCommunities(graph) {
     const dataframe = graph.dataframe;
     const forwardsEdges = dataframe.getColumnValues('forwardsEdges', 'hostBuffer');
     const backwardsEdges = dataframe.getColumnValues('backwardsEdges', 'hostBuffer');
 
-    const outArr = new Array(dataframe.getNumElements('point'));
-
-    const getDegree = function (forwardsEdges, backwardsEdges, i) {
-        return forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
-    };
+    const numPoints = dataframe.getNumElements('point');
+    const communitiesByPointID = new Array(numPoints);
 
     const compare = function (initBest, buffers, i) {
         let best = initBest;
@@ -277,8 +292,8 @@ function calculateAndStoreCommunities(graph) {
         for (let j = 0; j < numEdges; j++) {
             const dst = buffers.edgesTyped[firstEdge*2 + j*2 + 1];
             const degree = getDegree(forwardsEdges, backwardsEdges, dst);
-            if (   (degree > best.degree)
-                || (degree === best.degree && dst > best.id)) {
+            if (degree > best.degree ||
+                (degree === best.degree && dst > best.id)) {
                 best = {id: dst, degree: degree};
             }
         }
@@ -286,24 +301,34 @@ function calculateAndStoreCommunities(graph) {
         return best;
     };
 
-    for (let idx = 0; idx < outArr.length; idx++) {
+    for (let idx = 0; idx < numPoints; idx++) {
+        // Start with this point's degree:
         const best = {id: idx, degree: getDegree(forwardsEdges, backwardsEdges, idx)};
         const bestOut = compare(best, forwardsEdges, idx);
         const bestIn = compare(bestOut, backwardsEdges, idx);
-        outArr[idx] = bestIn.id;
+        communitiesByPointID[idx] = bestIn.id;
     }
 
-    const valueObj = {name: '__pointCommunity', values: outArr, type: 'number'};
+    const valueObj = {name: '__pointCommunity', values: communitiesByPointID, type: 'number'};
     graph.dataframe.loadColumn('__pointCommunity', 'point', valueObj);
 }
 
 
-const opentsdbMapper = {
+function rangeFromValues (values) {
+    return [_.min(values), _.max(values)];
+}
+
+
+const pointSizeScale = d3Scale.sqrt().range([5, 30]);
+const edgeSizeScale = d3Scale.linear().range([1,10]);
+
+
+const OpenTSDBMapper = {
     mappings: {
         pointSize: {
             name: 'degree',
             transform: function (v) {
-                return scaleValuesLinearIntegral(scaleValuesLog(v), 5, Math.pow(2, 8));
+                return _.map(v, pointSizeScale.copy().domain(rangeFromValues(v)));
             }
         },
         pointTitle: {
@@ -313,32 +338,37 @@ const opentsdbMapper = {
             name: 'community_spinglass',
             transform: function (v) {
                 const palette = util.palettes.qual_palette2;
-                return util.int2color(scaleValuesLinearIntegral(v, 0, palette.length - 1), palette);
+                var scale = d3Scale.linear().range([0, palette.length - 1]);
+                return _.map(v, (x) => util.int2color(Math.floor(scale(x)), palette));
             }
         },
         edgeColor: {
             name: 'bytes',
             transform: function (v) {
                 const palette = util.palettes.green2red_palette;
-                return util.int2color(scaleValuesLinearIntegral(scaleValuesLog(v), 0, palette.length - 1), palette);
+                const scale = d3Scale.log()
+                    .domain(rangeFromValues(v))
+                    .range([0, palette.length - 1])
+                    .clamp(true);
+                return _.map(v, (x) => util.int2color(Math.floor(scale(x)), palette));
             }
         },
         edgeWeight: {
             name: 'weight',
             transform: function (v) {
-                return scaleValuesLinear(scaleValuesLog(v), 0.5, 1.5);
+                return _.map(v, d3Scale.log().domain(rangeFromValues(v)).range([0.5, 1.5]).clamp(true));
             }
         }
     }
 };
 
 
-const misMapper = {
-    mappings: _.extend({}, opentsdbMapper.mappings, {
+const MiserablesMapper = {
+    mappings: _.extend({}, OpenTSDBMapper.mappings, {
         pointSize: {
             name: 'betweenness',
             transform: function (v) {
-                return scaleValuesLinearIntegral(v, 5, Math.pow(2, 8));
+                return _.map(v, pointSizeScale.copy().domain(rangeFromValues(v)));
             }
         }
     })
@@ -350,7 +380,7 @@ const defaultMapper = {
         pointSize: {
             name: 'pointSize',
             transform: function (v) {
-                return scaleValuesLinearIntegral(v, 5, Math.pow(2, 8));
+                return _.map(v, pointSizeScale.copy().domain(rangeFromValues(v)));
             }
         },
         pointLabel: {
@@ -371,13 +401,19 @@ const defaultMapper = {
                 return _.map(v, (cat) => palettes.bindings[cat]);
             }
         },
+        edgeSize: {
+            name: 'edgeSize',
+            transform: function (v) {
+                return _.map(v, edgeSizeScale.copy().domain(rangeFromValues(v)));
+            }
+        },
         edgeHeight: {
             name: 'edgeHeight'
         },
         edgeWeight: {
             name: 'edgeWeight',
             transform: function (v) {
-                return scaleValuesLinear(v, 0.5, 1.5);
+                return _.map(v, d3Scale.linear().domain(rangeFromValues(v)).range([0.5, 1.5]));
             }
         }
     }
@@ -385,11 +421,20 @@ const defaultMapper = {
 
 
 const mappers = {
-    'opentsdb': opentsdbMapper,
-    'miserables': misMapper,
+    'opentsdb': OpenTSDBMapper,
+    'miserables': MiserablesMapper,
     'splunk': defaultMapper,
     'default': defaultMapper
 };
+
+
+function getMapper (mapperKey = 'default') {
+    if (mappers.hasOwnProperty(mapperKey)) {
+        return mappers[mapperKey];
+    }
+    logger.warn('Unknown mapper', mapperKey, 'using "default"');
+    return mappers['default'];
+}
 
 
 function wrap(mappings, loaders) {
@@ -450,7 +495,7 @@ function load(graph, dataset) {
     const vg = protoBufDefinitions.VectorGraph.decode(dataset.body);
     logger.trace('attaching vgraph to simulator');
     graph.simulator.vgraph = vg;
-    return decoders[vg.version](graph, vg, dataset.metadata);
+    return decodersByVersion[vg.version](graph, vg, dataset.metadata);
 }
 
 /** @typedef {Object} DataframeMetadataByColumn
@@ -506,7 +551,7 @@ function loadDataframe(dataframe, attributeObjects, numPoints, numEdges, aliases
 }
 
 
-function decode0(graph, vg, metadata)  {
+function decode0(graph, vg, metadata) {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
           vg.version, vg.name, vg.vertexCount, vg.edgeCount);
 
@@ -532,11 +577,7 @@ function decode0(graph, vg, metadata)  {
     }
 
     let loaders = attributeLoaders(graph);
-    let mapper = mappers[metadata.mapper || 'default'];
-    if (mapper === undefined) {
-        logger.warn('Unknown mapper', metadata.mapper, 'using "default"');
-        mapper = mappers['default'];
-    }
+    let mapper = getMapper(metadata.mapper);
     loaders = wrap(mapper.mappings, loaders);
     logger.trace('Attribute loaders:', loaders);
 
@@ -776,40 +817,6 @@ function getAttributes0(vg/*, metadata*/) {
 }
 
 
-function scaleValuesLog(values) {
-    return _.map(values, (val) => val <= 0 ? 0 : Math.log(val));
-}
-
-
-/** rescale values from their full range to integral values in [minimum, maximum]
- * @param {Number[]} values values to rescale
- * @param {Number} minimum
- * @param {Number} maximum
- * @returns {Number[]}
- */
-function scaleValuesLinearIntegral(values, minimum, maximum) {
-    const max = _.max(values);
-    const min = _.min(values);
-    const scaleFactor = (maximum - minimum) / (max - min + 1);
-
-    return _.map(values, (val) => minimum + Math.floor((val - min) * scaleFactor));
-}
-
-
-/** rescale values from their full range to full-precision values in [minimum, maximum]
- * @param {Number[]} values values to rescale
- * @param {Number} minimum
- * @param {Number} maximum
- * @returns {Number[]}
- */
-function scaleValuesLinear(values, minimum, maximum) {
-    const max = _.max(values);
-    const min = _.min(values);
-    const scaleFactor = (maximum - minimum) / (max - min + 1);
-
-    return _.map(values, (val) => minimum + (val - min) * scaleFactor);
-}
-
 /**
  * @param {VectorGraph} vg
  * @returns {any[]}
@@ -837,7 +844,7 @@ function getAttributes1(vg, metadata) {
             return;
         }
         const attributeObjects = v.target === VERTEX ? nodeAttributeObjects : edgeAttributeObjects;
-        const typeAccessor = v.target === VERTEX ? 'nodes' : (v.target === EDGE ? 'edges' : undefined);
+        const typeAccessor = customAttributeNameByGraphIntType[v.target];
         let attributeMetadata;
         if (metadata !== undefined && metadata[typeAccessor] !== undefined) {
             const relevantMetadata = _.find(metadata[typeAccessor], (metadataByComponent) => {
@@ -862,11 +869,12 @@ function getAttributes1(vg, metadata) {
 }
 
 
-function sameKeys(o1, o2){
-    const k1 = _.keys(o1);
-    const k2 = _.keys(o2);
-    const ki = _.intersection(k1, k2);
-    return k1.length === k2.length && k2.length === ki.length;
+function sameKeys(a, b){
+    const aKeys = _.keys(a);
+    const bKeys = _.keys(b);
+    if (aKeys.length !== bKeys.length) { return false; }
+    const bothKeys = _.intersection(aKeys, bKeys);
+    return bKeys.length === bothKeys.length;
 }
 
 /** These encodings are handled in their own special way. */
@@ -955,7 +963,7 @@ function checkMetadataAgainstVGraph(metadata, vg, vgAttributes) {
  * @param {DataframeMetadata} metadata
  * @returns {Promise<U>}
  */
-function decode1(graph, vg, metadata)  {
+function decode1(graph, vg, metadata) {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
                  vg.version, vg.name, vg.vertexCount, vg.edgeCount);
 
@@ -978,11 +986,7 @@ function decode1(graph, vg, metadata)  {
     }
 
     let loaders = attributeLoaders(graph);
-    let mapper = mappers[metadata.mapper];
-    if (!mapper) {
-        logger.warn('Unknown mapper', metadata.mapper, 'using "default"');
-        mapper = mappers['default'];
-    }
+    let mapper = getMapper(metadata.mapper);
     loaders = wrap(mapper.mappings, loaders);
     logger.trace('Attribute loaders:', loaders);
 

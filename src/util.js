@@ -105,15 +105,10 @@ var palettes = {
 };
 
 
-function int2color(values, palette) {
+function int2color(val, palette) {
     palette = palette || palettes.palette1;
-
-    logger.trace('Palette: %o', palette);
-
-    var numColors = palette.length;
-    return _.map(values, function (val) {
-        return palette[val % numColors];
-    });
+    const numColors = palette.length;
+    return palette[val % numColors];
 }
 
 
