@@ -85,7 +85,7 @@ module.exports = {
 
     loadDocument: function (workbookSpecifier) {
         var workbookRoot = new persist.ContentSchema().subSchemaForWorkbook(workbookSpecifier);
-        return Rx.Observable.fromPromise(workbookRoot.download(WorkbookDocName)).map(function (data) {
+        return Rx.Observable.fromPromise(workbookRoot.get(WorkbookDocName)).map(function (data) {
             return JSON.parse(data);
         });
     },
