@@ -88,6 +88,7 @@ var UserBarsView = Backbone.View.extend({
     },
 
     addBar: function (model) {
+        console.log('Adding Bar');
         var view = new timeBar.view({model: model});
         model.view = view;
         // this.$el.append(view.el);
@@ -104,8 +105,9 @@ var UserBarsView = Backbone.View.extend({
         // this.$el.empty();
         this.collection.each(this.addBar, this);
         this.render();
-    },
+    }
 
+    /*
     mousemoveParent: function (evt) {
         this.collection.each(function (child) {
             if (child.view) {
@@ -121,6 +123,8 @@ var UserBarsView = Backbone.View.extend({
             }
         });
     }
+    */
+
 });
 
 

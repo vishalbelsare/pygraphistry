@@ -41,7 +41,13 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
     var userBarsModel = new userTimeBars.model({explorer: explorer});
     this.userBarsView = new userTimeBars.view({explorer: explorer, collection: this.userBars, model: userBarsModel});
+
     var mainBarModel = new timeBar.model({explorer: explorer, timeStamp: Date.now(), showTimeAggregationButtons: true});
+    mainBarModel.set('barModelSubject', explorer.barModelSubjects[0]);
+    mainBarModel.set('dataModelSubject', explorer.dataModelSubject);
+    mainBarModel.set('barType', 'main');
+    mainBarModel.set('lineUnchanged', 'false');
+
     this.mainBarView = new timeBar.view({model: mainBarModel});
     this.bottomAxisView = new timeExplorerBottomAxis.view({model: new timeExplorerBottomAxis.model({explorer: explorer}) });
 
@@ -58,6 +64,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
         $timeExplorerSideInput: $('#timeExplorerSideInput'),
         $dragBox: $('#timeExplorerDragBox'),
         $verticalLine: $('#timeExplorerVerticalLine'),
+        $filterSlider: $('#time-panel-filter-slider'),
         userBarsView: that.userBarsView,
         mainBarView: that.mainBarView,
         bottomAxisView: that.bottomAxisView,
@@ -72,13 +79,22 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
         },
 
         initialize: function () {
+
+            // Setup subject handlers
+            this.dataModelSubject = this.model.get('dataModelSubject');
+            this.barModelSubjects = this.model.get('barModelSubjects');
+
+            // TODO: Handlers for data changes
+
+
+
+
             // TODO: Add, remove, reset handlers
-            this.listenTo(this.model, 'change', this.updateChildren);
-            this.listenTo(this.model, 'change:all', this.setupMouseInteractions);
+            // this.listenTo(this.model, 'change', this.updateChildren);
+            // this.listenTo(this.model, 'change:all', this.setupMouseInteractions);
 
             this.dragBoxLastLeftX = Infinity;
             this.dragBoxLastRightX = -Infinity;
-
 
             // this.setupVerticalLine();
             this.renderInitializationMenu();
@@ -111,17 +127,23 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             var timeType = target.data('graph-type');
             var timeAttr = target.data('attr-name');
 
-            console.log('timeType, timeAttr: ', timeType, timeAttr);
+            console.log('submitting timeType, timeAttr: ', timeType, timeAttr);
 
-            // var timeType = $('#timeType').val();
-            // var timeAttr = $('#timeAttr').val();
+            this.dataModelSubject.take(1).do((dataModel) => {
+                var newModel = _.clone(dataModel);
+                newModel.timeAttr = timeAttr;
+                newModel.timeType = timeType;
 
-            this.render();
-
-            this.model.get('explorer').modifyTimeDescription({
-                timeType: timeType,
-                timeAttr: timeAttr
-            });
+                this.dataModelSubject.onNext(newModel);
+                this.render();
+                this.setupMouseInteractions();
+                this.setupSliderInteractions();
+                this.updateChildrenViewList();
+            }).subscribe(_.identity, util.makeErrorHandler('updating time attr'));
+            // this.model.get('explorer').modifyTimeDescription({
+            //     timeType: timeType,
+            //     timeAttr: timeAttr
+            // });
         },
 
         render: function () {
@@ -133,7 +155,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             this.$timeExplorerAxisContainer.append(this.bottomAxisView.el);
 
             // Make time slider visible
-            $('#time-panel-filter-slider').bootstrapSlider({tooltip: 'hide'});
+            this.$filterSlider.bootstrapSlider({tooltip: 'hide'});
             // $('#timeFilterSliderRow').css('visibility', 'visible');
 
             this.userBarsView.$el.removeClass('hidden');
@@ -147,6 +169,70 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 this.setupZoomInteraction();
                 this.enableMouseInteractions = true;
             }
+        },
+
+        setupSliderInteractions: function () {
+            var offset = this.$timeExplorerVizContainer.offset().left
+
+            // TODO: Instead of directly tying input -> side effect, go through model
+            this.$filterSlider.on('slide', (evt) => {
+                var [rawStart, rawStop] = evt.value;
+                var start = rawStart / 1000; // scale to ratio
+                var stop = rawStop / 1000; // scale to ratio
+
+                var width = this.$timeExplorerVizContainer.width();
+
+                var leftX = (width * start) + offset - 1;
+                var rightX = (width * stop) + offset - 1;
+
+                // Don't actually update model until the slider is released
+
+                // Move the dragBox size
+                this.$dragBox.css('left', leftX);
+                this.$dragBox.css('width', rightX - leftX);
+
+                // Show or hide dragbox based on values
+                if (rawStart === 0 && rawStop === 1000) {
+                    this.$dragBox.css('display', 'none');
+                } else {
+                    this.$dragBox.css('display', 'block');
+                }
+
+            });
+
+
+            this.$filterSlider.on('slideStop', (evt) => {
+                var [rawStart, rawStop] = evt.value;
+                var sliderStart = rawStart / 1000; // scale to ratio
+                var sliderStop = rawStop / 1000; // scale to ratio
+
+                var shouldResetFilter = (rawStart === 0 && rawStop === 1000);
+
+                this.dataModelSubject.take(1).do((model) => {
+                    var newModel = _.clone(model);
+
+                    if (shouldResetFilter) {
+                        newModel.filterTimeBounds = {
+                            start: null, stop: null
+                        }
+                    } else {
+                        var localTimeBoundDiff = model.localTimeBounds.stop - model.localTimeBounds.start;
+                        var filterStartOffset = sliderStart * localTimeBoundDiff;
+                        var filterStopOffset = sliderStop * localTimeBoundDiff;
+                        newModel.filterTimeBounds = {
+                            start: model.localTimeBounds.start + filterStartOffset,
+                            stop: model.localTimeBounds.start + filterStopOffset
+                        };
+                    }
+
+                    this.dataModelSubject.onNext(newModel);
+                }).subscribe(_.identity, util.makeErrorHandler('updating time filter'));
+
+            });
+
+
+
+
         },
 
         setupZoomInteraction: function () {
@@ -365,10 +451,18 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                             explorer.updateGraphTimeFilter(null);
                             that.handlingMouseDown = false;
                             that.$dragBox.css('display', 'none');
+
+                            // Update model to show no time filter
+                            that.dataModelSubject.take(1).do((model) => {
+                                var newModel = _.clone(model);
+                                newModel.filterTimeBounds = null;
+                                that.dataModelSubject.onNext(newModel);
+                            });
+
                         };
 
                         var applyFilterFunc = function () {
-                            var mainBarData = that.model.get('all');
+                            var mainBarData = that.mainBarView.lastBarModel.serverData;
                             var cutoffs = mainBarData.cutoffs;
 
                             var leftBin = that.mainBarView.getBinForPosition(leftX);
@@ -381,9 +475,14 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                             var leftCutoff = cutoffs[leftBin];
                             var rightCutoff = cutoffs[rightBin + 1];
 
-                            explorer.updateGraphTimeFilter({
-                                start: leftCutoff,
-                                stop: rightCutoff
+                            // Update model to show new time filter
+                            that.dataModelSubject.take(1).do((model) => {
+                                var newModel = _.clone(model);
+                                newModel.filterTimeBounds = {
+                                    start: leftCutoff,
+                                    stop: rightCutoff
+                                };
+                                that.dataModelSubject.onNext(newModel);
                             });
 
                             that.handlingMouseDown = false;
@@ -404,9 +503,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
                     }).subscribe(_.identity, util.makeErrorHandler('time explorer drag mouseup'));
 
-
             }
-
 
 
         },
@@ -429,103 +526,203 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             if (!this.enableMouseInteractions) {
                 return;
             }
-            this.mainBarView.mousemoveParent(evt);
-            this.userBarsView.mousemoveParent(evt);
+
+            this.dataModelSubject.take(1).do((model) => {
+                var newModel = _.clone(model);
+                newModel.mouseX = evt.pageX;
+                this.dataModelSubject.onNext(newModel);
+            }).subscribe(_.identity, util.makeErrorHandler('mousemove timebar'));
+
+            // this.mainBarView.mousemoveParent(evt);
+            // this.userBarsView.mousemoveParent(evt);
         },
 
         mouseout: function (evt) {
             if (!this.enableMouseInteractions) {
                 return;
             }
-            this.mainBarView.mouseoutParent(evt);
-            this.userBarsView.mouseoutParent(evt);
+
+            this.dataModelSubject.take(1).do((model) => {
+                var newModel = _.clone(model);
+                newModel.mouseX = null;
+                this.dataModelSubject.onNext(newModel);
+            }).subscribe(_.identity, util.makeErrorHandler('mouseout timebar'));
+
         },
 
-        updateChildren: function () {
-            var data = this.model.attributes;
-            var explorer = this.model.get('explorer');
-            var params;
+        updateChildrenViewList: function () {
 
-            // TODO: Make this a cleaner system
-            var axisKey = '' + data.all.start + data.all.stop + data.all.timeAggregation;
+            var childrenSubjects = this.barModelSubjects;
+            var allSubjects = childrenSubjects.slice();
 
-            // Handle axis
-            params = {
-                data: data.all,
-                timeStamp: Date.now(),
-                key: axisKey
-            };
-            this.bottomAxisView.model.set(params);
-
-            // Handle main bar, '_all'
-            params = {
-                data: data.all,
-                maxBinValue: data.maxBinValue,
-                timeStamp: Date.now(),
-                showTimeAggregationButtons: true,
-                lineUnchanged: false
-            };
-            this.mainBarView.model.id = params.data.name;
-            this.mainBarView.model.set('barType', 'main');
-            this.mainBarView.model.set(params);
-
-            var barModels = [];
             var collection = this.userBarsView.collection;
 
-            // console.log('DATA: User: ', data.user);
-            // console.log('Collection: ', collection);
+            var idZipFunc = function () {
+                var retArr = [];
+                for (var i = 0; i < arguments.length; i++) {
+                    retArr.push(arguments[i].id);
+                }
+                return retArr;
+            }
+
+            allSubjects.push(idZipFunc);
+            Rx.Observable.zip.apply(Rx.Observable, allSubjects).take(1).do((ids) => {
+
+                // TODO: Make it so this doesn't eagerly run
+
+                var idToSubjectMap = {};
+                for (var i = 0; i < ids.length; i++) {
+                    var id = ids[i];
+                    idToSubjectMap[id] = allSubjects[i];
+                }
+
+                // Deal with first (all Bar)
+                // TODO FIXME: Stop treating this one specially
+                this.mainBarView.model.set('barModelSubject', idToSubjectMap[ids[0]]);
+                this.mainBarView.model.set('dataModelSubject', this.dataModelSubject);
+                this.mainBarView.model.set('explorer', this.model.get('explorer'));
+                this.mainBarView.model.set('barType', 'main');
+                this.mainBarView.model.set('lineUnchanged', 'false');
+                this.mainBarView.model.id = ids[0];
+
+                // Remove first element for all bar
+                ids.shift();
+
+                var existingKeys = _.pluck(collection.models, 'id');
+                var updatedKeys = _.intersection(ids, existingKeys);
+                var newKeys = _.difference(ids, existingKeys);
 
 
-            var dataKeys = _.keys(data.user);
-            var existingKeys = _.pluck(collection.models, 'id');
+                // Unless subjects can change (Not supported today),
+                // don't have to deal with updated.
 
-            var updatedKeys = _.intersection(dataKeys, existingKeys);
-            var newKeys = _.difference(dataKeys, existingKeys);
-            // var deletedKeys = _.difference(existingKeys, dataKeys);
+                // TODO: Support deleting elements
 
-            var barModels = [];
+                // add new bars
+                var barModels = [];
 
-            // Handle updated keys
-            _.each(updatedKeys, function (key) {
-                var val = data.user[key];
-                // console.log('Updating data for: ', key);
+                _.each(updatedKeys, (key) => {
+                    // console.log('Updating data for: ', key);
 
-                var params = {
-                    data: val,
-                    maxBinValue: data.maxBinValue,
-                    timeStamp: Date.now(),
-                    lineUnchanged: false
-                };
+                    var params = {
+                        barModelSubject: idToSubjectMap[key],
+                        dataModelSubject: this.dataModelSubject,
+                        lineUnchanged: false,
+                        barType: 'user'
+                    };
 
-                var model = collection.get(key);
-                model.set(params);
-                model.set('barType', 'user');
-                barModels.push(model);
-            });
+                    var model = collection.get(key);
+                    model.set(params);
+                    barModels.push(model);
+                });
 
-            //Add new data elements
-            _.each(newKeys, function (key) {
-                var val = data.user[key];
-                var barModel = new timeBar.model({explorer: explorer});
-                var params = {
-                    data: val,
-                    maxBinValue: data.maxBinValue,
-                    timeStamp: Date.now(),
-                    lineUnchanged: false
-                };
+                //Add new data elements
+                _.each(newKeys, (key) => {
+                    var barModel = new timeBar.model({explorer: explorer});
+                    var params = {
+                        barModelSubject: idToSubjectMap[key],
+                        dataModelSubject: this.dataModelSubject,
+                        lineUnchanged: false,
+                        barType: 'user'
+                    };
 
-                barModel.set(params);
-                barModel.set('barType', 'user');
-                barModel.id = key;
-                barModels.push(barModel);
-            });
+                    barModel.set(params);
+                    barModel.set('explorer', this.model.get('explorer'));
+                    barModel.id = key;
+                    barModels.push(barModel);
+                });
 
-            collection.set(barModels);
-        }
+                collection.set(barModels);
+
+            }).subscribe(_.identity, util.makeErrorHandler('Failed zip of time panel subjects'));
+
+        },
+
+        // updateChildren: function () {
+        //     var data = this.model.attributes;
+        //     var explorer = this.model.get('explorer');
+        //     var params;
+
+        //     // TODO: Make this a cleaner system
+        //     var axisKey = '' + data.all.start + data.all.stop + data.all.timeAggregation;
+
+        //     // Handle axis
+        //     params = {
+        //         data: data.all,
+        //         timeStamp: Date.now(),
+        //         key: axisKey
+        //     };
+        //     this.bottomAxisView.model.set(params);
+
+        //     // Handle main bar, '_all'
+        //     params = {
+        //         data: data.all,
+        //         maxBinValue: data.maxBinValue,
+        //         timeStamp: Date.now(),
+        //         showTimeAggregationButtons: true,
+        //         lineUnchanged: false
+        //     };
+        //     this.mainBarView.model.id = params.data.name;
+        //     this.mainBarView.model.set('barType', 'main');
+        //     this.mainBarView.model.set(params);
+
+        //     var barModels = [];
+        //     var collection = this.userBarsView.collection;
+
+        //     // console.log('DATA: User: ', data.user);
+        //     // console.log('Collection: ', collection);
+
+
+        //     var dataKeys = _.keys(data.user);
+        //     var existingKeys = _.pluck(collection.models, 'id');
+
+        //     var updatedKeys = _.intersection(dataKeys, existingKeys);
+        //     var newKeys = _.difference(dataKeys, existingKeys);
+        //     // var deletedKeys = _.difference(existingKeys, dataKeys);
+
+        //     var barModels = [];
+
+        //     // Handle updated keys
+        //     _.each(updatedKeys, function (key) {
+        //         var val = data.user[key];
+        //         // console.log('Updating data for: ', key);
+
+        //         var params = {
+        //             data: val,
+        //             maxBinValue: data.maxBinValue,
+        //             timeStamp: Date.now(),
+        //             lineUnchanged: false
+        //         };
+
+        //         var model = collection.get(key);
+        //         model.set(params);
+        //         model.set('barType', 'user');
+        //         barModels.push(model);
+        //     });
+
+        //     //Add new data elements
+        //     _.each(newKeys, function (key) {
+        //         var val = data.user[key];
+        //         var barModel = new timeBar.model({explorer: explorer});
+        //         var params = {
+        //             data: val,
+        //             maxBinValue: data.maxBinValue,
+        //             timeStamp: Date.now(),
+        //             lineUnchanged: false
+        //         };
+
+        //         barModel.set(params);
+        //         barModel.set('barType', 'user');
+        //         barModel.id = key;
+        //         barModels.push(barModel);
+        //     });
+
+        //     collection.set(barModels);
+        // }
 
     });
 
-    this.model = new TimeExplorerModel({explorer: explorer});
+    this.model = new TimeExplorerModel({explorer: explorer, dataModelSubject: explorer.dataModelSubject, barModelSubjects: explorer.barModelSubjects});
     this.view = new TimeExplorerView({model: this.model});
     this.collection = this.userBars;
 
