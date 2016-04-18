@@ -416,6 +416,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 .inspectTime(SCROLL_SAMPLE_TIME)
                 .do(function (wheelEvent) {
                     wheelEvent.preventDefault();
+                    wheelEvent.stopPropagation();
                 })
                 .do(function(wheelEvent) {
 

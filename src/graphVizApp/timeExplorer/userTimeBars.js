@@ -33,7 +33,8 @@ var UserBarsCollection = Backbone.Collection.extend({
 
 var UserBarsView = Backbone.View.extend({
     events: {
-        'click #newAttrSubmitButton': 'submitNewAttr'
+        'click #newTimeBarButton': 'submitNewAttr',
+        'mousewheel': 'handleMouseWheel'
     },
 
     initialize: function () {
@@ -61,6 +62,12 @@ var UserBarsView = Backbone.View.extend({
         this.$el.empty();
         this.$el.append(newDiv);
 
+        var params = {
+
+        };
+        var addRowHtml = this.template(params);
+        newDiv.append(addRowHtml);
+
         this.collection.each(function (child) {
             // TODO: This guard is a hack. I don't know how to initialize backbone
             if (child.view) {
@@ -70,13 +77,11 @@ var UserBarsView = Backbone.View.extend({
             }
         });
 
-        var params = {
-
-        };
-        var addRowHtml = this.template(params);
-        newDiv.append(addRowHtml);
-
         this.$el.attr('cid', this.cid);
+    },
+
+    handleMouseWheel: function (evt) {
+        evt.preventDefault();
     },
 
     submitNewAttr: function (evt) {
@@ -84,15 +89,6 @@ var UserBarsView = Backbone.View.extend({
         var explorer = this.model.get('explorer');
         explorer.addActiveQuery(undefined, undefined, '');
         return;
-
-
-        var newType = $('#newType').val();
-        var newAttr = $('#newAttr').val();
-        var newQuery = $('#newQuery').val();
-        // TODO: Don't use this global. Instead properly structure user bars as a model, that contains a collection.
-
-        explorer.addActiveQuery(newType, newAttr, newQuery);
-        // this.collection.get('explorer').addActiveQuery(newType, newAttr, newQuery);
     },
 
     addBar: function (model) {
