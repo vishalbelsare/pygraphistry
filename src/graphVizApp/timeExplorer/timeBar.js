@@ -74,7 +74,8 @@ var TimeBarView = Backbone.View.extend({
 
         this.barModelSubject.take(1).do((barModel) => {
             var params = {};
-            if (barModel.timeAggregationButtons) {
+            console.log('initializing bar, model: ', barModel);
+            if (barModel.showTimeAggregationButtons) {
                 params.timeAggregationButtons = timeAggregationButtons;
             }
 
@@ -147,11 +148,13 @@ var TimeBarView = Backbone.View.extend({
             if (data.changedKeys.length > 0 &&
                 _.intersection(data.changedKeys, ['localTimeBounds', 'timeAttr', 'timeType', 'timeAggregationMode']).length > 0) {
 
+                // TODO: Replace this
+                this.model.set('lineUnchanged', false);
+
                 this.requestNewDataAndRender({
                     data, bar
                 });
 
-                // TODO: Make this a switch
                 return;
             }
 
@@ -236,11 +239,13 @@ var TimeBarView = Backbone.View.extend({
             filters
         };
 
+        console.log('Payload: ', payload);
+
         // console.log('SENDING TIME DATA COMMAND');
 
         return explorer.getTimeDataCommand.sendWithObservableResult(payload).take(1)
             .map(function (resp) {
-                // console.log('payload: ', payload);
+                console.log('resp: ', resp);
                 resp.data.name = name;
                 return resp.data;
             });
@@ -279,6 +284,7 @@ var TimeBarView = Backbone.View.extend({
         // Don't do first time work.
         // TODO: Should this be initialize instead?
         if (model.get('initialized')) {
+            console.log('Requesting render: ', barModel, dataModel);
             updateTimeBar(model.get('vizContainer'), model, barModel, dataModel);
             return this;
         }
@@ -628,8 +634,6 @@ function updateTimeBar ($el, model, barModel, dataModel) {
 
     // Draw as time series if too many
     if ((width/MIN_COLUMN_WIDTH) < data.numBins) {
-        console.log('In Line Chart Path. width, data.numBins: ', width, data.numBins);
-        console.log('d3Data: ', d3Data);
         updateTimeBarLineChart($el, model, barModel, dataModel);
         d3Data.lastDraw = 'lineChart';
         return;
@@ -637,7 +641,6 @@ function updateTimeBar ($el, model, barModel, dataModel) {
 
     // Reset if line Chart
     if (d3Data.lastDraw === 'lineChart') {
-        // console.log('RESETTING SVG BECAUSE WAS LINE');
         svg.selectAll("*").remove();
     }
 
@@ -855,7 +858,7 @@ function updateTimeBarLineChart ($el, model, barModel, dataModel) {
     var width = d3Data.width;
     var height = d3Data.height;
     // var data = model.get('data');
-    var data = dataModel.serverData;
+    var data = barModel.serverData;
     var maxBinValue = data.maxBin;
     // var maxBinValue = model.get('maxBinValue');
 

@@ -42,7 +42,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
     var userBarsModel = new userTimeBars.model({explorer: explorer});
     this.userBarsView = new userTimeBars.view({explorer: explorer, collection: this.userBars, model: userBarsModel});
 
-    var mainBarModel = new timeBar.model({explorer: explorer, timeStamp: Date.now(), showTimeAggregationButtons: true});
+    var mainBarModel = new timeBar.model({explorer: explorer, timeStamp: Date.now()});
     mainBarModel.set('barModelSubject', explorer.barModelSubjects[0]);
     mainBarModel.set('dataModelSubject', explorer.dataModelSubject);
     mainBarModel.set('barType', 'main');

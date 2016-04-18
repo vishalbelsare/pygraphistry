@@ -56,7 +56,7 @@ function TimeExplorer (socket, $div, filtersPanel) {
     this.globalBarModelSubject.onNext(timeExplorerUtils.baseGlobalBar);
 
     var allBar = new Rx.ReplaySubject(1);
-    var allBarModel = timeExplorerUtils.baseUserBar;
+    var allBarModel = _.clone(timeExplorerUtils.baseUserBar);
     allBarModel.showTimeAggregationButtons = true;
     allBarModel.id = getId();
     allBar.onNext(allBarModel);
@@ -185,7 +185,7 @@ TimeExplorer.prototype.updateGraphTimeFilter = function (model) {
 TimeExplorer.prototype.addActiveQuery = function (type, attr, string) {
 
     var newBar = new Rx.ReplaySubject(1);
-    var newBarModel = timeExplorerUtils.baseUserBar;
+    var newBarModel = _.clone(timeExplorerUtils.baseUserBar);
 
     newBarModel.id = getId();
     newBarModel.filter = this.makeQuery(type, attr, string);
