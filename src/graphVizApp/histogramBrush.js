@@ -99,8 +99,13 @@ HistogramBrush.prototype.initializeGlobalData = function(socket, filtersPanel, u
         // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
         const maxInitialItems = Math.min(Math.round((window.innerHeight - 110) / 85), 5);
         const filteredAttributes = {};
-        const keys = _.keys(data.sparkLines);
-        const sortedKeys = _.sortBy(keys, (key) => (GraphistryAttributeNames.indexOf(key)));
+        // FIXME server should provide smarter summary metadata and dispatch on that
+        const keysWithNonTrivialData = _.filter(_.keys(data.sparkLines), (key => {
+            var sparkLine = data.sparkLines[key];
+            return !(sparkLine.type === 'nodata' ||
+                (sparkLine.binValues !== undefined && sparkLine.binValues.length === 1));
+        }));
+        const sortedKeys = _.sortBy(keysWithNonTrivialData, (key) => (GraphistryAttributeNames.indexOf(key)));
         const firstKeys = _.first(sortedKeys, maxInitialItems);
         _.each(firstKeys, (key) => {
             filteredAttributes[key] = data.sparkLines[key];
