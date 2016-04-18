@@ -151,6 +151,16 @@ function makeDataModelDiffer (optionalTag) {
     return differ;
 }
 
+function getAttributeInfoFromQueryString (queryString) {
+
+    var firstIdentifiedRegex = /\b(\w+):(\w+)\b/
+    var firstMatch = firstIdentifiedRegex.exec(queryString);
+    var type = firstMatch[1];
+    var attr = firstMatch[2];
+    return {type, attr};
+
+}
+
 
 module.exports = {
     setupSvg,
@@ -162,6 +172,7 @@ module.exports = {
     baseDataModel,
     baseGlobalBar,
     baseUserBar,
-    makeDataModelDiffer
+    makeDataModelDiffer,
+    getAttributeInfoFromQueryString
 };
 

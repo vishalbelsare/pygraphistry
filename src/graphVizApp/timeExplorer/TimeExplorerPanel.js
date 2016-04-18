@@ -28,7 +28,7 @@ var timeExplorerUtils = require('./timeExplorerUtils.js');
 
 var DOUBLE_CLICK_TIME = 500;
 var SCROLL_SAMPLE_TIME = 5;
-var INTERACTION_MODE = 'FILTER';
+var INTERACTION_MODE = 'PANZOOM';
 
 //////////////////////////////////////////////////////////////////////////////
 // Explorer Panel
@@ -39,17 +39,20 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
     this.userBars = new userTimeBars.collection({explorer: explorer});
 
-    var userBarsModel = new userTimeBars.model({explorer: explorer});
+    var userBarsModel = new userTimeBars.model({explorer: explorer, metadata});
     this.userBarsView = new userTimeBars.view({explorer: explorer, collection: this.userBars, model: userBarsModel});
 
     var mainBarModel = new timeBar.model({explorer: explorer, timeStamp: Date.now()});
     mainBarModel.set('barModelSubject', explorer.barModelSubjects[0]);
     mainBarModel.set('dataModelSubject', explorer.dataModelSubject);
+    mainBarModel.set('metadata', metadata);
     mainBarModel.set('barType', 'main');
     mainBarModel.set('lineUnchanged', 'false');
 
     this.mainBarView = new timeBar.view({model: mainBarModel});
     this.bottomAxisView = new timeExplorerBottomAxis.view({model: new timeExplorerBottomAxis.model({explorer: explorer}) });
+
+    this.metadata = metadata;
 
     var TimeExplorerModel = Backbone.Model.extend({});
 
@@ -267,6 +270,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
         },
 
         handleMouseDown: function (evt) {
+            console.log('Handling mouse down');
             // Return early if it's a UI element
             // TODO: Figure out how to represent this in terms of the selector
             var $target = $(evt.target);
@@ -274,237 +278,47 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 return;
             }
 
-            var that = this;
-            var explorer = that.model.get('explorer');
-
             if (!this.enableMouseInteractions) {
                 return;
             }
 
-            // In the middle of prior click/double click. Don't start new one.
-            if (that.handlingMouseDown) {
-                return;
-            }
-            that.handlingMouseDown = true;
+            console.log('Passed checks')
 
+            var lastX = evt.pageX;
+            var width = this.$timeExplorerVizContainer.width();
 
-            if (INTERACTION_MODE === 'ZOOM') {
-                var startX = evt.pageX;
-                var leftX = evt.pageX;
-                var rightX = evt.pageX;
-                var mouseMoved = false;
+            var positionChanges = Rx.Observable.fromEvent(this.$timeExplorerVizContainer, 'mousemove')
+                .flatMap((evt) => {
+                    return this.dataModelSubject.take(1).map((dataModel) => {
+                        return {dataModel, evt};
+                    });
+                })
+                .do((wrapped) => {
+                    var {dataModel, evt} = wrapped;
+                    var newX = evt.pageX;
 
-                var positionChanges = Rx.Observable.fromEvent(that.$timeExplorerVizContainer, 'mousemove')
-                    .map(function (evt) {
+                    var newModel = _.clone(dataModel);
+                    var percentageDiff = (lastX - newX) / width;
+                    var timeDiff = Math.round(percentageDiff * (dataModel.localTimeBounds.stop - dataModel.localTimeBounds.start));
 
-                        mouseMoved = true;
-                        var newX = evt.pageX;
-                        var ends = [startX, newX];
-                        leftX = _.min(ends);
-                        rightX = _.max(ends);
+                    newModel.localTimeBounds = {
+                        start: dataModel.localTimeBounds.start + timeDiff,
+                        stop: dataModel.localTimeBounds.stop + timeDiff
+                    }
 
-                        that.$dragBox.css('left', leftX);
-                        that.$dragBox.css('width', rightX - leftX);
-                        that.$dragBox.css('display', 'block');
+                    lastX = newX;
 
-                    }).subscribe(_.identity, util.makeErrorHandler('time explorer drag move'));
+                    console.log('Pos change');
+                    this.dataModelSubject.onNext(newModel);
 
-                Rx.Observable.fromEvent(this.$timeExplorerVizContainer, 'mouseup')
-                    .take(1)
-                    .do(function () {
-                        positionChanges.dispose();
+                }).subscribe(_.identity, util.makeErrorHandler('time explorer drag move'));
 
-                        var filterDownFunc = function () {
-                            var leftBin = that.mainBarView.getBinForPosition(leftX);
-                            var rightBin = that.mainBarView.getBinForPosition(rightX);
-
-                            var mainBarData = that.model.get('all');
-                            var cutoffs = mainBarData.cutoffs;
-
-                            var leftCutoff = cutoffs[leftBin];
-                            var rightCutoff = cutoffs[rightBin + 1];
-
-                            var explorer = that.model.get('explorer');
-                            explorer.modifyTimeDescription({
-                                start: leftCutoff,
-                                stop: rightCutoff
-                            });
-
-                            that.handlingMouseDown = false;
-                        };
-
-                        var zoomOutFunc = function () {
-                            var explorer = that.model.get('explorer');
-                            explorer.modifyTimeDescription({
-                                start: explorer.originalStart,
-                                stop: explorer.originalStop
-                            });
-
-                            Rx.Observable.timer(DOUBLE_CLICK_TIME)
-                                .take(1)
-                                .do(function () {
-                                    that.handlingMouseDown = false;
-                                }).subscribe(_.identity);
-                        };
-
-                        if (leftX === rightX) {
-                            // Click
-                            // Wait for new click to zoom out, else zoom in
-                            // TODO: Figure out how to do this in terms of user accessibility settings
-                            // that the user specified on how long to wait between double click.
-                            var mousedownStream = Rx.Observable.fromEvent(that.$timeExplorerVizContainer, 'mousedown');
-                            var timer = Rx.Observable.timer(DOUBLE_CLICK_TIME);
-
-                            timer.merge(mousedownStream)
-                                .take(1)
-                                .do(function (val) {
-                                    if (val) {
-                                        // Is mousedown event
-                                        zoomOutFunc();
-                                    } else {
-                                        // Timed out, is click
-                                        filterDownFunc();
-                                    }
-                                }).subscribe(_.identity, util.makeErrorHandler('time explorer double click'));
-
-                        } else {
-                            // Drag
-                            filterDownFunc();
-                        }
-
-                        that.$dragBox.css('display', 'none');
-
-                    }).subscribe(_.identity, util.makeErrorHandler('time explorer drag mouseup'));
-
-            } else if (INTERACTION_MODE === 'FILTER') {
-
-                var startX = evt.pageX;
-                var startLeftX = that.dragBoxLastLeftX;
-                var startRightX = that.dragBoxLastRightX;
-                var leftX = evt.pageX;
-                var rightX = evt.pageX;
-                var mouseMoved = false;
-
-                var clickedOnOldWindow = (startX >= that.dragBoxLastLeftX && startX <= that.dragBoxLastRightX);
-
-                var positionChanges = Rx.Observable.fromEvent(that.$timeExplorerVizContainer, 'mousemove')
-                    .map(function (evt) {
-
-                        mouseMoved = true;
-                        var newX = evt.pageX;
-
-                        if (clickedOnOldWindow) {
-
-                            var leftBound = that.$timeExplorerMain.offset().left + timeBar.margin.left;
-                            var rightBound = that.$timeExplorerMain.offset().left + that.$timeExplorerMain.width() - timeBar.margin.right;
-                            // Slight extra padding
-                            leftBound += 2;
-                            rightBound -= 5;
-
-                            // Prevent delta from going off the border
-                            var delta = newX - startX;
-                            // check left
-                            if (startLeftX + delta <= leftBound) {
-                                delta = leftBound - startLeftX;
-                            }
-                            // check right
-                            if (startRightX + delta >= rightBound) {
-                                delta = rightBound - startRightX;
-                            }
-
-                            that.dragBoxLastLeftX = startLeftX + delta;
-                            that.dragBoxLastRightX = startRightX + delta;
-
-                            leftX = that.dragBoxLastLeftX;
-                            rightX = that.dragBoxLastRightX;
-
-                            that.$dragBox.css('left', leftX);
-                            that.$dragBox.css('width', rightX - leftX);
-                            that.$dragBox.css('display', 'block');
-
-                        } else {
-                            // Create new window
-                            var ends = [startX, newX];
-                            leftX = _.min(ends);
-                            rightX = _.max(ends);
-
-                            that.dragBoxLastRightX = rightX;
-                            that.dragBoxLastLeftX = leftX;
-
-                            that.$dragBox.css('left', leftX);
-                            that.$dragBox.css('width', rightX - leftX);
-                            that.$dragBox.css('display', 'block');
-
-                        }
-                    }).subscribe(_.identity, util.makeErrorHandler('time explorer drag move'));
-
-                Rx.Observable.fromEvent(this.$timeExplorerVizContainer, 'mouseup')
-                    .take(1)
-                    .do(function () {
-                        positionChanges.dispose();
-
-                        var removeFilterFunc = function () {
-
-                            that.dragBoxLastLeftX = Infinity;
-                            that.dragBoxLastRightX = -Infinity;
-
-                            explorer.updateGraphTimeFilter(null);
-                            that.handlingMouseDown = false;
-                            that.$dragBox.css('display', 'none');
-
-                            // Update model to show no time filter
-                            that.dataModelSubject.take(1).do((model) => {
-                                var newModel = _.clone(model);
-                                newModel.filterTimeBounds = null;
-                                that.dataModelSubject.onNext(newModel);
-                            });
-
-                        };
-
-                        var applyFilterFunc = function () {
-                            var mainBarData = that.mainBarView.lastBarModel.serverData;
-                            var cutoffs = mainBarData.cutoffs;
-
-                            var leftBin = that.mainBarView.getBinForPosition(leftX);
-                            var rightBin = that.mainBarView.getBinForPosition(rightX);
-
-                            // Guard edges
-                            leftBin = Math.max(leftBin, 0);
-                            rightBin = Math.min(rightBin, cutoffs.length - 2);
-
-                            var leftCutoff = cutoffs[leftBin];
-                            var rightCutoff = cutoffs[rightBin + 1];
-
-                            // Update model to show new time filter
-                            that.dataModelSubject.take(1).do((model) => {
-                                var newModel = _.clone(model);
-                                newModel.filterTimeBounds = {
-                                    start: leftCutoff,
-                                    stop: rightCutoff
-                                };
-                                that.dataModelSubject.onNext(newModel);
-                            });
-
-                            that.handlingMouseDown = false;
-                        };
-
-                        if (leftX === rightX) {
-                            // Click
-                            if (clickedOnOldWindow) {
-                                removeFilterFunc();
-                            } else {
-                                that.handlingMouseDown = false;
-                            }
-
-                        } else {
-                            // Drag
-                            applyFilterFunc();
-                        }
-
-                    }).subscribe(_.identity, util.makeErrorHandler('time explorer drag mouseup'));
-
-            }
-
+            Rx.Observable.fromEvent(this.$timeExplorerVizContainer, 'mouseup')
+                .take(1)
+                .do(function () {
+                    // Dispose of mousedown handler stream
+                    positionChanges.dispose();
+                }).subscribe(_.identity, util.makeErrorHandler('time explorer drag mouseup'));
 
         },
 
@@ -608,6 +422,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                         barModelSubject: idToSubjectMap[key],
                         dataModelSubject: this.dataModelSubject,
                         lineUnchanged: false,
+                        metadata: metadata,
                         barType: 'user'
                     };
 
@@ -623,6 +438,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                         barModelSubject: idToSubjectMap[key],
                         dataModelSubject: this.dataModelSubject,
                         lineUnchanged: false,
+                        metadata: metadata,
                         barType: 'user'
                     };
 

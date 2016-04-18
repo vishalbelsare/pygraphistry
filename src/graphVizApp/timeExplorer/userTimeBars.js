@@ -17,6 +17,8 @@ var FilterControl = require('../FilterControl.js');
 var Identifier = require('../Identifier');
 var contentFormatter = require('../contentFormatter.js');
 
+var QuerySelectionModel = require('../QuerySelectionModel.js');
+
 var timeExplorerUtils = require('./timeExplorerUtils.js');
 var timeBar = require('./timeBar.js');
 
@@ -50,6 +52,7 @@ var UserBarsView = Backbone.View.extend({
 
     render: function () {
         // this.collection.sort(); //TODO
+        var explorer = this.model.get('explorer');
 
         var newDiv = $('<div id="timeExplorerUserBarsRenderingContainer"></div>');
 
@@ -78,11 +81,16 @@ var UserBarsView = Backbone.View.extend({
 
     submitNewAttr: function (evt) {
         evt.preventDefault();
+        var explorer = this.model.get('explorer');
+        explorer.addActiveQuery(undefined, undefined, '');
+        return;
+
+
         var newType = $('#newType').val();
         var newAttr = $('#newAttr').val();
         var newQuery = $('#newQuery').val();
         // TODO: Don't use this global. Instead properly structure user bars as a model, that contains a collection.
-        var explorer = this.model.get('explorer');
+
         explorer.addActiveQuery(newType, newAttr, newQuery);
         // this.collection.get('explorer').addActiveQuery(newType, newAttr, newQuery);
     },

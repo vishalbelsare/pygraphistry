@@ -15,6 +15,7 @@ var util    = require('../util.js');
 var FilterControl = require('../FilterControl.js');
 var Identifier = require('../Identifier');
 var contentFormatter = require('../contentFormatter.js');
+var ExpressionEditor    = require('../expressionEditor.js');
 
 var timeExplorerUtils = require('./timeExplorerUtils.js');
 
@@ -84,9 +85,44 @@ var TimeBarView = Backbone.View.extend({
             this.$el.html(html);
             this.$el.attr('cid', this.cid);
 
+            // TODO FIXME
+            // Use showTimeAggButtons to signify bottom bar
+            if (!barModel.showTimeAggregationButtons) {
+
+                // Setup expression editor
+                this.$expressionArea = this.$('.filterExpression');
+                this.editor = new ExpressionEditor(this.$expressionArea[0]);
+                this.editor.setReadOnly(false);
+                this.editor.dataframeCompleter.setNamespaceMetadata(this.model.get('metadata'));
+
+                // Make special enter submit command:
+                this.editor.editor.commands.addCommand({
+                    name: 'enterHandler',
+                    bindKey: {win: 'enter',  mac: 'enter'},
+                    exec: (editor) => {
+                        var queryString = editor.getValue();
+                        var {type, attr} = timeExplorerUtils.getAttributeInfoFromQueryString(queryString);
+                        var query = FilterControl.prototype.queryFromExpressionString(queryString);
+                        this.updateBarFilter({type, attribute: attr, query});
+                    }
+                });
+
+            }
+
             this.listenForUpdates();
 
         }).subscribe(_.identity, util.makeErrorHandler('getting bar model for time bar'));
+    },
+
+    updateBarFilter: function (filterDesc) {
+
+        this.barModelSubject.take(1).do((barModel) => {
+            var newModel = _.clone(barModel);
+            newModel.filter = filterDesc;
+
+            this.barModelSubject.onNext(newModel);
+        }).subscribe(_.identity, util.makeErrorHandler('updating bar filter'));
+
     },
 
     listenForUpdates: function () {
@@ -145,8 +181,11 @@ var TimeBarView = Backbone.View.extend({
             // console.log('Got update, ', data.changedKeys);
 
             // Fetch new data and rerender
-            if (data.changedKeys.length > 0 &&
-                _.intersection(data.changedKeys, ['localTimeBounds', 'timeAttr', 'timeType', 'timeAggregationMode']).length > 0) {
+            if (_.intersection(data.changedKeys, ['localTimeBounds', 'timeAttr', 'timeType', 'timeAggregationMode']).length > 0
+                || _.intersection(bar.changedKeys, ['filter', 'attr', 'binContentType']).length > 0
+            ) {
+
+                console.log('Requesting new everything, barmodel: ', bar.model);
 
                 // TODO: Replace this
                 this.model.set('lineUnchanged', false);
