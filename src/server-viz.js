@@ -102,10 +102,21 @@ function getDataTypesFromValues(values, type, dataframe) {
     return dataTypes;
 }
 
-// TODO: Dataframe doesn't currently support sorted/filtered views, so we just do
-// a shitty job and manage it directly out here, which is slow + error prone.
-// We need to extend dataframe to allow us to have views.
-function sliceSelection(dataFrame, type, indices, start, end, sort_by, ascending, searchFilter) {
+/**
+ * TODO: Dataframe doesn't currently support sorted/filtered views, so we just clumsily manage it here.
+ * This is slow + error prone. We need to extend dataframe to allow us to have views.
+ *
+ * @param {Dataframe} dataFrame
+ * @param {String} type
+ * @param {Mask} indices
+ * @param {Number} start
+ * @param {Number} end
+ * @param {String} sortColumnName
+ * @param {Boolean} ascending
+ * @param {String} searchFilter
+ * @returns {{count: *, values: *, dataTypes: *}}
+ */
+function sliceSelection(dataFrame, type, indices, start, end, sortColumnName, ascending, searchFilter) {
     let values;
     let dataTypes;
 
@@ -129,7 +140,7 @@ function sliceSelection(dataFrame, type, indices, start, end, sort_by, ascending
 
     const count = indices.length;
 
-    if (sort_by === undefined) {
+    if (sortColumnName === undefined) {
         values = dataFrame.getRows(indices.slice(start, end), type);
         dataTypes = getDataTypesFromValues(values, type, dataFrame);
         return {count: count, values: values, dataTypes: dataTypes};
@@ -137,7 +148,7 @@ function sliceSelection(dataFrame, type, indices, start, end, sort_by, ascending
 
     // TODO: Speed this up / cache sorting. Actually, put this into dataframe itself.
     // Only using permutation out here because this should be pushed into dataframe.
-    const sortCol = dataFrame.getColumnValues(sort_by, type);
+    const sortCol = dataFrame.getColumnValues(sortColumnName, type);
     const taggedSortCol = _.map(indices, (idx) => [sortCol[idx], idx]);
 
     const sortedTags = taggedSortCol.sort((val1, val2) => {
@@ -251,9 +262,9 @@ VizServer.prototype.readSelection = function (type, query, res) {
             };
         }).then((lastSelectionIndices) => {
             const page = parseInt(query.page);
-            const per_page = parseInt(query.per_page);
-            const start = (page - 1) * per_page;
-            const end = start + per_page;
+            const pageSize = parseInt(query.per_page);
+            const start = (page - 1) * pageSize;
+            const end = start + pageSize;
             const data = sliceSelection(graph.dataframe, type, lastSelectionIndices[type], start, end,
                                         query.sort_by, query.order === 'asc', query.search);
             _.extend(data, {
@@ -288,19 +299,19 @@ VizServer.prototype.filterGraphByMaskList = function (graph, selectionMasks, exc
     const response = {filters: viewConfig.filters, exclusions: viewConfig.exclusions};
 
     const dataframe = graph.dataframe;
-    const unprunedMasks = dataframe.composeMasks(selectionMasks, exclusionMasks, viewConfig.limits);
+    const masks = dataframe.composeMasks(selectionMasks, exclusionMasks, viewConfig.limits);
     // Prune out dangling edges.
-    const masks = dataframe.pruneMaskEdges(unprunedMasks);
+    const prunedMasks = dataframe.pruneMaskEdges(masks);
 
-    logger.debug('mask lengths: ', masks.numEdges(), masks.numPoints());
+    logger.debug('mask lengths: ', prunedMasks.numEdges(), prunedMasks.numPoints());
 
     const simulator = graph.simulator;
     try {
-        let filterPromise = dataframe.applyDataframeMaskToFilterInPlace(masks, simulator);
+        let filterPromise = dataframe.applyDataframeMaskToFilterInPlace(prunedMasks, simulator);
         // Prune out orphans if configured that way:
         if (viewConfig.parameters && viewConfig.parameters.pruneOrphans === true) {
             filterPromise = filterPromise.then(() => {
-                const orphanPrunedMasks = dataframe.pruneOrphans(masks);
+                const orphanPrunedMasks = dataframe.pruneOrphans(prunedMasks);
                 return dataframe.applyDataframeMaskToFilterInPlace(orphanPrunedMasks, simulator);
             });
         }
