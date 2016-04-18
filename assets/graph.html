@@ -383,12 +383,17 @@
     </div>
 
     <div id="timeExplorer" class="panel">
+
         <div id="timeExplorerDragBox" class="dragBox"></div>
+        <div id="timeExplorerEncodingA" class="dragBox"></div>
+        <div id="timeExplorerEncodingB" class="dragBox"></div>
+        <div id="timeExplorerEncodingC" class="dragBox"></div>
+
         <div id="timeExplorerVerticalLine" class="verticalLine"></div>
         <div id="timeExplorerTop">
             <div class="row" id="timeFilterSliderRow">
                 <div class="col-xs-10 col-xs-offset-1 noPadding" id="timeFilterSliderDiv">
-                    <input class="time-panel-filter-slider" id="time-panel-filter-slider" type="text" data-slider-id="time-panel-filter-slider" data-slider-min="0" data-slider-max="1000", data-slider-step="1" data-slider-value="[0, 1000]" data-slider-handle="filterhandle">
+                    <input class="time-panel-filter-slider hidden" id="time-panel-filter-slider" type="text" data-slider-id="time-panel-filter-slider" data-slider-min="0" data-slider-max="1000", data-slider-step="1" data-slider-value="[0, 1000]" data-slider-handle="filterhandle">
                 </div>
             </div>
         </div>
@@ -405,7 +410,14 @@
                 </div>
             </div>
         </div>
-        <div id="timeExplorerBottom"></div>
+        <div id="timeExplorerBottom">
+            <div class="row" id="timeEncodingSliderRow">
+                <div class="col-xs-10 col-xs-offset-1 noPadding" id="timeEncodingSliderDiv">
+                    <input class="time-panel-encoding-slider-a hidden" id="time-panel-encoding-slider-a" type="text" data-slider-id="time-panel-encoding-slider-a" data-slider-min="0" data-slider-max="1000", data-slider-step="1" data-slider-value="[0, 1000]" data-slider-handle="encoding-handle-a">
+                    <input class="time-panel-encoding-slider-b hidden" id="time-panel-encoding-slider-b" type="text" data-slider-id="time-panel-encoding-slider-b" data-slider-min="0" data-slider-max="1000", data-slider-step="1" data-slider-value="[0, 1000]" data-slider-handle="encoding-handle-b">
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
