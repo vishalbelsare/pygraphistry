@@ -292,6 +292,39 @@ function inferEncoding (dataframe, type, attributeName, encodingType, variation,
     };
 }
 
+function inferTimeBoundEncoding (dataframe, type, attributeName, encodingType, timeBounds) {
+    const scalingFunc = function (timeValue) {
+        const {
+            encodingBoundsA,
+            encodingBoundsB,
+            encodingBoundsC
+        } = timeBounds;
+
+        // if in C
+        if (timeValue >= encodingBoundsC.start && timeValue <= encodingBoundsC.stop) {
+            return '#912CEE';
+        }
+
+        // if in B
+        if (timeValue >= encodingBoundsB.start && timeValue <= encodingBoundsB.stop) {
+            return '#2E37FE';
+        }
+
+        // if in B
+        if (timeValue >= encodingBoundsA.start && timeValue <= encodingBoundsA.stop) {
+            return '#FF3030';
+        }
+
+        // Otherwise return light grey
+        return '#D3D3D3';
+    };
+
+    return {
+        scaling: scalingFunc,
+        legend: undefined
+    };
+}
+
 module.exports = {
     inferEncodingType: inferEncodingType,
     inferEncoding: inferEncoding,
@@ -302,5 +335,6 @@ module.exports = {
     legendForBins: legendForBins,
     bufferNameForEncodingType: function (encodingType) {
         return encodingType && (encodingType + 's');
-    }
+    },
+    inferTimeBoundEncoding
 };

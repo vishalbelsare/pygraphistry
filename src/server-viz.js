@@ -1070,7 +1070,9 @@ function VizServer(app, socket, cachedVBOs) {
                 normalization = dataframe.normalizeAttributeName(query.attribute, query.type),
                 encodingType = query.encodingType,
                 variation = query.variation,
-                binning = query.binning;
+                binning = query.binning,
+                timeBounds = query.timeBounds;
+
             if (normalization === undefined) {
                 failWithMessage(cb, 'No attribute found for: ' + query.attribute + ',' + query.type);
                 return;
@@ -1087,6 +1089,7 @@ function VizServer(app, socket, cachedVBOs) {
                     return;
                 }
             }
+
             var encoding, bufferName;
             try {
                 if (!encodingType) {
@@ -1097,8 +1100,12 @@ function VizServer(app, socket, cachedVBOs) {
                     if (bufferName) {
                         var ccManager = dataframe.computedColumnManager;
                         var originalDesc = ccManager.overlayBufferSpecs[bufferName];
-                        ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName, originalDesc);
-                        delete ccManager.overlayBufferSpecs[bufferName];
+
+                        // Guard against reset being called before an encoding is set
+                        if (originalDesc) {
+                            ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName, originalDesc);
+                            delete ccManager.overlayBufferSpecs[bufferName];
+                        }
                     }
                     this.tickGraph(cb);
                     cb({
@@ -1109,7 +1116,14 @@ function VizServer(app, socket, cachedVBOs) {
                     });
                     return;
                 }
-                encoding = encodings.inferEncoding(dataframe, type, attributeName, encodingType, variation, binning);
+
+                // TODO FIXME: Have a more robust encoding spec, instead of multiple paths through here
+                if (timeBounds) {
+                    encoding = encodings.inferTimeBoundEncoding(dataframe, type, attributeName, encodingType, timeBounds);
+                } else {
+                    encoding = encodings.inferEncoding(dataframe, type, attributeName, encodingType, variation, binning);
+                }
+
             } catch (e) {
                 failWithMessage(cb, e.message);
                 return;
