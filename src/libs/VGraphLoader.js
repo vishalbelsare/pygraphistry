@@ -237,7 +237,7 @@ function getDegree(forwardsEdges, backwardsEdges, i) {
 }
 
 var MIN_VERTEX_PIXEL_DIAMETER = 5; // Minimum hit target we've decided on.
-var MAX_VERTEX_PIXEL_DIAMETER = 30; // Destination of this data is a UInt8Array, so don't overflow!
+var MAX_VERTEX_PIXEL_DIAMETER = 255; // Destination of this data is a UInt8Array, so don't overflow!
 
 function calculateAndStoreDefaultPointSizeColumns (graph) {
     const dataframe = graph.dataframe;
@@ -256,7 +256,7 @@ function calculateAndStoreDefaultPointSizeColumns (graph) {
     }
 
     const scaling = encodingsUtil.scalingFromSpec({
-        scalingType: 'sqrt',
+        scalingType: 'linear',
         domain: [minDegree, maxDegree],
         range: [MIN_VERTEX_PIXEL_DIAMETER, MAX_VERTEX_PIXEL_DIAMETER],
         clamp: true
