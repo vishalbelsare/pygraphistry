@@ -70,6 +70,16 @@ function HistogramBrush(socket, filtersPanel, doneLoading) {
     }).subscribe(_.identity, util.makeErrorHandler('histogram init done loading wrapper'));
 }
 
+
+const GraphistryAttributeNames = [
+    'degree',
+    'community_infomap', 'community_louvain', 'community_spinglass',
+    'betweenness', 'centrality', 'closeness', 'pagerank',
+    'weight', 'degree_in', 'degree_out', 'indegree', 'outdegree',
+    'Source', 'Destination', '__nodeid__', 'id'
+];
+
+
 HistogramBrush.prototype.initializeGlobalData = function(socket, filtersPanel, updateDataframeAttributeSubject) {
     const globalStream = this.aggregatePointsAndEdges({
         all: true});
@@ -89,7 +99,9 @@ HistogramBrush.prototype.initializeGlobalData = function(socket, filtersPanel, u
         // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
         const maxInitialItems = Math.min(Math.round((window.innerHeight - 110) / 85), 5);
         const filteredAttributes = {};
-        const firstKeys = _.first(_.keys(data.sparkLines), maxInitialItems);
+        const keys = _.keys(data.sparkLines);
+        const sortedKeys = _.sortBy(keys, (key) => (GraphistryAttributeNames.indexOf(key)));
+        const firstKeys = _.first(sortedKeys, maxInitialItems);
         _.each(firstKeys, (key) => {
             filteredAttributes[key] = data.sparkLines[key];
             filteredAttributes[key].sparkLines = true;
