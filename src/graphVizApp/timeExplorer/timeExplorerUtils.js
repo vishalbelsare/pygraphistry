@@ -116,6 +116,10 @@ var baseDataModel = {
         start: null,
         stop: null
     },
+    encodingBoundsC: {
+        start: null,
+        stop: null
+    },
     mouseX: -1
 };
 

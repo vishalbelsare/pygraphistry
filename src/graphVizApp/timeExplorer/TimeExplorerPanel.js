@@ -243,16 +243,13 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
             });
 
-
             var defaultFakeEvent = {value: [0, 1000]};
             var aSliderObservable = this.$encodingSliderA.onAsObservable('slide').merge(Rx.Observable.from([defaultFakeEvent]));
             var bSliderObservable = this.$encodingSliderB.onAsObservable('slide').merge(Rx.Observable.from([defaultFakeEvent]));
+            var aSlideStopObservable = this.$encodingSliderA.onAsObservable('slideStop').merge(Rx.Observable.from([defaultFakeEvent]));
+            var bSlideStopObservable = this.$encodingSliderB.onAsObservable('slideStop').merge(Rx.Observable.from([defaultFakeEvent]));
 
-            Rx.Observable.combineLatest(aSliderObservable, bSliderObservable,
-                (aEvt, bEvt) => {
-                    return {aEvt, bEvt};
-                }
-            ).do((wrapped) => {
+            var wrappedToRatioInfo = function (wrapped) {
                 var {aEvt, bEvt} = wrapped;
                 var [aRawStart, aRawStop] = aEvt.value;
                 var [bRawStart, bRawStop] = bEvt.value;
@@ -304,6 +301,24 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 }
                 var shouldShowC = (cContained && (shouldShowA || shouldShowB))|| (shouldShowA && shouldShowB && cExists);
 
+                return {
+                    shouldShowA, aStart, aStop,
+                    shouldShowB, bStart, bStop,
+                    shouldShowC, cStart, cStop
+                };
+            };
+
+            Rx.Observable.combineLatest(aSliderObservable, bSliderObservable,
+                (aEvt, bEvt) => {
+                    return {aEvt, bEvt};
+                }
+            ).do((wrapped) => {
+                var {
+                    shouldShowA, aStart, aStop,
+                    shouldShowB, bStart, bStop,
+                    shouldShowC, cStart, cStop
+                } = wrappedToRatioInfo(wrapped);
+
                 var width = this.$timeExplorerVizContainer.width();
 
                 var leftX, rightX;
@@ -343,14 +358,52 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                     this.$encodingBoxC.css('display', 'none');
                 }
 
-
-
             }).subscribe(_.identity, util.makeErrorHandler('handling time encoding slider'));
 
+            Rx.Observable.combineLatest(aSlideStopObservable, bSlideStopObservable,
+                (aEvt, bEvt) => {
+                    return {aEvt, bEvt};
+                }
+            ).do((wrapped) => {
+                var {
+                    shouldShowA, aStart, aStop,
+                    shouldShowB, bStart, bStop,
+                    shouldShowC, cStart, cStop
+                } = wrappedToRatioInfo(wrapped);
 
+                 // Propagate it to data model:
+                this.dataModelSubject.take(1).do((model) => {
+                    var newModel = _.clone(model);
 
+                    var convertRatioToTime = function (ratio) {
+                        var localTimeBoundDiff = model.localTimeBounds.stop - model.localTimeBounds.start;
+                        var offset = ratio * localTimeBoundDiff;
+                        var concreteTime = model.localTimeBounds.start + offset;
+                        return concreteTime;
+                    };
 
+                    if (shouldShowA) {
+                        newModel.encodingBoundsA = {start: convertRatioToTime(aStart), stop: convertRatioToTime(aStop)};
+                    } else {
+                        newModel.encodingBoundsA = {start: null, stop: null};
+                    }
 
+                    if (shouldShowB) {
+                        newModel.encodingBoundsB = {start: convertRatioToTime(bStart), stop: convertRatioToTime(bStop)};
+                    } else {
+                        newModel.encodingBoundsB = {start: null, stop: null};
+                    }
+
+                    if (shouldShowC) {
+                        newModel.encodingBoundsC = {start: convertRatioToTime(cStart), stop: convertRatioToTime(cStop)};
+                    } else {
+                        newModel.encodingBoundsC = {start: null, stop: null};
+                    }
+
+                    this.dataModelSubject.onNext(newModel);
+                }).subscribe(_.identity, util.makeErrorHandler('updating time filter'));
+
+            }).subscribe(_.identity, util.makeErrorHandler('handling time encoding slider up'));
 
         },
 

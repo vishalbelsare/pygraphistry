@@ -46,6 +46,7 @@ function TimeExplorer (socket, $div, filtersPanel) {
     this.getTimeDataCommand = new Command('getting time data', 'timeAggregation', socket);
     this.getTimeBoundsCommand = new Command('getting time bounds', 'getTimeBoundaries', socket);
     this.namespaceMetadataCommand = new Command('getting namespace metadata', 'get_namespace_metadata', socket);
+    this.updateEncodingCommand = new Command('updating encodings on server', 'encode_by_column', socket);
 
     this.dataModelSubject = new Rx.ReplaySubject(1);
     this.dataModelSubject.onNext(timeExplorerUtils.baseDataModel);
@@ -78,40 +79,12 @@ function TimeExplorer (socket, $div, filtersPanel) {
             this.updateGraphTimeFilter(newModel);
         }
 
+        if (_.intersection(changedKeys, ['encodingBoundsA', 'encodingBoundsB', 'encodingBoundsC']).length > 0) {
+            // Update encodings on server
+            this.updateEncodings(newModel);
+        }
+
     }).subscribe(_.identity, util.makeErrorHandler('updating time data model'));
-
-
-
-
-    // this.activeQueries = [];
-    // this.queryChangeSubject = new Rx.ReplaySubject(1);
-
-    // this.queryChangeSubject.filter(function (desc) {
-    //         // Not initialized
-    //         return !(_.contains(_.values(desc), null));
-    //     }).flatMap(function (timeDesc) {
-    //         // console.log('WE GETTING TIME DATA');
-    //         var timeType = timeDesc.timeType;
-    //         var timeAttr = timeDesc.timeAttr;
-    //         var timeAggregation = timeDesc.timeAggregation;
-    //         var start = timeDesc.start;
-    //         var stop = timeDesc.stop;
-    //         return that.getMultipleTimeData(timeType, timeAttr, start, stop, timeAggregation, that.activeQueries);
-    //     }).do(function (data) {
-    //         // debug('GOT NEW DATA: ', data);
-    //         var dividedData = {};
-    //         dividedData.all = data.All;
-    //         delete data.All;
-    //         dividedData.user = data;
-    //         dividedData.maxBinValue = dividedData.all.maxBin;
-
-    //         // debug('DIVIDED DATA: ', dividedData);
-
-    //         that.panel.model.set(dividedData);
-    //     }).subscribe(_.identity, util.makeErrorHandler('Error getting time data stream'));
-
-
-    // this.queryChangeSubject.onNext(this.timeDescription);
 
     this.setupZoom();
 
@@ -122,6 +95,32 @@ function TimeExplorer (socket, $div, filtersPanel) {
 
     debug('Initialized Time Explorer');
 }
+
+
+TimeExplorer.prototype.updateEncodings = function (model) {
+
+    var {encodingBoundsA, encodingBoundsB, encodingBoundsC} = model;
+    var query = {};
+    query.type = model.timeType;
+    query.attribute = model.timeAttr;
+    query.encodingType = 'color';
+    query.timeBounds = {
+        encodingBoundsA,
+        encodingBoundsB,
+        encodingBoundsC
+    };
+
+    // Check if needs to reset
+    var shouldReset = encodingBoundsA.start === null && encodingBoundsA.stop === null &&
+            encodingBoundsB.start === null && encodingBoundsB.stop === null &&
+            encodingBoundsC.start === null && encodingBoundsC.stop === null;
+
+    query.reset = shouldReset;
+
+    this.updateEncodingCommand.sendWithObservableResult(query)
+        .subscribe(_.identity, util.makeErrorHandler('updating encodings'));
+};
+
 
 TimeExplorer.prototype.updateGlobalTimeBounds = function (model) {
     var obj = {
