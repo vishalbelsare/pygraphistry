@@ -419,9 +419,13 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 })
                 .do(function(wheelEvent) {
 
-                    // DONT ZOOM IF DRAG BOX IS VISIBLE
+                    // HACK FIXME: DONT ZOOM IF DRAG BOX IS VISIBLE
                     // TODO: Enable zooming and rescale box
-                    if (that.$dragBox.css('display') !== 'none') {
+                    if (that.$dragBox.css('display') !== 'none' ||
+                        that.$encodingBoxA.css('display') !== 'none' ||
+                        that.$encodingBoxB.css('display') !== 'none' ||
+                        that.$encodingBoxB.css('display') !== 'none'
+                    ) {
                         return;
                     }
 
@@ -444,6 +448,16 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             // TODO: Figure out how to represent this in terms of the selector
             var $target = $(evt.target);
             if ($target.hasClass('btn') || $target.hasClass('form-control') || $target.hasClass('slider-handle')) {
+                return;
+            }
+
+            // HACK FIXME: DONT ALLOW PANS IF DRAG BOX IS VISIBLE
+            // TODO: Enable zooming and rescale box
+            if (this.$dragBox.css('display') !== 'none' ||
+                this.$encodingBoxA.css('display') !== 'none' ||
+                this.$encodingBoxB.css('display') !== 'none' ||
+                this.$encodingBoxB.css('display') !== 'none'
+            ) {
                 return;
             }
 
