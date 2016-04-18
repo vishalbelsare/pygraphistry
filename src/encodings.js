@@ -109,7 +109,7 @@ function inferEncodingType (dataframe, type, attributeName) {
 function scalingFromSpec (scalingSpec) {
     let scalingType = scalingSpec.scalingType,
         scaling;
-    if (typeof d3Scale[scalingType] === 'function') {
+    if (d3Scale[scalingType] !== undefined) {
         scaling = d3Scale[scalingType]();
     } else if (scalingType === 'identity') {
         scaling = _.identity;
