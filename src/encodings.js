@@ -212,9 +212,11 @@ function legendForBins (aggregations, scaling, binning) {
         if (binning.bins && _.size(binning.bins) > 0) {
             if (binning.type === 'countBy') {
                 if (_.isArray(binning.bins)) {
-                    legend = _.map(binning.bins, function (itemCount, index) {
-                        return scaling(index);
-                    });
+                    if (_.isArray(binning.binValues)) {
+                        legend = _.map(binning.binValues, (binValue) => scaling(binValue.representative));
+                    } else {
+                        legend = _.map(binning.bins, (itemCount, index) => scaling(index));
+                    }
                 } else {
                     const sortedBinKeys = _.sortBy(_.keys(binning.bins), function (key) {
                         if (key === '_other') { return Infinity; } // always shows last
