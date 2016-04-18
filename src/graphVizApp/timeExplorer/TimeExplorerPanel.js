@@ -66,8 +66,13 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
         $timeExplorerVizContainer: $('#timeExplorerVizContainer'),
         $timeExplorerSideInput: $('#timeExplorerSideInput'),
         $dragBox: $('#timeExplorerDragBox'),
+        $encodingBoxA: $('#timeExplorerEncodingA'),
+        $encodingBoxB: $('#timeExplorerEncodingB'),
+        $encodingBoxC: $('#timeExplorerEncodingC'),
         $verticalLine: $('#timeExplorerVerticalLine'),
         $filterSlider: $('#time-panel-filter-slider'),
+        $encodingSliderA: $('#time-panel-encoding-slider-a'),
+        $encodingSliderB: $('#time-panel-encoding-slider-b'),
         userBarsView: that.userBarsView,
         mainBarView: that.mainBarView,
         bottomAxisView: that.bottomAxisView,
@@ -159,6 +164,11 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
             // Make time slider visible
             this.$filterSlider.bootstrapSlider({tooltip: 'hide'});
+            this.$filterSlider.toggleClass('hidden', false);
+            this.$encodingSliderA.bootstrapSlider({tooltip: 'hide'});
+            this.$encodingSliderA.toggleClass('hidden', false);
+            this.$encodingSliderB.bootstrapSlider({tooltip: 'hide'});
+            this.$encodingSliderB.toggleClass('hidden', false);
             // $('#timeFilterSliderRow').css('visibility', 'visible');
 
             this.userBarsView.$el.removeClass('hidden');
@@ -175,7 +185,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
         },
 
         setupSliderInteractions: function () {
-            var offset = this.$timeExplorerVizContainer.offset().left
+            var offset = this.$timeExplorerVizContainer.offset().left - 1;
 
             // TODO: Instead of directly tying input -> side effect, go through model
             this.$filterSlider.on('slide', (evt) => {
@@ -185,8 +195,8 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
                 var width = this.$timeExplorerVizContainer.width();
 
-                var leftX = (width * start) + offset - 1;
-                var rightX = (width * stop) + offset - 1;
+                var leftX = (width * start) + offset;
+                var rightX = (width * stop) + offset;
 
                 // Don't actually update model until the slider is released
 
@@ -232,6 +242,112 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 }).subscribe(_.identity, util.makeErrorHandler('updating time filter'));
 
             });
+
+
+            var defaultFakeEvent = {value: [0, 1000]};
+            var aSliderObservable = this.$encodingSliderA.onAsObservable('slide').merge(Rx.Observable.from([defaultFakeEvent]));
+            var bSliderObservable = this.$encodingSliderB.onAsObservable('slide').merge(Rx.Observable.from([defaultFakeEvent]));
+
+            Rx.Observable.combineLatest(aSliderObservable, bSliderObservable,
+                (aEvt, bEvt) => {
+                    return {aEvt, bEvt};
+                }
+            ).do((wrapped) => {
+                var {aEvt, bEvt} = wrapped;
+                var [aRawStart, aRawStop] = aEvt.value;
+                var [bRawStart, bRawStop] = bEvt.value;
+
+                // Convert to ratios
+                var aStart = aRawStart/1000;
+                var aStop = aRawStop/1000;
+                var bStart = bRawStart/1000;
+                var bStop = bRawStop/1000;
+
+                // Convert to A B C, where C is overlap of B and C
+
+                var cStart = Math.max(aStart, bStart);
+                var cStop = Math.min(aStop, bStop);
+                var cExists = (cStart < cStop);
+
+                var cContained = false;
+                var shouldShowA = undefined;
+                var shouldShowB = undefined;
+                var shouldShowC = undefined;
+
+                // Adjust a and b so that they don't overlap with C;
+                if (cExists) {
+                    // A is within B
+                    if (aStart >= bStart && aStop <= bStop) {
+                        cContained = true;
+                        shouldShowA = false;
+                    // B is within A
+                    } else if (bStart >= aStart && bStop <= aStop) {
+                        cContained = true;
+                        shouldShowB = false;
+                    // A on left
+                    } else if (aStart < cStart) {
+                        aStop = cStart;
+                        bStart = cStop;
+                    // B on left
+                    } else {
+                        bStop = cStart;
+                        aStart = cStop;
+                    }
+                }
+
+                // Render boxes
+                var shouldShowA = shouldShowA === undefined ? ((aStart !== aStop)) : shouldShowA;
+                var shouldShowB = shouldShowB === undefined ? ((bStart !== bStop)) : shouldShowB;
+                if (aStart === 0 && aStop === 1 && bStart === 0 && bStop === 1) {
+                    shouldShowA = false;
+                    shouldShowB = false;
+                }
+                var shouldShowC = (cContained && (shouldShowA || shouldShowB))|| (shouldShowA && shouldShowB && cExists);
+
+                var width = this.$timeExplorerVizContainer.width();
+
+                var leftX, rightX;
+                if (shouldShowA) {
+                    leftX = (width * aStart) + offset;
+                    rightX = (width * aStop) + offset;
+
+                    this.$encodingBoxA.css('left', leftX);
+                    this.$encodingBoxA.css('width', rightX - leftX);
+
+                    this.$encodingBoxA.css('display', 'block');
+                } else {
+                    this.$encodingBoxA.css('display', 'none');
+                }
+
+                if (shouldShowB) {
+                    leftX = (width * bStart) + offset;
+                    rightX = (width * bStop) + offset;
+
+                    this.$encodingBoxB.css('left', leftX);
+                    this.$encodingBoxB.css('width', rightX - leftX);
+
+                    this.$encodingBoxB.css('display', 'block');
+                } else {
+                    this.$encodingBoxB.css('display', 'none');
+                }
+
+                if (shouldShowC) {
+                    leftX = (width * cStart) + offset;
+                    rightX = (width * cStop) + offset;
+
+                    this.$encodingBoxC.css('left', leftX);
+                    this.$encodingBoxC.css('width', rightX - leftX);
+
+                    this.$encodingBoxC.css('display', 'block');
+                } else {
+                    this.$encodingBoxC.css('display', 'none');
+                }
+
+
+
+            }).subscribe(_.identity, util.makeErrorHandler('handling time encoding slider'));
+
+
 
 
 
