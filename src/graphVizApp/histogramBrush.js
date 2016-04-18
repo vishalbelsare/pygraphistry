@@ -188,16 +188,16 @@ HistogramBrush.prototype.setupMarqueeInteraction = function (marquee) {
             this.lastSelection = data.sel;
             return this.aggregationCommand.sendWithObservableResult(params)
                 .map((agg) => ({reply: agg, sel: data.sel, globalStats: data.globalStats, type: data.type}))
-                .map((data) => {
+                .map((aggResponse) => {
                     // HACK to make it not display 'all' selections as brushed sections.
-                    if (data.sel && data.sel.all) {
+                    if (aggResponse.sel && aggResponse.sel.all) {
                         const newData = {};
-                        _.each(data.reply.data, (val, key) => {
+                        _.each(aggResponse.reply.data, (val, key) => {
                             newData[key] = {type: 'nodata'};
                         });
-                        data.reply.data = newData;
+                        aggResponse.reply.data = newData;
                     }
-                    return data;
+                    return aggResponse;
                 });
         })
         .do((data) => {
