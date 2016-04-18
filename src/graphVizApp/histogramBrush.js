@@ -99,15 +99,32 @@ HistogramBrush.prototype.initializeGlobalData = function(socket, filtersPanel, u
         // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
         const maxInitialItems = Math.min(Math.round((window.innerHeight - 110) / 85), 5);
         const filteredAttributes = {};
-        // FIXME server should provide smarter summary metadata and dispatch on that
+        // TODO FIXME server should provide smarter summary metadata and dispatch on that
         const keysWithNonTrivialData = _.filter(_.keys(data.sparkLines), (key => {
             var sparkLine = data.sparkLines[key];
             if (sparkLine.type === 'nodata') { return false; }
-            if (sparkLine.binValues !== undefined) { return sparkLine.binValues.length > 1; }
-            if (sparkLine.bins !== undefined) { return _.size(sparkLine.bins) > 1; }
+            if (sparkLine.binValues !== undefined &&
+                sparkLine.binValues.length <= 1 &&
+                !sparkLine.binValues.hasOwnProperty('_other')) {
+                return false;
+            }
+            if (sparkLine.bins !== undefined &&
+                _.size(sparkLine.bins) <= 1) {
+                return false;
+            }
             return true;
         }));
-        const sortedKeys = _.sortBy(keysWithNonTrivialData, (key) => GraphistryAttributeNames.indexOf(key));
+        // Prioritize user-provided data ahead of system data.
+        // Prioritize user-provided data by how small the _other bin is, since mega-valued domains make poor histograms.
+        const sortedKeys = _.sortBy(keysWithNonTrivialData, (key) => {
+            const sysIndex = GraphistryAttributeNames.indexOf(key);
+            if (sysIndex < 0) {
+                const otherSize = Math.log10(data.sparkLines[key].bins._other | 1);
+                return sysIndex / otherSize;
+            } else {
+                return sysIndex;
+            }
+        });
         const firstKeys = _.first(sortedKeys, maxInitialItems);
         _.each(firstKeys, (key) => {
             filteredAttributes[key] = data.sparkLines[key];
