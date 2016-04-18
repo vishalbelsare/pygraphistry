@@ -2,7 +2,6 @@
 
 const _ = require('underscore');
 const dataTypeUtil = require('./dataTypes.js');
-const HashTable = require('ht');
 
 /**
  * @param {Dataframe} dataframe
@@ -221,25 +220,28 @@ ColumnAggregation.prototype.computeStandardDeviation = function () {
 const MaxDistinctValues = 40000;
 
 ColumnAggregation.prototype.countDistinct = function (limit=MaxDistinctValues) {
-    let countsByValue = new HashTable(),
+    let countsByValue = {},
         numDistinct = 0, minValue = null, maxValue = null;
-    const isLessThan = dataTypeUtil.isLessThanForDataType(this.getAggregationByType('dataType'));
+    const dataType = this.getAggregationByType('dataType');
+    const isLessThan = dataTypeUtil.isLessThanForDataType(dataType);
+    const keyMaker = dataTypeUtil.keyMakerForDataType(dataType);
     _.each(this.values, (value) => {
         if (dataTypeUtil.valueSignifiesUndefined(value)) { return; }
         if (minValue === null || isLessThan(value, minValue)) { minValue = value; }
         else if (maxValue === null || isLessThan(maxValue, value)) { maxValue = value; }
+        const key = keyMaker(value);
         if (numDistinct < limit) {
-            if (countsByValue.contains(value)) {
-                countsByValue.put(value, countsByValue.get(value) + 1);
+            if (countsByValue.hasOwnProperty(key)) {
+                countsByValue[key]++;
             } else {
                 numDistinct++;
-                countsByValue.put(value, 1);
+                countsByValue[key] = 1;
             }
         }
     });
     let distinctCounts = new Array(numDistinct), idx = 0;
-    countsByValue.forEach((key, value) => {
-        distinctCounts[idx++] = {distinctValue: key, count: value};
+    _.each(countsByValue, (count, keyForValue) => {
+        distinctCounts[idx++] = {distinctValue: keyForValue, count: count};
     });
     // Sort by count descending so the most common elements are first:
     distinctCounts.sort((a, b) => b.count - a.count);
