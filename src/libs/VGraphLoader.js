@@ -319,7 +319,7 @@ function rangeFromValues (values) {
 }
 
 
-const pointSizeScale = d3Scale.sqrt().range([5, 30]);
+const pointSizeScale = d3Scale.linear().range([MIN_VERTEX_PIXEL_DIAMETER, MAX_VERTEX_PIXEL_DIAMETER]);
 const edgeSizeScale = d3Scale.linear().range([1,10]);
 
 
