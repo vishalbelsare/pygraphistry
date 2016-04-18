@@ -102,10 +102,12 @@ HistogramBrush.prototype.initializeGlobalData = function(socket, filtersPanel, u
         // FIXME server should provide smarter summary metadata and dispatch on that
         const keysWithNonTrivialData = _.filter(_.keys(data.sparkLines), (key => {
             var sparkLine = data.sparkLines[key];
-            return !(sparkLine.type === 'nodata' ||
-                (sparkLine.binValues !== undefined && sparkLine.binValues.length === 1));
+            if (sparkLine.type === 'nodata') { return false; }
+            if (sparkLine.binValues !== undefined) { return sparkLine.binValues.length > 1; }
+            if (sparkLine.bins !== undefined) { return _.size(sparkLine.bins) > 1; }
+            return true;
         }));
-        const sortedKeys = _.sortBy(keysWithNonTrivialData, (key) => (GraphistryAttributeNames.indexOf(key)));
+        const sortedKeys = _.sortBy(keysWithNonTrivialData, (key) => GraphistryAttributeNames.indexOf(key));
         const firstKeys = _.first(sortedKeys, maxInitialItems);
         _.each(firstKeys, (key) => {
             filteredAttributes[key] = data.sparkLines[key];
