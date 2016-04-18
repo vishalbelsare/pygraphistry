@@ -4,15 +4,18 @@
 // When run as main, writes palette order to stdout && values to palettes.json
 // Adds a final 'repeating' PairedRepeat singleton palette
 
-var _      = require('underscore');
-var brewer = require('colorbrewer');
-var sprintf = require('sprintf-js').sprintf;
+const _      = require('underscore');
+const brewer = require('colorbrewer');
+const sprintf = require('sprintf-js').sprintf;
 
 
 //////////// SORT PALETTES
 
 //fixed ~alphabetic order
-var palettes = ['Paired', 'Blues', 'BrBG', 'BuGn', 'BuPu', 'Dark2', 'GnBu', 'Greens', 'Greys', 'OrRd', 'Oranges', 'PRGn', 'Accent', 'Pastel1', 'Pastel2', 'PiYG', 'PuBu', 'PuBuGn', 'PuOr', 'PuRd', 'Purples', 'RdBu', 'RdGy', 'RdPu', 'RdYlBu', 'RdYlGn', 'Reds', 'Set1', 'Set2', 'Set3', 'Spectral', 'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'PairedRepeat'];
+let palettes = ['Paired', 'Blues', 'BrBG', 'BuGn', 'BuPu', 'Dark2', 'GnBu', 'Greens', 'Greys', 'OrRd', 'Oranges',
+    'PRGn', 'Accent', 'Pastel1', 'Pastel2', 'PiYG', 'PuBu', 'PuBuGn', 'PuOr', 'PuRd', 'Purples',
+    'RdBu', 'RdGy', 'RdPu', 'RdYlBu', 'RdYlGn', 'Reds', 'Set1', 'Set2', 'Set3', 'Spectral',
+    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'PairedRepeat'];
 
 //how it was generated
 if (require.main === module) {
@@ -21,8 +24,8 @@ if (require.main === module) {
     palettes.sort();
 
     //for historical reasons, put 'Paired' first
-    var oldPos = palettes.indexOf('Paired');
-    var tmp = palettes[0];
+    const oldPos = palettes.indexOf('Paired');
+    const tmp = palettes[0];
     palettes[0] = palettes[oldPos];
     palettes[oldPos] = tmp;
 
@@ -33,7 +36,7 @@ if (require.main === module) {
 
 //redone for printing below
 brewer.PairedRepeat = {
-    0: _.flatten(_.times(10000, function () { return brewer.Paired[12]; }))
+    0: _.flatten(_.times(10000, () => brewer.Paired[12]))
 };
 
 ////////////// BIND PALETTES
@@ -58,51 +61,51 @@ function convertRGBAToABGR (value) {
 
 /**
  * '#AABBCC' -> int
- * TODO: this returns ABGR as that's what vgraphloader sends to the client
+ * TODO: this returns ABGR as that's what VGraphLoader sends to the client
  * @param {String} hexColor
  * @return {Number}
  */
 function hexToABGR (hexColor) {
-    var out = hexColor;
+    let out = hexColor;
     if (typeof hexColor === 'string') {
         out = parseInt(hexColor.replace('#', '0x'), 16);
     }
 
     //sadness, rgba => abgr
-    var r = (out >> 16) & 255,
+    const r = (out >> 16) & 255,
         g = (out >> 8) & 255,
         b = out & 255;
     return (b << 16) | (g << 8) | r;
 }
 
 //{<string> -> {<int> -> [int]_int}}
-var palettesToColorInts = {};
+const palettesToColorInts = {};
 
 //{int -> int}
-var categoryToColorInt = {};
+const categoryToColorInt = {};
 
 //{<string> -> {<int> -> {hexes: [string], offset: int}}}
-var all = {};
+const all = {};
 
-var encounteredPalettes = 0;
-palettes.forEach(function (palette) {
+let encounteredPalettes = 0;
+palettes.forEach((palette) => {
     palettesToColorInts[palette] = {};
     all[palette] = {};
 
-    var dims = Object.keys(brewer[palette]);
+    const dims = Object.keys(brewer[palette]);
 
     //for legacy/convenience, biggest first
-    dims.sort(function (a, b) { return a - b; });
+    dims.sort((a, b) => a - b);
     dims.reverse();
 
-    dims.forEach(function (dim) {
+    dims.forEach((dim) => {
 
         //use to create palette.out
         //console.log('palette', palette, encounteredPalettes * 1000, brewer[palette][dim].length, brewer[palette][dim].join(','))
 
-        var paletteOffset = encounteredPalettes * 1000;
+        const paletteOffset = encounteredPalettes * 1000;
         palettesToColorInts[palette][dim] = brewer[palette][dim].map(hexToABGR);
-        palettesToColorInts[palette][dim].forEach(function (color, idx) {
+        palettesToColorInts[palette][dim].forEach((color, idx) => {
             categoryToColorInt[paletteOffset + idx] = color;
         });
 
@@ -118,9 +121,9 @@ palettes.forEach(function (palette) {
 
 //use to create palette.json
 if (require.main === module) {
-    var fs = require('fs');
+    const fs = require('fs');
 
-    var modifiedDocs = JSON.parse(JSON.stringify(all));
+    const modifiedDocs = JSON.parse(JSON.stringify(all));
     delete modifiedDocs.PairedRepeat;
     modifiedDocs['PairedRepeat (repeats 10,000 times)'] = {
         12: {
@@ -129,7 +132,7 @@ if (require.main === module) {
         }
     };
 
-    fs.writeFile('palette.js', 'palettes = ' + JSON.stringify(modifiedDocs), function (err) {
+    fs.writeFile('palette.js', 'palettes = ' + JSON.stringify(modifiedDocs), (err) => {
         if (err) {
             console.error('bad write of palette.js', err);
         } else {
@@ -154,13 +157,13 @@ module.exports = {
     // Find out if a set of [unique] values fits one category's integer space we've defined for palettes.
     valuesFitOnePaletteCategory: function (intValues) {
         if (intValues.length === 0) { return true; }
-        var paletteNumbers = _.map(intValues, function (intValue) { return Math.floor(intValue / 1000); }),
+        const paletteNumbers = _.map(intValues, (intValue) => Math.floor(intValue / 1000)),
             firstPaletteNumber = paletteNumbers[0],
             firstPaletteOffset = firstPaletteNumber * 1000;
         if (firstPaletteNumber >= encounteredPalettes) {
             return false;
         }
-        return _.every(intValues, function (intValue, idx) {
+        return _.every(intValues, (intValue, idx) => {
             return paletteNumbers[idx] === firstPaletteNumber &&
                 categoryToColorInt[firstPaletteOffset + idx] !== undefined;
         });
