@@ -275,6 +275,7 @@ VizServer.prototype.readSelection = function (type, query, res) {
 };
 
 VizServer.prototype.tickGraph = function (cb) {
+
     this.graph.take(1).do(function (graphContent) {
         this.updateVboSubject.onNext(graphContent);
     }.bind(this)).subscribe(
@@ -1105,9 +1106,9 @@ function VizServer(app, socket, cachedVBOs) {
                         if (originalDesc) {
                             ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName, originalDesc);
                             delete ccManager.overlayBufferSpecs[bufferName];
+                            this.tickGraph(cb);
                         }
                     }
-                    this.tickGraph(cb);
                     cb({
                         success: true,
                         enabled: false,
