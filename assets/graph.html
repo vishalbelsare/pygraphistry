@@ -385,7 +385,13 @@
     <div id="timeExplorer" class="panel">
         <div id="timeExplorerDragBox" class="dragBox"></div>
         <div id="timeExplorerVerticalLine" class="verticalLine"></div>
-        <div id="timeExplorerTop"></div>
+        <div id="timeExplorerTop">
+            <div class="row" id="timeFilterSliderRow">
+                <div class="col-xs-10 col-xs-offset-1 noPadding" id="timeFilterSliderDiv">
+                    <input class="time-panel-filter-slider" id="time-panel-filter-slider" type="text" data-slider-id="time-panel-filter-slider" data-slider-min="0" data-slider-max="1000", data-slider-step="1" data-slider-value="[0, 1000]" data-slider-handle="filterhandle">
+                </div>
+            </div>
+        </div>
         <div class="row timeExplorerBodyRow timeExplorerFixedHeight">
             <!-- <div id="timeExplorerSideInput" class="col-xs-2 timeExplorerFixedHeight"></div> -->
             <div id="timeExplorerVizContainer" class="col-xs-10 col-xs-offset-1 timeExplorerFixedHeight noPadding">
@@ -849,6 +855,7 @@ Note: this release does not support expressions with multiple fields nor changin
 </script>
 
 <script type="text/x-handlebars-template" id="timeBarTemplate">
+
     {{#if timeAggregationButtons}}
         <div class="timeAggregationSwitchboard">
             <div class="btn-group" data-toggle="buttons-radio">
@@ -859,14 +866,21 @@ Note: this release does not support expressions with multiple fields nor changin
                 {{/each}}
             </div>
         </div>
+
+    {{else}}
+
+        <div class="form-control filterExpression" id="filterExpressionID"
+         data-toggle="tooltip" data-placement="right" title="Filter expression"></div>
+
     {{/if}}
     <div class="vizContainer"></div>
 </script>
 
 <script type="text/x-handlebars-template" id="timeExplorerBodyTemplate">
+
     <div class="row">
 
-        <div class="col-xs-8">
+        <div class="col-xs-6">
 
             <form class="form-inline unselectable">
                 <div class="form-group">
@@ -880,6 +894,15 @@ Note: this release does not support expressions with multiple fields nor changin
                 </div>
                 <button id="newAttrSubmitButton" type="submit" class="btn btn-default">Add Filtered Bar</button>
             </form>
+
+        </div>
+
+        <div class="col-xs-6">
+
+            <div class="row form-group" title="Expression">
+                <div class="form-control filterExpression" id="filterExpressionID"
+                     data-toggle="tooltip" data-placement="right" title="Filter expression"></div>
+            </div>
 
         </div>
 
