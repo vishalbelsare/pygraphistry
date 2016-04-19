@@ -24,8 +24,8 @@ var timeExplorerUtils = require('./timeExplorerUtils.js');
 //////////////////////////////////////////////////////////////////////////////
 
 var timeAggregationButtons = [
-    {shortValue: 'D', longValue: 'day', active: true},
-    {shortValue: 'H', longValue: 'hour'},
+    {shortValue: 'D', longValue: 'day'},
+    {shortValue: 'H', longValue: 'hour', active: true},
     {shortValue: 'M', longValue: 'minute'},
     {shortValue: 'S', longValue: 'second'}
 ];

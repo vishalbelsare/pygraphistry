@@ -19,7 +19,7 @@ var contentFormatter = require('../contentFormatter.js');
 
 var ZOOM_UPDATE_RATE = 90;
 var ZOOM_POLL_RATE = ZOOM_UPDATE_RATE - 10;
-var DEFAULT_TIME_AGGREGATION = 'day';
+var DEFAULT_TIME_AGGREGATION = 'hour';
 
 function setupSvg (el, margin, width, height) {
     return d3.select(el).append('svg')
