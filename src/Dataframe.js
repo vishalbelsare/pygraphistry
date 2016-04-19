@@ -366,7 +366,9 @@ Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, lim
  */
 Dataframe.prototype.getMasksForQuery = function (query, errors) {
     var attribute = query.attribute,
-        type = query.type;
+        type = query.type,
+        basedOnCurrentDataframe = query.basedOnCurrentDataframe;
+
     if (attribute) {
         var normalization = this.normalizeAttributeName(attribute, type);
         if (normalization === undefined) {
@@ -382,7 +384,7 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
         var masks, filterFunc;
         if (query.ast === undefined) {
             filterFunc = this.filterFuncForQueryObject(query);
-            masks = this.getAttributeMask(type, attribute, filterFunc);
+            masks = this.getAttributeMask(type, attribute, filterFunc, basedOnCurrentDataframe);
         } else if (plan.isRedundant()) {
             type = plan.rootNode.iterationType();
             var normalizedAttribute = this.normalizeAttributeName(_.keys(plan.rootNode.identifierNodes())[0], type);
@@ -391,7 +393,7 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
             }
             _.defaults(query, {attribute: attribute, type: type});
             filterFunc = this.filterFuncForQueryObject(query);
-            masks = this.getAttributeMask(type, attribute, filterFunc);
+            masks = this.getAttributeMask(type, attribute, filterFunc, basedOnCurrentDataframe);
         } else {
             masks = plan.execute();
         }
@@ -470,17 +472,17 @@ Dataframe.prototype.getMaskForPredicateOnAttributeValues = function (attributeVa
 /**
  * @returns {DataframeMask}
  */
-Dataframe.prototype.getAttributeMask = function (type, columnName, filterFunc) {
+Dataframe.prototype.getAttributeMask = function (type, columnName, filterFunc, basedOnCurrentDataframe) {
     switch (type) {
         case 'point':
-            var pointMask = this.getPointAttributeMask(columnName, filterFunc);
+            var pointMask = this.getPointAttributeMask(columnName, filterFunc, basedOnCurrentDataframe);
             return new DataframeMask(
                 this,
                 pointMask,
                 undefined
             );
         case 'edge':
-            var edgeMask = this.getEdgeAttributeMask(columnName, filterFunc);
+            var edgeMask = this.getEdgeAttributeMask(columnName, filterFunc, basedOnCurrentDataframe);
             return new DataframeMask(
                 this,
                 undefined,
@@ -501,12 +503,14 @@ function numericSort (a, b) { return a > b ? 1 : (a < b ? -1 : 0); }
  * @param {Function<Object>} filterFunc
  * @returns {Mask}
  */
-Dataframe.prototype.getEdgeAttributeMask = function (columnName, filterFunc) {
+Dataframe.prototype.getEdgeAttributeMask = function (columnName, filterFunc, basedOnCurrentDataframe) {
     var attr = this.rawdata.attributes.edge[columnName];
     if (attr === undefined) {
         return this.fullDataframeMask();
     }
-    var edgeMask = this.getMaskForPredicateOnAttributeValues(attr.values, filterFunc);
+
+    var values = basedOnCurrentDataframe ? this.getColumnValues(columnName, 'edge') : attr.values;
+    var edgeMask = this.getMaskForPredicateOnAttributeValues(values, filterFunc);
     return edgeMask;
 };
 
@@ -517,12 +521,14 @@ Dataframe.prototype.getEdgeAttributeMask = function (columnName, filterFunc) {
  * @param {Function<Object>} filterFunc
  * @returns {Mask}
  */
-Dataframe.prototype.getPointAttributeMask = function (columnName, filterFunc) {
+Dataframe.prototype.getPointAttributeMask = function (columnName, filterFunc, basedOnCurrentDataframe) {
     var attr = this.rawdata.attributes.point[columnName];
     if (attr === undefined) {
         return this.fullDataframeMask();
     }
-    return this.getMaskForPredicateOnAttributeValues(attr.values, filterFunc);
+
+    var values = basedOnCurrentDataframe ? this.getColumnValues(columnName, 'point') : attr.values;
+    return this.getMaskForPredicateOnAttributeValues(values, filterFunc);
 };
 
 

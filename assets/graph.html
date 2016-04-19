@@ -386,23 +386,41 @@
     </div>
 
     <div id="timeExplorer" class="panel">
+
         <div id="timeExplorerDragBox" class="dragBox"></div>
+        <div id="timeExplorerEncodingA" class="dragBox"></div>
+        <div id="timeExplorerEncodingB" class="dragBox"></div>
+        <div id="timeExplorerEncodingC" class="dragBox"></div>
+
         <div id="timeExplorerVerticalLine" class="verticalLine"></div>
-        <div id="timeExplorerTop"></div>
+        <div id="timeExplorerTop">
+            <div class="row" id="timeFilterSliderRow">
+                <div class="col-xs-12 noPadding" id="timeFilterSliderDiv">
+                    <input class="time-panel-filter-slider hidden" id="time-panel-filter-slider" type="text" data-slider-id="time-panel-filter-slider" data-slider-min="0" data-slider-max="1000", data-slider-step="1" data-slider-value="[0, 1000]" data-slider-handle="filterhandle">
+                </div>
+            </div>
+        </div>
         <div class="row timeExplorerBodyRow timeExplorerFixedHeight">
             <!-- <div id="timeExplorerSideInput" class="col-xs-2 timeExplorerFixedHeight"></div> -->
-            <div id="timeExplorerVizContainer" class="col-xs-10 col-xs-offset-1 timeExplorerFixedHeight noPadding">
+            <div id="timeExplorerVizContainer" class="col-xs-12 timeExplorerFixedHeight noPadding">
                 <div id="timeExplorerBody" class="noPadding"></div>
                 <div id="timeExplorerMain" class="noPadding"></div>
             </div>
         </div>
         <div class="row timeExplorerFixedHeightAxis">
-            <div class="timeExplorerFixedHeightAxis noPadding col-xs-10 col-xs-offset-1">
+            <div class="timeExplorerFixedHeightAxis noPadding col-xs-12">
                 <div id="timeExplorerAxisContainer" class="noPadding">
                 </div>
             </div>
         </div>
-        <div id="timeExplorerBottom"></div>
+        <div id="timeExplorerBottom">
+            <div class="row" id="timeEncodingSliderRow">
+                <div class="col-xs-12 noPadding" id="timeEncodingSliderDiv">
+                    <input class="time-panel-encoding-slider-a hidden" id="time-panel-encoding-slider-a" type="text" data-slider-id="time-panel-encoding-slider-a" data-slider-min="0" data-slider-max="1000", data-slider-step="1" data-slider-value="[0, 1000]" data-slider-handle="encoding-handle-a">
+                    <input class="time-panel-encoding-slider-b hidden" id="time-panel-encoding-slider-b" type="text" data-slider-id="time-panel-encoding-slider-b" data-slider-min="0" data-slider-max="1000", data-slider-step="1" data-slider-value="[0, 1000]" data-slider-handle="encoding-handle-b">
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -854,6 +872,7 @@ Note: this release does not support expressions with multiple fields nor changin
 </script>
 
 <script type="text/x-handlebars-template" id="timeBarTemplate">
+
     {{#if timeAggregationButtons}}
         <div class="timeAggregationSwitchboard">
             <div class="btn-group" data-toggle="buttons-radio">
@@ -864,73 +883,27 @@ Note: this release does not support expressions with multiple fields nor changin
                 {{/each}}
             </div>
         </div>
+
+    {{else}}
+
+        <div class="form-control filterExpression" id="filterExpressionID"
+         data-toggle="tooltip" data-placement="right" title="Filter expression"></div>
+
     {{/if}}
     <div class="vizContainer"></div>
 </script>
 
 <script type="text/x-handlebars-template" id="timeExplorerBodyTemplate">
+
     <div class="row">
 
-        <div class="col-xs-8">
-
-            <form class="form-inline unselectable">
-                <div class="form-group">
-                    <input type="text" class="form-control" id="newType" placeholder="type (point|edge)">
-                </div>
-                <div class="form-group">
-                    <input type="text" class="form-control" id="newAttr" placeholder="name">
-                </div>
-                <div class="form-group">
-                    <input type="text" class="form-control" id="newQuery" placeholder="type:name > 2">
-                </div>
-                <button id="newAttrSubmitButton" type="submit" class="btn btn-default">Add Filtered Bar</button>
-            </form>
-
+        <div class="col-xs-1 col-xs-offset-11 addTimeBarDiv">
+            <div class="pull-right">
+                <button class="btn btn-primary btn-sm" id="newTimeBarButton" href="#">
+                    <i class="fa fa-plus" aria-hidden="true" title="Add new time bar"></i>
+                </button>
+            </div>
         </div>
-
-        <!--
-
-        <div id="timeExplorerEditorInput" class="col-xs-4">
-
-            <form class="filterEditor form-horizontal">
-                <div class="form-group-sm" title="Data Type">
-                    <label class="control-label" for="filterDataType{{id}}">Data Type</label>
-                    <span class="form-control-static">{{model.dataType}}</span>
-                    <select class="filterDataTypeSelector form-control hidden" id="filterDataType{{id}}" title="Data Type">
-                        <option value="">(Unknown)</option>
-                        {{#each dataTypes}}
-                        {{#if selected}}
-                            <option value="{{name}}" selected="selected">{{name}}</option>
-                        {{else}}
-                            <option value="{{name}}">{{name}}</option>
-                        {{/if}}
-                        {{/each}}
-                    </select>
-                </div>
-                <div class="form-group-sm" title="Control Type">
-                    <label class="control-label" for="filterControlType{{id}}">Control Type</label>
-                    <span class="form-control-static">{{model.controlType}}</span>
-                    <select class="filterControlTypeSelector form-control hidden" id="filterControlType{{id}}" title="Control Type">
-                        <option value="">(Unknown)</option>
-                        {{#each controlTypes}}
-                        {{#if selected}}
-                            <option value="{{value}}" selected="selected">{{name}}</option>
-                        {{else}}
-                            <option value="{{value}}">{{name}}</option>
-                        {{/if}}
-                        {{/each}}
-                    </select>
-                </div>
-                <div class="row form-group" title="Expression">
-                    <div class="form-control filterExpression" id="filterExpression{{id}}"
-                         data-toggle="tooltip" data-placement="right" title="Filter expression"></div>
-                </div>
-            </form>
-
-        </div>
-
-        -->
-
 
     </div>
 </script>
@@ -943,61 +916,26 @@ Note: this release does not support expressions with multiple fields nor changin
 
     <div class="row">
 
-        <div class="col-xs-8">
+        <div class="col-xs-4">
 
-            <form class="form-inline">
-                <div class="form-group">
-                    <input type="text" class="form-control" id="timeType" placeholder="type (point|edge)">
-                </div>
-                <div class="form-group">
-                    <input type="text" class="form-control" id="timeAttr" placeholder="timeColumn">
-                </div>
-                <button id="timeAttrSubmitButton" type="submit" class="btn btn-default">Initialize</button>
-            </form>
+            <div class="dropup">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="selectTimeAttrButton" data-toggle="dropdown" aria-expanded="true">
+                    Select Time Attribute
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu scrollable-menu" role="menu" aria-labelledby="dropdownMenu{{id}}">
+                    {{#each fields}}
+                        <li role="presentation"><a class="selectTimeAttrDropdownField" role="menuitem" tabindex="-1" href="#" data-graph-type="{{graphType}}" data-attr-name="{{attrName}}">
+                            {{displayName}}
+                        </a></li>
+                    {{/each}}
+                </ul>
+            </div>
 
         </div>
 
 
     </div>
-</script>
-
-<script type="text/x-handlebars-template" id="timeExplorerSideInputTemplate">
-
-    <form class="form-inline">
-        <div class="form-group">
-            <input type="text" class="form-control" id="timeType" placeholder="type (point|edge)">
-        </div>
-        <div class="form-group">
-            <input type="text" class="form-control" id="timeAttr" placeholder="timeColumn">
-        </div>
-        <button id="timeAttrSubmitButton" type="submit" class="btn btn-default">Initialize</button>
-    </form>
-
-    <br>
-
-    <!--
-    <form class="form-inline">
-        <div class="form-group">
-            <input type="text" class="form-control" id="newType" placeholder="type (point|edge)">
-        </div>
-        <div class="form-group">
-            <input type="text" class="form-control" id="newAttr" placeholder="name">
-        </div>
-        <div class="form-group">
-            <input type="text" class="form-control" id="newQuery" placeholder="type:name > 2">
-        </div>
-        <button id="newAttrSubmitButton" type="submit" class="btn btn-default">Add Filtered Bar</button>
-    </form>
-
-    <br>
-
-    <select id="timeAggregationSelect" class="form-control">
-        {{#each timeAggregationOptions}}
-            <option>{{this}}</option>
-        {{/each}}
-    </select>
-    -->
-
 </script>
 
 
