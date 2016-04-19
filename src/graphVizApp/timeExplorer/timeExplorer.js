@@ -135,6 +135,12 @@ TimeExplorer.prototype.updateGlobalTimeBounds = function (model) {
         timeType: model.timeType
     };
 
+    // TODO FIXME
+    // Guard on initialized
+    if (!obj.timeAttr || !obj.timeType) {
+        return;
+    }
+
     this.getTimeBoundsCommand.sendWithObservableResult(obj)
         .do((timeBounds) => {
             var {min, max} = timeBounds;
