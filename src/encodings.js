@@ -310,21 +310,23 @@ function inferTimeBoundEncoding (dataframe, type, attributeName, encodingType, t
 
         // if in C
         if (timeValue >= encodingBoundsC.start && timeValue <= encodingBoundsC.stop) {
-            return '#912CEE';
+            return '#9816C1';
         }
 
         // if in B
         if (timeValue >= encodingBoundsB.start && timeValue <= encodingBoundsB.stop) {
-            return '#2E37FE';
+            // return '#2E37FE';
+            return '#1A16C1';
         }
 
-        // if in B
+        // if in A
         if (timeValue >= encodingBoundsA.start && timeValue <= encodingBoundsA.stop) {
-            return '#FF3030';
+            // return '#FF3030';
+            return '#C11616';
         }
 
         // Otherwise return light grey
-        return '#D3D3D3';
+        return '#8E8E8E';
     };
 
     return {
