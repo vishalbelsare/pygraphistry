@@ -1076,9 +1076,9 @@ Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
     let source = new Array(numElements);
     let destination = new Array(numElements);
 
-    for (let i = 0; i < n; i += 2) {
-        source[i] = nodeTitles[unsortedEdges[i]];
-        destination[i] = nodeTitles[unsortedEdges[i + 1]];
+    for (let i = 0; i < numElements; i++) {
+        source[i] = nodeTitles[unsortedEdges[i*2]];
+        destination[i] = nodeTitles[unsortedEdges[i*2 + 1]];
     }
 
     this.defineAttributeOn(attributes, 'Source', 'string', source);
