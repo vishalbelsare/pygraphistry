@@ -213,7 +213,7 @@ function legendForBins (aggregations, scaling, binning) {
             if (binning.type === 'countBy') {
                 if (_.isArray(binning.bins)) {
                     if (_.isArray(binning.binValues)) {
-                        legend = _.map(binning.binValues, (binValue) => scaling(binValue.representative));
+                        legend = _.map(binning.binValues, (binValue) => scaling(binValue && binValue.representative));
                     } else {
                         legend = _.map(binning.bins, (itemCount, index) => scaling(index));
                     }
