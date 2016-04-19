@@ -35,7 +35,7 @@ var MIN_COLUMN_WIDTH = 6;
 var BAR_SIDE_PADDING = 1;
 
 var color = d3.scale.ordinal()
-        .range(['#929292', '#6B6868', '#0FA5C5', '#E35E13'])
+        .range(['#A2A2A2', '#828282', '#6FC4D6', '#479BAD'])
         .domain(['user', 'userFocus', 'main', 'mainFocus']);
 
 var margin = {
@@ -75,7 +75,6 @@ var TimeBarView = Backbone.View.extend({
 
         this.barModelSubject.take(1).do((barModel) => {
             var params = {};
-            console.log('initializing bar, model: ', barModel);
             if (barModel.showTimeAggregationButtons) {
                 params.timeAggregationButtons = timeAggregationButtons;
             }
@@ -133,27 +132,6 @@ var TimeBarView = Backbone.View.extend({
 
     listenForUpdates: function () {
 
-
-        // var enrichedBarModelSubj = this.barModelSubject.map((model) => {
-        //     var changedKeys = this.barModelDiffer(model);
-        //     console.log('barModelEnriched');
-        //     return {model, changedKeys};
-        // });
-
-        // var enrichedDataModelSubj = this.dataModelSubject.map((model) => {
-        //     var changedKeys = this.dataModelDiffer(model);
-        //     console.log('dataModelEnriched');
-        //     return {model, changedKeys};
-        // });
-
-        // Rx.Observable.combineLatest(enrichedBarModelSubj,
-        //     enrichedDataModelSubj,
-        //     (bar, data) => {
-        //         console.log('combine latest')
-        //         return {bar, data};
-        //     }
-        // )
-
         Rx.Observable.combineLatest(this.barModelSubject,
             this.dataModelSubject,
             (barModel, dataModel) => {
@@ -184,14 +162,10 @@ var TimeBarView = Backbone.View.extend({
                 return;
             }
 
-            // console.log('Got update, ', data.changedKeys);
-
             // Fetch new data and rerender
             if (_.intersection(data.changedKeys, ['localTimeBounds', 'timeAttr', 'timeType', 'timeAggregationMode']).length > 0
                 || _.intersection(bar.changedKeys, ['filter', 'attr', 'binContentType']).length > 0
             ) {
-
-                console.log('Requesting new everything, barmodel: ', bar.model);
 
                 // TODO: Replace this
                 this.model.set('lineUnchanged', false);
@@ -205,8 +179,6 @@ var TimeBarView = Backbone.View.extend({
 
             // Mouse moved, render mouseover effects
             if (_.intersection(data.changedKeys, ['mouseX']).length > 0) {
-
-                // console.log('Mouse Render time since: ', timeSince);
 
                 // TODO FIXME LAZY HACK
                 this.lastBarModel = bar.model;
@@ -231,7 +203,6 @@ var TimeBarView = Backbone.View.extend({
                 });
             }).do((data) => {
                 var {req, serverData} = data;
-                // console.log('Got server data');
 
                 var newModel = _.clone(req.bar.model);
                 newModel.serverData = serverData;
@@ -255,11 +226,7 @@ var TimeBarView = Backbone.View.extend({
 
         var {timeType, timeAttr, timeAggregationMode} = dataModel;
         var {start, stop} = dataModel.localTimeBounds;
-        var otherFilter = barModel.filter
-
-        console.log('id, otherFilter: ', this.model.id, otherFilter);
-
-        // console.log('fetching timeAttr, timeType: ', timeAttr, timeType);
+        var otherFilter = barModel.filter;
 
         var combinedAttr = '' + Identifier.clarifyWithPrefixSegment(timeAttr, timeType);
         var timeFilterQuery = combinedAttr + ' >= ' + start + ' AND ' + combinedAttr + ' <= ' + stop;
@@ -284,21 +251,14 @@ var TimeBarView = Backbone.View.extend({
             filters
         };
 
-        console.log('Payload: ', payload);
-
-        // console.log('SENDING TIME DATA COMMAND');
-
         return explorer.getTimeDataCommand.sendWithObservableResult(payload).take(1)
             .map(function (resp) {
-                console.log('resp: ', resp);
                 resp.data.name = name;
                 return resp.data;
             });
     },
 
     renderMouseEffects: function (barModel, dataModel) {
-
-        // console.log('Rendering mouse effects', this.model.id);
 
         var model = this.model;
 
@@ -317,8 +277,6 @@ var TimeBarView = Backbone.View.extend({
 
     render: function (barModel, dataModel) {
 
-        // console.log('Rendering general effects', this.model.id);
-
         var model = this.model;
 
         // Don't do anything, you haven't been populated yet
@@ -329,7 +287,6 @@ var TimeBarView = Backbone.View.extend({
         // Don't do first time work.
         // TODO: Should this be initialize instead?
         if (model.get('initialized')) {
-            console.log('Requesting render: ', barModel, dataModel);
             updateTimeBar(model.get('vizContainer'), model, barModel, dataModel);
             return this;
         }
@@ -371,7 +328,6 @@ var TimeBarView = Backbone.View.extend({
     changeTimeAgg: function (evt) {
         evt.preventDefault();
         evt.stopPropagation();
-        // console.log('GOT CLICK: ', evt);
 
         var target = evt.target;
         var shortText = $(target).text();
@@ -781,7 +737,6 @@ function updateTimeBar ($el, model, barModel, dataModel) {
 
     var columns = svg.selectAll('.column')
         .data(taggedBins, function (d, i) {
-            // console.log('COLUMN KEY: ', d, i);
             return d.key;
         });
 
@@ -791,7 +746,6 @@ function updateTimeBar ($el, model, barModel, dataModel) {
 
     columns.transition().duration(timeExplorerUtils.ZOOM_UPDATE_RATE).ease('linear')
         .attr('transform', function (d, i) {
-            // console.log('UPDATING COLUMN');
             return 'translate(' + xScale(i) + ',0)';
         });
 
@@ -823,11 +777,9 @@ function updateTimeBar ($el, model, barModel, dataModel) {
 
     newCols.transition().duration(timeExplorerUtils.ZOOM_UPDATE_RATE).ease('linear')
         .attrTween('transform', function (d, i, a) {
-            // console.log('TESTING TRANSFORM: ', d, i, d3Data);
             if (topVal && d.cutoff >= topVal) {
                 return d3.interpolate('translate(' + width + ',0)', String(enterTweenTransformFunc.call(this, d, i)));
             } else {
-                // console.log('BOTTOM PATH, init 0');
                 return d3.interpolate('translate(0,0)', String(enterTweenTransformFunc.call(this, d, i)));
             }
         });
@@ -843,7 +795,6 @@ function updateTimeBar ($el, model, barModel, dataModel) {
             };
             return [params];
         }, function (d, i) {
-            // console.log('BAR ARGS: ', d, i);
             return d.key;
             // return d.idx;
         });
@@ -876,7 +827,6 @@ function updateTimeBar ($el, model, barModel, dataModel) {
         })
         // .attr('width', barWidth)
         .attr('y', function (d) {
-            // console.log('ENTERING BAR');
             return height - yScale(d.val);
         })
         .attr('height', function (d) {
@@ -890,8 +840,6 @@ function updateTimeBar ($el, model, barModel, dataModel) {
     d3Data.lastDraw = 'barChart';
     d3Data.lastTopVal = data.topVal;
     d3Data.lastBottomVal = data.bottomVal;
-
-    // console.log('Setting top vals. Top1, top2: ', data.topVal, data.cutoffs[data.cutoffs.length - 1]);
 
 }
 
@@ -925,8 +873,6 @@ function updateTimeBarLineChart ($el, model, barModel, dataModel) {
 
     var xScale = timeExplorerUtils.setupBinScale(width, data.numBins, data);
     var yScale = timeExplorerUtils.setupAmountScale(height, maxBinValue, data.bins);
-
-    // var barWidth = Math.floor(width/data.numBins) - BAR_SIDE_PADDING;
 
     //////////////////////////////////////////////////////////////////////////
     // Make Line Beneath
@@ -980,9 +926,6 @@ function updateTimeBarLineChart ($el, model, barModel, dataModel) {
         .x(function(d, i) { return xScale(i); })
         .y0(height)
         .y1(function(d) { return height - yScale(d); });
-
-    // var areaChart = svg.selectAll('.areaChart')
-    //     .datum(data.bins);
 
     // HACK: WAY TO AVOID REDRAW
     var areaChart = svg.selectAll('.areaChart');

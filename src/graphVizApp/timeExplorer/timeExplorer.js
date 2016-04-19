@@ -103,6 +103,13 @@ TimeExplorer.prototype.updateEncodings = function (model) {
     var query = {};
     query.type = model.timeType;
     query.attribute = model.timeAttr;
+
+    // Guard on having types set
+    // TODO: Rework this logic
+    if (query.type === null || query.attribute === null) {
+        return;
+    }
+
     query.encodingType = 'color';
     query.timeBounds = {
         encodingBoundsA,
@@ -154,8 +161,6 @@ TimeExplorer.prototype.updateGraphTimeFilter = function (model) {
 
     if (model.filterTimeBounds && model.filterTimeBounds.start && model.filterTimeBounds.stop) {
 
-        console.log('Filter time bounds: ', model.filterTimeBounds);
-
         var combinedAttr = '' + Identifier.clarifyWithPrefixSegment(model.timeAttr, model.timeType);
         var timeFilterQuery = combinedAttr + ' >= ' + model.filterTimeBounds.start + ' AND ' + combinedAttr + ' <= ' + model.filterTimeBounds.stop;
 
@@ -188,25 +193,11 @@ TimeExplorer.prototype.addActiveQuery = function (type, attr, string) {
 
     newBarModel.id = getId();
     newBarModel.filter = this.makeQuery(type, attr, string);
-    // newBarModel.filter = {
-    //     type, attr, query: this.makeQuery(type, attr, string)
-    // };
 
     newBar.onNext(newBarModel);
     this.barModelSubjects.push(newBar);
     this.panel.view.updateChildrenViewList();
 };
-
-
-
-// TimeExplorer.prototype.addActiveQuery = function (type, attr, string) {
-//     var formattedQuery = this.makeQuery(type, attr, string);
-//     this.activeQueries.push({
-//         name: string,
-//         query: formattedQuery
-//     });
-//     this.modifyTimeDescription({}); // Update. TODO: Make an actual update func
-// };
 
 TimeExplorer.prototype.makeQuery = function (type, attr, string) {
     return {
@@ -215,46 +206,6 @@ TimeExplorer.prototype.makeQuery = function (type, attr, string) {
         query: FilterControl.prototype.queryFromExpressionString(string)
     };
 };
-
-// TimeExplorer.prototype.getTimeData = function (timeType, timeAttr, start, stop, timeAggregation, otherFilters, name) {
-//     // FOR UberAll
-//     // LARGEST      2007-01-07T23:59:24+00:00
-//     // SMALLEST     2007-01-01T00:01:24+00:00
-//     // timeExplorer.realGetTimeData('point', 'time', '2007-01-01T00:01:24+00:00', '2007-01-07T23:59:24+00:00', 'day', [])
-//     // timeExplorer.realGetTimeData('point', 'time', '2007-01-01T00:01:24+00:00', '2007-01-07T23:59:24+00:00', 'day', [timeExplorer.makeQuery('point', 'trip', 'point:trip > 5000')])
-
-//     // console.log('GET TIME DATA');
-
-//     var combinedAttr = '' + Identifier.clarifyWithPrefixSegment(timeAttr, timeType);
-//     var timeFilterQuery = combinedAttr + ' >= ' + start + ' AND ' + combinedAttr + ' <= ' + stop;
-
-//     var timeFilter = {
-//         type: timeType,
-//         attribute: timeAttr,
-//         query: FilterControl.prototype.queryFromExpressionString(timeFilterQuery)
-//     };
-
-//     var filters = otherFilters.concat([timeFilter]);
-
-//     var payload = {
-//         start: start,
-//         stop: stop,
-//         timeType: timeType,
-//         timeAttr: timeAttr,
-//         timeAggregation: timeAggregation,
-//         filters: filters
-//     };
-
-//     // console.log('SENDING TIME DATA COMMAND');
-
-//     return this.getTimeDataCommand.sendWithObservableResult(payload)
-//         .map(function (resp) {
-//             // console.log('payload: ', payload);
-//             resp.data.name = name;
-//             return resp.data;
-//         });
-// };
-
 
 TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start, stop, timeAggregation, activeQueries) {
     var that = this;
@@ -284,7 +235,6 @@ TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start
 };
 
 TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, percentage, dragBox, vizContainer) {
-    // console.log('GOT ZOOM TIME REQUEST: ', arguments);
     // Negative if zoom out, positive if zoom in.
 
 
@@ -292,8 +242,6 @@ TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, percentage, dragBox
     this.zoomCount++;
 
     var adjustedZoom = 1.0 - zoomFactor;
-
-    // console.log('zoomReq: ', adjustedZoom);
 
     var params = {
         percentage: percentage,
@@ -324,8 +272,6 @@ TimeExplorer.prototype.setupZoom = function () {
 
             var newStart = numStart;
             var newStop = numStop;
-
-            // console.log('numStart, numStop: ', numStart, numStop);
 
             for (var i = 0; i < this.zoomCount; i++) {
                 var diff = newStop - newStart;

@@ -135,8 +135,6 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             var timeType = target.data('graph-type');
             var timeAttr = target.data('attr-name');
 
-            console.log('submitting timeType, timeAttr: ', timeType, timeAttr);
-
             this.dataModelSubject.take(1).do((dataModel) => {
                 var newModel = _.clone(dataModel);
                 newModel.timeAttr = timeAttr;
@@ -158,7 +156,6 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             // TODO: New div and render correct eleements in right order
             this.$timeExplorerMain.empty();
 
-            // console.log('RENDERING TOP LEVEL VIEW');
             this.$timeExplorerMain.append(this.mainBarView.el);
             this.$timeExplorerAxisContainer.append(this.bottomAxisView.el);
 
@@ -444,7 +441,6 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
         },
 
         handleMouseDown: function (evt) {
-            console.log('Handling mouse down');
             // Return early if it's a UI element
             // TODO: Figure out how to represent this in terms of the selector
             var $target = $(evt.target);
@@ -465,8 +461,6 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             if (!this.enableMouseInteractions) {
                 return;
             }
-
-            console.log('Passed checks')
 
             var lastX = evt.pageX;
             var width = this.$timeExplorerVizContainer.width();
@@ -492,7 +486,6 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
                     lastX = newX;
 
-                    console.log('Pos change');
                     this.dataModelSubject.onNext(newModel);
 
                 }).subscribe(_.identity, util.makeErrorHandler('time explorer drag move'));
@@ -531,8 +524,6 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 this.dataModelSubject.onNext(newModel);
             }).subscribe(_.identity, util.makeErrorHandler('mousemove timebar'));
 
-            // this.mainBarView.mousemoveParent(evt);
-            // this.userBarsView.mousemoveParent(evt);
         },
 
         mouseout: function (evt) {
@@ -605,7 +596,6 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 var barModels = [];
 
                 _.each(updatedKeys, (key) => {
-                    // console.log('Updating data for: ', key);
 
                     var params = {
                         barModelSubject: idToSubjectMap[key],
@@ -641,89 +631,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
             }).subscribe(_.identity, util.makeErrorHandler('Failed zip of time panel subjects'));
 
-        },
-
-        // updateChildren: function () {
-        //     var data = this.model.attributes;
-        //     var explorer = this.model.get('explorer');
-        //     var params;
-
-        //     // TODO: Make this a cleaner system
-        //     var axisKey = '' + data.all.start + data.all.stop + data.all.timeAggregation;
-
-        //     // Handle axis
-        //     params = {
-        //         data: data.all,
-        //         timeStamp: Date.now(),
-        //         key: axisKey
-        //     };
-        //     this.bottomAxisView.model.set(params);
-
-        //     // Handle main bar, '_all'
-        //     params = {
-        //         data: data.all,
-        //         maxBinValue: data.maxBinValue,
-        //         timeStamp: Date.now(),
-        //         showTimeAggregationButtons: true,
-        //         lineUnchanged: false
-        //     };
-        //     this.mainBarView.model.id = params.data.name;
-        //     this.mainBarView.model.set('barType', 'main');
-        //     this.mainBarView.model.set(params);
-
-        //     var barModels = [];
-        //     var collection = this.userBarsView.collection;
-
-        //     // console.log('DATA: User: ', data.user);
-        //     // console.log('Collection: ', collection);
-
-
-        //     var dataKeys = _.keys(data.user);
-        //     var existingKeys = _.pluck(collection.models, 'id');
-
-        //     var updatedKeys = _.intersection(dataKeys, existingKeys);
-        //     var newKeys = _.difference(dataKeys, existingKeys);
-        //     // var deletedKeys = _.difference(existingKeys, dataKeys);
-
-        //     var barModels = [];
-
-        //     // Handle updated keys
-        //     _.each(updatedKeys, function (key) {
-        //         var val = data.user[key];
-        //         // console.log('Updating data for: ', key);
-
-        //         var params = {
-        //             data: val,
-        //             maxBinValue: data.maxBinValue,
-        //             timeStamp: Date.now(),
-        //             lineUnchanged: false
-        //         };
-
-        //         var model = collection.get(key);
-        //         model.set(params);
-        //         model.set('barType', 'user');
-        //         barModels.push(model);
-        //     });
-
-        //     //Add new data elements
-        //     _.each(newKeys, function (key) {
-        //         var val = data.user[key];
-        //         var barModel = new timeBar.model({explorer: explorer});
-        //         var params = {
-        //             data: val,
-        //             maxBinValue: data.maxBinValue,
-        //             timeStamp: Date.now(),
-        //             lineUnchanged: false
-        //         };
-
-        //         barModel.set(params);
-        //         barModel.set('barType', 'user');
-        //         barModel.id = key;
-        //         barModels.push(barModel);
-        //     });
-
-        //     collection.set(barModels);
-        // }
+        }
 
     });
 

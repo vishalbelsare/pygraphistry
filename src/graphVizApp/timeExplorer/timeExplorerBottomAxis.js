@@ -83,8 +83,6 @@ var BottomAxisView = Backbone.View.extend({
 
     render: function (mainBarModel) {
 
-        // console.log('Rendering axis');
-
         var backboneModel = this.model;
 
         if (backboneModel.get('initialized')) {
