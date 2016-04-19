@@ -540,6 +540,11 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 return;
             }
 
+            // Hide all tooltips when moused out, especially if any get stuck
+            // TODO FIXME: Figure out a better way to deal with this and
+            // prevent it from being necesary.
+            this.$el.children('.tooltip').remove();
+
             this.dataModelSubject.take(1).do((model) => {
                 var newModel = _.clone(model);
                 newModel.mouseX = null;

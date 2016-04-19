@@ -379,7 +379,7 @@ function updateBottomAxis ($el, model, mainBarModel) {
                 // Update mouseover tooltip content
                 d3.select('#timexaxis-' + id)
                     .selectAll('text')
-                    .attr('data-container', 'body')
+                    .attr('data-container', '#timeExplorer')
                     .attr('data-placement', 'top')
                     .attr('data-toggle', 'tooltip')
                     .attr('data-original-title', function (d, i) {
