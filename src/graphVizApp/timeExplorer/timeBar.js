@@ -95,6 +95,12 @@ var TimeBarView = Backbone.View.extend({
                 this.editor.setReadOnly(false);
                 this.editor.dataframeCompleter.setNamespaceMetadata(this.model.get('metadata'));
 
+                // TODO FIXME These should be params to the expression editor constructor, not done after the fact
+                this.editor.editor.setOptions({
+                    minLines: 1,
+                    maxLines: 1
+                });
+
                 // Make special enter submit command:
                 this.editor.editor.commands.addCommand({
                     name: 'enterHandler',
