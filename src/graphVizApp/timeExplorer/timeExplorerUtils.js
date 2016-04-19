@@ -17,8 +17,6 @@ var Identifier = require('../Identifier');
 var contentFormatter = require('../contentFormatter.js');
 
 
-
-
 var ZOOM_UPDATE_RATE = 90;
 var ZOOM_POLL_RATE = ZOOM_UPDATE_RATE - 10;
 var DEFAULT_TIME_AGGREGATION = 'day';
@@ -90,12 +88,95 @@ function setupAmountScale (height, maxBin) {
 
 
 
+//////////////////////////////////////////////////////////////////////////////
+// TIME EXPLORER DATA MODELS
+//////////////////////////////////////////////////////////////////////////////
+
+var baseDataModel = {
+    timeAttr: null,
+    timeType: null,
+    timeAggregationMode: DEFAULT_TIME_AGGREGATION,
+    globalTimeBounds: {
+        start: null,
+        stop: null
+    },
+    localTimeBounds: {
+        start: null,
+        stop: null
+    },
+    filterTimeBounds: {
+        start: null,
+        stop: null
+    },
+    encodingBoundsA: {
+        start: null,
+        stop: null
+    },
+    encodingBoundsB: {
+        start: null,
+        stop: null
+    },
+    encodingBoundsC: {
+        start: null,
+        stop: null
+    },
+    mouseX: -1
+};
+
+// TODO:
+var baseGlobalBar = {
+    serverData: null
+};
+
+var baseUserBar = {
+    serverData: null,
+    filter: {
+        type: null,
+        attribute: null,
+        query: null
+    },
+    attr: null,
+    binContentType: null,
+    showTimeAggregationButtons: false,
+    id: -1
+};
+
+function makeDataModelDiffer (optionalTag) {
+    var lastModel = {};
+    var differ = function (newModel) {
+        var newKeys = _.keys(newModel);
+        var changedKeys = _.filter(newKeys, function (key) {
+            return newModel[key] !== lastModel[key];
+        });
+
+        lastModel = newModel;
+        return changedKeys;
+    };
+    return differ;
+}
+
+function getAttributeInfoFromQueryString (queryString) {
+
+    var firstIdentifiedRegex = /\b(\w+):(\w+)\b/
+    var firstMatch = firstIdentifiedRegex.exec(queryString);
+    var type = firstMatch[1];
+    var attr = firstMatch[2];
+    return {type, attr};
+
+}
+
+
 module.exports = {
     setupSvg,
     setupBinScale,
     setupAmountScale,
     ZOOM_UPDATE_RATE,
     ZOOM_POLL_RATE,
-    DEFAULT_TIME_AGGREGATION
+    DEFAULT_TIME_AGGREGATION,
+    baseDataModel,
+    baseGlobalBar,
+    baseUserBar,
+    makeDataModelDiffer,
+    getAttributeInfoFromQueryString
 };
 

@@ -17,6 +17,8 @@ var FilterControl = require('../FilterControl.js');
 var Identifier = require('../Identifier');
 var contentFormatter = require('../contentFormatter.js');
 
+var QuerySelectionModel = require('../QuerySelectionModel.js');
+
 var timeExplorerUtils = require('./timeExplorerUtils.js');
 var timeBar = require('./timeBar.js');
 
@@ -31,7 +33,8 @@ var UserBarsCollection = Backbone.Collection.extend({
 
 var UserBarsView = Backbone.View.extend({
     events: {
-        'click #newAttrSubmitButton': 'submitNewAttr'
+        'click #newTimeBarButton': 'submitNewAttr',
+        'mousewheel': 'handleMouseWheel'
     },
 
     initialize: function () {
@@ -50,6 +53,7 @@ var UserBarsView = Backbone.View.extend({
 
     render: function () {
         // this.collection.sort(); //TODO
+        var explorer = this.model.get('explorer');
 
         var newDiv = $('<div id="timeExplorerUserBarsRenderingContainer"></div>');
 
@@ -57,6 +61,12 @@ var UserBarsView = Backbone.View.extend({
         // having to rerender the svgs inside.
         this.$el.empty();
         this.$el.append(newDiv);
+
+        var params = {
+
+        };
+        var addRowHtml = this.template(params);
+        newDiv.append(addRowHtml);
 
         this.collection.each(function (child) {
             // TODO: This guard is a hack. I don't know how to initialize backbone
@@ -67,24 +77,18 @@ var UserBarsView = Backbone.View.extend({
             }
         });
 
-        var params = {
-
-        };
-        var addRowHtml = this.template(params);
-        newDiv.append(addRowHtml);
-
         this.$el.attr('cid', this.cid);
+    },
+
+    handleMouseWheel: function (evt) {
+        evt.preventDefault();
     },
 
     submitNewAttr: function (evt) {
         evt.preventDefault();
-        var newType = $('#newType').val();
-        var newAttr = $('#newAttr').val();
-        var newQuery = $('#newQuery').val();
-        // TODO: Don't use this global. Instead properly structure user bars as a model, that contains a collection.
         var explorer = this.model.get('explorer');
-        explorer.addActiveQuery(newType, newAttr, newQuery);
-        // this.collection.get('explorer').addActiveQuery(newType, newAttr, newQuery);
+        explorer.addActiveQuery(undefined, undefined, '');
+        return;
     },
 
     addBar: function (model) {
@@ -97,30 +101,15 @@ var UserBarsView = Backbone.View.extend({
 
     removeBar: function () {
         //TODO
-        console.log('ATTEMPTING TO REMOVE USER BAR, NOT IMPLEMENTED YET');
+        debug('ATTEMPTING TO REMOVE USER BAR, NOT IMPLEMENTED YET');
     },
 
     addAll: function () {
         // this.$el.empty();
         this.collection.each(this.addBar, this);
         this.render();
-    },
-
-    mousemoveParent: function (evt) {
-        this.collection.each(function (child) {
-            if (child.view) {
-                child.view.mousemoveParent(evt);
-            }
-        });
-    },
-
-    mouseoutParent: function (evt) {
-        this.collection.each(function (child) {
-            if (child.view) {
-                child.view.mouseoutParent(evt);
-            }
-        });
     }
+
 });
 
 

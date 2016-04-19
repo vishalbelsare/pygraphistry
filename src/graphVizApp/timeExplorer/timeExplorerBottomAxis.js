@@ -44,34 +44,62 @@ var BottomAxisView = Backbone.View.extend({
     events: {},
 
     initialize: function () {
+
+        // Setup subject handlers
+        this.dataModelSubject = this.model.get('explorer').dataModelSubject;
+        this.barModelSubjects = this.model.get('explorer').barModelSubjects;
+        // TODO: Don't treat it so specially.
+        this.mainBarModelSubject = this.barModelSubjects[0];
+
         this.listenTo(this.model, 'destroy', this.remove);
-        this.listenTo(this.model, 'change:key', this.render);
+        // this.listenTo(this.model, 'change:key', this.render);
 
         var params = {};
         this.template = Handlebars.compile($('#timeBarBottomAxisTemplate').html());
         var html = this.template(params);
         this.$el.html(html);
         this.$el.attr('cid', this.cid);
+
+        // Render Handler
+        this.mainBarModelDiffer = timeExplorerUtils.makeDataModelDiffer();
+        this.mainBarModelSubject
+            //.inspectTime(timeExplorerUtils.ZOOM_POLL_RATE) // Commented out because it goes out of sync
+            .do((model) => {
+                var changedKeys = this.mainBarModelDiffer(model);
+
+                // Check if required fields are present, and return if not
+                if (!model.serverData) {
+                    return;
+                }
+
+                if (_.intersection(changedKeys, ['serverData']).length > 0) {
+                    this.render(model);
+                }
+
+        }).subscribe(_.identity, util.makeErrorHandler('rendering bottom axis'));
+
+
     },
 
-    render: function () {
-        var model = this.model;
+    render: function (mainBarModel) {
 
-        if (model.get('initialized')) {
-            updateBottomAxis(model.get('axisContainer'), model);
+        var backboneModel = this.model;
+
+        if (backboneModel.get('initialized')) {
+            updateBottomAxis(backboneModel.get('axisContainer'), backboneModel, mainBarModel);
             return this;
         }
 
-        model.set('$el', this.$el);
+        backboneModel.set('$el', this.$el);
         var axisContainer = this.$el.children('.axisContainer');
         axisContainer.empty();
-        model.set('axisContainer', axisContainer);
+        backboneModel.set('axisContainer', axisContainer);
         var axisHeight = '' + AXIS_HEIGHT + 'px';
         axisContainer.height(axisHeight);
-        initializeBottomAxis(axisContainer, model);
-        updateBottomAxis(axisContainer, model);
+        initializeBottomAxis(axisContainer, backboneModel, mainBarModel);
+        updateBottomAxis(axisContainer, backboneModel, mainBarModel);
 
-        model.set('initialized', true);
+        backboneModel.set('initialized', true);
         return this;
     }
 });
@@ -80,7 +108,7 @@ var BottomAxisView = Backbone.View.extend({
 // D3
 //////////////////////////////////////////////////////////////////////////////
 
-function initializeBottomAxis ($el, model) {
+function initializeBottomAxis ($el, model, mainBarModel) {
     // debug('init bottom axis');
 
     var width = $el.width();
@@ -115,10 +143,10 @@ function initializeBottomAxis ($el, model) {
     });
 }
 
-function updateBottomAxis ($el, model) {
+function updateBottomAxis ($el, model, mainBarModel) {
     // debug('update bottom axis');
 
-    var data = model.get('data');
+    var data = mainBarModel.serverData;
     var id = model.cid;
     var d3Data = model.get('d3Data');
     var numBins = data.numBins;
@@ -349,7 +377,7 @@ function updateBottomAxis ($el, model) {
                 // Update mouseover tooltip content
                 d3.select('#timexaxis-' + id)
                     .selectAll('text')
-                    .attr('data-container', 'body')
+                    .attr('data-container', '#timeExplorer')
                     .attr('data-placement', 'top')
                     .attr('data-toggle', 'tooltip')
                     .attr('data-original-title', function (d, i) {

@@ -15,6 +15,7 @@ var util    = require('../util.js');
 var FilterControl = require('../FilterControl.js');
 var Identifier = require('../Identifier');
 var contentFormatter = require('../contentFormatter.js');
+var ExpressionEditor    = require('../expressionEditor.js');
 
 var timeExplorerUtils = require('./timeExplorerUtils.js');
 
@@ -34,7 +35,7 @@ var MIN_COLUMN_WIDTH = 6;
 var BAR_SIDE_PADDING = 1;
 
 var color = d3.scale.ordinal()
-        .range(['#929292', '#6B6868', '#0FA5C5', '#E35E13'])
+        .range(['#A2A2A2', '#828282', '#6FC4D6', '#479BAD'])
         .domain(['user', 'userFocus', 'main', 'mainFocus']);
 
 var margin = {
@@ -59,61 +60,234 @@ var TimeBarView = Backbone.View.extend({
     },
 
     initialize: function () {
+
+        this.barModelSubject = this.model.get('barModelSubject');
+        this.dataModelSubject = this.model.get('dataModelSubject');
+        this.newDataAndRenderSubject = new Rx.ReplaySubject(1);
+        this.setupRenderRequestHandler();
+
+        this.dataModelDiffer = timeExplorerUtils.makeDataModelDiffer('timeBarDataModelDiffer');
+        this.barModelDiffer = timeExplorerUtils.makeDataModelDiffer();
+
         this.listenTo(this.model, 'destroy', this.remove);
-        this.listenTo(this.model, 'change:timeStamp', this.newContent);
+        // this.listenTo(this.model, 'change:timeStamp', this.newContent);
         // TODO: listen to changes and render
 
-        // Set default values
-        this.model.set('pageX', 0);
-        this.model.set('pageY', 0);
+        this.barModelSubject.take(1).do((barModel) => {
+            var params = {};
+            if (barModel.showTimeAggregationButtons) {
+                params.timeAggregationButtons = timeAggregationButtons;
+            }
 
-        var params = {
+            this.template = Handlebars.compile($('#timeBarTemplate').html());
+            var html = this.template(params);
+            this.$el.html(html);
+            this.$el.attr('cid', this.cid);
 
+            // TODO FIXME
+            // Use showTimeAggButtons to signify bottom bar
+            if (!barModel.showTimeAggregationButtons) {
+
+                // Setup expression editor
+                this.$expressionArea = this.$('.filterExpression');
+                this.editor = new ExpressionEditor(this.$expressionArea[0]);
+                this.editor.setReadOnly(false);
+                this.editor.dataframeCompleter.setNamespaceMetadata(this.model.get('metadata'));
+
+                // TODO FIXME These should be params to the expression editor constructor, not done after the fact
+                this.editor.editor.setOptions({
+                    minLines: 1,
+                    maxLines: 1
+                });
+
+                // Make special enter submit command:
+                this.editor.editor.commands.addCommand({
+                    name: 'enterHandler',
+                    bindKey: {win: 'enter',  mac: 'enter'},
+                    exec: (editor) => {
+                        var queryString = editor.getValue();
+                        var {type, attr} = timeExplorerUtils.getAttributeInfoFromQueryString(queryString);
+                        var query = FilterControl.prototype.queryFromExpressionString(queryString);
+                        this.updateBarFilter({type, attribute: attr, query});
+                    }
+                });
+
+            }
+
+            this.listenForUpdates();
+
+        }).subscribe(_.identity, util.makeErrorHandler('getting bar model for time bar'));
+    },
+
+    updateBarFilter: function (filterDesc) {
+
+        this.barModelSubject.take(1).do((barModel) => {
+            var newModel = _.clone(barModel);
+            newModel.filter = filterDesc;
+
+            this.barModelSubject.onNext(newModel);
+        }).subscribe(_.identity, util.makeErrorHandler('updating bar filter'));
+
+    },
+
+    listenForUpdates: function () {
+
+        Rx.Observable.combineLatest(this.barModelSubject,
+            this.dataModelSubject,
+            (barModel, dataModel) => {
+                var changedBarKeys = this.barModelDiffer(barModel);
+                var changedDataKeys = this.dataModelDiffer(dataModel);
+                var enrichedBar = {
+                    model: barModel,
+                    changedKeys: changedBarKeys
+                };
+                var enrichedData = {
+                    model: dataModel,
+                    changedKeys: changedDataKeys
+                };
+                return {
+                    bar: enrichedBar,
+                    data: enrichedData
+                };
+            }
+        )
+        .do((updates) => {
+            var {bar, data} = updates;
+
+            // TODO: Generalize requirements to render
+            // check if data model has requisite fields and return if not
+            var hasFields = data.model.timeAttr && data.model.timeType && data.model.timeAggregationMode &&
+                        data.model.localTimeBounds;
+            if (!hasFields) {
+                return;
+            }
+
+            // Fetch new data and rerender
+            if (_.intersection(data.changedKeys, ['localTimeBounds', 'timeAttr', 'timeType', 'timeAggregationMode']).length > 0
+                || _.intersection(bar.changedKeys, ['filter', 'attr', 'binContentType']).length > 0
+            ) {
+
+                // TODO: Replace this
+                this.model.set('lineUnchanged', false);
+
+                this.requestNewDataAndRender({
+                    data, bar
+                });
+
+                return;
+            }
+
+            // Mouse moved, render mouseover effects
+            if (_.intersection(data.changedKeys, ['mouseX']).length > 0) {
+
+                // TODO FIXME LAZY HACK
+                this.lastBarModel = bar.model;
+                this.lastDataModel = data.model;
+
+                this.renderMouseEffects(bar.model, data.model);
+            }
+
+
+        }).subscribe(_.identity, util.makeErrorHandler('listening for updates time bar'));
+
+    },
+
+    setupRenderRequestHandler: function () {
+        this.newDataAndRenderSubject.inspectTime(timeExplorerUtils.ZOOM_POLL_RATE)
+            .flatMap((req) => {
+                return this.getServerTimeDataObservable(req.data.model, req.bar.model).take(1).map((serverData) => {
+                    return {
+                        req,
+                        serverData
+                    }
+                });
+            }).do((data) => {
+                var {req, serverData} = data;
+
+                var newModel = _.clone(req.bar.model);
+                newModel.serverData = serverData;
+                this.barModelSubject.onNext(newModel);
+
+                // TODO FIXME LAZY HACK:
+                this.lastBarModel = newModel;
+                this.lastDataModel = req.data.model;
+
+                this.render(newModel, req.data.model);
+            }).subscribe(_.identity, util.makeErrorHandler('fetching data for time bar'));
+    },
+
+    requestNewDataAndRender: function (req) {
+        this.newDataAndRenderSubject.onNext(req);
+    },
+
+    getServerTimeDataObservable: function (dataModel, barModel) {
+
+        var explorer = this.model.get('explorer')
+
+        var {timeType, timeAttr, timeAggregationMode} = dataModel;
+        var {start, stop} = dataModel.localTimeBounds;
+        var otherFilter = barModel.filter;
+
+        var combinedAttr = '' + Identifier.clarifyWithPrefixSegment(timeAttr, timeType);
+        var timeFilterQuery = combinedAttr + ' >= ' + start + ' AND ' + combinedAttr + ' <= ' + stop;
+
+        var timeFilter = {
+            type: timeType,
+            attribute: timeAttr,
+            query: FilterControl.prototype.queryFromExpressionString(timeFilterQuery)
         };
 
-        if (this.model.get('showTimeAggregationButtons')) {
-            params.timeAggregationButtons = timeAggregationButtons;
+        var filters = [timeFilter];
+        if (otherFilter.type && otherFilter.attribute && otherFilter.query) {
+            filters.push(otherFilter);
         }
 
-        this.template = Handlebars.compile($('#timeBarTemplate').html());
-        var html = this.template(params);
-        this.$el.html(html);
-        this.$el.attr('cid', this.cid);
+        var payload = {
+            start,
+            stop,
+            timeType,
+            timeAttr,
+            timeAggregation: timeAggregationMode,
+            filters
+        };
+
+        return explorer.getTimeDataCommand.sendWithObservableResult(payload).take(1)
+            .map(function (resp) {
+                resp.data.name = name;
+                return resp.data;
+            });
     },
 
-    newContent: function () {
-        // this.model.set('initialized', false);
-        this.render();
-    },
+    renderMouseEffects: function (barModel, dataModel) {
 
-    renderMouseEffects: function () {
         var model = this.model;
 
         // Don't do anything, you haven't been populated yet
-        if (!this.model.get('data')) {
+        if (!barModel.serverData) {
             return this;
         }
 
         // Don't do first time work.
         // TODO: Should this be initialize instead?
         if (model.get('initialized')) {
-            updateTimeBarMouseover(model.get('vizContainer'), model);
+            updateTimeBarMouseover(model.get('vizContainer'), model, barModel, dataModel);
             return this;
         }
     },
 
-    render: function () {
+    render: function (barModel, dataModel) {
+
         var model = this.model;
 
         // Don't do anything, you haven't been populated yet
-        if (!this.model.get('data')) {
+        if (!barModel || !barModel.serverData) {
             return this;
         }
 
         // Don't do first time work.
         // TODO: Should this be initialize instead?
         if (model.get('initialized')) {
-            updateTimeBar(model.get('vizContainer'), model);
+            updateTimeBar(model.get('vizContainer'), model, barModel, dataModel);
             return this;
         }
 
@@ -124,51 +298,48 @@ var TimeBarView = Backbone.View.extend({
         model.set('vizContainer', vizContainer);
         var vizHeight = '' + TIME_BAR_HEIGHT + 'px';
         vizContainer.height(vizHeight);
-        initializeTimeBar(vizContainer, model);
-        updateTimeBar(vizContainer, model);
+        initializeTimeBar(vizContainer, model, barModel, dataModel);
+        updateTimeBar(vizContainer, model, barModel, dataModel);
 
         model.set('initialized', true);
         return this;
     },
 
-    mousemoveParent: function (evt) {
-        this.model.set('pageX', evt.pageX);
-        this.model.set('pageY', evt.pageY);
-        this.renderMouseEffects();
-    },
+    // mousemoveParent: function (evt) {
+    //     this.model.set('pageX', evt.pageX);
+    //     this.model.set('pageY', evt.pageY);
+    //     this.renderMouseEffects();
+    // },
 
-    mouseoutParent: function (/*evt*/) {
-        this.model.set('pageX', -1);
-        this.model.set('pageY', -1);
-        this.renderMouseEffects();
-    },
+    // mouseoutParent: function (/*evt*/) {
+    //     this.model.set('pageX', -1);
+    //     this.model.set('pageY', -1);
+    //     this.renderMouseEffects();
+    // },
 
     getBinForPosition: function (pageX) {
-        return getActiveBinForPosition(this.$el, this.model, pageX);
+        return getActiveBinForPosition(this.$el, this.model, pageX, this.lastBarModel, this.lastDataModel);
     },
 
     getPercentageForPosition: function (pageX) {
-        return getPercentageForPosition(this.$el, this.model, pageX);
+        return getPercentageForPosition(this.$el, this.model, pageX, this.lastBarModel, this.lastDataModel);
     },
 
     changeTimeAgg: function (evt) {
         evt.preventDefault();
         evt.stopPropagation();
-        // console.log('GOT CLICK: ', evt);
 
         var target = evt.target;
         var shortText = $(target).text();
         $(target).parent().children('button').not('#timeAggButton-' + shortText).removeClass('active');
         $(target).addClass('active');
-        // console.log('TARGET: ', target);
-        // console.log($(target));
         var aggValue = $(target).data('aggregation-value');
-        // console.log('aggValue: ', aggValue);
 
-
-        this.model.get('explorer').modifyTimeDescription({
-            timeAggregation: aggValue
-        });
+        this.dataModelSubject.take(1).do((model) => {
+            var newModel = _.clone(model);
+            newModel.timeAggregationMode = aggValue;
+            this.dataModelSubject.onNext(newModel);
+        }).subscribe(_.identity, util.makeErrorHandler('change time agg timebar'));
 
     },
 
@@ -201,7 +372,7 @@ function initializeTimeBar ($el, model) {
     });
 }
 
-function getPercentageForPosition ($el, model, pageX) {
+function getPercentageForPosition ($el, model, pageX, barModel, dataModel) {
 
     var d3Data = model.get('d3Data');
     var width = d3Data.width;
@@ -226,13 +397,13 @@ function getPercentageForPosition ($el, model, pageX) {
 }
 
 
-function getActiveBinForPosition ($el, model, pageX) {
+function getActiveBinForPosition ($el, model, pageX, barModel, dataModel) {
     var d3Data = model.get('d3Data');
     var width = d3Data.width;
     if (!width) {
         width = $el.width() - margin.left - margin.right;
     }
-    var data = model.get('data');
+    var data = barModel.serverData;
     var svg = d3Data.svg;
     var xScale = timeExplorerUtils.setupBinScale(width, data.numBins, data);
 
@@ -260,11 +431,14 @@ function tagBins (rawBins, keys, cutoffs) {
     return taggedBins;
 }
 
-function updateTimeBarMouseover ($el, model) {
+// TODO MAKE THIS USE BAR MODEL DATA MODEL, and all other update methods
+function updateTimeBarMouseover ($el, model, barModel, dataModel) {
 
     var d3Data = model.get('d3Data');
-    var data = model.get('data');
-    var maxBinValue = model.get('maxBinValue');
+    // var data = model.get('data');
+    var data = barModel.serverData;
+    var maxBinValue = data.maxBin;
+    // var maxBinValue = model.get('maxBinValue');
     var barType = model.get('barType');
 
     var svg = d3Data.svg;
@@ -276,7 +450,7 @@ function updateTimeBarMouseover ($el, model) {
     }
 
     if (d3Data.lastDraw === 'lineChart') {
-        updateTimeBarLineChartMouseover($el, model);
+        updateTimeBarLineChartMouseover($el, model, barModel, dataModel);
         return;
     }
 
@@ -285,8 +459,9 @@ function updateTimeBarMouseover ($el, model) {
     //////////////////////////////////////////////////////////////////////////
 
     var upperTooltip = svg.selectAll('.upperTooltip');
-    var pageX = model.get('pageX');
-    var activeBin = getActiveBinForPosition($el, model, pageX);
+    var pageX = dataModel.mouseX;
+    // var pageX = model.get('pageX');
+    var activeBin = getActiveBinForPosition($el, model, pageX, barModel, dataModel);
     var upperTooltipValue = data.bins[activeBin];
 
     var svgOffset = d3Data.svgOffset;
@@ -360,11 +535,12 @@ function updateTimeBarMouseover ($el, model) {
 }
 
 
-function updateTimeBarLineChartMouseover ($el, model) {
+function updateTimeBarLineChartMouseover ($el, model, barModel, dataModel) {
     // debug('updating time bar: ', model);
 
     var d3Data = model.get('d3Data');
-    var data = model.get('data');
+    // var data = model.get('data');
+    var data = barModel.serverData;
     var barType = model.get('barType');
 
     var svg = d3Data.svg;
@@ -380,8 +556,9 @@ function updateTimeBarLineChartMouseover ($el, model) {
     //////////////////////////////////////////////////////////////////////////
 
     var upperTooltip = svg.selectAll('.upperTooltip');
-    var pageX = model.get('pageX');
-    var activeBin = getActiveBinForPosition($el, model, pageX);
+    // var pageX = model.get('pageX');
+    var pageX = dataModel.mouseX;
+    var activeBin = getActiveBinForPosition($el, model, pageX, barModel, dataModel);
     var upperTooltipValue = data.bins[activeBin];
 
     var svgOffset = d3Data.svgOffset;
@@ -437,13 +614,14 @@ function updateTimeBarLineChartMouseover ($el, model) {
 }
 
 
-function updateTimeBar ($el, model) {
+function updateTimeBar ($el, model, barModel, dataModel) {
     // debug('updating time bar: ', model);
 
     var d3Data = model.get('d3Data');
     var width = d3Data.width;
     var height = d3Data.height;
-    var data = model.get('data');
+    // var data = model.get('data');
+    var data = barModel.serverData;
     var maxBinValue = data.maxBin;
     var taggedBins = tagBins(data.bins, data.keys, data.cutoffs);
 
@@ -457,14 +635,13 @@ function updateTimeBar ($el, model) {
 
     // Draw as time series if too many
     if ((width/MIN_COLUMN_WIDTH) < data.numBins) {
-        updateTimeBarLineChart($el, model);
+        updateTimeBarLineChart($el, model, barModel, dataModel);
         d3Data.lastDraw = 'lineChart';
         return;
     }
 
     // Reset if line Chart
     if (d3Data.lastDraw === 'lineChart') {
-        // console.log('RESETTING SVG BECAUSE WAS LINE');
         svg.selectAll("*").remove();
     }
 
@@ -481,8 +658,9 @@ function updateTimeBar ($el, model) {
 
 
 
-    var pageX = model.get('pageX');
-    var activeBin = getActiveBinForPosition($el, model, pageX);
+    // var pageX = model.get('pageX');
+    var pageX = dataModel.mouseX;
+    var activeBin = getActiveBinForPosition($el, model, pageX, barModel, dataModel);
 
     var recolorBar = function (d) {
         if (d.idx === activeBin) {
@@ -559,7 +737,6 @@ function updateTimeBar ($el, model) {
 
     var columns = svg.selectAll('.column')
         .data(taggedBins, function (d, i) {
-            // console.log('COLUMN KEY: ', d, i);
             return d.key;
         });
 
@@ -569,7 +746,6 @@ function updateTimeBar ($el, model) {
 
     columns.transition().duration(timeExplorerUtils.ZOOM_UPDATE_RATE).ease('linear')
         .attr('transform', function (d, i) {
-            // console.log('UPDATING COLUMN');
             return 'translate(' + xScale(i) + ',0)';
         });
 
@@ -601,11 +777,9 @@ function updateTimeBar ($el, model) {
 
     newCols.transition().duration(timeExplorerUtils.ZOOM_UPDATE_RATE).ease('linear')
         .attrTween('transform', function (d, i, a) {
-            // console.log('TESTING TRANSFORM: ', d, i, d3Data);
             if (topVal && d.cutoff >= topVal) {
                 return d3.interpolate('translate(' + width + ',0)', String(enterTweenTransformFunc.call(this, d, i)));
             } else {
-                // console.log('BOTTOM PATH, init 0');
                 return d3.interpolate('translate(0,0)', String(enterTweenTransformFunc.call(this, d, i)));
             }
         });
@@ -621,7 +795,6 @@ function updateTimeBar ($el, model) {
             };
             return [params];
         }, function (d, i) {
-            // console.log('BAR ARGS: ', d, i);
             return d.key;
             // return d.idx;
         });
@@ -654,7 +827,6 @@ function updateTimeBar ($el, model) {
         })
         // .attr('width', barWidth)
         .attr('y', function (d) {
-            // console.log('ENTERING BAR');
             return height - yScale(d.val);
         })
         .attr('height', function (d) {
@@ -662,25 +834,24 @@ function updateTimeBar ($el, model) {
         });
 
     // Handle mouse position specific parts
-    updateTimeBarMouseover($el, model);
+    updateTimeBarMouseover($el, model, barModel, dataModel);
 
 
     d3Data.lastDraw = 'barChart';
     d3Data.lastTopVal = data.topVal;
     d3Data.lastBottomVal = data.bottomVal;
 
-    // console.log('Setting top vals. Top1, top2: ', data.topVal, data.cutoffs[data.cutoffs.length - 1]);
-
 }
 
 
-function updateTimeBarLineChart ($el, model) {
+function updateTimeBarLineChart ($el, model, barModel, dataModel) {
     // debug('updating time bar: ', model);
 
     var d3Data = model.get('d3Data');
     var width = d3Data.width;
     var height = d3Data.height;
-    var data = model.get('data');
+    // var data = model.get('data');
+    var data = barModel.serverData;
     var maxBinValue = data.maxBin;
     // var maxBinValue = model.get('maxBinValue');
 
@@ -702,8 +873,6 @@ function updateTimeBarLineChart ($el, model) {
 
     var xScale = timeExplorerUtils.setupBinScale(width, data.numBins, data);
     var yScale = timeExplorerUtils.setupAmountScale(height, maxBinValue, data.bins);
-
-    // var barWidth = Math.floor(width/data.numBins) - BAR_SIDE_PADDING;
 
     //////////////////////////////////////////////////////////////////////////
     // Make Line Beneath
@@ -758,9 +927,6 @@ function updateTimeBarLineChart ($el, model) {
         .y0(height)
         .y1(function(d) { return height - yScale(d); });
 
-    // var areaChart = svg.selectAll('.areaChart')
-    //     .datum(data.bins);
-
     // HACK: WAY TO AVOID REDRAW
     var areaChart = svg.selectAll('.areaChart');
 
@@ -776,7 +942,7 @@ function updateTimeBarLineChart ($el, model) {
     }
 
     // Handle mouse position specific updates
-    updateTimeBarLineChartMouseover($el, model);
+    updateTimeBarLineChartMouseover($el, model, barModel, dataModel);
 
     model.set('lineUnchanged', true);
 
