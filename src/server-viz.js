@@ -1582,6 +1582,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     this.socket.on('get_global_ids', (sel, cb) => {
         graph.take(1).do((graph) => {
             const res = _.map(sel, (ent) => {
+                if (!ent) { return ent; }
                 const type = ent.dim === 1 ? 'point' : 'edge';
                 return {
                     type: type,
