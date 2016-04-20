@@ -314,19 +314,29 @@ export function create(dataframe, renderer, cl, device, vendor, cfg) {
 function setColor (renderer, simulator, colorObj) {
 
     //TODO why are these reversed?
-    var rgb =
+    const rgb =
         (colorObj.rgb.r << 0)
         + (colorObj.rgb.g << 8)
         + (colorObj.rgb.b << 16);
 
-    for (var v = 0; v < renderer.numPoints; v++) {
-        simulator.dataframe.setLocalBufferValue('pointColors', v, rgb);
-    }
-    for (var e = 0; e < renderer.numEdges; e++) {
-        simulator.dataframe.setLocalBufferValue('edgeColors', 2*e, rgb);
-        simulator.dataframe.setLocalBufferValue('edgeColors', 2*e+1, rgb);
-    }
-    simulator.tickBuffers(['pointColors', 'edgeColors']);
+    const dataframe = simulator.dataframe;
+    const ccManager = dataframe.computedColumnManager;
+
+    // Set point colors
+    const oldPointColorDesc = ccManager.getComputedColumnSpec('localBuffer', 'pointColors');
+    const newPointColorDesc = oldPointColorDesc.clone();
+    newPointColorDesc.setDependencies([]);
+    newPointColorDesc.setComputeSingleValue(() => rgb);
+
+    // Set edge colors
+    const oldEdgeColorDesc = ccManager.getComputedColumnSpec('localBuffer', 'edgeColors');
+    const newEdgeColorDesc = oldEdgeColorDesc.clone();
+    newEdgeColorDesc.setDependencies([]);
+    newEdgeColorDesc.setComputeSingleValue(() => [rgb, rgb]);
+
+    ccManager.addComputedColumn(dataframe, 'localBuffer', 'pointColors', newPointColorDesc);
+    ccManager.addComputedColumn(dataframe, 'localBuffer', 'edgeColors', newEdgeColorDesc);
+
     return Q();
 }
 
