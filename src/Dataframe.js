@@ -1941,7 +1941,7 @@ Dataframe.prototype.serializeColumns = function (target, options) {
 
 /** Return a promise of a string CSV representation of the dataframe
  */
-Dataframe.prototype.formatAsCsv = function (type) {
+Dataframe.prototype.formatAsCSV = function (type) {
     const compact = this.getRowsCompactUnfiltered(undefined, type);
     const promiseStringify = Q.denodeify(csv.stringify);
     console.log('compact header: ', compact.header);

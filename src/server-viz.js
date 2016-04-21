@@ -1477,7 +1477,7 @@ VizServer.prototype.defineRoutesInApp = function (app) {
         const type = req.query.type;
 
         appRouteResponder.graph.take(1).do((graph) => {
-            const content = graph.dataframe.formatAsCsv(type)
+            const content = graph.dataframe.formatAsCSV(type)
                 .then((formattedCsv) => {
 
                     const datasetName = appRouteResponder.datasetName || 'graphistry';
