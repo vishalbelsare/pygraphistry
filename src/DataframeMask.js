@@ -1,9 +1,9 @@
 'use strict';
 
-var _ = require('underscore');
+const _ = require('underscore');
 
 // Duplicated from Dataframe.js
-var GraphComponentTypes = ['point', 'edge'];
+const GraphComponentTypes = ['point', 'edge'];
 
 /**
  * Mask is implemented as a list of valid indices (in sorted order).
@@ -20,7 +20,7 @@ var GraphComponentTypes = ['point', 'edge'];
  * @returns {Number}
  */
 function indexOfInSorted(sortedArray, value) {
-    var low = 0,
+    let low = 0,
         high = sortedArray.length - 1,
         mid;
     while (low < high) {
@@ -47,8 +47,8 @@ function DataframeMask(dataframe, pointIndexes, edgeIndexes, basis) {
     this.dataframe = dataframe;
     /** Boolean for whether untouched/undefined masks mean empty vs full. */
     this.isExclusive = false;
-    var pointMask = pointIndexes;
-    var edgeMask = edgeIndexes;
+    let pointMask = pointIndexes;
+    let edgeMask = edgeIndexes;
     if (basis) {
         pointMask = unbaseMaskFrom(pointMask, basis.point);
         edgeMask = unbaseMaskFrom(edgeMask, basis.edge);
@@ -68,7 +68,7 @@ function DataframeMask(dataframe, pointIndexes, edgeIndexes, basis) {
  */
 function unbaseMaskFrom (mask, basisMask) {
     if (mask !== undefined && basisMask !== undefined) {
-        var globalizedMask = new Uint32Array(mask.length);
+        const globalizedMask = new Uint32Array(mask.length);
         for (var i=0; i<mask.length; i++) {
             globalizedMask[i] = basisMask[mask[i]];
         }
@@ -87,10 +87,10 @@ function unbaseMaskFrom (mask, basisMask) {
  */
 function baseMaskOn (mask, basisMask) {
     if (mask !== undefined && basisMask !== undefined) {
-        var maskLength = mask.length, basisLength = basisMask.length;
+        const maskLength = mask.length, basisLength = basisMask.length;
         // Smallest result: no intersection and no output.
-        var localizedMask = [];
-        var maskIndex = 0, basisIndex = 0;
+        const localizedMask = [];
+        let maskIndex = 0, basisIndex = 0;
         while (maskIndex < maskLength && basisIndex < basisLength) {
             if (mask[maskIndex] < basisMask[basisIndex]) {
                 maskIndex++;
@@ -117,10 +117,10 @@ function baseMaskOn (mask, basisMask) {
 DataframeMask.unionOfTwoMasks = function(x, y) {
     // Undefined means pass-through:
     if (x === undefined || y === undefined) { return undefined; }
-    var xLength = x.length, yLength = y.length;
+    const xLength = x.length, yLength = y.length;
     // Smallest result: one is a subset of the other.
-    var result = new Array(Math.floor(Math.max(xLength, yLength)));
-    var xIndex = 0, yIndex = 0, resultIndex = 0;
+    const result = new Array(Math.floor(Math.max(xLength, yLength)));
+    let xIndex = 0, yIndex = 0, resultIndex = 0;
     while (xIndex < xLength && yIndex < yLength) {
         if (x[xIndex] < y[yIndex]) {
             result[resultIndex++] = x[xIndex++];
@@ -151,10 +151,10 @@ DataframeMask.intersectionOfTwoMasks = function(x, y) {
     // Undefined means pass-through:
     if (x === undefined) { return y; }
     if (y === undefined) { return x; }
-    var xLength = x.length, yLength = y.length;
+    const xLength = x.length, yLength = y.length;
     // Smallest result: no intersection and no output.
-    var result = [];
-    var xIndex = 0, yIndex = 0;
+    const result = [];
+    let xIndex = 0, yIndex = 0;
     while (xIndex < xLength && yIndex < yLength) {
         if (x[xIndex] < y[yIndex]) {
             xIndex++;
@@ -179,10 +179,10 @@ DataframeMask.complementOfMask = function(x, sizeOfUniverse) {
     // Undefined means all, complement is empty:
     if (x === undefined) { return []; }
     if (x === []) { return undefined; }
-    var xLength = x.length;
+    const xLength = x.length;
     // We know the exact length.
-    var result = new Array(sizeOfUniverse - xLength);
-    var xIndex = 0, complementIndex = 0, resultIndex = 0;
+    const result = new Array(sizeOfUniverse - xLength);
+    let xIndex = 0, complementIndex = 0, resultIndex = 0;
     // Only add complementIndex when x has no matching value.
     while (complementIndex < sizeOfUniverse) {
         // Either run past X's values or X is higher, so not found in X:
@@ -209,10 +209,10 @@ DataframeMask.minusMask = function (x, y, sizeOfUniverse) {
     if (x === undefined) { return DataframeMask.complementOfMask(y, sizeOfUniverse); }
     // The complement of the universe is empty:
     if (y === undefined) { return []; }
-    var xLength = x.length, yLength = y.length;
+    const xLength = x.length, yLength = y.length;
     // Smallest result: full intersection and no output.
-    var result = [];
-    var xIndex = 0, yIndex = 0;
+    const result = [];
+    let xIndex = 0, yIndex = 0;
     while (xIndex < xLength && yIndex < yLength) {
         if (x[xIndex] < y[yIndex]) {
             result.push(x[xIndex++]);
@@ -237,9 +237,9 @@ DataframeMask.minusMask = function (x, y, sizeOfUniverse) {
  */
 DataframeMask.diffMask = function (x, y) {
     // Smallest results: full intersection and no output on each count.
-    var result = {xOnly: [], intersection: [], yOnly: []};
-    var xLength = x.length, yLength = y.length;
-    var xIndex = 0, yIndex = 0;
+    const result = {xOnly: [], intersection: [], yOnly: []};
+    const xLength = x.length, yLength = y.length;
+    let xIndex = 0, yIndex = 0;
     while (xIndex < xLength && yIndex < yLength) {
         if (x[xIndex] < y[yIndex]) {
             result.xOnly.push(x[xIndex++]);
@@ -259,7 +259,7 @@ DataframeMask.diffMask = function (x, y) {
     return result;
 };
 
-var OmittedProperties = ['dataframe'];
+const OmittedProperties = ['dataframe'];
 
 
 DataframeMask.prototype = {
@@ -284,17 +284,15 @@ DataframeMask.prototype = {
      * @returns {Boolean}
      */
     equals: function (other) {
-        var that = this;
-
         // Quick test on sizes.
         if (this.numPoints() !== other.numPoints() || this.numEdges() !== other.numEdges()) {
             return false;
         }
 
         // If sizes are same, iterate through to make sure.
-        var isSame = true;
-        _.each(['point', 'edge'], function (type) {
-            that.mapIndexes(type, function (idx, i) {
+        let isSame = true;
+        _.each(GraphComponentTypes, (type) => {
+            this.mapIndexes(type, (idx, i) => {
                 if (other.getIndexByType(type, i) !== idx) {
                     isSame = false;
                 }
@@ -387,7 +385,7 @@ DataframeMask.prototype = {
      * @returns {DataframeMask}
      */
     complement: function () {
-        var result = new DataframeMask(this.dataframe,
+        const result = new DataframeMask(this.dataframe,
             DataframeMask.complementOfMask(this.getMaskForType('point'), this.dataframe.numPoints()),
             DataframeMask.complementOfMask(this.getMaskForType('edge'), this.dataframe.numEdges()));
         result.setExclusive(!this.isExclusive);
@@ -430,16 +428,16 @@ DataframeMask.prototype = {
      * @param {IndexIteratorCallback} iterator
      */
     mapIndexes: function (type, iterator) {
-        var numElements = this.numByType(type), i = 0;
-        var mask = this[type];
+        const numElements = this.numByType(type);
+        const mask = this[type];
         if (mask === undefined) {
             if (!this.isExclusive) {
-                for (i = 0; i < numElements; i++) {
+                for (let i = 0; i < numElements; i++) {
                     iterator.call(this, i, i);
                 }
             }
         } else {
-            for (i = 0; i < numElements; i++) {
+            for (let i = 0; i < numElements; i++) {
                 iterator.call(this, mask[i], i);
             }
         }
@@ -472,16 +470,15 @@ DataframeMask.prototype = {
     },
 
     typedIndexesForType: function (type) {
-        var numElements = this.numByType(type),
+        const numElements = this.numByType(type),
             result = new Uint32Array(numElements),
-            i = 0,
             mask = this[type];
         if (mask === undefined) {
-            for (i=0; i<numElements; i++) {
+            for (let i=0; i<numElements; i++) {
                 result[i] = i;
             }
         } else {
-            for (i=0; i<numElements; i++) {
+            for (let i=0; i<numElements; i++) {
                 result[i] = mask[i];
             }
         }
@@ -510,9 +507,9 @@ DataframeMask.prototype = {
      * @param {DataframeMask} basisMask
      */
     toJSON: function (basisMask) {
-        var result = _.omit(this, OmittedProperties);
-        _.each(GraphComponentTypes, function (componentType) {
-            var componentMask = result[componentType];
+        const result = _.omit(this, OmittedProperties);
+        _.each(GraphComponentTypes, (componentType) => {
+            let componentMask = result[componentType];
             if (basisMask) {
                 componentMask = baseMaskOn(componentMask, basisMask[componentType]);
             }
@@ -532,14 +529,14 @@ DataframeMask.prototype = {
      */
     fromJSON: function (clientMask) {
         if (clientMask === undefined) { return; }
-        _.each(GraphComponentTypes, function (componentType) {
+        _.each(GraphComponentTypes, (componentType) => {
             if (clientMask[componentType] !== undefined) {
-                var numComponents = this.dataframe.numByType(componentType);
-                var componentMask = _.filter(clientMask[componentType], function (idx) { return idx < numComponents; });
+                const numComponents = this.dataframe.numByType(componentType);
+                const componentMask = _.filter(clientMask[componentType], (idx) => idx < numComponents);
                 // TODO translate to filter-independent offsets
                 this[componentType] = componentMask.sort();
             }
-        }.bind(this));
+        });
     }
 };
 
