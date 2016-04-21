@@ -494,9 +494,6 @@ Dataframe.prototype.getAttributeMask = function (type, columnName, filterFunc, b
 };
 
 
-function numericSort (a, b) { return a > b ? 1 : (a < b ? -1 : 0); }
-
-
 /**
  * Returns sorted edge mask
  * @param {String} columnName
@@ -1432,13 +1429,12 @@ Dataframe.prototype.getVersion = function (type, attrName) {
     }
 
     return attributes[attrName].version;
-}
+};
 
 /** Returns the contents of one cell
  * @param {double} index - which element to extract.
  * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  * @param {string} attrName - the name of the column you want
- * @param {Object?} attributes - which attributes to extract from the row.
  */
 Dataframe.prototype.getCell = function (index, type, attrName) {
 
@@ -1513,7 +1509,6 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
 /** Returns one row object.
  * @param {double} index - which element to extract.
  * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
- * @param {Object?} attributes - which attributes to extract from the row.
  */
 Dataframe.prototype.getRowAt = function (index, type) {
     var origIndex = index; // For clientside metadata
