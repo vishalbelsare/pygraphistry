@@ -987,14 +987,11 @@ function VizServer(app, socket, cachedVBOs) {
 
             // Exclude prepended with __
             // TODO FIXME treat this in a generic way across UI elements
-            const nodeKeys = graph.dataframe.getAttributeKeys('point')
-                .filter((key) => {
-                    return !(key[0] === '_' && key[1] === '_');
-                });
-            const edgeKeys = graph.dataframe.getAttributeKeys('edge')
-                .filter((key) => {
-                    return !(key[0] === '_' && key[1] === '_');
-                });
+            var dataframe = graph.dataframe;
+            const nodeKeys = dataframe.getAttributeKeys('point')
+                .filter((key) => !dataframe.isAttributeNamePrivate(key));
+            const edgeKeys = dataframe.getAttributeKeys('edge')
+                .filter((key) => !dataframe.isAttributeNamePrivate(key));
 
 
             cb({
