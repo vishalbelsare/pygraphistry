@@ -1,30 +1,30 @@
 'use strict';
 
-var _ = require('underscore');
-var dateFormat = require('dateformat');
-var Q = require('q');
-var fs = require('fs');
-var csv = require('csv');
-var flake = require('simpleflake');
+const _ = require('underscore');
+const dateFormat = require('dateformat');
+const Q = require('q');
+const fs = require('fs');
+const csv = require('csv');
+const flake = require('simpleflake');
 
-var log = require('common/logger.js');
-var logger = log.createLogger('graph-viz', 'graph-viz/js/DataFrame.js');
+const log = require('common/logger.js');
+const logger = log.createLogger('graph-viz', 'graph-viz/js/DataFrame.js');
 
-var ExpressionCodeGenerator = require('./expressionCodeGenerator');
-var ExpressionPlan = require('./ExpressionPlan.js');
-var DataframeMask = require('./DataframeMask.js');
-var ColumnAggregation = require('./ColumnAggregation.js');
-var ComputedColumnManager = require('./ComputedColumnManager.js');
+const ExpressionCodeGenerator = require('./expressionCodeGenerator');
+const ExpressionPlan = require('./ExpressionPlan.js');
+const DataframeMask = require('./DataframeMask.js');
+const ColumnAggregation = require('./ColumnAggregation.js');
+const ComputedColumnManager = require('./ComputedColumnManager.js');
 
-var dataTypeUtil = require('./dataTypes.js');
+const dataTypeUtil = require('./dataTypes.js');
 
-var palettes    = require('./palettes');
+const palettes    = require('./palettes');
 
-var baseDirPath = __dirname + '/../assets/dataframe/';
+const baseDirPath = __dirname + '/../assets/dataframe/';
 
 function getUniqueId () {
-    var id = flake();
-    var stringId = id.toString('hex');
+    const id = flake();
+    const stringId = id.toString('hex');
     return stringId;
 }
 
@@ -32,12 +32,12 @@ function getUniqueId () {
  * @readonly
  * @type {string[]}
  */
-var GraphComponentTypes = ['point', 'edge'];
+const GraphComponentTypes = ['point', 'edge'];
 /**
  * @readonly
  * @type {string[]}
  */
-var BufferTypeKeys = GraphComponentTypes.concat('simulator');
+const BufferTypeKeys = GraphComponentTypes.concat('simulator');
 
 /**
  * @property {DataframeData} rawdata The original data, immutable by this object.
@@ -78,7 +78,7 @@ function Dataframe () {
     this.metadata = {};
 
     // TODO: Move this out of data frame constructor.
-    var computedColumnManager = new ComputedColumnManager();
+    const computedColumnManager = new ComputedColumnManager();
     computedColumnManager.loadDefaultColumns();
     computedColumnManager.loadEncodingColumns();
     this.loadComputedColumnManager(computedColumnManager);
@@ -147,19 +147,19 @@ function makeEmptyData () {
 Dataframe.prototype.pruneMaskEdges = function (oldMask) {
 
     // Create hash to lookup which points/edges exist in mask.
-    var pointMaskOriginalLookup = {};
-    oldMask.mapPointIndexes(function (idx) {
+    const pointMaskOriginalLookup = {};
+    oldMask.mapPointIndexes((idx) => {
         pointMaskOriginalLookup[idx] = 1;
     });
 
-    var edgeMask = [];
-    var edges = this.rawdata.hostBuffers.unsortedEdges;
+    const edgeMask = [];
+    const edges = this.rawdata.hostBuffers.unsortedEdges;
 
-    oldMask.mapEdgeIndexes(function (edgeIdx) {
-        var src = edges[2*edgeIdx];
-        var dst = edges[2*edgeIdx + 1];
-        var newSrc = pointMaskOriginalLookup[src];
-        var newDst = pointMaskOriginalLookup[dst];
+    oldMask.mapEdgeIndexes((edgeIdx) => {
+        const src = edges[2*edgeIdx];
+        const dst = edges[2*edgeIdx + 1];
+        const newSrc = pointMaskOriginalLookup[src];
+        const newDst = pointMaskOriginalLookup[dst];
         if (newSrc && newDst) {
             edgeMask.push(edgeIdx);
         }
@@ -181,21 +181,21 @@ Dataframe.prototype.pruneMaskEdges = function (oldMask) {
  * @returns {DataframeMask}
  */
 Dataframe.prototype.pruneOrphans = function (baseMask) {
-    var resultPointMask = [];
+    const resultPointMask = [];
     if (baseMask.numPoints() === this.numPoints() && baseMask.numEdges() === this.numEdges()) {
-        var degreeColumn = this.getColumnValues('degree', 'point');
-        baseMask.mapPointIndexes(function (pointIdx) {
+        const degreeColumn = this.getColumnValues('degree', 'point');
+        baseMask.mapPointIndexes((pointIdx) => {
             if (degreeColumn[pointIdx] !== 0) {
                 resultPointMask.push(pointIdx);
             }
         });
     } else {
-        var degreeOutTyped = this.getHostBuffer('forwardsEdges').degreesTyped,
+        const degreeOutTyped = this.getHostBuffer('forwardsEdges').degreesTyped,
             degreeInTyped = this.getHostBuffer('backwardsEdges').degreesTyped;
         if (degreeInTyped.length !== baseMask.numPoints()) {
             throw new Error('Mismatched buffer lengths');
         }
-        baseMask.mapPointIndexes(function (pointIdx, idx) {
+        baseMask.mapPointIndexes((pointIdx, idx) => {
             if (degreeInTyped[idx] !== 0 || degreeOutTyped[idx] !== 0) {
                 resultPointMask.push(pointIdx);
             }
@@ -249,10 +249,10 @@ Dataframe.prototype.fullDataframeMask = function() {
 
 Dataframe.prototype.presentVizSet = function (vizSet) {
     if (!vizSet || vizSet.masks === undefined) { return vizSet; }
-    var maskResponseLimit = 3e4;
-    var masksTooLarge = vizSet.masks.numPoints() > maskResponseLimit ||
+    const maskResponseLimit = 3e4;
+    const masksTooLarge = vizSet.masks.numPoints() > maskResponseLimit ||
         vizSet.masks.numEdges() > maskResponseLimit;
-    var response = masksTooLarge ? _.omit(vizSet, ['masks']) : _.clone(vizSet);
+    const response = masksTooLarge ? _.omit(vizSet, ['masks']) : _.clone(vizSet);
     response.sizes = {point: vizSet.masks.numPoints(), edge: vizSet.masks.numEdges()};
     // Do NOT serialize the dataframe.
     if (response.masks) {
@@ -274,7 +274,7 @@ Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, lim
     if (!limits) {
         limits = {point: Infinity, edge: Infinity};
     }
-    _.each(GraphComponentTypes, function (type) {
+    _.each(GraphComponentTypes, (type) => {
         if (limits[type] === undefined) {
             limits[type] = Infinity;
         }
@@ -286,50 +286,50 @@ Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, lim
     }
 
     // Assumes we will never have more than 255 separate masks.
-    var numMasks = selectionMasks.length;
-    var MASK_LIMIT = 255;
+    const numMasks = selectionMasks.length;
+    const MASK_LIMIT = 255;
     if (numMasks > MASK_LIMIT) {
         console.error('TOO MANY MASKS; truncating to: ' + MASK_LIMIT);
         selectionMasks.length = 255;
     }
 
     // Assumes Uint8Array() constructor initializes to zero, which it should.
-    var numMasksSatisfiedByPointID = new Uint8Array(this.numPoints());
-    var numMasksSatisfiedByEdgeID = new Uint8Array(this.numEdges());
+    const numMasksSatisfiedByPointID = new Uint8Array(this.numPoints());
+    const numMasksSatisfiedByEdgeID = new Uint8Array(this.numEdges());
 
     // Equivalent to reduce over AND:
-    _.each(selectionMasks, function (mask) {
-        mask.mapEdgeIndexes(function (idx) {
+    _.each(selectionMasks, (mask) => {
+        mask.mapEdgeIndexes((idx) => {
             numMasksSatisfiedByEdgeID[idx]++;
         });
 
-        mask.mapPointIndexes(function (idx) {
+        mask.mapPointIndexes((idx) => {
             numMasksSatisfiedByPointID[idx]++;
         });
     });
 
     // Equivalent to reduce over NOT OR:
-    _.each(exclusionMasks, function (mask) {
-        mask.mapPointIndexes(function (idx) {
+    _.each(exclusionMasks, (mask) => {
+        mask.mapPointIndexes((idx) => {
             numMasksSatisfiedByPointID[idx] = 0;
         });
-        mask.mapEdgeIndexes(function (idx) {
+        mask.mapEdgeIndexes((idx) => {
             numMasksSatisfiedByEdgeID[idx] = 0;
         });
     });
 
     // The overall masks per type, made by mask intersection:
-    var result = new DataframeMask(
+    const result = new DataframeMask(
         this,
         [],
         []
     );
 
-    _.each(GraphComponentTypes, function (type) {
-        var limit = limits[type],
+    _.each(GraphComponentTypes, (type) => {
+        const limit = limits[type],
             numMasksSatisfiedByID = type === 'edge' ? numMasksSatisfiedByEdgeID : numMasksSatisfiedByPointID,
             targetMask = result[type];
-        for (var i=0; i<numMasksSatisfiedByID.length; i++) {
+        for (let i=0; i<numMasksSatisfiedByID.length; i++) {
             // Shorthand for "if we've passed all masks":
             if (numMasksSatisfiedByID[i] === numMasks) {
                 targetMask.push(i);
@@ -365,12 +365,12 @@ Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, lim
  * @returns {DataframeMask}
  */
 Dataframe.prototype.getMasksForQuery = function (query, errors) {
-    var attribute = query.attribute,
-        type = query.type,
-        basedOnCurrentDataframe = query.basedOnCurrentDataframe;
+    const basedOnCurrentDataframe = query.basedOnCurrentDataframe;
+    let attribute = query.attribute,
+        type = query.type;
 
     if (attribute) {
-        var normalization = this.normalizeAttributeName(attribute, type);
+        const normalization = this.normalizeAttributeName(attribute, type);
         if (normalization === undefined) {
             errors.push('Unknown frame element');
             return this.fullDataframeMask();
@@ -380,14 +380,14 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
         }
     }
     try {
-        var plan = new ExpressionPlan(this, query.ast);
-        var masks, filterFunc;
+        const plan = new ExpressionPlan(this, query.ast);
+        let masks, filterFunc;
         if (query.ast === undefined) {
             filterFunc = this.filterFuncForQueryObject(query);
             masks = this.getAttributeMask(type, attribute, filterFunc, basedOnCurrentDataframe);
         } else if (plan.isRedundant()) {
             type = plan.rootNode.iterationType();
-            var normalizedAttribute = this.normalizeAttributeName(_.keys(plan.rootNode.identifierNodes())[0], type);
+            const normalizedAttribute = this.normalizeAttributeName(_.keys(plan.rootNode.identifierNodes())[0], type);
             if (normalizedAttribute !== undefined) {
                 attribute = normalizedAttribute.attribute;
             }
@@ -412,15 +412,15 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
  * @returns Function<Object>
  */
 Dataframe.prototype.filterFuncForQueryObject = function (query) {
-    var filterFunc = _.identity;
+    let filterFunc = _.identity;
 
-    var ast = query.ast;
+    let ast = query.ast;
     if (ast !== undefined) {
-        var generator = new ExpressionCodeGenerator('javascript');
-        var columnName = this.normalizeAttributeName(query.attribute, query.type);
+        const generator = new ExpressionCodeGenerator('javascript');
+        const columnName = this.normalizeAttributeName(query.attribute, query.type);
         if (columnName === undefined) {
             // Trust that this is still single-attribute. Doubtful idea.
-            var plan = new ExpressionPlan(this, ast);
+            const plan = new ExpressionPlan(this, ast);
             plan.compile();
             filterFunc = plan.rootNode.executor;
         } else {
@@ -436,7 +436,7 @@ Dataframe.prototype.filterFuncForQueryObject = function (query) {
 
     } else if (query.equals !== undefined) {
         // Exact match or list-contains:
-        var compareValue = query.equals;
+        const compareValue = query.equals;
         if (_.isArray(compareValue)) {
             filterFunc = function (val) {
                 return _.contains(compareValue, val);
@@ -457,9 +457,9 @@ Dataframe.prototype.filterFuncForQueryObject = function (query) {
  * @returns Mask
  */
 Dataframe.prototype.getMaskForPredicateOnAttributeValues = function (attributeValues, filterFunc) {
-    var mask = [];
+    const mask = [];
     if (filterFunc) {
-        _.each(attributeValues, function (val, idx) {
+        _.each(attributeValues, (val, idx) => {
             if (filterFunc(val)) {
                 mask.push(idx);
             }
@@ -474,20 +474,22 @@ Dataframe.prototype.getMaskForPredicateOnAttributeValues = function (attributeVa
  */
 Dataframe.prototype.getAttributeMask = function (type, columnName, filterFunc, basedOnCurrentDataframe) {
     switch (type) {
-        case 'point':
-            var pointMask = this.getPointAttributeMask(columnName, filterFunc, basedOnCurrentDataframe);
+        case 'point': {
+            const pointMask = this.getPointAttributeMask(columnName, filterFunc, basedOnCurrentDataframe);
             return new DataframeMask(
                 this,
                 pointMask,
                 undefined
             );
-        case 'edge':
-            var edgeMask = this.getEdgeAttributeMask(columnName, filterFunc, basedOnCurrentDataframe);
+        }
+        case 'edge': {
+            const edgeMask = this.getEdgeAttributeMask(columnName, filterFunc, basedOnCurrentDataframe);
             return new DataframeMask(
                 this,
                 undefined,
                 edgeMask
             );
+        }
         default:
             throw new Error('Unknown graph component type: ' + type);
     }
@@ -501,13 +503,13 @@ Dataframe.prototype.getAttributeMask = function (type, columnName, filterFunc, b
  * @returns {Mask}
  */
 Dataframe.prototype.getEdgeAttributeMask = function (columnName, filterFunc, basedOnCurrentDataframe) {
-    var attr = this.rawdata.attributes.edge[columnName];
+    const attr = this.rawdata.attributes.edge[columnName];
     if (attr === undefined) {
         return this.fullDataframeMask();
     }
 
-    var values = basedOnCurrentDataframe ? this.getColumnValues(columnName, 'edge') : attr.values;
-    var edgeMask = this.getMaskForPredicateOnAttributeValues(values, filterFunc);
+    const values = basedOnCurrentDataframe ? this.getColumnValues(columnName, 'edge') : attr.values;
+    const edgeMask = this.getMaskForPredicateOnAttributeValues(values, filterFunc);
     return edgeMask;
 };
 
@@ -516,15 +518,16 @@ Dataframe.prototype.getEdgeAttributeMask = function (columnName, filterFunc, bas
  * Returns sorted point mask
  * @param {String} columnName
  * @param {Function<Object>} filterFunc
+ * @param {Boolean} basedOnCurrentDataframe
  * @returns {Mask}
  */
 Dataframe.prototype.getPointAttributeMask = function (columnName, filterFunc, basedOnCurrentDataframe) {
-    var attr = this.rawdata.attributes.point[columnName];
+    const attr = this.rawdata.attributes.point[columnName];
     if (attr === undefined) {
         return this.fullDataframeMask();
     }
 
-    var values = basedOnCurrentDataframe ? this.getColumnValues(columnName, 'point') : attr.values;
+    const values = basedOnCurrentDataframe ? this.getColumnValues(columnName, 'point') : attr.values;
     return this.getMaskForPredicateOnAttributeValues(values, filterFunc);
 };
 
@@ -538,9 +541,9 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
     this.typedArrayCache.newPointColors = new Uint32Array(oldNumPoints);
     this.typedArrayCache.newEdgeColors = new Uint32Array(oldNumEdges * 2);
     this.typedArrayCache.newEdgeHeights = new Uint32Array(oldNumEdges * 2);
-    var numRenderedSplits = this.rawdata.numElements.renderedSplits;
-    var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
-    var numMidEdgeColors = numMidEdgeColorsPerEdge * oldNumEdges;
+    const numRenderedSplits = this.rawdata.numElements.renderedSplits;
+    const numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
+    const numMidEdgeColors = numMidEdgeColorsPerEdge * oldNumEdges;
     this.typedArrayCache.newMidEdgeColors = new Uint32Array(numMidEdgeColors);
 
     this.typedArrayCache.tempPrevForces = new Float32Array(oldNumPoints * 2);
@@ -563,24 +566,23 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
  */
 Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulator) {
     logger.debug('Starting Filtering Data In-Place by DataframeMask');
-    var that = this;
 
     if (masks === this.lastMasks) {
         return Q(false);
     }
 
-    var start = Date.now();
+    const start = Date.now();
 
-    var rawdata = this.rawdata;
+    const rawdata = this.rawdata;
 
-    var rawSimBuffers = rawdata.buffers.simulator;
+    const rawSimBuffers = rawdata.buffers.simulator;
 
     /** @type {DataframeData} */
-    var newData = makeEmptyData();
-    var numPoints = masks.numPoints();
-    var numEdges = masks.numEdges();
-    var oldNumPoints = this.numPoints();
-    var oldNumEdges = this.numEdges();
+    const newData = makeEmptyData();
+    const numPoints = masks.numPoints();
+    const numEdges = masks.numEdges();
+    const oldNumPoints = this.numPoints();
+    const oldNumEdges = this.numEdges();
 
     // TODO: Should this be lazy, or done at startup?
     if (_.keys(this.typedArrayCache).length === 0) {
@@ -594,50 +596,50 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     ///////////////////////////////////////////////////////////////////////////
 
     // Filter out to new edges/points arrays.
-    var filteredEdges = new Uint32Array(this.typedArrayCache.filteredEdges.buffer, 0, numEdges * 2);
-    var originalEdges = rawdata.hostBuffers.unsortedEdges;
+    const filteredEdges = new Uint32Array(this.typedArrayCache.filteredEdges.buffer, 0, numEdges * 2);
+    const originalEdges = rawdata.hostBuffers.unsortedEdges;
 
     // We start unsorted because we're working with the rawdata first.
-    var unsortedEdgeMask = new Uint32Array(this.typedArrayCache.unsortedEdgeMask.buffer, 0, numEdges);
+    const unsortedEdgeMask = new Uint32Array(this.typedArrayCache.unsortedEdgeMask.buffer, 0, numEdges);
 
-    masks.mapEdgeIndexes(function(edgeIndex, i) {
+    masks.mapEdgeIndexes((edgeIndex, i) => {
         unsortedEdgeMask[i] = edgeIndex;
     });
 
     // TODO: See if there's a way to do this without sorting.
     // Sorting is slow as all hell.
-    // Array.prototype.sort.call(unsortedEdgeMask, function (a, b) {
+    // Array.prototype.sort.call(unsortedEdgeMask, (a, b) => {
     //     return a - b;
     // });
 
-    var unsortedMasks = masks;
+    const unsortedMasks = masks;
 
-    // var unsortedMasks = new DataframeMask(
+    // const unsortedMasks = new DataframeMask(
     //     this,
     //     masks.point,
     //     unsortedEdgeMask
     // );
 
-    var pointOriginalLookup = [];
-    masks.mapPointIndexes(function (pointIndex, i) {
+    const pointOriginalLookup = [];
+    masks.mapPointIndexes((pointIndex, i) => {
         pointOriginalLookup[pointIndex] = i;
     });
 
-    _.each(unsortedEdgeMask, function (oldIdx, i) {
+    _.each(unsortedEdgeMask, (oldIdx, i) => {
         filteredEdges[i*2] = pointOriginalLookup[originalEdges[oldIdx*2]];
         filteredEdges[i*2 + 1] = pointOriginalLookup[originalEdges[oldIdx*2 + 1]];
     });
 
-    var edgesFlipped = new Uint32Array(this.typedArrayCache.edgesFlipped.buffer, 0, filteredEdges.length);
+    const edgesFlipped = new Uint32Array(this.typedArrayCache.edgesFlipped.buffer, 0, filteredEdges.length);
 
-    for (var i = 0; i < filteredEdges.length/2; i++) {
+    for (let i = 0; i < filteredEdges.length/2; i++) {
         edgesFlipped[2 * i] = filteredEdges[2 * i + 1];
         edgesFlipped[2 * i + 1] = filteredEdges[2 * i];
     }
 
     newData.hostBuffers.unsortedEdges = filteredEdges;
-    var forwardsEdges = this.encapsulateEdges(filteredEdges, numPoints, rawdata.hostBuffers.forwardsEdges, unsortedMasks, pointOriginalLookup);
-    var backwardsEdges = this.encapsulateEdges(edgesFlipped, numPoints, rawdata.hostBuffers.backwardsEdges, unsortedMasks, pointOriginalLookup);
+    const forwardsEdges = this.encapsulateEdges(filteredEdges, numPoints, rawdata.hostBuffers.forwardsEdges, unsortedMasks, pointOriginalLookup);
+    const backwardsEdges = this.encapsulateEdges(edgesFlipped, numPoints, rawdata.hostBuffers.backwardsEdges, unsortedMasks, pointOriginalLookup);
     newData.hostBuffers.forwardsEdges = forwardsEdges;
     newData.hostBuffers.backwardsEdges = backwardsEdges;
     // newData.hostBuffers.points = rawdata.hostBuffers.points;
@@ -650,14 +652,14 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // Copy non-GPU buffers
     ///////////////////////////////////////////////////////////////////////////
 
-    var numRenderedSplits = rawdata.numElements.renderedSplits;
-    var numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
-    var numMidEdgeColors = numMidEdgeColorsPerEdge * numEdges;
-    var newMidEdgeColors = new Uint32Array(this.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
+    const numRenderedSplits = rawdata.numElements.renderedSplits;
+    const numMidEdgeColorsPerEdge = 2 * (numRenderedSplits + 1);
+    const numMidEdgeColors = numMidEdgeColorsPerEdge * numEdges;
+    const newMidEdgeColors = new Uint32Array(this.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
 
-    masks.mapEdgeIndexes(function (edgeIndex, i) {
+    masks.mapEdgeIndexes((edgeIndex, i) => {
 
-        for (var j = 0; j < numMidEdgeColorsPerEdge; j++) {
+        for (let j = 0; j < numMidEdgeColorsPerEdge; j++) {
             newMidEdgeColors[i * numMidEdgeColorsPerEdge + j] =
                 rawdata.localBuffers.midEdgeColors[edgeIndex * numMidEdgeColorsPerEdge + j];
         }
@@ -668,7 +670,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
 
     // numElements;
     // Copy all old in.
-    _.each(_.keys(rawdata.numElements), function (key) {
+    _.each(_.keys(rawdata.numElements), (key) => {
         newData.numElements[key] = rawdata.numElements[key];
     });
     // Update point/edge counts, since those were filtered,
@@ -683,15 +685,15 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // Copy Buffer Overlays
     ///////////////////////////////////////////////////////////////////////////
 
-    _.each(this.bufferOverlays, function (val/*, key*/) {
-        var alias = val.alias;
-        var type = val.type;
-        var originalName = val.originalName;
+    _.each(this.bufferOverlays, (val/*, key*/) => {
+        const alias = val.alias;
+        const type = val.type;
+        const originalName = val.originalName;
 
-        var newBuffer = that.getLocalBuffer(originalName).constructor(masks.maskSize()[type]);
-        var rawBuffer = that.rawdata.localBuffers[alias];
+        const newBuffer = this.getLocalBuffer(originalName).constructor(masks.maskSize()[type]);
+        const rawBuffer = this.rawdata.localBuffers[alias];
 
-        masks.mapIndexes(type, function (rawIndex, i) {
+        masks.mapIndexes(type, (rawIndex, i) => {
             newBuffer[i] = rawBuffer[rawIndex];
         });
 
@@ -702,46 +704,46 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // SIMULATOR BUFFERS.
     //////////////////////////////////
 
-    var tempPrevForces = new Float32Array(this.typedArrayCache.tempPrevForces.buffer, 0, oldNumPoints * 2);
-    var tempSpringsPos = new Float32Array(this.typedArrayCache.tempSpringsPos.buffer, 0, oldNumEdges * 4);
-    var tempCurPoints = new Float32Array(this.typedArrayCache.tempCurPoints.buffer, 0, oldNumPoints * 2);
+    const tempPrevForces = new Float32Array(this.typedArrayCache.tempPrevForces.buffer, 0, oldNumPoints * 2);
+    const tempSpringsPos = new Float32Array(this.typedArrayCache.tempSpringsPos.buffer, 0, oldNumEdges * 4);
+    const tempCurPoints = new Float32Array(this.typedArrayCache.tempCurPoints.buffer, 0, oldNumPoints * 2);
 
-    var newPrevForces = new Float32Array(this.typedArrayCache.newPrevForces.buffer, 0, numPoints * 2);
-    var newDegrees = new Uint32Array(this.typedArrayCache.newDegrees.buffer, 0, numPoints);
-    var newSpringsPos = new Float32Array(this.typedArrayCache.newSpringsPos.buffer, 0, numEdges * 4);
-    var newCurPoints = new Float32Array(this.typedArrayCache.newCurPoints.buffer, 0, numPoints * 2);
+    const newPrevForces = new Float32Array(this.typedArrayCache.newPrevForces.buffer, 0, numPoints * 2);
+    const newDegrees = new Uint32Array(this.typedArrayCache.newDegrees.buffer, 0, numPoints);
+    const newSpringsPos = new Float32Array(this.typedArrayCache.newSpringsPos.buffer, 0, numEdges * 4);
+    const newCurPoints = new Float32Array(this.typedArrayCache.newCurPoints.buffer, 0, numPoints * 2);
 
-    var filteredSimBuffers = this.data.buffers.simulator;
+    const filteredSimBuffers = this.data.buffers.simulator;
 
     return Q.all([
         rawSimBuffers.prevForces.read(tempPrevForces),
         rawSimBuffers.springsPos.read(tempSpringsPos),
         filteredSimBuffers.curPoints.read(tempCurPoints)
-    ]).spread(function () {
+    ]).spread(() => {
 
         ///////////////////////////////////////
         // Update last locations of points
         ///////////////////////////////////////
 
-        var promise;
+        let promise;
         // TODO: Move this into general initialization
-        if (!that.lastPointPositions) {
-            that.lastPointPositions = new Float32Array(oldNumPoints * 2);
-            _.each(tempCurPoints, function (point, i) {
-                that.lastPointPositions[i] = point;
+        if (!this.lastPointPositions) {
+            this.lastPointPositions = new Float32Array(oldNumPoints * 2);
+            _.each(tempCurPoints, (point, i) => {
+                this.lastPointPositions[i] = point;
             });
 
-            promise = simulator.renderer.createBuffer(that.lastPointPositions, 'curPointsFiltered')
-                .then(function (pointVBO) {
+            promise = simulator.renderer.createBuffer(this.lastPointPositions, 'curPointsFiltered')
+                .then((pointVBO) => {
                     return simulator.cl.createBufferGL(pointVBO, 'curPointsFiltered');
-                }).then(function (pointBuf) {
-                    that.filteredBufferCache.simulator.curPoints = pointBuf;
+                }).then((pointBuf) => {
+                    this.filteredBufferCache.simulator.curPoints = pointBuf;
                 });
 
         } else {
-            that.lastMasks.mapPointIndexes(function (pointIndex, i) {
-                that.lastPointPositions[pointIndex*2] = tempCurPoints[i*2];
-                that.lastPointPositions[pointIndex*2 + 1] = tempCurPoints[i*2 + 1];
+            this.lastMasks.mapPointIndexes((pointIndex, i) => {
+                this.lastPointPositions[pointIndex*2] = tempCurPoints[i*2];
+                this.lastPointPositions[pointIndex*2 + 1] = tempCurPoints[i*2 + 1];
             });
 
             promise = Q({});
@@ -749,34 +751,34 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
 
         return promise;
 
-    }).then(function () {
-        masks.mapPointIndexes(function (oldPointIndex, i) {
+    }).then(() => {
+        masks.mapPointIndexes((oldPointIndex, i) => {
             newPrevForces[i*2] = tempPrevForces[oldPointIndex*2];
             newPrevForces[i*2 + 1] = tempPrevForces[oldPointIndex*2 + 1];
 
             newDegrees[i] = forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
 
-            newCurPoints[i*2] = that.lastPointPositions[oldPointIndex*2];
-            newCurPoints[i*2 + 1] = that.lastPointPositions[oldPointIndex*2 + 1];
+            newCurPoints[i*2] = this.lastPointPositions[oldPointIndex*2];
+            newCurPoints[i*2 + 1] = this.lastPointPositions[oldPointIndex*2 + 1];
         });
 
-        masks.mapEdgeIndexes(function (oldEdgeIdx, i) {
+        masks.mapEdgeIndexes((oldEdgeIdx, i) => {
             newSpringsPos[i*4] = tempSpringsPos[oldEdgeIdx*4];
             newSpringsPos[i*4 + 1] = tempSpringsPos[oldEdgeIdx*4 + 1];
             newSpringsPos[i*4 + 2] = tempSpringsPos[oldEdgeIdx*4 + 2];
             newSpringsPos[i*4 + 3] = tempSpringsPos[oldEdgeIdx*4 + 3];
         });
 
-        var someBufferPropertyNames = ['curPoints', 'prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
+        const someBufferPropertyNames = ['curPoints', 'prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
             'forwardsWorkItems', 'forwardsEdgeStartEndIdxs', 'backwardsEdges',
             'backwardsDegrees', 'backwardsWorkItems', 'backwardsEdgeStartEndIdxs',
             'springsPos'
         ];
-        _.each(someBufferPropertyNames, function (key) {
-            newData.buffers.simulator[key] = that.filteredBufferCache.simulator[key];
+        _.each(someBufferPropertyNames, (key) => {
+            newData.buffers.simulator[key] = this.filteredBufferCache.simulator[key];
         });
 
-        var newBuffers = newData.buffers.simulator;
+        const newBuffers = newData.buffers.simulator;
         return Q.all([
             newBuffers.curPoints.write(newCurPoints),
             newBuffers.prevForces.write(newPrevForces),
@@ -793,13 +795,13 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
         ]);
 
 
-    }).then(function () {
+    }).then(() => {
         // Delete all GPU buffers for values.
-        var promises = [];
-        _.each(GraphComponentTypes, function (type) {
-            var buffers = that.data.buffers[type];
-            _.each(_.keys(buffers), function (name) {
-                //var buf = buffers[name];
+        const promises = [];
+        _.each(GraphComponentTypes, (type) => {
+            const buffers = this.data.buffers[type];
+            _.each(_.keys(buffers), (name) => {
+                //const buf = buffers[name];
                 promises.push(buffers.delete);
                 delete buffers[name];
             });
@@ -807,36 +809,36 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
 
         return Q.all(promises);
 
-    }).then(function () {
+    }).then(() => {
 
         // Just in case, copy over references from raw data to newData
         // This means we don't have to explicitly overwrite everything.
 
-        _.each(_.keys(rawdata.buffers.simulator), function (key) {
+        _.each(_.keys(rawdata.buffers.simulator), (key) => {
             if (newData.buffers.simulator[key] === undefined) {
                 newData.buffers.simulator[key] = rawdata.buffers.simulator[key];
             }
         });
 
-        _.each(_.keys(rawdata.localBuffers), function (key) {
+        _.each(_.keys(rawdata.localBuffers), (key) => {
             if (newData.localBuffers[key] === undefined) {
                 newData.localBuffers[key] = rawdata.localBuffers[key];
             }
         });
 
-        _.each(_.keys(rawdata.numElements), function (key) {
+        _.each(_.keys(rawdata.numElements), (key) => {
             if (newData.numElements[key] === undefined) {
                 newData.numElements[key] = rawdata.numElements[key];
             }
         });
 
-        _.each(_.keys(rawdata.rendererBuffers), function (key) {
+        _.each(_.keys(rawdata.rendererBuffers), (key) => {
             if (newData.rendererBuffers[key] === undefined) {
                 newData.rendererBuffers[key] = rawdata.rendererBuffers[key];
             }
         });
 
-        _.each(_.keys(rawdata.hostBuffers), function (key) {
+        _.each(_.keys(rawdata.hostBuffers), (key) => {
             if (newData.hostBuffers[key] === undefined) {
                 newData.hostBuffers[key] = rawdata.hostBuffers[key];
             }
@@ -845,21 +847,20 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
         // Copy in attributes from raw data
         // Bump versions of every attribute because it's versioned.
         // Also mark as dirty, due to filter.
-        var attributePropertiesToSkip = ['values'];
+        const attributePropertiesToSkip = ['values'];
         // Each namespace of columns
-        _.each(rawdata.attributes, function (cols, colCategoryKey) {
+        _.each(rawdata.attributes, (cols, colCategoryKey) => {
 
             newData.attributes[colCategoryKey] = {};
             // Each column
-            _.each(cols, function (col, colName) {
+            _.each(cols, (col, colName) => {
                 newData.attributes[colCategoryKey][colName] = {};
 
                 // Each key of column object
-                _.each(col, function (prop, propName) {
-                    if (attributePropertiesToSkip.indexOf(propName) !== -1) {
-                        return;
+                _.each(col, (prop, propName) => {
+                    if (attributePropertiesToSkip.indexOf(propName) === -1) {
+                        newData.attributes[colCategoryKey][colName][propName] = prop;
                     }
-                    newData.attributes[colCategoryKey][colName][propName] = prop;
                 });
 
                 // Bump Version
@@ -875,17 +876,17 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
 
         // Bump versions of every buffer.
         // TODO: Decide if this is really necessary.
-        _.each(_.keys(simulator.versions.buffers), function (key) {
+        _.each(_.keys(simulator.versions.buffers), (key) => {
             simulator.versions.buffers[key] += 1;
         });
         simulator.versions.tick++;
 
-        that.lastMasks.point = unsortedMasks.point;
-        that.lastMasks.edge = unsortedMasks.edge;
+        this.lastMasks.point = unsortedMasks.point;
+        this.lastMasks.edge = unsortedMasks.edge;
 
-    }).then(function () {
+    }).then(() => {
         logger.debug('Filter Completed in ' + (Date.now() - start) + ' ms.');
-        that.data = newData;
+        this.data = newData;
     });
 
 };
@@ -895,7 +896,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
 // Data Loading
 //////////////////////////////////////////////////////////////////////////////
 
-var SystemAttributeNames = [
+const SystemAttributeNames = [
     'pointColor', 'pointSize', 'pointTitle', 'pointLabel',
     'edgeLabel', 'edgeTitle', 'edgeHeight',
     'degree'
@@ -904,21 +905,21 @@ var SystemAttributeNames = [
 Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager) {
     this.computedColumnManager = computedColumnManager;
 
-    var attrs = this.data.attributes;
-    var activeColumns = computedColumnManager.getActiveColumns();
+    const attrs = this.data.attributes;
+    const activeColumns = computedColumnManager.getActiveColumns();
 
 
     // TODO: Don't require them to be explicitly loaded in like this with knowldge
     // of internal structure
     // Functions that look up available column names and fetch values
     // should know how to look aside at this.
-    _.each(activeColumns, function (cols, colType) {
+    _.each(activeColumns, (cols, colType) => {
         // If no columns exist in category, make obj
         attrs[colType] = attrs[colType] || {};
 
-        _.each(cols, function (colDesc, name) {
+        _.each(cols, (colDesc, name) => {
 
-            var col = {
+            const col = {
                 name: name,
                 type: colDesc.type,
                 version: 0,
@@ -941,11 +942,11 @@ Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager)
 
 
 Dataframe.prototype.registerNewComputedColumn = function (computedColumnManager, columnType, columnName) {
-    var colDesc = computedColumnManager.getComputedColumnSpec(columnType, columnName);
-    var attrs = this.data.attributes;
+    const colDesc = computedColumnManager.getComputedColumnSpec(columnType, columnName);
+    const attrs = this.data.attributes;
     attrs[columnType] = attrs[columnType] || {};
 
-    var col = {
+    const col = {
         name: columnName,
         type: colDesc.type,
         version: 0,
@@ -980,16 +981,16 @@ Dataframe.prototype.loadAttributesForType = function (attributeObjectsByName, ty
     // decodeStrings(attributeObjectsByName);
     // decodeDates(attributeObjectsByName);
 
-    var nodeTitleField = pickTitleField(this.bufferAliases, attributeObjectsByName, 'pointTitle');
-    var edgeTitleField = pickTitleField(this.bufferAliases, attributeObjectsByName, 'edgeTitle');
+    const nodeTitleField = pickTitleField(this.bufferAliases, attributeObjectsByName, 'pointTitle');
+    const edgeTitleField = pickTitleField(this.bufferAliases, attributeObjectsByName, 'edgeTitle');
 
-    var userDefinedAttributeKeys = _.keys(attributeObjectsByName)
-        .filter(function (name) {
+    const userDefinedAttributeKeys = _.keys(attributeObjectsByName)
+        .filter((name) => {
             return SystemAttributeNames.indexOf(name) === -1;
         })
-        .filter(function (name) { return name !== nodeTitleField && name !== edgeTitleField; });
+        .filter((name) => { return name !== nodeTitleField && name !== edgeTitleField; });
 
-    var userDefinedAttributesByName = _.pick(attributeObjectsByName, function (value, key) {
+    const userDefinedAttributesByName = _.pick(attributeObjectsByName, (value, key) => {
         return userDefinedAttributeKeys.indexOf(key) > -1;
     });
 
@@ -1004,7 +1005,7 @@ Dataframe.prototype.loadAttributesForType = function (attributeObjectsByName, ty
     }
 
     // Mark version as 0, and that they're not dirty.
-    _.each(userDefinedAttributesByName, function (obj, key) {
+    _.each(userDefinedAttributesByName, (obj, key) => {
         obj.version = 0;
         obj.dirty = false;
         obj.numberPerGraphComponent = obj.numberPerGraphComponent || 1;
@@ -1055,7 +1056,7 @@ Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
     let degreeIn = new Array(numElements);
     let degreeOut = new Array(numElements);
 
-    for (var i = 0; i < numElements; i++) {
+    for (let i = 0; i < numElements; i++) {
         degreeIn[i] = inDegrees[i];
         degreeOut[i] = outDegrees[i];
         degree[i] = inDegrees[i] + outDegrees[i];
@@ -1125,31 +1126,31 @@ Dataframe.prototype.writeBuffer = function (name, type, values, simulator) {
  *  @param {Object} buffer - a raw OpenCL buffer object
  */
 Dataframe.prototype.loadHostBuffer = function (name, buffer) {
-    var hostBuffers = this.rawdata.hostBuffers;
+    const hostBuffers = this.rawdata.hostBuffers;
     hostBuffers[name] = buffer;
 };
 
 
 Dataframe.prototype.loadLocalBuffer = function (name, buffer) {
-    var localBuffers = this.rawdata.localBuffers;
+    const localBuffers = this.rawdata.localBuffers;
     localBuffers[name] = buffer;
 };
 
 
 Dataframe.prototype.setLocalBufferValue = function (name, idx, value) {
-    var localBuffers = this.rawdata.localBuffers;
+    const localBuffers = this.rawdata.localBuffers;
     localBuffers[name][idx] = value;
 };
 
 
 Dataframe.prototype.loadRendererBuffer = function (name, buffer) {
-    var rendererBuffers = this.rawdata.rendererBuffers;
+    const rendererBuffers = this.rawdata.rendererBuffers;
     rendererBuffers[name] = buffer;
 };
 
 
 Dataframe.prototype.setHostBufferValue = function (name, idx, value) {
-    var hostBuffers = this.rawdata.hostBuffers;
+    const hostBuffers = this.rawdata.hostBuffers;
     hostBuffers[name][idx] = value;
 };
 
@@ -1160,12 +1161,11 @@ Dataframe.prototype.loadLabels = function (type, labels) {
 
 
 Dataframe.prototype.deleteBuffer = function (name) {
-    var that = this;
-    _.each(BufferTypeKeys, function (type) {
-        _.each(_.keys(that.rawdata.buffers[type]), function (key) {
+    _.each(BufferTypeKeys, (type) => {
+        _.each(_.keys(this.rawdata.buffers[type]), (key) => {
             if (key === name) {
-                that.rawdata.buffers[type][key].delete();
-                that.rawdata.buffers[type][key] = null;
+                this.rawdata.buffers[type][key].delete();
+                this.rawdata.buffers[type][key] = null;
             }
         });
     });
@@ -1191,8 +1191,8 @@ Dataframe.prototype.setNumElements = function (type, num) {
  * @returns {ColumnName}
  */
 Dataframe.prototype.normalizeAttributeName = function (columnName, type) {
-    var idx = columnName ? columnName.lastIndexOf(':') : -1;
-    var name = columnName;
+    const idx = columnName ? columnName.lastIndexOf(':') : -1;
+    let name = columnName;
     if (idx !== -1) {
         type = columnName.substring(0, idx);
         name = columnName.substring(idx + 1);
@@ -1213,8 +1213,8 @@ Dataframe.prototype.getKeyFromName = function (maybeName, type) {
         return this.getKeyFromName(maybeName, 'point') || this.getKeyFromName(maybeName, 'edge');
     }
 
-    var attributes = this.rawdata.attributes[type];
-    var matchKeys = _.filter(_.keys(attributes), function (key) {
+    const attributes = this.rawdata.attributes[type];
+    const matchKeys = _.filter(_.keys(attributes), (key) => {
         return attributes[key].name === maybeName || key === maybeName;
     });
 
@@ -1241,7 +1241,7 @@ Dataframe.prototype.getBufferKeys = function (type) {
 };
 
 Dataframe.prototype.getOriginalNumElements = function (type) {
-    var res = this.rawdata.numElements[type];
+    const res = this.rawdata.numElements[type];
     if (!res && res !== 0) {
         throw new Error('Invalid Num Elements: ' + type);
     }
@@ -1249,7 +1249,7 @@ Dataframe.prototype.getOriginalNumElements = function (type) {
 };
 
 Dataframe.prototype.getNumElements = function (type) {
-    var res = this.data.numElements[type];
+    const res = this.data.numElements[type];
     if (!res && res !== 0) {
         throw new Error('Invalid Num Elements: ' + type);
     }
@@ -1264,26 +1264,27 @@ Dataframe.prototype.getAllBuffers = function (type) {
 
 Dataframe.prototype.overlayLocalBuffer = function (type, name, alias, values) {
     if (values) {
-        var newUnfilteredBuffer = this.getLocalBuffer(name).constructor(values.length); // Used to get constructor, does not care about contents
-        for (var i=0; i< values.length; i++) {
+        // Use getLocalBuffer to match its constructor, does not care about contents.
+        const newUnfilteredBuffer = this.getLocalBuffer(name).constructor(values.length);
+        for (let i=0; i< values.length; i++) {
             newUnfilteredBuffer[i] = values[i];
         }
 
         // Update rawdata (unfiltered)
         this.rawdata.localBuffers[alias] = newUnfilteredBuffer;
 
-        var numFilteredElements = this.lastMasks.maskSize()[type];
+        let numFilteredElements = this.lastMasks.maskSize()[type];
 
         // TODO figure out how to generically assigned to edges (since some are strides of 2, some are 1)
         if (name === 'edgeColors') {
-            numFilteredElements = this.lastMasks.maskSize()[type] * 2;
+            numFilteredElements *= 2;
         }
 
-        var newFilteredBuffer = newUnfilteredBuffer.constructor(numFilteredElements);
+        const newFilteredBuffer = newUnfilteredBuffer.constructor(numFilteredElements);
 
         // Filter and toss into data.
         // TODO: This is shared code between filtering code and here.
-        this.lastMasks.mapIndexes(type, function (indexInRaw, i) {
+        this.lastMasks.mapIndexes(type, (indexInRaw, i) => {
             newFilteredBuffer[i] = newUnfilteredBuffer[indexInRaw];
         });
 
@@ -1307,17 +1308,18 @@ Dataframe.prototype.resetLocalBuffer = function (name) {
 };
 
 Dataframe.prototype.hasLocalBuffer = function (name) {
-    var hasDeprecatedExplicitLocalBuffer = this.data.localBuffers[name] !== undefined || this.rawdata.localBuffers[name] !== undefined;
-    var hasComputedLocalBuffer = this.computedColumnManager.hasColumn('localBuffer', name);
+    const hasDeprecatedExplicitLocalBuffer = this.data.localBuffers[name] !== undefined ||
+        this.rawdata.localBuffers[name] !== undefined;
+    const hasComputedLocalBuffer = this.computedColumnManager.hasColumn('localBuffer', name);
     return (hasDeprecatedExplicitLocalBuffer || hasComputedLocalBuffer);
 };
 
 Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
 
-    var data = unfiltered ? this.rawdata : this.data;
+    const data = unfiltered ? this.rawdata : this.data;
 
     if (this.canResetLocalBuffer(name)) {
-        var alias = this.bufferOverlays[name] && this.bufferOverlays[name].alias; // Guard against no overlay
+        const alias = this.bufferOverlays[name] && this.bufferOverlays[name].alias; // Guard against no overlay
         // Prevents a possible race condition resetting a buffer alias/overlay:
         if (this.hasLocalBuffer(alias)) {
             name = alias;
@@ -1326,14 +1328,14 @@ Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
         }
     }
 
-    var deprecatedExplicitlySetValues = data.localBuffers[name];
+    const deprecatedExplicitlySetValues = data.localBuffers[name];
     if (deprecatedExplicitlySetValues) {
         return deprecatedExplicitlySetValues;
     }
 
     // Get values via normal path where they're treated as computed columns.
     // TODO: Deal with "unfiltered code" path. Do we need it with computed columns?
-    var res = this.getColumnValues(name, 'localBuffer');
+    const res = this.getColumnValues(name, 'localBuffer');
 
     if (!res) {
         throw new Error('Invalid Local Buffer: ' + name);
@@ -1344,12 +1346,12 @@ Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
 
 Dataframe.prototype.getHostBuffer = function (name) {
 
-    var deprecatedExplicitlySetValues = this.data.hostBuffers[name];
+    const deprecatedExplicitlySetValues = this.data.hostBuffers[name];
     if (deprecatedExplicitlySetValues) {
         return deprecatedExplicitlySetValues;
     }
 
-    var res = this.getColumnValues(name, 'hostBuffer');
+    const res = this.getColumnValues(name, 'hostBuffer');
 
     if (!res) {
         throw new Error('Invalid Host Buffer: ' + name);
@@ -1359,9 +1361,9 @@ Dataframe.prototype.getHostBuffer = function (name) {
 };
 
 Dataframe.prototype.hasHostBuffer = function (name) {
-
-    var hasDeprecatedExplicitHostBuffer = this.data.hostBuffers[name] !== undefined || this.rawdata.hostBuffers[name] !== undefined;
-    var hasComputedHostBuffer = this.computedColumnManager.hasColumn('hostBuffer', name);
+    const hasDeprecatedExplicitHostBuffer = this.data.hostBuffers[name] !== undefined ||
+        this.rawdata.hostBuffers[name] !== undefined;
+    const hasComputedHostBuffer = this.computedColumnManager.hasColumn('hostBuffer', name);
     return (hasDeprecatedExplicitHostBuffer || hasComputedHostBuffer);
 
 };
@@ -1378,8 +1380,8 @@ Dataframe.prototype.getLabels = function (type) {
 Dataframe.prototype.getBuffer = function (name, type) {
     // TODO: Specialize the 'simulator' type case into its own function.
     // It should be treated differently, since we manually load the buffers
-    var buffers = this.data.buffers[type];
-    var res = buffers[name];
+    const buffers = this.data.buffers[type];
+    const res = buffers[name];
 
     if (type === 'simulator') {
         return res;
@@ -1388,18 +1390,18 @@ Dataframe.prototype.getBuffer = function (name, type) {
     if (res) {
         return Q(res);
     } else {
-        var data = this.data.attributes[type][name].values;
-        var dataType = this.getDataType(name, type);
+        const data = this.data.attributes[type][name].values;
+        const dataType = this.getDataType(name, type);
 
         if (dataType !== 'number') {
             throw new Error('Attempting to get buffer that is non-numeric; data type is: ' + dataType);
         }
 
-        var typedData = new Float32Array(data);
-        var byteLength = typedData.byteLength;
+        const typedData = new Float32Array(data);
+        const byteLength = typedData.byteLength;
 
         return this.simulator.cl.createBuffer(byteLength, '_' + type + '_' + name)
-            .then(function (newBuffer) {
+            .then((newBuffer) => {
                 buffers[name] = newBuffer;
                 return newBuffer.write(typedData);
             });
@@ -1416,7 +1418,7 @@ Dataframe.prototype.globalize = function(index, type) {
 };
 
 Dataframe.prototype.getVersion = function (type, attrName) {
-    var attributes = this.data.attributes[type];
+    const attributes = this.data.attributes[type];
 
     if (!attributes[attrName]) {
         return undefined;
@@ -1424,7 +1426,7 @@ Dataframe.prototype.getVersion = function (type, attrName) {
 
     // If it's a computed column, provide the combination of CC spec version + dataframe version.
     if (attributes[attrName].computed) {
-        var ccVersion = this.computedColumnManager.getColumnVersion(type, attrName);
+        const ccVersion = this.computedColumnManager.getColumnVersion(type, attrName);
         return '' + ccVersion + ':' + attributes[attrName].version;
     }
 
@@ -1438,8 +1440,8 @@ Dataframe.prototype.getVersion = function (type, attrName) {
  */
 Dataframe.prototype.getCell = function (index, type, attrName) {
 
-    var attributes = this.data.attributes[type];
-    var numberPerGraphComponent = attributes[attrName].numberPerGraphComponent;
+    const attributes = this.data.attributes[type];
+    const numberPerGraphComponent = attributes[attrName].numberPerGraphComponent;
 
     // TODO FIXME HACK:
     // So computed column manager can work, we need to pass through calls from here
@@ -1459,7 +1461,7 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
 
     // Check to see if it's computed and version matches that of computed column.
     // Computed column versions reflect dependencies between computed columns.
-    var computedVersionMatches = !(attributes[attrName].computed &&
+    const computedVersionMatches = !(attributes[attrName].computed &&
         (attributes[attrName].computedVersion !== this.computedColumnManager.getColumnVersion(type, attrName))
     );
 
@@ -1469,9 +1471,9 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
         if (numberPerGraphComponent === 1) {
             return attributes[attrName].values[index];
         } else {
-            var arrType = attributes[attrName].arrType || Array;
-            var returnArr = new arrType(numberPerGraphComponent);
-            for (var j = 0; j < returnArr.length; j++) {
+            const ArrayVariant = attributes[attrName].arrType || Array;
+            const returnArr = new ArrayVariant(numberPerGraphComponent);
+            for (let j = 0; j < returnArr.length; j++) {
                 returnArr[j] = attributes[attrName].values[index*numberPerGraphComponent + j];
             }
             return returnArr;
@@ -1480,21 +1482,20 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
 
     // If it's calculated and needs to be recomputed
     if (attributes[attrName].computed && (!computedVersionMatches || attributes[attrName].dirty)) {
-        var returnval = this.computedColumnManager.getValue(this, type, attrName, index);
-        return returnval;
+        return this.computedColumnManager.getValue(this, type, attrName, index);
     }
 
     // If it's not calculated / cached, and filtered use last masks (parent) to index into already
     // calculated values
     if (attributes[attrName].dirty && attributes[attrName].dirty.cause === 'filter') {
-        var parentIndex = this.lastMasks.getIndexByType(type, index);
+        const parentIndex = this.lastMasks.getIndexByType(type, index);
         return this.rawdata.attributes[type][attrName].values[parentIndex];
         if (numberPerGraphComponent === 1) {
             return this.rawdata.attributes[type][attrName].values[parentIndex];
         } else {
-            var arrType = attributes[attrName].arrType || Array;
-            var returnArr = new arrType(numberPerGraphComponent);
-            for (var j = 0; j < returnArr.length; j++) {
+            const ArrayVariant = attributes[attrName].arrType || Array;
+            const returnArr = new ArrayVariant(numberPerGraphComponent);
+            for (let j = 0; j < returnArr.length; j++) {
                 returnArr[j] = this.rawdata.attributes[attrName].values[parentIndex*numberPerGraphComponent + j];
             }
             return returnArr;
@@ -1511,17 +1512,16 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
  * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  */
 Dataframe.prototype.getRowAt = function (index, type) {
-    var origIndex = index; // For clientside metadata
-    var that = this;
+    const origIndex = index; // For client-side metadata
 
-    var row = {};
-    _.each(_.keys(that.data.attributes[type]), function (key) {
+    const row = {};
+    _.each(_.keys(this.data.attributes[type]), (key) => {
         // Skip columns that are prepended with __
         if (key[0] === '_' && key[1] === '_') {
             return;
         }
 
-        row[key] = that.getCell(index, type, key);
+        row[key] = this.getCell(index, type, key);
     });
     row._index = origIndex;
     return row;
@@ -1533,12 +1533,11 @@ Dataframe.prototype.getRowAt = function (index, type) {
  * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  */
 Dataframe.prototype.getRows = function (indices, type) {
-    var that = this;
 
-    indices = indices || _.range(that.data.numElements[type]);
+    indices = indices || _.range(this.data.numElements[type]);
 
-    return _.map(indices, function (index) {
-        return that.getRowAt(index, type);
+    return _.map(indices, (index) => {
+        return this.getRowAt(index, type);
     });
 };
 
@@ -1554,17 +1553,17 @@ Dataframe.prototype.getRowsCompactUnfiltered = function (indices, type) {
 
     // TODO: Should this be generalized for non-serializing purposes? E.g., it's not in
     // the standard lookup path.
-    var attributes = this.rawdata.attributes[type],
+    const attributes = this.rawdata.attributes[type],
         keys = this.getAttributeKeys(type);
 
     indices = indices || _.range(this.data.numElements[type]);
 
-    var lastMasks = this.lastMasks;
+    const lastMasks = this.lastMasks;
 
-    var values = _.map(indices, function (index) {
+    const values = _.map(indices, (index) => {
         index = lastMasks.getIndexByType(type, index);
-        var row = [];
-        _.each(keys, function (key) {
+        const row = [];
+        _.each(keys, (key) => {
             row.push(attributes[key].values[index]);
         });
         return row;
@@ -1582,12 +1581,12 @@ Dataframe.prototype.getDataType = function (columnName, type) {
     return this.rawdata.attributes[type][columnName] && this.rawdata.attributes[type][columnName].type;
 };
 
-var LargeColumnProperties = ['values', 'aggregations'];
 
 Dataframe.prototype.getColumn = function (columnName, type) {
     return _.omit(this.rawdata.attributes[type][columnName], LargeColumnProperties);
 };
 
+const LargeColumnProperties = ['values', 'aggregations'];
 
 /**
  * @typedef {Object} Column
@@ -1608,15 +1607,15 @@ Dataframe.prototype.reIndexArray = function (columnName, type, arr, indexType, a
     }
 
     // Nothing was found, so throw error.
-    throw new Error("Attempted to reindex array with invalid index type: ", columnName, type, indexType);
-}
+    throw new Error('Attempted to reindex array with invalid index type: ', columnName, type, indexType);
+};
 
 
 // TODO: Have this return edge attributes in sorted order, unless
 // explicitly requested to be unsorted (for internal performance reasons)
 Dataframe.prototype.getColumnValues = function (columnName, type) {
 
-    var attributes = this.data.attributes[type];
+    const attributes = this.data.attributes[type];
 
     // TODO FIXME HACK:
     // So computed column manager can work, we need to pass through calls from here
@@ -1634,14 +1633,14 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
 
     // This lets us know if we need to reindex the values,
     // e.g., go from unsorted to sorted.
-    var indexType = attributes[columnName].index;
+    const indexType = attributes[columnName].index;
 
 
     // First try to see if have values already calculated / cached for this frame
 
     // Check to see if it's computed and version matches that of computed column.
     // Computed column versions reflect dependencies between computed columns.
-    var computedVersionMatches = !(attributes[columnName].computed &&
+    const computedVersionMatches = !(attributes[columnName].computed &&
         (attributes[columnName].computedVersion !== this.computedColumnManager.getColumnVersion(type, columnName))
     );
 
@@ -1652,7 +1651,7 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     // If it's calculated and needs to be recomputed
     if (attributes[columnName].computed && (!computedVersionMatches || attributes[columnName].dirty)) {
 
-        var newValues = this.computedColumnManager.getDenseMaterializedArray(this, type, columnName);
+        const newValues = this.computedColumnManager.getDenseMaterializedArray(this, type, columnName);
         attributes[columnName].values = newValues;
         attributes[columnName].dirty = false;
 
@@ -1664,14 +1663,14 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     // then cache the result.
     if (attributes[columnName].dirty && attributes[columnName].dirty.cause === 'filter') {
 
-        var rawAttributes = this.rawdata.attributes[type];
-        var arrType = rawAttributes[columnName].arrType || Array;
-        var numNewValues = this.lastMasks.numByType(type);
-        var numberPerGraphComponent = rawAttributes[columnName].numberPerGraphComponent;
-        var newValues = new arrType(numberPerGraphComponent * numNewValues);
+        const rawAttributes = this.rawdata.attributes[type];
+        const ArrayVariant = rawAttributes[columnName].arrType || Array;
+        const numNewValues = this.lastMasks.numByType(type);
+        const numberPerGraphComponent = rawAttributes[columnName].numberPerGraphComponent;
+        const newValues = new ArrayVariant(numberPerGraphComponent * numNewValues);
 
-        this.lastMasks.mapIndexes(type, function (idx, i) {
-            for (var j = 0; j < numberPerGraphComponent; j++) {
+        this.lastMasks.mapIndexes(type, (idx, i) => {
+            for (let j = 0; j < numberPerGraphComponent; j++) {
                 newValues[numberPerGraphComponent*i + j] = rawAttributes[columnName].values[numberPerGraphComponent*idx + j];
             }
             // newValues.push(rawAttributes[columnName].values[idx]);
@@ -1692,8 +1691,7 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
 // so we can flag them as dirty='CL' or something and know to copy off GPU.
 Dataframe.prototype.getClBuffer = function (cl, columnName, type) {
 
-    var that = this;
-    var attributes = this.data.attributes[type];
+    const attributes = this.data.attributes[type];
 
     // TODO FIXME HACK:
     // So computed column manager can work, we need to pass through calls from here
@@ -1708,7 +1706,7 @@ Dataframe.prototype.getClBuffer = function (cl, columnName, type) {
     // }
 
     // Check to see if our buffer is not dirty, and that we have buffer values.
-    var computedVersionMatches = !(attributes[columnName].computed &&
+    const computedVersionMatches = !(attributes[columnName].computed &&
         (attributes[columnName].computedVersion !== this.computedColumnManager.getColumnVersion(type, columnName))
     );
 
@@ -1719,13 +1717,13 @@ Dataframe.prototype.getClBuffer = function (cl, columnName, type) {
     // Need to fix CL Buffer. Today, naively get all columns and do a full copy.
     // In the future, do this more cleverly (e.g., GPU filter + compact)
 
-    var newValues = this.getColumnValues(columnName, type);
+    const newValues = this.getColumnValues(columnName, type);
 
     // TODO: Add eviction to generic CL Buffer caching.
     return this.getCachedCLBuffer(cl, columnName, type)
-        .then(function (buffer) {
+        .then((buffer) => {
             return buffer.write(newValues);
-        }).then(function (buffer) {
+        }).then((buffer) => {
             attributes[columnName].clBuffer = buffer;
             return buffer;
         });
@@ -1734,18 +1732,18 @@ Dataframe.prototype.getClBuffer = function (cl, columnName, type) {
 
 // TODO: Add eviction to generic CL Buffer caching.
 Dataframe.prototype.getCachedCLBuffer = function (cl, columnName, type) {
-    var desc = this.data.attributes[type][columnName];
-    var arrType = desc.arrType;
+    const desc = this.data.attributes[type][columnName];
+    const arrType = desc.arrType;
 
     if (arrType === Array) {
         throw new Error('Attempted to make CL Buffer for non-typed array: ', columnName, type);
     }
 
-    var graphComponentType = desc.graphComponentType || type;
-    var numElements = this.getNumElements(graphComponentType);
+    const graphComponentType = desc.graphComponentType || type;
+    const numElements = this.getNumElements(graphComponentType);
 
     this.clBufferCache[type] = this.clBufferCache[type] || {};
-    var cache = this.clBufferCache[type];
+    const cache = this.clBufferCache[type];
 
     // TODO: Deal with size not being sufficient.
     if (cache[columnName]) {
@@ -1760,7 +1758,7 @@ Dataframe.prototype.getCachedCLBuffer = function (cl, columnName, type) {
 
     // Not cached, so create and cache
     return cl.createBuffer(numElements * arrType.BYTES_PER_ELEMENT, 'clBuffer_' + type + '_' + columnName)
-        .then(function (buffer) {
+        .then((buffer) => {
             cache[columnName] = buffer;
             return buffer;
         });
@@ -1799,7 +1797,7 @@ Dataframe.prototype.getCachedCLBuffer = function (cl, columnName, type) {
 
 
 Dataframe.prototype.metadataForColumn = function (columnName, type) {
-    var metadata, defs, defsContainer;
+    let metadata, defs, defsContainer;
     if (this.metadata !== undefined) {
         switch (type) {
             case 'point':
@@ -1810,7 +1808,7 @@ Dataframe.prototype.metadataForColumn = function (columnName, type) {
                 break;
         }
     }
-    defs = _.find(defsContainer, function (eachDefs) { return eachDefs[columnName] !== undefined; });
+    defs = _.find(defsContainer, (eachDefs) => { return eachDefs[columnName] !== undefined; });
     if (defs !== undefined) {
         metadata = defs[columnName];
     }
@@ -1822,12 +1820,12 @@ Dataframe.prototype.metadataForColumn = function (columnName, type) {
  * @returns {ColumnAggregation}
  */
 Dataframe.prototype.getColumnAggregations = function(columnName, type, unfiltered) {
-    var dataframeData = (unfiltered ? this.rawdata : this.data);
-    var column = dataframeData.attributes[type][columnName];
+    const dataframeData = (unfiltered ? this.rawdata : this.data);
+    const column = dataframeData.attributes[type][columnName];
     if (column === undefined) { return undefined; }
     if (column.aggregations === undefined) {
         column.aggregations = new ColumnAggregation(this, column, columnName, type);
-        var columnMetadata = this.metadataForColumn(columnName, type);
+        let columnMetadata = this.metadataForColumn(columnName, type);
         if (columnMetadata !== undefined) {
             if (columnMetadata.aggregations !== undefined) {
                 columnMetadata = columnMetadata.aggregations;
@@ -1844,13 +1842,13 @@ Dataframe.prototype.getColumnAggregations = function(columnName, type, unfiltere
  * @returns {Boolean}
  */
 Dataframe.prototype.doesColumnRepresentColorPaletteMap = function (type, columnName) {
-    var aggregations = this.getColumnAggregations(columnName, type, true);
-    var aggType = 'fitsColorPaletteMap';
+    const aggregations = this.getColumnAggregations(columnName, type, true);
+    const aggType = 'fitsColorPaletteMap';
     if (!aggregations.hasAggregationByType(aggType)) {
-        var fits = false;
+        let fits = false;
         if (this.getDataType(columnName, type) === 'color' &&
             aggregations.getAggregationByType('dataType') === 'integer') {
-            var distinctValues = _.map(aggregations.getAggregationByType('distinctValues'), function (x) { return x.distinctValue; });
+            let distinctValues = _.map(aggregations.getAggregationByType('distinctValues'), (x) => x.distinctValue);
             if (_.isEmpty(distinctValues)) {
                 distinctValues = [aggregations.getAggregationByType('minValue'),
                     aggregations.getAggregationByType('maxValue')];
@@ -1881,13 +1879,12 @@ Dataframe.prototype.isAttributeNamePrivate = function (columnName) {
 
 
 Dataframe.prototype.getColumnsByType = function () {
-    var result = {};
-    var that = this;
-    _.each(GraphComponentTypes, function (typeName) {
-        var typeResult = {};
-        var columnNamesPerType = that.getAttributeKeys(typeName);
-        _.each(columnNamesPerType, function (columnName) {
-            var column = that.getColumn(columnName, typeName);
+    const result = {};
+    _.each(GraphComponentTypes, (typeName) => {
+        const typeResult = {};
+        const columnNamesPerType = this.getAttributeKeys(typeName);
+        _.each(columnNamesPerType, (columnName) => {
+            const column = this.getColumn(columnName, typeName);
             typeResult[columnName] = column;
             if (column.name !== undefined && column.name !== columnName) {
                 typeResult[column.name] = column;
@@ -1910,14 +1907,13 @@ Dataframe.prototype.getColumnsByType = function () {
 Dataframe.prototype.serializeRows = function (target, options) {
     // TODO: Async file write.
     options = options || {};
-    var that = this;
-    var toSerialize = {};
+    const toSerialize = {};
 
-    _.each(BufferTypeKeys, function (type) {
+    _.each(BufferTypeKeys, (type) => {
         if (options.compact) {
-            toSerialize[type] = that.getRowsCompactUnfiltered(undefined, type);
+            toSerialize[type] = this.getRowsCompactUnfiltered(undefined, type);
         } else {
-            toSerialize[type] = that.getRows(undefined, type);
+            toSerialize[type] = this.getRows(undefined, type);
         }
     });
 
@@ -1930,14 +1926,13 @@ Dataframe.prototype.serializeRows = function (target, options) {
  */
 Dataframe.prototype.serializeColumns = function (target, options) {
     options = options || {};
-    var that = this;
-    var toSerialize = {};
+    const toSerialize = {};
 
-    _.each(BufferTypeKeys, function (type) {
+    _.each(BufferTypeKeys, (type) => {
         toSerialize[type] = {};
-        var keys = that.getAttributeKeys(type);
-        _.each(keys, function (key) {
-            toSerialize[type][key] = that.getColumnValues(key, type);
+        const keys = this.getAttributeKeys(type);
+        _.each(keys, (key) => {
+            toSerialize[type][key] = this.getColumnValues(key, type);
         });
     });
 
@@ -1947,12 +1942,10 @@ Dataframe.prototype.serializeColumns = function (target, options) {
 /** Return a promise of a string CSV representation of the dataframe
  */
 Dataframe.prototype.formatAsCsv = function (type) {
-    var that = this;
-
-    var compact = that.getRowsCompactUnfiltered(undefined, type);
-    var promiseStringify = Q.denodeify(csv.stringify);
+    const compact = this.getRowsCompactUnfiltered(undefined, type);
+    const promiseStringify = Q.denodeify(csv.stringify);
     console.log('compact header: ', compact.header);
-    var structuredArrays = [compact.header].concat(compact.values);
+    const structuredArrays = [compact.header].concat(compact.values);
 
     return promiseStringify(structuredArrays);
 
@@ -1968,47 +1961,42 @@ Dataframe.prototype.formatAsCsv = function (type) {
 //undefined type signifies both nodes and edges
 Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, type) {
 
-    var that = this;
+    const processAgg = (attribute) => {
 
-    var processAgg = function (attribute, indices) {
-
-        var goalNumberOfBins = binning ? binning._goalNumberOfBins : 0;
-        var binningHint = binning ? binning[attribute] : undefined;
-        var dataType = that.getDataType(attribute, type);
+        const goalNumberOfBins = binning ? binning._goalNumberOfBins : 0;
+        const binningHint = binning ? binning[attribute] : undefined;
+        const dataType = this.getDataType(attribute, type);
 
         if (mode !== 'countBy' && dataType !== 'string') {
-            return that.histogram(attribute, binningHint, goalNumberOfBins, indices, type, dataType);
+            return this.histogram(attribute, binningHint, goalNumberOfBins, indices, type, dataType);
         } else {
-            return that.countBy(attribute, binningHint, indices, type, dataType);
+            return this.countBy(attribute, binningHint, indices, type, dataType);
         }
     };
 
-    var validAttributes = this.getAttributeKeys(type);
-    var keysToAggregate = attributes ? attributes : validAttributes;
+    const validAttributes = this.getAttributeKeys(type);
+    let keysToAggregate = attributes ? attributes : validAttributes;
 
-    keysToAggregate = keysToAggregate.filter(function (val) {
-        return val[0] !== '_';
-    }).filter(function (val) {
-        // Make sure that valid attributes were passed in.
-        return validAttributes.indexOf(val) > -1;
-    });
+    // Make sure that valid non-private attributes were passed in.
+    keysToAggregate = keysToAggregate.filter(
+        (val) => !this.isAttributeNamePrivate(val) && validAttributes.indexOf(val) !== -1);
 
 
-    var chain = Q(); //simulator.otherKernels.histogramKernel.setIndices(simulator, indices);
-    var aggregated = {};
+    let chain = Q(); //simulator.otherKernels.histogramKernel.setIndices(simulator, indices);
+    const aggregated = {};
 
-    _.each(keysToAggregate, function (attribute) {
+    _.each(keysToAggregate, (attribute) => {
 
-        chain = chain.then(function() {
+        chain = chain.then(() => {
             return processAgg(attribute, indices)
-                .then(function (agg) {
+                .then((agg) => {
                     // Store result
                     aggregated[attribute] = agg;
 
                     // Force loop restart before handling next
                     // So async IO can go through, e.g., VBO updates
-                    var waitForNextTick = Q.defer();
-                    process.nextTick(function () {
+                    const waitForNextTick = Q.defer();
+                    process.nextTick(() => {
                         waitForNextTick.resolve();
                     });
                     return waitForNextTick.promise;
@@ -2016,19 +2004,17 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
         });
     });
 
-    return chain.then(function() {
-        return aggregated;
-    });
+    return chain.then(() => aggregated);
 
 
     // Array of promises
-    // var promisedAggregates = _.map(keysToAggregate, function (attribute) {
+    // const promisedAggregates = _.map(keysToAggregate, (attribute) => {
     //     return processAgg(attribute, indices);
     // });
 
-    // return Q.all(promisedAggregates).then(function (aggregated) {
-    //     var ret = {};
-    //     _.each(aggregated, function (agg, idx) {
+    // return Q.all(promisedAggregates).then((aggregated) => {
+    //     const ret = {};
+    //     _.each(aggregated, (agg, idx) => {
     //         ret[keysToAggregate[idx]] = agg;
     //     });
     //     return ret;
@@ -2037,50 +2023,50 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
 
 
 Dataframe.prototype.countBy = function (attribute, binning, indices, type, dataType) {
-    var values = this.getColumnValues(attribute, type);
+    const values = this.getColumnValues(attribute, type);
 
     // TODO: Get this value from a proper source, instead of hard coding.
-    var maxNumBins = 29;
+    const maxNumBins = 29;
 
     if (indices.length === 0) {
         return Q({type: 'nodata'});
     }
 
-    var rawBins = {};
-    for (var i = 0; i < indices.length; i++) {
-        var val = values[i];
+    const rawBins = {};
+    for (let i = 0; i < indices.length; i++) {
+        const val = values[i];
         if (dataTypeUtil.valueSignifiesUndefined(val)) { continue; }
         rawBins[val] = (rawBins[val] || 0) + 1;
     }
 
-    var numBins = Math.min(_.keys(rawBins).length, maxNumBins);
-    var numBinsWithoutOther = numBins - 1;
-    var keys = _.keys(rawBins);
-    var sortedKeys = keys.sort(function (a, b) {
+    const numBins = Math.min(_.keys(rawBins).length, maxNumBins);
+    const numBinsWithoutOther = numBins - 1;
+    const keys = _.keys(rawBins);
+    const sortedKeys = keys.sort((a, b) => {
         return rawBins[b] - rawBins[a];
     });
 
     // Copy over numBinsWithoutOther from rawBins to bins directly.
     // Take the rest and bucket them into '_other'
-    var bins = {}, binValues;
-    _.each(sortedKeys.slice(0, numBinsWithoutOther), function (key) {
+    let bins = {}, binValues;
+    _.each(sortedKeys.slice(0, numBinsWithoutOther), (key) => {
         bins[key] = rawBins[key];
     });
 
 
-    var otherKeys = sortedKeys.slice(numBinsWithoutOther);
+    const otherKeys = sortedKeys.slice(numBinsWithoutOther);
     if (otherKeys.length === 1) {
         bins[otherKeys[0]] = rawBins[otherKeys[0]];
     } else if (otherKeys.length > 1) {
         // TODO ensure that this _other bin can be selected and it turn into a correct AST query.
-        var sum = _.reduce(otherKeys, function (memo, key) {
+        const sum = _.reduce(otherKeys, (memo, key) => {
             return memo + rawBins[key];
         }, 0);
         bins._other = sum;
         binValues = {_other: {representative: '_other', numValues: otherKeys.length}};
     }
 
-    var numValues = _.reduce(_.values(bins), function (memo, num) {
+    const numValues = _.reduce(_.values(bins), (memo, num) => {
         return memo + num;
     }, 0);
 
@@ -2111,30 +2097,30 @@ Dataframe.prototype.countBy = function (attribute, binning, indices, type, dataT
  * @returns {Binning} a binning object
  */
 Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNumberOfBins) {
-    var maxBinCount = 30;
-    var goalBins = numValues > maxBinCount ?
+    const maxBinCount = 30;
+    let goalBins = numValues > maxBinCount ?
         Math.ceil(Math.log(numValues) / Math.log(2)) + 1 :
         Math.ceil(Math.sqrt(numValues));
     goalBins = Math.min(goalBins, maxBinCount); // Cap number of bins.
     goalBins = Math.max(goalBins, 8); // Cap min number of bins.
 
-    var max = aggregations.getAggregationByType('maxValue');
-    var min = aggregations.getAggregationByType('minValue');
+    const max = aggregations.getAggregationByType('maxValue');
+    const min = aggregations.getAggregationByType('minValue');
 
-    var defaultBinning = {
+    const defaultBinning = {
         numBins: 1,
         binWidth: 1,
         minValue: -Infinity,
         maxValue: Infinity
     };
 
-    var numBins;
-    var bottomVal;
-    var topVal;
-    var binWidth;
-    var range = max - min;
-    var isCountBy;
-    var countDistinct = aggregations.getAggregationByType('countDistinct');
+    let numBins;
+    let bottomVal;
+    let topVal;
+    let binWidth;
+    const range = max - min;
+    let isCountBy;
+    const countDistinct = aggregations.getAggregationByType('countDistinct');
     if (isNaN(range) || min === false) { // Implies non-numerical domain. Boolean needs special logic, har.
         numBins = Math.min(countDistinct, maxBinCount);
         bottomVal = min;
@@ -2155,7 +2141,7 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
 
     // Try to find a good division.
     } else {
-        //var goalWidth = range / goalBins;
+        //const goalWidth = range / goalBins;
 
         binWidth = 10;
         numBins = range / binWidth;
@@ -2177,7 +2163,7 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
         }
 
         // Refine by doubling/halving
-        var minBins = Math.max(3, Math.floor(goalBins / 2) - 1);
+        const minBins = Math.max(3, Math.floor(goalBins / 2) - 1);
         while (numBins < minBins || numBins > goalBins) {
             if (numBins < minBins) {
                 binWidth /= 2;
@@ -2215,19 +2201,18 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
 
 // Counts occurrences of type that matches type of time attr.
 Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, start, stop, timeAggregation) {
-    var that = this;
 
     // Compute binning
-    var startDate = new Date(start);
-    var endDate = new Date(stop);
+    const startDate = new Date(start);
+    const endDate = new Date(stop);
 
     //////////////////////////////////////////////////////////////////////////
     // COMPUTE INC / DEC FUNCTIONS
     //////////////////////////////////////////////////////////////////////////
 
 
-    var incFunction;
-    var decFunction;
+    let incFunction;
+    let decFunction;
     // TODO: Rest of time ranges
     if (timeAggregation === 'day') {
         incFunction = function (date) {
@@ -2271,7 +2256,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
 
     // // Before incrementing endDate, check to see if it's already a boundary (in which case we don't)
     // // want to increment
-    // var testDate = new Date(endDate.getTime());
+    // const testDate = new Date(endDate.getTime());
     // decFunction(testDate);
     // if (testDate.getTime() !== endDate.getTime()) {
     //     incFunction(endDate);
@@ -2284,25 +2269,25 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
 
     // TODO: We don't strictly need to compute all cutoffs to bin.
     // We should just compute numBins, width, start, stop like in normal histograms
-    var cutoffs = [startDate];
+    const cutoffs = [startDate];
 
     // Guess how many it would be.
-    var timeA = new Date(start);
-    var timeB = new Date(start);
+    const timeA = new Date(start);
+    const timeB = new Date(start);
     decFunction(timeA);
     incFunction(timeB);
-    var binWidth = timeB.getTime() - timeA.getTime();
+    let binWidth = timeB.getTime() - timeA.getTime();
 
-    var estimatedNumberBins = (endDate.getTime() - startDate.getTime())/binWidth;
-    var MAX_BINS_TIME_HISTOGRAM = 2500;
+    const estimatedNumberBins = (endDate.getTime() - startDate.getTime())/binWidth;
+    const MAX_BINS_TIME_HISTOGRAM = 2500;
 
-    var approximated = false,
+    let approximated = false,
         runningDate, newDate;
     if (estimatedNumberBins > MAX_BINS_TIME_HISTOGRAM) {
 
-        var diff = endDate.getTime() - startDate.getTime();
-        var startNum = startDate.getTime();
-        var step = Math.floor(diff / MAX_BINS_TIME_HISTOGRAM);
+        const diff = endDate.getTime() - startDate.getTime();
+        const startNum = startDate.getTime();
+        const step = Math.floor(diff / MAX_BINS_TIME_HISTOGRAM);
         runningDate = startNum + step;
         while (runningDate < endDate) {
             newDate = new Date(runningDate);
@@ -2314,7 +2299,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     } else {
 
         runningDate = startDate;
-        var backupCount = 0;
+        let backupCount = 0;
         while (runningDate < endDate && backupCount < 100000) {
             newDate = new Date(runningDate.getTime());
             incFunction(newDate);
@@ -2328,7 +2313,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     }
 
     cutoffs.push(endDate);
-    var cutoffNumbers = cutoffs.map(function (val/*, i*/) {
+    const cutoffNumbers = cutoffs.map((val/*, i*/) => {
         return val.getTime();
     });
 
@@ -2337,16 +2322,16 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     //////////////////////////////////////////////////////////////////////////
 
     // Fill bins
-    var numBins = cutoffs.length - 1;
-    var bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
-    var timeValues = this.getColumnValues(timeAttr, timeType);
+    const numBins = cutoffs.length - 1;
+    const bins = Array.apply(null, new Array(numBins)).map(() => { return 0; });
+    const timeValues = this.getColumnValues(timeAttr, timeType);
 
     // COMPUTE BIN WIDTH
-    var binWidthTestDate = new Date(start);
+    const binWidthTestDate = new Date(start);
     decFunction(binWidthTestDate);
-    var bottom = binWidthTestDate.getTime();
+    const bottom = binWidthTestDate.getTime();
     incFunction(binWidthTestDate);
-    var top = binWidthTestDate.getTime();
+    const top = binWidthTestDate.getTime();
 
     // If we have more than 3 bins, we can just take a difference from the middle
     if (cutoffNumbers.length > 3) {
@@ -2356,11 +2341,11 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     }
 
 
-    mask.mapIndexes(timeType, function (idx) {
+    mask.mapIndexes(timeType, (idx) => {
 
-        var value = timeValues[idx];
-        var valueDate = new Date(value);
-        var valueNum = valueDate.getTime();
+        const value = timeValues[idx];
+        const valueDate = new Date(value);
+        const valueNum = valueDate.getTime();
 
         // Because the first and last bins can be variable width (but ONLY those)
         // We need to special case being in the first bucket, and make rest of computations
@@ -2371,11 +2356,11 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
             bins[0]++;
         } else {
             // In any other bin
-            var binId = (((valueNum - cutoffNumbers[1]) / binWidth) | 0) + 1;
+            const binId = (((valueNum - cutoffNumbers[1]) / binWidth) | 0) + 1;
             bins[binId]++;
         }
 
-        // var binId = ((valueNum - cutoffNumbers[0]) / binWidth) | 0;
+        // const binId = ((valueNum - cutoffNumbers[0]) / binWidth) | 0;
         // bins[binId]++;
     });
 
@@ -2383,24 +2368,23 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     // Compute offsets array for visualization purposes
     //////////////////////////////////////////////////////////////////////////
 
-    var widths = [];
-    var i;
-    for (i = 0; i < cutoffNumbers.length - 1; i++) {
+    const widths = [];
+    for (let i = 0; i < cutoffNumbers.length - 1; i++) {
         widths[i] = (cutoffNumbers[i+1] - cutoffNumbers[i])/binWidth;
     }
 
-    var rawOffsets = [];
+    const rawOffsets = [];
     // Compute scan of widths
-    for (i = 0; i < widths.length; i++) {
-        var prev = (i > 0) ? rawOffsets[i-1] : 0;
+    for (let i = 0; i < widths.length; i++) {
+        const prev = (i > 0) ? rawOffsets[i-1] : 0;
         rawOffsets[i] = prev + widths[i];
     }
 
     // Normalize rawOffsets so that they are out of 1.0;
-    var denom = rawOffsets[rawOffsets.length - 1];
-    var offsets = [];
-    for (i = 0; i < rawOffsets.length; i++) {
-        var raw = (i > 0) ? rawOffsets[i-1] : 0;
+    const denom = rawOffsets[rawOffsets.length - 1];
+    const offsets = [];
+    for (let i = 0; i < rawOffsets.length; i++) {
+        const raw = (i > 0) ? rawOffsets[i-1] : 0;
         offsets[i] = (raw / denom);
     }
 
@@ -2408,8 +2392,8 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     // Provide keys for d3
     //////////////////////////////////////////////////////////////////////////
 
-    var keys = _.map(cutoffs, function (d) {
-        var newDate = new Date(d.getTime());
+    const keys = _.map(cutoffs, (d) => {
+        const newDate = new Date(d.getTime());
         decFunction(newDate);
         return timeAggregation + newDate.getTime();
     });
@@ -2441,7 +2425,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
 
     // Disabled because filtering is expensive, and we now have type safety coming from
     // VGraph types.
-    // values = _.filter(values, function (x) { return !isNaN(x)});
+    // values = _.filter(values, (x) => { return !isNaN(x)});
 
     const values = this.getColumnValues(attribute, type);
     const aggregations = this.getColumnAggregations(attribute, type);
@@ -2467,13 +2451,13 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
         bottomVal = minValue;
     }
 
-    //var qDataBuffer = this.getBuffer(attribute, type);
+    //const qDataBuffer = this.getBuffer(attribute, type);
     const binStart = new Float32Array(numBins);
     for (let i = 0; i < numBins; i++) {
         binStart[i] = bottomVal + (binWidth * i);
     }
 
-    //var dataSize = indices.length;
+    //const dataSize = indices.length;
 
     const result = {
         type: binning.isCountBy ? 'countBy' : 'histogram',
@@ -2506,7 +2490,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     // Dead code, exists solely for timing.
     // TODO: Make this a config option.
 
-    bins = Array.apply(null, new Array(numBins)).map(function () { return 0; });
+    bins = Array.apply(null, new Array(numBins)).map(Number.prototype.valueOf, 0);
     binValues = new Array(numBins);
 
     // When iterating through values, we make sure to use the full value array and an
@@ -2524,8 +2508,10 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
             binId = ((value - bottomVal) / binWidth) | 0;
         } else {
             // Least greater-than:
-            binId = _.findIndex(binValues, (binValue) => { return isLessThan(value, binValue); });
-            if (binId < 0) { binId = 0; }
+            binId = _.findIndex(binValues, (binValue) => isLessThan(value, binValue));
+            if (binId < 0) {
+                binId = 0;
+            }
             binId |= 0;
         }
         if (binId > 1e6) {
@@ -2536,7 +2522,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
         if (binValues[binId] === undefined) {
             binValues[binId] = {min: value, max: value, representative: value, isSingular: true};
         }
-        var binDescription = binValues[binId];
+        const binDescription = binValues[binId];
         if (binDescription.representative !== value) {
             binDescription.isSingular = false;
         }
@@ -2556,12 +2542,12 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
 
 
 function pickTitleField (aliases, attributes, field) {
-    var mapped = aliases[field];
+    const mapped = aliases[field];
     if (mapped && mapped in attributes) {
         return mapped;
     } else {
-        var oldDeprecatedNames = [field, 'node', 'label', 'edge'];
-        return _.find(oldDeprecatedNames, function (f) { return f in attributes; });
+        const oldDeprecatedNames = [field, 'node', 'label', 'edge'];
+        return _.find(oldDeprecatedNames, (f) => { return f in attributes; });
     }
 }
 
@@ -2570,7 +2556,7 @@ function roundDownBy(num, multiple) {
         return num;
     }
 
-    var div = num / multiple;
+    const div = num / multiple;
     return multiple * Math.floor(div);
 }
 
@@ -2579,12 +2565,12 @@ function roundUpBy(num, multiple) {
         return num;
     }
 
-    var div = num / multiple;
+    const div = num / multiple;
     return multiple * Math.ceil(div);
 }
 
 function serialize(data, compressFunction, target) {
-    var serialized = JSON.stringify(data);
+    let serialized = JSON.stringify(data);
 
     if (compressFunction) {
         serialized = compressFunction(serialized);
@@ -2595,19 +2581,19 @@ function serialize(data, compressFunction, target) {
 
 function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
 
-    var edgeListTyped = new Uint32Array(edges.length);
-    var mapped = new Uint32Array(edges.length / 2);
-    var i, src, dst, idx;
+    const edgeListTyped = new Uint32Array(edges.length);
+    const mapped = new Uint32Array(edges.length / 2);
+    let i, src, dst, idx;
 
     // If we're filtering and have information on unfiltered data.
     // TODO: Undisable once this is fixed with multi-edge / self edge.
     if (false && oldEncapsulated && masks) {
-        var oldEdges = oldEncapsulated.edgesTyped;
-        var oldPermutation = oldEncapsulated.edgePermutationInverseTyped;
-        var lastOldIdx = 0;
+        const oldEdges = oldEncapsulated.edgesTyped;
+        const oldPermutation = oldEncapsulated.edgePermutationInverseTyped;
+        let lastOldIdx = 0;
 
         // Lookup to see if an edge is included.
-        var edgeLookup = {};
+        const edgeLookup = {};
         for (i = 0; i < edges.length/2; i++) {
             src = edges[i*2];
             dst = edges[i*2 + 1];
@@ -2618,7 +2604,7 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
         }
 
 
-        var mappedMaskInverse = new Uint32Array(oldPermutation.length);
+        const mappedMaskInverse = new Uint32Array(oldPermutation.length);
         for (i = 0; i < mappedMaskInverse.length; i++) {
             mappedMaskInverse[i] = 1;
         }
@@ -2642,7 +2628,7 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
             }
         }
         // Compute Scan of mappedMask:
-        var mappedScan = new Uint32Array(mappedMaskInverse.length);
+        const mappedScan = new Uint32Array(mappedMaskInverse.length);
         mappedScan[0] = mappedMaskInverse[0];
         for (i = 1; i < mappedMaskInverse.length; i++) {
             mappedScan[i] = mappedMaskInverse[i] + mappedScan[i-1];
@@ -2655,14 +2641,14 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
 
     // First time through.
     } else {
-        var maskedEdgeList = new Float64Array(edgeListTyped.buffer);
-        var maskedEdges = new Float64Array(edges.buffer);
+        const maskedEdgeList = new Float64Array(edgeListTyped.buffer);
+        const maskedEdges = new Float64Array(edges.buffer);
 
         for (i = 0; i < mapped.length; i++) {
             mapped[i] = i;
         }
 
-        Array.prototype.sort.call(mapped, function (a, b) {
+        Array.prototype.sort.call(mapped, (a, b) => {
             return (edges[a*2] - edges[b*2] || (edges[a*2 + 1] - edges[b*2 + 1]) || (a - b));
         });
 
@@ -2685,16 +2671,16 @@ function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
 
 function computeWorkItemsTyped(edgesTyped, originals, numPoints) {
      // [ [first edge number from src idx, numEdges from source idx, source idx], ... ]
-    var workItemsTyped = new Int32Array(numPoints*4);
-    var edgeListLastPos = 0;
-    var edgeListLastSrc = edgesTyped[0];
-    var numEdges = edgesTyped.length / 2;
-    for (var i = 0; i < numPoints; i++) {
+    const workItemsTyped = new Int32Array(numPoints*4);
+    let edgeListLastPos = 0;
+    let edgeListLastSrc = edgesTyped[0];
+    const numEdges = edgesTyped.length / 2;
+    for (let i = 0; i < numPoints; i++) {
 
         // Case where node has edges
         if (edgeListLastSrc === i) {
-            var startingIdx = edgeListLastPos;
-            var count = 0;
+            const startingIdx = edgeListLastPos;
+            let count = 0;
             while (edgeListLastPos < numEdges && edgesTyped[edgeListLastPos*2] === i) {
                 count++;
                 edgeListLastPos++;
@@ -2715,16 +2701,16 @@ function computeWorkItemsTyped(edgesTyped, originals, numPoints) {
 }
 
 function computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoints) {
-    //var index = 0;
-    var edgeStartEndIdxsTyped = new Uint32Array(numPoints * 2);
-    for(var i = 0; i < (workItemsTyped.length/4) - 1; i++) {
-        var start = workItemsTyped[i * 4];
+    //const index = 0;
+    const edgeStartEndIdxsTyped = new Uint32Array(numPoints * 2);
+    for(let i = 0; i < (workItemsTyped.length/4) - 1; i++) {
+        const start = workItemsTyped[i * 4];
         if (start === -1) {
             edgeStartEndIdxsTyped[i * 2] = -1;
             edgeStartEndIdxsTyped[i * 2 + 1] = -1;
         } else {
-            var end = workItemsTyped[(i + 1) * 4];
-            var j = i + 1;
+            let end = workItemsTyped[(i + 1) * 4];
+            let j = i + 1;
             while (end < 0 && ((j + 1) < (workItemsTyped.length / 4))) {
                 end = workItemsTyped[(j + 1) * 4];
                 j++;
@@ -2749,27 +2735,27 @@ function computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoint
 
 function computeEdgeHeightInfo (edges) {
 
-    var numEdges = edges.length / 2;
+    const numEdges = edges.length / 2;
 
-    var heights = new Uint32Array(numEdges);
-    var seqLens = new Uint32Array(numEdges);
+    const heights = new Uint32Array(numEdges);
+    const seqLens = new Uint32Array(numEdges);
 
 
-    var prevSrcIdx = -1;
-    var prevDstIdx = -1;
-    var heightCounter = 0;
-    var edgeSeqLen = 1;
+    let prevSrcIdx = -1;
+    let prevDstIdx = -1;
+    let heightCounter = 0;
+    let edgeSeqLen = 1;
 
-    for (var i = 0; i < numEdges; i ++) {
+    for (let i = 0; i < numEdges; i ++) {
 
-        var srcIdx = edges[i*2];
-        var dstIdx = edges[i*2 + 1];
+        const srcIdx = edges[i*2];
+        const dstIdx = edges[i*2 + 1];
 
         if (prevSrcIdx === srcIdx && prevDstIdx === dstIdx) {
             heightCounter++;
         } else {
             heightCounter = 0;
-            var j;
+            let j;
 
             // TODO: Make this faster and clearer
             for (j = i + 1;
@@ -2797,32 +2783,32 @@ function computeEdgeHeightInfo (edges) {
 Dataframe.prototype.encapsulateEdges = function (edges, numPoints, oldEncapsulated, masks, pointOriginalLookup) {
 
     //[[src idx, dest idx, original idx]]
-    var edgeListObj = computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup);
-    var edgesTyped = edgeListObj.edgeListTyped;
-    var originals = edgeListObj.originals;
+    const edgeListObj = computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup);
+    const edgesTyped = edgeListObj.edgeListTyped;
+    const originals = edgeListObj.originals;
 
-    var edgePermutationInverseTyped = originals;
-    // var edgePermutationTyped = originals;
-    var edgePermutationTyped = new Uint32Array(edgesTyped.length / 2);
-    _.each(edgePermutationInverseTyped, function (val, i) {
+    const edgePermutationInverseTyped = originals;
+    // const edgePermutationTyped = originals;
+    const edgePermutationTyped = new Uint32Array(edgesTyped.length / 2);
+    _.each(edgePermutationInverseTyped, (val, i) => {
         edgePermutationTyped[val] = i;
     });
 
     // [ [first edge number from src idx, numEdges from source idx, source idx], ... ]
     //workItemsTyped is a Uint32Array [first edge number from src idx, number of edges from src idx, src idx, 666]
-    var workItemsTyped = computeWorkItemsTyped(edgesTyped, originals, numPoints);
+    const workItemsTyped = computeWorkItemsTyped(edgesTyped, originals, numPoints);
 
-    var degreesTyped = new Uint32Array(numPoints);
-    var srcToWorkItem = new Int32Array(numPoints);
+    const degreesTyped = new Uint32Array(numPoints);
+    const srcToWorkItem = new Int32Array(numPoints);
 
-    for (var i = 0; i < numPoints; i++) {
+    for (let i = 0; i < numPoints; i++) {
         srcToWorkItem[workItemsTyped[i*4 + 2]] = i;
         degreesTyped[workItemsTyped[i*4 + 2]] = workItemsTyped[i*4 + 1];
     }
 
-    var edgeStartEndIdxsTyped = computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoints);
+    const edgeStartEndIdxsTyped = computeEdgeStartEndIdxs(workItemsTyped, edgesTyped, originals, numPoints);
 
-    var {heights, seqLens} = computeEdgeHeightInfo(edgesTyped);
+    const {heights, seqLens} = computeEdgeHeightInfo(edgesTyped);
 
 
     return {
