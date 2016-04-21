@@ -32,7 +32,7 @@ let prevHeader = {elements: {}, bufferByteLengths: {}};
 
 
 function ensurePath(directoryPath) {
-    fs.exists(directoryPath, function (doesExist) {
+    fs.exists(directoryPath, (doesExist) => {
         if (!doesExist) {
             fs.mkdir(directoryPath);
         }
@@ -71,7 +71,7 @@ function staticContentForDataframe (dataframe, type) {
         offsetsView = new Uint32Array(rowCount);
     let currentContentOffset = 0,
         lastContentOffset = currentContentOffset;
-    _.each(labels, function (label, rowIndex) {
+    _.each(labels, (label, rowIndex) => {
         const content = new Buffer(JSON.stringify(label), 'utf8');
         const contentLength = content.length;
         offsetsView[rowIndex] = currentContentOffset;
@@ -98,9 +98,9 @@ function staticContentForDataframe (dataframe, type) {
  * @param {{S3: {String}, BUCKET: {String}}} options
  * @constructor
  */
-function ContentSchema(prefixPath, options) {
-    this.options = options || _.pick(config, ['S3', 'BUCKET']);
-    this.prefixPath = prefixPath || '';
+function ContentSchema(prefixPath = '', options = _.pick(config, ['S3', 'BUCKET'])) {
+    this.options = options;
+    this.prefixPath = prefixPath;
 }
 
 ContentSchema.prototype = {
@@ -181,7 +181,7 @@ module.exports = {
         fs.writeFileSync(path.join(baseDirPath, snapshotName + '.metadata.json'), JSON.stringify(prevHeader));
         const buffers = VBOs.uncompressed;
         const bufferKeys = _.keys(buffers);
-        _.each(bufferKeys, function (bufferKey) {
+        _.each(bufferKeys, (bufferKey) => {
             const vboPath = path.join(baseDirPath, snapshotName + '.' + bufferKey + '.vbo');
             const raw = buffers[bufferKey];
             const buff = new Buffer(raw.byteLength);
@@ -241,26 +241,26 @@ module.exports = {
                 {ContentType: 'application/json', ContentEncoding: 'gzip'}),
             snapshotSchema.uploadPublic('metadata.json', JSON.stringify(metadata),
                 {ContentType: 'application/json', ContentEncoding: 'gzip'})]
-        ).catch(function (err) {
+        ).catch((err) => {
             throw new Error('Failed to upload JSON metadata: ', err.message);
-        }).then(function () {
+        }).then(() => {
             // compressedVBOs attributes are already gzipped:
-            return Q.all(_.select(vboAttributes, function (attributeName) {
+            return Q.all(_.select(vboAttributes, (attributeName) => {
                 return compressedVBOs.hasOwnProperty(attributeName) && !_.isUndefined(compressedVBOs[attributeName]);
-            }).map(function (attributeName) {
+            }).map((attributeName) => {
                 return snapshotSchema.uploadPublic(attributeName + '.vbo', compressedVBOs[attributeName],
                     {shouldCompress: false, ContentEncoding: 'gzip'});
-            })).catch(function (err) {
+            })).catch((err) => {
                 throw new Error('Failed to upload VBOs: ', err.message);
             });
-        }).then(function () {
+        }).then(() => {
             return Q.allSettled([
                 // These are ArrayBuffers, so ask for compression:
                 snapshotSchema.uploadPublic('pointLabels.offsets', pointExport.indexes, {shouldCompress: false}),
                 snapshotSchema.uploadPublic('pointLabels.buffer', pointExport.contents, {shouldCompress: false}),
                 snapshotSchema.uploadPublic('edgeLabels.offsets', edgeExport.indexes, {shouldCompress: false}),
                 snapshotSchema.uploadPublic('edgeLabels.buffer', edgeExport.contents, {shouldCompress: false})]);
-        }).catch (function (err) {
+        }).catch ((err) => {
             throw new Error('Failed to upload label contents: ', err.message);
         });
     },
