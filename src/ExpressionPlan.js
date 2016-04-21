@@ -1,13 +1,13 @@
 'use strict';
 
-var _ = require('underscore');
-var ExpressionCodeGenerator = require('./expressionCodeGenerator.js');
-var DataframeMask = require('./DataframeMask.js');
+const _ = require('underscore');
+const ExpressionCodeGenerator = require('./expressionCodeGenerator.js');
+const DataframeMask = require('./DataframeMask.js');
 
-var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:driver:planner');
+const log         = require('common/logger.js');
+const logger      = log.createLogger('graph-viz:driver:planner');
 
-var ReturnTypes = {
+const ReturnTypes = {
     Positions: 'Positions', // Signifies a predicate, effectively returning a boolean value.
     Values: 'Values' // Signifies an expression returning a value.
 };
@@ -22,15 +22,11 @@ function attributeDataEquals (x, y) {
 
 LocalBindings.prototype = {
     includes: function (attributeData) {
-        return _.any(this.attributes, function (eachAttribute) {
-            return attributeDataEquals(eachAttribute, attributeData);
-        });
+        return _.any(this.attributes, (eachAttribute) => attributeDataEquals(eachAttribute, attributeData));
     },
 
     include: function (attributeData) {
-        var found = _.find(this.attributes, function (eachAttribute) {
-            return attributeDataEquals(eachAttribute, attributeData);
-        });
+        let found = _.find(this.attributes, (eachAttribute) => attributeDataEquals(eachAttribute, attributeData));
         if (found === undefined) {
             found = attributeData;
             this.attributes.push(attributeData);
@@ -39,9 +35,9 @@ LocalBindings.prototype = {
     },
 
     attributesByType: function () {
-        var result = {};
-        _.each(this.attributes, function (eachAttribute) {
-            var type = eachAttribute.type;
+        const result = {};
+        _.each(this.attributes, (eachAttribute) => {
+            const type = eachAttribute.type;
             if (result[type] === undefined) {
                 result[type] = {};
             }
@@ -51,9 +47,9 @@ LocalBindings.prototype = {
     },
 
     attributesByName: function () {
-        var result = {};
-        _.each(this.attributes, function (eachAttribute) {
-            var attribute = eachAttribute.attribute;
+        const result = {};
+        _.each(this.attributes, (eachAttribute) => {
+            const attribute = eachAttribute.attribute;
             if (result[attribute] === undefined) {
                 result[attribute] = eachAttribute;
             }
@@ -62,8 +58,8 @@ LocalBindings.prototype = {
     },
 
     hasIncompatibleTypes: function () {
-        var typeKeys = {};
-        _.each(this.attributes, function (eachAttribute) {
+        const typeKeys = {};
+        _.each(this.attributes, (eachAttribute) => {
             typeKeys[eachAttribute.type] = true;
         });
         return _.keys(typeKeys).length > 1;
@@ -85,7 +81,7 @@ function PlanNode(ast, inputNodes, attributeData) {
 
 PlanNode.prototype = {
     inferBindings: function () {
-        var bindings = new LocalBindings();
+        const bindings = new LocalBindings();
         this.eachNode(function (inputNode) {
             inputNode.eachAttribute(function (attributeData) {
                 bindings.include(attributeData);
@@ -112,7 +108,7 @@ PlanNode.prototype = {
         } else if (this.canRunOnOneColumn()) {
             this.executor = generator.functionForAST(this.ast, {'*': 'value'});
         } else {
-            var planNodeResult = generator.functionForPlanNode(this, dataframe.getColumnsByType());
+            const planNodeResult = generator.functionForPlanNode(this, dataframe.getColumnsByType());
             this.isLocalized = planNodeResult.ast.isLocalized;
             this.executor = planNodeResult.executor;
         }
@@ -127,51 +123,49 @@ PlanNode.prototype = {
      * @param {String} iterationType
      * @returns {Array|DataframeMask}
      */
-    execute: function (dataframe, valuesRequired, iterationType) {
-        if (iterationType === undefined) {
-            iterationType = this.iterationType();
-        } else if (iterationType !== this.iterationType()) {
-            throw new Error('Using an expression of iteration type ' + this.iterationType() + ' within ' + iterationType);
+    execute: function (dataframe, valuesRequired, iterationType = this.iterationType()) {
+        if (iterationType !== this.iterationType()) {
+            throw new Error('Using an expression iterating over ' + this.iterationType() + ' within ' + iterationType);
         }
-        var numElements = dataframe.numByType(iterationType), i= 0, resultValues;
-        var returnType = this.returnType();
+        const numElements = dataframe.numByType(iterationType);
+        let returnType = this.returnType(),
+            resultValues;
         if (this.isConstant()) {
             // map constant values to the iteration types.
             // TODO: don't allocate all this (challenge is combining this return value with other arrays/masks).
             resultValues = new Array(numElements);
-            var value = this.ast.value;
+            const value = this.ast.value;
             //resultValues.fill(this.ast.value);
-            for (i=0; i<numElements; i++) {
+            for (let i=0; i<numElements; i++) {
                 resultValues[i] = value;
             }
             return resultValues;
         } else if (this.canRunOnOneColumn()) {
-            var attributeName = _.find(this.attributeData);
+            const attributeName = _.find(this.attributeData);
             if (valuesRequired && returnType === ReturnTypes.Positions) {
                 returnType = ReturnTypes.Values;
             }
             switch (returnType) {
                 case ReturnTypes.Values:
                     if (this.ast.type === 'Identifier') {
-                        return dataframe.getUnfilteredColumnValues(attributeName.type, attributeName.attribute);
+                        return dataframe.getUnfilteredColumnValues(
+                            attributeName.type, attributeName.attribute);
                     } else {
-                        return dataframe.mapUnfilteredColumnValues(attributeName.type, attributeName.attribute, this.executor);
+                        return dataframe.mapUnfilteredColumnValues(
+                            attributeName.type, attributeName.attribute, this.executor);
                     }
-                    break;
                 case ReturnTypes.Positions:
                 /* falls through */
                 default:
                     return dataframe.getAttributeMask(attributeName.type, attributeName.attribute, this.executor);
             }
         } else {
-            var j, attribute, bindings;
+            let attribute, bindings;
             if (this.isLocalized) {
-                valuesRequired = _.any(this.inputNodes, function (inputNode) {
-                    return inputNode.returnType() === ReturnTypes.Values;
-                });
-                bindings = _.mapObject(this.inputNodes, function (inputNode) {
+                valuesRequired = _.any(this.inputNodes, (inputNode) => inputNode.returnType() === ReturnTypes.Values);
+                bindings = _.mapObject(this.inputNodes, (inputNode) => {
                     if (_.isArray(inputNode)) {
-                        return _.map(inputNode, function (eachNode) {
+                        return _.map(inputNode, (eachNode) => {
                             return eachNode.execute(dataframe, valuesRequired, iterationType);
                         });
                     } else {
@@ -179,16 +173,16 @@ PlanNode.prototype = {
                     }
                 });
             } else {
-                bindings = _.mapObject(this.attributeData, function (attributeName) {
+                bindings = _.mapObject(this.attributeData, (attributeName) => {
                     return dataframe.getUnfilteredColumnValues(attributeName.type, attributeName.attribute);
                 });
             }
-            var bindingKeys = _.keys(bindings);
-            var perElementBindings = _.mapObject(bindings, function () { return undefined; });
+            const bindingKeys = _.keys(bindings);
+            const perElementBindings = _.mapObject(bindings, () => undefined);
             if (this.returnType() === ReturnTypes.Values) {
                 resultValues = new Array(numElements);
-                for (i=0; i<numElements; i++) {
-                    for (j=0; j<bindingKeys.length; j++) {
+                for (let i=0; i<numElements; i++) {
+                    for (let j=0; j<bindingKeys.length; j++) {
                         attribute = bindingKeys[j];
                         perElementBindings[attribute] = bindings[attribute][i];
                     }
@@ -197,12 +191,12 @@ PlanNode.prototype = {
                 return resultValues;
             } else {
                 // TODO FIXME Terrible way to signal that we want to union/intersect/etc some set results:
-                if (_.every(bindings, function (arg) { return arg instanceof DataframeMask; })) {
+                if (_.every(bindings, (arg) => arg instanceof DataframeMask)) {
                     return this.executor.call(bindings);
                 }
-                var mask = [];
-                for (i=0; i<numElements; i++) {
-                    for (j=0; j<bindingKeys.length; j++) {
+                const mask = [];
+                for (let i=0; i<numElements; i++) {
+                    for (let j=0; j<bindingKeys.length; j++) {
                         attribute = bindingKeys[j];
                         perElementBindings[attribute] = bindings[attribute][i];
                     }
@@ -224,8 +218,8 @@ PlanNode.prototype = {
     },
 
     iterationType: function () {
-        var result;
-        _.each(this.attributeData, function (attributeName) {
+        let result;
+        _.each(this.attributeData, (attributeName) => {
             if (result === undefined) {
                 result = attributeName.type;
             }
@@ -234,13 +228,13 @@ PlanNode.prototype = {
     },
 
     eachAttribute: function (attributeIterator) {
-        _.each(this.attributeData, function (attributeName, key) {
+        _.each(this.attributeData, (attributeName, key) => {
             attributeIterator(attributeName, key);
         });
     },
 
     eachNode: function (nodeIterator) {
-        _.each(this.inputNodes, function (eachNode, key) {
+        _.each(this.inputNodes, (eachNode, key) => {
             if (_.isArray(eachNode)) {
                 _.each(eachNode, nodeIterator);
             } else {
@@ -254,10 +248,9 @@ PlanNode.prototype = {
      * @param {Object} result
      * @returns {Object}
      */
-    identifierNodes: function (result) {
-        if (result === undefined) { result = {}; }
+    identifierNodes: function (result = {}) {
         if (this.ast.type === 'Identifier') {
-            var identifierName = this.ast.name;
+            const identifierName = this.ast.name;
             if (result[identifierName] === undefined) { result[identifierName] = []; }
             result[identifierName].push(this);
         }
@@ -278,7 +271,7 @@ PlanNode.prototype = {
         if (this.ast.type === 'Literal') {
             return 0;
         }
-        var identifierNodes = this.identifierNodes();
+        const identifierNodes = this.identifierNodes();
         return _.size(identifierNodes);
     },
 
@@ -357,31 +350,30 @@ ExpressionPlan.prototype = {
      * @return {PlanNode}
      */
     planFromAST: function (ast, dataframe) {
-        var inputProperties = this.codeGenerator.inputPropertiesFromAST(ast);
+        const inputProperties = this.codeGenerator.inputPropertiesFromAST(ast);
         if (inputProperties === undefined) {
             switch (ast.type) {
-                case 'Identifier':
-                    var attributeData = {};
-                    var attributeName = dataframe.normalizeAttributeName(ast.name);
+                case 'Identifier': {
+                    const attributeData = {};
+                    const attributeName = dataframe.normalizeAttributeName(ast.name);
                     if (attributeName !== undefined) {
                         attributeData[attributeName.attribute] = attributeName;
                     }
                     return new PlanNode(ast, undefined, attributeData);
+                }
                 case 'Literal':
                     return new PlanNode(ast);
                 default:
                     throw new Error('Unhandled input to plan: ' + ast.type);
             }
         }
-        var inputResults = _.mapObject(_.pick(ast, inputProperties), function (inputAST) {
+        const inputResults = _.mapObject(_.pick(ast, inputProperties), (inputAST) => {
             if (_.isArray(inputAST)) {
-                return _.map(inputAST, function (eachAST) {
-                    return this.planFromAST(eachAST, dataframe);
-                }.bind(this));
+                return _.map(inputAST, (eachAST) => this.planFromAST(eachAST, dataframe));
             } else {
                 return this.planFromAST(inputAST, dataframe);
             }
-        }.bind(this));
+        });
         return new PlanNode(ast, inputResults);
     }
 };

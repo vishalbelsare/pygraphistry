@@ -1,15 +1,12 @@
 'use strict';
 
-var _ = require('underscore');
+const _ = require('underscore');
 
-var log = require('common/logger.js');
-var logger = log.createLogger('graph-viz', 'graph-viz:expressionCodeGenerator');
+const log = require('common/logger.js');
+const logger = log.createLogger('graph-viz', 'graph-viz:expressionCodeGenerator');
 
 
-function ExpressionCodeGenerator(language) {
-    if (language === undefined) {
-        language = 'JavaScript';
-    }
+function ExpressionCodeGenerator(language = 'JavaScript') {
     this.language = language;
 }
 
@@ -28,12 +25,12 @@ if (!String.prototype.startsWith) {
 
 if (!String.prototype.endsWith) {
     String.prototype.endsWith = function (searchString, position) {
-        var subjectString = this.toString();
+        const subjectString = this.toString();
         if (position === undefined || position > subjectString.length) {
             position = subjectString.length;
         }
         position -= searchString.length;
-        var lastIndex = subjectString.lastIndexOf(searchString, position);
+        const lastIndex = subjectString.lastIndexOf(searchString, position);
         return lastIndex !== -1 && lastIndex === position;
     };
 }
@@ -70,7 +67,7 @@ function propertyAccessExprStringFor (key) {
     return key.match(/\W/) ? 'this[' + literalExpressionFor(key) + ']' : 'this.' + key;
 }
 
-var InputPropertiesByShape = {
+const InputPropertiesByShape = {
     BetweenPredicate: ['start', 'stop', 'value'],
     BinaryExpression: ['left', 'right'],
     CaseExpression: ['value', 'cases', 'elseClause'],
@@ -201,13 +198,13 @@ ExpressionCodeGenerator.prototype = {
     },
 
     expressionForFunctionCall: function (inputFunctionName, args, outerPrecedence) {
-        var safeFunctionName;
-        var precedence = this.precedenceOf('.');
-        var methodCall = function (firstArg, outputFunctionName, restArgs) {
+        let safeFunctionName;
+        const precedence = this.precedenceOf('.');
+        const methodCall = (firstArg, outputFunctionName, restArgs) => {
             return this.wrapSubExpressionPerPrecedences(
                 firstArg + '.' + outputFunctionName + '(' + (restArgs !== undefined ? restArgs.join(', ') : '') + ')',
                 precedence, outerPrecedence);
-        }.bind(this);
+        };
         switch (inputFunctionName.toUpperCase()) {
             case 'DATE':
             case 'TIME':
@@ -348,8 +345,8 @@ ExpressionCodeGenerator.prototype = {
     },
 
     functionForAST: function (ast, bindings) {
-        var source;
-        var body = this.expressionStringForAST(ast, bindings);
+        let source;
+        const body = this.expressionStringForAST(ast, bindings);
         if (this.hasMultipleBindings(bindings)) {
             source = '(function () { return ' + body + '; })';
             logger.info('Evaluating (multi-column)', ast.type, source);
@@ -362,7 +359,7 @@ ExpressionCodeGenerator.prototype = {
     },
 
     transformedASTPerBindings: function (ast, bindings) {
-        return _.mapObject(ast, function (value, key) {
+        return _.mapObject(ast, (value, key) => {
             if (bindings.hasOwnProperty(key)) {
                 return {type: 'Identifier', name: propertyAccessExprStringFor(key)};
             } else {
@@ -372,14 +369,14 @@ ExpressionCodeGenerator.prototype = {
     },
 
     localizedAST: function (ast) {
-        var propertiesToLocalize = this.inputPropertiesFromAST(ast);
-        var localized = _.mapObject(ast, function (arg, key) {
+        const propertiesToLocalize = this.inputPropertiesFromAST(ast);
+        const localized = _.mapObject(ast, (arg, key) => {
             if (_.contains(propertiesToLocalize, key)) {
                 return {type: 'Identifier', name: key};
             } else {
                 return arg;
             }
-        }, this);
+        });
         localized.isLocalized = true;
         return localized;
     },
@@ -393,9 +390,9 @@ ExpressionCodeGenerator.prototype = {
      */
     transformASTForNullGuards: function (ast, attributeData, dataframe) {
         if (this.isPredicate(ast)) {
-            var guards = [];
-            _.each(attributeData, function (attributeName) {
-                var nativeType = dataframe.getDataType(attributeName.attribute, attributeName.type),
+            const guards = [];
+            _.each(attributeData, (attributeName) => {
+                const nativeType = dataframe.getDataType(attributeName.attribute, attributeName.type),
                     identifier = {type: 'Identifier', name: attributeName.type + ':' + attributeName.attribute};
                 switch (nativeType) {
                     case 'float':
@@ -447,7 +444,7 @@ ExpressionCodeGenerator.prototype = {
                         break;
                 }
             });
-            return _.reduce(guards, function (memo, guard) {
+            return _.reduce(guards, (memo, guard) => {
                 return {
                     type: 'BinaryPredicate',
                     operator: 'OR',
@@ -460,8 +457,8 @@ ExpressionCodeGenerator.prototype = {
     },
 
     functionForPlanNode: function (planNode, bindings) {
-        var result = this.planNodeExpressionStringForAST(planNode.ast, bindings);
-        var source = '(function () { return ' + result.expr + '; })';
+        const result = this.planNodeExpressionStringForAST(planNode.ast, bindings);
+        const source = '(function () { return ' + result.expr + '; })';
         logger.info('Evaluating (multi-column)', planNode.ast.type, source);
         result.executor = eval(source); // jshint ignore:line
         return result;
@@ -469,17 +466,17 @@ ExpressionCodeGenerator.prototype = {
 
     /** Evaluate an expression immediately, with no access to any bindings. */
     evaluateExpressionFree: function (ast) {
-        var body = this.expressionStringForAST(ast, {});
+        const body = this.expressionStringForAST(ast, {});
         return eval(body); // jshint ignore:line
     },
 
     regularExpressionLiteralFromLikePattern: function (pattern, escapeChar) {
         if (!escapeChar) { escapeChar = '%'; }
-        var re = new RegExp(escapeChar + '%|' + escapeChar + '_|' + '%|_', 'g');
-        var match;
-        var matches = [];
-        var outputLiteralString = '';
-        var lastMatchIndex = 0;
+        const re = new RegExp(escapeChar + '%|' + escapeChar + '_|' + '%|_', 'g');
+        let match;
+        const matches = [];
+        let outputLiteralString = '';
+        let lastMatchIndex = 0;
         while ((match = re.exec(pattern)) !== null) {
             matches.push(match);
         }
@@ -488,10 +485,10 @@ ExpressionCodeGenerator.prototype = {
         }
         for (var i = 0; i < matches.length; i++) {
             match = matches[i];
-            var patternSegment = pattern.substring(lastMatchIndex, match.index);
+            const patternSegment = pattern.substring(lastMatchIndex, match.index);
             // Avoid adding regex chars unquoted or numbers!
             outputLiteralString = outputLiteralString.concat(escapeRegexNonPattern(patternSegment));
-            var matchString = match[0][0];
+            const matchString = match[0][0];
             lastMatchIndex = match.index + matchString.length;
             if (matchString.length === 2) {
                 // Inline quoted pattern character:
@@ -507,28 +504,28 @@ ExpressionCodeGenerator.prototype = {
             }
         }
         if (lastMatchIndex < pattern.length) {
-            var lastPatternSegment = pattern.substring(lastMatchIndex);
+            const lastPatternSegment = pattern.substring(lastMatchIndex);
             outputLiteralString = outputLiteralString.concat(escapeRegexNonPattern(lastPatternSegment));
         }
         return outputLiteralString;
     },
 
     regexExpressionForLikeOperator: function (ast, bindings, depth, outerPrecedence) {
-        var caseInsensitive = ast.operator.toUpperCase() === 'ILIKE';
-        var escapeChar = '%'; // Could override in AST via "LIKE pattern ESCAPE char"
+        const caseInsensitive = ast.operator.toUpperCase() === 'ILIKE';
+        const escapeChar = '%'; // Could override in AST via "LIKE pattern ESCAPE char"
         if (ast.right.type !== 'Literal') {
             throw Error('Computed text comparison patterns not yet implemented.');
         }
         /** @type {String} */
-        var pattern = ast.right.value;
-        var outputLiteralString = this.regularExpressionLiteralFromLikePattern(pattern, escapeChar);
+        const pattern = ast.right.value;
+        let outputLiteralString = this.regularExpressionLiteralFromLikePattern(pattern, escapeChar);
         outputLiteralString = '/^' + outputLiteralString + '$/';
         if (caseInsensitive) {
             outputLiteralString += 'i';
         }
-        var precedence = this.precedenceOf('.');
-        var arg = this.expressionStringForAST(ast.left, bindings, depth + 1, precedence);
-        var subExprString = arg + '.match(' + outputLiteralString + ')';
+        const precedence = this.precedenceOf('.');
+        const arg = this.expressionStringForAST(ast.left, bindings, depth + 1, precedence);
+        const subExprString = arg + '.match(' + outputLiteralString + ')';
         return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
     },
 
@@ -541,13 +538,13 @@ ExpressionCodeGenerator.prototype = {
      * @returns {string}
      */
     expressionForConditions: function (cases, elseClause, bindings, depth) {
-        var resultStr = '';
-        var precedence = this.precedenceOf('?:');
-        _.each(cases, function (caseExpr) {
-            var conditionArg = this.expressionStringForAST(caseExpr.condition, bindings, depth, precedence),
+        let resultStr = '';
+        const precedence = this.precedenceOf('?:');
+        _.each(cases, (caseExpr) => {
+            const conditionArg = this.expressionStringForAST(caseExpr.condition, bindings, depth, precedence),
                 resultArg = this.expressionStringForAST(caseExpr.result, bindings, depth, precedence);
             resultStr += conditionArg + ' ? ' + resultArg + ' : (';
-        }, this);
+        });
         if (elseClause === undefined) {
             resultStr += 'undefined';
         } else {
@@ -609,13 +606,14 @@ ExpressionCodeGenerator.prototype = {
         if (depth === undefined) {
             depth = 0;
         }
-        var precedence = this.precedenceOf('.'), subExprString;
-        var transformedAST = undefined && this.transformedASTPerBindings(ast, bindings);
-        var localizedAST = this.localizedAST(ast);
-        var depth2 = depth + 1;
-        var localizedArgs = _.mapObject(_.pick(localizedAST, this.inputPropertiesFromAST(ast)), function (arg) {
+        const precedence = this.precedenceOf('.');
+        let subExprString;
+        // const transformedAST = undefined && this.transformedASTPerBindings(ast, bindings);
+        const localizedAST = this.localizedAST(ast);
+        const depth2 = depth + 1;
+        const localizedArgs = _.mapObject(_.pick(localizedAST, this.inputPropertiesFromAST(ast)), (arg) => {
             return this.expressionStringForAST(arg, bindings, depth2, precedence);
-        }, this);
+        });
         switch (ast.type) {
             case 'NotExpression':
                 subExprString = localizedArgs.value + '.complement()';
@@ -631,7 +629,6 @@ ExpressionCodeGenerator.prototype = {
                     default:
                         return {ast: ast, expr: this.expressionStringForAST(ast, bindings, depth2, outerPrecedence)};
                 }
-                break;
             case 'ConditionalExpression':
             case 'CaseExpression':
             case 'BetweenPredicate':
@@ -658,15 +655,12 @@ ExpressionCodeGenerator.prototype = {
      * @param {Number} [outerPrecedence] - Surrounding expression precedence, determines whether result needs ().
      * @returns {String}
      */
-    expressionStringForAST: function (ast, bindings, depth, outerPrecedence) {
+    expressionStringForAST: function (ast, bindings, depth = 0, outerPrecedence = undefined) {
         if (typeof ast === 'string') {
             return ast;
         }
-        if (depth === undefined) {
-            depth = 0;
-        }
-        var subExprString, operator, precedence, args, arg;
-        var depth2 = depth + 1;
+        let subExprString, operator, precedence, args, arg;
+        const depth2 = depth + 1;
         switch (ast.type) {
             case 'NotExpression':
                 precedence = this.precedenceOf('!');
@@ -674,33 +668,33 @@ ExpressionCodeGenerator.prototype = {
                 return this.wrapSubExpressionPerPrecedences('!' + arg, precedence, outerPrecedence);
             case 'BetweenPredicate':
                 precedence = this.precedenceOf('&&');
-                args = _.mapObject(_.pick(ast, InputPropertiesByShape.BetweenPredicate), function (arg) {
+                args = _.mapObject(_.pick(ast, InputPropertiesByShape.BetweenPredicate), (arg) => {
                     return this.expressionStringForAST(arg, bindings, depth2, this.precedenceOf('<='));
-                }, this);
+                });
                 subExprString = args.value + ' >= ' + args.start +
                     ' && ' + args.value + ' <= ' + args.stop;
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'RegexPredicate':
                 precedence = this.precedenceOf('.');
-                args = _.mapObject(_.pick(ast, InputPropertiesByShape.BinaryExpression), function (arg) {
+                args = _.mapObject(_.pick(ast, InputPropertiesByShape.BinaryExpression), (arg) => {
                     return this.expressionStringForAST(arg, bindings, depth2, this.precedenceOf('<='));
-                }, this);
+                });
                 subExprString = '(new RegExp(' + args.right + ')).test(' + args.left + ')';
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
-            case 'LikePredicate':
+            case 'LikePredicate': {
                 if (ast.right.type !== 'Literal') {
                     throw Error('Computed text comparison patterns not yet implemented.');
                 }
-                var pattern = ast.right.value;
+                const pattern = ast.right.value;
                 switch (ast.operator.toUpperCase()) {
-                    case 'LIKE':
+                    case 'LIKE': {
                         precedence = this.precedenceOf('.');
                         arg = this.expressionStringForAST(ast.left, bindings, depth2, precedence);
-                        var prefix, suffix;
-                        var lastPatternIndex = pattern.length - 1;
+                        let prefix, suffix;
+                        const lastPatternIndex = pattern.length - 1;
                         if (pattern.startsWith('%') && pattern.endsWith('%') &&
                             pattern.length > 2 && pattern.match(/%/g).length === 2) {
-                            var substring = pattern.slice(1, lastPatternIndex);
+                            const substring = pattern.slice(1, lastPatternIndex);
                             // ES6 could replace with String.includes():
                             precedence = this.precedenceOf('!==');
                             subExprString = arg + '.indexOf(' + literalExpressionFor(substring) + ') !== -1';
@@ -713,7 +707,7 @@ ExpressionCodeGenerator.prototype = {
                             prefix = pattern.slice(0, lastPatternIndex);
                             subExprString = arg + '.startsWith(' + literalExpressionFor(prefix) + ')';
                         } else {
-                            var index = pattern.indexOf('%');
+                            const index = pattern.indexOf('%');
                             if (index === -1) {
                                 precedence = this.precedenceOf('===');
                                 subExprString = arg + ' === ' + literalExpressionFor(pattern);
@@ -726,12 +720,13 @@ ExpressionCodeGenerator.prototype = {
                             }
                         }
                         return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
+                    }
                     case 'ILIKE':
                         return this.regexExpressionForLikeOperator(ast, bindings, depth, outerPrecedence);
                     default:
                         throw Error('Operator not yet implemented: ' + ast.operator);
                 }
-                break;
+            }
             case 'EqualityPredicate':
             case 'BinaryPredicate':
             case 'BinaryExpression':
@@ -739,24 +734,24 @@ ExpressionCodeGenerator.prototype = {
                 // Maybe InExpression would be a better logic branch:
                 if (operator === 'IN') {
                     precedence = this.precedenceOf('!==');
-                    args = _.map([ast.left, ast.right], function (arg) {
-                        return this.expressionStringForAST(arg, bindings, depth2, precedence);
-                    }, this);
+                    args = _.map([ast.left, ast.right], (subArg) => {
+                        return this.expressionStringForAST(subArg, bindings, depth2, precedence);
+                    });
                     subExprString = args[1] + '.indexOf(' + args[0] + ') !== -1';
                     return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
                 } else if (operator === '**') {
                     precedence = this.precedenceOf('(');
-                    args = _.map([ast.left, ast.right], function (arg) {
-                        return this.expressionStringForAST(arg, bindings, depth2, precedence);
-                    }, this);
+                    args = _.map([ast.left, ast.right], (subArg) => {
+                        return this.expressionStringForAST(subArg, bindings, depth2, precedence);
+                    });
                     subExprString = 'Math.pow(' + args[0] + ', ' + args[1] + ')';
                     return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
                 }
                 operator = this.translateOperator(operator);
                 precedence = this.precedenceOf(operator);
-                args = _.map([ast.left, ast.right], function (arg) {
-                    return this.expressionStringForAST(arg, bindings, depth2, precedence);
-                }, this);
+                args = _.map([ast.left, ast.right], (subArg) => {
+                    return this.expressionStringForAST(subArg, bindings, depth2, precedence);
+                });
                 // Special-case NAN equality/comparison:
                 if (ast.right.type === 'Literal' && ast.right.dataType === 'number' &&
                     isNaN(ast.right.value)) {
@@ -798,11 +793,10 @@ ExpressionCodeGenerator.prototype = {
                     }
                 }
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
-            case 'CastExpression':
-                var value = ast.value;
-                var castValue = value;
+            case 'CastExpression': {
+                const value = ast.value;
                 // This is a load of silly guards because the PEG production for TypeIdentifier needs cleanup:
-                var typeName = ast.type_name;
+                let typeName = ast.type_name;
                 while (typeof typeName !== 'string') {
                     if (typeName.length) {
                         typeName = typeName[0];
@@ -810,51 +804,60 @@ ExpressionCodeGenerator.prototype = {
                         typeName = typeName.name;
                     }
                 }
+                let castValue, castArg;
                 switch (typeName.toLowerCase()) {
                     case 'string':
                         precedence = this.precedenceOf('.');
-                        castValue = this.expressionStringForAST(value, bindings, depth2, precedence) + '.toString()';
+                        castArg = this.expressionStringForAST(value, bindings, depth2, precedence);
+                        castValue = castArg + '.toString()';
                         break;
                     case 'integer':
                         precedence = this.precedenceOf('(');
-                        castValue = 'parseInt(' + this.expressionStringForAST(value, bindings, depth2, precedence) + ')';
+                        castArg = this.expressionStringForAST(value, bindings, depth2, precedence);
+                        castValue = 'parseInt(' + castArg + ')';
                         break;
                     case 'number':
                         precedence = this.precedenceOf('(');
-                        castValue = 'Number(' + this.expressionStringForAST(value, bindings, depth2, precedence) + ')';
+                        castArg = this.expressionStringForAST(value, bindings, depth2, precedence);
+                        castValue = 'Number(' + castArg + ')';
                         break;
                     case 'boolean':
                         precedence = this.precedenceOf('!');
-                        castValue = '!!' + this.expressionStringForAST(value, bindings, depth2, precedence);
+                        castArg = this.expressionStringForAST(value, bindings, depth2, precedence);
+                        castValue = '!!' + castArg;
                         break;
                     case 'null':
-                        castValue = 'null';
+                        castValue = castArg = 'null';
                         break;
                     case 'array':
                         // Wraps the object in a single-slot Array. This is the simplest interpretation but workable:
                         precedence = this.precedenceOf('[');
-                        castValue = '[' + this.expressionStringForAST(value, bindings, depth2, precedence) + ']';
+                        castArg = this.expressionStringForAST(value, bindings, depth2, precedence);
+                        castValue = '[' + castArg + ']';
                         break;
                     case 'date':
                     case 'timestamp':
                         // Should only accept a date string or the number of seconds since the epoch this way:
                         precedence = this.precedenceOf('(');
-                        castValue = 'new Date(' + this.expressionStringForAST(value, bindings, depth2, precedence) + ')';
+                        castArg = this.expressionStringForAST(value, bindings, depth2, precedence);
+                        castValue = 'new Date(' + castArg + ')';
                         break;
                     case 'time':
                         precedence = this.precedenceOf('(');
-                        castValue = 'new Date(' + this.expressionStringForAST(value, bindings, depth2, precedence) + ').getTime()';
+                        castArg = this.expressionStringForAST(value, bindings, depth2, precedence);
+                        castValue = 'new Date(' + castArg + ').getTime()';
                         break;
                     default:
                         throw Error('Unrecognized type: ' + typeName);
                 }
                 return castValue;
-            case 'CaseExpression':
+            }
+            case 'CaseExpression': {
                 // Turns case statement into if statements.
-                var caseComparison = ast.value,
-                    cases = ast.cases;
+                const caseComparison = ast.value;
+                let cases = ast.cases;
                 if (caseComparison !== undefined) {
-                    cases = _.map(cases, function (caseAST) {
+                    cases = _.map(cases, (caseAST) => {
                         return {
                             type: 'EqualityPredicate',
                             operator: '=',
@@ -864,6 +867,7 @@ ExpressionCodeGenerator.prototype = {
                     });
                 }
                 return this.expressionForConditions(cases, ast.elseClause, bindings, depth2);
+            }
             case 'ConditionalExpression':
                 return this.expressionForConditions(ast.cases, ast.elseClause, bindings, depth2);
             case 'CaseBranch':
@@ -871,32 +875,32 @@ ExpressionCodeGenerator.prototype = {
             case 'Literal':
                 return literalExpressionFor(ast.value, ast.dataType);
             case 'ListExpression':
-                args = _.map(ast.elements, function (arg) {
-                    return this.expressionStringForAST(arg, bindings, depth2, this.precedenceOf('('));
-                }, this);
+                args = _.map(ast.elements, (subArg) => {
+                    return this.expressionStringForAST(subArg, bindings, depth2, this.precedenceOf('('));
+                });
                 return '[' + args.join(', ') + ']';
             case 'FunctionCall':
-                args = _.map(ast.arguments, function (arg) {
-                    return this.expressionStringForAST(arg, bindings, depth2, this.precedenceOf('('));
-                }, this);
+                args = _.map(ast.arguments, (subArg) => {
+                    return this.expressionStringForAST(subArg, bindings, depth2, this.precedenceOf('('));
+                });
                 return this.expressionForFunctionCall(ast.callee.name, args, outerPrecedence);
             case 'MemberAccess':
                 precedence = this.precedenceOf('[');
-                args = _.mapObject(_.pick(ast, InputPropertiesByShape.MemberAccess), function (arg) {
+                args = _.mapObject(_.pick(ast, InputPropertiesByShape.MemberAccess), (arg) => {
                     return this.expressionStringForAST(arg, bindings, depth2, precedence);
-                }, this);
+                });
                 subExprString = args.object + '[' + args.property + ']';
                 return this.wrapSubExpressionPerPrecedences(subExprString, precedence, outerPrecedence);
             case 'Identifier':
                 if (this.hasMultipleBindings(bindings)) {
-                    var unsafeInputName = ast.name;
+                    const unsafeInputName = ast.name;
                     // Delete all non-word characters, but keep colons and dots.
-                    var inputName = unsafeInputName.replace(/[^\w:]/, '', 'g');
-                    var inputNameParts = inputName.split(/:/);
+                    const inputName = unsafeInputName.replace(/[^\w:]/, '', 'g');
+                    const inputNameParts = inputName.split(/:/);
                     if (inputNameParts.length === 0) {
                         return 'undefined';
                     }
-                    var scope = bindings;
+                    let scope = bindings;
                     if (inputNameParts.length > 1) {
                         switch (inputNameParts[0]) {
                             case 'point':
@@ -907,8 +911,8 @@ ExpressionCodeGenerator.prototype = {
                                 break;
                         }
                     }
-                    var lastInputPart = inputNameParts[inputNameParts.length - 1];
-                    var contextProperty = scope[lastInputPart];
+                    const lastInputPart = inputNameParts[inputNameParts.length - 1];
+                    let contextProperty = scope[lastInputPart];
                     if (contextProperty === undefined) {
                         contextProperty = inputName;
                     }
