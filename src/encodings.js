@@ -43,7 +43,7 @@ function inferColorScalingSpecFor(summary, variation, defaultDomain, distinctVal
             } else if (binning.bins && _.size(binning.bins) > 0) {
                 // A linear ordering has to trust bin order to make visual sense.
                 if (binning.type === 'countBy') {
-                    domain = _.sortBy(_.keys(binning.bins), function (key) {
+                    domain = _.sortBy(_.keys(binning.bins), (key) => {
                         return binning.bins[key];
                     });
                 } else {
@@ -133,7 +133,7 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
     const summary = aggregations.getSummary();
     let scalingType, domain, range, clamp;
     const defaultDomain = [summary.minValue, summary.maxValue];
-    const distinctValues = _.map(summary.distinctValues, function (x) { return x.distinctValue; });
+    const distinctValues = _.map(summary.distinctValues, (x) => x.distinctValue);
     switch (encodingType) {
         case 'size':
         case 'pointSize':
@@ -218,20 +218,20 @@ function legendForBins (aggregations, scaling, binning) {
                         legend = _.map(binning.bins, (itemCount, index) => scaling(index));
                     }
                 } else {
-                    const sortedBinKeys = _.sortBy(_.keys(binning.bins), function (key) {
+                    const sortedBinKeys = _.sortBy(_.keys(binning.bins), (key) => {
                         if (key === '_other') { return Infinity; } // always shows last
                         return -binning.bins[key];
                     });
-                    legend = _.map(sortedBinKeys, function (key) {
+                    legend = _.map(sortedBinKeys, (key) => {
                         return (key === '_other') ? undefined : scaling(key);
                     });
                 }
             } else if (summary.isNumeric) {
-                legend = _.map(binning.bins, function (itemCount, index) {
+                legend = _.map(binning.bins, (itemCount, index) => {
                     return scaling(minValue + step * index);
                 });
             } else {
-                legend = _.map(binning.bins, function (itemCount, index) {
+                legend = _.map(binning.bins, (itemCount, index) => {
                     const value = binValues !== undefined && binValues[index] ? binValues[index] : index;
                     return scaling(value);
                 });
