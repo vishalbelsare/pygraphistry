@@ -473,6 +473,17 @@ function VizServer(app, socket, cachedVBOs) {
 
     if (!query.falcorClient) {
 
+        this.workbookForQuery(query)
+            .do(null, log.makeRxErrorHandler(socketLogger, 'Setting up a Workbook'))
+            .concat(Observable.never())
+            .subscribe(this.workbookDoc);
+
+        this.workbookDoc
+            .mergeMap((workbookDoc) => this.setupDataset(workbookDoc, query))
+            .do(null, log.makeRxErrorHandler(socketLogger, 'Dataset setup failure'))
+            .concat(Observable.never())
+            .subscribe(this.dataset);
+
         this.dataset
             .map((dataset) => {
                 const { metadata } = dataset;
@@ -486,19 +497,10 @@ function VizServer(app, socket, cachedVBOs) {
             .subscribe(this.renderConfig);
 
         this.workbookDoc
-            .mergeMap((workbookDoc) => this.setupDataset(workbookDoc, query))
-            .concat(Observable.never())
-            .subscribe(this.dataset);
-
-        this.workbookDoc
             .map((workbookDoc) => this.getViewToLoad(workbookDoc, query))
-            .do(null, log.makeRxErrorHandler(socketLogger, 'Getting View from Workbook'))
+            .do(null, log.makeRxErrorHandler(socketLogger, 'Getting a View from a Workbook'))
             .concat(Observable.never())
             .subscribe(this.viewConfig);
-
-        this.workbookForQuery(query)
-            .concat(Observable.never())
-            .subscribe(this.workbookDoc);
 
         this.dataset.subscribe((dataset) => {
             this.resetState(dataset, socket);
@@ -1256,7 +1258,13 @@ VizServer.prototype.setupDataset = function (workbookDoc, query) {
     if (queryDatasetURL === undefined) {
         logger.debug('No dataset in URL; picking random in workbook');
         datasetConfig = _.find(workbookDoc.datasetReferences);
-        datasetURLString = datasetConfig.url;
+        if (datasetConfig === undefined) {
+            const msg = 'No dataset reference available to load';
+            logger.debug(msg);
+            throw new Error(msg);
+        } else {
+            datasetURLString = datasetConfig.url;
+        }
     } else {
         // Using the URL parameter, make a config from the URL:
         datasetURLString = queryDatasetURL.format();
