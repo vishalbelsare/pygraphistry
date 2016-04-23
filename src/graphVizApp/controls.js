@@ -92,13 +92,7 @@ function createStyleElement() {
 
 
 var encodingForLabelParams = [
-    {
-        name: 'labelsEnabled',
-        displayName: 'Show Labels',
-        type: 'bool',
-        value: true
-    },
-    {
+   {
         name: 'labelForegroundColor',
         displayName: 'Text Color',
         type: 'color',
@@ -137,17 +131,24 @@ var encodingForLabelParams = [
         scaling: PercentScale
     },
     {
+        name: 'labelsEnabled',
+        displayName: 'Show Labels',
+        type: 'bool',
+        value: true
+    },
+    {
         name: 'poiEnabled',
         displayName: 'Points of Interest',
         type: 'bool',
         value: true
-    },
+    }/*,
     {
         name: 'displayTimeZone',
         displayName: 'Display Time Zone',
         type: 'text',
         value: ''
-    }
+    },*/
+
 ];
 
 
