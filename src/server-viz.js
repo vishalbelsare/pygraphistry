@@ -91,12 +91,23 @@ function sizeInMBOfVBOs (VBOs) {
     return (vboSizeBytes / (1024 * 1024)).toFixed(1);
 }
 
-function getDataTypesFromValues(values, type, dataframe) {
+function getDataTypesFromValues (values, type, dataframe, debug = false) {
     const dataTypes = {};
     if (values.length > 0) {
-        _.each(_.keys(values[0]), (columnName) => {
+        const columnNames = _.keys(values[0]);
+        _.each(columnNames, (columnName) => {
             dataTypes[columnName] = dataframe.getDataType(columnName, type);
         });
+        if (debug) {
+            _.each(values, (value) => {
+                _.each(columnNames, (columnName) => {
+                    if (!dataTypeUtil.isCompatible(dataTypes[columnName], value)) {
+                        throw new Error('Mismatched data type ' + dataTypes[columnName]
+                            + ' to value: ' + value.toString());
+                    }
+                });
+            });
+        }
     }
     return dataTypes;
 }

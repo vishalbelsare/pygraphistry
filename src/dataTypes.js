@@ -1,5 +1,7 @@
 'use strict';
 
+const _ = require('underscore');
+
 // TODO customize based on user/content preferences:
 const DefaultLocale = 'en-US';
 // TODO customize based on user/content preferences, and/or per column.
@@ -72,6 +74,28 @@ const DataTypesUtils = {
                 return (value) => JSON.stringify(value);
             default:
                 return (value) => value.toString();
+        }
+    },
+
+    isCompatible: function (dataType, value) {
+        switch (dataType) {
+            case 'undefined':
+                return value === undefined;
+            case 'number':
+                return _.isNumber(value);
+            case 'integer':
+                return _.isNumber(value) && parseInt(value) === value;
+            case 'string':
+                return _.isString(value);
+            case 'date':
+            case 'datetime':
+                return _.isDate(value);
+            case 'object':
+                return _.isObject(value);
+            case 'array':
+                return _.isArray(value);
+            default:
+                return true;
         }
     },
 
