@@ -56,7 +56,7 @@ const customAttributeNameByGraphIntType = {
  * @param graph
  * @returns {Object.<AttributeLoader>}
  */
-const attributeLoaders = function(graph) {
+const attributeLoaders = function (graph) {
     return {
         pointSize: {
             load: function (values) {
@@ -232,12 +232,12 @@ const attributeLoaders = function(graph) {
     };
 };
 
-function getDegree(forwardsEdges, backwardsEdges, i) {
+function getDegree (forwardsEdges, backwardsEdges, i) {
     return forwardsEdges.degreesTyped[i] + backwardsEdges.degreesTyped[i];
 }
 
-var MIN_VERTEX_PIXEL_DIAMETER = 5; // Minimum hit target we've decided on.
-var MAX_VERTEX_PIXEL_DIAMETER = 255; // Destination of this data is a UInt8Array, so don't overflow!
+const MIN_VERTEX_PIXEL_DIAMETER = 5; // Minimum hit target we've decided on.
+const MAX_VERTEX_PIXEL_DIAMETER = 255; // Destination of this data is a UInt8Array, so don't overflow!
 
 function calculateAndStoreDefaultPointSizeColumns (graph) {
     const dataframe = graph.dataframe;
@@ -275,7 +275,7 @@ function calculateAndStoreDefaultPointSizeColumns (graph) {
 /**
  * This computes a community identified by the node in {self} ∪ {neighbors} with the highest degree.
  */
-function calculateAndStoreCommunities(graph) {
+function calculateAndStoreCommunities (graph) {
     const dataframe = graph.dataframe;
     const forwardsEdges = dataframe.getColumnValues('forwardsEdges', 'hostBuffer');
     const backwardsEdges = dataframe.getColumnValues('backwardsEdges', 'hostBuffer');
@@ -338,7 +338,7 @@ const OpenTSDBMapper = {
             name: 'community_spinglass',
             transform: function (v) {
                 const palette = util.palettes.qual_palette2;
-                var scale = d3Scale.linear().range([0, palette.length - 1]);
+                const scale = d3Scale.linear().range([0, palette.length - 1]);
                 return _.map(v, (x) => util.int2color(Math.floor(scale(x)), palette));
             }
         },
@@ -429,17 +429,17 @@ const mappers = {
 
 
 function getMapper (mapperKey = 'default') {
-    if (mappers.hasOwnProperty(mapperKey)) {
-        return mappers[mapperKey];
+    if (!mappers.hasOwnProperty(mapperKey)) {
+        logger.warn('Unknown mapper', mapperKey, 'using "default"');
+        mapperKey = 'default';
     }
-    logger.warn('Unknown mapper', mapperKey, 'using "default"');
-    return mappers['default'];
+    return mappers[mapperKey];
 }
 
 
-function wrap(mappings, loaders) {
+function wrap (mappings, loaders) {
     const res = {};
-    for (let a in loaders) {
+    for (const a in loaders) {
         if (loaders.hasOwnProperty(a) && a in mappings) {
             const loader = loaders[a];
             const mapping = mappings[a];
@@ -456,7 +456,7 @@ function wrap(mappings, loaders) {
 }
 
 
-function doWrap(res, mapping, loader) {
+function doWrap (res, mapping, loader) {
     const mapped = res[mapping.name] || [];
 
     if ('transform' in mapping) {
@@ -471,18 +471,16 @@ function doWrap(res, mapping, loader) {
 }
 
 
-function runLoaders(loaders) {
-    const promises = _.map(loaders, (loaderArray) => {
-        return _.map(loaderArray, (loader) => {
-            if (loader.values) {
-                return loader.load(loader.values);
-            } else if (loader.default) {
-                return loader.default();
-            } else {
-                return Q();
-            }
-        });
-    });
+function runLoaders (loaders) {
+    const promises = _.map(loaders, (loaderArray) => _.map(loaderArray, (loader) => {
+        if (loader.values) {
+            return loader.load(loader.values);
+        } else if (loader.default) {
+            return loader.default();
+        } else {
+            return Q();
+        }
+    }));
     const flatPromises = _.flatten(promises, true);
     return Q.all(flatPromises);
 }
@@ -491,7 +489,7 @@ function runLoaders(loaders) {
 /**
  * Load the raw data from the dataset object from S3
 **/
-function load(graph, dataset) {
+function load (graph, dataset) {
     const vg = protoBufDefinitions.VectorGraph.decode(dataset.body);
     logger.trace('attaching vgraph to simulator');
     graph.simulator.vgraph = vg;
@@ -577,7 +575,7 @@ function decode0(graph, vg, metadata) {
     }
 
     let loaders = attributeLoaders(graph);
-    let mapper = getMapper(metadata.mapper);
+    const mapper = getMapper(metadata.mapper);
     loaders = wrap(mapper.mappings, loaders);
     logger.trace('Attribute loaders:', loaders);
 
@@ -624,7 +622,7 @@ function computeInitialPositions(vertexCount, edges, dimensions) {
     const pointsPerRow = vertexCount / (Math.round(Math.sqrt(numComponents)) + 1);
 
     perf.startTiming('graph-viz:data:vgraphloader, weaklycc postprocess');
-    let componentOffsets = [];
+    const componentOffsets = [];
     let cumulativePoints = 0;
     let row = 0;
     let col = 0;
@@ -769,7 +767,8 @@ function punnedTypeFromVector(v, attributeMetadata) {
     }
 
     if ((/color/i).test(v.name)) {
-        let isColorInAPalette = false, sampleValue = v.values[0];
+        let isColorInAPalette = false;
+        const sampleValue = v.values[0];
         if (type === 'number') {
             if (sampleValue > 0 && sampleValue <= 0xFFFFFFFF) {
                 isColorInAPalette = true;
@@ -798,22 +797,12 @@ function punnedTypeFromVector(v, attributeMetadata) {
  */
 function getAttributes0(vg/*, metadata*/) {
     const vectors = getVectors0(vg);
-    const attributeObjects = [];
-
-    _.each(vectors, (v) => {
-        if (v.values.length === 0) {
-            return;
-        }
-
-        attributeObjects.push({
-            name: v.name,
-            target : v.target,
-            type: punnedTypeFromVector(v),
-            values: v.values
-        });
-    });
-
-    return attributeObjects;
+    return _.map(_.filter(vectors, (v) => v.values.length > 0), (v) => ({
+        name: v.name,
+        target: v.target,
+        type: punnedTypeFromVector(v),
+        values: v.values
+    }));
 }
 
 
@@ -986,7 +975,7 @@ function decode1(graph, vg, metadata) {
     }
 
     let loaders = attributeLoaders(graph);
-    let mapper = getMapper(metadata.mapper);
+    const mapper = getMapper(metadata.mapper);
     loaders = wrap(mapper.mappings, loaders);
     logger.trace('Attribute loaders:', loaders);
 
