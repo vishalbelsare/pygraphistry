@@ -218,13 +218,13 @@ const attributeLoaders = function(graph) {
         // PointTitle and edgeTitle as invalid.
         pointTitle: {
             load: function () { return Q(); },
-            type: ['string'],
+            type: ['string', 'number'],
             target: VERTEX,
             default: function () { return Q(); }
         },
         edgeTitle: {
             load: function () { return Q(); },
-            type: ['string'],
+            type: ['string', 'number'],
             target: EDGE,
             default: function () { return Q(); }
 
