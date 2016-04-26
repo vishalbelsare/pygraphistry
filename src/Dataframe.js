@@ -1874,8 +1874,8 @@ Dataframe.prototype.getAttributeKeys = function (type) {
 
 
 Dataframe.prototype.isAttributeNamePrivate = function (columnName) {
-    return columnName[0] === '_' && columnName[1] === '_';
-}
+    return columnName[0] === '_'/* && columnName[1] === '_'*/;
+};
 
 
 Dataframe.prototype.getColumnsByType = function () {
