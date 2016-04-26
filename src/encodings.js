@@ -218,18 +218,14 @@ function legendForBins (aggregations, scaling, binning) {
                         legend = _.map(binning.bins, (itemCount, index) => scaling(index));
                     }
                 } else {
-                    const sortedBinKeys = _.sortBy(_.keys(binning.bins), (key) => {
-                        if (key === '_other') { return Infinity; } // always shows last
-                        return -binning.bins[key];
-                    });
-                    legend = _.map(sortedBinKeys, (key) => {
-                        return (key === '_other') ? undefined : scaling(key);
-                    });
+                    // _other always shows last
+                    const sortedBinKeys = _.sortBy(_.keys(binning.bins),
+                        (key) => (key === '_other') ? Infinity : -binning.bins[key]);
+                    legend = _.map(sortedBinKeys,
+                        (key) => (key === '_other') ? undefined : scaling(key));
                 }
             } else if (summary.isNumeric) {
-                legend = _.map(binning.bins, (itemCount, index) => {
-                    return scaling(minValue + step * index);
-                });
+                legend = _.map(binning.bins, (itemCount, index) => scaling(minValue + step * index));
             } else {
                 legend = _.map(binning.bins, (itemCount, index) => {
                     const value = binValues !== undefined && binValues[index] ? binValues[index] : index;

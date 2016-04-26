@@ -432,7 +432,7 @@ var render = Q.promised(function(renderer) {
         renderer.programs["points"].use();
         renderer.programs["points"].bindVertexAttrib(renderer.buffers.curPoints, "curPos",
             renderer.elementsPerPoint, gl.FLOAT, false,
-            renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0)
+            renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
         renderer.programs["points"].bindVertexAttrib(renderer.buffers.pointSizes, "pointSize",
             1, gl.UNSIGNED_BYTE, false, 0, 0);
         renderer.programs["points"].bindVertexAttrib(renderer.buffers.pointColors, "pointColor",

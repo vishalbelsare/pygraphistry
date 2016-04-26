@@ -1,7 +1,7 @@
 'use strict';
 
 
-var path = require('path'),
+const path = require('path'),
     fs = require('fs'),
     Q = require('q'),
     _ = require('underscore'),
@@ -10,14 +10,14 @@ var path = require('path'),
 
 
 function getShaderSource(id) {
-    var shaderPath = path.resolve(__dirname, '..' ,'shaders', id);
+    const shaderPath = path.resolve(__dirname, '..' ,'shaders', id);
     logger.trace('Fetching source for shader %s at path %s, using fs read', id, shaderPath);
     return Q.denodeify(fs.readFile)(shaderPath, {encoding: 'utf8'});
 }
 
 
 function getKernelSource(id) {
-    var kernelPath = path.resolve(__dirname, '..' ,'kernels', id);
+    const kernelPath = path.resolve(__dirname, '..' ,'kernels', id);
     logger.trace('Fetching source for kernel %s at path %s, using fs read', id, kernelPath);
     return Q.denodeify(fs.readFile)(kernelPath, {encoding: 'utf8'});
 }
@@ -25,22 +25,20 @@ function getKernelSource(id) {
 // Should be used as a (mostly) drop in replacement for Q.all when you want each promise to run sequentially
 // instead of in parallel. It requires an array of functions that produce promises (as opposed to an array of promises)
 function chainQAll (arr) {
-    var values = [];
-    var chain = Q();
+    const values = [];
+    let chain = Q();
 
-    _.each(arr, function (func, i) {
-        chain = chain.then(function () {
-            return func().then(function (val) {
+    _.each(arr, (func, i) => {
+        chain = chain.then(() => {
+            return func().then((val) => {
                 values[i] = val;
-                return;
+                return undefined;
             });
         });
 
     });
 
-    return chain.then(function () {
-        return values;
-    });
+    return chain.then(() => values);
 }
 
 
@@ -50,11 +48,11 @@ function chainQAll (arr) {
  * @returns a promise fulfilled with the HTML Image object, once loaded
  */
 function getImage(url) {
-    var deferred = Q.defer();
+    const deferred = Q.defer();
     try {
-        var img = new Image();
+        const img = new Image();
 
-        img.onload = function() {
+        img.onload = () => {
             logger.trace('Done loading <img>');
 
             deferred.resolve(img);
@@ -78,7 +76,7 @@ function rgb(r, g, b, a) {
 }
 
 
-var palettes = {
+const palettes = {
     palette1: [
         rgb(234,87,61), rgb(251,192,99), rgb(100,176,188), rgb(68,102,153),
         rgb(85,85,119)
@@ -105,8 +103,7 @@ var palettes = {
 };
 
 
-function int2color(val, palette) {
-    palette = palette || palettes.palette1;
+function int2color(val, palette = palettes.palette1) {
     const numColors = palette.length;
     return palette[val % numColors];
 }
@@ -116,8 +113,8 @@ function int2color(val, palette) {
 // Run function and print timing data
 // Curry to create a timed function wrapper
 function perf (perfCallback, name, fn /* args */) {
-    var t0 = Date.now();
-    var res = fn.apply({}, Array.prototype.slice.call(arguments, 3));
+    const t0 = Date.now();
+    const res = fn.apply({}, Array.prototype.slice.call(arguments, 3));
     perfCallback(name, Date.now() - t0, 'ms');
     return res;
 }

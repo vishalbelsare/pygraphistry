@@ -1,11 +1,11 @@
 'use strict';
 
 // TODO customize based on user/content preferences:
-var DefaultLocale = 'en-US';
+const DefaultLocale = 'en-US';
 // TODO customize based on user/content preferences, and/or per column.
-var LocaleCompareOptions = {usage: 'sort', numeric: true};
+const LocaleCompareOptions = {usage: 'sort', numeric: true};
 
-var SupportedDataTypes = [
+const SupportedDataTypes = [
     'number',
     'integer',
     'string',
@@ -16,7 +16,7 @@ var SupportedDataTypes = [
     'object'
 ];
 
-var DataTypesUtils = {
+const DataTypesUtils = {
     numberSignifiesUndefined: function (value) {
         return isNaN(value);
     },
@@ -26,7 +26,7 @@ var DataTypesUtils = {
     },
 
     dateSignifiesUndefined: function (value) {
-        var dateObj = new Date(value);
+        const dateObj = new Date(value);
         return isNaN(dateObj.getTime());
     },
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-//Set jshint to ignore `predef:'io'` in .jshintrc so we can manually define io here
+// Set jshint to ignore `predef:'io'` in .jshintrc so we can manually define io here
 /* global -io */
 
 import Rx from 'rxjs/Rx.KitchenSink';
@@ -51,7 +51,6 @@ const vgwriter    = require('./libs/VGraphWriter.js');
 const compress    = require('node-pigz');
 const config      = require('config')();
 const ExpressionCodeGenerator = require('./expressionCodeGenerator');
-const ComputedColumnSpec = require('./ComputedColumnSpec');
 const RenderNull  = require('./RenderNull.js');
 const NBody = require('./NBody.js');
 
@@ -73,18 +72,18 @@ try {
     logger.debug({message: 'memwatch unavailable', error: e});
 }
 
-/**** GLOBALS ****************************************************/
+/** GLOBALS ****************************************************/
 
 
 const saveAtEachStep = false;
 const defaultSnapshotName = 'snapshot';
 
 
-/**** END GLOBALS ****************************************************/
+/** END GLOBALS ****************************************************/
 
 
 /** Given an Object with buffers as values, returns the sum size in megabytes of all buffers */
-function sizeInMBOfVBOs(VBOs) {
+function sizeInMBOfVBOs (VBOs) {
     const vboSizeBytes =
         _.reduce(
             _.pluck(_.values(VBOs.buffers), 'byteLength'),
@@ -116,7 +115,7 @@ function getDataTypesFromValues(values, type, dataframe) {
  * @param {String} searchFilter
  * @returns {{count: *, values: *, dataTypes: *}}
  */
-function sliceSelection(dataFrame, type, indices, start, end, sortColumnName, ascending, searchFilter) {
+function sliceSelection (dataFrame, type, indices, start, end, sortColumnName, ascending, searchFilter) {
     let values;
     let dataTypes;
 
@@ -174,7 +173,7 @@ function sliceSelection(dataFrame, type, indices, start, end, sortColumnName, as
     return {count: count, values: values, dataTypes: dataTypes};
 }
 
-function getControls(controlsName) {
+function getControls (controlsName) {
     let controls = lConf.controls.default;
     if (controlsName in lConf.controls) {
         controls = lConf.controls[controlsName];
@@ -189,11 +188,11 @@ function getControls(controlsName) {
 VizServer.prototype.resetState = function (dataset, socket) {
     logger.info({socketID: socket.id}, 'RESETTING APP STATE');
 
-    //FIXME explicitly destroy last graph if it exists?
+    // FIXME explicitly destroy last graph if it exists?
 
     // ----- BUFFERS (multiplexed over clients) ----------
-    //Serve most recent compressed binary buffers
-    //TODO reuse across users
+    // Serve most recent compressed binary buffers
+    // TODO reuse across users
     this.lastCompressedVBOs = undefined;
     this.lastMetadata = undefined;
     /** @type {Object.<String,Function>} **/
@@ -201,10 +200,10 @@ VizServer.prototype.resetState = function (dataset, socket) {
 
     this.lastRenderConfig = undefined;
 
-    //Signal to Explicitly Send New VBOs
+    // Signal to Explicitly Send New VBOs
     this.updateVboSubject = new Rx.ReplaySubject(1);
 
-    const createGraph = function (dataset, socket) {
+    const createGraph = function () {
         // TODO: Figure out correct DI/IoC pattern. Is require() sufficient?
         // Otherwise, can we structure this as a DAG constructed of multicast RX streams?
 
@@ -215,17 +214,17 @@ VizServer.prototype.resetState = function (dataset, socket) {
         const dataframe = new Dataframe();
         const qNullRenderer = RenderNull.create(null);
 
-        const qCl = qNullRenderer.then((renderer) => {
-            return cljs.create(renderer, device, vendor);
-        }).fail(log.makeQErrorHandler(logger, 'Failure in CLJS creation'));
+        const qCl = qNullRenderer.then(
+            (renderer) => cljs.create(renderer, device, vendor)
+        ).fail(log.makeQErrorHandler(logger, 'Failure in CLJS creation'));
 
-        const qSimulator = Q.all([qNullRenderer, qCl]).spread((renderer, cl) => {
-            return controls[0].simulator.create(dataframe, renderer, cl, device, vendor, controls);
-        }).fail(log.makeQErrorHandler(logger, 'Cannot create simulator'));
+        const qSimulator = Q.all([qNullRenderer, qCl]).spread((renderer, cl) =>
+            controls[0].simulator.create(dataframe, renderer, cl, device, vendor, controls)
+        ).fail(log.makeQErrorHandler(logger, 'Cannot create simulator'));
 
-        const nBodyInstance = Q.all([qNullRenderer, qSimulator]).spread((renderer, simulator) => {
-            return NBody.create(renderer, simulator, dataframe, device, vendor, controls, socket);
-        }).fail(log.makeQErrorHandler(logger, 'Failure in NBody Creation'));
+        const nBodyInstance = Q.all([qNullRenderer, qSimulator]).spread((renderer, simulator) =>
+            NBody.create(renderer, simulator, dataframe, device, vendor, controls, socket)
+        ).fail(log.makeQErrorHandler(logger, 'Failure in NBody Creation'));
 
         const graph = driver.create(dataset, socket, nBodyInstance);
         return graph;
@@ -234,11 +233,11 @@ VizServer.prototype.resetState = function (dataset, socket) {
 
 
     // ----- ANIMATION ------------------------------------
-    //current animation
+    // current animation
     // this.animationStep = driver.create(dataset, socket);
-    this.animationStep = createGraph(dataset, socket);
+    this.animationStep = createGraph();
 
-    //multicast of current animation's ticks
+    // multicast of current animation's ticks
     this.ticksMulti = this.animationStep.ticks.publish();
     this.ticksMulti.connect();
 
@@ -246,7 +245,7 @@ VizServer.prototype.resetState = function (dataset, socket) {
      * @type {Rx.ReplaySubject}
      */
     this.graph = new Rx.ReplaySubject(1);
-    //make available to all clients
+    // make available to all clients
     this.ticksMulti.take(1).subscribe(this.graph, log.makeRxErrorHandler(logger, logger, 'ticksMulti failure'));
 
     logger.trace('RESET APP STATE.');
@@ -370,19 +369,18 @@ function processAggregateIndices(query, graph, nodeIndices) {
             edge: edgeIndices
         };
 
-        let types = [], attributes = [];
+        const types = [];
+        let attributes = [];
 
         if (query.type) {
             types.push(query.type);
             attributes.push(query.attributes);
         } else {
             types.push('point', 'edge');
-            attributes = _.map(types, (type) => {
-                return  _.chain(query.attributes)
-                    .where({ type: type })
-                    .pluck('name')
-                    .value();
-            });
+            attributes = _.map(types, (type) => _.chain(query.attributes)
+                .where({type: type})
+                .pluck('name')
+                .value());
         }
 
         return Observable
@@ -395,9 +393,7 @@ function processAggregateIndices(query, graph, nodeIndices) {
                     query.binning, query.mode, type
                 );
             })
-            .reduce((memo, item) => {
-                return _.extend(memo, item);
-            }, {});
+            .reduce((memo, item) => _.extend(memo, item), {});
     } catch (err) {
         return Observable.throw(err);
     }
@@ -439,7 +435,7 @@ function failWithMessage (cb, message) {
 
 // Grab user info from socket and add to logger
 // TODO de-duplicate from viz-server's server.js
-function tagUser(query) {
+function tagUser (query) {
     log.addMetadataField({dataset: query.dataset});
 
     if (query.usertag && query.usertag !== 'undefined') {
@@ -447,7 +443,7 @@ function tagUser(query) {
     }
 }
 
-function VizServer(app, socket, cachedVBOs) {
+function VizServer (app, socket, cachedVBOs) {
 
     const socketLogger = logger.child({
         socketID: socket.id
@@ -552,7 +548,7 @@ function VizServer(app, socket, cachedVBOs) {
         });
     });
 
-    this.socket.on('render_config', (_, cb) => {
+    this.socket.on('render_config', (ignore, cb) => {
         this.renderConfig.take(1).subscribe(
             (renderConfig) => {
                 socketLogger.info('Socket on render_config (sending render_config to client)');
@@ -780,7 +776,7 @@ function VizServer(app, socket, cachedVBOs) {
 
             _.each(data.filters, (filter) => {
 
-                const query = filter.query;
+                const {query} = filter;
                 if (!query.type) {
                     query.type = filter.type;
                 }
@@ -807,7 +803,8 @@ function VizServer(app, socket, cachedVBOs) {
                 }
             }
 
-            const agg = dataframe.timeBasedHistogram(combinedMask, data.timeType, data.timeAttr, data.start, data.stop, data.timeAggregation);
+            const agg = dataframe.timeBasedHistogram(
+                combinedMask, data.timeType, data.timeAttr, data.start, data.stop, data.timeAggregation);
             cb({
                 success: true,
                 data: agg
@@ -946,7 +943,7 @@ function VizServer(app, socket, cachedVBOs) {
         );
     });
 
-    this.socket.on('layout_controls', (_, cb) => {
+    this.socket.on('layout_controls', (ignore, cb) => {
         logger.info('Sending layout controls to client');
 
         this.graph.take(1).do((graph) => {
@@ -961,7 +958,7 @@ function VizServer(app, socket, cachedVBOs) {
         });
     });
 
-    this.socket.on('begin_streaming', (_, cb) => {
+    this.socket.on('begin_streaming', (ignore, cb) => {
         this.renderConfig.take(1).subscribe(
             (renderConfig) => {
                 this.beginStreaming(renderConfig, this.colorTexture);
@@ -973,9 +970,10 @@ function VizServer(app, socket, cachedVBOs) {
         );
     });
 
-    this.socket.on('reset_graph', (_, cb) => {
+    this.socket.on('reset_graph', (ignore, cb) => {
         logger.info('reset_graph command');
-        this.dataset.take(1).subscribe((dataset) => {
+        this.dataset.take(1).subscribe(
+            (dataset) => {
                 this.resetState(dataset, this.socket);
                 cb();
             },
@@ -989,7 +987,7 @@ function VizServer(app, socket, cachedVBOs) {
 
             // Exclude prepended with __
             // TODO FIXME treat this in a generic way across UI elements
-            var dataframe = graph.dataframe;
+            const dataframe = graph.dataframe;
             const nodeKeys = dataframe.getAttributeKeys('point')
                 .filter((key) => !dataframe.isAttributeNamePrivate(key));
             const edgeKeys = dataframe.getAttributeKeys('edge')
@@ -1088,10 +1086,7 @@ function VizServer(app, socket, cachedVBOs) {
         this.graph.take(1).do((graph) => {
             const dataframe = graph.dataframe,
                 normalization = dataframe.normalizeAttributeName(query.attribute, query.type);
-            let encodingType = query.encodingType,
-                variation = query.variation,
-                binning = query.binning,
-                timeBounds = query.timeBounds;
+            let {encodingType, variation, binning, timeBounds} = query;
 
             if (normalization === undefined) {
                 failWithMessage(cb, 'No attribute found for: ' + query.attribute + ',' + query.type);
@@ -1140,9 +1135,11 @@ function VizServer(app, socket, cachedVBOs) {
 
                 // TODO FIXME: Have a more robust encoding spec, instead of multiple paths through here
                 if (timeBounds) {
-                    encoding = encodings.inferTimeBoundEncoding(dataframe, type, attributeName, encodingType, timeBounds);
+                    encoding = encodings.inferTimeBoundEncoding(
+                        dataframe, type, attributeName, encodingType, timeBounds);
                 } else {
-                    encoding = encodings.inferEncoding(dataframe, type, attributeName, encodingType, variation, binning);
+                    encoding = encodings.inferEncoding(
+                        dataframe, type, attributeName, encodingType, variation, binning);
                 }
 
             } catch (e) {
@@ -1161,9 +1158,8 @@ function VizServer(app, socket, cachedVBOs) {
                 // TODO don't have ETL magically encode the color space; it doesn't save space, time, code, or style.
                 if (dataframe.doesColumnRepresentColorPaletteMap(type, attributeName)) {
                     wrappedScaling = (x) => palettes.bindings[x];
-                    encoding.legend = _.map(encoding.legend, (sourceValue) => {
-                        return palettes.intToHex(palettes.bindings[sourceValue]);
-                    });
+                    encoding.legend = _.map(encoding.legend,
+                        (sourceValue) => palettes.intToHex(palettes.bindings[sourceValue]));
                 } else {
                     wrappedScaling = (x) => palettes.hexToABGR(encoding.scaling(x));
                 }
@@ -1316,15 +1312,13 @@ VizServer.prototype.setupColorTexture = function () {
             .flatMap((buffer) => {
                 logger.trace('Loaded raw colorTexture', buffer.length);
                 return Rx.Observable.bindNodeCallback(compress.deflate)(
-                    buffer,//binary,
+                    buffer,// binary,
                     {output: new Buffer(
                         Math.max(1024, Math.round(buffer.length * 1.5)))})
-                    .map((compressed) => {
-                        return {
-                            raw: buffer,
-                            compressed: compressed
-                        };
-                    });
+                    .map((compressed) => ({
+                        raw: buffer,
+                        compressed: compressed
+                    }));
             })
             .do(() => { logger.trace('Compressed color texture'); })
             .map((pair) => {
@@ -1341,7 +1335,7 @@ VizServer.prototype.setupColorTexture = function () {
         .do(this.colorTexture)
         .subscribe(_.identity, log.makeRxErrorHandler(logger, 'img/texture'));
     this.colorTexture
-        .do(function() { logger.trace('HAS COLOR TEXTURE'); })
+        .do(() => { logger.trace('HAS COLOR TEXTURE'); })
         .subscribe(_.identity, log.makeRxErrorHandler(logger, 'colorTexture'));
 };
 
@@ -1353,9 +1347,7 @@ VizServer.prototype.setupAggregationRequestHandling = function () {
     // Handle aggregate requests. Using `concatMap` ensures we fully handle one
     // before moving on to the next.
     Observable
-        .fromEvent(this.socket, 'aggregate', (query, cb) => {
-            return { query: query, cb: cb };
-        })
+        .fromEvent(this.socket, 'aggregate', (query, cb) => ({query, cb}))
         .concatMap((request) => {
 
             const cb = request.cb;
@@ -1370,18 +1362,18 @@ VizServer.prototype.setupAggregationRequestHandling = function () {
                 .mergeAll()
                 .take(1)
                 .do(
-                    function sendSuccessResponse(data) {
+                    (data) => {
                         logger.info('--- Aggregate success ---');
                         cb({ success: true, data: data });
                     },
-                    function handleErrorResponse(err) {
+                    (err) => {
                         logErrorGlobally(err);
                         sendErrorResponse(err);
                     }
                 )
                 .catch(Observable.empty);
 
-            function selectNodeIndices(graph) {
+            function selectNodeIndices (graph) {
                 if (query.all === true) {
                     const numPoints = graph.simulator.dataframe.getNumElements('point');
                     return Observable.of(new Uint32Array(_.range(numPoints)));
@@ -1406,7 +1398,7 @@ VizServer.prototype.defineRoutesInApp = function (app) {
     if (routesAlreadyBound) { return; }
 
     this.app.get('/vbo', (req, res) => {
-        //console.log(req);
+        // console.log(req);
         logger.info('HTTP GET request for vbo %s', req.query.buffer);
         // performance monitor here?
         // profiling.debug('VBO request');
@@ -1509,12 +1501,10 @@ VizServer.prototype.defineRoutesInApp = function (app) {
     app.use(bodyParser.urlencoded({ extended: false }));
 
     // middleware to handle Falcor get/put/post requests
-    app.use('/model.json', FalcorServer.dataSourceRoute(function(request, response) {
-        return new FalcorRouter({
-            config, logger, request, server: appRouteResponder,
-            socketLogger: appRouteResponder.socketLogger
-        });
-    }));
+    app.use('/model.json', FalcorServer.dataSourceRoute((request, response) => new FalcorRouter({
+        config, logger, request, server: appRouteResponder,
+        socketLogger: appRouteResponder.socketLogger
+    })));
 };
 
 VizServer.prototype.rememberVBOs = function (VBOs) {
@@ -1530,8 +1520,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
         this.dispose();
     });
 
-    //Used for tracking what needs to be sent
-    //Starts as all active, and as client caches, whittles down
+    // Used for tracking what needs to be sent
+    // Starts as all active, and as client caches, whittles down
     const activeBuffers = _.chain(renderConfig.models).pairs().filter((pair) => {
         const model = pair[1];
         return rConf.isBufServerSide(model);
@@ -1553,9 +1543,9 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     let requestedBuffers = activeBuffers,
         requestedTextures = activeTextures;
 
-    //Knowing this helps overlap communication and computations
+    // Knowing this helps overlap communication and computations
     this.socket.on('planned_binary_requests', (request) => {
-        //console.log(that.socket);
+        // console.log(this.socket);
         logger.trace({buffers: request.buffers, textures: request.textures}, 'Client sending planned requests');
         requestedBuffers = request.buffers;
         requestedTextures = request.textures;
@@ -1582,28 +1572,26 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
         const dim = query.dim;
 
         graph.take(1)
-            .map((graph) => {
-                return labeler.getLabels(graph, indices, dim);
-            })
+            .map((currentGraph) => labeler.getLabels(currentGraph, indices, dim))
             .do((out) => {
                 cb(null, out);
             })
             .subscribe(
                 _.identity,
                 (err) => {
-                    cb('get_labels error');
                     log.makeRxErrorHandler(logger, 'get_labels')(err);
+                    cb('get_labels error');
                 });
     });
 
     this.socket.on('get_global_ids', (sel, cb) => {
-        graph.take(1).do((graph) => {
+        graph.take(1).do((currentGraph) => {
             const res = _.map(sel, (ent) => {
                 if (!ent) { return ent; }
                 const type = ent.dim === 1 ? 'point' : 'edge';
                 return {
                     type: type,
-                    dataIdx: graph.simulator.dataframe.globalize(ent.idx, type),
+                    dataIdx: currentGraph.simulator.dataframe.globalize(ent.idx, type),
                     viewIdx: ent.idx
                 };
             });
@@ -1613,8 +1601,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
 
     this.socket.on('shortest_path', (pair) => {
         graph.take(1)
-            .do((graph) => {
-                graph.simulator.highlightShortestPaths(pair);
+            .do((currentGraph) => {
+                currentGraph.simulator.highlightShortestPaths(pair);
                 animationStep.interact({play: true, layout: false});
             })
             .subscribe(_.identity, log.makeRxErrorHandler(logger, 'shortest_path'));
@@ -1622,8 +1610,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
 
     this.socket.on('set_colors', (color) => {
         graph.take(1)
-            .do((graph) => {
-                graph.simulator.setColor(color);
+            .do((currentGraph) => {
+                currentGraph.simulator.setColor(color);
                 animationStep.interact({play: true, layout: false});
             })
             .subscribe(_.identity, log.makeRxErrorHandler(logger, 'set_colors'));
@@ -1639,8 +1627,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
      */
     this.socket.on('select', (specification, cb) => {
         /** @type {SelectionSpecification} specification */
-        Rx.Observable.combineLatest(this.graph, this.viewConfig, (graph, viewConfig) => {
-            const simulator = graph.simulator;
+        Rx.Observable.combineLatest(this.graph, this.viewConfig, (currentGraph, viewConfig) => {
+            const {simulator} = currentGraph, {dataframe} = simulator;
             let qNodeSelection;
             switch (specification.gesture) {
                 case 'rectangle':
@@ -1653,30 +1641,26 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     // TODO FIXME translate masks to unfiltered indexes.
                     qNodeSelection = Q(specification.masks);
                     break;
-                case 'sets':
-                    const matchingSets = _.filter(viewConfig.sets, (vizSet) => {
-                        return specification.setIDs.indexOf(vizSet.id) !== -1;
-                    });
-                    const combinedMasks = _.reduce(matchingSets, (masks, vizSet) => {
-                        return masks.union(vizSet.masks);
-                    }, new DataframeMask(graph.dataframe, [], []));
+                case 'sets': {
+                    const matchingSets = _.filter(viewConfig.sets,
+                        (vizSet) => specification.setIDs.indexOf(vizSet.id) !== -1);
+                    const combinedMasks = _.reduce(matchingSets,
+                        (masks, vizSet) => masks.union(vizSet.masks),
+                        new DataframeMask(dataframe, [], []));
                     qNodeSelection = Q(combinedMasks);
                     break;
+                }
                 default:
                     throw Error('Unrecognized selection gesture: ' + specification.gesture.toString());
             }
             if (qNodeSelection === undefined) { throw Error('No selection made'); }
-            const lastMasks = graph.dataframe.lastSelectionMasks;
+            const lastMasks = dataframe.lastSelectionMasks;
             switch (specification.action) {
                 case 'add':
-                    qNodeSelection = qNodeSelection.then((dataframeMask) => {
-                        return lastMasks.union(dataframeMask);
-                    });
+                    qNodeSelection = qNodeSelection.then((dataframeMask) => lastMasks.union(dataframeMask));
                     break;
                 case 'remove':
-                    qNodeSelection = qNodeSelection.then((dataframeMask) => {
-                        return lastMasks.minus(dataframeMask);
-                    });
+                    qNodeSelection = qNodeSelection.then((dataframeMask) => lastMasks.minus(dataframeMask));
                     break;
                 case 'replace':
                     break;
@@ -1684,8 +1668,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     break;
             }
             qNodeSelection.then((dataframeMask) => {
-                graph.dataframe.lastSelectionMasks = dataframeMask;
-                graph.simulator.tickBuffers(['selectedPointIndexes', 'selectedEdgeIndexes']);
+                currentGraph.dataframe.lastSelectionMasks = dataframeMask;
+                currentGraph.simulator.tickBuffers(['selectedPointIndexes', 'selectedEdgeIndexes']);
                 animationStep.interact({play: true, layout: false});
                 cb({success: true});
             });
@@ -1698,31 +1682,28 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
 
     this.socket.on('highlight', (specification, cb) => {
         /** @type {SelectionSpecification} specification */
-        Rx.Observable.combineLatest(this.graph, this.viewConfig, (graph, viewConfig) => {
+        Rx.Observable.combineLatest(this.graph, this.viewConfig, (currentGraph, viewConfig) => {
             let qNodeSelection;
             switch (specification.gesture) {
                 case 'masks':
                     // TODO FIXME translate masks to unfiltered indexes.
                     qNodeSelection = Q(specification.masks);
                     break;
-                case 'sets':
-                    const matchingSets = _.filter(viewConfig.sets, (vizSet) => {
-                        return specification.setIDs.indexOf(vizSet.id) !== -1;
-                    });
-                    const combinedMasks = _.reduce(_.map(matchingSets, (vizSet) => {
-                        return vizSet.masks;
-                    }), (eachMask, accumulatedMask) => {
-                        return accumulatedMask.union(eachMask);
-                    });
+                case 'sets': {
+                    const matchingSets = _.filter(viewConfig.sets,
+                        (vizSet) => specification.setIDs.indexOf(vizSet.id) !== -1);
+                    const combinedMasks = _.reduce(_.map(matchingSets, (vizSet) => vizSet.masks),
+                        (eachMask, accumulatedMask) => accumulatedMask.union(eachMask));
                     qNodeSelection = Q(combinedMasks);
                     break;
+                }
                 default:
                     throw Error('Unrecognized highlight gesture: ' + specification.gesture.toString());
             }
             const GREEN = 255 << 8;
             const color = specification.color || GREEN;
             qNodeSelection.then((dataframeMask) => {
-                const simulator = graph.simulator, dataframe = simulator.dataframe;
+                const {simulator} = currentGraph, {dataframe} = simulator;
                 const bufferName = 'pointColors';
                 if (dataframeMask.isEmpty() && dataframe.canResetLocalBuffer(bufferName)) {
                     dataframe.resetLocalBuffer(bufferName);
@@ -1747,13 +1728,13 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
 
     this.socket.on('highlight_points', (points) => {
         graph.take(1)
-            .do((graph) => {
-
+            .do((currentGraph) => {
+                const {simulator} = currentGraph, {dataframe} = simulator;
                 points.forEach((point) => {
-                    graph.simulator.dataframe.getLocalBuffer('pointColors')[point.index] = point.color;
-                    // graph.simulator.buffersLocal.pointColors[point.index] = point.color;
+                    dataframe.getLocalBuffer('pointColors')[point.index] = point.color;
+                    // currentGraph.simulator.buffersLocal.pointColors[point.index] = point.color;
                 });
-                graph.simulator.tickBuffers(['pointColors']);
+                simulator.tickBuffers(['pointColors']);
 
                 animationStep.interact({play: true, layout: false});
             })
@@ -1762,31 +1743,25 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     });
 
     this.socket.on('persist_current_workbook', (workbookName, cb) => {
-        Rx.Observable.combineLatest(graph, this.workbookDoc, (graph, workbookDoc) => {
+        Rx.Observable.combineLatest(graph, this.workbookDoc, (currentGraph, workbookDoc) => {
             workbookDoc.title = workbookName;
             workbookDoc.contentName = workbookName;
             workbook.saveDocument(workbookName, workbookDoc).then(
-                (result) => {
-                    return cb({success: true, data: result});
-                },
-                (rejectedResult) => {
-                    return failWithMessage(cb, rejectedResult);
-                });
-            }).take(1).subscribe(_.identity, log.makeRxErrorHandler(logger, 'persist_current_workbook'));
+                (result) => cb({success: true, data: result}),
+                (rejectedResult) => failWithMessage(cb, rejectedResult));
+        }).take(1).subscribe(_.identity, log.makeRxErrorHandler(logger, 'persist_current_workbook'));
     });
 
     this.socket.on('persist_current_vbo', (contentKey, cb) => {
         graph.take(1)
-            .do((graph) => {
+            .do((currentGraph) => {
                 const cleanContentKey = encodeURIComponent(contentKey);
                 persist.publishStaticContents(
                     cleanContentKey, this.lastCompressedVBOs,
-                    this.lastMetadata, graph.dataframe, renderConfig
-                ).then(function() {
-                    cb({success: true, name: cleanContentKey});
-                }).catch((error) => {
-                    cb({success: false, errors: [error], name: cleanContentKey});
-                }).done(
+                    this.lastMetadata, currentGraph.dataframe, renderConfig
+                ).then(() => cb({success: true, name: cleanContentKey})
+                ).catch((error) => cb({success: false, errors: [error], name: cleanContentKey})
+                ).done(
                     _.identity,
                     log.makeQErrorHandler(logger, 'persist_current_vbo')
                 );
@@ -1797,7 +1772,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     this.socket.on('persist_upload_png_export', (pngDataURL, contentKey, imageName, cb) => {
         imageName = imageName || 'preview.png';
         graph.take(1)
-            .do((/*graph*/) => {
+            .do((currentGraph) => {
                 const cleanContentKey = encodeURIComponent(contentKey),
                     cleanImageName = encodeURIComponent(imageName),
                     base64Data = pngDataURL.replace(/^data:image\/png;base64,/,""),
@@ -1814,9 +1789,9 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
 
     this.socket.on('fork_vgraph', (name, cb) => {
         graph.take(1)
-            .do((graph) => {
-                const vgName = 'Users/' + name;
-                vgwriter.save(graph, vgName).then(() => {
+            .do((currentGraph) => {
+                const vgName = path.join('Users', name);
+                vgwriter.save(currentGraph, vgName).then(() => {
                     cb({success: true, name: vgName});
                 }).done(
                     _.identity,
@@ -1836,7 +1811,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
 
     // ============= EVENT LOOP
 
-    //starts true, set to false whenever transfer starts, true again when acknowledged.
+    // starts true, set to false whenever transfer starts, true again when acknowledged.
     const clientReady = new Rx.ReplaySubject(1);
     clientReady.onNext(true);
     this.socket.on('received_buffers', (time) => {
@@ -1853,17 +1828,17 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     let lastTick = 0;
 
     const graphObservable = graph;
-    graph.expand((graph) => {
+    graph.expand((currentGraph) => {
         step++;
 
         logger.trace({activeBuffers: activeBuffers, step:step}, '0. Prefetch VBOs');
 
-        return driver.fetchData(graph, renderConfig, compress,
+        return driver.fetchData(currentGraph, renderConfig, compress,
                                 activeBuffers, lastVersions, activePrograms)
             .do((VBOs) => {
                 logger.trace({step:step}, '1. pre-fetched VBOs for xhr2: ' + sizeInMBOfVBOs(VBOs.compressed) + 'MB');
 
-                //tell XHR2 sender about it
+                // tell XHR2 sender about it
                 if (this.lastCompressedVBOs) {
                     _.extend(this.lastCompressedVBOs, VBOs.compressed);
                 } else {
@@ -1889,33 +1864,34 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
             .flatMap((VBOs) => {
                 logger.trace('3. tell client about availability');
 
-                //for each buffer transfer
+                // for each buffer transfer
                 let clientAckStartTime;
                 let clientElapsed;
                 const transferredBuffers = [];
                 this.bufferTransferFinisher = function (bufferName) {
                     logger.trace({step: step}, '5a ?. sending a buffer %s', bufferName);
                     transferredBuffers.push(bufferName);
-                    //console.log("Length", transferredBuffers.length, requestedBuffers.length);
+                    // console.log("Length", transferredBuffers.length, requestedBuffers.length);
                     if (transferredBuffers.length === requestedBuffers.length) {
                         logger.trace('5b. started sending all');
                         logger.trace('Socket...client ping ' + clientElapsed + 'ms');
-                        logger.trace('Socket', '...client asked for all buffers' + (Date.now() - clientAckStartTime) + 'ms');
+                        const elapsedTime = (Date.now() - clientAckStartTime);
+                        logger.trace('Socket', '...client asked for all buffers' + elapsedTime + 'ms');
                     }
                 };
 
                 // const emitFnWrapper = Rx.Observable.fromCallback(socket.emit, socket);
 
-                //notify of buffer/texture metadata
-                //FIXME make more generic and account in buffer notification status
-                const receivedAll = colorTexture.flatMap((colorTexture) => {
+                // notify of buffer/texture metadata
+                // FIXME make more generic and account in buffer notification status
+                const receivedAll = colorTexture.flatMap((eachColorTexture) => {
                     logger.trace('4a. unwrapped texture meta');
 
                     const textures = {
-                        colorMap: _.pick(colorTexture, ['width', 'height', 'bytes'])
+                        colorMap: _.pick(eachColorTexture, ['width', 'height', 'bytes'])
                     };
 
-                    //FIXME: should show all active VBOs, not those based on prev req
+                    // FIXME: should show all active VBOs, not those based on prev req
                     const metadata =
                         _.extend(
                             _.pick(VBOs, ['bufferByteLengths', 'elements']),
@@ -1931,16 +1907,16 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     lastTick = VBOs.tick;
 
                     logger.trace('4b. notifying client of buffer metadata');
-                    //performance monitor here?
+                    // performance monitor here?
                     // profiling.trace('===Sending VBO Update===');
 
-                    //const emitter = socket.emit('vbo_update', metadata, (time) => {
-                    //return time;
-                    //});
-                    //const observableCallback = Rx.Observable.bindNodeCallback(emitter);
-                    //return observableCallback;
+                    // const emitter = socket.emit('vbo_update', metadata, (time) => {
+                    // return time;
+                    // });
+                    // const observableCallback = Rx.Observable.bindNodeCallback(emitter);
+                    // return observableCallback;
                     return Rx.Observable.bindCallback(this.socket.emit.bind(this.socket))('vbo_update', metadata);
-                    //return emitFnWrapper('vbo_update', metadata);
+                    // return emitFnWrapper('vbo_update', metadata);
 
                 }).do(
                     (clientElapsedMsg) => {
@@ -1954,19 +1930,20 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
             .flatMap(() => {
                 logger.trace('7. Wait for next animation step, updateVboSubject, or if we are behind on ticks');
 
-                const filteredUpdateVbo = this.updateVboSubject.filter(data => data);
+                const filteredUpdateVbo = this.updateVboSubject.filter(_.identity);
 
-                const behindOnTicks = graphObservable.take(1).filter(graph => graph.simulator.versions.tick > lastTick);
+                const behindOnTicks = graphObservable.take(1).filter(
+                    (currentGraph) => currentGraph.simulator.versions.tick > lastTick);
 
                 return Rx.Observable.merge(this.ticksMulti, filteredUpdateVbo, behindOnTicks)
                     .take(1)
-                    .do((/*data*/) => {
+                    .do((data) => {
                         // Mark that we don't need to send VBOs independently of ticks anymore.
                         this.updateVboSubject.onNext(false);
                     })
                     .do(() => { logger.trace('8. next ready!'); });
             })
-            .map(_.constant(graph));
+            .map(_.constant(currentGraph));
     })
     .subscribe(
         () => { logger.trace('9. LOOP ITERATED'); },
@@ -1983,10 +1960,10 @@ VizServer.prototype.dispose = function () {
 };
 
 
-VizServer.clHealthCheck = function() {
+VizServer.clHealthCheck = function () {
     try {
-        var ctx = cljs.createSync(null);
-        if (ctx !== null && ctx !== undefined) {
+        const clContext = cljs.createSync(null);
+        if (clContext !== null && clContext !== undefined) {
             return {success: true};
         } else {
             return {success: false, error: 'Null/Undefined CL context'};
@@ -2022,7 +1999,7 @@ if (require.main === module) {
     };
     app.use(nocache);
 
-    const allowCrossOrigin = function  (req, res, next) {
+    const allowCrossOrigin = function (req, res, next) {
         res.header('Access-Control-Allow-Origin', '*');
         res.header('Access-Control-Allow-Headers', 'X-Requested-With,Content-Type,Authorization');
         res.header('Access-Control-Allow-Methods', 'GET,PUT,PATCH,POST,DELETE');
@@ -2030,19 +2007,19 @@ if (require.main === module) {
     };
     app.use(allowCrossOrigin);
 
-    //Static assets
-    app.get('*/StreamGL.js', function(req, res) {
+    // Static assets
+    app.get('*/StreamGL.js', (req, res) => {
         res.sendFile(require.resolve('StreamGL/dist/StreamGL.js'));
     });
-    app.get('*/StreamGL.map', function(req, res) {
+    app.get('*/StreamGL.map', (req, res) => {
         res.sendFile(require.resolve('StreamGL/dist/StreamGL.map'));
     });
     app.use('/graph', (req, res, next) => {
         return express.static(path.resolve(__dirname, 'assets'))(req, res, next);
     });
 
-    //Dyn routing
-    app.get('/vizaddr/graph', function(req, res) {
+    // Dyn routing
+    app.get('/vizaddr/graph', (req, res) => {
         res.json({
             'hostname': config.HTTP_LISTEN_ADDRESS,
             'port': config.HTTP_LISTEN_PORT,
@@ -2064,20 +2041,21 @@ if (require.main === module) {
 
     listen.do(() => {
 
-        //proxy worker requests
+        // proxy worker requests
         const from = '/worker/' + config.HTTP_LISTEN_PORT + '/';
         const to = 'http://localhost:' + config.HTTP_LISTEN_PORT;
         logger.info('setting up proxy', from, '->', to);
         app.use(from, proxy(to, {
-            forwardPath: function(req/*, res*/) {
-                return url.parse(req.url).path.replace(new RegExp('worker/' + config.HTTP_LISTEN_PORT + '/'),'/');
+            forwardPath: (req, res) => {
+                const pathToReplace = path.join('worker', config.HTTP_LISTEN_PORT, '/');
+                return url.parse(req.url).path.replace(new RegExp(pathToReplace),'/');
             }
         }));
 
 
 
     }).subscribe(
-        function () { logger.info('\nViz worker listening...'); },
+        () => { logger.info('\nViz worker listening...'); },
         log.makeRxErrorHandler(logger, 'server-viz main')
     );
 
