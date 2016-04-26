@@ -129,6 +129,10 @@ function scalingFromSpec (scalingSpec) {
     return scaling;
 }
 
+function domainIsPositive (aggregations) {
+    return aggregations.getAggregationByType('isPositive');
+}
+
 function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingType, variation, binning) {
     const summary = aggregations.getSummary();
     let scalingType, domain, range, clamp;
@@ -138,7 +142,7 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
         case 'size':
         case 'pointSize':
             // Has to have a magnitude, not negative:
-            if (summary.isPositive) {
+            if (domainIsPositive(aggregations)) {
                 // Square root because point size/radius yields a point area:
                 scalingType = 'sqrt';
                 domain = defaultDomain;
@@ -148,7 +152,7 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
             break;
         case 'edgeSize':
             // TODO ensure sizes are binned/scaled so that they may be visually distinguished.
-            if (summary.isPositive) {
+            if (domainIsPositive(aggregations)) {
                 scalingType = 'linear';
                 domain = defaultDomain;
                 range = defaults.edgeSize.range;
@@ -159,7 +163,7 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
         case 'pointOpacity':
         case 'edgeOpacity':
             // Has to have a magnitude, not negative:
-            if (summary.isPositive) {
+            if (domainIsPositive(aggregations)) {
                 scalingType = 'linear';
                 domain = defaultDomain;
                 range = defaults.pointOpacity.range;
