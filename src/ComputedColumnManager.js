@@ -1,11 +1,11 @@
 'use strict';
 
-var _       = require('underscore');
-var graphlib = require('graphlib');
-var Graph = graphlib.Graph;
+const _       = require('underscore');
+const graphlib = require('graphlib');
+const Graph = graphlib.Graph;
 
-var util    = require('./util.js');
-var ComputedColumnSpec = require('./ComputedColumnSpec.js');
+const util    = require('./util.js');
+const ComputedColumnSpec = require('./ComputedColumnSpec.js');
 
 //////////////////////////////////////////////////////////////////////////////
 // DEFAULT ENCODINGS (TODO: Should these move into another file?)
@@ -36,7 +36,7 @@ var ComputedColumnSpec = require('./ComputedColumnSpec.js');
 // Only aggregates can point to specific dataframe view (otherwise indexing doesn't make sense);
 // TODO: Implement aggregates across computed columns too.
 
-var defaultLocalBuffers = {
+const defaultLocalBuffers = {
 
     logicalEdges: new ComputedColumnSpec({
         arrType: Uint32Array,
@@ -66,7 +66,7 @@ var defaultLocalBuffers = {
         ],
         computeAllValues: function (forwardsEdges, outArr, numGraphElements) {
 
-            var map = forwardsEdges.edgePermutationInverseTyped;
+            const map = forwardsEdges.edgePermutationInverseTyped;
 
             for (var i = 0; i < outArr.length; i++) {
                 outArr[i] = map[i];
@@ -102,7 +102,7 @@ var defaultLocalBuffers = {
             ['forwardsEdges', 'hostBuffer']
         ],
         computeAllValues: function (forwardsEdges, outArr, numGraphElements) {
-            var perm = forwardsEdges.edgePermutation;
+            const perm = forwardsEdges.edgePermutation;
             for (var i = 0; i < outArr.length; i++) {
                 outArr[i] = forwardsEdges.heights[perm[i]];
             }
@@ -120,7 +120,7 @@ var defaultLocalBuffers = {
             ['forwardsEdges', 'hostBuffer']
         ],
         computeAllValues: function (forwardsEdges, outArr, numGraphElements) {
-            var perm = forwardsEdges.edgePermutation;
+            const perm = forwardsEdges.edgePermutation;
             for (var i = 0; i < outArr.length; i++) {
                 outArr[i] = forwardsEdges.seqLens[perm[i]];
             }
@@ -158,9 +158,9 @@ var defaultLocalBuffers = {
 
         computeSingleValue: function (pointCommunity, idx, numGraphElements) {
 
-            var palette = util.palettes.qual_palette2;
-            var pLen = palette.length;
-            var color = palette[pointCommunity % pLen];
+            const palette = util.palettes.qual_palette2;
+            const pLen = palette.length;
+            const color = palette[pointCommunity % pLen];
 
             return color;
         }
@@ -182,7 +182,7 @@ var defaultLocalBuffers = {
         computeAllValues: function (unsortedEdges, pointColors, outArr, numGraphElements) {
 
             for (var idx = 0; idx < outArr.length; idx++) {
-                var nodeIdx = unsortedEdges[idx];
+                const nodeIdx = unsortedEdges[idx];
                 outArr[idx] = pointColors[nodeIdx];
             }
 
@@ -206,7 +206,7 @@ var defaultLocalBuffers = {
 };
 
 
-var defaultHostBuffers = {
+const defaultHostBuffers = {
 
     forwardsEdgeWeights: new ComputedColumnSpec({
         arrType: Float32Array,
@@ -240,16 +240,16 @@ var defaultHostBuffers = {
             }
             return outArr;
         }
-    }),
+    })
 
 };
 
 // TODO: Allow users to specify which view to pull dependencies from.
-var defaultColumns = {
+const defaultColumns = {
     hostBuffer: defaultHostBuffers
 };
 
-var defaultEncodingColumns = {
+const defaultEncodingColumns = {
     localBuffer: defaultLocalBuffers
 };
 
@@ -258,7 +258,7 @@ var defaultEncodingColumns = {
 //////////////////////////////////////////////////////////////////////////////
 
 function ComputedColumnManager () {
-    // We maintain a depenency graph between columns. dependency -> CC
+    // We maintain a dependency graph between columns. dependency -> CC
     this.dependencyGraph = new Graph();
     this.activeComputedColumns = {};
 
@@ -274,15 +274,15 @@ function ComputedColumnManager () {
 //////////////////////////////////////////////////////////////////////////////
 
 function keyFromColumn (columnType, columnName) {
-    var key = '' + columnType + ':' + columnName;
+    const key = '' + columnType + ':' + columnName;
     return key;
 }
 
 function typeAndNameFromKey (key) {
-    var parts = key.split(':');
+    const [columnType, columnName] = key.split(':');
     return {
-        columnType: parts[0],
-        columnName: parts[1]
+        columnType,
+        columnName
     };
 }
 
@@ -296,16 +296,16 @@ ComputedColumnManager.prototype.loadDefaultLocalBuffer = function (dataframe, na
 };
 
 ComputedColumnManager.prototype.bumpVersionsOnDependencies = function (columnType, columnName) {
-    var columnKey = keyFromColumn(columnType, columnName);
+    const columnKey = keyFromColumn(columnType, columnName);
 
-    var keysToBump = [columnKey];
+    const keysToBump = [columnKey];
     // Walk through all dependencies of the provided column, to make sure they're also bumped
-    var queue = [columnKey]; // push, shift
+    const queue = [columnKey]; // push, shift
     while (queue.length > 0) {
-        var workingKey = queue.shift();
-        var outEdges = this.dependencyGraph.outEdges(workingKey);
+        const workingKey = queue.shift();
+        const outEdges = this.dependencyGraph.outEdges(workingKey);
 
-        var newNodeKeys = _.pluck(outEdges, 'w');
+        const newNodeKeys = _.pluck(outEdges, 'w');
         _.each(newNodeKeys, (key) => {
             keysToBump.push(key);
             queue.push(key);
@@ -313,18 +313,18 @@ ComputedColumnManager.prototype.bumpVersionsOnDependencies = function (columnTyp
     }
 
     _.each(keysToBump, (key) => {
-        var {columnType, columnName} = typeAndNameFromKey(key);
-        var spec = this.getComputedColumnSpec(columnType, columnName);
+        const {columnType, columnName} = typeAndNameFromKey(key);
+        const spec = this.getComputedColumnSpec(columnType, columnName);
         spec.bumpVersion();
     });
 };
 
 ComputedColumnManager.prototype.removeComputedColumnInternally = function (columnType, columnName) {
-    var columnKey = keyFromColumn(columnType, columnName);
+    const columnKey = keyFromColumn(columnType, columnName);
 
     // Check if there's something that depends on this column.
     // In the dependency graph, that's represented by an outgoing edge
-    var outEdges = this.dependencyGraph.outEdges(columnKey);
+    const outEdges = this.dependencyGraph.outEdges(columnKey);
     if (outEdges.length > 0) {
         throw new Error('Attempted to remove computed column that is required for another');
     }
@@ -340,8 +340,8 @@ ComputedColumnManager.prototype.removeComputedColumnInternally = function (colum
 // Remove edges in dependency graph for a given columns dependencies.
 ComputedColumnManager.prototype.removeInwardColumnDependencyEdges = function (columnType, columnName) {
 
-    var columnKey = keyFromColumn(columnType, columnName);
-    var inEdges = this.dependencyGraph.inEdges(columnKey);
+    const columnKey = keyFromColumn(columnType, columnName);
+    const inEdges = this.dependencyGraph.inEdges(columnKey);
 
     _.each(inEdges, (edge) => {
         this.dependencyGraph.removeEdge(edge.v, edge.w);
@@ -354,15 +354,15 @@ ComputedColumnManager.prototype.loadComputedColumnSpecInternally = function (col
 
     // Check to see if we're updating an existing one, or simply adding a new one.
     // This is mostly for internal dependency bookkeeping.
-    var hasColumn = this.hasColumn(columnType, columnName);
+    const hasColumn = this.hasColumn(columnType, columnName);
 
     if (hasColumn) {
         this.removeInwardColumnDependencyEdges(columnType, columnName);
         // this.removeComputedColumnInternally(columnType, columnName);
     }
 
-    var columnKey = keyFromColumn(columnType, columnName);
-    var dependencyGraph = this.dependencyGraph;
+    const columnKey = keyFromColumn(columnType, columnName);
+    const dependencyGraph = this.dependencyGraph;
 
     this.activeComputedColumns[columnType] = this.activeComputedColumns[columnType] || {};
     this.activeComputedColumns[columnType][columnName] = spec;
@@ -372,8 +372,8 @@ ComputedColumnManager.prototype.loadComputedColumnSpecInternally = function (col
 
     // Add dependencies to graph if they're not already there.
     // Add edge from dependency to this column
-    _.each(spec.dependencies, function (dep) {
-        var depKey = keyFromColumn(dep[1], dep[0]);
+    _.each(spec.dependencies, (dep) => {
+        const depKey = keyFromColumn(dep[1], dep[0]);
 
         if (!dependencyGraph.hasNode(depKey)) {
             dependencyGraph.setNode(depKey);
@@ -399,12 +399,10 @@ ComputedColumnManager.prototype.addComputedColumn = function (dataframe, columnT
 
 
 ComputedColumnManager.prototype.loadDefaultColumns = function () {
-    var that = this;
-
     // copy in defaults. Copy so we can recover defaults when encodings change
-    _.each(defaultColumns, function (cols, colType) {
-        _.each(cols, function (colDesc, name) {
-            that.loadComputedColumnSpecInternally(colType, name, colDesc);
+    _.each(defaultColumns, (cols, colType) => {
+        _.each(cols, (colDesc, name) => {
+            this.loadComputedColumnSpecInternally(colType, name, colDesc);
         });
     });
 
@@ -412,12 +410,10 @@ ComputedColumnManager.prototype.loadDefaultColumns = function () {
 
 
 ComputedColumnManager.prototype.loadEncodingColumns = function () {
-    var that = this;
-
     // copy in defaults. Copy so we can recover defaults when encodings change
-    _.each(defaultEncodingColumns, function (cols, colType) {
-        _.each(cols, function (colDesc, name) {
-            that.loadComputedColumnSpecInternally(colType, name, colDesc);
+    _.each(defaultEncodingColumns, (cols, colType) => {
+        _.each(cols, (colDesc, name) => {
+            this.loadComputedColumnSpecInternally(colType, name, colDesc);
         });
     });
 
@@ -440,10 +436,7 @@ ComputedColumnManager.prototype.getColumnVersion = function (columnType, columnN
 };
 
 ComputedColumnManager.prototype.hasColumn = function (columnType, columnName) {
-    if (this.activeComputedColumns[columnType] && this.activeComputedColumns[columnType][columnName]) {
-        return true;
-    }
-    return false;
+    return this.activeComputedColumns[columnType] && this.activeComputedColumns[columnType][columnName];
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -452,7 +445,7 @@ ComputedColumnManager.prototype.hasColumn = function (columnType, columnName) {
 
 ComputedColumnManager.prototype.getValue = function (dataframe, columnType, columnName, idx) {
 
-    var columnDesc = this.activeComputedColumns[columnType][columnName];
+    const columnDesc = this.activeComputedColumns[columnType][columnName];
     // Check to see if we have have column registered
     if (!columnDesc || !columnDesc.isCompletelyDefined()) {
         throw new Error('Invalid column creation function for: ', columnType, columnName);
@@ -461,11 +454,11 @@ ComputedColumnManager.prototype.getValue = function (dataframe, columnType, colu
     // Check if the computation can't be done on a single one (quickly)
     // E.g., requires an aggregate, so might as well compute all.
     if (!columnDesc.computeSingleValue) {
-        var resultArray = this.getDenseMaterializedArray(dataframe, columnType, columnName);
+        const resultArray = this.getDenseMaterializedArray(dataframe, columnType, columnName);
         if (columnDesc.numberPerGraphComponent === 1) {
             return resultArray[idx];
         } else {
-            var returnArr = new columnDesc.arrType(columnDesc.numberPerGraphComponent);
+            const returnArr = new columnDesc.arrType(columnDesc.numberPerGraphComponent);
             for (var j = 0; j < columnDesc.numberPerGraphComponent; j++) {
                 returnArr[j] = resultArray[idx*columnDesc.numberPerGraphComponent + j];
             }
@@ -476,9 +469,9 @@ ComputedColumnManager.prototype.getValue = function (dataframe, columnType, colu
     // Nothing precomputed -- recompute
     // TODO: Cache these one off computations?
 
-    var dependencies = _.map(columnDesc.dependencies, function (dep) {
-        var columnName = dep[0];
-        var columnType = dep[1];
+    const dependencies = _.map(columnDesc.dependencies, (dep) => {
+        const columnName = dep[0];
+        const columnType = dep[1];
         // TODO: Impl
         return dataframe.getCell(idx, columnType, columnName);
     });
@@ -495,9 +488,9 @@ ComputedColumnManager.prototype.getValue = function (dataframe, columnType, colu
 
 
 
-ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe, columnType, columnName, optionalArray) {
+ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe, columnType, columnName) {
 
-    var columnDesc = this.activeComputedColumns[columnType][columnName];
+    const columnDesc = this.activeComputedColumns[columnType][columnName];
 
     // Check to see if we have have column registered
     if (!columnDesc || !columnDesc.isCompletelyDefined()) {
@@ -505,17 +498,17 @@ ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe,
     }
 
     // Get dependencies
-    var dependencies = _.map(columnDesc.dependencies, function (dep) {
-        var columnName = dep[0];
-        var columnType = dep[1];
+    const dependencies = _.map(columnDesc.dependencies, (dep) => {
+        const columnName = dep[0];
+        const columnType = dep[1];
         // TODO: Impl
         // TODO: Should this be an iterator instead of a raw array?
         return dataframe.getColumnValues(columnName, columnType);
     });
 
-    var numGraphElements = dataframe.getNumElements(columnDesc.graphComponentType);
-    var outputSize = columnDesc.numberPerGraphComponent * numGraphElements;
-    var outputArr = new columnDesc.arrType(outputSize);
+    const numGraphElements = dataframe.getNumElements(columnDesc.graphComponentType);
+    const outputSize = columnDesc.numberPerGraphComponent * numGraphElements;
+    const outputArr = new columnDesc.arrType(outputSize);
 
     // Check if an explicit function is provided to compute all
     if (columnDesc.computeAllValues) {
@@ -528,7 +521,7 @@ ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe,
         // dependencies.push(0);
         // dependencies.push(numGraphElements);
 
-        var singleDependencies = _.map(dependencies, function () {
+        const singleDependencies = _.map(dependencies, () => {
             return 0;
         });
         singleDependencies.push(0);
@@ -538,12 +531,12 @@ ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe,
         for (var i = 0; i < numGraphElements; i++) {
 
             // set dependencies for this call
-            _.each(dependencies, function (arr, idx) {
+            _.each(dependencies, (arr, idx) => {
                 if (columnDesc.numberPerGraphComponent === 1) {
                     singleDependencies[idx] = arr[i];
 
                 } else {
-                    var valueArray = new arr.constructor(columnDesc.numberPerGraphComponent);
+                    const valueArray = new arr.constructor(columnDesc.numberPerGraphComponent);
                     for (var j = 0; j < columnDesc.numberPerGraphComponent; j++) {
                         valueArray[j] = arr[i*columnDesc.numberPerGraphComponent + j];
                     }
@@ -555,7 +548,7 @@ ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe,
             if (columnDesc.numberPerGraphComponent === 1) {
                 outputArr[i] = columnDesc.computeSingleValue.apply(this, singleDependencies);
             } else {
-                var res = columnDesc.computeSingleValue.apply(this, singleDependencies);
+                const res = columnDesc.computeSingleValue.apply(this, singleDependencies);
                 for (var j = 0; j < columnDesc.numberPerGraphComponent; j++) {
                     outputArr[i*columnDesc.numberPerGraphComponent + j] = res[j];
                 }
