@@ -140,7 +140,7 @@ function HistogramsPanel(globalStats, filtersPanel,
     this.histograms = new HistogramCollection();
     const panel = this;
 
-    const attributes = _.filter(_.keys(globalStats.histograms), (val) => val !== '_title');
+    const attributes = _.filter(_.keys(globalStats.histograms), (val) => val[0] !== '_');
 
     // TODO: Replace this with a proper data transfer through the HTML5
     // drag and drop spec. It seems to be pretty broken outside of firefox,
