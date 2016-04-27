@@ -99,7 +99,7 @@ var encodingForLabelParams = [
         def: new Color('#1f1f33').rgbaString(),
         cb: (() => {
             var sheet = createStyleElement();
-            return function (stream) {
+            return (stream) => {
                 stream.inspectTime(20).subscribe((c) => {
                     sheet.text('.graph-label, .graph-label table { color: ' + c.rgbaString() + ' }');
                 });
@@ -113,7 +113,7 @@ var encodingForLabelParams = [
         def: (new Color('#fff')).alpha(0.9).rgbaString(),
         cb: (() => {
             var sheet = createStyleElement();
-            return function (stream) {
+            return (stream) => {
                 stream.inspectTime(20).subscribe((c) => {
                     sheet.text('.graph-label .graph-label-container  { background-color: ' + c.rgbaString() + ' }');
                 });
@@ -505,11 +505,11 @@ function setViewParameter(socket, name, pos, appState) {
     var camera = appState.renderState.get('camera');
     var val = pos;
 
-    function setUniform(name, value) {
+    function setUniform(key, value) {
         var uniforms = appState.renderState.get('uniforms');
         _.each(uniforms, (map) => {
-            if (name in map) {
-                map[name] = value;
+            if (key in map) {
+                map[key] = value;
             }
         });
     }
@@ -525,11 +525,11 @@ function setViewParameter(socket, name, pos, appState) {
             break;
         case 'pointOpacity':
             val = PercentScale.invert(pos);
-            setUniform('pointOpacity', [val]);
+            setUniform(name, [val]);
             break;
         case 'edgeOpacity':
             val = PercentScale.invert(pos);
-            setUniform('edgeOpacity', [val]);
+            setUniform(name, [val]);
             break;
         case 'labelTransparency':
             var opControl = $('#labelOpacity');
