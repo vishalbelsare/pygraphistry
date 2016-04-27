@@ -5,16 +5,16 @@
     Client networking layer for connecting a local canvas to remote layout engine
 */
 
-var urlModule    = require('url');
-var debug        = require('debug')('graphistry:StreamGL:client');
-var $            = window.$;
-var Rx           = require('rxjs/Rx.KitchenSink');
-                   require('./rx-jquery-stub');
-var _            = require('underscore');
-var io           = require('socket.io-client');
+const urlModule    = require('url');
+const debug        = require('debug')('graphistry:StreamGL:client');
+const $            = window.$;
+const Rx           = require('rxjs/Rx.KitchenSink');
+                     require('./rx-jquery-stub');
+const _            = require('underscore');
+const io           = require('socket.io-client');
 
-var renderer     = require('./renderer.js');
-var caption      = require('./caption.js');
+const renderer     = require('./renderer.js');
+const caption      = require('./caption.js');
 
 
 /**
@@ -31,26 +31,31 @@ var caption      = require('./caption.js');
  *     when calling the returned function.
  */
 function makeFetcher (workerUrl, endpoint, queryKey) {
-    //string * {<name> -> int} * name -> Subject ArrayBuffer
-    return function (socketID, bufferByteLengths, bufferName) {
+    /**
+     * @param {String} socketID
+     * @param {Object.<Number>} bufferByteLengths
+     * @param {String} bufferName
+     * @returns Observable<ArrayBuffer>
+     */
+    return (socketID, bufferByteLengths, bufferName) => {
         debug('fetching', bufferName);
 
-        var res = new Rx.Subject();
+        const res = new Rx.Subject();
 
-        var query = { id: socketID };
+        const query = { id: socketID };
         query[queryKey] = bufferName;
 
-        var fetchUrlObj = _.extend({}, workerUrl);
+        const fetchUrlObj = _.extend({}, workerUrl);
         fetchUrlObj.pathname =
             fetchUrlObj.pathname +
             (fetchUrlObj.pathname.substr(-1) !== '/' ? '/' : '') +
             endpoint;
         fetchUrlObj.query = query;
 
-        var fetchUrl = urlModule.format(fetchUrlObj);
+        const fetchUrl = urlModule.format(fetchUrlObj);
 
-        //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
-        var oReq = new XMLHttpRequest();
+        // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
+        const oReq = new XMLHttpRequest();
         oReq.open('GET', fetchUrl, true);
         oReq.responseType = 'arraybuffer';
         oReq.timeout = 10000;
@@ -59,15 +64,15 @@ function makeFetcher (workerUrl, endpoint, queryKey) {
             res.onNext(new Uint8Array(0));
         };
 
-        var now = Date.now();
+        const now = Date.now();
         oReq.onload = function () {
             try {
                 debug('got texture/vbo data', bufferName, Date.now() - now, 'ms');
 
-                var arrayBuffer = oReq.response; // Note: not oReq.responseText
-                var blength = bufferByteLengths[bufferName];
+                const arrayBuffer = oReq.response; // Note: not oReq.responseText
+                const blength = bufferByteLengths[bufferName];
                 debug('Buffer length (%s): %d', bufferName, blength);
-                var trimmedArray = new Uint8Array(arrayBuffer, 0, blength);
+                const trimmedArray = new Uint8Array(arrayBuffer, 0, blength);
 
                 res.onNext(trimmedArray);
 
@@ -100,29 +105,30 @@ function getUpdatedNames (names, originalVersions, newVersions) {
  */
 function requestWorker(args) {
 
-    var attempt = 0;
+    let attempt = 0;
 
-    return Rx.Observable.return().flatMap(function () {
-            //wrap so can retry if claim race failure
+    return Rx.Observable.return().flatMap(
+        () => {
+            // wrap so can retry if claim race failure
             debug('Asking /vizaddr');
             return $.ajaxAsObservable({
                 url: '/vizaddr/graph?' + args,
                 dataType: 'json'
             });
         })
-        .flatMap(function(reply) {
+        .flatMap((reply) => {
 
             attempt++;
 
-            var ret = Rx.Observable.return(reply);
-            return attempt === 1 ?  ret : (ret.delay(1000));
+            const ret = Rx.Observable.return(reply);
+            return attempt === 1 ? ret : (ret.delay(1000));
 
         })
         .map(function (reply) {
 
-            if (!reply.data || reply.data.error) { //FIXME Check success value
+            if (!reply.data || reply.data.error) { // FIXME Check success value
                 console.error('vizaddr returned error', reply, (reply.data||{}).error);
-                var msg;
+                let msg;
                 if (reply.data && reply.data.error) {
                     msg = reply.data.error;
                 } else {
@@ -144,14 +150,14 @@ function requestWorker(args) {
 }
 
 
-// URL query params whitelist for the worker API
-var validWorkerParams = [
+// URL query params white-list for the worker API
+const validWorkerParams = [
     'workbook', 'view', 'dataset', 'scene', 'device', 'controls', 'mapper', 'type', 'vendor',
     'usertag', 'viztoken'
 ];
 
 
-function connect(vizType, urlParams) {
+function connect (vizType, urlParams) {
     debug('Connecting to visualization server');
     if (!vizType) {
         throw new Error('need vizType');
@@ -163,24 +169,24 @@ function connect(vizType, urlParams) {
     }
 
     // Get URL query params to send over to the worker via socket
-    var validUrlParams = _.chain(urlParams)
+    const validUrlParams = _.chain(urlParams)
         .pick(validWorkerParams)
-        .mapObject(function(val) { return encodeURIComponent(val); })
+        .mapObject((val) => encodeURIComponent(val))
         .value();
 
-    var vizAddrArgs = _.chain(validUrlParams)
+    const vizAddrArgs = _.chain(validUrlParams)
         .pairs()
         .map(function (param) { return param.join('='); })
         .value()
         .join('&');
 
-    var attempt = 0,
+    let attempt = 0,
         latestError;
 
     return requestWorker(vizAddrArgs)
-        .flatMap(function (uri) {
+        .flatMap((uri) => {
             return Rx.Observable.return()
-                .do(function () {
+                .do(() => {
                     attempt++;
                     if (attempt === 3) {
                         console.error('Last attempt failed');
@@ -188,10 +194,10 @@ function connect(vizType, urlParams) {
                         throw new Error(latestError);
                     }
                 })
-                .flatMap(function() {
+                .flatMap(() => {
                     uri.query = _.extend({}, validUrlParams, uri.query);
 
-                    var socketUrl = _.extend({}, uri);
+                    const socketUrl = _.extend({}, uri);
                     socketUrl.pathname =
                         socketUrl.pathname +
                         (socketUrl.pathname.substr(-1) !== '/' ? '/' : '') +
@@ -199,7 +205,8 @@ function connect(vizType, urlParams) {
 
                     debug('Got worker URI', urlModule.format(socketUrl));
 
-                    var socket = io.Manager(socketUrl.protocol + '//' + socketUrl.host, {
+                    const socket = io.Manager(socketUrl.protocol + '//' + socketUrl.host,
+                        {
                             query: socketUrl.query,
                             path: socketUrl.pathname,
                             reconnection: false
@@ -207,7 +214,7 @@ function connect(vizType, urlParams) {
                     socket.io.engine.binaryType = 'arraybuffer';
 
                     // FIXME Cannot trigger this handler when testing. Bug?
-                    socket.io.on('connect_error', function (err) {
+                    socket.io.on('connect_error', (err) => {
                         console.error('error, socketio failed connect', err);
                         latestError = 'Failed to connect to GPU worker. Try refreshing the page...';
 
@@ -217,15 +224,17 @@ function connect(vizType, urlParams) {
 
                     debug('Stream client websocket connected to visualization server', vizType);
 
+                    const fallbackErrorMessage = 'Connection rejected by GPU worker. Try refreshing the page...';
+
                     return Rx.Observable.bindCallback(socket.emit.bind(socket, 'viz'))(vizType)
-                        .do(function (v) {
+                        .do((v) => {
                             debug('notified viz type', v);
                         })
                         .map(function (res) {
                             if (res && res.success) {
-                                return {uri: uri, socket: socket};
+                                return {uri, socket};
                             } else {
-                                latestError = (res||{}).error || 'Connection rejected by GPU worker. Try refreshing the page...';
+                                latestError = (res||{}).error || fallbackErrorMessage;
                                 console.error('Viz rejected (likely due to multiple claimants)');
                                 throw new Error (latestError);
                             }
@@ -237,7 +246,7 @@ function connect(vizType, urlParams) {
 
 
 //socket * canvas * {?is3d: bool}
-function createRenderer(socket, canvas, urlParams) {
+function createRenderer (socket, canvas, urlParams) {
     debug('Getting render-config from server', urlParams);
     return Rx.Observable.bindCallback(socket.emit.bind(socket))('render_config', null)
         .map(function (res) {
@@ -248,7 +257,7 @@ function createRenderer(socket, canvas, urlParams) {
                 throw new Error((res||{}).error || 'Cannot get render_config');
             }
         }).map(function (renderConfig) {
-            var renderState = renderer.init(renderConfig, canvas, urlParams);
+            const renderState = renderer.init(renderConfig, canvas, urlParams);
             debug('Renderer created');
             return renderState;
         });
@@ -262,35 +271,34 @@ function createRenderer(socket, canvas, urlParams) {
  * @param  {socket.io socket} socket - socket.io socket created when we connected to the server.
  * @param  {string} uri              - The URI for the server's websocket endpoint.
  * @param  {renderer} renderState    - The renderer object returned by renderer.create().
- *
  * @return {Rx.BehaviorSubject} {'init', 'start', 'received', 'rendered'} Rx subject that fires every time a frame is rendered.
  */
-function handleVboUpdates(socket, uri, renderState) {
+function handleVboUpdates (socket, uri, renderState) {
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     //socketID, bufferByteLengths, bufferName
-    var fetchBuffer = makeFetcher(uri, 'vbo', 'buffer');
+    const fetchBuffer = makeFetcher(uri, 'vbo', 'buffer');
 
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     //socketID, textureByteLengths, textureName
-    var fetchTexture = makeFetcher(uri, 'texture', 'texture');
+    const fetchTexture = makeFetcher(uri, 'texture', 'texture');
 
-    var bufferNames = renderer.getServerBufferNames(renderState.get('config').toJS());
-    var textureNames = renderer.getServerTextureNames(renderState.get('config').toJS());
+    const bufferNames = renderer.getServerBufferNames(renderState.get('config').toJS());
+    const textureNames = renderer.getServerTextureNames(renderState.get('config').toJS());
 
     debug('Server buffers/textures', bufferNames, textureNames);
 
-    var lastHandshake = Date.now();
-    var vboUpdates = new Rx.BehaviorSubject('init');
+    let lastHandshake = Date.now();
+    const vboUpdates = new Rx.BehaviorSubject('init');
 
-    var previousVersions = {buffers: {}, textures: {}};
-    var vboUpdateStep = 0;
+    const previousVersions = {buffers: {}, textures: {}};
+    let vboUpdateStep = 0;
 
-    var vboVersions = new Rx.BehaviorSubject(previousVersions);
+    const vboVersions = new Rx.BehaviorSubject(previousVersions);
 
-    socket.on('vbo_update', function (data, handshake) {
+    socket.on('vbo_update', (data, handshake) => {
         debug('0. socket vbo update');
 
-        var thisStep = {step: vboUpdateStep++, data: data.step};
+        const thisStep = {step: vboUpdateStep++, data: data.step};
 
         caption.renderCaptionFromData(data);
 
@@ -298,21 +306,23 @@ function handleVboUpdates(socket, uri, renderState) {
             debug('1. VBO update', thisStep);
             vboUpdates.onNext('start');
 
-            var now = new Date().getTime();
+            const now = new Date().getTime();
             debug('2. got VBO update message', now - lastHandshake, data, 'ms', thisStep);
 
-            var changedBufferNames  = getUpdatedNames(bufferNames,  previousVersions.buffers,  data.versions ? data.versions.buffers : null);
-            var changedTextureNames = getUpdatedNames(textureNames, previousVersions.textures, data.versions ? data.versions.textures : null);
+            const changedBufferNames  = getUpdatedNames(bufferNames,
+                previousVersions.buffers, data.versions ? data.versions.buffers : null);
+            const changedTextureNames = getUpdatedNames(textureNames,
+                previousVersions.textures, data.versions ? data.versions.textures : null);
 
 
             socket.emit('planned_binary_requests', {buffers: changedBufferNames, textures: changedTextureNames});
 
             debug('3. changed buffers/textures', previousVersions, data.versions, changedBufferNames, changedTextureNames, thisStep);
 
-            var readyBuffers = new Rx.ReplaySubject(1);
-            var readyTextures = new Rx.ReplaySubject(1);
+            const readyBuffers = new Rx.ReplaySubject(1);
+            const readyTextures = new Rx.ReplaySubject(1);
 
-            var readyToRender = Rx.Observable.zip(readyBuffers, readyTextures, _.identity).share();
+            const readyToRender = Rx.Observable.zip(readyBuffers, readyTextures, _.identity).share();
             readyToRender
                 .subscribe(function () {
                     debug('6. All buffers and textures received, completing', thisStep);
@@ -320,9 +330,9 @@ function handleVboUpdates(socket, uri, renderState) {
                     lastHandshake = Date.now();
                     vboUpdates.onNext('received');
                 },
-                function (err) { console.error('6 err. readyToRender error', err, (err||{}).stack, thisStep); });
+                (err) => { console.error('6 err. readyToRender error', err, (err||{}).stack, thisStep); });
 
-            var bufferVBOs = Rx.Observable.combineLatest(
+            const bufferVBOs = Rx.Observable.combineLatest(
                 [Rx.Observable.return()]
                     .concat(changedBufferNames.map(fetchBuffer.bind('', socket.io.engine.id, data.bufferByteLengths))))
                 .take(1);
@@ -332,14 +342,14 @@ function handleVboUpdates(socket, uri, renderState) {
                     vbos.shift(); // Remove empty stub observable from the beginning
 
                     debug('4a. Got VBOs:', vbos.length, thisStep);
-                    var bindings = _.object(_.zip(changedBufferNames, vbos));
+                    const bindings = _.object(_.zip(changedBufferNames, vbos));
 
                     debug('5a. got all VBO data', Date.now() - now, 'ms', bindings, thisStep);
                     //TODO may be able to move this early
                     socket.emit('received_buffers');
 
                     try {
-                        _.each(data.elements, function (num, itemName) {
+                        _.each(data.elements, (num, itemName) => {
                             renderer.setNumElements(renderState, itemName, num);
                         });
                         renderer.loadBuffers(renderState, bindings);
@@ -349,16 +359,16 @@ function handleVboUpdates(socket, uri, renderState) {
                     }
 
                 },
-                function (err) { console.error('bufferVBOs error', err, (err||{}).stack, thisStep); });
+                (err) => { console.error('bufferVBOs error', err, (err||{}).stack, thisStep); });
 
-            var textureLengths =
+            const textureLengths =
                 _.object(_.pairs(_.pick(data.textures, changedTextureNames))
                     .map(function (pair) {
-                        var name = pair[0];
-                        var nfo = pair[1];
+                        const name = pair[0];
+                        const nfo = pair[1];
                         return [name, nfo.bytes]; }));
 
-            var texturesData = Rx.Observable.combineLatest(
+            const texturesData = Rx.Observable.combineLatest(
                 [Rx.Observable.return()]
                     .concat(changedTextureNames.map(fetchTexture.bind('', socket.io.engine.id, textureLengths))))
                 .take(1);
@@ -366,17 +376,17 @@ function handleVboUpdates(socket, uri, renderState) {
             texturesData.subscribe(function (textures) {
                 textures.shift();
 
-                var textureNfos = changedTextureNames.map(function (name, i) {
+                const textureNfos = changedTextureNames.map(function (name, i) {
                     return _.extend(data.textures[name], {buffer: textures[i]});
                 });
 
-                var bindings = _.object(_.zip(changedTextureNames, textureNfos));
+                const bindings = _.object(_.zip(changedTextureNames, textureNfos));
 
                 debug('4b. Got textures', textures, thisStep);
                 renderer.loadTextures(renderState, bindings);
 
                 readyTextures.onNext();
-            }, function (err) { console.error('5b.readyToRender error', err, (err||{}).stack, thisStep); });
+            }, (err) => { console.error('5b.readyToRender error', err, (err||{}).stack, thisStep); });
 
             _.keys(data.versions).forEach(function (mode) {
                 previousVersions[mode] = previousVersions[mode] || {};
