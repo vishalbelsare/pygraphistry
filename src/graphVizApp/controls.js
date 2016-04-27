@@ -698,10 +698,10 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     /**
      * Returns whether camera auto-centering is specified; defaults to true.
      */
-    var finalCenter = (function () {
+    var finalCenter = (() => {
         var flag = urlParams.center;
         return flag === undefined || flag.toString().toLowerCase() === 'true';
-    }());
+    })();
 
     var $simulation = $('#simulation');
     var centeringDone =
