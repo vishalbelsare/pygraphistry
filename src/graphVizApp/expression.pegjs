@@ -226,7 +226,7 @@ ORPredicate
 
 LimitClause "limit"
   = LIMIT __ limit:ArithmeticExpression
-    { return { type: 'Limit', value: limit } }
+    { return { type: 'LimitExpression', value: limit } }
 
 MemberOfOperator =
   IN / MEMBEROF
