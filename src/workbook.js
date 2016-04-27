@@ -29,7 +29,7 @@ function getBlankViewTemplate() {
                 query: {
                     type: 'point',
                     ast: {
-                        type: 'Limit',
+                        type: 'LimitExpression',
                         value: {
                             type: 'Literal',
                             dataType: 'integer',

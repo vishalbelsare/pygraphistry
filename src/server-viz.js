@@ -906,7 +906,7 @@ function VizServer (app, socket, cachedVBOs) {
                     }
                     const ast = query.ast;
                     if (ast !== undefined &&
-                        ast.type === 'Limit' &&
+                        ast.type === 'LimitExpression' &&
                         ast.value !== undefined) {
                         viewConfig.limits.point = generator.evaluateExpressionFree(ast.value);
                         viewConfig.limits.edge = viewConfig.limits.point;
