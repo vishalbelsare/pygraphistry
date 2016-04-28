@@ -344,7 +344,7 @@ function createLabelDom(instance, dim, labelObj) {
             $wrap.append($icons);
             var dataOptions = {placement: 'bottom', toggle: 'tooltip'};
             var keyValueEqn = Identifier.clarifyWithPrefixSegment($key.text(), type) + '=' + displayName;
-            var $tag = $('<a class="tag-by-key-value">').html('<i class="fa fa-tag"></i>');
+            var $tag = $('<a class="tag-by-key-value beta">').html('<i class="fa fa-tag"></i>');
             $tag.data(dataOptions);
             $tag.attr('title', 'Tag as ' + keyValueEqn);
             $tag.tooltip({container: 'body'})
