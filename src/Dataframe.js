@@ -1564,7 +1564,12 @@ Dataframe.prototype.getRowsCompactUnfiltered = function (indices, type) {
         index = lastMasks.getIndexByType(type, index);
         const row = [];
         _.each(keys, (key) => {
-            row.push(attributes[key].values[index]);
+            const value = attributes[key].values[index];
+            // This is serialization-specific logic to avoid unusable CSV output. Hoist as necessary:
+            if (dataTypeUtil.valueSignifiesUndefined(value)) {
+                row.push(NaN);
+            }
+            row.push(value);
         });
         return row;
     });
