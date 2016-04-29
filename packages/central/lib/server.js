@@ -57,31 +57,10 @@ var apiKey      = require('common/api.js');
 // Tell Express to trust reverse-proxy connections from localhost, linklocal, and private IP ranges.
 // This allows Express to expose the client's real IP and protocol, not the proxy's.
 app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
-
 app.use(compression());
-
-//needed for splunk API
-//TODO can we tighten so only for API?
-var allowCrossOrigin = function  (req, res, next) {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'X-Requested-With,Content-Type,Authorization,X-Splunk-Form-Key,X-CSRFToken');
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,PATCH,POST,DELETE');
-    next();
-};
-app.use(allowCrossOrigin);
-
-
-app.options('/api/v0.2/splunk/html/graph.fragment.html', function(req, res) {
-    res.sendStatus(200);
-});
-app.options('/api/v0.2/splunk/html/index.fragment.html', function(req, res) {
-    res.sendStatus(200);
-});
-
 
 var MAIN_STATIC_PATH    = path.resolve(__dirname, '../assets');
 var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
-var SPLUNK_STATIC_PATH  = path.resolve(require('splunk-viz').staticFilePath(), 'assets');
 var STREAMGL_PATH       = require.resolve('StreamGL/dist/StreamGL.js');
 var STREAMGL_MAP_PATH   = require.resolve('StreamGL/dist/StreamGL.map');
 
@@ -251,9 +230,6 @@ app.use(rewrite('/workbook/:workbookName', '/graph/graph.html?workbook=:workbook
 app.use(rewrite('/workbook/:workbookName\\?*', '/graph/graph.html?workbook=:workbookName?$1'));
 app.use(rewrite('/workbook/:workbookName/view/:viewName', '/graph/graph.html?workbook=:workbookName&view=:viewName'));
 app.use(rewrite('/workbook/:workbookName/view/:viewName\\?*', '/graph/graph.html?workbook=:workbookName&view=:viewName?$1'));
-
-// Serve splunk static assets
-app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 
 function start() {
