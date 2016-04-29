@@ -154,44 +154,6 @@ function assignWorker(req, res) {
     });
 }
 
-app.get('/vizaddr/graph', function(req, res) {
-    assignWorker(req, res);
-});
-
-// Serve the StreamGL client library
-// app.get('*/StreamGL.js', function(req, res) {
-//     res.sendFile(STREAMGL_PATH);
-// });
-// app.get('*/StreamGL.map', function(req, res) {
-//     res.sendFile(STREAMGL_MAP_PATH);
-// });
-
-// Serve graph static assets
-// app.use('/graph', function (req, res, next) {
-//     return express.static(GRAPH_STATIC_PATH)(req, res, next);
-// });
-
-app.use(bodyParser.urlencoded({ extended: false }));
-
-// middleware to handle Falcor get/put/post requests
-app.use('/model.json', FalcorServer.dataSourceRoute(function(request, response) {
-    return new FalcorRouter({ config, logger, request });
-}));
-
-app.use('/graph', express.static(GRAPH_STATIC_PATH, { fallthrough: true }));
-app.use('/graph', express.static(STREAMGL_DIST_PATH, { fallthrough: true }));
-
-app.use(rewrite('/dataset/:datasetName', '/graph/graph.html?dataset=:datasetName'));
-app.use(rewrite('/dataset/:datasetName\\?*', '/graph/graph.html?dataset=:datasetName?$1'));
-app.use(rewrite('/workbook/:workbookName', '/graph/graph.html?workbook=:workbookName'));
-app.use(rewrite('/workbook/:workbookName\\?*', '/graph/graph.html?workbook=:workbookName?$1'));
-app.use(rewrite('/workbook/:workbookName/view/:viewName', '/graph/graph.html?workbook=:workbookName&view=:viewName'));
-app.use(rewrite('/workbook/:workbookName/view/:viewName\\?*', '/graph/graph.html?workbook=:workbookName&view=:viewName?$1'));
-// Serve uber static assets
-app.use('/uber',   express.static(UBER_STATIC_PATH));
-// Serve splunk static assets
-app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
-
 
 // Proxy upload to task-like worker (etl, oneshot)
 // String * String -> {success: bool, msg: 'Invalid API key'}
@@ -256,10 +218,14 @@ function propagatePostToWorker (route, workerName) {
     });
 }
 
+
+app.get('/vizaddr/graph', function(req, res) {
+    assignWorker(req, res);
+});
+
 propagatePostToWorker('/etl', 'etl');
 propagatePostToWorker('/etlvgraph', 'etl');
 propagatePostToWorker('/oneshot', 'oneshot');
-
 
 // Store client errors in a log file (indexed by Splunk)
 app.post('/error', bodyParser.urlencoded({extended: true, limit: '64kb'}), logClientError);
@@ -270,15 +236,48 @@ app.use('/graphistry', express.static(MAIN_STATIC_PATH));
 // Default '/' static assets
 app.use('/', express.static(MAIN_STATIC_PATH));
 
+//https://.../api/encrypt?text=...
+apiKey.init(app);
 
 app.get('/uber', function(req, res) {
     logger.info('redirecting to graph');
     res.redirect('/uber/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
 });
+// Serve the StreamGL client library
+// app.get('*/StreamGL.js', function(req, res) {
+//     res.sendFile(STREAMGL_PATH);
+// });
+// app.get('*/StreamGL.map', function(req, res) {
+//     res.sendFile(STREAMGL_MAP_PATH);
+// });
 
+// Serve graph static assets
+// app.use('/graph', function (req, res, next) {
+//     return express.static(GRAPH_STATIC_PATH)(req, res, next);
+// });
 
-//https://.../api/encrypt?text=...
-apiKey.init(app);
+app.use(bodyParser.urlencoded({ extended: false }));
+
+// middleware to handle Falcor get/put/post requests
+app.use('/model.json', FalcorServer.dataSourceRoute(function(request, response) {
+    return new FalcorRouter({ config, logger, request });
+}));
+
+app.use('/graph', express.static(GRAPH_STATIC_PATH, { fallthrough: true }));
+app.use('/graph', express.static(STREAMGL_DIST_PATH, { fallthrough: true }));
+
+app.use(rewrite('/dataset/:datasetName', '/graph/graph.html?dataset=:datasetName'));
+app.use(rewrite('/dataset/:datasetName\\?*', '/graph/graph.html?dataset=:datasetName?$1'));
+app.use(rewrite('/workbook/:workbookName', '/graph/graph.html?workbook=:workbookName'));
+app.use(rewrite('/workbook/:workbookName\\?*', '/graph/graph.html?workbook=:workbookName?$1'));
+app.use(rewrite('/workbook/:workbookName/view/:viewName', '/graph/graph.html?workbook=:workbookName&view=:viewName'));
+app.use(rewrite('/workbook/:workbookName/view/:viewName\\?*', '/graph/graph.html?workbook=:workbookName&view=:viewName?$1'));
+
+// Serve uber static assets
+app.use('/uber',   express.static(UBER_STATIC_PATH));
+
+// Serve splunk static assets
+app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
 
 
 function start() {
@@ -303,9 +302,6 @@ function start() {
             )(HTTP_SERVER_LISTEN_ADDRESS);
         });
 }
-
-
-
 
 
 module.exports = {
