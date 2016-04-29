@@ -138,10 +138,6 @@ function assignWorker(req, res) {
         var workerPath = (config.PINGER_ENABLED) ?
             util.format('%sworker/%s/', config.BASE_PATH, encodeURIComponent(worker.port)) :
             util.format('%s', config.BASE_PATH);
-//            util.format('%s/%s/%s',
-//                config.BASE_URL,
-//                encodeURIComponent(worker.hostname),
-//                encodeURIComponent(worker.port));
 
         var workerUrl = ensureValidUrl({
                 hostname: baseUrl.hostname,
@@ -223,6 +219,7 @@ app.get('/vizaddr/graph', function(req, res) {
     assignWorker(req, res);
 });
 
+// Forward ETL requests to workers
 propagatePostToWorker('/etl', 'etl');
 propagatePostToWorker('/etlvgraph', 'etl');
 propagatePostToWorker('/oneshot', 'oneshot');
@@ -243,18 +240,6 @@ app.get('/uber', function(req, res) {
     logger.info('redirecting to graph');
     res.redirect('/uber/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
 });
-// Serve the StreamGL client library
-// app.get('*/StreamGL.js', function(req, res) {
-//     res.sendFile(STREAMGL_PATH);
-// });
-// app.get('*/StreamGL.map', function(req, res) {
-//     res.sendFile(STREAMGL_MAP_PATH);
-// });
-
-// Serve graph static assets
-// app.use('/graph', function (req, res, next) {
-//     return express.static(GRAPH_STATIC_PATH)(req, res, next);
-// });
 
 app.use(bodyParser.urlencoded({ extended: false }));
 
