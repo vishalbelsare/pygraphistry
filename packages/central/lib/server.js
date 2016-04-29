@@ -81,7 +81,6 @@ app.options('/api/v0.2/splunk/html/index.fragment.html', function(req, res) {
 
 var MAIN_STATIC_PATH    = path.resolve(__dirname, '../assets');
 var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
-var UBER_STATIC_PATH    = path.resolve(require('uber-viz').staticFilePath(), 'assets');
 var SPLUNK_STATIC_PATH  = path.resolve(require('splunk-viz').staticFilePath(), 'assets');
 var STREAMGL_PATH       = require.resolve('StreamGL/dist/StreamGL.js');
 var STREAMGL_MAP_PATH   = require.resolve('StreamGL/dist/StreamGL.map');
@@ -236,11 +235,6 @@ app.use('/', express.static(MAIN_STATIC_PATH));
 //https://.../api/encrypt?text=...
 apiKey.init(app);
 
-app.get('/uber', function(req, res) {
-    logger.info('redirecting to graph');
-    res.redirect('/uber/index.html' + (req.query.debug !== undefined ? '?debug' : ''));
-});
-
 app.use(bodyParser.urlencoded({ extended: false }));
 
 // middleware to handle Falcor get/put/post requests
@@ -257,9 +251,6 @@ app.use(rewrite('/workbook/:workbookName', '/graph/graph.html?workbook=:workbook
 app.use(rewrite('/workbook/:workbookName\\?*', '/graph/graph.html?workbook=:workbookName?$1'));
 app.use(rewrite('/workbook/:workbookName/view/:viewName', '/graph/graph.html?workbook=:workbookName&view=:viewName'));
 app.use(rewrite('/workbook/:workbookName/view/:viewName\\?*', '/graph/graph.html?workbook=:workbookName&view=:viewName?$1'));
-
-// Serve uber static assets
-app.use('/uber',   express.static(UBER_STATIC_PATH));
 
 // Serve splunk static assets
 app.use('/api/v0.2/splunk',   express.static(SPLUNK_STATIC_PATH));
