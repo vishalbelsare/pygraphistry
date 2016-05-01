@@ -61,8 +61,6 @@ app.use(compression());
 
 var MAIN_STATIC_PATH    = path.resolve(__dirname, '../assets');
 var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
-var STREAMGL_PATH       = require.resolve('StreamGL/dist/StreamGL.js');
-var STREAMGL_MAP_PATH   = require.resolve('StreamGL/dist/StreamGL.map');
 
 var STREAMGL_DIST_PATH  = require.resolve('StreamGL');
 STREAMGL_DIST_PATH = path.resolve(STREAMGL_DIST_PATH.slice(0, STREAMGL_DIST_PATH.lastIndexOf('/')), 'dist');
