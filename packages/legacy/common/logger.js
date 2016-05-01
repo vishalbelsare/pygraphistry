@@ -172,8 +172,8 @@ module.exports = {
 // Global error handlers
 ////////////////////////////////////////////////////////////////////////////////
 
-var SegfaultHandler = require('segfault-handler');
-SegfaultHandler.registerHandler();
+//var SegfaultHandler = require('segfault-handler');
+//SegfaultHandler.registerHandler();
 
 
 ////////////////////////////////////////////////////////////////////////////////
