@@ -72,6 +72,11 @@ var HTTP_SERVER_LISTEN_PORT = config.HTTP_LISTEN_PORT;
 
 function logClientError(req, res) {
     var writeError = function (msg) {
+
+        if (msg.err && msg.err.stack) {
+            msg.err.stackArray = Log.getFullErrorStack(msg.err.stack);
+        }
+
         if(config.ENVIRONMENT === 'local') {
             msg.ip = req.ip;
             logger.error(msg, 'Client Error');
