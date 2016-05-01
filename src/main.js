@@ -380,13 +380,15 @@ function initAnalytics(urlParams) {
 }
 
 function setupErrorReporters(urlParams) {
-    function makeMsg() {
+    function makeMsg(type, level) {
         return {
             module: 'streamgl',
             time: (new Date()).toUTCString(),
             userAgent: window.navigator.userAgent,
             params: urlParams,
-            origin: document.location.origin
+            origin: document.location.origin,
+            type: type,
+            level: level
         };
     }
     var reportURL = window.templatePaths.API_ROOT + 'error';
@@ -403,8 +405,7 @@ function setupErrorReporters(urlParams) {
             content.stack = e.error.stack;
         }
 
-        var msg = makeMsg();
-        msg.type = 'JSError';
+        var msg = makeMsg('JSError', 50);
         msg.err = content;
 
         $.post(reportURL, msg);
@@ -418,8 +419,7 @@ function setupErrorReporters(urlParams) {
             return;
         }
 
-        var msg = makeMsg();
-        msg.type = 'AjaxError';
+        var msg = makeMsg('AjaxError', 50);
         msg.err = {
             url: settings.url,
             result: e.result,
@@ -433,8 +433,7 @@ function setupErrorReporters(urlParams) {
     var loggedConsoleFunctions = ['error', 'warn'];
     _.each(loggedConsoleFunctions, function (fun) {
         monkey.patch(console, fun, monkey.after(function () {
-            var msg = makeMsg();
-            msg.type = 'console.' + fun;
+            var msg = makeMsg('console.' + fun, fun === 'warn' ? 40 : 50);
             msg.err = {message: nodeutil.format.apply(this, arguments)};
 
             $.post(reportURL, msg);
