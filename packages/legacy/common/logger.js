@@ -164,7 +164,9 @@ module.exports = {
             childLogger.error.apply(childLogger, args);
             throw err;
         };
-    }
+    },
+
+    getFullErrorStack: getFullErrorStack
 };
 
 
