@@ -394,22 +394,22 @@ function setupErrorReporters(urlParams) {
     var reportURL = window.templatePaths.API_ROOT + 'error';
 
     // Track JavaScript errors
-    window.addEventListener('error', function(e) {
+    // Use the new standard (2014+) to get stack from modern browsers
+    // https://html.spec.whatwg.org/multipage/webappapis.html#errorevent
+    window.onerror = function(message, file, line, col, error) {
         var content = {
-            message: e.message,
-            filename: e.filename,
-            lineno: e.lineno
+            message: message,
+            filename: file,
+            line: line,
+            col: col,
+            stack: (error || {}).stack
         };
-
-        if (e.error) { // Modern browsers report the stack trace
-            content.stack = e.error.stack;
-        }
 
         var msg = makeMsg('JSError', 50);
         msg.err = content;
 
         $.post(reportURL, msg);
-    });
+    };
 
     // Track AJAX errors (jQuery API)
     $(document).ajaxError(function(e, request, settings, thrownError) {
@@ -423,7 +423,8 @@ function setupErrorReporters(urlParams) {
         msg.err = {
             url: settings.url,
             result: e.result,
-            message: thrownError
+            message: thrownError,
+            stack: (new Error(thrownError)).stack
         };
 
         $.post(reportURL, msg);
@@ -434,7 +435,16 @@ function setupErrorReporters(urlParams) {
     _.each(loggedConsoleFunctions, function (fun) {
         monkey.patch(console, fun, monkey.after(function () {
             var msg = makeMsg('console.' + fun, fun === 'warn' ? 40 : 50);
-            msg.err = {message: nodeutil.format.apply(this, arguments)};
+            var e = new Error(nodeutil.format.apply(this, arguments));
+
+            var peeledStack = _.filter(e.stack.split('\n'), function (l) {
+                return l.indexOf('Console') === -1;
+            });
+
+            msg.err = {
+                message: e.message,
+                stack: peeledStack.join('\n')
+            };
 
             $.post(reportURL, msg);
         }));
