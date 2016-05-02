@@ -470,7 +470,7 @@ function VizServer (app, socket, cachedVBOs) {
     /** @type {GraphistryURLParams} */
     const query = this.socket.handshake.query;
 
-    tagUser(query);
+    //tagUser(query);
 
     this.graph = new Rx.ReplaySubject(1);
     this.viewConfig = new Rx.ReplaySubject(1);
