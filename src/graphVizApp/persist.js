@@ -53,7 +53,13 @@ function getWorkbookURL (urlParams, workbookName) {
 
 function generateContentKey (urlParams) {
     const uid = util.createAlphaNumericUID();
-    return urlParams.dataset + '_' + uid;
+    const parts = urlParams.dataset.split('/');
+    const suffix = parts.slice(-parts.length + 1);
+    if (parts.length === 2) {
+        return urlParams.dataset + '_' + uid;
+    } else {
+        return urlParams.dataset.replace(/\.json$/, '_' + uid + '.json');
+    }
 }
 
 

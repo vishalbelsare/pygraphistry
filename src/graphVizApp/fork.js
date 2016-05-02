@@ -25,9 +25,15 @@ module.exports = function (socket, urlParams) {
         .map(function () {
             var uid = util.createAlphaNumericUID();
             var parts = urlParams.dataset.split('/');
-            var suffix = parts.slice(-parts.length + 1);
+            var suffix = parts.slice(-parts.length - 1);
+            var defaultName;
+            if (parts.length === 2) {
+                defaultName = suffix + '_' + uid;
+            } else {
+                defaultName = urlParams.dataset.replace(/\.json$/, '_' + uid + '.json');
+            }
             return $(Handlebars.compile($('#forkTemplate').html())(
-                {defName: suffix + '_' + uid}));
+                {defName: defaultName}));
         })
         .do(function ($modal) {
             $('body').append($modal);
