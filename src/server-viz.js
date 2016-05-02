@@ -444,17 +444,9 @@ function failWithMessage (cb, message) {
     cb({success: false, error: message});
 }
 
-// Grab user info from socket and add to logger
-// TODO de-duplicate from viz-server's server.js
-function tagUser (query) {
-    log.addMetadataField({dataset: query.dataset});
 
-    if (query.usertag && query.usertag !== 'undefined') {
-        log.addMetadataField({userTag: decodeURIComponent(query.usertag)});
-    }
-}
-
-function VizServer (app, socket, cachedVBOs) {
+function VizServer (app, socket, cachedVBOs, loggerMetadata) {
+    log.addMetadataField(loggerMetadata);
 
     const socketLogger = logger.child({
         socketID: socket.id
@@ -469,8 +461,6 @@ function VizServer (app, socket, cachedVBOs) {
     this.cachedVBOs = cachedVBOs;
     /** @type {GraphistryURLParams} */
     const query = this.socket.handshake.query;
-
-    //tagUser(query);
 
     this.graph = new Rx.ReplaySubject(1);
     this.viewConfig = new Rx.ReplaySubject(1);
