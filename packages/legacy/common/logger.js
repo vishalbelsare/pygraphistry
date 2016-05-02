@@ -144,6 +144,10 @@ module.exports = {
         return _.extend(parentLogger.fields.metadata, metadata);
     },
 
+    clearMetadataField: function (fields) {
+        _.each(fields, function (field) { delete parentLogger.fields.metadata[field]; });
+    },
+
     addUserInfo: function(newUserInfo) {
         return _.extend(parentLogger.fields.metadata.userInfo, newUserInfo);
     },
@@ -164,7 +168,9 @@ module.exports = {
             childLogger.error.apply(childLogger, args);
             throw err;
         };
-    }
+    },
+
+    getFullErrorStack: getFullErrorStack
 };
 
 
