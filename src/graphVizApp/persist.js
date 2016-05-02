@@ -1,15 +1,15 @@
 'use strict';
 
-var $               = window.$;
-var _               = require('underscore');
-var Rx              = require('rxjs/Rx.KitchenSink');
+const $               = window.$;
+const _               = require('underscore');
+const Rx              = require('rxjs/Rx.KitchenSink');
                       require('../rx-jquery-stub');
-var Handlebars      = require('handlebars');
-var Color           = require('color');
+const Handlebars      = require('handlebars');
+const Color           = require('color');
 
-var util            = require('./util.js');
-var staticclient    = require('../staticclient.js');
-var marquee         = require('./marquee.js');
+const util            = require('./util.js');
+const staticclient    = require('../staticclient.js');
+const marquee         = require('./marquee.js');
 
 
 /**
@@ -22,76 +22,74 @@ var marquee         = require('./marquee.js');
  */
 function getExportURL (camera, urlParams, contentKey, backgroundColor) {
     // static+contentKey identify static content
-    var overrides = {
+    const overrides = {
             static: true, contentKey: contentKey,
             play: 0, center: false, // TODO: Infer these play/center settings from static=true on load.
             menu: false, goLive: false
         },
-        boundsArray = _.map(camera.getBounds(), function (value) { return value.toPrecision(3); }),
+        boundsArray = _.map(camera.getBounds(), (value) => value.toPrecision(3)),
         bounds    = {left: boundsArray[0], right: boundsArray[1], top: boundsArray[2], bottom: boundsArray[3]};
     if (backgroundColor) {
         overrides.bg = encodeURIComponent(backgroundColor);
     }
-    var params    = _.extend({}, urlParams, overrides, bounds),
-        paramStr  = _.map(params, function (v, k) { return k + '=' + v; }).join('&');
+    const params    = _.extend({}, urlParams, overrides, bounds),
+        paramStr  = _.map(params, (v, k) => k + '=' + v).join('&');
     return window.location.origin + window.location.pathname + '?' + paramStr;
 }
 
 
-function getWorkbookURL(urlParams, workbookName) {
-    var override = {workbook: workbookName},
+function getWorkbookURL (urlParams, workbookName) {
+    const override = {workbook: workbookName},
         params = _.extend({}, urlParams, override),
-        paramStr  = _.map(params, function (v, k) { return k + '=' + v; }).join('&');
+        paramStr  = _.map(params, (v, k) => k + '=' + v).join('&');
     return window.location.origin + window.location.pathname + '?' + paramStr;
 }
 
 
-function generateContentKey(urlParams) {
-    var uid = util.createAlphaNumericUID(),
-        parts = urlParams.dataset.split('/'),
-        suffix = parts.slice(-parts.length + 1);
-    return suffix + '_' + uid;
+function generateContentKey (urlParams) {
+    const uid = util.createAlphaNumericUID();
+    return urlParams.dataset + '_' + uid;
 }
 
 
 module.exports = {
-    setupPersistWorkbookButton: function ($btn, appState, socket, urlParams) {
-        var workbookName = urlParams.workbook;
+    setupPersistWorkbookButton: ($btn, appState, socket, urlParams) => {
+        let workbookName = urlParams.workbook;
 
         Rx.Observable.fromEvent($btn, 'click')
-            .map(function () {
+            .map(() => {
                 return $(Handlebars.compile($('#persistWorkbookTemplate').html())(
                     {defName: workbookName}));
             })
-            .do(function ($modal) {
+            .do(($modal) => {
                 $('body').append($modal);
                 $('.status', $modal).css('display', 'none');
                 $modal.modal('show');
             })
-            .flatMap(function ($modal) {
+            .flatMap(($modal) => {
                 return Rx.Observable.fromEvent($('.modal-footer button', $modal), 'click')
                     .map(_.constant($modal));
             })
             // notify server and wait
-            .do(function ($modal) {
+            .do(($modal) => {
                 $('.persist-status-text', $modal).text('Saving workbook');
                 $('.status', $modal).css('display', 'inline');
                 $('.modal-footer button', $modal).css('display', 'none');
             })
-            .flatMap(function ($modal) {
+            .flatMap(($modal) => {
                 workbookName = $('.modal-body input', $modal).val();
                 return Rx.Observable.bindCallback(socket.emit.bind(socket))('persist_current_workbook', workbookName)
-                    .map(function (reply) {
+                    .map((reply) => {
                         return {reply: reply, $modal: $modal, workbookName: workbookName};
                     });
             })
-            .do(function (response) {
-                var reply = response.reply,
+            .do((response) => {
+                const reply = response.reply,
                     $modal = response.$modal;
                 if (!(reply && reply.success)) {
                     throw new Error({msg: 'Server error on inspectHeader', v: (reply || {error: 'unknown'}).error});
                 }
-                var targetURL = getWorkbookURL(urlParams, response.workbookName),
+                const targetURL = getWorkbookURL(urlParams, response.workbookName),
                     previewElement = $('<a>')
                         .attr('target', '_blank')
                         .text(workbookName)
@@ -105,13 +103,13 @@ module.exports = {
                         .append(previewElement));
             })
             .subscribe(_.identity,
-            function (err) {
+            (err) => {
                 console.error('err', err);
                 try { $('.persistWorkbook').remove(); } catch (ignore) { }
                 util.makeErrorHandler('Exception while persisting workbook', err);
             });
     },
-    setupPersistLayoutButton: function ($btn, appState, socket, urlParams) {
+    setupPersistLayoutButton: ($btn, appState, socket, urlParams) => {
         if (urlParams.static === 'true') {
             $btn.remove();
             return;
@@ -119,40 +117,40 @@ module.exports = {
 
         Rx.Observable.fromEvent($btn, 'click')
             // show
-            .map(function () {
-                var contentKey = urlParams.contentKey || generateContentKey(urlParams);
+            .map(() => {
+                const contentKey = urlParams.contentKey || generateContentKey(urlParams);
                 return $(Handlebars.compile($('#persistLayoutTemplate').html())(
                     {defName: contentKey}));
             })
-            .do(function ($modal) {
+            .do(($modal) => {
                 $('body').append($modal);
                 $('.status', $modal).css('display', 'none');
                 $modal.modal('show');
             })
-            .flatMap(function ($modal) {
+            .flatMap(($modal) => {
                 return Rx.Observable.fromEvent($('.modal-footer button', $modal), 'click')
                     .map(_.constant($modal));
             })
             // notify server & wait
-            .do(function ($modal) {
+            .do(($modal) => {
                 $('.persist-status-text', $modal).text('Saving graph');
                 $('.status', $modal).css('display', 'inline');
                 $('.modal-footer button', $modal).css('display', 'none');
             })
-            .flatMap(function ($modal) {
-                var contentKey = $('.modal-body input', $modal).val();
+            .flatMap(($modal) => {
+                const contentKey = $('.modal-body input', $modal).val();
                 return Rx.Observable.bindCallback(socket.emit.bind(socket))('persist_current_vbo', contentKey)
-                    .map(function (reply) {
+                    .map((reply) => {
                         return {reply: reply, $modal: $modal, contentKey: contentKey};
                     });
             })
-            .flatMap(function (response) {
+            .flatMap((response) => {
                 // The colorpicker sets background color via CSS, so we match it thus:
                 return marquee.getGhostImageObservable(appState.renderState, undefined, 'image/png', true)
-                    .map(function (imageDataURL) {
+                    .map((imageDataURL) => {
                         response.imageDataURL = imageDataURL;
                         // TODO Fix this to just grab any non-default Color setting:
-                        var backgroundColor = $('#simulation').css('backgroundColor');
+                        const backgroundColor = $('#simulation').css('backgroundColor');
                         if (backgroundColor && !backgroundColor.match('^rgba?\\(0+, 0+, 0+[,)]')) {
                             response.backgroundColor = new Color(backgroundColor);
                         }
@@ -160,31 +158,31 @@ module.exports = {
                         return response;
                     });
             })
-            .do(function (response) {
+            .do((response) => {
                 $('.persist-status-text', response.$modal)
                     .text('Uploading screenshot (' +
                     (response.imageDataURL.length / (1024 * 1024)).toFixed(1) +
                     'MB)');
             })
-            .flatMap(function (response) {
+            .flatMap((response) => {
                 //FIXME upload concurrently w/ save
-                var contentKey = response.reply.name || response.contentKey,
+                const contentKey = response.reply.name || response.contentKey,
                     previewDataURL = response.imageDataURL;
                 if (!contentKey || !previewDataURL) {
                     throw new Error('No content provided: ', response);
                 }
                 return Rx.Observable.bindCallback(socket.emit.bind(socket))('persist_upload_png_export', previewDataURL, contentKey, 'preview.png')
-                    .map(function () {
+                    .map(() => {
                         return response;
                     });
             })
             // show
-            .do(function (response) {
-                var reply = response.reply;
+            .do((response) => {
+                const reply = response.reply;
                 if (!(reply && reply.success)) {
                     throw new Error({msg: 'Server error on uploading screenshot', v: (reply || {error: 'unknown'}).error});
                 }
-                var renderState = appState.renderState,
+                const renderState = appState.renderState,
                     camera = renderState.get('camera'),
                     $modal = response.$modal,
                     targetURL = getExportURL(camera, urlParams, reply.name, response.backgroundColor && response.backgroundColor.hexString()),
@@ -223,7 +221,7 @@ module.exports = {
                 $('.status, .persist-status-text', $modal).css('display', 'none');
             })
             .subscribe(_.identity,
-            function (err) {
+            (err) => {
                 console.error('err', err);
                 try { $('.persistLayout').remove(); } catch (ignore) { }
                 util.makeErrorHandler('Exception while persisting VBOs', err);
