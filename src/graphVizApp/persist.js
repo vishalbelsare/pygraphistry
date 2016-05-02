@@ -3,45 +3,50 @@
 const $               = window.$;
 const _               = require('underscore');
 const Rx              = require('rxjs/Rx.KitchenSink');
-                      require('../rx-jquery-stub');
+                        require('../rx-jquery-stub');
 const Handlebars      = require('handlebars');
 const Color           = require('color');
 
 const util            = require('./util.js');
 const staticclient    = require('../staticclient.js');
 const marquee         = require('./marquee.js');
+const Command         = require('./command.js');
 
+
+function joinEscapedParams (paramKeysAndEscapedValues) {
+    return _.map(paramKeysAndEscapedValues, (paramName, paramValue) => paramName + '=' + paramValue).join('&');
+}
 
 /**
  * Returns a URL string for the export specified.
  * @param {Camera2d} camera - the current/desired viewport.
  * @param {Object} urlParams - the original view URL parameters, mostly carried over.
- * @param {string} contentKey - the key into the content bucket where the export resides.
+ * @param {string} contentKey - the key for the server into the content where the export resides.
  * @param {string} backgroundColor - the background color string from CSS.
  * @returns {string}
  */
 function getExportURL (camera, urlParams, contentKey, backgroundColor) {
     // static+contentKey identify static content
     const overrides = {
-            static: true, contentKey: contentKey,
-            play: 0, center: false, // TODO: Infer these play/center settings from static=true on load.
-            menu: false, goLive: false
-        },
-        boundsArray = _.map(camera.getBounds(), (value) => value.toPrecision(3)),
-        bounds    = {left: boundsArray[0], right: boundsArray[1], top: boundsArray[2], bottom: boundsArray[3]};
+        static: true, contentKey: contentKey,
+        play: 0, center: false, // TODO: Infer these play/center settings from static=true on load.
+        menu: false, goLive: false
+    };
+    const boundsArray = _.map(camera.getBounds(), (value) => value.toPrecision(3));
+    const bounds    = {left: boundsArray[0], right: boundsArray[1], top: boundsArray[2], bottom: boundsArray[3]};
     if (backgroundColor) {
         overrides.bg = encodeURIComponent(backgroundColor);
     }
-    const params    = _.extend({}, urlParams, overrides, bounds),
-        paramStr  = _.map(params, (v, k) => k + '=' + v).join('&');
+    const params    = _.extend({}, urlParams, overrides, bounds);
+    const paramStr  = joinEscapedParams(params);
     return window.location.origin + window.location.pathname + '?' + paramStr;
 }
 
 
 function getWorkbookURL (urlParams, workbookName) {
-    const override = {workbook: workbookName},
-        params = _.extend({}, urlParams, override),
-        paramStr  = _.map(params, (v, k) => k + '=' + v).join('&');
+    const override = {workbook: workbookName};
+    const params = _.extend({}, urlParams, override);
+    const paramStr  = joinEscapedParams(params);
     return window.location.origin + window.location.pathname + '?' + paramStr;
 }
 
@@ -84,13 +89,12 @@ module.exports = {
                     });
             })
             .do((response) => {
-                const reply = response.reply,
-                    $modal = response.$modal;
+                const {reply, $modal} = response;
                 if (!(reply && reply.success)) {
                     throw new Error({msg: 'Server error on inspectHeader', v: (reply || {error: 'unknown'}).error});
                 }
-                const targetURL = getWorkbookURL(urlParams, response.workbookName),
-                    previewElement = $('<a>')
+                const targetURL = getWorkbookURL(urlParams, response.workbookName);
+                const previewElement = $('<a>')
                         .attr('target', '_blank')
                         .text(workbookName)
                         .attr('href', targetURL);
@@ -166,38 +170,39 @@ module.exports = {
             })
             .flatMap((response) => {
                 //FIXME upload concurrently w/ save
-                const contentKey = response.reply.name || response.contentKey,
-                    previewDataURL = response.imageDataURL;
+                const contentKey = response.reply.name || response.contentKey;
+                const previewDataURL = response.imageDataURL;
                 if (!contentKey || !previewDataURL) {
                     throw new Error('No content provided: ', response);
                 }
-                return Rx.Observable.bindCallback(socket.emit.bind(socket))('persist_upload_png_export', previewDataURL, contentKey, 'preview.png')
-                    .map(() => {
-                        return response;
-                    });
+                const uploadScreenshotCommand = new Command('Upload PNG', 'persist_upload_png_export', socket);
+                return uploadScreenshotCommand.sendWithObservableResult(previewDataURL, contentKey, 'preview.png')
+                    .map(() => response);
             })
             // show
             .do((response) => {
                 const reply = response.reply;
                 if (!(reply && reply.success)) {
-                    throw new Error({msg: 'Server error on uploading screenshot', v: (reply || {error: 'unknown'}).error});
+                    const errorMessage = (reply || {error: 'unknown'}).error;
+                    throw new Error({msg: 'Server error on uploading screenshot', v: errorMessage});
                 }
-                const renderState = appState.renderState,
-                    camera = renderState.get('camera'),
-                    $modal = response.$modal,
-                    targetURL = getExportURL(camera, urlParams, reply.name, response.backgroundColor && response.backgroundColor.hexString()),
-                    previewURL = staticclient.getStaticContentURL(reply.name, 'preview.png'),
-                    previewElement = $('<a>')
+                const renderState = appState.renderState;
+                const camera = renderState.get('camera');
+                const $modal = response.$modal;
+                const backgroundColor = response.backgroundColor;
+                const targetURL = getExportURL(camera, urlParams, reply.name, backgroundColor && backgroundColor.hexString());
+                const previewURL = staticclient.getStaticContentURL(reply.name, 'preview.png');
+                const previewElement = $('<a>')
                         .attr('target', '_blank')
                         .append($('<img>')
                             .attr('height', 150)
-                            //.attr('width', 150)
+                            // .attr('width', 150)
                             .attr('src', previewURL)
                             // TODO: extract these into LESS and use a class attribute:
                             .css({
                                 'min-width': 150,
                                 'min-height': 150,
-                                'background-color': response.backgroundColor || $('.graphistry-body').css('backgroundColor')
+                                'background-color': backgroundColor || $('.graphistry-body').css('backgroundColor')
                             }))
                         .attr('href', targetURL);
                 $('.snapshot-form-area', $modal)
