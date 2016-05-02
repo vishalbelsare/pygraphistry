@@ -384,6 +384,9 @@ function setupErrorReporters(urlParams) {
         return {
             module: 'streamgl',
             time: (new Date()).toUTCString(),
+            metadata: {
+                debugId: window.graphistryDebugId
+            },
             userAgent: window.navigator.userAgent,
             params: urlParams,
             origin: document.location.origin,
@@ -391,7 +394,17 @@ function setupErrorReporters(urlParams) {
             level: level
         };
     }
+
     var reportURL = window.templatePaths.API_ROOT + 'error';
+
+    // Create a id to track this session/pageload all he way across our stack
+    var d = new Date().getTime();
+    window.graphistryDebugId = 'xxxx-xxxx'.replace(/[x]/g, function () {
+        var r = (d + Math.random() * 16) % 16 | 0;
+        d = Math.floor(d / 16);
+        return r.toString(16);
+    }).toUpperCase();
+    console.info('Graphistry Debug Id:', window.graphistryDebugId);
 
     // Track JavaScript errors
     // Use the new standard (2014+) to get stack from modern browsers

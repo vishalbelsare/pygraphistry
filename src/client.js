@@ -153,7 +153,7 @@ function requestWorker(args) {
 // URL query params white-list for the worker API
 const validWorkerParams = [
     'workbook', 'view', 'dataset', 'scene', 'device', 'controls', 'mapper', 'type', 'vendor',
-    'usertag', 'viztoken'
+    'usertag', 'viztoken', 'debugId'
 ];
 
 
@@ -169,7 +169,7 @@ function connect (vizType, urlParams) {
     }
 
     // Get URL query params to send over to the worker via socket
-    const validUrlParams = _.chain(urlParams)
+    const validUrlParams = _.chain(_.extend({}, urlParams, {debugId: window.graphistryDebugId}))
         .pick(validWorkerParams)
         .mapObject((val) => encodeURIComponent(val))
         .value();
