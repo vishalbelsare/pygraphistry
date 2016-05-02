@@ -102,6 +102,9 @@ function logClientError(req, res) {
  * the user, and returning the worker's address to the user so she can connect to it.
  */
 function assignWorker(req, res) {
+    const metadataFields = ['dataset', 'debugId'];
+    Log.addMetadataField(_.pick(req.query, metadataFields));
+
     router.pickWorkerCB(function (err, worker) {
         if (err) {
             logger.error(err, 'Error while assigning visualization worker');
@@ -127,7 +130,8 @@ function assignWorker(req, res) {
                 query: {}
             });
 
-        return res.json({success: true, timestamp: worker.timestamp, uri: workerUrl});
+        res.json({success: true, timestamp: worker.timestamp, uri: workerUrl});
+        Log.clearMetadataField(metadataFields);
     });
 }
 
