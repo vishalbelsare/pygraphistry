@@ -376,8 +376,6 @@ function createCamera(state, pixelRatio, urlParams) {
         : camConfig.get('type') === '3d' ? '3d'
         : '2d';
 
-    console.log('url', mode, urlParams);
-
     var camera = new cameras.Camera2d(
         bounds.get('left'), bounds.get('right'),
         bounds.get('top'), bounds.get('bottom'),

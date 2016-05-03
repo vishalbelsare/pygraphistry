@@ -964,7 +964,7 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
         renderer.setNumElements(renderState, 'edgepicking', midSpringsPos.length / 2);
         renderer.setNumElements(renderState, 'midedgeculled', midSpringsPos.length / 2);
         end2 = Date.now();
-        console.debug('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
+        debug('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
         that.makeArrows(appSnapshot.buffers, edgeMode, numRenderedSplits);
         end3 = Date.now();
         renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
@@ -980,7 +980,7 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
         renderer.setNumElements(renderState, 'arrowculled', numArrowCulled);
         end4 = Date.now();
 
-        console.debug('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
+        debug('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
 
     } else if (appSnapshot.vboUpdated) {
         //EDGE BUNDLING

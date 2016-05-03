@@ -42,10 +42,6 @@ var serverClient    = require('./client.js');
 var localClient     = require('./localclient.js');
 var staticClient    = require('./staticclient.js');
 
-console.warn('%cWarning: having the console open can slow down execution significantly!',
-    'font-size: 18pt; font-weight: bold; font-family: \'Helvetica Neue\', Helvetica, sans-serif; background-color: rgb(255, 242, 0);');
-
-
 // ===============
 
 

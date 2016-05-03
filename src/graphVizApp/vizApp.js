@@ -23,8 +23,7 @@ var VizSlice        = require('./VizSlice.js');
 
 function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, apiActions,
               workerParams, urlParams) {
-    debug('Initializing vizApp.');
-    console.log('URL PARAMS: ', urlParams);
+    debug('Initializing vizApp', 'URL params', urlParams);
 
     //////////////////////////////////////////////////////////////////////////
     // App State
