@@ -14,7 +14,7 @@ const Command         = require('./command.js');
 
 
 function joinEscapedParams (paramKeysAndEscapedValues) {
-    return _.map(paramKeysAndEscapedValues, (paramName, paramValue) => paramName + '=' + paramValue).join('&');
+    return _.map(paramKeysAndEscapedValues, (paramValue, paramName) => paramName + '=' + paramValue).join('&');
 }
 
 /**
