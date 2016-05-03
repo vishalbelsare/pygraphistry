@@ -7,10 +7,11 @@ var $ = window.$;
 exports.error = function() {
     var args = Array.prototype.slice.call(arguments);
     var message = args.length === 1 ? args[0] : args.join(' ');
+    var suffix = ' (Debug ID: ' + window.graphistryDebugId +')';
 
     if (typeof($) !== 'undefined') {
         var $icon = $('<i class="fa fa-exclamation-triangle"></i>');
-        var $text = $('<span>').append(message);
+        var $text = $('<span>').append(message + suffix);
         var $msg = $('<div>')
             .addClass('status-error')
             .append($icon, $text)
