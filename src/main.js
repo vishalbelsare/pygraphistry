@@ -405,6 +405,7 @@ function setupErrorReporters(urlParams) {
         return r.toString(16);
     }).toUpperCase();
     console.info('Graphistry Debug Id:', window.graphistryDebugId);
+    console.log('Logs:', 'https://splunk.graphistry.com:3000/en-US/app/search/session_inspector?form.debugid=' + window.graphistryDebugId);
 
     // Track JavaScript errors
     // Use the new standard (2014+) to get stack from modern browsers
