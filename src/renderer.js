@@ -460,6 +460,30 @@ function getTextureDims(config, canvas, camera, name) {
     return { width: width, height: height };
 }
 
+
+function initializeTexture(gl, texture, fbo, renderBuffer, width, height) {
+
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
+        width, height,
+        0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+    //NPOT dimensions: https://developer.mozilla.org/en-US/docs/Web/WebGL/Using_textures_in_WebGL
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderBuffer);
+
+}
+
+
 // create for each texture rendertarget, an offscreen fbo, texture, renderbuffer, and host buffer
 // note that not all textures are render targets (e.g., server reads)
 function createRenderTargets(config, canvas, gl, camera) {
@@ -490,26 +514,8 @@ function createRenderTargets(config, canvas, gl, camera) {
                 renderBuffer    = pair[2],
                 dimensions  = pair[3];
 
-            var width = dimensions.width;
-            var height = dimensions.height;
+            initializeTexture(gl, texture, fbo, renderBuffer, dimensions.width, dimensions.height);
 
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
-                width, height,
-                0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-            //NPOT dimensions: https://developer.mozilla.org/en-US/docs/Web/WebGL/Using_textures_in_WebGL
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-            gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-
-            gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer);
-            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
-            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-
-            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderBuffer);
         });
 
     return {
@@ -899,13 +905,42 @@ function setCamera(state) {
     });
 }
 
-function updateRenderTarget (state, renderTarget) {
+//if maybeDims provided, also resize texture if needed
+function updateRenderTarget (state, renderTarget, maybeDims) {
     var gl = state.get('gl');
-    if (renderTarget !== lastRenderTarget) {
-        debug('  rebinding renderTarget');
+
+    var isChangedTarget = renderTarget !== lastRenderTarget;
+
+    var isMaybeResized = renderTarget && (renderTarget !== 'CANVAS') && maybeDims;
+    var isResized;
+    if (isMaybeResized) {
+        var pixelreads = state.get('pixelreads');
+        var outbuffer = pixelreads[renderTarget];
+        if (!outbuffer || outbuffer.length !== maybeDims.width * maybeDims.height * 4) {
+            isResized = true;
+        } else {
+            isResized = false;
+        }
+    }
+
+    if (isResized) {
+            debug('resizing texture', renderTarget, maybeDims.width, maybeDims.height);
+        var textures = state.get('textures').toJS();
+        var texture = textures[renderTarget];
+        var fbos = state.get('fbos').toJS();
+        var fbo = fbos[renderTarget];
+        var renderBuffers = state.get('renderBuffers').toJS();
+        var renderBuffer = renderBuffers[renderTarget];
+
+        initializeTexture(gl, texture, fbo, renderBuffer, maybeDims.width, maybeDims.height);
+    }
+
+    if (isChangedTarget || isResized) {
+        debug('  rebinding renderTarget', renderTarget);
         gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
         lastRenderTarget = renderTarget;
     }
+
 }
 
 function copyCanvasToTexture(state, textureName) {
@@ -1016,12 +1051,12 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
         _.uniq(texturesToRead).forEach(function (renderTarget) {
             debug('reading back texture', renderTarget);
 
-            updateRenderTarget(state, renderTarget);
-
             var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
             var pixelreads = state.get('pixelreads');
             var texture = pixelreads[renderTarget];
             var readDims = readPixelsOverride || { x: 0, y: 0, width: dims.width, height: dims.height };
+
+            updateRenderTarget(state, renderTarget, readDims);
 
             if (!texture || texture.length !== readDims.width * readDims.height * 4) {
                 debug('reallocating buffer', texture.length, readDims.width * readDims.height * 4);
@@ -1082,11 +1117,10 @@ function renderItem(state, config, camera, gl, options, ext, programs, buffers, 
 
     debug('Rendering item "%s" (%d elements)', item, numElements);
 
-    updateRenderTarget(state, renderTarget);
-
 
     //change viewport in case of downsampled target
     var dims = getTextureDims(config, gl.canvas, camera, renderTarget);
+    updateRenderTarget(state, renderTarget, dims);
     gl.viewport(0, 0, dims.width, dims.height);
 
     //set uniforms for downsampled targets
