@@ -14,7 +14,7 @@ const Command         = require('./command.js');
 
 
 function joinEscapedParams (paramKeysAndEscapedValues) {
-    return _.map(paramKeysAndEscapedValues, (paramName, paramValue) => paramName + '=' + paramValue).join('&');
+    return _.map(paramKeysAndEscapedValues, (paramValue, paramName) => paramName + '=' + paramValue).join('&');
 }
 
 /**
@@ -53,12 +53,15 @@ function getWorkbookURL (urlParams, workbookName) {
 
 function generateContentKey (urlParams) {
     const uid = util.createAlphaNumericUID();
-    const parts = urlParams.dataset.split('/');
-    const suffix = parts.slice(-parts.length + 1);
+    const datasetParam = urlParams.dataset;
+    const parts = datasetParam.split('/');
     if (parts.length === 2) {
-        return urlParams.dataset + '_' + uid;
+        return datasetParam + '_' + uid;
+    } else if (datasetParam.match(/\.json$/)) {
+        // return datasetParam.replace(/\.json$/, '_' + uid + '.json');
+        return datasetParam.replace(/\/dataset\.json$/, '_' + uid + '/dataset.json');
     } else {
-        return urlParams.dataset.replace(/\.json$/, '_' + uid + '.json');
+        throw new Error('Unrecognized form in dataset URL parameter: ' + datasetParam);
     }
 }
 

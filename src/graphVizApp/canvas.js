@@ -333,7 +333,6 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
             // Mouseover interactions
             // TODO: Generalize this as a separate category?
             if (_.keys(renderQueue).indexOf('mouseOver') > -1) {
-
                 // Only handle mouseovers if the fullscreen buffer
                 // from rendering all edges (full scene) is clean
                 if (!that.appSnapshot.fullScreenBufferDirty) {
@@ -345,12 +344,21 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
 
             // Rest render queue
             if (_.keys(renderQueue).length > 0) {
+
+                // TODO: Generalize this into tag description (or allow to check renderconfig)
+                // Alternatively, generalize when we fix the fullScreenBuffer.
+                var isRenderingToScreen = _.filter(_.keys(renderQueue),
+                    name => name.indexOf('picking') === -1
+                ).length > 0;
+
                 // TODO: Generalize this code block
-                shouldUpdateRenderTime = true;
-                that.appSnapshot.fullScreenBufferDirty = true;
-                if (quietSignaled) {
-                    isAnimating.onNext(true);
-                    quietSignaled = false;
+                if (isRenderingToScreen) {
+                    shouldUpdateRenderTime = true;
+                    that.appSnapshot.fullScreenBufferDirty = true;
+                    if (quietSignaled) {
+                        isAnimating.onNext(true);
+                        quietSignaled = false;
+                    }
                 }
 
                 renderer.setCamera(renderState);
