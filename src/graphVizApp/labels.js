@@ -30,6 +30,7 @@ function setupLabelsAndCursor(appState, urlParams, $eventTarget) {
     setupClickSelections(appState, $eventTarget);
     setupLabels(appState, urlParams, $eventTarget, latestHighlightedObject);
     setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject);
+    setupClickDragInteractions(appState, $eventTarget);
 
     // TODO: Is this the actual behavior we want?
     deselectWhenSimulating(appState);
@@ -63,6 +64,42 @@ function setupLatestHighlightedObject (appState, $eventTarget, textures) {
         .subscribe(appState.latestHighlightedObject, util.makeErrorHandler('getLatestHighlightedObject'));
 
     return appState.latestHighlightedObject;
+}
+
+// Handles interactions caused by clicking on canvas and dragging.
+function setupClickDragInteractions (appState, $eventTarget) {
+
+    Rx.Observable.fromEvent($eventTarget, 'mousedown')
+        .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
+        .switchMap((downEvt) => {
+            return interaction.observableFilterForClickingSelectedPoints(downEvt, appState, true);
+        }).switchMap((downEvt) => {
+            return appState.activeSelection.map((sel) => {
+                return {sel, downEvt};
+            }).take(1);
+        })
+        .switchMap(({sel, downEvt}) => {
+            return Rx.Observable.fromEvent($eventTarget, 'mousemove')
+                .takeUntil(Rx.Observable.fromEvent($eventTarget, 'mouseup')
+                    .do(() => {
+                        console.log('TODO: Update to server');
+                        // Trigger move update to server.
+                    })
+                )
+                // .distinctUntilChanged((a, b) => {
+                //     return (a.x === b.x) && (a.y === b.y);
+                // }, (pos) => pos)
+                .do((moveEvt) => {
+                    const diff = {
+                        x: moveEvt.pageX - downEvt.pageX,
+                        y: moveEvt.pageY - downEvt.pageY
+                    };
+
+                    appState.renderingScheduler.renderMovePointsTemporaryPositions(diff, sel);
+
+                })
+        }).subscribe(_.identity, util.makeErrorHandler('click drag selection handler'));
+
 }
 
 
