@@ -183,7 +183,7 @@ const attributeLoaders = function (graph) {
 
                 const computeAllEdgeWeightFunction = function (edgeWeights, edges, outArr/*, numGraphElements*/) {
                     for (let i = 0; i < edgeWeights.length; i++) {
-                        outArr[i] = edgeWeights[i];
+                        outArr[i] = edgeWeights[edges.edgePermutationInverseTyped[i]];
                     }
                     return outArr;
                 };
