@@ -419,8 +419,31 @@ const defaultMapper = {
     }
 };
 
+const wideEdgeWeightRangeMapper = {
+    mappings: _.extend(defaultMapper.mappings, {
+        edgeWeight: {
+            name: 'edgeWeight',
+            transform: function (v) {
+                return _.map(v, d3Scale.linear().domain(rangeFromValues(v)).range([0.25, 3]));
+            }
+        }
+    })
+}   
+
+const noEdgeWeightTransformMapper  = {
+    mappings: _.extend(defaultMapper.mappings, {
+        edgeWeight: {
+            name: 'edgeWeight',
+            transform: function (v) {
+                return v;
+            }
+        }
+    })
+}   
 
 const mappers = {
+    'wideEdgeWeightRange':wideEdgeWeightRangeMapper,
+    'noEdgeWeightTransform':noEdgeWeightTransformMapper,
     'opentsdb': OpenTSDBMapper,
     'miserables': MiserablesMapper,
     'splunk': defaultMapper,
