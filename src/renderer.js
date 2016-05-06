@@ -3,7 +3,7 @@
 var _           = require('underscore');
 // TODO: Upgrade to immutable v3 (from v2) -- breaking changes; our usage must be updated to match
 var Immutable   = require('immutable');
-var Rx          = require('rxjs/Rx.KitchenSink');
+var Rx          = require('rxjs/Rx');
 var util        = require('./graphVizApp/util.js');
 var debug       = require('debug')('graphistry:StreamGL:renderer');
 

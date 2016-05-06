@@ -3,7 +3,7 @@
 'use strict';
 
 var $  = window.$;
-var Rx = require('rxjs/Rx.KitchenSink');
+var Rx = require('rxjs/Rx');
 
 var proto = $.fn;
 

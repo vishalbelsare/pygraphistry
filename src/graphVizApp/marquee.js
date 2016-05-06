@@ -2,7 +2,7 @@
 
 var debug = require('debug')('graphistry:StreamGL:marquee');
 var $     = window.$;
-var Rx    = require('rxjs/Rx.KitchenSink');
+var Rx    = require('rxjs/Rx');
             require('../rx-jquery-stub');
 var _     = require('underscore');
 var renderer = require('../renderer.js');
@@ -116,7 +116,7 @@ function marqueeSelections (appState, $cont, $elt, isOn, marqueeState, doAfterSe
                         debug('stopPropagation: marquee move');
                         evt.stopPropagation();
                     })
-                    .inspectTime(1)
+                    .auditTime(1)
                     .map(function (moveEvt) {
                         return toRect(startPoint, toPoint($cont, moveEvt));
                     }).do(function (rect) {
@@ -208,7 +208,7 @@ function marqueeDrags(selections, $cont, $elt, marqueeState, takeLast, doAfterDr
                         debug('stopPropagation: marquee move 2');
                         evt.stopPropagation();
                     })
-                    .inspectTime(1)
+                    .auditTime(1)
                     .map(function (evt) {
                         return {start: startPoint, end: toPoint($cont, evt)};
                     }).do(function (drag) {

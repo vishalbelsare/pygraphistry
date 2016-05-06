@@ -3,7 +3,7 @@
 
 var $$       = window.Quo;
 var $        = window.$;
-var Rx       = require('rxjs/Rx.KitchenSink');
+var Rx       = require('rxjs/Rx');
                require('../rx-jquery-stub');
 var _        = require('underscore');
 var debug    = require('debug')('graphistry:StreamGL:interaction');
@@ -98,7 +98,7 @@ function setupMousemove($eventTarget) {
         .filter(function (v) {
             return ! $(v.target).parents('.graph-label.clicked').length;
         })
-        .inspectTime(1)
+        .auditTime(1)
         .map(function (evt) {
             evt.preventDefault();
             return {
@@ -152,7 +152,7 @@ function setupScroll($eventTarget, canvas, camera, appState) {
     var zoomBase = 1.1;
 
     return $eventTarget.onAsObservable('mousewheel')
-        .inspectTime(1)
+        .auditTime(1)
         .switchMap(util.observableFilter([appState.marqueeOn, appState.brushOn],
             function (val) {
                 return val !== 'done';
@@ -212,7 +212,7 @@ function zoom(camera, zoomFactor, zoomPoint) {
 
 function setupCenter($toggle, curPoints, camera) {
     return $toggle.onAsObservable('click')
-        .inspectTime(1)
+        .auditTime(1)
         .switchMap(function () {
             debug('click on center');
             return curPoints.take(1).map(function (curPoints) {

@@ -9,7 +9,7 @@
 var debug       = require('debug')('graphistry:StreamGL:poi');
 var _           = require('underscore');
 var $           = window.$;
-var Rx          = require('rxjs/Rx.KitchenSink');
+var Rx          = require('rxjs/Rx');
                   require('./rx-jquery-stub');
 var Color       = require('color');
 
@@ -214,7 +214,7 @@ function genLabel (instance, $labelCont, idx, info) {
     };
 
     setter
-        .inspectTime(3)
+        .auditTime(3)
         .do((data) => {
             res.dim = data.dim;
             res.idx = data.idx;

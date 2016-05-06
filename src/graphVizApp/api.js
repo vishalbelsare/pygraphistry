@@ -1,6 +1,6 @@
 'use strict';
 
-var Rx      = require('rxjs/Rx.KitchenSink');
+var Rx      = require('rxjs/Rx');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 

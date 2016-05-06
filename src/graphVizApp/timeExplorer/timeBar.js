@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:TimeExplorer');
 var $       = window.$;
-var Rx      = require('rxjs/Rx.KitchenSink');
+var Rx      = require('rxjs/Rx');
               require('../../rx-jquery-stub');
 var _       = require('underscore');
 var Handlebars = require('handlebars');
@@ -193,7 +193,7 @@ var TimeBarView = Backbone.View.extend({
     },
 
     setupRenderRequestHandler: function () {
-        this.newDataAndRenderSubject.inspectTime(timeExplorerUtils.ZOOM_POLL_RATE)
+        this.newDataAndRenderSubject.auditTime(timeExplorerUtils.ZOOM_POLL_RATE)
             .flatMap((req) => {
                 return this.getServerTimeDataObservable(req.data.model, req.bar.model).take(1).map((serverData) => {
                     return {
