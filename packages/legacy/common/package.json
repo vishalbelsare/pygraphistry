@@ -1,5 +1,5 @@
 {
-  "name": "common",
+  "name": "@graphistry/common",
   "version": "0.0.0",
   "description": "",
   "scripts": {
@@ -16,7 +16,7 @@
   },
   "homepage": "https://github.com/graphistry/common",
   "dependencies": {
-    "bunyan": "graphistry/node-bunyan",
+    "@graphistry/bunyan": "graphistry/node-bunyan",
     "chalk": "~1.0.0",
     "config": "graphistry/config",
     "fs-tools": "~0.2.0",
