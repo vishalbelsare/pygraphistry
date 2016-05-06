@@ -1,5 +1,5 @@
 {
-  "name": "config",
+  "name": "@graphistry/config",
   "description": "Graphistry configuration resolver",
   "version": "0.0.1",
   "private": true,
