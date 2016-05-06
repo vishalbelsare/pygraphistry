@@ -5,7 +5,7 @@
 
 require('source-map-support').install();
 
-var Rx          = require('rxjs/Rx.KitchenSink');
+var Rx          = require('rxjs/Rx');
 
 Rx.Observable.return = function (value) {
     return Rx.Observable.of(value);
