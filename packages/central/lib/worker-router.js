@@ -3,7 +3,7 @@
 /// <reference path="../typings/rx/rx.d.ts"/>
 'use strict';
 
-var Rx          = require('rxjs/Rx.KitchenSink');
+var Rx          = require('rxjs/Rx');
 var Observable  = Rx.Observable;
 
 Rx.Observable.return = function (value) {
