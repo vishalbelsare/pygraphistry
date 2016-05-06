@@ -184,16 +184,18 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         that.appSnapshot.simulating = val;
     }, util.makeErrorHandler('simulate updates'));
 
+    var hostBuffers = renderState.get('hostBuffers');
+
+    // FIXME handle selection update buffers here.
+    Rx.Observable.combineLatest(hostBuffers.selectedPointIndexes, hostBuffers.selectedEdgeIndexes,
+        function (pointIndexes, edgeIndexes) {
+            activeSelection.onNext(new VizSlice({point: pointIndexes, edge: edgeIndexes}));
+        }).take(1).subscribe(_.identity, util.makeErrorHandler('Getting indexes of selections.'));
+
+
     vboUpdates.filter(function (status) {
         return status === 'received';
     }).switchMap(function () {
-        var hostBuffers = renderState.get('hostBuffers');
-
-        // FIXME handle selection update buffers here.
-        Rx.Observable.combineLatest(hostBuffers.selectedPointIndexes, hostBuffers.selectedEdgeIndexes,
-            function (pointIndexes, edgeIndexes) {
-                activeSelection.onNext(new VizSlice({point: pointIndexes, edge: edgeIndexes}));
-            }).take(1).subscribe(_.identity, util.makeErrorHandler('Getting indexes of selections.'));
 
         var bufUpdates = ['curPoints', 'logicalEdges', 'edgeColors', 'pointSizes', 'curMidPoints', 'edgeHeights', 'edgeSeqLens'].map(function (bufName) {
             var bufUpdate = hostBuffers[bufName] || Rx.Observable.return();
