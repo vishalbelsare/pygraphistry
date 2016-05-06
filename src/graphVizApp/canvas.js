@@ -389,7 +389,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
 
                 // If anything is selected, we need to do the copy to texture + darken
                 // TODO: Investigate performance of this.
-                if (that.lastMouseoverTask &&
+                if (isRenderingToScreen && that.lastMouseoverTask &&
                         (that.lastMouseoverTask.data.selected.nodeIndices.length + that.lastMouseoverTask.data.selected.edgeIndices.length > 0)
                 ) {
                     renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
