@@ -173,7 +173,7 @@ function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, ap
         util.makeErrorHandler('cameraChanges')
     );
 
-    labels.setupLabelsAndCursor(appState, urlParams, $simCont);
+    labels.setupLabelsAndCursor(appState, socket, urlParams, $simCont);
     canvas.setupCameraInteractionRenderUpdates(appState.renderingScheduler, appState.cameraChanges,
             appState.settingsChanges, appState.simulateOn);
 

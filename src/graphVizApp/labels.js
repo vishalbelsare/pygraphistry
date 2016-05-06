@@ -11,6 +11,8 @@ var interaction     = require('./interaction.js');
 var picking         = require('../picking.js');
 var canvas          = require('./canvas.js');
 var VizSlice        = require('./VizSlice.js');
+var Command         = require('./command.js');
+
 
 var EDGE_LABEL_OFFSET = 0;
 
@@ -22,7 +24,7 @@ document.addEventListener('mousemove', function(e) {
     mousePosition.y = e.clientY || e.pageY;
 }, false);
 
-function setupLabelsAndCursor(appState, urlParams, $eventTarget) {
+function setupLabelsAndCursor(appState, socket, urlParams, $eventTarget) {
     // Picks objects in priority based on order.
     var hitMapTextures = ['hitmap'];
     var latestHighlightedObject = setupLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
@@ -30,6 +32,7 @@ function setupLabelsAndCursor(appState, urlParams, $eventTarget) {
     setupClickSelections(appState, $eventTarget);
     setupLabels(appState, urlParams, $eventTarget, latestHighlightedObject);
     setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject);
+    setupClickDragInteractions(appState, socket, $eventTarget);
 
     // TODO: Is this the actual behavior we want?
     deselectWhenSimulating(appState);
@@ -63,6 +66,53 @@ function setupLatestHighlightedObject (appState, $eventTarget, textures) {
         .subscribe(appState.latestHighlightedObject, util.makeErrorHandler('getLatestHighlightedObject'));
 
     return appState.latestHighlightedObject;
+}
+
+// Handles interactions caused by clicking on canvas and dragging.
+function setupClickDragInteractions (appState, socket, $eventTarget) {
+
+    const moveNodesByIdCommand = new Command('moving nodes', 'move_nodes_by_ids', socket);
+
+    const worldCoordDiffFromMouseEvents = function (initialEvent, finalEvent, renderState) {
+        const camera = renderState.get('camera');
+        const cnv = renderState.get('canvas');
+
+        const worldInit = camera.canvas2WorldCoords(initialEvent.pageX, initialEvent.pageY, cnv);
+        const worldFinal = camera.canvas2WorldCoords(finalEvent.pageX, finalEvent.pageY, cnv);
+        const diff = {
+            x: worldFinal.x - worldInit.x,
+            y: worldFinal.y - worldInit.y
+        };
+        return diff;
+    };
+
+    Rx.Observable.fromEvent($eventTarget, 'mousedown')
+        .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
+        .switchMap((downEvt) => {
+            return interaction.observableFilterForClickingSelectedPoints(downEvt, appState, true);
+        }).switchMap((downEvt) => {
+            return appState.activeSelection.map((sel) => {
+                return {sel, downEvt};
+            }).take(1);
+        })
+        .switchMap(({sel, downEvt}) => {
+            return Rx.Observable.fromEvent($eventTarget, 'mousemove')
+                .takeUntil(Rx.Observable.fromEvent($eventTarget, 'mouseup')
+                    .switchMap((upEvt) => {
+                        const diff = worldCoordDiffFromMouseEvents(downEvt, upEvt, appState.renderingScheduler.renderState);
+                        const ids = sel.getPointIndexValues();
+                        const payload = { diff, ids }
+
+                        return moveNodesByIdCommand.sendWithObservableResult(payload);
+                    })
+                )
+                .do((moveEvt) => {
+                    const diff = worldCoordDiffFromMouseEvents(downEvt, moveEvt, appState.renderingScheduler.renderState);
+                    appState.renderingScheduler.renderMovePointsTemporaryPositions(diff, sel);
+
+                })
+        }).subscribe(_.identity, util.makeErrorHandler('click drag selection handler'));
+
 }
 
 

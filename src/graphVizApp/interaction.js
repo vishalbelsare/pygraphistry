@@ -50,6 +50,11 @@ function setupDrag($eventTarget, camera, appState) {
             }
             return true;
         })
+        // Filter so that we don't do a camera pan interaction if we should
+        // be moving points (dragging selected nodes)
+        .switchMap((downEvt) => {
+            return observableFilterForClickingSelectedPoints(downEvt, appState, false);
+        })
         .do(function (/*clickPos*/) {
             // clickPos.preventDefault();
             $sim.toggleClass('moving', true);
@@ -374,6 +379,23 @@ function setupPinch(eventTarget, camera) {
         });
 }
 
+function observableFilterForClickingSelectedPoints (downEvt, appState, shouldBeSelected) {
+    return appState.activeSelection
+        .combineLatest(appState.latestHighlightedObject, (sel, highlighted) => {
+            return {sel, highlighted};
+        }).take(1)
+        .filter(({sel, highlighted}) => {
+            const selectedPointIndices = sel.getPointIndexValues();
+            const highlightedPointIndices = highlighted.getPointIndexValues();
+            const isIntersection = _.intersection(selectedPointIndices, highlightedPointIndices).length > 0;
+            if (shouldBeSelected) {
+                return isIntersection;
+            } else {
+                return !isIntersection;
+            }
+        }).map(() => downEvt).take(1);
+}
+
 
 module.exports = {
     setupDrag: setupDrag,
@@ -384,6 +406,7 @@ module.exports = {
     setupPinch: setupPinch,
     setupZoomButton: setupZoomButton,
     setupRotate: setupRotate,
+    observableFilterForClickingSelectedPoints,
 
     isTouchBased: touchBased
 };

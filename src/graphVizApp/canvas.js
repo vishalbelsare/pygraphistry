@@ -184,16 +184,18 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         that.appSnapshot.simulating = val;
     }, util.makeErrorHandler('simulate updates'));
 
+    var hostBuffers = renderState.get('hostBuffers');
+
+    // FIXME handle selection update buffers here.
+    Rx.Observable.combineLatest(hostBuffers.selectedPointIndexes, hostBuffers.selectedEdgeIndexes,
+        function (pointIndexes, edgeIndexes) {
+            activeSelection.onNext(new VizSlice({point: pointIndexes, edge: edgeIndexes}));
+        }).take(1).subscribe(_.identity, util.makeErrorHandler('Getting indexes of selections.'));
+
+
     vboUpdates.filter(function (status) {
         return status === 'received';
     }).switchMap(function () {
-        var hostBuffers = renderState.get('hostBuffers');
-
-        // FIXME handle selection update buffers here.
-        Rx.Observable.combineLatest(hostBuffers.selectedPointIndexes, hostBuffers.selectedEdgeIndexes,
-            function (pointIndexes, edgeIndexes) {
-                activeSelection.onNext(new VizSlice({point: pointIndexes, edge: edgeIndexes}));
-            }).take(1).subscribe(_.identity, util.makeErrorHandler('Getting indexes of selections.'));
 
         var bufUpdates = ['curPoints', 'logicalEdges', 'edgeColors', 'pointSizes', 'curMidPoints', 'edgeHeights', 'edgeSeqLens'].map(function (bufName) {
             var bufUpdate = hostBuffers[bufName] || Rx.Observable.return();
@@ -330,7 +332,24 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
                 });
             }
 
-            // Mouseover interactions
+            // Move points overlay
+            // Takes precedence over mouseover interactions, and will skip mouseover
+            // interactions
+            if (_.keys(renderQueue).indexOf('movePointsOverlay') > -1) {
+
+                if (!that.appSnapshot.fullScreenBufferDirty) {
+                    shouldUpdateRenderTime = true;
+                    that.renderMovePointsOverlay(renderQueue.movePointsOverlay);
+                }
+
+                delete renderQueue.movePointsOverlay;
+                if (renderQueue.mouseOver) {
+                    delete renderQueue.mouseOver;
+                }
+            }
+
+
+            // Mouseover
             // TODO: Generalize this as a separate category?
             if (_.keys(renderQueue).indexOf('mouseOver') > -1) {
                 // Only handle mouseovers if the fullscreen buffer
@@ -370,7 +389,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
 
                 // If anything is selected, we need to do the copy to texture + darken
                 // TODO: Investigate performance of this.
-                if (that.lastMouseoverTask &&
+                if (isRenderingToScreen && that.lastMouseoverTask &&
                         (that.lastMouseoverTask.data.selected.nodeIndices.length + that.lastMouseoverTask.data.selected.edgeIndices.length > 0)
                 ) {
                     renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
@@ -1037,6 +1056,78 @@ function getSortedConnectedEdges (nodeId, forwardsEdgeStartEndIdxs) {
     return resultSet;
 }
 
+RenderingScheduler.prototype.renderMovePointsOverlay = function (task) {
+    var that = this;
+    var {appSnapshot, renderState} = this;
+    var {buffers} = appSnapshot;
+    var {diff, sel} = task.data;
+    var hostBuffers = renderState.get('hostBuffersCache');
+
+    var hostNodePositions = new Float32Array(hostBuffers.curPoints.buffer);
+    var hostNodeSizes = hostBuffers.pointSizes;
+    var hostNodeColors = new Uint32Array(hostBuffers.pointColors.buffer);
+
+    var movingNodeIndices = sel.getPointIndexValues();
+    var numMovingNodes = movingNodeIndices.length;
+
+
+    renderer.setNumElements(renderState, 'edgeselected', 0);
+    renderer.setNumElements(renderState, 'pointselected', numMovingNodes);
+    renderer.setNumElements(renderState, 'arrowselected', 0);
+
+    // Create empty arrays for edges and arrows
+    buffers.selectedEdges = new Float32Array(0);
+    buffers.selectedEdgeStarts = new Float32Array(0);
+    buffers.selectedEdgeEnds = new Float32Array(0);
+    buffers.selectedEdgeColors = new Uint32Array(0);
+    buffers.selectedArrowStartPos = new Float32Array(0);
+    buffers.selectedArrowEndPos = new Float32Array(0);
+    buffers.selectedArrowNormalDir = new Float32Array(0);
+    buffers.selectedArrowPointColors = new Uint32Array(0);
+    buffers.selectedArrowPointSizes = new Uint8Array(0);
+
+    // Create arrays for nodes
+    buffers.selectedNodePositions = new Float32Array(movingNodeIndices.length * 2);
+    buffers.selectedNodeSizes = new Uint8Array(movingNodeIndices.length);
+    buffers.selectedNodeColors = new Uint32Array(movingNodeIndices.length);
+
+    // Copy in node information
+    _.each(movingNodeIndices, function (val, idx) {
+        buffers.selectedNodePositions[idx*2] = hostNodePositions[val*2];
+        buffers.selectedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
+        buffers.selectedNodeSizes[idx] = hostNodeSizes[val];
+        buffers.selectedNodeColors[idx] = hostNodeColors[val];
+    });
+
+    // Updating positions given delta
+    for (var i = 0; i < buffers.selectedNodePositions.length / 2; i++) {
+        buffers.selectedNodePositions[i*2] += diff.x;
+        buffers.selectedNodePositions[i*2 + 1] += diff.y;
+    }
+
+    renderer.loadBuffers(renderState, {
+        'selectedMidSpringsPos': buffers.selectedEdges,
+        'selectedMidEdgesColors': buffers.selectedEdgeColors,
+        'selectedMidSpringsStarts': buffers.selectedEdgeStarts,
+        'selectedMidSpringsEnds': buffers.selectedEdgeEnds,
+        'selectedCurPoints': buffers.selectedNodePositions,
+        'selectedPointSizes': buffers.selectedNodeSizes,
+        'selectedPointColors': buffers.selectedNodeColors,
+        'selectedArrowStartPos': buffers.selectedArrowStartPos,
+        'selectedArrowEndPos': buffers.selectedArrowEndPos,
+        'selectedArrowNormalDir': buffers.selectedArrowNormalDir,
+        'selectedArrowColors': buffers.selectedArrowPointColors,
+        'selectedArrowPointSizes': buffers.selectedArrowPointSizes
+    });
+
+    var shouldDarken = true;
+    var renderTrigger = shouldDarken ? 'highlightDark' : 'highlight';
+
+    renderer.setCamera(renderState);
+    renderer.render(renderState, renderTrigger, renderTrigger);
+};
+
+
 /*
  * Render mouseover effects. These should only occur during a quiet state.
  *
@@ -1291,6 +1382,13 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
 
     renderer.setCamera(renderState);
     renderer.render(renderState, renderTrigger, renderTrigger);
+};
+
+RenderingScheduler.prototype.renderMovePointsTemporaryPositions = function (diff, sel) {
+    const task = {
+        data: {diff, sel}
+    };
+    this.renderScene('movePointsOverlay', task);
 };
 
 

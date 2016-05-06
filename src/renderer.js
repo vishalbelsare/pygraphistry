@@ -1035,8 +1035,8 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
 
     sortedItems.forEach(function(item) {
         var numElements = state.get('numElements')[item];
-        if(typeof numElements === 'undefined') {
-            console.warn('Not rendering item "%s" because it doesn\'t have any elements (set in numElements)',
+        if (typeof numElements === 'undefined' || numElements === 0) {
+            debug('Not rendering item "%s" because it doesn\'t have a non-zero numElements',
                 item);
             return false;
         }
