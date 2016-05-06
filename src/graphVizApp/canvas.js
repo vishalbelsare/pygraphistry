@@ -1061,11 +1061,6 @@ RenderingScheduler.prototype.renderMovePointsOverlay = function (task) {
     var {diff, sel} = task.data;
     var hostBuffers = renderState.get('hostBuffersCache');
 
-    // Adjust to world coordinates from screen coordinates
-    var camera = renderState.get('camera');
-    var cnv = renderState.get('canvas');
-    var mtx = camera.getMatrix();
-
     var hostNodePositions = new Float32Array(hostBuffers.curPoints.buffer);
     var hostNodeSizes = hostBuffers.pointSizes;
     var hostNodeColors = new Uint32Array(hostBuffers.pointColors.buffer);
@@ -1103,22 +1098,9 @@ RenderingScheduler.prototype.renderMovePointsOverlay = function (task) {
     });
 
     // Updating positions given delta
-    // TODO: Adjust for screen coord -> world coord
     for (var i = 0; i < buffers.selectedNodePositions.length / 2; i++) {
-        // First convert from world -> canvas, apply diff, then convert back to world
-        let xPos = buffers.selectedNodePositions[i*2];
-        let yPos = buffers.selectedNodePositions[i*2 + 1];
-
-        let origWorldPos = {x: xPos, y: yPos};
-        let origCanvasPos = camera.canvasCoords(origWorldPos.x, origWorldPos.y, cnv, mtx);
-        let adjustedCanvasPos = {
-            x: origCanvasPos.x + diff.x,
-            y: origCanvasPos.y + diff.y
-        };
-        let newWorldPos = camera.canvas2WorldCoords(adjustedCanvasPos.x, adjustedCanvasPos.y, cnv);
-
-        buffers.selectedNodePositions[i*2] = newWorldPos.x;
-        buffers.selectedNodePositions[i*2 + 1] = newWorldPos.y;
+        buffers.selectedNodePositions[i*2] += diff.x;
+        buffers.selectedNodePositions[i*2 + 1] += diff.y;
     }
 
     renderer.loadBuffers(renderState, {
