@@ -40,6 +40,14 @@ function VizSlice (specification) {
  */
 function removeOrAddFromSortedArray(arrayData, newValue) {
     if (arrayData === undefined) { return [newValue]; }
+
+    // Guard for if the array is arraylike, but not array
+    // This is the case for arguments, as well as typed arrays
+    // We do this because we need access to the push() method
+    if (arrayData.constructor !== Array) {
+        arrayData = Array.prototype.slice.call(arrayData);
+    }
+
     var low = 0,
         high = arrayData.length - 1,
         mid;
@@ -55,6 +63,7 @@ function removeOrAddFromSortedArray(arrayData, newValue) {
         }
     }
     arrayData.push(newValue);
+
     return arrayData.length - 1;
 }
 
@@ -77,6 +86,14 @@ function indexOfInSorted(sortedArray, value) {
 
 function removeOrAddFromUnsortedArray(arrayData, newElem, equalityFunc) {
     if (arrayData === undefined) { return [newElem]; }
+
+    // Guard for if the array is arraylike, but not array
+    // This is the case for arguments, as well as typed arrays
+    // We do this because we need access to the push() method
+    if (arrayData.constructor !== Array) {
+        arrayData = Array.prototype.slice.call(arrayData);
+    }
+
     var lengthBefore = arrayData.length,
         result = arrayData;
 
