@@ -944,6 +944,29 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
         );
     });
 
+    this.socket.on('move_nodes_by_ids', (data, cb) => {
+        this.graph.take(1).do((graph) => {
+
+            const {ids, diff} = data;
+
+            if (ids && diff) {
+                graph.simulator.moveNodesByIds(ids, diff)
+                    .then(() => {
+                        this.tickGraph(cb);
+                        cb();
+                    });
+            } else {
+                cb({success: false});
+            }
+
+        }).subscribe(
+            _.identity,
+            (err) => {
+                log.makeRxErrorHandler(logger, 'move nodes by ids handler')(err);
+            }
+        );
+    });
+
     this.socket.on('layout_controls', (ignore, cb) => {
         logger.info('Sending layout controls to client');
 

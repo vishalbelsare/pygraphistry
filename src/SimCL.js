@@ -6,6 +6,7 @@ var sprintf = require('sprintf-js').sprintf;
 var dijkstra = require('dijkstra');
 var util = require('./util.js');
 var MoveNodes = require('./moveNodes.js');
+var MoveNodesByIds = require('./moveNodesByIds.js');
 var SelectNodesInRect = require('./SelectNodesInRect.js');
 var SelectNodesInCircle = require('./SelectNodesInCircle.js');
 
@@ -74,6 +75,7 @@ export function createSync(dataframe, renderer, cl, device, vendor, cfg) {
     simObj.layoutAlgorithms = algos;
     simObj.otherKernels = {
         moveNodes: new MoveNodes(cl),
+        moveNodesByIds: new MoveNodesByIds(cl),
         selectNodesInRect: new SelectNodesInRect(cl),
         selectNodesInCircle: new SelectNodesInCircle(cl)
         //histogramKernel: new HistogramKernel(cl),
@@ -91,6 +93,7 @@ export function createSync(dataframe, renderer, cl, device, vendor, cfg) {
     simObj.setLocks = setLocks.bind(this, simObj);
     simObj.setPhysics = setPhysics.bind(this, simObj);
     simObj.moveNodes = moveNodes.bind(this, simObj);
+    simObj.moveNodesByIds = moveNodesByIds.bind(this, simObj);
     simObj.selectNodesInRect = selectNodesInRect.bind(this, simObj);
     simObj.selectNodesInCircle = selectNodesInCircle.bind(this, simObj);
     simObj.connectedEdges = connectedEdges.bind(this, simObj);
@@ -218,6 +221,7 @@ export function create(dataframe, renderer, cl, device, vendor, cfg) {
             simObj.layoutAlgorithms = algos;
             simObj.otherKernels = {
                 moveNodes: new MoveNodes(cl),
+                moveNodesByIds: new MoveNodesByIds(cl),
                 selectNodesInRect: new SelectNodesInRect(cl),
                 selectNodesInCircle: new SelectNodesInCircle(cl)
                 //histogramKernel: new HistogramKernel(cl),
@@ -234,6 +238,7 @@ export function create(dataframe, renderer, cl, device, vendor, cfg) {
             simObj.setLocks = setLocks.bind(this, simObj);
             simObj.setPhysics = setPhysics.bind(this, simObj);
             simObj.moveNodes = moveNodes.bind(this, simObj);
+            simObj.moveNodesByIds = moveNodesByIds.bind(this, simObj);
             simObj.selectNodesInRect = selectNodesInRect.bind(this, simObj);
             simObj.selectNodesInCircle = selectNodesInCircle.bind(this, simObj);
             simObj.connectedEdges = connectedEdges.bind(this, simObj);
@@ -1003,6 +1008,14 @@ function setPhysics(simulator, cfg) {
     return Q();
 }
 
+function moveNodesByIds (simulator, ids, diff) {
+    logger.debug('move nodes by ids: ', diff);
+
+    var moveNodesByIdsKernel = simulator.otherKernels.moveNodesByIds;
+
+    return moveNodesByIdsKernel.run(simulator, ids, diff)
+        .fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes by ids'));
+}
 
 function moveNodes(simulator, marqueeEvent) {
     logger.debug('marqueeEvent', marqueeEvent);
