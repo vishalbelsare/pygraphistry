@@ -4,7 +4,7 @@
 // Set jshint to ignore `predef:'io'` in .jshintrc so we can manually define io here
 /* global -io */
 
-import Rx from 'rxjs/Rx.KitchenSink';
+import Rx from 'rxjs/Rx';
 
 const Observable  = Rx.Observable;
 

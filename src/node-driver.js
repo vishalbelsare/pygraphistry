@@ -7,7 +7,7 @@
 
 
 var Q = require("q"),
-    Rx = require("rxjs/Rx.KitchenSink"),
+    Rx = require("rxjs/Rx"),
     _ = require('underscore'),
     request = require('request'),
     rConf = require('./renderer.config.js'),

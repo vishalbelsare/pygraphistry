@@ -1,6 +1,6 @@
 'use strict';
 
-const Rx      = require('rxjs/Rx.KitchenSink');
+const Rx      = require('rxjs/Rx');
 
 const persist = require('./persist.js');
 
