@@ -251,17 +251,25 @@ function popUnused(poi, hits, idx, dim) {
 
     if (!poi.state.inactiveLabels.length) return;
 
-    var top = poi.state.inactiveLabels.pop();
-    if (top.idx == idx && top.dim == dim) {
-        return top;
-    }
-    var key = poi.cacheKey(idx, dim);
-    if (!hits[key]) {
-        return top;
+    //reuse if already in there
+    //TODO make O(1) via reverse index
+    for (var i = 0; i < poi.state.inactiveLabels.length; i++) {
+        var elt = poi.state.inactiveLabels[i];
+        if (elt.idx == idx && elt.dim == dim) {
+            poi.state.inactiveLabels.splice(i, 1);
+            return elt;
+        }
     }
 
-    poi.state.inactiveLabels.push(top);
-    return;
+    var top = poi.state.inactiveLabels.pop();
+    if (!hits[poi.cacheKey(top.idx, top.dim)]) {
+        //reuse unclaimable
+        return top;
+    } else {
+        //leave for later claimant
+        poi.state.inactiveLabels.unshift(top);
+        return;
+    }
 }
 
 
@@ -308,22 +316,23 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, se
             } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (_.pluck(elementsToHighlight, 'idx').indexOf(idx) === -1)) {
                 // no label but too many on screen, don't create new
                 return null;
-            } else if (!poi.state.inactiveLabels.length) {
-                // no label and no pre-allocated elements, create new
-                var freshLabel = poi.genLabel($labelCont, idx, hits[key]);
-                freshLabel.elt.on('click', function () {
-                    appState.labelHover.onNext(this);
-                });
-                extendEdgeLabelWithCoords(freshLabel, hit, appState);
-                return freshLabel;
             } else {
-                // no label and available inactive pre-allocated, reuse
-                var lbl = poi.state.inactiveLabels.pop();
-                lbl.idx = idx;
-                lbl.dim = dim;
-                lbl.setIdx({idx: idx, dim: lbl.dim});
-                extendEdgeLabelWithCoords(lbl, hit, appState);
-                return lbl;
+                var lbl = popUnused(poi, hits, idx, dim);
+                if (lbl) {
+                    lbl.idx = idx;
+                    lbl.dim = dim;
+                    lbl.setIdx({idx: idx, dim: lbl.dim});
+                    extendEdgeLabelWithCoords(lbl, hit, appState);
+                    return lbl;
+                } else {
+                    // no label and no pre-allocated elements, create new
+                    var freshLabel = poi.genLabel($labelCont, idx, hits[key]);
+                    freshLabel.elt.on('click', function () {
+                        appState.labelHover.onNext(this);
+                    });
+                    extendEdgeLabelWithCoords(freshLabel, hit, appState);
+                    return freshLabel;
+                }
             }
         })
         .filter(_.identity);
