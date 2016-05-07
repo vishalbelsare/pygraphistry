@@ -2,7 +2,7 @@
 
 const $       = window.$;
 const _       = require('underscore');
-const Rx      = require('rxjs/Rx');
+const Rx      = require('rxjs/Rx.KitchenSink');
 import '../rx-jquery-stub';
 const Handlebars = require('handlebars');
 const Backbone = require('backbone');

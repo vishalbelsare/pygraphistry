@@ -2,7 +2,7 @@
 
 var $       = window.$;
 var _       = require('underscore');
-var Rx      = require('rxjs/Rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var Handlebars = require('handlebars');
 var Backbone = require('backbone');

@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:controls');
 var $       = window.$;
-var Rx      = require('rxjs/Rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var d3      = require('d3');
 var _       = require('underscore');
@@ -100,7 +100,7 @@ var encodingForLabelParams = [
         cb: (() => {
             var sheet = createStyleElement();
             return (stream) => {
-                stream.auditTime(20).subscribe((c) => {
+                stream.inspectTime(20).subscribe((c) => {
                     sheet.text('.graph-label, .graph-label table { color: ' + c.rgbaString() + ' }');
                 });
             };
@@ -114,7 +114,7 @@ var encodingForLabelParams = [
         cb: (() => {
             var sheet = createStyleElement();
             return (stream) => {
-                stream.auditTime(20).subscribe((c) => {
+                stream.inspectTime(20).subscribe((c) => {
                     sheet.text('.graph-label .graph-label-container  { background-color: ' + c.rgbaString() + ' }');
                 });
             };
@@ -460,7 +460,7 @@ function createControls(socket, appState, trigger, urlParams) {
                 $slider.onAsObservable('slide'),
                 $slider.onAsObservable('slideStop')
             ).distinctUntilChanged()
-            .auditTime(50)
+            .inspectTime(50)
             .subscribe(
                 () => {
                     if ($that.hasClass('layout-menu-slider')) {

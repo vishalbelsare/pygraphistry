@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:TimeExplorer');
 var $       = window.$;
-var Rx      = require('rxjs/Rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../../rx-jquery-stub');
 var _       = require('underscore');
 var Handlebars = require('handlebars');
@@ -63,7 +63,7 @@ var BottomAxisView = Backbone.View.extend({
         // Render Handler
         this.mainBarModelDiffer = timeExplorerUtils.makeDataModelDiffer();
         this.mainBarModelSubject
-            //.auditTime(timeExplorerUtils.ZOOM_POLL_RATE) // Commented out because it goes out of sync
+            //.inspectTime(timeExplorerUtils.ZOOM_POLL_RATE) // Commented out because it goes out of sync
             .do((model) => {
                 var changedKeys = this.mainBarModelDiffer(model);
 

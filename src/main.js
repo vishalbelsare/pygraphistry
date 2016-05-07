@@ -9,7 +9,7 @@ require('source-map-support').install();
  * @module StreamGL/main
  */
 
-var Rx              = require('rxjs/Rx');
+var Rx              = require('rxjs/Rx.KitchenSink');
 
 Rx.Observable.return = function (value) {
     return Rx.Observable.of(value);

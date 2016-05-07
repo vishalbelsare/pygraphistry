@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:timeslider');
 var $       = window.$;
-var Rx      = require('rxjs/Rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 var FilterControl = require('./FilterControl.js');
 
@@ -33,7 +33,7 @@ module.exports = {
         // Should just acquire the backend control from a standard place.
         var control = new FilterControl(socket);
 
-        hits.auditTime(100).subscribe(function (v) {
+        hits.inspectTime(100).subscribe(function (v) {
             var len = END - START;
             var start = START + len * v[0] / MAX_BOUNDS;
             var stop = END - len * (MAX_BOUNDS - v[1]) / MAX_BOUNDS;

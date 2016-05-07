@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:shortestpaths');
 var $       = window.$;
-var Rx      = require('rxjs/Rx');
+var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 
 //poi * labelDOM -> int U exn

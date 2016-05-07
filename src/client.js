@@ -8,7 +8,7 @@
 const urlModule    = require('url');
 const debug        = require('debug')('graphistry:StreamGL:client');
 const $            = window.$;
-const Rx           = require('rxjs/Rx');
+const Rx           = require('rxjs/Rx.KitchenSink');
                      require('./rx-jquery-stub');
 const _            = require('underscore');
 const io           = require('socket.io-client');

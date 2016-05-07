@@ -2,7 +2,7 @@
 
 var $               = window.$;
 var _               = require('underscore');
-var Rx              = require('rxjs/Rx');
+var Rx              = require('rxjs/Rx.KitchenSink');
                       require('../rx-jquery-stub');
 var util            = require('./util.js');
 var Color           = require('color');
@@ -62,7 +62,7 @@ module.exports = {
         foregroundColorObservable.first()
             .subscribe(function (initForegroundColor) {
                 makeInspector($fg, initForegroundColor && initForegroundColor.hexString())
-                    .auditTime(10)
+                    .inspectTime(10)
                     .do(function (foregroundColor) {
                         // Execute the server command:
                         socket.emit('set_colors', {
@@ -82,7 +82,7 @@ module.exports = {
         backgroundColorObservable.first()
             .subscribe(function (initBackgroundColor) {
                 makeInspector($bg, initBackgroundColor && initBackgroundColor.hexString())
-                    .auditTime(10)
+                    .inspectTime(10)
                     .do(function (backgroundColor) {
                         // Set the background color directly/locally via CSS:
                         $('#simulation').css('backgroundColor', backgroundColor.rgbaString());
