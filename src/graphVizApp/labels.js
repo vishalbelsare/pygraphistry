@@ -245,6 +245,26 @@ function renderLabels(appState, $labelCont, highlighted, selected, doneAnimating
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
 
+
+
+function popUnused(poi, hits, idx, dim) {
+
+    if (!poi.state.inactiveLabels.length) return;
+
+    var top = poi.state.inactiveLabels.pop();
+    if (top.idx == idx && top.dim == dim) {
+        return top;
+    }
+    var key = poi.cacheKey(idx, dim);
+    if (!hits[key]) {
+        return top;
+    }
+
+    poi.state.inactiveLabels.push(top);
+    return;
+}
+
+
 function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, selected, doneAnimating, labelsAreEnabled, poiIsEnabled) {
 
     // Trying to handle set highlight/selection, but badly:
