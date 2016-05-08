@@ -108,7 +108,6 @@ function atlasControls(algo) {
         gravity: new ContinuousParam('Center Magnet', 1.0, 0.01, 100),
         scalingRatio: new ContinuousParam('Expansion Ratio', 1.0, 0.01, 100),
         edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
-        //preventOverlap: new BoolParam('Prevent Overlap', false),
         strongGravity: new BoolParam('Compact Layout', false),
         dissuadeHubs: new BoolParam('Dissuade Hubs', false),
         linLog: new BoolParam('Strong Separation (LinLog)', false)

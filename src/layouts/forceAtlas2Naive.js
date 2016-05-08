@@ -35,7 +35,7 @@ ForceAtlas2.prototype.constructor = ForceAtlas2;
 
 ForceAtlas2.name = 'ForceAtlas2Fast';
 ForceAtlas2.argsPoints = [
-    'preventOverlap', 'strongGravity', 'scalingRatio', 'gravity',
+    'strongGravity', 'scalingRatio', 'gravity',
     'edgeInfluence', 'tilePointsParam',
     'tilePointsParam2', 'numPoints', 'tilesPerIteration', 'inputPositions',
     'width', 'height', 'stepNumber', 'pointDegrees', 'pointForces'
@@ -62,7 +62,6 @@ ForceAtlas2.argsType = {
     gravity: cljs.types.float_t,
     edgeInfluence: cljs.types.uint_t,
     flags: cljs.types.uint_t,
-    preventOverlap: cljs.types.define,
     strongGravity: cljs.types.define,
     numPoints: cljs.types.uint_t,
     tilesPerIteration: cljs.types.uint_t,
