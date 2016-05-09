@@ -377,19 +377,19 @@ function getNamespaceFromGraph (graph) {
     return metadata;
 }
 
-function processAggregateIndices ({type, attributes, binning, mode, goalNumberOfBins}, graph, pointMask) {
-    logger.debug('Done selecting indices; starting aggregation');
+function processBinningOfColumns ({type, attributes, binning, mode, goalNumberOfBins}, graph, pointMask) {
+    logger.debug('Starting binning');
     try {
         const mask = maskFromPointsByConnectingEdges(pointMask, graph);
 
-        const selectedTypes = [];
-        let selectedAttributes = [];
+        let selectedTypes;
+        let selectedAttributes;
 
         if (type) {
-            selectedTypes.push(type);
-            selectedAttributes.push(attributes);
+            selectedTypes = [type];
+            selectedAttributes = [attributes];
         } else {
-            selectedTypes.push('point', 'edge');
+            selectedTypes = ['point', 'edge'];
             selectedAttributes = _.map(selectedTypes, (eachType) => _.chain(attributes)
                 .where({type: eachType})
                 .pluck('name')
@@ -1245,7 +1245,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
         );
     });
 
-    this.setupAggregationRequestHandling();
+    this.setupBinningRequestHandling();
 
     this.socket.on('viz', (msg, cb) => { cb({success: true}); });
 }
@@ -1364,31 +1364,27 @@ VizServer.prototype.setupColorTexture = function () {
         .subscribe(_.identity, log.makeRxErrorHandler(logger, 'colorTexture'));
 };
 
-VizServer.prototype.setupAggregationRequestHandling = function () {
+VizServer.prototype.setupBinningRequestHandling = function () {
 
-    const self = this;
     const logErrorGlobally = log.makeRxErrorHandler(logger, 'aggregate socket handler');
 
     // Handle aggregate requests. Using `concatMap` ensures we fully handle one
     // before moving on to the next.
     Observable
         .fromEvent(this.socket, 'computeBinningForColumns', (query, cb) => ({query, cb}))
-        .concatMap((request) => {
+        .concatMap(({cb, query}) => {
+            const resultSelector = processBinningOfColumns.bind(null, query);
+            const sendErrorResponse = failWithMessage.bind(null, cb, 'Error while computing binning');
 
-            const cb = request.cb;
-            const query = request.query;
-            const resultSelector = processAggregateIndices.bind(null, query);
-            const sendErrorResponse = failWithMessage.bind(null, cb, 'aggregate socket error');
+            logger.debug({query: query}, 'Received binning query');
 
-            logger.debug({query: query}, 'Got aggregate');
-
-            return self.graph.take(1)
+            return this.graph.take(1)
                 .flatMap(pointMaskFromQuery, resultSelector)
                 .mergeAll()
                 .take(1)
                 .do(
                     (data) => {
-                        logger.info('--- Aggregate success ---');
+                        logger.info('--- Binning success ---');
                         cb({ success: true, data: data });
                     },
                     (err) => {

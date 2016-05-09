@@ -1969,13 +1969,13 @@ Dataframe.prototype.computeBinningByColumnNames = function (
 
 
     let chain = Q(); // simulator.otherKernels.histogramKernel.setIndices(simulator, maskForType);
-    const aggregated = {};
+    const binningByColumnName = {};
 
     _.each(keysToAggregate, (attribute) => {
 
         chain = chain.then(() => processAgg(attribute).then((agg) => {
             // Store result
-            aggregated[attribute] = agg;
+            binningByColumnName[type + ':' + attribute] = agg;
 
             // Force loop restart before handling next
             // So async IO can go through, e.g., VBO updates
@@ -1987,7 +1987,7 @@ Dataframe.prototype.computeBinningByColumnNames = function (
         }));
     });
 
-    return chain.then(() => aggregated);
+    return chain.then(() => binningByColumnName);
 
 
     // Array of promises
