@@ -181,7 +181,9 @@ ColumnAggregation.prototype.runAggregationForAggType = function (aggType) {
         case 'isCategorical':
             this.isCategorical();
             break;
-        case 'binning':
+        case 'median':
+        case 'fullySorted':
+            this.fullySorted();
             break;
         default:
             throw new Error('Unrecognized aggregation type: ' + aggType);
@@ -245,6 +247,28 @@ ColumnAggregation.prototype.computeStandardDeviation = function () {
 };
 
 const MaxDistinctValues = 40000;
+
+ColumnAggregation.prototype.fullySorted = function () {
+    const dataType = this.getAggregationByType('dataType');
+    const comparator = dataTypeUtil.comparatorForDataType(dataType);
+    const numValues = this.getAggregationByType('count');
+    if (comparator === undefined) {
+        this.updateAggregationTo('fullySorted', null);
+        return;
+    }
+    const sortedValues = _.clone(this.values);
+    // The comparison call count here scales badly, but is offset by one-time simple allocation cost.
+    // We could do better with a Schwartz Transform if each compare key has to be computed, but a calculated column
+    // achieves that handily instead, so try to solve that at a higher level instead of fixing this.
+    sortedValues.sort(comparator);
+    this.updateAggregationTo('fullySorted', sortedValues);
+    const halfwayIndex = Math.floor(numValues / 2);
+    let medianValue = sortedValues[halfwayIndex];
+    if (numValues % 2 === 0) {
+        medianValue = (sortedValues[halfwayIndex-1] + medianValue) / 2;
+    }
+    this.updateAggregationTo('median', medianValue);
+};
 
 ColumnAggregation.prototype.countDistinct = function (limit=MaxDistinctValues) {
     const countsByValue = {};

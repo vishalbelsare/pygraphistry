@@ -106,6 +106,21 @@ const DataTypesUtils = {
             default:
                 return (a, b) => a < b;
         }
+    },
+
+    comparatorForDataType: function (dataType) {
+        switch (dataType) {
+            case 'number':
+            case 'integer':
+                return (a, b) => a - b;
+            case 'string':
+                return (a, b) => a.localeCompare(b, DefaultLocale, LocaleCompareOptions);
+            case 'date':
+            case 'datetime':
+                return (a, b) => a.getTime() - b.getTime();
+            default:
+                return undefined;
+        }
     }
 };
 
