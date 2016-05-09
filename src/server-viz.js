@@ -359,7 +359,7 @@ VizServer.prototype.filterGraphByMaskList = function (graph, selectionMasks, exc
         errors.push(err);
         _.each(errors, logger.debug.bind(logger));
         _.extend(response, {success: false, errors: errors});
-        cb(response);
+        return cb(response);
     }
 };
 
@@ -520,8 +520,8 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
             socketLogger.trace({viewConfig: viewConfig}, 'viewConfig');
             cb({success: true, viewConfig: viewConfig});
         }).subscribe(_.identity, (err) => {
-            cb({success: false, errors: [err.message]});
             log.makeRxErrorHandler(socketLogger, 'Get view config')(err);
+            cb({success: false, errors: [err.message]});
         });
     });
 
@@ -532,8 +532,8 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
             extend(true, viewConfig, newValues);
             cb({success: true, viewConfig: viewConfig});
         }).subscribe(_.identity, (err) => {
-            cb({success: false, errors: [err.message]});
             log.makeRxErrorHandler(socketLogger, 'Update view config')(err);
+            return cb({success: false, errors: [err.message]});
         });
     });
 
@@ -544,8 +544,8 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
             socketLogger.trace({viewConfig: viewConfig}, 'viewConfig');
             cb({success: true});
         }).subscribe(_.identity, (err) => {
-            cb({success: false, errors: [err.message]});
             log.makeRxErrorHandler(socketLogger, 'Update view parameter')(err);
+            return cb({success: false, errors: [err.message]});
         });
     });
 
@@ -554,13 +554,13 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
             (renderConfig) => {
                 socketLogger.info('Socket on render_config (sending render_config to client)');
                 socketLogger.trace({renderConfig : renderConfig}, 'renderConfig');
-                cb({success: true, renderConfig: renderConfig});
 
                 if (saveAtEachStep) {
                     persist.saveConfig(defaultSnapshotName, renderConfig);
                 }
 
                 this.lastRenderConfig = renderConfig;
+                return cb({success: true, renderConfig: renderConfig});
             },
             (err) => {
                 failWithMessage(cb, 'Render config read error');
@@ -987,7 +987,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
             (renderConfig) => {
                 this.beginStreaming(renderConfig, this.colorTexture);
                 if (cb) {
-                    cb({success: true});
+                    return cb({success: true});
                 }
             },
             log.makeQErrorHandler(logger, 'begin_streaming')
