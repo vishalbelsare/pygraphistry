@@ -193,8 +193,8 @@ ColumnAggregation.prototype.isIntegral = function (value) {
 };
 
 ColumnAggregation.prototype.genericSinglePassFixedMemoryAggregations = function () {
-    let minValue = null, maxValue = null, countMissing = 0,
-        numValues = this.getAggregationByType('count');
+    const numValues = this.getAggregationByType('count');
+    let minValue = null, maxValue = null, countMissing = 0;
     const isLessThan = dataTypeUtil.isLessThanForDataType(this.getAggregationByType('dataType'));
     _.each(this.values, (value) => {
         if (dataTypeUtil.valueSignifiesUndefined(value)) {
@@ -247,8 +247,8 @@ ColumnAggregation.prototype.computeStandardDeviation = function () {
 const MaxDistinctValues = 40000;
 
 ColumnAggregation.prototype.countDistinct = function (limit=MaxDistinctValues) {
-    let countsByValue = {},
-        numDistinct = 0, minValue = null, maxValue = null;
+    const countsByValue = {};
+    let numDistinct = 0, minValue = null, maxValue = null;
     const dataType = this.getAggregationByType('dataType');
     const isLessThan = dataTypeUtil.isLessThanForDataType(dataType);
     const keyMaker = dataTypeUtil.keyMakerForDataType(dataType);
@@ -266,7 +266,8 @@ ColumnAggregation.prototype.countDistinct = function (limit=MaxDistinctValues) {
             }
         }
     });
-    let distinctCounts = new Array(numDistinct), idx = 0;
+    const distinctCounts = new Array(numDistinct);
+    let idx = 0;
     _.each(countsByValue, (count, keyForValue) => {
         distinctCounts[idx++] = {distinctValue: keyForValue, count: count};
     });
