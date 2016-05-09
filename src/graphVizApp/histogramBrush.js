@@ -53,15 +53,15 @@ function HistogramBrush(socket, filtersPanel, doneLoading) {
     this.globalStats = new Rx.ReplaySubject(1);
     const updateDataframeAttributeSubject = new Rx.Subject();
 
-    this.aggregationCommand = new Command('binning column data', 'computeBinningForColumns', socket);
+    this.binningCommand = new Command('binning column data', 'computeBinningForColumns', socket);
 
     //////////////////////////////////////////////////////////////////////////
     // Setup Streams
     //////////////////////////////////////////////////////////////////////////
 
     // Setup update attribute subject that histogram panel can write to
-    updateDataframeAttributeSubject.do((data) => {
-        this.updateDataframeAttribute(data.oldAttr, data.newAttr, data.type);
+    updateDataframeAttributeSubject.do(({oldAttr, newAttr, type}) => {
+        this.updateDataframeAttribute(oldAttr, newAttr, type);
     }).subscribe(_.identity, util.makeErrorHandler('Update Attribute'));
 
     // Once Loaded, setup initial stream of global statistics.
@@ -162,19 +162,19 @@ HistogramBrush.prototype.setupMarqueeInteraction = function (marquee) {
         .merge(this.dataframeAttributeChange.map(() => ({type: 'dataframeAttributeChange', sel: this.lastSelection})))
         .switchMap((selContainer) => this.globalStats.map((globalVal) =>
             ({type: selContainer.type, sel: selContainer.sel, globalStats: globalVal})))
-        .switchMap((data) => {
+        .switchMap(({sel, globalStats, type}) => {
             const binning = {};
             const attributeNames = _.pluck(this.activeDataframeAttributes, 'name');
             _.each(this.activeDataframeAttributes, (attr) => {
                 if (attr.type === 'sparkLines') {
-                    binning[attr.name] = data.globalStats.sparkLines[attr.name];
+                    binning[attr.name] = globalStats.sparkLines[attr.name];
                 } else {
-                    binning[attr.name] = data.globalStats.histograms[attr.name];
+                    binning[attr.name] = globalStats.histograms[attr.name];
                 }
             });
             const attributes = _.map(attributeNames, (name) => {
-                let normalizedName = name,
-                    graphType = data.globalStats.histograms[name].graphType;
+                let normalizedName = name;
+                let graphType = globalStats.histograms[name].graphType;
                 if (normalizedName.indexOf(':') !== -1) {
                     const nameParts = normalizedName.split(':', 2);
                     normalizedName = nameParts[1];
@@ -186,33 +186,32 @@ HistogramBrush.prototype.setupMarqueeInteraction = function (marquee) {
                 };
             });
 
-            const params = {sel: data.sel, attributes: attributes, binning: binning};
-            this.lastSelection = data.sel;
-            return this.aggregationCommand.sendWithObservableResult(params)
-                .map((agg) => ({reply: agg, sel: data.sel, globalStats: data.globalStats, type: data.type}))
+            const params = {sel: sel, attributes: attributes, binning: binning};
+            this.lastSelection = sel;
+            return this.binningCommand.sendWithObservableResult(params)
                 .map((aggResponse) => {
                     // HACK to make it not display 'all' selections as brushed sections.
-                    if (aggResponse.sel && aggResponse.sel.all) {
+                    if (sel && sel.all) {
                         const newData = {};
-                        _.each(aggResponse.reply.data, (val, key) => {
+                        _.each(aggResponse.data, (val, key) => {
                             newData[key] = {type: 'nodata'};
                         });
-                        aggResponse.reply.data = newData;
+                        aggResponse.data = newData;
                     }
-                    return aggResponse;
+                    return {reply: aggResponse, sel, globalStats, type};
                 });
         })
-        .do((data) => {
-            if (!data.reply) {
+        .do(({reply}) => {
+            if (!reply) {
                 console.error('Unexpected server error on aggregate');
-            } else if (data.reply && !data.reply.success) {
-                console.error('Server replied with error:', data.reply.error, data.reply.stack);
+            } else if (reply && !reply.success) {
+                console.error('Server replied with error:', reply.error, reply.stack);
             }
             // TODO: Do we want to treat no replies in some special way?
         })
-        .filter((data) => data.reply && data.reply.success)
-        .do((data) => {
-            this.updateHistogramData(data.reply.data, data.globalStats);
+        .filter(({reply}) => reply && reply.success)
+        .do(({reply, globalStats}) => {
+            this.updateHistogramData(reply.data, globalStats);
         }).subscribe(_.identity, util.makeErrorHandler('Brush selection aggregate error'));
 };
 
@@ -236,11 +235,13 @@ HistogramBrush.prototype.updateDataframeAttribute = function (oldAttributeName, 
 };
 
 
-function checkReply(reply) {
-    if (!reply) {
-        console.error('Unexpected server error on global aggregate');
-    } else if (reply && !reply.success) {
-        console.error('Server replied with error from global aggregate:', reply.error, reply.stack);
+function checkReply (reply) {
+    if (reply) {
+        if (!reply.success) {
+            console.error('Server replied with error from global binning:', reply.error, reply.stack);
+        }
+    } else {
+        console.error('Unexpected server error on global binning');
     }
 }
 
@@ -281,11 +282,12 @@ HistogramBrush.prototype.updateHistogramData = function (data, globalStats, empt
             // TODO: Make sure that sparkLines is always passed in, so we don't have
             // to do this check.
             _.each(this.activeDataframeAttributes, (attr) => {
+                const isSparkLines = attr.type === 'sparkLines';
                 if (attr.name === key) {
-                    params.sparkLines = (attr.type === 'sparkLines');
+                    params.sparkLines = (isSparkLines);
                 } else if (attr.name.match(/:/) && attr.name.split(/:/, 2)[1] === key) {
-                    params.sparkLines = (attr.type === 'sparkLines');
-                    if (attr.graphType === undefined) {
+                    params.sparkLines = (isSparkLines);
+                    if (attr.graphType === undefined || attr.name.indexOf(attr.graphType + ':') === 0) {
                         attributeName = attr.name;
                     } else {
                         attributeName = attr.graphType + ':' + attr.name;
@@ -308,16 +310,19 @@ HistogramBrush.prototype.updateHistogramData = function (data, globalStats, empt
 };
 
 
-// ?? -> Observable ??
-HistogramBrush.prototype.aggregatePointsAndEdges = function(params) {
+/**
+ * @param {Object} params
+ * @returns {Observable}
+ */
+HistogramBrush.prototype.aggregatePointsAndEdges = function (params) {
     return Rx.Observable.zip(
-        this.aggregationCommand.sendWithObservableResult(_.extend({}, params, {type: 'point'})),
-        this.aggregationCommand.sendWithObservableResult(_.extend({}, params, {type: 'edge'})),
+        this.binningCommand.sendWithObservableResult(_.extend({}, params, {type: 'point'})),
+        this.binningCommand.sendWithObservableResult(_.extend({}, params, {type: 'edge'})),
         (pointHists, edgeHists) => {
 
             // Disambiguate column names present on both points and edges:
-            const pointHistsData = pointHists.data || {},
-                edgeHistsData = edgeHists.data || {};
+            const pointHistsData = pointHists.data || {};
+            const edgeHistsData = edgeHists.data || {};
             _.each(_.keys(edgeHistsData), (columnName) => {
                 if (pointHistsData.hasOwnProperty(columnName)) {
                     const pointColumnName = 'point:' + columnName;
