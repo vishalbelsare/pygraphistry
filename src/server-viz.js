@@ -401,7 +401,7 @@ function processAggregateIndices ({type, attributes, binning, mode, goalNumberOf
             .concatMap((typeAndAttributeNames) => {
                 const eachType = typeAndAttributeNames[0];
                 const attributeNames = typeAndAttributeNames[1];
-                return graph.dataframe.aggregate(
+                return graph.dataframe.computeBinningByColumnNames(
                     mask, attributeNames,
                     binning, mode, eachType, goalNumberOfBins
                 );

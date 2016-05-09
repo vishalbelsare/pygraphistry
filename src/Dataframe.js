@@ -1944,7 +1944,7 @@ Dataframe.prototype.formatAsCSV = function (type) {
  * @param {Number?} goalNumberOfBins
  * @returns {Promise<Object.<BinningResult>>}
  */
-Dataframe.prototype.aggregate = function (
+Dataframe.prototype.computeBinningByColumnNames = function (
     mask, attributes, binningHintsByAttribute = {}, mode = undefined, type = undefined, goalNumberOfBins = 0) {
 
     const processAgg = (attribute) => {
