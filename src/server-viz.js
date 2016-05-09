@@ -262,20 +262,26 @@ VizServer.prototype.resetState = function (dataset, socket) {
     logger.trace('RESET APP STATE.');
 };
 
+
+function maskFromPointsByConnectingEdges (pointMask, graph) {
+    return new DataframeMask(graph.dataframe,
+        pointMask,
+        pointMask === undefined ? undefined : graph.simulator.connectedEdges(pointMask)
+    );
+}
+
+
 VizServer.prototype.readSelection = function (type, query, res) {
     this.graph.take(1).do((graph) => {
-        graph.simulator.selectNodesInRect(query.sel).then((nodeIndices) => {
-            const edgeIndices = graph.simulator.connectedEdges(nodeIndices);
-            return {
-                'point': nodeIndices,
-                'edge': edgeIndices
-            };
-        }).then((lastSelectionIndices) => {
+        const {dataframe} = graph;
+        graph.simulator.selectNodesInRect(query.sel).then(
+            (pointMask) => maskFromPointsByConnectingEdges(pointMask, graph)
+        ).then((lastSelectionMask) => {
             const page = parseInt(query.page);
             const pageSize = parseInt(query.per_page);
             const start = (page - 1) * pageSize;
             const end = start + pageSize;
-            const data = sliceSelection(graph.dataframe, type, lastSelectionIndices[type], start, end,
+            const data = sliceSelection(dataframe, type, lastSelectionMask, start, end,
                                         query.sort_by, query.order === 'asc', query.search);
             _.extend(data, {
                 page: page
@@ -371,37 +377,33 @@ function getNamespaceFromGraph(graph) {
     return metadata;
 }
 
-function processAggregateIndices(query, graph, nodeIndices) {
-    logger.debug('Done selecting indices');
+function processAggregateIndices ({type, attributes, binning, mode, goalNumberOfBins}, graph, pointMask) {
+    logger.debug('Done selecting indices; starting aggregation');
     try {
-        const edgeIndices = graph.simulator.connectedEdges(nodeIndices);
-        const indices = {
-            point: nodeIndices,
-            edge: edgeIndices
-        };
+        const mask = maskFromPointsByConnectingEdges(pointMask, graph);
 
-        const types = [];
-        let attributes = [];
+        const selectedTypes = [];
+        let selectedAttributes = [];
 
-        if (query.type) {
-            types.push(query.type);
-            attributes.push(query.attributes);
+        if (type) {
+            selectedTypes.push(type);
+            selectedAttributes.push(attributes);
         } else {
-            types.push('point', 'edge');
-            attributes = _.map(types, (type) => _.chain(query.attributes)
-                .where({type: type})
+            selectedTypes.push('point', 'edge');
+            selectedAttributes = _.map(selectedTypes, (eachType) => _.chain(attributes)
+                .where({type: eachType})
                 .pluck('name')
                 .value());
         }
 
         return Observable
-            .from(_.zip(types, attributes))
-            .concatMap((tuple) => {
-                const type = tuple[0];
-                const attributeNames = tuple[1];
+            .from(_.zip(selectedTypes, selectedAttributes))
+            .concatMap((typeAndAttributeNames) => {
+                const eachType = typeAndAttributeNames[0];
+                const attributeNames = typeAndAttributeNames[1];
                 return graph.dataframe.aggregate(
-                    indices[type], attributeNames,
-                    query.binning, query.mode, type
+                    mask, attributeNames,
+                    binning, mode, eachType, goalNumberOfBins
                 );
             })
             .reduce((memo, item) => _.extend(memo, item), {});
@@ -643,10 +645,8 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                     throw Error('Selection not specified for creating a Set');
                 }
                 if (pointsOnly) {
-                    qNodeSelection = qNodeSelection.then((pointIndexes) => {
-                        const edgeIndexes = simulator.connectedEdges(pointIndexes);
-                        return new DataframeMask(dataframe, pointIndexes, edgeIndexes);
-                    });
+                    qNodeSelection = qNodeSelection.then(
+                        (pointMask) => maskFromPointsByConnectingEdges(pointMask, graph));
                 }
             } else if (sourceType === 'dataframe') {
                 qNodeSelection = Q(dataframe.fullDataframeMask());
@@ -1382,7 +1382,7 @@ VizServer.prototype.setupAggregationRequestHandling = function () {
             logger.debug({query: query}, 'Got aggregate');
 
             return self.graph.take(1)
-                .flatMap(selectNodeIndices, resultSelector)
+                .flatMap(pointMaskFromQuery, resultSelector)
                 .mergeAll()
                 .take(1)
                 .do(
@@ -1397,12 +1397,15 @@ VizServer.prototype.setupAggregationRequestHandling = function () {
                 )
                 .catch(Observable.empty);
 
-            function selectNodeIndices (graph) {
+            /**
+             * @param graph
+             * @returns {Observable<Mask>}
+             */
+            function pointMaskFromQuery (graph) {
                 if (query.all === true) {
-                    const numPoints = graph.simulator.dataframe.getNumElements('point');
-                    return Observable.of(new Uint32Array(_.range(numPoints)));
+                    return Observable.of(undefined);
                 } else if (!query.sel) {
-                    return Observable.of(new Uint32Array([]));
+                    return Observable.of([]);
                 } else {
                     return graph.simulator.selectNodesInRect(query.sel);
                 }
