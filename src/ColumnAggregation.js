@@ -3,6 +3,33 @@
 const _ = require('underscore');
 const dataTypeUtil = require('./dataTypes.js');
 
+
+/**
+ * @typedef {Object} Aggregations
+ * @property {String} dataType
+ * @property {String} jsType
+ * @property {Boolean} isNumeric
+ * @property {Boolean} isIntegral
+ * @property {Boolean} isContinuous
+ * @property {Boolean} isCategorical
+ * @property {Boolean} isQuantitative
+ * @property {Boolean} isOrdered
+ * @property {Boolean} isDiverging
+ * @property {Boolean} hasPositive
+ * @property {Boolean} hasNegative
+ * @property {Boolean} isPositive Has positive values and no negative ones.
+ * @property {Number} count
+ * @property {Number} countDistinct
+ * @property {ValueCount[]} distinctValues count of instances by value, sorted by count descending.
+ * @property {Object} maxValue
+ * @property {Object} minValue
+ * @property {Number} standardDeviation
+ * @property {Number} averageValue
+ * @property {Number} sum
+ * @property {Object} binning
+ */
+
+
 /**
  * @param {Dataframe} dataframe
  * @param {Object} column
