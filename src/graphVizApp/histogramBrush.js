@@ -53,7 +53,7 @@ function HistogramBrush(socket, filtersPanel, doneLoading) {
     this.globalStats = new Rx.ReplaySubject(1);
     const updateDataframeAttributeSubject = new Rx.Subject();
 
-    this.aggregationCommand = new Command('aggregating data', 'aggregate', socket);
+    this.aggregationCommand = new Command('binning column data', 'computeBinningForColumns', socket);
 
     //////////////////////////////////////////////////////////////////////////
     // Setup Streams
@@ -80,12 +80,14 @@ const GraphistryAttributeNames = [
 ];
 
 
-HistogramBrush.prototype.initializeGlobalData = function(socket, filtersPanel, updateDataframeAttributeSubject) {
+HistogramBrush.prototype.initializeGlobalData = function (socket, filtersPanel, updateDataframeAttributeSubject) {
     const globalStream = this.aggregatePointsAndEdges({
-        all: true});
+        all: true
+    });
     const globalStreamSparklines = this.aggregatePointsAndEdges({
         all: true,
-        binning: {'_goalNumberOfBins': HistogramsPanel.MAX_HORIZONTAL_BINS}});
+        goalNumberOfBins: HistogramsPanel.MAX_HORIZONTAL_BINS
+    });
     Rx.Observable.zip(globalStream, globalStreamSparklines, (histogramsReply, sparkLinesReply) => {
         checkReply(histogramsReply);
         checkReply(sparkLinesReply);
