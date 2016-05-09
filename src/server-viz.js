@@ -1371,7 +1371,7 @@ VizServer.prototype.setupAggregationRequestHandling = function () {
     // Handle aggregate requests. Using `concatMap` ensures we fully handle one
     // before moving on to the next.
     Observable
-        .fromEvent(this.socket, 'aggregate', (query, cb) => ({query, cb}))
+        .fromEvent(this.socket, 'computeBinningForColumns', (query, cb) => ({query, cb}))
         .concatMap((request) => {
 
             const cb = request.cb;
