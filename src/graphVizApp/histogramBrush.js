@@ -41,7 +41,7 @@ function handleFiltersResponse (filtersResponseObservable, poi) {
 }
 
 
-function HistogramBrush(socket, filtersPanel, doneLoading) {
+function HistogramBrush (socket, filtersPanel, doneLoading) {
     debug('Initializing histogram brush');
 
     this.lastSelection = undefined;
@@ -71,22 +71,17 @@ function HistogramBrush(socket, filtersPanel, doneLoading) {
 }
 
 
-const GraphistryAttributeNames = [
-    'degree',
-    'community_infomap', 'community_louvain', 'community_spinglass',
-    'betweenness', 'centrality', 'closeness', 'pagerank',
-    'weight', 'degree_in', 'degree_out', 'indegree', 'outdegree',
-    'Source', 'Destination', '__nodeid__', 'id'
-];
-
-
 HistogramBrush.prototype.initializeGlobalData = function (socket, filtersPanel, updateDataframeAttributeSubject) {
+    // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
+    const maxInitialItems = Math.min(Math.round((window.innerHeight - 110) / 85), 5);
     const globalStream = this.aggregatePointsAndEdges({
-        all: true
+        all: true,
+        maxInitialItems: maxInitialItems
     });
     const globalStreamSparklines = this.aggregatePointsAndEdges({
         all: true,
-        goalNumberOfBins: HistogramsPanel.MAX_HORIZONTAL_BINS
+        goalNumberOfBins: HistogramsPanel.MAX_HORIZONTAL_BINS,
+        maxInitialItems: maxInitialItems
     });
     Rx.Observable.zip(globalStream, globalStreamSparklines, (histogramsReply, sparkLinesReply) => {
         checkReply(histogramsReply);
@@ -98,36 +93,9 @@ HistogramBrush.prototype.initializeGlobalData = function (socket, filtersPanel, 
             this.dataframeAttributeChange, updateDataframeAttributeSubject);
         data.histogramPanel = this.histogramsPanel;
 
-        // On auto-populate, at most 5 histograms, or however many * 85 + 110 px = window height.
-        const maxInitialItems = Math.min(Math.round((window.innerHeight - 110) / 85), 5);
+        // This is redundant with the server request honoring the same limit, but avoids visual overflow:
         const filteredAttributes = {};
-        // TODO FIXME server should provide smarter summary metadata and dispatch on that
-        const keysWithNonTrivialData = _.filter(_.keys(data.sparkLines), (key => {
-            var sparkLine = data.sparkLines[key];
-            if (sparkLine.type === 'nodata') { return false; }
-            if (sparkLine.binValues !== undefined &&
-                sparkLine.binValues.length <= 1 &&
-                !sparkLine.binValues.hasOwnProperty('_other')) {
-                return false;
-            }
-            if (sparkLine.bins !== undefined &&
-                _.size(sparkLine.bins) <= 1) {
-                return false;
-            }
-            return true;
-        }));
-        // Prioritize user-provided data ahead of system data.
-        // Prioritize user-provided data by how small the _other bin is, since mega-valued domains make poor histograms.
-        const sortedKeys = _.sortBy(keysWithNonTrivialData, (key) => {
-            const sysIndex = GraphistryAttributeNames.indexOf(key);
-            if (sysIndex < 0) {
-                const otherSize = Math.log10(data.sparkLines[key].bins._other | 1);
-                return sysIndex / otherSize;
-            } else {
-                return sysIndex;
-            }
-        });
-        const firstKeys = _.first(sortedKeys, maxInitialItems);
+        const firstKeys = _.first(_.keys(data.sparkLines), maxInitialItems);
         _.each(firstKeys, (key) => {
             filteredAttributes[key] = data.sparkLines[key];
             filteredAttributes[key].sparkLines = true;
