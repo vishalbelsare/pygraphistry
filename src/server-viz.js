@@ -374,23 +374,82 @@ function getNamespaceFromGraph (graph) {
     return metadata;
 }
 
-function processBinningOfColumns ({type, attributes, binning, mode, goalNumberOfBins}, graph, pointMask) {
+// Defines the order in which system columns are typically interesting:
+const CommonAttributeNamesSortedByInterestLevel = [
+    'degree',
+    'community_infomap', 'community_louvain', 'community_spinglass',
+    'betweenness', 'centrality', 'closeness', 'pagerank',
+    'weight', 'degree_in', 'degree_out', 'indegree', 'outdegree',
+    'Source', 'Destination', '__nodeid__', 'id'
+];
+
+
+/**
+ * @param {Dataframe} dataframe
+ * @param {Number?} maxInitialItems
+ * @returns {ColumnName[]}
+ */
+function selectInitialColumnsForBinning (dataframe, maxInitialItems = undefined) {
+    const selectedColumnNames = [];
+    const attributeKeysByType = {point: dataframe.getAttributeKeys('point'), edge: dataframe.getAttributeKeys('edge')};
+    _.each(attributeKeysByType, (attributeKeys, type) => {
+        _.each(attributeKeys, (attributeName) => {
+            const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
+            const countDistinct = aggregations.getAggregationByType('countDistinct');
+            if (countDistinct < 2) {
+                return;
+            }
+            const columnName = {
+                attribute: attributeName,
+                type: type
+            };
+            // Develop a score for prioritizing the columns.
+            // Avoid private columns if at all possible (usually just an internal target of an alias).
+            if (dataframe.isAttributeNamePrivate(attributeName)) {
+                columnName.score = CommonAttributeNamesSortedByInterestLevel.length;
+            } else {
+                // Prioritize user-provided data ahead of system data.
+                const sysIndex = CommonAttributeNamesSortedByInterestLevel.indexOf(attributeName);
+                if (sysIndex === -1) {
+                    // Prioritize user-provided data (crudely) by how small the _other bin is;
+                    // mega-valued domains make poor histograms.
+                    columnName.score = sysIndex / Math.log(countDistinct);
+                } else {
+                    columnName.score = sysIndex;
+                }
+            }
+            selectedColumnNames.push(columnName);
+        });
+    });
+    const sortedColumnNames = _.sortBy(selectedColumnNames, (columnName) => columnName.score);
+    return _.first(sortedColumnNames, maxInitialItems);
+}
+
+function processBinningOfColumns ({type, attributes, binning, mode, goalNumberOfBins, maxInitialItems},
+    graph, pointMask) {
     logger.debug('Starting binning');
     try {
         const mask = maskFromPointsByConnectingEdges(pointMask, graph);
+
+        if (attributes === undefined) {
+            attributes = _.map(selectInitialColumnsForBinning(graph.dataframe, maxInitialItems),
+                (columnName) => ({name: columnName.attribute, type: columnName.type}));
+        }
+
+        const namesFromAttributes = (someType) => _.chain(attributes)
+            .where({type: someType})
+            .pluck('name')
+            .value();
 
         let selectedTypes;
         let selectedAttributes;
 
         if (type) {
             selectedTypes = [type];
-            selectedAttributes = [attributes];
+            selectedAttributes = [namesFromAttributes(type)];
         } else {
             selectedTypes = ['point', 'edge'];
-            selectedAttributes = _.map(selectedTypes, (eachType) => _.chain(attributes)
-                .where({type: eachType})
-                .pluck('name')
-                .value());
+            selectedAttributes = _.map(selectedTypes, namesFromAttributes);
         }
 
         return Observable

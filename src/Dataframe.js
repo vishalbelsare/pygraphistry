@@ -1586,13 +1586,6 @@ Dataframe.prototype.getDataType = function (columnName, type) {
     return this.rawdata.attributes[type][columnName] && this.rawdata.attributes[type][columnName].type;
 };
 
-
-Dataframe.prototype.getColumn = function (columnName, type) {
-    return _.omit(this.rawdata.attributes[type][columnName], LargeColumnProperties);
-};
-
-const LargeColumnProperties = ['values', 'aggregations'];
-
 /**
  * @typedef {Object} Column
  * @property {Array} values
@@ -1787,7 +1780,7 @@ Dataframe.prototype.metadataForColumn = function (columnName, type) {
                 break;
         }
     }
-    defs = _.find(defsContainer, (eachDefs) => { return eachDefs[columnName] !== undefined; });
+    defs = _.find(defsContainer, (eachDefs) => eachDefs[columnName] !== undefined);
     if (defs !== undefined) {
         metadata = defs[columnName];
     }
@@ -1798,9 +1791,8 @@ Dataframe.prototype.metadataForColumn = function (columnName, type) {
 /**
  * @returns {ColumnAggregation}
  */
-Dataframe.prototype.getColumnAggregations = function(columnName, type, unfiltered) {
-    const dataframeData = (unfiltered ? this.rawdata : this.data);
-    const column = dataframeData.attributes[type][columnName];
+Dataframe.prototype.getColumnAggregations = function (columnName, type, unfiltered = undefined) {
+    const column = this.getColumn(columnName, type, unfiltered);
     if (column === undefined) { return undefined; }
     if (column.aggregations === undefined) {
         column.aggregations = new ColumnAggregation(this, column, columnName, type);
@@ -1849,6 +1841,32 @@ Dataframe.prototype.getAttributeKeys = function (type) {
         _.keys(this.rawdata.attributes[type]),
         _.identity
     );
+};
+
+
+Dataframe.prototype.hasColumnNamed = function (type, columnName) {
+    const columnsByAttribute = this.rawdata.attributes[type];
+    return columnsByAttribute.hasOwnProperty(columnName) ||
+        _.any(columnsByAttribute, (column) => column.name === columnName);
+};
+
+
+const LargeColumnProperties = ['values', 'aggregations'];
+
+Dataframe.prototype.getColumn = function (columnName, type, unfiltered = true) {
+    const dataframeData = (unfiltered ? this.rawdata : this.data);
+    const columnsForType = dataframeData.attributes[type];
+    const column = columnsForType[columnName] ||
+        _.find(columnsForType, (eachColumn) => eachColumn.name === columnName);
+    return _.omit(column, LargeColumnProperties);
+};
+
+
+Dataframe.prototype.getAttributeKeyForColumnName = function (columnName, type) {
+    const columnsForType = this.rawdata.attributes[type];
+    return columnsForType.hasOwnProperty(columnName) ?
+        columnName :
+        _.findKey(columnsForType, (column) => column.name === columnName);
 };
 
 
@@ -1960,12 +1978,11 @@ Dataframe.prototype.computeBinningByColumnNames = function (
         }
     };
 
-    const validAttributes = this.getAttributeKeys(type);
-    let keysToAggregate = attributes ? attributes : validAttributes;
+    let keysToAggregate = attributes ? attributes : this.getAttributeKeys(type);
 
-    // Make sure that valid non-private attributes were passed in.
+    // Make sure that valid attributes were passed in.
     keysToAggregate = keysToAggregate.filter(
-        (val) => !this.isAttributeNamePrivate(val) && validAttributes.indexOf(val) !== -1);
+        (columnName) => this.hasColumnNamed(type, columnName));
 
 
     let chain = Q(); // simulator.otherKernels.histogramKernel.setIndices(simulator, maskForType);
