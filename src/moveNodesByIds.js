@@ -25,29 +25,29 @@ MoveNodesByIds.prototype.run = function (simulator, ids, diff) {
     var deltaX = diff.x;
     var deltaY = diff.y;
 
-    var inputPositions = simulator.dataframe.getBuffer('curPoints', 'simulator');
-    var outputPositions = simulator.dataframe.getBuffer('nextPoints', 'simulator');
+    var curPoints = simulator.dataframe.getBuffer('curPoints', 'simulator');
+    var nextPoints = simulator.dataframe.getBuffer('nextPoints', 'simulator');
 
-    var numPoints = simulator.dataframe.getNumElements('point');
-    var outputArray = new Float32Array(numPoints * 2);
+    var byteLength = curPoints.size;
+    var numElements = byteLength / Float32Array.BYTES_PER_ELEMENT;
+    var outputArray = new Float32Array(numElements);
 
     return Q().then(() => {
-        return inputPositions.copyInto(outputPositions);
+        // Copy from GPU to CPU
+        return curPoints.read(outputArray);
     }).then(() => {
-        return inputPositions.read(outputArray);
-    }).then(() => {
+        // Move nodes
         for (var i = 0; i < ids.length; i++) {
             var id = ids[i];
             outputArray[id*2] += deltaX;
             outputArray[id*2 + 1] += deltaY;
         }
     }).then(() => {
-        return outputPositions.write(outputArray);
-    }).then(() => {
-        return outputPositions.copyInto(inputPositions);
-    }).then(() => {
+        // Write back to GPU
         simulator.tickBuffers(['nextPoints', 'curPoints']);
+        return curPoints.write(outputArray);
     }).fail(log.makeQErrorHandler(logger, 'Kernel moveNodesByIds failed'));
+
 }
 
 
