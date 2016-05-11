@@ -55,7 +55,7 @@ function generateContentKey (urlParams) {
     const uid = util.createAlphaNumericUID();
     const datasetParam = urlParams.dataset;
     const parts = datasetParam.split('/');
-    if (parts.length === 2) {
+    if (parts.length <= 2) {
         return datasetParam + '_' + uid;
     } else if (datasetParam.match(/\.json$/)) {
         // return datasetParam.replace(/\.json$/, '_' + uid + '.json');
