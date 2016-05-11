@@ -297,7 +297,9 @@ var TimeBarView = Backbone.View.extend({
         vizContainer.empty();
         model.set('vizContainer', vizContainer);
         var vizHeight = '' + TIME_BAR_HEIGHT + 'px';
+        var vizWidth = this.$el.closest('#timeExplorerVizContainer').width(); // Set width to parent container so all bars have same width
         vizContainer.height(vizHeight);
+        vizContainer.width(vizWidth);
         initializeTimeBar(vizContainer, model, barModel, dataModel);
         updateTimeBar(vizContainer, model, barModel, dataModel);
 
