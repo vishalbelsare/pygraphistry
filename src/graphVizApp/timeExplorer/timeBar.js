@@ -497,53 +497,8 @@ function updateTimeBarMouseover ($el, model, barModel, dataModel) {
         var dateTooltipValue = data.cutoffs[activeBin];
         dateTooltipValue = contentFormatter.defaultFormat(dateTooltipValue, 'date');
 
-        dateTooltip
-            // .attr('x', adjustedX - 3)
-            .text(dateTooltipValue)
-            .style('display', 'none'); // Hide until we know it doesn't overlap
-
-        // Now that it's drawn, check its bounding box to see if it goes off.
-        // If it does, then move it to the right side of the line.
-        dateTooltip
-            .style('display', function (d) {
-                // Don't show if mouse is off screen;
-                var mouseCursorIsOffScreen = adjustedX < 0;
-                if (mouseCursorIsOffScreen) {
-                    return 'none';
-                }
-                return 'block';
-            })
-            .attr('x', function (d) {
-                var bbox = this.getBBox();
-                var textGoesOutOfBounds = bbox.width > adjustedX;
-                if (textGoesOutOfBounds) {
-                    return bbox.width + adjustedX + 4;
-                } else {
-                    return adjustedX - 3;
-                }
-            })
-            .attr('y', function (d) {
-                var bbox = this.getBBox();
-                var textGoesOutOfBounds = bbox.width > adjustedX;
-                if (textGoesOutOfBounds) {
-                    return -5 + bbox.height - 2;
-                } else {
-                    return -5;
-                }
-            });
-
-        dateTooltip.data([''])
-            .enter().append('text')
-            .classed('dateTooltip', true)
-            .classed('unselectable', true)
-            .attr('y', -5)
-            .attr('x', 0)
-            .attr('text-anchor', 'end')
-            .attr('opacity', 1.0)
-            .attr('font-size', '0.7em')
-            .attr('pointer-events', 'none')
-            .text('');
-
+        updateTooltipContentAndPosition(dateTooltip, dateTooltipValue, adjustedX);
+        enterDateTooltip(dateTooltip);
     }
 
 
@@ -626,55 +581,61 @@ function updateTimeBarLineChartMouseover ($el, model, barModel, dataModel) {
         var dateTooltipValue = data.cutoffs[activeBin];
         dateTooltipValue = contentFormatter.defaultFormat(dateTooltipValue, 'date');
 
-        dateTooltip
-            // .attr('x', adjustedX - 3)
-            .text(dateTooltipValue)
-            .style('display', 'none'); // Hide until we know it doesn't overlap
-
-        // Now that it's drawn, check its bounding box to see if it goes off.
-        // If it does, then move it to the right side of the line.
-        dateTooltip
-            .style('display', function (d) {
-                // Don't show if mouse is off screen;
-                var mouseCursorIsOffScreen = adjustedX < 0;
-                if (mouseCursorIsOffScreen) {
-                    return 'none';
-                }
-                return 'block';
-            })
-            .attr('x', function (d) {
-                var bbox = this.getBBox();
-                var textGoesOutOfBounds = bbox.width > adjustedX;
-                if (textGoesOutOfBounds) {
-                    return bbox.width + adjustedX + 4;
-                } else {
-                    return adjustedX - 3;
-                }
-            })
-            .attr('y', function (d) {
-                var bbox = this.getBBox();
-                var textGoesOutOfBounds = bbox.width > adjustedX;
-                if (textGoesOutOfBounds) {
-                    return -5 + bbox.height - 2;
-                } else {
-                    return -5;
-                }
-            });
-
-        dateTooltip.data([''])
-            .enter().append('text')
-            .classed('dateTooltip', true)
-            .classed('unselectable', true)
-            .attr('y', -5)
-            .attr('x', 0)
-            .attr('text-anchor', 'end')
-            .attr('opacity', 1.0)
-            .attr('font-size', '0.7em')
-            .attr('pointer-events', 'none')
-            .text('');
+        updateTooltipContentAndPosition(dateTooltip, dateTooltipValue, adjustedX);
+        enterDateTooltip(dateTooltip);
 
     }
 
+}
+
+function enterDateTooltip (tooltip) {
+    tooltip.data([''])
+        .enter().append('text')
+        .classed('dateTooltip', true)
+        .classed('unselectable', true)
+        .attr('y', -5)
+        .attr('x', 0)
+        .attr('text-anchor', 'end')
+        .attr('opacity', 1.0)
+        .attr('font-size', '0.7em')
+        .attr('pointer-events', 'none')
+        .text('');
+}
+
+function updateTooltipContentAndPosition (tooltip, textValue, xPos) {
+    tooltip
+        .text(textValue)
+        .style('display', 'none'); // Hide until we know it doesn't overlap
+
+    // Now that it's drawn, check its bounding box to see if it goes off.
+    // If it does, then move it to the right side of the line.
+    tooltip
+        .style('display', function (d) {
+            // Don't show if mouse is off screen;
+            var mouseCursorIsOffScreen = xPos < 0;
+            if (mouseCursorIsOffScreen) {
+                return 'none';
+            }
+            return 'block';
+        })
+        .attr('x', function (d) {
+            var bbox = this.getBBox();
+            var textGoesOutOfBounds = bbox.width > xPos;
+            if (textGoesOutOfBounds) {
+                return bbox.width + xPos + 4;
+            } else {
+                return xPos - 3;
+            }
+        })
+        .attr('y', function (d) {
+            var bbox = this.getBBox();
+            var textGoesOutOfBounds = bbox.width > xPos;
+            if (textGoesOutOfBounds) {
+                return -5 + bbox.height - 2;
+            } else {
+                return -5;
+            }
+        });
 }
 
 
