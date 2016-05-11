@@ -118,7 +118,7 @@ function getDataTypesFromValues (values, type, dataframe, debug = false) {
  *
  * @param {Dataframe} dataFrame
  * @param {String} type
- * @param {Mask} indices
+ * @param {DataframeMask} mask
  * @param {Number} start
  * @param {Number} end
  * @param {String} sortColumnName
@@ -126,32 +126,26 @@ function getDataTypesFromValues (values, type, dataframe, debug = false) {
  * @param {String} searchFilter
  * @returns {{count: *, values: *, dataTypes: *}}
  */
-function sliceSelection (dataFrame, type, indices, start, end, sortColumnName, ascending, searchFilter) {
+function sliceSelection (dataFrame, type, mask, start, end, sortColumnName, ascending, searchFilter) {
     let values;
     let dataTypes;
 
     if (searchFilter) {
         searchFilter = searchFilter.toLowerCase();
         const newIndices = [];
-        _.each(indices, (idx) => {
-            const row = dataFrame.getRowAt(idx, type);
-            let keep = false;
-            _.each(row, (val/*, key*/) => {
-                if (String(val).toLowerCase().indexOf(searchFilter) > -1) {
-                    keep = true;
-                }
-            });
-            if (keep) {
+        mask.mapIndexes(type, (idx) => {
+            if (_.any(dataFrame.getRowAt(idx, type),
+                    (val/* , key */) => String(val).toLowerCase().indexOf(searchFilter) > -1)) {
                 newIndices.push(idx);
             }
         });
-        indices = newIndices;
+        mask[type] = newIndices;
     }
 
-    const count = indices.length;
+    const count = mask.numByType(type);
 
     if (sortColumnName === undefined) {
-        values = dataFrame.getRows(indices.slice(start, end), type);
+        values = dataFrame.getRows(mask.getIndexRangeByType(type, start, end), type);
         dataTypes = getDataTypesFromValues(values, type, dataFrame);
         return {count: count, values: values, dataTypes: dataTypes};
     }
@@ -159,7 +153,10 @@ function sliceSelection (dataFrame, type, indices, start, end, sortColumnName, a
     // TODO: Speed this up / cache sorting. Actually, put this into dataframe itself.
     // Only using permutation out here because this should be pushed into dataframe.
     const sortCol = dataFrame.getColumnValues(sortColumnName, type);
-    const taggedSortCol = _.map(indices, (idx) => [sortCol[idx], idx]);
+    const taggedSortCol = new Array(count);
+    mask.mapIndexes(type, (idx, i) => {
+        taggedSortCol[i] = [sortCol[idx], idx];
+    });
 
     const sortedTags = taggedSortCol.sort((val1, val2) => {
         const a = val1[0];

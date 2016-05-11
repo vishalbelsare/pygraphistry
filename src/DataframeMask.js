@@ -339,6 +339,18 @@ DataframeMask.prototype = {
         return this[type];
     },
 
+    getIndexRangeByType: function (type, start, end) {
+        if (this[type] === undefined) {
+            if (this.isExclusive) {
+                throw new Error('taking a slice of an exclusive range not yet defined');
+            } else {
+                return _.range(start, end);
+            }
+        } else {
+            return this[type].slice(start, end);
+        }
+    },
+
     /**
      * @param {String} type point/edge
      * @param {DataframeMask} other
