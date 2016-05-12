@@ -400,8 +400,13 @@ function setupErrorReporters(urlParams) {
         d = Math.floor(d / 16);
         return r.toString(16);
     }).toUpperCase();
-    console.info('Graphistry Debug Id:', window.graphistryDebugId);
-    console.log('Logs:', 'https://splunk.graphistry.com:3000/en-US/app/search/session_inspector?form.debugid=' + window.graphistryDebugId);
+
+    if (window.location.hostname.endsWith('graphistry.com')) {
+        console.info('Logs:',
+                     'https://splunk.graphistry.com:3000/en-US/app/search/session_inspector?form.debugid=' + window.graphistryDebugId);
+    } else {
+        console.info('Graphistry Debug Id:', window.graphistryDebugId);
+    }
 
     // Track JavaScript errors
     // Use the new standard (2014+) to get stack from modern browsers
