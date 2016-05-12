@@ -1053,9 +1053,9 @@ Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
         return;
     }
 
-    let degree = new Array(numElements);
-    let degreeIn = new Array(numElements);
-    let degreeOut = new Array(numElements);
+    const degree = new Array(numElements);
+    const degreeIn = new Array(numElements);
+    const degreeOut = new Array(numElements);
 
     for (let i = 0; i < numElements; i++) {
         degreeIn[i] = inDegrees[i];
