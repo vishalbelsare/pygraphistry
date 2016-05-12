@@ -390,6 +390,7 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
             const normalizedAttribute = this.normalizeAttributeName(_.keys(plan.rootNode.identifierNodes())[0], type);
             if (normalizedAttribute !== undefined) {
                 attribute = normalizedAttribute.attribute;
+                type = normalizedAttribute.type;
             }
             _.defaults(query, {attribute: attribute, type: type});
             filterFunc = this.filterFuncForQueryObject(query);
