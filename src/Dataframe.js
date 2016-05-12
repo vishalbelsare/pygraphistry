@@ -1630,37 +1630,39 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
         return this.getLocalBuffer(columnName);
     }
 
+    const column = attributes[columnName] || this.getColumn(columnName, type, false);
+
     // This lets us know if we need to reindex the values,
     // e.g., go from unsorted to sorted.
-    const indexType = attributes[columnName].index;
+    const indexType = column.index;
 
 
     // First try to see if have values already calculated / cached for this frame
 
     // Check to see if it's computed and version matches that of computed column.
     // Computed column versions reflect dependencies between computed columns.
-    const computedVersionMatches = !(attributes[columnName].computed &&
-        (attributes[columnName].computedVersion !== this.computedColumnManager.getColumnVersion(type, columnName))
+    const computedVersionMatches = !(column.computed &&
+        (column.computedVersion !== this.computedColumnManager.getColumnVersion(type, columnName))
     );
 
-    if (computedVersionMatches && !attributes[columnName].dirty && attributes[columnName].values) {
-        return this.reIndexArray(columnName, type, attributes[columnName].values, indexType, attributes[columnName]);
+    if (computedVersionMatches && !column.dirty && column.values) {
+        return this.reIndexArray(columnName, type, column.values, indexType, column);
     }
 
     // If it's calculated and needs to be recomputed
-    if (attributes[columnName].computed && (!computedVersionMatches || attributes[columnName].dirty)) {
+    if (column.computed && (!computedVersionMatches || column.dirty)) {
 
         const newValues = this.computedColumnManager.getDenseMaterializedArray(this, type, columnName);
-        attributes[columnName].values = newValues;
-        attributes[columnName].dirty = false;
+        column.values = newValues;
+        column.dirty = false;
 
-        return this.reIndexArray(columnName, type, newValues, indexType, attributes[columnName]);
+        return this.reIndexArray(columnName, type, newValues, indexType, column);
     }
 
 
     // If it's not calculated / cached, and filtered, apply the mask and compact
     // then cache the result.
-    if (attributes[columnName].dirty && attributes[columnName].dirty.cause === 'filter') {
+    if (column.dirty && column.dirty.cause === 'filter') {
 
         const rawAttributes = this.rawdata.attributes[type];
         const ArrayVariant = rawAttributes[columnName].arrType || Array;
@@ -1675,10 +1677,10 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
             // newValues.push(rawAttributes[columnName].values[idx]);
         });
 
-        attributes[columnName].values = newValues;
-        attributes[columnName].dirty = false;
+        column.values = newValues;
+        column.dirty = false;
 
-        return this.reIndexArray(columnName, type, newValues, indexType, attributes[columnName]);
+        return this.reIndexArray(columnName, type, newValues, indexType, column);
     }
 
     // Nothing was found, so throw error.
