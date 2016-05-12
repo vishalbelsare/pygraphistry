@@ -385,13 +385,18 @@ function observableFilterForClickingSelectedPoints (downEvt, appState, shouldBeS
             return {sel, highlighted};
         }).take(1)
         .filter(({sel, highlighted}) => {
-            const selectedPointIndices = sel.getPointIndexValues();
             const highlightedPointIndices = highlighted.getPointIndexValues();
-            const isIntersection = _.intersection(selectedPointIndices, highlightedPointIndices).length > 0;
+
+            let someHighlightedAreSelected = false;
+            for (let i = 0; i < highlightedPointIndices.length; i++) {
+                let pointIdx = highlightedPointIndices[i];
+                someHighlightedAreSelected = someHighlightedAreSelected || sel.containsIndexByDim(pointIdx, 1);
+            }
+
             if (shouldBeSelected) {
-                return isIntersection;
+                return someHighlightedAreSelected;
             } else {
-                return !isIntersection;
+                return !someHighlightedAreSelected;
             }
         }).map(() => downEvt).take(1);
 }
