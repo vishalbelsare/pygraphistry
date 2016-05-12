@@ -96,8 +96,30 @@ function setupClickDragInteractions (appState, socket, $eventTarget) {
             }).take(1);
         })
         .switchMap(({sel, downEvt}) => {
+
+            // Create stream of events that signify an end to the drag
+
+            // These events are bound to the document so that we don't miss either
+            // due to interactions with other dom elements
+            const mouseUpOnWindowStream = Rx.Observable.fromEvent(document, 'mouseup');
+
+            // We make a handler here for mouseouts of JUST the document.
+            // That is, a mouseout event from a child of the document won't trigger this,
+            // only someone mouseing out of the window
+            // Technique taken from http://stackoverflow.com/questions/923299/how-can-i-detect-when-the-mouse-leaves-the-window
+            const mouseOutOfWindowStream = Rx.Observable.fromEvent(document, 'mouseout')
+                .filter((e=window.event) => {
+                    const from = e.relatedTarget || e.toElement;
+                    return (!from || from.nodeName === 'HTML');
+                });
+
+            const stopDraggingStream = mouseOutOfWindowStream.merge(mouseUpOnWindowStream)
+                .take(1); // We take 1 so we don't have to manually dispose of these
+
+
+            // Subscribe to mouse moves until we get a signal to stop, then send payload to server
             return Rx.Observable.fromEvent($eventTarget, 'mousemove')
-                .takeUntil(Rx.Observable.fromEvent($eventTarget, 'mouseup')
+                .takeUntil(stopDraggingStream
                     .switchMap((upEvt) => {
                         const diff = worldCoordDiffFromMouseEvents(downEvt, upEvt, appState.renderingScheduler.renderState);
                         const ids = sel.getPointIndexValues();
