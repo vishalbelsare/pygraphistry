@@ -118,7 +118,7 @@ function getDataTypesFromValues (values, type, dataframe, debug = false) {
  *
  * @param {Dataframe} dataFrame
  * @param {String} type
- * @param {Mask} indices
+ * @param {DataframeMask} mask
  * @param {Number} start
  * @param {Number} end
  * @param {String} sortColumnName
@@ -126,32 +126,26 @@ function getDataTypesFromValues (values, type, dataframe, debug = false) {
  * @param {String} searchFilter
  * @returns {{count: *, values: *, dataTypes: *}}
  */
-function sliceSelection (dataFrame, type, indices, start, end, sortColumnName, ascending, searchFilter) {
+function sliceSelection (dataFrame, type, mask, start, end, sortColumnName, ascending, searchFilter) {
     let values;
     let dataTypes;
 
     if (searchFilter) {
         searchFilter = searchFilter.toLowerCase();
         const newIndices = [];
-        _.each(indices, (idx) => {
-            const row = dataFrame.getRowAt(idx, type);
-            let keep = false;
-            _.each(row, (val/*, key*/) => {
-                if (String(val).toLowerCase().indexOf(searchFilter) > -1) {
-                    keep = true;
-                }
-            });
-            if (keep) {
+        mask.mapIndexes(type, (idx) => {
+            if (_.any(dataFrame.getRowAt(idx, type),
+                    (val/* , key */) => String(val).toLowerCase().indexOf(searchFilter) > -1)) {
                 newIndices.push(idx);
             }
         });
-        indices = newIndices;
+        mask[type] = newIndices;
     }
 
-    const count = indices.length;
+    const count = mask.numByType(type);
 
     if (sortColumnName === undefined) {
-        values = dataFrame.getRows(indices.slice(start, end), type);
+        values = dataFrame.getRows(mask.getIndexRangeByType(type, start, end), type);
         dataTypes = getDataTypesFromValues(values, type, dataFrame);
         return {count: count, values: values, dataTypes: dataTypes};
     }
@@ -159,7 +153,10 @@ function sliceSelection (dataFrame, type, indices, start, end, sortColumnName, a
     // TODO: Speed this up / cache sorting. Actually, put this into dataframe itself.
     // Only using permutation out here because this should be pushed into dataframe.
     const sortCol = dataFrame.getColumnValues(sortColumnName, type);
-    const taggedSortCol = _.map(indices, (idx) => [sortCol[idx], idx]);
+    const taggedSortCol = new Array(count);
+    mask.mapIndexes(type, (idx, i) => {
+        taggedSortCol[i] = [sortCol[idx], idx];
+    });
 
     const sortedTags = taggedSortCol.sort((val1, val2) => {
         const a = val1[0];
@@ -262,20 +259,26 @@ VizServer.prototype.resetState = function (dataset, socket) {
     logger.trace('RESET APP STATE.');
 };
 
+
+function maskFromPointsByConnectingEdges (pointMask, graph) {
+    return new DataframeMask(graph.dataframe,
+        pointMask,
+        pointMask === undefined ? undefined : graph.simulator.connectedEdges(pointMask)
+    );
+}
+
+
 VizServer.prototype.readSelection = function (type, query, res) {
     this.graph.take(1).do((graph) => {
-        graph.simulator.selectNodesInRect(query.sel).then((nodeIndices) => {
-            const edgeIndices = graph.simulator.connectedEdges(nodeIndices);
-            return {
-                'point': nodeIndices,
-                'edge': edgeIndices
-            };
-        }).then((lastSelectionIndices) => {
+        const {dataframe} = graph;
+        graph.simulator.selectNodesInRect(query.sel).then(
+            (pointMask) => maskFromPointsByConnectingEdges(pointMask, graph)
+        ).then((lastSelectionMask) => {
             const page = parseInt(query.page);
             const pageSize = parseInt(query.per_page);
             const start = (page - 1) * pageSize;
             const end = start + pageSize;
-            const data = sliceSelection(graph.dataframe, type, lastSelectionIndices[type], start, end,
+            const data = sliceSelection(dataframe, type, lastSelectionMask, start, end,
                                         query.sort_by, query.order === 'asc', query.search);
             _.extend(data, {
                 page: page
@@ -359,11 +362,11 @@ VizServer.prototype.filterGraphByMaskList = function (graph, selectionMasks, exc
         errors.push(err);
         _.each(errors, logger.debug.bind(logger));
         _.extend(response, {success: false, errors: errors});
-        cb(response);
+        return cb(response);
     }
 };
 
-function getNamespaceFromGraph(graph) {
+function getNamespaceFromGraph (graph) {
     const dataframeColumnsByType = graph.dataframe.getColumnsByType();
     // TODO add special names that can be used in calculation references.
     // TODO handle multiple sources.
@@ -371,37 +374,33 @@ function getNamespaceFromGraph(graph) {
     return metadata;
 }
 
-function processAggregateIndices(query, graph, nodeIndices) {
-    logger.debug('Done selecting indices');
+function processBinningOfColumns ({type, attributes, binning, mode, goalNumberOfBins}, graph, pointMask) {
+    logger.debug('Starting binning');
     try {
-        const edgeIndices = graph.simulator.connectedEdges(nodeIndices);
-        const indices = {
-            point: nodeIndices,
-            edge: edgeIndices
-        };
+        const mask = maskFromPointsByConnectingEdges(pointMask, graph);
 
-        const types = [];
-        let attributes = [];
+        let selectedTypes;
+        let selectedAttributes;
 
-        if (query.type) {
-            types.push(query.type);
-            attributes.push(query.attributes);
+        if (type) {
+            selectedTypes = [type];
+            selectedAttributes = [attributes];
         } else {
-            types.push('point', 'edge');
-            attributes = _.map(types, (type) => _.chain(query.attributes)
-                .where({type: type})
+            selectedTypes = ['point', 'edge'];
+            selectedAttributes = _.map(selectedTypes, (eachType) => _.chain(attributes)
+                .where({type: eachType})
                 .pluck('name')
                 .value());
         }
 
         return Observable
-            .from(_.zip(types, attributes))
-            .concatMap((tuple) => {
-                const type = tuple[0];
-                const attributeNames = tuple[1];
-                return graph.dataframe.aggregate(
-                    indices[type], attributeNames,
-                    query.binning, query.mode, type
+            .from(_.zip(selectedTypes, selectedAttributes))
+            .concatMap((typeAndAttributeNames) => {
+                const eachType = typeAndAttributeNames[0];
+                const attributeNames = typeAndAttributeNames[1];
+                return graph.dataframe.computeBinningByColumnNames(
+                    mask, attributeNames,
+                    binning, mode, eachType, goalNumberOfBins
                 );
             })
             .reduce((memo, item) => _.extend(memo, item), {});
@@ -520,8 +519,8 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
             socketLogger.trace({viewConfig: viewConfig}, 'viewConfig');
             cb({success: true, viewConfig: viewConfig});
         }).subscribe(_.identity, (err) => {
-            cb({success: false, errors: [err.message]});
             log.makeRxErrorHandler(socketLogger, 'Get view config')(err);
+            cb({success: false, errors: [err.message]});
         });
     });
 
@@ -532,8 +531,8 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
             extend(true, viewConfig, newValues);
             cb({success: true, viewConfig: viewConfig});
         }).subscribe(_.identity, (err) => {
-            cb({success: false, errors: [err.message]});
             log.makeRxErrorHandler(socketLogger, 'Update view config')(err);
+            return cb({success: false, errors: [err.message]});
         });
     });
 
@@ -544,8 +543,8 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
             socketLogger.trace({viewConfig: viewConfig}, 'viewConfig');
             cb({success: true});
         }).subscribe(_.identity, (err) => {
-            cb({success: false, errors: [err.message]});
             log.makeRxErrorHandler(socketLogger, 'Update view parameter')(err);
+            return cb({success: false, errors: [err.message]});
         });
     });
 
@@ -554,13 +553,13 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
             (renderConfig) => {
                 socketLogger.info('Socket on render_config (sending render_config to client)');
                 socketLogger.trace({renderConfig : renderConfig}, 'renderConfig');
-                cb({success: true, renderConfig: renderConfig});
 
                 if (saveAtEachStep) {
                     persist.saveConfig(defaultSnapshotName, renderConfig);
                 }
 
                 this.lastRenderConfig = renderConfig;
+                return cb({success: true, renderConfig: renderConfig});
             },
             (err) => {
                 failWithMessage(cb, 'Render config read error');
@@ -643,10 +642,8 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                     throw Error('Selection not specified for creating a Set');
                 }
                 if (pointsOnly) {
-                    qNodeSelection = qNodeSelection.then((pointIndexes) => {
-                        const edgeIndexes = simulator.connectedEdges(pointIndexes);
-                        return new DataframeMask(dataframe, pointIndexes, edgeIndexes);
-                    });
+                    qNodeSelection = qNodeSelection.then(
+                        (pointMask) => maskFromPointsByConnectingEdges(pointMask, graph));
                 }
             } else if (sourceType === 'dataframe') {
                 qNodeSelection = Q(dataframe.fullDataframeMask());
@@ -987,7 +984,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
             (renderConfig) => {
                 this.beginStreaming(renderConfig, this.colorTexture);
                 if (cb) {
-                    cb({success: true});
+                    return cb({success: true});
                 }
             },
             log.makeQErrorHandler(logger, 'begin_streaming')
@@ -1245,7 +1242,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
         );
     });
 
-    this.setupAggregationRequestHandling();
+    this.setupBinningRequestHandling();
 
     this.socket.on('viz', (msg, cb) => { cb({success: true}); });
 }
@@ -1324,6 +1321,7 @@ VizServer.prototype.workbookForQuery = function (query) {
             // Create a new workbook here with a default view:
             subscriber.next(workbook.blankWorkbookTemplate);
             subscriber.complete();
+            return subscriber;
         }
     });
 };
@@ -1363,31 +1361,27 @@ VizServer.prototype.setupColorTexture = function () {
         .subscribe(_.identity, log.makeRxErrorHandler(logger, 'colorTexture'));
 };
 
-VizServer.prototype.setupAggregationRequestHandling = function () {
+VizServer.prototype.setupBinningRequestHandling = function () {
 
-    const self = this;
     const logErrorGlobally = log.makeRxErrorHandler(logger, 'aggregate socket handler');
 
     // Handle aggregate requests. Using `concatMap` ensures we fully handle one
     // before moving on to the next.
     Observable
-        .fromEvent(this.socket, 'aggregate', (query, cb) => ({query, cb}))
-        .concatMap((request) => {
+        .fromEvent(this.socket, 'computeBinningForColumns', (query, cb) => ({query, cb}))
+        .concatMap(({cb, query}) => {
+            const resultSelector = processBinningOfColumns.bind(null, query);
+            const sendErrorResponse = failWithMessage.bind(null, cb, 'Error while computing binning');
 
-            const cb = request.cb;
-            const query = request.query;
-            const resultSelector = processAggregateIndices.bind(null, query);
-            const sendErrorResponse = failWithMessage.bind(null, cb, 'aggregate socket error');
+            logger.debug({query: query}, 'Received binning query');
 
-            logger.debug({query: query}, 'Got aggregate');
-
-            return self.graph.take(1)
-                .flatMap(selectNodeIndices, resultSelector)
+            return this.graph.take(1)
+                .flatMap(pointMaskFromQuery, resultSelector)
                 .mergeAll()
                 .take(1)
                 .do(
                     (data) => {
-                        logger.info('--- Aggregate success ---');
+                        logger.info('--- Binning success ---');
                         cb({ success: true, data: data });
                     },
                     (err) => {
@@ -1397,12 +1391,15 @@ VizServer.prototype.setupAggregationRequestHandling = function () {
                 )
                 .catch(Observable.empty);
 
-            function selectNodeIndices (graph) {
+            /**
+             * @param graph
+             * @returns {Observable<Mask>}
+             */
+            function pointMaskFromQuery (graph) {
                 if (query.all === true) {
-                    const numPoints = graph.simulator.dataframe.getNumElements('point');
-                    return Observable.of(new Uint32Array(_.range(numPoints)));
+                    return Observable.of(undefined);
                 } else if (!query.sel) {
-                    return Observable.of(new Uint32Array([]));
+                    return Observable.of([]);
                 } else {
                     return graph.simulator.selectNodesInRect(query.sel);
                 }

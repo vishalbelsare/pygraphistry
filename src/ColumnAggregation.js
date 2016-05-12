@@ -3,6 +3,33 @@
 const _ = require('underscore');
 const dataTypeUtil = require('./dataTypes.js');
 
+
+/**
+ * @typedef {Object} Aggregations
+ * @property {String} dataType
+ * @property {String} jsType
+ * @property {Boolean} isNumeric
+ * @property {Boolean} isIntegral
+ * @property {Boolean} isContinuous
+ * @property {Boolean} isCategorical
+ * @property {Boolean} isQuantitative
+ * @property {Boolean} isOrdered
+ * @property {Boolean} isDiverging
+ * @property {Boolean} hasPositive
+ * @property {Boolean} hasNegative
+ * @property {Boolean} isPositive Has positive values and no negative ones.
+ * @property {Number} count
+ * @property {Number} countDistinct
+ * @property {ValueCount[]} distinctValues count of instances by value, sorted by count descending.
+ * @property {Object} maxValue
+ * @property {Object} minValue
+ * @property {Number} standardDeviation
+ * @property {Number} averageValue
+ * @property {Number} sum
+ * @property {Object} binning
+ */
+
+
 /**
  * @param {Dataframe} dataframe
  * @param {Object} column
@@ -154,7 +181,9 @@ ColumnAggregation.prototype.runAggregationForAggType = function (aggType) {
         case 'isCategorical':
             this.isCategorical();
             break;
-        case 'binning':
+        case 'median':
+        case 'fullySorted':
+            this.fullySorted();
             break;
         default:
             throw new Error('Unrecognized aggregation type: ' + aggType);
@@ -166,8 +195,8 @@ ColumnAggregation.prototype.isIntegral = function (value) {
 };
 
 ColumnAggregation.prototype.genericSinglePassFixedMemoryAggregations = function () {
-    let minValue = null, maxValue = null, countMissing = 0,
-        numValues = this.getAggregationByType('count');
+    const numValues = this.getAggregationByType('count');
+    let minValue = null, maxValue = null, countMissing = 0;
     const isLessThan = dataTypeUtil.isLessThanForDataType(this.getAggregationByType('dataType'));
     _.each(this.values, (value) => {
         if (dataTypeUtil.valueSignifiesUndefined(value)) {
@@ -219,9 +248,31 @@ ColumnAggregation.prototype.computeStandardDeviation = function () {
 
 const MaxDistinctValues = 40000;
 
+ColumnAggregation.prototype.fullySorted = function () {
+    const dataType = this.getAggregationByType('dataType');
+    const comparator = dataTypeUtil.comparatorForDataType(dataType);
+    const numValues = this.getAggregationByType('count');
+    if (comparator === undefined) {
+        this.updateAggregationTo('fullySorted', null);
+        return;
+    }
+    const sortedValues = _.clone(this.values);
+    // The comparison call count here scales badly, but is offset by one-time simple allocation cost.
+    // We could do better with a Schwartz Transform if each compare key has to be computed, but a calculated column
+    // achieves that handily instead, so try to solve that at a higher level instead of fixing this.
+    sortedValues.sort(comparator);
+    this.updateAggregationTo('fullySorted', sortedValues);
+    const halfwayIndex = Math.floor(numValues / 2);
+    let medianValue = sortedValues[halfwayIndex];
+    if (numValues % 2 === 0) {
+        medianValue = (sortedValues[halfwayIndex-1] + medianValue) / 2;
+    }
+    this.updateAggregationTo('median', medianValue);
+};
+
 ColumnAggregation.prototype.countDistinct = function (limit=MaxDistinctValues) {
-    let countsByValue = {},
-        numDistinct = 0, minValue = null, maxValue = null;
+    const countsByValue = {};
+    let numDistinct = 0, minValue = null, maxValue = null;
     const dataType = this.getAggregationByType('dataType');
     const isLessThan = dataTypeUtil.isLessThanForDataType(dataType);
     const keyMaker = dataTypeUtil.keyMakerForDataType(dataType);
@@ -239,7 +290,8 @@ ColumnAggregation.prototype.countDistinct = function (limit=MaxDistinctValues) {
             }
         }
     });
-    let distinctCounts = new Array(numDistinct), idx = 0;
+    const distinctCounts = new Array(numDistinct);
+    let idx = 0;
     _.each(countsByValue, (count, keyForValue) => {
         distinctCounts[idx++] = {distinctValue: keyForValue, count: count};
     });

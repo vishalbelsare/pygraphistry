@@ -1775,32 +1775,6 @@ Dataframe.prototype.getCachedCLBuffer = function (cl, columnName, type) {
  */
 
 
-/**
- * @typedef {Object} Aggregations
- * @property {String} dataType
- * @property {String} jsType
- * @property {Boolean} isNumeric
- * @property {Boolean} isIntegral
- * @property {Boolean} isContinuous
- * @property {Boolean} isCategorical
- * @property {Boolean} isQuantitative
- * @property {Boolean} isOrdered
- * @property {Boolean} isDiverging
- * @property {Boolean} hasPositive
- * @property {Boolean} hasNegative
- * @property {Boolean} isPositive Has positive values and no negative ones.
- * @property {Number} count
- * @property {Number} countDistinct
- * @property {ValueCount[]} distinctValues count of instances by value, sorted by count descending.
- * @property {Object} maxValue
- * @property {Object} minValue
- * @property {Number} standardDeviation
- * @property {Number} averageValue
- * @property {Number} sum
- * @property {Object} binning
- */
-
-
 Dataframe.prototype.metadataForColumn = function (columnName, type) {
     let metadata, defs, defsContainer;
     if (this.metadata !== undefined) {
@@ -1961,21 +1935,28 @@ Dataframe.prototype.formatAsCSV = function (type) {
 //////////////////////////////////////////////////////////////////////////////
 
 
-// [int] * ?[ string ] * ?{string -> ??} * ?{countBy, ??} * {point, edge, undefined}
-// -> ??
-//undefined type signifies both nodes and edges
-Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, type) {
+/**
+ * @param {DataframeMask} mask
+ * @param {String[]} attributes - undefined lets server fill in
+ * @param {Object.<Binning>} binningHintsByAttribute
+ * @param {String} mode
+ * @param {GraphComponentTypes} type - undefined type signifies both nodes and edges
+ * @param {Number?} goalNumberOfBins
+ * @returns {Promise<Object.<BinningResult>>}
+ */
+Dataframe.prototype.computeBinningByColumnNames = function (
+    mask, attributes, binningHintsByAttribute = {}, mode = undefined, type = undefined, goalNumberOfBins = 0) {
 
     const processAgg = (attribute) => {
 
-        const goalNumberOfBins = binning ? binning._goalNumberOfBins : 0;
-        const binningHint = binning ? binning[attribute] : undefined;
+        const binningHint = binningHintsByAttribute[attribute];
         const dataType = this.getDataType(attribute, type);
+        const columnName = {attribute, type};
 
-        if (mode !== 'countBy' && dataType !== 'string') {
-            return this.histogram(attribute, binningHint, goalNumberOfBins, indices, type, dataType);
+        if (mode === 'countBy' || dataType === 'string') {
+            return this.binningForColumnByDistinctValue(columnName, mask, dataType);
         } else {
-            return this.countBy(attribute, binningHint, indices, type, dataType);
+            return this.binningForColumn(columnName, binningHint, goalNumberOfBins, mask, dataType);
         }
     };
 
@@ -1987,34 +1968,31 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
         (val) => !this.isAttributeNamePrivate(val) && validAttributes.indexOf(val) !== -1);
 
 
-    let chain = Q(); //simulator.otherKernels.histogramKernel.setIndices(simulator, indices);
-    const aggregated = {};
+    let chain = Q(); // simulator.otherKernels.histogramKernel.setIndices(simulator, maskForType);
+    const binningByColumnName = {};
 
     _.each(keysToAggregate, (attribute) => {
 
-        chain = chain.then(() => {
-            return processAgg(attribute, indices)
-                .then((agg) => {
-                    // Store result
-                    aggregated[attribute] = agg;
+        chain = chain.then(() => processAgg(attribute).then((agg) => {
+            // Store result
+            binningByColumnName[type + ':' + attribute] = agg;
 
-                    // Force loop restart before handling next
-                    // So async IO can go through, e.g., VBO updates
-                    const waitForNextTick = Q.defer();
-                    process.nextTick(() => {
-                        waitForNextTick.resolve();
-                    });
-                    return waitForNextTick.promise;
-                });
-        });
+            // Force loop restart before handling next
+            // So async IO can go through, e.g., VBO updates
+            const waitForNextTick = Q.defer();
+            process.nextTick(() => {
+                waitForNextTick.resolve();
+            });
+            return waitForNextTick.promise;
+        }));
     });
 
-    return chain.then(() => aggregated);
+    return chain.then(() => binningByColumnName);
 
 
     // Array of promises
     // const promisedAggregates = _.map(keysToAggregate, (attribute) => {
-    //     return processAgg(attribute, indices);
+    //     return processAgg(attribute, maskForType);
     // });
 
     // return Q.all(promisedAggregates).then((aggregated) => {
@@ -2027,53 +2005,62 @@ Dataframe.prototype.aggregate = function (indices, attributes, binning, mode, ty
 };
 
 
-Dataframe.prototype.countBy = function (attribute, binning, indices, type, dataType) {
-    const values = this.getColumnValues(attribute, type);
+/**
+ * @param {ColumnName} columnName
+ * @param {DataframeMask} mask
+ * @param {String} dataType
+ * @returns {BinningResult}
+ */
+Dataframe.prototype.binningForColumnByDistinctValue = function (columnName, mask, dataType) {
+    const type = columnName.type;
+    if (mask.isEmptyByType(type)) {
+        return Q({type: 'nodata'});
+    }
+
+    const values = this.getColumnValues(columnName.attribute, type);
 
     // TODO: Get this value from a proper source, instead of hard coding.
     const maxNumBins = 29;
 
-    if (indices.length === 0) {
-        return Q({type: 'nodata'});
+    const countsByValue = {};
+    const countValue = function (val) {
+        if (dataTypeUtil.valueSignifiesUndefined(val)) { return; }
+        countsByValue[val] = (countsByValue[val] || 0) + 1;
+    };
+    const maskForType = mask.getMaskForType(type);
+    if (maskForType === undefined) {
+        _.each(values, countValue);
+    } else {
+        _.each(maskForType, (selectedIndex) => {
+            countValue(values[selectedIndex]);
+        });
     }
 
-    const rawBins = {};
-    for (let i = 0; i < indices.length; i++) {
-        const val = values[i];
-        if (dataTypeUtil.valueSignifiesUndefined(val)) { continue; }
-        rawBins[val] = (rawBins[val] || 0) + 1;
-    }
-
-    const numBins = Math.min(_.keys(rawBins).length, maxNumBins);
+    const numBins = Math.min(_.keys(countsByValue).length, maxNumBins);
     const numBinsWithoutOther = numBins - 1;
-    const keys = _.keys(rawBins);
-    const sortedKeys = keys.sort((a, b) => {
-        return rawBins[b] - rawBins[a];
-    });
+    const keys = _.keys(countsByValue);
+    const sortedKeys = keys.sort((a, b) => countsByValue[b] - countsByValue[a]);
 
-    // Copy over numBinsWithoutOther from rawBins to bins directly.
+    // Copy over numBinsWithoutOther from countsByValue to bins directly.
     // Take the rest and bucket them into '_other'
-    let bins = {}, binValues;
+    const bins = {};
+    let binValues;
     _.each(sortedKeys.slice(0, numBinsWithoutOther), (key) => {
-        bins[key] = rawBins[key];
+        bins[key] = countsByValue[key];
     });
 
 
     const otherKeys = sortedKeys.slice(numBinsWithoutOther);
     if (otherKeys.length === 1) {
-        bins[otherKeys[0]] = rawBins[otherKeys[0]];
+        bins[otherKeys[0]] = countsByValue[otherKeys[0]];
     } else if (otherKeys.length > 1) {
         // TODO ensure that this _other bin can be selected and it turn into a correct AST query.
-        const sum = _.reduce(otherKeys, (memo, key) => {
-            return memo + rawBins[key];
-        }, 0);
-        bins._other = sum;
+        const sumInOther = _.reduce(otherKeys, (memo, key) => memo + countsByValue[key], 0);
+        bins._other = sumInOther;
         binValues = {_other: {representative: '_other', numValues: otherKeys.length}};
     }
 
-    const numValues = _.reduce(_.values(bins), (memo, num) => {
-        return memo + num;
-    }, 0);
+    const numValues = _.reduce(_.values(bins), (memo, num) => memo + num, 0);
 
     return Q({
         type: 'countBy',
@@ -2092,6 +2079,13 @@ Dataframe.prototype.countBy = function (attribute, binning, indices, type, dataT
  * @property {Number} binWidth
  * @property {Number} minValue
  * @property {Number} maxValue
+ */
+
+/**
+ * @typedef {Binning} BinningResult
+ * @property {Number} numValues
+ * @property {Object} bins
+ * @property {Object} binValues
  */
 
 
@@ -2425,13 +2419,18 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
 };
 
 
-Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, indices, type, dataType) {
-    // Binning has binWidth, minValue, maxValue, and numBins
+/**
+ * @param {ColumnName} columnName
+ * @param {Binning} binningHint
+ * @param {Number} goalNumberOfBins
+ * @param {DataframeMask} mask
+ * @param {String} dataType
+ * @returns {BinningResult}
+ */
+Dataframe.prototype.binningForColumn = function (
+    columnName, binningHint = undefined, goalNumberOfBins = 0, mask, dataType) {
 
-    // Disabled because filtering is expensive, and we now have type safety coming from
-    // VGraph types.
-    // values = _.filter(values, (x) => { return !isNaN(x)});
-
+    const {attribute, type} = columnName;
     const values = this.getColumnValues(attribute, type);
     const aggregations = this.getColumnAggregations(attribute, type);
 
@@ -2441,10 +2440,10 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     }
 
     // Override if provided binning data.
-    if (!binning) {
-        binning = this.calculateBinning(aggregations, numValues, goalNumberOfBins);
+    if (binningHint === undefined) {
+        binningHint = this.calculateBinning(aggregations, numValues, goalNumberOfBins);
     }
-    let {numBins, binWidth, minValue, maxValue} = binning;
+    let {numBins, binWidth, minValue, maxValue} = binningHint;
     let bottomVal = minValue;
     let topVal = maxValue;
 
@@ -2456,16 +2455,16 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
         bottomVal = minValue;
     }
 
-    //const qDataBuffer = this.getBuffer(attribute, type);
+    // const qDataBuffer = this.getBuffer(attribute, type);
     const binStart = new Float32Array(numBins);
     for (let i = 0; i < numBins; i++) {
         binStart[i] = bottomVal + (binWidth * i);
     }
 
-    //const dataSize = indices.length;
+    // const dataSize = maskForType.length;
 
     const result = {
-        type: binning.isCountBy ? 'countBy' : 'histogram',
+        type: binningHint.isCountBy ? 'countBy' : 'histogram',
         dataType: dataType,
         numBins: numBins,
         binWidth: binWidth,
@@ -2479,7 +2478,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     // Fast path for case of only one bin.
     if (numBins === 1) {
         bins = [numValues];
-        if (binning.isCountBy) {
+        if (binningHint.isCountBy) {
             binValues = [{min: minValue, max: minValue, representative: minValue, isSingular: true}];
         }
         _.extend(result, {bins: bins, binValues: binValues});
@@ -2487,7 +2486,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     }
 
     // return qDataBuffer.then((dataBuffer) => {
-    //     return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataBuffer, indices, binStart);
+    //     return simulator.otherKernels.histogramKernel.run(simulator, numBins, dataSize, dataBuffer, maskForType, binStart);
     // }).then((bins) => {
     //     return _.extend(result, {bins: bins});
     // }).fail(log.makeQErrorHandler(logger, 'Failure trying to run histogramKernel'));
@@ -2499,29 +2498,30 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
     binValues = new Array(numBins);
 
     // When iterating through values, we make sure to use the full value array and an
-    // indices "mask" over it. This is because each histogram brush move produces a single
-    // new (large) array of indices. Then each separate histogram can use the already existing
-    // values array and the single indices array to compute bins without any large allocations.
+    // maskForType "mask" over it. This is because each histogram brush move produces a single
+    // new (large) array of maskForType. Then each separate histogram can use the already existing
+    // values array and the single maskForType array to compute bins without any large allocations.
     const isLessThan = dataTypeUtil.isLessThanForDataType(aggregations.getAggregationByType('dataType'));
-    for (let i = 0; i < indices.length; i++) {
+    mask.mapIndexes(type, (i) => {
         // Here we use an optimized "Floor" because we know it's a smallish, positive number.
         // TODO: Have to be careful because floating point error.
         // In particular, we need to match math as closely as possible in expressions.
-        let value = values[indices[i]], binId;
-        if (dataTypeUtil.valueSignifiesUndefined(value)) { continue; }
+        const value = values[i];
+        if (dataTypeUtil.valueSignifiesUndefined(value)) { return; }
+        let binId;
         if (_.isNumber(value)) {
             binId = ((value - bottomVal) / binWidth) | 0;
         } else {
             // Least greater-than:
             binId = _.findIndex(binValues, (binValue) => isLessThan(value, binValue));
-            if (binId < 0) {
+            if (binId === -1) {
                 binId = 0;
             }
             binId |= 0;
         }
-        if (binId > 1e6) {
+        if (binId > 1e6) { // binValues.length is sometimes exceeded for unclear reasons.
             logger.warn('Invalid bin ID: ' + binId.toString() + ' generated for value: ' + JSON.stringify(value));
-            continue;
+            return;
         }
         bins[binId]++;
         if (binValues[binId] === undefined) {
@@ -2533,7 +2533,7 @@ Dataframe.prototype.histogram = function (attribute, binning, goalNumberOfBins, 
         }
         if (isLessThan(value, binDescription.min)) { binDescription.min = value; }
         if (isLessThan(binDescription.max, value)) { binDescription.max = value; }
-    }
+    });
 
     _.extend(result, {bins: bins, binValues: binValues});
     return Q(result);

@@ -6,7 +6,8 @@ const _ = require('underscore');
 const GraphComponentTypes = ['point', 'edge'];
 
 /**
- * Mask is implemented as a list of valid indices (in sorted order).
+ * Mask represents a selection of index values in an enumerated space.
+ * Implemented as a list of valid indices (in sorted order).
  * @typedef Array<Number> Mask
  */
 
@@ -43,7 +44,7 @@ function indexOfInSorted(sortedArray, value) {
  * @param {DataframeMask?} basis Another DataframeMask which the input indexes refer to.
  * @constructor
  */
-function DataframeMask(dataframe, pointIndexes, edgeIndexes, basis) {
+function DataframeMask (dataframe, pointIndexes = undefined, edgeIndexes = undefined, basis = undefined) {
     this.dataframe = dataframe;
     /** Boolean for whether untouched/undefined masks mean empty vs full. */
     this.isExclusive = false;
@@ -336,6 +337,18 @@ DataframeMask.prototype = {
             return [];
         }
         return this[type];
+    },
+
+    getIndexRangeByType: function (type, start, end) {
+        if (this[type] === undefined) {
+            if (this.isExclusive) {
+                throw new Error('taking a slice of an exclusive range not yet defined');
+            } else {
+                return _.range(start, end);
+            }
+        } else {
+            return this[type].slice(start, end);
+        }
     },
 
     /**
