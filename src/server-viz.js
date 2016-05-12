@@ -39,6 +39,7 @@ const cljs        = require('./cl.js');
 const loader      = require('./data-loader.js');
 const driver      = require('./node-driver.js');
 const persist     = require('./persist.js');
+const Version     = require('./Version.js');
 const workbook    = require('./workbook.js');
 const labeler     = require('./labeler.js');
 const encodings   = require('./encodings.js');
@@ -512,6 +513,8 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
     }
 
     this.setupColorTexture();
+
+    Version(this.socket, socketLogger);
 
     this.socket.on('get_view_config', (ignore, cb) => {
         this.viewConfig.take(1).do((viewConfig) => {
