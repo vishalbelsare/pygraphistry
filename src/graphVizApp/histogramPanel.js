@@ -617,7 +617,7 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
                 );
             }
             // Leave blank until/if we can determine this better?
-            dataType = histFilter.type || 'string';
+            dataType = histFilter.dataType || 'string';
         }
         if (histFilter.ast !== undefined) {
             query.ast = histFilter.ast;
