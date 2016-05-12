@@ -425,6 +425,14 @@ function selectInitialColumnsForBinning (dataframe, maxInitialItems = undefined)
     return _.first(sortedColumnNames, maxInitialItems);
 }
 
+/** @typedef {Object} BinningParams
+ * @property {Boolean} all
+ * @property {GraphComponentTypes} type
+ * @property {Number} goalNumberOfBins
+ * @property {Array<String>} attributes
+ */
+
+
 function processBinningOfColumns ({type, attributes, binning, mode, goalNumberOfBins, maxInitialItems},
     graph, pointMask) {
     logger.debug('Starting binning');
