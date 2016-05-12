@@ -120,17 +120,13 @@ const HistogramCollection = Backbone.Collection.extend({
 });
 
 /**
- * @param globalStats
  * @param {FiltersPanel} filtersPanel
- * @param attrChangeSubject
- * @param updateAttributeSubject
+ * @param {Observable<HistogramChange>} updateAttributeSubject
  * @constructor
  */
-function HistogramsPanel(globalStats, filtersPanel,
-                         attrChangeSubject, updateAttributeSubject) {
+function HistogramsPanel (filtersPanel, updateAttributeSubject) {
     this.filtersPanel = filtersPanel;
     // How the model-view communicate back to underlying Rx.
-    this.dataframeAttributeChange = attrChangeSubject;
     this.updateAttributeSubject = updateAttributeSubject;
     /** Histogram-specific/owned filter information, keyed/unique per attribute. */
     this.histogramFilters = {};
@@ -139,8 +135,6 @@ function HistogramsPanel(globalStats, filtersPanel,
 
     this.histograms = new HistogramCollection();
     const panel = this;
-
-    const attributes = _.filter(_.keys(globalStats.histograms), (val) => val[0] !== '_');
 
     // TODO: Replace this with a proper data transfer through the HTML5
     // drag and drop spec. It seems to be pretty broken outside of firefox,
@@ -165,7 +159,6 @@ function HistogramsPanel(globalStats, filtersPanel,
             this.listenTo(this.model, 'change:timeStamp', this.render);
             this.listenTo(this.model, 'change:encodingType', this.render);
             const params = {
-                fields: attributes,
                 attribute: this.model.get('attribute'),
                 type: this.model.get('type'),
                 modelId: this.model.cid,
@@ -311,11 +304,25 @@ function HistogramsPanel(globalStats, filtersPanel,
             this.listenTo(panel.histograms, 'remove', this.removeHistogram);
             this.listenTo(panel.histograms, 'reset', this.addAll);
 
-            // Setup add histogram button.
-            const template = Handlebars.compile($('#addHistogramTemplate').html());
-            const params = { fields: attributes };
-            const html = template(params);
-            $('#addHistogram').html(html);
+            filtersPanel.control.namespaceMetadataObservable().filter(_.identity).subscribe(
+                (namespaceMetadata) => {
+                    var newNamespaceAttributes = {};
+                    _.each(namespaceMetadata, function (columnsByName, type) {
+                        _.each(columnsByName, function (column, attributeName) {
+                            if (Identifier.isPrivate(attributeName)) { return; }
+                            var prefixedAttribute = Identifier.clarifyWithPrefixSegment(attributeName, type);
+                            newNamespaceAttributes[prefixedAttribute] = column;
+                        });
+                    });
+                    /** @type {Array.<String>} */
+                    const attributes = _.keys(newNamespaceAttributes);
+                    // Setup add histogram button.
+                    const template = Handlebars.compile($('#addHistogramTemplate').html());
+                    const params = { fields: attributes };
+                    const html = template(params);
+                    $('#addHistogram').html(html);
+                }
+            );
 
             // Setup drag drop interactions.
             $histogram.on('dragover', (evt) => {
@@ -404,11 +411,11 @@ function HistogramsPanel(globalStats, filtersPanel,
     panel.model = HistogramModel;
 }
 
-HistogramsPanel.prototype.updateAttribute = function (oldAttr, newAttr, type) {
+HistogramsPanel.prototype.updateAttribute = function (delAttr, newAttr, histogramOrientation) {
     this.updateAttributeSubject.onNext({
-        oldAttr: oldAttr,
+        delAttr: delAttr,
         newAttr: newAttr,
-        type: type
+        histogramOrientation: histogramOrientation
     });
 };
 
@@ -502,7 +509,7 @@ HistogramsPanel.prototype.deleteHistogramFilterByAttribute = function (dataframe
  * We should maintain only expression objects instead.
  * We should also use structural pattern matching...
  */
-function updateHistogramFilterFromExpression(histFilter, ast) {
+function updateHistogramFilterFromExpression (histFilter, ast) {
     let op;
     histFilter.equals = undefined;
     histFilter.start = undefined;
