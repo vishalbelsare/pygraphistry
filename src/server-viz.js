@@ -910,7 +910,6 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                 const selectionMasks = [];
                 const errors = [];
                 const generator = new ExpressionCodeGenerator('javascript');
-                let query;
 
                 /** @type {DataframeMask[]} */
                 const exclusionMasks = [];
@@ -919,17 +918,17 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                         return;
                     }
                     /** @type ClientQuery */
-                    query = exclusion.query;
-                    if (query === undefined) {
+                    const exclusionQuery = exclusion.query;
+                    if (exclusionQuery === undefined) {
                         return;
                     }
-                    if (!query.type) {
-                        query.type = exclusion.type;
+                    if (!exclusionQuery.type) {
+                        exclusionQuery.type = exclusion.type;
                     }
-                    if (!query.attribute) {
-                        query.attribute = exclusion.attribute;
+                    if (!exclusionQuery.attribute) {
+                        exclusionQuery.attribute = exclusion.attribute;
                     }
-                    const masks = dataframe.getMasksForQuery(query, errors);
+                    const masks = dataframe.getMasksForQuery(exclusionQuery, errors);
                     if (masks !== undefined) {
                         masks.setExclusive(true);
                         exclusion.maskSizes = masks.maskSize();
@@ -946,11 +945,11 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                         return;
                     }
                     /** @type ClientQuery */
-                    query = filter.query;
-                    if (query === undefined) {
+                    const filterQuery = filter.query;
+                    if (filterQuery === undefined) {
                         return;
                     }
-                    const ast = query.ast;
+                    const ast = filterQuery.ast;
                     if (ast !== undefined &&
                         ast.type === 'LimitExpression' &&
                         ast.value !== undefined) {
@@ -958,13 +957,13 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                         viewConfig.limits.edge = viewConfig.limits.point;
                         return;
                     }
-                    if (!query.type) {
-                        query.type = filter.type;
+                    if (!filterQuery.type) {
+                        filterQuery.type = filter.type;
                     }
-                    if (!query.attribute) {
-                        query.attribute = filter.attribute;
+                    if (!filterQuery.attribute) {
+                        filterQuery.attribute = filter.attribute;
                     }
-                    const masks = dataframe.getMasksForQuery(query, errors);
+                    const masks = dataframe.getMasksForQuery(filterQuery, errors);
                     if (masks !== undefined) {
                         // Record the size of the filtered set for UI feedback:
                         filter.maskSizes = masks.maskSize();
