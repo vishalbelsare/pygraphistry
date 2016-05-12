@@ -19,6 +19,7 @@ var util            = require('./util.js');
 var highlight       = require('./highlight.js');
 var api             = require('./api.js');
 var VizSlice        = require('./VizSlice.js');
+var Version         = require('./Version.js');
 
 
 function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, apiActions,
@@ -203,6 +204,8 @@ function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, ap
 
     controls.init(appState, socket, $toolbar, doneLoading, workerParams, urlParams);
     api.setupAPIHooks(socket, appState, doneLoading);
+
+    Version(socket);
 }
 
 
