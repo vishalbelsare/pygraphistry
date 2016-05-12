@@ -2,6 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:Version');
 var $       = window.$;
+var util    = require('./util.js');
 
 // Combine server's get_version with streamgl's VERSION (webpack) and print to DOM
 
