@@ -1,26 +1,20 @@
 'use strict';
 
-var Rx      = require('rxjs/Rx.KitchenSink');
-var debug   = require('debug')('graphistry:StreamGL:graphVizApp:command');
+const Rx      = require('rxjs/Rx.KitchenSink');
+const debug   = require('debug')('graphistry:StreamGL:graphVizApp:command');
 
 
-function Command(description, commandName, socket, disableErrorFiltering) {
+function Command (description, commandName, socket, disableErrorFiltering = true) {
     this.description = description;
     this.commandName = commandName;
     this.socket = socket;
-    this.disableErrorFiltering = (disableErrorFiltering !== undefined) ?
-        disableErrorFiltering : true;
+    this.disableErrorFiltering = disableErrorFiltering;
 }
 
 Command.prototype = {
-    sendWithObservableResult: function () {
-        debug('Sent command ' + this.commandName, arguments);
-        var args = new Array(arguments.length + 1);
-        args[0] = this.commandName;
-        for (var i = 0; i < arguments.length; i++) {
-            args[i + 1] = arguments[i];
-        }
-        var src = Rx.Observable.bindCallback(this.socket.emit.bind(this.socket)).apply(null, args);
+    sendWithObservableResult: function (...args) {
+        debug('Sent command ' + this.commandName, args);
+        const src = Rx.Observable.bindCallback(this.socket.emit.bind(this.socket))(this.commandName, ...args);
         if (this.disableErrorFiltering === true) {
             return src;
         }
