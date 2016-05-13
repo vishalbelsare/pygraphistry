@@ -7,8 +7,259 @@ var Rx    = require('rxjs/Rx.KitchenSink');
 var _     = require('underscore');
 var renderer = require('../renderer.js');
 var util     = require('./util.js');
+var Stately  = require('stately.js');
+
+//////////////////////////////////////////////////////////////////////////////
+// Marquee State Machine Definition
+//////////////////////////////////////////////////////////////////////////////
+
+const marqueeStateMachineDesc = {
+    OFF: {
+        enable: /* => */ 'INIT'
+    },
+
+    INIT: {
+        down: /* => */ 'DOWN_SELECT'
+    },
+
+    DOWN_SELECT: {
+        up: /* => */ 'INIT',
+        move: /* => */ 'DRAWING'
+    },
+
+    DRAWING: {
+        move: /* => */ 'DRAWING',
+        up: /* => */ 'DONE_DRAWING'
+    },
+
+    DONE_DRAWING: {
+        reset: /* => */ 'INIT',
+        waitForDrag: /* => */ 'MARQUEE_STATIONARY'
+    },
+
+    MARQUEE_STATIONARY: {
+        downOffBox: /* => */ 'DOWN_SELECT',
+        downOnBox: /* => */ 'DOWN_MARQUEE'
+    },
+
+    DOWN_MARQUEE: {
+        up: /* => */ 'MARQUEE_STATIONARY',
+        move: /* => */ 'DRAGGING_MARQUEE'
+    },
+
+    DRAGGING_MARQUEE: {
+        move: /* => */ 'DRAGGING_MARQUEE',
+        up: /* => */ 'DONE_DRAGGING'
+    },
+
+    DONE_DRAGGING: {
+        waitForDrag: /* => */ 'MARQUEE_STATIONARY'
+    }
+};
+
+// Add to each a transition for disable to reset to "OFF" state
+_.each(marqueeStateMachineDesc, (obj) => {
+    obj.disable = 'OFF';
+});
+
+//////////////////////////////////////////////////////////////////////////////
+// Marquee State Machine Side Effects
+//////////////////////////////////////////////////////////////////////////////
+
+// TODO: Handle pageX + Offset
+function moveElementToRect ($elt, rect) {
+    // TODO: Use translate, not CSS left/top
+    $elt.css({
+        left: rect.tl.x,
+        top: rect.tl.y,
+        width: rect.br.x - rect.tl.x,
+        height: rect.br.y - rect.tl.y
+    });
+}
+
+function enableMarqueeVisuals ($elt, $cont) {
+    $elt.removeClass('off').addClass('on');
+    $cont.removeClass('off').addClass('on');
+    $cont.addClass('noselect');
+}
+
+function disableAndResetMarqueeVisuals ($elt, $cont) {
+    $elt.empty();
+    $elt.css({width: 0, height: 0});
+    $elt.removeClass('draggable').removeClass('dragging');
+    $elt.removeClass('on').addClass('off');
+    $cont.removeClass('on').addClass('off');
+    $cont.removeClass('done');
+    $('body').removeClass('noselect');
+}
+
+const sideEffectFunctions = {
+    OFF: (machine, evt) => {
+        // Hide everything, change cursor back to normal
+        console.log('Side Effect Off');
+
+        disableAndResetMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
+    },
+
+    INIT: (machine, evt) => {
+        // Set cursor to crosshair
+        console.log('Init');
+
+        disableAndResetMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
+    },
+
+    DOWN_SELECT: (machine, evt) => {
+        // Set Marquee State for down position
+        console.log('down select');
+        machine.marqueeState.downPos = toPoint(machine.marqueeState.$cont, evt);
+
+        enableMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
+    },
+
+    DRAWING: (machine, evt) => {
+        // Update marquee state for last position
+        // Draw rectangle to match
+        console.log('drawing');
+        machine.marqueeState.movePos = toPoint(machine.marqueeState.$cont, evt);
+
+        const rect = toRect(machine.marqueeState.downPos, machine.marqueeState.movePos);
+        moveElementToRect(machine.marqueeState.$elt, rect);
+    },
+
+    DONE_DRAWING: (machine, evt) => {
+        console.log('done drawing');
+
+        // Set Marquee State for up position
+        machine.marqueeState.upPos = toPoint(machine.marqueeState.$cont, evt);
+
+        // Run select handler
+        machine.marqueeState.selectObservable.onNext(machine.marqueeState);
+
+        // Either reset or drag
+        if (machine.marqueeState.canDrag) {
+            machine.events.onNext({evt: {}, name: 'waitForDrag'});
+        } else {
+            machine.events.onNext({evt: {}, name: 'reset'});
+        }
+    },
+
+    MARQUEE_STATIONARY: (machine, evt) => {
+
+        console.log('marquee stationary');
+    },
+
+    DOWN_MARQUEE: (machine, evt) => {
+
+        console.log('down marquee');
+    },
+
+    DRAGGING_MARQUEE: (machine, evt) => {
+
+        console.log('dragging marquee');
+    },
+
+    DONE_DRAGGING: (machine, evt) => {
+
+        console.log('done dragging');
+    }
+};
 
 
+//////////////////////////////////////////////////////////////////////////////
+// UI Hookup
+//////////////////////////////////////////////////////////////////////////////
+
+function makeStateMachine (options={}) {
+    const {selectObservable = new Rx.ReplaySubject(1), dragObservable = new Rx.ReplaySubject(1),
+        canDrag = false, $elt, $cont
+    } = options;
+
+    const machine = new Stately(marqueeStateMachineDesc, 'OFF');
+
+    // Attach options to the machine so we can access them later.
+    // TODO FIXME: Is this the right model to use here?
+    // Is there a way to make this more reasonable, instead of passing data
+    // by attaching it to this?
+    machine.marqueeState = {selectObservable, dragObservable, canDrag, $elt, $cont};
+
+    return machine;
+}
+
+function activateMarqueeStateMachine (machine) {
+
+    const sim = $('#simulation');
+    const $cont = machine.marqueeState.$cont;
+
+    // Setup handlers from UI interactions to events.
+    // These ultimately feed into a stream called events, which consist of strings
+
+    const events = new Rx.ReplaySubject(1);
+    machine.events = events; // TODO: Can we remove this attachment?
+
+    const downEvents = Rx.Observable.fromEvent(sim, 'mousedown')
+        .merge(Rx.Observable.fromEvent($cont, 'mousedown'))
+        .map(evt => ({evt, name: 'down'}));
+
+    const moveEvents = Rx.Observable.fromEvent(sim, 'mousemove')
+        .merge(Rx.Observable.fromEvent($cont, 'mousemove'))
+        .map(evt => ({evt, name: 'move'}));
+
+    const upEvents = Rx.Observable.fromEvent(sim, 'mouseup')
+        .merge(Rx.Observable.fromEvent($cont, 'mouseup'))
+        .map(evt => ({evt, name: 'up'}));
+
+    Rx.Observable.merge(downEvents, moveEvents, upEvents)
+        .do(({evt}) => evt.preventDefault())
+        .subscribe(events, util.makeErrorHandler('handle events for marquee'));
+
+    // Update State Machine
+    events.map(({name, evt}) => {
+        // Because there's no easy way to hook into stately to find out if
+        // a state change happened on last event, we have a little shim here
+        // to check.
+        const stateChanged = _.contains(machine.getMachineEvents(), name);
+        return { machine: machine[name](), evt, stateChanged };
+    }).map(({machine, evt, stateChanged}) => {
+        return { currentState: machine.getMachineState(), evt, machine, stateChanged }
+    }).subscribe(({machine, currentState, evt, stateChanged}) => {
+        // Only attempt side effects when transition occurs
+        if (stateChanged && _.isFunction(sideEffectFunctions[currentState])) {
+            sideEffectFunctions[currentState](machine, evt);
+        }
+    }, util.makeErrorHandler('Handling marquee state machine'))
+}
+
+
+var globalMachine;
+function initSelectionMarquee (appState, $cont, cfg) {
+    const $elt = createElt();
+
+    $cont.append($elt);
+    const machineOptions = {
+        selectObservable: new Rx.ReplaySubject(1),
+        canDrag: false, $elt, $cont
+    };
+
+    machineOptions.selectObservable
+        .do((state) => {
+            console.log('Selected from: ', state.downPos, state.upPos);
+        })
+        .subscribe(_.identity, util.makeErrorHandler('select handler'));
+
+    const machine = makeStateMachine(machineOptions);
+    activateMarqueeStateMachine(machine);
+
+    // TODO kill this
+    globalMachine = machine;
+}
+
+window.enableSelectionMarquee = function () {
+    globalMachine.events.onNext({evt: {}, name: 'enable'});
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Old Code
+//////////////////////////////////////////////////////////////////////////////
 
 //$DOM * evt -> {x: num, y: num}
 function toPoint ($cont, evt) {
@@ -458,6 +709,8 @@ function initBrush (appState, $cont, toggle, cfg) {
 }
 
 
+
+
 // AppState * $DOM * Observable bool * ?{?transform: [num, num] -> [num, num]}
 //          -> {selections: Observable [ [num, num] ] }
 function initMarquee (appState, $cont, toggle, cfg) {
@@ -466,6 +719,10 @@ function initMarquee (appState, $cont, toggle, cfg) {
     var isOn = new Rx.ReplaySubject(1);
     setupContainer($cont, toggle, cfg, isOn, $elt);
     var transformAll = makeTransformer(cfg);
+
+    // TODO REMOVE ME HACK THIS SHOULD BE ELSEWHERE
+    initSelectionMarquee(appState, $cont, cfg);
+
 
 
     var bounds = marqueeSelections(appState, $cont, $elt, isOn, appState.marqueeOn, blurAndMakeGhost);
