@@ -580,6 +580,12 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
 
     this.setupColorTexture();
 
+    this.socket.on('get_sharing_config', (ignore, cb) => {
+        var decision = config.S3UPLOADS ? true : false;
+        socketLogger.info('get_sharing_config', decision);
+        cb({success: true, decision: decision});
+    });
+
     this.socket.on('get_view_config', (ignore, cb) => {
         this.viewConfig.take(1).do((viewConfig) => {
             socketLogger.info('Socket on get_view_config');
