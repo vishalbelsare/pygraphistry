@@ -10,7 +10,7 @@ const logger      = log.createLogger('graph-viz', 'graph-viz/Version.js');
 
 
 var ARTIFACT_TAG = config.ARTIFACT_TAG || process.env.npm_package_version;
-logger.info({ARTIFACT_TAG: ARTIFACT_TAG});
+logger.info({ARTIFACT_TAG: ARTIFACT_TAG, STREAMGL: require('StreamGL/dist/webpack-assets.json').StreamGL.js.replace('/dist/','')});
 
 function Version (socket, socketLogger) {
     socket.on('get_version', (ignore, cb) => {
