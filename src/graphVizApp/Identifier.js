@@ -28,5 +28,22 @@ module.exports = {
         } else {
             return attributeName;
         }
+    },
+
+    /**
+     * @param {String} attributeName
+     * @returns {ColumnName}
+     */
+    identifierToColumnName: function (attributeName) {
+        if (attributeName.match(/^[a-z]+:/)) {
+            const [type, attribute] = attributeName.split(':', 2);
+            return {type: type, attribute: attribute};
+        } else {
+            return {attribute: attributeName};
+        }
+    },
+
+    isPrivate: function (attributeName) {
+        return attributeName[0] === '_';
     }
 };
