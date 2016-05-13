@@ -1663,8 +1663,8 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     // If it's not calculated / cached, and filtered, apply the mask and compact
     // then cache the result.
     if (column.dirty && column.dirty.cause === 'filter') {
-
-        const unfilteredColumn = this.getColumn(columnName, type, true);
+        const unfilteredAttributes = this.rawdata.attributes[type];
+        const unfilteredColumn = unfilteredAttributes[columnName] || this.getColumn(columnName, type, true);
         const ArrayVariant = unfilteredColumn.arrType || Array;
         const numNewValues = this.lastMasks.numByType(type);
         const numberPerGraphComponent = unfilteredColumn.numberPerGraphComponent;
