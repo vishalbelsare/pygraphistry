@@ -4,15 +4,14 @@ const _ = require('underscore');
 const ExpressionCodeGenerator = require('./expressionCodeGenerator.js');
 const DataframeMask = require('./DataframeMask.js');
 
-const log         = require('common/logger.js');
-const logger      = log.createLogger('graph-viz:driver:planner');
-
 const ReturnTypes = {
     Positions: 'Positions', // Signifies a predicate, effectively returning a boolean value.
-    Values: 'Values' // Signifies an expression returning a value.
+    Values: 'Values', // Signifies an expression returning a value.
+    Sort: 'Sort'
 };
 
-function LocalBindings() {
+function LocalBindings () {
+    // TODO replace with a Set.
     this.attributes = [];
 }
 
@@ -21,10 +20,18 @@ function attributeDataEquals (x, y) {
 }
 
 LocalBindings.prototype = {
+    /**
+     * @param {ColumnName} attributeData
+     * @returns {boolean}
+     */
     includes: function (attributeData) {
         return _.any(this.attributes, (eachAttribute) => attributeDataEquals(eachAttribute, attributeData));
     },
 
+    /**
+     * @param {ColumnName} attributeData
+     * @returns {ColumnName}
+     */
     include: function (attributeData) {
         let found = _.find(this.attributes, (eachAttribute) => attributeDataEquals(eachAttribute, attributeData));
         if (found === undefined) {
@@ -69,12 +76,12 @@ LocalBindings.prototype = {
 /**
  * @param {ClientQueryAST} ast
  * @param {PlanNode[]} inputNodes
- * @param {Object.<AttributeName>} attributeData
+ * @param {Object.<ColumnName>} attributeData
  * @constructor
  */
-function PlanNode(ast, inputNodes, attributeData) {
+function PlanNode (ast, inputNodes = [], attributeData = {}) {
     this.ast = ast;
-    this.inputNodes = inputNodes || [];
+    this.inputNodes = inputNodes;
     this.attributeData = attributeData;
     this.inferBindings();
 }
@@ -123,7 +130,7 @@ PlanNode.prototype = {
      * @param {String} iterationType
      * @returns {Array|DataframeMask}
      */
-    execute: function (dataframe, valuesRequired, iterationType = this.iterationType()) {
+    execute: function (dataframe, valuesRequired = false, iterationType = this.iterationType()) {
         if (iterationType !== this.iterationType()) {
             throw new Error('Using an expression iterating over ' + this.iterationType() + ' within ' + iterationType);
         }
@@ -135,29 +142,29 @@ PlanNode.prototype = {
             // TODO: don't allocate all this (challenge is combining this return value with other arrays/masks).
             resultValues = new Array(numElements);
             const value = this.ast.value;
-            //resultValues.fill(this.ast.value);
+            // resultValues.fill(this.ast.value);
             for (let i=0; i<numElements; i++) {
                 resultValues[i] = value;
             }
             return resultValues;
         } else if (this.canRunOnOneColumn()) {
-            const attributeName = _.find(this.attributeData);
+            const columnName = _.find(this.attributeData);
             if (valuesRequired && returnType === ReturnTypes.Positions) {
                 returnType = ReturnTypes.Values;
             }
             switch (returnType) {
-                case ReturnTypes.Values:
+                case ReturnTypes.Values: {
+                    const columnValues = dataframe.getColumnValues(columnName.attribute, columnName.type);
                     if (this.ast.type === 'Identifier') {
-                        return dataframe.getUnfilteredColumnValues(
-                            attributeName.type, attributeName.attribute);
+                        return columnValues;
                     } else {
-                        return dataframe.mapUnfilteredColumnValues(
-                            attributeName.type, attributeName.attribute, this.executor);
+                        return _.map(columnValues, this.executor);
                     }
+                }
                 case ReturnTypes.Positions:
                 /* falls through */
                 default:
-                    return dataframe.getAttributeMask(attributeName.type, attributeName.attribute, this.executor);
+                    return dataframe.getAttributeMask(columnName.type, columnName.attribute, this.executor);
             }
         } else {
             let attribute, bindings;
@@ -165,17 +172,15 @@ PlanNode.prototype = {
                 valuesRequired = _.any(this.inputNodes, (inputNode) => inputNode.returnType() === ReturnTypes.Values);
                 bindings = _.mapObject(this.inputNodes, (inputNode) => {
                     if (_.isArray(inputNode)) {
-                        return _.map(inputNode, (eachNode) => {
-                            return eachNode.execute(dataframe, valuesRequired, iterationType);
-                        });
+                        return _.map(inputNode,
+                            (eachNode) => eachNode.execute(dataframe, valuesRequired, iterationType));
                     } else {
                         return inputNode.execute(dataframe, valuesRequired, iterationType);
                     }
                 });
             } else {
-                bindings = _.mapObject(this.attributeData, (attributeName) => {
-                    return dataframe.getUnfilteredColumnValues(attributeName.type, attributeName.attribute);
-                });
+                bindings = _.mapObject(this.attributeData,
+                    (columnName) => dataframe.getColumnValues(columnName.attribute, columnName.type));
             }
             const bindingKeys = _.keys(bindings);
             const perElementBindings = _.mapObject(bindings, () => undefined);
@@ -214,7 +219,6 @@ PlanNode.prototype = {
                 }
             }
         }
-        throw new Error('Unable to execute plan node', this);
     },
 
     iterationType: function () {
@@ -319,7 +323,7 @@ PlanNode.prototype = {
  * @param {ClientQueryAST} ast
  * @constructor
  */
-function ExpressionPlan(dataframe, ast) {
+function ExpressionPlan (dataframe, ast) {
     this.codeGenerator = new ExpressionCodeGenerator();
     /** @type PlanNode */
     this.rootNode = this.planFromAST(ast, dataframe);
