@@ -87,6 +87,7 @@ function HistogramBrush (socket, filtersPanel, doneLoading) {
         if (newAttr) {
             return this.requestHistogram(histogramOrientation, newAttr, globalStats).map(() => result);
         } else {
+            this.handleHistogramChange(delAttr, newAttr, histogramOrientation);
             return Rx.Observable.of(result);
         }
     }).subscribe(_.identity, util.makeErrorHandler('Update Attribute'));
@@ -222,11 +223,13 @@ HistogramBrush.prototype.handleHistogramChange = function (
 
     // Add new one if it exists
     if (newAttributeName) {
-        this.activeDataframeAttributes.push({name: newAttributeName, histogramOrientation: histogramOrientation});
-    }
-
-    // Only resend selections if an add/update
-    if (newAttributeName) {
+        const existing = _.find(this.activeDataframeAttributes, (x) => x.name === newAttributeName);
+        const histogramSpec = {name: newAttributeName, histogramOrientation: histogramOrientation};
+        if (existing === undefined) {
+            this.activeDataframeAttributes.push(histogramSpec);
+        } else {
+            _.extend(existing, histogramSpec);
+        }
         this.dataframeAttributeChange.onNext(newAttributeName);
     }
 };
@@ -297,9 +300,9 @@ HistogramBrush.prototype.updateHistogramData = function (data, globalStats, empt
             _.each(this.activeDataframeAttributes, (attr) => {
                 const isSparkLines = attr.histogramOrientation === 'sparkLines';
                 if (attr.name === key) {
-                    params.sparkLines = (isSparkLines);
+                    params.sparkLines = isSparkLines;
                 } else if (attr.name.match(/:/) && attr.name.split(/:/, 2)[1] === key) {
-                    params.sparkLines = (isSparkLines);
+                    params.sparkLines = isSparkLines;
                     attributeName = Identifier.clarifyWithPrefixSegment(attr.name, attr.graphType);
                     if (attr.graphType) {
                         histogram.set('type', attr.graphType);
