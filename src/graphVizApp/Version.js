@@ -13,7 +13,7 @@ function Version (socket) {
     socket.emit('get_version', null, function (response) {
         if (response.success) {
             console.info('Graphistry server', response.version);
-            var v = 'v' + response.version + ':' + VERSION;
+            var v = 'v' + response.version;
             $('.logo-version').html(v);
         } else {
             util.makeErrorHandler('get_version')(response.error);
