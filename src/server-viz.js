@@ -367,7 +367,7 @@ VizServer.prototype.filterGraphByMaskList = function (graph, selectionMasks, exc
 };
 
 function getNamespaceFromGraph (graph) {
-    const dataframeColumnsByType = graph.dataframe.getColumnsByType();
+    const dataframeColumnsByType = graph.dataframe.getColumnsByType(true);
     // TODO add special names that can be used in calculation references.
     // TODO handle multiple sources.
     const metadata = _.extend({}, dataframeColumnsByType);

@@ -1664,15 +1664,15 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     // then cache the result.
     if (column.dirty && column.dirty.cause === 'filter') {
 
-        const rawAttributes = this.rawdata.attributes[type];
-        const ArrayVariant = rawAttributes[columnName].arrType || Array;
+        const unfilteredColumn = this.getColumn(columnName, type, true);
+        const ArrayVariant = unfilteredColumn.arrType || Array;
         const numNewValues = this.lastMasks.numByType(type);
-        const numberPerGraphComponent = rawAttributes[columnName].numberPerGraphComponent;
+        const numberPerGraphComponent = unfilteredColumn.numberPerGraphComponent;
         const newValues = new ArrayVariant(numberPerGraphComponent * numNewValues);
 
         this.lastMasks.mapIndexes(type, (idx, i) => {
             for (let j = 0; j < numberPerGraphComponent; j++) {
-                newValues[numberPerGraphComponent*i + j] = rawAttributes[columnName].values[numberPerGraphComponent*idx + j];
+                newValues[numberPerGraphComponent*i + j] = unfilteredColumn.values[numberPerGraphComponent*idx + j];
             }
             // newValues.push(rawAttributes[columnName].values[idx]);
         });
@@ -1794,8 +1794,8 @@ Dataframe.prototype.metadataForColumn = function (columnName, type) {
 /**
  * @returns {ColumnAggregation}
  */
-Dataframe.prototype.getColumnAggregations = function (columnName, type, unfiltered = undefined) {
-    const column = this.getColumn(columnName, type, unfiltered);
+Dataframe.prototype.getColumnAggregations = function (columnName, type, global = true) {
+    const column = this.getColumn(columnName, type, global);
     if (column === undefined) { return undefined; }
     if (column.aggregations === undefined) {
         column.aggregations = new ColumnAggregation(this, column, columnName, type);
@@ -1856,12 +1856,16 @@ Dataframe.prototype.hasColumnNamed = function (type, columnName) {
 
 const LargeColumnProperties = ['values', 'aggregations'];
 
-Dataframe.prototype.getColumn = function (columnName, type, unfiltered = true) {
-    const dataframeData = (unfiltered ? this.rawdata : this.data);
+Dataframe.prototype.getColumn = function (columnName, type, global = true, forSerialization = false) {
+    const dataframeData = (global ? this.rawdata : this.data);
     const columnsForType = dataframeData.attributes[type];
     const column = columnsForType[columnName] ||
         _.find(columnsForType, (eachColumn) => eachColumn.name === columnName);
-    return _.omit(column, LargeColumnProperties);
+    if (forSerialization) {
+        return _.omit(column, LargeColumnProperties);
+    } else {
+        return column;
+    }
 };
 
 
@@ -1878,13 +1882,13 @@ Dataframe.prototype.isAttributeNamePrivate = function (columnName) {
 };
 
 
-Dataframe.prototype.getColumnsByType = function () {
+Dataframe.prototype.getColumnsByType = function (forSerialization = false) {
     const result = {};
     _.each(GraphComponentTypes, (typeName) => {
         const typeResult = {};
         const columnNamesPerType = this.getAttributeKeys(typeName);
         _.each(columnNamesPerType, (columnName) => {
-            const column = this.getColumn(columnName, typeName);
+            const column = this.getColumn(columnName, typeName, true, forSerialization);
             typeResult[columnName] = column;
             if (column.name !== undefined && column.name !== columnName) {
                 typeResult[column.name] = column;
@@ -2452,7 +2456,7 @@ Dataframe.prototype.binningForColumn = function (
 
     const {attribute, type} = columnName;
     const values = this.getColumnValues(attribute, type);
-    const aggregations = this.getColumnAggregations(attribute, type);
+    const aggregations = this.getColumnAggregations(attribute, type, true);
 
     const numValues = aggregations.getAggregationByType('countDistinct');
     if (numValues === 0) {
