@@ -390,6 +390,7 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
             const normalizedAttribute = this.normalizeAttributeName(_.keys(plan.rootNode.identifierNodes())[0], type);
             if (normalizedAttribute !== undefined) {
                 attribute = normalizedAttribute.attribute;
+                type = normalizedAttribute.type;
             }
             _.defaults(query, {attribute: attribute, type: type});
             filterFunc = this.filterFuncForQueryObject(query);
@@ -1052,9 +1053,9 @@ Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
         return;
     }
 
-    let degree = new Array(numElements);
-    let degreeIn = new Array(numElements);
-    let degreeOut = new Array(numElements);
+    const degree = new Array(numElements);
+    const degreeIn = new Array(numElements);
+    const degreeOut = new Array(numElements);
 
     for (let i = 0; i < numElements; i++) {
         degreeIn[i] = inDegrees[i];
@@ -1586,13 +1587,6 @@ Dataframe.prototype.getDataType = function (columnName, type) {
     return this.rawdata.attributes[type][columnName] && this.rawdata.attributes[type][columnName].type;
 };
 
-
-Dataframe.prototype.getColumn = function (columnName, type) {
-    return _.omit(this.rawdata.attributes[type][columnName], LargeColumnProperties);
-};
-
-const LargeColumnProperties = ['values', 'aggregations'];
-
 /**
  * @typedef {Object} Column
  * @property {Array} values
@@ -1636,37 +1630,39 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
         return this.getLocalBuffer(columnName);
     }
 
+    const column = attributes[columnName] || this.getColumn(columnName, type, false);
+
     // This lets us know if we need to reindex the values,
     // e.g., go from unsorted to sorted.
-    const indexType = attributes[columnName].index;
+    const indexType = column.index;
 
 
     // First try to see if have values already calculated / cached for this frame
 
     // Check to see if it's computed and version matches that of computed column.
     // Computed column versions reflect dependencies between computed columns.
-    const computedVersionMatches = !(attributes[columnName].computed &&
-        (attributes[columnName].computedVersion !== this.computedColumnManager.getColumnVersion(type, columnName))
+    const computedVersionMatches = !(column.computed &&
+        (column.computedVersion !== this.computedColumnManager.getColumnVersion(type, columnName))
     );
 
-    if (computedVersionMatches && !attributes[columnName].dirty && attributes[columnName].values) {
-        return this.reIndexArray(columnName, type, attributes[columnName].values, indexType, attributes[columnName]);
+    if (computedVersionMatches && !column.dirty && column.values) {
+        return this.reIndexArray(columnName, type, column.values, indexType, column);
     }
 
     // If it's calculated and needs to be recomputed
-    if (attributes[columnName].computed && (!computedVersionMatches || attributes[columnName].dirty)) {
+    if (column.computed && (!computedVersionMatches || column.dirty)) {
 
         const newValues = this.computedColumnManager.getDenseMaterializedArray(this, type, columnName);
-        attributes[columnName].values = newValues;
-        attributes[columnName].dirty = false;
+        column.values = newValues;
+        column.dirty = false;
 
-        return this.reIndexArray(columnName, type, newValues, indexType, attributes[columnName]);
+        return this.reIndexArray(columnName, type, newValues, indexType, column);
     }
 
 
     // If it's not calculated / cached, and filtered, apply the mask and compact
     // then cache the result.
-    if (attributes[columnName].dirty && attributes[columnName].dirty.cause === 'filter') {
+    if (column.dirty && column.dirty.cause === 'filter') {
 
         const rawAttributes = this.rawdata.attributes[type];
         const ArrayVariant = rawAttributes[columnName].arrType || Array;
@@ -1681,10 +1677,10 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
             // newValues.push(rawAttributes[columnName].values[idx]);
         });
 
-        attributes[columnName].values = newValues;
-        attributes[columnName].dirty = false;
+        column.values = newValues;
+        column.dirty = false;
 
-        return this.reIndexArray(columnName, type, newValues, indexType, attributes[columnName]);
+        return this.reIndexArray(columnName, type, newValues, indexType, column);
     }
 
     // Nothing was found, so throw error.
@@ -1787,7 +1783,7 @@ Dataframe.prototype.metadataForColumn = function (columnName, type) {
                 break;
         }
     }
-    defs = _.find(defsContainer, (eachDefs) => { return eachDefs[columnName] !== undefined; });
+    defs = _.find(defsContainer, (eachDefs) => eachDefs[columnName] !== undefined);
     if (defs !== undefined) {
         metadata = defs[columnName];
     }
@@ -1798,9 +1794,8 @@ Dataframe.prototype.metadataForColumn = function (columnName, type) {
 /**
  * @returns {ColumnAggregation}
  */
-Dataframe.prototype.getColumnAggregations = function(columnName, type, unfiltered) {
-    const dataframeData = (unfiltered ? this.rawdata : this.data);
-    const column = dataframeData.attributes[type][columnName];
+Dataframe.prototype.getColumnAggregations = function (columnName, type, unfiltered = undefined) {
+    const column = this.getColumn(columnName, type, unfiltered);
     if (column === undefined) { return undefined; }
     if (column.aggregations === undefined) {
         column.aggregations = new ColumnAggregation(this, column, columnName, type);
@@ -1849,6 +1844,32 @@ Dataframe.prototype.getAttributeKeys = function (type) {
         _.keys(this.rawdata.attributes[type]),
         _.identity
     );
+};
+
+
+Dataframe.prototype.hasColumnNamed = function (type, columnName) {
+    const columnsByAttribute = this.rawdata.attributes[type];
+    return columnsByAttribute.hasOwnProperty(columnName) ||
+        _.any(columnsByAttribute, (column) => column.name === columnName);
+};
+
+
+const LargeColumnProperties = ['values', 'aggregations'];
+
+Dataframe.prototype.getColumn = function (columnName, type, unfiltered = true) {
+    const dataframeData = (unfiltered ? this.rawdata : this.data);
+    const columnsForType = dataframeData.attributes[type];
+    const column = columnsForType[columnName] ||
+        _.find(columnsForType, (eachColumn) => eachColumn.name === columnName);
+    return _.omit(column, LargeColumnProperties);
+};
+
+
+Dataframe.prototype.getAttributeKeyForColumnName = function (columnName, type) {
+    const columnsForType = this.rawdata.attributes[type];
+    return columnsForType.hasOwnProperty(columnName) ?
+        columnName :
+        _.findKey(columnsForType, (column) => column.name === columnName);
 };
 
 
@@ -1960,12 +1981,11 @@ Dataframe.prototype.computeBinningByColumnNames = function (
         }
     };
 
-    const validAttributes = this.getAttributeKeys(type);
-    let keysToAggregate = attributes ? attributes : validAttributes;
+    let keysToAggregate = attributes ? attributes : this.getAttributeKeys(type);
 
-    // Make sure that valid non-private attributes were passed in.
+    // Make sure that valid attributes were passed in.
     keysToAggregate = keysToAggregate.filter(
-        (val) => !this.isAttributeNamePrivate(val) && validAttributes.indexOf(val) !== -1);
+        (columnName) => this.hasColumnNamed(type, columnName));
 
 
     let chain = Q(); // simulator.otherKernels.histogramKernel.setIndices(simulator, maskForType);
