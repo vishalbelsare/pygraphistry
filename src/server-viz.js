@@ -390,38 +390,50 @@ const CommonAttributeNamesSortedByInterestLevel = [
  * @returns {ColumnName[]}
  */
 function selectInitialColumnsForBinning (dataframe, maxInitialItems = undefined) {
-    const selectedColumnNames = [];
+    const scoredColumnNames = [];
     const attributeKeysByType = {point: dataframe.getAttributeKeys('point'), edge: dataframe.getAttributeKeys('edge')};
+    const scoreRange = CommonAttributeNamesSortedByInterestLevel.length;
     _.each(attributeKeysByType, (attributeKeys, type) => {
         _.each(attributeKeys, (attributeName) => {
+            const column = dataframe.getColumn(attributeName, type);
             const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
             const countDistinct = aggregations.getAggregationByType('countDistinct');
-            if (countDistinct < 2) {
-                return;
-            }
-            const columnName = {
-                attribute: attributeName,
-                type: type
-            };
+            const fractionValid = aggregations.getAggregationByType('countValid') /
+                aggregations.getAggregationByType('count');
+            let score = 0; // Lower is better.
             // Develop a score for prioritizing the columns.
-            // Avoid private columns if at all possible (usually just an internal target of an alias).
             if (dataframe.isAttributeNamePrivate(attributeName)) {
-                columnName.score = CommonAttributeNamesSortedByInterestLevel.length;
-            } else {
-                // Prioritize user-provided data ahead of system data.
-                const sysIndex = CommonAttributeNamesSortedByInterestLevel.indexOf(attributeName);
-                if (sysIndex === -1) {
-                    // Prioritize user-provided data (crudely) by how small the _other bin is;
-                    // mega-valued domains make poor histograms.
-                    columnName.score = sysIndex / Math.log(countDistinct);
-                } else {
-                    columnName.score = sysIndex;
-                }
+                // Avoid private columns if at all possible (usually just an internal target of an alias).
+                score += scoreRange;
             }
-            selectedColumnNames.push(columnName);
+            if (fractionValid < 0.01) {
+                score += scoreRange;
+            }
+            // Prioritize user-provided data ahead of system data.
+            let sysIndex = CommonAttributeNamesSortedByInterestLevel.indexOf(attributeName);
+            // Double check whether this is an alias for system data.
+            if (sysIndex === -1 && column.name !== attributeName) {
+                sysIndex = CommonAttributeNamesSortedByInterestLevel.indexOf(column.name);
+            }
+            if (sysIndex === -1) {
+                // Prioritize user-provided data (crudely) by how small the _other bin is;
+                // mega-valued domains make poor histograms.
+                if (countDistinct < 2) {
+                    score += scoreRange;
+                } else {
+                    score -= scoreRange / Math.log(countDistinct);
+                }
+            } else {
+                score += sysIndex;
+            }
+            scoredColumnNames.push({
+                attribute: attributeName,
+                type: type,
+                score: score
+            });
         });
     });
-    const sortedColumnNames = _.sortBy(selectedColumnNames, (columnName) => columnName.score);
+    const sortedColumnNames = _.sortBy(scoredColumnNames, (columnName) => columnName.score);
     return _.first(sortedColumnNames, maxInitialItems);
 }
 
