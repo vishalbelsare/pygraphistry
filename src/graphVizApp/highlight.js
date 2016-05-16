@@ -9,28 +9,23 @@ const util = require('./util.js');
 // Mouseover elements will also have their neighborhoods highlighted.
 // Selections take precedence over highlight.
 // Assumes that selections/highlighted indices don't have duplicates in their lists
-function setupHighlight(appState) {
+function setupHighlight (appState) {
 
     const latestHighlightedObject = appState.latestHighlightedObject;
     const activeSelection = appState.activeSelection;
 
     latestHighlightedObject.combineLatest(activeSelection,
-        function (highlighted, selected) {
-            return {
-                highlighted: highlighted,
-                selected: selected
-            };
-        }).do(function (data) {
+        (highlighted, selected) => ({highlighted, selected})).do(({highlighted, selected}) => {
             const task = {
                 trigger: 'mouseOverEdgeHighlight',
                 data: {
                     highlight: {
-                        nodeIndices: data.highlighted.getPointIndexValues(),
-                        edgeIndices: data.highlighted.getEdgeIndexValues()
+                        nodeIndices: highlighted.getPointIndexValues(),
+                        edgeIndices: highlighted.getEdgeIndexValues()
                     },
                     selected: {
-                        nodeIndices: data.selected.getPointIndexValues(),
-                        edgeIndices: data.selected.getEdgeIndexValues()
+                        nodeIndices: selected.getPointIndexValues(),
+                        edgeIndices: selected.getEdgeIndexValues()
                     }
                 }
             };
