@@ -1022,7 +1022,7 @@ function decode1(graph, vg, metadata) {
     _.each(loaders, (loaderArray, graphProperty) => {
         _.each(loaderArray, (loader) => {
             const encodings = encodingsByTarget[loader.target];
-            const attributes = loader.target === accessorForTargetType[loader.target];
+            const attributes = vgAttributes[accessorForTargetType[loader.target]];
             if (graphProperty in encodings) {
                 const attributeName = encodings[graphProperty];
                 logger.debug('Loading values for', graphProperty, 'from attribute', attributeName);
