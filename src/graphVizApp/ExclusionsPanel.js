@@ -14,13 +14,13 @@ var ExpressionEditor    = require('./expressionEditor.js');
 var util          = require('./util.js');
 
 
-var COLLAPSED_EXCLUSION_HEIGHT = 80;
+const COLLAPSED_EXCLUSION_HEIGHT = 80;
 
 
-var ExclusionModel = QuerySelectionModel.extend({
+const ExclusionModel = QuerySelectionModel.extend({
 });
 
-var ExclusionCollection = Backbone.Collection.extend({
+const ExclusionCollection = Backbone.Collection.extend({
     model: ExclusionModel,
     control: undefined,
     namespaceMetadata: undefined,
@@ -28,8 +28,8 @@ var ExclusionCollection = Backbone.Collection.extend({
         if (!attributes.title) {
             attributes.title = attributes.attribute;
         }
-        var newExclusion = new ExclusionModel(attributes);
-        var match = this.find((exclusion) => _.isEqual(newExclusion.get('query'), exclusion.get('query')));
+        const newExclusion = new ExclusionModel(attributes);
+        const match = this.find((exclusion) => _.isEqual(newExclusion.get('query'), exclusion.get('query')));
         if (match === undefined) {
             this.push(newExclusion);
         } else {
@@ -38,7 +38,7 @@ var ExclusionCollection = Backbone.Collection.extend({
     }
 });
 
-var ExclusionView = Backbone.View.extend({
+const ExclusionView = Backbone.View.extend({
     tagName: 'div',
     className: 'exclusionInspector container-fluid',
     events: {
@@ -57,12 +57,12 @@ var ExclusionView = Backbone.View.extend({
         this.listenTo(this.model, 'change', this.updateFromModel);
     },
     render: function () {
-        var bindings = {
+        const bindings = {
             model: _.extend({
                 placeholder: this.control.queryToExpression(this.model.placeholderQuery())
             }, this.model.toJSON())
         };
-        var html = this.template(bindings);
+        const html = this.template(bindings);
         this.$el.html(html);
 
         this.initEditor();
@@ -74,7 +74,7 @@ var ExclusionView = Backbone.View.extend({
     },
     updateFromModel: function () {
         if (this.isEditorReadOnly()) {
-            var inputString = this.model.get('query').inputString;
+            const inputString = this.model.get('query').inputString;
             if (inputString !== undefined) {
                 this.editor.session.setValue(inputString);
             }
@@ -86,7 +86,7 @@ var ExclusionView = Backbone.View.extend({
         this.$expressionArea = this.$('.exclusionExpression');
 
         this.editor = new ExpressionEditor(this.$expressionArea[0]);
-        var readOnly = this.isEditorReadOnly();
+        const readOnly = this.isEditorReadOnly();
         this.editor.setReadOnly(readOnly);
         this.$expressionArea.toggleClass('disabled', readOnly);
         this.$el.toggleClass('disabled', readOnly);
@@ -94,7 +94,7 @@ var ExclusionView = Backbone.View.extend({
             .subscribe((namespaceMetadata) => {
                 this.editor.dataframeCompleter.setNamespaceMetadata(namespaceMetadata);
             });
-        var expression = this.model.getExpression(this.control);
+        const expression = this.model.getExpression(this.control);
         if (expression) {
             this.editor.session.setValue(expression);
         }
@@ -103,13 +103,13 @@ var ExclusionView = Backbone.View.extend({
         });
     },
     updateQuery: function (expressionString, aceEvent) {
-        var annotation;
+        let annotation;
         try {
             this.model.updateExpression(this.control, expressionString);
         } catch (syntaxError) {
             if (syntaxError) {
-                var row = syntaxError.line && syntaxError.line - 1;
-                var startColumn = syntaxError.column;
+                const row = syntaxError.line && syntaxError.line - 1;
+                let startColumn = syntaxError.column;
                 if (aceEvent && aceEvent.lines[row].length <= startColumn) {
                     startColumn--;
                 }
@@ -140,7 +140,7 @@ var ExclusionView = Backbone.View.extend({
         this.collection.remove(this.model);
     },
     disable: function (event) {
-        var $button = $(event.target);
+        const $button = $(event.target);
         $button.removeClass('disableExclusionButton').addClass('disabledExclusionButton');
         $button.removeClass('fa-toggle-on').addClass('fa-toggle-off');
         $button.attr('title', 'Disabled');
@@ -150,7 +150,7 @@ var ExclusionView = Backbone.View.extend({
         this.model.set('enabled', false);
     },
     enable: function (event) {
-        var $button = $(event.target);
+        const $button = $(event.target);
         $button.removeClass('disabledExclusionButton').addClass('disableExclusionButton');
         $button.removeClass('fa-toggle-off').addClass('fa-toggle-on');
         $button.attr('title', 'Enabled');
@@ -168,7 +168,7 @@ var ExclusionView = Backbone.View.extend({
     }
 });
 
-var AllExclusionsView = Backbone.View.extend({
+const AllExclusionsView = Backbone.View.extend({
     events: {
         'click .addExclusionButton': 'addExclusionFromButton'
     },
@@ -185,24 +185,24 @@ var AllExclusionsView = Backbone.View.extend({
         this.collection.each(this.addExclusion, this);
     },
     render: function () {
-        var $exclusionButton = $('#exclusionButton');
-        var numActiveElements = this.collection.filter((filterModel) => !!filterModel.get('enabled')).length;
+        const $exclusionButton = $('#exclusionButton');
+        const numActiveElements = this.collection.filter((filterModel) => !!filterModel.get('enabled')).length;
         $('.badge', $exclusionButton).text(numActiveElements > 0 ? numActiveElements : '');
         return this;
     },
     addExclusion: function (exclusion) {
-        var view = new ExclusionView({
+        const view = new ExclusionView({
             model: exclusion,
             collection: this.collection,
             control: this.control
         });
-        var childElement = view.render().el;
-        // var dataframeAttribute = exclusion.get('attribute');
+        const childElement = view.render().el;
+        // const dataframeAttribute = exclusion.get('attribute');
         this.exclusionsContainer.append(childElement);
         exclusion.set('$el', $(childElement));
     },
     removeExclusion: function (exclusion) {
-        var $el = exclusion.get('$el');
+        const $el = exclusion.get('$el');
         if ($el) {
             $el.remove();
         }
@@ -224,8 +224,8 @@ var AllExclusionsView = Backbone.View.extend({
 Handlebars.registerHelper('json', (context) => JSON.stringify(context));
 
 
-function ExclusionsPanel(socket, control, labelRequests) {
-    //var $button = $('#exclusionButton');
+function ExclusionsPanel (socket, control, labelRequests) {
+    //const $button = $('#exclusionButton');
 
     if (control === undefined) {
         control = new FilterControl(socket);
@@ -235,7 +235,7 @@ function ExclusionsPanel(socket, control, labelRequests) {
     this.labelRequestSubscription = labelRequests.filter(
         (labelRequest) => labelRequest.excludeQuery !== undefined
     ).do((labelRequest) => {
-        var exclusion = labelRequest.excludeQuery;
+        const exclusion = labelRequest.excludeQuery;
         this.collection.addExclusion(exclusion);
     }).subscribe(_.identity, util.makeErrorHandler('Handling an exclusion from a label'));
 
@@ -278,13 +278,13 @@ function ExclusionsPanel(socket, control, labelRequests) {
 ExclusionsPanel.prototype.isVisible = function () { return this.view.$el.is(':visible'); };
 
 ExclusionsPanel.prototype.toggleVisibility = function (newVisibility) {
-    var $panel = this.view.el;
+    const $panel = this.view.el;
     $panel.toggle(newVisibility);
     $panel.css('visibility', newVisibility ? 'visible': 'hidden');
 };
 
 ExclusionsPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButton, $resetElements) {
-    var panelToggles = toolbarClicks.filter(
+    const panelToggles = toolbarClicks.filter(
         (elt) => elt === $panelButton[0] || $resetElements.find(elt)
     ).map((elt) => {
         // return the target state (boolean negate)

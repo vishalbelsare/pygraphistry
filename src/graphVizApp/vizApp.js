@@ -2,102 +2,92 @@
 
 // FIXME: Move this to graph-viz repo -- it shouldn't be a part of the core StreamGL library
 
-var debug   = require('debug')('graphistry:StreamGL:graphVizApp:vizApp');
-var $       = window.$;
-var _       = require('underscore');
-var Rx      = require('rxjs/Rx.KitchenSink');
+const debug   = require('debug')('graphistry:StreamGL:graphVizApp:vizApp');
+const $       = window.$;
+const _       = require('underscore');
+const Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
 
-var shortestpaths   = require('./shortestpaths.js');
-var colorPicker     = require('./colorpicker.js');
-var controls        = require('./controls.js');
-var canvas          = require('./canvas.js');
-var labels          = require('./labels.js');
-var ui              = require('../ui.js');
-var poiLib          = require('../poi.js');
-var util            = require('./util.js');
-var highlight       = require('./highlight.js');
-var api             = require('./api.js');
-var VizSlice        = require('./VizSlice.js');
+const shortestPaths   = require('./shortestpaths.js');
+const colorPicker     = require('./colorpicker.js');
+const controls        = require('./controls.js');
+const canvas          = require('./canvas.js');
+const labels          = require('./labels.js');
+const ui              = require('../ui.js');
+const poiLib          = require('../poi.js');
+const util            = require('./util.js');
+const highlight       = require('./highlight.js');
+const api             = require('./api.js');
+const VizSlice        = require('./VizSlice.js');
 
 
-function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, apiActions,
-              workerParams, urlParams) {
+function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, apiActions,
+               workerParams, urlParams) {
     debug('Initializing vizApp', 'URL params', urlParams);
 
     //////////////////////////////////////////////////////////////////////////
     // App State
     //////////////////////////////////////////////////////////////////////////
 
-    var labelRequests = new Rx.Subject();
-    var poi = poiLib(socket, labelRequests);
+    const labelRequests = new Rx.Subject();
+    const poi = poiLib(socket, labelRequests);
 
     // Observable DOM
-    var labelHover = new Rx.Subject();
+    const labelHover = new Rx.Subject();
 
-    var cameraChanges = new Rx.ReplaySubject(1);
+    const cameraChanges = new Rx.ReplaySubject(1);
     cameraChanges.onNext(initialRenderState.get('camera'));
-    var isAnimating = new Rx.ReplaySubject(1);
+    const isAnimating = new Rx.ReplaySubject(1);
     isAnimating.onNext(false);
 
-    var settingsChanges = new Rx.ReplaySubject(1);
+    const settingsChanges = new Rx.ReplaySubject(1);
     settingsChanges.onNext({});
-    var activeSelection = new Rx.ReplaySubject(1);
+    const activeSelection = new Rx.ReplaySubject(1);
     activeSelection.onNext(new VizSlice([]));
 
     // Marquee button selected
-    var marqueeOn = new Rx.ReplaySubject(1);
+    const marqueeOn = new Rx.ReplaySubject(1);
     marqueeOn.onNext(false);
     // Marquee being drawn / dragged
-    var marqueeActive = new Rx.ReplaySubject(1);
+    const marqueeActive = new Rx.ReplaySubject(1);
     marqueeActive.onNext(false);
     // Marquee finished drawing on the canvas
     // TODO: Do we really need this?
-    var marqueeDone = new Rx.ReplaySubject(1);
+    const marqueeDone = new Rx.ReplaySubject(1);
     marqueeDone.onNext(false);
     // Simulate button selected
-    var simulateOn = new Rx.ReplaySubject(1);
+    const simulateOn = new Rx.ReplaySubject(1);
     simulateOn.onNext(false);
     // Brush button selected
-    var brushOn = new Rx.ReplaySubject(1);
+    const brushOn = new Rx.ReplaySubject(1);
     brushOn.onNext(false);
     // Is any marquee type toggled on?
-    var anyMarqueeOn = marqueeOn
-        .flatMap(function (marqueeVal) {
-            return brushOn
-                .map(function (brushVal) {
-                    return (brushVal || marqueeVal);
-                });
-        });
+    const anyMarqueeOn = marqueeOn
+        .flatMap((marqueeVal) => brushOn.map((brushVal) => brushVal || marqueeVal));
 
-    var isAnimatingOrSimulating = isAnimating
-        .flatMap(function (animating) {
-            return simulateOn
-                .map(function (simulating) {
-                    return (animating || simulating);
-                });
-        });
+    const isAnimatingOrSimulating = isAnimating
+        .flatMap((animating) => simulateOn.map((simulating) => animating || simulating));
 
-    var latestHighlightedObject = new Rx.ReplaySubject(1);
+    const latestHighlightedObject = new Rx.ReplaySubject(1);
 
-    var labelsAreEnabled = new Rx.ReplaySubject(1);
+    const labelsAreEnabled = new Rx.ReplaySubject(1);
     labelsAreEnabled.onNext(urlParams.hasOwnProperty('labels') ? urlParams.labels : true);
     apiActions
-        .filter(function (msg) { return msg && (msg.setting === 'labels'); })
-        .do(function (msg) {
+        .filter((msg) => msg && (msg.setting === 'labels'))
+        .do((msg) => {
             labelsAreEnabled.onNext(msg.value);
         }).subscribe(_.identity, util.makeErrorHandler('Error updating label enabling'));
 
-    var poiIsEnabled = new Rx.ReplaySubject(1);
+    const poiIsEnabled = new Rx.ReplaySubject(1);
     poiIsEnabled.onNext(urlParams.hasOwnProperty('poi') ? urlParams.poi : true);
     apiActions
-        .filter(function (msg) { return msg && (msg.setting === 'poi'); })
-        .do(function (msg) {
+        .filter((msg) => msg && (msg.setting === 'poi'))
+        .do((msg) => {
             poiIsEnabled.onNext(msg.value);
         }).subscribe(_.identity, util.makeErrorHandler('renderPipeline error'));
 
-    var viewConfigChanges = new Rx.ReplaySubject(1);
-    socket.emit('get_view_config', null, function (response) {
+    const viewConfigChanges = new Rx.ReplaySubject(1);
+    socket.emit('get_view_config', null, (response) => {
         if (response.success) {
             debug('Received view config from server', response.viewConfig);
             viewConfigChanges.onNext(response.viewConfig);
@@ -105,8 +95,8 @@ function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, ap
             throw Error('Failed to get viewConfig');
         }
     });
-    viewConfigChanges.do(function (viewConfig) {
-        var parameters = viewConfig.parameters;
+    viewConfigChanges.do((viewConfig) => {
+        const parameters = viewConfig.parameters;
         if (parameters !== undefined) {
             if (parameters.poiEnabled !== undefined) {
                 poiIsEnabled.onNext(parameters.poiEnabled);
@@ -117,7 +107,7 @@ function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, ap
         }
     });
 
-    var appState = {
+    const appState = {
         renderState: initialRenderState,
         vboUpdates: vboUpdates,
         vboVersions: vboVersions,
@@ -149,11 +139,11 @@ function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, ap
     // DOM Elements
     //////////////////////////////////////////////////////////////////////////
 
-    var $simCont   = $('.sim-container');
-    var $fgPicker  = $('#foregroundColor');
-    var $bgPicker  = $('#backgroundColor');
-    var $spButton  = $('#shortestpath');
-    var $toolbar   = $('#controlState');
+    const $simCont   = $('.sim-container');
+    const $fgPicker  = $('#foregroundColor');
+    const $bgPicker  = $('#backgroundColor');
+    const $spButton  = $('#shortestpath');
+    const $toolbar   = $('#controlState');
 
     //////////////////////////////////////////////////////////////////////////
     // Setup
@@ -179,8 +169,8 @@ function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, ap
 
     highlight.setupHighlight(appState);
 
-    var backgroundColorObservable = colorPicker.backgroundColorObservable(initialRenderState, urlParams);
-    var foregroundColorObservable = colorPicker.foregroundColorObservable();
+    const backgroundColorObservable = colorPicker.backgroundColorObservable(initialRenderState, urlParams);
+    const foregroundColorObservable = colorPicker.foregroundColorObservable();
     colorPicker.init($fgPicker, $bgPicker, foregroundColorObservable, backgroundColorObservable, socket, initialRenderState);
     // TODO use colors.foregroundColor for the renderer/canvas!
     canvas.setupBackgroundColor(appState.renderingScheduler, backgroundColorObservable);
@@ -195,11 +185,10 @@ function init(socket, initialRenderState, vboUpdates, vboVersions, apiEvents, ap
         $('#simulation').css('opacity', urlParams.opacity);
     }
 
-    shortestpaths($spButton, poi, socket);
+    shortestPaths($spButton, poi, socket);
 
-    var doneLoading = vboUpdates.filter(function (update) {
-        return update === 'received';
-    }).take(1).do(ui.hideSpinnerShowBody).delay(100);
+    const doneLoading = vboUpdates.filter((update) => update === 'received')
+        .take(1).do(ui.hideSpinnerShowBody).delay(100);
 
     controls.init(appState, socket, $toolbar, doneLoading, workerParams, urlParams);
     api.setupAPIHooks(socket, appState, doneLoading);

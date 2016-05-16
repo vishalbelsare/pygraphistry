@@ -1,13 +1,13 @@
 'use strict';
 
-var moment  = require('moment-timezone');
-var sprintf = require('sprintf-js').sprintf;
-var debug   = require('debug')('graphistry:StreamGL:graphVizApp:contentFormatter');
-var d3      = require('d3');
+const moment  = require('moment-timezone');
+const sprintf = require('sprintf-js').sprintf;
+const debug   = require('debug')('graphistry:StreamGL:graphVizApp:contentFormatter');
+const d3      = require('d3');
 
 // TODO: Wrap this up into a formatter object instead of a global here.
 // Initialize with moment's best guess at timezone.
-var displayTimezone = moment.tz.guess();
+let displayTimezone = moment.tz.guess();
 function setTimeZone (newTimezone) {
     // Treat empty string as reset (because this comes from a text input)
     if (newTimezone === '') {
@@ -15,7 +15,7 @@ function setTimeZone (newTimezone) {
         return;
     }
 
-    var zoneObj = moment.tz.zone(newTimezone);
+    const zoneObj = moment.tz.zone(newTimezone);
     if (zoneObj) {
         debug('Setting timezone from '+ displayTimezone + ' to: ' + newTimezone);
         displayTimezone = newTimezone;
@@ -25,7 +25,7 @@ function setTimeZone (newTimezone) {
 }
 
 function castToMoment (value) {
-    var momentVal;
+    let momentVal;
     if (typeof(value) === 'number') {
         // First attempt unix seconds constructor
         momentVal = moment.unix(value);
@@ -97,17 +97,17 @@ function d3ColorFromRGBA(x) {
  * @param {Number} significantFigures
  * @returns {String}
  */
-function maybePrecise(v, significantFigures) {
+function maybePrecise (v, significantFigures) {
     if (v === Math.floor(v)) {
         return v.toString();
     }
-    var remainder = Math.abs(v), precision = significantFigures;
+    let remainder = Math.abs(v), precision = significantFigures;
     while (remainder > 1 && precision > 0) {
         remainder /= 10;
         precision--;
     }
     // Cut out trailing zeroes beyond the decimal point:
-    var printed = v.toFixed(precision), printedOneLessDigit = v.toFixed(precision - 1);
+    let printed = v.toFixed(precision), printedOneLessDigit = v.toFixed(precision - 1);
     while (precision > 1 && Number(printedOneLessDigit) === Number(printed)) {
         printed = printedOneLessDigit;
         precision--;

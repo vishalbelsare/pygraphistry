@@ -1,7 +1,8 @@
 'use strict';
-var _       = require('underscore');
 
-var util            = require('./util.js');
+const _ = require('underscore');
+
+const util = require('./util.js');
 
 
 // Highlights mouseover and selected elements
@@ -10,8 +11,8 @@ var util            = require('./util.js');
 // Assumes that selections/highlighted indices don't have duplicates in their lists
 function setupHighlight(appState) {
 
-    var latestHighlightedObject = appState.latestHighlightedObject;
-    var activeSelection = appState.activeSelection;
+    const latestHighlightedObject = appState.latestHighlightedObject;
+    const activeSelection = appState.activeSelection;
 
     latestHighlightedObject.combineLatest(activeSelection,
         function (highlighted, selected) {
@@ -20,7 +21,7 @@ function setupHighlight(appState) {
                 selected: selected
             };
         }).do(function (data) {
-            var task = {
+            const task = {
                 trigger: 'mouseOverEdgeHighlight',
                 data: {
                     highlight: {
@@ -39,11 +40,6 @@ function setupHighlight(appState) {
             // console.log('TASK: ', JSON.stringify(task, null, 4));
         }).subscribe(_.identity, util.makeErrorHandler('Setup highlight'));
 }
-
-
-
-
-
 
 module.exports = {
     setupHighlight: setupHighlight

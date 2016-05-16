@@ -1,8 +1,8 @@
 'use strict';
 
-var _ = require('underscore');
+const _ = require('underscore');
 
-var DimCodes = {
+const DimCodes = {
     point: 1,
     edge: 2
 };
@@ -36,9 +36,9 @@ function VizSlice (specification) {
  * Modifies the array as a sorted set to toggle the value in/out. Returns the index of the value once effected.
  * @param {Number[]} arrayData
  * @param {Number} newValue
- * @returns {Number}
+ * @returns {Mask?}
  */
-function removeOrAddFromSortedArray(arrayData, newValue) {
+function removeOrAddFromSortedArray (arrayData, newValue) {
     if (arrayData === undefined) { return [newValue]; }
 
     // Guard for if the array is arraylike, but not array
@@ -48,7 +48,7 @@ function removeOrAddFromSortedArray(arrayData, newValue) {
         arrayData = Array.prototype.slice.call(arrayData);
     }
 
-    var low = 0,
+    let low = 0,
         high = arrayData.length - 1,
         mid;
     while (low < high) {
@@ -64,11 +64,11 @@ function removeOrAddFromSortedArray(arrayData, newValue) {
     }
     arrayData.push(newValue);
 
-    return arrayData.length - 1;
+    return arrayData;
 }
 
-function indexOfInSorted(sortedArray, value) {
-    var low = 0,
+function indexOfInSorted (sortedArray, value) {
+    let low = 0,
         high = sortedArray.length - 1,
         mid;
     while (low < high) {
@@ -84,7 +84,7 @@ function indexOfInSorted(sortedArray, value) {
     return -1;
 }
 
-function removeOrAddFromUnsortedArray(arrayData, newElem, equalityFunc) {
+function removeOrAddFromUnsortedArray (arrayData, newElem, equalityFunc) {
     if (arrayData === undefined) { return [newElem]; }
 
     // Guard for if the array is arraylike, but not array
@@ -94,20 +94,18 @@ function removeOrAddFromUnsortedArray(arrayData, newElem, equalityFunc) {
         arrayData = Array.prototype.slice.call(arrayData);
     }
 
-    var lengthBefore = arrayData.length,
-        result = arrayData;
+    const lengthBefore = arrayData.length;
+    let result = arrayData;
 
     // Remove elements if they exist.
-    result = _.map(result, function (elem) {
+    result = _.map(result, (elem) => {
         if (equalityFunc(elem, newElem)) {
             return null;
         }
         return elem;
     });
 
-    result = result.filter(function (val) {
-        return (val !== null);
-    });
+    result = result.filter((val) => val !== null);
 
     // Add new elements if it didn't exist;
     if (lengthBefore === result.length) {
@@ -129,7 +127,7 @@ VizSlice.prototype = {
     },
 
     size: function () {
-        var result = 0;
+        let result = 0;
         if (this.point !== undefined) { result += this.point.length; }
         if (this.edge !== undefined) { result += this.edge.length; }
         if (this.separateItems !== undefined) { result += this.separateItems.length; }
@@ -145,8 +143,8 @@ VizSlice.prototype = {
     },
 
     newAdding: function (newElements) {
-        var existingItems = this.separateItems,
-            resultItems = existingItems;
+        const existingItems = this.separateItems;
+        let resultItems = existingItems;
         if (_.isArray(existingItems)) {
             resultItems = existingItems.concat(newElements);
         }
@@ -174,7 +172,7 @@ VizSlice.prototype = {
                 }
                 break;
         }
-        return _.find(this.separateItems, function (separateItem) {
+        return _.find(this.separateItems, (separateItem) => {
             return separateItem.dim === dim && separateItem.idx === idx;
         }) !== undefined;
     },
@@ -197,7 +195,7 @@ VizSlice.prototype = {
 
     tagSourceAs: function (source) {
         this.source = source;
-        _.each(this.separateItems, function (sliceElement) { sliceElement.source = source; });
+        _.each(this.separateItems, (sliceElement) => { sliceElement.source = source; });
     },
 
     getPrimaryManualElement: function () {
@@ -216,19 +214,18 @@ VizSlice.prototype = {
      * @param iterator Takes index and dimension (1=point, 2=edge)
      */
     forEachIndexAndDim: function (iterator) {
-        var i = 0;
         if (this.point !== undefined) {
-            for (i=0; i<this.point.length; i++) {
+            for (let i=0; i<this.point.length; i++) {
                 iterator(this.point[i], 1);
             }
         }
         if (this.edge !== undefined) {
-            for (i=0; i<this.edge.length; i++) {
+            for (let i=0; i<this.edge.length; i++) {
                 iterator(this.edge[i], 2);
             }
         }
         if (this.separateItems && _.isArray(this.separateItems)) {
-            for (i=0; i<this.separateItems.length; i++) {
+            for (let i=0; i<this.separateItems.length; i++) {
                 iterator(this.separateItems[i].idx, this.separateItems[i].dim);
             }
         }
@@ -239,7 +236,7 @@ VizSlice.prototype = {
      * @param {VizSliceElement} selection
      */
     removeOrAdd: function (selection) {
-        var result = this.copy();
+        const result = this.copy();
         if (this._isMaskShaped()) {
             switch (selection.dim) {
                 case DimCodes.point:
@@ -250,7 +247,7 @@ VizSlice.prototype = {
                     break;
             }
         } else {
-            result.separateItems = removeOrAddFromUnsortedArray(result.separateItems, selection, function (a, b) {
+            result.separateItems = removeOrAddFromUnsortedArray(result.separateItems, selection, (a, b) => {
                 return a.dim === b.dim && a.idx === b.idx;
             });
         }

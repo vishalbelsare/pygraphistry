@@ -4,7 +4,7 @@ const Rx      = require('rxjs/Rx.KitchenSink');
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:command');
 
 
-function Command (description, commandName, socket, disableErrorFiltering = true) {
+function Command(description, commandName, socket, disableErrorFiltering = true) {
     this.description = description;
     this.commandName = commandName;
     this.socket = socket;
@@ -17,10 +17,11 @@ Command.prototype = {
         const src = Rx.Observable.bindCallback(this.socket.emit.bind(this.socket))(this.commandName, ...args);
         if (this.disableErrorFiltering === true) {
             return src;
+        } else {
+            return src
+                .do(this.logErrorFromResponse)
+                .filter(this.isServerResponseSuccess);
         }
-        return src
-            .do(this.logErrorFromResponse)
-            .filter(this.isServerResponseSuccess);
     },
 
     logErrorFromResponse: function (reply) {

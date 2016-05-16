@@ -4,7 +4,7 @@ var Rx      = require('rxjs/Rx.KitchenSink');
 var _       = require('underscore');
 
 function makeErrorHandler(name) {
-    return function (err) {
+    return (err) => {
         console.error(name, err, (err || {}).stack);
     };
 }
@@ -19,20 +19,20 @@ function makeErrorHandler(name) {
 // When ready for a new element, put data into ready, e.g.,
 // hash.ready.onNext(hash.data)
 function bufferUntilReady(stream) {
-    var lastElem = new Rx.Subject();
-    var newStream = new Rx.Subject();
-    var replayStream = new Rx.ReplaySubject(1);
+    const lastElem = new Rx.Subject();
+    const newStream = new Rx.Subject();
+    const replayStream = new Rx.ReplaySubject(1);
 
     // Feed stream into replayStream so we can
     // always handle the last request.
     stream.subscribe(replayStream, makeErrorHandler('Copying stream for util.bufferUntilReady'));
 
-    lastElem.switchMap(function (last) {
-        return replayStream.filter(function (data) {
+    lastElem.switchMap((last) => {
+        return replayStream.filter((data) => {
             return data !== last;
         }).take(1);
-    }).do(function (data) {
-        var ready = function () {
+    }).do((data) => {
+        const ready = function () {
             lastElem.onNext(data);
         };
         newStream.onNext({data: data, ready: ready});
@@ -52,7 +52,7 @@ function AND (a, b) {
 }
 
 
-var ALPHA_NUMERIC_RADIX = 36;
+const ALPHA_NUMERIC_RADIX = 36;
 
 
 function createAlphaNumericUID() {
@@ -69,34 +69,32 @@ function createAlphaNumericUID() {
 
 function observableFilter (streams, pred, operator) {
 
-    var isArray = streams.constructor === Array;
+    const isArray = streams.constructor === Array;
 
     if (isArray) {
         if (streams.length > 2) {
             console.error('Observable Filter on 3+ elements not implemented yet');
         }
-        return function (origVal) {
-            return streams[0].switchMap(function (val0) {
-                return streams[1].map(function (val1) {
+        return (origVal) => {
+            return streams[0].switchMap((val0) => {
+                return streams[1].map((val1) => {
                     return {val0: val0, val1: val1};
                 });
-            }).filter(function (obj) {
-                var v0 = pred(obj.val0);
-                var v1 = pred(obj.val1);
+            }).filter((obj) => {
+                const v0 = pred(obj.val0);
+                const v1 = pred(obj.val1);
                 return operator(v0, v1);
-            }).map(function () {
+            }).map(() => {
                 return origVal;
             }).take(1);
         };
 
     } else {
 
-        return function (origVal) {
+        return (origVal) => {
             return streams
                 .filter(pred)
-                .map(function () {
-                    return origVal;
-                }).take(1);
+                .map(() => origVal).take(1);
         };
     }
 }
@@ -106,7 +104,7 @@ function notIdentity (val) {
     return !val;
 }
 
-var times = {};
+const times = {};
 function consoleTimerStart(name) {
     console.log('==Started Timing', name);
     times[name] = Date.now();

@@ -1,33 +1,38 @@
 'use strict';
 
-var debug   = require('debug')('graphistry:StreamGL:graphVizApp:labels');
-var $       = window.$;
-var Rx      = require('rxjs/Rx.KitchenSink');
+const debug   = require('debug')('graphistry:StreamGL:graphVizApp:labels');
+const $       = window.$;
+const Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
-var _       = require('underscore');
+const _       = require('underscore');
 
-var util            = require('./util.js');
-var interaction     = require('./interaction.js');
-var picking         = require('../picking.js');
-var canvas          = require('./canvas.js');
-var VizSlice        = require('./VizSlice.js');
-var Command         = require('./command.js');
+const util            = require('./util.js');
+const interaction     = require('./interaction.js');
+const picking         = require('../picking.js');
+const canvas          = require('./canvas.js');
+const VizSlice        = require('./VizSlice.js');
+const Command         = require('./command.js');
 
 
-var EDGE_LABEL_OFFSET = 0;
+const EDGE_LABEL_OFFSET = 0;
 
 // HACK because we can't know what the mouse position is without watching events
-var mousePosition = {x: 0, y: 0};
+const mousePosition = {x: 0, y: 0};
 
-document.addEventListener('mousemove', function(e) {
+/** @typedef {Object} LabelStruct
+ * @property {Number} dim
+ * @property {Number} idx
+ */
+
+document.addEventListener('mousemove', (e) => {
     mousePosition.x = e.clientX || e.pageX;
     mousePosition.y = e.clientY || e.pageY;
 }, false);
 
-function setupLabelsAndCursor(appState, socket, urlParams, $eventTarget) {
+function setupLabelsAndCursor (appState, socket, urlParams, $eventTarget) {
     // Picks objects in priority based on order.
-    var hitMapTextures = ['hitmap'];
-    var latestHighlightedObject = setupLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
+    const hitMapTextures = ['hitmap'];
+    const latestHighlightedObject = setupLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
 
     setupClickSelections(appState, $eventTarget);
     setupLabels(appState, urlParams, $eventTarget, latestHighlightedObject);
@@ -49,18 +54,14 @@ function setupLatestHighlightedObject (appState, $eventTarget, textures) {
             _.identity
         )
         .switchMap(util.observableFilter([appState.marqueeOn, appState.brushOn],
-                function (v) {
-                    return (v !== 'selecting') && (v !== 'dragging');
-                },
+                (v) => (v !== 'selecting') && (v !== 'dragging'),
                 util.AND
         ))
         .switchMap(util.observableFilter(appState.isAnimatingOrSimulating, util.notIdentity))
-        .map(function (pos) {
-            return picking.hitTestN(appState.renderState, textures, pos.x, pos.y, 10);
-        })
+        .map((pos) => picking.hitTestN(appState.renderState, textures, pos.x, pos.y, 10))
         // Only update when changes.
-        .distinctUntilKeyChanged('idx').map(function (hit) {
-            var elements = hit.idx === -1 ? [] : [hit];
+        .distinctUntilKeyChanged('idx').map((hit) => {
+            const elements = hit.idx === -1 ? [] : [hit];
             return new VizSlice(elements);
         })
         .subscribe(appState.latestHighlightedObject, util.makeErrorHandler('getLatestHighlightedObject'));
@@ -123,7 +124,7 @@ function setupClickDragInteractions (appState, socket, $eventTarget) {
                     .switchMap((upEvt) => {
                         const diff = worldCoordDiffFromMouseEvents(downEvt, upEvt, appState.renderingScheduler.renderState);
                         const ids = sel.getPointIndexValues();
-                        const payload = { diff, ids }
+                        const payload = {diff, ids};
 
                         return moveNodesByIdCommand.sendWithObservableResult(payload);
                     })
@@ -132,7 +133,7 @@ function setupClickDragInteractions (appState, socket, $eventTarget) {
                     const diff = worldCoordDiffFromMouseEvents(downEvt, moveEvt, appState.renderingScheduler.renderState);
                     appState.renderingScheduler.renderMovePointsTemporaryPositions(diff, sel);
 
-                })
+                });
         }).subscribe(_.identity, util.makeErrorHandler('click drag selection handler'));
 
 }
@@ -142,32 +143,28 @@ function setupClickDragInteractions (appState, socket, $eventTarget) {
 // Sets up clicking to set active selections in the appState.
 // Will handle clicking on labels as well as the canvas.
 function setupClickSelections (appState, $eventTarget) {
-    var activeSelection = appState.activeSelection;
+    const activeSelection = appState.activeSelection;
 
     $eventTarget.mousedownAsObservable()
         .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
-        .switchMap(function (down) {
-            return $eventTarget.mouseupAsObservable().take(1).map(function (up) {
-                var downUp = [down, up];
-                downUp.ctrl = down.ctrlKey || down.metaKey;
-                return downUp;
-            });
-        })
-        .filter(function (downUp) {
-            var dist = distance(downUp[0].clientX, downUp[0].clientY, downUp[1].clientX, downUp[1].clientY);
-            return dist < 5;
-        })
-        .switchMap(function (downUp) {
-            var $target = $(downUp[1].target);
-            var targetElementStream;
+        .switchMap((down) => $eventTarget.mouseupAsObservable().take(1).map((up) => {
+            const downUp = [down, up];
+            downUp.ctrl = down.ctrlKey || down.metaKey;
+            return downUp;
+        }))
+        .filter((downUp) =>
+            distance(downUp[0].clientX, downUp[0].clientY, downUp[1].clientX, downUp[1].clientY) < 5)
+        .switchMap((downUp) => {
+            const $target = $(downUp[1].target);
+            let targetElementStream;
             // Clicked on existing POI label, return point corresponding to label
             if ($target.hasClass('graph-label') ||
                     $target.parents('.graph-label').length) {
 
-                var elt = $target.hasClass('graph-label') ? downUp[1].target
+                const elt = $target.hasClass('graph-label') ? downUp[1].target
                     : ($target.parents('.graph-label')[0]);
-                var pt = _.values(appState.poi.state.activeLabels)
-                    .filter(function (lbl) { return lbl.elt.get(0) === elt; })[0];
+                const pt = _.values(appState.poi.state.activeLabels)
+                    .filter((lbl) => lbl.elt.get(0) === elt)[0];
                 targetElementStream = Rx.Observable.return(new VizSlice([pt]));
 
             // Clicked on canvas, return latest highlighted object
@@ -175,32 +172,26 @@ function setupClickSelections (appState, $eventTarget) {
                 targetElementStream = appState.latestHighlightedObject.take(1);
             }
 
-            return targetElementStream.map(function (slice) {
-                return {
-                    clickSlice: slice,
-                    ctrl: downUp.ctrl
-                };
-            });
-        }).switchMap(function (data) {
-            return activeSelection.take(1).map(function (sel) {
-                return {sel: sel, clickSlice: data.clickSlice, ctrl: data.ctrl};
-            });
-        }).subscribe(appState.clickEvents, util.makeErrorHandler('build click events'));
+            return targetElementStream.map((slice) => ({
+                clickSlice: slice,
+                ctrl: downUp.ctrl
+            }));
+        }).switchMap((data) => activeSelection.take(1).map(
+            (sel) => ({sel: sel, clickSlice: data.clickSlice, ctrl: data.ctrl})))
+        .subscribe(appState.clickEvents, util.makeErrorHandler('build click events'));
 
-        appState.clickEvents.do(function (data) {
-            var clickSlice = data.clickSlice;
-            var sel = data.sel;
-            var ctrl = data.ctrl;
+    appState.clickEvents.do((data) => {
+        const {clickSlice, sel, ctrl} = data;
 
-            clickSlice.tagSourceAs('canvas');
+        clickSlice.tagSourceAs('canvas');
 
-            if (ctrl) {
-                activeSelection.onNext(sel.removeOrAdd(clickSlice.getPrimaryManualElement()));
-            } else {
-                activeSelection.onNext(sel.newFrom(clickSlice.separateItems));
-            }
+        if (ctrl) {
+            activeSelection.onNext(sel.removeOrAdd(clickSlice.getPrimaryManualElement()));
+        } else {
+            activeSelection.onNext(sel.newFrom(clickSlice.separateItems));
+        }
 
-        }).subscribe(_.identity, util.makeErrorHandler('setupClickSelections'));
+    }).subscribe(_.identity, util.makeErrorHandler('setupClickSelections'));
 }
 
 // move labels when new highlight or finish noisy rendering section
@@ -209,7 +200,7 @@ function setupClickSelections (appState, $eventTarget) {
 function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject) {
 
     // TODO: Move this out of JS and into HTML.
-    var $labelCont = $('<div>').addClass('graph-label-container');
+    const $labelCont = $('<div>').addClass('graph-label-container');
     $eventTarget.append($labelCont);
 
     if (urlParams.labels === false) {
@@ -217,7 +208,7 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
         return;
     }
 
-    appState.labelsAreEnabled.do(function (v) {
+    appState.labelsAreEnabled.do((v) => {
         $('html').toggleClass('labelsDisabled', !v);
     }).subscribe(_.identity, util.makeErrorHandler('poi -> html status'));
 
@@ -228,16 +219,14 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
         appState.activeSelection,
         appState.labelsAreEnabled,
         appState.poiIsEnabled,
-        function (camera, vboUpdates, isAnimating, highlighted, selection, labelsAreEnabled, poiIsEnabled) {
-            return {
-                highlighted: highlighted,
-                selection: selection,
-                labelsAreEnabled: labelsAreEnabled,
-                poiIsEnabled: poiIsEnabled,
-                doneAnimating: !isAnimating
-            };
-        }
-    ).do(function (toShow) {
+        (camera, vboUpdates, isAnimating, highlighted, selection, labelsAreEnabled, poiIsEnabled) => ({
+            highlighted: highlighted,
+            selection: selection,
+            labelsAreEnabled: labelsAreEnabled,
+            poiIsEnabled: poiIsEnabled,
+            doneAnimating: !isAnimating
+        })
+    ).do((toShow) => {
         renderLabels(appState, $labelCont, toShow.highlighted, toShow.selection, toShow.doneAnimating,
             toShow.labelsAreEnabled, toShow.poiIsEnabled);
     })
@@ -253,43 +242,49 @@ function renderLabels(appState, $labelCont, highlighted, selected, doneAnimating
 
     // TODO: Simplify this so we don't have to have this separate call for getting
     // points.
-    var curPoints = appState.renderState.get('hostBuffers').curPoints;
+    const curPoints = appState.renderState.get('hostBuffers').curPoints;
     if (!curPoints) {
         console.warn('renderLabels called before curPoints available');
         return;
     }
 
     curPoints.take(1)
-        .do(function (curPoints) {
-            renderLabelsImmediate(appState, $labelCont, curPoints, highlighted, selected, doneAnimating,
+        .do((curPointsNow) => {
+            renderLabelsImmediate(appState, $labelCont, curPointsNow, highlighted, selected, doneAnimating,
                 labelsAreEnabled, poiIsEnabled);
         })
         .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
 }
 
 
+/**
+ * @param poi
+ * @param hits
+ * @param idx
+ * @param dim
+ * @returns {LabelStruct?}
+ */
+function popUnused (poi, hits, idx, dim) {
 
-function popUnused(poi, hits, idx, dim) {
+    if (_.isEmpty(poi.state.inactiveLabels)) { return; }
 
-    if (!poi.state.inactiveLabels.length) return;
-
-    //reuse if already in there
-    //TODO make O(1) via reverse index
-    for (var i = 0; i < poi.state.inactiveLabels.length; i++) {
-        var elt = poi.state.inactiveLabels[i];
-        if (elt.idx == idx && elt.dim == dim) {
+    // reuse if already in there
+    // TODO make O(1) via reverse index
+    for (let i = 0; i < poi.state.inactiveLabels.length; i++) {
+        const elt = poi.state.inactiveLabels[i];
+        if (elt.idx === idx && elt.dim === dim) {
             poi.state.inactiveLabels.splice(i, 1);
             return elt;
         }
     }
 
-    var top = poi.state.inactiveLabels.pop();
-    if (!hits[poi.cacheKey(top.idx, top.dim)]) {
-        //reuse unclaimable
-        return top;
+    const topInactiveLabel = poi.state.inactiveLabels.pop();
+    if (!hits[poi.cacheKey(topInactiveLabel.idx, topInactiveLabel.dim)]) {
+        // reuse unclaimable
+        return topInactiveLabel;
     } else {
-        //leave for later claimant
-        poi.state.inactiveLabels.unshift(top);
+        // leave for later claimant
+        poi.state.inactiveLabels.unshift(topInactiveLabel);
         return;
     }
 }
@@ -298,26 +293,26 @@ function popUnused(poi, hits, idx, dim) {
 function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, selected, doneAnimating, labelsAreEnabled, poiIsEnabled) {
 
     // Trying to handle set highlight/selection, but badly:
-    var elementsToExpand = selected.size() > 1 ? [] : selected.getVizSliceElements();
-    var elementsToHighlight = highlighted.size() > 1 ? [] : highlighted.getVizSliceElements();
+    const elementsToExpand = selected.size() > 1 ? [] : selected.getVizSliceElements();
+    const elementsToHighlight = highlighted.size() > 1 ? [] : highlighted.getVizSliceElements();
 
-    var poi = appState.poi;
-    var points = new Float32Array(curPoints.buffer);
+    const {poi} = appState;
+    const points = new Float32Array(curPoints.buffer);
 
     // Get hits from POI if it's enabled, and add highlighted/selected after
-    var hits = {};
+    let hits = {};
     if (poiIsEnabled) {
         hits = poi.getActiveApprox(appState.renderState, 'pointHitmapDownsampled', doneAnimating);
     }
 
-    _.each([elementsToHighlight, elementsToExpand], function (set) {
-        _.each(set, function (labelObj) {
+    _.each([elementsToHighlight, elementsToExpand], (set) => {
+        _.each(set, (labelObj) => {
             hits[poi.cacheKey(labelObj.idx, labelObj.dim)] = labelObj;
         });
     });
 
     // Initial values for clearing/showing
-    var toClear;
+    let toClear;
     if (poiIsEnabled) {
         toClear = poi.finishApprox(poi.state.activeLabels, poi.state.inactiveLabels,
                             hits, appState.renderState, points);
@@ -326,29 +321,30 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, se
     }
 
     // select label elements (and make active if needed)
-    var labelsToShow = _.values(hits)
-        .map(function (hit) {
-            var idx = parseInt(hit.idx);
-            var dim = hit.dim;
-            var key = poi.cacheKey(idx, dim);
+    const labelsToShow = _.values(hits)
+        .map((hit) => {
+            const idx = parseInt(hit.idx);
+            const dim = hit.dim;
+            const key = poi.cacheKey(idx, dim);
 
             if (poi.state.activeLabels[key]) {
                 // label already on, re-use
                 return poi.state.activeLabels[key];
-            } else if ((_.keys(poi.state.activeLabels).length > poi.MAX_LABELS) && (_.pluck(elementsToHighlight, 'idx').indexOf(idx) === -1)) {
+            } else if (_.keys(poi.state.activeLabels).length > poi.MAX_LABELS &&
+                _.pluck(elementsToHighlight, 'idx').indexOf(idx) === -1) {
                 // no label but too many on screen, don't create new
                 return null;
             } else {
-                var lbl = popUnused(poi, hits, idx, dim);
-                if (lbl) {
-                    lbl.idx = idx;
-                    lbl.dim = dim;
-                    lbl.setIdx({idx: idx, dim: lbl.dim});
-                    extendEdgeLabelWithCoords(lbl, hit, appState);
-                    return lbl;
+                const labelToReuse = popUnused(poi, hits, idx, dim);
+                if (labelToReuse) {
+                    labelToReuse.idx = idx;
+                    labelToReuse.dim = dim;
+                    labelToReuse.setIdx({idx: idx, dim: labelToReuse.dim});
+                    extendEdgeLabelWithCoords(labelToReuse, hit, appState);
+                    return labelToReuse;
                 } else {
                     // no label and no pre-allocated elements, create new
-                    var freshLabel = poi.genLabel($labelCont, idx, hits[key]);
+                    const freshLabel = poi.genLabel($labelCont, idx, hits[key]);
                     freshLabel.elt.on('click', function () {
                         appState.labelHover.onNext(this);
                     });
@@ -359,29 +355,29 @@ function renderLabelsImmediate (appState, $labelCont, curPoints, highlighted, se
         })
         .filter(_.identity);
 
-    poi.resetActiveLabels(_.object(labelsToShow.map(function (lbl) { return [poi.cacheKey(lbl.idx, lbl.dim), lbl]; })));
+    poi.resetActiveLabels(_.object(labelsToShow.map((lbl) => [poi.cacheKey(lbl.idx, lbl.dim), lbl])));
 
-    var newPos = newLabelPositions(appState.renderState, labelsToShow, points);
+    const newPos = newLabelPositions(appState.renderState, labelsToShow, points);
 
     effectLabels(toClear, labelsToShow, newPos, elementsToHighlight, elementsToExpand, poi);
 }
 
 function newLabelPositions(renderState, labels, points) {
 
-    var camera = renderState.get('camera');
-    var cnv = renderState.get('canvas');
-    var mtx = camera.getMatrix();
+    const camera = renderState.get('camera');
+    const cnv = renderState.get('canvas');
+    const mtx = camera.getMatrix();
 
-    var newPos = new Float32Array(labels.length * 2);
-    for (var i = 0; i < labels.length; i++) {
+    const newPos = new Float32Array(labels.length * 2);
+    for (let i = 0; i < labels.length; i++) {
         // TODO: Treat 2D labels more naturally.
-        var dim = labels[i].dim;
+        const dim = labels[i].dim;
 
-        var pos;
+        let pos;
         if (dim === 2) {
             pos = camera.canvasCoords(labels[i].x, labels[i].y, cnv, mtx);
         } else {
-            var idx = labels[i].idx;
+            const idx = labels[i].idx;
             pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
         }
         newPos[2 * i] = pos.x;
@@ -395,8 +391,8 @@ function newLabelPositions(renderState, labels, points) {
 function effectLabels(toClear, labels, newPos, highlighted, clicked, poi) {
 
     // DOM effects: disable old, then move->enable new
-    toClear.forEach(function (lbl) {
-        var rawElt = lbl.elt[0];
+    toClear.forEach((lbl) => {
+        const rawElt = lbl.elt[0];
         rawElt.style.display = 'none';
     });
     // In case a label made a tooltip
@@ -405,13 +401,13 @@ function effectLabels(toClear, labels, newPos, highlighted, clicked, poi) {
     }
 
     // For each label move it
-    for (var i = 0; i < labels.length; i++) {
-        var elt = labels[i];
-        // This is a very frequently occuring loop, so we avoid using
-        // Jquery css methods here, which can be expensive.
+    for (let i = 0; i < labels.length; i++) {
+        const elt = labels[i];
+        // This is a very frequently occurring loop, so we avoid using
+        // jQuery css methods here, which can be expensive.
         //
-        // Jquery class methods aren't too slow, so we'll keep using for convenience.
-        var rawElt = elt.elt[0];
+        // jQuery class methods aren't too slow, so we'll keep using for convenience.
+        const rawElt = elt.elt[0];
         rawElt.style.left = String(newPos[2*i]) + 'px';
         rawElt.style.top = String(newPos[2*i + 1]) + 'px';
 
@@ -421,9 +417,9 @@ function effectLabels(toClear, labels, newPos, highlighted, clicked, poi) {
         rawElt.style.display = 'block';
     }
 
-    highlighted.forEach(function (label) {
+    highlighted.forEach((label) => {
         if (label.idx > -1) {
-            var cacheKey = poi.cacheKey(label.idx, label.dim),
+            const cacheKey = poi.cacheKey(label.idx, label.dim),
                 cacheValue = poi.state.activeLabels[cacheKey];
             if (cacheValue === undefined) {
                 console.warn('Label cache missing expected key: ' + cacheKey);
@@ -433,9 +429,9 @@ function effectLabels(toClear, labels, newPos, highlighted, clicked, poi) {
         }
     });
 
-    clicked.forEach(function (clickObj) {
+    clicked.forEach((clickObj) => {
         if (clickObj.idx > -1) {
-            var cacheKey = poi.cacheKey(clickObj.idx, clickObj.dim),
+            const cacheKey = poi.cacheKey(clickObj.idx, clickObj.dim),
                 cacheValue = poi.state.activeLabels[cacheKey];
             if (cacheValue === undefined) {
                 console.warn('Label cache missing expected key: ' + cacheKey);
@@ -463,41 +459,40 @@ function extendEdgeLabelWithCoords (label, hit, appState) {
 }
 
 function toWorldCoords(renderState, x, y) {
-    var camera = renderState.get('camera');
-    var cnv = renderState.get('canvas');
-    var mtx = camera.getMatrix();
+    const camera = renderState.get('camera');
+    const cnv = renderState.get('canvas');
+    const mtx = camera.getMatrix();
 
     return camera.canvas2WorldCoords(x, y, cnv, mtx);
 }
 
 // RenderState * Observable * Observable
 function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlightedObject) {
-    var rxPoints = renderState.get('hostBuffers').curPoints;
-    var rxSizes = renderState.get('hostBuffers').pointSizes;
+    const rxPoints = renderState.get('hostBuffers').curPoints;
+    const rxSizes = renderState.get('hostBuffers').pointSizes;
 
-    var $cont = $('#highlighted-point-cont');
-    var $point = $('.highlighted-point');
-    var $center = $('.highlighted-point-center');
-    var animating = isAnimating.filter(function (v) { return v === true; });
-    var notAnimating = isAnimating.filter(function (v) { return v === false; });
+    const $cont = $('#highlighted-point-cont');
+    const $point = $('.highlighted-point');
+    const $center = $('.highlighted-point-center');
+    const animating = isAnimating.filter((v) => v === true);
+    const notAnimating = isAnimating.filter((v) => v === false);
 
-    animating.subscribe(function () {
+    animating.subscribe(() => {
         $cont.css({display: 'none'});
     }, util.makeErrorHandler('renderCursor isAnimating'));
 
-    notAnimating.switchMap(function () {
-        return rxPoints.combineLatest(
+    notAnimating.switchMap(() => rxPoints.combineLatest(
             rxSizes,
             latestHighlightedObject,
-            function (p, s, highlights) {
+            (p, s, highlights) => {
                 return {
                     points: new Float32Array(p.buffer),
                     sizes: new Uint8Array(s.buffer),
                     indices: highlights.getVizSliceElements()
                 };
             }
-        ).takeUntil(animating);
-    }).do(function (data) {
+        ).takeUntil(animating)
+    ).do((data) => {
         renderCursor(renderState, renderingScheduler, $cont, $point, $center, data.points, data.sizes, data.indices);
     }).subscribe(_.identity, util.makeErrorHandler('setupCursor'));
 }
@@ -513,20 +508,20 @@ function renderCursor(renderState, renderingScheduler, $cont, $point, $center, p
         return;
     }
 
-    var idx = indices[0].idx;
+    const idx = indices[0].idx;
 
     $cont.css({display: 'block'});
 
-    var camera = renderState.get('camera');
-    var cnv = renderState.get('canvas');
-    var pixelRatio = camera.pixelRatio;
-    var mtx = camera.getMatrix();
+    const camera = renderState.get('camera');
+    const cnv = renderState.get('canvas');
+    const pixelRatio = camera.pixelRatio;
+    const mtx = camera.getMatrix();
 
-    var pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
-    var scalingFactor = camera.semanticZoom(sizes.length);
+    const pos = camera.canvasCoords(points[2 * idx], points[2 * idx + 1], cnv, mtx);
+    const scalingFactor = camera.semanticZoom(sizes.length);
     // Clamp like in pointculled shader
-    var size = Math.max(5, Math.min(scalingFactor * sizes[idx], 50)) / pixelRatio;
-    var offset = size / 2.0;
+    const size = Math.max(5, Math.min(scalingFactor * sizes[idx], 50)) / pixelRatio;
+    const offset = size / 2.0;
 
     $cont.attr('pointIdx', idx).css({
         top: pos.y,
@@ -543,7 +538,7 @@ function renderCursor(renderState, renderingScheduler, $cont, $point, $center, p
     /* Ideally, highlighted-point-center would be a child of highlighted-point-cont
     * instead of highlighted-point. I ran into tricky CSS absolute positioning
     * issues when I tried that. */
-    var csize = parseInt($center.css('width'), 10);
+    const csize = parseInt($center.css('width'), 10);
     $center.css({
         left: offset - csize / 2.0,
         top: offset - csize / 2.0
@@ -552,7 +547,7 @@ function renderCursor(renderState, renderingScheduler, $cont, $point, $center, p
 
 
 function deselectWhenSimulating(appState) {
-    appState.simulateOn.do(function (val) {
+    appState.simulateOn.do((val) => {
         if (val) {
             appState.activeSelection.onNext(new VizSlice());
         }

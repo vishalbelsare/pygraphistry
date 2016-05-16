@@ -3,14 +3,14 @@
 var _       = require('underscore');
 var Rx      = require('rxjs/Rx.KitchenSink');
 require('../rx-jquery-stub');
-var PEGUtil = require('pegjs-util');
-//var ASTY    = require('asty');
+const PEGUtil = require('pegjs-util');
+//const ASTY    = require('asty');
 
-var util    = require('./util.js');
-var Command = require('./command.js');
-var Identifier = require('./Identifier');
-var parser  = require('./expression.pegjs');
-// var parser  = require('./expressionParser.js');
+const util    = require('./util.js');
+const Command = require('./command.js');
+const Identifier = require('./Identifier');
+const parser  = require('./expression.pegjs');
+// const parser  = require('./expressionParser.js');
 
 
 function filterParametersCore(type, attribute) {
@@ -102,12 +102,12 @@ FilterControl.prototype.queryToExpression = function (query) {
     if (query.inputString) {
         return query.inputString;
     }
-    var attribute = query.attribute;
+    let attribute = query.attribute;
     if (!attribute) {
         attribute = '<unknown>';
     }
     attribute = Identifier.clarifyWithPrefixSegment(attribute, query.type);
-    var printedAttribute = Identifier.identifierToExpression(attribute);
+    const printedAttribute = Identifier.identifierToExpression(attribute);
     if (query.start !== undefined && query.stop !== undefined) {
         return printedAttribute + ' BETWEEN ' + this.printedExpressionOf(query.start) +
             ' AND ' + this.printedExpressionOf(query.stop);
@@ -125,8 +125,8 @@ FilterControl.prototype.queryToExpression = function (query) {
 };
 
 FilterControl.prototype.queryFromExpressionString = function (inputString) {
-    //var asty = new ASTY();
-    var result = PEGUtil.parse(parser, inputString, {
+    //const asty = new ASTY();
+    const result = PEGUtil.parse(parser, inputString, {
         startRule: 'start'/*,
         makeAST: function (line, column, offset, args) {
             return asty.create.apply(asty, args).pos(line, column, offset);
@@ -169,27 +169,27 @@ FilterControl.prototype.queryFromAST = function (ast) {
  */
 FilterControl.prototype.queryFromExpressionTokens = function (tokens) {
     if (!tokens) { return undefined; }
-    var query = {};
+    const query = {};
     if (tokens[0].type === 'identifier') {
         query.attribute = tokens[0].value;
-        var idx = query.attribute.indexOf(':');
+        const idx = query.attribute.indexOf(':');
         if (idx > 1) {
             query.type = query.attribute.slice(0, idx - 1);
         }
     }
     if (tokens[1].type === 'operator') {
-        var op = tokens[1].value;
+        const op = tokens[1].value;
         if (op === '=' || op === '==') {
             query.equals = tokens[2].value;
         } else {
             console.warn('Unhandled operator', tokens[1].value);
         }
     } else if (tokens[1].type === 'keyword') {
-        var keyword = tokens[1].value.toLowerCase();
+        const keyword = tokens[1].value.toLowerCase();
         if (keyword === 'between') {
-            var startValue = tokens[2].value;
+            const startValue = tokens[2].value;
             if (tokens[3].value.toLowerCase() === 'and') {
-                var stopValue = tokens[4].value;
+                const stopValue = tokens[4].value;
                 query.start = startValue;
                 query.stop = stopValue;
             }
@@ -199,7 +199,7 @@ FilterControl.prototype.queryFromExpressionTokens = function (tokens) {
 };
 
 FilterControl.prototype.filterRangeParameters = function (type, attribute, start, stop) {
-    var result = _.extend(filterParametersCore(type, attribute), {
+    const result = _.extend(filterParametersCore(type, attribute), {
         start: start,
         stop: stop
     });
@@ -208,7 +208,7 @@ FilterControl.prototype.filterRangeParameters = function (type, attribute, start
 };
 
 FilterControl.prototype.filterExactValueParameters = function (type, attribute, value) {
-    var result = _.extend(filterParametersCore(type, attribute), {
+    const result = _.extend(filterParametersCore(type, attribute), {
         equals: value
     });
     result.inputString = this.queryToExpression(result);
@@ -216,7 +216,7 @@ FilterControl.prototype.filterExactValueParameters = function (type, attribute, 
 };
 
 FilterControl.prototype.filterExactValuesParameters = function (type, attribute, values) {
-    var result = _.extend(filterParametersCore(type, attribute), {
+    const result = _.extend(filterParametersCore(type, attribute), {
         equals: values
     });
     result.inputString = this.queryToExpression(result);

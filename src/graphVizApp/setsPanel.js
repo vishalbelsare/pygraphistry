@@ -4,21 +4,21 @@ var $       = window.$;
 //var _       = require('underscore');
 var Rx      = require('rxjs/Rx.KitchenSink');
 require('../rx-jquery-stub');
-var Handlebars = require('handlebars');
-var Backbone   = require('backbone');
-    Backbone.$ = $;
-var _          = require('underscore');
-var util       = require('./util.js');
-var Command    = require('./command.js');
-var VizSlice   = require('./VizSlice.js');
+const Handlebars = require('handlebars');
+const Backbone   = require('backbone');
+      Backbone.$ = $;
+const _          = require('underscore');
+const util       = require('./util.js');
+const Command    = require('./command.js');
+const VizSlice   = require('./VizSlice.js');
 
 
 function unionOfTwoMasks (x, y) {
     // TODO: this is a copy of DataframeMask.unionOfTwoMasks. de-duplicate through common code-share.
-    var xLength = x.length, yLength = y.length;
+    const xLength = x.length, yLength = y.length;
     // Smallest result: one is a subset of the other.
-    var result = new Array(Math.max(xLength, yLength));
-    var xIndex = 0, yIndex = 0, resultIndex = 0;
+    const result = new Array(Math.max(xLength, yLength));
+    let xIndex = 0, yIndex = 0, resultIndex = 0;
     while (xIndex < xLength && yIndex < yLength) {
         if (x[xIndex] < y[yIndex]) {
             result[resultIndex++] = x[xIndex++];
@@ -39,10 +39,10 @@ function unionOfTwoMasks (x, y) {
 }
 
 
-var MasksProperty = 'masks';
+const MasksProperty = 'masks';
 
 
-var VizSetModel = Backbone.Model.extend({
+const VizSetModel = Backbone.Model.extend({
     default: {
         title: undefined,
         description: undefined
@@ -51,7 +51,7 @@ var VizSetModel = Backbone.Model.extend({
      * @returns {VizSliceElement[]}
      */
     asVizSlice: function () {
-        var mask = this.get(MasksProperty);
+        const mask = this.get(MasksProperty);
         return new VizSlice({point: mask.point, edge: mask.edge});
     },
     updateMaskFromVizSlice: function (mask, slice) {
@@ -74,7 +74,7 @@ var VizSetModel = Backbone.Model.extend({
         if (slice._isMaskShaped()) {
             return _.pick(slice, ['point', 'edge']);
         } else {
-            var mask = {point: [], edge: []};
+            const mask = {point: [], edge: []};
             this.updateMaskFromVizSlice(mask, slice);
             return mask;
         }
@@ -83,7 +83,7 @@ var VizSetModel = Backbone.Model.extend({
      * @param {VizSlice} slice
      */
     fromVizSlice: function (slice) {
-        var mask = this.get(MasksProperty);
+        let mask = this.get(MasksProperty);
         if (mask === undefined) {
             mask = {point: [], edge: []};
             this.set(MasksProperty, mask);
@@ -99,11 +99,11 @@ var VizSetModel = Backbone.Model.extend({
      * @returns {VizSetModel}
      */
     union: function (otherSet) {
-        var result = new VizSetModel();
+        const result = new VizSetModel();
         if (!this.isConcrete() || !otherSet.isConcrete()) {
             throw Error('Cannot perform union on abstract set');
         }
-        var resultMask = {}, thisMask = this.get(MasksProperty), otherMask = otherSet.get(MasksProperty);
+        const resultMask = {}, thisMask = this.get(MasksProperty), otherMask = otherSet.get(MasksProperty);
         resultMask.point = unionOfTwoMasks(thisMask.point, otherMask.point);
         resultMask.edge = unionOfTwoMasks(thisMask.edge, otherMask.edge);
         result.set(MasksProperty, resultMask);
@@ -122,13 +122,13 @@ var VizSetModel = Backbone.Model.extend({
         return this.get('selected');
     },
     isConcrete: function () {
-        var mask = this.get(MasksProperty);
+        const mask = this.get(MasksProperty);
         return mask !== undefined && mask.point !== undefined && mask.edge !== undefined;
     },
     isEmpty: function () {
-        var sizes = this.get('sizes');
+        const sizes = this.get('sizes');
         if (this.isConcrete()) {
-            var mask = this.get(MasksProperty);
+            const mask = this.get(MasksProperty);
             return mask.point.length === 0 && mask.edge.length === 0;
         } else if (sizes !== undefined) {
             return sizes.point === 0 && sizes.edge.length === 0;
@@ -137,13 +137,13 @@ var VizSetModel = Backbone.Model.extend({
         }
     },
     getDescriptionForCounts: function (numPoints, numEdges) {
-        var result = '';
-        var hasPoints = numPoints > 0;
+        let result = '';
+        const hasPoints = numPoints > 0;
         if (hasPoints) {
             result += numPoints.toString(10) + ' point';
             if (numPoints > 1) { result += 's'; }
         }
-        var hasEdges = numEdges > 0;
+        const hasEdges = numEdges > 0;
         if (hasPoints && hasEdges) {
             result += ' and ';
         }
@@ -154,9 +154,9 @@ var VizSetModel = Backbone.Model.extend({
         return result;
     },
     getGeneratedDescription: function (fullPhrase) {
-        var setSource = this.get('setSource');
-        var mask = this.get(MasksProperty);
-        var result = '';
+        const setSource = this.get('setSource');
+        const mask = this.get(MasksProperty);
+        let result = '';
         if (this.isSystem()) {
             switch (fullPhrase && this.id) {
                 case 'dataframe':
@@ -176,7 +176,7 @@ var VizSetModel = Backbone.Model.extend({
                 result = 'Selected ';
             }
         }
-        var sizes = this.get('sizes');
+        const sizes = this.get('sizes');
         if (mask === undefined) {
             if (sizes === undefined) {
                 result += 'empty';
@@ -184,22 +184,22 @@ var VizSetModel = Backbone.Model.extend({
                 result += this.getDescriptionForCounts(sizes.point, sizes.edge);
             }
         } else {
-            var numPoints = mask.point !== undefined ? mask.point.length : sizes && sizes.point;
-            var numEdges = mask.edge !== undefined ? mask.edge.length : sizes && sizes.edge;
+            const numPoints = mask.point !== undefined ? mask.point.length : sizes && sizes.point;
+            const numEdges = mask.edge !== undefined ? mask.edge.length : sizes && sizes.edge;
             result += this.getDescriptionForCounts(numPoints, numEdges);
         }
         return result;
     },
     sync: function (method, model, options) {
         if (options === undefined) { options = {}; }
-        var success = options.success,
+        const success = options.success,
             panel = options.panel;
         switch (method) {
             case 'read':
                 panel.getAllSets().take(1).subscribe(
                     function (latestSets) {
                         if (model.isNew()) { return; }
-                        var match = _.find(latestSets, (vizSet) => vizSet.id === model.id);
+                        const match = _.find(latestSets, (vizSet) => vizSet.id === model.id);
                         if (match !== undefined) {
                             model.set(match);
                         }
@@ -228,11 +228,11 @@ var VizSetModel = Backbone.Model.extend({
     }
 });
 
-var VizSetCollection = Backbone.Collection.extend({
+const VizSetCollection = Backbone.Collection.extend({
     model: VizSetModel
 });
 
-var VizSetView = Backbone.View.extend({
+const VizSetView = Backbone.View.extend({
     tagName: 'div',
     events: {
         'mouseover': 'highlight',
@@ -249,7 +249,7 @@ var VizSetView = Backbone.View.extend({
         this.renameTemplate = Handlebars.compile($('#setTagTemplate').html());
     },
     bindingsFor: function (vizSet) {
-        var bindings = vizSet.toJSON();
+        const bindings = vizSet.toJSON();
         bindings.isSystem = vizSet.isSystem();
         bindings.isEmpty = vizSet.isEmpty();
         if (!bindings.description) {
@@ -259,8 +259,8 @@ var VizSetView = Backbone.View.extend({
         return bindings;
     },
     render: function () {
-        var bindings = this.bindingsFor(this.model);
-        var html = this.template(bindings);
+        const bindings = this.bindingsFor(this.model);
+        const html = this.template(bindings);
         this.$el.html(html);
         $('[data-toggle="tooltip"]', this.$el).tooltip();
         return this;
@@ -271,16 +271,16 @@ var VizSetView = Backbone.View.extend({
     },
     rename: function (event) {
         event.preventDefault();
-        var bindings = this.model.toJSON();
+        const bindings = this.model.toJSON();
         if (this.$renameDialog !== undefined && !this.$renameDialog.is(':visible')) {
             this.closeRenameDialog();
         }
         if (this.$renameDialog === undefined) {
             this.$renameDialog = $(this.renameTemplate(bindings));
             $('body').append(this.$renameDialog);
-            var $status = $('.status', this.$renameDialog);
+            const $status = $('.status', this.$renameDialog);
             $status.css('display', 'none');
-            var $input = $('.modal-body input', this.$renameDialog);
+            const $input = $('.modal-body input', this.$renameDialog);
             $input.val(this.model.get('title'));
             this.$renameDialog.on('shown.bs.modal', () => {
                 $('input', this.$renameDialog).first().focus();
@@ -288,7 +288,7 @@ var VizSetView = Backbone.View.extend({
             this.$renameDialog.modal('show');
             this.renameDialogSubscription = Rx.Observable.fromEvent($('.modal-footer button', this.$renameDialog), 'click')
                 .map(_.constant(this.$renameDialog)).subscribe((/*$modal*/) => {
-                    var setTag = $input.val();
+                    const setTag = $input.val();
                     this.model.save('title', setTag, {panel: this.panel});
                     this.closeRenameDialog();
                 },
@@ -323,7 +323,7 @@ var VizSetView = Backbone.View.extend({
     }
 });
 
-var AllVizSetsView = Backbone.View.extend({
+const AllVizSetsView = Backbone.View.extend({
     events: {
         'click .addSetButton': 'createSet',
         'click .createSetDropdownOption': 'updateCreateSetSelection'
@@ -363,14 +363,14 @@ var AllVizSetsView = Backbone.View.extend({
         return this.collection.select((vizSet) => vizSet.isSystem());
     },
     updateVizSelectionFromSelectedSets: function () {
-        var currentlySelectedSets = this.selectedSets();
+        const currentlySelectedSets = this.selectedSets();
         if (!_.isEqual(currentlySelectedSets, this.lastSetSelection)) {
             this.panel.selectSetModels(currentlySelectedSets);
             this.lastSetSelection = currentlySelectedSets;
         }
     },
     render: function () {
-        var visibleModels = this.visibleSets();
+        const visibleModels = this.visibleSets();
         $('.badge', this.$setsControlButton).text(visibleModels.length > 0 ? visibleModels.length : '');
         return this;
     },
@@ -378,12 +378,12 @@ var AllVizSetsView = Backbone.View.extend({
         if (!this.shouldShow(set)) {
             return;
         }
-        var view = new VizSetView({
+        const view = new VizSetView({
             model: set,
             collection: this.collection,
             panel: this.panel
         });
-        var childElement = view.render().el;
+        const childElement = view.render().el;
         this.$setsContainer.append(childElement);
         set.set('$el', $(childElement));
         this.updateEmptyMessage();
@@ -392,7 +392,7 @@ var AllVizSetsView = Backbone.View.extend({
         this.$emptyMessage.toggleClass('hidden', this.visibleSets().length > 0);
     },
     removeSet: function (set) {
-        var $el = set.get('$el');
+        const $el = set.get('$el');
         if ($el) {
             $el.remove();
         }
@@ -408,9 +408,9 @@ var AllVizSetsView = Backbone.View.extend({
                 }
             });
         }
-        var initialSelection = this.collection.findWhere({id: this.createSetSelectionID}) ||
+        const initialSelection = this.collection.findWhere({id: this.createSetSelectionID}) ||
             new VizSetModel({title: 'Selected', id: this.createSetSelectionID});
-        var $createSet = $(this.createSetTemplate({
+        const $createSet = $(this.createSetTemplate({
             disabled: initialSelection.isEmpty() && 'disabled',
             selectedOption: VizSetView.prototype.bindingsFor(initialSelection),
             options: this.systemSets().map((vizSet) => VizSetView.prototype.bindingsFor(vizSet))
@@ -424,9 +424,9 @@ var AllVizSetsView = Backbone.View.extend({
         this.collection.each(this.addSet, this);
     },
     updateCreateSetSelection: function (evt) {
-        var $target = $(evt.currentTarget);
-        var vizSetID = $target.data('id');
-        var vizSet = this.collection.find((vizSet) => vizSet.id === vizSetID);
+        const $target = $(evt.currentTarget);
+        const vizSetID = $target.data('id');
+        const vizSet = this.collection.find((eachVizSet) => eachVizSet.id === vizSetID);
         if (vizSet !== undefined) {
             this.createSetSelectionID = vizSet.id;
             $('.createSetSelectionTitle', this.$createSetContainer).text(vizSet.title);
@@ -436,7 +436,7 @@ var AllVizSetsView = Backbone.View.extend({
         }
     },
     createSet: function (/*evt*/) {
-        var srcSystemSet = this.collection.find((vizSet) => vizSet.id === this.createSetSelectionID);
+        const srcSystemSet = this.collection.find((vizSet) => vizSet.id === this.createSetSelectionID);
         if (srcSystemSet === undefined) {
             throw Error('Set creation failed; unknown source: ' + this.createSetSelectionID);
         }
@@ -444,7 +444,7 @@ var AllVizSetsView = Backbone.View.extend({
     }
 });
 
-function SetsPanel(socket) {
+function SetsPanel(socket, labelRequests) {
 
     this.commands = {
         getAll: new Command('getting sets', 'get_sets', socket),
@@ -463,15 +463,23 @@ function SetsPanel(socket) {
         el: $('#setsPanel'),
         panel: this
     });
+
+    this.labelRequestSubscription = labelRequests.filter(
+        (labelRequest) => labelRequest.tagQuery !== undefined
+    ).do((labelRequest) => {
+        const setSpec = labelRequest.tagQuery;
+        const setModel = new VizSetModel(setSpec);
+        this.view.addSet(setModel);
+    }).subscribe(_.identity, util.makeErrorHandler('Handling a filter from a label'));
 }
 
 SetsPanel.prototype = {
     createSetViaCommand: function (srcSystemSet) {
-        var sourceType = srcSystemSet.id;
+        const sourceType = srcSystemSet.id;
         switch (sourceType) {
             case 'selection':
                 this.activeSelection.take(1).switchMap((activeSelection) => {
-                    var specification = {masks: VizSetModel.prototype.maskFromVizSlice(activeSelection)};
+                    const specification = {masks: VizSetModel.prototype.maskFromVizSlice(activeSelection)};
                     return this.commands.create.sendWithObservableResult(sourceType, specification).do((createSetResult) => {
                         this.handleCreateSetResult(createSetResult);
                         // Reset selection now that we've captured them in a Set:
@@ -482,8 +490,8 @@ SetsPanel.prototype = {
                 break;
             case 'filtered':
                 this.filtersSubject.take(1).switchMap((filtersCollection) => {
-                    var userFilters = filtersCollection.select((filter) => !filter.isSystem());
-                    var specification = {
+                    const userFilters = filtersCollection.select((filter) => !filter.isSystem());
+                    const specification = {
                         title: _.map(userFilters, (filter) => filter.get('query').inputString).join(' and '),
                         filters: userFilters,
                         masks: _.clone(srcSystemSet.get(MasksProperty))
@@ -502,7 +510,7 @@ SetsPanel.prototype = {
         if (createSetResult.success === false) {
             throw Error('Set creation failed.');
         }
-        var createdSet = new VizSetModel(createSetResult.set);
+        const createdSet = new VizSetModel(createSetResult.set);
         this.collection.push(createdSet);
     },
 
@@ -515,9 +523,9 @@ SetsPanel.prototype = {
             this.getAllSets(),
             this.activeSelection,
             (response, activeSelection) => {
-                var sets = response.sets;
+                const sets = response.sets;
                 this.collection.reset(_.map(sets, (vizSet) => {
-                    var setModel = new VizSetModel(vizSet);
+                    const setModel = new VizSetModel(vizSet);
                     if (setModel.representsActiveSelection()) {
                         setModel.fromVizSlice(activeSelection);
                     }
@@ -535,14 +543,14 @@ SetsPanel.prototype = {
         if (newVisibility) {
             this.refreshCollection();
         }
-        var $panel = this.view.el;
+        const $panel = this.view.el;
         $panel.toggle(newVisibility);
         $panel.css('visibility', newVisibility ? 'visible' : 'hidden');
     },
 
     setupToggleControl: function (toolbarClicks, $panelButton) {
         // return the target state (boolean negate)
-        var panelToggles = toolbarClicks.filter((elt) => elt === $panelButton[0]).map(() => !this.isVisible());
+        const panelToggles = toolbarClicks.filter((elt) => elt === $panelButton[0]).map(() => !this.isVisible());
         this.togglesSubscription = panelToggles.do((newVisibility) => {
             $panelButton.children('i').toggleClass('toggle-on', newVisibility);
             this.toggleVisibility(newVisibility);
@@ -570,11 +578,11 @@ SetsPanel.prototype = {
         this.activeSelection = activeSelection;
         /** @type {Rx.ReplaySubject} */
         this.latestHighlightedObject = latestHighlightedObject;
-        this.activeSelection.do((activeSelection) => {
-            if (activeSelection.isEmpty()) {
+        this.activeSelection.do((latestSelection) => {
+            if (latestSelection.isEmpty()) {
                 this.collection.each((vizSet) => { vizSet.isSelected(false); });
             }
-            this.view.refreshCreateSet(activeSelection);
+            this.view.refreshCreateSet(latestSelection);
         }).subscribe(_.identity, util.makeErrorHandler('Clearing selection from canvas'));
     },
 
@@ -582,7 +590,7 @@ SetsPanel.prototype = {
         this.filtersSubject = filtersPanel.filtersSubject;
         filtersPanel.control.setsResponsesSubject.do((setsResponse) => {
             _.each(setsResponse, (updatedSet) => {
-                var match = this.collection.find((existingSet) => existingSet.id === updatedSet.id);
+                const match = this.collection.find((existingSet) => existingSet.id === updatedSet.id);
                 if (match !== undefined) {
                     match.set(updatedSet);
                 }
@@ -593,7 +601,7 @@ SetsPanel.prototype = {
 
     vizSliceFromSetModels: function (setModels) {
         if (setModels.length > 1) {
-            var resultSetModel = _.reduce(setModels, (firstSet, secondSet) => {
+            const resultSetModel = _.reduce(setModels, (firstSet, secondSet) => {
                 return firstSet.union(secondSet);
             });
             return resultSetModel.asVizSlice();
@@ -605,12 +613,12 @@ SetsPanel.prototype = {
     },
 
     highlightSetModels: function (setModels) {
-        var allConcrete = _.every(setModels, (vizSet) => vizSet.isConcrete());
+        const allConcrete = _.every(setModels, (vizSet) => vizSet.isConcrete());
         if (allConcrete) {
             this.latestHighlightedObject.onNext(this.vizSliceFromSetModels(setModels));
         }
         if (false && setModels.length === 0 || !allConcrete) {
-            var setIDs = _.map(setModels, (setModel) => setModel.id);
+            const setIDs = _.map(setModels, (setModel) => setModel.id);
             this.commands.highlight.sendWithObservableResult({gesture: 'sets', action: 'replace', setIDs: setIDs}).do(
                 Command.prototype.logErrorFromResponse
             ).subscribe(_.identity, util.makeErrorHandler('highlighting sets'));
@@ -618,12 +626,12 @@ SetsPanel.prototype = {
     },
 
     selectSetModels: function (setModels) {
-        var allConcrete = _.every(setModels, (vizSet) => vizSet.isConcrete());
+        const allConcrete = _.every(setModels, (vizSet) => vizSet.isConcrete());
         if (allConcrete) {
             this.activeSelection.onNext(this.vizSliceFromSetModels(setModels));
         }
         if (setModels.length === 0 || !allConcrete) {
-            var setIDs = _.map(setModels, (setModel) => setModel.id);
+            const setIDs = _.map(setModels, (setModel) => setModel.id);
             this.commands.select.sendWithObservableResult({gesture: 'sets', action: 'replace', setIDs: setIDs});
         }
     }

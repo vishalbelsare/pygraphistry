@@ -12,19 +12,19 @@ var util     = require('./util.js');
 
 //$DOM * evt -> {x: num, y: num}
 function toPoint ($cont, evt) {
-    var offset = $cont.offset();
+    const offset = $cont.offset();
     return {x: evt.pageX - offset.left, y: evt.pageY - offset.top};
 }
 
 //{x: num, y: num} * {x: num, y: num} -> {tl: {x: num, y:num}, br: {x: num, y:num}}
 function toRect (pointA, pointB) {
-    var left    = Math.min(pointA.x, pointB.x);
-    var right   = Math.max(pointA.x, pointB.x);
+    const left    = Math.min(pointA.x, pointB.x);
+    const right   = Math.max(pointA.x, pointB.x);
 
-    var top     = Math.min(pointA.y, pointB.y);
-    var bottom  = Math.max(pointA.y, pointB.y);
+    const top     = Math.min(pointA.y, pointB.y);
+    const bottom  = Math.max(pointA.y, pointB.y);
 
-    var pos = {
+    const pos = {
         tl: {x: left, y: top},
         br: {x: right, y: bottom}
     };
@@ -35,9 +35,9 @@ function toRect (pointA, pointB) {
 //Add/remove 'on'/'off' class
 function maintainContainerStyle($cont, isOn) {
      isOn.subscribe(
-        function (isOn) {
-            debug('marquee toggle', isOn);
-            if (isOn) {
+        (isOnNow) => {
+            debug('marquee toggle', isOnNow);
+            if (isOnNow) {
                 $cont.removeClass('off').addClass('on');
             } else {
                 $cont.removeClass('on') .addClass('off');
@@ -48,7 +48,7 @@ function maintainContainerStyle($cont, isOn) {
 
 
 function effectCanvas(effect) {
-    var $simulation = $('#simulation');
+    const $simulation = $('#simulation');
     if (effect === 'blur') {
         $simulation.css({
             'filter': 'grayscale(50%) blur(2px)',
@@ -65,7 +65,7 @@ function effectCanvas(effect) {
 }
 
 function eventPageCoordsInElement (evt, $elt) {
-    var offset = $elt.offset();
+    const offset = $elt.offset();
     return evt.pageX > offset.left &&
         evt.pageX < offset.left + $elt.width() &&
         evt.pageY > offset.top &&
@@ -78,8 +78,8 @@ function eventPageCoordsInElement (evt, $elt) {
 // doAfterSelection takes (appState, rect, $elt, width, height)
 //
 function marqueeSelections (appState, $cont, $elt, isOn, marqueeState, doAfterSelection) {
-    var bounds = isOn.switchMap(function (isOn) {
-        if (!isOn) {
+    const bounds = isOn.switchMap((isOnNow) => {
+        if (!isOnNow) {
             debug('stop listening for marquee selections');
             $('#simulation').css({
                 'filter': '',
@@ -89,14 +89,12 @@ function marqueeSelections (appState, $cont, $elt, isOn, marqueeState, doAfterSe
             return Rx.Observable.empty();
         }
         debug('start listening for marquee selections');
-        var firstRunSinceMousedown;
+        let firstRunSinceMousedown;
         return Rx.Observable.fromEvent($cont, 'mousedown')
             .merge(
             Rx.Observable.fromEvent($('#highlighted-point-cont'), 'mousedown')
-                .filter(function (evt) {
-                    return !eventPageCoordsInElement(evt, $elt);
-                }))
-            .do(function (evt) {
+                .filter((evt) => !eventPageCoordsInElement(evt, $elt)))
+            .do((evt) => {
                 debug('stopPropagation: marquee down');
                 marqueeState.onNext('selecting');
                 evt.stopPropagation();
@@ -107,19 +105,18 @@ function marqueeSelections (appState, $cont, $elt, isOn, marqueeState, doAfterSe
                 $elt.removeClass('draggable').removeClass('dragging');
                 $cont.removeClass('done');
             }).map(toPoint.bind('', $cont))
-            .do(function () {
+            .do(() => {
                 debug('marquee instance started, listening');
                 firstRunSinceMousedown = true;
-            }).switchMap(function (startPoint) {
+            }).switchMap((startPoint) => {
                 return Rx.Observable.fromEvent($(window.document), 'mousemove')
-                    .do(function (evt) {
+                    .do((evt) => {
                         debug('stopPropagation: marquee move');
                         evt.stopPropagation();
                     })
                     .inspectTime(1)
-                    .map(function (moveEvt) {
-                        return toRect(startPoint, toPoint($cont, moveEvt));
-                    }).do(function (rect) {
+                    .map((moveEvt) => toRect(startPoint, toPoint($cont, moveEvt)))
+                    .do((rect) => {
                         if (firstRunSinceMousedown) {
                             debug('show marquee instance on first bound calc');
                             $elt.removeClass('off').addClass('on');
@@ -132,21 +129,21 @@ function marqueeSelections (appState, $cont, $elt, isOn, marqueeState, doAfterSe
                             height: rect.br.y - rect.tl.y
                         });
                     }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
-                        .do(function (evt) {
+                        .do((evt) => {
                             debug('stopPropagation: marquee up');
                             evt.stopPropagation();
                             debug('drag marquee finished');
                         })
                 ).takeLast(1)
-                    .do(function (rect) {
+                    .do((rect) => {
                         $('body').removeClass('noselect');
                         $elt.addClass('draggable').removeClass('on');
                         $cont.addClass('done');
                         marqueeState.onNext('done');
 
-                        var width = rect.br.x - rect.tl.x;
-                        var height = rect.br.y - rect.tl.y;
-                        var bw = parseInt($elt.css('border-width'));
+                        const width = rect.br.x - rect.tl.x;
+                        const height = rect.br.y - rect.tl.y;
+                        const bw = parseInt($elt.css('border-width'));
 
                         $elt.css({ // Take border sizes into account when aligning ghost image
                             left: rect.tl.x - bw,
@@ -183,17 +180,17 @@ function clearMarquee($cont, $elt) {
 }
 
 
-function marqueeDrags(selections, $cont, $elt, marqueeState, takeLast, doAfterDrags) {
-    var drags = selections.switchMap(function (selection) {
-        var firstRunSinceMousedown = true;
-        var dragDelta = {x: 0, y: 0};
+function marqueeDrags (selections, $cont, $elt, marqueeState, takeLast, doAfterDrags) {
+    const drags = selections.switchMap((selection) => {
+        let firstRunSinceMousedown = true;
+        let dragDelta = {x: 0, y: 0};
         return Rx.Observable.fromEvent($elt, 'mousedown')
             .merge(
                 Rx.Observable.fromEvent($('#highlighted-point-cont'), 'mousedown')
-                .filter(function (evt) {
+                .filter((evt) => {
                     return eventPageCoordsInElement(evt, $elt);
                 }))
-            .do(function (evt) {
+            .do((evt) => {
                 debug('stopPropagation: marquee down 2');
                 marqueeState.onNext('dragging');
                 evt.stopPropagation();
@@ -201,17 +198,16 @@ function marqueeDrags(selections, $cont, $elt, marqueeState, takeLast, doAfterDr
                 $cont.addClass('beingdragged');
             })
             .map(toPoint.bind('', $cont))
-            .switchMap(function (startPoint) {
+            .switchMap((startPoint) => {
                 debug('Start of drag: ', startPoint);
-                var observable =  Rx.Observable.fromEvent($(window.document), 'mousemove')
-                    .do(function (evt) {
+                const observable =  Rx.Observable.fromEvent($(window.document), 'mousemove')
+                    .do((evt) => {
                         debug('stopPropagation: marquee move 2');
                         evt.stopPropagation();
                     })
                     .inspectTime(1)
-                    .map(function (evt) {
-                        return {start: startPoint, end: toPoint($cont, evt)};
-                    }).do(function (drag) {
+                    .map((evt) => ({start: startPoint, end: toPoint($cont, evt)}))
+                    .do((drag) => {
                         dragDelta = toDelta(drag.start, drag.end);
 
                         // Side effects
@@ -224,18 +220,18 @@ function marqueeDrags(selections, $cont, $elt, marqueeState, takeLast, doAfterDr
                             top: selection.tl.y + dragDelta.y
                         });
 
-                    }).map(function (diff) {
+                    }).map((diff) => {
                         // Convert back into TL/BR
-                        var newTl = {x: selection.tl.x + dragDelta.x,
+                        const newTl = {x: selection.tl.x + dragDelta.x,
                                 y: selection.tl.y + dragDelta.y};
-                        var newBr = {x: selection.br.x + dragDelta.x,
+                        const newBr = {x: selection.br.x + dragDelta.x,
                                 y: selection.br.y + dragDelta.y};
 
                         return {diff: diff,
                                 coords: {tl: newTl, br: newBr}
                         };
                     }).takeUntil(Rx.Observable.fromEvent($(window.document), 'mouseup')
-                        .do(function () {
+                        .do(() => {
                             debug('End of drag');
                             doAfterDrags(marqueeState, selection, dragDelta, $cont, $elt);
                         })
@@ -265,9 +261,9 @@ function doAfterDragsBrush (doneDragging, marqueeState, selection, dragDelta) {
     selection.br.x += dragDelta.x;
     selection.br.y += dragDelta.y;
 
-    var newTl = {x: selection.tl.x,
+    const newTl = {x: selection.tl.x,
         y: selection.tl.y};
-    var newBr = {x: selection.br.x,
+    const newBr = {x: selection.br.x,
         y: selection.br.y};
 
     doneDragging.onNext({tl: newTl, br: newBr});
@@ -275,7 +271,7 @@ function doAfterDragsBrush (doneDragging, marqueeState, selection, dragDelta) {
 }
 
 
-function createElt() {
+function createElt () {
 
     return $('<div>')
         .addClass('selection')
@@ -284,11 +280,11 @@ function createElt() {
 }
 
 // Callback takes texture as arg.
-function getTextureObservable(renderState, dims) {
-    var result = new Rx.ReplaySubject(1);
-    renderer.render(renderState, 'marqueeGetTexture', 'marquee', undefined, dims, function (success) {
+function getTextureObservable (renderState, dims) {
+    const result = new Rx.ReplaySubject(1);
+    renderer.render(renderState, 'marqueeGetTexture', 'marquee', undefined, dims, (success) => {
         if (success) {
-            var texture = renderState.get('pixelreads').pointTexture;
+            const texture = renderState.get('pixelreads').pointTexture;
             if (!texture) {
                 console.error('error reading texture');
             }
@@ -307,10 +303,10 @@ function getTextureObservable(renderState, dims) {
  * @param {Boolean} flipY - whether to flip the image data vertically to escape WebGL orientation.
  * @returns {Rx.ReplaySubject} - contains string of the image data uri
  */
-function getGhostImageObservable(renderState, sel, mimeType, flipY) {
+function getGhostImageObservable (renderState, sel, mimeType, flipY) {
     /** @type HTMLCanvasElement */
-    var canvas = renderState.get('gl').canvas;
-    var pixelRatio = renderState.get('camera').pixelRatio;
+    const canvas = renderState.get('gl').canvas;
+    const pixelRatio = renderState.get('camera').pixelRatio;
 
     if (flipY === undefined) {
         flipY = true;
@@ -322,7 +318,7 @@ function getGhostImageObservable(renderState, sel, mimeType, flipY) {
     }
 
     // We flip Y to support WebGL e.g. the marquee tool for "move nodes" selection highlight.
-    var dims = {
+    const dims = {
         x: Math.floor(sel.tl.x * pixelRatio),
         y: Math.floor(canvas.height - pixelRatio * (sel.tl.y + Math.abs(sel.tl.y - sel.br.y))),
         width: Math.floor(Math.max(1, pixelRatio * Math.abs(sel.tl.x - sel.br.x))),
@@ -330,24 +326,24 @@ function getGhostImageObservable(renderState, sel, mimeType, flipY) {
     };
 
     return getTextureObservable(renderState, dims)
-        .map(function (texture) {
+        .map((texture) => {
             /** @type HTMLCanvasElement */
-            var imgCanvas = document.createElement('canvas');
+            const imgCanvas = document.createElement('canvas');
             imgCanvas.width = dims.width;
             imgCanvas.height = dims.height;
-            var ctx = imgCanvas.getContext('2d');
+            const ctx = imgCanvas.getContext('2d');
 
-            var imgData = ctx.createImageData(dims.width, dims.height);
+            const imgData = ctx.createImageData(dims.width, dims.height);
             if (texture) {
                 imgData.data.set(texture);
             }
             if (flipY) {
-                var h = imgData.height,
+                const h = imgData.height,
                     imgInner = imgData.data,
                     rowByteLength = imgData.width * 4,
                     rowSwapBuffer = new Uint8Array(rowByteLength);
-                for (var y = 0; y < h / 2; y++) {
-                    var rowOffset = y * rowByteLength,
+                for (let y = 0; y < h / 2; y++) {
+                    const rowOffset = y * rowByteLength,
                         flippedRowOffset = (h - y - 1) * rowByteLength,
                         row = new Uint8Array(imgInner.buffer, rowOffset, rowByteLength),
                         rowTarget = new Uint8Array(imgInner.buffer, flippedRowOffset, rowByteLength);
@@ -370,11 +366,11 @@ function getGhostImageObservable(renderState, sel, mimeType, flipY) {
  * @param cssWidth - differs from selection because retina/DPP-related?
  * @param cssHeight - differs from selection because retina/DPP-related?
  */
-function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
+function createGhostImg (renderState, sel, $elt, cssWidth, cssHeight) {
     // TODO kill cssWidth & cssHeight, letting imgCanvas use sel parameter and pixel ratio?
     getGhostImageObservable(renderState, sel)
-        .do(function (dataURL) {
-            var img = new Image();
+        .do((dataURL) => {
+            const img = new Image();
             img.src = dataURL;
 
             $(img).css({
@@ -384,14 +380,14 @@ function createGhostImg(renderState, sel, $elt, cssWidth, cssHeight) {
             });
             $elt.append(img);
         })
-        .subscribe(_.identity, function (e) {
+        .subscribe(_.identity, (e) => {
             console.error('Error extracting image data', e);
         });
 }
 
 function makeTransformer (cfg) {
-    return function (obj) {
-        return _.object(_.map(obj, function (val, key) {
+    return (obj) => {
+        return _.object(_.map(obj, (val, key) => {
             return [key, cfg.transform(val)];
         }));
     };
@@ -404,7 +400,7 @@ function setupContainer ($cont, toggle, cfg, isOn, $elt) {
     // starts false
     toggle.merge(Rx.Observable.return(false)).subscribe(isOn, util.makeErrorHandler('on/off'));
 
-    isOn.subscribe(function (flag) {
+    isOn.subscribe((flag) => {
         if (!flag) {
             clearMarquee($cont, $elt);
         }
@@ -418,31 +414,31 @@ function setupContainer ($cont, toggle, cfg, isOn, $elt) {
 
 function initBrush (appState, $cont, toggle, cfg) {
     debug('init brush');
-    var $elt = createElt();
-    var isOn = new Rx.ReplaySubject(1);
+    const $elt = createElt();
+    const isOn = new Rx.ReplaySubject(1);
     setupContainer($cont, toggle, cfg, isOn, $elt);
-    var transformAll = makeTransformer(cfg);
+    const transformAll = makeTransformer(cfg);
 
 
-    var doneDraggingRaw = new Rx.ReplaySubject(1);
-    var doneDragging = doneDraggingRaw.debounceTime(50).map(transformAll);
+    const doneDraggingRaw = new Rx.ReplaySubject(1);
+    const doneDragging = doneDraggingRaw.debounceTime(50).map(transformAll);
 
-    var bounds = marqueeSelections(appState, $cont, $elt, isOn, appState.brushOn, _.identity);
+    const bounds = marqueeSelections(appState, $cont, $elt, isOn, appState.brushOn, _.identity);
 
-    var drags = marqueeDrags(bounds, $cont, $elt, appState.brushOn, false, doAfterDragsBrush.bind(null, doneDraggingRaw))
-            .map(function (data) {
+    const drags = marqueeDrags(bounds, $cont, $elt, appState.brushOn, false, doAfterDragsBrush.bind(null, doneDraggingRaw))
+            .map((data) => {
                 return data.coords;
             }).map(transformAll);
 
-    var selections = bounds.map(transformAll);
+    let selections = bounds.map(transformAll);
 
-    var allSubject = new Rx.Subject();
+    const allSubject = new Rx.Subject();
     selections = selections.merge(allSubject);
     // Set up server state so initial selection is all.
     allSubject.onNext({all: true});
-    toggle.filter(function (on) {
+    toggle.filter((on) => {
         return !(on);
-    }).do(function () {
+    }).do(() => {
         allSubject.onNext({all: true});
     }).subscribe(_.identity);
 
@@ -462,27 +458,27 @@ function initBrush (appState, $cont, toggle, cfg) {
 //          -> {selections: Observable [ [num, num] ] }
 function initMarquee (appState, $cont, toggle, cfg) {
     debug('init marquee');
-    var $elt = createElt();
-    var isOn = new Rx.ReplaySubject(1);
+    const $elt = createElt();
+    const isOn = new Rx.ReplaySubject(1);
     setupContainer($cont, toggle, cfg, isOn, $elt);
-    var transformAll = makeTransformer(cfg);
+    const transformAll = makeTransformer(cfg);
 
 
-    var bounds = marqueeSelections(appState, $cont, $elt, isOn, appState.marqueeOn, blurAndMakeGhost);
-    var boundsA = new Rx.ReplaySubject(1);
+    const bounds = marqueeSelections(appState, $cont, $elt, isOn, appState.marqueeOn, blurAndMakeGhost);
+    const boundsA = new Rx.ReplaySubject(1);
     bounds.subscribe(boundsA, util.makeErrorHandler('boundsA'));
 
-    var rawDrags = marqueeDrags(boundsA, $cont, $elt, appState.marqueeOn, true, doAfterDragsMarquee);
-    var dragsA = new Rx.ReplaySubject(1);
+    const rawDrags = marqueeDrags(boundsA, $cont, $elt, appState.marqueeOn, true, doAfterDragsMarquee);
+    const dragsA = new Rx.ReplaySubject(1);
     rawDrags.subscribe(dragsA, util.makeErrorHandler('dragsA'));
-    var drags = dragsA
-        .map(function (data) {
+    const drags = dragsA
+        .map((data) => {
             console.log('Marquee got: ', data);
             return data.diff;
         })
         .map(transformAll);
 
-    var selections = boundsA.map(transformAll);
+    const selections = boundsA.map(transformAll);
 
     return {
         selections: selections,

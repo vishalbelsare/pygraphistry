@@ -7,7 +7,6 @@ import '../rx-jquery-stub';
 const Handlebars = require('handlebars');
 const Backbone = require('backbone');
 Backbone.$ = $;
-//const Ace     = require('brace');
 const FilterControl       = require('./FilterControl.js');
 const QuerySelectionModel = require('./QuerySelectionModel.js');
 const ExpressionEditor    = require('./expressionEditor.js');
