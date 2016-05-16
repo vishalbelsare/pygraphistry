@@ -31,14 +31,17 @@ const protoBufDefinitions = protoBufBuilder.build();
 const VERTEX = protoBufDefinitions.VectorGraph.AttributeTarget.VERTEX;
 const EDGE   = protoBufDefinitions.VectorGraph.AttributeTarget.EDGE;
 
+/** Indicates which GraphComponentType the data associates. */
+const ColumnVectorTargets = [VERTEX, EDGE];
+
+const accessorForTargetType = {
+    [VERTEX]: 'nodes',
+    [EDGE]: 'edges'
+};
+
 const decodersByVersion = {
     0: decode0,
     1: decode1
-};
-
-const customAttributeNameByGraphIntType = {
-    [VERTEX]: 'nodes',
-    [EDGE]: 'edges'
 };
 
 /** @typedef {ProtoBuf.Message} VectorGraph
@@ -856,7 +859,7 @@ function getAttributes1(vg, metadata) {
             return;
         }
         const attributeObjects = v.target === VERTEX ? nodeAttributeObjects : edgeAttributeObjects;
-        const typeAccessor = customAttributeNameByGraphIntType[v.target];
+        const typeAccessor = accessorForTargetType[v.target];
         let attributeMetadata;
         if (metadata !== undefined && metadata[typeAccessor] !== undefined) {
             const relevantMetadata = _.find(metadata[typeAccessor], (metadataByComponent) => {
@@ -890,11 +893,16 @@ function sameKeys(a, b){
 }
 
 /** These encodings are handled in their own special way. */
-const GraphShapeProperties = ['source', 'destination', 'nodeId'];
+const GraphShapePropertiesByTarget = [['nodeId'], ['source', 'destination']];
+const GraphShapeProperties = _.flatten(GraphShapePropertiesByTarget);
 
-function getShapeMappings(nodeEncodings, edgeEncodings) {
-    const mappings = _.pick(edgeEncodings, [GraphShapeProperties[0], GraphShapeProperties[1]]);
-    mappings.nodeId = nodeEncodings.nodeId;
+function getShapeMappings (graphInfo) {
+    const mappings = {};
+    _.each(GraphShapePropertiesByTarget, (shapeProperties, targetType) => {
+        _.each(shapeProperties, (shapeProperty) => {
+            mappings[shapeProperty] = graphInfo[accessorForTargetType[targetType]].encodings;
+        });
+    });
     return mappings;
 }
 
@@ -904,7 +912,7 @@ function getShapeMappings(nodeEncodings, edgeEncodings) {
  * @param {Number} target VERTEX or EDGE
  * @returns {Object.<DataframeMetadataByColumn>}
  */
-function getSimpleEncodings(encodings, loaders, target) {
+function getSimpleEncodings (encodings, loaders, target) {
 
     const supportedEncodings = _.pick(encodings, (enc, graphProperty) => {
         if (_.contains(GraphShapeProperties, graphProperty)) {
@@ -1002,18 +1010,19 @@ function decode1(graph, vg, metadata) {
     loaders = wrap(mapper.mappings, loaders);
     logger.trace('Attribute loaders:', loaders);
 
-    const nodeEncodings = getSimpleEncodings(graphInfo.nodes.encodings, loaders, VERTEX);
-    const edgeEncodings = getSimpleEncodings(graphInfo.edges.encodings, loaders, EDGE);
-    const shapeMappings = getShapeMappings(graphInfo.nodes.encodings, graphInfo.edges.encodings);
+    const encodingsByTarget = _.map(ColumnVectorTargets,
+        (targetType) => getSimpleEncodings(graphInfo[accessorForTargetType[targetType]].encodings,
+            loaders, targetType));
+    const shapeMappings = getShapeMappings(graphInfo);
 
     const flatAttributeArray = _.values(vgAttributes.nodes).concat(_.values(vgAttributes.edges));
-    const allEncodings =  _.extend({}, nodeEncodings, edgeEncodings, shapeMappings);
+    const allEncodings =  _.extend({}, encodingsByTarget[VERTEX], encodingsByTarget[EDGE], shapeMappings);
     loadDataframe(graph.dataframe, flatAttributeArray, vg.vertexCount, vg.edgeCount, allEncodings, graphInfo);
 
     _.each(loaders, (loaderArray, graphProperty) => {
         _.each(loaderArray, (loader) => {
-            const encodings = loader.target === VERTEX ? nodeEncodings : edgeEncodings;
-            const attributes = loader.target === VERTEX ? vgAttributes.nodes : vgAttributes.edges;
+            const encodings = encodingsByTarget[loader.target];
+            const attributes = loader.target === accessorForTargetType[loader.target];
             if (graphProperty in encodings) {
                 const attributeName = encodings[graphProperty];
                 logger.debug('Loading values for', graphProperty, 'from attribute', attributeName);
