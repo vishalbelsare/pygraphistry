@@ -102,8 +102,8 @@ function getDataTypesFromValues (values, type, dataframe, debug = false) {
             _.each(values, (value) => {
                 _.each(columnNames, (columnName) => {
                     if (!dataTypeUtil.isCompatible(dataTypes[columnName], value)) {
-                        throw new Error('Mismatched data type ' + dataTypes[columnName]
-                            + ' to value: ' + value.toString());
+                        throw new Error('Mismatched data type ' + dataTypes[columnName] +
+                            ' to value: ' + value.toString());
                     }
                 });
             });
@@ -859,18 +859,18 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
 
             _.each(data.filters, (filter) => {
 
-                const {query} = filter;
-                if (!query.type) {
-                    query.type = filter.type;
+                const filterQuery = filter.query;
+                if (!filterQuery.type) {
+                    filterQuery.type = filter.type;
                 }
-                if (!query.attribute) {
-                    query.attribute = filter.attribute;
+                if (!filterQuery.attribute) {
+                    filterQuery.attribute = filter.attribute;
                 }
 
                 // Signify that the query is based against the filtered dataframe
-                query.basedOnCurrentDataframe = true;
+                filterQuery.basedOnCurrentDataframe = true;
 
-                const masks = dataframe.getMasksForQuery(query, errors);
+                const masks = dataframe.getMasksForQuery(filterQuery, errors);
 
                 if (masks !== undefined) {
                     // Record the size of the filtered set for UI feedback:
@@ -936,6 +936,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                 const selectionMasks = [];
                 const errors = [];
                 const generator = new ExpressionCodeGenerator('javascript');
+                let exclusionQuery;
 
                 /** @type {DataframeMask[]} */
                 const exclusionMasks = [];
@@ -944,7 +945,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                         return;
                     }
                     /** @type ClientQuery */
-                    const exclusionQuery = exclusion.query;
+                    exclusionQuery = exclusion.query;
                     if (exclusionQuery === undefined) {
                         return;
                     }
@@ -1151,15 +1152,15 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
     });
 
     // Legacy method for timeslider.js only; refactor that to work with newer code and kill this.
-    this.socket.on('filter', (query, cb) => {
-        logger.info({query: query}, 'Got filter');
+    this.socket.on('filter', (filterSpec, cb) => {
+        logger.info({query: filterSpec}, 'Got filter');
         Rx.Observable.combineLatest(this.viewConfig, this.graph, (viewConfig, graph) => {
 
             const selectionMasks = [];
             const errors = [];
 
             const dataframe = graph.dataframe;
-            _.each(query, (data, attribute) => {
+            _.each(filterSpec, (data, attribute) => {
                 let type = data.type;
                 const normalization = dataframe.normalizeAttributeName(attribute, type);
                 if (normalization === undefined) {
@@ -1187,14 +1188,14 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
         );
     });
 
-    this.socket.on('encode_by_column', (query, cb) => {
-        this.graph.take(1).do((graph) => {
-            const dataframe = graph.dataframe,
-                normalization = dataframe.normalizeAttributeName(query.attribute, query.type);
-            let {encodingType, variation, binning, timeBounds} = query;
+    this.socket.on('encode_by_column', (encodingRequest, cb) => {
+        this.graph.take(1).do((currentGraph) => {
+            const dataframe = currentGraph.dataframe,
+                normalization = dataframe.normalizeAttributeName(encodingRequest.attribute, encodingRequest.type);
+            let {encodingType, variation, binning, timeBounds} = encodingRequest;
 
             if (normalization === undefined) {
-                failWithMessage(cb, 'No attribute found for: ' + query.attribute + ',' + query.type);
+                failWithMessage(cb, 'No attribute found for: ' + encodingRequest.attribute + ',' + encodingRequest.type);
                 return;
             }
 
@@ -1218,7 +1219,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                     encodingType = encodings.inferEncodingType(dataframe, type, attributeName);
                 }
                 bufferName = encodings.bufferNameForEncodingType(encodingType);
-                if (query.reset) {
+                if (encodingRequest.reset) {
                     if (bufferName) {
                         const originalDesc = ccManager.overlayBufferSpecs[bufferName];
 
@@ -1582,9 +1583,8 @@ VizServer.prototype.defineRoutesInApp = function (app) {
         const type = req.query.type;
 
         appRouteResponder.graph.take(1).do((graph) => {
-            const content = graph.dataframe.formatAsCSV(type)
+            graph.dataframe.formatAsCSV(type)
                 .then((formattedCsv) => {
-
                     const datasetName = appRouteResponder.datasetName || 'graphistry';
                     const filenameSuffix = (type === 'point') ? 'Points' : 'Edges';
                     const filename = datasetName + filenameSuffix + '.csv';
@@ -1593,7 +1593,6 @@ VizServer.prototype.defineRoutesInApp = function (app) {
                     res.charset = 'UTF-8';
                     res.write(formattedCsv);
                     res.send();
-
                 });
         }).subscribe(
             _.identity,
@@ -1880,9 +1879,9 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
             .do((currentGraph) => {
                 const cleanContentKey = encodeURIComponent(contentKey),
                     cleanImageName = encodeURIComponent(imageName),
-                    base64Data = pngDataURL.replace(/^data:image\/png;base64,/,""),
+                    base64Data = pngDataURL.replace(/^data:image\/png;base64,/,''),
                     binaryData = new Buffer(base64Data, 'base64');
-                persist.publishPNGToStaticContents(cleanContentKey, cleanImageName, binaryData).then(function() {
+                persist.publishPNGToStaticContents(cleanContentKey, cleanImageName, binaryData).then(() => {
                     cb({success: true, name: cleanContentKey});
                 }).done(
                     _.identity,
@@ -1924,6 +1923,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
         logger.trace('Client end-to-end time', time);
         clientReady.onNext(true);
     });
+    // const updateVBOCommand = new Command('Update VBOs', 'vbo_update', this.socket);
+    const emitOnSocket = Rx.Observable.bindCallback(this.socket.emit.bind(this.socket));
 
     clientReady.subscribe(logger.debug.bind(logger, 'CLIENT STATUS'), log.makeRxErrorHandler(logger, 'clientReady'));
 
@@ -2020,9 +2021,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     // });
                     // const observableCallback = Rx.Observable.bindNodeCallback(emitter);
                     // return observableCallback;
-                    return Rx.Observable.bindCallback(this.socket.emit.bind(this.socket))('vbo_update', metadata);
-                    // return emitFnWrapper('vbo_update', metadata);
-
+                    // return updateVBOCommand.sendWithObservableResult(metadata);
+                    return emitOnSocket('vbo_update', metadata);
                 }).do(
                     (clientElapsedMsg) => {
                         logger.trace('6. client all received');
@@ -2042,7 +2042,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
 
                 return Rx.Observable.merge(this.ticksMulti, filteredUpdateVbo, behindOnTicks)
                     .take(1)
-                    .do((data) => {
+                    .do(() => {
                         // Mark that we don't need to send VBOs independently of ticks anymore.
                         this.updateVboSubject.onNext(false);
                     })
