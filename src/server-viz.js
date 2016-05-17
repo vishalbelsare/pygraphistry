@@ -1297,6 +1297,16 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
 
             // Now that we have an encoding function, store it as a computed column;
             const oldDesc = ccManager.getComputedColumnSpec('localBuffer', bufferName);
+            if (oldDesc === undefined) {
+                cb({
+                    success: false,
+                    enabled: false,
+                    error: 'Unable to derive from a base calculation when encoding',
+                    encodingType: encodingType,
+                    legend: encoding.legend
+                });
+                return;
+            }
 
             // If this is the first encoding for a buffer type, store the original
             // spec so we can recover it.
