@@ -1189,6 +1189,27 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
         );
     });
 
+    this.socket.on('describe_column', (params, cb) => {
+        this.graph.take(1).do((graph) => {
+            const dataframe = graph.dataframe,
+                normalization = dataframe.normalizeAttributeName(params.attribute, params.type);
+            const column = dataframe.getColumn(normalization.attribute, normalization.type);
+            if (column === undefined) {
+                return cb({success: false, errors: ['Column not found']});
+            }
+            const aggregations = dataframe.getColumnAggregations(normalization.attribute, normalization.type);
+            return cb({success: true, description: {
+                alias: column.name,
+                aggregations: aggregations.getSummary()
+            }});
+        }).subscribe(
+            _.identity,
+            (err) => {
+                log.makeRxErrorHandler(logger, 'describe column handler')(err);
+            }
+        );
+    });
+
     this.socket.on('encode_by_column', (encodingRequest, cb) => {
         this.graph.take(1).do((currentGraph) => {
             const dataframe = currentGraph.dataframe,
