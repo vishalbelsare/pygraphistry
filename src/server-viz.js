@@ -133,8 +133,9 @@ function sliceSelection (dataFrame, type, mask, start, end, sortColumnName, asce
     if (searchFilter) {
         searchFilter = searchFilter.toLowerCase();
         const newIndices = [];
-        mask.mapIndexes(type, (idx) => {
-            if (_.any(dataFrame.getRowAt(idx, type),
+        const columnNames = dataFrame.publicColumnNamesByType(type);
+        mask.forEachIndexByType(type, (idx) => {
+            if (_.any(dataFrame.getRowAt(idx, type, columnNames),
                     (val/* , key */) => String(val).toLowerCase().indexOf(searchFilter) > -1)) {
                 newIndices.push(idx);
             }
@@ -154,7 +155,7 @@ function sliceSelection (dataFrame, type, mask, start, end, sortColumnName, asce
     // Only using permutation out here because this should be pushed into dataframe.
     const sortCol = dataFrame.getColumnValues(sortColumnName, type);
     const taggedSortCol = new Array(count);
-    mask.mapIndexes(type, (idx, i) => {
+    mask.forEachIndexByType(type, (idx, i) => {
         taggedSortCol[i] = [sortCol[idx], idx];
     });
 
@@ -1814,7 +1815,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                 } else {
                     const pointColorsBuffer = dataframe.getLocalBuffer(bufferName);
                     const highlightedPointColorsBuffer = _.clone(pointColorsBuffer);
-                    dataframeMask.mapPointIndexes((pointIndex) => {
+                    dataframeMask.forEachPointIndex((pointIndex) => {
                         highlightedPointColorsBuffer[pointIndex] = color;
                     });
                 }

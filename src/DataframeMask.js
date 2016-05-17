@@ -281,23 +281,39 @@ DataframeMask.prototype = {
     },
 
     /**
+     * @param {GraphComponentTypes} type
      * @param {DataframeMask} other
      * @returns {Boolean}
      */
-    equals: function (other) {
+    equalsMaskOnType: function (type, other) {
+        let isSame = true;
+        this.forEachIndexByType(type, (idx, i) => {
+            if (other.getIndexByType(type, i) !== idx) {
+                isSame = false;
+                return false;
+            }
+            return undefined;
+        });
+        return isSame;
+    },
+
+    /**
+     * @param {DataframeMask} other
+     * @returns {Boolean}
+     */
+    equalsMask: function (other) {
+        if (this === other) {
+            return true;
+        }
         // Quick test on sizes.
-        if (this.numPoints() !== other.numPoints() || this.numEdges() !== other.numEdges()) {
+        if (_.any(GraphComponentTypes, (type) => this.numByType(type) !== other.numByType(type))) {
             return false;
         }
 
         // If sizes are same, iterate through to make sure.
         let isSame = true;
         _.each(GraphComponentTypes, (type) => {
-            this.mapIndexes(type, (idx, i) => {
-                if (other.getIndexByType(type, i) !== idx) {
-                    isSame = false;
-                }
-            });
+            isSame = isSame && this.equalsMaskOnType(type, other);
         });
         return isSame;
     },
@@ -437,37 +453,45 @@ DataframeMask.prototype = {
      * */
 
     /**
-     * @param {String} type point/edge
-     * @param {IndexIteratorCallback} iterator
+     * @param {GraphComponentTypes} type
+     * @param {IndexIteratorCallback} iterator Returning a value terminates iteration early.
      */
-    mapIndexes: function (type, iterator) {
+    forEachIndexByType: function (type, iterator) {
         const numElements = this.numByType(type);
         const mask = this[type];
         if (mask === undefined) {
-            if (!this.isExclusive) {
-                for (let i = 0; i < numElements; i++) {
-                    iterator.call(this, i, i);
-                }
+            if (this.isExclusive) { return; }
+            for (let i = 0; i < numElements; i++) {
+                if (iterator.call(this, i, i) !== undefined) { return; }
             }
         } else {
             for (let i = 0; i < numElements; i++) {
-                iterator.call(this, mask[i], i);
+                if (iterator.call(this, mask[i], i) !== undefined) { return; }
             }
         }
     },
 
-    /**
-     * @param {IndexIteratorCallback} iterator
-     */
-    mapPointIndexes: function (iterator) {
-        this.mapIndexes('point', iterator);
+    mapIndexesByType: function (type, iterator) {
+        const numElements = this.numByType(type);
+        const results = new Array(numElements);
+        this.forEachIndexByType(type, (index, i) => {
+            results[i] = iterator(index, i);
+        });
+        return results;
     },
 
     /**
      * @param {IndexIteratorCallback} iterator
      */
-    mapEdgeIndexes: function (iterator) {
-        this.mapIndexes('edge', iterator);
+    forEachPointIndex: function (iterator) {
+        this.forEachIndexByType('point', iterator);
+    },
+
+    /**
+     * @param {IndexIteratorCallback} iterator
+     */
+    forEachEdgeIndex: function (iterator) {
+        this.forEachIndexByType('edge', iterator);
     },
 
     getIndexByType: function (type, index) {

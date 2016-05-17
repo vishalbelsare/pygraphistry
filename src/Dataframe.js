@@ -1,7 +1,6 @@
 'use strict';
 
 const _ = require('underscore');
-const dateFormat = require('dateformat');
 const Q = require('q');
 const fs = require('fs');
 const csv = require('csv');
@@ -148,14 +147,14 @@ Dataframe.prototype.pruneMaskEdges = function (oldMask) {
 
     // Create hash to lookup which points/edges exist in mask.
     const pointMaskOriginalLookup = {};
-    oldMask.mapPointIndexes((idx) => {
+    oldMask.forEachPointIndex((idx) => {
         pointMaskOriginalLookup[idx] = 1;
     });
 
     const edgeMask = [];
     const edges = this.rawdata.hostBuffers.unsortedEdges;
 
-    oldMask.mapEdgeIndexes((edgeIdx) => {
+    oldMask.forEachEdgeIndex((edgeIdx) => {
         const src = edges[2*edgeIdx];
         const dst = edges[2*edgeIdx + 1];
         const newSrc = pointMaskOriginalLookup[src];
@@ -184,7 +183,7 @@ Dataframe.prototype.pruneOrphans = function (baseMask) {
     const resultPointMask = [];
     if (baseMask.numPoints() === this.numPoints() && baseMask.numEdges() === this.numEdges()) {
         const degreeColumn = this.getColumnValues('degree', 'point');
-        baseMask.mapPointIndexes((pointIdx) => {
+        baseMask.forEachPointIndex((pointIdx) => {
             if (degreeColumn[pointIdx] !== 0) {
                 resultPointMask.push(pointIdx);
             }
@@ -195,7 +194,7 @@ Dataframe.prototype.pruneOrphans = function (baseMask) {
         if (degreeInTyped.length !== baseMask.numPoints()) {
             throw new Error('Mismatched buffer lengths');
         }
-        baseMask.mapPointIndexes((pointIdx, idx) => {
+        baseMask.forEachPointIndex((pointIdx, idx) => {
             if (degreeInTyped[idx] !== 0 || degreeOutTyped[idx] !== 0) {
                 resultPointMask.push(pointIdx);
             }
@@ -299,21 +298,21 @@ Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, lim
 
     // Equivalent to reduce over AND:
     _.each(selectionMasks, (mask) => {
-        mask.mapEdgeIndexes((idx) => {
+        mask.forEachEdgeIndex((idx) => {
             numMasksSatisfiedByEdgeID[idx]++;
         });
 
-        mask.mapPointIndexes((idx) => {
+        mask.forEachPointIndex((idx) => {
             numMasksSatisfiedByPointID[idx]++;
         });
     });
 
     // Equivalent to reduce over NOT OR:
     _.each(exclusionMasks, (mask) => {
-        mask.mapPointIndexes((idx) => {
+        mask.forEachPointIndex((idx) => {
             numMasksSatisfiedByPointID[idx] = 0;
         });
-        mask.mapEdgeIndexes((idx) => {
+        mask.forEachEdgeIndex((idx) => {
             numMasksSatisfiedByEdgeID[idx] = 0;
         });
     });
@@ -568,7 +567,7 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
 Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulator) {
     logger.debug('Starting Filtering Data In-Place by DataframeMask');
 
-    if (masks === this.lastMasks) {
+    if (masks.equalsMask(this.lastMasks)) {
         return Q(false);
     }
 
@@ -603,15 +602,13 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // We start unsorted because we're working with the rawdata first.
     const unsortedEdgeMask = new Uint32Array(this.typedArrayCache.unsortedEdgeMask.buffer, 0, numEdges);
 
-    masks.mapEdgeIndexes((edgeIndex, i) => {
+    masks.forEachEdgeIndex((edgeIndex, i) => {
         unsortedEdgeMask[i] = edgeIndex;
     });
 
     // TODO: See if there's a way to do this without sorting.
     // Sorting is slow as all hell.
-    // Array.prototype.sort.call(unsortedEdgeMask, (a, b) => {
-    //     return a - b;
-    // });
+    // Array.prototype.sort.call(unsortedEdgeMask, (a, b) => a - b);
 
     const unsortedMasks = masks;
 
@@ -622,7 +619,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     // );
 
     const pointOriginalLookup = [];
-    masks.mapPointIndexes((pointIndex, i) => {
+    masks.forEachPointIndex((pointIndex, i) => {
         pointOriginalLookup[pointIndex] = i;
     });
 
@@ -658,7 +655,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     const numMidEdgeColors = numMidEdgeColorsPerEdge * numEdges;
     const newMidEdgeColors = new Uint32Array(this.typedArrayCache.newMidEdgeColors.buffer, 0, numMidEdgeColors);
 
-    masks.mapEdgeIndexes((edgeIndex, i) => {
+    masks.forEachEdgeIndex((edgeIndex, i) => {
 
         for (let j = 0; j < numMidEdgeColorsPerEdge; j++) {
             newMidEdgeColors[i * numMidEdgeColorsPerEdge + j] =
@@ -694,7 +691,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
         const newBuffer = this.getLocalBuffer(originalName).constructor(masks.maskSize()[type]);
         const rawBuffer = this.rawdata.localBuffers[alias];
 
-        masks.mapIndexes(type, (rawIndex, i) => {
+        masks.forEachIndexByType(type, (rawIndex, i) => {
             newBuffer[i] = rawBuffer[rawIndex];
         });
 
@@ -742,7 +739,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
                 });
 
         } else {
-            this.lastMasks.mapPointIndexes((pointIndex, i) => {
+            this.lastMasks.forEachPointIndex((pointIndex, i) => {
                 this.lastPointPositions[pointIndex*2] = tempCurPoints[i*2];
                 this.lastPointPositions[pointIndex*2 + 1] = tempCurPoints[i*2 + 1];
             });
@@ -753,7 +750,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
         return promise;
 
     }).then(() => {
-        masks.mapPointIndexes((oldPointIndex, i) => {
+        masks.forEachPointIndex((oldPointIndex, i) => {
             newPrevForces[i*2] = tempPrevForces[oldPointIndex*2];
             newPrevForces[i*2 + 1] = tempPrevForces[oldPointIndex*2 + 1];
 
@@ -763,7 +760,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
             newCurPoints[i*2 + 1] = this.lastPointPositions[oldPointIndex*2 + 1];
         });
 
-        masks.mapEdgeIndexes((oldEdgeIdx, i) => {
+        masks.forEachEdgeIndex((oldEdgeIdx, i) => {
             newSpringsPos[i*4] = tempSpringsPos[oldEdgeIdx*4];
             newSpringsPos[i*4 + 1] = tempSpringsPos[oldEdgeIdx*4 + 1];
             newSpringsPos[i*4 + 2] = tempSpringsPos[oldEdgeIdx*4 + 2];
@@ -931,7 +928,7 @@ Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager)
                 index: colDesc.index,
                 graphComponentType: colDesc.graphComponentType,
                 numberPerGraphComponent: colDesc.numberPerGraphComponent,
-                arrType: colDesc.arrType
+                ArrayVariant: colDesc.ArrayVariant
             };
 
             attrs[colType][name] = col;
@@ -958,7 +955,7 @@ Dataframe.prototype.registerNewComputedColumn = function (computedColumnManager,
         index: colDesc.index,
         graphComponentType: colDesc.graphComponentType,
         numberPerGraphComponent: colDesc.numberPerGraphComponent,
-        arrType: colDesc.arrType
+        ArrayVariant: colDesc.ArrayVariant
     };
 
     attrs[columnType][columnName] = col;
@@ -1006,7 +1003,7 @@ Dataframe.prototype.loadAttributesForType = function (attributeObjectsByName, ty
     }
 
     // Mark version as 0, and that they're not dirty.
-    _.each(userDefinedAttributesByName, (obj, key) => {
+    _.each(userDefinedAttributesByName, (obj) => {
         obj.version = 0;
         obj.dirty = false;
         obj.numberPerGraphComponent = obj.numberPerGraphComponent || 1;
@@ -1285,7 +1282,7 @@ Dataframe.prototype.overlayLocalBuffer = function (type, name, alias, values) {
 
         // Filter and toss into data.
         // TODO: This is shared code between filtering code and here.
-        this.lastMasks.mapIndexes(type, (indexInRaw, i) => {
+        this.lastMasks.forEachIndexByType(type, (indexInRaw, i) => {
             newFilteredBuffer[i] = newUnfilteredBuffer[indexInRaw];
         });
 
@@ -1472,7 +1469,7 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
         if (numberPerGraphComponent === 1) {
             return attributes[attrName].values[index];
         } else {
-            const ArrayVariant = attributes[attrName].arrType || Array;
+            const ArrayVariant = attributes[attrName].ArrayVariant || Array;
             const returnArr = new ArrayVariant(numberPerGraphComponent);
             for (let j = 0; j < returnArr.length; j++) {
                 returnArr[j] = attributes[attrName].values[index*numberPerGraphComponent + j];
@@ -1491,38 +1488,29 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
     if (attributes[attrName].dirty && attributes[attrName].dirty.cause === 'filter') {
         const parentIndex = this.lastMasks.getIndexByType(type, index);
         return this.rawdata.attributes[type][attrName].values[parentIndex];
-        if (numberPerGraphComponent === 1) {
-            return this.rawdata.attributes[type][attrName].values[parentIndex];
-        } else {
-            const ArrayVariant = attributes[attrName].arrType || Array;
-            const returnArr = new ArrayVariant(numberPerGraphComponent);
-            for (let j = 0; j < returnArr.length; j++) {
-                returnArr[j] = this.rawdata.attributes[attrName].values[parentIndex*numberPerGraphComponent + j];
-            }
-            return returnArr;
-        }
     }
 
     // Nothing was found, so throw error.
-    throw new Error("Couldn't get cell value for: " + attrName + ' ' + index);
+    throw new Error('Couldn\'t get cell value for: ' + attrName + ' ' + index);
+};
+
+
+Dataframe.prototype.publicColumnNamesByType = function publicColumnNamesByType (type) {
+    return _.filter(_.keys(this.data.attributes[type]), (columnName) => !this.isAttributeNameInternal(columnName));
 };
 
 
 /** Returns one row object.
- * @param {double} index - which element to extract.
- * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
+ * @param {Number} index - which element to extract.
+ * @param {String} type - any of [TYPES]{@link BufferTypeKeys}.
+ * @param {String[]?} columnNames
  */
-Dataframe.prototype.getRowAt = function (index, type) {
+Dataframe.prototype.getRowAt = function (index, type, columnNames = this.publicColumnNamesByType(type)) {
     const origIndex = index; // For client-side metadata
 
     const row = {};
-    _.each(_.keys(this.data.attributes[type]), (key) => {
-        // Skip columns that are prepended with __
-        if (key[0] === '_' && key[1] === '_') {
-            return;
-        }
-
-        row[key] = this.getCell(index, type, key);
+    _.each(columnNames, (columnName) => {
+        row[columnName] = this.getCell(index, type, columnName);
     });
     row._index = origIndex;
     return row;
@@ -1531,14 +1519,15 @@ Dataframe.prototype.getRowAt = function (index, type) {
 
 /** Returns array of row (fat json) objects.
  * @param {Array.<number>} indices - which elements to extract.
- * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
+ * @param {BufferTypeKeys} type
  */
 Dataframe.prototype.getRows = function (indices, type) {
+    const mask = new DataframeMask(this);
+    mask[type] = indices;
 
-    indices = indices || _.range(this.data.numElements[type]);
-
-    return _.map(indices, (index) => {
-        return this.getRowAt(index, type);
+    const columnNames = this.publicColumnNamesByType(type);
+    return mask.mapIndexesByType(type, (index) => {
+        return this.getRowAt(index, type, columnNames);
     });
 };
 
@@ -1587,14 +1576,14 @@ Dataframe.prototype.getDataType = function (columnName, type) {
     return this.rawdata.attributes[type][columnName] && this.rawdata.attributes[type][columnName].type;
 };
 
-/**
+/** Stand-in for a real Column type for now.
  * @typedef {Object} Column
- * @property {Array} values
- * @property {String} type
+ * @property {Array} values - the values held per row in the iteration type.
+ * @property {GraphComponentTypes} type - the iteration type.
  * @property {Object} target
  */
 
-Dataframe.prototype.reIndexArray = function (columnName, type, arr, indexType, attributeDesc) {
+Dataframe.prototype.reIndexArray = function (columnName, type, arr, indexType) {
     if (!indexType) {
         return arr;
     }
@@ -1665,12 +1654,12 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     if (column.dirty && column.dirty.cause === 'filter') {
         const unfilteredAttributes = this.rawdata.attributes[type];
         const unfilteredColumn = unfilteredAttributes[columnName] || this.getColumn(columnName, type, true);
-        const ArrayVariant = unfilteredColumn.arrType || Array;
+        const ArrayVariant = unfilteredColumn.ArrayVariant || Array;
         const numNewValues = this.lastMasks.numByType(type);
         const numberPerGraphComponent = unfilteredColumn.numberPerGraphComponent;
         const newValues = new ArrayVariant(numberPerGraphComponent * numNewValues);
 
-        this.lastMasks.mapIndexes(type, (idx, i) => {
+        this.lastMasks.forEachIndexByType(type, (idx, i) => {
             for (let j = 0; j < numberPerGraphComponent; j++) {
                 newValues[numberPerGraphComponent*i + j] = unfilteredColumn.values[numberPerGraphComponent*idx + j];
             }
@@ -1684,7 +1673,7 @@ Dataframe.prototype.getColumnValues = function (columnName, type) {
     }
 
     // Nothing was found, so throw error.
-    throw new Error("Couldn't get column values for: " + columnName);
+    throw new Error('Couldn\'t get column values for: ' + columnName);
 };
 
 
@@ -1734,9 +1723,9 @@ Dataframe.prototype.getClBuffer = function (cl, columnName, type) {
 // TODO: Add eviction to generic CL Buffer caching.
 Dataframe.prototype.getCachedCLBuffer = function (cl, columnName, type) {
     const desc = this.data.attributes[type][columnName];
-    const arrType = desc.arrType;
+    const ArrayVariant = desc.ArrayVariant;
 
-    if (arrType === Array) {
+    if (ArrayVariant === Array) {
         throw new Error('Attempted to make CL Buffer for non-typed array: ', columnName, type);
     }
 
@@ -1749,7 +1738,7 @@ Dataframe.prototype.getCachedCLBuffer = function (cl, columnName, type) {
     // TODO: Deal with size not being sufficient.
     if (cache[columnName]) {
 
-        if (cache[columnName].size < arrType.BYTES_PER_ELEMENT * numElements) {
+        if (cache[columnName].size < ArrayVariant.BYTES_PER_ELEMENT * numElements) {
             // TODO: Evict from cache and do necessary GC
             throw new Error('Did not implement resizing of cached CL buffers yet for: ', columnName, type);
         }
@@ -1758,7 +1747,7 @@ Dataframe.prototype.getCachedCLBuffer = function (cl, columnName, type) {
     }
 
     // Not cached, so create and cache
-    return cl.createBuffer(numElements * arrType.BYTES_PER_ELEMENT, 'clBuffer_' + type + '_' + columnName)
+    return cl.createBuffer(numElements * ArrayVariant.BYTES_PER_ELEMENT, 'clBuffer_' + type + '_' + columnName)
         .then((buffer) => {
             cache[columnName] = buffer;
             return buffer;
@@ -1847,6 +1836,11 @@ Dataframe.prototype.getAttributeKeys = function (type) {
 };
 
 
+/**
+ * @param {String} columnName
+ * @param {GraphComponentTypes} type
+ * @returns {Boolean}
+ */
 Dataframe.prototype.hasColumnNamed = function (type, columnName) {
     const columnsByAttribute = this.rawdata.attributes[type];
     return columnsByAttribute.hasOwnProperty(columnName) ||
@@ -1856,6 +1850,13 @@ Dataframe.prototype.hasColumnNamed = function (type, columnName) {
 
 const LargeColumnProperties = ['values', 'aggregations'];
 
+/**
+ * @param {String} columnName
+ * @param {GraphComponentTypes} type
+ * @param {Boolean?} global
+ * @param {Boolean?} forSerialization - Whether to ensure JSON serialization is reasonable.
+ * @returns {Column?}
+ */
 Dataframe.prototype.getColumn = function (columnName, type, global = true, forSerialization = false) {
     const dataframeData = (global ? this.rawdata : this.data);
     const columnsForType = dataframeData.attributes[type];
@@ -1878,9 +1879,12 @@ Dataframe.prototype.getAttributeKeyForColumnName = function (columnName, type) {
 
 
 Dataframe.prototype.isAttributeNamePrivate = function (columnName) {
-    return columnName[0] === '_'/* && columnName[1] === '_'*/;
+    return columnName.length > 0 && columnName[0] === '_';
 };
 
+Dataframe.prototype.isAttributeNameInternal = function (columnName) {
+    return this.isAttributeNamePrivate(columnName) && columnName.length > 1 && columnName[1] === '_';
+};
 
 Dataframe.prototype.getColumnsByType = function (forSerialization = false) {
     const result = {};
@@ -1905,12 +1909,11 @@ Dataframe.prototype.getColumnsByType = function (forSerialization = false) {
 //////////////////////////////////////////////////////////////////////////////
 
 /** Serialize the dataframe to the target in JSON format in row-wise order.
- * @param {string} target - filename to write to.
+ * @param {String} target - filename to write to.
  * @param {Object} options - has flags 'compact' and 'compress'
  */
-Dataframe.prototype.serializeRows = function (target, options) {
+Dataframe.prototype.serializeRows = function (target, options = {}) {
     // TODO: Async file write.
-    options = options || {};
     const toSerialize = {};
 
     _.each(BufferTypeKeys, (type) => {
@@ -1925,11 +1928,10 @@ Dataframe.prototype.serializeRows = function (target, options) {
 };
 
 /** Serialize the dataframe to the target in JSON format in column-wise order.
- * @param {string} target - filename to write to.
+ * @param {String} target - filename to write to.
  * @param {Object} options - has flags 'compact' and 'compress'
  */
-Dataframe.prototype.serializeColumns = function (target, options) {
-    options = options || {};
+Dataframe.prototype.serializeColumns = function (target, options = {}) {
     const toSerialize = {};
 
     _.each(BufferTypeKeys, (type) => {
@@ -2364,7 +2366,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     }
 
 
-    mask.mapIndexes(timeType, (idx) => {
+    mask.forEachIndexByType(timeType, (idx) => {
 
         const value = timeValues[idx];
         const valueDate = new Date(value);
@@ -2452,7 +2454,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
  * @returns {BinningResult}
  */
 Dataframe.prototype.binningForColumn = function (
-    columnName, binningHint = undefined, goalNumberOfBins = 0, mask, dataType) {
+    columnName, binningHint = undefined, goalNumberOfBins = 0, mask = this.newEmptyMask(), dataType = undefined) {
 
     const {attribute, type} = columnName;
     const values = this.getColumnValues(attribute, type);
@@ -2526,7 +2528,7 @@ Dataframe.prototype.binningForColumn = function (
     // new (large) array of maskForType. Then each separate histogram can use the already existing
     // values array and the single maskForType array to compute bins without any large allocations.
     const isLessThan = dataTypeUtil.isLessThanForDataType(aggregations.getAggregationByType('dataType'));
-    mask.mapIndexes(type, (i) => {
+    mask.forEachIndexByType(type, (i) => {
         // Here we use an optimized "Floor" because we know it's a smallish, positive number.
         // TODO: Have to be careful because floating point error.
         // In particular, we need to match math as closely as possible in expressions.
