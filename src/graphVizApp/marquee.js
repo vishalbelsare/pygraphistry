@@ -200,12 +200,23 @@ function activateMarqueeStateMachine (machine) {
         .merge(Rx.Observable.fromEvent($cont, 'mousedown'))
         .map(evt => ({evt, name: 'down'}));
 
-    const moveEvents = Rx.Observable.fromEvent(sim, 'mousemove')
+    // We listen to document in case we mouse over open labels
+    const moveEvents = Rx.Observable.fromEvent(document, 'mousemove')
         .merge(Rx.Observable.fromEvent($cont, 'mousemove'))
         .map(evt => ({evt, name: 'move'}));
 
-    const upEvents = Rx.Observable.fromEvent(sim, 'mouseup')
-        .merge(Rx.Observable.fromEvent($cont, 'mouseup'))
+    // We make a handler here for mouseouts of JUST the document.
+    // That is, a mouseout event from a child of the document won't trigger this,
+    // only someone mouseing out of the window
+    // Technique taken from http://stackoverflow.com/questions/923299/how-can-i-detect-when-the-mouse-leaves-the-window
+    const mouseOutOfWindowStream = Rx.Observable.fromEvent(document, 'mouseout')
+        .filter((e=window.event) => {
+            const from = e.relatedTarget || e.toElement;
+            return (!from || from.nodeName === 'HTML');
+        });
+
+    const upEvents = Rx.Observable.fromEvent(document, 'mouseup')
+        .merge(mouseOutOfWindowStream)
         .map(evt => ({evt, name: 'up'}));
 
     Rx.Observable.merge(downEvents, moveEvents, upEvents)
@@ -226,7 +237,28 @@ function activateMarqueeStateMachine (machine) {
         if (stateChanged && _.isFunction(sideEffectFunctions[currentState])) {
             sideEffectFunctions[currentState](machine, evt);
         }
-    }, util.makeErrorHandler('Handling marquee state machine'))
+    }, util.makeErrorHandler('Handling marquee state machine'));
+
+    const enable = function () { events.onNext({evt: {}, name: 'enable'}) };
+    const disable = function () { events.onNext({evt: {}, name: 'disable'}) };
+    return {enable, disable};
+}
+
+function createSelectionMarquee ($cont) {
+    const $elt = createElt();
+    $cont.append($elt);
+
+    const machineOptions = {
+        selectObservable: new Rx.ReplaySubject(1),
+        canDrag: false, $elt, $cont
+    };
+
+    const machine = makeStateMachine(machineOptions);
+    const {enable, disable} = activateMarqueeStateMachine(machine);
+
+    return {
+        enable, disable, selections: machineOptions.selectObservable, $elt
+    };
 }
 
 
@@ -755,5 +787,6 @@ function initMarquee (appState, $cont, toggle, cfg) {
 module.exports = {
     initMarquee: initMarquee,
     getGhostImageObservable: getGhostImageObservable, // TODO move this to renderer
-    initBrush: initBrush
+    initBrush: initBrush,
+    createSelectionMarquee
 };

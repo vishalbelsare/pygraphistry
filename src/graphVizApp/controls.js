@@ -175,23 +175,28 @@ function setLayoutParameter(socket, algorithm, param, value, settingsChanges) {
     });
 }
 
-//Observable bool -> { ... }
-function setupMarquee(appState, isOn) {
-    var camera = appState.renderState.get('camera');
-    var cnv = appState.renderState.get('canvas');
-    var transform = (point) => camera.canvas2WorldCoords(point.x, point.y, cnv);
 
-    var marquee = marqueeFact.initMarquee(appState, $('#marquee'), isOn, {transform: transform});
+function setupSelectionMarquee (appState, isOn) {
+    const camera = appState.renderState.get('camera');
+    const cnv = appState.renderState.get('canvas');
+    const transform = (point) => camera.canvas2WorldCoords(point.x, point.y, cnv);
 
-    marquee.selections.subscribe((sel) => {
-        debug('marquee selected bounds', sel);
-    }, util.makeErrorHandler('bad marquee selections'));
+    const marquee = marqueeFact.createSelectionMarquee($('#marquee'));
 
-    marquee.drags.subscribe((drag) => {
-        debug('marquee drag action', drag.start, drag.end);
-    }, util.makeErrorHandler('bad marquee drags'));
+    isOn.filter(_.identity).do(() => {
+        console.log('Enabling');
+        marquee.enable();
+    }).subscribe(_.identity, util.makeErrorHandler('enable selection marquee'));
 
-    return marquee;
+    isOn.filter((x) => !x).do(() => {
+        console.log('disabling');
+        marquee.disable();
+    }).subscribe(_.identity, util.makeErrorHandler('enable selection marquee'));
+
+    marquee.selections.do((marqueeState) => {
+        console.log('Got selection: ', marqueeState);
+    }).subscribe(_.identity, util.makeErrorHandler('handling selections marquee'));
+
 }
 
 /**
@@ -242,8 +247,9 @@ function clicksFromPopoutControls($elt) {
                     evt.stopPropagation();
                 })
                 .switchMap(() => Rx.Observable.fromEvent(elt, 'mouseup'))
-                .map(_.constant(elt));
-        }));
+                .map(_.constant(elt))
+                .share();
+        })).share();
 }
 
 function toggleLogo($cont, urlParams) {
@@ -624,18 +630,20 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     // TODO: More general version for all toggle-able buttons?
     var marqueeIsOn = false;
     var $viewSelectionButton = $('#viewSelectionButton');
-    var turnOnMarquee =
-        Rx.Observable.merge(
-            popoutClicks.filter((elt) => {
-                return elt === $viewSelectionButton[0]; })
-                .map(() => !marqueeIsOn),
-            Rx.Observable.fromEvent($graph, 'click')
-                .map(_.constant(false)))
-        .do((isTurnOn) => {
-            marqueeIsOn = isTurnOn;
+
+    const marqueeOnObservable =
+        popoutClicks.filter((elt) => {
+            console.log('Got click: ', elt);
+            return elt === $viewSelectionButton[0];
+        })
+        .do(() => {
+            marqueeIsOn = !marqueeIsOn;
+            console.log('TURNING to: ', marqueeIsOn);
             toggleButton($viewSelectionButton, marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
-        });
+        }).map(() => marqueeIsOn).share();
+
+
     var histogramPanelToggle = setupPanelControl(popoutClicks, $('#histogramPanelControl'), $('#histogram.panel'),
         'Turning on/off the histogram panel');
     var dataInspectorIsVisible = false;
@@ -721,7 +729,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .merge(histogramPanelToggle)
         .take(1);
 
-    var marquee = setupMarquee(appState, turnOnMarquee);
+    var marquee = setupSelectionMarquee(appState, marqueeOnObservable);
     var brush = setupBrush(appState, turnOnBrush);
     var filtersPanel = new FiltersPanel(socket, appState.labelRequests, appState.settingsChanges);
     filtersPanel.setupToggleControl(popoutClicks, $('#filterButton'), $('#exclusionButton'));
@@ -754,16 +762,6 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             .filter((elt) => elt === $('#layoutSettingsButton')[0])
             .take(1),
         urlParams);
-
-    Rx.Observable.zip(
-        marquee.drags,
-        marquee.drags.switchMap(() => marquee.selections.take(1)),
-        (a, b) => ({drag: a, selection: b})
-    ).subscribe((move) => {
-        var payload = {marquee: move};
-        socket.emit('move_nodes', payload);
-    }, util.makeErrorHandler('marquee error'));
-
 
     //tick stream until canceled/timed out (ends with finalCenter)
     var autoCentering =
