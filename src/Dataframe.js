@@ -2198,8 +2198,8 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
             numBins = range / binWidth;
         }
 
-        bottomVal = roundDownBy(min, binWidth);
-        topVal = roundUpBy(max, binWidth);
+        bottomVal = dataTypeUtil.roundDownBy(min, binWidth);
+        topVal = dataTypeUtil.roundUpBy(max, binWidth);
         numBins = Math.floor((topVal - bottomVal) / binWidth) + 1;
     }
 
@@ -2236,38 +2236,8 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     //////////////////////////////////////////////////////////////////////////
 
 
-    let incFunction;
-    let decFunction;
-    // TODO: Rest of time ranges
-    if (timeAggregation === 'day') {
-        incFunction = function (date) {
-            return date.setHours(24,0,0,0);
-        };
-        decFunction = function (date) {
-            return date.setHours(0,0,0,0);
-        };
-    } else if (timeAggregation === 'hour') {
-        incFunction = function (date) {
-            return date.setMinutes(60,0,0);
-        };
-        decFunction = function (date) {
-            return date.setMinutes(0,0,0);
-        };
-    } else if (timeAggregation === 'minute') {
-        incFunction = function (date) {
-            return date.setSeconds(60,0);
-        };
-        decFunction = function (date) {
-            return date.setSeconds(0,0);
-        };
-    } else if (timeAggregation === 'second') {
-        incFunction = function (date) {
-            return date.setMilliseconds(1000);
-        };
-        decFunction = function (date) {
-            return date.setMilliseconds(0);
-        };
-    } else {
+    const {inc: incFunction, dec: decFunction} = dataTypeUtil.dateIncrementors(timeAggregation);
+    if (incFunction === undefined) {
         return;
     }
 
@@ -2348,7 +2318,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
 
     // Fill bins
     const numBins = cutoffs.length - 1;
-    const bins = Array.apply(null, new Array(numBins)).map(() => { return 0; });
+    const bins = Array.apply(null, new Array(numBins)).map(() => 0);
     const timeValues = this.getColumnValues(timeAttr, timeType);
 
     // COMPUTE BIN WIDTH
@@ -2578,27 +2548,10 @@ function pickTitleField (aliases, attributes, field) {
         return mapped;
     } else {
         const oldDeprecatedNames = [field, 'node', 'label', 'edge'];
-        return _.find(oldDeprecatedNames, (f) => { return f in attributes; });
+        return _.find(oldDeprecatedNames, (f) => attributes.hasOwnProperty(f));
     }
 }
 
-function roundDownBy(num, multiple) {
-    if (multiple === 0) {
-        return num;
-    }
-
-    const div = num / multiple;
-    return multiple * Math.floor(div);
-}
-
-function roundUpBy(num, multiple) {
-    if (multiple === 0) {
-        return num;
-    }
-
-    const div = num / multiple;
-    return multiple * Math.ceil(div);
-}
 
 function serialize(data, compressFunction, target) {
     let serialized = JSON.stringify(data);
