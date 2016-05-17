@@ -1,7 +1,6 @@
 'use strict';
 
 const Q       = require('q');
-const _       = require('underscore');
 const pb      = require('protobufjs');
 const path    = require('path');
 const config  = require('config')();
@@ -18,7 +17,7 @@ const builder = pb.loadProtoFile(graphVectorProtoPath);
 if (builder === null) {
     logger.die('Could not find protobuf definition');
 }
-const pb_root = builder.build();
+const protobufRoot = builder.build();
 
 /* Hack way to serialize positions while waiting for dataframe */
 function serializePositions(graph) {
@@ -38,16 +37,16 @@ function serializePositions(graph) {
             yVal[i] = values[2*i + 1];
         }
 
-        const xVec = new pb_root.VectorGraph.DoubleAttributeVector();
+        const xVec = new protobufRoot.VectorGraph.DoubleAttributeVector();
         xVec.name = 'x';
         xVec.values = xVal;
-        xVec.target = pb_root.VectorGraph.AttributeTarget.VERTEX;
+        xVec.target = protobufRoot.VectorGraph.AttributeTarget.VERTEX;
         vg.double_vectors.push(xVec);
 
-        const yVec = new pb_root.VectorGraph.DoubleAttributeVector();
+        const yVec = new protobufRoot.VectorGraph.DoubleAttributeVector();
         yVec.name = 'y';
         yVec.values = yVal;
-        yVec.target = pb_root.VectorGraph.AttributeTarget.VERTEX;
+        yVec.target = protobufRoot.VectorGraph.AttributeTarget.VERTEX;
         vg.double_vectors.push(yVec);
 
         return vg;

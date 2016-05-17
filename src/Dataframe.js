@@ -28,12 +28,10 @@ function getUniqueId () {
 }
 
 /**
- * @readonly
  * @type {string[]}
  */
 const GraphComponentTypes = ['point', 'edge'];
 /**
- * @readonly
  * @type {string[]}
  */
 const BufferTypeKeys = GraphComponentTypes.concat('simulator');

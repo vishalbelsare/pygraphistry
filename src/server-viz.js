@@ -135,6 +135,7 @@ function sliceSelection (dataFrame, type, mask, start, end, sortColumnName, asce
         const newIndices = [];
         const columnNames = dataFrame.publicColumnNamesByType(type);
         mask.forEachIndexByType(type, (idx) => {
+            // TODO: do this column-wise or at least avoid row-consing.
             if (_.any(dataFrame.getRowAt(idx, type, columnNames),
                     (val/* , key */) => String(val).toLowerCase().indexOf(searchFilter) > -1)) {
                 newIndices.push(idx);
@@ -1354,7 +1355,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
         }).subscribe(
             _.identity,
             (err) => {
-                log.makeRxErrorHandler(logger, 'recolor by column handler')(err);
+                log.makeRxErrorHandler(logger, 'encode by column handler')(err);
             }
         );
     });
