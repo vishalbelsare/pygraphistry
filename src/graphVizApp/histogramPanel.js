@@ -1289,6 +1289,11 @@ function setupSvg (el, margin, width, height) {
 // Util
 //////////////////////////////////////////////////////////////////////////////
 
+function isBinValueRange (binValue) {
+    return binValue.min !== undefined && binValue.min !== binValue.max &&
+        (binValue.min !== binValue.representative || binValue.max !== binValue.representative);
+}
+
 /**
  * Retains histogram-control-specific filter details while allowing coordination with the underlying filter model.
  * @param {String} dataframeAttribute
@@ -1319,6 +1324,7 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
         };
     } else if (stats.type === 'countBy') {
         const binValues = [];
+        const binRanges = [];
         // TODO: Determine if this order is deterministic,
         // and if not, explicitly send over a bin ordering from aggregate.
         const binNames = _.keys(stats.bins);
@@ -1330,11 +1336,16 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                 otherIsSelected = true;
                 continue;
             }
-            if (stats.binValues && stats.binValues[binName] &&
-                stats.binValues[binName].representative !== undefined) {
-                binName = stats.binValues[binName].representative;
+            const binValue = stats.binValues && stats.binValues[binName];
+            if (!binValue) { continue; }
+            if (isBinValueRange(binValue)) {
+                binRanges.push([binValue.min, binValue.max]);
+            } else {
+                if (binValue.representative !== undefined) {
+                    binName = binValue.representative;
+                }
+                binValues.push(isNumeric ? Number(binName) : binName);
             }
-            binValues.push(isNumeric ? Number(binName) : binName);
         }
         updatedHistogramFilter.equals = binValues;
         const elements = _.map(binValues, (x) => ({type: 'Literal', value: x}));
@@ -1353,8 +1364,22 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                 right: elements[0]
             };
         }
+        const rangePredicates = _.map(binRanges, ([min, max]) => ({
+            type: 'BetweenPredicate',
+            start: {type: 'Literal', value: min},
+            stop: {type: 'Literal', value: max},
+            value: identifier
+        }));
+        rangePredicates.forEach((betweenPredicate) => {
+            updatedHistogramFilter.ast = updatedHistogramFilter.ast === undefined ? betweenPredicate : {
+                type: 'BinaryPredicate',
+                operator: 'OR',
+                left: betweenPredicate,
+                right: updatedHistogramFilter.ast
+            };
+        });
         if (otherIsSelected) {
-            const otherAST = {
+            let otherAST = {
                 type: 'NotExpression',
                 operator: 'NOT',
                 value: {
@@ -1367,6 +1392,18 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                     }
                 }
             };
+            rangePredicates.forEach((betweenPredicate) => {
+                otherAST = {
+                    type: 'BinaryPredicate',
+                    operator: 'AND',
+                    left: {
+                        type: 'NotExpression',
+                        operator: 'NOT',
+                        value: betweenPredicate
+                    },
+                    right: otherAST
+                };
+            });
             if (updatedHistogramFilter.ast === undefined) {
                 updatedHistogramFilter.ast = otherAST;
             } else {
@@ -1381,7 +1418,9 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
     }
     // TODO rename type property to graphType for clarity.
     updatedHistogramFilter.type = graphType;
-    this.histogramFilters[dataframeAttribute] = updatedHistogramFilter;
+    if (updatedHistogramFilter.ast !== undefined) {
+        this.histogramFilters[dataframeAttribute] = updatedHistogramFilter;
+    }
 
     $('.refreshHistogramButton-' + id).css('visibility', 'visible');
 };
