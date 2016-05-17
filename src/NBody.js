@@ -12,6 +12,10 @@ const logger      = log.createLogger('graph-viz', 'graph-viz/js/NBody');
 const ELEMENTS_PER_POINTS = 2;
 
 
+/**
+ * @param {Object} graph
+ * @returns {GraphManager}
+ */
 export function createSync (graph) {
 
     _.each({

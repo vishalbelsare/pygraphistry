@@ -3,41 +3,42 @@
 
 'use strict';
 
-var RenderBase = require('./RenderBase.js');
-var Q = require('q');
+const RenderBase = require('./RenderBase.js');
+const Q = require('q');
 
-var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz', 'graph-viz/js/RenderNull.js');
+const log         = require('common/logger.js');
+const logger      = log.createLogger('graph-viz', 'graph-viz/js/RenderNull.js');
 
-var createBuffer = Q.promised(function(renderer, data) {
-    logger.trace("Creating (fake) null renderer buffer of type %s. Constructor: %o", typeof(data), (data||{}).constructor);
+const createBuffer = Q.promised((renderer, data) => {
+    logger.trace('Creating (fake) null renderer buffer of type %s. Constructor: %o',
+        typeof(data), (data||{}).constructor);
 
-    var bufObj = {
-        "buffer": null,
-        "gl": null,
-        "len": (typeof data === 'number' ? data : data.byteLength),
-        "data": (typeof data === 'number' ? null : data)
+    const bufObj = {
+        'buffer': null,
+        'gl': null,
+        'len': (typeof data === 'number' ? data : data.byteLength),
+        'data': (typeof data === 'number' ? null : data)
     };
 
     return bufObj;
 });
 
 
-var write = function(buffer, data) { return Q(buffer); };
+const noopWrite = function(buffer/* , data */) { return Q(buffer); };
 
 
-function noop() {
+function noop () {
     return true;
 }
 
 
-var noopPromise = Q.promised(function() {
+const noopPromise = Q.promised(() => {
     return;
 });
 
 export function createSync(document) {
-    var renderer = RenderBase.create();
-    logger.trace("Created renderer RenderNull");
+    const renderer = RenderBase.create();
+    logger.trace('Created renderer RenderNull');
 
     renderer.document = document;
 
@@ -56,5 +57,7 @@ export function createSync(document) {
     return renderer;
 }
 
-//[string] * document -> Promise Renderer
+/**
+ * @returns Promise<Renderer>
+ */
 export const create = Q.promised(createSync);

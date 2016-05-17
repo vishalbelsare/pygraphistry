@@ -1,18 +1,16 @@
 'use strict';
 
-var _ = require('underscore');
-var Q = require('q');
-var sprintf = require('sprintf-js').sprintf;
-var path = require('path');
-var fs = require('fs');
-var util = require('./util');
+const _ = require('underscore');
+const Q = require('q');
+const sprintf = require('sprintf-js').sprintf;
+const util = require('./util');
 
-var cljs = require('./cl.js');
-var ocl = require('node-opencl');
-var config = require('config')();
+const cljs = require('./cl.js');
+const ocl = require('node-opencl');
+const config = require('config')();
 
-var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz', 'graph-viz/js/kernel.js');
+const log         = require('common/logger.js');
+const logger      = log.createLogger('graph-viz', 'graph-viz/js/kernel.js');
 
 // Disable debug logging since this file is responsible for 90% of log output.
 // Comment me for local debugging.
@@ -21,19 +19,19 @@ var logger      = log.createLogger('graph-viz', 'graph-viz/js/kernel.js');
 
 
 // String * [String] * {String: Type} * String * clCtx
-var Kernel = function (name, argNames, argTypes, file, clContext) {
+const Kernel = function (name, argNames, argTypes, file, clContext) {
     logger.trace({kernelName: name,
                 file: file}, 'Creating Kernel: %s', name);
 
-    var that = this;
+    const that = this;
     this.name = name;
     this.argNames = argNames;
     // Q promise
-    var source = util.getKernelSource(file);
+    const source = util.getKernelSource(file);
 
     //TODO: Alternative way of doing this, since we aren't using debug module anymore
     // Set synchronous based on debug value
-    var synchronous = false;
+    let synchronous = false;
     if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') !== -1) {
         logger.trace('Kernel ' + name + ' is synchronous because DEBUG=perf');
         synchronous = true;
@@ -42,10 +40,10 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     // For gathering performance data
     this.timings = [];
     this.totalRuns = 0;
-    var maxTimings = 100;
+    const maxTimings = 100;
 
     // Sanity Checks
-    _.each(argNames, function (arg) {
+    _.each(argNames, (arg) => {
         if (!(arg in argTypes)) {
             logger.die('In Kernel %s, argument %s has no type', name, arg);
         }
@@ -54,28 +52,28 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     function isDefine(arg) {
         return argTypes[arg] === cljs.types.define;
     }
-    var args = _.reject(argNames, isDefine);
-    var defines = _.filter(argNames, isDefine).concat(['NODECL']);
+    const args = _.reject(argNames, isDefine);
+    const defines = _.filter(argNames, isDefine).concat(['NODECL']);
 
-    var defVal = {dirty: true, val: null};
-    var argValues = _.object(
-        _.map(args, function (name) { return [name, defVal]; })
+    const defVal = {dirty: true, val: null};
+    const argValues = _.object(
+        _.map(args, (argName) => [argName, defVal])
     );
-    var defValues = _.object(
-        _.map(defines, function (name) { return [name, null]; })
+    const defValues = _.object(
+        _.map(defines, (argName) => [argName, null])
     );
     Object.seal(argValues);
     Object.seal(defValues);
 
     // If kernel has no defines, compile right away
-    var qKernel = _.without(defines, 'NODECL').length === 0 ? compile() : Q(null);
+    let qKernel = _.without(defines, 'NODECL').length === 0 ? compile() : Q(null);
 
     // {String -> Value} -> Kernel
     this.set = function (args) {
         logger.trace({'kernelName': this.name, 'arguements': args}, 'Setting args for kernel: %s', this.name);
 
-        var mustRecompile = false;
-        _.each(args, function (val, arg) {
+        let mustRecompile = false;
+        _.each(args, (val, arg) => {
             if (arg in argValues) {
                 if (val === undefined || val === null) {
                     logger.trace('Setting argument %s to %s', arg, val);
@@ -113,14 +111,14 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     function compile () {
         logger.trace('Compiling kernel', that.name);
 
-        _.each(defValues, function (arg, val) {
+        _.each(defValues, (arg, val) => {
             if (val === null) {
                 logger.die('Define %s of kernel %s was never set', arg, name);
             }
 
         });
 
-        var prefix = _.flatten(_.map(defValues, function (val, key) {
+        const prefix = _.flatten(_.map(defValues, (val, key) => {
             if (typeof val === 'string' || typeof val === 'number' || val === true) {
                 return ['#define ' + key + ' ' + val];
             } else if (val === null) {
@@ -131,30 +129,28 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
         }), true).join('\n');
         logger.trace('Prefix', prefix);
 
-        return source.then(function (source) {
-            var processedSource = prefix + '\n\n' + source;
+        return source.then((source) => {
+            const processedSource = prefix + '\n\n' + source;
             // TODO: Alternative way of doing this, since we aren't using debug module anymore
             // if (config.ENVIRONMENT === 'local') {
-            //     var debugFile = path.resolve(__dirname, '..', 'kernels', file + '.debug');
+            //     const debugFile = path.resolve(__dirname, '..', 'kernels', file + '.debug');
             //     fs.writeFileSync(debugFile, processedSource);
             // }
 
             return clContext.compile(processedSource, [name])
-                .then(function (kernels) {
-                    return kernels[name];
-                });
+                .then((kernels) => kernels[name]);
         });
     }
 
     function setAllArgs(kernel) {
         logger.trace({kernelName: name}, 'Setting arguments for kernel');
-        var i;
+        let i;
         try {
             for (i = 0; i < args.length; i++) {
-                var arg = args[i];
-                var val = argValues[arg].val;
-                var dirty = argValues[arg].dirty;
-                var type = argTypes[arg] || "cl_mem";
+                const arg = args[i];
+                const val = argValues[arg].val;
+                const dirty = argValues[arg].dirty;
+                const type = argTypes[arg] || 'cl_mem';
                 if (val === null) {
                     logger.trace('In kernel %s, argument %s is null', name, arg);
                 }
@@ -174,14 +170,14 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
     function call(kernel, workItems, buffers, workGroupSize) {
         // TODO: Consider acquires and releases of buffers.
 
-        var queue = clContext.queue;
+        const queue = clContext.queue;
         logger.trace({kernelName: that.name}, 'Enqueuing kernel %s', that.name);
-        var start = process.hrtime();
+        const start = process.hrtime();
         ocl.enqueueNDRangeKernel(queue, kernel, 1, null, workItems, workGroupSize || null);
         if (synchronous) {
             logger.trace('Waiting for kernel to finish');
             ocl.finish(queue);
-            var diff = process.hrtime(start);
+            const diff = process.hrtime(start);
             that.timings[that.totalRuns % maxTimings] = (diff[0] * 1000 + diff[1] / 1000000);
         }
         that.totalRuns++;
@@ -190,7 +186,7 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
     // [Int] * [String] -> Promise[Kernel]
     this.exec = function(numWorkItems, resources, workGroupSize) {
-        return qKernel.then(function (kernel) {
+        return qKernel.then((kernel) => {
             if (kernel === null) {
                 logger.error('Kernel is not compiled, aborting');
                 return Q();
@@ -204,14 +200,14 @@ var Kernel = function (name, argNames, argTypes, file, clContext) {
 
 // () -> Stats
 Kernel.prototype.runtimeStats = function () {
-    var runs = this.timings.length;
-    var mean =  _.reduce(this.timings, function (a, b) {return a + b;}, 0) / runs;
-    var stdDev =
-        _.reduce(this.timings, function (acc, t) {
+    const runs = this.timings.length;
+    const mean =  _.reduce(this.timings, ((a, b) => a + b), 0) / runs;
+    const stdDev =
+        _.reduce(this.timings, (acc, t) => {
             return acc + (t - mean) * (t - mean);
         }, 0) / (runs > 1 ? runs - 1 : runs);
 
-    var pretty = sprintf('%25s:%4s ±%4s        #runs:%4d', this.name,
+    const pretty = sprintf('%25s:%4s ±%4s        #runs:%4d', this.name,
                          mean.toFixed(0), stdDev.toFixed(0), this.totalRuns);
     return {
         name: this.name,

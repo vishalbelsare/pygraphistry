@@ -1,20 +1,27 @@
 'use strict';
 
-var Q = require('q'),
+const Q = require('q'),
     _ = require('underscore');
 
-var RenderBase = require('./RenderBase.js');
-var glMatrix = require('gl-matrix');
-var util = require('./util.js');
+const RenderBase = require('./RenderBase.js');
+const glMatrix = require('gl-matrix');
+const util = require('./util.js');
 
-var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz:render:rendergl');
+const log         = require('common/logger.js');
+const logger      = log.createLogger('graph-viz:render:rendergl');
 
 //[string] * document * canvas * int * [number, number] * {<string>: bool} -> Promise Renderer
-var create = Q.promised(function(document, canvas, bgColor, dimensions, visible) {
-    visible = visible || {};
 
-    var renderer = RenderBase.create();
+/**
+ * @param document
+ * @param canvas
+ * @param {Number[]} bgColor
+ * @param dimensions
+ * @param visible
+ * @returns {Promise<Renderer>}
+ */
+const create = Q.promised((document, canvas, bgColor, dimensions, visible = {}) => {
+    const renderer = RenderBase.create();
     renderer.document = document;
     renderer.canvas = canvas;
 
@@ -23,9 +30,9 @@ var create = Q.promised(function(document, canvas, bgColor, dimensions, visible)
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
 
-    var gl = canvas.getContext("webgl", {antialias: true, premultipliedAlpha: false});
+    const gl = canvas.getContext('webgl', {antialias: true, premultipliedAlpha: false});
     if(gl === null) {
-        throw new Error("Could not initialize WebGL");
+        throw new Error('Could not initialize WebGL');
     }
 
     // Set up WebGL settings
@@ -38,7 +45,7 @@ var create = Q.promised(function(document, canvas, bgColor, dimensions, visible)
     gl.enable(gl.GL_POINT_SPRITE | 0x8861); //34913
     gl.enable(gl.VERTEX_PROGRAM_POINT_SIZE | 0x8642);
     gl.enable(gl.POINT_SMOOTH | 0x0B10);
-    gl.clearColor.apply(gl, bgColor);
+    gl.clearColor(bgColor);
     // Lines should be 1px wide
     gl.lineWidth(1);
 
@@ -72,61 +79,59 @@ var create = Q.promised(function(document, canvas, bgColor, dimensions, visible)
 
 
     return Q.all(
-        ['point', 'edge', 'midpoint', 'midedge', 'midedge-textured'].map(function (name) {
-            return renderer.createProgram(name + '.vertex', name + '.fragment');
-    }))
-    .spread(function (pointProgram, edgeProgram, midpointProgram, midedgeProgram, midedgeTexturedProgram) {
-        renderer.programs["points"] = pointProgram;
-        renderer.programs["edges"] = edgeProgram;
-        renderer.programs["midpoints"] = midpointProgram;
-        renderer.programs["midedges"] = midedgeProgram;
-        renderer.programs["midedgestextured"] = midedgeTexturedProgram;
+        ['point', 'edge', 'midpoint', 'midedge', 'midedge-textured'].map(
+            (name) => renderer.createProgram(name + '.vertex', name + '.fragment')
+    ))
+    .spread((pointProgram, edgeProgram, midpointProgram, midedgeProgram, midedgeTexturedProgram) => {
+        renderer.programs.points = pointProgram;
+        renderer.programs.edges = edgeProgram;
+        renderer.programs.midpoints = midpointProgram;
+        renderer.programs.midedges = midedgeProgram;
+        renderer.programs.midedgestextured = midedgeTexturedProgram;
 
         // TODO: Enlarge the camera by the (size of gl points / 2) so that points are fully
         // on screen even if they're at the edge of the graph.
         return renderer.setCamera2d(-0.01, dimensions[0] + 0.01, -0.01, dimensions[1] + 0.01);
     })
-    .then(function(renderer) {
-        return renderer;
-    });
+    .then((renderer) => renderer);
 });
 
 
-function createProgram(renderer, vertexShaderID, fragmentShaderID) {
-    var gl = renderer.gl;
+function createProgram (renderer, vertexShaderID, fragmentShaderID) {
+    const gl = renderer.gl;
 
-    var pragObj = {};
+    const pragObj = {};
 
     pragObj.renderer = renderer;
     pragObj.glProgram = gl.createProgram();
     pragObj.bindVertexAttrib = bindVertexAttrib.bind(this, pragObj);
-    pragObj.use = function() {
+    pragObj.use = function () {
         gl.useProgram(pragObj.glProgram);
-    }
+    };
     pragObj.attributes = {};
 
     return Q.all([
-        util.getShaderSource(vertexShaderID + ".glsl"),
-        util.getShaderSource(fragmentShaderID + ".glsl")
+        util.getShaderSource(vertexShaderID + '.glsl'),
+        util.getShaderSource(fragmentShaderID + '.glsl')
     ])
-    .spread(function(vertShaderSource, fragShaderSource) {
+    .spread((vertShaderSource, fragShaderSource) => {
 
         function compileShader(program, shaderSource, shaderType) {
 
-            var sanitizedShaderSource =
-                (typeof(window) == 'undefined' ? '#version 120\n' : '')
-                + shaderSource.replace(/(precision [a-z]* float;)/g,"#ifdef GL_ES\n$1\n#endif\n");
+            const sanitizedShaderSource =
+                (typeof(window) === 'undefined' ? '#version 120\n' : '') +
+                shaderSource.replace(/(precision [a-z]* float;)/g,'#ifdef GL_ES\n$1\n#endif\n');
 
-            var shader = renderer.gl.createShader(shaderType);
+            const shader = renderer.gl.createShader(shaderType);
             renderer.gl.shaderSource(shader, sanitizedShaderSource);
             renderer.gl.compileShader(shader);
             if(!renderer.gl.getShaderParameter(shader, renderer.gl.COMPILE_STATUS)) {
-                var err = new Error("Error compiling WebGL shader (shader type: " + shaderType + ")");
+                const err = new Error('Error compiling WebGL shader (shader type: ' + shaderType + ')');
                 logger.error(err, renderer.gl.getShaderInfoLog(shader));
                 throw err;
             }
             if(!renderer.gl.isShader(shader)) {
-                throw new Error("After compiling shader, WebGL is reporting it is not valid");
+                throw new Error('After compiling shader, WebGL is reporting it is not valid');
             }
             renderer.gl.attachShader(program.glProgram, shader);
 
@@ -142,32 +147,32 @@ function createProgram(renderer, vertexShaderID, fragmentShaderID) {
 }
 
 
-var setCamera2d = Q.promised(function(renderer, left, right, bottom, top) {
+const setCamera2d = Q.promised((renderer, left, right, bottom, top) => {
     renderer.gl.viewport(0, 0, renderer.canvas.width, renderer.canvas.height);
 
-    var lr = 1 / (left - right),
+    const lr = 1 / (left - right),
         bt = 1 / (bottom - top);
 
-    var mvpMatrix = glMatrix.mat2d.create();
+    const mvpMatrix = glMatrix.mat2d.create();
     glMatrix.mat2d.scale(mvpMatrix, mvpMatrix, glMatrix.vec2.fromValues(-2 * lr, -2 * bt));
     glMatrix.mat2d.translate(mvpMatrix, mvpMatrix, glMatrix.vec2.fromValues((left+right)*lr, (top+bottom)*bt));
 
-    var mvpMat3 = glMatrix.mat3.create();
+    const mvpMat3 = glMatrix.mat3.create();
     glMatrix.mat3.fromMat2d(mvpMat3, mvpMatrix);
 
-    ['points', 'edges', 'midpoints', 'midedges', 'midedgestextured'].forEach(function (name) {
-        var program = renderer.programs[name].glProgram;
+    ['points', 'edges', 'midpoints', 'midedges', 'midedgestextured'].forEach((name) => {
+        const program = renderer.programs[name].glProgram;
         renderer.gl.useProgram(program);
-        var mvpLocation = renderer.gl.getUniformLocation(program, "mvp");
+        const mvpLocation = renderer.gl.getUniformLocation(program, 'mvp');
         renderer.gl.uniformMatrix3fv(mvpLocation, false, mvpMat3);
-    })
+    });
 
     return renderer;
 });
 
 
 
-var colorMaps =
+const colorMaps =
     [
       [[0,0,0]], //1
       [[255,0,0],[0,0,255]], //2
@@ -189,40 +194,40 @@ var colorMaps =
 /**
  * Fetch the image at the given URL and use it when coloring edges in the graph.
  */
-var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
+const setColorMap = Q.promised((renderer, imageURL, maybeClusters) => {
 
 
     // TODO: Allow a user to clear the color map by passing in a null here or something
-    var gl = renderer.gl;
+    const gl = renderer.gl;
 
     return util.getImage(imageURL)
-    .then(function(texImg) {
+    .then((texImg) => {
 
-        var imageData;
+        let imageData;
         try {
-        if (typeof(window) == 'undefined') {
-            logger.trace("FIXME: no fancy setColorMap in node");
+        if (typeof(window) === 'undefined') {
+            logger.trace('FIXME: no fancy setColorMap in node');
         } else if (maybeClusters) {
 
-            logger.trace("Clustering colors");
+            logger.trace('Clustering colors');
 
-            var canvas = renderer.document.createElement("canvas");
+            const canvas = renderer.document.createElement('canvas');
             canvas.width = texImg.width;
             canvas.height = texImg.height;
 
-            var ctx = canvas.getContext("2d");
+            const ctx = canvas.getContext('2d');
             if (ctx.createImageData) {
                 imageData = ctx.createImageData(texImg.width, texImg.height);
             } else {
                 imageData = {
                     data: new Uint8Array(texImg.width * texImg.height * 4)
-                }
+                };
             }
 
             //default to white/transparent
-            for (var x = 0; x < texImg.width; x++) {
-                for (var y = 0; y < texImg.height; y++) {
-                    var i = 4 * (y * texImg.width + x);
+            for (let x = 0; x < texImg.width; x++) {
+                for (let y = 0; y < texImg.height; y++) {
+                    const i = 4 * (y * texImg.width + x);
                     imageData.data[i] = 255;
                     imageData.data[i+1] = 255;
                     imageData.data[i+2] = 255;
@@ -232,23 +237,23 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
 
             //point box around each start point to its cluster
             //FIXME: unsafe in case of overplotting; better to have a labeled edgelist..
-            var colors = colorMaps[maybeClusters.clusters.centers.length - 1];
-            maybeClusters.edges.forEach(function (pair, i) {
-                var clusterIdx = maybeClusters.clusters.labeling[i];
-                var cluster = maybeClusters.clusters.centers[clusterIdx];
-                var startPoint = maybeClusters.points[pair[0]];
+            const colors = colorMaps[maybeClusters.clusters.centers.length - 1];
+            maybeClusters.edges.forEach((pair, i) => {
+                const clusterIdx = maybeClusters.clusters.labeling[i];
+                // const cluster = maybeClusters.clusters.centers[clusterIdx];
+                const startPoint = maybeClusters.points[pair[0]];
 
-                var color = colors[clusterIdx];
+                const color = colors[clusterIdx];
 
-                var col = startPoint[0] * texImg.width;
-                var row = startPoint[1] * texImg.height;
+                const col = startPoint[0] * texImg.width;
+                const row = startPoint[1] * texImg.height;
 
-                var range = 3;
+                const range = 3;
 
-                for (var a = -range; a < range; a++) {
-                    for (var b = -range; b < range; b++) {
+                for (let a = -range; a < range; a++) {
+                    for (let b = -range; b < range; b++) {
 
-                        var idx = (Math.floor(row + a) * texImg.width + Math.floor(col+b)) * 4;
+                        let idx = (Math.floor(row + a) * texImg.width + Math.floor(col+b)) * 4;
                         idx = Math.max(0, Math.min(texImg.width * texImg.height * 4, idx)); //clamp
 
                         imageData.data[idx] = color[0];
@@ -259,7 +264,7 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
                 }
             });
         }else {
-            logger.debug("Using preset colors from %s", imageURL);
+            logger.debug('Using preset colors from %s', imageURL);
         }
         } catch (e) {
             log.makeQErrorHandler(logger, 'bad cluster load')(e);
@@ -277,26 +282,26 @@ var setColorMap = Q.promised(function(renderer, imageURL, maybeClusters) {
         gl.bindTexture(gl.TEXTURE_2D, null);
 
 
-        logger.trace("Finished setting colormap");
+        logger.trace('Finished setting colormap');
     });
 });
 
 
 //async (may trigger a write)
-var createBuffer = Q.promised(function(renderer, data) {
-    logger.trace("Creating gl buffer of type %s. Constructor: %o", typeof(data), (data||{}).constructor);
+const createBuffer = Q.promised((renderer, data) => {
+    logger.trace('Creating gl buffer of type %s. Constructor: %o', typeof(data), (data||{}).constructor);
 
-    var buffer = renderer.gl.createBuffer();
-    var bufObj = {
-        "buffer": buffer,
-        "gl": renderer.gl,
-        "len": (typeof data === 'number') ? data : data.byteLength
+    const buffer = renderer.gl.createBuffer();
+    const bufObj = {
+        'buffer': buffer,
+        'gl': renderer.gl,
+        'len': (typeof data === 'number') ? data : data.byteLength
     };
 
-    bufObj.delete = Q.promised(function() {
+    bufObj.delete = Q.promised(() => {
         renderer.gl.deleteBuffer(buffer);
         return renderer;
-    })
+    });
     bufObj.write = write.bind(this, bufObj);
 
     if(data) {
@@ -307,7 +312,7 @@ var createBuffer = Q.promised(function(renderer, data) {
 });
 
 
-var write = Q.promised(function(buffer, data) {
+const write = Q.promised((buffer, data) => {
     buffer.gl.bindBuffer(buffer.gl.ARRAY_BUFFER, buffer.buffer);
     buffer.gl.bufferData(buffer.gl.ARRAY_BUFFER, data, buffer.gl.DYNAMIC_DRAW);
     buffer.gl.finish();
@@ -331,9 +336,9 @@ var write = Q.promised(function(buffer, data) {
  * @param {number} offset - the number of bytes from the start of the buffer to begin reading
  */
 function bindVertexAttrib(program, buffer, attribute, elementsPerItem, glType, normalize, stride, offset) {
-    var gl = program.renderer.gl;
+    const gl = program.renderer.gl;
     // TODO: cache this, because getAttribLocation is a CPU/GPU synchronization
-    var location = gl.getAttribLocation(program.glProgram, attribute);
+    const location = gl.getAttribLocation(program.glProgram, attribute);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer.buffer);
     gl.enableVertexAttribArray(location);
@@ -384,8 +389,8 @@ function finish(renderer) {
 }
 
 
-var render = Q.promised(function(renderer) {
-    var gl = renderer.gl;
+const render = Q.promised((renderer) => {
+    const gl = renderer.gl;
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -396,53 +401,53 @@ var render = Q.promised(function(renderer) {
 
 
     if(renderer.numEdges > 0) {
-        if (renderer.isVisible("edges")) {
-            renderer.programs["edges"].use();
-            renderer.programs["edges"].bindVertexAttrib(renderer.buffers.springs, "curPos",
+        if (renderer.isVisible('edges')) {
+            renderer.programs.edges.use();
+            renderer.programs.edges.bindVertexAttrib(renderer.buffers.springs, 'curPos',
                 renderer.elementsPerPoint, gl.FLOAT, false,
                 renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
             gl.drawArrays(gl.LINES, 0, renderer.numEdges * 2);
         }
 
-        if (renderer.isVisible("midedges")) {
+        if (renderer.isVisible('midedges')) {
             if(renderer.colorTexture === null) {
-                renderer.programs["midedges"].use();
-                renderer.programs["midedges"].bindVertexAttrib(renderer.buffers.midSprings, "curPos",
+                renderer.programs.midedges.use();
+                renderer.programs.midedges.bindVertexAttrib(renderer.buffers.midSprings, 'curPos',
                     renderer.elementsPerPoint, gl.FLOAT, false,
                     renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
                 gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);
             } else {
-                renderer.programs["midedgestextured"].use();
-                renderer.programs["midedgestextured"].bindVertexAttrib(renderer.buffers.midSprings, "curPos",
+                renderer.programs.midedgestextured.use();
+                renderer.programs.midedgestextured.bindVertexAttrib(renderer.buffers.midSprings, 'curPos',
                     renderer.elementsPerPoint, gl.FLOAT, false,
                     renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-                renderer.programs["midedgestextured"].bindVertexAttrib(renderer.buffers.midSpringsColorCoord, "aColorCoord",
+                renderer.programs.midedgestextured.bindVertexAttrib(renderer.buffers.midSpringsColorCoord, 'aColorCoord',
                     renderer.elementsPerPoint, gl.FLOAT, false,
                     renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
                 gl.activeTexture(gl.TEXTURE0);
                 gl.bindTexture(gl.TEXTURE_2D, renderer.colorTexture);
-                gl.uniform1i(gl.getUniformLocation(renderer.programs["midedgestextured"].glProgram, "uSampler"), 0);
+                gl.uniform1i(gl.getUniformLocation(renderer.programs.midedgestextured.glProgram, 'uSampler'), 0);
                 gl.drawArrays(gl.LINES, 0, renderer.numMidEdges * 2);
             }
 
         }
     }
 
-    if (renderer.isVisible("points")) {
-        renderer.programs["points"].use();
-        renderer.programs["points"].bindVertexAttrib(renderer.buffers.curPoints, "curPos",
+    if (renderer.isVisible('points')) {
+        renderer.programs.points.use();
+        renderer.programs.points.bindVertexAttrib(renderer.buffers.curPoints, 'curPos',
             renderer.elementsPerPoint, gl.FLOAT, false,
             renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
-        renderer.programs["points"].bindVertexAttrib(renderer.buffers.pointSizes, "pointSize",
+        renderer.programs.points.bindVertexAttrib(renderer.buffers.pointSizes, 'pointSize',
             1, gl.UNSIGNED_BYTE, false, 0, 0);
-        renderer.programs["points"].bindVertexAttrib(renderer.buffers.pointColors, "pointColor",
+        renderer.programs.points.bindVertexAttrib(renderer.buffers.pointColors, 'pointColor',
             4, gl.UNSIGNED_BYTE, true, Uint32Array.BYTES_PER_ELEMENT, 0);
         gl.drawArrays(gl.POINTS, 0, renderer.numPoints);
     }
 
-    if (renderer.isVisible("midpoints")) {
-        renderer.programs["midpoints"].use();
-        renderer.programs["midpoints"].bindVertexAttrib(renderer.buffers.curMidPoints, "curPos",
+    if (renderer.isVisible('midpoints')) {
+        renderer.programs.midpoints.use();
+        renderer.programs.midpoints.bindVertexAttrib(renderer.buffers.curMidPoints, 'curPos',
             renderer.elementsPerPoint, gl.FLOAT, false,
             renderer.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 0);
         gl.drawArrays(gl.POINTS, 0, renderer.numMidPoints);
@@ -455,14 +460,14 @@ var render = Q.promised(function(renderer) {
 
 
 module.exports = {
-    "create": create,
-    "createProgram": createProgram,
-    "setColorMap": setColorMap,
-    "setCamera2d": setCamera2d,
-    "createBuffer": createBuffer,
-    "write": write,
-    "bindVertexAttrib": bindVertexAttrib,
-    "setVisible": setVisible,
-    "isVisible": isVisible,
-    "render": render
+    'create': create,
+    'createProgram': createProgram,
+    'setColorMap': setColorMap,
+    'setCamera2d': setCamera2d,
+    'createBuffer': createBuffer,
+    'write': write,
+    'bindVertexAttrib': bindVertexAttrib,
+    'setVisible': setVisible,
+    'isVisible': isVisible,
+    'render': render
 };

@@ -431,7 +431,7 @@ const wideEdgeWeightRangeMapper = {
             }
         }
     })
-}   
+};
 
 const noEdgeWeightTransformMapper  = {
     mappings: _.extend(defaultMapper.mappings, {
@@ -442,7 +442,7 @@ const noEdgeWeightTransformMapper  = {
             }
         }
     })
-}   
+};
 
 const mappers = {
     'wideEdgeWeightRange':wideEdgeWeightRangeMapper,

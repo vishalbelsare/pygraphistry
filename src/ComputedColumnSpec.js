@@ -9,22 +9,28 @@ function getUniqueId () {
     return stringId;
 }
 
+/**
+ * @param {Object} optionalInitializationSpec
+ * @constructor
+ */
 function ComputedColumnSpec (optionalInitializationSpec) {
 
     // Initialize with default values;
     this.version = getUniqueId();
     this.numberPerGraphComponent = 1;
-    this.arrType = Array;
+    this.ArrayVariant = Array;
     this.dependencies = [];
 
     if (optionalInitializationSpec && optionalInitializationSpec.constructor === Object) {
-        this.initializeFromObject(optionalInitializationSpec);
+        // TODO: Validate these inputs. Primarily meant for internal use
+        _.each(_.keys(optionalInitializationSpec), (key) => {
+            this[key] = optionalInitializationSpec[key];
+        });
     }
-
 }
 
 const NecessaryProps = [
-    'arrType', 'type', 'numberPerGraphComponent', 'graphComponentType',
+    'ArrayVariant', 'type', 'numberPerGraphComponent', 'graphComponentType',
     'dependencies'
 ];
 
@@ -40,12 +46,6 @@ ComputedColumnSpec.prototype.isCompletelyDefined = function () {
     return hasNecessaryProps && hasAComputationFunction;
 };
 
-ComputedColumnSpec.prototype.initializeFromObject = function (obj) {
-    // TODO: Validate these inputs. Primarily meant for internal use
-    _.each(_.keys(obj), (key) => {
-        this[key] = obj[key];
-    });
-};
 
 // Return a shallow clone of this object
 // Delete computation functions + dependencies for safety
@@ -79,8 +79,8 @@ ComputedColumnSpec.prototype.setGraphComponentType = function (graphComponentTyp
     this.graphComponentType = graphComponentType;
 };
 
-ComputedColumnSpec.prototype.setArrType = function (arrType) {
-    this.arrType = arrType;
+ComputedColumnSpec.prototype.setArrayVariant = function (arrType) {
+    this.ArrayVariant = arrType;
 };
 
 ComputedColumnSpec.prototype.setDataType = function (dataType) {

@@ -14,7 +14,7 @@ const ComputedColumnSpec = require('./ComputedColumnSpec.js');
 // Required fields in an encoding
 //
 // key: name of resulting local buffer
-// arrType: constructor for typed array
+// ArrayVariant: constructor for typed array
 // numberPerGraphComponent: Number of elements in resulting array relative to number
 //      of input graphComponentType. E.g., edge colors have twice as many as number of edges
 // graphComponentType: 'point' | 'edge'
@@ -39,7 +39,7 @@ const ComputedColumnSpec = require('./ComputedColumnSpec.js');
 const defaultLocalBuffers = {
 
     logicalEdges: new ComputedColumnSpec({
-        arrType: Uint32Array,
+        ArrayVariant: Uint32Array,
         type: 'number',
         numberPerGraphComponent: 2,
         graphComponentType: 'edge',
@@ -47,8 +47,8 @@ const defaultLocalBuffers = {
         dependencies: [
             ['unsortedEdges', 'hostBuffer']
         ],
-        computeAllValues: function (unsortedEdges, outArr, numGraphElements) {
-            for (var i = 0; i < outArr.length; i++) {
+        computeAllValues: function (unsortedEdges, outArr/* , numGraphElements */) {
+            for (let i = 0; i < outArr.length; i++) {
                 outArr[i] = unsortedEdges[i];
             }
             return outArr;
@@ -56,7 +56,7 @@ const defaultLocalBuffers = {
     }),
 
     forwardsEdgeToUnsortedEdge: new ComputedColumnSpec({
-        arrType: Uint32Array,
+        ArrayVariant: Uint32Array,
         type: 'number',
         numberPerGraphComponent: 1,
         graphComponentType: 'edge',
@@ -64,11 +64,11 @@ const defaultLocalBuffers = {
         dependencies: [
             ['forwardsEdges', 'hostBuffer']
         ],
-        computeAllValues: function (forwardsEdges, outArr, numGraphElements) {
+        computeAllValues: function (forwardsEdges, outArr/* , numGraphElements */) {
 
             const map = forwardsEdges.edgePermutationInverseTyped;
 
-            for (var i = 0; i < outArr.length; i++) {
+            for (let i = 0; i < outArr.length; i++) {
                 outArr[i] = map[i];
             }
             return outArr;
@@ -76,7 +76,7 @@ const defaultLocalBuffers = {
     }),
 
     forwardsEdgeStartEndIdxs: new ComputedColumnSpec({
-        arrType: Uint32Array,
+        ArrayVariant: Uint32Array,
         type: 'number',
         numberPerGraphComponent: 2,
         graphComponentType: 'point',
@@ -84,8 +84,8 @@ const defaultLocalBuffers = {
         dependencies: [
             ['forwardsEdges', 'hostBuffer']
         ],
-        computeAllValues: function (forwardsEdges, outArr, numGraphElements) {
-            for (var i = 0; i < outArr.length; i++) {
+        computeAllValues: function (forwardsEdges, outArr/* , numGraphElements */) {
+            for (let i = 0; i < outArr.length; i++) {
                 outArr[i] = forwardsEdges.edgeStartEndIdxsTyped[i];
             }
             return outArr;
@@ -93,7 +93,7 @@ const defaultLocalBuffers = {
     }),
 
     edgeHeights: new ComputedColumnSpec({
-        arrType: Uint32Array,
+        ArrayVariant: Uint32Array,
         type: 'number',
         numberPerGraphComponent: 1,
         graphComponentType: 'edge',
@@ -101,9 +101,9 @@ const defaultLocalBuffers = {
         dependencies: [
             ['forwardsEdges', 'hostBuffer']
         ],
-        computeAllValues: function (forwardsEdges, outArr, numGraphElements) {
+        computeAllValues: function (forwardsEdges, outArr/* , numGraphElements */) {
             const perm = forwardsEdges.edgePermutation;
-            for (var i = 0; i < outArr.length; i++) {
+            for (let i = 0; i < outArr.length; i++) {
                 outArr[i] = forwardsEdges.heights[perm[i]];
             }
             return outArr;
@@ -111,7 +111,7 @@ const defaultLocalBuffers = {
     }),
 
     edgeSeqLens: new ComputedColumnSpec({
-        arrType: Uint32Array,
+        ArrayVariant: Uint32Array,
         type: 'number',
         numberPerGraphComponent: 1,
         graphComponentType: 'edge',
@@ -119,9 +119,9 @@ const defaultLocalBuffers = {
         dependencies: [
             ['forwardsEdges', 'hostBuffer']
         ],
-        computeAllValues: function (forwardsEdges, outArr, numGraphElements) {
+        computeAllValues: function (forwardsEdges, outArr/* , numGraphElements */) {
             const perm = forwardsEdges.edgePermutation;
-            for (var i = 0; i < outArr.length; i++) {
+            for (let i = 0; i < outArr.length; i++) {
                 outArr[i] = forwardsEdges.seqLens[perm[i]];
             }
             return outArr;
@@ -129,7 +129,7 @@ const defaultLocalBuffers = {
     }),
 
     backwardsEdgeStartEndIdxs: new ComputedColumnSpec({
-        arrType: Uint32Array,
+        ArrayVariant: Uint32Array,
         type: 'number',
         numberPerGraphComponent: 2,
         graphComponentType: 'point',
@@ -137,8 +137,8 @@ const defaultLocalBuffers = {
         dependencies: [
             ['backwardsEdges', 'hostBuffer']
         ],
-        computeAllValues: function (backwardsEdges, outArr, numGraphElements) {
-            for (var i = 0; i < outArr.length; i++) {
+        computeAllValues: function (backwardsEdges, outArr/* , numGraphElements */) {
+            for (let i = 0; i < outArr.length; i++) {
                 outArr[i] = backwardsEdges.edgeStartEndIdxsTyped[i];
             }
             return outArr;
@@ -146,7 +146,7 @@ const defaultLocalBuffers = {
     }),
 
     pointColors: new ComputedColumnSpec({
-        arrType: Uint32Array,
+        ArrayVariant: Uint32Array,
         type: 'color',
         filterable: true,
         numberPerGraphComponent: 1,
@@ -156,7 +156,7 @@ const defaultLocalBuffers = {
             ['__pointCommunity', 'point']
         ],
 
-        computeSingleValue: function (pointCommunity, idx, numGraphElements) {
+        computeSingleValue: function (pointCommunity/* , idx, numGraphElements */) {
 
             const palette = util.palettes.qual_palette2;
             const pLen = palette.length;
@@ -168,7 +168,7 @@ const defaultLocalBuffers = {
     }),
 
     edgeColors: new ComputedColumnSpec({
-        arrType: Uint32Array,
+        ArrayVariant: Uint32Array,
         type: 'color',
         filterable: true,
         numberPerGraphComponent: 2,
@@ -179,9 +179,9 @@ const defaultLocalBuffers = {
             ['pointColors', 'localBuffer']
         ],
 
-        computeAllValues: function (unsortedEdges, pointColors, outArr, numGraphElements) {
+        computeAllValues: function (unsortedEdges, pointColors, outArr/* , numGraphElements */) {
 
-            for (var idx = 0; idx < outArr.length; idx++) {
+            for (let idx = 0; idx < outArr.length; idx++) {
                 const nodeIdx = unsortedEdges[idx];
                 outArr[idx] = pointColors[nodeIdx];
             }
@@ -192,14 +192,14 @@ const defaultLocalBuffers = {
     }),
 
     pointSizes: new ComputedColumnSpec({
-        arrType: Uint8Array,
+        ArrayVariant: Uint8Array,
         type: 'number',
         filterable: true,
         numberPerGraphComponent: 1,
         graphComponentType: 'point',
         version: 0,
         dependencies: [['__defaultPointSize', 'point']],
-        computeSingleValue: function (defaultPointSize, idx, numGraphElements) {
+        computeSingleValue: function (defaultPointSize/* , idx, numGraphElements */) {
             return defaultPointSize;
         }
     })
@@ -209,7 +209,7 @@ const defaultLocalBuffers = {
 const defaultHostBuffers = {
 
     forwardsEdgeWeights: new ComputedColumnSpec({
-        arrType: Float32Array,
+        ArrayVariant: Float32Array,
         type: 'number',
         filterable: true,
         numberPerGraphComponent: 1,
@@ -217,8 +217,8 @@ const defaultHostBuffers = {
         version: 0,
         dependencies: [
         ],
-        computeAllValues: function (outArr, numGraphElements) {
-            for (var i = 0; i < outArr.length; i++) {
+        computeAllValues: function (outArr/* , numGraphElements */) {
+            for (let i = 0; i < outArr.length; i++) {
                 outArr[i] = 1.0;
             }
             return outArr;
@@ -226,7 +226,7 @@ const defaultHostBuffers = {
     }),
 
     backwardsEdgeWeights: new ComputedColumnSpec({
-        arrType: Float32Array,
+        ArrayVariant: Float32Array,
         type: 'number',
         filterable: true,
         numberPerGraphComponent: 1,
@@ -234,8 +234,8 @@ const defaultHostBuffers = {
         version: 0,
         dependencies: [
         ],
-        computeAllValues: function (outArr, numGraphElements) {
-            for (var i = 0; i < outArr.length; i++) {
+        computeAllValues: function (outArr/* , numGraphElements */) {
+            for (let i = 0; i < outArr.length; i++) {
                 outArr[i] = 1.0;
             }
             return outArr;
@@ -260,6 +260,7 @@ const defaultEncodingColumns = {
 function ComputedColumnManager () {
     // We maintain a dependency graph between columns. dependency -> CC
     this.dependencyGraph = new Graph();
+    /** @type Object.<GraphComponentTypes, Object.<String, ComputedColumnSpec>> */
     this.activeComputedColumns = {};
 
     // TODO FIXME HACK: Computed Column Manager should not understand logic of
@@ -423,6 +424,11 @@ ComputedColumnManager.prototype.loadEncodingColumns = function () {
 // Lightweight Getters
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @param {GraphComponentTypes} columnType
+ * @param {String} columnName
+ * @returns {ComputedColumnSpec}
+ */
 ComputedColumnManager.prototype.getComputedColumnSpec = function (columnType, columnName) {
     return this.activeComputedColumns[columnType][columnName];
 };
@@ -458,8 +464,8 @@ ComputedColumnManager.prototype.getValue = function (dataframe, columnType, colu
         if (columnDesc.numberPerGraphComponent === 1) {
             return resultArray[idx];
         } else {
-            const returnArr = new columnDesc.arrType(columnDesc.numberPerGraphComponent);
-            for (var j = 0; j < columnDesc.numberPerGraphComponent; j++) {
+            const returnArr = new columnDesc.ArrayVariant(columnDesc.numberPerGraphComponent);
+            for (let j = 0; j < columnDesc.numberPerGraphComponent; j++) {
                 returnArr[j] = resultArray[idx*columnDesc.numberPerGraphComponent + j];
             }
             return returnArr;
@@ -469,11 +475,9 @@ ComputedColumnManager.prototype.getValue = function (dataframe, columnType, colu
     // Nothing precomputed -- recompute
     // TODO: Cache these one off computations?
 
-    const dependencies = _.map(columnDesc.dependencies, (dep) => {
-        const columnName = dep[0];
-        const columnType = dep[1];
+    const dependencies = _.map(columnDesc.dependencies, ([dependencyName, dependencyType]) => {
         // TODO: Impl
-        return dataframe.getCell(idx, columnType, columnName);
+        return dataframe.getCell(idx, dependencyType, dependencyName);
     });
 
     dependencies.push(idx);
@@ -498,17 +502,15 @@ ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe,
     }
 
     // Get dependencies
-    const dependencies = _.map(columnDesc.dependencies, (dep) => {
-        const columnName = dep[0];
-        const columnType = dep[1];
+    const dependencies = _.map(columnDesc.dependencies, ([dependencyName, dependencyType]) => {
         // TODO: Impl
         // TODO: Should this be an iterator instead of a raw array?
-        return dataframe.getColumnValues(columnName, columnType);
+        return dataframe.getColumnValues(dependencyName, dependencyType);
     });
 
     const numGraphElements = dataframe.getNumElements(columnDesc.graphComponentType);
     const outputSize = columnDesc.numberPerGraphComponent * numGraphElements;
-    const outputArr = new columnDesc.arrType(outputSize);
+    const outputArr = new columnDesc.ArrayVariant(outputSize);
 
     // Check if an explicit function is provided to compute all
     if (columnDesc.computeAllValues) {
@@ -521,14 +523,12 @@ ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe,
         // dependencies.push(0);
         // dependencies.push(numGraphElements);
 
-        const singleDependencies = _.map(dependencies, () => {
-            return 0;
-        });
+        const singleDependencies = _.map(dependencies, () => 0);
         singleDependencies.push(0);
         singleDependencies.push(numGraphElements);
 
 
-        for (var i = 0; i < numGraphElements; i++) {
+        for (let i = 0; i < numGraphElements; i++) {
 
             // set dependencies for this call
             _.each(dependencies, (arr, idx) => {
@@ -537,7 +537,7 @@ ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe,
 
                 } else {
                     const valueArray = new arr.constructor(columnDesc.numberPerGraphComponent);
-                    for (var j = 0; j < columnDesc.numberPerGraphComponent; j++) {
+                    for (let j = 0; j < columnDesc.numberPerGraphComponent; j++) {
                         valueArray[j] = arr[i*columnDesc.numberPerGraphComponent + j];
                     }
                     singleDependencies[idx] = valueArray;
@@ -549,7 +549,7 @@ ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe,
                 outputArr[i] = columnDesc.computeSingleValue.apply(this, singleDependencies);
             } else {
                 const res = columnDesc.computeSingleValue.apply(this, singleDependencies);
-                for (var j = 0; j < columnDesc.numberPerGraphComponent; j++) {
+                for (let j = 0; j < columnDesc.numberPerGraphComponent; j++) {
                     outputArr[i*columnDesc.numberPerGraphComponent + j] = res[j];
                 }
             }
