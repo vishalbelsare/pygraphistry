@@ -13,6 +13,7 @@ const d3      = require('d3');
 const util    = require('./util.js');
 const Identifier = require('./Identifier');
 const contentFormatter = require('./contentFormatter.js');
+const ExpressionPrinter = require('./ExpressionPrinter.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -629,6 +630,7 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
         if (histFilter.ast !== undefined) {
             query.ast = histFilter.ast;
         }
+        query.inputString = ExpressionPrinter.print(query);
         const matchingFilter = this.findFilterForHistogramFilter(attribute);
         if (matchingFilter === undefined) {
             filtersCollection.addFilter({

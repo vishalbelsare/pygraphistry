@@ -9,7 +9,6 @@ const PEGUtil = require('pegjs-util');
 const util    = require('./util.js');
 const Command = require('./command.js');
 const parser  = require('./expression.pegjs');
-const ExpressionPrinter = require('./ExpressionPrinter.js');
 
 
 function filterParametersCore (type, attribute) {
@@ -98,28 +97,22 @@ FilterControl.prototype.queryFromExpressionString = function (inputString) {
 };
 
 FilterControl.prototype.filterRangeParameters = function (type, attribute, start, stop) {
-    const result = _.extend(filterParametersCore(type, attribute), {
+    return _.extend(filterParametersCore(type, attribute), {
         start: start,
         stop: stop
     });
-    result.inputString = ExpressionPrinter.print(result);
-    return result;
 };
 
 FilterControl.prototype.filterExactValueParameters = function (type, attribute, value) {
-    const result = _.extend(filterParametersCore(type, attribute), {
+    return _.extend(filterParametersCore(type, attribute), {
         equals: value
     });
-    result.inputString = ExpressionPrinter.print(result);
-    return result;
 };
 
 FilterControl.prototype.filterExactValuesParameters = function (type, attribute, values) {
-    const result = _.extend(filterParametersCore(type, attribute), {
+    return _.extend(filterParametersCore(type, attribute), {
         equals: values
     });
-    result.inputString = ExpressionPrinter.print(result);
-    return result;
 };
 
 FilterControl.prototype.filterObservable = function (params) {
