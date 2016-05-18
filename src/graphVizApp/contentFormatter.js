@@ -44,6 +44,20 @@ function castToMoment (value) {
 
 function defaultFormat (value, dataType) {
 
+    if (dataType === undefined) {
+        dataType = typeof value;
+    }
+
+    if (dataType === 'boolean') {
+        if (value === true) {
+            return '✓';
+        } else if (value === false) {
+            return '✗';
+        } else {
+            return '☐';
+        }
+    }
+
     // null guards
     if (dataType === 'number' && (isNaN(value) || value === 0x7FFFFFFF)) {
         return null;
@@ -117,6 +131,20 @@ function maybePrecise (v, significantFigures) {
 }
 
 function shortFormat (value, dataType) {
+
+    if (dataType === undefined) {
+        dataType = typeof value;
+    }
+
+    if (dataType === 'boolean') {
+        if (value === true) {
+            return '✓';
+        } else if (value === false) {
+            return '✗';
+        } else {
+            return '☐';
+        }
+    }
 
     if (dataType === 'date') {
         var momentVal = castToMoment(value);
