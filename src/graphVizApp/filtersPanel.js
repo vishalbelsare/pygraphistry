@@ -10,6 +10,7 @@ Backbone.$ = $;
 const FilterControl       = require('./FilterControl.js');
 const QuerySelectionModel = require('./QuerySelectionModel.js');
 const ExpressionEditor    = require('./expressionEditor.js');
+const ExpressionPrinter   = require('./ExpressionPrinter.js');
 const Identifier          = require('./Identifier.js');
 const util          = require('./util.js');
 
@@ -17,7 +18,6 @@ const util          = require('./util.js');
 const COLLAPSED_FILTER_HEIGHT = 80;
 
 /**
- * @readonly
  * @type {string[]}
  */
 const GraphComponentTypes = ['point', 'edge'];
@@ -94,7 +94,7 @@ const FilterView = Backbone.View.extend({
     render: function () {
         const bindings = {
             model: _.extend({
-                placeholder: this.control.queryToExpression(this.model.placeholderQuery()),
+                placeholder: ExpressionPrinter.print(this.model.placeholderQuery()),
                 isSystem: this.model.isSystem() || undefined
             }, this.model.toJSON()),
             dataTypes: _.map(DataTypes, (dataType) => {
@@ -140,7 +140,7 @@ const FilterView = Backbone.View.extend({
         ).subscribe((namespaceMetadata) => {
             this.editor.dataframeCompleter.setNamespaceMetadata(namespaceMetadata);
         });
-        const expression = this.model.getExpression(this.control);
+        const expression = this.model.getExpression();
         if (expression) {
             this.editor.session.setValue(expression);
         }

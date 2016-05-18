@@ -2,6 +2,7 @@
 
 const _ = require('underscore');
 const Backbone = require('backbone');
+const ExpressionPrinter = require('./ExpressionPrinter.js');
 
 const QuerySelectionModel = Backbone.Model.extend({
     defaults: {
@@ -73,7 +74,7 @@ const QuerySelectionModel = Backbone.Model.extend({
     },
     getExpression: function (control) {
         const query = this.get('query') || this.placeholderQuery();
-        return control.queryToExpression(query);
+        return ExpressionPrinter.print(query);
     },
     updateExpression: function (control, newExpression) {
         const query = control.queryFromExpressionString(newExpression);

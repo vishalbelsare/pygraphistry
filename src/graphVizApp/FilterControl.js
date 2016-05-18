@@ -10,7 +10,7 @@ const util    = require('./util.js');
 const Command = require('./command.js');
 const Identifier = require('./Identifier');
 const parser  = require('./expression.pegjs');
-// const parser  = require('./expressionParser.js');
+const ExpressionPrinter = require('./ExpressionPrinter');
 
 
 function filterParametersCore(type, attribute) {
@@ -82,47 +82,6 @@ FilterControl.prototype.updateFilters = function (filterStack) {
 FilterControl.prototype.clearExclusions = function () { return this.updateExclusions([]); };
 
 FilterControl.prototype.clearFilters = function () { return this.updateFilters([]); };
-
-FilterControl.prototype.printedExpressionOf = function (value) {
-    if (typeof value === 'string') {
-        return JSON.stringify(value);
-    } else if (typeof value === 'number') {
-        return value.toString(10);
-    } else if (typeof value === 'undefined' || value === null) {
-        return 'NULL';
-    } else if (Array.isArray(value)) {
-        return '(' + _.map(value, (each) => this.printedExpressionOf(each)).join(', ') + ')';
-    } else {
-        return '<unknown>';
-    }
-};
-
-FilterControl.prototype.queryToExpression = function (query) {
-    if (!query) { return undefined; }
-    if (query.inputString) {
-        return query.inputString;
-    }
-    let attribute = query.attribute;
-    if (!attribute) {
-        attribute = '<unknown>';
-    }
-    attribute = Identifier.clarifyWithPrefixSegment(attribute, query.type);
-    const printedAttribute = Identifier.identifierToExpression(attribute);
-    if (query.start !== undefined && query.stop !== undefined) {
-        return printedAttribute + ' BETWEEN ' + this.printedExpressionOf(query.start) +
-            ' AND ' + this.printedExpressionOf(query.stop);
-    } else if (query.start !== undefined) {
-        return printedAttribute + ' >= ' + this.printedExpressionOf(query.start);
-    } else if (query.stop !== undefined) {
-        return this.printedExpressionOf(query.stop) + ' <= ' + printedAttribute;
-    } else if (query.equals !== undefined) {
-        if (Array.isArray(query.equals) && query.equals.length > 1) {
-            return printedAttribute + ' IN ' + this.printedExpressionOf(query.equals);
-        } else {
-            return printedAttribute + ' = ' + this.printedExpressionOf(query.equals);
-        }
-    }
-};
 
 FilterControl.prototype.queryFromExpressionString = function (inputString) {
     //const asty = new ASTY();
@@ -203,7 +162,7 @@ FilterControl.prototype.filterRangeParameters = function (type, attribute, start
         start: start,
         stop: stop
     });
-    result.inputString = this.queryToExpression(result);
+    result.inputString = ExpressionPrinter.print(result);
     return result;
 };
 
@@ -211,7 +170,7 @@ FilterControl.prototype.filterExactValueParameters = function (type, attribute, 
     const result = _.extend(filterParametersCore(type, attribute), {
         equals: value
     });
-    result.inputString = this.queryToExpression(result);
+    result.inputString = ExpressionPrinter.print(result);
     return result;
 };
 
@@ -219,7 +178,7 @@ FilterControl.prototype.filterExactValuesParameters = function (type, attribute,
     const result = _.extend(filterParametersCore(type, attribute), {
         equals: values
     });
-    result.inputString = this.queryToExpression(result);
+    result.inputString = ExpressionPrinter.print(result);
     return result;
 };
 

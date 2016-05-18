@@ -11,6 +11,7 @@ var Backbone = require('backbone');
 var FilterControl       = require('./FilterControl.js');
 var QuerySelectionModel = require('./QuerySelectionModel.js');
 var ExpressionEditor    = require('./expressionEditor.js');
+var ExpressionPrinter   = require('./ExpressionPrinter.js');
 var util          = require('./util.js');
 
 
@@ -59,7 +60,7 @@ const ExclusionView = Backbone.View.extend({
     render: function () {
         const bindings = {
             model: _.extend({
-                placeholder: this.control.queryToExpression(this.model.placeholderQuery())
+                placeholder: ExpressionPrinter.print(this.model.placeholderQuery())
             }, this.model.toJSON())
         };
         const html = this.template(bindings);
@@ -94,7 +95,7 @@ const ExclusionView = Backbone.View.extend({
             .subscribe((namespaceMetadata) => {
                 this.editor.dataframeCompleter.setNamespaceMetadata(namespaceMetadata);
             });
-        const expression = this.model.getExpression(this.control);
+        const expression = this.model.getExpression();
         if (expression) {
             this.editor.session.setValue(expression);
         }
