@@ -224,6 +224,12 @@ function setupSelectionMarquee (appState, isOn) {
                 return {marqueeState, points};
             });
     }).map(({marqueeState, points}) => {
+
+        // Case where there is no valid selection (e.g., user just clicked and didn't drag)
+        if (!marqueeState.lastRect) {
+            return [];
+        }
+
         const {tl, br} = marqueeState.lastRect;
         const tlWorld = transform(tl);
         const brWorld = transform(br);

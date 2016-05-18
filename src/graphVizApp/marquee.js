@@ -23,8 +23,12 @@ const marqueeStateMachineDesc = {
     },
 
     DOWN_SELECT: {
-        up: /* => */ 'INIT',
+        up: /* => */ 'RESET_CLICK',
         move: /* => */ 'DRAWING'
+    },
+
+    RESET_CLICK: {
+        reset: /* => */ 'INIT'
     },
 
     DRAWING: {
@@ -96,33 +100,55 @@ function disableMarqueeVisuals ($elt, $cont) {
     $cont.removeClass('noselect');
 }
 
+function makeNewShiftedRect (rect, dx, dy) {
+    const newRect = {
+        tl: {
+            x: rect.tl.x + dx,
+            y: rect.tl.y + dy
+        },
+        br: {
+            x: rect.br.x + dx,
+            y: rect.br.y + dy
+        }
+    };
+    return newRect;
+}
+
+function makeEmptyRect() {
+    return {
+        tl: {x: 0, y: 0},
+        br: {x: 0, y: 0}
+    };
+}
+
 const sideEffectFunctions = {
     OFF: (machine, evt) => {
         // Hide everything, change cursor back to normal
-        console.log('Side Effect Off');
-
         resetMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
         disableMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
     },
 
     INIT: (machine, evt) => {
         // Set cursor to crosshair
-        console.log('Init');
-
+        machine.marqueeState.lastRect = makeEmptyRect();
         enableMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
         resetMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
     },
 
+    RESET_CLICK: (machine, evt) => {
+        machine.marqueeState.lastRect = makeEmptyRect();
+        machine.marqueeState.selectObservable.onNext(machine.marqueeState);
+        machine.events.onNext({evt: {}, name: 'reset'});
+    },
+
     DOWN_SELECT: (machine, evt) => {
         // Set Marquee State for down position
-        console.log('down select');
         machine.marqueeState.downPos = toPoint(machine.marqueeState.$cont, evt);
     },
 
     DRAWING: (machine, evt) => {
         // Update marquee state for last position
         // Draw rectangle to match
-        console.log('drawing');
         machine.marqueeState.movePos = toPoint(machine.marqueeState.$cont, evt);
 
         const rect = toRect(machine.marqueeState.downPos, machine.marqueeState.movePos);
@@ -131,8 +157,6 @@ const sideEffectFunctions = {
     },
 
     DONE_DRAWING: (machine, evt) => {
-        console.log('done drawing');
-
         // Set Marquee State for up position
         machine.marqueeState.upPos = toPoint(machine.marqueeState.$cont, evt);
 
@@ -148,23 +172,26 @@ const sideEffectFunctions = {
     },
 
     MARQUEE_STATIONARY: (machine, evt) => {
-
-        console.log('marquee stationary');
+        machine.marqueeState.stationaryRect = machine.marqueeState.lastRect;
     },
 
     DOWN_MARQUEE: (machine, evt) => {
-
-        console.log('down marquee');
+        machine.marqueeState.dragDownPos = toPoint(machine.marqueeState.$cont, evt);
     },
 
     DRAGGING_MARQUEE: (machine, evt) => {
-
-        console.log('dragging marquee');
+        machine.marqueeState.dragMovePos = toPoint(machine.marqueeState.$cont, evt);
+        const dx = machine.marqueeState.dragMovePos.x - machine.marqueeState.dragDownPos.x;
+        const dy = machine.marqueeState.dragMovePos.y - machine.marqueeState.dragDownPos.y;
+        const newRect = makeNewShiftedRect(machine.marqueeState.stationaryRect, dx, dy);
+        machine.marqueeState.lastRect = newRect;
+        moveElementToRect(machine.marqueeState.$elt, newRect);
+        machine.marqueeState.dragObservable.onNext(machine.marqueeState);
     },
 
     DONE_DRAGGING: (machine, evt) => {
-
-        console.log('done dragging');
+        machine.marqueeState.selectObservable.onNext(machine.marqueeState);
+        machine.events.onNext({evt: {}, name: 'waitForDrag'});
     }
 };
 
@@ -209,6 +236,28 @@ function activateMarqueeStateMachine (machine) {
         .merge(Rx.Observable.fromEvent($cont, 'mousemove'))
         .map(evt => ({evt, name: 'move'}));
 
+    const downOnBoxEvents = Rx.Observable.fromEvent(document, 'mousedown')
+        .filter((evt) => {
+            if (!machine.marqueeState.lastRect) {
+                return false;
+            }
+            const {tl, br} = machine.marqueeState.lastRect;
+            const {pageX: x, pageY: y} = evt;
+            return (x > tl.x && y > tl.y && x < br.x && y < br.y);
+        })
+        .map(evt => ({evt, name: 'downOnBox'}));
+
+    const downOffBoxEvents = Rx.Observable.fromEvent(document, 'mousedown')
+        .filter((evt) => {
+            if (!machine.marqueeState.lastRect) {
+                return false;
+            }
+            const {tl, br} = machine.marqueeState.lastRect;
+            const {pageX: x, pageY: y} = evt;
+            return !(x > tl.x && y > tl.y && x < br.x && y < br.y);
+        })
+        .map(evt => ({evt, name: 'downOffBox'}));
+
     // We make a handler here for mouseouts of JUST the document.
     // That is, a mouseout event from a child of the document won't trigger this,
     // only someone mouseing out of the window
@@ -223,7 +272,7 @@ function activateMarqueeStateMachine (machine) {
         .merge(mouseOutOfWindowStream)
         .map(evt => ({evt, name: 'up'}));
 
-    Rx.Observable.merge(downEvents, moveEvents, upEvents)
+    Rx.Observable.merge(downEvents, moveEvents, upEvents, downOnBoxEvents, downOffBoxEvents)
         .subscribe(events, util.makeErrorHandler('handle events for marquee'));
 
     // Update State Machine
