@@ -1,14 +1,36 @@
+'use strict';
 // Base class for Render* renderer objects
 // Returns a sealed Object with all fields required of a Render* object declared but set to null
 
-'use strict';
+/** @typedef {Object} Renderer
+ * @property gl
+ * @property document
+ * @property canvas
+ * @property {{curPoints: null, springs: null, curMidPoints: null, midSprings: null, midSpringsColorCoord: null}} buffers
+ * @property {{points: null, edges: null, midpoints: null, midedges: null, midedgestextured: null}} programs
+ * @property {Number} elementsPerPoint
+ * @property {Number} numPoints
+ * @property {Number} numEdges
+ * @property {Number} numMidPoints
+ * @property {Number} numMidEdges
+ * @property colorTexture
+ * @property {Function} setCamera2d
+ * @property {Function} createBuffer
+ * @property {Function} render
+ * @property {Function} createProgram
+ * @property {Function} setVisible
+ * @property {Function} isVisible
+ * @property {Function} setColorMap
+ * @property {Function} finish
+ * @property {{points: null, edges: null, midpoints: null, midedges: null}} visible
+ */
 
-var _ = require('underscore');
+/**
+ * @returns {Renderer}
+ */
+export function create () {
 
-//[string] -> Renderer
-function create() {
-
-    var renderer = {
+    const renderer = {
         gl: null,
         document: null,
         canvas: null,
@@ -50,7 +72,7 @@ function create() {
             edges: null,
             midpoints: null,
             midedges: null
-        },
+        }
     };
 
 
@@ -61,8 +83,3 @@ function create() {
 
     return renderer;
 }
-
-
-module.exports = {
-    "create": create
-};

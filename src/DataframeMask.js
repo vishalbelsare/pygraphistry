@@ -20,7 +20,7 @@ const GraphComponentTypes = ['point', 'edge'];
  * @param {Number} value
  * @returns {Number}
  */
-function indexOfInSorted(sortedArray, value) {
+function indexOfInSorted (sortedArray, value) {
     let low = 0,
         high = sortedArray.length - 1,
         mid;
@@ -70,7 +70,7 @@ function DataframeMask (dataframe, pointIndexes = undefined, edgeIndexes = undef
 function unbaseMaskFrom (mask, basisMask) {
     if (mask !== undefined && basisMask !== undefined) {
         const globalizedMask = new Uint32Array(mask.length);
-        for (var i=0; i<mask.length; i++) {
+        for (let i=0; i<mask.length; i++) {
             globalizedMask[i] = basisMask[mask[i]];
         }
         return globalizedMask;
@@ -115,7 +115,7 @@ function baseMaskOn (mask, basisMask) {
  * @param {Mask} y
  * @returns {Mask}
  */
-DataframeMask.unionOfTwoMasks = function(x, y) {
+DataframeMask.unionOfTwoMasks = function (x, y) {
     // Undefined means pass-through:
     if (x === undefined || y === undefined) { return undefined; }
     const xLength = x.length, yLength = y.length;
@@ -148,7 +148,7 @@ DataframeMask.unionOfTwoMasks = function(x, y) {
  * @param {Mask} y
  * @returns {Mask}
  */
-DataframeMask.intersectionOfTwoMasks = function(x, y) {
+DataframeMask.intersectionOfTwoMasks = function (x, y) {
     // Undefined means pass-through:
     if (x === undefined) { return y; }
     if (y === undefined) { return x; }
@@ -176,7 +176,7 @@ DataframeMask.intersectionOfTwoMasks = function(x, y) {
  * @param {Number} sizeOfUniverse
  * @returns {Mask}
  */
-DataframeMask.complementOfMask = function(x, sizeOfUniverse) {
+DataframeMask.complementOfMask = function (x, sizeOfUniverse) {
     // Undefined means all, complement is empty:
     if (x === undefined) { return []; }
     if (x === []) { return undefined; }
@@ -281,23 +281,39 @@ DataframeMask.prototype = {
     },
 
     /**
+     * @param {GraphComponentTypes} type
      * @param {DataframeMask} other
      * @returns {Boolean}
      */
-    equals: function (other) {
+    equalsMaskOnType: function (type, other) {
+        let isSame = true;
+        this.forEachIndexByType(type, (idx, i) => {
+            if (other.getIndexByType(type, i) !== idx) {
+                isSame = false;
+                return false;
+            }
+            return undefined;
+        });
+        return isSame;
+    },
+
+    /**
+     * @param {DataframeMask} other
+     * @returns {Boolean}
+     */
+    equalsMask: function (other) {
+        if (this === other) {
+            return true;
+        }
         // Quick test on sizes.
-        if (this.numPoints() !== other.numPoints() || this.numEdges() !== other.numEdges()) {
+        if (_.any(GraphComponentTypes, (type) => this.numByType(type) !== other.numByType(type))) {
             return false;
         }
 
         // If sizes are same, iterate through to make sure.
         let isSame = true;
         _.each(GraphComponentTypes, (type) => {
-            this.mapIndexes(type, (idx, i) => {
-                if (other.getIndexByType(type, i) !== idx) {
-                    isSame = false;
-                }
-            });
+            isSame = isSame && this.equalsMaskOnType(type, other);
         });
         return isSame;
     },
@@ -437,37 +453,45 @@ DataframeMask.prototype = {
      * */
 
     /**
-     * @param {String} type point/edge
-     * @param {IndexIteratorCallback} iterator
+     * @param {GraphComponentTypes} type
+     * @param {IndexIteratorCallback} iterator Returning a value terminates iteration early.
      */
-    mapIndexes: function (type, iterator) {
+    forEachIndexByType: function (type, iterator) {
         const numElements = this.numByType(type);
         const mask = this[type];
         if (mask === undefined) {
-            if (!this.isExclusive) {
-                for (let i = 0; i < numElements; i++) {
-                    iterator.call(this, i, i);
-                }
+            if (this.isExclusive) { return; }
+            for (let i = 0; i < numElements; i++) {
+                if (iterator.call(this, i, i) !== undefined) { return; }
             }
         } else {
             for (let i = 0; i < numElements; i++) {
-                iterator.call(this, mask[i], i);
+                if (iterator.call(this, mask[i], i) !== undefined) { return; }
             }
         }
     },
 
-    /**
-     * @param {IndexIteratorCallback} iterator
-     */
-    mapPointIndexes: function (iterator) {
-        this.mapIndexes('point', iterator);
+    mapIndexesByType: function (type, iterator) {
+        const numElements = this.numByType(type);
+        const results = new Array(numElements);
+        this.forEachIndexByType(type, (index, i) => {
+            results[i] = iterator(index, i);
+        });
+        return results;
     },
 
     /**
      * @param {IndexIteratorCallback} iterator
      */
-    mapEdgeIndexes: function (iterator) {
-        this.mapIndexes('edge', iterator);
+    forEachPointIndex: function (iterator) {
+        this.forEachIndexByType('point', iterator);
+    },
+
+    /**
+     * @param {IndexIteratorCallback} iterator
+     */
+    forEachEdgeIndex: function (iterator) {
+        this.forEachIndexByType('edge', iterator);
     },
 
     getIndexByType: function (type, index) {
@@ -528,7 +552,7 @@ DataframeMask.prototype = {
             }
             if (componentMask !== undefined && !(componentMask instanceof Array)) {
                 result[componentType] = new Array(componentMask.length);
-                for (var i = 0; i < componentMask.length; i++) {
+                for (let i = 0; i < componentMask.length; i++) {
                     result[componentType][i] = componentMask[i];
                 }
             }

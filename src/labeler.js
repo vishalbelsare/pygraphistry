@@ -1,88 +1,99 @@
 'use strict';
 
-var _ = require('underscore');
-var palettes = require('./palettes');
+const _ = require('underscore');
+const palettes = require('./palettes');
+const dataTypeUtil = require('./dataTypes.js');
 
-var DimCodes = {
+const DimCodes = {
     point: 1,
     edge: 2
 };
 
-function pickTitleField (attribs, prioritized) {
-    for (var i = 0; i < prioritized.length; i++) {
-        var field = prioritized[i];
-        if (attribs.hasOwnProperty(field)) {
-            return field;
+/** @typedef {Object} LabelCell
+ * @property value
+ * @property {String} displayName
+ * @property {String} key
+ * @property {String} dataType
+ */
+
+/**
+ * @param {Dataframe} dataframe
+ * @param {Mask} indices
+ * @param {GraphComponentTypes} type
+ * @param {String[]} columnNames
+ * @returns {{title: String, columns: LabelCell[]}}[]
+ */
+function defaultLabels (dataframe, indices, type, columnNames = dataframe.publicColumnNamesByType(type)) {
+    const rows = dataframe.getRows(indices, type, columnNames);
+    const dataTypesByColumnName = {};
+    const colorMappedByColumnName = {};
+    columnNames.forEach((columnName) => {
+        dataTypesByColumnName[columnName] = dataframe.getDataType(columnName, type);
+        if (dataframe.doesColumnRepresentColorPaletteMap(type, columnName)) {
+            colorMappedByColumnName[columnName] = true;
         }
-    }
-    return undefined;
-}
+    });
 
-
-function defaultLabels(graph, indices, type) {
-
-    /** @type Dataframe */
-    var dataframe = graph.dataframe;
-    var rows = dataframe.getRows(indices, type);
-
-    var structuredData = rows.map((row) => {
-        var title = row._title;
-        var filteredRow = _.omit(row, '_title');
-
-        var unsortedColumns = _.map(_.keys(filteredRow), (columnName) => {
-            var dataType = dataframe.getDataType(columnName, type);
-            var value = filteredRow[columnName],
-                displayName;
-            if (dataType !== undefined && dataframe.doesColumnRepresentColorPaletteMap(type, columnName)) {
+    return rows.map((row) => {
+        const columnValuesInRow = [];
+        (columnNames || _.keys(row)).forEach((columnName) => {
+            if (columnName === '_title') { return; }
+            const value = row[columnName];
+            if (dataTypeUtil.valueSignifiesUndefined(value)) { return; }
+            let displayName;
+            if (colorMappedByColumnName.hasOwnProperty(columnName)) {
                 displayName = palettes.intToHex(palettes.bindings[value]);
             }
 
-            return {
+            columnValuesInRow.push({
                 value: value,
                 displayName: displayName,
                 key: columnName,
-                dataType: dataType
-            };
+                dataType: dataTypesByColumnName[columnName]
+            });
         });
 
-        var sortedColumns = _.sortBy(unsortedColumns, (obj) => obj.key);
-
         return {
-            title: title,
-            columns: sortedColumns
+            title: row._title,
+            columns: columnValuesInRow
         };
     });
-
-    return structuredData;
 }
 
 
+function labelBufferNameForType (type) {
+    return DimCodes.hasOwnProperty(type) ? type + 'Labels' : '';
+}
+
 function presetLabels (dataframe, indices, type) {
 
-    var name =  (type === 'point') ? 'pointLabels' :
-                (type === 'edge') ? 'edgeLabels' :
-                '';
+    const name = labelBufferNameForType(type);
 
     return indices.map((idx) => {
-        var label = dataframe.getCell(idx, 'hostBuffer', name);
+        const label = dataframe.getCell(idx, 'hostBuffer', name);
         return { formatted: label };
     });
 
 }
 
 
-function getLabels(graph, indices, dim) {
-    var type = _.findKey(DimCodes, (dimCode) => dimCode === dim);
+/**
+ * @param {Dataframe} dataframe
+ * @param {Mask} indices
+ * @param {DimCodes} dim
+ * @param {String[]} columnNames
+ * @returns {{title: String, columns: LabelCell[]}}[]
+ */
+function getLabels (dataframe, indices, dim, columnNames = undefined) {
+    const type = _.findKey(DimCodes, (dimCode) => dimCode === dim);
 
-    var hasPrecomputedLabels =  (type === 'point') ? graph.dataframe.hasHostBuffer('pointLabels') :
-                                (type === 'edge') ? graph.dataframe.hasHostBuffer('edgeLabels') :
-                                false;
+    const hasPrecomputedLabels = dataframe.hasHostBuffer(labelBufferNameForType(type));
 
     if (hasPrecomputedLabels) {
-        return presetLabels(graph.dataframe, indices, type);
+        return presetLabels(dataframe, indices, type);
     }
 
-    return defaultLabels(graph, indices, type);
+    return defaultLabels(dataframe, indices, type, columnNames);
 }
 
 

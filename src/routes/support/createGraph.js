@@ -12,7 +12,7 @@ import * as NBody from '../../NBody';
 import * as driver from '../../node-driver';
 import * as RenderNull from '../../RenderNull';
 
-export function createGraph(dataset, socket) {
+export function createGraph (dataset, socket) {
 
     const { id, metadata } = dataset;
     const { vendor, device } = metadata;

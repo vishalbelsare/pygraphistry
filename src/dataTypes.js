@@ -121,6 +121,51 @@ const DataTypesUtils = {
             default:
                 return undefined;
         }
+    },
+
+    roundUpBy: function roundUpBy(num, multiple = 0) {
+        if (multiple === 0) {
+            return num;
+        }
+
+        const div = num / multiple;
+        return multiple * Math.ceil(div);
+    },
+
+    roundDownBy: function roundDownBy(num, multiple = 0) {
+        if (multiple === 0) {
+            return num;
+        }
+
+        const div = num / multiple;
+        return multiple * Math.floor(div);
+    },
+
+    dateIncrementors: function (timeAggLevel) {
+        // TODO: Rest of time ranges
+        switch (timeAggLevel) {
+            case 'day':
+                return {
+                    inc: (date) => date.setHours(24,0,0,0),
+                    dec: (date) => date.setHours(0,0,0,0)
+                };
+            case 'hour':
+                return {
+                    inc: (date) => date.setMinutes(60,0,0),
+                    dec: (date) => date.setMinutes(0,0,0)
+                };
+            case 'minute':
+                return {
+                    inc: (date) => date.setSeconds(60,0),
+                    dec: (date) => date.setSeconds(0,0)
+                };
+            case 'second':
+                return {
+                    inc: (date) => date.setMilliseconds(1000),
+                    dec: (date) => date.setMilliseconds(0)
+                };
+        }
+        return undefined;
     }
 };
 

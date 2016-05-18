@@ -6,55 +6,60 @@
 //similar to main.js
 
 
-var Q = require("q"),
-    Rx = require("rxjs/Rx"),
+const Q = require('q'),
+    Rx = require('rxjs/Rx'),
     _ = require('underscore'),
-    request = require('request'),
     rConf = require('./renderer.config.js'),
-    loader = require("./data-loader.js"),
+    loader = require('./data-loader.js'),
     clientNotification = require('./clientNotification.js');
 
-var log         = require('common/logger.js');
-var logger      = log.createLogger('graph-viz', 'graph-viz/js/node-driver');
-var perf        = require('common/perfStats.js').createPerfMonitor();
+const log         = require('common/logger.js');
+const logger      = log.createLogger('graph-viz', 'graph-viz/js/node-driver');
+const perf        = require('common/perfStats.js').createPerfMonitor();
 
 
-//number/offset of graph elements and how they relate to various models
-//num: # of vertices
-//offset: in vertices
-//graph -> {<model>: {num: int, offset: int
+/** @typedef {Object} GraphCount
+ * @property {Number} num # of vertices
+ * @property {Number} offset in vertices
+ */
 
-function graphCounts(graph) {
-    var numRenderedSplits = graph.simulator.dataframe.getNumElements('renderedSplits');
+/**
+ * number/offset of graph elements and how they relate to various models (result keyed by model name)
+ * @param {GraphManager} graph
+ * @param {Boolean?} debug
+ * @returns {Object.<String, GraphCount>}
+ */
+function graphCounts (graph, debug=false) {
+    const numRenderedSplits = graph.simulator.dataframe.getNumElements('renderedSplits');
 
-    var numPoints       = graph.dataframe.getNumElements('point');
-    var numEdges        = graph.dataframe.getNumElements('edge')*2;
-    var offsetPoint     = 0;
-    var offsetEdge      = 0;
-    var numMidPoints    = graph.dataframe.getNumElements('midPoints');
-    var numMidEdges     = graph.dataframe.getNumElements('midEdges');
-    var offsetMidPoints = 0;
-    var offsetMidEdges  = 0;
-    var numForwardsEdgeStartEndIdxs = graph.dataframe.getNumElements('point')*2;
-    var numBackwardsEdgeStartEndIdxs = graph.dataframe.getNumElements('point')*2;
-    var offsetEdgeStartEndIdxs = 0;
-    var numSelectedEdgeIndexes = graph.dataframe.lastSelectionMasks.numEdges();
-    var numSelectedPointIndexes = graph.dataframe.lastSelectionMasks.numPoints();
-    var offsetSelectedEdgeIndexes = 0;
-    var offsetSelectedPointIndexes = 0;
+    const numPoints       = graph.dataframe.getNumElements('point');
+    const numEdges        = graph.dataframe.getNumElements('edge')*2;
+    const offsetPoint     = 0;
+    const offsetEdge      = 0;
+    const numMidPoints    = graph.dataframe.getNumElements('midPoints');
+    const numMidEdges     = graph.dataframe.getNumElements('midEdges');
+    const offsetMidPoints = 0;
+    const offsetMidEdges  = 0;
+    const numForwardsEdgeStartEndIdxs = graph.dataframe.getNumElements('point')*2;
+    const numBackwardsEdgeStartEndIdxs = graph.dataframe.getNumElements('point')*2;
+    const offsetEdgeStartEndIdxs = 0;
+    const numSelectedEdgeIndexes = graph.dataframe.lastSelectionMasks.numEdges();
+    const numSelectedPointIndexes = graph.dataframe.lastSelectionMasks.numPoints();
+    const offsetSelectedEdgeIndexes = 0;
+    const offsetSelectedPointIndexes = 0;
 
-    var point       = {num: numPoints,    offset: offsetPoint};
-    var edge        = {num: numEdges,     offset: offsetEdge};
-    var midPoint    = {num: numMidPoints, offset: offsetMidPoints};
-    var midEdge     = {num: numMidEdges,  offset: offsetMidEdges};
-    var midEdgeColor ={num: numEdges * (numRenderedSplits + 1), offset:offsetMidEdges};
-    var selectedEdgeIndexes = {num: numSelectedEdgeIndexes, offset: offsetSelectedEdgeIndexes};
-    var selectedPointIndexes = {num: numSelectedPointIndexes, offset: offsetSelectedPointIndexes};
-    var forwardsEdgeStartEndIdxs = {num: numForwardsEdgeStartEndIdxs, offset: offsetEdgeStartEndIdxs};
-    var backwardsEdgeStartEndIdxs = {num: numBackwardsEdgeStartEndIdxs, offset: offsetEdgeStartEndIdxs};
-    var onePerEdge = {num: numEdges/2, offset: 0};
+    const point       = {num: numPoints,    offset: offsetPoint};
+    const edge        = {num: numEdges,     offset: offsetEdge};
+    const midPoint    = {num: numMidPoints, offset: offsetMidPoints};
+    const midEdge     = {num: numMidEdges,  offset: offsetMidEdges};
+    const midEdgeColor ={num: numEdges * (numRenderedSplits + 1), offset:offsetMidEdges};
+    const selectedEdgeIndexes = {num: numSelectedEdgeIndexes, offset: offsetSelectedEdgeIndexes};
+    const selectedPointIndexes = {num: numSelectedPointIndexes, offset: offsetSelectedPointIndexes};
+    const forwardsEdgeStartEndIdxs = {num: numForwardsEdgeStartEndIdxs, offset: offsetEdgeStartEndIdxs};
+    const backwardsEdgeStartEndIdxs = {num: numBackwardsEdgeStartEndIdxs, offset: offsetEdgeStartEndIdxs};
+    const onePerEdge = {num: numEdges/2, offset: 0};
 
-    var counts = {
+    const counts = {
         curPoints: point,
         springsPos: edge,
         logicalEdges: edge,
@@ -74,15 +79,16 @@ function graphCounts(graph) {
         backwardsEdgeStartEndIdxs: backwardsEdgeStartEndIdxs
     };
 
-    // console.log('counts: ', counts);
-    // _.each(_.keys(graph.dataframe.rawdata), (key1) => {
-    //     console.log(key1 + ': ' + _.keys(graph.dataframe.rawdata[key1]));
-    // });
-    // console.log('Simulator Buffer Keys: ', _.keys(graph.dataframe.rawdata.buffers.simulator));
-    // console.log('Host Buffer Point: ', graph.dataframe.rawdata.hostBuffers.points);
+    if (debug) {
+        console.log('counts: ', counts);
+        _.each(_.keys(graph.dataframe.rawdata), (key1) => {
+            console.log(key1 + ': ' + _.keys(graph.dataframe.rawdata[key1]));
+        });
+        console.log('Simulator Buffer Keys: ', _.keys(graph.dataframe.rawdata.buffers.simulator));
+        console.log('Host Buffer Point: ', graph.dataframe.rawdata.hostBuffers.points);
 
-
-    // console.log('dataframe: ', graph.dataframe.rawdata);
+        console.log('dataframe: ', graph.dataframe.rawdata);
+    }
 
     return counts;
 }
@@ -92,15 +98,15 @@ function graphCounts(graph) {
 function getBufferVersion (graph, bufferName) {
 
     // First check newer, data frame based version
-    var dataframeVersion = graph.dataframe.getVersion('localBuffer', bufferName);
+    const dataframeVersion = graph.dataframe.getVersion('localBuffer', bufferName);
     if (dataframeVersion !== undefined) {
         return dataframeVersion;
     }
 
     // If that failed, attempt to get in the deprecated simulator method
-    var deprecatedSimulatorBuffers = graph.simulator.versions.buffers;
+    const deprecatedSimulatorBuffers = graph.simulator.versions.buffers;
     if (bufferName in deprecatedSimulatorBuffers) {
-        return deprecatedSimulatorBuffers[bufferName]
+        return deprecatedSimulatorBuffers[bufferName];
     }
 
     // Could not find a version number anywhere.
@@ -112,31 +118,27 @@ function getBufferVersion (graph, bufferName) {
 
 // ... -> {<name>: {buffer: ArrayBuffer, version: int}}
 function fetchVBOs(graph, renderConfig, bufferNames, counts) {
-    var bufferSizes = fetchBufferByteLengths(counts, renderConfig);
-    var targetArrays = {};
+    const bufferSizes = fetchBufferByteLengths(counts, renderConfig);
+    const targetArrays = {};
 
-    var layouts = _.object(_.map(bufferNames, (name) => {
-        var model = renderConfig.models[name];
-        if (_.values(model).length != 1) {
+    const layouts = _.object(_.map(bufferNames, (name) => {
+        const model = renderConfig.models[name];
+        if (_.values(model).length !== 1) {
             logger.die('Currently assumes one view per model');
         }
 
         return [name, _.values(model)[0]];
 
     }));
-    var hostBufs = _.omit(layouts, (layout) => {
-        return layout.datasource !== rConf.VBODataSources.HOST;
-    });
-    var devBufs = _.omit(layouts, (layout) => {
-        return layout.datasource !== rConf.VBODataSources.DEVICE;
-    });
+    const hostBufs = _.omit(layouts, (layout) => layout.datasource !== rConf.VBODataSources.HOST);
+    const devBufs = _.omit(layouts, (layout) => layout.datasource !== rConf.VBODataSources.DEVICE);
 
     // TODO: Instead of doing blocking CL reads, use CL events and wait on those.
     // node-webcl's event arguments to enqueue commands seems busted at the moment, but
     // maybe enqueueing a event barrier and using its event might work?
     return Q.all(
             _.map(devBufs, (layout, name) => {
-                var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
+                const stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
 
                 targetArrays[name] = {
                     buffer: new ArrayBuffer(bufferSizes[name]),
@@ -152,11 +154,11 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
             })
         ).then(() => {
             _.each(hostBufs, (layout, name) => {
-                var stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
+                // const stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
 
                 logger.trace('Fetching host buffer %s', name);
-                var localBuffer = graph.simulator.dataframe.getLocalBuffer(name);
-                var bytes_per_element = localBuffer.BYTES_PER_ELEMENT;
+                const localBuffer = graph.simulator.dataframe.getLocalBuffer(name);
+                const bytesPerElement = localBuffer.BYTES_PER_ELEMENT;
 
                 // This will create another array (of type buffersLocal[name]) on top
                 // of the exisiting array
@@ -167,7 +169,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                 targetArrays[name] = {
                     buffer: new localBuffer.constructor(
                         localBuffer.buffer,
-                        counts[name].offset * bytes_per_element,
+                        counts[name].offset * bytesPerElement,
                         counts[name].num),
                     version: getBufferVersion(graph, name)
                 };
@@ -177,21 +179,23 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
 }
 
 
-
-//counts -> {<itemName>: int}
-//For each render item, find a serverside model and send its count
-function fetchNumElements(counts, renderConfig) {
+/** For each render item, find a serverside model and send its count
+ * @param {Object.<String, GraphCount>} counts
+ * @param {RenderConfig} renderConfig
+ * @returns {Object.<String, Number?>}
+ */
+function fetchNumElements (counts, renderConfig) {
     return _.object(
         _.keys(renderConfig.items)
             .map((item) => {
-                var itemDef = renderConfig.items[item];
-                var aServersideModelName;
+                const itemDef = renderConfig.items[item];
+                let aServersideModelName;
                 if (itemDef.index) {
                     aServersideModelName = itemDef.index[0];
                 } else {
-                    var serversideModelBindings = _.values(renderConfig.items[item].bindings)
+                    const serversideModelBindings = _.values(renderConfig.items[item].bindings)
                         .filter((binding) => {
-                            var model = renderConfig.models[binding[0]];
+                            const model = renderConfig.models[binding[0]];
                             return rConf.isBufServerSide(model);
                         });
                     if (serversideModelBindings.length !== 0) {
@@ -203,15 +207,18 @@ function fetchNumElements(counts, renderConfig) {
 }
 
 
-//counts -> {<model>: int}
-//Find num bytes needed for each model
-function fetchBufferByteLengths(counts, renderConfig) {
+/** Find num bytes needed for each model
+ * @param {Object.<String, GraphCount>} counts
+ * @param {RenderConfig} renderConfig
+ * @returns {Object.<String, Number>}
+ */
+function fetchBufferByteLengths (counts, renderConfig) {
 
-    return _.chain(renderConfig.models).omit((model, name) => {
-        return rConf.isBufClientSide(model);
-    }).map((model, name) => {
-        var layout = _.values(model)[0];
-        var count = counts[name].num;
+    return _.chain(renderConfig.models).omit(
+        (model) => rConf.isBufClientSide(model)
+    ).map((model, name) => {
+        const layout = _.values(model)[0];
+        const count = counts[name].num;
         return [name, count * (layout.stride || (rConf.gl2Bytes(layout.type) * layout.count))];
     }).object().value();
 }
@@ -222,7 +229,7 @@ function fetchBufferByteLengths(counts, renderConfig) {
  * @param  {*}        [value=false] - the value of the event (`delay` must be given if `value` is)
  * @return {Rx.Observable} A Rx Observable stream that emits `value` after `delay`, and finishes
  */
-function delayObservableGenerator(delay, value, cb) {
+function delayObservableGenerator (delay, value, cb) {
     if(arguments.length < 2) {
         cb = arguments[0];
         delay = 16;
@@ -338,19 +345,26 @@ export function createInteractionsLoop({
     }
 }
 
-export function create(dataset, socket, nBodyInstance) {
+/**
+ *
+ * @param dataset
+ * @param socket
+ * @param {NBody} nBodyInstance
+ * @returns {{interact: interact, ticks: Observable<T>, graph: void}}
+ */
+export function create (dataset, socket, nBodyInstance) {
     logger.trace('STARTING DRIVER');
 
-    //Observable {play: bool, layout: bool, ... cfg settings ...}
+    // Observable {play: bool, layout: bool, ... cfg settings ...}
     //  play: animation stream
     //  layout: whether to actually call layout algs (e.g., don't for filtering)
-    var userInteractions = new Rx.Subject();
+    const userInteractions = new Rx.Subject();
 
     // This signal is emitted whenever the renderer's VBOs change, and contains Typed Arraysn for
     // the contents of each VBO
-    var animStepSubj = new Rx.BehaviorSubject(null);
+    const animStepSubj = new Rx.BehaviorSubject(null);
 
-    var graph = nBodyInstance.then((graph) => {
+    const graph = nBodyInstance.then((graph) => {
         logger.trace('LOADING DATASET');
         return Q.all([
             loader.loadDatasetIntoSim(graph, dataset),
@@ -358,9 +372,9 @@ export function create(dataset, socket, nBodyInstance) {
         ]);
     }).spread((graph) => {
         // Load into dataframe data attributes that rely on the simulator existing.
-        var outDegrees = graph.simulator.dataframe.getHostBuffer('forwardsEdges').degreesTyped;
-        var inDegrees = graph.simulator.dataframe.getHostBuffer('backwardsEdges').degreesTyped;
-        var unsortedEdges = graph.simulator.dataframe.getHostBuffer('unsortedEdges');
+        const outDegrees = graph.simulator.dataframe.getHostBuffer('forwardsEdges').degreesTyped;
+        const inDegrees = graph.simulator.dataframe.getHostBuffer('backwardsEdges').degreesTyped;
+        const unsortedEdges = graph.simulator.dataframe.getHostBuffer('unsortedEdges');
 
         graph.dataframe.loadDegrees(outDegrees, inDegrees);
         graph.dataframe.loadEdgeDestinations(unsortedEdges);
@@ -376,10 +390,10 @@ export function create(dataset, socket, nBodyInstance) {
     }).then((graph) => {
         logger.trace('ANIMATING');
 
-        var play = userInteractions.filter((o) => o && o.play);
+        const play = userInteractions.filter((o) => o && o.play);
 
         //Observable {play: bool, layout: bool}
-        var isRunning =
+        const isRunning =
             Rx.Observable.merge(
                 //run beginning & after every interaction
                 play.merge(Rx.Observable.return({play: true, layout: false})),
@@ -393,7 +407,7 @@ export function create(dataset, socket, nBodyInstance) {
                     .delay(4)
                     .map(_.constant({play: false, layout: false})));
 
-        var isRunningRecent = new Rx.ReplaySubject(1);
+        const isRunningRecent = new Rx.ReplaySubject(1);
 
         isRunningRecent.subscribe((v) => {
             logger.trace('=============================isRunningRecent:', v);
@@ -404,29 +418,21 @@ export function create(dataset, socket, nBodyInstance) {
         // Loop simulation by recursively expanding each tick event into a new sequence
         // Gate by isRunning
         Rx.Observable.return(graph)
-            //.flatMap(() => {
-            //    return Rx.Observable.fromPromise(graph.tick(0, {play: true, layout: false}));
-            //})
+            // .flatMap(() => Rx.Observable.fromPromise(graph.tick(0, {play: true, layout: false})))
             .expand((graph) => {
                 perf.startTiming('tick_durationMS');
-                //return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
+                // return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
                 return Rx.Observable.return()
                     // Add in a delay to allow Node's event loop some breathing room
-                    .flatMap(() => {
-                        return delayObservableGenerator(1, false);
-                    })
-                    .flatMap(() => {
-                        return isRunningRecent.filter((o) => o.play).take(1);
-                    })
-                    .flatMap((v) => {
-                        return Rx.Observable.fromPromise(
-                            graph.updateSettings(v).then(() => {
-                                return graph.tick(v);
-                            }).then(() => {
-                                perf.endTiming('tick_durationMS');
-                            })
-                        );
-                    })
+                    .flatMap(() => delayObservableGenerator(1, false))
+                    .flatMap(() => isRunningRecent.filter((o) => o.play).take(1))
+                    .flatMap((v) => Rx.Observable.fromPromise(
+                        graph.updateSettings(v).then(
+                            () => graph.tick(v)
+                        ).then(() => {
+                            perf.endTiming('tick_durationMS');
+                        })
+                    ))
                     .map(_.constant(graph));
             })
             .subscribe(
@@ -437,9 +443,9 @@ export function create(dataset, socket, nBodyInstance) {
         logger.trace('Graph created');
         return graph;
     })
-    .then((graph) => {
-        return clientNotification.loadingStatus(socket, 'Graph created', null, graph); // returns graph
-    })
+    .then((graph) =>
+        clientNotification.loadingStatus(socket, 'Graph created', null, graph) // returns graph
+    )
     .fail((err) => {
         logger.die(err, 'Driver initialization error');
     })
@@ -455,7 +461,7 @@ export function create(dataset, socket, nBodyInstance) {
 }
 
 function extendDataVersions (data, bufferVersions, graph) {
-    var versions = data.versions;
+    const versions = data.versions;
 
     _.each(_.keys(bufferVersions), (key) => {
         if (versions[key] === undefined) {
@@ -478,25 +484,25 @@ function extendDataVersions (data, bufferVersions, graph) {
  * property set to an Object mapping buffer names to ArrayBuffer data; and the 'elements' Object
  * mapping render item names to number of elements that should be rendered for the given buffers.
  */
-export function fetchData(graph, renderConfig, compress, bufferNames, bufferVersions, programNames) {
-    var counts = graphCounts(graph);
+export function fetchData (graph, renderConfig, compress, bufferNames, bufferVersions, programNames) {
+    const counts = graphCounts(graph);
 
 
     bufferVersions = bufferVersions || _.object(bufferNames.map((name) => [name, -1]));
-    var bufferByteLengths = _.pick(fetchBufferByteLengths(counts, renderConfig),
+    const bufferByteLengths = _.pick(fetchBufferByteLengths(counts, renderConfig),
                                           bufferNames);
 
-    var elements = _.pick(fetchNumElements(counts, renderConfig), programNames);
-    var neededBuffers =
+    const elements = _.pick(fetchNumElements(counts, renderConfig), programNames);
+    const neededBuffers =
         bufferNames.filter((name) => {
-            var clientVersion = bufferVersions[name];
-            var liveVersion = getBufferVersion(graph, name);
+            const clientVersion = bufferVersions[name];
+            const liveVersion = getBufferVersion(graph, name);
             return clientVersion !== liveVersion;
         });
     bufferNames = neededBuffers;
 
     if (bufferNames.length === 0) {
-        var obj = {
+        const obj = {
             compressed: [],
             uncompressed: [],
             elements: [],
@@ -521,8 +527,8 @@ export function fetchData(graph, renderConfig, compress, bufferNames, bufferVers
             });
 
             _.each(bufferNames, (bufferName) => {
-                var actualByteLength = vbos[bufferName].buffer.byteLength;
-                var expectedByteLength = bufferByteLengths[bufferName];
+                const actualByteLength = vbos[bufferName].buffer.byteLength;
+                const expectedByteLength = bufferByteLengths[bufferName];
                 if( actualByteLength !== expectedByteLength) {
                     logger.error('Mismatch length for VBO %s (Expected:%d Got:%d)',
                                bufferName, expectedByteLength, actualByteLength);
@@ -531,7 +537,7 @@ export function fetchData(graph, renderConfig, compress, bufferNames, bufferVers
 
             //[ {buffer, version, compressed} ] ordered by bufferName
             perf.startTiming('compressAll_durationMS');
-            var compressed =
+            const compressed =
                 bufferNames.map((bufferName) => {
                     perf.startTiming('compress_durationMS');
                     return Rx.Observable.bindNodeCallback(compress.deflate)(
@@ -539,8 +545,9 @@ export function fetchData(graph, renderConfig, compress, bufferNames, bufferVers
                         {output: new Buffer(
                             Math.max(1024, Math.round(vbos[bufferName].buffer.byteLength * 1.5)))})
                         .map((compressed) => {
-                            logger.trace('compress bufferName %s (size %d)', bufferName, vbos[bufferName].buffer.byteLength);
-                            perf.histogram('compress_inputBytes', vbos[bufferName].buffer.byteLength);
+                            const byteLength = vbos[bufferName].buffer.byteLength;
+                            logger.trace('compress bufferName %s (size %d)', bufferName, byteLength);
+                            perf.histogram('compress_inputBytes', byteLength);
                             perf.histogram('compress_outputBytes', compressed.length);
                             perf.endTiming('compress_durationMS');
                             return _.extend({}, vbos[bufferName], {compressed: compressed});
@@ -553,22 +560,22 @@ export function fetchData(graph, renderConfig, compress, bufferNames, bufferVers
         })
         .map((compressedVBOs) => {
 
-            var buffers =
+            const buffers =
                 _.object(_.zip(
                         bufferNames,
-                        bufferNames.map((_, i) => {  return compressedVBOs[i].compressed[0]; })));
+                        bufferNames.map((_, i) => compressedVBOs[i].compressed[0])));
 
-            var uncompressed =
+            const uncompressed =
                 _.object(_.zip(
                         bufferNames,
-                        bufferNames.map((_, i) => {  return compressedVBOs[i].buffer.buffer || compressedVBOs[i].buffer; })));
+                        bufferNames.map((_, i) => compressedVBOs[i].buffer.buffer || compressedVBOs[i].buffer)));
 
-            var versions =
+            const versions =
                 _.object(_.zip(
                         bufferNames,
-                        bufferNames.map((_, i) => {  return compressedVBOs[i].version; })));
+                        bufferNames.map((_, i) => compressedVBOs[i].version)));
 
-            var bundledData = {
+            const bundledData = {
                 compressed: buffers,
                 uncompressed: uncompressed,
                 elements: elements,

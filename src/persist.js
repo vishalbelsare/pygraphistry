@@ -66,7 +66,7 @@ function staticContentForDataframe (dataframe, type) {
     // Delegate label data to the labeler for structural compatibility.
     // TODO support custom labels; requires a graph object.
     const rowCount = dataframe.getNumElements(type),
-        labels = labeler.getDefaultLabels({dataframe: dataframe}, undefined, type),
+        labels = labeler.getDefaultLabels(dataframe, undefined, type),
         rowContents = new Array(rowCount),
         offsetsView = new Uint32Array(rowCount);
     let currentContentOffset = 0,

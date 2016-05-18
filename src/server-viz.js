@@ -103,8 +103,8 @@ function getDataTypesFromValues (values, type, dataframe, debug = false) {
             _.each(values, (value) => {
                 _.each(columnNames, (columnName) => {
                     if (!dataTypeUtil.isCompatible(dataTypes[columnName], value)) {
-                        throw new Error('Mismatched data type ' + dataTypes[columnName]
-                            + ' to value: ' + value.toString());
+                        throw new Error('Mismatched data type ' + dataTypes[columnName] +
+                            ' to value: ' + value.toString());
                     }
                 });
             });
@@ -134,8 +134,10 @@ function sliceSelection (dataFrame, type, mask, start, end, sortColumnName, asce
     if (searchFilter) {
         searchFilter = searchFilter.toLowerCase();
         const newIndices = [];
-        mask.mapIndexes(type, (idx) => {
-            if (_.any(dataFrame.getRowAt(idx, type),
+        const columnNames = dataFrame.publicColumnNamesByType(type);
+        mask.forEachIndexByType(type, (idx) => {
+            // TODO: do this column-wise or at least avoid row-consing.
+            if (_.any(dataFrame.getRowAt(idx, type, columnNames),
                     (val/* , key */) => String(val).toLowerCase().indexOf(searchFilter) > -1)) {
                 newIndices.push(idx);
             }
@@ -155,7 +157,7 @@ function sliceSelection (dataFrame, type, mask, start, end, sortColumnName, asce
     // Only using permutation out here because this should be pushed into dataframe.
     const sortCol = dataFrame.getColumnValues(sortColumnName, type);
     const taggedSortCol = new Array(count);
-    mask.mapIndexes(type, (idx, i) => {
+    mask.forEachIndexByType(type, (idx, i) => {
         taggedSortCol[i] = [sortCol[idx], idx];
     });
 
@@ -209,7 +211,9 @@ VizServer.prototype.resetState = function (dataset, socket) {
 
     this.lastRenderConfig = undefined;
 
-    // Signal to Explicitly Send New VBOs
+    /** Signal to Explicitly Send New VBOs
+     * @type ReplaySubject<GraphManager|Boolean>
+     */
     this.updateVboSubject = new Rx.ReplaySubject(1);
 
     const createGraph = function () {
@@ -368,21 +372,12 @@ VizServer.prototype.filterGraphByMaskList = function (graph, selectionMasks, exc
 };
 
 function getNamespaceFromGraph (graph) {
-    const dataframeColumnsByType = graph.dataframe.getColumnsByType();
+    const dataframeColumnsByType = graph.dataframe.getColumnsByType(true);
     // TODO add special names that can be used in calculation references.
     // TODO handle multiple sources.
     const metadata = _.extend({}, dataframeColumnsByType);
     return metadata;
 }
-
-// Defines the order in which system columns are typically interesting:
-const CommonAttributeNamesSortedByInterestLevel = [
-    'degree',
-    'community_infomap', 'community_louvain', 'community_spinglass',
-    'betweenness', 'centrality', 'closeness', 'pagerank',
-    'weight', 'degree_in', 'degree_out', 'indegree', 'outdegree',
-    'Source', 'Destination', '__nodeid__', 'id'
-];
 
 
 /**
@@ -391,38 +386,51 @@ const CommonAttributeNamesSortedByInterestLevel = [
  * @returns {ColumnName[]}
  */
 function selectInitialColumnsForBinning (dataframe, maxInitialItems = undefined) {
-    const selectedColumnNames = [];
+    const scoredColumnNames = [];
     const attributeKeysByType = {point: dataframe.getAttributeKeys('point'), edge: dataframe.getAttributeKeys('edge')};
+    const CommonAttributeNamesSortedByInterestLevel = Dataframe.CommonAttributeNamesSortedByInterestLevel;
+    const scoreRange = CommonAttributeNamesSortedByInterestLevel.length;
     _.each(attributeKeysByType, (attributeKeys, type) => {
         _.each(attributeKeys, (attributeName) => {
+            const column = dataframe.getColumn(attributeName, type);
             const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
             const countDistinct = aggregations.getAggregationByType('countDistinct');
-            if (countDistinct < 2) {
-                return;
-            }
-            const columnName = {
-                attribute: attributeName,
-                type: type
-            };
+            const fractionValid = aggregations.getAggregationByType('countValid') /
+                aggregations.getAggregationByType('count');
+            let score = 0; // Lower is better.
             // Develop a score for prioritizing the columns.
-            // Avoid private columns if at all possible (usually just an internal target of an alias).
             if (dataframe.isAttributeNamePrivate(attributeName)) {
-                columnName.score = CommonAttributeNamesSortedByInterestLevel.length;
-            } else {
-                // Prioritize user-provided data ahead of system data.
-                const sysIndex = CommonAttributeNamesSortedByInterestLevel.indexOf(attributeName);
-                if (sysIndex === -1) {
-                    // Prioritize user-provided data (crudely) by how small the _other bin is;
-                    // mega-valued domains make poor histograms.
-                    columnName.score = sysIndex / Math.log(countDistinct);
-                } else {
-                    columnName.score = sysIndex;
-                }
+                // Avoid private columns if at all possible (usually just an internal target of an alias).
+                score += scoreRange;
             }
-            selectedColumnNames.push(columnName);
+            if (fractionValid < 0.01) {
+                score += scoreRange;
+            }
+            // Prioritize user-provided data ahead of system data.
+            let sysIndex = CommonAttributeNamesSortedByInterestLevel.indexOf(attributeName);
+            // Double check whether this is an alias for system data.
+            if (sysIndex === -1 && column.name !== attributeName) {
+                sysIndex = CommonAttributeNamesSortedByInterestLevel.indexOf(column.name);
+            }
+            if (sysIndex === -1) {
+                // Prioritize user-provided data (crudely) by how small the _other bin is;
+                // mega-valued domains make poor histograms.
+                if (countDistinct < 2) {
+                    score += scoreRange;
+                } else {
+                    score -= scoreRange / Math.log(countDistinct);
+                }
+            } else {
+                score += sysIndex;
+            }
+            scoredColumnNames.push({
+                attribute: attributeName,
+                type: type,
+                score: score
+            });
         });
     });
-    const sortedColumnNames = _.sortBy(selectedColumnNames, (columnName) => columnName.score);
+    const sortedColumnNames = _.sortBy(scoredColumnNames, (columnName) => columnName.score);
     return _.first(sortedColumnNames, maxInitialItems);
 }
 
@@ -529,6 +537,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
     /** @type {GraphistryURLParams} */
     const query = this.socket.handshake.query;
 
+    /** @type {ReplaySubject<GraphManager>} */
     this.graph = new Rx.ReplaySubject(1);
     this.viewConfig = new Rx.ReplaySubject(1);
     this.workbookDoc = new Rx.ReplaySubject(1);
@@ -582,6 +591,12 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
     this.setupColorTexture();
 
     Version(this.socket, socketLogger);
+
+    this.socket.on('get_sharing_config', (ignore, cb) => {
+        var decision = config.S3UPLOADS ? true : false;
+        socketLogger.info('get_sharing_config', decision);
+        cb({success: true, decision: decision});
+    });
 
     this.socket.on('get_view_config', (ignore, cb) => {
         this.viewConfig.take(1).do((viewConfig) => {
@@ -844,18 +859,18 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
 
             _.each(data.filters, (filter) => {
 
-                const {query} = filter;
-                if (!query.type) {
-                    query.type = filter.type;
+                const filterQuery = filter.query;
+                if (!filterQuery.type) {
+                    filterQuery.type = filter.type;
                 }
-                if (!query.attribute) {
-                    query.attribute = filter.attribute;
+                if (!filterQuery.attribute) {
+                    filterQuery.attribute = filter.attribute;
                 }
 
                 // Signify that the query is based against the filtered dataframe
-                query.basedOnCurrentDataframe = true;
+                filterQuery.basedOnCurrentDataframe = true;
 
-                const masks = dataframe.getMasksForQuery(query, errors);
+                const masks = dataframe.getMasksForQuery(filterQuery, errors);
 
                 if (masks !== undefined) {
                     // Record the size of the filtered set for UI feedback:
@@ -921,6 +936,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                 const selectionMasks = [];
                 const errors = [];
                 const generator = new ExpressionCodeGenerator('javascript');
+                let exclusionQuery;
 
                 /** @type {DataframeMask[]} */
                 const exclusionMasks = [];
@@ -929,7 +945,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                         return;
                     }
                     /** @type ClientQuery */
-                    const exclusionQuery = exclusion.query;
+                    exclusionQuery = exclusion.query;
                     if (exclusionQuery === undefined) {
                         return;
                     }
@@ -1136,15 +1152,15 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
     });
 
     // Legacy method for timeslider.js only; refactor that to work with newer code and kill this.
-    this.socket.on('filter', (query, cb) => {
-        logger.info({query: query}, 'Got filter');
+    this.socket.on('filter', (filterSpec, cb) => {
+        logger.info({query: filterSpec}, 'Got filter');
         Rx.Observable.combineLatest(this.viewConfig, this.graph, (viewConfig, graph) => {
 
             const selectionMasks = [];
             const errors = [];
 
             const dataframe = graph.dataframe;
-            _.each(query, (data, attribute) => {
+            _.each(filterSpec, (data, attribute) => {
                 let type = data.type;
                 const normalization = dataframe.normalizeAttributeName(attribute, type);
                 if (normalization === undefined) {
@@ -1172,19 +1188,39 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
         );
     });
 
-    this.socket.on('encode_by_column', (query, cb) => {
+    this.socket.on('describe_column', (params, cb) => {
         this.graph.take(1).do((graph) => {
             const dataframe = graph.dataframe,
-                normalization = dataframe.normalizeAttributeName(query.attribute, query.type);
-            let {encodingType, variation, binning, timeBounds} = query;
+                normalization = dataframe.normalizeAttributeName(params.attribute, params.type);
+            const column = dataframe.getColumn(normalization.attribute, normalization.type);
+            if (column === undefined) {
+                return cb({success: false, errors: ['Column not found']});
+            }
+            const aggregations = dataframe.getColumnAggregations(normalization.attribute, normalization.type);
+            return cb({success: true, description: {
+                alias: column.name,
+                aggregations: aggregations.getSummary()
+            }});
+        }).subscribe(
+            _.identity,
+            (err) => {
+                log.makeRxErrorHandler(logger, 'describe column handler')(err);
+            }
+        );
+    });
+
+    this.socket.on('encode_by_column', (encodingRequest, cb) => {
+        this.graph.take(1).do((currentGraph) => {
+            const dataframe = currentGraph.dataframe;
+            const normalization = dataframe.normalizeAttributeName(encodingRequest.attribute, encodingRequest.type);
 
             if (normalization === undefined) {
-                failWithMessage(cb, 'No attribute found for: ' + query.attribute + ',' + query.type);
+                failWithMessage(cb, 'No attribute found for: ' + JSON.stringify(encodingRequest));
                 return;
             }
 
-            const attributeName = normalization.attribute,
-                type = normalization.type;
+            const {attribute: attributeName, type} = normalization;
+            let {encodingType, variation, binning, timeBounds} = encodingRequest;
             if (encodingType) {
                 if (encodingType === 'color' || encodingType === 'size' || encodingType === 'opacity') {
                     encodingType = type + encodingType.charAt(0).toLocaleUpperCase() + encodingType.slice(1);
@@ -1203,7 +1239,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                     encodingType = encodings.inferEncodingType(dataframe, type, attributeName);
                 }
                 bufferName = encodings.bufferNameForEncodingType(encodingType);
-                if (query.reset) {
+                if (encodingRequest.reset) {
                     if (bufferName) {
                         const originalDesc = ccManager.overlayBufferSpecs[bufferName];
 
@@ -1259,6 +1295,16 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
 
             // Now that we have an encoding function, store it as a computed column;
             const oldDesc = ccManager.getComputedColumnSpec('localBuffer', bufferName);
+            if (oldDesc === undefined) {
+                cb({
+                    success: false,
+                    enabled: false,
+                    error: 'Unable to derive from a base calculation when encoding',
+                    encodingType: encodingType,
+                    legend: encoding.legend
+                });
+                return;
+            }
 
             // If this is the first encoding for a buffer type, store the original
             // spec so we can recover it.
@@ -1306,7 +1352,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
         }).subscribe(
             _.identity,
             (err) => {
-                log.makeRxErrorHandler(logger, 'recolor by column handler')(err);
+                log.makeRxErrorHandler(logger, 'encode by column handler')(err);
             }
         );
     });
@@ -1398,31 +1444,28 @@ VizServer.prototype.workbookForQuery = function (query) {
 VizServer.prototype.setupColorTexture = function () {
     this.colorTexture = new Rx.ReplaySubject(1);
     const imgPath = path.resolve(__dirname, '../test-colormap2.rgba');
-    const img =
-        Rx.Observable.bindNodeCallback(fs.readFile)(imgPath)
-            .flatMap((buffer) => {
-                logger.trace('Loaded raw colorTexture', buffer.length);
-                return Rx.Observable.bindNodeCallback(compress.deflate)(
-                    buffer,// binary,
-                    {output: new Buffer(
-                        Math.max(1024, Math.round(buffer.length * 1.5)))})
-                    .map((compressed) => ({
-                        raw: buffer,
-                        compressed: compressed
-                    }));
-            })
-            .do(() => { logger.trace('Compressed color texture'); })
-            .map((pair) => {
-                logger.trace('colorMap bytes', pair.raw.length);
-                return {
-                    buffer: pair.compressed[0],
-                    bytes: pair.raw.length,
-                    width: 512,
-                    height: 512
-                };
-            });
-
-    img.take(1)
+    Rx.Observable.bindNodeCallback(fs.readFile)(imgPath)
+        .flatMap((buffer) => {
+            logger.trace('Loaded raw colorTexture', buffer.length);
+            return Rx.Observable.bindNodeCallback(compress.deflate)(
+                buffer,// binary,
+                {output: new Buffer(
+                    Math.max(1024, Math.round(buffer.length * 1.5)))})
+                .map((compressed) => ({
+                    raw: buffer,
+                    compressed: compressed
+                }));
+        })
+        .do(() => { logger.trace('Compressed color texture'); })
+        .map((pair) => {
+            logger.trace('colorMap bytes', pair.raw.length);
+            return {
+                buffer: pair.compressed[0],
+                bytes: pair.raw.length,
+                width: 512,
+                height: 512
+            };
+        }).take(1)
         .do(this.colorTexture)
         .subscribe(_.identity, log.makeRxErrorHandler(logger, 'img/texture'));
     this.colorTexture
@@ -1567,9 +1610,8 @@ VizServer.prototype.defineRoutesInApp = function (app) {
         const type = req.query.type;
 
         appRouteResponder.graph.take(1).do((graph) => {
-            const content = graph.dataframe.formatAsCSV(type)
+            graph.dataframe.formatAsCSV(type)
                 .then((formattedCsv) => {
-
                     const datasetName = appRouteResponder.datasetName || 'graphistry';
                     const filenameSuffix = (type === 'point') ? 'Points' : 'Edges';
                     const filename = datasetName + filenameSuffix + '.csv';
@@ -1578,7 +1620,6 @@ VizServer.prototype.defineRoutesInApp = function (app) {
                     res.charset = 'UTF-8';
                     res.write(formattedCsv);
                     res.send();
-
                 });
         }).subscribe(
             _.identity,
@@ -1615,16 +1656,12 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     const activeBuffers = _.chain(renderConfig.models).pairs().filter((pair) => {
         const model = pair[1];
         return rConf.isBufServerSide(model);
-    }).map((pair) => {
-        return pair[0];
-    }).value();
+    }).map((pair) => pair[0]).value();
 
     const activeTextures = _.chain(renderConfig.textures).pairs().filter((pair) => {
         const texture = pair[1];
         return rConf.isTextureServerSide(texture);
-    }).map((pair) => {
-        return pair[0];
-    }).value();
+    }).map((pair) => pair[0]).value();
 
     const activePrograms = renderConfig.render;
 
@@ -1642,7 +1679,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     });
 
 
-    logger.debug({activeBuffers: activeBuffers, activeTextures: activeTextures, activePrograms: activePrograms}, 'Beginning stream');
+    logger.debug({activeBuffers, activeTextures, activePrograms}, 'Beginning stream');
 
     const graph = this.graph;
     const animationStep = this.animationStep;
@@ -1650,7 +1687,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     this.socket.on('interaction', (payload) => {
         // performance monitor here?
         // profiling.trace('Got Interaction');
-        logger.trace({payload: payload}, 'Recieved interaction:');
+        logger.trace({payload: payload}, 'Received interaction:');
         // TODO: Find a way to avoid flooding main thread waiting for GPU ticks.
         const defaults = {play: false, layout: false};
         animationStep.interact(_.extend(defaults, payload || {}));
@@ -1662,7 +1699,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
         const dim = query.dim;
 
         graph.take(1)
-            .map((currentGraph) => labeler.getLabels(currentGraph, indices, dim))
+            .map((currentGraph) => labeler.getLabels(currentGraph.simulator.dataframe, indices, dim))
             .do((out) => {
                 cb(null, out);
             })
@@ -1800,7 +1837,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                 } else {
                     const pointColorsBuffer = dataframe.getLocalBuffer(bufferName);
                     const highlightedPointColorsBuffer = _.clone(pointColorsBuffer);
-                    dataframeMask.mapPointIndexes((pointIndex) => {
+                    dataframeMask.forEachPointIndex((pointIndex) => {
                         highlightedPointColorsBuffer[pointIndex] = color;
                     });
                 }
@@ -1862,12 +1899,12 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     this.socket.on('persist_upload_png_export', (pngDataURL, contentKey, imageName, cb) => {
         imageName = imageName || 'preview.png';
         graph.take(1)
-            .do((currentGraph) => {
+            .do(() => {
                 const cleanContentKey = encodeURIComponent(contentKey),
                     cleanImageName = encodeURIComponent(imageName),
-                    base64Data = pngDataURL.replace(/^data:image\/png;base64,/,""),
+                    base64Data = pngDataURL.replace(/^data:image\/png;base64,/,''),
                     binaryData = new Buffer(base64Data, 'base64');
-                persist.publishPNGToStaticContents(cleanContentKey, cleanImageName, binaryData).then(function() {
+                persist.publishPNGToStaticContents(cleanContentKey, cleanImageName, binaryData).then(() => {
                     cb({success: true, name: cleanContentKey});
                 }).done(
                     _.identity,
@@ -1909,6 +1946,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
         logger.trace('Client end-to-end time', time);
         clientReady.onNext(true);
     });
+    // const updateVBOCommand = new Command('Update VBOs', 'vbo_update', this.socket);
+    const emitOnSocket = Rx.Observable.bindCallback(this.socket.emit.bind(this.socket));
 
     clientReady.subscribe(logger.debug.bind(logger, 'CLIENT STATUS'), log.makeRxErrorHandler(logger, 'clientReady'));
 
@@ -2005,9 +2044,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     // });
                     // const observableCallback = Rx.Observable.bindNodeCallback(emitter);
                     // return observableCallback;
-                    return Rx.Observable.bindCallback(this.socket.emit.bind(this.socket))('vbo_update', metadata);
-                    // return emitFnWrapper('vbo_update', metadata);
-
+                    // return updateVBOCommand.sendWithObservableResult(metadata);
+                    return emitOnSocket('vbo_update', metadata);
                 }).do(
                     (clientElapsedMsg) => {
                         logger.trace('6. client all received');
@@ -2023,11 +2061,11 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                 const filteredUpdateVbo = this.updateVboSubject.filter(_.identity);
 
                 const behindOnTicks = graphObservable.take(1).filter(
-                    (currentGraph) => currentGraph.simulator.versions.tick > lastTick);
+                    (latestGraph) => latestGraph.simulator.versions.tick > lastTick);
 
                 return Rx.Observable.merge(this.ticksMulti, filteredUpdateVbo, behindOnTicks)
                     .take(1)
-                    .do((data) => {
+                    .do(() => {
                         // Mark that we don't need to send VBOs independently of ticks anymore.
                         this.updateVboSubject.onNext(false);
                     })

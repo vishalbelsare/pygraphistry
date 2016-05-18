@@ -1,13 +1,10 @@
-import { bind } from 'lodash'
-import { Observable } from 'rxjs/Observable';
-
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/from';
 import 'rxjs/add/operator/do';
 
 import { createGraph } from './createGraph';
 
-export function loadGraphDriver({
+export function loadGraphDriver ({
         graphsById, workbook, dataset, socket, server
     }) {
 

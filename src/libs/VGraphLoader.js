@@ -31,14 +31,17 @@ const protoBufDefinitions = protoBufBuilder.build();
 const VERTEX = protoBufDefinitions.VectorGraph.AttributeTarget.VERTEX;
 const EDGE   = protoBufDefinitions.VectorGraph.AttributeTarget.EDGE;
 
+/** Indicates which GraphComponentType the data associates. */
+const ColumnVectorTargets = [VERTEX, EDGE];
+
+const accessorForTargetType = {
+    [VERTEX]: 'nodes',
+    [EDGE]: 'edges'
+};
+
 const decodersByVersion = {
     0: decode0,
     1: decode1
-};
-
-const customAttributeNameByGraphIntType = {
-    [VERTEX]: 'nodes',
-    [EDGE]: 'edges'
 };
 
 /** @typedef {ProtoBuf.Message} VectorGraph
@@ -101,7 +104,7 @@ const attributeLoaders = function (graph) {
 
                 const desc = ccManager.getComputedColumnSpec('localBuffer', 'edgeColors').clone();
                 desc.setDependencies([['__edgeColors', 'edge']]);
-                desc.setComputeAllValues((edgeColors, outArr/*, numGraphElements*/) => {
+                desc.setComputeAllValues((edgeColors, outArr/* , numGraphElements */) => {
                     for (let i = 0; i < edgeColors.length; i++) {
                         outArr[i*2] = edgeColors[i];
                         outArr[i*2 + 1] = edgeColors[i];
@@ -116,7 +119,7 @@ const attributeLoaders = function (graph) {
             values: undefined
         },
         edgeHeight: {
-            load: function (/*values*/) {
+            load: function (/* values */) {
                 // NOT IMPLEMENTED OR USED YET
                 console.log('\n\n\ LOADING EDGE HEIGHTS NOT SUPPORTED\n\n\n');
             },
@@ -181,7 +184,7 @@ const attributeLoaders = function (graph) {
                 const valueObj = {name: '__edgeWeights', values: values, type: 'number'};
                 graph.dataframe.loadColumn('__edgeWeights', 'edge', valueObj);
 
-                const computeAllEdgeWeightFunction = function (edgeWeights, edges, outArr/*, numGraphElements*/) {
+                const computeAllEdgeWeightFunction = function (edgeWeights, edges, outArr/* , numGraphElements */) {
                     for (let i = 0; i < edgeWeights.length; i++) {
                         outArr[i] = edgeWeights[edges.edgePermutationInverseTyped[i]];
                     }
@@ -318,9 +321,11 @@ function rangeFromValues (values) {
     return [_.min(values), _.max(values)];
 }
 
+const MIN_EDGE_PIXEL_WIDTH = 1;
+const MAX_EDGE_PIXEL_WIDTH = 10;
 
 const pointSizeScale = d3Scale.linear().range([MIN_VERTEX_PIXEL_DIAMETER, MAX_VERTEX_PIXEL_DIAMETER]);
-const edgeSizeScale = d3Scale.linear().range([1,10]);
+const edgeSizeScale = d3Scale.linear().range([MIN_EDGE_PIXEL_WIDTH, MAX_EDGE_PIXEL_WIDTH]);
 
 
 const OpenTSDBMapper = {
@@ -428,7 +433,7 @@ const wideEdgeWeightRangeMapper = {
             }
         }
     })
-}   
+};
 
 const noEdgeWeightTransformMapper  = {
     mappings: _.extend(defaultMapper.mappings, {
@@ -439,7 +444,7 @@ const noEdgeWeightTransformMapper  = {
             }
         }
     })
-}   
+};
 
 const mappers = {
     'wideEdgeWeightRange':wideEdgeWeightRangeMapper,
@@ -557,7 +562,7 @@ function load (graph, dataset) {
  * @param {Object} aliases column names by encoding.
  * @param {DataframeMetadata} graphInfo
  */
-function loadDataframe(dataframe, attributeObjects, numPoints, numEdges, aliases, graphInfo) {
+function loadDataframe (dataframe, attributeObjects, numPoints, numEdges, aliases = {}, graphInfo = {}) {
     const edgeAttributeObjects = _.filter(attributeObjects, (value) => value.target === EDGE);
     const pointAttributeObjects = _.filter(attributeObjects, (value) => value.target === VERTEX);
 
@@ -572,14 +577,14 @@ function loadDataframe(dataframe, attributeObjects, numPoints, numEdges, aliases
 }
 
 
-function decode0(graph, vg, metadata) {
+function decode0 (graph, vg, metadata) {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
           vg.version, vg.name, vg.vertexCount, vg.edgeCount);
 
     notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.vertexCount);
 
     const attributes = getAttributes0(vg);
-    loadDataframe(graph.dataframe, attributes, vg.vertexCount, vg.edgeCount, {}, {});
+    loadDataframe(graph.dataframe, attributes, vg.vertexCount, vg.edgeCount);
     logger.info({attributes: _.pluck(attributes, 'name')}, 'Successfully loaded dataframe');
 
     const edges = new Array(vg.edgeCount);
@@ -637,7 +642,7 @@ function decode0(graph, vg, metadata) {
 }
 
 
-function computeInitialPositions(vertexCount, edges, dimensions) {
+function computeInitialPositions (vertexCount, edges, dimensions) {
     logger.trace('Running component analysis');
 
     const {components, nodeToComponent} = weaklycc(vertexCount, edges, 2);
@@ -707,7 +712,7 @@ function computeInitialPositions(vertexCount, edges, dimensions) {
  * @param {AttrObject[]} vectors
  * @returns {Array.<Array.<Number>>}
  */
-function lookupInitialPosition(vg, vectors) {
+function lookupInitialPosition (vg, vectors) {
     const x = _.find(vectors, (o) => o.name === 'x');
     const y = _.find(vectors, (o) => o.name === 'y');
 
@@ -724,7 +729,7 @@ function lookupInitialPosition(vg, vectors) {
 }
 
 
-function getVectors0(vg) {
+function getVectors0 (vg) {
     return vg.string_vectors.concat(vg.uint32_vectors,
                                     vg.int32_vectors,
                                     vg.double_vectors);
@@ -759,7 +764,7 @@ function dateAsNumber (val) {
  * @param {DataframeMetadataByColumn} attributeMetadata
  * @returns {string}
  */
-function punnedTypeFromVector(v, attributeMetadata) {
+function punnedTypeFromVector (v, attributeMetadata) {
     let type = typeof(v.values[0]);
 
     // Attempt to infer date types when possible
@@ -818,7 +823,7 @@ function punnedTypeFromVector(v, attributeMetadata) {
  * @param {VectorGraph} vg
  * @returns {List<AttrObject>}
  */
-function getAttributes0(vg/*, metadata*/) {
+function getAttributes0 (vg/*, metadata*/) {
     const vectors = getVectors0(vg);
     return _.map(_.filter(vectors, (v) => v.values.length > 0), (v) => ({
         name: v.name,
@@ -833,7 +838,7 @@ function getAttributes0(vg/*, metadata*/) {
  * @param {VectorGraph} vg
  * @returns {any[]}
  */
-function getVectors1(vg) {
+function getVectors1 (vg) {
     return _.flatten([
         vg.uint32_vectors, vg.int32_vectors, vg.int64_vectors,
         vg.float_vectors, vg.double_vectors,
@@ -846,7 +851,7 @@ function getVectors1(vg) {
  * @param {DataframeMetadata} metadata
  * @returns {{nodes: Object.<AttrObject>, edges: Object.<AttrObject>}}
  */
-function getAttributes1(vg, metadata) {
+function getAttributes1 (vg, metadata) {
     const vectors = getVectors1(vg);
     const nodeAttributeObjects = {};
     const edgeAttributeObjects = {};
@@ -856,7 +861,7 @@ function getAttributes1(vg, metadata) {
             return;
         }
         const attributeObjects = v.target === VERTEX ? nodeAttributeObjects : edgeAttributeObjects;
-        const typeAccessor = customAttributeNameByGraphIntType[v.target];
+        const typeAccessor = accessorForTargetType[v.target];
         let attributeMetadata;
         if (metadata !== undefined && metadata[typeAccessor] !== undefined) {
             const relevantMetadata = _.find(metadata[typeAccessor], (metadataByComponent) => {
@@ -881,7 +886,7 @@ function getAttributes1(vg, metadata) {
 }
 
 
-function sameKeys(a, b){
+function sameKeys (a, b) {
     const aKeys = _.keys(a);
     const bKeys = _.keys(b);
     if (aKeys.length !== bKeys.length) { return false; }
@@ -890,11 +895,16 @@ function sameKeys(a, b){
 }
 
 /** These encodings are handled in their own special way. */
-const GraphShapeProperties = ['source', 'destination', 'nodeId'];
+const GraphShapePropertiesByTarget = [['nodeId'], ['source', 'destination']];
+const GraphShapeProperties = _.flatten(GraphShapePropertiesByTarget);
 
-function getShapeMappings(nodeEncodings, edgeEncodings) {
-    const mappings = _.pick(edgeEncodings, [GraphShapeProperties[0], GraphShapeProperties[1]]);
-    mappings.nodeId = nodeEncodings.nodeId;
+function getShapeMappings (graphInfo) {
+    const mappings = {};
+    _.each(GraphShapePropertiesByTarget, (shapeProperties, targetType) => {
+        _.each(shapeProperties, (shapeProperty) => {
+            mappings[shapeProperty] = graphInfo[accessorForTargetType[targetType]].encodings;
+        });
+    });
     return mappings;
 }
 
@@ -904,7 +914,7 @@ function getShapeMappings(nodeEncodings, edgeEncodings) {
  * @param {Number} target VERTEX or EDGE
  * @returns {Object.<DataframeMetadataByColumn>}
  */
-function getSimpleEncodings(encodings, loaders, target) {
+function getSimpleEncodings (encodings, loaders, target) {
 
     const supportedEncodings = _.pick(encodings, (enc, graphProperty) => {
         if (_.contains(GraphShapeProperties, graphProperty)) {
@@ -937,7 +947,7 @@ function getSimpleEncodings(encodings, loaders, target) {
  * @param {{nodes: Object.<AttrObject>, edges: Object.<AttrObject>}} vgAttributes
  * @returns {{nodes: *, edges: *}}
  */
-function checkMetadataAgainstVGraph(metadata, vg, vgAttributes) {
+function checkMetadataAgainstVGraph (metadata, vg, vgAttributes) {
     if (metadata.nodes.length === 0 || metadata.edges.length === 0) {
         throw new Error('Nodes or edges missing!');
     }
@@ -975,7 +985,7 @@ function checkMetadataAgainstVGraph(metadata, vg, vgAttributes) {
  * @param {DataframeMetadata} metadata
  * @returns {Promise<U>}
  */
-function decode1(graph, vg, metadata) {
+function decode1 (graph, vg, metadata) {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
                  vg.version, vg.name, vg.vertexCount, vg.edgeCount);
 
@@ -1002,18 +1012,19 @@ function decode1(graph, vg, metadata) {
     loaders = wrap(mapper.mappings, loaders);
     logger.trace('Attribute loaders:', loaders);
 
-    const nodeEncodings = getSimpleEncodings(graphInfo.nodes.encodings, loaders, VERTEX);
-    const edgeEncodings = getSimpleEncodings(graphInfo.edges.encodings, loaders, EDGE);
-    const shapeMappings = getShapeMappings(graphInfo.nodes.encodings, graphInfo.edges.encodings);
+    const encodingsByTarget = _.map(ColumnVectorTargets,
+        (targetType) => getSimpleEncodings(graphInfo[accessorForTargetType[targetType]].encodings,
+            loaders, targetType));
+    const shapeMappings = getShapeMappings(graphInfo);
 
     const flatAttributeArray = _.values(vgAttributes.nodes).concat(_.values(vgAttributes.edges));
-    const allEncodings =  _.extend({}, nodeEncodings, edgeEncodings, shapeMappings);
+    const allEncodings =  _.extend({}, encodingsByTarget[VERTEX], encodingsByTarget[EDGE], shapeMappings);
     loadDataframe(graph.dataframe, flatAttributeArray, vg.vertexCount, vg.edgeCount, allEncodings, graphInfo);
 
     _.each(loaders, (loaderArray, graphProperty) => {
         _.each(loaderArray, (loader) => {
-            const encodings = loader.target === VERTEX ? nodeEncodings : edgeEncodings;
-            const attributes = loader.target === VERTEX ? vgAttributes.nodes : vgAttributes.edges;
+            const encodings = encodingsByTarget[loader.target];
+            const attributes = vgAttributes[accessorForTargetType[loader.target]];
             if (graphProperty in encodings) {
                 const attributeName = encodings[graphProperty];
                 logger.debug('Loading values for', graphProperty, 'from attribute', attributeName);

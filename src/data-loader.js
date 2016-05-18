@@ -29,7 +29,7 @@ const downloaders = {
 
 const tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
 
-function downloader(transport, url) {
+function downloader (transport, url) {
     logger.trace('Attempting to download dataset');
     const result = Q.defer();
 
@@ -43,7 +43,7 @@ function downloader(transport, url) {
         }).fail(() => {
             transport.get(url.href, (getResponse) => {
                 getResponse.setEncoding('binary');
-                //const lastModifiedTime = new Date(getResponse.headers['last-modified']);
+                // const lastModifiedTime = new Date(getResponse.headers['last-modified']);
 
                 let data = '';
                 getResponse.on('data', (chunk) => {
@@ -72,7 +72,7 @@ function downloader(transport, url) {
 * Kick off the download process. This checks the
  * modified time and fetches from S3 accordingly.
 **/
-function s3Downloader(url) {
+function s3Downloader (url) {
     const params = {
         Bucket: url.host || config.BUCKET,  // Defaults to Graphistry's bucket
         Key: decodeURIComponent(url.pathname.replace(/^\//,'')) // Strip leading slash if there is one
@@ -111,7 +111,7 @@ function s3Downloader(url) {
 
 
 // If body is gzipped, decompress transparently
-function unzipBufferIfCompressed(buffer, twice) {
+function unzipBufferIfCompressed (buffer, twice) {
     if (buffer.readUInt16BE(0) === 0x1f8b) { // Do we care about big endian? ARM?
         logger.trace('Data body is gzipped, decompressing');
         if (twice) {
@@ -128,7 +128,7 @@ function unzipBufferIfCompressed(buffer, twice) {
 
 
 // Run appropriate loader based on dataset type
-function loadDatasetIntoSim(graph, dataset) {
+function loadDatasetIntoSim (graph, dataset) {
     logger.debug({dataset: dataset.metadata}, 'Loading dataset');
 
     const loader = loaders[dataset.metadata.type];
@@ -140,7 +140,7 @@ function loadDatasetIntoSim(graph, dataset) {
 
 
 // Parse the json dataset description, download then load data.
-function loadJSONMeta(graph, rawDataset) {
+function loadJSONMeta (graph, rawDataset) {
     const dataset = JSON.parse(rawDataset.body.toString('utf8'));
     return downloadDatasources(dataset).then((datasetWithData) => {
         if (datasetWithData.datasources.length !== 1) {
@@ -157,13 +157,11 @@ function loadJSONMeta(graph, rawDataset) {
 
 
 // Download all datasources in dataset
-function downloadDatasources(dataset) {
+function downloadDatasources (dataset) {
     const qBlobs = _.map(dataset.datasources, (datasource) => {
         const url = urllib.parse(datasource.url);
         if (_.contains(_.keys(downloaders), url.protocol)) {
-            return downloaders[url.protocol](url).then((blob) => {
-                return unzipBufferIfCompressed(blob);
-            });
+            return downloaders[url.protocol](url).then((blob) => unzipBufferIfCompressed(blob));
         } else {
             throw new Error('Fetching datasources: protocol not yet supported' + url.href);
         }
@@ -181,16 +179,16 @@ function downloadDatasources(dataset) {
 
 const datasetConfigParams = ['scene', 'controls', 'mapper', 'device', 'vendor', 'type'];
 
+function paramValueOrDefault (param) { return param !== undefined && param !== 'undefined' ? param : 'default'; }
 
 module.exports = {
     loadDatasetIntoSim: loadDatasetIntoSim,
-    datasetURLFromQuery: function datasetURLFromQuery(query) {
+    datasetURLFromQuery: function datasetURLFromQuery (query) {
         if (!query.dataset) { return undefined; }
         return urllib.parse(decodeURIComponent(query.dataset));
     },
-    datasetConfigFromQuery: function datasetConfigFromQuery(query) {
-        function paramValueOrDefault(param) { return param !== undefined && param !== 'undefined' ? param : 'default'; }
-        let datasetConfig = {};
+    datasetConfigFromQuery: function datasetConfigFromQuery (query) {
+        const datasetConfig = {};
         _.each(datasetConfigParams, (paramName) => {
             datasetConfig[paramName] = paramValueOrDefault(query[paramName]);
         });
