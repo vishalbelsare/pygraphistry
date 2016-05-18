@@ -1018,10 +1018,12 @@ HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, gl
         .take(1)
         .do(() => {
             positionChanges.dispose();
-            this.histogramFilters[attr].completed = true;
+            if (this.histogramFilters[attr]) {
+                this.histogramFilters[attr].completed = true;
+            }
 
             // Click on selection, so undo all filters.
-            if (startedInLastFilter &&  !mouseMoved) {
+            if (startedInLastFilter && !mouseMoved) {
                 this.deleteHistogramFilterByAttribute(attr);
             }
 
@@ -1108,8 +1110,9 @@ HistogramsPanel.prototype.toggleTooltips = function (showTooltip, svg) {
     const globalTooltip = tooltipBox.select('.globalTooltip');
     const localTooltip = tooltipBox.select('.localTooltip');
     if (showTooltip) {
-        globalTooltip.text('TOTAL: ' + String(global) + ', ');
-        localTooltip.text('SELECTED: ' + String(local));
+        const hasSelection = local > 0;
+        globalTooltip.text('TOTAL: ' + String(global) + (hasSelection ? ', ': ''));
+        localTooltip.text(hasSelection ? 'SELECTED: ' + String(local) : '');
         tooltipBox.attr('opacity', FullOpacity);
     } else {
         globalTooltip.text('');
