@@ -378,15 +378,6 @@ function getNamespaceFromGraph (graph) {
     return metadata;
 }
 
-// Defines the order in which system columns are typically interesting:
-const CommonAttributeNamesSortedByInterestLevel = [
-    'degree',
-    'community_infomap', 'community_louvain', 'community_spinglass',
-    'betweenness', 'centrality', 'closeness', 'pagerank',
-    'weight', 'degree_in', 'degree_out', 'indegree', 'outdegree',
-    'Source', 'Destination', '__nodeid__', 'id'
-];
-
 
 /**
  * @param {Dataframe} dataframe
@@ -396,6 +387,7 @@ const CommonAttributeNamesSortedByInterestLevel = [
 function selectInitialColumnsForBinning (dataframe, maxInitialItems = undefined) {
     const scoredColumnNames = [];
     const attributeKeysByType = {point: dataframe.getAttributeKeys('point'), edge: dataframe.getAttributeKeys('edge')};
+    const CommonAttributeNamesSortedByInterestLevel = Dataframe.CommonAttributeNamesSortedByInterestLevel;
     const scoreRange = CommonAttributeNamesSortedByInterestLevel.length;
     _.each(attributeKeysByType, (attributeKeys, type) => {
         _.each(attributeKeys, (attributeName) => {

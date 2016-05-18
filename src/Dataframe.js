@@ -1493,8 +1493,25 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
 };
 
 
+// Defines the order in which system columns are typically interesting:
+const CommonAttributeNamesSortedByInterestLevel = [
+    'degree',
+    'community_infomap', 'community_louvain', 'community_spinglass',
+    'betweenness', 'centrality', 'closeness', 'pagerank',
+    'weight', 'degree_in', 'degree_out', 'indegree', 'outdegree',
+    'Source', 'Destination', '__nodeid__', 'id'
+];
+
+
+Dataframe.CommonAttributeNamesSortedByInterestLevel = CommonAttributeNamesSortedByInterestLevel;
+
+
 Dataframe.prototype.publicColumnNamesByType = function publicColumnNamesByType (type) {
-    return _.filter(_.keys(this.data.attributes[type]), (columnName) => !this.isAttributeNameInternal(columnName));
+    const keys = _.filter(_.keys(this.rawdata.attributes[type]),
+        (columnName) => !this.isAttributeNameInternal(columnName));
+    keys.sort((a, b) =>
+        CommonAttributeNamesSortedByInterestLevel.indexOf(a) - CommonAttributeNamesSortedByInterestLevel.indexOf(b));
+    return keys;
 };
 
 
@@ -1518,12 +1535,12 @@ Dataframe.prototype.getRowAt = function (index, type, columnNames = this.publicC
 /** Returns array of row (fat json) objects.
  * @param {Array.<number>} indices - which elements to extract.
  * @param {BufferTypeKeys} type
+ * @param {String[]} columnNames
  */
-Dataframe.prototype.getRows = function (indices, type) {
+Dataframe.prototype.getRows = function (indices, type, columnNames = this.publicColumnNamesByType(type)) {
     const mask = new DataframeMask(this);
     mask[type] = indices;
 
-    const columnNames = this.publicColumnNamesByType(type);
     return mask.mapIndexesByType(type, (index) => {
         return this.getRowAt(index, type, columnNames);
     });
@@ -1533,37 +1550,36 @@ Dataframe.prototype.getRows = function (indices, type) {
 /** Returns a descriptor of a set of rows.
  * This works relative to UNSORTED edge orders, since it's meant
  * for serializing raw data.
- * @param {Array.<number>} indices - which elements to extract.
- * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
- * @returns {{header, values}}
+ * @param {Mask} mask - which elements to extract.
+ * @param {GraphComponentTypes} type
+ * @param {String[]} columnNames
+ * @returns {{header: Array<String, values: Array<Array>}}
  */
-Dataframe.prototype.getRowsCompactUnfiltered = function (indices, type) {
+Dataframe.prototype.getRowsCompactUnfiltered = function (mask, type, columnNames = this.getAttributeKeys(type)) {
 
-    // TODO: Should this be generalized for non-serializing purposes? E.g., it's not in
-    // the standard lookup path.
-    const attributes = this.rawdata.attributes[type],
-        keys = this.getAttributeKeys(type);
+    // TODO: Should this be generalized for non-serializing purposes? E.g., it's not in the standard lookup path.
+    const columnValuesByName = _.object(columnNames,
+        _.map(columnNames, (columnName) => this.getColumn(columnName, type).values));
+    const numColumns = columnNames.length;
 
-    indices = indices || _.range(this.data.numElements[type]);
+    const localizedMask = new DataframeMask(this);
+    localizedMask[type] = mask;
 
     const lastMasks = this.lastMasks;
 
-    const values = _.map(indices, (index) => {
-        index = lastMasks.getIndexByType(type, index);
-        const row = [];
-        _.each(keys, (key) => {
-            const value = attributes[key].values[index];
+    const values = localizedMask.mapIndexesByType(type, (localIndex) => {
+        const index = lastMasks.getIndexByType(type, localIndex);
+        const row = new Array(numColumns);
+        _.each(columnNames, (key, i) => {
+            const value = columnValuesByName[key][index];
             // This is serialization-specific logic to avoid unusable CSV output. Hoist as necessary:
-            if (dataTypeUtil.valueSignifiesUndefined(value)) {
-                row.push(NaN);
-            }
-            row.push(value);
+            row[i] = dataTypeUtil.valueSignifiesUndefined(value) ? NaN : value;
         });
         return row;
     });
 
     return {
-        header: keys,
+        header: columnNames,
         values: values
     };
 };
