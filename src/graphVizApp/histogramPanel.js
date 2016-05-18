@@ -13,7 +13,7 @@ const d3      = require('d3');
 const util    = require('./util.js');
 const Identifier = require('./Identifier');
 const contentFormatter = require('./contentFormatter.js');
-const ExpressionPrinter = require('./ExpressionPrinter.js');
+const ExpressionPrinter = require('./expressionPrinter.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
