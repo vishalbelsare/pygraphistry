@@ -83,14 +83,17 @@ function enableMarqueeVisuals ($elt, $cont) {
     $cont.addClass('noselect');
 }
 
-function disableAndResetMarqueeVisuals ($elt, $cont) {
+function resetMarqueeVisuals ($elt, $cont) {
     $elt.empty();
     $elt.css({width: 0, height: 0});
     $elt.removeClass('draggable').removeClass('dragging');
+    $cont.removeClass('done');
+}
+
+function disableMarqueeVisuals ($elt, $cont) {
     $elt.removeClass('on').addClass('off');
     $cont.removeClass('on').addClass('off');
-    $cont.removeClass('done');
-    $('body').removeClass('noselect');
+    $cont.removeClass('noselect');
 }
 
 const sideEffectFunctions = {
@@ -98,22 +101,22 @@ const sideEffectFunctions = {
         // Hide everything, change cursor back to normal
         console.log('Side Effect Off');
 
-        disableAndResetMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
+        resetMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
+        disableMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
     },
 
     INIT: (machine, evt) => {
         // Set cursor to crosshair
         console.log('Init');
 
-        disableAndResetMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
+        enableMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
+        resetMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
     },
 
     DOWN_SELECT: (machine, evt) => {
         // Set Marquee State for down position
         console.log('down select');
         machine.marqueeState.downPos = toPoint(machine.marqueeState.$cont, evt);
-
-        enableMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
     },
 
     DRAWING: (machine, evt) => {
