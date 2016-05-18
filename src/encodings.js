@@ -30,6 +30,30 @@ const defaults = {
     }
 };
 
+/** @typedef {Object} EncodingSpec
+ * @property {String} scalingType linear, log, etc. from d3.scale, and identity
+ * @property {Array} domain [min, max] structure for d3.scale
+ * @property {Array} range [min, max] structure for d3.scale
+ * @property {Boolean?} clamp
+ */
+
+
+/**
+ * @param {Dataframe} dataframe
+ * @returns Object.<String, EncodingSpec>
+ */
+function inferLoadedEncodingsFor(dataframe) {
+}
+
+
+/**
+ * @param {Aggregations} summary
+ * @param {String} variation
+ * @param {Array} defaultDomain
+ * @param {Array} distinctValues
+ * @param {BinningResult} binning
+ * @returns {EncodingSpec}
+ */
 function inferColorScalingSpecFor (summary, variation, defaultDomain, distinctValues, binning) {
     let scalingType, domain, range;
     const defaultSequentialRange = defaults.color.isQuantitative.sequential.range;
@@ -84,6 +108,12 @@ function inferColorScalingSpecFor (summary, variation, defaultDomain, distinctVa
 }
 
 
+/**
+ * @param {Dataframe} dataframe
+ * @param {GraphComponentTypes} type
+ * @param {String} attributeName
+ * @returns {EncodingSpec}
+ */
 function inferEncodingType (dataframe, type, attributeName) {
     const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
     const summary = aggregations.getSummary();
@@ -106,6 +136,10 @@ function inferEncodingType (dataframe, type, attributeName) {
     return encodingType;
 }
 
+/**
+ * @param {EncodingSpec} scalingSpec
+ * @returns {d3.scale}
+ */
 function scalingFromSpec (scalingSpec) {
     const scalingType = scalingSpec.scalingType;
     let scaling;
@@ -133,6 +167,15 @@ function domainIsPositive (aggregations) {
     return aggregations.getAggregationByType('isPositive');
 }
 
+/**
+ * @param {EncodingSpec?} encodingSpec
+ * @param {ColumnAggregation} aggregations
+ * @param {String} attributeName
+ * @param {String} encodingType
+ * @param {String} variation
+ * @param {Binning} binning
+ * @returns {EncodingSpec}
+ */
 function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingType, variation, binning) {
     const summary = aggregations.getSummary();
     let scalingType, domain, range, clamp;
@@ -201,7 +244,7 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
     });
 }
 
-/** A legend per the binning.
+/** A legend per the binning; assigns a range member per bin.
  * @returns <Array>
  */
 function legendForBins (aggregations, scaling, binning) {
@@ -246,10 +289,6 @@ function legendForBins (aggregations, scaling, binning) {
     return legend;
 }
 
-/** @typedef {Object} EncodingSpec
- *
- */
-
 /**
  * @param {Dataframe} dataframe
  * @param {String} columnName
@@ -275,7 +314,7 @@ function getEncodingSpecFor (dataframe, columnName, type, encodingType) {
 /**
  * @param {Dataframe} dataframe
  * @param {String} columnName
- * @param {String} type
+ * @param {GraphComponentTypes} type
  * @param {String} encodingType
  * @param {EncodingSpec} encodingSpec
  */
@@ -288,6 +327,15 @@ function saveEncodingSpec (dataframe, columnName, type, encodingType, encodingSp
 }
 
 
+/**
+ * @param {Dataframe} dataframe
+ * @param {GraphComponentTypes} type
+ * @param {String} attributeName
+ * @param {String} encodingType
+ * @param {String} variation
+ * @param {Binning} binning
+ * @returns {{legend: Array, scaling: d3.scale}}
+ */
 function inferEncoding (dataframe, type, attributeName, encodingType, variation, binning) {
     const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
     let encodingSpec = getEncodingSpecFor(dataframe, attributeName, type, encodingType);
