@@ -1709,7 +1709,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
         const dim = query.dim;
 
         graph.take(1)
-            .map((currentGraph) => labeler.getLabels(currentGraph, indices, dim))
+            .map((currentGraph) => labeler.getLabels(currentGraph.simulator.dataframe, indices, dim))
             .do((out) => {
                 cb(null, out);
             })

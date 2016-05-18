@@ -8,24 +8,17 @@ const DimCodes = {
     edge: 2
 };
 
-function pickTitleField (attribs, prioritized) {
-    for (let i = 0; i < prioritized.length; i++) {
-        const field = prioritized[i];
-        if (attribs.hasOwnProperty(field)) {
-            return field;
-        }
-    }
-    return undefined;
-}
 
-
-function defaultLabels(graph, indices, type) {
-
-    /** @type Dataframe */
-    const dataframe = graph.dataframe;
+/**
+ * @param {Dataframe} dataframe
+ * @param {Mask} indices
+ * @param {GraphComponentTypes} type
+ * @returns {*}
+ */
+function defaultLabels (dataframe, indices, type) {
     const rows = dataframe.getRows(indices, type);
 
-    const structuredData = rows.map((row) => {
+    return rows.map((row) => {
         const title = row._title;
         const filteredRow = _.omit(row, '_title');
 
@@ -52,8 +45,6 @@ function defaultLabels(graph, indices, type) {
             columns: sortedColumns
         };
     });
-
-    return structuredData;
 }
 
 
@@ -73,16 +64,16 @@ function presetLabels (dataframe, indices, type) {
 }
 
 
-function getLabels (graph, indices, dim) {
+function getLabels (dataframe, indices, dim) {
     const type = _.findKey(DimCodes, (dimCode) => dimCode === dim);
 
-    const hasPrecomputedLabels = graph.dataframe.hasHostBuffer(labelBufferNameForType(type));
+    const hasPrecomputedLabels = dataframe.hasHostBuffer(labelBufferNameForType(type));
 
     if (hasPrecomputedLabels) {
-        return presetLabels(graph.dataframe, indices, type);
+        return presetLabels(dataframe, indices, type);
     }
 
-    return defaultLabels(graph, indices, type);
+    return defaultLabels(dataframe, indices, type);
 }
 
 
