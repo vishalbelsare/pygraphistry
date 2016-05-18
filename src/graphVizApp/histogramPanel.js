@@ -1342,7 +1342,15 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
             const binValue = stats.binValues && stats.binValues[binName];
             if (!binValue) { continue; }
             if (isBinValueRange(binValue)) {
-                binRanges.push([binValue.min, binValue.max]);
+                if (binRanges.length === 0) {
+                    binRanges.push({min: binValue.min, max: binValue.max, bins: [i]});
+                } else {
+                    const lastBinRange = binRanges[binRanges.length - 1];
+                    if (lastBinRange.bins[lastBinRange.bins.length - 1] === i - 1) {
+                        lastBinRange.bins.push(i);
+                        lastBinRange.max = binValue.max;
+                    }
+                }
             } else {
                 if (binValue.representative !== undefined) {
                     binName = binValue.representative;
@@ -1367,7 +1375,7 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                 right: elements[0]
             };
         }
-        const rangePredicates = _.map(binRanges, ([min, max]) => ({
+        const rangePredicates = _.map(binRanges, ({min, max}) => ({
             type: 'BetweenPredicate',
             start: {type: 'Literal', value: min},
             stop: {type: 'Literal', value: max},
