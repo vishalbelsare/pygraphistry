@@ -24,6 +24,8 @@ var externalLink    = require('./externalLink.js');
 var fullscreenLink  = require('./fullscreenLink.js');
 var TimeExplorer    = require('./timeExplorer/timeExplorer.js');
 var contentFormatter = require('./contentFormatter.js');
+var VizSlice        = require('./VizSlice.js');
+
 
 function logScaling(minPos, maxPos, minVal, maxVal) {
     return d3.scale.log().domain([minVal, maxVal]).range([minPos, maxPos]);
@@ -175,6 +177,13 @@ function setLayoutParameter(socket, algorithm, param, value, settingsChanges) {
     });
 }
 
+// TODO FIXME Why do we need this to click on a switchboard instead of jquery?
+// Where this is used in the selection marquee handler, jquery functions don't seem to work.
+function triggerRawMouseEvent (el, evt) {
+    const mouseEvt = document.createEvent('MouseEvents');
+    mouseEvt.initEvent(evt, true, true);
+    el.dispatchEvent(mouseEvt);
+}
 
 function setupSelectionMarquee (appState, isOn) {
     const camera = appState.renderState.get('camera');
@@ -183,18 +192,59 @@ function setupSelectionMarquee (appState, isOn) {
 
     const marquee = marqueeFact.createSelectionMarquee($('#marquee'));
 
+    // TODO: Handle switchboard + tool activation saner
     isOn.filter(_.identity).do(() => {
-        console.log('Enabling');
         marquee.enable();
     }).subscribe(_.identity, util.makeErrorHandler('enable selection marquee'));
 
     isOn.filter((x) => !x).do(() => {
-        console.log('disabling');
         marquee.disable();
     }).subscribe(_.identity, util.makeErrorHandler('enable selection marquee'));
 
-    marquee.selections.do((marqueeState) => {
-        console.log('Got selection: ', marqueeState);
+    // Assumes world coordinates, and a dense point position Float32Array of [x1, y1, x2, y2, ...]
+    const getPointIndicesInRectangularRegion = (points, tl, br) => {
+        const matchedPoints = [];
+        const numPoints = points.length / 2;
+        for (let i = 0; i < numPoints; i++) {
+            let x = points[i*2];
+            let y = points[i*2 + 1];
+            if (x > tl.x && y < tl.y && x < br.x && y > br.y) {
+                matchedPoints.push(i);
+            }
+        }
+        return matchedPoints;
+    }
+
+    // Handle selections
+    marquee.selections.switchMap((marqueeState) => {
+        // TODO: Provide smoother way to handle getting these
+        return appState.renderState.get('hostBuffers').curPoints.take(1)
+            .map((rawPoints) => {
+                const points = new Float32Array(rawPoints.buffer);
+                return {marqueeState, points};
+            });
+    }).map(({marqueeState, points}) => {
+        const {tl, br} = marqueeState.lastRect;
+        const tlWorld = transform(tl);
+        const brWorld = transform(br);
+
+        return getPointIndicesInRectangularRegion(points, tlWorld, brWorld);
+    }).do((selectedPoints) => {
+        // TODO: Allow for union of new selection with old one (via modifier key?)
+        const newSelection = new VizSlice({point: selectedPoints});
+        appState.activeSelection.onNext(newSelection);
+    }).do(() => {
+        // Turn off selection tool. Done here by simulating raw mouse events on the
+        // switchboard button. JQuery .mousedown() did not seem to get the same result.
+        // TODO FIXME: Just update a falcor model.
+
+        const button = $('#viewSelectionButton')[0];
+
+        // We do staggered down -> up because the handlers can't respond to a click.
+        triggerRawMouseEvent(button, 'mousedown');
+        setTimeout(() => {
+            triggerRawMouseEvent(button, 'mouseup');
+        }, 10);
     }).subscribe(_.identity, util.makeErrorHandler('handling selections marquee'));
 
 }

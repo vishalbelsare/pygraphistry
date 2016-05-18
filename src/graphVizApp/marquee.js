@@ -123,6 +123,7 @@ const sideEffectFunctions = {
         machine.marqueeState.movePos = toPoint(machine.marqueeState.$cont, evt);
 
         const rect = toRect(machine.marqueeState.downPos, machine.marqueeState.movePos);
+        machine.marqueeState.lastRect = rect;
         moveElementToRect(machine.marqueeState.$elt, rect);
     },
 
@@ -196,7 +197,7 @@ function activateMarqueeStateMachine (machine) {
     const events = new Rx.ReplaySubject(1);
     machine.events = events; // TODO: Can we remove this attachment?
 
-    const downEvents = Rx.Observable.fromEvent(sim, 'mousedown')
+    const downEvents = Rx.Observable.fromEvent(document, 'mousedown')
         .merge(Rx.Observable.fromEvent($cont, 'mousedown'))
         .map(evt => ({evt, name: 'down'}));
 
