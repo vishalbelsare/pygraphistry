@@ -1,19 +1,18 @@
 'use strict';
 
-var _       = require('underscore');
-var Rx      = require('rxjs/Rx.KitchenSink');
+const _     = require('underscore');
+const Rx    = require('rxjs/Rx.KitchenSink');
 require('../rx-jquery-stub');
 const PEGUtil = require('pegjs-util');
-//const ASTY    = require('asty');
+// const ASTY    = require('asty');
 
 const util    = require('./util.js');
 const Command = require('./command.js');
-const Identifier = require('./Identifier');
 const parser  = require('./expression.pegjs');
-const ExpressionPrinter = require('./ExpressionPrinter');
+const ExpressionPrinter = require('./ExpressionPrinter.js');
 
 
-function filterParametersCore(type, attribute) {
+function filterParametersCore (type, attribute) {
     return {
         type: type,
         attribute: attribute
@@ -21,7 +20,7 @@ function filterParametersCore(type, attribute) {
 }
 
 
-function FilterControl(socket) {
+function FilterControl (socket) {
     this.namespaceMetadataSubject = new Rx.ReplaySubject(1);
 
     this.namespaceCommand = new Command('getting column descriptions', 'get_namespace_metadata', socket, false);
@@ -31,6 +30,8 @@ function FilterControl(socket) {
     this.runFilterCommand = new Command('filtering the view', 'filter', socket);
 
     this.encodeCommand = new Command('Encode a column', 'encode_by_column', socket);
+
+    this.describeCommand = new Command('Describe a column', 'describe_column', socket);
 
     /** @type Rx.ReplaySubject */
     this.filtersResponsesSubject = new Rx.ReplaySubject(1);
@@ -84,7 +85,7 @@ FilterControl.prototype.clearExclusions = function () { return this.updateExclus
 FilterControl.prototype.clearFilters = function () { return this.updateFilters([]); };
 
 FilterControl.prototype.queryFromExpressionString = function (inputString) {
-    //const asty = new ASTY();
+    // const asty = new ASTY();
     const result = PEGUtil.parse(parser, inputString, {
         startRule: 'start'/*,
         makeAST: function (line, column, offset, args) {
@@ -94,67 +95,6 @@ FilterControl.prototype.queryFromExpressionString = function (inputString) {
     // TODO set result.attribute by walking the AST for Identifiers, requires asty.
     result.inputString = inputString;
     return result;
-};
-
-FilterControl.prototype.queryFromAST = function (ast) {
-    switch (ast.type) {
-        case 'BinaryExpression':
-            // Special-case for BETWEEN/AND expansion:
-            if (ast.operator.toUpperCase() === 'AND') {
-                if (ast.left.operator === '>=' && ast.right.operator === '<=' &&
-                    ast.left.left.type === 'Identifier' &&
-                    _.isEqual(ast.left.left, ast.right.left)) {
-                    return {
-                        attribute: ast.left.left.value,
-                        start: ast.left.right.value,
-                        stop: ast.right.right.value
-                    };
-                }
-            }
-            break;
-        default:
-            break;
-    }
-};
-
-/**
- * @typedef {{type: String, value: String}} Token
- */
-
-/**
- *
- * @param {Token[]} tokens
- * @returns {Object}
- */
-FilterControl.prototype.queryFromExpressionTokens = function (tokens) {
-    if (!tokens) { return undefined; }
-    const query = {};
-    if (tokens[0].type === 'identifier') {
-        query.attribute = tokens[0].value;
-        const idx = query.attribute.indexOf(':');
-        if (idx > 1) {
-            query.type = query.attribute.slice(0, idx - 1);
-        }
-    }
-    if (tokens[1].type === 'operator') {
-        const op = tokens[1].value;
-        if (op === '=' || op === '==') {
-            query.equals = tokens[2].value;
-        } else {
-            console.warn('Unhandled operator', tokens[1].value);
-        }
-    } else if (tokens[1].type === 'keyword') {
-        const keyword = tokens[1].value.toLowerCase();
-        if (keyword === 'between') {
-            const startValue = tokens[2].value;
-            if (tokens[3].value.toLowerCase() === 'and') {
-                const stopValue = tokens[4].value;
-                query.start = startValue;
-                query.stop = stopValue;
-            }
-        }
-    }
-    return query;
 };
 
 FilterControl.prototype.filterRangeParameters = function (type, attribute, start, stop) {
