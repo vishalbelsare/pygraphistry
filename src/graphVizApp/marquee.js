@@ -221,7 +221,6 @@ function activateMarqueeStateMachine (machine) {
         .map(evt => ({evt, name: 'up'}));
 
     Rx.Observable.merge(downEvents, moveEvents, upEvents)
-        .do(({evt}) => evt.preventDefault())
         .subscribe(events, util.makeErrorHandler('handle events for marquee'));
 
     // Update State Machine
