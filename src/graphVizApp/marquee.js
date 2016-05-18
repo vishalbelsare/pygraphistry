@@ -261,34 +261,6 @@ function createSelectionMarquee ($cont) {
     };
 }
 
-
-var globalMachine;
-function initSelectionMarquee (appState, $cont, cfg) {
-    const $elt = createElt();
-
-    $cont.append($elt);
-    const machineOptions = {
-        selectObservable: new Rx.ReplaySubject(1),
-        canDrag: false, $elt, $cont
-    };
-
-    machineOptions.selectObservable
-        .do((state) => {
-            console.log('Selected from: ', state.downPos, state.upPos);
-        })
-        .subscribe(_.identity, util.makeErrorHandler('select handler'));
-
-    const machine = makeStateMachine(machineOptions);
-    activateMarqueeStateMachine(machine);
-
-    // TODO kill this
-    globalMachine = machine;
-}
-
-window.enableSelectionMarquee = function () {
-    globalMachine.events.onNext({evt: {}, name: 'enable'});
-}
-
 //////////////////////////////////////////////////////////////////////////////
 // Old Code
 //////////////////////////////////////////////////////////////////////////////
@@ -751,11 +723,6 @@ function initMarquee (appState, $cont, toggle, cfg) {
     var isOn = new Rx.ReplaySubject(1);
     setupContainer($cont, toggle, cfg, isOn, $elt);
     var transformAll = makeTransformer(cfg);
-
-    // TODO REMOVE ME HACK THIS SHOULD BE ELSEWHERE
-    initSelectionMarquee(appState, $cont, cfg);
-
-
 
     var bounds = marqueeSelections(appState, $cont, $elt, isOn, appState.marqueeOn, blurAndMakeGhost);
     var boundsA = new Rx.ReplaySubject(1);
