@@ -12,24 +12,26 @@ var Backgrid = require('backgrid');
     require('backgrid-paginator');
     require('backgrid-filter');
 
-var util        = require('./util.js');
-var VizSlice    = require('./VizSlice.js');
-var contentFormatter = require('./contentFormatter.js');
 
-var ROWS_PER_PAGE = 8;
+const util        = require('./util.js');
+const VizSlice    = require('./VizSlice.js');
+const contentFormatter = require('./contentFormatter.js');
+const Command     = require('./command.js');
+
+const ROWS_PER_PAGE = 8;
 
 
-function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filtersResponses, isOnSubject) {
-    var $nodesInspector = $('#inspector-nodes').find('.inspector');
-    var $edgesInspector = $('#inspector-edges').find('.inspector');
+function init (appState, socket, workerUrl, marquee, histogramPanelToggle, filtersResponses, isOnSubject) {
+    const $nodesInspector = $('#inspector-nodes').find('.inspector');
+    const $edgesInspector = $('#inspector-edges').find('.inspector');
 
-    var marqueeTriggers = marquee.selections.merge(marquee.doneDragging);
+    const marqueeTriggers = marquee.selections.merge(marquee.doneDragging);
 
     //////////////////////////////////////////////////////////////////////////
     // Interactions with other tools.
     //////////////////////////////////////////////////////////////////////////
 
-    var $inspectorOverlay = $('#inspector-overlay');
+    const $inspectorOverlay = $('#inspector-overlay');
     // Grey out data inspector when marquee is being dragged.
     appState.brushOn.do((state) => {
         // TODO: Don't rely on CSS state here.
@@ -55,12 +57,8 @@ function init(appState, socket, workerUrl, marquee, histogramPanelToggle, filter
 
 
     // Grab header.
-    Rx.Observable.bindCallback(socket.emit.bind(socket))('inspect_header', null)
-    .do((reply) => {
-        if (!reply || !reply.success) {
-            console.error('Server error on inspectHeader', (reply||{}).error);
-        }
-    }).filter((reply) => reply && reply.success)
+    const inspectHeaderCommand = new Command('Inspect header', 'inspect_header', socket, false);
+    inspectHeaderCommand.sendWithObservableResult(null)
     .map((data) => ({
         nodes: {
             columns: createColumns(data.header.nodes, 'Node'),
@@ -116,7 +114,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
     // Setup Backbone Views and Models
     //////////////////////////////////////////////////////////////////////////
 
-    var SelectableRow = Backgrid.Row.extend({
+    const SelectableRow = Backgrid.Row.extend({
         mouseoverColor: 'lightblue',
         activeColor: '#0FA5C5',
         events: {
@@ -139,9 +137,9 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         },
 
         rowClick: function (evt) {
-            var ctrl = evt.ctrlKey || evt.metaKey;
-            var shift = evt.shiftKey;
-            var selection = {idx: +this.model.attributes._index, dim: dim, source: 'dataInspector'};
+            const ctrl = evt.ctrlKey || evt.metaKey;
+            const shift = evt.shiftKey;
+            const selection = {idx: +this.model.attributes._index, dim: dim, source: 'dataInspector'};
             if (ctrl) {
                 // TODO: Is there a cleaner way to do this sort of "in place"
                 // operation on a replay subject?
@@ -153,14 +151,14 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
                     if (sel.isEmpty()) {
                         sel = sel.newFrom([selection]);
                     } else {
-                        //var newRangeStart = sel[sel.length - 1];
-                        var newRange = [];
+                        //const newRangeStart = sel[sel.length - 1];
+                        const newRange = [];
                         sel = sel.newAdding(newRange);
                     }
                     activeSelection.onNext(sel);
                 }).subscribe(_.identity, util.makeErrorHandler('Multiselect range in dataInspector'));
             } else {
-                var newSelection;
+                let newSelection;
                 if (this.model.get('selected')) {
                     newSelection = new VizSlice();
                 } else {
@@ -171,8 +169,8 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         }
     });
 
-    var InspectData = Backbone.Model.extend({});
-    var DataFrame = Backbone.PageableCollection.extend({
+    const InspectData = Backbone.Model.extend({});
+    const DataFrame = Backbone.PageableCollection.extend({
         model: InspectData,
         url: workerUrl + urn,
         state: {
@@ -190,8 +188,8 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
             // Transform response values for presentation.
             _.each(resp.values, (rowContents) => {
                 _.each(_.keys(rowContents), (attrName) => {
-                    var dataType = resp.dataTypes[attrName];
-                    var formatted = contentFormatter.defaultFormat(rowContents[attrName], dataType);
+                    const dataType = resp.dataTypes[attrName];
+                    const formatted = contentFormatter.defaultFormat(rowContents[attrName], dataType);
                     rowContents[attrName] = formatted;
                 });
             });
@@ -200,9 +198,9 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
         }
     });
 
-    var dataFrame = new DataFrame([], {mode: 'server'});
+    const dataFrame = new DataFrame([], {mode: 'server'});
 
-    var grid = new Backgrid.Grid({
+    const grid = new Backgrid.Grid({
         row: SelectableRow,
         columns: columns,
         collection: dataFrame,
@@ -220,7 +218,7 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
 
     grid.renderRows = function () {
         grid.selectedModels = [];
-        _.each(grid.body.rows, function (row) {
+        _.each(grid.body.rows, (row) => {
             // TODO: Kill this hack.
             if (!row.model) {
                 return;
@@ -243,14 +241,14 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
     // Render the grid and attach the root to your HTML document
     $inspector.empty().append(grid.render().el);
 
-    var paginator = new Backgrid.Extension.Paginator({
+    const paginator = new Backgrid.Extension.Paginator({
         windowSize: 20, // Default is 10
         collection: dataFrame
     });
 
     // TODO: Use templates for this stuff instead of making in jquery.
-    var divider = $('<div>').addClass('divide-line');
-    var paginatorEl = paginator.render().el;
+    const divider = $('<div>').addClass('divide-line');
+    const paginatorEl = paginator.render().el;
 
     $inspector.prepend(divider);
     $inspector.append(paginatorEl);
@@ -258,11 +256,11 @@ function initPageableGrid(workerUrl, columns, urn, $inspector, activeSelection, 
     setupSelectionRerender(activeSelection, grid, dim);
     setupSearchBar(columns[0].label, dataFrame, $inspector, workerUrl, dim);
 
-    var $colHeaders = $inspector.find('.backgrid').find('thead').find('tr').children();
-    $colHeaders.each(function () {
-        var $colHeader = $(this);
-        $colHeader.click(function () {
-            $colHeaders.not($colHeader).each(function () {
+    const $colHeaders = $inspector.find('.backgrid').find('thead').find('tr').children();
+    $colHeaders.each(() => {
+        const $colHeader = $(this);
+        $colHeader.click(() => {
+            $colHeaders.not($colHeader).each(() => {
                 $(this).removeClass('ascending').removeClass('descending');
             });
         });
@@ -299,7 +297,7 @@ function setupSelectionRerender(activeSelection, grid, whichDim) {
 function setupSearchStreams(searchRequests) {
 
     util.bufferUntilReady(searchRequests).do((hash) => {
-        var req = hash.data;
+        const req = hash.data;
 
         if (Backbone.PageableCollection &&
                 req.collection instanceof Backbone.PageableCollection) {
@@ -313,7 +311,7 @@ function setupSearchStreams(searchRequests) {
 
 function setupSearchBar(searchField, dataFrame, $inspector, workerUrl, dim) {
 
-    var serverSideFilter = new Backgrid.Extension.ServerSideFilter({
+    const serverSideFilter = new Backgrid.Extension.ServerSideFilter({
         collection: dataFrame,
         name: 'search',
         placeholder: 'Search ' + searchField + 's'
@@ -323,9 +321,9 @@ function setupSearchBar(searchField, dataFrame, $inspector, workerUrl, dim) {
     // Attach Autosearch Handlers
     //////////////////////////////////////////////////////////////////////
 
-    var searchRequests = new Rx.ReplaySubject(1);
+    const searchRequests = new Rx.ReplaySubject(1);
 
-    var attemptSearch = function (e) {
+    const attemptSearch = function (e) {
         // Because we clobber the handler for this.
         this.showClearButtonMaybe();
         this.search(e);
@@ -334,19 +332,19 @@ function setupSearchBar(searchField, dataFrame, $inspector, workerUrl, dim) {
     // Copied / modified the filter extension. We're overriding here to
     // allow it to debounce itself.
     // TODO: Decide if we should fork, or otherwise extend cleaner.
-    var search = function (e) {
+    const search = function (e) {
         if (e) {
             e.preventDefault();
         }
 
-        var data = {};
-        var query = this.query();
+        const data = {};
+        const query = this.query();
         if (query) {
             data[this.name] = query;
         }
         searchRequests.onNext({
             data: data,
-            collection: this.collection,
+            collection: this.collection
         });
     };
 
@@ -354,20 +352,20 @@ function setupSearchBar(searchField, dataFrame, $inspector, workerUrl, dim) {
 
     // Hook up new event handlers
     serverSideFilter.events = _.extend(serverSideFilter.events, {
-        'keyup input[type=search]': 'attemptSearch',
+        'keyup input[type=search]': 'attemptSearch'
     });
     serverSideFilter.attemptSearch = attemptSearch;
     serverSideFilter.search = search;
     serverSideFilter.delegateEvents();
 
-    var filterEl = serverSideFilter.render().el;
+    const filterEl = serverSideFilter.render().el;
 
     // Add an export button to bar
 
-    var exportUrl = 'export_csv';
-    var type = (dim === 2) ? 'edge' : 'point';
-    var href = workerUrl + exportUrl + '?type=' + type;
-    var $exportButton = $('<a href="' + href + '" target="_blank" download class="csvExportButton pull-right btn btn-xs btn-default" id="csvExportButton' + dim + '">' +
+    const exportUrl = 'export_csv';
+    const type = (dim === 2) ? 'edge' : 'point';
+    const href = workerUrl + exportUrl + '?type=' + type;
+    const $exportButton = $('<a href="' + href + '" target="_blank" download class="csvExportButton pull-right btn btn-xs btn-default" id="csvExportButton' + dim + '">' +
         '<span class="glyphicon glyphicon-cloud-download"></span>' +
         'Download ' + searchField.toLowerCase() + ' table as CSV' +
         '</a>');

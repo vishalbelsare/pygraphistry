@@ -17,10 +17,11 @@ Command.prototype = {
         const src = Rx.Observable.bindCallback(this.socket.emit.bind(this.socket))(this.commandName, ...args);
         if (this.disableErrorFiltering === true) {
             return src;
+        } else {
+            return src
+                .do(this.logErrorFromResponse)
+                .filter(this.isServerResponseSuccess);
         }
-        return src
-            .do(this.logErrorFromResponse)
-            .filter(this.isServerResponseSuccess);
     },
 
     logErrorFromResponse: function (reply) {

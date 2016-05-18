@@ -11,7 +11,7 @@ const util            = require('./util.js');
 const staticclient    = require('../staticclient.js');
 const marquee         = require('./marquee.js');
 const Command         = require('./command.js');
-
+const debug           = require('debug')('graphistry:StreamGL:persist');
 
 function joinEscapedParams (paramKeysAndEscapedValues) {
     return _.map(paramKeysAndEscapedValues, (paramValue, paramName) => paramName + '=' + paramValue).join('&');
@@ -63,6 +63,25 @@ function generateContentKey (urlParams) {
     } else {
         throw new Error('Unrecognized form in dataset URL parameter: ' + datasetParam);
     }
+}
+
+
+function maybeHide($btn, socket) {
+
+    //option group
+    $btn.parent().css('display', 'none');
+
+    socket.emit('get_sharing_config', null, function (response) {
+        if (response.success) {
+            debug('Graphistry sharing config', response.decision, $btn);
+            if (response.decision)  {
+                $btn.parent().css('display', 'block');
+            }
+        } else {
+            util.makeErrorHandler('get_sharing_config')(response.error);
+        }
+    });
+
 }
 
 
@@ -127,6 +146,8 @@ module.exports = {
             $btn.remove();
             return;
         }
+
+        maybeHide($btn, socket);
 
         Rx.Observable.fromEvent($btn, 'click')
             // show

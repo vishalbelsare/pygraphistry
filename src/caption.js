@@ -1,6 +1,6 @@
 'use strict';
 
-var $     = window.$;
+const $     = window.$;
 
 
 /**
@@ -15,8 +15,8 @@ module.exports = {
     renderCaptionFromData: function renderGraphCaption(data)
     {
 
-        var numNodes = data.elements.pointculled || data.elements.uberpointculled || 0,
-            numEdges = (data.elements.edgeculled || data.elements.edgeculledindexed ||
+        const numNodes = data.elements.pointculled || data.elements.uberpointculled || 0,
+              numEdges = (data.elements.edgeculled || data.elements.edgeculledindexed ||
                 data.elements.edgeculledindexedclient || data.bufferByteLengths.logicalEdges / 4 || 0) / 2;
         $('#graph-node-count').text(numNodes);
         $('#graph-edge-count').text(numEdges);

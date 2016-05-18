@@ -1,40 +1,41 @@
 'use strict';
 
-var debug   = require('debug')('graphistry:StreamGL:graphVizApp:controls');
-var $       = window.$;
-var Rx      = require('rxjs/Rx.KitchenSink');
-              require('../rx-jquery-stub');
-var d3      = require('d3');
-var _       = require('underscore');
-var Color   = require('color');
+const debug   = require('debug')('graphistry:StreamGL:graphVizApp:controls');
+const $       = window.$;
+const Rx      = require('rxjs/Rx.KitchenSink');
+                require('../rx-jquery-stub');
+const d3      = require('d3');
+const _       = require('underscore');
+const Color   = require('color');
 
-var util            = require('./util.js');
-var dataInspector   = require('./dataInspector.js');
-var FiltersPanel    = require('./filtersPanel.js');
-var ExclusionsPanel = require('./ExclusionsPanel.js');
-var SetsPanel       = require('./setsPanel.js');
-var HistogramBrush  = require('./histogramBrush.js');
-var marqueeFact     = require('./marquee.js');
-var runButton       = require('./runButton.js');
-var forkVgraph      = require('./fork.js');
-var persist         = require('./persist.js');
-var goLiveButton    = require('./goLiveButton.js');
-var colorPicker     = require('./colorpicker.js');
-var externalLink    = require('./externalLink.js');
-var fullscreenLink  = require('./fullscreenLink.js');
-var TimeExplorer    = require('./timeExplorer/timeExplorer.js');
-var contentFormatter = require('./contentFormatter.js');
+const util            = require('./util.js');
+const dataInspector   = require('./dataInspector.js');
+const FiltersPanel    = require('./filtersPanel.js');
+const ExclusionsPanel = require('./ExclusionsPanel.js');
+const SetsPanel       = require('./setsPanel.js');
+const HistogramBrush  = require('./histogramBrush.js');
+const marqueeFact     = require('./marquee.js');
+const runButton       = require('./runButton.js');
+const forkVgraph      = require('./fork.js');
+const persist         = require('./persist.js');
+const goLiveButton    = require('./goLiveButton.js');
+const colorPicker     = require('./colorpicker.js');
+const externalLink    = require('./externalLink.js');
+const fullscreenLink  = require('./fullscreenLink.js');
+const TimeExplorer    = require('./timeExplorer/timeExplorer.js');
+const contentFormatter = require('./contentFormatter.js');
+const Command         = require('./command.js');
 
-function logScaling(minPos, maxPos, minVal, maxVal) {
+function logScaling (minPos, maxPos, minVal, maxVal) {
     return d3.scale.log().domain([minVal, maxVal]).range([minPos, maxPos]);
 }
 
-var PercentScale = d3.scale.linear().domain([0, 1]).range([0, 100]);
-var PointSizeScale = logScaling(1, 100, 0.1, 10);
-var EdgeSizeScale = logScaling(1, 100, 0.1, 10);
+const PercentScale = d3.scale.linear().domain([0, 1]).range([0, 100]);
+const PointSizeScale = logScaling(1, 100, 0.1, 10);
+const EdgeSizeScale = logScaling(1, 100, 0.1, 10);
 
 // Setup client side controls.
-var encodingPerElementParams = [
+const encodingPerElementParams = [
     {
         name: 'pointScaling',
         displayName: 'Point Size',
@@ -85,20 +86,20 @@ var encodingPerElementParams = [
 
 
 function createStyleElement() {
-    var sheet = $('<style type="text/css">');
+    const sheet = $('<style type="text/css">');
     sheet.appendTo($('head'));
     return sheet;
 }
 
 
-var encodingForLabelParams = [
+const encodingForLabelParams = [
    {
         name: 'labelForegroundColor',
         displayName: 'Text Color',
         type: 'color',
         def: new Color('#1f1f33').rgbaString(),
         cb: (() => {
-            var sheet = createStyleElement();
+            const sheet = createStyleElement();
             return (stream) => {
                 stream.inspectTime(20).subscribe((c) => {
                     sheet.text('.graph-label, .graph-label table { color: ' + c.rgbaString() + ' }');
@@ -112,7 +113,7 @@ var encodingForLabelParams = [
         type: 'color',
         def: (new Color('#fff')).alpha(0.9).rgbaString(),
         cb: (() => {
-            var sheet = createStyleElement();
+            const sheet = createStyleElement();
             return (stream) => {
                 stream.inspectTime(20).subscribe((c) => {
                     sheet.text('.graph-label .graph-label-container  { background-color: ' + c.rgbaString() + ' }');
@@ -155,13 +156,13 @@ var encodingForLabelParams = [
 
 
 function setLayoutParameter(socket, algorithm, param, value, settingsChanges) {
-    var update = {};
-    var controls = {};
+    const update = {};
+    const controls = {};
 
     update[param] = value;
     controls[algorithm] = update;
 
-    var payload = {
+    const payload = {
         play: true,
         layout: true,
         simControls: controls
@@ -177,11 +178,11 @@ function setLayoutParameter(socket, algorithm, param, value, settingsChanges) {
 
 //Observable bool -> { ... }
 function setupMarquee(appState, isOn) {
-    var camera = appState.renderState.get('camera');
-    var cnv = appState.renderState.get('canvas');
-    var transform = (point) => camera.canvas2WorldCoords(point.x, point.y, cnv);
+    const camera = appState.renderState.get('camera');
+    const cnv = appState.renderState.get('canvas');
+    const transform = (point) => camera.canvas2WorldCoords(point.x, point.y, cnv);
 
-    var marquee = marqueeFact.initMarquee(appState, $('#marquee'), isOn, {transform: transform});
+    const marquee = marqueeFact.initMarquee(appState, $('#marquee'), isOn, {transform: transform});
 
     marquee.selections.subscribe((sel) => {
         debug('marquee selected bounds', sel);
@@ -211,11 +212,11 @@ function setupMarquee(appState, isOn) {
  * @returns {Brush}
  */
 function setupBrush(appState, isOn) {
-    var camera = appState.renderState.get('camera');
-    var cnv = appState.renderState.get('canvas');
-    var transform = (point) => camera.canvas2WorldCoords(point.x, point.y, cnv);
+    const camera = appState.renderState.get('camera');
+    const cnv = appState.renderState.get('canvas');
+    const transform = (point) => camera.canvas2WorldCoords(point.x, point.y, cnv);
 
-    var brush = marqueeFact.initBrush(appState, $('#brush'), isOn, {transform: transform});
+    const brush = marqueeFact.initBrush(appState, $('#brush'), isOn, {transform: transform});
 
     brush.selections.subscribe((sel) => {
         debug('brush selected bounds', sel);
@@ -231,11 +232,11 @@ function setupBrush(appState, isOn) {
 // -> Observable DOM
 //Return which mouse group element selected
 //Side effect: highlight that element
-function clicksFromPopoutControls($elt) {
-    var mouseElements = $('.panel-button, .modal-button', $elt);
+function clicksFromPopoutControls ($elt) {
+    const mouseElements = $('.panel-button, .modal-button', $elt);
 
-    return Rx.Observable.merge.apply(Rx.Observable,
-        mouseElements.get().map((elt) => {
+    return Rx.Observable.merge(
+        ...mouseElements.get().map((elt) => {
             return Rx.Observable.fromEvent(elt, 'mousedown')
                 .do((evt) => {
                     // Stop from propagating to canvas
@@ -258,7 +259,7 @@ function createLegend($elt, urlParams) {
         return;
     }
 
-    var legend;
+    let legend;
     try {
         legend = JSON.parse(urlParams.legend);
     } catch (err) {
@@ -266,7 +267,7 @@ function createLegend($elt, urlParams) {
         return;
     }
 
-    var $title = $elt.children('.legend-title');
+    const $title = $elt.children('.legend-title');
     if (legend.title) {
         $title.append(legend.title);
     }
@@ -291,8 +292,8 @@ function createLegend($elt, urlParams) {
 //  * string -> DOM
 // (Will append at anchor position)
 function controlMaker (urlParams, param, type) {
-    var $input;
-    var initValue;
+    let $input;
+    let initValue;
     switch (param.type) {
         case 'continuous':
             initValue = urlParams[param.name] ? parseFloat(urlParams[param.name]) : param.value;
@@ -343,31 +344,32 @@ function controlMaker (urlParams, param, type) {
                 .append($('<div>').addClass('colorHolder'));
             param.cb(colorPicker.makeInspector($input, initValue));
             break;
-        case 'text':
-            var $innerInput = $('<input>').attr({
+        case 'text': {
+            const $innerInput = $('<input>').attr({
                 class: type + '-control-textbox form-control control-textbox',
                 id: param.name,
                 type: 'text'
             }).data('param', param);
 
-            var $button = $('<button class="btn btn-default control-textbox-button">Set</button>');
+            const $button = $('<button class="btn btn-default control-textbox-button">Set</button>');
 
-            var $wrappedInput = $('<div>').addClass('col-xs-8').addClass('inputWrapper')
+            const $wrappedInput = $('<div>').addClass('col-xs-8').addClass('inputWrapper')
                 .css('padding-left', '0px')
                 .append($innerInput);
-            var $wrappedButton = $('<div>').addClass('col-xs-4').addClass('buttonWrapper')
+            const $wrappedButton = $('<div>').addClass('col-xs-4').addClass('buttonWrapper')
                 .css('padding-left', '0px')
                 .append($button);
 
             $input = $('<div>').append($wrappedInput).append($wrappedButton);
             break;
+        }
         default:
             console.warn('Ignoring param of unknown type', param);
             $input = $('<div>').text('Unknown setting type' + param.type);
     }
 
-    var $col = $('<div>').addClass('col-xs-8').append($input);
-    var $label = $('<label>').attr({
+    const $col = $('<div>').addClass('col-xs-8').append($input);
+    const $label = $('<label>').attr({
         for: param.name,
         class: 'control-label col-xs-4'
     }).text(param.displayName);
@@ -379,16 +381,16 @@ function controlMaker (urlParams, param, type) {
 }
 
 
-function createControlHeader($anchor, name) {
+function createControlHeader ($anchor, name) {
     $('<div>')
         .addClass('control-title').text(name)
         .appendTo($anchor);
 }
 
 
-function createControls(socket, appState, trigger, urlParams) {
-
-    var rxControls = Rx.Observable.bindCallback(socket.emit.bind(socket))('layout_controls', null)
+function createControls (socket, appState, trigger, urlParams) {
+    const getControlsCommand = new Command('Get layout controls', 'layout_controls', socket);
+    const rxControls = getControlsCommand.sendWithObservableResult(null)
         .map((res) => {
             if (res && res.success) {
                 debug('Received layout controls from server', res.controls);
@@ -398,13 +400,13 @@ function createControls(socket, appState, trigger, urlParams) {
             }
         });
 
-    var $renderingItems = $('#renderingItems');
-    var $anchor = $renderingItems.children('.form-horizontal');
+    const $renderingItems = $('#renderingItems');
+    const $anchor = $renderingItems.children('.form-horizontal');
 
     $renderingItems.css({'display': 'block', 'left': '100%'});
 
     Rx.Observable.combineLatest(rxControls, appState.viewConfigChanges, (controls, viewConfig) => {
-        var parameters = viewConfig.parameters;
+        const parameters = viewConfig.parameters;
         // TODO fix this so whitelisted urlParams can update viewConfig.parameters, and then those affect/init values.
         _.extend(urlParams, parameters);
 
@@ -434,10 +436,10 @@ function createControls(socket, appState, trigger, urlParams) {
         });
 
         $('#renderingItems').find('[type=checkbox]').each(function () {
-            var $that = $(this);
-            var input = this;
+            const $that = $(this);
+            const input = this;
             $(input).bootstrapSwitch();
-            var param = $(input).data('param');
+            const param = $(input).data('param');
             $(input).onAsObservable('switchChange.bootstrapSwitch').subscribe(
                 () => {
                     if ($that.hasClass('layout-checkbox')) {
@@ -452,9 +454,9 @@ function createControls(socket, appState, trigger, urlParams) {
 
 
         $('.menu-slider').each(function () {
-            var $that = $(this);
-            var $slider = $(this).bootstrapSlider({tooltip: 'hide'});
-            var param = $slider.data('param');
+            const $that = $(this);
+            const $slider = $(this).bootstrapSlider({tooltip: 'hide'});
+            const param = $slider.data('param');
 
             Rx.Observable.merge(
                 $slider.onAsObservable('slide'),
@@ -475,15 +477,15 @@ function createControls(socket, appState, trigger, urlParams) {
         });
 
         $('.control-textbox-button').each(function () {
-            var input = this;
+            const input = this;
 
             $(input).onAsObservable('click')
                 .do((evt) => {
-                    var $button = $(evt.target);
-                    var $input = $button.parent().siblings('.inputWrapper').first()
+                    const $button = $(evt.target);
+                    const $input = $button.parent().siblings('.inputWrapper').first()
                         .children('.control-textbox').first();
-                    var val = $input.val();
-                    var param = $input.data('param');
+                    const val = $input.val();
+                    const param = $input.data('param');
 
                     if ($input.hasClass('layout-control-textbox')) {
                         console.log('Layout control textboxes are not supported yet.');
@@ -502,11 +504,11 @@ function createControls(socket, appState, trigger, urlParams) {
 
 
 function setViewParameter(socket, name, pos, appState) {
-    var camera = appState.renderState.get('camera');
-    var val = pos;
+    const camera = appState.renderState.get('camera');
+    let val = pos;
 
     function setUniform(key, value) {
-        var uniforms = appState.renderState.get('uniforms');
+        const uniforms = appState.renderState.get('uniforms');
         _.each(uniforms, (map) => {
             if (key in map) {
                 map[key] = value;
@@ -531,14 +533,15 @@ function setViewParameter(socket, name, pos, appState) {
             val = PercentScale.invert(pos);
             setUniform(name, [val]);
             break;
-        case 'labelTransparency':
-            var opControl = $('#labelOpacity');
+        case 'labelTransparency': {
+            let opControl = $('#labelOpacity');
             if (!opControl.length) {
                 opControl = $('<style>').appendTo($('body'));
             }
             val = PercentScale.invert(pos);
             opControl.text('.graph-label { opacity: ' + val + '; }');
             break;
+        }
         case 'displayTimeZone':
             contentFormatter.setTimeZone(val);
             break;
@@ -581,8 +584,8 @@ function togglePanel ($panelButton, $panel, newVisibility) {
 // else toggle off $panelButton and hide $panel
 //Return toggle status stream
 function setupPanelControl (toolbarClicks, $panelButton, $panel, errorLogLabel) {
-    var neverOpened = true;
-    var panelToggles = toolbarClicks.filter((elt) => elt === $panelButton[0]).map(() => {
+    let neverOpened = true;
+    const panelToggles = toolbarClicks.filter((elt) => elt === $panelButton[0]).map(() => {
         // HACK Make sure the first click always opens even if technically :visible already for D3/etc.
         if (neverOpened) {
             neverOpened = false;
@@ -598,9 +601,9 @@ function setupPanelControl (toolbarClicks, $panelButton, $panel, errorLogLabel) 
 }
 
 function setupCameraApi (appState) {
-    var renderState = appState.renderState;
-    var renderingScheduler = appState.renderingScheduler;
-    var camera = renderState.get('camera');
+    const renderState = appState.renderState;
+    const renderingScheduler = appState.renderingScheduler;
+    const camera = renderState.get('camera');
 
     appState.apiActions
         .filter((e) => e.event === 'updateCamera')
@@ -616,15 +619,15 @@ function setupCameraApi (appState) {
 function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     createLegend($('#graph-legend'), urlParams);
     toggleLogo($('.logo-container'), urlParams);
-    var popoutClicks = clicksFromPopoutControls($elt);
+    const popoutClicks = clicksFromPopoutControls($elt);
     externalLink($('#externalLinkButtonContainer'), $('#externalLinkButton'), urlParams);
     fullscreenLink($('#externalLinkButtonContainer'), $('#fullscreenButton'), urlParams);
 
-    var $graph = $('#simulate');
+    const $graph = $('#simulate');
     // TODO: More general version for all toggle-able buttons?
-    var marqueeIsOn = false;
-    var $viewSelectionButton = $('#viewSelectionButton');
-    var turnOnMarquee =
+    let marqueeIsOn = false;
+    const $viewSelectionButton = $('#viewSelectionButton');
+    const turnOnMarquee =
         Rx.Observable.merge(
             popoutClicks.filter((elt) => {
                 return elt === $viewSelectionButton[0]; })
@@ -636,11 +639,11 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             toggleButton($viewSelectionButton, marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
         });
-    var histogramPanelToggle = setupPanelControl(popoutClicks, $('#histogramPanelControl'), $('#histogram.panel'),
+    const histogramPanelToggle = setupPanelControl(popoutClicks, $('#histogramPanelControl'), $('#histogram.panel'),
         'Turning on/off the histogram panel');
-    var dataInspectorIsVisible = false;
-    var dataInspectorOnSubject = new Rx.Subject();
-    var $dataInspectorButton = $('#dataInspectorButton');
+    let dataInspectorIsVisible = false;
+    const dataInspectorOnSubject = new Rx.Subject();
+    const $dataInspectorButton = $('#dataInspectorButton');
     dataInspectorOnSubject.onNext(false);
     popoutClicks.filter((elt) => elt === $dataInspectorButton[0]).do(() => {
         dataInspectorIsVisible = !dataInspectorIsVisible;
@@ -650,8 +653,8 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     }).subscribe(_.identity, util.makeErrorHandler('dataInspector visibility toggle'));
 
     // Visibility for time explorer
-    var $timeExplorerButton = $('#timeExplorerButton');
-    var timeExplorerIsVisible = false;
+    const $timeExplorerButton = $('#timeExplorerButton');
+    let timeExplorerIsVisible = false;
     popoutClicks.filter((elt) => elt === $timeExplorerButton[0]).do(() => {
         timeExplorerIsVisible = !timeExplorerIsVisible;
         toggleButton($timeExplorerButton, timeExplorerIsVisible);
@@ -660,16 +663,16 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
 
     // histogram brush:
-    var brushIsOn = false;
+    let brushIsOn = false;
     // Use separate subject so downstream subscribers don't trigger control changes twice.
     // TODO: Figure out the correct pattern for this.
-    var turnOnBrush = new Rx.Subject();
+    const turnOnBrush = new Rx.Subject();
     popoutClicks
         .merge(
             Rx.Observable.fromEvent($graph, 'click')
             .map(_.constant($graph[0])))
         .map((elt) => {
-            var $brushButton = $('#brushButton');
+            const $brushButton = $('#brushButton');
             if (elt === $brushButton[0]) {
                 toggleButton($(elt));
                 brushIsOn = !brushIsOn;
@@ -688,23 +691,23 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     setupPanelControl(popoutClicks, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
 
-    var $tooltips = $('[data-toggle="tooltip"]');
-    var $bolt = $graph.find('.fa');
-    var $center = $('#center');
-    var $shrinkToFit = $center.find('.fa');
-    var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
+    const $tooltips = $('[data-toggle="tooltip"]');
+    const $bolt = $graph.find('.fa');
+    const $center = $('#center');
+    const $shrinkToFit = $center.find('.fa');
+    const numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
 
 
     /**
      * Returns whether camera auto-centering is specified; defaults to true.
      */
-    var finalCenter = (() => {
-        var flag = urlParams.center;
+    const finalCenter = (() => {
+        const flag = urlParams.center;
         return flag === undefined || flag.toString().toLowerCase() === 'true';
     })();
 
-    var $simulation = $('#simulation');
-    var centeringDone =
+    const $simulation = $('#simulation');
+    const centeringDone =
         Rx.Observable.merge(
             Rx.Observable.fromEvent($center, 'click'),
             Rx.Observable.fromEvent($graph, 'click'),
@@ -717,18 +720,18 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .merge(Rx.Observable.timer(numTicks))
         .map(_.constant(finalCenter));
 
-    var readyForHistograms = centeringDone.zip(doneLoading)
+    const readyForHistograms = centeringDone.zip(doneLoading)
         .merge(histogramPanelToggle)
         .take(1);
 
-    var marquee = setupMarquee(appState, turnOnMarquee);
-    var brush = setupBrush(appState, turnOnBrush);
-    var filtersPanel = new FiltersPanel(socket, appState.labelRequests, appState.settingsChanges);
+    const marquee = setupMarquee(appState, turnOnMarquee);
+    const brush = setupBrush(appState, turnOnBrush);
+    const filtersPanel = new FiltersPanel(socket, appState.labelRequests, appState.settingsChanges);
     filtersPanel.setupToggleControl(popoutClicks, $('#filterButton'), $('#exclusionButton'));
-    var exclusionsPanel = new ExclusionsPanel(socket, filtersPanel.control, appState.labelRequests);
+    const exclusionsPanel = new ExclusionsPanel(socket, filtersPanel.control, appState.labelRequests);
     exclusionsPanel.setupToggleControl(popoutClicks, $('#exclusionButton'), $('#filterButton'));
-    var filtersResponses = filtersPanel.control.filtersResponsesSubject;
-    var histogramBrush = new HistogramBrush(socket, filtersPanel, readyForHistograms);
+    const filtersResponses = filtersPanel.control.filtersResponsesSubject;
+    const histogramBrush = new HistogramBrush(socket, filtersPanel, readyForHistograms);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
     histogramBrush.setupApiInteraction(appState.apiActions);
@@ -740,12 +743,12 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     persist.setupPersistLayoutButton($('#persistButton'), appState, socket, urlParams);
     persist.setupPersistWorkbookButton($('#persistWorkbookButton'), appState, socket, urlParams);
     goLiveButton(socket, urlParams);
-    var setsPanel = new SetsPanel(socket, urlParams);
+    const setsPanel = new SetsPanel(socket, appState.labelRequests);
     setsPanel.setupFiltersPanelInteraction(filtersPanel);
     setsPanel.setupToggleControl(popoutClicks, $('#setsPanelButton'));
     setsPanel.setupSelectionInteraction(appState.activeSelection, appState.latestHighlightedObject);
 
-    /*var timeExplorer = */new TimeExplorer(socket, $('#timeExplorer'), filtersPanel);
+    /*const timeExplorer = */new TimeExplorer(socket, $('#timeExplorer'), filtersPanel);
 
     createControls(
         socket,
@@ -760,13 +763,13 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         marquee.drags.switchMap(() => marquee.selections.take(1)),
         (a, b) => ({drag: a, selection: b})
     ).subscribe((move) => {
-        var payload = {marquee: move};
+        const payload = {marquee: move};
         socket.emit('move_nodes', payload);
     }, util.makeErrorHandler('marquee error'));
 
 
     //tick stream until canceled/timed out (ends with finalCenter)
-    var autoCentering =
+    const autoCentering =
         doneLoading.switchMap(() => {
             return Rx.Observable.interval(50)
                 .do(() => { debug('auto center interval'); })
@@ -774,7 +777,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
                 .takeUntil(centeringDone.delay(1));
         });
 
-    var isAutoCentering = new Rx.ReplaySubject(1);
+    const isAutoCentering = new Rx.ReplaySubject(1);
     autoCentering.subscribe(isAutoCentering, util.makeErrorHandler('bad auto-center'));
 
     autoCentering.subscribe(
@@ -817,5 +820,5 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
 
 module.exports = {
-    init: init,
+    init: init
 };

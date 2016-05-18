@@ -1,17 +1,17 @@
 'use strict';
 
-var $               = window.$;
-var _               = require('underscore');
-var Rx              = require('rxjs/Rx.KitchenSink');
+const $               = window.$;
+const _               = require('underscore');
+const Rx              = require('rxjs/Rx.KitchenSink');
                       require('../rx-jquery-stub');
-var util            = require('./util.js');
-var Color           = require('color');
+const util            = require('./util.js');
+const Color           = require('color');
 
 
 //$DOM * hex -> Observable hex
 function makeInspector ($elt, hexColor) {
 
-    var colors = new Rx.Subject();
+    const colors = new Rx.Subject();
 
     $elt.find('.colorSelector').ColorPicker({
         color: hexColor,
@@ -25,7 +25,7 @@ function makeInspector ($elt, hexColor) {
         },
         onChange: function (hsb, hex, rgb) {
             $elt.find('.colorSelector div').css('backgroundColor', '#' + hex);
-            var color = new Color(rgb);
+            const color = new Color(rgb);
             colors.onNext(color);
         }
     });
@@ -35,7 +35,7 @@ function makeInspector ($elt, hexColor) {
 
 
 function renderConfigValueForColor(colorValue) {
-    return _.map(colorValue.rgbaArray(), function (value, index) {
+    return _.map(colorValue.rgbaArray(), (value, index) => {
         //255,255,255,1 -> 1,1,1,1
         return index === 3 ? value : (value/255);
     });
@@ -44,7 +44,7 @@ function renderConfigValueForColor(colorValue) {
 
 function colorFromRenderConfigValue(rgbaFractions) {
     return new Color()
-        .rgb(rgbaFractions.slice(0,3).map(function (v) { return v * 255; }))
+        .rgb(rgbaFractions.slice(0,3).map((v) => v * 255))
         .alpha(rgbaFractions[3]);
 }
 
@@ -60,10 +60,10 @@ module.exports = {
     init: function ($fg, $bg, foregroundColorObservable, backgroundColorObservable, socket) {
 
         foregroundColorObservable.first()
-            .subscribe(function (initForegroundColor) {
+            .subscribe((initForegroundColor) => {
                 makeInspector($fg, initForegroundColor && initForegroundColor.hexString())
                     .inspectTime(10)
-                    .do(function (foregroundColor) {
+                    .do((foregroundColor) => {
                         // Execute the server command:
                         socket.emit('set_colors', {
                             rgb: {
@@ -80,17 +80,19 @@ module.exports = {
             });
 
         backgroundColorObservable.first()
-            .subscribe(function (initBackgroundColor) {
+            .subscribe((initBackgroundColor) => {
                 makeInspector($bg, initBackgroundColor && initBackgroundColor.hexString())
                     .inspectTime(10)
-                    .do(function (backgroundColor) {
+                    .do((backgroundColor) => {
                         // Set the background color directly/locally via CSS:
                         $('#simulation').css('backgroundColor', backgroundColor.rgbaString());
                         // Update the server render config:
-                        var newValue = renderConfigValueForColor(backgroundColor);
+                        const newValue = renderConfigValueForColor(backgroundColor);
                         socket.emit('update_render_config', {'options': {'clearColor': [newValue]}}, _.identity);
                         // Update the color picker swatch affordance:
-                        $('.colorSelector div', $bg).css('background-color', backgroundColor && backgroundColor.hexString());
+                        $('.colorSelector div', $bg).css(
+                            'background-color', backgroundColor && backgroundColor.hexString()
+                        );
                     })
                     .subscribe(backgroundColorObservable, util.makeErrorHandler('bad background color'));
             });
@@ -103,26 +105,27 @@ module.exports = {
     renderConfigValueForColor: renderConfigValueForColor,
 
     foregroundColorObservable: function () {
-        var foregroundColorObservable = new Rx.ReplaySubject(1);
+        const foregroundColorObservable = new Rx.ReplaySubject(1);
         foregroundColorObservable.onNext(undefined);
         return foregroundColorObservable;
     },
 
     backgroundColorObservable: function (initialRenderState, urlParams) {
-        var backgroundColorObservable = new Rx.ReplaySubject(1);
-        var urlParamsBackgroundColor;
+        const backgroundColorObservable = new Rx.ReplaySubject(1);
+        let urlParamsBackgroundColor;
         if (urlParams.hasOwnProperty('bg')) {
             try {
-                var hex = decodeURIComponent(urlParams.bg);
+                const hex = decodeURIComponent(urlParams.bg);
                 urlParamsBackgroundColor = new Color(hex);
-                var configValueForColor = renderConfigValueForColor(urlParamsBackgroundColor);
+                const configValueForColor = renderConfigValueForColor(urlParamsBackgroundColor);
                 initialRenderState.get('options').clearColor = [configValueForColor];
                 backgroundColorObservable.onNext(urlParamsBackgroundColor);
             } catch (e) {
                 console.error('Invalid color from URL', e, urlParams.bg);
             }
         } else {
-            var renderStateBackgroundColor = colorFromRenderConfigValue(initialRenderState.get('options').clearColor[0]);
+            const configValueForColor = initialRenderState.get('options').clearColor[0];
+            const renderStateBackgroundColor = colorFromRenderConfigValue(configValueForColor);
             backgroundColorObservable.onNext(renderStateBackgroundColor);
         }
         return backgroundColorObservable;

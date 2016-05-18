@@ -1,19 +1,17 @@
 'use strict';
 
-var _       = require('underscore');
-var Rx      = require('rxjs/Rx.KitchenSink');
+const _     = require('underscore');
+const Rx    = require('rxjs/Rx.KitchenSink');
 require('../rx-jquery-stub');
-var PEGUtil = require('pegjs-util');
-//var ASTY    = require('asty');
+const PEGUtil = require('pegjs-util');
+// const ASTY    = require('asty');
 
-var util    = require('./util.js');
-var Command = require('./command.js');
-var Identifier = require('./Identifier');
-var parser  = require('./expression.pegjs');
-// var parser  = require('./expressionParser.js');
+const util    = require('./util.js');
+const Command = require('./command.js');
+const parser  = require('./expression.pegjs');
 
 
-function filterParametersCore(type, attribute) {
+function filterParametersCore (type, attribute) {
     return {
         type: type,
         attribute: attribute
@@ -21,7 +19,7 @@ function filterParametersCore(type, attribute) {
 }
 
 
-function FilterControl(socket) {
+function FilterControl (socket) {
     this.namespaceMetadataSubject = new Rx.ReplaySubject(1);
 
     this.namespaceCommand = new Command('getting column descriptions', 'get_namespace_metadata', socket, false);
@@ -31,6 +29,8 @@ function FilterControl(socket) {
     this.runFilterCommand = new Command('filtering the view', 'filter', socket);
 
     this.encodeCommand = new Command('Encode a column', 'encode_by_column', socket);
+
+    this.describeCommand = new Command('Describe a column', 'describe_column', socket);
 
     /** @type Rx.ReplaySubject */
     this.filtersResponsesSubject = new Rx.ReplaySubject(1);
@@ -83,50 +83,9 @@ FilterControl.prototype.clearExclusions = function () { return this.updateExclus
 
 FilterControl.prototype.clearFilters = function () { return this.updateFilters([]); };
 
-FilterControl.prototype.printedExpressionOf = function (value) {
-    if (typeof value === 'string') {
-        return JSON.stringify(value);
-    } else if (typeof value === 'number') {
-        return value.toString(10);
-    } else if (typeof value === 'undefined' || value === null) {
-        return 'NULL';
-    } else if (Array.isArray(value)) {
-        return '(' + _.map(value, (each) => this.printedExpressionOf(each)).join(', ') + ')';
-    } else {
-        return '<unknown>';
-    }
-};
-
-FilterControl.prototype.queryToExpression = function (query) {
-    if (!query) { return undefined; }
-    if (query.inputString) {
-        return query.inputString;
-    }
-    var attribute = query.attribute;
-    if (!attribute) {
-        attribute = '<unknown>';
-    }
-    attribute = Identifier.clarifyWithPrefixSegment(attribute, query.type);
-    var printedAttribute = Identifier.identifierToExpression(attribute);
-    if (query.start !== undefined && query.stop !== undefined) {
-        return printedAttribute + ' BETWEEN ' + this.printedExpressionOf(query.start) +
-            ' AND ' + this.printedExpressionOf(query.stop);
-    } else if (query.start !== undefined) {
-        return printedAttribute + ' >= ' + this.printedExpressionOf(query.start);
-    } else if (query.stop !== undefined) {
-        return this.printedExpressionOf(query.stop) + ' <= ' + printedAttribute;
-    } else if (query.equals !== undefined) {
-        if (Array.isArray(query.equals) && query.equals.length > 1) {
-            return printedAttribute + ' IN ' + this.printedExpressionOf(query.equals);
-        } else {
-            return printedAttribute + ' = ' + this.printedExpressionOf(query.equals);
-        }
-    }
-};
-
 FilterControl.prototype.queryFromExpressionString = function (inputString) {
-    //var asty = new ASTY();
-    var result = PEGUtil.parse(parser, inputString, {
+    // const asty = new ASTY();
+    const result = PEGUtil.parse(parser, inputString, {
         startRule: 'start'/*,
         makeAST: function (line, column, offset, args) {
             return asty.create.apply(asty, args).pos(line, column, offset);
@@ -137,90 +96,23 @@ FilterControl.prototype.queryFromExpressionString = function (inputString) {
     return result;
 };
 
-FilterControl.prototype.queryFromAST = function (ast) {
-    switch (ast.type) {
-        case 'BinaryExpression':
-            // Special-case for BETWEEN/AND expansion:
-            if (ast.operator.toUpperCase() === 'AND') {
-                if (ast.left.operator === '>=' && ast.right.operator === '<=' &&
-                    ast.left.left.type === 'Identifier' &&
-                    _.isEqual(ast.left.left, ast.right.left)) {
-                    return {
-                        attribute: ast.left.left.value,
-                        start: ast.left.right.value,
-                        stop: ast.right.right.value
-                    };
-                }
-            }
-            break;
-        default:
-            break;
-    }
-};
-
-/**
- * @typedef {{type: String, value: String}} Token
- */
-
-/**
- *
- * @param {Token[]} tokens
- * @returns {Object}
- */
-FilterControl.prototype.queryFromExpressionTokens = function (tokens) {
-    if (!tokens) { return undefined; }
-    var query = {};
-    if (tokens[0].type === 'identifier') {
-        query.attribute = tokens[0].value;
-        var idx = query.attribute.indexOf(':');
-        if (idx > 1) {
-            query.type = query.attribute.slice(0, idx - 1);
-        }
-    }
-    if (tokens[1].type === 'operator') {
-        var op = tokens[1].value;
-        if (op === '=' || op === '==') {
-            query.equals = tokens[2].value;
-        } else {
-            console.warn('Unhandled operator', tokens[1].value);
-        }
-    } else if (tokens[1].type === 'keyword') {
-        var keyword = tokens[1].value.toLowerCase();
-        if (keyword === 'between') {
-            var startValue = tokens[2].value;
-            if (tokens[3].value.toLowerCase() === 'and') {
-                var stopValue = tokens[4].value;
-                query.start = startValue;
-                query.stop = stopValue;
-            }
-        }
-    }
-    return query;
-};
-
 FilterControl.prototype.filterRangeParameters = function (type, attribute, start, stop) {
-    var result = _.extend(filterParametersCore(type, attribute), {
+    return _.extend(filterParametersCore(type, attribute), {
         start: start,
         stop: stop
     });
-    result.inputString = this.queryToExpression(result);
-    return result;
 };
 
 FilterControl.prototype.filterExactValueParameters = function (type, attribute, value) {
-    var result = _.extend(filterParametersCore(type, attribute), {
+    return _.extend(filterParametersCore(type, attribute), {
         equals: value
     });
-    result.inputString = this.queryToExpression(result);
-    return result;
 };
 
 FilterControl.prototype.filterExactValuesParameters = function (type, attribute, values) {
-    var result = _.extend(filterParametersCore(type, attribute), {
+    return _.extend(filterParametersCore(type, attribute), {
         equals: values
     });
-    result.inputString = this.queryToExpression(result);
-    return result;
 };
 
 FilterControl.prototype.filterObservable = function (params) {

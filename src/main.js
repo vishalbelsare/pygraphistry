@@ -27,20 +27,20 @@ Rx.Subscriber.prototype.dispose = Rx.Subscriber.prototype.unsubscribe;
 
 Rx.Subscription.prototype.dispose = Rx.Subscription.prototype.unsubscribe;
 
-var $               = window.$;
-var _               = require('underscore');
-var nodeutil        = require('util');
-var util            = require('./graphVizApp/util.js');
-var debug           = require('debug')('graphistry:StreamGL:main');
+const $               = window.$;
+const _               = require('underscore');
+const nodeutil        = require('util');
+const util            = require('./graphVizApp/util.js');
+const debug           = require('debug')('graphistry:StreamGL:main');
 
-var ui              = require('./ui.js');
-var vizApp          = require('./graphVizApp/vizApp.js');
-var monkey          = require('./monkey.js');
+const ui              = require('./ui.js');
+const vizApp          = require('./graphVizApp/vizApp.js');
+const monkey          = require('./monkey.js');
 
 // defer choice to after urlParam
-var serverClient    = require('./client.js');
-var localClient     = require('./localclient.js');
-var staticClient    = require('./staticclient.js');
+const serverClient    = require('./client.js');
+const localClient     = require('./localclient.js');
+const staticClient    = require('./staticclient.js');
 
 // ===============
 
@@ -53,19 +53,20 @@ var staticClient    = require('./staticclient.js');
  * @property {Boolean?} info - defaults to false.
  * @property {Boolean?} logo - bool, defaults to true, can override to disable Graphistry brand/logo.
  * @property {Boolean?} menu - bool, defaults to true, can override to disable menu.
- * @property {Boolean?} offline - bool, defaults to false, indicates whether to use localClient to load from local files.
+ * @property {Boolean?} offline - bool, defaults to false, indicates whether to use localClient to load local files.
  * @property {String?} basePath - related to offline, specifies the path prefix to find the local files.
  * @property {String?} workbook - name of the workbook to load
  * @property {String?} view - name of the view in the workbook to load
+ * @property {String?} dataset - name of the dataset to load
  * @property {Number?} splashAfter - double, number of seconds to wait while loading.
- * @property {Boolean?} static - bool, defaults to false, indicates whether to load static content instead of connect live.
+ * @property {Boolean?} static - bool, defaults to false, indicates whether to load static content.
  * @property {String?} contentKey - specific to static, specifies prefix to find the static content.
  * @property {String?} bg - hex color, URI-encoded, indicates the DOM background color to use instead of default.
  * @property {String?} camera - defaults to '2d', can also be '3d'
  */
 
 $.urlParam = function(name){
-    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+    const results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
     if (results === null) {
         return null;
     }
@@ -79,17 +80,17 @@ $.urlParam = function(name){
  * @return GraphistryURLParams
  */
 function getUrlParameters() {
-    var query = window.location.search.substring(1);
-    var queryParts = query.split('&');
+    const query = window.location.search.substring(1);
+    const queryParts = query.split('&');
 
     return _.chain(queryParts)
         .map(function decodeParam(param) {
-            var ps = param.split('=');
+            const ps = param.split('=');
 
-            var key = decodeURIComponent(ps.shift());
-            var value = decodeURIComponent(ps.join('='));
+            const key = decodeURIComponent(ps.shift());
+            const value = decodeURIComponent(ps.join('='));
 
-            // var valNorm = valRaw.toLowerCase();
+            // const valNorm = valRaw.toLowerCase();
             switch (value.toLowerCase()) {
                 case 'true':
                 case 'yes':
@@ -112,7 +113,7 @@ function getUrlParameters() {
         .object()
         .value();
 }
-var urlParams = getUrlParameters();
+const urlParams = getUrlParameters();
 debug('Parsed URL parameters:', urlParams);
 
 
@@ -121,31 +122,31 @@ debug('Parsed URL parameters:', urlParams);
 
 // Sets up event handlers to display socket errors + disconnects on screen
 function displayErrors(socket, $canvas) {
-    socket.on('error', function (reason) {
+    socket.on('error', (reason) => {
         ui.error('Connection error (reason:', reason, (reason || {}).description, ')');
     });
 
-    socket.on('disconnect', function (reason) {
+    socket.on('disconnect', (reason) => {
         $canvas.parent().addClass('disconnected');
         ui.error(
             $('<span>')
                 .text('Disconnected (reason:' + reason + '). ')
                 .append($('<a>')
                     .text('Reload the frame.')
-                    .click(function () {
+                    .click(() => {
                         document.location.reload();
                     })));
     });
 }
 
 function handleLoadingMessages(socket) {
-    var INITIAL_MESSAGE = 'Herding stray GPUs';
-    var $loadText = $('#load-text');
+    const INITIAL_MESSAGE = 'Herding stray GPUs';
+    const $loadText = $('#load-text');
 
-    socket.on('update_loading_status', function (data) {
-        var message = data.message;
+    socket.on('update_loading_status', (data) => {
+        const message = data.message;
         // TODO: Use the percentage
-        // var percentage = data.message;
+        // const percentage = data.message;
 
         $loadText.text(message);
     });
@@ -161,23 +162,23 @@ function handleLoadingMessages(socket) {
 function init(streamClient, canvasElement, vizType) {
     debug('Initializing client networking driver', vizType);
 
-    var apiEvents = new Rx.Subject();
-    var apiActions = new Rx.Subject();
+    const apiEvents = new Rx.Subject();
+    let apiActions = new Rx.Subject();
 
     if (urlParams.embedded) {
-        apiEvents.do(function (e) {
+        apiEvents.do((e) => {
             parent.postMessage(e, '*');
         }).subscribe(_.identity, util.makeErrorHandler('postMessage apiEvents'));
         apiEvents.onNext({subscriberID: '*', body: {event: 'init'}});
 
-        apiActions = Rx.Observable.fromEvent(window, 'message').filter(function (msg) {
+        apiActions = Rx.Observable.fromEvent(window, 'message').filter((msg) => {
             return msg && msg.data && msg.data.event;
-        }).map(function (msg) {
+        }).map((msg) => {
             return msg.data;
         });
     }
 
-    apiActions.do(function (msg) {
+    apiActions.do((msg) => {
         debug('apiActions', msg);
     }).subscribe(_.identity, util.makeErrorHandler('apiActions'));
 
@@ -188,16 +189,16 @@ function init(streamClient, canvasElement, vizType) {
      **/
 
     streamClient.connect(vizType, urlParams)
-        .flatMap(function (nfo) {
+        .flatMap((nfo) => {
             /** @param {RenderInfo} nfo */
-            var socket  = nfo.socket;
+            const socket  = nfo.socket;
             handleLoadingMessages(socket);
             displayErrors(socket, $(canvasElement));
             apiEvents.onNext({event: 'workerConnected', uri: nfo.uri});
 
             debug('Creating renderer');
             return streamClient.createRenderer(socket, canvasElement, urlParams)
-                .map(/** @param {renderer} initialRenderState @returns {RenderInfo} */ function (initialRenderState) {
+                .map(/** @param {renderer} initialRenderState @returns {RenderInfo} */ (initialRenderState) => {
                     debug('Renderer created');
                     return {
                         socket: socket,
@@ -205,18 +206,18 @@ function init(streamClient, canvasElement, vizType) {
                         initialRenderState: initialRenderState
                     };
                 });
-        }).do(/** @param {RenderInfo} nfo */ function (nfo) {
-            var vboUpdateWrapper = streamClient.handleVboUpdates(nfo.socket, nfo.uri, nfo.initialRenderState);
-            var vboUpdates = vboUpdateWrapper.vboUpdates;
-            var vboVersions = vboUpdateWrapper.vboVersions;
+        }).do(/** @param {RenderInfo} nfo */ (nfo) => {
+            const vboUpdateWrapper = streamClient.handleVboUpdates(nfo.socket, nfo.uri, nfo.initialRenderState);
+            const vboUpdates = vboUpdateWrapper.vboUpdates;
+            const vboVersions = vboUpdateWrapper.vboVersions;
             vizApp(nfo.socket, nfo.initialRenderState, vboUpdates, vboVersions, apiEvents, apiActions, nfo.uri, urlParams);
             if (urlParams.debug) {
                 createInfoOverlay(nfo.initialRenderState, vboUpdates);
             }
         }).subscribe(
             _.identity,
-            function (err) {
-                var msg = (err || {}).message || 'Error when connecting to visualization server. Try refreshing the page...';
+            (err) => {
+                const msg = (err || {}).message || 'Error when connecting to visualization server. Try refreshing the page...';
                 ui.error('Oops, something went wrong: ', msg);
                 ui.hideSpinnerShowBody();
                 util.makeErrorHandler('General init error')(err);
@@ -225,16 +226,16 @@ function init(streamClient, canvasElement, vizType) {
 }
 
 function createInfoOverlay(initialRenderState, vboUpdates) {
-    var renderMeterD =
+    const renderMeterD =
         $('<div>')
             .addClass('meter').addClass('meter-fps')
             .append(
                 $('<span>')
                     .addClass('flavor')
                     .text('render'));
-    var $body = $('body');
+    const $body = $('body');
     $body.append(renderMeterD);
-    var renderMeter = new FPSMeter(renderMeterD.get(0), {
+    const renderMeter = new FPSMeter(renderMeterD.get(0), {
         heat: 1,
         graph: 1,
 
@@ -245,13 +246,13 @@ function createInfoOverlay(initialRenderState, vboUpdates) {
 
         theme: 'transparent'
     });
-    initialRenderState.get('renderPipeline').do(function (evt) {
+    initialRenderState.get('renderPipeline').do((evt) => {
         if (evt.rendered) {
             renderMeter.tick();
         }
     }).subscribe(_.identity, util.makeErrorHandler('renderPipeline error'));
 
-    var networkMeterD =
+    const networkMeterD =
         $('<div>')
             .addClass('meter').addClass('meter-network')
             .append(
@@ -259,7 +260,7 @@ function createInfoOverlay(initialRenderState, vboUpdates) {
                     .addClass('flavor')
                     .text('network'));
     $body.append(networkMeterD);
-    var networkMeter = new FPSMeter(networkMeterD.get(0), {
+    const networkMeter = new FPSMeter(networkMeterD.get(0), {
         heat: 1,
         graph: 1,
 
@@ -270,7 +271,7 @@ function createInfoOverlay(initialRenderState, vboUpdates) {
 
         theme: 'transparent'
     });
-    vboUpdates.do(function (evt) {
+    vboUpdates.do((evt) => {
         switch (evt) {
             case 'start':
                 networkMeter.resume();
@@ -285,7 +286,7 @@ function createInfoOverlay(initialRenderState, vboUpdates) {
 }
 
 function createSpinner() {
-    var opts = {
+    const opts = {
         lines: 13, // The number of lines to draw
         length: 0, // The length of each line
         width: 15, // The line thickness
@@ -303,10 +304,10 @@ function createSpinner() {
         top: '50%', // Top position relative to parent
         left: '50%' // Left position relative to parent
     };
-    var spinner = new window.Spinner(opts).spin();
-    var $text = $('<div>').attr('id', 'load-text').text('locating graphistry\'s farm');
-    var $spinner = $(spinner.el);
-    var $reload = $('<a>').attr('href', '#').attr('id', 'retry-load').text('Reload').click(function () {
+    const spinner = new window.Spinner(opts).spin();
+    const $text = $('<div>').attr('id', 'load-text').text('locating graphistry\'s farm');
+    const $spinner = $(spinner.el);
+    const $reload = $('<a>').attr('href', '#').attr('id', 'retry-load').text('Reload').click(() => {
         document.location.reload();
     }).hide();
 
@@ -314,7 +315,7 @@ function createSpinner() {
     $('<div>').addClass('load-spinner').append($spinner).appendTo($('body'));
 
     $spinner.fadeIn(300);
-    setTimeout(function () {
+    setTimeout(() => {
         $('#retry-load').fadeIn(200);
     }, 8000);
 }
@@ -349,7 +350,7 @@ function launch(streamClient, urlParams) {
 }
 
 function initAnalytics(urlParams) {
-    var title = '';
+    let title = '';
     if (urlParams.dataset) {
         title = urlParams.dataset;
         if (urlParams.static) {
@@ -358,24 +359,24 @@ function initAnalytics(urlParams) {
     } else if (urlParams.workbook) {
         title = urlParams.workbook;
     }
-    var joiner = ' — ';
-    var companyProductLabel = 'Graphistry\'s Graph Explorer';
+    const joiner = ' — ';
+    const companyProductLabel = 'Graphistry\'s Graph Explorer';
     document.title = title ? (title + joiner + companyProductLabel) : companyProductLabel;
 
-    var ga = window.ga;
+    const ga = window.ga;
     if (ga) {
         ga('create', 'UA-59712214-1', 'auto');
         ga('require', 'linkid', 'linkid.js');
         ga('send', 'pageview');
 
-        var tag = urlParams.usertag;
+        const tag = urlParams.usertag;
         if (tag !== undefined && tag !== '') {
             ga('set', 'userId', tag);
         }
     }
 }
 
-function setupErrorReporters(urlParams) {
+function setupErrorReporters (urlParams) {
     function makeMsg(type, level) {
         return {
             module: 'streamgl',
@@ -391,12 +392,12 @@ function setupErrorReporters(urlParams) {
         };
     }
 
-    var reportURL = window.templatePaths.API_ROOT + 'error';
+    const reportURL = window.templatePaths.API_ROOT + 'error';
 
     // Create a id to track this session/pageload all he way across our stack
-    var d = new Date().getTime();
-    window.graphistryDebugId = 'xxxx-xxxx'.replace(/[x]/g, function () {
-        var r = (d + Math.random() * 16) % 16 | 0;
+    let d = new Date().getTime();
+    window.graphistryDebugId = 'xxxx-xxxx'.replace(/[x]/g, () => {
+        const r = (d + Math.random() * 16) % 16 | 0;
         d = Math.floor(d / 16);
         return r.toString(16);
     }).toUpperCase();
@@ -412,7 +413,7 @@ function setupErrorReporters(urlParams) {
     // Use the new standard (2014+) to get stack from modern browsers
     // https://html.spec.whatwg.org/multipage/webappapis.html#errorevent
     window.onerror = function(message, file, line, col, error) {
-        var content = {
+        const content = {
             message: message,
             filename: file,
             line: line,
@@ -420,21 +421,21 @@ function setupErrorReporters(urlParams) {
             stack: (error || {}).stack
         };
 
-        var msg = makeMsg('JSError', 50);
+        const msg = makeMsg('JSError', 50);
         msg.err = content;
 
         $.post(reportURL, msg);
     };
 
     // Track AJAX errors (jQuery API)
-    $(document).ajaxError(function(e, request, settings, thrownError) {
+    $(document).ajaxError((e, request, settings, thrownError) => {
         // Skip ajaxError caused by posting errors to /error
-        var errorPage = '/error';
+        const errorPage = '/error';
         if (settings.url.indexOf(errorPage, settings.url.length - errorPage.length) !== -1) {
             return;
         }
 
-        var msg = makeMsg('AjaxError', 50);
+        const msg = makeMsg('AjaxError', 50);
         msg.err = {
             url: settings.url,
             result: e.result,
@@ -446,13 +447,13 @@ function setupErrorReporters(urlParams) {
     });
 
     // Patch console calls to forward errors to central
-    var loggedConsoleFunctions = ['error', 'warn'];
-    _.each(loggedConsoleFunctions, function (fun) {
-        monkey.patch(console, fun, monkey.after(function () {
-            var msg = makeMsg('console.' + fun, fun === 'warn' ? 40 : 50);
-            var e = new Error(nodeutil.format.apply(this, arguments));
+    const loggedConsoleFunctions = ['error', 'warn'];
+    _.each(loggedConsoleFunctions, (fun) => {
+        monkey.patch(console, fun, monkey.after((...args) => {
+            const msg = makeMsg('console.' + fun, fun === 'warn' ? 40 : 50);
+            const e = new Error(nodeutil.format(...args));
 
-            var peeledStack = _.filter(e.stack.split('\n'), function (l) {
+            const peeledStack = _.filter(e.stack.split('\n'), (l) => {
                 return l.indexOf('Console') === -1;
             });
 
@@ -466,14 +467,14 @@ function setupErrorReporters(urlParams) {
     });
 }
 
-window.addEventListener('load', function () {
+window.addEventListener('load', () => {
     setupErrorReporters(urlParams);
 
     initAnalytics(urlParams);
 
     debug('IS_OFFLINE', urlParams.offline);
     debug('IS_STATIC', urlParams.static);
-    var streamClient = null;
+    let streamClient = null;
     if (urlParams.offline) {
         streamClient = localClient;
         if (urlParams.basePath !== undefined) {
@@ -490,16 +491,16 @@ window.addEventListener('load', function () {
 
         launch(streamClient, urlParams);
     } else {
-        var clickHandler = function() {
-            $('.splash').fadeOut(100, function () {
+        const clickHandler = function() {
+            $('.splash').fadeOut(100, () => {
                 $(this).empty();
                 launch(streamClient, urlParams);
             });
         };
-        var $logo = $('<img>').attr('src', 'img/logowhite.png').click(clickHandler);
-        var $golink = $('<a>').attr('href', '#').attr('id', 'go-load')
+        const $logo = $('<img>').attr('src', 'img/logowhite.png').click(clickHandler);
+        const $golink = $('<a>').attr('href', '#').attr('id', 'go-load')
                               .text('Launch Visualization').click(clickHandler);
-        var $span = $('<span>').append($golink);
+        const $span = $('<span>').append($golink);
         $('<div>').attr('class', 'splash').append($logo).append($span).prependTo($('body'));
     }
 });

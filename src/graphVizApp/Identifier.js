@@ -11,7 +11,7 @@ module.exports = {
         if (prefixSegment === undefined) {
             return attributeName;
         }
-        var prefix = prefixSegment + ':';
+        const prefix = prefixSegment + ':';
         if (attributeName.indexOf(prefix) === 0) {
             return attributeName;
         }

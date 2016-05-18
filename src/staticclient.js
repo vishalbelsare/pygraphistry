@@ -4,33 +4,33 @@
     Static-only facet for client.js
 */
 
-var debug        = require('debug')('graphistry:StreamGL:staticclient');
-var $            = window.$;
-var Rx           = require('rxjs/Rx.KitchenSink');
-                   require('./rx-jquery-stub');
-var _            = require('underscore');
+const debug        = require('debug')('graphistry:StreamGL:staticclient');
+const $            = window.$;
+const Rx           = require('rxjs/Rx.KitchenSink');
+                     require('./rx-jquery-stub');
+const _            = require('underscore');
 
-var renderer     = require('./renderer.js');
-var caption      = require('./caption.js');
+const renderer     = require('./renderer.js');
+const caption      = require('./caption.js');
 
 
-//======
+// ======
 
-var DimCodes = {
+const DimCodes = {
     point: 1,
     edge: 2
 };
 
 // Site-level configuration:
-var BUCKET_REGION = 'us-west-1';
-var BUCKET_NAME = 'graphistry.data';
-var BUCKET_URL = 'https://s3-' + BUCKET_REGION + '.amazonaws.com/' + BUCKET_NAME;
-var BASE_URL = BUCKET_URL + '/Static/';
+const BUCKET_REGION = 'us-west-1';
+const BUCKET_NAME = 'graphistry.data';
+const BUCKET_URL = 'https://s3-' + BUCKET_REGION + '.amazonaws.com/' + BUCKET_NAME;
+const BASE_URL = BUCKET_URL + '/Static/';
 
 // Per-content-instance:
 // TODO: de-globalize:
-var contentKey;
-var labelsByType = {point: {}, edge: {}};
+let contentKey;
+const labelsByType = {point: {}, edge: {}};
 
 
 // ======
@@ -41,30 +41,30 @@ var labelsByType = {point: {}, edge: {}};
  * @param {string} contentPath - identifies the member of the content bundle (relative file name/path)
  * @returns {string}
  */
-function getStaticContentURL(contentKey, contentPath) {
+function getStaticContentURL (contentKey, contentPath) {
     return BASE_URL + contentKey + '/' + (contentPath || '');
 }
 
 
 // string * {socketHost: string, socketPort: int} -> (... -> ...)
 // where fragment == 'vbo?buffer' or 'texture?name'
-function makeFetcher() {
+function makeFetcher () {
 // string * {<name> -> int} * name -> Subject ArrayBuffer
-    return function (bufferByteLengths, bufferName) {
+    return (bufferByteLengths, bufferName) => {
 
         debug('fetching', bufferName);
 
-        var res = new Rx.Subject();
+        const res = new Rx.Subject();
 
         // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
-        var oReq = new XMLHttpRequest();
-        var assetURL = getStaticContentURL(contentKey, bufferName);
+        const oReq = new XMLHttpRequest();
+        const assetURL = getStaticContentURL(contentKey, bufferName);
         oReq.open('GET', assetURL, true);
         // Handling a response as an arraybuffer means bypassing $.ajax:
         oReq.responseType = 'arraybuffer';
 
-        var now = Date.now();
-        oReq.onload = function () {
+        const now = Date.now();
+        oReq.onload = () => {
             if (oReq.status !== 200) {
                 console.error('HTTP error acquiring data at: ', assetURL, oReq.statusText);
                 return;
@@ -72,11 +72,11 @@ function makeFetcher() {
             try {
                 debug('got texture/vbo data', bufferName, Date.now() - now, 'ms');
 
-                var arrayBuffer = oReq.response; // Note: not oReq.responseText
+                const arrayBuffer = oReq.response; // Note: not oReq.responseText
                 if (bufferByteLengths.hasOwnProperty(bufferName)) {
-                    var bufferLength = bufferByteLengths[bufferName];
+                    const bufferLength = bufferByteLengths[bufferName];
                     debug('Buffer length (%s): %d, %d', bufferName, bufferLength, arrayBuffer.byteLength);
-                    var trimmedArray = new Uint8Array(arrayBuffer, 0, bufferLength);
+                    const trimmedArray = new Uint8Array(arrayBuffer, 0, bufferLength);
 
                     res.onNext(trimmedArray);
                 } else {
@@ -97,21 +97,21 @@ function makeFetcher() {
 /**
  * Observable stream for one AJAX GET for a label offsets buffer (pure binary, UInt32Array).
  * @param {String} bufferName
- * @returns {Rx.ReplaySubject}
+ * @returns {ReplaySubject}
  */
-function fetchOffsetBuffer(bufferName) {
+function fetchOffsetBuffer (bufferName) {
     debug('fetching', bufferName);
 
     // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
-    var result = new Rx.ReplaySubject(1),
-        oReq = new XMLHttpRequest(),
-        assetURL = getStaticContentURL(contentKey, bufferName),
-        now = Date.now();
+    const result = new Rx.ReplaySubject(1);
+    const oReq = new XMLHttpRequest();
+    const assetURL = getStaticContentURL(contentKey, bufferName);
+    const now = Date.now();
     oReq.open('GET', assetURL, true);
     // Handling a response as an arraybuffer means bypassing $.ajax:
     oReq.responseType = 'arraybuffer';
 
-    oReq.onload = function () {
+    oReq.onload = () => {
         if (oReq.status !== 200) {
             console.error('HTTP error acquiring data at: ', assetURL, oReq.statusText);
             return;
@@ -119,7 +119,7 @@ function fetchOffsetBuffer(bufferName) {
         try {
             debug('got offset data', bufferName, Date.now() - now, 'ms');
 
-            var arrayBuffer = oReq.response; // Note: not oReq.responseText
+            const arrayBuffer = oReq.response; // Note: not oReq.responseText
             // Uint32Array to match persist.js static export format.
             result.onNext(new Uint32Array(arrayBuffer));
         } catch (e) {
@@ -134,26 +134,26 @@ function fetchOffsetBuffer(bufferName) {
 
 /**
  * @param {String} type 'point' or 'edge'
- * @returns {Rx.ReplaySubject}
+ * @returns {ReplaySubject}
  */
-function getLabelOffsets(type) {
-    var bufferName = type + 'Labels.offsets';
-    return fetchOffsetBuffer(bufferName).do(function (labelContentOffsets) {
+function getLabelOffsets (type) {
+    const bufferName = type + 'Labels.offsets';
+    return fetchOffsetBuffer(bufferName).do((labelContentOffsets) => {
         debug('Got offsets for', type, labelContentOffsets);
     });
 }
 
 
 /** Arbitrary limit to prevent large range requests, ~ 260kb. */
-var LABEL_SIZE_LIMIT = Math.pow(2, 18);
+const LABEL_SIZE_LIMIT = Math.pow(2, 18);
 
 
 function getLabelViaRange(type, index, byteStart, byteEnd) {
-    var res = new Rx.Subject();
-    var oReq = new XMLHttpRequest();
-    var assetURL = getStaticContentURL(contentKey, type + 'Labels.buffer');
-    var byteStartString = byteStart !== undefined && byteStart.toString ? byteStart.toString(10) : '';
-    var byteEndString = byteEnd !== undefined && byteEnd.toString ? byteEnd.toString(10) : '';
+    const res = new Rx.Subject();
+    const oReq = new XMLHttpRequest();
+    const assetURL = getStaticContentURL(contentKey, type + 'Labels.buffer');
+    const byteStartString = byteStart !== undefined && byteStart.toString ? byteStart.toString(10) : '';
+    const byteEndString = byteEnd !== undefined && byteEnd.toString ? byteEnd.toString(10) : '';
 
     // First label: start can be 0, but end must be set.
     // Last label: start is set, end unspecified, okay.
@@ -169,16 +169,16 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
         oReq.setRequestHeader('Range', 'bytes=' + byteStartString + '-' + byteEndString);
         debug(assetURL, 'Range', 'bytes=' + byteStartString + '-' + byteEndString);
 
-        oReq.onload = function () {
+        oReq.onload = () => {
             if (oReq.status !== 206) {
                 console.error('HTTP error acquiring ranged data at: ', assetURL);
                 return;
             }
             try {
-                var responseData = JSON.parse(oReq.responseText);
+                let responseData = JSON.parse(oReq.responseText);
                 // Dynamically transform deprecated/obsolete label response format of {attribute: value, ...}
                 if (!responseData.hasOwnProperty('columns')) {
-                    var title = responseData._title;
+                    const title = responseData._title;
                     responseData = {
                         formatted: false,
                         title: decodeURIComponent(title),
@@ -203,14 +203,14 @@ function getLabelViaRange(type, index, byteStart, byteEnd) {
 }
 
 
-function getRangeForLabel(offsetsForType, type, index) {
+function getRangeForLabel (offsetsForType, type, index) {
     if (!offsetsForType) {
         throw new Error('Label offsets not found for type', type);
     }
 
-    var lowerBound = offsetsForType[index];
+    const lowerBound = offsetsForType[index];
     // Upper bound will be undefined for last label
-    var upperBound = index < offsetsForType.length ? offsetsForType[index + 1] - 1 : undefined;
+    const upperBound = index < offsetsForType.length ? offsetsForType[index + 1] - 1 : undefined;
 
     if (upperBound !== undefined && lowerBound >= upperBound) {
         throw new Error('Invalid byte range indicated at', type, index);
@@ -219,15 +219,15 @@ function getRangeForLabel(offsetsForType, type, index) {
 }
 
 
-function getLabel(offsetsForType, type, index) {
-    var translatedType = _.findKey(DimCodes, function (dimCode) { return dimCode === type; }) || type,
-        labelCache = labelsByType[translatedType];
+function getLabel (offsetsForType, type, index) {
+    const translatedType = _.findKey(DimCodes, (dimCode) => { return dimCode === type; }) || type;
+    const labelCache = labelsByType[translatedType];
     if (labelCache.hasOwnProperty(index)) {
-        var res = new Rx.Subject();
+        const res = new Rx.Subject();
         res.onNext(labelCache[index]);
         return res;
     }
-    var range = getRangeForLabel(offsetsForType, translatedType, index);
+    const range = getRangeForLabel(offsetsForType, translatedType, index);
     return getLabelViaRange(translatedType, index, range[0], range[1]);
 }
 
@@ -236,36 +236,35 @@ module.exports = {
 
     getStaticContentURL: getStaticContentURL,
 
-    connect: function (vizType, urlParams) {
+    connect: (vizType, urlParams) => {
         debug('connect', vizType, urlParams);
 
         contentKey = urlParams.contentKey;
 
-        var offsetsSource = Rx.Observable.combineLatest(
+        const offsetsSource = Rx.Observable.combineLatest(
             getLabelOffsets('point'),
             getLabelOffsets('edge'),
-            function (pointsOffsets, edgesOffsets) {
+            (pointsOffsets, edgesOffsets) => {
                 // Ensure that points and edges are accessed at the same enum dim value (1 and 2):
                 return [undefined, pointsOffsets, edgesOffsets];
             }
         );
-        var offsetsCombined = new Rx.ReplaySubject(1);
+        const offsetsCombined = new Rx.ReplaySubject(1);
         offsetsSource.subscribe(offsetsCombined);
 
         return Rx.Observable.return({
             socket: {
-                on: function (eventName) {
+                on: (eventName) => {
                     debug('ignoring on event', eventName);
                 },
-                emit: function (eventName, data, cb) {
+                emit: (eventName, data, cb) => {
                     if (eventName === 'get_labels') {
-                        var dim = data.dim,
-                            indices = data.indices;
-                        offsetsCombined.flatMap(function (offsetsArray) {
-                            return getLabel(offsetsArray[dim], dim, indices[0]);
-                        }).do(function (responseData) {
+                        const {dim, indices} = data;
+                        offsetsCombined.flatMap(
+                            (offsetsArray) => getLabel(offsetsArray[dim], dim, indices[0])
+                        ).do((responseData) => {
                             cb(undefined, responseData);
-                        }).subscribe(_.identity, function (err) {
+                        }).subscribe(_.identity, (err) => {
                             console.error('Error fetching labels', data, err, (err || {}).stack);
                             cb(err, data);
                         });
@@ -281,73 +280,70 @@ module.exports = {
         });
     },
 
-    createRenderer: function (socket, canvas, urlParams) {
+    createRenderer: (socket, canvas, urlParams) => {
         debug('createRenderer');
 
         return $.ajaxAsObservable({
-                url: getStaticContentURL(contentKey, 'renderconfig.json'),
-                dataType: 'json'
-            })
-            .catch(function (error) {
-                console.error('Error retrieving render config.', error);
-                throw new Error('Content Not Found');
-            })
-            .pluck('data')
-            .map(function (data) {
-                debug('got', data);
-                var renderState = renderer.init(data, canvas, urlParams);
-                debug('Renderer created');
-                return renderState;
-            });
+            url: getStaticContentURL(contentKey, 'renderconfig.json'),
+            dataType: 'json'
+        })
+        .catch((error) => {
+            console.error('Error retrieving render config.', error);
+            throw new Error('Content Not Found');
+        })
+        .pluck('data')
+        .map((data) => {
+            debug('got', data);
+            const renderState = renderer.init(data, canvas, urlParams);
+            debug('Renderer created');
+            return renderState;
+        });
     },
 
-    handleVboUpdates: function (socket, uri, renderState) {
+    handleVboUpdates: (socket, uri, renderState) => {
         debug('handle vbo updates');
 
-        var vboUpdates = new Rx.ReplaySubject(1);
+        const vboUpdates = new Rx.ReplaySubject(1);
         vboUpdates.onNext('init');
 
-        var previousVersions = {buffers: {}, textures: {}};
-        var vboVersions = new Rx.BehaviorSubject(previousVersions);
+        const previousVersions = {buffers: {}, textures: {}};
+        const vboVersions = new Rx.BehaviorSubject(previousVersions);
 
-        var bufferBlackList = ['selectedPointIndexes', 'selectedEdgeIndexes'];
+        const bufferBlackList = ['selectedPointIndexes', 'selectedEdgeIndexes'];
 
         $.ajaxAsObservable({url: getStaticContentURL(contentKey, 'metadata.json'), dataType: 'json'})
             .pluck('data')
-            .do(function (data) {
+            .do((data) => {
                 debug('got metadata', data);
 
                 caption.renderCaptionFromData(data);
 
                 vboUpdates.onNext('start');
 
-                var fetchBuffer = makeFetcher().bind(data.bufferByteLengths, '');
-                var fetchTexture = makeFetcher().bind(data.bufferByteLengths, '');
+                const fetchBuffer = makeFetcher().bind(data.bufferByteLengths, '');
+                const fetchTexture = makeFetcher().bind(data.bufferByteLengths, '');
 
-                var readyBuffers = new Rx.ReplaySubject(1);
-                var readyTextures = new Rx.ReplaySubject(1);
-                var readyToRender = Rx.Observable.zip(readyBuffers, readyTextures, _.identity).share();
+                const readyBuffers = new Rx.ReplaySubject(1);
+                const readyTextures = new Rx.ReplaySubject(1);
+                const readyToRender = Rx.Observable.zip(readyBuffers, readyTextures, _.identity).share();
                 readyToRender.subscribe(
-                    function () { vboUpdates.onNext('received'); },
-                    function (err) { console.error('readyToRender error', err, (err||{}).stack); });
+                    () => { vboUpdates.onNext('received'); },
+                    (err) => { console.error('readyToRender error', err, (err||{}).stack); });
 
-                var changedBufferNames = _.select(_.keys(data.bufferByteLengths), function(bufferName) {
-                    return !_.contains(bufferBlackList, bufferName);
-                });
-                var bufferFileNames = changedBufferNames.map(function (bufferName) {
-                    return bufferName + '.vbo';
-                });
-                var bufferVBOs = Rx.Observable.combineLatest(
+                const changedBufferNames = _.select(_.keys(data.bufferByteLengths),
+                    (bufferName) => !_.contains(bufferBlackList, bufferName));
+                const bufferFileNames = changedBufferNames.map((bufferName) => bufferName + '.vbo');
+                const bufferVBOs = Rx.Observable.combineLatest(
                     [Rx.Observable.return()]
                         .concat(bufferFileNames.map(fetchBuffer)))
                     .take(1);
                 bufferVBOs
                     .subscribe(
-                        function (vbos) {
+                        (vbos) => {
                             vbos.shift();
-                            var bindings = _.object(_.zip(changedBufferNames, vbos));
+                            const bindings = _.object(_.zip(changedBufferNames, vbos));
                             try {
-                                _.each(data.elements, function (num, itemName) {
+                                _.each(data.elements, (num, itemName) => {
                                     renderer.setNumElements(renderState, itemName, num);
                                 });
                                 renderer.loadBuffers(renderState, bindings);
@@ -356,31 +352,31 @@ module.exports = {
                                 console.error('Render error on loading data into WebGL:', e, e.stack);
                             }
                         },
-                        function (err) {
+                        (err) => {
                             console.error('bufferVBOs exn', err, (err||{}).stack);
                         });
 
-                var changedTextureNames = [];
-                var texturesData = Rx.Observable.combineLatest(
+                const changedTextureNames = [];
+                const texturesData = Rx.Observable.combineLatest(
                     [Rx.Observable.return()]
                         .concat(changedTextureNames.map(fetchTexture)))
                     .take(1);
                 texturesData
-                    .subscribe(function (textures) {
-                            textures.shift();
-                            var textureNfos = changedTextureNames.map(function (name, i) {
-                                return _.extend(data.textures[name], {buffer: textures[i]});
-                            });
-                            var bindings = _.object(_.zip(changedTextureNames, textureNfos));
-                            renderer.loadTextures(renderState, bindings);
-                            readyTextures.onNext();
-                        },
-                        function (err) {
-                            console.error('texturesData exn', err, (err||{}).stack);
+                    .subscribe((textures) => {
+                        textures.shift();
+                        const textureNfos = changedTextureNames.map((name, i) => {
+                            return _.extend(data.textures[name], {buffer: textures[i]});
                         });
+                        const bindings = _.object(_.zip(changedTextureNames, textureNfos));
+                        renderer.loadTextures(renderState, bindings);
+                        readyTextures.onNext();
+                    },
+                    (err) => {
+                        console.error('texturesData exn', err, (err||{}).stack);
+                    });
 
             }).subscribe(_.identity,
-                function (err) {
+                (err) => {
                     console.error('fetch vbo exn', err, (err||{}).stack);
                     throw new Error('Content Not Found');
                 });

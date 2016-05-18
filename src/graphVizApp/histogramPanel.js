@@ -13,6 +13,7 @@ const d3      = require('d3');
 const util    = require('./util.js');
 const Identifier = require('./Identifier');
 const contentFormatter = require('./contentFormatter.js');
+const ExpressionPrinter = require('./ExpressionPrinter.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -306,11 +307,11 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
 
             filtersPanel.control.namespaceMetadataObservable().filter(_.identity).subscribe(
                 (namespaceMetadata) => {
-                    var newNamespaceAttributes = {};
-                    _.each(namespaceMetadata, function (columnsByName, type) {
-                        _.each(columnsByName, function (column, attributeName) {
+                    const newNamespaceAttributes = {};
+                    _.each(namespaceMetadata, (columnsByName, type) => {
+                        _.each(columnsByName, (column, attributeName) => {
                             if (Identifier.isPrivate(attributeName)) { return; }
-                            var prefixedAttribute = Identifier.clarifyWithPrefixSegment(attributeName, type);
+                            const prefixedAttribute = Identifier.clarifyWithPrefixSegment(attributeName, type);
                             newNamespaceAttributes[prefixedAttribute] = column;
                         });
                     });
@@ -527,7 +528,7 @@ function updateHistogramFilterFromExpression (histFilter, ast) {
             const containerExpr = ast.right;
             if (containerExpr.type === 'ListExpression') {
                 histFilter.equals = _.map(containerExpr.elements,
-                    (element) => element.type === 'Literal' ? element.value : undefined);
+                    (element) => (element.type === 'Literal' ? element.value : undefined));
             }
         }
     } else if (ast.type === 'BinaryExpression') {
@@ -629,6 +630,7 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
         if (histFilter.ast !== undefined) {
             query.ast = histFilter.ast;
         }
+        query.inputString = ExpressionPrinter.print(query);
         const matchingFilter = this.findFilterForHistogramFilter(attribute);
         if (matchingFilter === undefined) {
             filtersCollection.addFilter({
@@ -763,7 +765,7 @@ HistogramsPanel.prototype.highlight = function (selection, toggle) {
             }
         }
 
-        let colorScale = toggle ? colorsHighlightedByType : colorWithoutHighlight;
+        const colorScale = toggle ? colorsHighlightedByType : colorWithoutHighlight;
         $(sel).css('fill', colorScale[data.type]);
     });
 };
@@ -1018,10 +1020,12 @@ HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, gl
         .take(1)
         .do(() => {
             positionChanges.dispose();
-            this.histogramFilters[attr].completed = true;
+            if (this.histogramFilters[attr]) {
+                this.histogramFilters[attr].completed = true;
+            }
 
             // Click on selection, so undo all filters.
-            if (startedInLastFilter &&  !mouseMoved) {
+            if (startedInLastFilter && !mouseMoved) {
                 this.deleteHistogramFilterByAttribute(attr);
             }
 
@@ -1078,9 +1082,7 @@ HistogramsPanel.prototype.applyAttrBars = function (bars, globalPos, localPos) {
         })
 
         .attr('data-toggle', 'tooltip')
-        .attr('data-original-title', function(d) {
-            return d.val;
-        })
+        .attr('data-original-title', (d) => d.val)
 
         .style('pointer-events', 'none')
         .style('fill', this.reColor.bind(this));
@@ -1108,8 +1110,9 @@ HistogramsPanel.prototype.toggleTooltips = function (showTooltip, svg) {
     const globalTooltip = tooltipBox.select('.globalTooltip');
     const localTooltip = tooltipBox.select('.localTooltip');
     if (showTooltip) {
-        globalTooltip.text('TOTAL: ' + String(global) + ', ');
-        localTooltip.text('SELECTED: ' + String(local));
+        const hasSelection = local > 0;
+        globalTooltip.text('TOTAL: ' + String(global) + (hasSelection ? ', ': ''));
+        localTooltip.text(hasSelection ? 'SELECTED: ' + String(local) : '');
         tooltipBox.attr('opacity', FullOpacity);
     } else {
         globalTooltip.text('');
@@ -1195,9 +1198,7 @@ function initializeHistogramViz($el, model) {
         .attr('data-container', 'body')
         .attr('data-placement', 'left')
         .attr('data-toggle', 'tooltip')
-        .attr('data-original-title', function(d) {
-            return fullTitles[d];
-        });
+        .attr('data-original-title', (d) => fullTitles[d]);
 
     d3.select('#yaxis-' + id)
         .selectAll('text')
@@ -1289,6 +1290,11 @@ function setupSvg (el, margin, width, height) {
 // Util
 //////////////////////////////////////////////////////////////////////////////
 
+function isBinValueRange (binValue) {
+    return binValue.min !== undefined && binValue.min !== binValue.max &&
+        (binValue.min !== binValue.representative || binValue.max !== binValue.representative);
+}
+
 /**
  * Retains histogram-control-specific filter details while allowing coordination with the underlying filter model.
  * @param {String} dataframeAttribute
@@ -1319,6 +1325,7 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
         };
     } else if (stats.type === 'countBy') {
         const binValues = [];
+        const binRanges = [];
         // TODO: Determine if this order is deterministic,
         // and if not, explicitly send over a bin ordering from aggregate.
         const binNames = _.keys(stats.bins);
@@ -1330,11 +1337,24 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                 otherIsSelected = true;
                 continue;
             }
-            if (stats.binValues && stats.binValues[binName] &&
-                stats.binValues[binName].representative !== undefined) {
-                binName = stats.binValues[binName].representative;
+            const binValue = stats.binValues && stats.binValues[binName];
+            if (!binValue) { continue; }
+            if (isBinValueRange(binValue)) {
+                if (binRanges.length === 0) {
+                    binRanges.push({min: binValue.min, max: binValue.max, bins: [i]});
+                } else {
+                    const lastBinRange = binRanges[binRanges.length - 1];
+                    if (lastBinRange.bins[lastBinRange.bins.length - 1] === i - 1) {
+                        lastBinRange.bins.push(i);
+                        lastBinRange.max = binValue.max;
+                    }
+                }
+            } else {
+                if (binValue.representative !== undefined) {
+                    binName = binValue.representative;
+                }
+                binValues.push(isNumeric ? Number(binName) : binName);
             }
-            binValues.push(isNumeric ? Number(binName) : binName);
         }
         updatedHistogramFilter.equals = binValues;
         const elements = _.map(binValues, (x) => ({type: 'Literal', value: x}));
@@ -1353,8 +1373,22 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                 right: elements[0]
             };
         }
+        const rangePredicates = _.map(binRanges, ({min, max}) => ({
+            type: 'BetweenPredicate',
+            start: {type: 'Literal', value: min},
+            stop: {type: 'Literal', value: max},
+            value: identifier
+        }));
+        rangePredicates.forEach((betweenPredicate) => {
+            updatedHistogramFilter.ast = updatedHistogramFilter.ast === undefined ? betweenPredicate : {
+                type: 'BinaryPredicate',
+                operator: 'OR',
+                left: betweenPredicate,
+                right: updatedHistogramFilter.ast
+            };
+        });
         if (otherIsSelected) {
-            const otherAST = {
+            let otherAST = {
                 type: 'NotExpression',
                 operator: 'NOT',
                 value: {
@@ -1367,6 +1401,18 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                     }
                 }
             };
+            rangePredicates.forEach((betweenPredicate) => {
+                otherAST = {
+                    type: 'BinaryPredicate',
+                    operator: 'AND',
+                    left: {
+                        type: 'NotExpression',
+                        operator: 'NOT',
+                        value: betweenPredicate
+                    },
+                    right: otherAST
+                };
+            });
             if (updatedHistogramFilter.ast === undefined) {
                 updatedHistogramFilter.ast = otherAST;
             } else {
@@ -1381,7 +1427,9 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
     }
     // TODO rename type property to graphType for clarity.
     updatedHistogramFilter.type = graphType;
-    this.histogramFilters[dataframeAttribute] = updatedHistogramFilter;
+    if (updatedHistogramFilter.ast !== undefined) {
+        this.histogramFilters[dataframeAttribute] = updatedHistogramFilter;
+    }
 
     $('.refreshHistogramButton-' + id).css('visibility', 'visible');
 };

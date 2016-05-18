@@ -1,6 +1,6 @@
 'use strict';
 
-var debug   = require('debug')('graphistry:StreamGL:shortestpaths');
+var debug   = require('debug')('graphistry:StreamGL:shortestPaths');
 var $       = window.$;
 var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
@@ -20,11 +20,11 @@ function getLabelIndex(poi, elt) {
 function nextSelectedLabel (poi) {
     return Rx.Observable.merge(
         Rx.Observable.fromEvent($('#highlighted-point-cont'), 'click')
-            .map(function () { return parseInt($('#highlighted-point-cont').attr('pointIdx')); })
-            .filter(function (v) { return !isNaN(v); }),
+            .map(() => { return parseInt($('#highlighted-point-cont').attr('pointIdx')); })
+            .filter((v) => { return !isNaN(v); }),
         Rx.Observable.fromEvent($('body'), 'click')
             .pluck('target')
-            .filter(function (v) { return v && $(v).hasClass('graph-label'); })
+            .filter((v) => { return v && $(v).hasClass('graph-label'); })
             .map(getLabelIndex.bind('', poi)))
         .take(1);
 }
@@ -33,31 +33,31 @@ function nextSelectedLabel (poi) {
 module.exports = function ($btn, poi, socket) {
 
     Rx.Observable.fromEvent($btn, 'click')
-        .do(function () {
+        .do(() => {
             $btn.find('.fa').toggleClass('toggle-on', true);
         })
-        .switchMap(function () {
+        .switchMap(() => {
 
             //TODO why is this red?
-            var RED = 255 << 8;
+            const RED = 255 << 8;
 
             return nextSelectedLabel(poi)
-                .flatMap(function (startIdx) {
+                .flatMap((startIdx) => {
                     socket.emit('highlight_points', [{index: startIdx, color: RED}]);
                     return nextSelectedLabel(poi)
-                        .map(function (endIdx) {
+                        .map((endIdx) => {
                             socket.emit('highlight_points', [{index: endIdx, color: RED}]);
                             return [startIdx, endIdx];
                         });
                 });
         })
-        .do(function (pair) {
-            debug('run shortestpaths', pair);
+        .do((pair) => {
+            debug('run shortestPaths', pair);
             $btn.find('.fa').toggleClass('toggle-on', false);
             socket.emit('shortest_path', pair);
         })
         .subscribe(
-            function (v) { debug('shortestpaths', v); },
-            function (err) { console.error('err', err); });
+            (v) => { debug('shortestPaths', v); },
+            (err) => { console.error('err', err); });
 
 };

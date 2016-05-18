@@ -1,4 +1,3 @@
-/// <reference path="../typings/underscore/underscore.d.ts"/>
 'use strict';
 
 /*
@@ -15,6 +14,7 @@ const io           = require('socket.io-client');
 
 const renderer     = require('./renderer.js');
 const caption      = require('./caption.js');
+const Command      = require('./graphVizApp/command.js');
 
 
 /**
@@ -65,14 +65,14 @@ function makeFetcher (workerUrl, endpoint, queryKey) {
         };
 
         const now = Date.now();
-        oReq.onload = function () {
+        oReq.onload = () => {
             try {
                 debug('got texture/vbo data', bufferName, Date.now() - now, 'ms');
 
                 const arrayBuffer = oReq.response; // Note: not oReq.responseText
-                const blength = bufferByteLengths[bufferName];
-                debug('Buffer length (%s): %d', bufferName, blength);
-                const trimmedArray = new Uint8Array(arrayBuffer, 0, blength);
+                const bufferLength = bufferByteLengths[bufferName];
+                debug('Buffer length (%s): %d', bufferName, bufferLength);
+                const trimmedArray = new Uint8Array(arrayBuffer, 0, bufferLength);
 
                 res.onNext(trimmedArray);
 
@@ -94,9 +94,8 @@ function getUpdatedNames (names, originalVersions, newVersions) {
     if (!originalVersions || !newVersions) {
         return names;
     }
-    return names.filter(function (name) {
-        return newVersions.hasOwnProperty(name) && (originalVersions[name] !== newVersions[name]);
-    });
+    return names.filter((name) =>
+        newVersions.hasOwnProperty(name) && (originalVersions[name] !== newVersions[name]));
 }
 
 
@@ -124,7 +123,7 @@ function requestWorker(args) {
             return attempt === 1 ? ret : (ret.delay(1000));
 
         })
-        .map(function (reply) {
+        .map((reply) => {
 
             if (!reply.data || reply.data.error) { // FIXME Check success value
                 console.error('vizaddr returned error', reply, (reply.data||{}).error);
@@ -176,7 +175,7 @@ function connect (vizType, urlParams) {
 
     const vizAddrArgs = _.chain(validUrlParams)
         .pairs()
-        .map(function (param) { return param.join('='); })
+        .map((param) => param.join('='))
         .value()
         .join('&');
 
@@ -226,11 +225,12 @@ function connect (vizType, urlParams) {
 
                     const fallbackErrorMessage = 'Connection rejected by GPU worker. Try refreshing the page...';
 
-                    return Rx.Observable.bindCallback(socket.emit.bind(socket, 'viz'))(vizType)
+                    const vizCommand = new Command('Notify viz type', 'viz', socket);
+                    return vizCommand.sendWithObservableResult(vizType)
                         .do((v) => {
                             debug('notified viz type', v);
                         })
-                        .map(function (res) {
+                        .map((res) => {
                             if (res && res.success) {
                                 return {uri, socket};
                             } else {
@@ -248,15 +248,16 @@ function connect (vizType, urlParams) {
 //socket * canvas * {?is3d: bool}
 function createRenderer (socket, canvas, urlParams) {
     debug('Getting render-config from server', urlParams);
-    return Rx.Observable.bindCallback(socket.emit.bind(socket))('render_config', null)
-        .map(function (res) {
+    const renderConfigCommand = new Command('Getting render config', 'render_config', socket);
+    return renderConfigCommand.sendWithObservableResult(null)
+        .map((res) => {
             if (res && res.success) {
                 debug('Received render-config from server', res.renderConfig);
                 return res.renderConfig;
             } else {
                 throw new Error((res||{}).error || 'Cannot get render_config');
             }
-        }).map(function (renderConfig) {
+        }).map((renderConfig) => {
             const renderState = renderer.init(renderConfig, canvas, urlParams);
             debug('Renderer created');
             return renderState;
@@ -324,7 +325,7 @@ function handleVboUpdates (socket, uri, renderState) {
 
             const readyToRender = Rx.Observable.zip(readyBuffers, readyTextures, _.identity).share();
             readyToRender
-                .subscribe(function () {
+                .subscribe(() => {
                     debug('6. All buffers and textures received, completing', thisStep);
                     handshake(Date.now() - lastHandshake);
                     lastHandshake = Date.now();
@@ -338,7 +339,7 @@ function handleVboUpdates (socket, uri, renderState) {
                 .take(1);
 
             bufferVBOs
-                .subscribe(function (vbos) {
+                .subscribe((vbos) => {
                     vbos.shift(); // Remove empty stub observable from the beginning
 
                     debug('4a. Got VBOs:', vbos.length, thisStep);
@@ -363,7 +364,7 @@ function handleVboUpdates (socket, uri, renderState) {
 
             const textureLengths =
                 _.object(_.pairs(_.pick(data.textures, changedTextureNames))
-                    .map(function (pair) {
+                    .map((pair) => {
                         const name = pair[0];
                         const nfo = pair[1];
                         return [name, nfo.bytes]; }));
@@ -373,10 +374,10 @@ function handleVboUpdates (socket, uri, renderState) {
                     .concat(changedTextureNames.map(fetchTexture.bind('', socket.io.engine.id, textureLengths))))
                 .take(1);
 
-            texturesData.subscribe(function (textures) {
+            texturesData.subscribe((textures) => {
                 textures.shift();
 
-                const textureNfos = changedTextureNames.map(function (name, i) {
+                const textureNfos = changedTextureNames.map((name, i) => {
                     return _.extend(data.textures[name], {buffer: textures[i]});
                 });
 
@@ -388,9 +389,9 @@ function handleVboUpdates (socket, uri, renderState) {
                 readyTextures.onNext();
             }, (err) => { console.error('5b.readyToRender error', err, (err||{}).stack, thisStep); });
 
-            _.keys(data.versions).forEach(function (mode) {
+            _.keys(data.versions).forEach((mode) => {
                 previousVersions[mode] = previousVersions[mode] || {};
-                _.keys(data.versions[mode]).forEach(function (name) {
+                _.keys(data.versions[mode]).forEach((name) => {
                     previousVersions[mode][name] = (data.versions[mode] || {})[name] || previousVersions[mode][name];
                 });
             });

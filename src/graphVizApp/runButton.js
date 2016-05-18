@@ -4,79 +4,78 @@
 var $       = window.$;
 var Rx      = require('rxjs/Rx.KitchenSink');
               require('../rx-jquery-stub');
-var _       = require('underscore');
+const _       = require('underscore');
 
-var util            = require('./util.js');
-var api             = require('./api.js');
-
-
-
-var INTERACTION_INTERVAL = 40;
+const util            = require('./util.js');
+const api             = require('./api.js');
 
 
 
-//appState ->  ()
+const INTERACTION_INTERVAL = 40;
+
+
+
 module.exports = function (appState, socket, urlParams, isAutoCentering) {
 
-    var $tooltips = $('[data-toggle="tooltip"]');
-    var $graph = $('#simulate');
-    var $bolt = $('.fa', $graph);
-    var numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
+    const $tooltips = $('[data-toggle="tooltip"]');
+    const $graph = $('#simulate');
+    const $bolt = $('.fa', $graph);
+    const numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
 
-    var disable = Rx.Observable.merge(
+    const disable = Rx.Observable.merge(
         $('#viewSelectionButton').onAsObservable('click'),
         $('#histogramBrush').onAsObservable('click'));
 
     // Tick stream until canceled/timed out (end with 'false'), starts after first vbo update.
-    var autoLayingOut =
+    const autoLayingOut =
         Rx.Observable.merge(
             Rx.Observable.return(Rx.Observable.interval(20)),
             Rx.Observable.merge(
                 $graph.onAsObservable('click')
-                    .filter(function (evt) { return evt.originalEvent !== undefined; }),
+                    .filter((evt) => evt.originalEvent !== undefined),
                 disable,
                 Rx.Observable.timer(numTicks)
             ).take(1).map(_.constant(Rx.Observable.return(false))))
         .switchMap(_.identity);
 
-    var runActions =
+    const runActions =
         appState.apiActions
-            .filter(function (e) { return e.event === 'toggleLayout'; })
-            .map(function (e) { return e.play || false; });
+            .filter((e) => { return e.event === 'toggleLayout'; })
+            .map((e) => { return e.play || false; });
 
-    var runLayout =
+    const runLayout =
         Rx.Observable.fromEvent($graph, 'click')
-            .map(function () { return $bolt.hasClass('toggle-on'); })
+            .map(() => { return $bolt.hasClass('toggle-on'); })
             .merge(disable.map(_.constant(true)))
-            .merge(runActions.map(function (play) { return !play; }))
-            .do(function (wasOn) {
+            .merge(runActions.map((play) => !play))
+            .do((wasOn) => {
                 $bolt.toggleClass('toggle-on', !wasOn);
             })
-            .switchMap(function (wasOn) {
-                var isOn = !wasOn;
+            .switchMap((wasOn) => {
+                const isOn = !wasOn;
                 appState.simulateOn.onNext(isOn);
                 return isOn ? Rx.Observable.interval(INTERACTION_INTERVAL) : Rx.Observable.empty();
             });
 
     runLayout
         .subscribe(
-            function () {
+            () => {
                 socket.emit('interaction', {play: true, layout: true});
             },
             util.makeErrorHandler('Error stimulating graph'));
 
     autoLayingOut.subscribe(
-        function (evt) {
+        (evt) => {
             if (evt !== false) {
-                var payload = {play: true, layout: true};
+                const payload = {play: true, layout: true};
                 socket.emit('interaction', payload);
             } else {
                 api.postEvent(appState.apiEvents, undefined, {event: 'ready'});
             }
         },
         util.makeErrorHandler('autoLayingOut error'),
-        function () {
-            isAutoCentering.take(1).subscribe(function (v) {
+        () => {
+            isAutoCentering.take(1).subscribe((v) => {
                 if (v !== false) {
                     $('#center').trigger('click');
                 }

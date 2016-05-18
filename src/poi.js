@@ -51,8 +51,8 @@ function markHits(samples32) {
     let left = -1;
     let right = -1;
     let runningCount = 0;
-    for (let i = 0; i < sortedSamples.length; i++) {
-        idx = picking.decodeGpuIndex(sortedSamples[i]);
+    _.each(sortedSamples, (eachSample) => {
+        idx = picking.decodeGpuIndex(eachSample);
         right = idx;
         if (right === left) {
             runningCount++;
@@ -62,14 +62,14 @@ function markHits(samples32) {
             runningCount = 1;
         }
 
-    }
+    });
     hits[left] = runningCount;
 
 
     // Approach two (straight count + incr)
     // O(N), but slams memory
 
-    // for (const i = 0; i < samples32.length; i++) {
+    // for (let i = 0; i < samples32.length; i++) {
     //     idx = picking.decodeGpuIndex(samples32[i]);
     //     hits[idx] = hits[idx] ? hits[idx] + 1 : 1;
     // }

@@ -1,50 +1,34 @@
 'use strict';
-var _       = require('underscore');
 
-var util            = require('./util.js');
+const _ = require('underscore');
 
-
-// Highlights mouseover and selected elements
-// Mouseover elements will also have their neighborhoods highlighted.
-// Selections take precedence over highlight.
-// Assumes that selections/highlighted indices don't have duplicates in their lists
-function setupHighlight(appState) {
-
-    var latestHighlightedObject = appState.latestHighlightedObject;
-    var activeSelection = appState.activeSelection;
-
-    latestHighlightedObject.combineLatest(activeSelection,
-        function (highlighted, selected) {
-            return {
-                highlighted: highlighted,
-                selected: selected
-            };
-        }).do(function (data) {
-            var task = {
-                trigger: 'mouseOverEdgeHighlight',
-                data: {
-                    highlight: {
-                        nodeIndices: data.highlighted.getPointIndexValues(),
-                        edgeIndices: data.highlighted.getEdgeIndexValues()
-                    },
-                    selected: {
-                        nodeIndices: data.selected.getPointIndexValues(),
-                        edgeIndices: data.selected.getEdgeIndexValues()
-                    }
-                }
-            };
-
-            appState.renderingScheduler.renderScene('mouseOver', task);
-
-            // console.log('TASK: ', JSON.stringify(task, null, 4));
-        }).subscribe(_.identity, util.makeErrorHandler('Setup highlight'));
-}
-
-
-
-
+const util = require('./util.js');
 
 
 module.exports = {
-    setupHighlight: setupHighlight
+    /** Highlights mouseover and selected elements
+     * Mouseover elements will also have their neighborhoods highlighted.
+     * Selections take precedence over highlight.
+     * Assumes that selections/highlighted indices don't have duplicates in their lists.
+     */
+    setupHighlight: function setupHighlight (appState) {
+        appState.latestHighlightedObject.combineLatest(appState.activeSelection,
+            (highlighted, selected) => ({highlighted, selected})).do(({highlighted, selected}) => {
+                const task = {
+                    trigger: 'mouseOverEdgeHighlight',
+                    data: {
+                        highlight: {
+                            nodeIndices: highlighted.getPointIndexValues(),
+                            edgeIndices: highlighted.getEdgeIndexValues()
+                        },
+                        selected: {
+                            nodeIndices: selected.getPointIndexValues(),
+                            edgeIndices: selected.getEdgeIndexValues()
+                        }
+                    }
+                };
+                appState.renderingScheduler.renderScene('mouseOver', task);
+                // console.log('TASK: ', JSON.stringify(task, null, 4));
+            }).subscribe(_.identity, util.makeErrorHandler('Setup highlight'));
+    }
 };

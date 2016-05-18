@@ -1,9 +1,10 @@
 'use strict';
 
-var _ = require('underscore');
-var Backbone = require('backbone');
+const _ = require('underscore');
+const Backbone = require('backbone');
+const ExpressionPrinter = require('./ExpressionPrinter.js');
 
-var QuerySelectionModel = Backbone.Model.extend({
+const QuerySelectionModel = Backbone.Model.extend({
     defaults: {
         title: undefined,
         attribute: undefined,
@@ -13,7 +14,7 @@ var QuerySelectionModel = Backbone.Model.extend({
         query: undefined
     },
     placeholderQuery: function () {
-        var result = {
+        const result = {
             attribute: this.get('attribute'),
             dataType: this.get('dataType')
         };
@@ -72,11 +73,11 @@ var QuerySelectionModel = Backbone.Model.extend({
         return result;
     },
     getExpression: function (control) {
-        var query = this.get('query') || this.placeholderQuery();
-        return control.queryToExpression(query);
+        const query = this.get('query') || this.placeholderQuery();
+        return ExpressionPrinter.print(query);
     },
     updateExpression: function (control, newExpression) {
-        var query = control.queryFromExpressionString(newExpression);
+        const query = control.queryFromExpressionString(newExpression);
         if (query.error) {
             throw query.error;
         }
