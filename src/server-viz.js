@@ -210,7 +210,9 @@ VizServer.prototype.resetState = function (dataset, socket) {
 
     this.lastRenderConfig = undefined;
 
-    // Signal to Explicitly Send New VBOs
+    /** Signal to Explicitly Send New VBOs
+     * @type ReplaySubject<GraphManager|Boolean>
+     */
     this.updateVboSubject = new Rx.ReplaySubject(1);
 
     const createGraph = function () {
@@ -542,6 +544,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
     /** @type {GraphistryURLParams} */
     const query = this.socket.handshake.query;
 
+    /** @type {ReplaySubject<GraphManager>} */
     this.graph = new Rx.ReplaySubject(1);
     this.viewConfig = new Rx.ReplaySubject(1);
     this.workbookDoc = new Rx.ReplaySubject(1);
@@ -1213,17 +1216,16 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
 
     this.socket.on('encode_by_column', (encodingRequest, cb) => {
         this.graph.take(1).do((currentGraph) => {
-            const dataframe = currentGraph.dataframe,
-                normalization = dataframe.normalizeAttributeName(encodingRequest.attribute, encodingRequest.type);
-            let {encodingType, variation, binning, timeBounds} = encodingRequest;
+            const dataframe = currentGraph.dataframe;
+            const normalization = dataframe.normalizeAttributeName(encodingRequest.attribute, encodingRequest.type);
 
             if (normalization === undefined) {
-                failWithMessage(cb, 'No attribute found for: ' + encodingRequest.attribute + ',' + encodingRequest.type);
+                failWithMessage(cb, 'No attribute found for: ' + JSON.stringify(encodingRequest));
                 return;
             }
 
-            const attributeName = normalization.attribute,
-                type = normalization.type;
+            const {attribute: attributeName, type} = normalization;
+            let {encodingType, variation, binning, timeBounds} = encodingRequest;
             if (encodingType) {
                 if (encodingType === 'color' || encodingType === 'size' || encodingType === 'opacity') {
                     encodingType = type + encodingType.charAt(0).toLocaleUpperCase() + encodingType.slice(1);
@@ -1447,31 +1449,28 @@ VizServer.prototype.workbookForQuery = function (query) {
 VizServer.prototype.setupColorTexture = function () {
     this.colorTexture = new Rx.ReplaySubject(1);
     const imgPath = path.resolve(__dirname, '../test-colormap2.rgba');
-    const img =
-        Rx.Observable.bindNodeCallback(fs.readFile)(imgPath)
-            .flatMap((buffer) => {
-                logger.trace('Loaded raw colorTexture', buffer.length);
-                return Rx.Observable.bindNodeCallback(compress.deflate)(
-                    buffer,// binary,
-                    {output: new Buffer(
-                        Math.max(1024, Math.round(buffer.length * 1.5)))})
-                    .map((compressed) => ({
-                        raw: buffer,
-                        compressed: compressed
-                    }));
-            })
-            .do(() => { logger.trace('Compressed color texture'); })
-            .map((pair) => {
-                logger.trace('colorMap bytes', pair.raw.length);
-                return {
-                    buffer: pair.compressed[0],
-                    bytes: pair.raw.length,
-                    width: 512,
-                    height: 512
-                };
-            });
-
-    img.take(1)
+    Rx.Observable.bindNodeCallback(fs.readFile)(imgPath)
+        .flatMap((buffer) => {
+            logger.trace('Loaded raw colorTexture', buffer.length);
+            return Rx.Observable.bindNodeCallback(compress.deflate)(
+                buffer,// binary,
+                {output: new Buffer(
+                    Math.max(1024, Math.round(buffer.length * 1.5)))})
+                .map((compressed) => ({
+                    raw: buffer,
+                    compressed: compressed
+                }));
+        })
+        .do(() => { logger.trace('Compressed color texture'); })
+        .map((pair) => {
+            logger.trace('colorMap bytes', pair.raw.length);
+            return {
+                buffer: pair.compressed[0],
+                bytes: pair.raw.length,
+                width: 512,
+                height: 512
+            };
+        }).take(1)
         .do(this.colorTexture)
         .subscribe(_.identity, log.makeRxErrorHandler(logger, 'img/texture'));
     this.colorTexture
@@ -1662,16 +1661,12 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     const activeBuffers = _.chain(renderConfig.models).pairs().filter((pair) => {
         const model = pair[1];
         return rConf.isBufServerSide(model);
-    }).map((pair) => {
-        return pair[0];
-    }).value();
+    }).map((pair) => pair[0]).value();
 
     const activeTextures = _.chain(renderConfig.textures).pairs().filter((pair) => {
         const texture = pair[1];
         return rConf.isTextureServerSide(texture);
-    }).map((pair) => {
-        return pair[0];
-    }).value();
+    }).map((pair) => pair[0]).value();
 
     const activePrograms = renderConfig.render;
 
@@ -1689,7 +1684,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     });
 
 
-    logger.debug({activeBuffers: activeBuffers, activeTextures: activeTextures, activePrograms: activePrograms}, 'Beginning stream');
+    logger.debug({activeBuffers, activeTextures, activePrograms}, 'Beginning stream');
 
     const graph = this.graph;
     const animationStep = this.animationStep;
@@ -1697,7 +1692,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     this.socket.on('interaction', (payload) => {
         // performance monitor here?
         // profiling.trace('Got Interaction');
-        logger.trace({payload: payload}, 'Recieved interaction:');
+        logger.trace({payload: payload}, 'Received interaction:');
         // TODO: Find a way to avoid flooding main thread waiting for GPU ticks.
         const defaults = {play: false, layout: false};
         animationStep.interact(_.extend(defaults, payload || {}));
@@ -1909,7 +1904,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
     this.socket.on('persist_upload_png_export', (pngDataURL, contentKey, imageName, cb) => {
         imageName = imageName || 'preview.png';
         graph.take(1)
-            .do((currentGraph) => {
+            .do(() => {
                 const cleanContentKey = encodeURIComponent(contentKey),
                     cleanImageName = encodeURIComponent(imageName),
                     base64Data = pngDataURL.replace(/^data:image\/png;base64,/,''),
@@ -2071,7 +2066,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                 const filteredUpdateVbo = this.updateVboSubject.filter(_.identity);
 
                 const behindOnTicks = graphObservable.take(1).filter(
-                    (currentGraph) => currentGraph.simulator.versions.tick > lastTick);
+                    (latestGraph) => latestGraph.simulator.versions.tick > lastTick);
 
                 return Rx.Observable.merge(this.ticksMulti, filteredUpdateVbo, behindOnTicks)
                     .take(1)

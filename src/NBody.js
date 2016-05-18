@@ -255,7 +255,7 @@ function _toTypedArray (array, cons) {
 }
 
 
-//graph * {play: bool, layout: bool} -> ()
+// graph * {play: bool, layout: bool} -> ()
 function tick (graph, cfg) {
     events.fire('tickBegin');
     events.fire('simulateBegin');

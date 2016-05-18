@@ -345,10 +345,17 @@ export function createInteractionsLoop({
     }
 }
 
+/**
+ *
+ * @param dataset
+ * @param socket
+ * @param {NBody} nBodyInstance
+ * @returns {{interact: interact, ticks: Observable<T>, graph: void}}
+ */
 export function create (dataset, socket, nBodyInstance) {
     logger.trace('STARTING DRIVER');
 
-    //Observable {play: bool, layout: bool, ... cfg settings ...}
+    // Observable {play: bool, layout: bool, ... cfg settings ...}
     //  play: animation stream
     //  layout: whether to actually call layout algs (e.g., don't for filtering)
     const userInteractions = new Rx.Subject();
@@ -411,29 +418,21 @@ export function create (dataset, socket, nBodyInstance) {
         // Loop simulation by recursively expanding each tick event into a new sequence
         // Gate by isRunning
         Rx.Observable.return(graph)
-            //.flatMap(() => {
-            //    return Rx.Observable.fromPromise(graph.tick(0, {play: true, layout: false}));
-            //})
+            // .flatMap(() => Rx.Observable.fromPromise(graph.tick(0, {play: true, layout: false})))
             .expand((graph) => {
                 perf.startTiming('tick_durationMS');
-                //return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
+                // return (Rx.Observable.fromCallback(graph.renderer.document.requestAnimationFrame))()
                 return Rx.Observable.return()
                     // Add in a delay to allow Node's event loop some breathing room
-                    .flatMap(() => {
-                        return delayObservableGenerator(1, false);
-                    })
-                    .flatMap(() => {
-                        return isRunningRecent.filter((o) => o.play).take(1);
-                    })
-                    .flatMap((v) => {
-                        return Rx.Observable.fromPromise(
-                            graph.updateSettings(v).then(() => {
-                                return graph.tick(v);
-                            }).then(() => {
-                                perf.endTiming('tick_durationMS');
-                            })
-                        );
-                    })
+                    .flatMap(() => delayObservableGenerator(1, false))
+                    .flatMap(() => isRunningRecent.filter((o) => o.play).take(1))
+                    .flatMap((v) => Rx.Observable.fromPromise(
+                        graph.updateSettings(v).then(
+                            () => graph.tick(v)
+                        ).then(() => {
+                            perf.endTiming('tick_durationMS');
+                        })
+                    ))
                     .map(_.constant(graph));
             })
             .subscribe(

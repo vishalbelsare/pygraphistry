@@ -88,8 +88,8 @@ Dataframe.prototype.newEmptyMask = function () {
 
 /**
  * @typedef {Object} DataframeData
- * @property {{point: Object, edge: Object, simulator: SimCL}} attributes
- * @property {{point: Object, edge: Object, simulator: SimCL}} buffers
+ * @property {{point: Object, edge: Object, simulator: Simulator}} attributes
+ * @property {{point: Object, edge: Object, simulator: Simulator}} buffers
  * @property {Object} labels
  * @property {Object} hostBuffers
  * @property {Object} localBuffers
@@ -559,7 +559,7 @@ Dataframe.prototype.initializeTypedArrayCache = function (oldNumPoints, oldNumEd
  * Filters this.data in-place given masks. Does not modify this.rawdata.
  * TODO: Take in Set objects, not just Mask.
  * @param {DataframeMask} masks
- * @param {SimCL} simulator
+ * @param {Simulator} simulator
  * @returns {Promise.<Array<Buffer>>} updated arrays - false if no-op
  */
 Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulator) {
@@ -2164,7 +2164,7 @@ Dataframe.prototype.calculateBinning = function (aggregations, numValues, goalNu
 
     // Try to find a good division.
     } else {
-        //const goalWidth = range / goalBins;
+        // const goalWidth = range / goalBins;
 
         binWidth = 10;
         numBins = range / binWidth;
