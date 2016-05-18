@@ -4,7 +4,7 @@ const Rx      = require('rxjs/Rx.KitchenSink');
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:command');
 
 
-function Command(description, commandName, socket, disableErrorFiltering = true) {
+function Command (description, commandName, socket, disableErrorFiltering = true) {
     this.description = description;
     this.commandName = commandName;
     this.socket = socket;

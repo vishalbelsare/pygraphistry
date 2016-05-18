@@ -6,10 +6,11 @@ const util = require('./util.js');
 
 
 module.exports = {
-    // Highlights mouseover and selected elements
-    // Mouseover elements will also have their neighborhoods highlighted.
-    // Selections take precedence over highlight.
-    // Assumes that selections/highlighted indices don't have duplicates in their lists
+    /** Highlights mouseover and selected elements
+     * Mouseover elements will also have their neighborhoods highlighted.
+     * Selections take precedence over highlight.
+     * Assumes that selections/highlighted indices don't have duplicates in their lists.
+     */
     setupHighlight: function setupHighlight (appState) {
         appState.latestHighlightedObject.combineLatest(appState.activeSelection,
             (highlighted, selected) => ({highlighted, selected})).do(({highlighted, selected}) => {

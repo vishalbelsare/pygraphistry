@@ -307,11 +307,11 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
 
             filtersPanel.control.namespaceMetadataObservable().filter(_.identity).subscribe(
                 (namespaceMetadata) => {
-                    var newNamespaceAttributes = {};
-                    _.each(namespaceMetadata, function (columnsByName, type) {
-                        _.each(columnsByName, function (column, attributeName) {
+                    const newNamespaceAttributes = {};
+                    _.each(namespaceMetadata, (columnsByName, type) => {
+                        _.each(columnsByName, (column, attributeName) => {
                             if (Identifier.isPrivate(attributeName)) { return; }
-                            var prefixedAttribute = Identifier.clarifyWithPrefixSegment(attributeName, type);
+                            const prefixedAttribute = Identifier.clarifyWithPrefixSegment(attributeName, type);
                             newNamespaceAttributes[prefixedAttribute] = column;
                         });
                     });
@@ -528,7 +528,7 @@ function updateHistogramFilterFromExpression (histFilter, ast) {
             const containerExpr = ast.right;
             if (containerExpr.type === 'ListExpression') {
                 histFilter.equals = _.map(containerExpr.elements,
-                    (element) => element.type === 'Literal' ? element.value : undefined);
+                    (element) => (element.type === 'Literal' ? element.value : undefined));
             }
         }
     } else if (ast.type === 'BinaryExpression') {
@@ -765,7 +765,7 @@ HistogramsPanel.prototype.highlight = function (selection, toggle) {
             }
         }
 
-        let colorScale = toggle ? colorsHighlightedByType : colorWithoutHighlight;
+        const colorScale = toggle ? colorsHighlightedByType : colorWithoutHighlight;
         $(sel).css('fill', colorScale[data.type]);
     });
 };
@@ -1082,9 +1082,7 @@ HistogramsPanel.prototype.applyAttrBars = function (bars, globalPos, localPos) {
         })
 
         .attr('data-toggle', 'tooltip')
-        .attr('data-original-title', function(d) {
-            return d.val;
-        })
+        .attr('data-original-title', (d) => d.val)
 
         .style('pointer-events', 'none')
         .style('fill', this.reColor.bind(this));
@@ -1200,9 +1198,7 @@ function initializeHistogramViz($el, model) {
         .attr('data-container', 'body')
         .attr('data-placement', 'left')
         .attr('data-toggle', 'tooltip')
-        .attr('data-original-title', function(d) {
-            return fullTitles[d];
-        });
+        .attr('data-original-title', (d) => fullTitles[d]);
 
     d3.select('#yaxis-' + id)
         .selectAll('text')
