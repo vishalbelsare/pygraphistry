@@ -20,7 +20,7 @@ const GraphComponentTypes = ['point', 'edge'];
  * @param {Number} value
  * @returns {Number}
  */
-function indexOfInSorted(sortedArray, value) {
+function indexOfInSorted (sortedArray, value) {
     let low = 0,
         high = sortedArray.length - 1,
         mid;
@@ -70,7 +70,7 @@ function DataframeMask (dataframe, pointIndexes = undefined, edgeIndexes = undef
 function unbaseMaskFrom (mask, basisMask) {
     if (mask !== undefined && basisMask !== undefined) {
         const globalizedMask = new Uint32Array(mask.length);
-        for (var i=0; i<mask.length; i++) {
+        for (let i=0; i<mask.length; i++) {
             globalizedMask[i] = basisMask[mask[i]];
         }
         return globalizedMask;
@@ -115,7 +115,7 @@ function baseMaskOn (mask, basisMask) {
  * @param {Mask} y
  * @returns {Mask}
  */
-DataframeMask.unionOfTwoMasks = function(x, y) {
+DataframeMask.unionOfTwoMasks = function (x, y) {
     // Undefined means pass-through:
     if (x === undefined || y === undefined) { return undefined; }
     const xLength = x.length, yLength = y.length;
@@ -148,7 +148,7 @@ DataframeMask.unionOfTwoMasks = function(x, y) {
  * @param {Mask} y
  * @returns {Mask}
  */
-DataframeMask.intersectionOfTwoMasks = function(x, y) {
+DataframeMask.intersectionOfTwoMasks = function (x, y) {
     // Undefined means pass-through:
     if (x === undefined) { return y; }
     if (y === undefined) { return x; }
@@ -176,7 +176,7 @@ DataframeMask.intersectionOfTwoMasks = function(x, y) {
  * @param {Number} sizeOfUniverse
  * @returns {Mask}
  */
-DataframeMask.complementOfMask = function(x, sizeOfUniverse) {
+DataframeMask.complementOfMask = function (x, sizeOfUniverse) {
     // Undefined means all, complement is empty:
     if (x === undefined) { return []; }
     if (x === []) { return undefined; }
@@ -552,7 +552,7 @@ DataframeMask.prototype = {
             }
             if (componentMask !== undefined && !(componentMask instanceof Array)) {
                 result[componentType] = new Array(componentMask.length);
-                for (var i = 0; i < componentMask.length; i++) {
+                for (let i = 0; i < componentMask.length; i++) {
                     result[componentType][i] = componentMask[i];
                 }
             }

@@ -89,8 +89,8 @@ function PlanNode (ast, inputNodes = [], attributeData = {}) {
 PlanNode.prototype = {
     inferBindings: function () {
         const bindings = new LocalBindings();
-        this.eachNode(function (inputNode) {
-            inputNode.eachAttribute(function (attributeData) {
+        this.eachNode((inputNode) => {
+            inputNode.eachAttribute((attributeData) => {
                 bindings.include(attributeData);
             });
         });
@@ -119,7 +119,7 @@ PlanNode.prototype = {
             this.isLocalized = planNodeResult.ast.isLocalized;
             this.executor = planNodeResult.executor;
         }
-        this.eachNode(function (eachNode) {
+        this.eachNode((eachNode) => {
             eachNode.compile(generator, dataframe);
         });
     },
@@ -128,7 +128,7 @@ PlanNode.prototype = {
      * @param {Dataframe} dataframe
      * @param {Boolean} valuesRequired
      * @param {String} iterationType
-     * @returns {Array|DataframeMask}
+     * @returns {Mask|DataframeMask}
      */
     execute: function (dataframe, valuesRequired = false, iterationType = this.iterationType()) {
         if (iterationType !== this.iterationType()) {
@@ -258,7 +258,7 @@ PlanNode.prototype = {
             if (result[identifierName] === undefined) { result[identifierName] = []; }
             result[identifierName].push(this);
         }
-        this.eachNode(function (eachNode) {
+        this.eachNode((eachNode) => {
             eachNode.identifierNodes(result);
         });
         return result;
@@ -342,7 +342,7 @@ ExpressionPlan.prototype = {
     },
 
     /**
-     * @returns {Array|DataframeMask}
+     * @returns {Mask|DataframeMask}
      */
     execute: function () {
         return this.rootNode.execute(this.dataframe);

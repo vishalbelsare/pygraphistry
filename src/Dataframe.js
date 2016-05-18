@@ -49,6 +49,7 @@ function Dataframe () {
     // This is to allow tools like filters/selections to propagate to
     // all other tools that rely on data frames.
 
+    /** @type DataframeData */
     this.rawdata = makeEmptyData();
     this.filteredBufferCache = {
         point: {},
@@ -69,6 +70,7 @@ function Dataframe () {
     this.lastSelectionMasks = this.newEmptyMask();
     this.masksForVizSets = {};
     this.bufferAliases = {};
+    /** @type DataframeData */
     this.data = this.rawdata;
     this.bufferOverlays = {};
     /** @type {DataframeMetadata} */
@@ -214,21 +216,6 @@ Dataframe.prototype.numEdges = function numEdges() {
 
 Dataframe.prototype.numByType = function (componentType) {
     return this.rawdata.numElements[componentType];
-};
-
-
-/**
- * @returns Mask
- */
-Dataframe.prototype.fullPointMask = function() {
-    return _.range(this.numPoints());
-};
-
-/**
- * @returns Mask
- */
-Dataframe.prototype.fullEdgeMask = function() {
-    return _.range(this.numEdges());
 };
 
 
@@ -1012,6 +999,11 @@ Dataframe.prototype.loadAttributesForType = function (attributeObjectsByName, ty
 };
 
 
+/**
+ * @param {String} name
+ * @param {GraphComponentTypes} type
+ * @param {Column} valueObj
+ */
 Dataframe.prototype.loadColumn = function (name, type, valueObj) {
     valueObj.version = 0;
     valueObj.dirty = false;
@@ -1021,7 +1013,17 @@ Dataframe.prototype.loadColumn = function (name, type, valueObj) {
 };
 
 
-Dataframe.prototype.defineAttributeOn = function (attributes, name, dataType, values, keyName=undefined) {
+/**
+ *
+ * @param {Object.<Column>} attributes
+ * @param {String} name
+ * @param {String} dataType
+ * @param {Array} values
+ * @param {String?} keyName defaults to name
+ * @returns Column
+ */
+Dataframe.prototype.defineAttributeOn = function (attributes, name, dataType, values, keyName=name) {
+    /** @type Column */
     const result = {
         name: name,
         type: dataType,
@@ -1030,7 +1032,7 @@ Dataframe.prototype.defineAttributeOn = function (attributes, name, dataType, va
         dirty: false,
         numberPerGraphComponent: 1
     };
-    attributes[keyName || name] = result;
+    attributes[keyName] = result;
     return result;
 };
 
@@ -1041,7 +1043,7 @@ Dataframe.prototype.defineAttributeOn = function (attributes, name, dataType, va
  */
 Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
     const numElements = this.numPoints();
-    let attributes = this.rawdata.attributes.point;
+    const attributes = this.rawdata.attributes.point;
 
     // TODO: Error handling
     if (numElements !== outDegrees.length || numElements !== inDegrees.length) {
@@ -1070,11 +1072,11 @@ Dataframe.prototype.loadDegrees = function (outDegrees, inDegrees) {
 Dataframe.prototype.loadEdgeDestinations = function (unsortedEdges) {
     const n = unsortedEdges.length;
     const numElements = this.numEdges() || n / 2;
-    let attributes = this.rawdata.attributes.edge;
+    const attributes = this.rawdata.attributes.edge;
     const nodeTitles = this.rawdata.attributes.point._title.values;
 
-    let source = new Array(numElements);
-    let destination = new Array(numElements);
+    const source = new Array(numElements);
+    const destination = new Array(numElements);
 
     for (let i = 0; i < numElements; i++) {
         source[i] = nodeTitles[unsortedEdges[i*2]];
@@ -1595,6 +1597,10 @@ Dataframe.prototype.getDataType = function (columnName, type) {
  * @property {Array} values - the values held per row in the iteration type.
  * @property {GraphComponentTypes} type - the iteration type.
  * @property {Object} target
+ * @property {Number} version - auto-incrementing positive version integer
+ * @property {Boolean} dirty - implies dependencies have changed
+ * @property {Number} numberPerGraphComponent - number of items in this column per core shape by type.
+ * @property {ColumnAggregation} aggregations
  */
 
 Dataframe.prototype.reIndexArray = function (columnName, type, arr, indexType) {
@@ -1775,7 +1781,7 @@ Dataframe.prototype.getCachedCLBuffer = function (cl, columnName, type) {
 
 
 Dataframe.prototype.metadataForColumn = function (columnName, type) {
-    let metadata, defs, defsContainer;
+    let metadata, defsContainer;
     if (this.metadata !== undefined) {
         switch (type) {
             case 'point':
@@ -1786,7 +1792,7 @@ Dataframe.prototype.metadataForColumn = function (columnName, type) {
                 break;
         }
     }
-    defs = _.find(defsContainer, (eachDefs) => eachDefs[columnName] !== undefined);
+    const defs = _.find(defsContainer, (eachDefs) => eachDefs[columnName] !== undefined);
     if (defs !== undefined) {
         metadata = defs[columnName];
     }
@@ -1869,7 +1875,7 @@ const LargeColumnProperties = ['values', 'aggregations'];
  * @param {GraphComponentTypes} type
  * @param {Boolean?} global
  * @param {Boolean?} forSerialization - Whether to ensure JSON serialization is reasonable.
- * @returns {Column?}
+ * @returns Column
  */
 Dataframe.prototype.getColumn = function (columnName, type, global = true, forSerialization = false) {
     const dataframeData = (global ? this.rawdata : this.data);
@@ -2290,27 +2296,25 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
     const estimatedNumberBins = (endDate.getTime() - startDate.getTime())/binWidth;
     const MAX_BINS_TIME_HISTOGRAM = 2500;
 
-    let approximated = false,
-        runningDate, newDate;
+    let approximated = false;
     if (estimatedNumberBins > MAX_BINS_TIME_HISTOGRAM) {
 
         const diff = endDate.getTime() - startDate.getTime();
         const startNum = startDate.getTime();
         const step = Math.floor(diff / MAX_BINS_TIME_HISTOGRAM);
-        runningDate = startNum + step;
+        let runningDate = startNum + step;
         while (runningDate < endDate) {
-            newDate = new Date(runningDate);
+            const newDate = new Date(runningDate);
             cutoffs.push(newDate);
             runningDate += step;
         }
         approximated = true;
 
     } else {
-
-        runningDate = startDate;
+        let runningDate = startDate;
         let backupCount = 0;
         while (runningDate < endDate && backupCount < 100000) {
-            newDate = new Date(runningDate.getTime());
+            const newDate = new Date(runningDate.getTime());
             incFunction(newDate);
             if (newDate < endDate) {
                 cutoffs.push(newDate);
@@ -2434,7 +2438,7 @@ Dataframe.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, sta
  * @param {Binning} binningHint
  * @param {Number} goalNumberOfBins
  * @param {DataframeMask} mask
- * @param {String} dataType
+ * @param {String?} dataType
  * @returns {BinningResult}
  */
 Dataframe.prototype.binningForColumn = function (
@@ -2577,7 +2581,7 @@ function serialize(data, compressFunction, target) {
     fs.writeFileSync(baseDirPath + target, serialized);
 }
 
-function computeEdgeList(edges, oldEncapsulated, masks, pointOriginalLookup) {
+function computeEdgeList (edges, oldEncapsulated, masks, pointOriginalLookup) {
 
     const edgeListTyped = new Uint32Array(edges.length);
     const mapped = new Uint32Array(edges.length / 2);

@@ -30,7 +30,7 @@ const defaults = {
     }
 };
 
-function inferColorScalingSpecFor(summary, variation, defaultDomain, distinctValues, binning) {
+function inferColorScalingSpecFor (summary, variation, defaultDomain, distinctValues, binning) {
     let scalingType, domain, range;
     const defaultSequentialRange = defaults.color.isQuantitative.sequential.range;
     if (summary.isCategorical) {
@@ -61,7 +61,7 @@ function inferColorScalingSpecFor(summary, variation, defaultDomain, distinctVal
         } else if (summary.countDistinct < 10) {
             scalingType = 'category10';
             domain = distinctValues;
-        } else { //if (summary.countDistinct < 20) {
+        } else { // if (summary.countDistinct < 20) {
             scalingType = 'category20';
             domain = distinctValues;
         }
@@ -107,8 +107,8 @@ function inferEncodingType (dataframe, type, attributeName) {
 }
 
 function scalingFromSpec (scalingSpec) {
-    let scalingType = scalingSpec.scalingType,
-        scaling;
+    const scalingType = scalingSpec.scalingType;
+    let scaling;
     if (d3Scale[scalingType] !== undefined) {
         scaling = d3Scale[scalingType]();
     } else if (scalingType === 'identity') {
@@ -224,9 +224,9 @@ function legendForBins (aggregations, scaling, binning) {
                 } else {
                     // _other always shows last
                     const sortedBinKeys = _.sortBy(_.keys(binning.bins),
-                        (key) => (key === '_other') ? Infinity : -binning.bins[key]);
+                        (key) => (key === '_other' ? Infinity : -binning.bins[key]));
                     legend = _.map(sortedBinKeys,
-                        (key) => (key === '_other') ? undefined : scaling(key));
+                        (key) => (key === '_other' ? undefined : scaling(key)));
                 }
             } else if (summary.isNumeric) {
                 legend = _.map(binning.bins, (itemCount, index) => scaling(minValue + step * index));

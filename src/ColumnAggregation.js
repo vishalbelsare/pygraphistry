@@ -271,6 +271,7 @@ ColumnAggregation.prototype.fullySorted = function () {
 };
 
 ColumnAggregation.prototype.countDistinct = function (limit=MaxDistinctValues) {
+    // TODO use an ES6 Map here.
     const countsByValue = {};
     let numDistinct = 0, minValue = null, maxValue = null;
     const dataType = this.getAggregationByType('dataType');
