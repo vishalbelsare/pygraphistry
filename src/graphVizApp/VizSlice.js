@@ -71,7 +71,7 @@ function indexOfInSorted(sortedArray, value) {
     var low = 0,
         high = sortedArray.length - 1,
         mid;
-    while (low < high) {
+    while (low <= high) {
         mid = Math.floor((low + high) / 2);
         if (sortedArray[mid] > value) {
             high = mid - 1;

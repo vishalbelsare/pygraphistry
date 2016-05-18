@@ -683,12 +683,10 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     const marqueeOnObservable =
         popoutClicks.filter((elt) => {
-            console.log('Got click: ', elt);
             return elt === $viewSelectionButton[0];
         })
         .do(() => {
             marqueeIsOn = !marqueeIsOn;
-            console.log('TURNING to: ', marqueeIsOn);
             toggleButton($viewSelectionButton, marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
         }).map(() => marqueeIsOn).share();
