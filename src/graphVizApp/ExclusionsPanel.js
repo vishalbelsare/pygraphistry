@@ -11,7 +11,7 @@ var Backbone = require('backbone');
 var FilterControl       = require('./FilterControl.js');
 var QuerySelectionModel = require('./QuerySelectionModel.js');
 var ExpressionEditor    = require('./expressionEditor.js');
-var ExpressionPrinter   = require('./ExpressionPrinter.js');
+var ExpressionPrinter   = require('./expressionPrinter.js');
 var util          = require('./util.js');
 
 
