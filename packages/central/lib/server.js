@@ -231,18 +231,21 @@ app.use('/model.json', FalcorServer.dataSourceRoute(function(request, response) 
 }));
 
 
-//Content-hashed streamgl
+// Templated graph.html, e.g., for release tag
 app.engine('.hbs', exphbs({extname: '.hbs'}));
 app.enable('view cache');
 app.set('view engine', 'hbs');
 app.locals.config = {RELEASE: config.RELEASE}; //template variables
 app.set('views', GRAPH_HBS_PATH);
 app.get('/graph/graph.html', function(req, res) {
-  res.render('graph');
+  res.render('graph',
+    {helpers: {
+        // passthroughs for dynamic templates at bottom
+        'raw-helper': function (options) { return options.fn(); }
+    }});
 });
 
 //app.use('/graph', express.static(GRAPH_HBS_PATH, { fallthrough: true }));
-console.log('setting');
 app.use('/graph', express.static(GRAPH_STATIC_PATH, { fallthrough: true }));
 app.use('/graph', express.static(STREAMGL_DIST_PATH, { fallthrough: true }));
 
