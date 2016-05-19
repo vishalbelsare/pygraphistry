@@ -120,6 +120,16 @@ const HistogramCollection = Backbone.Collection.extend({
     comparator: 'position'
 });
 
+/** @typedef {Object} HistogramFilterSpec
+ * @property {String} attribute
+ * @property {Number} firstBin
+ * @property {Number} lastBin
+ * @property {Boolean} completed
+ * @property {Object} start
+ * @property {Object} stop
+ * @property {Object|Array} equals
+ */
+
 /**
  * @param {FiltersPanel} filtersPanel
  * @param {Observable<HistogramChange>} updateAttributeSubject
@@ -129,7 +139,8 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
     this.filtersPanel = filtersPanel;
     // How the model-view communicate back to underlying Rx.
     this.updateAttributeSubject = updateAttributeSubject;
-    /** Histogram-specific/owned filter information, keyed/unique per attribute. */
+    /** Histogram-specific/owned filter information, keyed/unique per attribute.
+     * @type Object.<HistogramFilterSpec> */
     this.histogramFilters = {};
 
     const $histogram = $('#histogram');
@@ -509,6 +520,8 @@ HistogramsPanel.prototype.deleteHistogramFilterByAttribute = function (dataframe
  * This updates histogram filter structures from ASTs.
  * We should maintain only expression objects instead.
  * We should also use structural pattern matching...
+ * @param {HistogramFilterSpec} histFilter
+ * @param {ClientQueryAST} ast
  */
 function updateHistogramFilterFromExpression (histFilter, ast) {
     let op;
