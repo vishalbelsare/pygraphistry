@@ -313,6 +313,25 @@ function createSelectionMarquee ($cont) {
     };
 }
 
+function createDraggableMarquee ($cont) {
+    const $elt = createElt();
+    $cont.append($elt);
+
+    const machineOptions = {
+        selectObservable: new Rx.ReplaySubject(1),
+        dragObservable: new Rx.ReplaySubject(1),
+        canDrag: true, $elt, $cont
+    };
+
+    const machine = makeStateMachine(machineOptions);
+    const {enable, disable} = activateMarqueeStateMachine(machine);
+
+    return {
+        enable, disable, selections: machineOptions.selectObservable,
+        drags: machineOptions.dragObservable, $elt
+    };
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // Old Code
 //////////////////////////////////////////////////////////////////////////////
@@ -807,5 +826,6 @@ module.exports = {
     initMarquee: initMarquee,
     getGhostImageObservable: getGhostImageObservable, // TODO move this to renderer
     initBrush: initBrush,
-    createSelectionMarquee
+    createSelectionMarquee,
+    createDraggableMarquee
 };

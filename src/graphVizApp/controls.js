@@ -272,21 +272,41 @@ function setupSelectionMarquee (appState, isOn) {
  * @returns {Brush}
  */
 function setupBrush(appState, isOn) {
-    var camera = appState.renderState.get('camera');
-    var cnv = appState.renderState.get('canvas');
-    var transform = (point) => camera.canvas2WorldCoords(point.x, point.y, cnv);
+    const camera = appState.renderState.get('camera');
+    const cnv = appState.renderState.get('canvas');
+    const transform = (point) => camera.canvas2WorldCoords(point.x, point.y, cnv);
 
-    var brush = marqueeFact.initBrush(appState, $('#brush'), isOn, {transform: transform});
+    const marquee = marqueeFact.createDraggableMarquee($('#brush'));
 
-    brush.selections.subscribe((sel) => {
-        debug('brush selected bounds', sel);
-    }, util.makeErrorHandler('bad brush selections'));
+    // TODO: Handle switchboard + tool activation saner
+    isOn.do((on) => {
+        if (on) {
+            marquee.enable();
+        } else {
+            marquee.disable();
+        }
+    }).subscribe(_.identity, util.makeErrorHandler('enable/disable brush marquee'));
 
-    brush.drags.subscribe((drag) => {
-        debug('brush drag action', drag.start, drag.end);
-    }, util.makeErrorHandler('bad brush drags'));
+    const transformedSelections = marquee.selections.map((marqueeState) => {
+        const {tl, br} = marqueeState.lastRect;
+        const tlWorld = transform(tl);
+        const brWorld = transform(br);
+        return {tl: tlWorld, br: brWorld};
+    }).share();
 
-    return brush;
+    const transformedDrags = marquee.drags.map((marqueeState) => {
+        const {tl, br} = marqueeState.lastRect;
+        const tlWorld = transform(tl);
+        const brWorld = transform(br);
+        return {tl: tlWorld, br: brWorld};
+    }).share();
+
+    return {
+        bounds: marquee.selections,
+        selections: transformedSelections,
+        doneDragging: transformedSelections,
+        drags: transformedDrags
+    };
 }
 
 // -> Observable DOM
