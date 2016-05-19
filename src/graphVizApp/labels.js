@@ -36,7 +36,8 @@ function setupLabelsAndCursor (appState, socket, urlParams, $eventTarget) {
 
     setupClickSelections(appState, $eventTarget);
     setupLabels(appState, urlParams, $eventTarget, latestHighlightedObject);
-    setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating, latestHighlightedObject);
+    setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating,
+            latestHighlightedObject, appState.activeSelection);
     setupClickDragInteractions(appState, socket, $eventTarget);
 
     // TODO: Is this the actual behavior we want?
@@ -467,7 +468,7 @@ function toWorldCoords(renderState, x, y) {
 }
 
 // RenderState * Observable * Observable
-function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlightedObject) {
+function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlightedObject, activeSelection) {
     const rxPoints = renderState.get('hostBuffers').curPoints;
     const rxSizes = renderState.get('hostBuffers').pointSizes;
 
@@ -484,23 +485,25 @@ function setupCursor(renderState, renderingScheduler, isAnimating, latestHighlig
     notAnimating.switchMap(() => rxPoints.combineLatest(
             rxSizes,
             latestHighlightedObject,
-            (p, s, highlights) => {
+            activeSelection,
+            (p, s, highlights, activeSelection) => {
                 return {
                     points: new Float32Array(p.buffer),
                     sizes: new Uint8Array(s.buffer),
-                    indices: highlights.getVizSliceElements()
+                    indices: highlights.getVizSliceElements(),
+                    activeSelection
                 };
             }
         ).takeUntil(animating)
-    ).do((data) => {
-        renderCursor(renderState, renderingScheduler, $cont, $point, $center, data.points, data.sizes, data.indices);
+    ).do(({points, sizes, indices, activeSelection}) => {
+        renderCursor(renderState, renderingScheduler, $cont, $point, $center, points, sizes, indices, activeSelection);
     }).subscribe(_.identity, util.makeErrorHandler('setupCursor'));
 }
 
 // RenderState * Dom * Dom * Dom * Float32Array * Uint8Array * [Object]
 // TODO: Implement the highlighted point CSS as a generic generated (and maybe cached)
 // DOM element, not a fixed one that we embed in our graph.html
-function renderCursor(renderState, renderingScheduler, $cont, $point, $center, points, sizes, indices) {
+function renderCursor(renderState, renderingScheduler, $cont, $point, $center, points, sizes, indices, activeSelection) {
 
     // Don't render cursor unless latest highlighted is a single node
     if (indices.length !== 1 || indices[0].dim !== 1) {
@@ -543,6 +546,12 @@ function renderCursor(renderState, renderingScheduler, $cont, $point, $center, p
         left: offset - csize / 2.0,
         top: offset - csize / 2.0
     });
+
+    // Check if the highlighted element is an actively selected one.
+    // If it is, add CSS to the cursor circle element to make it look draggable, or reset
+    const isDraggable = activeSelection.containsIndexByDim(idx, 1);
+    $cont.toggleClass('draggable', isDraggable);
+
 }
 
 
