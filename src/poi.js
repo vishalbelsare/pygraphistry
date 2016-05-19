@@ -280,11 +280,24 @@ function queryForKeyAndValue (type, key, value) {
     };
 }
 
-function createLabelDom(instance, dim, labelObj) {
+
+function tooltipConfig ($elements) {
+    $elements.tooltip({container: 'body'})
+        .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
+}
+
+
+function createLabelDom (instance, dim, labelObj) {
     const $cont = $('<div>').addClass('graph-label-container');
     const $pin = $('<i>').addClass('fa fa-lg fa-thumb-tack');
-    let $title;
-    let $content;
+    $pin.data({toggle: 'tooltip'});
+    $pin.attr('title', 'Pinned');
+    // Debatable: have the pin do something like hide the label:
+    // $pin.on('click', () => {
+    //     $cont.hide();
+    // });
+    tooltipConfig($pin);
+    let $title, $content;
     const $labelType = $('<span>').addClass('label-type').addClass('pull-right');
 
     const type = _.findKey(DimCodes, (dimCode) => dimCode === dim);
@@ -306,10 +319,19 @@ function createLabelDom(instance, dim, labelObj) {
         });
 
         $cont.addClass('graph-label-default');
-        $title = $('<div>').addClass('graph-label-title').append($pin).append(' ' + labelObj.title)
-                .append($labelType);
-        const $table= $('<table>');
+        const dataOptions = {placement: 'bottom', toggle: 'tooltip'};
         const labelRequests = instance.state.labelRequests;
+        const $excludeElement = $('<a class="exclude-by-title">').html('<i class="fa fa-ban"></i>');
+        $excludeElement.data(dataOptions);
+        $excludeElement.attr('title', 'Exclude by title ' + labelObj.title);
+        tooltipConfig($excludeElement);
+        $excludeElement.on('click', () => {
+            labelRequests.onNext({excludeQuery: {query: queryForKeyAndValue(type, '_title', labelObj.title)}});
+        });
+        // TODO: replace spaces with actual padding.
+        $title = $('<div>').addClass('graph-label-title').append($pin).append(' ' + labelObj.title + ' ')
+            .append($excludeElement).append($labelType);
+        const $table= $('<table>');
         labelObj.columns.forEach((col) => {
             const key = oldFormat ? col[0] : col.key;
             const val = oldFormat ? col[1] : col.value;
@@ -344,29 +366,25 @@ function createLabelDom(instance, dim, labelObj) {
 
             const $icons = $('<div>').addClass('graph-label-icons');
             $wrap.append($icons);
-            const dataOptions = {placement: 'bottom', toggle: 'tooltip'};
             const keyValueEqn = Identifier.clarifyWithPrefixSegment($key.text(), type) + '=' + displayName;
             const $tag = $('<a class="tag-by-key-value beta">').html('<i class="fa fa-tag"></i>');
             $tag.data(dataOptions);
             $tag.attr('title', 'Tag as ' + keyValueEqn);
-            $tag.tooltip({container: 'body'})
-                .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
+            tooltipConfig($tag);
             $tag.on('click', () => {
                 labelRequests.onNext({tagQuery: {query: queryForKeyAndValue(type, key, val)}});
             });
             const $exclude = $('<a class="exclude-by-key-value">').html('<i class="fa fa-ban"></i>');
             $exclude.data(dataOptions);
             $exclude.attr('title', 'Exclude if ' + keyValueEqn);
-            $exclude.tooltip({container: 'body'})
-                .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
+            tooltipConfig($exclude);
             $exclude.on('click', () => {
                 labelRequests.onNext({excludeQuery: {query: queryForKeyAndValue(type, key, val)}});
             });
             const $filter = $('<a class="filter-by-key-value">').html('<i class="fa fa-filter"></i>');
             $filter.data(dataOptions);
             $filter.attr('title', 'Filter for ' + keyValueEqn);
-            $filter.tooltip({container: 'body'})
-                .data('bs.tooltip').tip().addClass('label-tooltip'); // so labels can remove
+            tooltipConfig($filter);
             $filter.on('click', () => {
                 labelRequests.onNext({filterQuery: {query: queryForKeyAndValue(type, key, val)}});
             });
