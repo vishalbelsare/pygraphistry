@@ -10,7 +10,7 @@ Backbone.$ = $;
 const FilterControl       = require('./FilterControl.js');
 const QuerySelectionModel = require('./QuerySelectionModel.js');
 const ExpressionEditor    = require('./expressionEditor.js');
-const ExpressionPrinter   = require('./ExpressionPrinter.js');
+const ExpressionPrinter   = require('./expressionPrinter.js');
 const Identifier          = require('./Identifier.js');
 const util          = require('./util.js');
 

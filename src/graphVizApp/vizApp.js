@@ -16,7 +16,7 @@ const labels          = require('./labels.js');
 const ui              = require('../ui.js');
 const poiLib          = require('../poi.js');
 const util            = require('./util.js');
-const highlight       = require('./highlight.js');
+const Highighter      = require('./highlight.js');
 const api             = require('./api.js');
 const Version         = require('./Version.js');
 const VizSlice        = require('./VizSlice.js');
@@ -169,7 +169,9 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
     canvas.setupCameraInteractionRenderUpdates(appState.renderingScheduler, appState.cameraChanges,
             appState.settingsChanges, appState.simulateOn);
 
-    highlight.setupHighlight(appState);
+    const highlighter = new Highighter(
+        appState.latestHighlightedObject, appState.activeSelection, appState.renderingScheduler);
+    highlighter.setupHighlight();
 
     const backgroundColorObservable = colorPicker.backgroundColorObservable(initialRenderState, urlParams);
     const foregroundColorObservable = colorPicker.foregroundColorObservable();

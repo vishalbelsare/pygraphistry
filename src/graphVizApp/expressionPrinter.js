@@ -57,8 +57,8 @@ ExpressionPrinter.printAST = function (ast) {
             properties = _.mapObject(_.pick(ast, ['value']), (propAST) => this.printAST(propAST));
             return [ast.operator, properties.value].join(' ');
         case 'ListExpression':
-            properties = _.mapObject(_.pick(ast, ['elements']), (propAST) => this.printAST(propAST));
-            return '(' + properties.elements.join(', ') + ')';
+            properties = _.map(ast.elements, (propAST) => this.printAST(propAST));
+            return '(' + properties.join(', ') + ')';
         // case 'FunctionCall':
         //     properties = _.mapObject(_.pick(ast, ['arguments']), (propAST) => this.printAST(propAST));
         case 'Literal':

@@ -13,7 +13,7 @@ const d3      = require('d3');
 const util    = require('./util.js');
 const Identifier = require('./Identifier');
 const contentFormatter = require('./contentFormatter.js');
-const ExpressionPrinter = require('./ExpressionPrinter.js');
+const ExpressionPrinter = require('./expressionPrinter.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -120,6 +120,16 @@ const HistogramCollection = Backbone.Collection.extend({
     comparator: 'position'
 });
 
+/** @typedef {Object} HistogramFilterSpec
+ * @property {String} attribute
+ * @property {Number} firstBin
+ * @property {Number} lastBin
+ * @property {Boolean} completed
+ * @property {Object} start
+ * @property {Object} stop
+ * @property {Object|Array} equals
+ */
+
 /**
  * @param {FiltersPanel} filtersPanel
  * @param {Observable<HistogramChange>} updateAttributeSubject
@@ -129,7 +139,8 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
     this.filtersPanel = filtersPanel;
     // How the model-view communicate back to underlying Rx.
     this.updateAttributeSubject = updateAttributeSubject;
-    /** Histogram-specific/owned filter information, keyed/unique per attribute. */
+    /** Histogram-specific/owned filter information, keyed/unique per attribute.
+     * @type Object.<HistogramFilterSpec> */
     this.histogramFilters = {};
 
     const $histogram = $('#histogram');
@@ -509,6 +520,8 @@ HistogramsPanel.prototype.deleteHistogramFilterByAttribute = function (dataframe
  * This updates histogram filter structures from ASTs.
  * We should maintain only expression objects instead.
  * We should also use structural pattern matching...
+ * @param {HistogramFilterSpec} histFilter
+ * @param {ClientQueryAST} ast
  */
 function updateHistogramFilterFromExpression (histFilter, ast) {
     let op;
@@ -1291,7 +1304,7 @@ function setupSvg (el, margin, width, height) {
 //////////////////////////////////////////////////////////////////////////////
 
 function isBinValueRange (binValue) {
-    return binValue.min !== undefined && binValue.min !== binValue.max &&
+    return binValue !== undefined && binValue.min !== undefined && binValue.min !== binValue.max &&
         (binValue.min !== binValue.representative || binValue.max !== binValue.representative);
 }
 
@@ -1338,7 +1351,6 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                 continue;
             }
             const binValue = stats.binValues && stats.binValues[binName];
-            if (!binValue) { continue; }
             if (isBinValueRange(binValue)) {
                 if (binRanges.length === 0) {
                     binRanges.push({min: binValue.min, max: binValue.max, bins: [i]});
@@ -1350,7 +1362,7 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                     }
                 }
             } else {
-                if (binValue.representative !== undefined) {
+                if (binValue && binValue.representative !== undefined) {
                     binName = binValue.representative;
                 }
                 binValues.push(isNumeric ? Number(binName) : binName);
