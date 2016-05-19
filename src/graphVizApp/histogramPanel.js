@@ -1304,7 +1304,7 @@ function setupSvg (el, margin, width, height) {
 //////////////////////////////////////////////////////////////////////////////
 
 function isBinValueRange (binValue) {
-    return binValue.min !== undefined && binValue.min !== binValue.max &&
+    return binValue !== undefined && binValue.min !== undefined && binValue.min !== binValue.max &&
         (binValue.min !== binValue.representative || binValue.max !== binValue.representative);
 }
 
@@ -1351,7 +1351,6 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                 continue;
             }
             const binValue = stats.binValues && stats.binValues[binName];
-            if (!binValue) { continue; }
             if (isBinValueRange(binValue)) {
                 if (binRanges.length === 0) {
                     binRanges.push({min: binValue.min, max: binValue.max, bins: [i]});
@@ -1363,7 +1362,7 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                     }
                 }
             } else {
-                if (binValue.representative !== undefined) {
+                if (binValue && binValue.representative !== undefined) {
                     binName = binValue.representative;
                 }
                 binValues.push(isNumeric ? Number(binName) : binName);
