@@ -1761,6 +1761,9 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
         Rx.Observable.combineLatest(this.graph, this.viewConfig, (currentGraph, viewConfig) => {
             let qNodeSelection;
             switch (specification.gesture) {
+                case 'clear':
+                    qNodeSelection = Q(currentGraph.dataframe.newEmptyMask());
+                    break;
                 case 'ast': {
                     const errors = [];
                     const query = _.pick(specification, ['ast', 'type', 'attribute']);
