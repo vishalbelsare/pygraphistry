@@ -154,7 +154,7 @@ function propagatePostToWorker (route, workerName) {
             try {
                 var who = apiKey.decrypt(req.query.key);
             } catch (err) {
-                logger.error(err, 'Invalid API key for POST');
+                logger.info('Invalid API key for POST, rejecting request');
                 return res.send({success: false, msg: 'Invalid API key'});
             }
         }
