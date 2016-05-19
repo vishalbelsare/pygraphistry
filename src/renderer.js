@@ -285,12 +285,6 @@ function init(config, canvas, urlParams) {
 
     resizeCanvas(state);
 
-    Rx.Observable.fromEvent(window, 'resize')
-        .debounceTime(100).delay(50)
-        .subscribe(() => {
-            resizeCanvas(state);
-        }, util.makeErrorHandler('resize handler'));
-
     canvas.addEventListener('webglcontextlost', () => {
         console.error('WebGL Context Loss');
     }, false);
@@ -1260,5 +1254,6 @@ module.exports = {
     getBufferNames: getBufferNames,
     allocateBufferSize: allocateBufferSize,
     updateIndexBuffer: updateIndexBuffer,
-    setFlags: setFlags
+    setFlags: setFlags,
+    resizeCanvas
 };
