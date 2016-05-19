@@ -47,6 +47,7 @@ const palettes    = require('./palettes.js');
 const dataTypeUtil = require('./dataTypes.js');
 const DataframeMask = require('./DataframeMask.js');
 const Dataframe   = require('./Dataframe.js');
+const Binning     = require('./Binning.js');
 const TransactionalIdentifier = require('./TransactionalIdentifier');
 const vgwriter    = require('./libs/VGraphWriter.js');
 const compress    = require('node-pigz');
@@ -380,60 +381,6 @@ function getNamespaceFromGraph (graph) {
 }
 
 
-/**
- * @param {Dataframe} dataframe
- * @param {Number?} maxInitialItems
- * @returns {ColumnName[]}
- */
-function selectInitialColumnsForBinning (dataframe, maxInitialItems = undefined) {
-    const scoredColumnNames = [];
-    const attributeKeysByType = {point: dataframe.getAttributeKeys('point'), edge: dataframe.getAttributeKeys('edge')};
-    const CommonAttributeNamesSortedByInterestLevel = Dataframe.CommonAttributeNamesSortedByInterestLevel;
-    const scoreRange = CommonAttributeNamesSortedByInterestLevel.length;
-    _.each(attributeKeysByType, (attributeKeys, type) => {
-        _.each(attributeKeys, (attributeName) => {
-            const column = dataframe.getColumn(attributeName, type);
-            const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
-            const countDistinct = aggregations.getAggregationByType('countDistinct');
-            const fractionValid = aggregations.getAggregationByType('countValid') /
-                aggregations.getAggregationByType('count');
-            let score = 0; // Lower is better.
-            // Develop a score for prioritizing the columns.
-            if (dataframe.isAttributeNamePrivate(attributeName)) {
-                // Avoid private columns if at all possible (usually just an internal target of an alias).
-                score += scoreRange;
-            }
-            if (fractionValid < 0.01) {
-                score += scoreRange;
-            }
-            // Prioritize user-provided data ahead of system data.
-            let sysIndex = CommonAttributeNamesSortedByInterestLevel.indexOf(attributeName);
-            // Double check whether this is an alias for system data.
-            if (sysIndex === -1 && column.name !== attributeName) {
-                sysIndex = CommonAttributeNamesSortedByInterestLevel.indexOf(column.name);
-            }
-            if (sysIndex === -1) {
-                // Prioritize user-provided data (crudely) by how small the _other bin is;
-                // mega-valued domains make poor histograms.
-                if (countDistinct < 2) {
-                    score += scoreRange;
-                } else {
-                    score -= scoreRange / Math.log(countDistinct);
-                }
-            } else {
-                score += sysIndex;
-            }
-            scoredColumnNames.push({
-                attribute: attributeName,
-                type: type,
-                score: score
-            });
-        });
-    });
-    const sortedColumnNames = _.sortBy(scoredColumnNames, (columnName) => columnName.score);
-    return _.first(sortedColumnNames, maxInitialItems);
-}
-
 /** @typedef {Object} BinningParams
  * @property {Boolean} all
  * @property {GraphComponentTypes} type
@@ -447,9 +394,11 @@ function processBinningOfColumns ({type, attributes, binning, mode, goalNumberOf
     logger.debug('Starting binning');
     try {
         const mask = maskFromPointsByConnectingEdges(pointMask, graph);
+        // TODO persist the binning util somewhere so it can hold more state/cache.
+        const binningUtil = new Binning(graph.dataframe);
 
         if (attributes === undefined) {
-            attributes = _.map(selectInitialColumnsForBinning(graph.dataframe, maxInitialItems),
+            attributes = _.map(binningUtil.selectInitialColumnsForBinning(maxInitialItems),
                 (columnName) => ({name: columnName.attribute, type: columnName.type}));
         }
 
@@ -474,7 +423,7 @@ function processBinningOfColumns ({type, attributes, binning, mode, goalNumberOf
             .concatMap((typeAndAttributeNames) => {
                 const eachType = typeAndAttributeNames[0];
                 const attributeNames = typeAndAttributeNames[1];
-                return graph.dataframe.computeBinningByColumnNames(
+                return binningUtil.computeBinningByColumnNames(
                     mask, attributeNames,
                     binning, mode, eachType, goalNumberOfBins
                 );
