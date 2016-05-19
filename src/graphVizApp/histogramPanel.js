@@ -724,7 +724,7 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
         _.each(_.range(Math.min(globalKeys.length, limit)), (idx) => {
             const key = globalKeys[idx];
             const local = bins[key] || 0;
-            const total = globalBins[key];
+            const total = globalBins[key] || 0;
             let binDescription;
             if (key === '_other' && binValues && binValues._other) {
                 binDescription = binValues._other;
