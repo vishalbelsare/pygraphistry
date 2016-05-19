@@ -98,20 +98,33 @@ FilterControl.prototype.queryFromExpressionString = function (inputString) {
 
 FilterControl.prototype.filterRangeParameters = function (type, attribute, start, stop) {
     return _.extend(filterParametersCore(type, attribute), {
-        start: start,
-        stop: stop
+        ast: {
+            type: 'BetweenPredicate',
+            value: {type: 'Identifier', name: attribute},
+            start: {type: 'Literal', value: start},
+            stop: {type: 'Literal', value: stop}
+        }
     });
 };
 
 FilterControl.prototype.filterExactValueParameters = function (type, attribute, value) {
     return _.extend(filterParametersCore(type, attribute), {
-        equals: value
+        ast: {
+            type: 'BinaryPredicate',
+            operator: '=',
+            left: {type: 'Identifier', name: attribute},
+            right: {type: 'Literal', value: value}
+        }
     });
 };
 
 FilterControl.prototype.filterExactValuesParameters = function (type, attribute, values) {
     return _.extend(filterParametersCore(type, attribute), {
-        equals: values
+        ast: {
+            type: 'MemberOfExpression',
+            operator: 'IN',
+            value: {type: 'ListExpression', elements: _.map(values, (value) => ({type: 'Literal', value: value}))}
+        }
     });
 };
 
