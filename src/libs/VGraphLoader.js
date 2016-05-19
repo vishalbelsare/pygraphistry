@@ -531,14 +531,14 @@ function load (graph, dataset) {
  * @property {Aggregations} aggregations
  */
 
-/** @typedef {Object} EncodingSpec
+/** @typedef {Object} LoadEncodingSpec
  * @property {String[]} attributes
  */
 
 /** @typedef {Object} DataframeMetadataByComponent
  * @property {Object.<DataframeMetadataByColumn>} attributes
  * @property {Number} count
- * @property {Object.<EncodingSpec>} encodings
+ * @property {Object.<LoadEncodingSpec>} encodings
  */
 
 /** @typedef {Object} DataframeMetadata
@@ -909,7 +909,7 @@ function getShapeMappings (graphInfo) {
 }
 
 /**
- * @param {Object.<EncodingSpec>} encodings
+ * @param {Object.<LoadEncodingSpec>} encodings
  * @param {Object.<AttributeLoader>} loaders
  * @param {Number} target VERTEX or EDGE
  * @returns {Object.<DataframeMetadataByColumn>}
