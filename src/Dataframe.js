@@ -398,7 +398,6 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
  */
 Dataframe.prototype.filterFuncForQueryObject = function (query) {
     let filterFunc = _.identity;
-
     let ast = query.ast;
     if (ast !== undefined) {
         const generator = new ExpressionCodeGenerator('javascript');
@@ -411,25 +410,6 @@ Dataframe.prototype.filterFuncForQueryObject = function (query) {
         } else {
             ast = generator.transformASTForNullGuards(ast, {value: columnName}, this);
             filterFunc = generator.functionForAST(ast, {'*': 'value'});
-        }
-        // Maintained only for earlier range queries from histograms, may drop soon:
-    } else if (query.start !== undefined && query.stop !== undefined) {
-        // Range:
-        filterFunc = function (val) {
-            return val >= query.start && val < query.stop;
-        };
-
-    } else if (query.equals !== undefined) {
-        // Exact match or list-contains:
-        const compareValue = query.equals;
-        if (_.isArray(compareValue)) {
-            filterFunc = function (val) {
-                return _.contains(compareValue, val);
-            };
-        } else {
-            filterFunc = function (val) {
-                return compareValue === val;
-            };
         }
     }
     return filterFunc;
