@@ -129,6 +129,10 @@ function makeEmptyRect() {
     };
 }
 
+// When entering a state, this object will be checked to see if there's an associated
+// side effect function to call. This is where DOM changes happen, state is stored,
+// and other such side effects.
+
 const sideEffectFunctions = {
     OFF: (machine, evt) => {
         // Hide everything, change cursor back to normal
@@ -226,16 +230,9 @@ function makeStateMachine (options={}) {
     return machine;
 }
 
-function activateMarqueeStateMachine (machine) {
-
-    const sim = $('#simulation');
-    const $cont = machine.marqueeState.$cont;
-
-    // Setup handlers from UI interactions to events.
-    // These ultimately feed into a stream called events, which consist of strings
-
+// Returns a stream of tagged UI events
+function getMarqueeUiEventStream ($cont, machine) {
     const events = new Rx.ReplaySubject(1);
-    machine.events = events; // TODO: Can we remove this attachment?
 
     const downEvents = Rx.Observable.fromEvent(document, 'mousedown')
         .merge(Rx.Observable.fromEvent($cont, 'mousedown'))
@@ -285,11 +282,25 @@ function activateMarqueeStateMachine (machine) {
     Rx.Observable.merge(downEvents, moveEvents, upEvents, downOnBoxEvents, downOffBoxEvents)
         .subscribe(events, util.makeErrorHandler('handle events for marquee'));
 
+    return events;
+}
+
+function activateMarqueeStateMachine (machine) {
+
+    const sim = $('#simulation');
+    const $cont = machine.marqueeState.$cont;
+
+    // Setup handlers from UI interactions to events.
+    // These ultimately feed into a stream called events, which consist of strings
+
+    // const events = new Rx.ReplaySubject(1);
+    const events = getMarqueeUiEventStream($cont, machine);
+    machine.events = events; // TODO: Can we remove this attachment?
+
     // Update State Machine
     events.map(({name, evt}) => {
         // Because there's no easy way to hook into stately to find out if
-        // a state change happened on last event, we have a little shim here
-        // to check.
+        // a state change happened on last event, we have a little shim here to check.
         const stateChanged = _.contains(machine.getMachineEvents(), name);
         return { machine: machine[name](), evt, stateChanged };
     }).map(({machine, evt, stateChanged}) => {

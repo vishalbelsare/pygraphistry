@@ -287,19 +287,15 @@ function setupBrush(appState, isOn) {
         }
     }).subscribe(_.identity, util.makeErrorHandler('enable/disable brush marquee'));
 
-    const transformedSelections = marquee.selections.map((marqueeState) => {
+    const marqueeStateToTransformedRect = (marqueeState) => {
         const {tl, br} = marqueeState.lastRect;
         const tlWorld = transform(tl);
         const brWorld = transform(br);
         return {tl: tlWorld, br: brWorld};
-    }).share();
+    };
 
-    const transformedDrags = marquee.drags.map((marqueeState) => {
-        const {tl, br} = marqueeState.lastRect;
-        const tlWorld = transform(tl);
-        const brWorld = transform(br);
-        return {tl: tlWorld, br: brWorld};
-    }).share();
+    const transformedSelections = marquee.selections.map(marqueeStateToTransformedRect).share();
+    const transformedDrags = marquee.drags.map(marqueeStateToTransformedRect).share();
 
     return {
         bounds: marquee.selections,
