@@ -241,7 +241,8 @@ app.get('/graph/graph.html', function(req, res) {
   res.render('graph',
     {helpers: {
         // passthroughs for dynamic templates at bottom
-        'raw-helper': function (options) { return options.fn(); }
+        'raw-helper': function (options) { return options.fn(); },
+        'json': function (context) { return JSON.stringify(context); }
     }});
 });
 
