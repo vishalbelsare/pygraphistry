@@ -27,17 +27,21 @@ function defaultLabels (dataframe, indices, type, columnNames = dataframe.public
     const rows = dataframe.getRows(indices, type, columnNames);
     const dataTypesByColumnName = {};
     const colorMappedByColumnName = {};
-    columnNames.forEach((columnName) => {
-        dataTypesByColumnName[columnName] = dataframe.getDataType(columnName, type);
-        if (dataframe.doesColumnRepresentColorPaletteMap(type, columnName)) {
-            colorMappedByColumnName[columnName] = true;
-        }
-    });
+    if (columnNames) {
+        columnNames.forEach((columnName) => {
+            dataTypesByColumnName[columnName] = dataframe.getDataType(columnName, type);
+            if (dataframe.doesColumnRepresentColorPaletteMap(type, columnName)) {
+                colorMappedByColumnName[columnName] = true;
+            }
+        });
+    }
+
+    const titleColumnName = '_title';
 
     return rows.map((row) => {
         const columnValuesInRow = [];
         (columnNames || _.keys(row)).forEach((columnName) => {
-            if (columnName === '_title') { return; }
+            if (columnName === titleColumnName) { return; }
             const value = row[columnName];
             if (dataTypeUtil.valueSignifiesUndefined(value)) { return; }
             let displayName;
@@ -54,7 +58,7 @@ function defaultLabels (dataframe, indices, type, columnNames = dataframe.public
         });
 
         return {
-            title: row._title,
+            title: row[titleColumnName],
             columns: columnValuesInRow
         };
     });
