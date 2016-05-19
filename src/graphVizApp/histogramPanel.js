@@ -1250,7 +1250,11 @@ function initializeSparklineViz($el, model) {
     const bins = data.bins || []; // Guard against empty bins.
     const type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     const d3Data = model.get('d3Data');
-    const numBins = (type === 'countBy' ? Math.min(MAX_HORIZONTAL_ELEMENTS, globalStats.numBins) : globalStats.numBins);
+    let numBins = globalStats.numBins;
+    if (type === 'countBy') {
+        const numValues = globalStats.binValues ? globalStats.binValues.length : 0;
+        numBins = Math.min(MAX_HORIZONTAL_ELEMENTS, Math.max(globalStats.numBins, numValues));
+    }
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
@@ -1281,7 +1285,8 @@ function setupBinScale (type, size, globalNumBins) {
     } else {
         return d3.scale.linear()
             .range([0, size])
-            .domain([0, globalNumBins]);
+            .domain([0, globalNumBins])
+            .clamp(true);
     }
 }
 
@@ -1292,8 +1297,9 @@ function setupAmountScale (size, stackedBins, distribution) {
     }
 
     return d3.scale.linear()
-            .range([size, 0])
-            .domain([0, domainMax]);
+        .range([size, 0])
+        .domain([0, domainMax])
+        .clamp(true);
 }
 
 function setupSvg (el, margin, width, height) {
