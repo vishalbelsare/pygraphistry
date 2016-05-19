@@ -39,7 +39,7 @@ const FilterHistogramBarFillColor = '#556ED4';
 //////////////////////////////////////////////////////////////////////////////
 
 const FullOpacity = 1;
-//const PartialOpacity = 0.5;
+// const PartialOpacity = 0.5;
 const SelectedOpacity = 0.25;
 const Transparent = 0;
 
@@ -97,9 +97,9 @@ const HistogramModel = Backbone.Model.extend({
         }
     },
     getSparkLineData: function () {
-        const sparkLinesByName = this.get('globalStats').sparkLines,
-            attributeName = this.get('attribute'),
-            type = this.get('type');
+        const sparkLinesByName = this.get('globalStats').sparkLines;
+        const attributeName = this.get('attribute');
+        const type = this.get('type');
         if (sparkLinesByName.hasOwnProperty(attributeName)) {
             return sparkLinesByName[attributeName];
         } else if (type !== undefined) {
@@ -930,8 +930,8 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
             return 'crosshair';
         }
     };
-    const encodingType = model.get('encodingType'),
-        encodesColor = encodingType !== undefined && encodingType.search(/Color$/) !== -1;
+    const encodingType = model.get('encodingType');
+    const encodesColor = encodingType !== undefined && encodingType.search(/Color$/) !== -1;
     const legend = model.get('legend');
     const updateColumnColor = (d, i) => {
         if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin) {
@@ -987,7 +987,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
 
 };
 
-function binInLastFilter(lastHistogramFilter, binNum) {
+function binInLastFilter (lastHistogramFilter, binNum) {
     return (lastHistogramFilter &&
         (lastHistogramFilter.firstBin <= binNum && lastHistogramFilter.lastBin >= binNum));
 }
@@ -1154,7 +1154,7 @@ HistogramsPanel.prototype.toggleTooltips = function (showTooltip, svg) {
     this.highlight(bars, showTooltip);
 };
 
-function heightDelta(d, xScale) {
+function heightDelta (d, xScale) {
     const minimumHeight = 5;
     const height = xScale(d.y0) - xScale(d.y1);
     if (d.val > 0 && d.y0 === 0 && height < minimumHeight) {
@@ -1164,7 +1164,7 @@ function heightDelta(d, xScale) {
     }
 }
 
-function initializeHistogramViz($el, model) {
+function initializeHistogramViz ($el, model) {
     let width = $el.width();
     let height = $el.height(); // TODO: Get this more naturally.
     const data = model.get('data');
@@ -1200,9 +1200,10 @@ function initializeHistogramViz($el, model) {
                 fullTitles[d] = fullTitle;
                 return contentFormatter.shortFormat(stackedBins[d].name, globalStats.dataType);
             } else {
-                fullTitle = contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType);
+                var value = d * globalStats.binWidth + globalStats.minValue;
+                fullTitle = contentFormatter.defaultFormat(value, globalStats.dataType);
                 fullTitles[d] = fullTitle;
-                return contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType);
+                return contentFormatter.defaultFormat(value, globalStats.dataType);
             }
         });
 
@@ -1241,7 +1242,7 @@ function initializeHistogramViz($el, model) {
     });
 }
 
-function initializeSparklineViz($el, model) {
+function initializeSparklineViz ($el, model) {
     let width = $el.width();
     let height = $el.height();
     const data = model.get('data');
