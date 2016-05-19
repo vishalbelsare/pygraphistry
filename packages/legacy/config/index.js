@@ -90,8 +90,8 @@ function defaults() {
             latestVersion: '0.9.28'
         },
 
-        VERSION_PRETTY: '2016.05.a',  // human-readable, show under logo
-        //ARTIFACT_TAG:   <-- pass in from ~Docker, defaults to graph-viz npm package
+        RELEASE: 'May 2016: R1',  // human-readable, shown under logo
+        ARTIFACT: 'unavailable', // override w/ a docker or jenkins tag
 
         LOCAL_CACHE: true,
         LOCAL_CACHE_DIR: '/tmp/graphistry/data_cache',
