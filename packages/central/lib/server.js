@@ -235,7 +235,7 @@ app.use('/model.json', FalcorServer.dataSourceRoute(function(request, response) 
 app.engine('.hbs', exphbs({extname: '.hbs'}));
 app.enable('view cache');
 app.set('view engine', 'hbs');
-app.locals.config = {streamglPath: require('StreamGL/dist/webpack-assets.json').StreamGL.js.replace('/dist/','')};
+app.locals.config = {RELEASE: config.RELEASE}; //template variables
 app.set('views', GRAPH_HBS_PATH);
 app.get('/graph/graph.html', function(req, res) {
   res.render('graph');
