@@ -25,6 +25,7 @@ const fullscreenLink  = require('./fullscreenLink.js');
 const TimeExplorer    = require('./timeExplorer/timeExplorer.js');
 const contentFormatter = require('./contentFormatter.js');
 const Command         = require('./command.js');
+const VizSlice        = require('./VizSlice.js');
 
 function logScaling (minPos, maxPos, minVal, maxVal) {
     return d3.scale.log().domain([minVal, maxVal]).range([minPos, maxPos]);
@@ -176,23 +177,82 @@ function setLayoutParameter(socket, algorithm, param, value, settingsChanges) {
     });
 }
 
-//Observable bool -> { ... }
-function setupMarquee(appState, isOn) {
+// TODO FIXME Why do we need this to click on a switchboard instead of jquery?
+// Where this is used in the selection marquee handler, jquery functions don't seem to work.
+function triggerRawMouseEvent (el, evt) {
+    const mouseEvt = document.createEvent('MouseEvents');
+    mouseEvt.initEvent(evt, true, true);
+    el.dispatchEvent(mouseEvt);
+}
+
+function setupSelectionMarquee (appState, isOn) {
     const camera = appState.renderState.get('camera');
     const cnv = appState.renderState.get('canvas');
     const transform = (point) => camera.canvas2WorldCoords(point.x, point.y, cnv);
 
-    const marquee = marqueeFact.initMarquee(appState, $('#marquee'), isOn, {transform: transform});
+    const marquee = marqueeFact.createSelectionMarquee($('#marquee'));
 
-    marquee.selections.subscribe((sel) => {
-        debug('marquee selected bounds', sel);
-    }, util.makeErrorHandler('bad marquee selections'));
+    // TODO: Handle switchboard + tool activation saner
+    isOn.filter(_.identity).do(() => {
+        marquee.enable();
+    }).subscribe(_.identity, util.makeErrorHandler('enable selection marquee'));
 
-    marquee.drags.subscribe((drag) => {
-        debug('marquee drag action', drag.start, drag.end);
-    }, util.makeErrorHandler('bad marquee drags'));
+    isOn.filter((x) => !x).do(() => {
+        marquee.disable();
+    }).subscribe(_.identity, util.makeErrorHandler('enable selection marquee'));
 
-    return marquee;
+    // Assumes world coordinates, and a dense point position Float32Array of [x1, y1, x2, y2, ...]
+    const getPointIndicesInRectangularRegion = (points, tl, br) => {
+        const matchedPoints = [];
+        const numPoints = points.length / 2;
+        for (let i = 0; i < numPoints; i++) {
+            let x = points[i*2];
+            let y = points[i*2 + 1];
+            if (x > tl.x && y < tl.y && x < br.x && y > br.y) {
+                matchedPoints.push(i);
+            }
+        }
+        return matchedPoints;
+    }
+
+    // Handle selections
+    marquee.selections.switchMap((marqueeState) => {
+        // TODO: Provide smoother way to handle getting these
+        return appState.renderState.get('hostBuffers').curPoints.take(1)
+            .map((rawPoints) => {
+                const points = new Float32Array(rawPoints.buffer);
+                return {marqueeState, points};
+            });
+    }).map(({marqueeState, points}) => {
+
+        // Case where there is no valid selection (e.g., user just clicked and didn't drag)
+        if (!marqueeState.lastRect) {
+            return [];
+        }
+
+        const {tl, br} = marqueeState.lastRect;
+        const tlWorld = transform(tl);
+        const brWorld = transform(br);
+
+        return getPointIndicesInRectangularRegion(points, tlWorld, brWorld);
+    }).do((selectedPoints) => {
+        // TODO: Allow for union of new selection with old one (via modifier key?)
+        const newSelection = new VizSlice({point: selectedPoints});
+        appState.activeSelection.onNext(newSelection);
+    }).do(() => {
+        // Turn off selection tool. Done here by simulating raw mouse events on the
+        // switchboard button. JQuery .mousedown() did not seem to get the same result.
+        // TODO FIXME: Just update a falcor model.
+
+        const button = $('#viewSelectionButton')[0];
+
+        // We do staggered down -> up because the handlers can't respond to a click.
+        triggerRawMouseEvent(button, 'mousedown');
+        setTimeout(() => {
+            triggerRawMouseEvent(button, 'mouseup');
+        }, 10);
+    }).subscribe(_.identity, util.makeErrorHandler('handling selections marquee'));
+
 }
 
 /**
@@ -216,17 +276,33 @@ function setupBrush(appState, isOn) {
     const cnv = appState.renderState.get('canvas');
     const transform = (point) => camera.canvas2WorldCoords(point.x, point.y, cnv);
 
-    const brush = marqueeFact.initBrush(appState, $('#brush'), isOn, {transform: transform});
+    const marquee = marqueeFact.createDraggableMarquee($('#brush'));
 
-    brush.selections.subscribe((sel) => {
-        debug('brush selected bounds', sel);
-    }, util.makeErrorHandler('bad brush selections'));
+    // TODO: Handle switchboard + tool activation saner
+    isOn.do((on) => {
+        if (on) {
+            marquee.enable();
+        } else {
+            marquee.disable();
+        }
+    }).subscribe(_.identity, util.makeErrorHandler('enable/disable brush marquee'));
 
-    brush.drags.subscribe((drag) => {
-        debug('brush drag action', drag.start, drag.end);
-    }, util.makeErrorHandler('bad brush drags'));
+    const marqueeStateToTransformedRect = (marqueeState) => {
+        const {tl, br} = marqueeState.lastRect;
+        const tlWorld = transform(tl);
+        const brWorld = transform(br);
+        return {tl: tlWorld, br: brWorld};
+    };
 
-    return brush;
+    const transformedSelections = marquee.selections.map(marqueeStateToTransformedRect).share();
+    const transformedDrags = marquee.drags.map(marqueeStateToTransformedRect).share();
+
+    return {
+        bounds: marquee.selections,
+        selections: transformedSelections,
+        doneDragging: transformedSelections,
+        drags: transformedDrags
+    };
 }
 
 // -> Observable DOM
@@ -243,8 +319,9 @@ function clicksFromPopoutControls ($elt) {
                     evt.stopPropagation();
                 })
                 .switchMap(() => Rx.Observable.fromEvent(elt, 'mouseup'))
-                .map(_.constant(elt));
-        }));
+                .map(_.constant(elt))
+                .share();
+        })).share();
 }
 
 function toggleLogo($cont, urlParams) {
@@ -627,18 +704,17 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     // TODO: More general version for all toggle-able buttons?
     let marqueeIsOn = false;
     const $viewSelectionButton = $('#viewSelectionButton');
-    const turnOnMarquee =
-        Rx.Observable.merge(
-            popoutClicks.filter((elt) => {
-                return elt === $viewSelectionButton[0]; })
-                .map(() => !marqueeIsOn),
-            Rx.Observable.fromEvent($graph, 'click')
-                .map(_.constant(false)))
-        .do((isTurnOn) => {
-            marqueeIsOn = isTurnOn;
+
+    const marqueeOnObservable =
+        popoutClicks.filter((elt) => {
+            return elt === $viewSelectionButton[0];
+        })
+        .do(() => {
+            marqueeIsOn = !marqueeIsOn;
             toggleButton($viewSelectionButton, marqueeIsOn);
             appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
-        });
+        }).map(() => marqueeIsOn).share();
+
     const histogramPanelToggle = setupPanelControl(popoutClicks, $('#histogramPanelControl'), $('#histogram.panel'),
         'Turning on/off the histogram panel');
     let dataInspectorIsVisible = false;
@@ -724,7 +800,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .merge(histogramPanelToggle)
         .take(1);
 
-    const marquee = setupMarquee(appState, turnOnMarquee);
+    const marquee = setupSelectionMarquee(appState, marqueeOnObservable);
     const brush = setupBrush(appState, turnOnBrush);
     const filtersPanel = new FiltersPanel(socket, appState.labelRequests, appState.settingsChanges);
     filtersPanel.setupToggleControl(popoutClicks, $('#filterButton'), $('#exclusionButton'));
@@ -757,16 +833,6 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
             .filter((elt) => elt === $('#layoutSettingsButton')[0])
             .take(1),
         urlParams);
-
-    Rx.Observable.zip(
-        marquee.drags,
-        marquee.drags.switchMap(() => marquee.selections.take(1)),
-        (a, b) => ({drag: a, selection: b})
-    ).subscribe((move) => {
-        const payload = {marquee: move};
-        socket.emit('move_nodes', payload);
-    }, util.makeErrorHandler('marquee error'));
-
 
     //tick stream until canceled/timed out (ends with finalCenter)
     const autoCentering =
