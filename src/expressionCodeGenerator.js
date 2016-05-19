@@ -580,6 +580,8 @@ ExpressionCodeGenerator.prototype = {
                 return InputPropertiesByShape.ConditionalExpression;
             case 'CaseBranch':
                 return InputPropertiesByShape.CaseBranch;
+            case 'MemberAccess':
+                return InputPropertiesByShape.MemberAccess;
             case 'CastExpression':
             case 'NotExpression':
                 return InputPropertiesByShape.NotExpression;
