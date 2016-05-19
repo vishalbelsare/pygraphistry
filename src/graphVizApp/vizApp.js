@@ -18,11 +18,13 @@ const poiLib          = require('../poi.js');
 const util            = require('./util.js');
 const Highighter      = require('./highlight.js');
 const api             = require('./api.js');
+const Version         = require('./Version.js');
 const VizSlice        = require('./VizSlice.js');
 
 
 function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, apiActions,
                workerParams, urlParams) {
+
     debug('Initializing vizApp', 'URL params', urlParams);
 
     //////////////////////////////////////////////////////////////////////////
@@ -194,6 +196,8 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
 
     controls.init(appState, socket, $toolbar, doneLoading, workerParams, urlParams);
     api.setupAPIHooks(socket, appState, doneLoading);
+
+    Version(socket);
 }
 
 
