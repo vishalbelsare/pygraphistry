@@ -9,13 +9,18 @@ const log         = require('common/logger.js');
 const logger      = log.createLogger('graph-viz', 'graph-viz/Version.js');
 
 
-var ARTIFACT_TAG = config.ARTIFACT_TAG || process.env.npm_package_version;
-logger.info({ARTIFACT_TAG: ARTIFACT_TAG, STREAMGL: require('StreamGL/dist/webpack-assets.json').StreamGL.js.replace('/dist/','')});
+const versions = {
+    artifact: config.ARTIFACT,
+    release: config.RELEASE,
+    build: process.env.npm_package_version // e.g., viz-server
+};
+logger.info(versions);
+
 
 function Version (socket, socketLogger) {
     socket.on('get_version', (ignore, cb) => {
         socketLogger.info('get_version');
-        cb({success: true, version: ARTIFACT_TAG});
+        cb({success: true, versions: versions});
     });
 }
 
