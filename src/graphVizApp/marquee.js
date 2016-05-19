@@ -100,6 +100,14 @@ function disableMarqueeVisuals ($elt, $cont) {
     $cont.removeClass('noselect');
 }
 
+function setMarqueeDraggable ($elt) {
+    $elt.addClass('draggable').removeClass('dragging');
+}
+
+function setMarqueeDragging ($elt) {
+    $elt.addClass('dragging');
+}
+
 function makeNewShiftedRect (rect, dx, dy) {
     const newRect = {
         tl: {
@@ -172,6 +180,7 @@ const sideEffectFunctions = {
     },
 
     MARQUEE_STATIONARY: (machine, evt) => {
+        setMarqueeDraggable(machine.marqueeState.$elt);
         machine.marqueeState.stationaryRect = machine.marqueeState.lastRect;
     },
 
@@ -186,6 +195,7 @@ const sideEffectFunctions = {
         const newRect = makeNewShiftedRect(machine.marqueeState.stationaryRect, dx, dy);
         machine.marqueeState.lastRect = newRect;
         moveElementToRect(machine.marqueeState.$elt, newRect);
+        setMarqueeDragging(machine.marqueeState.$elt);
         machine.marqueeState.dragObservable.onNext(machine.marqueeState);
     },
 
