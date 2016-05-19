@@ -389,6 +389,7 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
         }
     } catch (e) {
         errors.push(e.message);
+        return this.newEmptyMask();
     }
 };
 

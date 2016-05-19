@@ -1761,6 +1761,15 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
         Rx.Observable.combineLatest(this.graph, this.viewConfig, (currentGraph, viewConfig) => {
             let qNodeSelection;
             switch (specification.gesture) {
+                case 'ast': {
+                    const errors = [];
+                    const query = _.pick(specification, ['ast', 'type', 'attribute']);
+                    qNodeSelection = Q(currentGraph.dataframe.getMasksForQuery(query, errors));
+                    if (errors.length > 0) {
+                        throw errors[0];
+                    }
+                    break;
+                }
                 case 'masks':
                     // TODO FIXME translate masks to unfiltered indexes.
                     qNodeSelection = Q(specification.masks);
