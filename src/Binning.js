@@ -25,6 +25,7 @@ const dataTypeUtil = require('./dataTypes.js');
 
 /**
  * @typedef {Binning} BinningResult
+ * @property {String} type 'histogram' or 'countBy'
  * @property {Number} numValues
  * @property {Object} bins
  * @property {Object.<String, BinDescription>} binValues
@@ -599,21 +600,21 @@ Binning.prototype.computeBinningByColumnNames = function (
  * @returns {ColumnName[]}
  */
 Binning.prototype.selectInitialColumnsForBinning = function (maxInitialItems = undefined) {
-    const dataframe = this.dataframe;
     const scoredColumnNames = [];
-    const attributeKeysByType = {point: dataframe.getAttributeKeys('point'), edge: dataframe.getAttributeKeys('edge')};
-    const CommonAttributeNamesSortedByInterestLevel = dataframe.CommonAttributeNamesSortedByInterestLevel;
+    const attributeKeysByType = _.object(_.map(['point', 'edge'],
+        (type) => [type, this.dataframe.getAttributeKeys(type)]));
+    const CommonAttributeNamesSortedByInterestLevel = this.dataframe.CommonAttributeNamesSortedByInterestLevel;
     const scoreRange = CommonAttributeNamesSortedByInterestLevel.length;
     _.each(attributeKeysByType, (attributeKeys, type) => {
         _.each(attributeKeys, (attributeName) => {
-            const column = dataframe.getColumn(attributeName, type);
-            const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
+            const column = this.dataframe.getColumn(attributeName, type);
+            const aggregations = this.dataframe.getColumnAggregations(attributeName, type, true);
             const countDistinct = aggregations.getAggregationByType('countDistinct');
             const fractionValid = aggregations.getAggregationByType('countValid') /
                 aggregations.getAggregationByType('count');
             let score = 0; // Lower is better.
             // Develop a score for prioritizing the columns.
-            if (dataframe.isAttributeNamePrivate(attributeName)) {
+            if (this.dataframe.isAttributeNamePrivate(attributeName)) {
                 // Avoid private columns if at all possible (usually just an internal target of an alias).
                 score += scoreRange;
             }
