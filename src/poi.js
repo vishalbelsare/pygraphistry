@@ -17,7 +17,7 @@ const picking     = require('./picking.js');
 const Identifier  = require('./graphVizApp/Identifier');
 const contentFormatter = require('./graphVizApp/contentFormatter.js');
 
-//0--1: the closer to 1, the more likely that unsampled points disappear
+// 0--1: the closer to 1, the more likely that unsampled points disappear
 const APPROX = 0.5;
 const MAX_LABELS = 20;
 const TIME_BETWEEN_SAMPLES = 300; // ms
@@ -37,7 +37,7 @@ function makeErrorHandler(name) {
 
 
 
-function markHits(samples32) {
+function markHits (samples32) {
     const hits = {};
     let idx = -1;
 
@@ -80,7 +80,7 @@ function markHits(samples32) {
     return hits;
 }
 
-function sortedHits(hits) {
+function sortedHits (hits) {
     const indices = _.keys(hits);
     const sortedIndices = indices.sort((a, b) => hits[b] - hits[a]);
 
@@ -93,16 +93,20 @@ function sortedHits(hits) {
 let lastRes = {};
 let timeOfLastRes = 0;
 
-//renderState * String -> {<idx> -> {dim: int}}
-//dict of points that are on screen -- approx may skip some
-function getActiveApprox(renderState, textureName, forceResample) {
+
+/** dict of points that are on screen -- approx may skip some
+ * @param {Immutable} renderState
+ * @param {String} textureName
+ * @param {Boolean} forceResample
+ * @returns {Object.<String, VizSliceElement>}
+ */
+function getActiveApprox (renderState, textureName, forceResample = false) {
 
     // If it hasn't been long enough, just return last hits.
     if (!forceResample && Date.now() - timeOfLastRes < TIME_BETWEEN_SAMPLES) {
         // Clone because we might want to mutate this later
         return _.clone(lastRes);
     }
-
 
     const samples32 = new Uint32Array(renderState.get('pixelreads')[textureName].buffer);
     const hits = markHits(samples32);
@@ -116,19 +120,24 @@ function getActiveApprox(renderState, textureName, forceResample) {
         res[key] = {idx: idx, dim: 1};
     }
 
-
     lastRes = _.clone(res);
     timeOfLastRes = Date.now();
     return res;
 }
 
 
-//{<idx>: True} * [{elt: $DOM}] * {<idx>: {dim: int}} * RenderState * [ Float ] -> ()
-//  Effects: update inactiveLabels, activeLabels, hits
-//return unused activeLabels to inactiveLabels in case need extra to reuse
-//(otherwise mark as hit)
-//Idea: need to make sure missing not due to overplotting
-function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
+/** Effects: update inactiveLabels, activeLabels, hits
+ * return unused activeLabels to inactiveLabels in case need extra to reuse
+ * (otherwise mark as hit)
+ * Idea: need to make sure missing not due to overplotting
+ * @param {Object<String, VizSliceElement>} activeLabels
+ * @param {Array<VizSliceElement>} inactiveLabels
+ * @param {Object<String, VizSliceElement>} hits
+ * @param {Immutable} renderState
+ * @param {Array} points x and y alternating elements
+ * @returns {Array}
+ */
+function finishApprox (activeLabels, inactiveLabels, hits, renderState, points) {
 
     const camera = renderState.get('camera');
     const cnv = renderState.get('gl').canvas;
@@ -147,12 +156,12 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
             const isDecayed = (Math.random() > 1 - APPROX) || (_.keys(activeLabels).length > MAX_LABELS);
 
             if (isOffScreen || isDecayed) {
-                //remove
+                // remove
                 inactiveLabels.push(lbl);
                 delete activeLabels[cacheKey(lbl.idx, lbl.dim)];
                 toClear.push(lbl);
             } else {
-                //overplotted, keep
+                // overplotted, keep
                 hits[cacheKey(lbl.idx, lbl.dim)] = {idx: lbl.idx, dim: lbl.dim};
             }
         }
@@ -161,7 +170,7 @@ function finishApprox(activeLabels, inactiveLabels, hits, renderState, points) {
     return toClear;
 }
 
-function finishAll(activeLabels, inactiveLabels, hits) {
+function finishAll (activeLabels, inactiveLabels, hits) {
     const toClear = [];
 
     _.values(activeLabels).forEach((lbl) => {
@@ -175,14 +184,7 @@ function finishAll(activeLabels, inactiveLabels, hits) {
     return toClear;
 }
 
-//DOM =======================
-
-/**
- * @typedef {Object} LabelIndex
- * @type {number} idx
- * @type {number} dim
- */
-
+// DOM =======================
 
 /**
  * create label, attach to dom
@@ -190,7 +192,7 @@ function finishAll(activeLabels, inactiveLabels, hits) {
  * @param instance
  * @param {Element} $labelCont
  * @param {number} idx
- * @param {LabelIndex} info
+ * @param {VizSliceElement} info
  * @returns {{idx: *, dim: (number|*|dim), elt: *, setIdx: (function(this:*))}}
  */
 function genLabel (instance, $labelCont, idx, info) {
@@ -238,9 +240,9 @@ function genLabel (instance, $labelCont, idx, info) {
 
 
 
-//NETWORK ===================
+// NETWORK ===================
 
-function cacheKey(idx, dim) {
+function cacheKey (idx, dim) {
     return String(idx) + ',' + String(dim);
 }
 
@@ -265,7 +267,7 @@ function fetchLabel (instance, labelCacheEntry, idx, dim) {
     });
 }
 
-function queryForKeyAndValue(type, key, value) {
+function queryForKeyAndValue (type, key, value) {
     const identifier = Identifier.clarifyWithPrefixSegment(key, type);
     return {
         ast: {
@@ -384,7 +386,7 @@ function createLabelDom(instance, dim, labelObj) {
 
 // TODO batch fetches
 // instance * int -> ReplaySubject_1 labelObj
-function getLabel(instance, data) {
+function getLabel (instance, data) {
     // TODO: Make cache aware of both idx and dim
     const idx = data.idx;
     const dim = data.dim;
@@ -417,18 +419,16 @@ function emptyCache (instance) {
     });
 }
 
-/**
- * @typedef {Object} POIHandlerState
+/** @typedef {Object} POIHandlerState
  * @type {socket.io socket} socket
  * @type {GraphistryClient} client
- * @type {Object} labelCache
- * @type {Object} activeLabels
- * @type {Array} inactiveLabels
+ * @type {Object<String, ReplaySubject} labelCache
+ * @type {Object<String, VizSliceElement>} activeLabels
+ * @type {Array<VizSliceElement>} inactiveLabels
  */
 
 
-/**
- * @typedef {Object} POIHandler
+/** @typedef {Object} POIHandler
  * @type POIHandlerState state
  * @type number MAX_LABELS
  * @type Function resetActiveLabels
@@ -453,23 +453,24 @@ function init (socket, labelRequests) {
 
     _.extend(instance, {
 
+        /** @type POIHandlerState */
         state: {
 
             socket: socket,
 
-            // Rx.Subject
+            /** @type Rx.Subject */
             labelRequests: labelRequests,
 
-            //[ ReplaySubject_1 labelObj ]
+            /** @type ReplaySubject<> */
             labelCache: {},
 
-            //[ $DOM ]
+            /** @type Object<String, DOM> */
             labelDOMCache: {},
 
-            //{<int> -> {elt: $DOM, idx: int} }
+            /** @type Object<String, VizSliceElement> */
             activeLabels: {},
 
-            //[ {elt: $DOM, idx: int} ]
+            /** @type Array<VizSliceElement> */
             inactiveLabels: []
 
         },
@@ -481,7 +482,7 @@ function init (socket, labelRequests) {
             instance.state.activeLabels = activeLabels;
         },
 
-        //int -> Subject ?HtmlString
+        // int -> Subject ?HtmlString
         getLabelDom: getLabelDom.bind('', instance),
         getLabelObject: getLabel.bind('', instance),
 
@@ -489,7 +490,7 @@ function init (socket, labelRequests) {
         finishApprox: finishApprox,
         finishAll: finishAll,
 
-        //$DOM * idx -> {elt: $DOM, idx: int, setIdx: Subject int}
+        // $DOM * idx -> {elt: $DOM, idx: int, setIdx: Subject int}
         genLabel: genLabel.bind('', instance),
 
         emptyCache: emptyCache.bind('', instance),
