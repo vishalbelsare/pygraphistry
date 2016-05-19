@@ -14,27 +14,35 @@ const DimCodes = {
  * @property {String} source - whether from canvas click, etc.
  */
 
+/** @typedef {Object} VizSliceSpec
+ * @property {Mask} point
+ * @property {Mask} edge
+ * @property {VizSliceElement[]} separateItems
+ * @property {VizSliceElement[]} selections
+ */
+
 /**
- * @param {{point: Number[], edge: Number[], selections: VizSliceElement[]}} specification
+ * @param {VizSliceSpec} specification
  * @constructor
  */
 function VizSlice (specification) {
-    if (specification === undefined) { return; }
-    /** @type {ArrayBuffer|Number[]} */
-    this.point = specification.point;
-    /** @type {ArrayBuffer|Number[]} */
-    this.edge = specification.edge;
     if (_.isArray(specification)) {
         this.separateItems = specification;
-    } else if (_.isArray(specification.separateItems)) {
+    } else if (_.isObject(specification)) {
         /** @type {ArrayBuffer|Number[]} */
-        this.separateItems = specification.separateItems;
+        this.point = specification.point;
+        /** @type {ArrayBuffer|Number[]} */
+        this.edge = specification.edge;
+        if (_.isArray(specification.separateItems)) {
+            /** @type {ArrayBuffer|Number[]} */
+            this.separateItems = specification.separateItems;
+        }
     }
 }
 
 /**
  * Modifies the array as a sorted set to toggle the value in/out. Returns the index of the value once effected.
- * @param {Number[]} arrayData
+ * @param {Mask} arrayData
  * @param {Number} newValue
  * @returns {Mask?}
  */
@@ -87,7 +95,7 @@ function indexOfInSorted (sortedArray, value) {
 function removeOrAddFromUnsortedArray (arrayData, newElem, equalityFunc) {
     if (arrayData === undefined) { return [newElem]; }
 
-    // Guard for if the array is arraylike, but not array
+    // Guard for if the array is array-like, but not array
     // This is the case for arguments, as well as typed arrays
     // We do this because we need access to the push() method
     if (arrayData.constructor !== Array) {
@@ -95,17 +103,8 @@ function removeOrAddFromUnsortedArray (arrayData, newElem, equalityFunc) {
     }
 
     const lengthBefore = arrayData.length;
-    let result = arrayData;
-
-    // Remove elements if they exist.
-    result = _.map(result, (elem) => {
-        if (equalityFunc(elem, newElem)) {
-            return null;
-        }
-        return elem;
-    });
-
-    result = result.filter((val) => val !== null);
+    // Remove elements if they exist, while making a copy regardless.
+    const result = arrayData.filter((elem) => !equalityFunc(elem, newElem));
 
     // Add new elements if it didn't exist;
     if (lengthBefore === result.length) {
