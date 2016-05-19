@@ -1621,9 +1621,9 @@ Dataframe.prototype.reIndexArray = function (columnName, type, arr, indexType) {
 
 // TODO: Have this return edge attributes in sorted order, unless
 // explicitly requested to be unsorted (for internal performance reasons)
-Dataframe.prototype.getColumnValues = function (columnName, type) {
+Dataframe.prototype.getColumnValues = function (columnName, type, global = false) {
 
-    const attributes = this.data.attributes[type];
+    const attributes = (global ? this.rawdata : this.data).attributes[type];
 
     // TODO FIXME HACK:
     // So computed column manager can work, we need to pass through calls from here

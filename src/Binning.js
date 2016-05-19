@@ -54,7 +54,7 @@ Binning.prototype.binningForColumn = function (
     dataType = undefined) {
 
     const {attribute, type} = columnName;
-    const values = this.dataframe.getColumnValues(attribute, type);
+    const values = this.dataframe.getColumnValues(attribute, type, true);
     const aggregations = this.dataframe.getColumnAggregations(attribute, type, true);
 
     const numValues = aggregations.getAggregationByType('countDistinct');
@@ -175,7 +175,7 @@ Binning.prototype.binningForColumnByDistinctValue = function (columnName, mask, 
         return Q({type: 'nodata'});
     }
 
-    const values = this.dataframe.getColumnValues(columnName.attribute, type);
+    const values = this.dataframe.getColumnValues(columnName.attribute, type, true);
 
     // TODO: Get this value from a proper source, instead of hard coding.
     const maxNumBins = 29;
@@ -424,6 +424,7 @@ Binning.prototype.timeBasedHistogram = function (mask, timeType, timeAttr, start
     // Fill bins
     const numBins = cutoffs.length - 1;
     const bins = Array.apply(null, new Array(numBins)).map(() => 0);
+    // This is getting filtered values intentionally [or not?]
     const timeValues = this.dataframe.getColumnValues(timeAttr, timeType);
 
     // COMPUTE BIN WIDTH
