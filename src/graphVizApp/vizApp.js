@@ -18,6 +18,7 @@ const poiLib          = require('../poi.js');
 const util            = require('./util.js');
 const highlight       = require('./highlight.js');
 const api             = require('./api.js');
+const Version         = require('./Version.js');
 const VizSlice        = require('./VizSlice.js');
 
 
