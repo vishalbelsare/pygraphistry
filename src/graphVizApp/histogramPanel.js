@@ -125,9 +125,7 @@ const HistogramCollection = Backbone.Collection.extend({
  * @property {Number} firstBin
  * @property {Number} lastBin
  * @property {Boolean} completed
- * @property {Object} start
- * @property {Object} stop
- * @property {Object|Array} equals
+ * @property {ClientQueryAST} ast
  */
 
 /**
@@ -525,6 +523,7 @@ HistogramsPanel.prototype.deleteHistogramFilterByAttribute = function (dataframe
  */
 function updateHistogramFilterFromExpression (histFilter, ast) {
     let op;
+    histFilter.ast = ast;
     histFilter.equals = undefined;
     histFilter.start = undefined;
     histFilter.stop = undefined;
@@ -590,13 +589,56 @@ HistogramsPanel.prototype.updateHistogramFiltersFromFiltersSubject = function ()
             if (query.ast !== undefined) {
                 updateHistogramFilterFromExpression(histFilter, query.ast);
             }
-            _.extend(histFilter, _.pick(query, ['start', 'stop', 'equals']));
+            _.defaults(histFilter, _.pick(query, ['start', 'stop', 'equals']));
         }
     });
     _.each(histogramFiltersToRemove, (histFilter, attribute) => {
         delete this.histogramFilters[attribute];
     });
 };
+
+/**
+ * @param {HistogramSpec} histFilter
+ * @param {FilterControl} filterer
+ * @param {String} attribute
+ * @returns {{query: ClientQueryAST, dataType: String}}
+ */
+function expressionForHistogramFilter (histFilter, filterer, attribute) {
+    let query, dataType;
+    if (histFilter.start !== undefined || histFilter.stop !== undefined) {
+        query = filterer.filterRangeParameters(
+            histFilter.type,
+            attribute,
+            histFilter.start,
+            histFilter.stop);
+        dataType = 'float';
+    } else if (histFilter.equals !== undefined) {
+        if (histFilter.equals.hasOwnProperty('length')) {
+            if (histFilter.equals.length > 1) {
+                query = filterer.filterExactValuesParameters(
+                    histFilter.type,
+                    attribute,
+                    histFilter.equals
+                );
+            } else {
+                query = filterer.filterExactValueParameters(
+                    histFilter.type,
+                    attribute,
+                    histFilter.equals[0]
+                );
+            }
+        } else {
+            query = filterer.filterExactValueParameters(
+                histFilter.type,
+                attribute,
+                histFilter.equals
+            );
+        }
+        // Leave blank until/if we can determine this better?
+        dataType = histFilter.dataType || 'string';
+    }
+    return {query: query, dataType: dataType};
+}
 
 HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
     const filtersCollection = this.filtersPanel.collection;
@@ -605,41 +647,7 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
         if (!attribute) {
             attribute = histFilter.attribute;
         }
-        let query = {};
-        // Should be histFilter.dataType:
-        let dataType;
-        if (histFilter.start !== undefined || histFilter.stop !== undefined) {
-            query = filterer.filterRangeParameters(
-                histFilter.type,
-                attribute,
-                histFilter.start,
-                histFilter.stop);
-            dataType = 'float';
-        } else if (histFilter.equals !== undefined) {
-            if (histFilter.equals.hasOwnProperty('length')) {
-                if (histFilter.equals.length > 1) {
-                    query = filterer.filterExactValuesParameters(
-                        histFilter.type,
-                        attribute,
-                        histFilter.equals
-                    );
-                } else {
-                    query = filterer.filterExactValueParameters(
-                        histFilter.type,
-                        attribute,
-                        histFilter.equals[0]
-                    );
-                }
-            } else {
-                query = filterer.filterExactValueParameters(
-                    histFilter.type,
-                    attribute,
-                    histFilter.equals
-                );
-            }
-            // Leave blank until/if we can determine this better?
-            dataType = histFilter.dataType || 'string';
-        }
+        const {query, dataType} = expressionForHistogramFilter(histFilter, filterer, attribute);
         if (histFilter.ast !== undefined) {
             query.ast = histFilter.ast;
         }
