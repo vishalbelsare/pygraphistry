@@ -838,7 +838,9 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                 }
             }
 
-            const agg = dataframe.timeBasedHistogram(
+
+            const binningUtil = new Binning(dataframe);
+            const agg = binningUtil.timeBasedHistogram(
                 combinedMask, data.timeType, data.timeAttr, data.start, data.stop, data.timeAggregation);
             cb({
                 success: true,
