@@ -96,7 +96,7 @@ function init (app) {
                     };
                     res.json(checkOnly ? _.omit(payload, 'decrypted') : payload);
                 } catch (err) {
-                    logger.error(err, 'decrypter');
+                    logger.info('/api/(decrypt|check): Invalid key');
                     res.json({success: false, error: 'Invalid key'});
                 }
             },
