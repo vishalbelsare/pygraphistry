@@ -100,6 +100,21 @@ var TimeBarView = Backbone.View.extend({
                     maxLines: 1
                 });
 
+                // HACK Make ace ignore new-lines. It does not appear to naturally support this,
+                // so using technique from http://stackoverflow.com/a/32315686
+                this.editor.editor.getSession().on('change', (e) => {
+                    if (e.lines === undefined || e.lines[0] === undefined) {
+                        return;
+                    }
+
+                    const linesRepresentsEnter = e.lines[0] === '' && e.lines[1] === '';
+
+                    if (linesRepresentsEnter && e.action === "insert") {
+                        this.editor.editor.find(String.fromCharCode(10))
+                        this.editor.editor.replaceAll('');
+                    }
+                });
+
                 // Make special enter submit command:
                 this.editor.editor.commands.addCommand({
                     name: 'enterHandler',
