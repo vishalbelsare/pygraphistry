@@ -77,7 +77,9 @@ function logClientError(req, res) {
 
         if(config.ENVIRONMENT === 'local') {
             msg.ip = req.ip;
-            logger.error(msg, 'Client Error');
+            if (msg.level > 30) {
+                logger.error(msg, 'Client Error');
+            }
             /* jshint -W064 */
             return Q();
             /* jshint +W064 */
