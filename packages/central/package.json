@@ -7,7 +7,7 @@
   "scripts": {
     "clean": "rm -rf ./dist && mkdir -p ./dist",
     "build": "npm run clean && babel lib -d dist --source-maps --presets es2015,stage-0 --plugins transform-runtime",
-    "build-graph-viz": "cd ./node_modules/graph-viz && npm run build",
+    "build-graph-viz": "cd ./node_modules/@graphistry/graph-viz && npm run build",
     "watch": "npm run clean && babel lib -d dist --source-maps --presets es2015,stage-0 --plugins transform-runtime --watch",
     "test": "echo \"No tests available.\"",
     "start": "node ./bin/central",
@@ -38,7 +38,7 @@
     "falcor-json-graph": "graphistry/falcor-json-graph",
     "falcor-path-syntax": "netflix/falcor-path-syntax",
     "@graphistry/falcor-router": "graphistry/falcor-router",
-    "@graphistry/graph-viz": "graphistry/graph-viz",
+    "@graphistry/graph-viz": "graphistry/graph-viz#rename-with-org",
     "hbs": "~4.0.0",
     "mongodb": "~2.0.25",
     "protobufjs": "~3.8.0",

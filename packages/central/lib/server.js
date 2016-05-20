@@ -61,8 +61,8 @@ app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 app.use(compression());
 
 var MAIN_STATIC_PATH    = path.resolve(__dirname, '../assets');
-var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
-var GRAPH_HBS_PATH      = path.resolve(require('graph-viz').staticFilePath(), 'views');
+var GRAPH_STATIC_PATH   = path.resolve(require('@graphistry/graph-viz').staticFilePath(), 'assets');
+var GRAPH_HBS_PATH      = path.resolve(require('@graphistry/graph-viz').staticFilePath(), 'views');
 
 var STREAMGL_DIST_PATH  = require.resolve('StreamGL');
 STREAMGL_DIST_PATH = path.resolve(STREAMGL_DIST_PATH.slice(0, STREAMGL_DIST_PATH.lastIndexOf('/')), 'dist');
