@@ -123,9 +123,10 @@ FilterControl.prototype.queryExactValueParameters = function (type, attribute, v
 FilterControl.prototype.queryExactValuesParameters = function (type, attribute, values) {
     return _.extend(queryParametersCore(type, attribute), {
         ast: {
-            type: 'MemberOfExpression',
+            type: 'BinaryPredicate',
             operator: 'IN',
-            value: {type: 'ListExpression', elements: _.map(values, (value) => ({type: 'Literal', value: value}))}
+            left: {type: 'Identifier', name: attribute},
+            right: {type: 'ListExpression', elements: _.map(values, (value) => ({type: 'Literal', value: value}))}
         }
     });
 };
