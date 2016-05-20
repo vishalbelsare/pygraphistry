@@ -75,41 +75,92 @@ const histogramMarginsHorizontal = {top: 15, right: 10, bottom: 15, left: 10};
 
 // Setup Backbone for the brushing histogram
 const HistogramModel = Backbone.Model.extend({
-    getHistogramData: function (attributeName, type) {
-        if (attributeName === undefined) {
-            attributeName = this.get('attribute');
+    numBins: function () {
+        const globalStats = this.getGlobalStats();
+        let numBins = globalStats.numBins;
+        if (globalStats.type === 'countBy') {
+            const numValues = globalStats.binValues ? globalStats.binValues.length : 0;
+            numBins = Math.min(MAX_HORIZONTAL_ELEMENTS, Math.max(globalStats.numBins, numValues));
         }
-        if (type === undefined) {
-            type = this.get('type');
-        }
-        const histogramsByName = this.get('globalStats').histograms;
-        if (histogramsByName.hasOwnProperty(attributeName)) {
-            return histogramsByName[attributeName];
+        return numBins;
+    },
+    getHistogramOrientation: function () {
+        const data = this.get('data');
+        return (data.type && data.type !== 'nodata') ? data.type : this.get('globalStats').type;
+    },
+    getGlobalStats: function (attributeName = this.get('attribute')) {
+        return this.get('sparkLines') ? this.getSparkLineData() : this.getHistogramData(attributeName);
+    },
+    getHistogramData: function (attributeName = this.get('attribute')) {
+        const dataByName = this.get('globalStats').histograms;
+        const type = this.get('type');
+        if (dataByName.hasOwnProperty(attributeName)) {
+            return dataByName[attributeName];
         } else if (type !== undefined) {
-            return histogramsByName[Identifier.clarifyWithPrefixSegment(attributeName, type)];
+            return dataByName[Identifier.clarifyWithPrefixSegment(attributeName, type)];
         } else {
             const pointPrefixAttribute = Identifier.clarifyWithPrefixSegment(attributeName, 'point');
-            if (histogramsByName.hasOwnProperty(pointPrefixAttribute)) {
-                return histogramsByName[pointPrefixAttribute];
+            if (dataByName.hasOwnProperty(pointPrefixAttribute)) {
+                return dataByName[pointPrefixAttribute];
             } else {
-                return histogramsByName[Identifier.clarifyWithPrefixSegment(attributeName, 'edge')];
+                return dataByName[Identifier.clarifyWithPrefixSegment(attributeName, 'edge')];
             }
         }
     },
     getSparkLineData: function () {
-        const sparkLinesByName = this.get('globalStats').sparkLines;
+        const dataByName = this.get('globalStats').sparkLines;
         const attributeName = this.get('attribute');
         const type = this.get('type');
-        if (sparkLinesByName.hasOwnProperty(attributeName)) {
-            return sparkLinesByName[attributeName];
+        if (dataByName.hasOwnProperty(attributeName)) {
+            return dataByName[attributeName];
         } else if (type !== undefined) {
-            return sparkLinesByName[Identifier.clarifyWithPrefixSegment(attributeName, type)];
+            return dataByName[Identifier.clarifyWithPrefixSegment(attributeName, type)];
         } else {
             const pointPrefixAttribute = Identifier.clarifyWithPrefixSegment(attributeName, 'point');
-            if (sparkLinesByName.hasOwnProperty(pointPrefixAttribute)) {
-                return sparkLinesByName[pointPrefixAttribute];
+            if (dataByName.hasOwnProperty(pointPrefixAttribute)) {
+                return dataByName[pointPrefixAttribute];
             } else {
-                return sparkLinesByName[Identifier.clarifyWithPrefixSegment(attributeName, 'edge')];
+                return dataByName[Identifier.clarifyWithPrefixSegment(attributeName, 'edge')];
+            }
+        }
+    },
+    getDataType: function () {
+        const globalStats = this.getGlobalStats();
+        return globalStats && globalStats.dataType;
+    },
+    valueForBinID: function (binId) {
+        const globalStats = this.getGlobalStats();
+        const binValues = globalStats.binValues;
+
+        if (this.getHistogramOrientation() === 'countBy') {
+            const globalBins = globalStats.bins || [];
+            const globalKeys = _.keys(globalBins);
+            const key = globalKeys[binId];
+            let binDescription;
+            if (key === '_other' && binValues && binValues._other) {
+                return undefined;
+            } else if (binValues && binValues[binId]) {
+                binDescription = binValues[binId];
+                if (binDescription.isSingular) {
+                    return binDescription.representative;
+                } else if (binDescription.min !== undefined) {
+                    return [binDescription.min, binDescription.max];
+                } else {
+                    return key;
+                }
+            }
+        } else {
+            if (binValues && binValues[binId]) {
+                const binDescription = binValues[binId];
+                if (binDescription.isSingular) {
+                    return binDescription.representative;
+                } else if (binDescription.min !== undefined) {
+                    return [binDescription.min, binDescription.max];
+                }
+            } else {
+                const start = globalStats.minValue + (globalStats.binWidth * idx);
+                const stop = start + globalStats.binWidth;
+                return [start, stop];
             }
         }
     }
@@ -161,6 +212,7 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
             'click .expandedHistogramButton': 'shrink',
             'click .refreshHistogramButton': 'refresh',
             'click .encode-attribute': 'encode',
+            'mouseover': 'getDescription',
             'dragstart .topMenu': 'dragStart'
         },
 
@@ -184,6 +236,24 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
         render: function () {
             // TODO: Wrap updates into render
             const histogram = this.model;
+
+            const aggregations = histogram.get('aggregations');
+            if (aggregations) {
+                const dataOptions = {placement: 'left', toggle: 'tooltip', html: true};
+                const $attributeName = $('.attributeName', this.$el);
+                $attributeName.data(dataOptions);
+                const descriptionLines = [];
+                _.each(aggregations, (val, key) => {
+                    if (typeof val !== 'object') {
+                        const valFormatted = typeof val === 'string' ?
+                            contentFormatter.shortFormat(val) : contentFormatter.defaultFormat(val);
+                        descriptionLines.push('<tr><td>' + key + '</td><td>' + valFormatted + '</td></tr>');
+                    }
+                });
+                $attributeName.attr('title', '<table>' + descriptionLines.join('') + '</table>');
+                $attributeName.tooltip({container: 'body'});
+                $('[data-toggle="tooltip"]', this.$el).tooltip();
+            }
 
             // TODO: Don't have a 'sparkLines' boolean in the model, but a general vizType field.
             const d3Data = histogram.get('d3Data');
@@ -282,6 +352,19 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
             vizContainer.height(String(vizHeight) + 'px');
             this.model.set('sparkLines', false);
             panel.updateAttribute(attribute, attribute, 'histogram');
+        },
+
+        getDescription: function () {
+            if (this.model.get('aggregations') === undefined) {
+                panel.describeAttribute(this.model.get('attribute')).take(1).do((response) => {
+                    if (response.success) {
+                        this.model.set('aggregations', response.description.aggregations);
+                    } else {
+                        this.model.set('aggregations', undefined);
+                    }
+                    this.refresh();
+                }).subscribe(_.identity, util.makeErrorHandler('Describing attribute from histogram'));
+            }
         },
 
         refresh: function () {
@@ -429,6 +512,20 @@ HistogramsPanel.prototype.updateAttribute = function (delAttr, newAttr, histogra
     });
 };
 
+HistogramsPanel.prototype.highlightElementsMatchingQuery = function (dataframeAttribute, ast) {
+    return this.filtersPanel.control.highlightCommand.sendWithObservableResult({
+        gesture: 'ast',
+        ast: ast,
+        attribute: dataframeAttribute
+    });
+};
+
+HistogramsPanel.prototype.clearHighlight = function () {
+    return this.filtersPanel.control.highlightCommand.sendWithObservableResult({
+        clear: true
+    })
+};
+
 HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, encodingSpec, reset, binning) {
     return this.filtersPanel.control.encodeCommand.sendWithObservableResult({
         attribute: dataframeAttribute,
@@ -438,6 +535,13 @@ HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, encodi
         binning: binning
     });
 };
+
+HistogramsPanel.prototype.describeAttribute = function (dataframeAttribute) {
+    return this.filtersPanel.control.describeCommand.sendWithObservableResult({
+        attribute: dataframeAttribute
+    });
+};
+
 
 HistogramsPanel.prototype.setupApiInteraction = function (apiActions) {
     //FIXME should route all this via Backbone calls, not DOM
@@ -606,7 +710,7 @@ HistogramsPanel.prototype.updateHistogramFiltersFromFiltersSubject = function ()
 function expressionForHistogramFilter (histFilter, filterer, attribute) {
     let query, dataType;
     if (histFilter.start !== undefined || histFilter.stop !== undefined) {
-        query = filterer.filterRangeParameters(
+        query = filterer.queryRangeParameters(
             histFilter.type,
             attribute,
             histFilter.start,
@@ -615,20 +719,20 @@ function expressionForHistogramFilter (histFilter, filterer, attribute) {
     } else if (histFilter.equals !== undefined) {
         if (histFilter.equals.hasOwnProperty('length')) {
             if (histFilter.equals.length > 1) {
-                query = filterer.filterExactValuesParameters(
+                query = filterer.queryExactValuesParameters(
                     histFilter.type,
                     attribute,
                     histFilter.equals
                 );
             } else {
-                query = filterer.filterExactValueParameters(
+                query = filterer.queryExactValueParameters(
                     histFilter.type,
                     attribute,
                     histFilter.equals[0]
                 );
             }
         } else {
-            query = filterer.filterExactValueParameters(
+            query = filterer.queryExactValueParameters(
                 histFilter.type,
                 attribute,
                 histFilter.equals
@@ -709,7 +813,7 @@ function toStackedObject(local, total, idx, name, attr, numLocal, numTotal, dist
     return stackedObj;
 }
 
-function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distribution, limit) {
+function toStackedBins (bins, globalStats, type, attr, numLocal, numTotal, distribution, limit) {
     // Transform bins and global bins into stacked format.
     // Assumes that globalBins is always a superset of bins
     // TODO: Get this in a cleaner, more extensible way
@@ -772,7 +876,7 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
 }
 
 
-HistogramsPanel.prototype.highlight = function (selection, toggle) {
+HistogramsPanel.prototype.highlightHistogram = function (selection, toggle) {
     _.each(selection[0], (sel) => {
         const data = sel.__data__;
         let colorWithoutHighlight = colorsByType;
@@ -797,7 +901,7 @@ HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
     const data = model.get('data');
     const globalStats = model.getHistogramData(attribute);
     const bins = data.bins || []; // Guard against empty bins.
-    const type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
+    const type = model.getHistogramOrientation();
     const d3Data = model.get('d3Data');
     const numBins = (type === 'countBy' ? Math.min(MAX_VERTICAL_ELEMENTS, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
@@ -822,8 +926,8 @@ HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
             .attr('height', barHeight + barPadding)
             .attr('width', width)
             .attr('opacity', Transparent)
-            .on('mouseover', this.toggleTooltips.bind(this, true, svg))
-            .on('mouseout', this.toggleTooltips.bind(this, false, svg));
+            .on('mouseover', this.handleMouseOverHistogramBar.bind(this, true, svg))
+            .on('mouseout', this.handleMouseOverHistogramBar.bind(this, false, svg));
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -853,7 +957,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     const id = model.cid;
     const globalStats = model.getSparkLineData();
     const bins = data.bins || []; // Guard against empty bins.
-    const type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
+    const type = model.getHistogramOrientation();
     const d3Data = model.get('d3Data');
     const numBins = (type === 'countBy' ? Math.min(MAX_HORIZONTAL_ELEMENTS, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
@@ -962,8 +1066,8 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
             .attr('opacity', updateOpacity)
             .style('cursor', updateCursor)
             .on('mousedown', this.handleHistogramDown.bind(this, filterRedrawCallback, id, model.get('globalStats')))
-            .on('mouseover', this.toggleTooltips.bind(this, true, svg))
-            .on('mouseout', this.toggleTooltips.bind(this, false, svg));
+            .on('mouseover', this.handleMouseOverHistogramBar.bind(this, true, svg))
+            .on('mouseout', this.handleMouseOverHistogramBar.bind(this, false, svg));
 
     //////////////////////////////////////////////////////////////////////////
     // Create and Update Bars
@@ -1109,14 +1213,33 @@ HistogramsPanel.prototype.applyAttrBars = function (bars, globalPos, localPos) {
         .style('fill', this.reColor.bind(this));
 };
 
-HistogramsPanel.prototype.toggleTooltips = function (showTooltip, svg) {
+HistogramsPanel.prototype.handleMouseOverHistogramBar = function (isEntering, svg) {
     const col = d3.select(d3.event.target.parentNode);
     const bars = col.selectAll('.bar-rect');
 
     const data = col[0][0].__data__;
 
+    if (isEntering) {
+        const binId = data[0].binId;
+        const attribute = data.attr;
+        /** @type HistogramModel */
+        const histogram = this.histograms.get(attribute);
+        const value = histogram.valueForBinID(binId);
+        const histFilter = {type: undefined, attribute: attribute};
+        if (_.isArray(value)) {
+            histFilter.start = value[0];
+            histFilter.stop = value[1];
+        } else {
+            histFilter.equals = value;
+        }
+        const {query, dataType} = expressionForHistogramFilter(histFilter, this.filtersPanel.control, attribute);
+        this.highlightElementsMatchingQuery(query.attribute, query.ast)
+            .subscribe(_.identity, util.makeErrorHandler('Highlight by histogram bin'));
+    } else {
+        this.clearHighlight();
+    }
     // _.each(bars[0], (child) => {
-    //     if (showTooltip) {
+    //     if (isEntering) {
     //         $(child).tooltip('fixTitle');
     //         $(child).tooltip('show');
     //     } else {
@@ -1130,7 +1253,7 @@ HistogramsPanel.prototype.toggleTooltips = function (showTooltip, svg) {
     const tooltipBox = svg.select('.upperTooltip');
     const globalTooltip = tooltipBox.select('.globalTooltip');
     const localTooltip = tooltipBox.select('.localTooltip');
-    if (showTooltip) {
+    if (isEntering) {
         const hasSelection = local > 0;
         globalTooltip.text('TOTAL: ' + String(global) + (hasSelection ? ', ': ''));
         localTooltip.text(hasSelection ? 'SELECTED: ' + String(local) : '');
@@ -1143,7 +1266,7 @@ HistogramsPanel.prototype.toggleTooltips = function (showTooltip, svg) {
 
 
     const textBox = svg.select('.lowerTooltip');
-    if (showTooltip) {
+    if (isEntering) {
         textBox.text(data.name);
         textBox.attr('opacity', FullOpacity);
     } else {
@@ -1151,7 +1274,7 @@ HistogramsPanel.prototype.toggleTooltips = function (showTooltip, svg) {
         textBox.attr('opacity', Transparent);
     }
 
-    this.highlight(bars, showTooltip);
+    this.highlightHistogram(bars, isEntering);
 };
 
 function heightDelta (d, xScale) {
@@ -1172,9 +1295,9 @@ function initializeHistogramViz ($el, model) {
     const attribute = model.get('attribute');
     const globalStats = model.getHistogramData();
     const bins = data.bins || []; // Guard against empty bins.
-    const type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
+    const type = model.getHistogramOrientation();
     const d3Data = model.get('d3Data');
-    const numBins = (type === 'countBy' ? Math.min(MAX_VERTICAL_ELEMENTS, globalStats.numBins) : globalStats.numBins);
+    const numBins = model.numBins();
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
@@ -1249,7 +1372,7 @@ function initializeSparklineViz ($el, model) {
     const attribute = model.get('attribute');
     const globalStats = model.getSparkLineData();
     const bins = data.bins || []; // Guard against empty bins.
-    const type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
+    const type = model.getHistogramOrientation();
     const d3Data = model.get('d3Data');
     let numBins = globalStats.numBins;
     if (type === 'countBy') {

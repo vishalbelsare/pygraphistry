@@ -11,7 +11,7 @@ const Command = require('./command.js');
 const parser  = require('./expression.pegjs');
 
 
-function filterParametersCore (type, attribute) {
+function queryParametersCore (type, attribute) {
     return {
         type: type,
         attribute: attribute
@@ -31,6 +31,8 @@ function FilterControl (socket) {
     this.encodeCommand = new Command('Encode a column', 'encode_by_column', socket);
 
     this.describeCommand = new Command('Describe a column', 'describe_column', socket);
+
+    this.highlightCommand = new Command('Highlight elements', 'highlight', socket);
 
     /** @type Rx.ReplaySubject */
     this.filtersResponsesSubject = new Rx.ReplaySubject(1);
@@ -96,8 +98,8 @@ FilterControl.prototype.queryFromExpressionString = function (inputString) {
     return result;
 };
 
-FilterControl.prototype.filterRangeParameters = function (type, attribute, start, stop) {
-    return _.extend(filterParametersCore(type, attribute), {
+FilterControl.prototype.queryRangeParameters = function (type, attribute, start, stop) {
+    return _.extend(queryParametersCore(type, attribute), {
         ast: {
             type: 'BetweenPredicate',
             value: {type: 'Identifier', name: attribute},
@@ -107,8 +109,8 @@ FilterControl.prototype.filterRangeParameters = function (type, attribute, start
     });
 };
 
-FilterControl.prototype.filterExactValueParameters = function (type, attribute, value) {
-    return _.extend(filterParametersCore(type, attribute), {
+FilterControl.prototype.queryExactValueParameters = function (type, attribute, value) {
+    return _.extend(queryParametersCore(type, attribute), {
         ast: {
             type: 'BinaryPredicate',
             operator: '=',
@@ -118,8 +120,8 @@ FilterControl.prototype.filterExactValueParameters = function (type, attribute, 
     });
 };
 
-FilterControl.prototype.filterExactValuesParameters = function (type, attribute, values) {
-    return _.extend(filterParametersCore(type, attribute), {
+FilterControl.prototype.queryExactValuesParameters = function (type, attribute, values) {
+    return _.extend(queryParametersCore(type, attribute), {
         ast: {
             type: 'MemberOfExpression',
             operator: 'IN',
