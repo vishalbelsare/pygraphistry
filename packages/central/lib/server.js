@@ -35,6 +35,7 @@ var util        = require('util');
 var _           = require('underscore');
 var Q           = require('q');
 var express     = require('express');
+var exphbs      = require('express-handlebars');
 var io          = require('socket.io-client'); //for etl setup
 var proxy       = require('express-http-proxy');
 var rewrite     = require('express-urlrewrite');
@@ -61,6 +62,7 @@ app.use(compression());
 
 var MAIN_STATIC_PATH    = path.resolve(__dirname, '../assets');
 var GRAPH_STATIC_PATH   = path.resolve(require('graph-viz').staticFilePath(), 'assets');
+var GRAPH_HBS_PATH      = path.resolve(require('graph-viz').staticFilePath(), 'views');
 
 var STREAMGL_DIST_PATH  = require.resolve('StreamGL');
 STREAMGL_DIST_PATH = path.resolve(STREAMGL_DIST_PATH.slice(0, STREAMGL_DIST_PATH.lastIndexOf('/')), 'dist');
@@ -152,7 +154,7 @@ function propagatePostToWorker (route, workerName) {
             try {
                 var who = apiKey.decrypt(req.query.key);
             } catch (err) {
-                logger.error(err, 'Invalid API key for POST');
+                logger.info('Invalid API key for POST, rejecting request');
                 return res.send({success: false, msg: 'Invalid API key'});
             }
         }
@@ -228,6 +230,23 @@ app.use('/model.json', FalcorServer.dataSourceRoute(function(request, response) 
     return new FalcorRouter({ config, logger, request });
 }));
 
+
+// Templated graph.html, e.g., for release tag
+app.engine('.hbs', exphbs({extname: '.hbs'}));
+app.enable('view cache');
+app.set('view engine', 'hbs');
+app.locals.config = {RELEASE: config.RELEASE}; //template variables
+app.set('views', GRAPH_HBS_PATH);
+app.get('/graph/graph.html', function(req, res) {
+  res.render('graph',
+    {helpers: {
+        // passthroughs for dynamic templates at bottom
+        'raw-helper': function (options) { return options.fn(); },
+        'json': function (context) { return JSON.stringify(context); }
+    }});
+});
+
+//app.use('/graph', express.static(GRAPH_HBS_PATH, { fallthrough: true }));
 app.use('/graph', express.static(GRAPH_STATIC_PATH, { fallthrough: true }));
 app.use('/graph', express.static(STREAMGL_DIST_PATH, { fallthrough: true }));
 
