@@ -562,6 +562,18 @@ ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe,
 
 };
 
-
+ComputedColumnManager.prototype.resetLocalBuffer = function (bufferName, dataframe) {
+    if (!bufferName) {
+        return false;
+    }
+    const originalDesc = this.overlayBufferSpecs[bufferName];
+    // Guard against reset being called before an encoding is set
+    if (originalDesc) {
+        this.addComputedColumn(dataframe, 'localBuffer', bufferName, originalDesc);
+        delete this.overlayBufferSpecs[bufferName];
+        return true;
+    }
+    return false;
+};
 
 module.exports = ComputedColumnManager;

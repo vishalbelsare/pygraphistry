@@ -471,6 +471,30 @@ DataframeMask.prototype = {
         }
     },
 
+    /** Calls the iterator for every index possible along with a boolean whether it is in the mask.
+     * @param type
+     * @param numByType
+     * @param iterator
+     */
+    forEachUnderlyingIndexByType: function (type, numByType, iterator) {
+        const mask = this[type];
+        if (mask === undefined) {
+            const allIndexesAreIn = !this.isExclusive;
+            for (let i = 0; i < numByType; i++) {
+                iterator.call(this, i, allIndexesAreIn);
+            }
+        } else {
+            let maskIndex = 0;
+            for (let i = 0; i < numByType; i++) {
+                const isIn = maskIndex < mask.length && mask[maskIndex] === i;
+                if (isIn) {
+                    maskIndex++;
+                }
+                iterator.call(this, i, isIn);
+            }
+        }
+    },
+
     mapIndexesByType: function (type, iterator) {
         const numElements = this.numByType(type);
         const results = new Array(numElements);

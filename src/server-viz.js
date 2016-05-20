@@ -1194,15 +1194,8 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                 }
                 bufferName = encodings.bufferNameForEncodingType(encodingType);
                 if (encodingRequest.reset) {
-                    if (bufferName) {
-                        const originalDesc = ccManager.overlayBufferSpecs[bufferName];
-
-                        // Guard against reset being called before an encoding is set
-                        if (originalDesc) {
-                            ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName, originalDesc);
-                            delete ccManager.overlayBufferSpecs[bufferName];
-                            this.tickGraph(cb);
-                        }
+                    if (ccManager.resetLocalBuffer(bufferName, dataframe)) {
+                        this.tickGraph(cb);
                     }
                     cb({
                         success: true,
@@ -1712,6 +1705,18 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
             const {simulator} = currentGraph, {dataframe} = simulator;
             let qNodeSelection;
             switch (specification.gesture) {
+                case 'clear':
+                    qNodeSelection = Q(currentGraph.dataframe.newEmptyMask());
+                    break;
+                case 'ast': {
+                    const errors = [];
+                    const query = _.pick(specification, ['ast', 'type', 'attribute']);
+                    qNodeSelection = Q(currentGraph.dataframe.getMasksForQuery(query, errors));
+                    if (errors.length > 0) {
+                        throw errors[0];
+                    }
+                    break;
+                }
                 case 'rectangle':
                     qNodeSelection = simulator.selectNodesInRect({sel: _.pick(specification, ['tl', 'br'])});
                     break;
@@ -1765,14 +1770,19 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
         /** @type {SelectionSpecification} specification */
         Rx.Observable.combineLatest(this.graph, this.viewConfig, (currentGraph, viewConfig) => {
             let qNodeSelection;
+            const dataframe = currentGraph.dataframe;
             switch (specification.gesture) {
                 case 'clear':
-                    qNodeSelection = Q(currentGraph.dataframe.newEmptyMask());
+                    qNodeSelection = Q(dataframe.newEmptyMask());
                     break;
                 case 'ast': {
                     const errors = [];
                     const query = _.pick(specification, ['ast', 'type', 'attribute']);
-                    qNodeSelection = Q(currentGraph.dataframe.getMasksForQuery(query, errors));
+                    if (!query.type) {
+                        const columnName = dataframe.normalizeAttributeName(specification.attribute);
+                        _.extend(query, columnName);
+                    }
+                    qNodeSelection = Q(dataframe.getMasksForQuery(query, errors));
                     if (errors.length > 0) {
                         throw errors[0];
                     }
@@ -1794,22 +1804,73 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     throw Error('Unrecognized highlight gesture: ' + specification.gesture.toString());
             }
             const GREEN = 255 << 8;
-            const color = specification.color || GREEN;
+            const highlightColor = specification.color || GREEN;
+            const ccManager = dataframe.computedColumnManager;
             qNodeSelection.then((dataframeMask) => {
-                const {simulator} = currentGraph, {dataframe} = simulator;
-                const bufferName = 'pointColors';
-                if (dataframeMask.isEmpty() && dataframe.canResetLocalBuffer(bufferName)) {
-                    dataframe.resetLocalBuffer(bufferName);
-                } else {
-                    const pointColorsBuffer = dataframe.getLocalBuffer(bufferName);
-                    const highlightedPointColorsBuffer = _.clone(pointColorsBuffer);
-                    dataframeMask.forEachPointIndex((pointIndex) => {
-                        highlightedPointColorsBuffer[pointIndex] = color;
-                    });
+                const GraphComponentTypes = ['point', 'edge'];
+                const bufferNames = _.map(_.filter(GraphComponentTypes, (type) => dataframeMask[type] !== undefined),
+                    (type) => type + 'Colors');
+                const resetByType = _.map(GraphComponentTypes, () => false);
+                GraphComponentTypes.forEach((type, i) => {
+                    if (dataframeMask.isEmptyByType(type)) {
+                        if (ccManager.resetLocalBuffer(type + 'ColorsHighlighted', dataframe)) {
+                            resetByType[i] = true;
+                            this.tickGraph(cb);
+                        }
+                    }
+                });
+                if (_.every(resetByType)) {
+                    cb({success: true});
+                    return;
                 }
-                simulator.tickBuffers([bufferName]);
 
-                animationStep.interact({play: true, layout: false});
+                const oldDescs = _.map(bufferNames,
+                    (bufferName) => ccManager.getComputedColumnSpec('localBuffer', bufferName));
+                if (_.any(oldDescs, (oldDesc) => oldDesc === undefined)) {
+                    cb({
+                        success: false,
+                        error: 'Unable to derive from a base calculation to highlight'
+                    });
+                    return;
+                }
+
+                // If this is the first encoding for a buffer type, store the original
+                // spec so we can recover it.
+                bufferNames.forEach((bufferName, i) => {
+                    if (!ccManager.overlayBufferSpecs[bufferName]) {
+                        ccManager.overlayBufferSpecs[bufferName] = oldDescs[i];
+                    }
+                });
+
+                const descs = _.map(oldDescs, (oldDesc) => oldDesc.clone());
+                descs.forEach((desc, i) => {
+                    desc.setDependencies([[bufferNames[i], 'localBuffer']]);
+                });
+
+                bufferNames.forEach((bufferName, i) => {
+                    const desc = descs[i];
+                    if (bufferName === 'edgeColors') {
+                        desc.setComputeAllValues((values, outArr, numGraphElements) => {
+                            dataframeMask.forEachUnderlyingIndexByType('edge', (edgeIndex, highlighted) => {
+                                const color = highlighted ? highlightColor : 0;
+                                outArr[edgeIndex * 2] = color;
+                                outArr[edgeIndex * 2 + 1] = color;
+                            });
+                            return outArr;
+                        });
+                    } else {
+                        desc.setComputeAllValues((values, outArr, numGraphElements) => {
+                            dataframeMask.forEachUnderlyingIndexByType('point', (pointIndex, highlighted) => {
+                                const color = highlighted ? highlightColor : values[pointIndex];
+                                outArr[pointIndex] = color;
+                            });
+                            return outArr;
+                        });
+                    }
+                    ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName + 'Highlighted', desc);
+                });
+
+                this.tickGraph(cb);
                 cb({success: true});
             });
         }).take(1).subscribe(_.identity,
@@ -1823,11 +1884,12 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
         graph.take(1)
             .do((currentGraph) => {
                 const {simulator} = currentGraph, {dataframe} = simulator;
+                const columnName = 'pointColors';
                 points.forEach((point) => {
-                    dataframe.getLocalBuffer('pointColors')[point.index] = point.color;
+                    dataframe.getLocalBuffer(columnName)[point.index] = point.color;
                     // currentGraph.simulator.buffersLocal.pointColors[point.index] = point.color;
                 });
-                simulator.tickBuffers(['pointColors']);
+                simulator.tickBuffers([columnName]);
 
                 animationStep.interact({play: true, layout: false});
             })
