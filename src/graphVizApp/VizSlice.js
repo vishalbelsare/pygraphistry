@@ -14,27 +14,36 @@ const DimCodes = {
  * @property {String} source - whether from canvas click, etc.
  */
 
+/** @typedef {Object} VizSliceSpec
+ * @property {Mask} point
+ * @property {Mask} edge
+ * @property {VizSliceElement[]} separateItems
+ * @property {VizSliceElement[]} selections
+ */
+
 /**
- * @param {{point: Number[], edge: Number[], selections: VizSliceElement[]}} specification
+ * @param {VizSliceSpec} specification
  * @constructor
  */
 function VizSlice (specification) {
-    if (specification === undefined) { return; }
-    /** @type {ArrayBuffer|Number[]} */
-    this.point = specification.point;
-    /** @type {ArrayBuffer|Number[]} */
-    this.edge = specification.edge;
     if (_.isArray(specification)) {
         this.separateItems = specification;
-    } else if (_.isArray(specification.separateItems)) {
+    } else if (_.isObject(specification)) {
         /** @type {ArrayBuffer|Number[]} */
-        this.separateItems = specification.separateItems;
+        this.point = specification.point;
+        /** @type {ArrayBuffer|Number[]} */
+        this.edge = specification.edge;
+        if (_.isArray(specification.separateItems)) {
+            /** @type {ArrayBuffer|Number[]} */
+            this.separateItems = specification.separateItems;
+        }
     }
 }
 
 /**
- * Modifies the array as a sorted set to toggle the value in/out. Returns the index of the value once effected.
- * @param {Number[]} arrayData
+ * Modifies the array as a sorted set to toggle the value in/out. Returns the index of the value once effected,
+ * along with the array itself (in case a new array had to be instantiated)
+ * @param {Mask} arrayData
  * @param {Number} newValue
  * @returns {Mask?}
  */
@@ -48,30 +57,49 @@ function removeOrAddFromSortedArray (arrayData, newValue) {
         arrayData = Array.prototype.slice.call(arrayData);
     }
 
-    let low = 0,
-        high = arrayData.length - 1,
-        mid;
-    while (low < high) {
-        mid = Math.floor((low + high) / 2);
-        if (arrayData[mid] > newValue) {
-            high = mid - 1;
-        } else if (arrayData[mid] < newValue) {
-            low = mid + 1;
+    const idxInSorted = indexOfInSorted(arrayData, newValue);
+    let idx = -1;
+    if (idxInSorted >= 0) {
+        arrayData.splice(idxInSorted, 1);
+    } else {
+        const idxItShouldBeInArray = indexOfElementAfterInSorted(arrayData, newValue);
+        if (idxItShouldBeInArray < arrayData.length) {
+            arrayData.splice(idxItShouldBeInArray, 0, newValue);
+            idx = idxItShouldBeInArray;
         } else {
-            arrayData.splice(mid, 1);
-            return undefined;
+            arrayData.push(newValue);
+            idx = arrayData.length - 1;
         }
     }
-    arrayData.push(newValue);
 
-    return arrayData;
+    return {
+        idx, values: arrayData
+    };
+}
+
+function indexOfElementAfterInSorted (sortedArray, value) {
+    var low = 0,
+        high = sortedArray.length - 1,
+        mid;
+    while (low <= high) {
+        mid = Math.floor((low + high) / 2);
+        if (sortedArray[mid] > value) {
+            high = mid - 1;
+        } else if (sortedArray[mid] < value) {
+            low = mid + 1;
+        } else {
+            return mid;
+        }
+    }
+
+    return low; // low is now the element after where value should be
 }
 
 function indexOfInSorted (sortedArray, value) {
     let low = 0,
         high = sortedArray.length - 1,
         mid;
-    while (low < high) {
+    while (low <= high) {
         mid = Math.floor((low + high) / 2);
         if (sortedArray[mid] > value) {
             high = mid - 1;
@@ -87,7 +115,7 @@ function indexOfInSorted (sortedArray, value) {
 function removeOrAddFromUnsortedArray (arrayData, newElem, equalityFunc) {
     if (arrayData === undefined) { return [newElem]; }
 
-    // Guard for if the array is arraylike, but not array
+    // Guard for if the array is array-like, but not array
     // This is the case for arguments, as well as typed arrays
     // We do this because we need access to the push() method
     if (arrayData.constructor !== Array) {
@@ -95,17 +123,8 @@ function removeOrAddFromUnsortedArray (arrayData, newElem, equalityFunc) {
     }
 
     const lengthBefore = arrayData.length;
-    let result = arrayData;
-
-    // Remove elements if they exist.
-    result = _.map(result, (elem) => {
-        if (equalityFunc(elem, newElem)) {
-            return null;
-        }
-        return elem;
-    });
-
-    result = result.filter((val) => val !== null);
+    // Remove elements if they exist, while making a copy regardless.
+    const result = arrayData.filter((elem) => !equalityFunc(elem, newElem));
 
     // Add new elements if it didn't exist;
     if (lengthBefore === result.length) {
@@ -240,10 +259,10 @@ VizSlice.prototype = {
         if (this._isMaskShaped()) {
             switch (selection.dim) {
                 case DimCodes.point:
-                    result.point = removeOrAddFromSortedArray(result.point, selection.idx);
+                    result.point = removeOrAddFromSortedArray(result.point, selection.idx).values;
                     break;
                 case DimCodes.edge:
-                    result.edge = removeOrAddFromSortedArray(result.edge, selection.idx);
+                    result.edge = removeOrAddFromSortedArray(result.edge, selection.idx).values;
                     break;
             }
         } else {

@@ -13,7 +13,7 @@ const d3      = require('d3');
 const util    = require('./util.js');
 const Identifier = require('./Identifier');
 const contentFormatter = require('./contentFormatter.js');
-const ExpressionPrinter = require('./ExpressionPrinter.js');
+const ExpressionPrinter = require('./expressionPrinter.js');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -39,7 +39,7 @@ const FilterHistogramBarFillColor = '#556ED4';
 //////////////////////////////////////////////////////////////////////////////
 
 const FullOpacity = 1;
-//const PartialOpacity = 0.5;
+// const PartialOpacity = 0.5;
 const SelectedOpacity = 0.25;
 const Transparent = 0;
 
@@ -97,9 +97,9 @@ const HistogramModel = Backbone.Model.extend({
         }
     },
     getSparkLineData: function () {
-        const sparkLinesByName = this.get('globalStats').sparkLines,
-            attributeName = this.get('attribute'),
-            type = this.get('type');
+        const sparkLinesByName = this.get('globalStats').sparkLines;
+        const attributeName = this.get('attribute');
+        const type = this.get('type');
         if (sparkLinesByName.hasOwnProperty(attributeName)) {
             return sparkLinesByName[attributeName];
         } else if (type !== undefined) {
@@ -120,6 +120,14 @@ const HistogramCollection = Backbone.Collection.extend({
     comparator: 'position'
 });
 
+/** @typedef {Object} HistogramFilterSpec
+ * @property {String} attribute
+ * @property {Number} firstBin
+ * @property {Number} lastBin
+ * @property {Boolean} completed
+ * @property {ClientQueryAST} ast
+ */
+
 /**
  * @param {FiltersPanel} filtersPanel
  * @param {Observable<HistogramChange>} updateAttributeSubject
@@ -129,7 +137,8 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
     this.filtersPanel = filtersPanel;
     // How the model-view communicate back to underlying Rx.
     this.updateAttributeSubject = updateAttributeSubject;
-    /** Histogram-specific/owned filter information, keyed/unique per attribute. */
+    /** Histogram-specific/owned filter information, keyed/unique per attribute.
+     * @type Object.<HistogramFilterSpec> */
     this.histogramFilters = {};
 
     const $histogram = $('#histogram');
@@ -509,9 +518,12 @@ HistogramsPanel.prototype.deleteHistogramFilterByAttribute = function (dataframe
  * This updates histogram filter structures from ASTs.
  * We should maintain only expression objects instead.
  * We should also use structural pattern matching...
+ * @param {HistogramFilterSpec} histFilter
+ * @param {ClientQueryAST} ast
  */
 function updateHistogramFilterFromExpression (histFilter, ast) {
     let op;
+    histFilter.ast = ast;
     histFilter.equals = undefined;
     histFilter.start = undefined;
     histFilter.stop = undefined;
@@ -577,13 +589,56 @@ HistogramsPanel.prototype.updateHistogramFiltersFromFiltersSubject = function ()
             if (query.ast !== undefined) {
                 updateHistogramFilterFromExpression(histFilter, query.ast);
             }
-            _.extend(histFilter, _.pick(query, ['start', 'stop', 'equals']));
+            _.defaults(histFilter, _.pick(query, ['start', 'stop', 'equals']));
         }
     });
     _.each(histogramFiltersToRemove, (histFilter, attribute) => {
         delete this.histogramFilters[attribute];
     });
 };
+
+/**
+ * @param {HistogramSpec} histFilter
+ * @param {FilterControl} filterer
+ * @param {String} attribute
+ * @returns {{query: ClientQueryAST, dataType: String}}
+ */
+function expressionForHistogramFilter (histFilter, filterer, attribute) {
+    let query, dataType;
+    if (histFilter.start !== undefined || histFilter.stop !== undefined) {
+        query = filterer.filterRangeParameters(
+            histFilter.type,
+            attribute,
+            histFilter.start,
+            histFilter.stop);
+        dataType = 'float';
+    } else if (histFilter.equals !== undefined) {
+        if (histFilter.equals.hasOwnProperty('length')) {
+            if (histFilter.equals.length > 1) {
+                query = filterer.filterExactValuesParameters(
+                    histFilter.type,
+                    attribute,
+                    histFilter.equals
+                );
+            } else {
+                query = filterer.filterExactValueParameters(
+                    histFilter.type,
+                    attribute,
+                    histFilter.equals[0]
+                );
+            }
+        } else {
+            query = filterer.filterExactValueParameters(
+                histFilter.type,
+                attribute,
+                histFilter.equals
+            );
+        }
+        // Leave blank until/if we can determine this better?
+        dataType = histFilter.dataType || 'string';
+    }
+    return {query: query, dataType: dataType};
+}
 
 HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
     const filtersCollection = this.filtersPanel.collection;
@@ -592,41 +647,7 @@ HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
         if (!attribute) {
             attribute = histFilter.attribute;
         }
-        let query = {};
-        // Should be histFilter.dataType:
-        let dataType;
-        if (histFilter.start !== undefined || histFilter.stop !== undefined) {
-            query = filterer.filterRangeParameters(
-                histFilter.type,
-                attribute,
-                histFilter.start,
-                histFilter.stop);
-            dataType = 'float';
-        } else if (histFilter.equals !== undefined) {
-            if (histFilter.equals.hasOwnProperty('length')) {
-                if (histFilter.equals.length > 1) {
-                    query = filterer.filterExactValuesParameters(
-                        histFilter.type,
-                        attribute,
-                        histFilter.equals
-                    );
-                } else {
-                    query = filterer.filterExactValueParameters(
-                        histFilter.type,
-                        attribute,
-                        histFilter.equals[0]
-                    );
-                }
-            } else {
-                query = filterer.filterExactValueParameters(
-                    histFilter.type,
-                    attribute,
-                    histFilter.equals
-                );
-            }
-            // Leave blank until/if we can determine this better?
-            dataType = histFilter.dataType || 'string';
-        }
+        const {query, dataType} = expressionForHistogramFilter(histFilter, filterer, attribute);
         if (histFilter.ast !== undefined) {
             query.ast = histFilter.ast;
         }
@@ -703,7 +724,7 @@ function toStackedBins(bins, globalStats, type, attr, numLocal, numTotal, distri
         _.each(_.range(Math.min(globalKeys.length, limit)), (idx) => {
             const key = globalKeys[idx];
             const local = bins[key] || 0;
-            const total = globalBins[key];
+            const total = globalBins[key] || 0;
             let binDescription;
             if (key === '_other' && binValues && binValues._other) {
                 binDescription = binValues._other;
@@ -909,8 +930,8 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
             return 'crosshair';
         }
     };
-    const encodingType = model.get('encodingType'),
-        encodesColor = encodingType !== undefined && encodingType.search(/Color$/) !== -1;
+    const encodingType = model.get('encodingType');
+    const encodesColor = encodingType !== undefined && encodingType.search(/Color$/) !== -1;
     const legend = model.get('legend');
     const updateColumnColor = (d, i) => {
         if (histFilter && i >= histFilter.firstBin && i <= histFilter.lastBin) {
@@ -966,7 +987,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
 
 };
 
-function binInLastFilter(lastHistogramFilter, binNum) {
+function binInLastFilter (lastHistogramFilter, binNum) {
     return (lastHistogramFilter &&
         (lastHistogramFilter.firstBin <= binNum && lastHistogramFilter.lastBin >= binNum));
 }
@@ -1133,7 +1154,7 @@ HistogramsPanel.prototype.toggleTooltips = function (showTooltip, svg) {
     this.highlight(bars, showTooltip);
 };
 
-function heightDelta(d, xScale) {
+function heightDelta (d, xScale) {
     const minimumHeight = 5;
     const height = xScale(d.y0) - xScale(d.y1);
     if (d.val > 0 && d.y0 === 0 && height < minimumHeight) {
@@ -1143,7 +1164,7 @@ function heightDelta(d, xScale) {
     }
 }
 
-function initializeHistogramViz($el, model) {
+function initializeHistogramViz ($el, model) {
     let width = $el.width();
     let height = $el.height(); // TODO: Get this more naturally.
     const data = model.get('data');
@@ -1179,9 +1200,10 @@ function initializeHistogramViz($el, model) {
                 fullTitles[d] = fullTitle;
                 return contentFormatter.shortFormat(stackedBins[d].name, globalStats.dataType);
             } else {
-                fullTitle = contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType);
+                var value = d * globalStats.binWidth + globalStats.minValue;
+                fullTitle = contentFormatter.defaultFormat(value, globalStats.dataType);
                 fullTitles[d] = fullTitle;
-                return contentFormatter.defaultFormat(d * globalStats.binWidth + globalStats.minValue, globalStats.dataType);
+                return contentFormatter.defaultFormat(value, globalStats.dataType);
             }
         });
 
@@ -1220,7 +1242,7 @@ function initializeHistogramViz($el, model) {
     });
 }
 
-function initializeSparklineViz($el, model) {
+function initializeSparklineViz ($el, model) {
     let width = $el.width();
     let height = $el.height();
     const data = model.get('data');
@@ -1229,7 +1251,11 @@ function initializeSparklineViz($el, model) {
     const bins = data.bins || []; // Guard against empty bins.
     const type = (data.type && data.type !== 'nodata') ? data.type : globalStats.type;
     const d3Data = model.get('d3Data');
-    const numBins = (type === 'countBy' ? Math.min(MAX_HORIZONTAL_ELEMENTS, globalStats.numBins) : globalStats.numBins);
+    let numBins = globalStats.numBins;
+    if (type === 'countBy') {
+        const numValues = globalStats.binValues ? globalStats.binValues.length : 0;
+        numBins = Math.min(MAX_HORIZONTAL_ELEMENTS, Math.max(globalStats.numBins, numValues));
+    }
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
@@ -1260,7 +1286,8 @@ function setupBinScale (type, size, globalNumBins) {
     } else {
         return d3.scale.linear()
             .range([0, size])
-            .domain([0, globalNumBins]);
+            .domain([0, globalNumBins])
+            .clamp(true);
     }
 }
 
@@ -1271,8 +1298,9 @@ function setupAmountScale (size, stackedBins, distribution) {
     }
 
     return d3.scale.linear()
-            .range([size, 0])
-            .domain([0, domainMax]);
+        .range([size, 0])
+        .domain([0, domainMax])
+        .clamp(true);
 }
 
 function setupSvg (el, margin, width, height) {
@@ -1291,7 +1319,7 @@ function setupSvg (el, margin, width, height) {
 //////////////////////////////////////////////////////////////////////////////
 
 function isBinValueRange (binValue) {
-    return binValue.min !== undefined && binValue.min !== binValue.max &&
+    return binValue !== undefined && binValue.min !== undefined && binValue.min !== binValue.max &&
         (binValue.min !== binValue.representative || binValue.max !== binValue.representative);
 }
 
@@ -1338,7 +1366,6 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                 continue;
             }
             const binValue = stats.binValues && stats.binValues[binName];
-            if (!binValue) { continue; }
             if (isBinValueRange(binValue)) {
                 if (binRanges.length === 0) {
                     binRanges.push({min: binValue.min, max: binValue.max, bins: [i]});
@@ -1350,7 +1377,7 @@ HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute,
                     }
                 }
             } else {
-                if (binValue.representative !== undefined) {
+                if (binValue && binValue.representative !== undefined) {
                     binName = binValue.representative;
                 }
                 binValues.push(isNumeric ? Number(binName) : binName);

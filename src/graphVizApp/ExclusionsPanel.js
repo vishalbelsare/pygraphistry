@@ -1,18 +1,17 @@
 'use strict';
 
-var $       = window.$;
-var _       = require('underscore');
-var Rx      = require('rxjs/Rx.KitchenSink');
-              require('../rx-jquery-stub');
-var Handlebars = require('handlebars');
-var Backbone = require('backbone');
-    Backbone.$ = $;
-//var Ace     = require('brace');
-var FilterControl       = require('./FilterControl.js');
-var QuerySelectionModel = require('./QuerySelectionModel.js');
-var ExpressionEditor    = require('./expressionEditor.js');
-var ExpressionPrinter   = require('./ExpressionPrinter.js');
-var util          = require('./util.js');
+const $       = window.$;
+const _       = require('underscore');
+const Rx      = require('rxjs/Rx.KitchenSink');
+                require('../rx-jquery-stub');
+const Handlebars = require('handlebars');
+const Backbone = require('backbone');
+      Backbone.$ = $;
+const FilterControl       = require('./FilterControl.js');
+const QuerySelectionModel = require('./QuerySelectionModel.js');
+const ExpressionEditor    = require('./expressionEditor.js');
+const ExpressionPrinter   = require('./expressionPrinter.js');
+const util          = require('./util.js');
 
 
 const COLLAPSED_EXCLUSION_HEIGHT = 80;
@@ -25,7 +24,7 @@ const ExclusionCollection = Backbone.Collection.extend({
     model: ExclusionModel,
     control: undefined,
     namespaceMetadata: undefined,
-    addExclusion: function(attributes) {
+    addExclusion: function (attributes) {
         if (!attributes.title) {
             attributes.title = attributes.attribute;
         }
@@ -136,7 +135,7 @@ const ExclusionView = Backbone.View.extend({
             this.editor.session.setAnnotations([annotation]);
         }
     },
-    delete: function (/*event*/) {
+    delete: function (/* event */) {
         this.$el.remove();
         this.collection.remove(this.model);
     },
@@ -208,7 +207,7 @@ const AllExclusionsView = Backbone.View.extend({
             $el.remove();
         }
     },
-    addExclusionFromButton: function (/*evt*/) {
+    addExclusionFromButton: function (/* evt */) {
         this.collection.addExclusion({});
     },
     remove: function () {
@@ -226,7 +225,7 @@ Handlebars.registerHelper('json', (context) => JSON.stringify(context));
 
 
 function ExclusionsPanel (socket, control, labelRequests) {
-    //const $button = $('#exclusionButton');
+    // const $button = $('#exclusionButton');
 
     if (control === undefined) {
         control = new FilterControl(socket);
@@ -258,7 +257,7 @@ function ExclusionsPanel (socket, control, labelRequests) {
     /** Exposes changes to the ExclusionCollection. */
     this.exclusionsSubject = new Rx.ReplaySubject(1);
     // Seed with a fresh exclusions list. Should come from persisted state.
-    this.collection.on('change reset add remove', (/*model, options*/) => {
+    this.collection.on('change reset add remove', (/* model, options */) => {
         this.exclusionsSubject.onNext(this.collection);
     });
 

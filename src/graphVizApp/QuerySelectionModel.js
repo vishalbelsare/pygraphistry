@@ -2,7 +2,7 @@
 
 const _ = require('underscore');
 const Backbone = require('backbone');
-const ExpressionPrinter = require('./ExpressionPrinter.js');
+const ExpressionPrinter = require('./expressionPrinter.js');
 
 const QuerySelectionModel = Backbone.Model.extend({
     defaults: {

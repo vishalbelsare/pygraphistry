@@ -1,30 +1,42 @@
 'use strict';
 
 const _ = require('underscore');
-const Identifier = require('./Identifier.js');
 
 function ExpressionPrinter () {
 }
 
-ExpressionPrinter.printedExpressionOf = function (value) {
-    if (typeof value === 'string') {
+/**
+ * @param value
+ * @param {String} dataType
+ * @returns {String}
+ */
+ExpressionPrinter.printedExpressionOf = function (value, dataType = typeof value) {
+    if (dataType === 'string') {
         return JSON.stringify(value);
-    } else if (typeof value === 'number') {
-        return value.toString(10);
-    } else if (typeof value === 'undefined' || value === null) {
+    } else if (dataType === 'number') {
+        if (typeof value === 'string') { // it was serialized to avoid JSON limitations
+            return value;
+        } else {
+            return value.toString(10);
+        }
+    } else if (dataType === 'boolean') {
+        return value.toString().toUpperCase();
+    } else if (value === undefined || value === null) {
         return 'NULL';
     } else if (Array.isArray(value)) {
         return '(' + _.map(value, (each) => this.printedExpressionOf(each)).join(', ') + ')';
     } else {
-        return '<unknown>';
+        return JSON.stringify(value);
     }
 };
 
+/**
+ * @param {ClientQueryAST} ast
+ * @returns {String}
+ */
 ExpressionPrinter.printAST = function (ast) {
-    if (typeof ast === 'Array') {
-        return _.map(ast, (eachAST) => this.printAST(eachAST));
-    }
-    let properties;
+    if (ast === undefined) { return ''; }
+    let properties, elements;
     switch (ast.type) {
         case 'BetweenPredicate':
             properties = _.mapObject(_.pick(ast, ['start', 'stop', 'value']), (propAST) => this.printAST(propAST));
@@ -42,61 +54,55 @@ ExpressionPrinter.printAST = function (ast) {
             } else { // if (ast.fixity === 'prefix') {
                 return ast.operator + ' ' + properties.argument;
             }
-        // case 'CaseExpression':
-        //     properties = _.mapObject(_.pick(ast, ['value', 'cases', 'elseClause']), (propAST) => this.printAST(propAST));
-        // case 'ConditionalExpression':
-        //     properties = _.mapObject(_.pick(ast, ['cases', 'elseClause']), (propAST) => this.printAST(propAST));
-        // case 'CaseBranch':
-        //     properties = _.mapObject(_.pick(ast, ['condition', 'result']), (propAST) => this.printAST(propAST));
-        // case 'MemberAccess':
-        //     properties = _.mapObject(_.pick(ast, ['object', 'property']), (propAST) => this.printAST(propAST));
+        case 'CaseBranch':
+            properties = _.mapObject(_.pick(ast, ['condition', 'result']), (propAST) => this.printAST(propAST));
+            return [properties.condition, 'THEN', properties.result].join(' ');
+        case 'CaseExpression':
+            properties = _.mapObject(_.pick(ast, ['value', 'elseClause']), (propAST) => this.printAST(propAST));
+            elements = _.map(ast.cases, (caseAST) => 'WHEN ' + this.printAST(caseAST));
+            return (['CASE', properties.value]
+                .concat(elements)
+                .concat(ast.elseClause ? ['ELSE', properties.elseClause, 'END'] : ['END'])).join(' ');
+        case 'ConditionalExpression':
+            properties = _.mapObject(_.pick(ast, ['elseClause']), (propAST) => this.printAST(propAST));
+            elements = _.map(ast.cases, (caseAST) => 'IF ' + this.printAST(caseAST));
+            return elements.join(' ELSE ') +
+                (ast.elseClause ? [' ELSE', properties.elseClause, 'END'] : [' END']).join(' ');
+        case 'MemberAccess':
+            properties = _.mapObject(_.pick(ast, ['object', 'property']), (propAST) => this.printAST(propAST));
+            return [properties.object, '[', properties.property, ']'].join('');
         case 'CastExpression':
             properties = _.mapObject(_.pick(ast, ['value']), (propAST) => this.printAST(propAST));
             return ['CAST', properties.value, 'AS', ast.type_name].join(' ');
         case 'NotExpression':
             properties = _.mapObject(_.pick(ast, ['value']), (propAST) => this.printAST(propAST));
-            return [ast.operator, properties.value].join(' ');
+            return ast.operator + ' ' + properties.value;
         case 'ListExpression':
-            properties = _.mapObject(_.pick(ast, ['elements']), (propAST) => this.printAST(propAST));
-            return '(' + properties.elements.join(', ') + ')';
-        // case 'FunctionCall':
-        //     properties = _.mapObject(_.pick(ast, ['arguments']), (propAST) => this.printAST(propAST));
+            elements = _.map(ast.elements, (propAST) => this.printAST(propAST));
+            return '(' + elements.join(', ') + ')';
+        case 'FunctionCall':
+            elements = _.map(ast.arguments, (propAST) => this.printAST(propAST));
+            return ast.callee.name + '(' + elements.join(', ') + ')';
         case 'Literal':
-            return JSON.stringify(ast.value);
+            return this.printedExpressionOf(ast.value, ast.dataType);
         case 'Identifier':
             return ast.name;
+        case 'LimitExpression':
+            return 'LIMIT ' + this.printAST(ast.value);
         default:
-            throw new Error('Unrecognized type: ' + ast.type);
+            throw new Error('Unhandled type: ' + ast.type);
     }
 };
 
 ExpressionPrinter.print = function (query) {
-    if (!query) { return undefined; }
-    if (query.inputString) {
+    if (query === undefined) {
+        return undefined;
+    } else if (query.inputString) {
         return query.inputString;
-    }
-    if (query.ast) {
+    } else if (query.ast) {
         return this.printAST(query.ast);
-    }
-    let attribute = query.attribute;
-    if (!attribute) {
-        attribute = '<unknown>';
-    }
-    attribute = Identifier.clarifyWithPrefixSegment(attribute, query.type);
-    const printedAttribute = Identifier.identifierToExpression(attribute);
-    if (query.start !== undefined && query.stop !== undefined) {
-        return printedAttribute + ' BETWEEN ' + this.printedExpressionOf(query.start) +
-            ' AND ' + this.printedExpressionOf(query.stop);
-    } else if (query.start !== undefined) {
-        return printedAttribute + ' >= ' + this.printedExpressionOf(query.start);
-    } else if (query.stop !== undefined) {
-        return this.printedExpressionOf(query.stop) + ' <= ' + printedAttribute;
-    } else if (query.equals !== undefined) {
-        if (Array.isArray(query.equals) && query.equals.length > 1) {
-            return printedAttribute + ' IN ' + this.printedExpressionOf(query.equals);
-        } else {
-            return printedAttribute + ' = ' + this.printedExpressionOf(query.equals);
-        }
+    } else {
+        return undefined;
     }
 };
 

@@ -264,6 +264,22 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         }
     });
 
+    // Setup resize handler, which tells renderer to resize textures
+    // and the scheduler to rerun picking/populate textures. Split into fast/slow tasks
+    const resizes = Rx.Observable.fromEvent(window, 'resize').share();
+
+    resizes.debounceTime(100).delay(50)
+        .do(() => {
+            renderer.resizeCanvas(renderState);
+        }).subscribe(_.identity, util.makeErrorHandler('resize fast handler'));
+
+    resizes.debounceTime(500)
+        .do(() => {
+            // TODO: We really only need to refresh picking and fullscreen cached texture
+            this.renderScene('resizeRerender', {
+                trigger: 'renderSceneFull'
+            });
+        }).subscribe(_.identity, util.makeErrorHandler('resize slow handler'));
 
     /*
      * Helpers to start/stop the rendering loop within an animation frame. The rendering loop
