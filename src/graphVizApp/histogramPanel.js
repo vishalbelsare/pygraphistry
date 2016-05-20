@@ -231,6 +231,11 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
             const html = this.template(params);
             this.$el.html(html);
             this.$el.attr('cid', this.cid);
+
+            // Setup window resize handler. Not doable directly through backbone,
+            // so will be done via jquery (and must be removed in the histogram remove method);
+            this.jqueryResizeHandler = this.resizeHandler.bind(this);
+            $(window).bind('resize', this.jqueryResizeHandler);
         },
 
         render: function () {
@@ -367,6 +372,24 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
             }
         },
 
+        deleteVizElements: function () {
+            // Remove cached D3 elements
+            const vizContainer = this.model.get('vizContainer');
+            const d3Data = this.model.get('d3Data');
+            d3Data.svg.selectAll('*').remove();
+            vizContainer.empty();
+
+            // Set them to undefined so render will recreate
+            this.model.set('d3Data', undefined);
+            this.model.set('vizContainer', undefined);
+        },
+
+        resizeHandler: function () {
+            // TODO: Debounce this if it becomes sluggish
+            this.deleteVizElements();
+            this.render();
+        },
+
         refresh: function () {
             const attribute = this.model.get('attribute');
             const id = this.model.cid;
@@ -380,6 +403,10 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
             if (panel.histogramFilters[this.model.get('attribute')]) {
                 this.refresh();
             }
+
+            // Remove handler for window resize
+            $(window).unbind('resize', this.jqueryResizeHandler);
+
             this.$el.remove();
             panel.histograms.remove(this.model);
         }
