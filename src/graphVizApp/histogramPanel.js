@@ -905,6 +905,16 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     //////////////////////////////////////////////////////////////////////////
 
     // TODO: Is there a better/cleaner way to create fixed elements in D3?
+    svg.selectAll('.lowerTooltipBg')
+        .data([''])
+        .enter().append('rect')
+        .attr('class', 'lowerTooltipBg')
+        .attr('y', height)
+        .attr('x', 0)
+        .attr('width', '0em')
+        .attr('height', '0em')
+        .attr('fill', 'white')
+        .attr('opacity', Transparent);
     svg.selectAll('.lowerTooltip')
         .data([''])
         .enter().append('text')
@@ -1170,12 +1180,21 @@ HistogramsPanel.prototype.toggleTooltips = function (showTooltip, svg) {
 
 
     const textBox = svg.select('.lowerTooltip');
+    const textBoxBg = svg.select('.lowerTooltipBg');
     if (showTooltip) {
         textBox.text(data.name);
         textBox.attr('opacity', FullOpacity);
+        textBoxBg
+            .attr('opacity', FullOpacity)
+            .attr('height', '1em')
+            .attr('width', textBox.node().getComputedTextLength());
     } else {
         textBox.text('');
         textBox.attr('opacity', Transparent);
+        textBoxBg
+            .attr('opacity', Transparent)
+            .attr('height', '0em')
+            .attr('width', '0em');
     }
 
     this.highlight(bars, showTooltip);
