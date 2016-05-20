@@ -539,7 +539,10 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
 
     this.setupColorTexture();
 
-    Version(this.socket, socketLogger);
+    this.socket.on('get_version', (ignore, cb) => {
+        socketLogger.info('get_version');
+        cb({success: true, versions: Version.all});
+    });
 
     this.socket.on('get_sharing_config', (ignore, cb) => {
         var decision = config.S3UPLOADS ? true : false;
