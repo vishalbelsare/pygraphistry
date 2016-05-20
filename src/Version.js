@@ -1,27 +1,32 @@
 'use strict';
 
-// Socket route get_version returns the server version
-// Use config's ARTIFACT_TAG attribute, and if not available, graph-viz's package ver
-// Assumes started via npm start
+// Print version numbers on startup & provide for other uses
+//   artifact -- docker/jenkin's image id, via config (and thus docker)
+//   release -- user-friendly name, via config (and thus docker)
+//   build -- source code version; via viz-server package version
 
 const config      = require('config')();
 const log         = require('common/logger.js');
 const logger      = log.createLogger('graph-viz', 'graph-viz/Version.js');
 
+class Version {
 
-const versions = {
-    artifact: config.ARTIFACT,
-    release: config.RELEASE,
-    build: process.env.npm_package_version // e.g., viz-server
-};
-logger.info(versions);
+    static get artifact () { return config.ARTIFACT; }
 
+    static get build () { return process.env.npm_package_version; }
 
-function Version (socket, socketLogger) {
-    socket.on('get_version', (ignore, cb) => {
-        socketLogger.info('get_version');
-        cb({success: true, versions: versions});
-    });
+    static get release () { return config.RELEASE; }
+
+    static get all () {
+        return Object.freeze({
+            artifact: Version.artifact,
+            build: Version.build,
+            release: Version.release
+        });
+    }
+
 }
+
+logger.info(Version.all);
 
 module.exports = Version;
