@@ -99,6 +99,8 @@ var TimeBarView = Backbone.View.extend({
                     minLines: 1,
                     maxLines: 1
                 });
+                this.editor.editor.getSession().setUseWrapMode(false);
+
 
                 // HACK Make ace ignore new-lines. It does not appear to naturally support this,
                 // so using technique from http://stackoverflow.com/a/32315686
