@@ -169,6 +169,8 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             // $('#timeFilterSliderRow').css('visibility', 'visible');
 
             this.userBarsView.$el.removeClass('hidden');
+            $('[data-toggle="tooltip"]', this.$el).tooltip();
+
         },
 
         setupMouseInteractions: function () {
