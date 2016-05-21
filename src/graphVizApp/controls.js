@@ -779,7 +779,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
 
 
-    const $tooltips = $('[data-toggle="tooltip"]');
+    const $tooltips = $('#controlState [data-toggle="tooltip"]');
     const $bolt = $graph.find('.fa');
     const $center = $('#center');
     const $shrinkToFit = $center.find('.fa');

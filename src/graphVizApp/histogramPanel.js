@@ -179,6 +179,11 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
             const html = this.template(params);
             this.$el.html(html);
             this.$el.attr('cid', this.cid);
+
+            // Setup window resize handler. Not doable directly through backbone,
+            // so will be done via jquery (and must be removed in the histogram remove method);
+            this.jqueryResizeHandler = this.resizeHandler.bind(this);
+            $(window).bind('resize', this.jqueryResizeHandler);
         },
 
         render: function () {
@@ -284,6 +289,24 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
             panel.updateAttribute(attribute, attribute, 'histogram');
         },
 
+        deleteVizElements: function () {
+            // Remove cached D3 elements
+            const vizContainer = this.model.get('vizContainer');
+            const d3Data = this.model.get('d3Data');
+            d3Data.svg.selectAll('*').remove();
+            vizContainer.empty();
+
+            // Set them to undefined so render will recreate
+            this.model.set('d3Data', undefined);
+            this.model.set('vizContainer', undefined);
+        },
+
+        resizeHandler: function () {
+            // TODO: Debounce this if it becomes sluggish
+            this.deleteVizElements();
+            this.render();
+        },
+
         refresh: function () {
             const attribute = this.model.get('attribute');
             const id = this.model.cid;
@@ -297,6 +320,10 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
             if (panel.histogramFilters[this.model.get('attribute')]) {
                 this.refresh();
             }
+
+            // Remove handler for window resize
+            $(window).unbind('resize', this.jqueryResizeHandler);
+
             this.$el.remove();
             panel.histograms.remove(this.model);
         }
@@ -878,6 +905,16 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     //////////////////////////////////////////////////////////////////////////
 
     // TODO: Is there a better/cleaner way to create fixed elements in D3?
+    svg.selectAll('.lowerTooltipBg')
+        .data([''])
+        .enter().append('rect')
+        .attr('class', 'lowerTooltipBg')
+        .attr('y', height)
+        .attr('x', 0)
+        .attr('width', '0em')
+        .attr('height', '0em')
+        .attr('fill', 'white')
+        .attr('opacity', Transparent);
     svg.selectAll('.lowerTooltip')
         .data([''])
         .enter().append('text')
@@ -1143,12 +1180,21 @@ HistogramsPanel.prototype.toggleTooltips = function (showTooltip, svg) {
 
 
     const textBox = svg.select('.lowerTooltip');
+    const textBoxBg = svg.select('.lowerTooltipBg');
     if (showTooltip) {
         textBox.text(data.name);
         textBox.attr('opacity', FullOpacity);
+        textBoxBg
+            .attr('opacity', FullOpacity)
+            .attr('height', '1em')
+            .attr('width', textBox.node().getComputedTextLength());
     } else {
         textBox.text('');
         textBox.attr('opacity', Transparent);
+        textBoxBg
+            .attr('opacity', Transparent)
+            .attr('height', '0em')
+            .attr('width', '0em');
     }
 
     this.highlight(bars, showTooltip);

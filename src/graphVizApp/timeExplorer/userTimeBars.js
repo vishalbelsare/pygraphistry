@@ -78,6 +78,8 @@ var UserBarsView = Backbone.View.extend({
         });
 
         this.$el.attr('cid', this.cid);
+        $('[data-toggle="tooltip"]', this.$el).tooltip();
+
     },
 
     handleMouseWheel: function (evt) {

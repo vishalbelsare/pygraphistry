@@ -465,6 +465,10 @@ function setupErrorReporters (urlParams) {
             $.post(reportURL, msg);
         }));
     });
+
+    const msg = makeMsg('info', 30);
+    msg.msg = 'StreamGL downloaded';
+    $.post(reportURL, msg);
 }
 
 window.addEventListener('load', () => {
