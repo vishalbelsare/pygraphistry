@@ -666,7 +666,7 @@ function togglePanel ($panelButton, maybe$panel, newVisibility) {
 function setupPanelControl (toolbarClicks, $panelButton, maybe$panel, errorLogLabel) {
 
     //TODO falcor
-    const panelToggles = Rx.Observable.merge(
+    return Rx.Observable.merge(
 
             //toggle on self-click
             toolbarClicks.filter((elt) => elt === $panelButton[0]).map(() => {
@@ -679,12 +679,11 @@ function setupPanelControl (toolbarClicks, $panelButton, maybe$panel, errorLogLa
                 .filter((elt) => $(elt).attr('data-toggle-group')
                         && $panelButton.attr('data-toggle-group')
                         && $(elt).attr('data-toggle-group') === $panelButton.attr('data-toggle-group'))
-                .map(() => { return false }));
-
-    panelToggles.do((newVisibility) => {
-        togglePanel($panelButton, maybe$panel, newVisibility);
-    }).subscribe(_.identity, util.makeErrorHandler(errorLogLabel));
-    return panelToggles;
+                .map(() => { return false }))
+        .do((newVisibility) => {
+            togglePanel($panelButton, maybe$panel, newVisibility);
+        })
+        .share();
 }
 
 function setupCameraApi (appState) {
@@ -715,15 +714,12 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     let marqueeIsOn = false;
     const $viewSelectionButton = $('#viewSelectionButton');
 
-    const marqueeOnObservable =
-        popoutClicks.filter((elt) => {
-            return elt === $viewSelectionButton[0];
-        })
-        .do(() => {
-            marqueeIsOn = !marqueeIsOn;
-            toggleButton($viewSelectionButton, marqueeIsOn);
-            appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
-        }).map(() => marqueeIsOn).share();
+
+    const marqueeOnObservable = setupPanelControl(popoutClicks, $('#viewSelectionButton'), null,
+        'Turning on/off the spatial selection');
+    marqueeOnObservable
+        .map((marqueeIsOn) => { return marqueeIsOn ? ' toggled' : false; })
+        .subscribe(appState.marqueeOn, util.makeErrorHandler('notify spatial selection changed'));
 
 
     //TODO abstract, & normalize button/panel names
@@ -748,34 +744,13 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     setupPanelControl(popoutClicks, $('#layoutSettingsButton'), $('#renderingItems'),
         'Turning on/off layout settings');
 
+    const turnOnBrush = setupPanelControl(popoutClicks, $('#brushButton'), null,
+        'Turning on/off the histogram brush');
 
-    // TODO refactor this to subscribe to a setupPanelControl, where:
-    //   -- send 'toggled'  instead of true to appState.brushOn
-    //   -- merge in $graph clicks handling (unclear how); or simplify that logic
-    let brushIsOn = false;
-    const turnOnBrush = new Rx.Subject();
-    popoutClicks
-        .merge(
-            Rx.Observable.fromEvent($graph, 'click')
-            .map(_.constant($graph[0])))
-        .map((elt) => {
-            const $brushButton = $('#brushButton');
-            if (elt === $brushButton[0]) {
-                toggleButton($(elt));
-                brushIsOn = !brushIsOn;
-            } else if (brushIsOn &&
-                    (elt === $viewSelectionButton[0] || elt === $graph[0])) {
-                brushIsOn = false;
-                toggleButton($brushButton, false);
-            }
-            if (brushIsOn) {
-                appState.brushOn.onNext('toggled');
-            } else {
-                appState.brushOn.onNext(false);
-            }
-            turnOnBrush.onNext(brushIsOn);
-        }).subscribe(_.identity, util.makeErrorHandler('brush toggle'));
-
+    //TODO do on every click instead? weird
+    turnOnBrush
+        .map((s) => { return s ? 'toggled' : false})
+        .subscribe(appState.brushOn, util.makeErrorHandler('brush toggle'));
 
 
 
