@@ -465,7 +465,7 @@ function createControlHeader ($anchor, name) {
 }
 
 
-function createControls (socket, appState, trigger, urlParams) {
+function createControls (socket, appState, urlParams) {
     const getControlsCommand = new Command('Get layout controls', 'layout_controls', socket);
     const rxControls = getControlsCommand.sendWithObservableResult(null)
         .map((res) => {
@@ -480,7 +480,8 @@ function createControls (socket, appState, trigger, urlParams) {
     const $renderingItems = $('#renderingItems');
     const $anchor = $renderingItems.children('.form-horizontal');
 
-    $renderingItems.css({'display': 'block', 'left': '100%'});
+    //start open offscreen for bootstrap insanity
+    $renderingItems.css({'left': '100%'}).toggleClass('open', true);
 
     Rx.Observable.combineLatest(rxControls, appState.viewConfigChanges, (controls, viewConfig) => {
         const parameters = viewConfig.parameters;
@@ -489,7 +490,7 @@ function createControls (socket, appState, trigger, urlParams) {
 
         //workaround: https://github.com/nostalgiaz/bootstrap-switch/issues/446
         setTimeout(() => {
-            $('#renderingItems').css({'display': 'none', 'left': '5em'});
+            $('#renderingItems').css({'left': '5em'}).toggleClass('open', false);
         }, 2000);
 
         //APPEARANCE
@@ -648,33 +649,41 @@ function toggleButton ($panelButton, newEnableValue) {
 }
 
 
-function togglePanel ($panelButton, $panel, newVisibility) {
+function togglePanel ($panelButton, maybe$panel, newVisibility) {
+    //TODO falcor
     toggleButton($panelButton, newVisibility);
-    $panel.toggle(newVisibility);
-    $panel.css('visibility', newVisibility ? 'visible': 'hidden');
+    if (maybe$panel) {
+        maybe$panel.toggleClass('open', newVisibility);
+    }
 }
 
 
-//Observable DOM * $DOM * $DOM * String -> Observable Bool
-//When toolbarClicks is $panelButton,
+//Observable DOM * $DOM * ?$DOM * String -> Observable Bool
+//When toolbarClicks is $panelButton or has same data-toggle-group attr,
 // toggle $panelButton and potentially show $panel,
 // else toggle off $panelButton and hide $panel
 //Return toggle status stream
-function setupPanelControl (toolbarClicks, $panelButton, $panel, errorLogLabel) {
-    let neverOpened = true;
-    const panelToggles = toolbarClicks.filter((elt) => elt === $panelButton[0]).map(() => {
-        // HACK Make sure the first click always opens even if technically :visible already for D3/etc.
-        if (neverOpened) {
-            neverOpened = false;
-            return true;
-        }
-        // return the target state (boolean negate)
-        return !$panel.is(':visible');
-    });
-    panelToggles.do((newVisibility) => {
-        togglePanel($panelButton, $panel, newVisibility);
-    }).subscribe(_.identity, util.makeErrorHandler(errorLogLabel));
-    return panelToggles;
+function setupPanelControl (toolbarClicks, $panelButton, maybe$panel, errorLogLabel) {
+
+    //TODO falcor
+    return Rx.Observable.merge(
+
+            //toggle on self-click
+            toolbarClicks.filter((elt) => elt === $panelButton[0]).map(() => {
+                return !$panelButton.find('i').hasClass('toggle-on');
+            }),
+
+            //disable on same-toggle-group click
+            toolbarClicks
+                .filter((elt) => elt != $panelButton[0])
+                .filter((elt) => $(elt).attr('data-toggle-group')
+                        && $panelButton.attr('data-toggle-group')
+                        && $(elt).attr('data-toggle-group') === $panelButton.attr('data-toggle-group'))
+                .map(() => { return false }))
+        .do((newVisibility) => {
+            togglePanel($panelButton, maybe$panel, newVisibility);
+        })
+        .share();
 }
 
 function setupCameraApi (appState) {
@@ -705,67 +714,45 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     let marqueeIsOn = false;
     const $viewSelectionButton = $('#viewSelectionButton');
 
-    const marqueeOnObservable =
-        popoutClicks.filter((elt) => {
-            return elt === $viewSelectionButton[0];
-        })
-        .do(() => {
-            marqueeIsOn = !marqueeIsOn;
-            toggleButton($viewSelectionButton, marqueeIsOn);
-            appState.marqueeOn.onNext(marqueeIsOn ? 'toggled' : false);
-        }).map(() => marqueeIsOn).share();
 
+    const marqueeOnObservable = setupPanelControl(popoutClicks, $('#viewSelectionButton'), null,
+        'Turning on/off the spatial selection');
+    marqueeOnObservable
+        .map((marqueeIsOn) => { return marqueeIsOn ? ' toggled' : false; })
+        .subscribe(appState.marqueeOn, util.makeErrorHandler('notify spatial selection changed'));
+
+
+    //TODO abstract, & normalize button/panel names
     const histogramPanelToggle = setupPanelControl(popoutClicks, $('#histogramPanelControl'), $('#histogram.panel'),
         'Turning on/off the histogram panel');
-    let dataInspectorIsVisible = false;
-    const dataInspectorOnSubject = new Rx.Subject();
-    const $dataInspectorButton = $('#dataInspectorButton');
-    dataInspectorOnSubject.onNext(false);
-    popoutClicks.filter((elt) => elt === $dataInspectorButton[0]).do(() => {
-        dataInspectorIsVisible = !dataInspectorIsVisible;
-        dataInspectorOnSubject.onNext(dataInspectorIsVisible);
-        toggleButton($dataInspectorButton, dataInspectorIsVisible);
-        $('#inspector').css('visibility', dataInspectorIsVisible ? 'visible' : 'hidden');
-    }).subscribe(_.identity, util.makeErrorHandler('dataInspector visibility toggle'));
 
-    // Visibility for time explorer
-    const $timeExplorerButton = $('#timeExplorerButton');
-    let timeExplorerIsVisible = false;
-    popoutClicks.filter((elt) => elt === $timeExplorerButton[0]).do(() => {
-        timeExplorerIsVisible = !timeExplorerIsVisible;
-        toggleButton($timeExplorerButton, timeExplorerIsVisible);
-        $('#timeExplorer').css('visibility', timeExplorerIsVisible ? 'visible' : 'hidden');
-    }).subscribe(_.identity, util.makeErrorHandler('timeExplorer visibility toggle'));
+    const dataInspectorOn = setupPanelControl(popoutClicks, $('#dataInspectorButton'), $('#inspector'),
+        'Turning on/off the data inspector panel');
+
+    setupPanelControl(popoutClicks, $('#timeExplorerButton'), $('#timeExplorer'),
+        'Turning on/off the time panel');
+
+    setupPanelControl(popoutClicks, $('#exclusionButton'), $('#exclusionsPanel'),
+        'Turning on/off the exclusions panel');
+
+    setupPanelControl(popoutClicks, $('#filterButton'), $('#filtersPanel'),
+        'Turning on/off the exclusions panel');
+
+    setupPanelControl(popoutClicks, $('#setsPanelButton'), $('#setsPanel'),
+        'Turning on/off the exclusions panel');
+
+    setupPanelControl(popoutClicks, $('#layoutSettingsButton'), $('#renderingItems'),
+        'Turning on/off layout settings');
+
+    const turnOnBrush = setupPanelControl(popoutClicks, $('#brushButton'), null,
+        'Turning on/off the histogram brush');
+
+    //TODO do on every click instead? weird
+    turnOnBrush
+        .map((s) => { return s ? 'toggled' : false})
+        .subscribe(appState.brushOn, util.makeErrorHandler('brush toggle'));
 
 
-    // histogram brush:
-    let brushIsOn = false;
-    // Use separate subject so downstream subscribers don't trigger control changes twice.
-    // TODO: Figure out the correct pattern for this.
-    const turnOnBrush = new Rx.Subject();
-    popoutClicks
-        .merge(
-            Rx.Observable.fromEvent($graph, 'click')
-            .map(_.constant($graph[0])))
-        .map((elt) => {
-            const $brushButton = $('#brushButton');
-            if (elt === $brushButton[0]) {
-                toggleButton($(elt));
-                brushIsOn = !brushIsOn;
-            } else if (brushIsOn &&
-                    (elt === $viewSelectionButton[0] || elt === $graph[0])) {
-                brushIsOn = false;
-                toggleButton($brushButton, false);
-            }
-            if (brushIsOn) {
-                appState.brushOn.onNext('toggled');
-            } else {
-                appState.brushOn.onNext(false);
-            }
-            turnOnBrush.onNext(brushIsOn);
-        }).subscribe(_.identity, util.makeErrorHandler('brush toggle'));
-
-    setupPanelControl(popoutClicks, $('#layoutSettingsButton'),  $('#renderingItems'), 'Turning on/off settings');
 
     const $tooltips = $('#controlState [data-toggle="tooltip"]');
     const $bolt = $graph.find('.fa');
@@ -803,9 +790,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     const marquee = setupSelectionMarquee(appState, marqueeOnObservable);
     const brush = setupBrush(appState, turnOnBrush);
     const filtersPanel = new FiltersPanel(socket, appState.labelRequests, appState.settingsChanges);
-    filtersPanel.setupToggleControl(popoutClicks, $('#filterButton'), $('#exclusionButton'));
     const exclusionsPanel = new ExclusionsPanel(socket, filtersPanel.control, appState.labelRequests);
-    exclusionsPanel.setupToggleControl(popoutClicks, $('#exclusionButton'), $('#filterButton'));
     const filtersResponses = filtersPanel.control.filtersResponsesSubject;
     const histogramBrush = new HistogramBrush(socket, filtersPanel, readyForHistograms);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
@@ -814,14 +799,13 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     turnOnBrush.first((value) => value === true).do(() => {
         togglePanel($('#histogramPanelControl'), $('#histogram.panel'), true);
     }).subscribe(_.identity, util.makeErrorHandler('Enabling the histogram on first brush use.'));
-    dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle, filtersResponses, dataInspectorOnSubject);
+    dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle, filtersResponses, dataInspectorOn);
     forkVgraph(socket, urlParams);
     persist.setupPersistLayoutButton($('#persistButton'), appState, socket, urlParams);
     persist.setupPersistWorkbookButton($('#persistWorkbookButton'), appState, socket, urlParams);
     goLiveButton(socket, urlParams);
     const setsPanel = new SetsPanel(socket, appState.labelRequests);
     setsPanel.setupFiltersPanelInteraction(filtersPanel);
-    setsPanel.setupToggleControl(popoutClicks, $('#setsPanelButton'));
     setsPanel.setupSelectionInteraction(appState.activeSelection, appState.latestHighlightedObject);
 
     /*const timeExplorer = */new TimeExplorer(socket, $('#timeExplorer'), filtersPanel);
@@ -829,9 +813,6 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     createControls(
         socket,
         appState,
-        popoutClicks
-            .filter((elt) => elt === $('#layoutSettingsButton')[0])
-            .take(1),
         urlParams);
 
     //tick stream until canceled/timed out (ends with finalCenter)

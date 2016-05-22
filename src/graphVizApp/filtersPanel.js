@@ -405,24 +405,6 @@ FiltersPanel.prototype.toggleVisibility = function (newVisibility) {
     $panel.css('visibility', newVisibility ? 'visible': 'hidden');
 };
 
-FiltersPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButton, $resetElements) {
-    const panelToggles = toolbarClicks.filter((elt) => elt === $panelButton[0] || $resetElements.find(elt)
-    ).map((elt) => {
-        // return the target state (boolean negate)
-        if (elt === $panelButton[0]) {
-            return !this.isVisible();
-        } else if ($resetElements.find(elt)) {
-            return false;
-        } else {
-            return false;
-        }
-    });
-    this.togglesSubscription = panelToggles.do((newVisibility) => {
-        $panelButton.children('i').toggleClass('toggle-on', newVisibility);
-        this.toggleVisibility(newVisibility);
-    }).subscribe(_.identity, util.makeErrorHandler('Turning on/off the filter panel'));
-};
-
 FiltersPanel.prototype.dispose = function () {
     this.filtersSubject.dispose();
     this.togglesSubscription.dispose();

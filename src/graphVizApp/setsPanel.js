@@ -548,15 +548,6 @@ SetsPanel.prototype = {
         $panel.css('visibility', newVisibility ? 'visible' : 'hidden');
     },
 
-    setupToggleControl: function (toolbarClicks, $panelButton) {
-        // return the target state (boolean negate)
-        const panelToggles = toolbarClicks.filter((elt) => elt === $panelButton[0]).map(() => !this.isVisible());
-        this.togglesSubscription = panelToggles.do((newVisibility) => {
-            $panelButton.children('i').toggleClass('toggle-on', newVisibility);
-            this.toggleVisibility(newVisibility);
-        }).subscribe(_.identity, util.makeErrorHandler('Turning on/off the sets panel'));
-    },
-
     dispose: function () {
         this.togglesSubscription.dispose();
     },
