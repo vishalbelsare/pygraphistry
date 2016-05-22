@@ -754,7 +754,7 @@ function expressionForHistogramFilter (histFilter, filterer, attribute) {
             histFilter.stop);
         dataType = 'float';
     } else if (histFilter.equals !== undefined) {
-        if (histFilter.equals.hasOwnProperty('length')) {
+        if (_.isArray(histFilter.equals)) {
             if (histFilter.equals.length > 1) {
                 query = filterer.queryExactValuesParameters(
                     histFilter.type,
@@ -777,6 +777,17 @@ function expressionForHistogramFilter (histFilter, filterer, attribute) {
         }
         // Leave blank until/if we can determine this better?
         dataType = histFilter.dataType || 'string';
+    } else if (histFilter.isOtherThan !== undefined) {
+        query = filterer.queryExactValuesParameters(
+            histFilter.type,
+            attribute,
+            histFilter.isOtherThan
+        );
+        query.ast = {
+            type: 'NotExpression',
+            operator: 'NOT',
+            value: query.ast
+        };
     }
     return {query: query, dataType: dataType};
 }
