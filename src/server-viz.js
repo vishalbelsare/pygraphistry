@@ -1803,9 +1803,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                 default:
                     throw Error('Unrecognized highlight gesture: ' + specification.gesture.toString());
             }
-            const GREEN = 255 << 8;
-            const highlightColor = specification.color || GREEN;
             const ccManager = dataframe.computedColumnManager;
+            const highlightSuffix = 'Highlights';
             qNodeSelection.then((dataframeMask) => {
                 const GraphComponentTypes = ['point', 'edge'];
                 const bufferNames = _.map(_.filter(GraphComponentTypes, (type) => dataframeMask[type] !== undefined),
@@ -1813,7 +1812,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                 const resetByType = _.map(GraphComponentTypes, () => false);
                 GraphComponentTypes.forEach((type, i) => {
                     if (dataframeMask.isEmptyByType(type)) {
-                        if (ccManager.resetLocalBuffer(type + 'ColorsHighlighted', dataframe)) {
+                        const bufferName = type + 'Colors';
+                        if (ccManager.resetLocalBuffer(bufferName + highlightSuffix, dataframe)) {
                             resetByType[i] = true;
                             this.tickGraph(cb);
                         }
@@ -1826,7 +1826,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
 
                 const oldDescs = _.map(bufferNames,
                     (bufferName) => ccManager.getComputedColumnSpec('localBuffer', bufferName));
-                if (_.any(oldDescs, (oldDesc) => oldDesc === undefined)) {
+                if (!_.every(oldDescs)) {
                     cb({
                         success: false,
                         error: 'Unable to derive from a base calculation to highlight'
@@ -1851,23 +1851,23 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     const desc = descs[i];
                     if (bufferName === 'edgeColors') {
                         desc.setComputeAllValues((values, outArr, numGraphElements) => {
-                            dataframeMask.forEachUnderlyingIndexByType('edge', (edgeIndex, highlighted) => {
-                                const color = highlighted ? highlightColor : 0;
-                                outArr[edgeIndex * 2] = color;
-                                outArr[edgeIndex * 2 + 1] = color;
-                            });
+                            dataframeMask.forEachUnderlyingIndexByType('edge', numGraphElements,
+                                (edgeIndex, highlighted) => {
+                                    outArr[edgeIndex * 2] = highlighted;
+                                    outArr[edgeIndex * 2 + 1] = highlighted;
+                                });
                             return outArr;
                         });
                     } else {
                         desc.setComputeAllValues((values, outArr, numGraphElements) => {
-                            dataframeMask.forEachUnderlyingIndexByType('point', (pointIndex, highlighted) => {
-                                const color = highlighted ? highlightColor : values[pointIndex];
-                                outArr[pointIndex] = color;
+                            dataframeMask.forEachUnderlyingIndexByType('point', numGraphElements,
+                                (pointIndex, highlighted) => {
+                                outArr[pointIndex] = highlighted;
                             });
                             return outArr;
                         });
                     }
-                    ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName + 'Highlighted', desc);
+                    ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName + highlightSuffix, desc);
                 });
 
                 this.tickGraph(cb);
