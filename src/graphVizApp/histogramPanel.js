@@ -1286,16 +1286,25 @@ HistogramsPanel.prototype.handleMouseOverHistogramBar = function (isEntering, sv
         const value = histogram.valueForBinID(binId);
         const histFilter = {type: undefined, attribute: attribute};
         if (_.isArray(value)) {
-            histFilter.start = value[0];
-            histFilter.stop = value[1];
+            [histFilter.start, histFilter.stop] = value;
+        } else if (_.isObject(value)) {
+            // _other
+            histFilter.isOtherThan = value.isOtherThan;
         } else {
             histFilter.equals = value;
         }
         const {query, dataType} = expressionForHistogramFilter(histFilter, this.filtersPanel.control, attribute);
-        this.highlightElementsMatchingQuery(query.attribute, query.ast)
-            .subscribe(_.identity, util.makeErrorHandler('Highlight by histogram bin'));
+        this.highlightElementsMatchingQuery(query.attribute, query.ast).do((response) => {
+            if (response.success && response.highlightMask) {
+                this.latestHighlightedObject.onNext(new VizSlice(response.highlightMask));
+            }
+        }).subscribe(_.identity, util.makeErrorHandler('Highlight by histogram bin'));
     } else {
-        this.clearHighlight();
+        this.clearHighlight().do((response) => {
+            if (response.success && response.highlightMask) {
+                this.latestHighlightedObject.onNext(new VizSlice(response.highlightMask));
+            }
+        }).subscribe(_.identity, util.makeErrorHandler('Clearing the highlight'));
     }
     // _.each(bars[0], (child) => {
     //     if (isEntering) {
