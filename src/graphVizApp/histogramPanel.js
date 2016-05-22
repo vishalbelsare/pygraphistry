@@ -120,6 +120,16 @@ const HistogramCollection = Backbone.Collection.extend({
     comparator: 'position'
 });
 
+/**
+ * @param {DOM} $el
+ * @returns {Number}
+*/
+//startup is width-less (unattached), so sub in best guess
+function elWidth ($el) {
+    var base = $el.width();
+    return base > 0 ? base : Math.round($(document).width() * 0.15 - 9);
+}
+
 /** @typedef {Object} HistogramFilterSpec
  * @property {String} attribute
  * @property {Number} firstBin
@@ -874,7 +884,8 @@ HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
 
 
 HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
-    const width = $el.width() - histogramMarginsHorizontal.left - histogramMarginsHorizontal.right;
+
+    const width = elWidth($el) - histogramMarginsHorizontal.left - histogramMarginsHorizontal.right;
     const height = $el.height() - histogramMarginsHorizontal.top - histogramMarginsHorizontal.bottom;
     const data = model.get('data');
     const id = model.cid;
@@ -1211,7 +1222,7 @@ function heightDelta (d, xScale) {
 }
 
 function initializeHistogramViz ($el, model) {
-    let width = $el.width();
+    let width = elWidth($el);
     let height = $el.height(); // TODO: Get this more naturally.
     const data = model.get('data');
     const id = model.cid;
@@ -1289,7 +1300,7 @@ function initializeHistogramViz ($el, model) {
 }
 
 function initializeSparklineViz ($el, model) {
-    let width = $el.width();
+    let width = elWidth($el);
     let height = $el.height();
     const data = model.get('data');
     const attribute = model.get('attribute');
