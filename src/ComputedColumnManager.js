@@ -425,12 +425,12 @@ ComputedColumnManager.prototype.loadEncodingColumns = function () {
 //////////////////////////////////////////////////////////////////////////////
 
 /**
- * @param {GraphComponentTypes} columnType
+ * @param {BufferTypeKeys} columnType
  * @param {String} columnName
  * @returns {ComputedColumnSpec}
  */
 ComputedColumnManager.prototype.getComputedColumnSpec = function (columnType, columnName) {
-    return this.activeComputedColumns[columnType][columnName];
+    return this.activeComputedColumns[columnType] && this.activeComputedColumns[columnType][columnName];
 };
 
 ComputedColumnManager.prototype.getActiveColumns = function () {
@@ -442,7 +442,7 @@ ComputedColumnManager.prototype.getColumnVersion = function (columnType, columnN
 };
 
 ComputedColumnManager.prototype.hasColumn = function (columnType, columnName) {
-    return this.activeComputedColumns[columnType] && this.activeComputedColumns[columnType][columnName];
+    return this.getComputedColumnSpec(columnType, columnName) !== undefined;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -562,6 +562,18 @@ ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe,
 
 };
 
-
+ComputedColumnManager.prototype.resetLocalBuffer = function (bufferName, dataframe) {
+    if (!bufferName) {
+        return false;
+    }
+    const originalDesc = this.overlayBufferSpecs[bufferName];
+    // Guard against reset being called before an encoding is set
+    if (originalDesc) {
+        this.addComputedColumn(dataframe, 'localBuffer', bufferName, originalDesc);
+        delete this.overlayBufferSpecs[bufferName];
+        return true;
+    }
+    return false;
+};
 
 module.exports = ComputedColumnManager;

@@ -260,7 +260,7 @@ DataframeMask.diffMask = function (x, y) {
     return result;
 };
 
-const OmittedProperties = ['dataframe'];
+const NonSerializableProperties = ['dataframe'];
 
 
 DataframeMask.prototype = {
@@ -471,6 +471,30 @@ DataframeMask.prototype = {
         }
     },
 
+    /** Calls the iterator for every index possible along with a boolean whether it is in the mask.
+     * @param type
+     * @param numByType
+     * @param iterator
+     */
+    forEachUnderlyingIndexByType: function (type, numByType, iterator) {
+        const mask = this[type];
+        if (mask === undefined) {
+            const allIndexesAreIn = !this.isExclusive;
+            for (let i = 0; i < numByType; i++) {
+                iterator.call(this, i, allIndexesAreIn);
+            }
+        } else {
+            let maskIndex = 0;
+            for (let i = 0; i < numByType; i++) {
+                const isIn = maskIndex < mask.length && mask[maskIndex] === i;
+                if (isIn) {
+                    maskIndex++;
+                }
+                iterator.call(this, i, isIn);
+            }
+        }
+    },
+
     mapIndexesByType: function (type, iterator) {
         const numElements = this.numByType(type);
         const results = new Array(numElements);
@@ -503,7 +527,7 @@ DataframeMask.prototype = {
     },
 
     toString: function () {
-        return JSON.stringify(_.omit(this, OmittedProperties), null, 4);
+        return JSON.stringify(_.omit(this, NonSerializableProperties), null, 4);
     },
 
     typedIndexesForType: function (type) {
@@ -544,7 +568,7 @@ DataframeMask.prototype = {
      * @param {DataframeMask} basisMask
      */
     toJSON: function (basisMask) {
-        const result = _.omit(this, OmittedProperties);
+        const result = _.omit(this, NonSerializableProperties);
         _.each(GraphComponentTypes, (componentType) => {
             let componentMask = result[componentType];
             if (basisMask) {

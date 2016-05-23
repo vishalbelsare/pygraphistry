@@ -25,7 +25,7 @@ const dataTypeUtil = require('./dataTypes.js');
 
 /**
  * @typedef {Binning} BinningResult
- * @property {String} type 'histogram' or 'countBy'
+ * @property {String} type binning strategy of 'histogram' or 'countBy'
  * @property {Number} numValues
  * @property {Object} bins
  * @property {Object.<String, BinDescription>} binValues

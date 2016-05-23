@@ -75,6 +75,7 @@ const InputPropertiesByShape = {
     CaseBranch: ['condition', 'result'],
     UnaryExpression: ['argument'],
     MemberAccess: ['object', 'property'],
+    MemberOfExpression: ['value'],
     NotExpression: ['value'],
     ListExpression: ['elements'],
     FunctionCall: ['arguments']
@@ -381,6 +382,60 @@ ExpressionCodeGenerator.prototype = {
         return localized;
     },
 
+    guardExpressionsForType: function (nativeType, identifier) {
+        const guards = [];
+        switch (nativeType) {
+            case 'float':
+            case 'double':
+                guards.push({
+                    type: 'BinaryPredicate',
+                    operator: '=',
+                    left: identifier,
+                    right: {type: 'Literal', dataType: 'number', value: NaN}
+                });
+                break;
+            case 'integer':
+                guards.push({
+                    type: 'BinaryPredicate',
+                    operator: '=',
+                    left: identifier,
+                    right: {type: 'Literal', dataType: 'integer', value: 0x7FFFFFFF}
+                });
+                break;
+            case 'number':
+                // TODO distinguish float/double from integer.
+                guards.push({
+                    type: 'BinaryPredicate',
+                    operator: 'IS',
+                    left: identifier,
+                    right: {type: 'Literal', dataType: 'number', value: NaN}
+                });
+                guards.push({
+                    type: 'BinaryPredicate',
+                    operator: '=',
+                    left: identifier,
+                    right: {type: 'Literal', dataType: 'integer', value: 0x7FFFFFFF}
+                });
+                break;
+            case 'string':
+                guards.push({
+                    type: 'BinaryPredicate',
+                    operator: '=',
+                    left: identifier,
+                    right: {type: 'Literal', dataType: 'string', value: '\0'}
+                });
+                // TODO retire 'n/a'
+                guards.push({
+                    type: 'BinaryPredicate',
+                    operator: '=',
+                    left: identifier,
+                    right: {type: 'Literal', dataType: 'string', value: 'n/a'}
+                });
+                break;
+        }
+        return guards;
+    },
+
     /**
      * Wraps the AST in clauses that check for values signifying undefined, for k-partite / partitioned domains.
      * @param {ClientQueryAST} ast
@@ -394,55 +449,9 @@ ExpressionCodeGenerator.prototype = {
             _.each(attributeData, (attributeName) => {
                 const nativeType = dataframe.getDataType(attributeName.attribute, attributeName.type),
                     identifier = {type: 'Identifier', name: attributeName.type + ':' + attributeName.attribute};
-                switch (nativeType) {
-                    case 'float':
-                    case 'double':
-                        guards.push({
-                            type: 'BinaryPredicate',
-                            operator: '=',
-                            left: identifier,
-                            right: {type: 'Literal', dataType: 'number', value: NaN}
-                        });
-                        break;
-                    case 'integer':
-                        guards.push({
-                            type: 'BinaryPredicate',
-                            operator: '=',
-                            left: identifier,
-                            right: {type: 'Literal', dataType: 'integer', value: 0x7FFFFFFF}
-                        });
-                        break;
-                    case 'number':
-                        // TODO distinguish float/double from integer.
-                        guards.push({
-                            type: 'BinaryPredicate',
-                            operator: 'IS',
-                            left: identifier,
-                            right: {type: 'Literal', dataType: 'number', value: NaN}
-                        });
-                        guards.push({
-                            type: 'BinaryPredicate',
-                            operator: '=',
-                            left: identifier,
-                            right: {type: 'Literal', dataType: 'integer', value: 0x7FFFFFFF}
-                        });
-                        break;
-                    case 'string':
-                        guards.push({
-                            type: 'BinaryPredicate',
-                            operator: '=',
-                            left: identifier,
-                            right: {type: 'Literal', dataType: 'string', value: '\0'}
-                        });
-                        // TODO retire 'n/a'
-                        guards.push({
-                            type: 'BinaryPredicate',
-                            operator: '=',
-                            left: identifier,
-                            right: {type: 'Literal', dataType: 'string', value: 'n/a'}
-                        });
-                        break;
-                }
+                _.each(this.guardExpressionsForType(nativeType, identifier), (guard) => {
+                    guards.push(guard);
+                });
             });
             return _.reduce(guards, (memo, guard) => {
                 return {
@@ -483,7 +492,7 @@ ExpressionCodeGenerator.prototype = {
         if (matches.length === 0) {
             return escapeRegexNonPattern(pattern);
         }
-        for (var i = 0; i < matches.length; i++) {
+        for (let i = 0; i < matches.length; i++) {
             match = matches[i];
             const patternSegment = pattern.substring(lastMatchIndex, match.index);
             // Avoid adding regex chars unquoted or numbers!
@@ -550,7 +559,7 @@ ExpressionCodeGenerator.prototype = {
         } else {
             resultStr += this.expressionStringForAST(elseClause, bindings, depth, precedence);
         }
-        for (var i=0; i<cases.length; i++) {
+        for (let i=0; i<cases.length; i++) {
             resultStr += ')';
         }
         return resultStr;
@@ -582,6 +591,8 @@ ExpressionCodeGenerator.prototype = {
                 return InputPropertiesByShape.CaseBranch;
             case 'MemberAccess':
                 return InputPropertiesByShape.MemberAccess;
+            case 'MemberOfExpression':
+                return InputPropertiesByShape.MemberOfExpression;
             case 'CastExpression':
             case 'NotExpression':
                 return InputPropertiesByShape.NotExpression;
@@ -781,6 +792,16 @@ ExpressionCodeGenerator.prototype = {
                     precedence = this.precedenceOf(operator);
                     arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
                     subExprString = [arg, operator, 'null'].join(' ');
+                } else if (operator === 'DEFINED') {
+                    operator = '!==';
+                    precedence = this.precedenceOf(operator);
+                    arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
+                    subExprString = [arg, operator, 'undefined'].join(' ');
+                } else if (operator === 'UNDEFINED') {
+                    operator = '===';
+                    precedence = this.precedenceOf(operator);
+                    arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
+                    subExprString = [arg, operator, 'undefined'].join(' ');
                 } else {
                     operator = this.translateOperator(operator);
                     precedence = this.precedenceOf(operator, ast.fixity);

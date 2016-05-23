@@ -55,6 +55,7 @@ const config      = require('config')();
 const ExpressionCodeGenerator = require('./expressionCodeGenerator');
 const RenderNull  = require('./RenderNull.js');
 const NBody = require('./NBody.js');
+const ComputedColumnSpec = require('./ComputedColumnSpec.js');
 
 const log         = require('common/logger.js');
 const logger      = log.createLogger('graph-viz', 'graph-viz/viz-server.js');
@@ -1194,15 +1195,8 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
                 }
                 bufferName = encodings.bufferNameForEncodingType(encodingType);
                 if (encodingRequest.reset) {
-                    if (bufferName) {
-                        const originalDesc = ccManager.overlayBufferSpecs[bufferName];
-
-                        // Guard against reset being called before an encoding is set
-                        if (originalDesc) {
-                            ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName, originalDesc);
-                            delete ccManager.overlayBufferSpecs[bufferName];
-                            this.tickGraph(cb);
-                        }
+                    if (ccManager.resetLocalBuffer(bufferName, dataframe)) {
+                        this.tickGraph(cb);
                     }
                     cb({
                         success: true,
@@ -1712,6 +1706,18 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
             const {simulator} = currentGraph, {dataframe} = simulator;
             let qNodeSelection;
             switch (specification.gesture) {
+                case 'clear':
+                    qNodeSelection = Q(currentGraph.dataframe.newEmptyMask());
+                    break;
+                case 'ast': {
+                    const errors = [];
+                    const query = _.pick(specification, ['ast', 'type', 'attribute']);
+                    qNodeSelection = Q(currentGraph.dataframe.getMasksForQuery(query, errors, false));
+                    if (errors.length > 0) {
+                        throw errors[0];
+                    }
+                    break;
+                }
                 case 'rectangle':
                     qNodeSelection = simulator.selectNodesInRect({sel: _.pick(specification, ['tl', 'br'])});
                     break;
@@ -1761,27 +1767,26 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
             });
     });
 
-    this.socket.on('highlight', (specification, cb) => {
+    this.socket.on('computeMask', (specification, cb) => {
         /** @type {SelectionSpecification} specification */
         Rx.Observable.combineLatest(this.graph, this.viewConfig, (currentGraph, viewConfig) => {
             let qNodeSelection;
+            const dataframe = currentGraph.dataframe;
+            specification.basedOnCurrentDataframe = true;
             switch (specification.gesture) {
-                case 'clear':
-                    qNodeSelection = Q(currentGraph.dataframe.newEmptyMask());
-                    break;
                 case 'ast': {
                     const errors = [];
-                    const query = _.pick(specification, ['ast', 'type', 'attribute']);
-                    qNodeSelection = Q(currentGraph.dataframe.getMasksForQuery(query, errors));
+                    const query = _.pick(specification, ['ast', 'type', 'attribute', 'basedOnCurrentDataframe']);
+                    if (!query.type) {
+                        const columnName = dataframe.normalizeAttributeName(specification.attribute);
+                        _.extend(query, columnName);
+                    }
+                    qNodeSelection = Q(dataframe.getMasksForQuery(query, errors, false));
                     if (errors.length > 0) {
                         throw errors[0];
                     }
                     break;
                 }
-                case 'masks':
-                    // TODO FIXME translate masks to unfiltered indexes.
-                    qNodeSelection = Q(specification.masks);
-                    break;
                 case 'sets': {
                     const matchingSets = _.filter(viewConfig.sets,
                         (vizSet) => specification.setIDs.indexOf(vizSet.id) !== -1);
@@ -1793,24 +1798,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                 default:
                     throw Error('Unrecognized highlight gesture: ' + specification.gesture.toString());
             }
-            const GREEN = 255 << 8;
-            const color = specification.color || GREEN;
             qNodeSelection.then((dataframeMask) => {
-                const {simulator} = currentGraph, {dataframe} = simulator;
-                const bufferName = 'pointColors';
-                if (dataframeMask.isEmpty() && dataframe.canResetLocalBuffer(bufferName)) {
-                    dataframe.resetLocalBuffer(bufferName);
-                } else {
-                    const pointColorsBuffer = dataframe.getLocalBuffer(bufferName);
-                    const highlightedPointColorsBuffer = _.clone(pointColorsBuffer);
-                    dataframeMask.forEachPointIndex((pointIndex) => {
-                        highlightedPointColorsBuffer[pointIndex] = color;
-                    });
-                }
-                simulator.tickBuffers([bufferName]);
-
-                animationStep.interact({play: true, layout: false});
-                cb({success: true});
+                cb({success: true, computedMask: dataframeMask.toJSON()});
             });
         }).take(1).subscribe(_.identity,
             (err) => {
@@ -1823,11 +1812,12 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
         graph.take(1)
             .do((currentGraph) => {
                 const {simulator} = currentGraph, {dataframe} = simulator;
+                const columnName = 'pointColors';
                 points.forEach((point) => {
-                    dataframe.getLocalBuffer('pointColors')[point.index] = point.color;
+                    dataframe.getLocalBuffer(columnName)[point.index] = point.color;
                     // currentGraph.simulator.buffersLocal.pointColors[point.index] = point.color;
                 });
-                simulator.tickBuffers(['pointColors']);
+                simulator.tickBuffers([columnName]);
 
                 animationStep.interact({play: true, layout: false});
             })

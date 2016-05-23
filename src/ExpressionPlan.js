@@ -79,10 +79,11 @@ LocalBindings.prototype = {
  * @param {Object.<ColumnName>} attributeData
  * @constructor
  */
-function PlanNode (ast, inputNodes = [], attributeData = {}) {
+function PlanNode (ast, inputNodes = [], attributeData = {}, guardNulls = true) {
     this.ast = ast;
     this.inputNodes = inputNodes;
     this.attributeData = attributeData;
+    this.guardNulls = guardNulls;
     this.inferBindings();
 }
 
@@ -109,7 +110,9 @@ PlanNode.prototype = {
      * @param {Dataframe} dataframe
      */
     compile: function (generator, dataframe) {
-        this.ast = generator.transformASTForNullGuards(this.ast, this.attributeData, dataframe);
+        if (this.guardNulls) {
+            this.ast = generator.transformASTForNullGuards(this.ast, this.attributeData, dataframe);
+        }
         if (this.isConstant()) {
             this.executor = undefined;
         } else if (this.canRunOnOneColumn()) {
@@ -323,10 +326,10 @@ PlanNode.prototype = {
  * @param {ClientQueryAST} ast
  * @constructor
  */
-function ExpressionPlan (dataframe, ast) {
+function ExpressionPlan (dataframe, ast, guardNulls = true) {
     this.codeGenerator = new ExpressionCodeGenerator();
     /** @type PlanNode */
-    this.rootNode = this.planFromAST(ast, dataframe);
+    this.rootNode = this.planFromAST(ast, dataframe, guardNulls);
     /** @type Dataframe */
     this.dataframe = dataframe;
     this.compile();
@@ -353,7 +356,7 @@ ExpressionPlan.prototype = {
      * @param {Dataframe} dataframe - Normalizes attributes.
      * @return {PlanNode}
      */
-    planFromAST: function (ast, dataframe) {
+    planFromAST: function (ast, dataframe, guardNulls = true) {
         const inputProperties = this.codeGenerator.inputPropertiesFromAST(ast);
         if (inputProperties === undefined) {
             switch (ast.type) {
@@ -363,7 +366,7 @@ ExpressionPlan.prototype = {
                     if (attributeName !== undefined) {
                         attributeData[attributeName.attribute] = attributeName;
                     }
-                    return new PlanNode(ast, undefined, attributeData);
+                    return new PlanNode(ast, undefined, attributeData, guardNulls);
                 }
                 case 'Literal':
                     return new PlanNode(ast);
@@ -373,12 +376,12 @@ ExpressionPlan.prototype = {
         }
         const inputResults = _.mapObject(_.pick(ast, inputProperties), (inputAST) => {
             if (_.isArray(inputAST)) {
-                return _.map(inputAST, (eachAST) => this.planFromAST(eachAST, dataframe));
+                return _.map(inputAST, (eachAST) => this.planFromAST(eachAST, dataframe, guardNulls));
             } else {
-                return this.planFromAST(inputAST, dataframe);
+                return this.planFromAST(inputAST, dataframe, guardNulls);
             }
         });
-        return new PlanNode(ast, inputResults);
+        return new PlanNode(ast, inputResults, undefined, guardNulls);
     }
 };
 
