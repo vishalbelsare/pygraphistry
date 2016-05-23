@@ -5,6 +5,38 @@ const _ = require('underscore');
 function ExpressionPrinter () {
 }
 
+ExpressionPrinter.equals = function (left, right) {
+    return {type: 'EqualityPredicate', operator: '=', left, right};
+};
+
+ExpressionPrinter.not = function (value) {
+    return {type: 'NotExpression', operator: 'NOT', value};
+};
+
+ExpressionPrinter.and = function (...args) {
+    return _.reduce(args, (left, right) => ({type: 'BinaryPredicate', operator: 'AND', left, right}));
+};
+
+ExpressionPrinter.or = function (...args) {
+    return _.reduce(args, (left, right) => ({type: 'BinaryPredicate', operator: 'OR', left, right}));
+};
+
+ExpressionPrinter.list = function (...args) {
+    return {type: 'ListExpression', elements: args};
+};
+
+ExpressionPrinter.betweenAnd = function (value, start, stop) {
+    return {type: 'BetweenPredicate', start, stop, value};
+};
+
+ExpressionPrinter.identifier = function (name) {
+    return {type: 'Identifier', name};
+};
+
+ExpressionPrinter.literal = function (value, dataType) {
+    return {type: 'Literal', value, dataType};
+};
+
 /**
  * @param value
  * @param {String} dataType
