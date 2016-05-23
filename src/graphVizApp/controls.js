@@ -663,7 +663,7 @@ function togglePanel ($panelButton, maybe$panel, newVisibility) {
 // toggle $panelButton and potentially show $panel,
 // else toggle off $panelButton and hide $panel
 //Return toggle status stream
-function setupPanelControl (toolbarClicks, $panelButton, maybe$panel, errorLogLabel) {
+function setupPanelControl (toolbarClicks, $panelButton, maybe$panel) {
 
     //TODO falcor
     return Rx.Observable.merge(
@@ -715,37 +715,30 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     const $viewSelectionButton = $('#viewSelectionButton');
 
 
-    const marqueeOnObservable = setupPanelControl(popoutClicks, $('#viewSelectionButton'), null,
-        'Turning on/off the spatial selection');
-    marqueeOnObservable
+    //TODO abstract, & normalize button/panel names
+    //TODO infer from DOM, and declare panel binding there?
+    const marqueeOn = setupPanelControl(popoutClicks, $('#viewSelectionButton'));
+    const histogramPanelToggle = setupPanelControl(popoutClicks, $('#histogramPanelControl'), $('#histogram.panel'));
+    const dataInspectorOn = setupPanelControl(popoutClicks, $('#dataInspectorButton'), $('#inspector'));
+    const timeExplorerOn = setupPanelControl(popoutClicks, $('#timeExplorerButton'), $('#timeExplorer'));
+    const exclusionsOn = setupPanelControl(popoutClicks, $('#exclusionButton'), $('#exclusionsPanel'));
+    const filtersOn = setupPanelControl(popoutClicks, $('#filterButton'), $('#filtersPanel'));
+    const setsOn = setupPanelControl(popoutClicks, $('#setsPanelButton'), $('#setsPanel'));
+    const settingsOn = setupPanelControl(popoutClicks, $('#layoutSettingsButton'), $('#renderingItems'));
+    const turnOnBrush = setupPanelControl(popoutClicks, $('#brushButton'));
+
+    Rx.Observable.merge(...[
+            marqueeOn, histogramPanelToggle, dataInspectorOn, timeExplorerOn, exclusionsOn, filtersOn,
+            setsOn, settingsOn, turnOnBrush])
+        .subscribe(_.identity, util.makeErrorHandler('Toolbar icon clicks'));
+
+    histogramPanelToggle
+        .do(on => $('body').toggleClass('with-histograms', on))
+        .subscribe(_.identity, util.makeErrorHandler('histogram class state'));
+
+    marqueeOn
         .map((marqueeIsOn) => { return marqueeIsOn ? ' toggled' : false; })
         .subscribe(appState.marqueeOn, util.makeErrorHandler('notify spatial selection changed'));
-
-
-    //TODO abstract, & normalize button/panel names
-    const histogramPanelToggle = setupPanelControl(popoutClicks, $('#histogramPanelControl'), $('#histogram.panel'),
-        'Turning on/off the histogram panel');
-
-    const dataInspectorOn = setupPanelControl(popoutClicks, $('#dataInspectorButton'), $('#inspector'),
-        'Turning on/off the data inspector panel');
-
-    setupPanelControl(popoutClicks, $('#timeExplorerButton'), $('#timeExplorer'),
-        'Turning on/off the time panel');
-
-    setupPanelControl(popoutClicks, $('#exclusionButton'), $('#exclusionsPanel'),
-        'Turning on/off the exclusions panel');
-
-    setupPanelControl(popoutClicks, $('#filterButton'), $('#filtersPanel'),
-        'Turning on/off the exclusions panel');
-
-    setupPanelControl(popoutClicks, $('#setsPanelButton'), $('#setsPanel'),
-        'Turning on/off the exclusions panel');
-
-    setupPanelControl(popoutClicks, $('#layoutSettingsButton'), $('#renderingItems'),
-        'Turning on/off layout settings');
-
-    const turnOnBrush = setupPanelControl(popoutClicks, $('#brushButton'), null,
-        'Turning on/off the histogram brush');
 
     //TODO do on every click instead? weird
     turnOnBrush
@@ -787,7 +780,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .merge(histogramPanelToggle)
         .take(1);
 
-    const marquee = setupSelectionMarquee(appState, marqueeOnObservable);
+    const marquee = setupSelectionMarquee(appState, marqueeOn);
     const brush = setupBrush(appState, turnOnBrush);
     const filtersPanel = new FiltersPanel(socket, appState.labelRequests, appState.settingsChanges);
     const exclusionsPanel = new ExclusionsPanel(socket, filtersPanel.control, appState.labelRequests);
