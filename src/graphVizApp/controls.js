@@ -792,7 +792,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     turnOnBrush.first((value) => value === true).do(() => {
         togglePanel($('#histogramPanelControl'), $('#histogram.panel'), true);
     }).subscribe(_.identity, util.makeErrorHandler('Enabling the histogram on first brush use.'));
-    dataInspector.init(appState, socket, workerParams.href, brush, histogramPanelToggle, filtersResponses, dataInspectorOn);
+    dataInspector.init(appState, socket, workerParams.href, brush, filtersResponses, dataInspectorOn);
     forkVgraph(socket, urlParams);
     persist.setupPersistLayoutButton($('#persistButton'), appState, socket, urlParams);
     persist.setupPersistWorkbookButton($('#persistWorkbookButton'), appState, socket, urlParams);
