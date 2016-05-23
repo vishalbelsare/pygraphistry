@@ -9,7 +9,7 @@ const DimCodes = {
 
 /**
  * @typedef {Object} VizSliceElement
- * @property {Number} dim - Enum: 1 for point, 2 for edge.
+ * @property {DimCodes} dim - Enum: 1 for point, 2 for edge.
  * @property {Number} idx - Index into the filtered dataframe.
  * @property {String} source - whether from canvas click, etc.
  */

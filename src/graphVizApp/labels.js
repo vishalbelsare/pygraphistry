@@ -105,9 +105,9 @@ function setupClickDragInteractions (appState, socket, $eventTarget) {
             // due to interactions with other dom elements
             const mouseUpOnWindowStream = Rx.Observable.fromEvent(document, 'mouseup');
 
-            // We make a handler here for mouseouts of JUST the document.
+            // We make a handler here for mouse-outs of JUST the document.
             // That is, a mouseout event from a child of the document won't trigger this,
-            // only someone mouseing out of the window
+            // only someone mousing out of the window
             // Technique taken from http://stackoverflow.com/questions/923299/how-can-i-detect-when-the-mouse-leaves-the-window
             const mouseOutOfWindowStream = Rx.Observable.fromEvent(document, 'mouseout')
                 .filter((e=window.event) => {
