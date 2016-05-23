@@ -1230,7 +1230,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     const type = model.getBinningStrategy();
     const isCountBy = model.isCountBy();
     const d3Data = model.get('d3Data');
-    const numBins = (isCountBy ? Math.min(MAX_HORIZONTAL_ELEMENTS, globalStats.numBins) : globalStats.numBins);
+    const numBins = model.numBins();
     data.numValues = data.numValues || 0;
 
     const svg = d3Data.svg;
