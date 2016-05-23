@@ -14,6 +14,7 @@ const util    = require('./util.js');
 const Identifier = require('./Identifier');
 const contentFormatter = require('./contentFormatter.js');
 const ExpressionPrinter = require('./expressionPrinter.js');
+const VizSlice = require('./VizSlice');
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -75,94 +76,245 @@ const histogramMarginsHorizontal = {top: 15, right: 10, bottom: 15, left: 10};
 
 // Setup Backbone for the brushing histogram
 const HistogramModel = Backbone.Model.extend({
+    isHorizontal: function () { return this.get('sparkLines'); },
+    getOrientation: function () { return this.isHorizontal() ? 'sparkLines' : 'histogram'; },
+    setOrientation: function (orientation) { this.set('sparkLines', orientation === 'sparkLines'); },
+    getGlobalStats: function (attributeName = this.get('attribute')) {
+        return this.get('sparkLines') ? this.getSparkLineData(attributeName) : this.getHistogramData(attributeName);
+    },
+    getBinningStrategy: function () {
+        const data = this.get('data');
+        return (data.type && data.type !== 'nodata') ? data.type : this.getGlobalStats().type;
+    },
+    isCountBy: function () { return this.getBinningStrategy() === 'countBy'; },
     numBins: function () {
         const globalStats = this.getGlobalStats();
+        const isCountBy = this.isCountBy();
         let numBins = globalStats.numBins;
-        if (globalStats.type === 'countBy') {
-            const numValues = globalStats.binValues ? globalStats.binValues.length : 0;
-            numBins = Math.min(MAX_HORIZONTAL_ELEMENTS, Math.max(globalStats.numBins, numValues));
+        if (isCountBy) {
+            if (this.isHorizontal()) {
+                const numValues = globalStats.binValues ? globalStats.binValues.length : 0;
+                if (numValues) {
+                    numBins = Math.min(MAX_HORIZONTAL_ELEMENTS, Math.max(globalStats.numBins, numValues));
+                }
+            } else {
+                numBins = Math.min(MAX_VERTICAL_ELEMENTS, globalStats.numBins);
+            }
         }
         return numBins;
     },
-    getHistogramOrientation: function () {
-        const data = this.get('data');
-        return (data.type && data.type !== 'nodata') ? data.type : this.get('globalStats').type;
+
+    getValueFromDataByAttribute: function (dataByName, attributeName = this.get('attribute')) {
+        const type = this.get('type');
+        if (dataByName.hasOwnProperty(attributeName)) {
+            return dataByName[attributeName];
+        } else if (type !== undefined) {
+            return dataByName[Identifier.clarifyWithPrefixSegment(attributeName, type)];
+        } else {
+            const pointPrefixAttribute = Identifier.clarifyWithPrefixSegment(attributeName, 'point');
+            if (dataByName.hasOwnProperty(pointPrefixAttribute)) {
+                return dataByName[pointPrefixAttribute];
+            } else {
+                return dataByName[Identifier.clarifyWithPrefixSegment(attributeName, 'edge')];
+            }
+        }
     },
-    getGlobalStats: function (attributeName = this.get('attribute')) {
-        return this.get('sparkLines') ? this.getSparkLineData() : this.getHistogramData(attributeName);
-    },
+
+    /**
+     * @param {String?} attributeName
+     * @returns BinningResult
+     */
     getHistogramData: function (attributeName = this.get('attribute')) {
         const dataByName = this.get('globalStats').histograms;
-        const type = this.get('type');
-        if (dataByName.hasOwnProperty(attributeName)) {
-            return dataByName[attributeName];
-        } else if (type !== undefined) {
-            return dataByName[Identifier.clarifyWithPrefixSegment(attributeName, type)];
-        } else {
-            const pointPrefixAttribute = Identifier.clarifyWithPrefixSegment(attributeName, 'point');
-            if (dataByName.hasOwnProperty(pointPrefixAttribute)) {
-                return dataByName[pointPrefixAttribute];
-            } else {
-                return dataByName[Identifier.clarifyWithPrefixSegment(attributeName, 'edge')];
-            }
-        }
+        return this.getValueFromDataByAttribute(dataByName, attributeName);
     },
-    getSparkLineData: function () {
+    /**
+     * @param {String?} attributeName
+     * @returns BinningResult
+     */
+    getSparkLineData: function (attributeName = this.get('attribute')) {
         const dataByName = this.get('globalStats').sparkLines;
-        const attributeName = this.get('attribute');
-        const type = this.get('type');
-        if (dataByName.hasOwnProperty(attributeName)) {
-            return dataByName[attributeName];
-        } else if (type !== undefined) {
-            return dataByName[Identifier.clarifyWithPrefixSegment(attributeName, type)];
-        } else {
-            const pointPrefixAttribute = Identifier.clarifyWithPrefixSegment(attributeName, 'point');
-            if (dataByName.hasOwnProperty(pointPrefixAttribute)) {
-                return dataByName[pointPrefixAttribute];
-            } else {
-                return dataByName[Identifier.clarifyWithPrefixSegment(attributeName, 'edge')];
-            }
-        }
+        return this.getValueFromDataByAttribute(dataByName, attributeName);
     },
     getDataType: function () {
         const globalStats = this.getGlobalStats();
         return globalStats && globalStats.dataType;
     },
-    valueForBinID: function (binId) {
+    /**
+     * @param {Number} binId
+     * @returns HistFilter
+     */
+    histFilterForBinID: function (binId) {
         const globalStats = this.getGlobalStats();
         const binValues = globalStats.binValues;
 
-        if (this.getHistogramOrientation() === 'countBy') {
-            const globalBins = globalStats.bins || [];
-            const globalKeys = _.keys(globalBins);
-            const key = globalKeys[binId];
-            let binDescription;
-            if (key === '_other' && binValues && binValues._other) {
-                return undefined;
-            } else if (binValues && binValues[binId]) {
-                binDescription = binValues[binId];
-                if (binDescription.isSingular) {
-                    return binDescription.representative;
-                } else if (binDescription.min !== undefined) {
-                    return [binDescription.min, binDescription.max];
+        const histFilter = {type: this.get('type'), attribute: this.get('attribute')};
+        switch (this.getBinningStrategy()) {
+            case 'countBy': {
+                const globalBins = globalStats.bins || [];
+                const globalKeys = _.keys(globalBins);
+                const key = globalKeys[binId];
+                let binDescription;
+                if (key === '_other' && binValues && binValues._other) {
+                    histFilter.isOtherThan = _.filter(globalKeys, (eachKey) => eachKey !== key);
+                } else if (binValues && binValues[binId]) {
+                    binDescription = binValues[binId];
+                    if (binDescription.isSingular) {
+                        histFilter.equals = binDescription.representative;
+                    } else if (binDescription.min !== undefined) {
+                        histFilter.start = binDescription.min;
+                        histFilter.stop = binDescription.max;
+                    }
                 } else {
-                    return key;
+                    histFilter.equals = key;
                 }
+                break;
             }
-        } else {
-            if (binValues && binValues[binId]) {
-                const binDescription = binValues[binId];
-                if (binDescription.isSingular) {
-                    return binDescription.representative;
-                } else if (binDescription.min !== undefined) {
-                    return [binDescription.min, binDescription.max];
+            case 'histogram':
+            default:
+                if (binValues && binValues[binId]) {
+                    const binDescription = binValues[binId];
+                    if (binDescription.isSingular) {
+                        histFilter.equals = binDescription.representative;
+                    } else if (binDescription.min !== undefined) {
+                        histFilter.start = binDescription.min;
+                        histFilter.stop = binDescription.max;
+                    }
+                } else {
+                    histFilter.start = globalStats.minValue + (globalStats.binWidth * binId);
+                    histFilter.stop = histFilter.start + globalStats.binWidth;
                 }
-            } else {
-                const start = globalStats.minValue + (globalStats.binWidth * idx);
-                const stop = start + globalStats.binWidth;
-                return [start, stop];
+        }
+        return histFilter;
+    },
+
+    /**
+     *
+     * @param firstBin
+     * @param lastBin
+     * @returns HistFilter
+     */
+    histFilterForBinRange: function (firstBin, lastBin) {
+        const attribute = this.get('attribute');
+        const histFilter = {type: this.get('type'), attribute: this.get('attribute')};
+        /** @type BinningResult */
+        const globalStats = this.getGlobalStats();
+
+        const identifier = {type: 'Identifier', name: attribute};
+        switch (this.getBinningStrategy()) {
+            case 'histogram':
+                histFilter.start = globalStats.minValue + (globalStats.binWidth * firstBin);
+                histFilter.stop = globalStats.minValue + (globalStats.binWidth * lastBin) + globalStats.binWidth;
+                histFilter.ast = {
+                    type: 'BetweenPredicate',
+                    start: {type: 'Literal', value: histFilter.start},
+                    stop: {type: 'Literal', value: histFilter.stop},
+                    value: identifier
+                };
+                break;
+            case 'countBy': {
+                const binValues = [];
+                const binRanges = [];
+                // TODO: Determine if this order is deterministic,
+                // and if not, explicitly send over a bin ordering from aggregate.
+                const binNames = _.keys(globalStats.bins);
+                const isNumeric = _.isNumber(globalStats.minValue) && _.isNumber(globalStats.maxValue);
+                let otherIsSelected = false;
+                for (let i = firstBin; i <= lastBin; i++) {
+                    let binName = binNames[i];
+                    if (binName === '_other') {
+                        otherIsSelected = true;
+                        continue;
+                    }
+                    const binValue = globalStats.binValues && globalStats.binValues[binName];
+                    if (isBinValueRange(binValue)) {
+                        if (binRanges.length === 0) {
+                            binRanges.push({min: binValue.min, max: binValue.max, bins: [i]});
+                        } else {
+                            const lastBinRange = binRanges[binRanges.length - 1];
+                            if (lastBinRange.bins[lastBinRange.bins.length - 1] === i - 1) {
+                                lastBinRange.bins.push(i);
+                                lastBinRange.max = binValue.max;
+                            }
+                        }
+                    } else {
+                        if (binValue && binValue.representative !== undefined) {
+                            binName = binValue.representative;
+                        }
+                        binValues.push(isNumeric ? Number(binName) : binName);
+                    }
+                }
+                histFilter.equals = binValues;
+                const elements = _.map(binValues, (x) => ({type: 'Literal', value: x}));
+                if (elements.length > 1) {
+                    histFilter.ast = {
+                        type: 'BinaryPredicate',
+                        operator: 'IN',
+                        left: identifier,
+                        right: {type: 'ListExpression', elements: elements}
+                    };
+                } else if (elements.length === 1) {
+                    histFilter.ast = {
+                        type: 'BinaryPredicate',
+                        operator: '=',
+                        left: identifier,
+                        right: elements[0]
+                    };
+                }
+                const rangePredicates = _.map(binRanges, ({min, max}) => ({
+                    type: 'BetweenPredicate',
+                    start: {type: 'Literal', value: min},
+                    stop: {type: 'Literal', value: max},
+                    value: identifier
+                }));
+                rangePredicates.forEach((betweenPredicate) => {
+                    histFilter.ast = histFilter.ast === undefined ? betweenPredicate : {
+                        type: 'BinaryPredicate',
+                        operator: 'OR',
+                        left: betweenPredicate,
+                        right: histFilter.ast
+                    };
+                });
+                if (otherIsSelected) {
+                    let otherAST = {
+                        type: 'NotExpression',
+                        operator: 'NOT',
+                        value: {
+                            type: 'BinaryPredicate',
+                            operator: 'IN',
+                            left: identifier,
+                            right: {
+                                type: 'ListExpression',
+                                elements: _.map(binNames, (x) => ({type: 'Literal', value: x}))
+                            }
+                        }
+                    };
+                    rangePredicates.forEach((betweenPredicate) => {
+                        otherAST = {
+                            type: 'BinaryPredicate',
+                            operator: 'AND',
+                            left: {
+                                type: 'NotExpression',
+                                operator: 'NOT',
+                                value: betweenPredicate
+                            },
+                            right: otherAST
+                        };
+                    });
+                    if (histFilter.ast === undefined) {
+                        histFilter.ast = otherAST;
+                    } else {
+                        histFilter.ast = {
+                            type: 'BinaryPredicate',
+                            operator: 'OR',
+                            left: otherAST,
+                            right: histFilter.ast
+                        };
+                    }
+                }
             }
         }
+        return histFilter;
     }
 });
 
@@ -185,6 +337,8 @@ function elWidth ($el) {
  * @property {String} attribute
  * @property {Number} firstBin
  * @property {Number} lastBin
+ * @property {String} type
+ * @property {ClientQueryAST} ast
  * @property {Boolean} completed
  * @property {ClientQueryAST} ast
  */
@@ -192,12 +346,15 @@ function elWidth ($el) {
 /**
  * @param {FiltersPanel} filtersPanel
  * @param {Observable<HistogramChange>} updateAttributeSubject
+ * @param {Subject} latestHighlightedObject
  * @constructor
  */
-function HistogramsPanel (filtersPanel, updateAttributeSubject) {
+function HistogramsPanel (filtersPanel, updateAttributeSubject, latestHighlightedObject) {
     this.filtersPanel = filtersPanel;
     // How the model-view communicate back to underlying Rx.
     this.updateAttributeSubject = updateAttributeSubject;
+    this.latestHighlightedObject = latestHighlightedObject;
+    this.highlightRequests = new Rx.Subject();
     /** Histogram-specific/owned filter information, keyed/unique per attribute.
      * @type Object.<HistogramFilterSpec> */
     this.histogramFilters = {};
@@ -223,6 +380,7 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
             'click .refreshHistogramButton': 'refresh',
             'click .encode-attribute': 'encode',
             'mouseover': 'getDescription',
+            'mouseout': 'clearHighlight',
             'dragstart .topMenu': 'dragStart'
         },
 
@@ -273,7 +431,7 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
             // TODO: Don't have a 'sparkLines' boolean in the model, but a general vizType field.
             const d3Data = histogram.get('d3Data');
             if (d3Data && ((d3Data.vizType === 'sparkLines') === histogram.get('sparkLines'))) {
-                if (histogram.get('sparkLines')) {
+                if (histogram.isHorizontal()) {
                     panel.updateSparkline(histogram.get('vizContainer'), histogram, histogram.get('attribute'));
                 } else {
                     panel.updateHistogram(histogram.get('vizContainer'), histogram, histogram.get('attribute'));
@@ -288,7 +446,7 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
 
             let vizHeight = HORIZONTAL_HEIGHT;
             histogram.set('d3Data', {});
-            if (histogram.get('sparkLines')) {
+            if (histogram.isHorizontal()) {
                 vizContainer.height(String(vizHeight) + 'px');
                 initializeSparklineViz(vizContainer, histogram); // TODO: Link to data?
                 panel.updateSparkline(vizContainer, histogram, attribute);
@@ -359,8 +517,7 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
             const attribute = this.model.get('attribute');
             const d3Data = this.model.get('d3Data');
             const histogram = this.model.getHistogramData();
-            const numBins = (histogram.type === 'countBy') ?
-                Math.min(MAX_VERTICAL_ELEMENTS, histogram.numBins) : histogram.numBins;
+            const numBins = this.model.numBins();
             const vizHeight = numBins * BAR_THICKNESS + histogramMarginsVertical.top + histogramMarginsVertical.bottom;
             d3Data.svg.selectAll('*').remove();
             vizContainer.empty();
@@ -380,6 +537,10 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
                     this.refresh();
                 }).subscribe(_.identity, util.makeErrorHandler('Describing attribute from histogram'));
             }
+        },
+
+        clearHighlight: function () {
+            panel.clearHighlight();
         },
 
         deleteVizElements: function () {
@@ -539,6 +700,8 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject) {
     this.view = new AllHistogramsView({collection: panel.histograms});
     panel.collection = this.histograms;
     panel.model = HistogramModel;
+
+    this.setupHighlightRequests();
 }
 
 HistogramsPanel.prototype.updateAttribute = function (delAttr, newAttr, histogramOrientation) {
@@ -549,8 +712,45 @@ HistogramsPanel.prototype.updateAttribute = function (delAttr, newAttr, histogra
     });
 };
 
+HistogramsPanel.prototype.queryForBin = function (attribute, binId) {
+    const histogram = this.histograms.get(attribute);
+    const histFilter = histogram.histFilterForBinID(binId);
+    const {query} = expressionForHistogramFilter(histFilter, this.filtersPanel.control, attribute);
+    return query;
+};
+
+/**
+ * @param {String} attribute
+ * @param {Number} firstBin
+ * @param {Number} lastBin
+ * @returns HistogramFilterSpec
+ */
+HistogramsPanel.prototype.queryForBinRange = function (attribute, firstBin, lastBin) {
+    const histogram = this.histograms.get(attribute);
+    const histFilter = histogram.histFilterForBinRange(firstBin, lastBin);
+    const {query} = expressionForHistogramFilter(histFilter, this.filtersPanel.control, attribute);
+    query.firstBin = firstBin;
+    query.lastBin = lastBin;
+    return query;
+};
+
+HistogramsPanel.prototype.setupHighlightRequests = function () {
+    this.highlightRequests.debounceTime(100).switchMap((query) => {
+        return this.highlightElementsMatchingQuery(query.attribute, query.ast);
+    }).do((response) => {
+        if (response.success && response.computedMask) {
+            this.latestHighlightedObject.onNext(new VizSlice(response.computedMask));
+        }
+    }).subscribe(_.identity, util.makeErrorHandler('Highlight by histogram query'));
+};
+
 HistogramsPanel.prototype.highlightElementsMatchingQuery = function (dataframeAttribute, ast) {
-    return this.filtersPanel.control.highlightCommand.sendWithObservableResult({
+    if (this.previousHighlightedObject !== undefined) {
+        this.latestHighlightedObject.take(1).do((latestHighlightedObject) => {
+            this.previousHighlightedObject = latestHighlightedObject;
+        });
+    }
+    return this.filtersPanel.control.computeMaskCommand.sendWithObservableResult({
         gesture: 'ast',
         ast: ast,
         attribute: dataframeAttribute
@@ -558,9 +758,8 @@ HistogramsPanel.prototype.highlightElementsMatchingQuery = function (dataframeAt
 };
 
 HistogramsPanel.prototype.clearHighlight = function () {
-    return this.filtersPanel.control.highlightCommand.sendWithObservableResult({
-        clear: true
-    })
+    const previousHighlightedObject = this.previousHighlightedObject;
+    this.latestHighlightedObject.onNext(previousHighlightedObject || new VizSlice([]));
 };
 
 HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, encodingSpec, reset, binning) {
@@ -659,7 +858,7 @@ HistogramsPanel.prototype.deleteHistogramFilterByAttribute = function (dataframe
  * This updates histogram filter structures from ASTs.
  * We should maintain only expression objects instead.
  * We should also use structural pattern matching...
- * @param {HistogramFilterSpec} histFilter
+ * @param {HistFilter} histFilter
  * @param {ClientQueryAST} ast
  */
 function updateHistogramFilterFromExpression (histFilter, ast) {
@@ -738,11 +937,21 @@ HistogramsPanel.prototype.updateHistogramFiltersFromFiltersSubject = function ()
     });
 };
 
+/** @typedef {Object} HistFilter
+ * @property attribute
+ * @property type TODO rename to graphType for clarity
+ * @property ast
+ * @property start
+ * @property stop
+ * @property equals
+ * @property isOtherThan
+ */
+
 /**
- * @param {HistogramSpec} histFilter
+ * @param {HistFilter} histFilter
  * @param {FilterControl} filterer
  * @param {String} attribute
- * @returns {{query: ClientQueryAST, dataType: String}}
+ * @returns {{query: ClientQuery, dataType: String}}
  */
 function expressionForHistogramFilter (histFilter, filterer, attribute) {
     let query, dataType;
@@ -795,12 +1004,14 @@ function expressionForHistogramFilter (histFilter, filterer, attribute) {
 HistogramsPanel.prototype.updateFiltersFromHistogramFilters = function () {
     const filtersCollection = this.filtersPanel.collection;
     const filterer = this.filtersPanel.control;
-    _.each(this.histogramFilters, (histFilter, attribute) => {
+    _.each(this.histogramFilters, (histFilterSpec, attribute) => {
         if (!attribute) {
-            attribute = histFilter.attribute;
+            attribute = histFilterSpec.attribute;
         }
+        const histogram = this.histograms.get(attribute);
+        const histFilter = histogram.histFilterForBinRange(histFilterSpec.firstBin, histFilterSpec.lastBin);
         const {query, dataType} = expressionForHistogramFilter(histFilter, filterer, attribute);
-        if (histFilter.ast !== undefined) {
+        if (histFilter.ast && query && !query.ast) {
             query.ast = histFilter.ast;
         }
         query.inputString = ExpressionPrinter.print(query);
@@ -861,7 +1072,7 @@ function toStackedObject(local, total, idx, name, attr, numLocal, numTotal, dist
     return stackedObj;
 }
 
-function toStackedBins (bins, globalStats, type, attr, numLocal, numTotal, distribution, limit) {
+function toStackedBins (bins, globalStats, binningStrategy, attr, numLocal, numTotal, distribution, limit) {
     // Transform bins and global bins into stacked format.
     // Assumes that globalBins is always a superset of bins
     // TODO: Get this in a cleaner, more extensible way
@@ -871,54 +1082,58 @@ function toStackedBins (bins, globalStats, type, attr, numLocal, numTotal, distr
     const dataType = globalStats.dataType;
     let name;
     const localFormat = (value) => contentFormatter.shortFormat(value, dataType);
-    if (type === 'countBy') {
-        const globalKeys = _.keys(globalBins);
-        _.each(_.range(Math.min(globalKeys.length, limit)), (idx) => {
-            const key = globalKeys[idx];
-            const local = bins[key] || 0;
-            const total = globalBins[key] || 0;
-            let binDescription;
-            if (key === '_other' && binValues && binValues._other) {
-                binDescription = binValues._other;
-                name = '(Another ' + localFormat(binDescription.numValues) + ' values)';
-            } else if (binValues && binValues[idx]) {
-                binDescription = binValues[idx];
-                if (binDescription.isSingular) {
-                    name = localFormat(binDescription.representative);
-                } else if (binDescription.min !== undefined) {
-                    name = localFormat(binDescription.min) + ' : ' + localFormat(binDescription.max);
+    switch (binningStrategy) {
+        case 'countBy': {
+            const globalKeys = _.keys(globalBins);
+            _.each(_.range(Math.min(globalKeys.length, limit)), (idx) => {
+                const key = globalKeys[idx];
+                const local = bins[key] || 0;
+                const total = globalBins[key] || 0;
+                let binDescription;
+                if (key === '_other' && binValues && binValues._other) {
+                    binDescription = binValues._other;
+                    name = '(Another ' + localFormat(binDescription.numValues) + ' values)';
+                } else if (binValues && binValues[idx]) {
+                    binDescription = binValues[idx];
+                    if (binDescription.isSingular) {
+                        name = localFormat(binDescription.representative);
+                    } else if (binDescription.min !== undefined) {
+                        name = localFormat(binDescription.min) + ' : ' + localFormat(binDescription.max);
+                    }
+                } else {
+                    name = key;
                 }
-            } else {
-                name = key;
-            }
-            const stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
-            stackedBins.push(stackedObj);
-        });
-
-    } else {
-        // If empty bin array, make it all 0s.
-        if (bins.length === 0) {
-            bins = Array.apply(null, new Array(globalBins.length)).map(() => 0);
+                const stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
+                stackedBins.push(stackedObj);
+            });
+            break;
         }
-        const zippedBins = _.zip(bins, globalBins); // [[0,2], [1,4], ... ]
-        _.each(zippedBins, (stack, idx) => {
-            const local = stack[0] || 0;
-            const total = stack[1] || 0;
-            if (binValues && binValues[idx]) {
-                const binDescription = binValues[idx];
-                if (binDescription.isSingular) {
-                    name = localFormat(binDescription.representative);
-                } else if (binDescription.min !== undefined) {
-                    name = localFormat(binDescription.min) + ' : ' + localFormat(binDescription.max);
-                }
-            } else {
-                const start = globalStats.minValue + (globalStats.binWidth * idx);
-                const stop = start + globalStats.binWidth;
-                name = localFormat(start) + ' : ' + localFormat(stop);
+        case 'histogram':
+        default: {
+            // If empty bin array, make it all 0s.
+            if (bins.length === 0) {
+                bins = Array.apply(null, new Array(globalBins.length)).map(() => 0);
             }
-            const stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
-            stackedBins.push(stackedObj);
-        });
+            const zippedBins = _.zip(bins, globalBins); // [[0,2], [1,4], ... ]
+            _.each(zippedBins, (stack, idx) => {
+                const local = stack[0] || 0;
+                const total = stack[1] || 0;
+                if (binValues && binValues[idx]) {
+                    const binDescription = binValues[idx];
+                    if (binDescription.isSingular) {
+                        name = localFormat(binDescription.representative);
+                    } else if (binDescription.min !== undefined) {
+                        name = localFormat(binDescription.min) + ' : ' + localFormat(binDescription.max);
+                    }
+                } else {
+                    const start = globalStats.minValue + (globalStats.binWidth * idx);
+                    const stop = start + globalStats.binWidth;
+                    name = localFormat(start) + ' : ' + localFormat(stop);
+                }
+                const stackedObj = toStackedObject(local, total, idx, name, attr, numLocal, numTotal, distribution);
+                stackedBins.push(stackedObj);
+            });
+        }
     }
     return stackedBins;
 }
@@ -949,9 +1164,10 @@ HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
     const data = model.get('data');
     const globalStats = model.getHistogramData(attribute);
     const bins = data.bins || []; // Guard against empty bins.
-    const type = model.getHistogramOrientation();
+    const binningStrategy = model.getBinningStrategy();
+    const isCountBy = model.isCountBy();
     const d3Data = model.get('d3Data');
-    const numBins = (type === 'countBy' ? Math.min(MAX_VERTICAL_ELEMENTS, globalStats.numBins) : globalStats.numBins);
+    const numBins = model.numBins();
     data.numValues = data.numValues || 0;
 
     const svg = d3Data.svg;
@@ -959,13 +1175,12 @@ HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
     const yScale = d3Data.yScale;
 
     const barPadding = 2;
-    const stackedBins = toStackedBins(bins, globalStats, type, attribute, data.numValues, globalStats.numValues,
-            DIST, (type === 'countBy' ? MAX_VERTICAL_ELEMENTS : 0));
-    const barHeight = (type === 'countBy') ? yScale.rangeBand() : Math.floor(height/numBins) - barPadding;
+    const stackedBins = toStackedBins(bins, globalStats, binningStrategy, attribute,
+        data.numValues, globalStats.numValues,
+        DIST, (isCountBy ? MAX_VERTICAL_ELEMENTS : 0));
+    const barHeight = isCountBy ? yScale.rangeBand() : Math.floor(height/numBins) - barPadding;
 
-    //////////////////////////////////////////////////////////////////////////
     // Create Columns
-    //////////////////////////////////////////////////////////////////////////
 
     const columns = selectColumns(svg, stackedBins);
     applyAttrColumns(columns.enter().append('g'))
@@ -977,10 +1192,7 @@ HistogramsPanel.prototype.updateHistogram = function ($el, model, attribute) {
             .on('mouseover', this.handleMouseOverHistogramBar.bind(this, true, svg))
             .on('mouseout', this.handleMouseOverHistogramBar.bind(this, false, svg));
 
-
-    //////////////////////////////////////////////////////////////////////////
     // Create and Update Bars
-    //////////////////////////////////////////////////////////////////////////
 
     const bars = selectBars(columns);
 
@@ -1006,9 +1218,10 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     const id = model.cid;
     const globalStats = model.getSparkLineData();
     const bins = data.bins || []; // Guard against empty bins.
-    const type = model.getHistogramOrientation();
+    const type = model.getBinningStrategy();
+    const isCountBy = model.isCountBy();
     const d3Data = model.get('d3Data');
-    const numBins = (type === 'countBy' ? Math.min(MAX_HORIZONTAL_ELEMENTS, globalStats.numBins) : globalStats.numBins);
+    const numBins = (isCountBy ? Math.min(MAX_HORIZONTAL_ELEMENTS, globalStats.numBins) : globalStats.numBins);
     data.numValues = data.numValues || 0;
 
     const svg = d3Data.svg;
@@ -1017,18 +1230,15 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
 
     const barPadding = 1;
     const stackedBins = toStackedBins(bins, globalStats, type, attribute, data.numValues, globalStats.numValues,
-            DIST, (type === 'countBy' ? MAX_HORIZONTAL_ELEMENTS : 0));
+            DIST, (isCountBy ? MAX_HORIZONTAL_ELEMENTS : 0));
 
-    // const barWidth = (type === 'countBy') ? xScale.rangeBand() : Math.floor(width/numBins) - barPadding;
-    const barWidth = (type === 'countBy') ? xScale.rangeBand() : (width / numBins) - barPadding;
+    // const barWidth = isCountBy ? xScale.rangeBand() : Math.floor(width/numBins) - barPadding;
+    const barWidth = isCountBy ? xScale.rangeBand() : (width / numBins) - barPadding;
 
     // TODO: Is there a way to avoid this bind? What is the backbone way to do this?
     const filterRedrawCallback = model.view.render.bind(model.view);
 
-
-    //////////////////////////////////////////////////////////////////////////
     // Create Tooltip Text Elements
-    //////////////////////////////////////////////////////////////////////////
 
     // TODO: Is there a better/cleaner way to create fixed elements in D3?
     svg.selectAll('.lowerTooltipBg')
@@ -1072,9 +1282,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
         .attr('fill', colorsHighlightedByType.local)
         .text('local');
 
-    //////////////////////////////////////////////////////////////////////////
     // Create Columns
-    //////////////////////////////////////////////////////////////////////////
 
     const histogramFilters = this.histogramFilters;
     const histFilter = histogramFilters[attribute];
@@ -1116,7 +1324,14 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
     applyAttrColumns(columns.enter().append('g'))
         .attr('attribute', attribute)
         .attr('binnumber', (d, i) => i)
-        .attr('transform', (d, i) => 'translate(' + xScale(i) + ',0)')
+        .attr('transform', (d, i) => {
+            let offset = xScale(i);
+            if (offset === undefined) {
+                console.warn('Scaling failed for: ', d, i);
+                offset = 0;
+            }
+            return 'translate(' + offset + ',0)';
+        })
         .append('rect')
             .attr('class', 'column-rect')
             .attr('width', barWidth + barPadding)
@@ -1128,9 +1343,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
             .on('mouseover', this.handleMouseOverHistogramBar.bind(this, true, svg))
             .on('mouseout', this.handleMouseOverHistogramBar.bind(this, false, svg));
 
-    //////////////////////////////////////////////////////////////////////////
     // Create and Update Bars
-    //////////////////////////////////////////////////////////////////////////
 
     const bars = selectBars(columns)
         .style('fill', this.reColor.bind(this));
@@ -1282,29 +1495,8 @@ HistogramsPanel.prototype.handleMouseOverHistogramBar = function (isEntering, sv
         const binId = data[0].binId;
         const attribute = data.attr;
         /** @type HistogramModel */
-        const histogram = this.histograms.get(attribute);
-        const value = histogram.valueForBinID(binId);
-        const histFilter = {type: undefined, attribute: attribute};
-        if (_.isArray(value)) {
-            [histFilter.start, histFilter.stop] = value;
-        } else if (_.isObject(value)) {
-            // _other
-            histFilter.isOtherThan = value.isOtherThan;
-        } else {
-            histFilter.equals = value;
-        }
-        const {query, dataType} = expressionForHistogramFilter(histFilter, this.filtersPanel.control, attribute);
-        this.highlightElementsMatchingQuery(query.attribute, query.ast).do((response) => {
-            if (response.success && response.highlightMask) {
-                this.latestHighlightedObject.onNext(new VizSlice(response.highlightMask));
-            }
-        }).subscribe(_.identity, util.makeErrorHandler('Highlight by histogram bin'));
-    } else {
-        this.clearHighlight().do((response) => {
-            if (response.success && response.highlightMask) {
-                this.latestHighlightedObject.onNext(new VizSlice(response.highlightMask));
-            }
-        }).subscribe(_.identity, util.makeErrorHandler('Clearing the highlight'));
+        const query = this.queryForBin(attribute, binId);
+        this.highlightRequests.onNext(query);
     }
     // _.each(bars[0], (child) => {
     //     if (isEntering) {
@@ -1372,22 +1564,24 @@ function initializeHistogramViz ($el, model) {
     const attribute = model.get('attribute');
     const globalStats = model.getHistogramData();
     const bins = data.bins || []; // Guard against empty bins.
-    const type = model.getHistogramOrientation();
+    const binningStrategy = model.getBinningStrategy();
+    const isCountBy = model.isCountBy();
     const d3Data = model.get('d3Data');
     const numBins = model.numBins();
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
-    const stackedBins = toStackedBins(bins, globalStats, type, attribute, data.numValues, globalStats.numValues,
-        DIST, (type === 'countBy' ? MAX_VERTICAL_ELEMENTS : 0));
+    const stackedBins = toStackedBins(bins, globalStats, binningStrategy, attribute,
+        data.numValues, globalStats.numValues,
+        DIST, (isCountBy ? MAX_VERTICAL_ELEMENTS : 0));
 
     width = width - histogramMarginsVertical.left - histogramMarginsVertical.right;
     height = height - histogramMarginsVertical.top - histogramMarginsVertical.bottom;
 
-    const yScale = setupBinScale(type, height, numBins);
+    const yScale = setupBinScale(binningStrategy, height, numBins);
     const xScale = setupAmountScale(width, stackedBins, DIST);
 
-    const numTicks = (type === 'countBy' ? numBins : numBins + 1);
+    const numTicks = (isCountBy ? numBins : numBins + 1);
     const fullTitles = [];
     const yAxis = d3.svg.axis()
         .scale(yScale)
@@ -1395,12 +1589,12 @@ function initializeHistogramViz ($el, model) {
         .ticks(numTicks)
         .tickFormat((d) => {
             let fullTitle;
-            if (type === 'countBy') {
+            if (isCountBy) {
                 fullTitle = contentFormatter.defaultFormat(stackedBins[d].name, globalStats.dataType);
                 fullTitles[d] = fullTitle;
                 return contentFormatter.shortFormat(stackedBins[d].name, globalStats.dataType);
             } else {
-                var value = d * globalStats.binWidth + globalStats.minValue;
+                const value = d * globalStats.binWidth + globalStats.minValue;
                 fullTitle = contentFormatter.defaultFormat(value, globalStats.dataType);
                 fullTitles[d] = fullTitle;
                 return contentFormatter.defaultFormat(value, globalStats.dataType);
@@ -1449,23 +1643,20 @@ function initializeSparklineViz ($el, model) {
     const attribute = model.get('attribute');
     const globalStats = model.getSparkLineData();
     const bins = data.bins || []; // Guard against empty bins.
-    const type = model.getHistogramOrientation();
+    const binningStrategy = model.getBinningStrategy();
+    const isCountBy = model.isCountBy();
     const d3Data = model.get('d3Data');
-    let numBins = globalStats.numBins;
-    if (type === 'countBy') {
-        const numValues = globalStats.binValues ? globalStats.binValues.length : 0;
-        numBins = Math.min(MAX_HORIZONTAL_ELEMENTS, Math.max(globalStats.numBins, numValues));
-    }
+    const numBins = model.numBins();
     data.numValues = data.numValues || 0;
 
     // Transform bins and global bins into stacked format.
-    const stackedBins = toStackedBins(bins, globalStats, type, attribute, data.numValues, globalStats.numValues,
-        DIST, (type === 'countBy' ? MAX_HORIZONTAL_ELEMENTS : 0));
+    const stackedBins = toStackedBins(bins, globalStats, binningStrategy, attribute, data.numValues, globalStats.numValues,
+        DIST, (isCountBy ? MAX_HORIZONTAL_ELEMENTS : 0));
 
     width = width - histogramMarginsHorizontal.left - histogramMarginsHorizontal.right;
     height = height - histogramMarginsHorizontal.top - histogramMarginsHorizontal.bottom;
 
-    const xScale = setupBinScale(type, width, numBins);
+    const xScale = setupBinScale(binningStrategy, width, numBins);
     const yScale = setupAmountScale(height - HORIZONTAL_BACKGROUND_HEIGHT, stackedBins, DIST);
     const svg = setupSvg($el[0], histogramMarginsHorizontal, width, height);
 
@@ -1477,17 +1668,19 @@ function initializeSparklineViz ($el, model) {
     });
 }
 
-function setupBinScale (type, size, globalNumBins) {
+function setupBinScale (binningStrategy, size, globalNumBins) {
     // We want ticks between bars if histogram, and under bars if countBy
-    if (type === 'countBy') {
-        return d3.scale.ordinal()
-            .rangeRoundBands([0, size], 0.1, 0.1)
-            .domain(_.range(globalNumBins));
-    } else {
-        return d3.scale.linear()
-            .range([0, size])
-            .domain([0, globalNumBins])
-            .clamp(true);
+    switch (binningStrategy) {
+        case 'countBy':
+            return d3.scale.ordinal()
+                .rangeRoundBands([0, size], 0.1, 0.1)
+                .domain(_.range(globalNumBins));
+        case 'histogram':
+        default:
+            return d3.scale.linear()
+                .range([0, size])
+                .domain([0, globalNumBins])
+                .clamp(true);
     }
 }
 
@@ -1532,128 +1725,7 @@ function isBinValueRange (binValue) {
  * @param {Number} lastBin index of last bin, inclusive
  */
 HistogramsPanel.prototype.updateHistogramFilters = function (dataframeAttribute, id, globalStats, firstBin, lastBin) {
-
-    const updatedHistogramFilter = {
-        firstBin: firstBin,
-        lastBin: lastBin
-    };
-
-    const stats = globalStats.sparkLines[dataframeAttribute];
-    const graphType = stats.graphType;
-
-    const identifier = {type: 'Identifier', name: dataframeAttribute};
-    if (stats.type === 'histogram') {
-        updatedHistogramFilter.start = stats.minValue + (stats.binWidth * firstBin);
-        updatedHistogramFilter.stop = stats.minValue + (stats.binWidth * lastBin) + stats.binWidth;
-        updatedHistogramFilter.ast = {
-            type: 'BetweenPredicate',
-            start: {type: 'Literal', value: updatedHistogramFilter.start},
-            stop: {type: 'Literal', value: updatedHistogramFilter.stop},
-            value: identifier
-        };
-    } else if (stats.type === 'countBy') {
-        const binValues = [];
-        const binRanges = [];
-        // TODO: Determine if this order is deterministic,
-        // and if not, explicitly send over a bin ordering from aggregate.
-        const binNames = _.keys(stats.bins);
-        const isNumeric = _.isNumber(stats.minValue) && _.isNumber(stats.maxValue);
-        let otherIsSelected = false;
-        for (let i = firstBin; i <= lastBin; i++) {
-            let binName = binNames[i];
-            if (binName === '_other') {
-                otherIsSelected = true;
-                continue;
-            }
-            const binValue = stats.binValues && stats.binValues[binName];
-            if (isBinValueRange(binValue)) {
-                if (binRanges.length === 0) {
-                    binRanges.push({min: binValue.min, max: binValue.max, bins: [i]});
-                } else {
-                    const lastBinRange = binRanges[binRanges.length - 1];
-                    if (lastBinRange.bins[lastBinRange.bins.length - 1] === i - 1) {
-                        lastBinRange.bins.push(i);
-                        lastBinRange.max = binValue.max;
-                    }
-                }
-            } else {
-                if (binValue && binValue.representative !== undefined) {
-                    binName = binValue.representative;
-                }
-                binValues.push(isNumeric ? Number(binName) : binName);
-            }
-        }
-        updatedHistogramFilter.equals = binValues;
-        const elements = _.map(binValues, (x) => ({type: 'Literal', value: x}));
-        if (elements.length > 1) {
-            updatedHistogramFilter.ast = {
-                type: 'BinaryPredicate',
-                operator: 'IN',
-                left: identifier,
-                right: {type: 'ListExpression', elements: elements}
-            };
-        } else if (elements.length === 1) {
-            updatedHistogramFilter.ast = {
-                type: 'BinaryPredicate',
-                operator: '=',
-                left: identifier,
-                right: elements[0]
-            };
-        }
-        const rangePredicates = _.map(binRanges, ({min, max}) => ({
-            type: 'BetweenPredicate',
-            start: {type: 'Literal', value: min},
-            stop: {type: 'Literal', value: max},
-            value: identifier
-        }));
-        rangePredicates.forEach((betweenPredicate) => {
-            updatedHistogramFilter.ast = updatedHistogramFilter.ast === undefined ? betweenPredicate : {
-                type: 'BinaryPredicate',
-                operator: 'OR',
-                left: betweenPredicate,
-                right: updatedHistogramFilter.ast
-            };
-        });
-        if (otherIsSelected) {
-            let otherAST = {
-                type: 'NotExpression',
-                operator: 'NOT',
-                value: {
-                    type: 'BinaryPredicate',
-                    operator: 'IN',
-                    left: identifier,
-                    right: {
-                        type: 'ListExpression',
-                        elements: _.map(binNames, (x) => ({type: 'Literal', value: x}))
-                    }
-                }
-            };
-            rangePredicates.forEach((betweenPredicate) => {
-                otherAST = {
-                    type: 'BinaryPredicate',
-                    operator: 'AND',
-                    left: {
-                        type: 'NotExpression',
-                        operator: 'NOT',
-                        value: betweenPredicate
-                    },
-                    right: otherAST
-                };
-            });
-            if (updatedHistogramFilter.ast === undefined) {
-                updatedHistogramFilter.ast = otherAST;
-            } else {
-                updatedHistogramFilter.ast = {
-                    type: 'BinaryPredicate',
-                    operator: 'OR',
-                    left: otherAST,
-                    right: updatedHistogramFilter.ast
-                };
-            }
-        }
-    }
-    // TODO rename type property to graphType for clarity.
-    updatedHistogramFilter.type = graphType;
+    const updatedHistogramFilter = this.queryForBinRange(dataframeAttribute, firstBin, lastBin);
     if (updatedHistogramFilter.ast !== undefined) {
         this.histogramFilters[dataframeAttribute] = updatedHistogramFilter;
     }

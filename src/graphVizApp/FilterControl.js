@@ -32,7 +32,7 @@ function FilterControl (socket) {
 
     this.describeCommand = new Command('Describe a column', 'describe_column', socket);
 
-    this.highlightCommand = new Command('Highlight elements', 'highlight', socket);
+    this.computeMaskCommand = new Command('List elements matching', 'computeMask', socket);
 
     /** @type Rx.ReplaySubject */
     this.filtersResponsesSubject = new Rx.ReplaySubject(1);
