@@ -38,7 +38,7 @@ module.exports = {
             var start = START + len * v[0] / MAX_BOUNDS;
             var stop = END - len * (MAX_BOUNDS - v[1]) / MAX_BOUNDS;
             debug('emit filter', v, '->', [start, stop]);
-            control.filterObservable(control.filterRangeParameters('edge', 'Date', start, stop));
+            control.filterObservable(control.queryRangeParameters('edge', 'Date', start, stop));
         });
 
         //FIXME kickoff may fire before filterRange defined

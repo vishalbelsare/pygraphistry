@@ -28,6 +28,12 @@ Highlighter.prototype.setupHighlight = function () {
     this.subscription = this.latestHighlightedObject.combineLatest(this.activeSelection,
         (highlighted, selected) => ({highlighted, selected})
     ).do(({highlighted, selected}) => {
+        // This supports strong highlighting from other tools in a hacky way:
+        if (highlighted.notMouseOver) {
+            if (selected.isEmpty() && !highlighted.isEmpty()) {
+                selected = highlighted;
+            }
+        }
         const task = {
             trigger: 'mouseOverEdgeHighlight',
             data: {
