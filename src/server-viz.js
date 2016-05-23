@@ -55,6 +55,7 @@ const config      = require('config')();
 const ExpressionCodeGenerator = require('./expressionCodeGenerator');
 const RenderNull  = require('./RenderNull.js');
 const NBody = require('./NBody.js');
+const ComputedColumnSpec = require('./ComputedColumnSpec.js');
 
 const log         = require('common/logger.js');
 const logger      = log.createLogger('graph-viz', 'graph-viz/viz-server.js');
@@ -1766,15 +1767,12 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
             });
     });
 
-    this.socket.on('highlight', (specification, cb) => {
+    this.socket.on('computeMask', (specification, cb) => {
         /** @type {SelectionSpecification} specification */
         Rx.Observable.combineLatest(this.graph, this.viewConfig, (currentGraph, viewConfig) => {
             let qNodeSelection;
             const dataframe = currentGraph.dataframe;
             switch (specification.gesture) {
-                case 'clear':
-                    qNodeSelection = Q(dataframe.newEmptyMask());
-                    break;
                 case 'ast': {
                     const errors = [];
                     const query = _.pick(specification, ['ast', 'type', 'attribute']);
@@ -1788,10 +1786,6 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     }
                     break;
                 }
-                case 'masks':
-                    // TODO FIXME translate masks to unfiltered indexes.
-                    qNodeSelection = Q(specification.masks);
-                    break;
                 case 'sets': {
                     const matchingSets = _.filter(viewConfig.sets,
                         (vizSet) => specification.setIDs.indexOf(vizSet.id) !== -1);
@@ -1803,75 +1797,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                 default:
                     throw Error('Unrecognized highlight gesture: ' + specification.gesture.toString());
             }
-            const ccManager = dataframe.computedColumnManager;
-            const highlightSuffix = 'Highlights';
             qNodeSelection.then((dataframeMask) => {
-                const GraphComponentTypes = ['point', 'edge'];
-                const bufferNames = _.map(_.filter(GraphComponentTypes, (type) => dataframeMask[type] !== undefined),
-                    (type) => type + 'Colors');
-                const resetByType = _.map(GraphComponentTypes, () => false);
-                GraphComponentTypes.forEach((type, i) => {
-                    if (dataframeMask.isEmptyByType(type)) {
-                        const bufferName = type + 'Colors';
-                        if (ccManager.resetLocalBuffer(bufferName + highlightSuffix, dataframe)) {
-                            resetByType[i] = true;
-                            this.tickGraph(cb);
-                        }
-                    }
-                });
-                if (_.every(resetByType)) {
-                    cb({success: true});
-                    return;
-                }
-
-                const oldDescs = _.map(bufferNames,
-                    (bufferName) => ccManager.getComputedColumnSpec('localBuffer', bufferName));
-                if (!_.every(oldDescs)) {
-                    cb({
-                        success: false,
-                        error: 'Unable to derive from a base calculation to highlight'
-                    });
-                    return;
-                }
-
-                // If this is the first encoding for a buffer type, store the original
-                // spec so we can recover it.
-                bufferNames.forEach((bufferName, i) => {
-                    if (!ccManager.overlayBufferSpecs[bufferName]) {
-                        ccManager.overlayBufferSpecs[bufferName] = oldDescs[i];
-                    }
-                });
-
-                const descs = _.map(oldDescs, (oldDesc) => oldDesc.clone());
-                descs.forEach((desc, i) => {
-                    desc.setDependencies([[bufferNames[i], 'localBuffer']]);
-                });
-
-                bufferNames.forEach((bufferName, i) => {
-                    const desc = descs[i];
-                    if (bufferName === 'edgeColors') {
-                        desc.setComputeAllValues((values, outArr, numGraphElements) => {
-                            dataframeMask.forEachUnderlyingIndexByType('edge', numGraphElements,
-                                (edgeIndex, highlighted) => {
-                                    outArr[edgeIndex * 2] = highlighted;
-                                    outArr[edgeIndex * 2 + 1] = highlighted;
-                                });
-                            return outArr;
-                        });
-                    } else {
-                        desc.setComputeAllValues((values, outArr, numGraphElements) => {
-                            dataframeMask.forEachUnderlyingIndexByType('point', numGraphElements,
-                                (pointIndex, highlighted) => {
-                                outArr[pointIndex] = highlighted;
-                            });
-                            return outArr;
-                        });
-                    }
-                    ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName + highlightSuffix, desc);
-                });
-
-                this.tickGraph(cb);
-                cb({success: true});
+                cb({success: true, computedMask: dataframeMask.toJSON()});
             });
         }).take(1).subscribe(_.identity,
             (err) => {
