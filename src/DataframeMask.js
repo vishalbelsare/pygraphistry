@@ -260,7 +260,7 @@ DataframeMask.diffMask = function (x, y) {
     return result;
 };
 
-const OmittedProperties = ['dataframe'];
+const NonSerializableProperties = ['dataframe'];
 
 
 DataframeMask.prototype = {
@@ -527,7 +527,7 @@ DataframeMask.prototype = {
     },
 
     toString: function () {
-        return JSON.stringify(_.omit(this, OmittedProperties), null, 4);
+        return JSON.stringify(_.omit(this, NonSerializableProperties), null, 4);
     },
 
     typedIndexesForType: function (type) {
@@ -568,7 +568,7 @@ DataframeMask.prototype = {
      * @param {DataframeMask} basisMask
      */
     toJSON: function (basisMask) {
-        const result = _.omit(this, OmittedProperties);
+        const result = _.omit(this, NonSerializableProperties);
         _.each(GraphComponentTypes, (componentType) => {
             let componentMask = result[componentType];
             if (basisMask) {
