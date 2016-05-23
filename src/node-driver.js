@@ -161,7 +161,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
                 const bytesPerElement = localBuffer.BYTES_PER_ELEMENT;
 
                 // This will create another array (of type buffersLocal[name]) on top
-                // of the exisiting array
+                // of the existing array
 
                 logger.debug({counts: counts[name]}, 'Copying hostBuffer[' + name + ']. Orig Buffer len: ', localBuffer.length);
                 logger.debug('constructor: ', localBuffer.constructor);

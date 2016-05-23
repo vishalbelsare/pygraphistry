@@ -75,6 +75,7 @@ const InputPropertiesByShape = {
     CaseBranch: ['condition', 'result'],
     UnaryExpression: ['argument'],
     MemberAccess: ['object', 'property'],
+    MemberOfExpression: ['value'],
     NotExpression: ['value'],
     ListExpression: ['elements'],
     FunctionCall: ['arguments']
@@ -582,6 +583,8 @@ ExpressionCodeGenerator.prototype = {
                 return InputPropertiesByShape.CaseBranch;
             case 'MemberAccess':
                 return InputPropertiesByShape.MemberAccess;
+            case 'MemberOfExpression':
+                return InputPropertiesByShape.MemberOfExpression;
             case 'CastExpression':
             case 'NotExpression':
                 return InputPropertiesByShape.NotExpression;
