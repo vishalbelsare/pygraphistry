@@ -88,7 +88,7 @@ ace.define('ace/mode/graphistry_highlight_rules',
                     next:  'quotedIdentifier'
                 }, {
                     token: 'keyword.operator',
-                    regex: '\\+|\\-|\\/|\\/\\/|%|*|**|<@>|@>|<@|&|\\^|~|<|>|<=|=>|==|!=|<>|='
+                    regex: '\\+|\\-|\\/|\\/\\/|%|<@>|@>|<@|&|\\^|~|<|>|<=|=>|==|!=|<>|='
                 }, {
                     token: 'paren.lparen',
                     regex: /[\[({]/,
