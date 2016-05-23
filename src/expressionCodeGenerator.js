@@ -382,6 +382,60 @@ ExpressionCodeGenerator.prototype = {
         return localized;
     },
 
+    guardExpressionsForType: function (nativeType, identifier) {
+        const guards = [];
+        switch (nativeType) {
+            case 'float':
+            case 'double':
+                guards.push({
+                    type: 'BinaryPredicate',
+                    operator: '=',
+                    left: identifier,
+                    right: {type: 'Literal', dataType: 'number', value: NaN}
+                });
+                break;
+            case 'integer':
+                guards.push({
+                    type: 'BinaryPredicate',
+                    operator: '=',
+                    left: identifier,
+                    right: {type: 'Literal', dataType: 'integer', value: 0x7FFFFFFF}
+                });
+                break;
+            case 'number':
+                // TODO distinguish float/double from integer.
+                guards.push({
+                    type: 'BinaryPredicate',
+                    operator: 'IS',
+                    left: identifier,
+                    right: {type: 'Literal', dataType: 'number', value: NaN}
+                });
+                guards.push({
+                    type: 'BinaryPredicate',
+                    operator: '=',
+                    left: identifier,
+                    right: {type: 'Literal', dataType: 'integer', value: 0x7FFFFFFF}
+                });
+                break;
+            case 'string':
+                guards.push({
+                    type: 'BinaryPredicate',
+                    operator: '=',
+                    left: identifier,
+                    right: {type: 'Literal', dataType: 'string', value: '\0'}
+                });
+                // TODO retire 'n/a'
+                guards.push({
+                    type: 'BinaryPredicate',
+                    operator: '=',
+                    left: identifier,
+                    right: {type: 'Literal', dataType: 'string', value: 'n/a'}
+                });
+                break;
+        }
+        return guards;
+    },
+
     /**
      * Wraps the AST in clauses that check for values signifying undefined, for k-partite / partitioned domains.
      * @param {ClientQueryAST} ast
@@ -395,55 +449,9 @@ ExpressionCodeGenerator.prototype = {
             _.each(attributeData, (attributeName) => {
                 const nativeType = dataframe.getDataType(attributeName.attribute, attributeName.type),
                     identifier = {type: 'Identifier', name: attributeName.type + ':' + attributeName.attribute};
-                switch (nativeType) {
-                    case 'float':
-                    case 'double':
-                        guards.push({
-                            type: 'BinaryPredicate',
-                            operator: '=',
-                            left: identifier,
-                            right: {type: 'Literal', dataType: 'number', value: NaN}
-                        });
-                        break;
-                    case 'integer':
-                        guards.push({
-                            type: 'BinaryPredicate',
-                            operator: '=',
-                            left: identifier,
-                            right: {type: 'Literal', dataType: 'integer', value: 0x7FFFFFFF}
-                        });
-                        break;
-                    case 'number':
-                        // TODO distinguish float/double from integer.
-                        guards.push({
-                            type: 'BinaryPredicate',
-                            operator: 'IS',
-                            left: identifier,
-                            right: {type: 'Literal', dataType: 'number', value: NaN}
-                        });
-                        guards.push({
-                            type: 'BinaryPredicate',
-                            operator: '=',
-                            left: identifier,
-                            right: {type: 'Literal', dataType: 'integer', value: 0x7FFFFFFF}
-                        });
-                        break;
-                    case 'string':
-                        guards.push({
-                            type: 'BinaryPredicate',
-                            operator: '=',
-                            left: identifier,
-                            right: {type: 'Literal', dataType: 'string', value: '\0'}
-                        });
-                        // TODO retire 'n/a'
-                        guards.push({
-                            type: 'BinaryPredicate',
-                            operator: '=',
-                            left: identifier,
-                            right: {type: 'Literal', dataType: 'string', value: 'n/a'}
-                        });
-                        break;
-                }
+                _.each(this.guardExpressionsForType(nativeType, identifier), (guard) => {
+                    guards.push(guard);
+                });
             });
             return _.reduce(guards, (memo, guard) => {
                 return {
