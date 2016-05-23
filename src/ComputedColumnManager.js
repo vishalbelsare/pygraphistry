@@ -425,12 +425,12 @@ ComputedColumnManager.prototype.loadEncodingColumns = function () {
 //////////////////////////////////////////////////////////////////////////////
 
 /**
- * @param {GraphComponentTypes} columnType
+ * @param {BufferTypeKeys} columnType
  * @param {String} columnName
  * @returns {ComputedColumnSpec}
  */
 ComputedColumnManager.prototype.getComputedColumnSpec = function (columnType, columnName) {
-    return this.activeComputedColumns[columnType][columnName];
+    return this.activeComputedColumns[columnType] && this.activeComputedColumns[columnType][columnName];
 };
 
 ComputedColumnManager.prototype.getActiveColumns = function () {
@@ -442,7 +442,7 @@ ComputedColumnManager.prototype.getColumnVersion = function (columnType, columnN
 };
 
 ComputedColumnManager.prototype.hasColumn = function (columnType, columnName) {
-    return this.activeComputedColumns[columnType] && this.activeComputedColumns[columnType][columnName];
+    return this.getComputedColumnSpec(columnType, columnName) !== undefined;
 };
 
 //////////////////////////////////////////////////////////////////////////////
