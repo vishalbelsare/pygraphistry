@@ -55,10 +55,10 @@ function handleFiltersResponse (filtersResponseObservable, poi) {
  * @param socket
  * @param {FiltersPanel} filtersPanel
  * @param {Boolean} doneLoading
- * @param {Subject} latestHighlightedObject
+ * @param {Subject<VizSlice>} activeHighlight
  * @constructor
  */
-function HistogramBrush (socket, filtersPanel, doneLoading, latestHighlightedObject) {
+function HistogramBrush (socket, filtersPanel, doneLoading, activeHighlight) {
     debug('Initializing histogram brush');
 
     this.lastSelection = undefined;
@@ -67,7 +67,7 @@ function HistogramBrush (socket, filtersPanel, doneLoading, latestHighlightedObj
     this.dataframeAttributeChange = new Rx.Subject();
     /** @type ReplaySubject<Boolean> */
     this.histogramsPanelReady = new Rx.ReplaySubject(1);
-    this.latestHighlightedObject = latestHighlightedObject;
+    this.activeHighlight = activeHighlight;
 
     /** @type ReplaySubject<GlobalStats> */
     this.globalStats = new Rx.ReplaySubject(1);
@@ -120,7 +120,7 @@ HistogramBrush.prototype.initializeGlobalData = function (filtersPanel) {
         return {histograms: histogramsReply.data, sparkLines: sparkLinesReply.data};
     }).do((data) => {
         this.histogramsPanel = new HistogramsPanel(filtersPanel, this.updateDataframeAttributeSubject,
-            this.latestHighlightedObject);
+            this.activeHighlight);
 
         // This is redundant with the server request honoring the same limit, but avoids visual overflow:
         const filteredAttributes = {};

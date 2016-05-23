@@ -793,7 +793,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     const exclusionsPanel = new ExclusionsPanel(socket, filtersPanel.control, appState.labelRequests);
     const filtersResponses = filtersPanel.control.filtersResponsesSubject;
     const histogramBrush = new HistogramBrush(socket, filtersPanel, readyForHistograms,
-        appState.latestHighlightedObject);
+        appState.activeSelection);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
     histogramBrush.setupApiInteraction(appState.apiActions);

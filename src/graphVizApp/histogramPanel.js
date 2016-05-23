@@ -351,14 +351,14 @@ function elWidth ($el) {
 /**
  * @param {FiltersPanel} filtersPanel
  * @param {Observable<HistogramChange>} updateAttributeSubject
- * @param {Subject} latestHighlightedObject
+ * @param {Subject} activeHighlight
  * @constructor
  */
-function HistogramsPanel (filtersPanel, updateAttributeSubject, latestHighlightedObject) {
+function HistogramsPanel (filtersPanel, updateAttributeSubject, activeHighlight) {
     this.filtersPanel = filtersPanel;
     // How the model-view communicate back to underlying Rx.
     this.updateAttributeSubject = updateAttributeSubject;
-    this.latestHighlightedObject = latestHighlightedObject;
+    this.activeHighlight = activeHighlight;
     this.highlightRequests = new Rx.Subject();
     /** Histogram-specific/owned filter information, keyed/unique per attribute.
      * @type Object.<HistogramFilterSpec> */
@@ -740,21 +740,23 @@ HistogramsPanel.prototype.queryForBinRange = function (attribute, firstBin, last
 };
 
 HistogramsPanel.prototype.setupHighlightRequests = function () {
-    this.highlightRequests.debounceTime(100).switchMap((query) => {
-        return this.highlightElementsMatchingQuery(query.attribute, query.ast);
+    this.highlightRequests.debounceTime(250).switchMap((query) => {
+        if (query === undefined) {
+            return Rx.Observable.of({success: true, computedMask: []});
+        } else {
+            return this.highlightElementsMatchingQuery(query.attribute, query.ast);
+        }
     }).do((response) => {
         if (response.success && response.computedMask) {
-            this.latestHighlightedObject.onNext(new VizSlice(response.computedMask));
+            const slice = new VizSlice(response.computedMask);
+            // (TODO, HACK) Tag the slice so the highlighter knows to render it like a temporary selection.
+            slice.notMouseOver = true;
+            this.activeHighlight.onNext(slice);
         }
     }).subscribe(_.identity, util.makeErrorHandler('Highlight by histogram query'));
 };
 
 HistogramsPanel.prototype.highlightElementsMatchingQuery = function (dataframeAttribute, ast) {
-    if (this.previousHighlightedObject !== undefined) {
-        this.latestHighlightedObject.take(1).do((latestHighlightedObject) => {
-            this.previousHighlightedObject = latestHighlightedObject;
-        });
-    }
     return this.filtersPanel.control.computeMaskCommand.sendWithObservableResult({
         gesture: 'ast',
         ast: ast,
@@ -763,8 +765,7 @@ HistogramsPanel.prototype.highlightElementsMatchingQuery = function (dataframeAt
 };
 
 HistogramsPanel.prototype.clearHighlight = function () {
-    const previousHighlightedObject = this.previousHighlightedObject;
-    this.latestHighlightedObject.onNext(previousHighlightedObject || new VizSlice([]));
+    this.highlightRequests.onNext(undefined);
 };
 
 HistogramsPanel.prototype.encodeAttribute = function (dataframeAttribute, encodingSpec, reset, binning) {
@@ -1499,7 +1500,6 @@ HistogramsPanel.prototype.handleMouseOverHistogramBar = function (isEntering, sv
     if (isEntering) {
         const binId = data[0].binId;
         const attribute = data.attr;
-        /** @type HistogramModel */
         const query = this.queryForBin(attribute, binId);
         this.highlightRequests.onNext(query);
     }
