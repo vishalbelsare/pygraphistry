@@ -1491,6 +1491,20 @@ HistogramsPanel.prototype.applyAttrBars = function (bars, globalPos, localPos) {
         .style('fill', this.reColor.bind(this));
 };
 
+HistogramsPanel.prototype.transformFilterQueryForHighlight = function (query) {
+    query.ast = {
+        type: 'BinaryPredicate',
+        operator: 'AND',
+        left: {
+            type: 'UnaryExpression',
+            operator: 'DEFINED',
+            fixity: 'postfix',
+            argument: {type: 'Identifier', name: query.attribute}
+        },
+        right: query.ast
+    }
+};
+
 HistogramsPanel.prototype.handleMouseOverHistogramBar = function (isEntering, svg) {
     const col = d3.select(d3.event.target.parentNode);
     const bars = col.selectAll('.bar-rect');
@@ -1501,6 +1515,7 @@ HistogramsPanel.prototype.handleMouseOverHistogramBar = function (isEntering, sv
         const binId = data[0].binId;
         const attribute = data.attr;
         const query = this.queryForBin(attribute, binId);
+        this.transformFilterQueryForHighlight(query);
         this.highlightRequests.onNext(query);
     }
     // _.each(bars[0], (child) => {
