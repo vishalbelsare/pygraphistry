@@ -12,7 +12,7 @@ ace.define('ace/mode/graphistry_highlight_rules',
 
             var operatorKeywords = (
                 'between|and|or|not|in|memberof|' +
-                'is|isnull|notnull|' +
+                'is|isnull|notnull|defined|undefined|' +
                 'like|ilike|regexp|similar|to|escape|' +
                 'union|intersect'
             );
@@ -88,7 +88,7 @@ ace.define('ace/mode/graphistry_highlight_rules',
                     next:  'quotedIdentifier'
                 }, {
                     token: 'keyword.operator',
-                    regex: '\\+|\\-|\\/|\\/\\/|%|<@>|@>|<@|&|\\^|~|<|>|<=|=>|==|!=|<>|='
+                    regex: '\\+|\\-|\\/|\\/\\/|%|*|**|<@>|@>|<@|&|\\^|~|<|>|<=|=>|==|!=|<>|='
                 }, {
                     token: 'paren.lparen',
                     regex: /[\[({]/,
