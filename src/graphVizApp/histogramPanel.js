@@ -231,6 +231,7 @@ const HistogramModel = Backbone.Model.extend({
                         if (binRanges.length === 0) {
                             binRanges.push({min: binValue.min, max: binValue.max, bins: [i]});
                         } else {
+                            // Accumulate adjacent ranges:
                             const lastBinRange = binRanges[binRanges.length - 1];
                             if (lastBinRange.bins[lastBinRange.bins.length - 1] === i - 1) {
                                 lastBinRange.bins.push(i);
@@ -244,9 +245,9 @@ const HistogramModel = Backbone.Model.extend({
                         binValues.push(isNumeric ? Number(binName) : binName);
                     }
                 }
-                histFilter.equals = binValues;
                 const elements = _.map(binValues, (x) => ({type: 'Literal', value: x}));
                 if (elements.length > 1) {
+                    histFilter.equals = binValues;
                     histFilter.ast = {
                         type: 'BinaryPredicate',
                         operator: 'IN',
@@ -254,6 +255,7 @@ const HistogramModel = Backbone.Model.extend({
                         right: {type: 'ListExpression', elements: elements}
                     };
                 } else if (elements.length === 1) {
+                    histFilter.equals = binValues[0];
                     histFilter.ast = {
                         type: 'BinaryPredicate',
                         operator: '=',
@@ -311,6 +313,9 @@ const HistogramModel = Backbone.Model.extend({
                             right: histFilter.ast
                         };
                     }
+                } else if (binRanges.length === 1 && histFilter.equals === undefined) {
+                    histFilter.start = binRanges[0].min;
+                    histFilter.stop = binRanges[0].max;
                 }
             }
         }
