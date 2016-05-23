@@ -415,8 +415,9 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject, activeHighlight)
             // TODO: Wrap updates into render
             const histogram = this.model;
 
+            // Tooltip for column data summary using aggregations; needs polish.
             const aggregations = histogram.get('aggregations');
-            if (aggregations) {
+            if ($('.beta').length === 0 && aggregations) {
                 const dataOptions = {placement: 'left', toggle: 'tooltip', html: true};
                 const $attributeName = $('.attributeName', this.$el);
                 $attributeName.data(dataOptions);
@@ -521,7 +522,6 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject, activeHighlight)
             const vizContainer = this.model.get('vizContainer');
             const attribute = this.model.get('attribute');
             const d3Data = this.model.get('d3Data');
-            const histogram = this.model.getHistogramData();
             const numBins = this.model.numBins();
             const vizHeight = numBins * BAR_THICKNESS + histogramMarginsVertical.top + histogramMarginsVertical.bottom;
             d3Data.svg.selectAll('*').remove();
