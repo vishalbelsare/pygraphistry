@@ -288,14 +288,21 @@ function setupBrush(appState, isOn) {
     }).subscribe(_.identity, util.makeErrorHandler('enable/disable brush marquee'));
 
     const marqueeStateToTransformedRect = (marqueeState) => {
+        if (marqueeState.allSelected) {
+            return {all: true};
+        }
+
         const {tl, br} = marqueeState.lastRect;
         const tlWorld = transform(tl);
         const brWorld = transform(br);
         return {tl: tlWorld, br: brWorld};
     };
 
-    const transformedSelections = marquee.selections.map(marqueeStateToTransformedRect).share();
-    const transformedDrags = marquee.drags.map(marqueeStateToTransformedRect).share();
+    // Initialize both with an {all: true} selection
+    const transformedSelections = marquee.selections.map(marqueeStateToTransformedRect).share()
+            .merge(Rx.Observable.from([{all: true}]));
+    const transformedDrags = marquee.drags.map(marqueeStateToTransformedRect).share()
+            .merge(Rx.Observable.from([{all: true}]));
 
     return {
         bounds: marquee.selections,

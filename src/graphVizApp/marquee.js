@@ -138,13 +138,19 @@ const sideEffectFunctions = {
         // Hide everything, change cursor back to normal
         resetMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
         disableMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
+        machine.marqueeState.allSelected = true;
+        if (machine.marqueeState.canDrag) {
+            machine.marqueeState.dragObservable.onNext(machine.marqueeState);
+            machine.marqueeState.selectObservable.onNext(machine.marqueeState);
+        }
     },
 
     INIT: (machine, evt) => {
         // Set cursor to crosshair
-        machine.marqueeState.lastRect = makeEmptyRect();
         enableMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
         resetMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
+        machine.marqueeState.allSelected = false;
+        machine.marqueeState.lastRect = makeEmptyRect();
     },
 
     RESET_CLICK: (machine, evt) => {
@@ -216,7 +222,7 @@ const sideEffectFunctions = {
 
 function makeStateMachine (options={}) {
     const {selectObservable = new Rx.ReplaySubject(1), dragObservable = new Rx.ReplaySubject(1),
-        canDrag = false, $elt, $cont
+        canDrag = false, $elt, $cont, allSelected = false
     } = options;
 
     const machine = new Stately(marqueeStateMachineDesc, 'OFF');
@@ -225,7 +231,7 @@ function makeStateMachine (options={}) {
     // TODO FIXME: Is this the right model to use here?
     // Is there a way to make this more reasonable, instead of passing data
     // by attaching it to this?
-    machine.marqueeState = {selectObservable, dragObservable, canDrag, $elt, $cont};
+    machine.marqueeState = {selectObservable, dragObservable, canDrag, $elt, $cont, allSelected};
 
     return machine;
 }
@@ -341,7 +347,7 @@ function createDraggableMarquee ($cont) {
     const machineOptions = {
         selectObservable: new Rx.ReplaySubject(1),
         dragObservable: new Rx.ReplaySubject(1),
-        canDrag: true, $elt, $cont
+        canDrag: true, $elt, $cont, allSelected: true
     };
 
     const machine = makeStateMachine(machineOptions);
