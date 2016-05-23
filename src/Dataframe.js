@@ -1314,7 +1314,7 @@ Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
 
     // Get values via normal path where they're treated as computed columns.
     // TODO: Deal with "unfiltered code" path. Do we need it with computed columns?
-    const res = this.getColumnValues(name, 'localBuffer');
+    const res = this.hasLocalBuffer(name) && this.getColumnValues(name, 'localBuffer');
 
     if (!res) {
         throw new Error('Invalid Local Buffer: ' + name);
