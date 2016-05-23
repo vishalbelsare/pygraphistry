@@ -360,6 +360,9 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject, activeHighlight)
     this.updateAttributeSubject = updateAttributeSubject;
     this.activeHighlight = activeHighlight;
     this.highlightRequests = new Rx.Subject();
+    /** @type Rx.ReplaySubject<Boolean> */
+    this.mouseIsDown = new Rx.ReplaySubject(1);
+    this.mouseIsDown.onNext(false);
     /** Histogram-specific/owned filter information, keyed/unique per attribute.
      * @type Object.<HistogramFilterSpec> */
     this.histogramFilters = {};
@@ -740,8 +743,8 @@ HistogramsPanel.prototype.queryForBinRange = function (attribute, firstBin, last
 };
 
 HistogramsPanel.prototype.setupHighlightRequests = function () {
-    this.highlightRequests.debounceTime(250).switchMap((query) => {
-        if (query === undefined) {
+    this.highlightRequests.debounceTime(250).combineLatest(this.mouseIsDown).switchMap(([query, mouseIsDown]) => {
+        if (query === undefined || mouseIsDown) {
             return Rx.Observable.of({success: true, computedMask: []});
         } else {
             return this.highlightElementsMatchingQuery(query.attribute, query.ast);
@@ -1345,7 +1348,7 @@ HistogramsPanel.prototype.updateSparkline = function ($el, model, attribute) {
             .attr('fill', updateColumnColor)
             .attr('opacity', updateOpacity)
             .style('cursor', updateCursor)
-            .on('mousedown', this.handleHistogramDown.bind(this, filterRedrawCallback, id, model.get('globalStats')))
+            .on('mousedown', this.handleHistogramMouseDown.bind(this, filterRedrawCallback, id, model.get('globalStats')))
             .on('mouseover', this.handleMouseOverHistogramBar.bind(this, true, svg))
             .on('mouseout', this.handleMouseOverHistogramBar.bind(this, false, svg));
 
@@ -1374,7 +1377,8 @@ function binInLastFilter (lastHistogramFilter, binNum) {
         (lastHistogramFilter.firstBin <= binNum && lastHistogramFilter.lastBin >= binNum));
 }
 
-HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, globalStats) {
+HistogramsPanel.prototype.handleHistogramMouseDown = function (redrawCallback, id, globalStats) {
+    this.mouseIsDown.onNext(true);
     const col = d3.select(d3.event.target.parentNode);
     const $element = $(col[0][0]);
     const $parent = $element.parent();
@@ -1422,6 +1426,7 @@ HistogramsPanel.prototype.handleHistogramDown = function (redrawCallback, id, gl
     Rx.Observable.fromEvent($(document.body), 'mouseup')
         .take(1)
         .do(() => {
+            this.mouseIsDown.onNext(false);
             positionChanges.dispose();
             if (this.histogramFilters[attr]) {
                 this.histogramFilters[attr].completed = true;
@@ -1502,7 +1507,7 @@ HistogramsPanel.prototype.transformFilterQueryForHighlight = function (query) {
             argument: {type: 'Identifier', name: query.attribute}
         },
         right: query.ast
-    }
+    };
 };
 
 HistogramsPanel.prototype.handleMouseOverHistogramBar = function (isEntering, svg) {
