@@ -1772,10 +1772,11 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
         Rx.Observable.combineLatest(this.graph, this.viewConfig, (currentGraph, viewConfig) => {
             let qNodeSelection;
             const dataframe = currentGraph.dataframe;
+            specification.basedOnCurrentDataframe = true;
             switch (specification.gesture) {
                 case 'ast': {
                     const errors = [];
-                    const query = _.pick(specification, ['ast', 'type', 'attribute']);
+                    const query = _.pick(specification, ['ast', 'type', 'attribute', 'basedOnCurrentDataframe']);
                     if (!query.type) {
                         const columnName = dataframe.normalizeAttributeName(specification.attribute);
                         _.extend(query, columnName);
