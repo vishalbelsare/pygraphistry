@@ -484,7 +484,7 @@ ExpressionCodeGenerator.prototype = {
         if (matches.length === 0) {
             return escapeRegexNonPattern(pattern);
         }
-        for (var i = 0; i < matches.length; i++) {
+        for (let i = 0; i < matches.length; i++) {
             match = matches[i];
             const patternSegment = pattern.substring(lastMatchIndex, match.index);
             // Avoid adding regex chars unquoted or numbers!
@@ -551,7 +551,7 @@ ExpressionCodeGenerator.prototype = {
         } else {
             resultStr += this.expressionStringForAST(elseClause, bindings, depth, precedence);
         }
-        for (var i=0; i<cases.length; i++) {
+        for (let i=0; i<cases.length; i++) {
             resultStr += ')';
         }
         return resultStr;
@@ -784,6 +784,16 @@ ExpressionCodeGenerator.prototype = {
                     precedence = this.precedenceOf(operator);
                     arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
                     subExprString = [arg, operator, 'null'].join(' ');
+                } else if (operator === 'DEFINED') {
+                    operator = '!==';
+                    precedence = this.precedenceOf(operator);
+                    arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
+                    subExprString = [arg, operator, 'undefined'].join(' ');
+                } else if (operator === 'UNDEFINED') {
+                    operator = '===';
+                    precedence = this.precedenceOf(operator);
+                    arg = this.expressionStringForAST(ast.argument, bindings, depth2, precedence);
+                    subExprString = [arg, operator, 'undefined'].join(' ');
                 } else {
                     operator = this.translateOperator(operator);
                     precedence = this.precedenceOf(operator, ast.fixity);

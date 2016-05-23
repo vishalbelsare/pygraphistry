@@ -348,7 +348,7 @@ Dataframe.prototype.composeMasks = function (selectionMasks, exclusionMasks, lim
  * @param {Error[]}errors
  * @returns {DataframeMask}
  */
-Dataframe.prototype.getMasksForQuery = function (query, errors) {
+Dataframe.prototype.getMasksForQuery = function (query, errors, guardNulls = true) {
     const basedOnCurrentDataframe = query.basedOnCurrentDataframe;
     let attribute = query.attribute,
         type = query.type;
@@ -364,10 +364,10 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
         }
     }
     try {
-        const plan = new ExpressionPlan(this, query.ast);
+        const plan = new ExpressionPlan(this, query.ast, guardNulls);
         let masks, filterFunc;
         if (query.ast === undefined) {
-            filterFunc = this.filterFuncForQueryObject(query);
+            filterFunc = this.filterFuncForQueryObject(query, guardNulls);
             masks = this.getAttributeMask(type, attribute, filterFunc, basedOnCurrentDataframe);
         } else if (plan.isRedundant()) {
             type = plan.rootNode.iterationType();
@@ -377,7 +377,7 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
                 type = normalizedAttribute.type;
             }
             _.defaults(query, {attribute: attribute, type: type});
-            filterFunc = this.filterFuncForQueryObject(query);
+            filterFunc = this.filterFuncForQueryObject(query, guardNulls);
             masks = this.getAttributeMask(type, attribute, filterFunc, basedOnCurrentDataframe);
         } else {
             masks = plan.execute();
@@ -395,9 +395,10 @@ Dataframe.prototype.getMasksForQuery = function (query, errors) {
 
 /**
  * @param {ClientQuery} query
+ * @param {Boolean?} guardNulls
  * @returns Function<Object>
  */
-Dataframe.prototype.filterFuncForQueryObject = function (query) {
+Dataframe.prototype.filterFuncForQueryObject = function (query, guardNulls = true) {
     let filterFunc = _.identity;
     let ast = query.ast;
     if (ast !== undefined) {
@@ -405,11 +406,13 @@ Dataframe.prototype.filterFuncForQueryObject = function (query) {
         const columnName = this.normalizeAttributeName(query.attribute, query.type);
         if (columnName === undefined) {
             // Trust that this is still single-attribute. Doubtful idea.
-            const plan = new ExpressionPlan(this, ast);
+            const plan = new ExpressionPlan(this, ast, guardNulls);
             plan.compile();
             filterFunc = plan.rootNode.executor;
         } else {
-            ast = generator.transformASTForNullGuards(ast, {value: columnName}, this);
+            if (guardNulls) {
+                ast = generator.transformASTForNullGuards(ast, {value: columnName}, this);
+            }
             filterFunc = generator.functionForAST(ast, {'*': 'value'});
         }
     }

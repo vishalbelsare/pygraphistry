@@ -1712,7 +1712,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                 case 'ast': {
                     const errors = [];
                     const query = _.pick(specification, ['ast', 'type', 'attribute']);
-                    qNodeSelection = Q(currentGraph.dataframe.getMasksForQuery(query, errors));
+                    qNodeSelection = Q(currentGraph.dataframe.getMasksForQuery(query, errors, false));
                     if (errors.length > 0) {
                         throw errors[0];
                     }
@@ -1780,7 +1780,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                         const columnName = dataframe.normalizeAttributeName(specification.attribute);
                         _.extend(query, columnName);
                     }
-                    qNodeSelection = Q(dataframe.getMasksForQuery(query, errors));
+                    qNodeSelection = Q(dataframe.getMasksForQuery(query, errors, false));
                     if (errors.length > 0) {
                         throw errors[0];
                     }
