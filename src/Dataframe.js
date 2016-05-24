@@ -854,6 +854,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     }).then(() => {
         logger.debug('Filter Completed in ' + (Date.now() - start) + ' ms.');
         this.data = newData;
+        return true; // Signal to recipients that a filter was successfully completed
     });
 
 };

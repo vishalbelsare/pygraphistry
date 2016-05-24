@@ -330,9 +330,16 @@ VizServer.prototype.filterGraphByMaskList = function (graph, selectionMasks, exc
         let filterPromise = dataframe.applyDataframeMaskToFilterInPlace(prunedMasks, simulator);
         // Prune out orphans if configured that way:
         if (viewConfig.parameters && viewConfig.parameters.pruneOrphans === true) {
-            filterPromise = filterPromise.then(() => {
+            filterPromise = filterPromise.then((updatedBuffers) => {
+
                 const orphanPrunedMasks = dataframe.pruneOrphans(prunedMasks);
-                return dataframe.applyDataframeMaskToFilterInPlace(orphanPrunedMasks, simulator);
+                logger.debug('orphan pruned mask lengths: ', orphanPrunedMasks.numEdges(), orphanPrunedMasks.numPoints());
+
+                return dataframe.applyDataframeMaskToFilterInPlace(orphanPrunedMasks, simulator).then((pruneUpdatedBuffers) => {
+                    // We check return value to see if we should update buffers on the client.
+                    // Because this is a cascade of 2 filters, we need to return whether either of them should update
+                    return pruneUpdatedBuffers || updatedBuffers;
+                });
             });
         }
         filterPromise
