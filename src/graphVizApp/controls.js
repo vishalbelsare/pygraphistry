@@ -665,32 +665,71 @@ function togglePanel ($panelButton, maybe$panel, newVisibility) {
 }
 
 
-//Observable DOM * $DOM * ?$DOM * String -> Observable Bool
-//When toolbarClicks is $panelButton or has same data-toggle-group attr,
-// toggle $panelButton and potentially show $panel,
-// else toggle off $panelButton and hide $panel
-//Return toggle status stream
+//Observable DOM * $DOM * ?$DOM * String ->
+//  {toggleStatus: Observable Bool,
+//   toggle: Subject {null+undefined, boolean}
+// Control button and panel toggle state
+// Returns current state stream toggleStatus, and Subject toggle (similar to jquery's)
+//   -- toggle: null/undefined causes a flip, otherwise  use truthiness for new state
+//   -- self-click: flip
+//   -- toggle-group-click: disable
+
+//TODO falcor for this
+const globalStream = new Rx.Subject();
 function setupPanelControl (toolbarClicks, $panelButton, maybe$panel) {
 
     //TODO falcor
-    return Rx.Observable.merge(
 
-            //toggle on self-click
-            toolbarClicks.filter((elt) => elt === $panelButton[0]).map(() => {
-                return !$panelButton.find('i').hasClass('toggle-on');
-            }),
+    //Subject {undefined,null} + truthy
+    const toggle = new Rx.Subject();
 
-            //disable on same-toggle-group click
-            toolbarClicks
-                .filter((elt) => elt != $panelButton[0])
-                .filter((elt) => $(elt).attr('data-toggle-group')
+    //notify others about programmatic toggle
+    toggle.map(v => $panelButton[0])
+        .subscribe(globalStream, util.makeErrorHandler('toggle broadcast'));
+
+    // Observable {id: string, v: *}
+    const toggleCmds =
+        Rx.Observable.merge(
+
+            //external self-toggle
+            toggle.map(v => ({id: 'external-cmd', v})),
+
+            //self-click
+            toolbarClicks.filter((elt) => elt === $panelButton[0])
+                .map(v => ({id: 'self-click', v})),
+
+            //toggle-group-tick (via menu or other's toggle command)
+            toolbarClicks.merge(globalStream)
+                .filter(elt =>
+                        (elt != $panelButton[0])
+                        && $(elt).attr('data-toggle-group')
                         && $panelButton.attr('data-toggle-group')
                         && $(elt).attr('data-toggle-group') === $panelButton.attr('data-toggle-group'))
-                .map(() => { return false }))
+                .map(v => ({id: 'group-click', v})));
+
+    // Observable Boolean
+    const toggleStatus =
+        toggleCmds.do(function (v) { console.log('got', v); }).scan((prevStatus, {id, v}) => {
+                switch (id) {
+                    case 'external-cmd':
+                        return (v === undefined || v === null) ? !prevStatus
+                        : v ? true
+                        : false;
+                    case 'self-click':
+                        return !prevStatus;
+                    case 'group-click':
+                        return false;
+                    default:
+                        throw new Error({msg: 'unhandled cmd', val: [prevStatus, id, v]});
+                }
+            }, false)
         .do((newVisibility) => {
             togglePanel($panelButton, maybe$panel, newVisibility);
         })
         .share();
+
+    return {toggle, toggleStatus};
+
 }
 
 function setupCameraApi (appState) {
@@ -734,21 +773,22 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     const settingsOn = setupPanelControl(popoutClicks, $('#layoutSettingsButton'), $('#renderingItems'));
     const turnOnBrush = setupPanelControl(popoutClicks, $('#brushButton'));
 
-    Rx.Observable.merge(...[
-            marqueeOn, histogramPanelToggle, dataInspectorOn, timeExplorerOn, exclusionsOn, filtersOn,
-            setsOn, settingsOn, turnOnBrush])
-        .subscribe(_.identity, util.makeErrorHandler('Toolbar icon clicks'));
+    //register
+    [marqueeOn, histogramPanelToggle, dataInspectorOn, timeExplorerOn, exclusionsOn, filtersOn,
+            setsOn, settingsOn, turnOnBrush]
+            .forEach(pair =>
+                pair.toggleStatus.subscribe(_.identity, util.makeErrorHandler('Toolbar icon clicker')));
 
-    histogramPanelToggle
+    histogramPanelToggle.toggleStatus
         .do(on => $('body').toggleClass('with-histograms', on))
         .subscribe(_.identity, util.makeErrorHandler('histogram class state'));
 
-    marqueeOn
+    marqueeOn.toggleStatus
         .map((marqueeIsOn) => { return marqueeIsOn ? ' toggled' : false; })
         .subscribe(appState.marqueeOn, util.makeErrorHandler('notify spatial selection changed'));
 
     //TODO do on every click instead? weird
-    turnOnBrush
+    turnOnBrush.toggleStatus
         .map((s) => { return s ? 'toggled' : false})
         .subscribe(appState.brushOn, util.makeErrorHandler('brush toggle'));
 
@@ -784,28 +824,28 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .map(_.constant(finalCenter));
 
     const readyForHistograms = centeringDone.zip(doneLoading)
-        .merge(histogramPanelToggle)
+        .merge(histogramPanelToggle.toggleStatus)
         .take(1);
 
-    const marquee = setupSelectionMarquee(appState, marqueeOn);
-    const brush = setupBrush(appState, turnOnBrush);
-    const filtersPanel = new FiltersPanel(socket, appState.labelRequests, appState.settingsChanges);
-    const exclusionsPanel = new ExclusionsPanel(socket, filtersPanel.control, appState.labelRequests);
+    const marquee = setupSelectionMarquee(appState, marqueeOn.toggleStatus);
+    const brush = setupBrush(appState, turnOnBrush.toggleStatus);
+    const filtersPanel = new FiltersPanel(socket, appState.labelRequests, appState.settingsChanges, filtersOn.toggle);
+    const exclusionsPanel = new ExclusionsPanel(socket, filtersPanel.control, appState.labelRequests, exclusionsOn.toggle);
     const filtersResponses = filtersPanel.control.filtersResponsesSubject;
     const histogramBrush = new HistogramBrush(socket, filtersPanel, readyForHistograms,
         appState.latestHighlightedObject);
     histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
     histogramBrush.setupApiInteraction(appState.apiActions);
-    turnOnBrush.first((value) => value === true).do(() => {
-        togglePanel($('#histogramPanelControl'), $('#histogram.panel'), true);
+    turnOnBrush.toggleStatus.first((value) => value === true).do(() => {
+        histogramPanelToggle.toggle(true);
     }).subscribe(_.identity, util.makeErrorHandler('Enabling the histogram on first brush use.'));
-    dataInspector.init(appState, socket, workerParams.href, brush, filtersResponses, dataInspectorOn);
+    dataInspector.init(appState, socket, workerParams.href, brush, filtersResponses, dataInspectorOn.toggleStatus);
     forkVgraph(socket, urlParams);
     persist.setupPersistLayoutButton($('#persistButton'), appState, socket, urlParams);
     persist.setupPersistWorkbookButton($('#persistWorkbookButton'), appState, socket, urlParams);
     goLiveButton(socket, urlParams);
-    const setsPanel = new SetsPanel(socket, appState.labelRequests);
+    const setsPanel = new SetsPanel(socket, appState.labelRequests, setsOn.toggle);
     setsPanel.setupFiltersPanelInteraction(filtersPanel);
     setsPanel.setupSelectionInteraction(appState.activeSelection, appState.latestHighlightedObject);
 

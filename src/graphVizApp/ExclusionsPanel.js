@@ -224,13 +224,14 @@ const AllExclusionsView = Backbone.View.extend({
 Handlebars.registerHelper('json', (context) => JSON.stringify(context));
 
 
-function ExclusionsPanel (socket, control, labelRequests) {
+function ExclusionsPanel (socket, control, labelRequests, toggle) {
     // const $button = $('#exclusionButton');
 
     if (control === undefined) {
         control = new FilterControl(socket);
     }
     this.control = control;
+    this.toggle = toggle;
 
     this.labelRequestSubscription = labelRequests.filter(
         (labelRequest) => labelRequest.excludeQuery !== undefined
@@ -278,9 +279,7 @@ function ExclusionsPanel (socket, control, labelRequests) {
 ExclusionsPanel.prototype.isVisible = function () { return this.view.$el.is(':visible'); };
 
 ExclusionsPanel.prototype.toggleVisibility = function (newVisibility) {
-    const $panel = this.view.el;
-    $panel.toggle(newVisibility);
-    $panel.css('visibility', newVisibility ? 'visible': 'hidden');
+    this.toggle.onNext(newVisibility);
 };
 
 ExclusionsPanel.prototype.dispose = function () {

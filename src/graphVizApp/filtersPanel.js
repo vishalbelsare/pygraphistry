@@ -289,10 +289,12 @@ const AllFiltersView = Backbone.View.extend({
 Handlebars.registerHelper('json', (context) => JSON.stringify(context));
 
 
-function FiltersPanel(socket, labelRequests, settingsChanges) {
+function FiltersPanel(socket, labelRequests, settingsChanges, toggle) {
     //const $button = $('#filterButton');
 
     this.control = new FilterControl(socket);
+
+    this.toggle = toggle;
 
     this.labelRequestSubscription = labelRequests.filter(
         (labelRequest) => labelRequest.filterQuery !== undefined
@@ -400,9 +402,7 @@ FiltersPanel.prototype.runFilters = function (collection) {
 FiltersPanel.prototype.isVisible = function () { return this.view.$el.is(':visible'); };
 
 FiltersPanel.prototype.toggleVisibility = function (newVisibility) {
-    const $panel = this.view.el;
-    $panel.toggle(newVisibility);
-    $panel.css('visibility', newVisibility ? 'visible': 'hidden');
+   this.toggle.onNext(newVisibility);
 };
 
 FiltersPanel.prototype.dispose = function () {
