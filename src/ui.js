@@ -11,10 +11,11 @@ exports.error = function() {
 
     if (typeof($) !== 'undefined') {
         var $icon = $('<i class="fa fa-exclamation-triangle"></i>');
-        var $text = $('<span>').append(message + suffix);
+        var $text1 = $('<span>').append(message);
+        var $text2 = $('<span>').append(suffix).css({'float': 'right'});
         var $msg = $('<div>')
             .addClass('status-error')
-            .append($icon, $text)
+            .append($icon, $text1, $text2)
             .click(function() { $(this).slideUp(); });
 
         $('.load-spinner').hide();
