@@ -675,6 +675,7 @@ function togglePanel ($panelButton, maybe$panel, newVisibility) {
 //   -- toggle-group-click: disable
 
 //TODO falcor for this
+//Subject {v: {undefined,null}+truthy, btn: DOM}
 const globalStream = new Rx.Subject();
 function setupPanelControl (toolbarClicks, $panelButton, maybe$panel) {
 
@@ -684,7 +685,7 @@ function setupPanelControl (toolbarClicks, $panelButton, maybe$panel) {
     const toggle = new Rx.Subject();
 
     //notify others about programmatic toggle
-    toggle.map(v => $panelButton[0])
+    toggle.map(v => ({v, elt: $panelButton[0]}))
         .subscribe(globalStream, util.makeErrorHandler('toggle broadcast'));
 
     // Observable {id: string, v: *}
@@ -698,8 +699,17 @@ function setupPanelControl (toolbarClicks, $panelButton, maybe$panel) {
             toolbarClicks.filter((elt) => elt === $panelButton[0])
                 .map(v => ({id: 'self-click', v})),
 
-            //toggle-group-tick (via menu or other's toggle command)
-            toolbarClicks.merge(globalStream)
+            //external toggle command: turn off if peer turned on
+            globalStream.filter(({v, elt}) =>
+                (v
+                    && (elt != $panelButton[0])
+                    && $(elt).attr('data-toggle-group')
+                    && $panelButton.attr('data-toggle-group')
+                    && $(elt).attr('data-toggle-group') === $panelButton.attr('data-toggle-group')))
+                .map(v => ({id: 'group-click', v})),
+
+            //toggle-group-tick (via menu)
+            toolbarClicks
                 .filter(elt =>
                         (elt != $panelButton[0])
                         && $(elt).attr('data-toggle-group')
@@ -709,7 +719,7 @@ function setupPanelControl (toolbarClicks, $panelButton, maybe$panel) {
 
     // Observable Boolean
     const toggleStatus =
-        toggleCmds.do(function (v) { console.log('got', v); }).scan((prevStatus, {id, v}) => {
+        toggleCmds.scan((prevStatus, {id, v}) => {
                 switch (id) {
                     case 'external-cmd':
                         return (v === undefined || v === null) ? !prevStatus
