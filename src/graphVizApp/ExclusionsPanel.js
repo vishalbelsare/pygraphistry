@@ -224,13 +224,14 @@ const AllExclusionsView = Backbone.View.extend({
 Handlebars.registerHelper('json', (context) => JSON.stringify(context));
 
 
-function ExclusionsPanel (socket, control, labelRequests) {
+function ExclusionsPanel (socket, control, labelRequests, toggle) {
     // const $button = $('#exclusionButton');
 
     if (control === undefined) {
         control = new FilterControl(socket);
     }
     this.control = control;
+    this.toggle = toggle;
 
     this.labelRequestSubscription = labelRequests.filter(
         (labelRequest) => labelRequest.excludeQuery !== undefined
@@ -278,28 +279,7 @@ function ExclusionsPanel (socket, control, labelRequests) {
 ExclusionsPanel.prototype.isVisible = function () { return this.view.$el.is(':visible'); };
 
 ExclusionsPanel.prototype.toggleVisibility = function (newVisibility) {
-    const $panel = this.view.el;
-    $panel.toggle(newVisibility);
-    $panel.css('visibility', newVisibility ? 'visible': 'hidden');
-};
-
-ExclusionsPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButton, $resetElements) {
-    const panelToggles = toolbarClicks.filter(
-        (elt) => elt === $panelButton[0] || $resetElements.find(elt)
-    ).map((elt) => {
-        // return the target state (boolean negate)
-        if (elt === $panelButton[0]) {
-            return !this.isVisible();
-        } else if ($resetElements.find(elt)) {
-            return false;
-        } else {
-            return false;
-        }
-    });
-    this.togglesSubscription = panelToggles.do((newVisibility) => {
-        $panelButton.children('i').toggleClass('toggle-on', newVisibility);
-        this.toggleVisibility(newVisibility);
-    }).subscribe(_.identity, util.makeErrorHandler('Turning on/off the exclusion panel'));
+    this.toggle.onNext(newVisibility);
 };
 
 ExclusionsPanel.prototype.dispose = function () {

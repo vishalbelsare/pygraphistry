@@ -21,7 +21,7 @@ const Command     = require('./command.js');
 const ROWS_PER_PAGE = 8;
 
 
-function init (appState, socket, workerUrl, marquee, histogramPanelToggle, filtersResponses, isOnSubject) {
+function init (appState, socket, workerUrl, marquee, filtersResponses, isOnSubject) {
     const $nodesInspector = $('#inspector-nodes').find('.inspector');
     const $edgesInspector = $('#inspector-edges').find('.inspector');
 
@@ -41,15 +41,6 @@ function init (appState, socket, workerUrl, marquee, histogramPanelToggle, filte
             $inspectorOverlay.css('visibility', 'hidden');
         }
     }).subscribe(_.identity, util.makeErrorHandler('Grey / Ungrey Data Inspector'));
-
-    // Change sizes based on whether or not histogram is open.
-    // TODO: Separate this into some sort of control/window manager.
-    histogramPanelToggle.do((histogramsOn) => {
-        // TODO: Why is this inverted here?
-        $('#inspector').toggleClass('with-histograms', !histogramsOn);
-        $inspectorOverlay.toggleClass('with-histograms', !histogramsOn);
-    }).subscribe(_.identity, util.makeErrorHandler('change width on inspectorOverlay'));
-
 
     //////////////////////////////////////////////////////////////////////////
     // Setup Inspector

@@ -289,10 +289,12 @@ const AllFiltersView = Backbone.View.extend({
 Handlebars.registerHelper('json', (context) => JSON.stringify(context));
 
 
-function FiltersPanel(socket, labelRequests, settingsChanges) {
+function FiltersPanel(socket, labelRequests, settingsChanges, toggle) {
     //const $button = $('#filterButton');
 
     this.control = new FilterControl(socket);
+
+    this.toggle = toggle;
 
     this.labelRequestSubscription = labelRequests.filter(
         (labelRequest) => labelRequest.filterQuery !== undefined
@@ -400,27 +402,7 @@ FiltersPanel.prototype.runFilters = function (collection) {
 FiltersPanel.prototype.isVisible = function () { return this.view.$el.is(':visible'); };
 
 FiltersPanel.prototype.toggleVisibility = function (newVisibility) {
-    const $panel = this.view.el;
-    $panel.toggle(newVisibility);
-    $panel.css('visibility', newVisibility ? 'visible': 'hidden');
-};
-
-FiltersPanel.prototype.setupToggleControl = function (toolbarClicks, $panelButton, $resetElements) {
-    const panelToggles = toolbarClicks.filter((elt) => elt === $panelButton[0] || $resetElements.find(elt)
-    ).map((elt) => {
-        // return the target state (boolean negate)
-        if (elt === $panelButton[0]) {
-            return !this.isVisible();
-        } else if ($resetElements.find(elt)) {
-            return false;
-        } else {
-            return false;
-        }
-    });
-    this.togglesSubscription = panelToggles.do((newVisibility) => {
-        $panelButton.children('i').toggleClass('toggle-on', newVisibility);
-        this.toggleVisibility(newVisibility);
-    }).subscribe(_.identity, util.makeErrorHandler('Turning on/off the filter panel'));
+   this.toggle.onNext(newVisibility);
 };
 
 FiltersPanel.prototype.dispose = function () {

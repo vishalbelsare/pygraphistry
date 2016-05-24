@@ -578,6 +578,7 @@ Keyword
   / BETWEEN      !IdentifierPart
   / CASE         !IdentifierPart
   / CAST         !IdentifierPart
+  / DEFINED      !IdentifierPart
   / ELSE         !IdentifierPart
   / END          !IdentifierPart
   / ESCAPE       !IdentifierPart
@@ -598,6 +599,7 @@ Keyword
   / SIMILAR      !IdentifierPart
   / THEN         !IdentifierPart
   / TO           !IdentifierPart
+  / UNDEFINED    !IdentifierPart
   / WHEN         !IdentifierPart
   / WHERE        !IdentifierPart
 
@@ -685,6 +687,8 @@ _
 PostfixKeyword "postfix keyword"
   = ISNULL
   / NOTNULL
+  / DEFINED
+  / UNDEFINED
 
 PostfixExpression
   = argument:ArithmeticExpression __ operator:PostfixKeyword {
@@ -992,6 +996,7 @@ DATE = "DATE"i
 DEFAULT = "DEFAULT"i
 DEFERRABLE = "DEFERRABLE"i
 DEFERRED = "DEFERRED"i
+DEFINED = "DEFINED"i
 DELETE =
   __ "DELETE"i
 DESC = "DESC"i
@@ -1087,6 +1092,7 @@ TO = "TO"i
 TRANSACTION = "TRANSACTION"i
 TRIGGER = "TRIGGER"i
 TRUE = "TRUE"i
+UNDEFINED = "UNDEFINED"i
 UNION = "UNION"i
 UNIQUE = "UNIQUE"i
 UPDATE =
