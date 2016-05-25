@@ -588,11 +588,10 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 var updatedKeys = _.intersection(ids, existingKeys);
                 var newKeys = _.difference(ids, existingKeys);
 
-
                 // Unless subjects can change (Not supported today),
                 // don't have to deal with updated.
-
-                // TODO: Support deleting elements
+                //
+                // Deleting is handled by simply not adding to the new barModels
 
                 // add new bars
                 var barModels = [];

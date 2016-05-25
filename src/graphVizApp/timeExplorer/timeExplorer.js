@@ -192,6 +192,18 @@ TimeExplorer.prototype.updateGraphTimeFilter = function (model) {
     }
 };
 
+TimeExplorer.prototype.removeActiveQuery = function (barModelSubject) {
+    // Delete from bar model subjects list
+    for (let i = 0; i < this.barModelSubjects.length; i++) {
+        if (this.barModelSubjects[i] === barModelSubject) {
+            this.barModelSubjects.splice(i, 1);
+            break;
+        }
+    }
+
+    this.panel.view.updateChildrenViewList();
+}
+
 TimeExplorer.prototype.addActiveQuery = function (type, attr, string) {
 
     var newBar = new Rx.ReplaySubject(1);
