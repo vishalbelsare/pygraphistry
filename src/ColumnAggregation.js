@@ -42,6 +42,8 @@ function ColumnAggregation(dataframe, column, attrName, graphType) {
     this.dataframe = dataframe;
     this.column = column;
     this.values = dataframe.getColumnValues(attrName, graphType);
+    this.attrName = attrName;
+    this.graphType = graphType;
     /* @type Aggregations */
     this.aggregations = {
         count: undefined,
@@ -221,7 +223,7 @@ ColumnAggregation.prototype.fixedAllocationNumericAggregations = function () {
             return;
         }
         if (value < minValue) { minValue = value; }
-        else if (value > maxValue) { maxValue = value; }
+        if (value > maxValue) { maxValue = value; }
         sum += parseFloat(value);
     });
     this.updateAggregationTo('countValid', numValues - countMissing);
@@ -280,7 +282,7 @@ ColumnAggregation.prototype.countDistinct = function (limit=MaxDistinctValues) {
     _.each(this.values, (value) => {
         if (dataTypeUtil.valueSignifiesUndefined(value)) { return; }
         if (minValue === null || isLessThan(value, minValue)) { minValue = value; }
-        else if (maxValue === null || isLessThan(maxValue, value)) { maxValue = value; }
+        if (maxValue === null || isLessThan(maxValue, value)) { maxValue = value; }
         const key = keyMaker(value);
         if (numDistinct < limit) {
             if (countsByValue.hasOwnProperty(key)) {
