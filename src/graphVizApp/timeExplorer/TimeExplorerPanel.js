@@ -73,6 +73,8 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
         $filterSlider: $('#time-panel-filter-slider'),
         $encodingSliderA: $('#time-panel-encoding-slider-a'),
         $encodingSliderB: $('#time-panel-encoding-slider-b'),
+        $timeExplorerContents: $('#timeExplorerContents'),
+        $timeExplorerInitDiv: $('#timeExplorerInitDiv'),
         userBarsView: that.userBarsView,
         mainBarView: that.mainBarView,
         bottomAxisView: that.bottomAxisView,
@@ -125,7 +127,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
             var params = {fields};
             var html = this.timeBarInitializationMenuTemplate(params);
-            this.$timeExplorerMain.append(html);
+            this.$timeExplorerInitDiv.append(html);
         },
 
         submitTimeAttr: function (evt) {
@@ -155,6 +157,10 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
         render: function () {
             // TODO: New div and render correct eleements in right order
             this.$timeExplorerMain.empty();
+
+            this.$timeExplorerInitDiv.empty();
+            this.$timeExplorerInitDiv.addClass('hidden');
+            this.$timeExplorerContents.removeClass('hidden');
 
             this.$timeExplorerMain.append(this.mainBarView.el);
             this.$timeExplorerAxisContainer.append(this.bottomAxisView.el);
