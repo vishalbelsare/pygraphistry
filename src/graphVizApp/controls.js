@@ -497,7 +497,7 @@ function createControls (socket, appState, urlParams) {
 
         //workaround: https://github.com/nostalgiaz/bootstrap-switch/issues/446
         setTimeout(() => {
-            $('#renderingItems').css({'left': '5em'}).toggleClass('open', false);
+            $('#renderingItems').css({'left': '3.4em'}).toggleClass('open', false);
         }, 2000);
 
         //APPEARANCE
