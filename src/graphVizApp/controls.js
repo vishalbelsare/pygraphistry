@@ -853,7 +853,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     histogramBrush.setupMarqueeInteraction(brush);
     histogramBrush.setupApiInteraction(appState.apiActions);
     turnOnBrush.toggleStatus.first((value) => value === true).do(() => {
-        histogramPanelToggle.toggle(true);
+        histogramPanelToggle.toggle.onNext(true);
     }).subscribe(_.identity, util.makeErrorHandler('Enabling the histogram on first brush use.'));
     dataInspector.init(appState, socket, workerParams.href, brush, filtersResponses, dataInspectorOn.toggleStatus);
     forkVgraph(socket, urlParams);
