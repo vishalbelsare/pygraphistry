@@ -89,7 +89,7 @@ function enableMarqueeVisuals ($elt, $cont) {
 
 function resetMarqueeVisuals ($elt, $cont) {
     $elt.empty();
-    $elt.css({width: 0, height: 0});
+    $elt.css({width: 0, height: 0, left: 0, top: 0});
     $elt.removeClass('draggable').removeClass('dragging');
     $cont.removeClass('done');
 }
@@ -149,11 +149,11 @@ const sideEffectFunctions = {
         // Set cursor to crosshair
         enableMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
         resetMarqueeVisuals(machine.marqueeState.$elt, machine.marqueeState.$cont);
-        machine.marqueeState.allSelected = false;
         machine.marqueeState.lastRect = makeEmptyRect();
     },
 
     RESET_CLICK: (machine, evt) => {
+        machine.marqueeState.allSelected = true;
         machine.marqueeState.lastRect = makeEmptyRect();
         machine.marqueeState.selectObservable.onNext(machine.marqueeState);
         machine.events.onNext({evt: {}, name: 'reset'});
@@ -161,6 +161,7 @@ const sideEffectFunctions = {
 
     DOWN_SELECT: (machine, evt) => {
         // Set Marquee State for down position
+        machine.marqueeState.allSelected = false;
         machine.marqueeState.downPos = toPoint(machine.marqueeState.$cont, evt);
     },
 
