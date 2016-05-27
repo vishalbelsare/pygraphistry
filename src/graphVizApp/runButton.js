@@ -50,6 +50,7 @@ module.exports = function (appState, socket, urlParams, isAutoCentering) {
             .merge(runActions.map((play) => !play))
             .do((wasOn) => {
                 $bolt.toggleClass('toggle-on', !wasOn);
+                $bolt.toggleClass('automode', !wasOn);
             })
             .switchMap((wasOn) => {
                 const isOn = !wasOn;
