@@ -793,6 +793,11 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
         .do(on => $('body').toggleClass('with-histograms', on))
         .subscribe(_.identity, util.makeErrorHandler('histogram class state'));
 
+    timeExplorerOn.toggleStatus
+        .do((on) => {
+            $('#timeExplorer').css('visibility', on ? 'visible' : 'hidden');
+        }).subscribe(_.identity, util.makeErrorHandler('toggle histogram visibility from button'));
+
     marqueeOn.toggleStatus
         .map((marqueeIsOn) => { return marqueeIsOn ? ' toggled' : false; })
         .subscribe(appState.marqueeOn, util.makeErrorHandler('notify spatial selection changed'));
@@ -848,7 +853,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     histogramBrush.setupMarqueeInteraction(brush);
     histogramBrush.setupApiInteraction(appState.apiActions);
     turnOnBrush.toggleStatus.first((value) => value === true).do(() => {
-        histogramPanelToggle.toggle(true);
+        histogramPanelToggle.toggle.onNext(true);
     }).subscribe(_.identity, util.makeErrorHandler('Enabling the histogram on first brush use.'));
     dataInspector.init(appState, socket, workerParams.href, brush, filtersResponses, dataInspectorOn.toggleStatus);
     forkVgraph(socket, urlParams);

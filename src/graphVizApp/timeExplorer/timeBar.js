@@ -56,7 +56,8 @@ var TimeBarView = Backbone.View.extend({
     className: 'timeBarDiv',
 
     events: {
-        'click .timeAggButton': 'changeTimeAgg'
+        'click .timeAggButton': 'changeTimeAgg',
+        'click .closeTimeBarButton': 'close'
     },
 
     initialize: function () {
@@ -363,7 +364,9 @@ var TimeBarView = Backbone.View.extend({
     },
 
     close: function () {
-
+        const explorer = this.model.get('explorer')
+        explorer.removeActiveQuery(this.barModelSubject);
+        this.$el.remove();
     }
 });
 

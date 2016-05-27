@@ -56,24 +56,35 @@ var UserBarsView = Backbone.View.extend({
         var explorer = this.model.get('explorer');
 
         var newDiv = $('<div id="timeExplorerUserBarsRenderingContainer"></div>');
+        const renderingContainer = this.$el.find('#timeExplorerUserBarsRenderingContainer');
+        var children = renderingContainer.children('.timeBarDiv');
+        var domCacheByCid = {};
+        children.each(function () {
+            const $el = $(this);
+            const cid = $el.attr('cid');
+            domCacheByCid[cid] = $el.detach();
+        });
 
         // We empty out the div and reattach so that we can resort the elements without
         // having to rerender the svgs inside.
         this.$el.empty();
         this.$el.append(newDiv);
 
-        var params = {
-
-        };
+        var params = {};
         var addRowHtml = this.template(params);
         newDiv.append(addRowHtml);
 
         this.collection.each(function (child) {
             // TODO: This guard is a hack. I don't know how to initialize backbone
             if (child.view) {
-                newDiv.append(child.view.el);
+                // If a dom element already exists
+                const cachedDomElement = domCacheByCid[child.view.cid];
+                if (cachedDomElement) {
+                    cachedDomElement.appendTo(newDiv);
+                } else {
+                    newDiv.append(child.view.el);
+                }
                 child.view.render();
-
             }
         });
 
@@ -102,8 +113,7 @@ var UserBarsView = Backbone.View.extend({
     },
 
     removeBar: function () {
-        //TODO
-        debug('ATTEMPTING TO REMOVE USER BAR, NOT IMPLEMENTED YET');
+        this.render();
     },
 
     addAll: function () {
