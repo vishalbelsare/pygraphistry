@@ -569,7 +569,7 @@ function createControls (socket, appState, urlParams) {
                     const param = $input.data('param');
 
                     if ($input.hasClass('layout-control-textbox')) {
-                        console.log('Layout control textboxes are not supported yet.');
+                        console.warn('Layout control textboxes are not supported yet.');
                     } else if ($input.hasClass('local-control-textbox')) {
                         setViewParameter(socket, param.name, val, appState);
                     }
@@ -746,7 +746,6 @@ function setupCameraApi (appState) {
     appState.apiActions
         .filter((e) => e.event === 'updateCamera')
         .do((e) => {
-            console.log('RECEIVED API UPDATE CAMERA: ', e.cameraPosition);
             camera.setPosition(e.cameraPosition);
             renderingScheduler.renderScene('cameraApi', {trigger: 'renderSceneFast'});
             appState.cameraChanges.onNext(camera);
