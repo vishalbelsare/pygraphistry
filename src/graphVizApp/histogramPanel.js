@@ -9,6 +9,10 @@ const Handlebars = require('handlebars');
 const Backbone = require('backbone');
 Backbone.$ = $;
 const d3      = require('d3');
+const elementResizeDetectorFactory = require('element-resize-detector');
+const resizeDetector = elementResizeDetectorFactory({
+    strategy: "scroll" //Higher performance option, compatible with everything > IE9.
+});
 
 const util    = require('./util.js');
 const Identifier = require('./Identifier');
@@ -408,10 +412,10 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject, activeHighlight)
             this.$el.html(html);
             this.$el.attr('cid', this.cid);
 
-            // Setup window resize handler. Not doable directly through backbone,
-            // so will be done via jquery (and must be removed in the histogram remove method);
-            this.jqueryResizeHandler = this.resizeHandler.bind(this);
-            $(window).bind('resize', this.jqueryResizeHandler);
+            // Setup resize handler on the specific dom element, since it may change independently of the window
+            const rawEl = this.$el[0];
+            resizeDetector.listenTo(rawEl, this.resizeHandler.bind(this));
+
         },
 
         render: function () {
@@ -583,8 +587,9 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject, activeHighlight)
                 this.refresh();
             }
 
-            // Remove handler for window resize
-            $(window).unbind('resize', this.jqueryResizeHandler);
+            // Remove handler for dom element resize
+            const rawEl = this.$el[0];
+            resizeDetector.uninstall(rawEl);
 
             this.$el.remove();
             panel.histograms.remove(this.model);
