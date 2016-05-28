@@ -32,37 +32,34 @@ function logScaling (minPos, maxPos, minVal, maxVal) {
 }
 
 const PercentScale = d3.scale.linear().domain([0, 1]).range([0, 100]);
-const PointSizeScale = logScaling(1, 100, 0.1, 10);
-const EdgeSizeScale = logScaling(1, 100, 0.1, 10);
+const PointSizeScale = logScaling(0, 100, 0.1, 10);
+const EdgeSizeScale = logScaling(0, 100, 0.1, 10);
 
 // Setup client side controls.
 const encodingPerElementParams = [
     {
         name: 'pointScaling',
         displayName: 'Point Size',
-        type: 'discrete',
-        value: 50.0,
-        step: 1,
+        type: 'continuous',
+        value: PointSizeScale.invert(50),
         max: 100.0,
-        min: 1,
+        min: 0,
         scaling: PointSizeScale
     },
     {
         name: 'edgeScaling',
         displayName: 'Edge Size',
-        type: 'discrete',
-        value: 50.0,
-        step: 1,
+        type: 'continuous',
+        value: EdgeSizeScale.invert(50),
         max: 100.0,
-        min: 1,
+        min: 0,
         scaling: EdgeSizeScale
     },
     {
         name: 'pointOpacity',
         displayName: 'Point Opacity',
-        type: 'discrete',
-        value: 100,
-        step: 1,
+        type: 'continuous',
+        value: PercentScale.invert(100),
         max: 100,
         min: 0,
         scaling: PercentScale
@@ -70,9 +67,8 @@ const encodingPerElementParams = [
     {
         name: 'edgeOpacity',
         displayName: 'Edge Opacity',
-        type: 'discrete',
-        value: 100,
-        step: 1,
+        type: 'continuous',
+        value: PercentScale.invert(100),
         max: 100,
         min: 0,
         scaling: PercentScale
