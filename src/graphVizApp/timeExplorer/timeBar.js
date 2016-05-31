@@ -73,11 +73,15 @@ var TimeBarView = Backbone.View.extend({
         this.listenTo(this.model, 'destroy', this.remove);
         // this.listenTo(this.model, 'change:timeStamp', this.newContent);
         // TODO: listen to changes and render
+        const filteredDataModelSubj = this.dataModelSubject.filter((model) => model.timeAttr && model.timeType);
 
-        this.barModelSubject.take(1).do((barModel) => {
+        this.barModelSubject.combineLatest(filteredDataModelSubj, (barModel, dataModel) => {
+            return {barModel, dataModel};
+        }).take(1).do(({barModel, dataModel}) => {
             var params = {};
             if (barModel.showTimeAggregationButtons) {
                 params.timeAggregationButtons = timeAggregationButtons;
+                params.timeAttributeField = dataModel.timeType + ':' + dataModel.timeAttr;
             }
 
             this.template = Handlebars.compile($('#timeBarTemplate').html());
