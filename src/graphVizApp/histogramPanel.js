@@ -158,19 +158,23 @@ const HistogramModel = Backbone.Model.extend({
                 const globalBins = globalStats.bins || [];
                 const globalKeys = _.keys(globalBins);
                 const key = globalKeys[binId];
+                const isNumeric = globalStats.dataType === 'number' || (_.isNumber(globalStats.minValue) && _.isNumber(globalStats.maxValue));
+                const maybeCast = (x) => {return isNumeric ? Number(x) : x;};
+
                 let binDescription;
                 if (key === '_other' && binValues && binValues._other) {
-                    histFilter.isOtherThan = _.filter(globalKeys, (eachKey) => eachKey !== key);
+                    histFilter.isOtherThan = _.filter(globalKeys, (eachKey) => eachKey !== key)
+                        .map((key) => maybeCast(key));
                 } else if (binValues && binValues[binId]) {
                     binDescription = binValues[binId];
                     if (binDescription.isSingular) {
-                        histFilter.equals = binDescription.representative;
+                        histFilter.equals = maybeCast(binDescription.representative);
                     } else if (binDescription.min !== undefined) {
-                        histFilter.start = binDescription.min;
-                        histFilter.stop = binDescription.max;
+                        histFilter.start = maybeCast(binDescription.min);
+                        histFilter.stop = maybeCast(binDescription.max);
                     }
                 } else {
-                    histFilter.equals = key;
+                    histFilter.equals = maybeCast(key);
                 }
                 break;
             }
@@ -189,6 +193,7 @@ const HistogramModel = Backbone.Model.extend({
                     histFilter.stop = histFilter.start + globalStats.binWidth;
                 }
         }
+        histFilter.dataType = globalStats.dataType;
         return histFilter;
     },
 
@@ -222,7 +227,7 @@ const HistogramModel = Backbone.Model.extend({
                 // TODO: Determine if this order is deterministic,
                 // and if not, explicitly send over a bin ordering from aggregate.
                 const binNames = _.keys(globalStats.bins);
-                const isNumeric = _.isNumber(globalStats.minValue) && _.isNumber(globalStats.maxValue);
+                const isNumeric = globalStats.dataType === 'number' || (_.isNumber(globalStats.minValue) && _.isNumber(globalStats.maxValue));
                 let otherIsSelected = false;
                 for (let i = firstBin; i <= lastBin; i++) {
                     let binName = binNames[i];
@@ -323,6 +328,7 @@ const HistogramModel = Backbone.Model.extend({
                 }
             }
         }
+        histFilter.dataType = globalStats.dataType;
         return histFilter;
     }
 });
