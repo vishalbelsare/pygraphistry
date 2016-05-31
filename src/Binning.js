@@ -7,6 +7,8 @@ const logger = log.createLogger('graph-viz', 'graph-viz/js/Binning.js');
 
 const dataTypeUtil = require('./dataTypes.js');
 
+const maxBinCount = 30;
+
 /**
  * @typedef {Object} BinDescription
  * @property {Object} min
@@ -238,7 +240,6 @@ Binning.prototype.binningForColumnByDistinctValue = function (columnName, mask, 
  * @returns {Binning} a binning object
  */
 Binning.prototype.calculateBinning = function (aggregations, numValues, goalNumberOfBins) {
-    const maxBinCount = 30;
     let goalBins = numValues > maxBinCount ?
     Math.ceil(Math.log(numValues) / Math.log(2)) + 1 :
         Math.ceil(Math.sqrt(numValues));
@@ -542,8 +543,11 @@ Binning.prototype.computeBinningByColumnNames = function (
         const binningHint = binningHintsByAttribute[attribute];
         const dataType = this.dataframe.getDataType(attribute, type);
         const columnName = {attribute, type};
+        const aggregations = this.dataframe.getColumnAggregations(attribute, type, true);
+        const countDistinct = aggregations.getAggregationByType('countDistinct');
+        const isCountBy = countDistinct < maxBinCount;
 
-        if (mode === 'countBy' || dataType === 'string') {
+        if (mode === 'countBy' || isCountBy || dataType === 'string') {
             return this.binningForColumnByDistinctValue(columnName, mask, dataType);
         } else {
             return this.binningForColumn(columnName, binningHint, goalNumberOfBins, mask, dataType);
