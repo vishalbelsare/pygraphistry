@@ -498,7 +498,18 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
                 }).subscribe(_.identity, util.makeErrorHandler('time explorer drag move'));
 
-            Rx.Observable.fromEvent(this.$timeExplorerVizContainer, 'mouseup')
+            // We make a handler here for mouseouts of JUST the document.
+            // That is, a mouseout event from a child of the document won't trigger this,
+            // only someone mouseing out of the window
+            // Technique taken from http://stackoverflow.com/questions/923299/how-can-i-detect-when-the-mouse-leaves-the-window
+            const mouseOutOfWindowStream = Rx.Observable.fromEvent(document, 'mouseout')
+                .filter((e=window.event) => {
+                    const from = e.relatedTarget || e.toElement;
+                    return (!from || from.nodeName === 'HTML');
+                });
+
+            Rx.Observable.fromEvent(document, 'mouseup')
+                .merge(mouseOutOfWindowStream)
                 .take(1)
                 .do(function () {
                     // Dispose of mousedown handler stream
