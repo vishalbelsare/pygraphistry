@@ -122,16 +122,19 @@ var TimeBarView = Backbone.View.extend({
                     }
                 });
 
-                // Make special enter submit command:
+                const enterHandler = (editor) => {
+                    var queryString = editor.getValue();
+                    var {type, attr} = timeExplorerUtils.getAttributeInfoFromQueryString(queryString);
+                    var query = FilterControl.prototype.queryFromExpressionString(queryString);
+                    this.updateBarFilter({type, attribute: attr, query});
+                };
+
+                // Make special enter submit command for both button and keypress
+                this.$el.find('.timeFilterEnterButton').click(enterHandler.bind(this, this.editor.editor));
                 this.editor.editor.commands.addCommand({
                     name: 'enterHandler',
                     bindKey: {win: 'enter',  mac: 'enter'},
-                    exec: (editor) => {
-                        var queryString = editor.getValue();
-                        var {type, attr} = timeExplorerUtils.getAttributeInfoFromQueryString(queryString);
-                        var query = FilterControl.prototype.queryFromExpressionString(queryString);
-                        this.updateBarFilter({type, attribute: attr, query});
-                    }
+                    exec: enterHandler
                 });
 
             }
