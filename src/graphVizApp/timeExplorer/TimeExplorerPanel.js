@@ -65,7 +65,8 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
         $timeExplorerAxisContainer: $('#timeExplorerAxisContainer'),
         $timeExplorerVizContainer: $('#timeExplorerVizContainer'),
         $timeExplorerSideInput: $('#timeExplorerSideInput'),
-        $dragBox: $('#timeExplorerDragBox'),
+        $dragBoxLeft: $('#timeExplorerDragBoxLeft'),
+        $dragBoxRight: $('#timeExplorerDragBoxRight'),
         $encodingBoxA: $('#timeExplorerEncodingA'),
         $encodingBoxB: $('#timeExplorerEncodingB'),
         $encodingBoxC: $('#timeExplorerEncodingC'),
@@ -102,9 +103,6 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             // TODO: Add, remove, reset handlers
             // this.listenTo(this.model, 'change', this.updateChildren);
             // this.listenTo(this.model, 'change:all', this.setupMouseInteractions);
-
-            this.dragBoxLastLeftX = Infinity;
-            this.dragBoxLastRightX = -Infinity;
 
             // this.setupVerticalLine();
             this.renderInitializationMenu();
@@ -200,20 +198,26 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
                 var width = this.$timeExplorerVizContainer.width();
 
-                var leftX = (width * start) + offset;
-                var rightX = (width * stop) + offset;
+                // These x coordinates are not adjusted for offset
+                var leftX = (width * start);
+                var rightX = (width * stop);
 
                 // Don't actually update model until the slider is released
 
-                // Move the dragBox size
-                this.$dragBox.css('left', leftX);
-                this.$dragBox.css('width', rightX - leftX);
+                // Move and resize the dragBoxes
+                this.$dragBoxLeft.css('left', offset);
+                this.$dragBoxLeft.css('width', leftX)
+
+                this.$dragBoxRight.css('left', rightX + offset);
+                this.$dragBoxRight.css('width', width - rightX);
 
                 // Show or hide dragbox based on values
                 if (rawStart === 0 && rawStop === 1000) {
-                    this.$dragBox.css('display', 'none');
+                    this.$dragBoxLeft.css('display', 'none');
+                    this.$dragBoxRight.css('display', 'none');
                 } else {
-                    this.$dragBox.css('display', 'block');
+                    this.$dragBoxLeft.css('display', 'block');
+                    this.$dragBoxRight.css('display', 'block');
                 }
 
             });
@@ -427,7 +431,8 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
                     // HACK FIXME: DONT ZOOM IF DRAG BOX IS VISIBLE
                     // TODO: Enable zooming and rescale box
-                    if (that.$dragBox.css('display') !== 'none' ||
+                    if (that.$dragBoxLeft.css('display') !== 'none' ||
+                        that.$dragBoxRight.css('display') !== 'none' ||
                         that.$encodingBoxA.css('display') !== 'none' ||
                         that.$encodingBoxB.css('display') !== 'none' ||
                         that.$encodingBoxB.css('display') !== 'none'
@@ -441,7 +446,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                     var percentage = that.mainBarView.getPercentageForPosition(xPos);
 
                     var explorer = that.model.get('explorer');
-                    explorer.zoomTimeRange(zoomFactor, percentage, that.$dragBox);
+                    explorer.zoomTimeRange(zoomFactor, percentage);
 
                 }).subscribe(_.identity, util.makeErrorHandler('zoom handle on time explorer'));
 
@@ -458,7 +463,8 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
             // HACK FIXME: DONT ALLOW PANS IF DRAG BOX IS VISIBLE
             // TODO: Enable zooming and rescale box
-            if (this.$dragBox.css('display') !== 'none' ||
+            if (that.$dragBoxLeft.css('display') !== 'none' ||
+                that.$dragBoxRight.css('display') !== 'none' ||
                 this.$encodingBoxA.css('display') !== 'none' ||
                 this.$encodingBoxB.css('display') !== 'none' ||
                 this.$encodingBoxB.css('display') !== 'none'

@@ -252,7 +252,7 @@ TimeExplorer.prototype.getMultipleTimeData = function (timeType, timeAttr, start
     // return Rx.Observable.zip(subjects, zipFunc);
 };
 
-TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, percentage, dragBox, vizContainer) {
+TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, percentage, vizContainer) {
     // Negative if zoom out, positive if zoom in.
 
 
@@ -264,7 +264,6 @@ TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, percentage, dragBox
     var params = {
         percentage: percentage,
         zoom: adjustedZoom,
-        dragBox: dragBox,
         vizContainer: vizContainer
     };
 
