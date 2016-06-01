@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:TimeExplorer');
 var $       = window.$;
-var Rx      = require('rxjs/Rx.KitchenSink');
+var Rx      = require('rxjs/Rx');
               require('../../rx-jquery-stub');
 var _       = require('underscore');
 var Handlebars = require('handlebars');
@@ -418,7 +418,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
             this.$timeExplorerVizContainer.onAsObservable('mousewheel')
                 // TODO Replace this with correct Rx5 handler.
-                .inspectTime(SCROLL_SAMPLE_TIME)
+                .auditTime(SCROLL_SAMPLE_TIME)
                 .do(function (wheelEvent) {
                     wheelEvent.preventDefault();
                     wheelEvent.stopPropagation();

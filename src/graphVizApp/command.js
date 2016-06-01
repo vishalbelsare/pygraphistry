@@ -1,6 +1,6 @@
 'use strict';
 
-const Rx      = require('rxjs/Rx.KitchenSink');
+const Rx      = require('rxjs/Rx');
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:command');
 
 

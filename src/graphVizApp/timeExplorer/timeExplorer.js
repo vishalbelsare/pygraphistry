@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:TimeExplorer');
 var $       = window.$;
-var Rx      = require('rxjs/Rx.KitchenSink');
+var Rx      = require('rxjs/Rx');
               require('../../rx-jquery-stub');
 var _       = require('underscore');
 var Handlebars = require('handlebars');
@@ -274,7 +274,7 @@ TimeExplorer.prototype.zoomTimeRange = function (zoomFactor, percentage, dragBox
 TimeExplorer.prototype.setupZoom = function () {
 
     this.zoomRequests
-        .inspectTime(timeExplorerUtils.ZOOM_POLL_RATE)
+        .auditTime(timeExplorerUtils.ZOOM_POLL_RATE)
         .flatMap((request) => {
             return this.dataModelSubject
                 .take(1)

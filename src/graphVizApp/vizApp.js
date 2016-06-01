@@ -5,7 +5,7 @@
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:vizApp');
 const $       = window.$;
 const _       = require('underscore');
-const Rx      = require('rxjs/Rx.KitchenSink');
+const Rx      = require('rxjs/Rx');
               require('../rx-jquery-stub');
 
 const shortestPaths   = require('./shortestpaths.js');

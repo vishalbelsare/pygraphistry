@@ -2,7 +2,7 @@
 
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:controls');
 const $       = window.$;
-const Rx      = require('rxjs/Rx.KitchenSink');
+const Rx      = require('rxjs/Rx');
                 require('../rx-jquery-stub');
 const d3      = require('d3');
 const _       = require('underscore');
@@ -98,7 +98,7 @@ const encodingForLabelParams = [
         cb: (() => {
             const sheet = createStyleElement();
             return (stream) => {
-                stream.inspectTime(20).subscribe((c) => {
+                stream.auditTime(20).subscribe((c) => {
                     sheet.text('.graph-label, .graph-label table { color: ' + c.rgbaString() + ' }');
                 });
             };
@@ -112,7 +112,7 @@ const encodingForLabelParams = [
         cb: (() => {
             const sheet = createStyleElement();
             return (stream) => {
-                stream.inspectTime(20).subscribe((c) => {
+                stream.auditTime(20).subscribe((c) => {
                     sheet.text('.graph-label .graph-label-container  { background-color: ' + c.rgbaString() + ' }');
                 });
             };
@@ -295,9 +295,9 @@ function setupBrush(appState, isOn) {
     };
 
     // Initialize both with an {all: true} selection
-    const transformedSelections = marquee.selections.map(marqueeStateToTransformedRect).share()
+    const transformedSelections = marquee.selections.map(marqueeStateToTransformedRect)//.share()
             .merge(Rx.Observable.from([{all: true}]));
-    const transformedDrags = marquee.drags.map(marqueeStateToTransformedRect).share()
+    const transformedDrags = marquee.drags.map(marqueeStateToTransformedRect)//.share()
             .merge(Rx.Observable.from([{all: true}]));
 
     return {
@@ -323,8 +323,8 @@ function clicksFromPopoutControls ($elt) {
                 })
                 .switchMap(() => Rx.Observable.fromEvent(elt, 'mouseup'))
                 .map(_.constant(elt))
-                .share();
-        })).share();
+                // .share();
+        }))//.share();
 }
 
 function toggleLogo($cont, urlParams) {
@@ -543,7 +543,7 @@ function createControls (socket, appState, urlParams) {
                 $slider.onAsObservable('slide'),
                 $slider.onAsObservable('slideStop')
             ).distinctUntilChanged()
-            .inspectTime(50)
+            .auditTime(50)
             .subscribe(
                 () => {
                     if ($that.hasClass('layout-menu-slider')) {
@@ -729,10 +729,13 @@ function setupPanelControl (toolbarClicks, $panelButton, maybe$panel) {
                         throw new Error({msg: 'unhandled cmd', val: [prevStatus, id, v]});
                 }
             }, false)
+        .startWith(false)
         .do((newVisibility) => {
             togglePanel($panelButton, maybe$panel, newVisibility);
         })
-        .share();
+        .multicast(() => new Rx.ReplaySubject(1))
+        .refCount()
+        // .share();
 
     return {toggle, toggleStatus};
 

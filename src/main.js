@@ -9,7 +9,7 @@ require('source-map-support').install();
  * @module StreamGL/main
  */
 
-var Rx              = require('rxjs/Rx.KitchenSink');
+var Rx              = require('rxjs/Rx');
 
 Rx.Observable.return = function (value) {
     return Rx.Observable.of(value);
@@ -19,6 +19,10 @@ Rx.Subject.prototype.onNext = Rx.Subject.prototype.next;
 Rx.Subject.prototype.onError = Rx.Subject.prototype.error;
 Rx.Subject.prototype.onCompleted = Rx.Subject.prototype.complete;
 Rx.Subject.prototype.dispose = Rx.Subscriber.prototype.unsubscribe;
+Rx.AsyncSubject.prototype.onNext = Rx.AsyncSubject.prototype.next;
+Rx.AsyncSubject.prototype.onCompleted = Rx.AsyncSubject.prototype.complete;
+Rx.BehaviorSubject.prototype.onNext = Rx.BehaviorSubject.prototype.next;
+Rx.ReplaySubject.prototype.onNext = Rx.ReplaySubject.prototype.next;
 
 Rx.Subscriber.prototype.onNext = Rx.Subscriber.prototype.next;
 Rx.Subscriber.prototype.onError = Rx.Subscriber.prototype.error;

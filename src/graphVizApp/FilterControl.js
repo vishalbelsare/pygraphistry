@@ -1,7 +1,7 @@
 'use strict';
 
 const _     = require('underscore');
-const Rx    = require('rxjs/Rx.KitchenSink');
+const Rx    = require('rxjs/Rx');
 require('../rx-jquery-stub');
 const PEGUtil = require('pegjs-util');
 // const ASTY    = require('asty');

@@ -2,7 +2,7 @@
 
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:histogramBrush');
 const $       = window.$;
-const Rx      = require('rxjs/Rx.KitchenSink');
+const Rx      = require('rxjs/Rx');
 import '../rx-jquery-stub';
 const _       = require('underscore');
 
@@ -156,7 +156,7 @@ HistogramBrush.prototype.setupApiInteraction = function (apiActions) {
  */
 HistogramBrush.prototype.setupMarqueeInteraction = function (marquee) {
     marquee.selections.map((val) => ({type: 'selection', sel: val}))
-        .merge(marquee.drags.inspectTime(DRAG_SAMPLE_INTERVAL).map(val => ({type: 'drag', sel: val})))
+        .merge(marquee.drags.auditTime(DRAG_SAMPLE_INTERVAL).map(val => ({type: 'drag', sel: val})))
         .merge(this.dataframeAttributeChange.map(() => ({type: 'dataframeAttributeChange', sel: this.lastSelection})))
         .switchMap((selContainer) => this.globalStats.map((globalVal) =>
             ({type: selContainer.type, sel: selContainer.sel, globalStats: globalVal})))
