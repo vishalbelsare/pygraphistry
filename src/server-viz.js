@@ -16,6 +16,10 @@ Rx.Subject.prototype.onNext = Rx.Subject.prototype.next;
 Rx.Subject.prototype.onError = Rx.Subject.prototype.error;
 Rx.Subject.prototype.onCompleted = Rx.Subject.prototype.complete;
 Rx.Subject.prototype.dispose = Rx.Subscriber.prototype.unsubscribe;
+Rx.AsyncSubject.prototype.onNext = Rx.AsyncSubject.prototype.next;
+Rx.AsyncSubject.prototype.onCompleted = Rx.AsyncSubject.prototype.complete;
+Rx.BehaviorSubject.prototype.onNext = Rx.BehaviorSubject.prototype.next;
+Rx.ReplaySubject.prototype.onNext = Rx.ReplaySubject.prototype.next;
 
 Rx.Subscriber.prototype.onNext = Rx.Subscriber.prototype.next;
 Rx.Subscriber.prototype.onError = Rx.Subscriber.prototype.error;
@@ -1421,7 +1425,7 @@ VizServer.prototype.setupColorTexture = function () {
                 height: 512
             };
         }).take(1)
-        .do(this.colorTexture)
+        .do((x) => this.colorTexture.next(x))
         .subscribe(_.identity, log.makeRxErrorHandler(logger, 'img/texture'));
     this.colorTexture
         .do(() => { logger.trace('HAS COLOR TEXTURE'); })
