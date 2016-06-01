@@ -310,10 +310,62 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 }
                 var shouldShowC = (cContained && (shouldShowA || shouldShowB))|| (shouldShowA && shouldShowB && cExists);
 
+                var regionsToDraw = [];
+                if (shouldShowC) {
+                    regionsToDraw.push({
+                        left: cStart,
+                        right: cStop,
+                        color: 'purple'
+                    });
+                }
+
+                if (shouldShowC && cContained) {
+                    if (shouldShowA) {
+                        regionsToDraw.push({
+                            left: aStart,
+                            right: cStart,
+                            color: 'red'
+                        });
+                        regionsToDraw.push({
+                            left: cStop,
+                            right: aStop,
+                            color: 'red'
+                        });
+                    } else if (shouldShowB) {
+                        regionsToDraw.push({
+                            left: bStart,
+                            right: cStart,
+                            color: 'blue'
+                        });
+                        regionsToDraw.push({
+                            left: cStop,
+                            right: bStop,
+                            color: 'blue'
+                        });
+                    }
+                } else {
+                    if (shouldShowA) {
+                        regionsToDraw.push({
+                            left: aStart,
+                            right: aStop,
+                            color: 'red'
+                        });
+                    }
+                    if (shouldShowB) {
+                        regionsToDraw.push({
+                            left: bStart,
+                            right: bStop,
+                            color: 'blue'
+                        });
+                    }
+                }
+
+
                 return {
                     shouldShowA, aStart, aStop,
                     shouldShowB, bStart, bStop,
-                    shouldShowC, cStart, cStop
+                    shouldShowC, cStart, cStop,
+                    regionsToDraw
                 };
             };
 
@@ -325,47 +377,29 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 var {
                     shouldShowA, aStart, aStop,
                     shouldShowB, bStart, bStop,
-                    shouldShowC, cStart, cStop
+                    shouldShowC, cStart, cStop, regionsToDraw
                 } = wrappedToRatioInfo(wrapped);
 
                 var width = this.$timeExplorerVizContainer.width();
 
-                var leftX, rightX;
-                if (shouldShowA) {
-                    leftX = (width * aStart) + offset;
-                    rightX = (width * aStop) + offset;
+                var boxElements = [this.$encodingBoxA, this.$encodingBoxB, this.$encodingBoxC];
 
-                    this.$encodingBoxA.css('left', leftX);
-                    this.$encodingBoxA.css('width', rightX - leftX);
+                _.each(boxElements, (element, i) => {
+                    var drawingInfo = regionsToDraw[i];
 
-                    this.$encodingBoxA.css('display', 'block');
-                } else {
-                    this.$encodingBoxA.css('display', 'none');
-                }
+                    element.removeClass('red').removeClass('blue').removeClass('purple');
 
-                if (shouldShowB) {
-                    leftX = (width * bStart) + offset;
-                    rightX = (width * bStop) + offset;
+                    if (drawingInfo) {
+                        const leftX = (width * drawingInfo.left) + offset;
+                        const rightX = (width * drawingInfo.right) + offset;
 
-                    this.$encodingBoxB.css('left', leftX);
-                    this.$encodingBoxB.css('width', rightX - leftX);
-
-                    this.$encodingBoxB.css('display', 'block');
-                } else {
-                    this.$encodingBoxB.css('display', 'none');
-                }
-
-                if (shouldShowC) {
-                    leftX = (width * cStart) + offset;
-                    rightX = (width * cStop) + offset;
-
-                    this.$encodingBoxC.css('left', leftX);
-                    this.$encodingBoxC.css('width', rightX - leftX);
-
-                    this.$encodingBoxC.css('display', 'block');
-                } else {
-                    this.$encodingBoxC.css('display', 'none');
-                }
+                        element.css('left', leftX).css('width', rightX - leftX);
+                        element.addClass(drawingInfo.color);
+                        element.css('display', 'block');
+                    } else {
+                        element.css('display', 'none');
+                    }
+                });
 
             }).subscribe(_.identity, util.makeErrorHandler('handling time encoding slider'));
 
