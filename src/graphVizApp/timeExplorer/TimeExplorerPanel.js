@@ -215,9 +215,11 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 if (rawStart === 0 && rawStop === 1000) {
                     this.$dragBoxLeft.css('display', 'none');
                     this.$dragBoxRight.css('display', 'none');
+                    this.$el.find('#timeEncodingSliderRow').removeClass('disabled');
                 } else {
                     this.$dragBoxLeft.css('display', 'block');
                     this.$dragBoxRight.css('display', 'block');
+                    this.$el.find('#timeEncodingSliderRow').addClass('disabled');
                 }
 
             });
@@ -383,6 +385,12 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 var width = this.$timeExplorerVizContainer.width();
 
                 var boxElements = [this.$encodingBoxA, this.$encodingBoxB, this.$encodingBoxC];
+
+                if (shouldShowA || shouldShowB || shouldShowC) {
+                    this.$el.find('#timeFilterSliderRow').addClass('disabled');
+                } else {
+                    this.$el.find('#timeFilterSliderRow').removeClass('disabled');
+                }
 
                 _.each(boxElements, (element, i) => {
                     var drawingInfo = regionsToDraw[i];
