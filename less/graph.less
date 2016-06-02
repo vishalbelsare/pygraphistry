@@ -1885,11 +1885,22 @@ button:disabled {
     #timeExplorerWatermark {
         position: absolute;
         top: 2px;
-        left: 10px;
+        right: 90px;
         opacity: 0.5;
 
         font-size: 1.2em;
         pointer-events: none;
+    }
+
+    .timeAttributeField {
+        p {
+            position: absolute;
+            top: 2px;
+            left: 10px;
+
+            font-size: 1em;
+            pointer-events: none;
+        }
     }
 
     #timeFilterSliderRow {
@@ -2044,12 +2055,30 @@ button:disabled {
             }
         }
 
+        // TODO: filter expression and enter button should not both be absolutely positioned
         .filterExpression {
             position: absolute;
             left: 0;
             top: 0;
-            height: 13;
+            height: 16px;
             width: 25%;
+        }
+
+        .timeFilterEnterButton {
+            position: absolute;
+            left: 25%;
+            margin-left: 2px;
+            top: 0;
+            height: 16px;
+
+            .btn {
+                margin-top: -6px;
+                height: 16px;
+                width: 16px;
+                padding: 1px;
+                font-size: 10px;
+            }
+
         }
     }
 
@@ -2074,8 +2103,8 @@ button:disabled {
         position: absolute;
         left: 0;
         height: 100%;
-        opacity: 0.2;
-        background-color: @graphistry-lightblue;
+        opacity: 0.35;
+        background-color: #72858A;
         display: none;
         z-index: @timeexplorer-box-z;
         pointer-events: none;
@@ -2088,19 +2117,26 @@ button:disabled {
         border-right-color: black;
     }
 
-    #timeExplorerEncodingA.dragBox {
+    .filterBox.dragBox {
+        opacity: 0.4;
+    }
+
+    .dragBox.red {
+        // A
         /*background-color: red;*/
-        background-color: #C11616;
+        background-color: #860000;
     }
 
-    #timeExplorerEncodingB.dragBox {
+    .dragBox.blue {
+        // B
         /*background-color: blue;*/
-        background-color: #1A16C1;
+        background-color: #030088;
     }
 
-    #timeExplorerEncodingC.dragBox {
+    .dragBox.purple {
+        // C
         /*background-color: purple;*/
-        background-color: #9816C1;
+        background-color: #7B00B7;
     }
 
     .axis {
@@ -2141,6 +2177,12 @@ button:disabled {
         -moz-user-select: none;     /* Firefox all */
         -ms-user-select: none;      /* IE 10+ */
         user-select: none;          /* Likely future */
+    }
+
+    .disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
     }
 
 }

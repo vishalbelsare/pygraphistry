@@ -178,11 +178,11 @@
 
                       <div class="divide-line"></div>
 
-                      <a href="#" id="dataInspectorButton" class="button panel-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Data Inspector">
+                      <a href="#" id="dataInspectorButton" class="button panel-button" data-toggle-group="bottom-panel" data-container="body" data-toggle="tooltip" data-placement="right" title="Data Inspector">
                           <i class="fa fa-table fa-2x"></i>
                       </a>
 
-                      <a href="#" id="timeExplorerButton" class="button panel-button beta" data-container="body" data-toggle="tooltip" data-placement="right" title="Time Explorer">
+                      <a href="#" id="timeExplorerButton" class="button panel-button beta" data-toggle-group="bottom-panel" data-container="body" data-toggle="tooltip" data-placement="right" title="Time Explorer">
                             <i class="fa fa-clock-o fa-2x"></i>
                       </a>
 
@@ -392,7 +392,8 @@
       <div id="timeExplorerContents" class="hidden">
 
 
-        <div id="timeExplorerDragBox" class="dragBox"></div>
+        <div id="timeExplorerDragBoxLeft" class="dragBox filterBox"></div>
+        <div id="timeExplorerDragBoxRight" class="dragBox filterBox"></div>
         <div id="timeExplorerEncodingA" class="dragBox"></div>
         <div id="timeExplorerEncodingB" class="dragBox"></div>
         <div id="timeExplorerEncodingC" class="dragBox"></div>
@@ -882,12 +883,15 @@ Note: this release does not support expressions with multiple fields nor changin
 
 <script type="text/x-handlebars-template" id="timeBarTemplate">
     {{#if timeAggregationButtons}}
-        <p id="timeExplorerWatermark" class="noselect">alpha</p>
+        <p id="timeExplorerWatermark" class="noselect">alpha version</p>
+        <div class="timeAttributeField" class="noselect">
+            <p class="noselect">{{timeAttributeField}}</p>
+        </div>
         <div class="timeAggregationSwitchboard" data-toggle="tooltip" data-placement="bottom" title="Bin by time interval">
             <div class="btn-group" data-toggle="buttons-radio">
                 {{#each timeAggregationButtons}}
 
-                    <button type="button" id="timeAggButton-{{this.shortValue}}" class="timeAggButton btn btn-primary btn-xs {{#if this.active}}active{{/if}}" data-aggregation-value="{{this.longValue}}">{{this.shortValue}}</button>
+                    <button type="button" id="timeAggButton-{{this.shortValue}}" class="timeAggButton btn btn-primary btn-xs {{#if this.active}}active{{/if}}" data-aggregation-value="{{this.longValue}}" data-toggle="tooltip" data-placement="top" title="{{this.longValue}}">{{this.shortValue}}</button>
 
                 {{/each}}
             </div>
@@ -897,6 +901,11 @@ Note: this release does not support expressions with multiple fields nor changin
 
         <div class="form-control filterExpression" id="filterExpressionID"
          data-toggle="tooltip" data-placement="right" title="Filter expression"></div>
+        <div class="timeFilterEnterButton">
+          <button type="button" class="btn btn-primary btn-sm">
+            &#9166;
+          </button>
+        </div>
         <div class="timeBarCloseDiv">
             <a href="#" class="timebar-close">
                 <i class="fa fa-times closeTimeBarButton"></i>
