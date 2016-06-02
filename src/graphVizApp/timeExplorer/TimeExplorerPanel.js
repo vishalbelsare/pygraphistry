@@ -65,7 +65,8 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
         $timeExplorerAxisContainer: $('#timeExplorerAxisContainer'),
         $timeExplorerVizContainer: $('#timeExplorerVizContainer'),
         $timeExplorerSideInput: $('#timeExplorerSideInput'),
-        $dragBox: $('#timeExplorerDragBox'),
+        $dragBoxLeft: $('#timeExplorerDragBoxLeft'),
+        $dragBoxRight: $('#timeExplorerDragBoxRight'),
         $encodingBoxA: $('#timeExplorerEncodingA'),
         $encodingBoxB: $('#timeExplorerEncodingB'),
         $encodingBoxC: $('#timeExplorerEncodingC'),
@@ -102,9 +103,6 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             // TODO: Add, remove, reset handlers
             // this.listenTo(this.model, 'change', this.updateChildren);
             // this.listenTo(this.model, 'change:all', this.setupMouseInteractions);
-
-            this.dragBoxLastLeftX = Infinity;
-            this.dragBoxLastRightX = -Infinity;
 
             // this.setupVerticalLine();
             this.renderInitializationMenu();
@@ -200,20 +198,28 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
                 var width = this.$timeExplorerVizContainer.width();
 
-                var leftX = (width * start) + offset;
-                var rightX = (width * stop) + offset;
+                // These x coordinates are not adjusted for offset
+                var leftX = (width * start);
+                var rightX = (width * stop);
 
                 // Don't actually update model until the slider is released
 
-                // Move the dragBox size
-                this.$dragBox.css('left', leftX);
-                this.$dragBox.css('width', rightX - leftX);
+                // Move and resize the dragBoxes
+                this.$dragBoxLeft.css('left', offset);
+                this.$dragBoxLeft.css('width', leftX)
+
+                this.$dragBoxRight.css('left', rightX + offset);
+                this.$dragBoxRight.css('width', width - rightX);
 
                 // Show or hide dragbox based on values
                 if (rawStart === 0 && rawStop === 1000) {
-                    this.$dragBox.css('display', 'none');
+                    this.$dragBoxLeft.css('display', 'none');
+                    this.$dragBoxRight.css('display', 'none');
+                    this.$el.find('#timeEncodingSliderRow').removeClass('disabled');
                 } else {
-                    this.$dragBox.css('display', 'block');
+                    this.$dragBoxLeft.css('display', 'block');
+                    this.$dragBoxRight.css('display', 'block');
+                    this.$el.find('#timeEncodingSliderRow').addClass('disabled');
                 }
 
             });
@@ -306,10 +312,62 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 }
                 var shouldShowC = (cContained && (shouldShowA || shouldShowB))|| (shouldShowA && shouldShowB && cExists);
 
+                var regionsToDraw = [];
+                if (shouldShowC) {
+                    regionsToDraw.push({
+                        left: cStart,
+                        right: cStop,
+                        color: 'purple'
+                    });
+                }
+
+                if (shouldShowC && cContained) {
+                    if (shouldShowA) {
+                        regionsToDraw.push({
+                            left: aStart,
+                            right: cStart,
+                            color: 'red'
+                        });
+                        regionsToDraw.push({
+                            left: cStop,
+                            right: aStop,
+                            color: 'red'
+                        });
+                    } else if (shouldShowB) {
+                        regionsToDraw.push({
+                            left: bStart,
+                            right: cStart,
+                            color: 'blue'
+                        });
+                        regionsToDraw.push({
+                            left: cStop,
+                            right: bStop,
+                            color: 'blue'
+                        });
+                    }
+                } else {
+                    if (shouldShowA) {
+                        regionsToDraw.push({
+                            left: aStart,
+                            right: aStop,
+                            color: 'red'
+                        });
+                    }
+                    if (shouldShowB) {
+                        regionsToDraw.push({
+                            left: bStart,
+                            right: bStop,
+                            color: 'blue'
+                        });
+                    }
+                }
+
+
                 return {
                     shouldShowA, aStart, aStop,
                     shouldShowB, bStart, bStop,
-                    shouldShowC, cStart, cStop
+                    shouldShowC, cStart, cStop,
+                    regionsToDraw
                 };
             };
 
@@ -321,47 +379,35 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 var {
                     shouldShowA, aStart, aStop,
                     shouldShowB, bStart, bStop,
-                    shouldShowC, cStart, cStop
+                    shouldShowC, cStart, cStop, regionsToDraw
                 } = wrappedToRatioInfo(wrapped);
 
                 var width = this.$timeExplorerVizContainer.width();
 
-                var leftX, rightX;
-                if (shouldShowA) {
-                    leftX = (width * aStart) + offset;
-                    rightX = (width * aStop) + offset;
+                var boxElements = [this.$encodingBoxA, this.$encodingBoxB, this.$encodingBoxC];
 
-                    this.$encodingBoxA.css('left', leftX);
-                    this.$encodingBoxA.css('width', rightX - leftX);
-
-                    this.$encodingBoxA.css('display', 'block');
+                if (shouldShowA || shouldShowB || shouldShowC) {
+                    this.$el.find('#timeFilterSliderRow').addClass('disabled');
                 } else {
-                    this.$encodingBoxA.css('display', 'none');
+                    this.$el.find('#timeFilterSliderRow').removeClass('disabled');
                 }
 
-                if (shouldShowB) {
-                    leftX = (width * bStart) + offset;
-                    rightX = (width * bStop) + offset;
+                _.each(boxElements, (element, i) => {
+                    var drawingInfo = regionsToDraw[i];
 
-                    this.$encodingBoxB.css('left', leftX);
-                    this.$encodingBoxB.css('width', rightX - leftX);
+                    element.removeClass('red').removeClass('blue').removeClass('purple');
 
-                    this.$encodingBoxB.css('display', 'block');
-                } else {
-                    this.$encodingBoxB.css('display', 'none');
-                }
+                    if (drawingInfo) {
+                        const leftX = (width * drawingInfo.left) + offset;
+                        const rightX = (width * drawingInfo.right) + offset;
 
-                if (shouldShowC) {
-                    leftX = (width * cStart) + offset;
-                    rightX = (width * cStop) + offset;
-
-                    this.$encodingBoxC.css('left', leftX);
-                    this.$encodingBoxC.css('width', rightX - leftX);
-
-                    this.$encodingBoxC.css('display', 'block');
-                } else {
-                    this.$encodingBoxC.css('display', 'none');
-                }
+                        element.css('left', leftX).css('width', rightX - leftX);
+                        element.addClass(drawingInfo.color);
+                        element.css('display', 'block');
+                    } else {
+                        element.css('display', 'none');
+                    }
+                });
 
             }).subscribe(_.identity, util.makeErrorHandler('handling time encoding slider'));
 
@@ -427,7 +473,8 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
                     // HACK FIXME: DONT ZOOM IF DRAG BOX IS VISIBLE
                     // TODO: Enable zooming and rescale box
-                    if (that.$dragBox.css('display') !== 'none' ||
+                    if (that.$dragBoxLeft.css('display') !== 'none' ||
+                        that.$dragBoxRight.css('display') !== 'none' ||
                         that.$encodingBoxA.css('display') !== 'none' ||
                         that.$encodingBoxB.css('display') !== 'none' ||
                         that.$encodingBoxB.css('display') !== 'none'
@@ -441,7 +488,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                     var percentage = that.mainBarView.getPercentageForPosition(xPos);
 
                     var explorer = that.model.get('explorer');
-                    explorer.zoomTimeRange(zoomFactor, percentage, that.$dragBox);
+                    explorer.zoomTimeRange(zoomFactor, percentage);
 
                 }).subscribe(_.identity, util.makeErrorHandler('zoom handle on time explorer'));
 
@@ -458,7 +505,8 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
             // HACK FIXME: DONT ALLOW PANS IF DRAG BOX IS VISIBLE
             // TODO: Enable zooming and rescale box
-            if (this.$dragBox.css('display') !== 'none' ||
+            if (that.$dragBoxLeft.css('display') !== 'none' ||
+                that.$dragBoxRight.css('display') !== 'none' ||
                 this.$encodingBoxA.css('display') !== 'none' ||
                 this.$encodingBoxB.css('display') !== 'none' ||
                 this.$encodingBoxB.css('display') !== 'none'
@@ -498,7 +546,18 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
                 }).subscribe(_.identity, util.makeErrorHandler('time explorer drag move'));
 
-            Rx.Observable.fromEvent(this.$timeExplorerVizContainer, 'mouseup')
+            // We make a handler here for mouseouts of JUST the document.
+            // That is, a mouseout event from a child of the document won't trigger this,
+            // only someone mouseing out of the window
+            // Technique taken from http://stackoverflow.com/questions/923299/how-can-i-detect-when-the-mouse-leaves-the-window
+            const mouseOutOfWindowStream = Rx.Observable.fromEvent(document, 'mouseout')
+                .filter((e=window.event) => {
+                    const from = e.relatedTarget || e.toElement;
+                    return (!from || from.nodeName === 'HTML');
+                });
+
+            Rx.Observable.fromEvent(document, 'mouseup')
+                .merge(mouseOutOfWindowStream)
                 .take(1)
                 .do(function () {
                     // Dispose of mousedown handler stream
