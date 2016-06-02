@@ -90,7 +90,7 @@ function defaults() {
             latestVersion: '0.9.30'
         },
 
-        RELEASE: 'May 2016: R1',  // human-readable, shown under logo
+        RELEASE: 'June 2016: R1',  // human-readable, shown under logo
         ARTIFACT: 'unavailable', // override w/ a docker or jenkins tag
 
         LOCAL_CACHE: true,
