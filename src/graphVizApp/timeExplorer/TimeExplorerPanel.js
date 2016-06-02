@@ -505,8 +505,8 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
             // HACK FIXME: DONT ALLOW PANS IF DRAG BOX IS VISIBLE
             // TODO: Enable zooming and rescale box
-            if (that.$dragBoxLeft.css('display') !== 'none' ||
-                that.$dragBoxRight.css('display') !== 'none' ||
+            if (this.$dragBoxLeft.css('display') !== 'none' ||
+                this.$dragBoxRight.css('display') !== 'none' ||
                 this.$encodingBoxA.css('display') !== 'none' ||
                 this.$encodingBoxB.css('display') !== 'none' ||
                 this.$encodingBoxB.css('display') !== 'none'
