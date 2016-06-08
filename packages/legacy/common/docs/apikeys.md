@@ -6,6 +6,8 @@
 
 * Create a key
 * Send to receipient & record that you did
+* Specify key in notebook
+* Test
 
 
 #### Create a key
@@ -41,6 +43,8 @@ http://proxy-staging.graphistry.com/api/decrypt?text=9cdee03e7b3604af139cda92e3b
 http://proxy-staging.graphistry.com/api/decrypt?text=badkey
 
 => `{"error":"failed to decrypt"}`
+
+PyGraphistry will check keys on `.register()`, and eventually, we should have a test notebook for this.
 
 ### Implementation
 
