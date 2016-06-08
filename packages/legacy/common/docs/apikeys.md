@@ -2,6 +2,12 @@
 
 ### Usage
 
+#### Process
+
+* Create a key
+* Send to receipient & record that you did
+
+
 #### Create a key
 
 http://staging.graphistry.com/api/encrypt?text=foo@bar.comSEECANARYVALUEINSIDECONFIGJSON
@@ -9,6 +15,12 @@ http://staging.graphistry.com/api/encrypt?text=foo@bar.comSEECANARYVALUEINSIDECO
 `{"encrypted":"9cdee03e7b3604af139cda92e3b91461d8918e7545804005a6d127b7b4becec7"}`
 
 Note: must include suffix corresponding to “SEECANARYVALUEINSIDECONFIGJSON” (canary)
+
+#### Send to receipient & record that you did
+
+* Warn them not to upload private data
+* Record who/when: https://docs.google.com/spreadsheets/d/1U65IeJQXWdBKfLlLXaKl9s31iNP_w-bbh-YkPkkh3-g/edit#gid=0
+* Eventually, we need to setup our TOS (clickthrough agreement)
 
 #### Specify key in notebook
 
