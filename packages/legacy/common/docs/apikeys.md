@@ -24,6 +24,18 @@ Note: must include suffix corresponding to “SEECANARYVALUEINSIDECONFIGJSON” 
 * Record who/when: https://docs.google.com/spreadsheets/d/1U65IeJQXWdBKfLlLXaKl9s31iNP_w-bbh-YkPkkh3-g/edit#gid=0
 * Eventually, we need to setup our TOS (clickthrough agreement)
 
+```
+Hi ZZZZZ,
+
+Certainly, here is an API key for you: ZZZZZZ
+
+We have a tutorial on https://github.com/graphistry/pygraphistry. I will follow up with an invite to our Slack channel. Feel free to ask any questions, share comments/feedback or report problems via Slack: our team loves helping out. Out of curiosity, what kind of data are interested in visualizing?
+
+One more thing: You are sending data to us when you create a visualization. Since our public cloud is in alpha, we are not yet providing security or privacy guarantees.
+
+Happy graphing!
+```
+
 #### Specify key in notebook
 
 ```
