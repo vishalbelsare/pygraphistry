@@ -5,7 +5,7 @@
 var _           = require('underscore');
 var querystring = require('querystring');
 var request     = require('request');
-var config      = require('config')();
+var config      = require('@graphistry/config')();
 
 var defaults = {
     username: 'Bob should set a username',

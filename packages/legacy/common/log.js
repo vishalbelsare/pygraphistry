@@ -3,7 +3,7 @@
 
 var nodeutil = require('util'),
     chalk    = require('chalk'),
-    bunyan   = require('bunyan');
+    bunyan   = require('@graphistry/bunyan');
 
 
 var self = module.exports = {

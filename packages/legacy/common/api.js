@@ -14,7 +14,7 @@ Same with decrypt, except take care not to reveal canary
 
 var crypto = require('crypto');
 var _      = require('underscore');
-var config = require('config')();
+var config = require('@graphistry/config')();
 var logger = require('./logger.js').createLogger('central:api');
 
 

@@ -1,6 +1,7 @@
 {
   "name": "@graphistry/common",
-  "version": "0.0.0",
+  "version": "2.0.0",
+  "main": "index.js",
   "description": "",
   "scripts": {
     "test": "echo \"No test available\""
@@ -16,9 +17,9 @@
   },
   "homepage": "https://github.com/graphistry/common",
   "dependencies": {
-    "@graphistry/bunyan": "graphistry/node-bunyan",
+    "@graphistry/bunyan": "2.0.0",
     "chalk": "~1.0.0",
-    "config": "graphistry/config",
+    "@graphistry/config": "2.0.0",
     "fs-tools": "~0.2.0",
     "q": "~1.1.0",
     "underscore": "~1.8.3",
