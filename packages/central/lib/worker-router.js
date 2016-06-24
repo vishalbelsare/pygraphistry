@@ -3,7 +3,7 @@
 /// <reference path="../typings/rx/rx.d.ts"/>
 'use strict';
 
-var Rx          = require('rxjs/Rx');
+var Rx          = require('@graphistry/rxjs');
 var Observable  = Rx.Observable;
 
 Rx.Observable.return = function (value) {
@@ -27,9 +27,9 @@ var _           = require('underscore');
 var request     = require('request');
 var MongoClient = require('mongodb').MongoClient;
 
-var config      = require('config')();
+var config      = require('@graphistry/config')();
 
-var Log         = require('common/logger.js');
+var Log         = require('@graphistry/common').logger;
 var logger      = Log.createLogger('central', 'central/lib/worker-router.js');
 
 var mongoClientConnect = Rx.Observable.bindNodeCallback(MongoClient.connect.bind(MongoClient));

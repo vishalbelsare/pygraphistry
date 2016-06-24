@@ -5,7 +5,7 @@
 
 require('source-map-support').install();
 
-var Rx          = require('rxjs/Rx');
+var Rx          = require('@graphistry/rxjs');
 
 Rx.Observable.return = function (value) {
     return Rx.Observable.of(value);
@@ -46,14 +46,14 @@ var bodyParser  = require('body-parser');
 var app         = express();
 var http        = require('http').Server(app);
 
-var config      = require('config')();
+var config      = require('@graphistry/config')();
 
-var Log         = require('common/logger.js');
+var Log         = require('@graphistry/common').logger;
 var logger      = Log.createLogger('central', 'central/lib/server.js');
 
 var router = require('./worker-router.js');
 
-var apiKey      = require('common/api.js');
+var apiKey      = require('@graphistry/common').api;
 
 // Tell Express to trust reverse-proxy connections from localhost, linklocal, and private IP ranges.
 // This allows Express to expose the client's real IP and protocol, not the proxy's.
@@ -64,7 +64,7 @@ var MAIN_STATIC_PATH    = path.resolve(__dirname, '../assets');
 var GRAPH_STATIC_PATH   = path.resolve(require('@graphistry/graph-viz').staticFilePath(), 'assets');
 var GRAPH_HBS_PATH      = path.resolve(require('@graphistry/graph-viz').staticFilePath(), 'views');
 
-var STREAMGL_DIST_PATH  = require.resolve('StreamGL');
+var STREAMGL_DIST_PATH  = require.resolve('@graphistry/StreamGL');
 STREAMGL_DIST_PATH = path.resolve(STREAMGL_DIST_PATH.slice(0, STREAMGL_DIST_PATH.lastIndexOf('/')), 'dist');
 
 var HTTP_SERVER_LISTEN_ADDRESS = config.HTTP_LISTEN_ADDRESS;
