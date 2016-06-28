@@ -9,18 +9,18 @@ import { toClient as fromLayoutAlgorithms } from '../simulator/layout.config';
 export function loadViews(workbooksById, graphsById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
     const loadCurrentGraph = loadGraph(graphsById, config, s3Cache);
     const loadWorkbooksById = loadWorkbooks(workbooksById, config, s3Cache);
-    return function loadViewsById({ workbookIds, viewIds, server, options = {} }) {
+    return function loadViewsById({ workbookIds, viewIds, options = {} }) {
         return loadWorkbooksById({
-            workbookIds, server, options
+            workbookIds, options
         })
         .mergeMap(
-            ({ workbook }) => loadCurrentGraph({ workbook, server }),
+            ({ workbook }) => loadCurrentGraph({ workbook }),
             ({ workbook }, graph) => ({ workbook, graph })
         )
         .mergeMap(
             ({ workbook, graph }) => viewIds,
             ({ workbook, graph }, viewId) => ({
-                workbook, view: assignViewToWorkbook(server, workbook, assignGraphToView(
+                workbook, view: assignViewToWorkbook(workbook, assignGraphToView(
                     workbook, graph, workbook.viewsById[viewId] || createView(
                         workbook.id, graph, viewId
                 )))
@@ -29,7 +29,7 @@ export function loadViews(workbooksById, graphsById, config, s3Cache = new Cache
     }
 }
 
-function assignViewToWorkbook(server, workbook, view) {
+function assignViewToWorkbook(workbook, view) {
 
     const { id: viewId } = view;
     const { id: workbookId, viewsById, views } = workbook;
@@ -46,10 +46,6 @@ function assignViewToWorkbook(server, workbook, view) {
         if (!currentView) {
             views.current = $ref(`workbooksById['${workbookId}'].views['${viewIndex}']`);
         }
-
-        // TODO: refactor everything in server-viz so we can delete these lines
-        server && server.viewConfig.next(view);
-        server && server.renderConfig.next(view.scene);
     }
 
     return view;

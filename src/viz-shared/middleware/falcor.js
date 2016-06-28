@@ -2,9 +2,9 @@ import { Router } from 'reaxtor';
 import { Observable } from '@graphistry/rxjs';
 import { falcorRoutes } from '../routes/falcor';
 
-export function getDataSourceFactory(services, props) {
+export function getDataSourceFactory(services, routesSharedState) {
 
-    const AppRouterBase = Router.createClass(falcorRoutes(services, props));
+    const AppRouterBase = Router.createClass(falcorRoutes(services, routesSharedState));
 
     class AppRouter extends AppRouterBase {
         constructor(options = {}) {

@@ -7,9 +7,9 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from '../support';
 
-export function scene({ loadViewsById }, props) {
+export function scene({ loadViewsById }, routesSharedState) {
 
-    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById, props);
+    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById, routesSharedState);
 
     return [{
         get: genericGetHandler,
@@ -54,7 +54,7 @@ export function scene({ loadViewsById }, props) {
         const { request: { query: options = {}}} = this;
 
         return loadViewsById({
-            workbookIds, viewIds, options
+            ...routesSharedState, workbookIds, viewIds, options
         })
         .mergeMap(({ workbook, view }) => {
 
@@ -86,7 +86,7 @@ export function scene({ loadViewsById }, props) {
         const { request: { query: options = {}}} = this;
 
         return loadViewsById({
-            workbookIds, viewIds, options
+            ...routesSharedState, workbookIds, viewIds, options
         })
         .mergeMap(({ workbook, view }) => {
 

@@ -9,10 +9,10 @@ import { ref as $ref, atom as $atom } from 'falcor-json-graph';
 export function loadLabels(workbooksById, graphsById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
     const loadViewsById = loadViews(workbooksById, graphsById, config, s3Cache);
     return function loadLabelsByIndexAndType({
-        workbookIds, viewIds, labelTypes, labelIndexes, server, options = {}
+        workbookIds, viewIds, labelTypes, labelIndexes, options = {}
     }) {
         return loadViewsById({
-            workbookIds, viewIds, server, options
+            workbookIds, viewIds, options
         })
         .mergeMap(
             ({ workbook, view }) => labelTypes,

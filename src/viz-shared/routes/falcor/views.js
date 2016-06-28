@@ -8,9 +8,9 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from '../support';
 
-export function views({ loadViewsById }, props) {
+export function views({ loadViewsById }, routesSharedState) {
 
-    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById, props);
+    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById, routesSharedState);
 
     return [{
         get: genericGetHandler,

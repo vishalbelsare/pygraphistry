@@ -9,7 +9,7 @@ import { cache as Cache, logger as commonLogger } from '@graphistry/common';
 const logger = commonLogger.createLogger('viz-worker', 'viz-worker/services/loadGraph.js');
 
 export function loadGraph(graphsById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
-    return function loadCurrentGraph({ workbook, server }) {
+    return function loadCurrentGraph({ workbook }) {
         const { datasets: { current: metadata }} = workbook;
         return (metadata.id in graphsById) ?
             graphsById[metadata.id] : (
@@ -26,23 +26,6 @@ export function loadGraph(graphsById, config, s3Cache = new Cache(config.LOCAL_C
                     dataset, metadata, s3Cache, config, createGraph(metadata)
                 ))
                 .do(loadDataFrameAndUpdateBuffers)
-                // TODO: refactor everything in server-viz so we can delete these lines
-                .mergeMap((graph) => {
-                    if (server) {
-                        const { interactions, interactionsLoop } = graph;
-                        graph.server = server;
-                        // graph.socket = server.socket;
-                        server.animationStep = {
-                            interact(x) {
-                                interactions.next(x);
-                            }
-                        };
-                        server.ticks.next(interactionsLoop);
-                        return server.ticksMulti.take(1);
-                    }
-                    return Observable.of(graph);
-                })
-                .do((graph) => server && server.graph.next(graph))
                 .concat(Observable.never())
                 .multicast(new ReplaySubject(1))
                 .refCount()

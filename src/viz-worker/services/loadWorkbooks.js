@@ -9,18 +9,18 @@ import { dataset as createDataset,
 
 export function loadWorkbooks(workbooksById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
     const loadWorkbookById = loadWorkbook(workbooksById, config, s3Cache);
-    return function loadWorkbooksById({ workbookIds, server, options = {}}) {
+    return function loadWorkbooksById({ workbookIds, options = {}}) {
         return Observable
             .from(workbookIds)
             .mergeMap(
-                (workbookId) => loadWorkbookById({ workbookId, server, options }),
+                (workbookId) => loadWorkbookById({ workbookId, options }),
                 (workbookId, workbook) => ({ workbook })
             );
         }
 }
 
 export function loadWorkbook(workbooksById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
-    return function loadWorkbookById({ workbookId, server, options = {} }) {
+    return function loadWorkbookById({ workbookId, options = {} }) {
         return (workbookId in workbooksById) ?
             workbooksById[workbookId] : (
             workbooksById[workbookId] = Observable
@@ -29,8 +29,6 @@ export function loadWorkbook(workbooksById, config, s3Cache = new Cache(config.L
                 .map((workbook) => assignCurrentDataset(workbook, options))
                 .catch(() => Observable
                     .of(createWorkbook(createDataset(options), workbookId)))
-                // TODO: refactor everything in server-viz so we can delete this line
-                .do((workbook) => server && server.workbookDoc.next(workbook))
                 .concat(Observable.never())
                 .multicast(new ReplaySubject(1))
                 .refCount()

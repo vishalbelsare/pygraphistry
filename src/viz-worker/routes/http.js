@@ -5,8 +5,8 @@ import { renderMiddleware } from '../middleware';
 import { getDataSourceFactory } from '../../viz-shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 
-export function httpRoutes(services, props, modules) {
-    const getDataSource = getDataSourceFactory(services, props);
+export function httpRoutes(services, routesSharedState, modules) {
+    const getDataSource = getDataSourceFactory(services, routesSharedState);
     return [{
         use: bodyParser.urlencoded({ extended: false })
     }, {

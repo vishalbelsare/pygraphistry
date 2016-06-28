@@ -5,8 +5,8 @@ import VizServer from './simulator/server-viz';
 import { cache as Cache } from '@graphistry/common';
 import { reloadHot } from '../viz-shared/reloadHot';
 import removeExpressRoute from 'express-remove-route';
-import { Observable, Subscription } from '@graphistry/rxjs';
 import { logger as commonLogger } from '@graphistry/common';
+import { Observable, Subscription } from '@graphistry/rxjs';
 import { loadViews, loadLabels, loadWorkbooks } from './services';
 
 const config = _config();
@@ -25,7 +25,7 @@ export function vizWorker(app, server, sockets, caches) {
     const loadViewsById = loadViews(workbooksById, graphsById, config, s3Cache);
     const loadLabelsByIndexAndType = loadLabels(workbooksById, graphsById, config, s3Cache);
 
-    const routeProps = { config };
+    const routesSharedState = { config };
     const routeServices = {
         loadConfig,
         loadViewsById,
@@ -33,8 +33,8 @@ export function vizWorker(app, server, sockets, caches) {
         loadLabelsByIndexAndType
     };
 
-    const socketIORoutes = socketRoutes(routeServices, routeProps);
-    const expressAppRoutes = httpRoutes(routeServices, routeProps, reloadHot(module));
+    const socketIORoutes = socketRoutes(routeServices, routesSharedState);
+    const expressAppRoutes = httpRoutes(routeServices, routesSharedState, reloadHot(module));
 
     return Observable.using(onDispose, onSubscribe);
 
@@ -71,7 +71,7 @@ export function vizWorker(app, server, sockets, caches) {
 
         return requests.merge(sockets.map(enrichLogs).mergeMap(({ socket, metadata }) => {
             const vizServer = new VizServer(app, socket, vbos, metadata);
-            routeProps.server = vizServer;
+            routesSharedState.server = vizServer;
             return Observable.using(
                 onSocketDispose(socket, vizServer),
                 onSocketSubscribe(socket, vizServer)
@@ -89,10 +89,56 @@ export function vizWorker(app, server, sockets, caches) {
 
     function onSocketSubscribe(socket, vizServer) {
         return function onSocketSubscribe(subscription) {
+
             socketIORoutes.forEach(({ event, handler }) => {
                 socket.on(event, handler);
             });
-            return Observable.of({
+
+            let seedVizServer = Observable.empty();
+            const { handshake: { query: options = {} }} = socket;
+            const { workbook: workbookId } = options;
+
+            if (workbookId) {
+
+                const workbookIds = [workbookId];
+
+                seedVizServer = loadWorkbooksById({
+                        ...routesSharedState, workbookIds, options
+                    })
+                    .mergeMap(({ workbook }) => {
+                        const { value: viewRef } = workbook.views.current;
+                        const viewIds = [viewRef[viewRef.length - 1]];
+                        return loadViewsById({
+                            ...routesSharedState, workbookIds, viewIds, options
+                        });
+                    })
+                    .mergeMap(({ workbook, view }) => {
+
+                        const { scene, graph } = view;
+                        const { interactions, interactionsLoop } = graph;
+
+                        graph.socket = socket;
+                        graph.server = vizServer;
+
+                        vizServer.animationStep = {
+                            interact(x) {
+                                interactions.next(x);
+                            }
+                        };
+
+                        // TODO: refactor server-viz to remove dependency on stateful shared Subjects
+                        vizServer.workbookDoc.next(workbook);
+                        vizServer.viewConfig.next(view);
+                        vizServer.renderConfig.next(scene);
+                        vizServer.ticks.next(interactionsLoop);
+
+                        return vizServer.ticksMulti.take(1);
+                    })
+                    .do((graph) => vizServer.graph.next(graph))
+                    .ignoreElements();
+            }
+
+            return seedVizServer.startWith({
                 socket, type: 'connection'
             })
             .concat(Observable.never())
@@ -108,7 +154,7 @@ export function vizWorker(app, server, sockets, caches) {
                 socketIORoutes.forEach(({ event, handler }) => {
                     socket.off(event, handler);
                 });
-            })
+            });
             return composite;
         }
     }
@@ -122,7 +168,7 @@ export function vizWorker(app, server, sockets, caches) {
 
         commonLogger.addMetadataField(metadata);
 
-        logger.info({ ip: remoteAddress, query: query }, 'Connection Info');
+        logger.info({ ip: remoteAddress, query }, 'Connection Info');
 
         return { socket, metadata };
     }

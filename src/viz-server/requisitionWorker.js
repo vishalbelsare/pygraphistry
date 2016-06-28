@@ -32,10 +32,6 @@ export function requisitionWorker({
     const requestIsClaim = requestIsPathname('/claim');
     const requestIsIndex = requestIsPathname('/index.html');
 
-    // const restRequests = requests.filter((x) => !(
-    //     requestIsClaim(x) || requestIsIndex(x)
-    // ));
-
     const claimRequests = requests
         .filter(requestIsClaim)
         .mergeMap(requisition(acceptClaim, rejectClaim));
@@ -150,15 +146,15 @@ export function requisitionWorker({
     }
 
     function trackVizWorkerCaches({ caches }, [activeClientId, clientType, request, response]) {
-        const sockets = awaitSocketConnection(activeClientId);
+        const sockets = awaitSocketConnection(activeClientId, request);
         const worker = WORKERS[clientType](app, server, sockets, caches);
         return {
             caches, worker: worker.merge(Observable.of({ request, response }))
         };
     }
 
-    function awaitSocketConnection(activeClientId) {
-        return socketConnectionAsObservable(activeClientId)
+    function awaitSocketConnection(activeClientId, request) {
+        return socketConnectionAsObservable(activeClientId, request)
             .timeout(claimTimeout * 1000)
             .catch(() => {
                 isLocked = false;
@@ -168,10 +164,13 @@ export function requisitionWorker({
             });
     }
 
-    function socketConnectionAsObservable(activeClientId) {
+    function socketConnectionAsObservable(activeClientId, request) {
         return Observable.create((subscriber) => {
             const handler = (socket) => {
                 if (activeClientId === latestClientId) {
+                    const { handshake: { query }} = socket;
+                    const { query: options = {} } = request;
+                    socket.handshake.query = { ...options, ...query };
                     subscriber.next(socket);
                 } else {
                     logger.warn('Late claimant, notifying client of error');

@@ -7,13 +7,13 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from '../support';
 
-export function release({ loadConfig }, props) {
+export function release({ loadConfig }, routesSharedState) {
     return [{
         route: `release.current.date`,
         get(path) {
             const { request: { query: options = {}}} = this;
             return loadConfig({
-                ...props, options
+                ...routesSharedState, options
             })
             .map(({ RELEASE }) => $pathValue(
                 `release.current.date`, RELEASE

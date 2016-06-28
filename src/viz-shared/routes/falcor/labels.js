@@ -9,9 +9,9 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from '../support';
 
-export function labels({ loadViewsById, loadLabelsByIndexAndType }, props) {
+export function labels({ loadViewsById, loadLabelsByIndexAndType }, routesSharedState) {
 
-    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById, props);
+    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById, routesSharedState);
 
     return [{
         get: getLabelsByRangeAndTypeHandler,
@@ -49,7 +49,7 @@ export function labels({ loadViewsById, loadLabelsByIndexAndType }, props) {
         }, []);
 
         return loadLabelsByIndexAndType({
-            ...props, workbookIds, viewIds, labelTypes, labelIndexes, options
+            ...routesSharedState, workbookIds, viewIds, labelTypes, labelIndexes, options
         })
         .map(({ workbook, view, label }) => {
             const { labels } = view;
@@ -72,7 +72,7 @@ export function labels({ loadViewsById, loadLabelsByIndexAndType }, props) {
         const { request: { query: options = {}}} = this;
 
         return loadViewsById({
-            ...props, workbookIds, viewIds, options
+            ...routesSharedState, workbookIds, viewIds, options
         })
         .mergeMap(({ workbook, view }) => {
 
@@ -104,7 +104,7 @@ export function labels({ loadViewsById, loadLabelsByIndexAndType }, props) {
         const { request: { query: options = {}}} = this;
 
         return loadViewsById({
-            ...props, workbookIds, viewIds, options
+            ...routesSharedState, workbookIds, viewIds, options
         })
         .mergeMap(({ workbook, view }) => {
 

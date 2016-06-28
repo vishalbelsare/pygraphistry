@@ -9,9 +9,9 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from '../support';
 
-export function controls({ loadViewsById }, props) {
+export function controls({ loadViewsById }, routesSharedState) {
 
-    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById, props);
+    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById, routesSharedState);
 
     return [{
         get: genericGetHandler,
@@ -62,7 +62,7 @@ export function controls({ loadViewsById }, props) {
         workbookIds, viewIds, settingIds, controlIds, options
     }) {
         return loadViewsById({
-            workbookIds, viewIds, options
+            ...routesSharedState, workbookIds, viewIds, options
         })
         .mergeMap(
             ({ workbook, view }) => settingIds,
@@ -80,7 +80,7 @@ export function controls({ loadViewsById }, props) {
         const { workbookIds, viewIds, settingIds, controlIds } = getIDsFromJSON(json);
 
         return loadControls({
-            workbookIds, viewIds, settingIds, controlIds, options
+            ...routesSharedState, workbookIds, viewIds, settingIds, controlIds, options
         })
         .mergeMap(({ workbook, view, settingId, controlId }) => {
 
@@ -121,7 +121,7 @@ export function controls({ loadViewsById }, props) {
         const { workbookIds, viewIds, settingIds, controlIds } = getIDsFromJSON(json);
 
         return loadControls({
-            workbookIds, viewIds, settingIds, controlIds, options
+            ...routesSharedState, workbookIds, viewIds, settingIds, controlIds, options
         })
         .mergeMap(({ workbook, view, settingId, controlId }) => {
 

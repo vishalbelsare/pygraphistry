@@ -7,9 +7,9 @@ import {
 import flake from 'simpleflake';
 import { getHandler, captureErrorStacks } from '../support';
 
-export function workbooks({ loadWorkbooksById }, props) {
+export function workbooks({ loadWorkbooksById }, routesSharedState) {
 
-    const genericGetHandler = getHandler(['workbook'], loadWorkbooksById, props);
+    const genericGetHandler = getHandler(['workbook'], loadWorkbooksById, routesSharedState);
 
     return [{
         get: genericGetHandler,
@@ -32,7 +32,7 @@ export function workbooks({ loadWorkbooksById }, props) {
         options.workbook = workbookId;
 
         return loadWorkbooksById({
-            ...props, workbookIds, options
+            ...routesSharedState, workbookIds, options
         })
         .map(({ workbook }) => $pathValue(
             `workbooks.open`, $ref(`workbooksById['${workbookId}']`)

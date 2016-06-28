@@ -6,11 +6,8 @@ import { Observable, Scheduler } from '@graphistry/rxjs';
 export function initialize(options, debug) {
 
     const socket = SocketIO.Manager({
-        reconnection: false,
-        path: `/socket.io`,
-        query: {
-            ...options, falcorClient: true
-        }
+        path: `/socket.io`, reconnection: false,
+        query: { ...options, falcorClient: true }
     }).socket('/');
 
     socket.io.engine.binaryType = 'arraybuffer';
@@ -38,36 +35,12 @@ function getAppModel(options) {
         source: new RemoteDataSource('/graph/model.json', {
             crossDomain: false, withCredentials: false
         }, options),
-        // onChangesCompleted: function () {
-        //     if (useLocalStorage && localStorage && localStorage.setItem) {
-        //         localStorage.setItem('graphistry-app-cache', JSON.stringify(this.getCache()));
-        //     }
-        // }
+        onChangesCompleted: !__DEV__ ? null : function () {
+            window.appCache = this.getCache();
+        }
     });
 }
 
 function getAppCache() {
-
-    let { appCache } = window;
-
-    if (!appCache) {
-        if (useLocalStorage && localStorage && localStorage.getItem) {
-            const localStorageCache = localStorage.getItem('graphistry-app-cache');
-            if (localStorageCache) {
-                try {
-                    appCache = JSON.parse(localStorageCache);
-                } catch (e) {
-                    appCache = {};
-                }
-            } else {
-                appCache = {};
-            }
-        } else {
-            appCache = {};
-        }
-    }
-
-    console.log(appCache);
-
-    return appCache;
+    return window.appCache || {};
 }
