@@ -5,12 +5,12 @@ var crypto   = require('crypto');
 var _        = require('underscore');
 var Q        = require('q');
 
-var config   = require('config')();
+var config   = require('@graphistry/config')();
 var vgraph   = require('./vgraph.js');
-var apiKey   = require('common/api.js');
-var Cache    = require('common/cache.js');
-var s3       = require('common/s3.js');
-var Log      = require('common/logger.js');
+var apiKey   = require('@graphistry/common').api;
+var Cache    = require('@graphistry/common').cache;
+var s3       = require('@graphistry/common').s3;
+var Log      = require('@graphistry/common').logger;
 var logger   = Log.createLogger('etlworker:etl1');
 
 var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);

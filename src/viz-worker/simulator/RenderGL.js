@@ -7,7 +7,7 @@ const RenderBase = require('./RenderBase.js');
 const glMatrix = require('gl-matrix');
 const util = require('./util.js');
 
-const log         = require('common/logger.js');
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz:render:rendergl');
 
 //[string] * document * canvas * int * [number, number] * {<string>: bool} -> Promise Renderer

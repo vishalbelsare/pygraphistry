@@ -5,7 +5,7 @@ const path = require('path'),
     fs = require('fs'),
     Q = require('q'),
     _ = require('underscore'),
-    log = require('common/logger.js'),
+    log = require('@graphistry/common').logger,
     logger = log.createLogger('graph-viz', 'graph-viz/js/util');
 
 

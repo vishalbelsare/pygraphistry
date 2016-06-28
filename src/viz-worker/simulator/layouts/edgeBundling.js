@@ -3,8 +3,8 @@ var _          = require('underscore'),
     Q          = require('q'),
     cljs       = require('../cl.js'),
     Kernel     = require('../kernel.js'),
-    LayoutAlgo = require('../layoutAlgo.js'), 
-    log         = require('common/logger.js'),
+    LayoutAlgo = require('../layoutAlgo.js'),
+    log         = require('@graphistry/common').logger,
     logger      = log.createLogger('graph-viz:cl:edgebundling');
 
 var argsType = {
@@ -83,7 +83,7 @@ var kernelSpecs = {
     buildTree: {
         name: 'buildTree',
         kernelName: 'build_tree',
-        args: [ 'xCoords', 'yCoords', 'children', 'mass', 'start', 'step', 'bottom', 'maxDepth', 
+        args: [ 'xCoords', 'yCoords', 'children', 'mass', 'start', 'step', 'bottom', 'maxDepth',
             'radius', 'stepNumber', 'numEdges', 'numNodes' ],
         fileName: 'layouts/edgeBundling/kdTree/buildTree.cl'
     },
@@ -115,7 +115,7 @@ var kernelSpecs = {
     midspringForces: {
         name: 'midspringForces',
         kernelName: 'midspringForces',
-        args: ['numSplits', 'springs', 'workList', 'curPoints', 'midPointForces', 'curMidPoints', 
+        args: ['numSplits', 'springs', 'workList', 'curPoints', 'midPointForces', 'curMidPoints',
             'curForces', 'springStrength', 'springDistance', 'stepNumber'],
         fileName: 'layouts/edgeBundling/midspringForces.cl'
     },
@@ -169,7 +169,7 @@ var initializeLayoutBuffers = function (simulator) {
     var getBufferSizes = function(simulator) {
         var warpsize = getWarpsize(simulator);
         // TODO Set this to the number of workgroups in boundBox kernel
-        var numNodes = getNumNodes(numMidPoints, warpsize); 
+        var numNodes = getNumNodes(numMidPoints, warpsize);
         var numWorkGroups = 30;
         var numDimensions = 2;
         return {
@@ -389,8 +389,8 @@ EdgeBundling.prototype.calculateMidPointForces = function(simulator, workItems) 
     return calculateMidPointForces;
 }
 
-// Calculate the point forces on midpoints with index equal to midpointIndex 
-EdgeBundling.prototype.calculateMidPointForcesOnIndex = function(simulator, workItems, midpointIndex) { 
+// Calculate the point forces on midpoints with index equal to midpointIndex
+EdgeBundling.prototype.calculateMidPointForcesOnIndex = function(simulator, workItems, midpointIndex) {
     var numSplits = simulator.dataframe.getNumElements('splits');
 
     var resources = [
@@ -462,7 +462,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
             logger.debug("Force interpolation of midpoints");
         }
         locks.interpolateMidPointsOnce = false;
-        // If interpolateMidpoints is true, midpoints are calculate by interpolating between 
+        // If interpolateMidpoints is true, midpoints are calculate by interpolating between
         // corresponding edge points.
         simulator.tickBuffers(['curMidPoints']);
         calculateMidPoints = Q().then(function () {
@@ -480,7 +480,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
                 return that.midEdgeForces(simulator, workItems);
             }
         })
-        
+
         .then(function () {
             return that.calculateSwings(simulator, workItems);
         })
@@ -488,7 +488,7 @@ EdgeBundling.prototype.tick = function (simulator, stepNumber) {
         .then(function () {
             return that.integrate(simulator, workItems);
         })
-        
+
         .then(function () {
             var nextMidPoints = simulator.dataframe.getBuffer('nextMidPoints', 'simulator');
             var curMidPoints = simulator.dataframe.getBuffer('curMidPoints', 'simulator');

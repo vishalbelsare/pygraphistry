@@ -1,23 +1,15 @@
 'use strict';
 
 const Q       = require('q');
-const pb      = require('protobufjs');
-const path    = require('path');
-const config  = require('config')();
-const s3      = require('common/s3.js');
+const config  = require('@graphistry/config')();
+const s3      = require('@graphistry/common').s3;
 const sprintf = require('sprintf-js').sprintf;
 
-const log         = require('common/logger.js');
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz:data:vgraphwriter');
 
-// const builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
-// const graphVectorProtoPath = require.resolve('graph-viz/src/libs/graph_vector.proto');
-const graphVectorProtoPath = path.resolve(__dirname, '../../src/libs/graph_vector.proto');
-const builder = pb.loadProtoFile(graphVectorProtoPath);
-if (builder === null) {
-    logger.die('Could not find protobuf definition');
-}
-const protobufRoot = builder.build();
+const ProtoBuf = require('protobufjs/dist/protobuf-light');
+const protoBufDefinitions = ProtoBuf.loadJson(require('./graph_vector.proto')).build();
 
 /* Hack way to serialize positions while waiting for dataframe */
 function serializePositions(graph) {
@@ -37,16 +29,16 @@ function serializePositions(graph) {
             yVal[i] = values[2*i + 1];
         }
 
-        const xVec = new protobufRoot.VectorGraph.DoubleAttributeVector();
+        const xVec = new protoBufDefinitions.VectorGraph.DoubleAttributeVector();
         xVec.name = 'x';
         xVec.values = xVal;
-        xVec.target = protobufRoot.VectorGraph.AttributeTarget.VERTEX;
+        xVec.target = protoBufDefinitions.VectorGraph.AttributeTarget.VERTEX;
         vg.double_vectors.push(xVec);
 
-        const yVec = new protobufRoot.VectorGraph.DoubleAttributeVector();
+        const yVec = new protoBufDefinitions.VectorGraph.DoubleAttributeVector();
         yVec.name = 'y';
         yVec.values = yVal;
-        yVec.target = protobufRoot.VectorGraph.AttributeTarget.VERTEX;
+        yVec.target = protoBufDefinitions.VectorGraph.AttributeTarget.VERTEX;
         vg.double_vectors.push(yVec);
 
         return vg;

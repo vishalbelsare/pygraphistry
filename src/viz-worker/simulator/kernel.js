@@ -7,9 +7,9 @@ const util = require('./util');
 
 const cljs = require('./cl.js');
 const ocl = require('node-opencl');
-const config = require('config')();
+const config = require('@graphistry/config')();
 
-const log         = require('common/logger.js');
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/kernel.js');
 
 // Disable debug logging since this file is responsible for 90% of log output.

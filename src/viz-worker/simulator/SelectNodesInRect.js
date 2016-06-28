@@ -4,7 +4,7 @@ var    cljs = require('./cl.js'),
           Q = require('q'),
      Kernel = require('./kernel.js');
 
-var log         = require('common/logger.js');
+var log         = require('@graphistry/common').logger;
 var logger      = log.createLogger('graph-viz', 'graph-viz/js/selectNodesInRect.js');
 
 function SelectNodesInRect(clContext) {

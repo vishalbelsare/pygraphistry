@@ -6,7 +6,7 @@ var _ = require('underscore');
 var pb = require('protobufjs');
 var sprintf = require('sprintf-js').sprintf;
 
-var Log         = require('common/logger.js');
+var Log         = require('@graphistry/common').logger;
 var logger      = Log.createLogger('etlworker:vgraph');
 
 //TODO: Lines 60-261 instances of console should be changed to pipe output to client

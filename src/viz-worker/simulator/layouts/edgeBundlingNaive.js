@@ -5,7 +5,7 @@ var _          = require('underscore'),
     cljs       = require('../cl.js'),
     Kernel     = require('../kernel.js'),
     LayoutAlgo = require('../layoutAlgo.js'),
-    log        = require('common/logger.js'),
+    log        = require('@graphistry/common').logger,
     logger     = log.createLogger('graph-viz:cl:edgebundling');
 
 

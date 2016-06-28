@@ -4,7 +4,7 @@ const  cljs = require('./cl.js'),
           Q = require('q'),
      Kernel = require('./kernel.js');
 
-const log         = require('common/logger.js');
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz:cl:histogramKernel');
 
 const MAX_NUM_BINS = 256;

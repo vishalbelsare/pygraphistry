@@ -6,10 +6,10 @@ var sprintf     = require('sprintf-js').sprintf;
 var bodyParser  = require('body-parser');
 var multer      = require('multer');
 
-var config      = require('config')();
-var Log         = require('common/logger.js');
-var slack       = require('common/slack.js');
-var apiKey      = require('common/api.js');
+var config      = require('@graphistry/config')();
+var Log         = require('@graphistry/common').logger;
+var slack       = require('@graphistry/common').slack;
+var apiKey      = require('@graphistry/common').api;
 var etl1        = require('./src/etl1.js');
 var etl2        = require('./src/etl2.js');
 var logger      = Log.createLogger('etlworker:index');

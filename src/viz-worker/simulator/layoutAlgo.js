@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('underscore');
-const log         = require('common/logger.js');
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/layoutAlgo.js');
 
 /* Abstract class for layout algorithms

@@ -1,17 +1,17 @@
 'use strict';
 
-var Rx           = require('rxjs/Rx');
+var Rx           = require('@graphistry/rxjs');
 var _            = require('underscore');
 var fs           = require('fs');
 var path         = require('path');
 var driver       = require('../dist/node-driver.js');
 // var StreamGL     = require('StreamGL');
-var compress     = require('node-pigz');
+var compress     = require('@graphistry/node-pigz');
 // var renderer     = StreamGL.renderer;
 var rConf        = require('../dist/renderer.config.js');
 var loader       = require('../dist/data-loader.js');
 var server       = require('../dist/server-viz.js');
-var config       = require('config')();
+var config       = require('@graphistry/config')();
 var ioClient     = require('socket.io-client');
 var supertest    = require('supertest');
 var express      = require('express');
@@ -21,7 +21,7 @@ var XMLHttpRequest = require('xhr2');
 var io           = require('socket.io')(http, {transports: ['websocket']});
 var zlib         = require('zlib');
 
-var log         = require('common/logger.js');
+var log         = require('@graphistry/common').logger;
 var logger      = log.createLogger('graph-viz:smokespec');
 
 // Because node swallows a lot of exceptions, uncomment this if tests are

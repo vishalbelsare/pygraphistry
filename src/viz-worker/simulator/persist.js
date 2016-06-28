@@ -1,6 +1,6 @@
 'use strict';
 
-const Cache = require('common/cache.js');
+const Cache = require('@graphistry/common').cache;
 const fs          = require('fs');
 const path        = require('path');
 const Q           = require('q');
@@ -9,9 +9,9 @@ const encodeS3URI = require('node-s3-url-encode');
 
 const _           = require('underscore');
 
-const s3          = require('common/s3.js');
+const s3          = require('@graphistry/common').s3;
 
-const config      = require('config')();
+const config      = require('@graphistry/config')();
 
 const CHECK_AT_EACH_SAVE = true;
 
@@ -19,7 +19,7 @@ const baseDirPath = path.join(__dirname, '/../assets/viz/');
 
 const labeler     = require('./labeler.js');
 
-const log         = require('common/logger.js');
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz:persist');
 
 

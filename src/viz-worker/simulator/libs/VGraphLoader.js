@@ -2,8 +2,6 @@
 
 const Q = require('q');
 const _ = require('underscore');
-const pb = require('protobufjs');
-const path = require('path');
 const moment = require('moment');
 const Color = require('color');
 const d3Scale = require('d3-scale');
@@ -12,21 +10,15 @@ const util = require('../util.js');
 const weaklycc = require('../weaklycc.js');
 const palettes = require('../palettes.js');
 const encodingsUtil = require('../encodings.js');
-const clientNotification = require('../clientNotification.js');
+// const clientNotification = require('../clientNotification.js');
 const ComputedColumnSpec = require('../ComputedColumnSpec.js');
 
-const log         = require('common/logger.js');
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/libs/VGraphLoader.js');
-const perf        = require('common/perfStats.js').createPerfMonitor();
+const perf        = require('@graphistry/common').perfStats.createPerfMonitor();
 
-// const builder = pb.loadProtoFile(path.resolve(__dirname, 'graph_vector.proto'));
-// const graphVectorProtoPath = require.resolve('graph-viz/src/libs/graph_vector.proto');
-const graphVectorProtoPath = path.resolve(__dirname, '../../src/libs/graph_vector.proto');
-const protoBufBuilder = pb.loadProtoFile(graphVectorProtoPath);
-if (protoBufBuilder === null) {
-    logger.die('Could not find protobuf definition');
-}
-const protoBufDefinitions = protoBufBuilder.build();
+const ProtoBuf = require('protobufjs/dist/protobuf-light');
+const protoBufDefinitions = ProtoBuf.loadJson(require('./graph_vector.proto')).build();
 
 const VERTEX = protoBufDefinitions.VectorGraph.AttributeTarget.VERTEX;
 const EDGE   = protoBufDefinitions.VectorGraph.AttributeTarget.EDGE;
@@ -581,7 +573,8 @@ function decode0 (graph, vg, metadata) {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
           vg.version, vg.name, vg.vertexCount, vg.edgeCount);
 
-    notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.vertexCount);
+    // TODO
+    // notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.vertexCount);
 
     const attributes = getAttributes0(vg);
     loadDataframe(graph.dataframe, attributes, vg.vertexCount, vg.edgeCount);
@@ -598,7 +591,7 @@ function decode0 (graph, vg, metadata) {
     let vertices = lookupInitialPosition(vg, attributes);
 
     if (vertices === undefined) {
-        clientNotification.loadingStatus(graph.socket, 'Initializing positions');
+        // clientNotification.loadingStatus(graph.socket, 'Initializing positions');
         vertices = computeInitialPositions(vg.vertexCount, edges, dimensions, graph.socket);
     }
 
@@ -628,17 +621,26 @@ function decode0 (graph, vg, metadata) {
 
     });
 
-    return clientNotification.loadingStatus(graph.socket, 'Binding nodes')
-        .then(() => graph.setVertices(vertices))
-        .then(() => clientNotification.loadingStatus(graph.socket, 'Binding edges'))
+    return graph.setVertices(vertices)
         .then(() => graph.setEdges(edges, vertices))
-        .then(() => clientNotification.loadingStatus(graph.socket, 'Binding everything else'))
         .then(() => {
             calculateAndStoreCommunities(graph);
             calculateAndStoreDefaultPointSizeColumns(graph);
             return runLoaders(loaders);
-        }).then(() => graph)
+        })
+        .then(() => graph)
         .fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
+    // return clientNotification.loadingStatus(graph.socket, 'Binding nodes')
+    //     .then(() => graph.setVertices(vertices))
+    //     .then(() => clientNotification.loadingStatus(graph.socket, 'Binding edges'))
+    //     .then(() => graph.setEdges(edges, vertices))
+    //     .then(() => clientNotification.loadingStatus(graph.socket, 'Binding everything else'))
+    //     .then(() => {
+    //         calculateAndStoreCommunities(graph);
+    //         calculateAndStoreDefaultPointSizeColumns(graph);
+    //         return runLoaders(loaders);
+    //     }).then(() => graph)
+    //     .fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
 }
 
 
@@ -991,7 +993,9 @@ function decode1 (graph, vg, metadata) {
 
     const vgAttributes = getAttributes1(vg, metadata);
     const graphInfo = checkMetadataAgainstVGraph(metadata, vg, vgAttributes);
-    notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.vertexCount);
+
+    // TODO
+    // notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.vertexCount);
 
     const edges = new Array(vg.edgeCount);
     for (let i = 0; i < vg.edges.length; i++) {
@@ -1003,7 +1007,7 @@ function decode1 (graph, vg, metadata) {
 
     let vertices = lookupInitialPosition(vg, _.values(vgAttributes.nodes));
     if (vertices === undefined) {
-        clientNotification.loadingStatus(graph.socket, 'Initializing positions');
+        // clientNotification.loadingStatus(graph.socket, 'Initializing positions');
         vertices = computeInitialPositions(vg.vertexCount, edges, dimensions, graph.socket);
     }
 
@@ -1035,17 +1039,26 @@ function decode1 (graph, vg, metadata) {
         });
     });
 
-    return clientNotification.loadingStatus(graph.socket, 'Binding nodes')
-        .then(() => graph.setVertices(vertices))
-        .then(() => clientNotification.loadingStatus(graph.socket, 'Binding edges'))
+    return graph.setVertices(vertices)
         .then(() => graph.setEdges(edges, vertices))
-        .then(() => clientNotification.loadingStatus(graph.socket, 'Binding everything else'))
         .then(() => {
             calculateAndStoreCommunities(graph);
             calculateAndStoreDefaultPointSizeColumns(graph);
             return runLoaders(loaders);
-        }).then(() => graph)
+        })
+        .then(() => graph)
         .fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
+    // return clientNotification.loadingStatus(graph.socket, 'Binding nodes')
+    //     .then(() => graph.setVertices(vertices))
+    //     .then(() => clientNotification.loadingStatus(graph.socket, 'Binding edges'))
+    //     .then(() => graph.setEdges(edges, vertices))
+    //     .then(() => clientNotification.loadingStatus(graph.socket, 'Binding everything else'))
+    //     .then(() => {
+    //         calculateAndStoreCommunities(graph);
+    //         calculateAndStoreDefaultPointSizeColumns(graph);
+    //         return runLoaders(loaders);
+    //     }).then(() => graph)
+    //     .fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
 }
 
 function notifyClientOfSizesForAllocation (socket, edgeCount, vertexCount) {

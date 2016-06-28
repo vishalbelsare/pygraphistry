@@ -8,7 +8,7 @@
 var fs = require('fs');
 var _ = require('underscore');
 
-var log         = require('common/logger.js');
+var log         = require('@graphistry/common').logger;
 var logger      = log.createLogger('graph-viz:driver:config');
 
 

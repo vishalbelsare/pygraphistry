@@ -5,8 +5,8 @@
 //   release -- user-friendly name, via config (and thus docker)
 //   build -- source code version; via viz-server package version
 
-const config      = require('config')();
-const log         = require('common/logger.js');
+const config      = require('@graphistry/config')();
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/Version.js');
 
 class Version {

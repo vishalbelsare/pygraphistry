@@ -4,12 +4,12 @@ const http = require('http');
 const https = require('https');
 const Q = require('q');
 const _ = require('underscore');
-const config  = require('config')();
+const config  = require('@graphistry/config')();
 const zlib = require('zlib');
 const urllib = require('url');
-const Cache = require('common/cache.js');
+const Cache = require('@graphistry/common').cache;
 
-const log         = require('common/logger.js');
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/data-loader.js');
 
 const VGraphLoader = require('./libs/VGraphLoader.js');

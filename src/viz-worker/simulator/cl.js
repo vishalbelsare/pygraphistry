@@ -6,10 +6,10 @@ var nodeutil = require('util');
 var path = require('path');
 var util = require('./util.js');
 
-var log         = require('common/logger.js');
+var log         = require('@graphistry/common').logger;
 var logger      = log.createLogger('graph-viz', 'graph-viz/js/cl.js');
 
-var perf        = require('common/perfStats.js').createPerfMonitor();
+var perf        = require('@graphistry/common').perfStats.createPerfMonitor();
 
 logger.trace("Initializing node-webcl flavored cl.js");
 //var webcl = require('node-webcl');

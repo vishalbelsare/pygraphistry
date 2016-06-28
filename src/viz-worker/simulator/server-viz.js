@@ -4,7 +4,7 @@
 // Set jshint to ignore `predef:'io'` in .jshintrc so we can manually define io here
 /* global -io */
 
-import Rx from 'rxjs/Rx';
+import Rx from '@graphistry/rxjs';
 
 const Observable  = Rx.Observable;
 
@@ -28,16 +28,12 @@ Rx.Subscriber.prototype.dispose = Rx.Subscriber.prototype.unsubscribe;
 
 Rx.Subscription.prototype.dispose = Rx.Subscription.prototype.unsubscribe;
 
-import bodyParser from 'body-parser';
-import FalcorServer from 'falcor-express';
-import { FalcorRouter } from './falcor-router';
-
 const _           = require('underscore');
 const Q           = require('q');
 const fs          = require('fs');
 const path        = require('path');
 const extend      = require('node.extend');
-const rConf       = require('./renderer.config.js');
+const rConf       = require('../../viz-shared/models/renderer');
 const lConf       = require('./layout.config.js');
 const cljs        = require('./cl.js');
 const loader      = require('./data-loader.js');
@@ -54,16 +50,16 @@ const Dataframe   = require('./Dataframe.js');
 const Binning     = require('./Binning.js');
 const TransactionalIdentifier = require('./TransactionalIdentifier');
 const vgwriter    = require('./libs/VGraphWriter.js');
-const compress    = require('node-pigz');
-const config      = require('config')();
+const compress    = require('@graphistry/node-pigz');
+const config      = require('@graphistry/config')();
 const ExpressionCodeGenerator = require('./expressionCodeGenerator');
 const RenderNull  = require('./RenderNull.js');
 const NBody = require('./NBody.js');
 const ComputedColumnSpec = require('./ComputedColumnSpec.js');
 
-const log         = require('common/logger.js');
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/viz-server.js');
-const perf        = require('common/perfStats.js').createPerfMonitor();
+const perf        = require('@graphistry/common').perfStats.createPerfMonitor();
 
 try {
     const memoryWatcher = require('memwatch');
@@ -1587,14 +1583,6 @@ VizServer.prototype.defineRoutesInApp = function (app) {
             }
         );
     });
-
-    app.use(bodyParser.urlencoded({ extended: false }));
-
-    // middleware to handle Falcor get/put/post requests
-    app.use('/model.json', FalcorServer.dataSourceRoute((request, response) => new FalcorRouter({
-        config, logger, request, server: appRouteResponder,
-        socketLogger: appRouteResponder.socketLogger
-    })));
 };
 
 VizServer.prototype.rememberVBOs = function (VBOs) {
@@ -2046,7 +2034,8 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
 };
 
 
-VizServer.prototype.dispose = function () {
+VizServer.prototype.dispose =
+VizServer.prototype.unsubscribe = function () {
     logger.info('disconnecting', this.socket.id);
     delete this.lastCompressedVBOs;
     delete this.bufferTransferFinisher;
@@ -2067,94 +2056,5 @@ VizServer.clHealthCheck = function () {
         return {success: false, error: err.message};
     }
 };
-
-
-if (require.main === module) {
-
-    const url     = require('url');
-
-    const express = require('express');
-    const proxy   = require('express-http-proxy');
-
-    const app     = express();
-    const http    = require('http').Server(app);
-    const io      = require('socket.io')(http, {path: '/worker/3000/socket.io'});
-
-    // Tell Express to trust reverse-proxy connections from localhost, linklocal, and private IP ranges.
-    // This allows Express to expose the client's real IP and protocol, not the proxy's.
-    app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
-
-    // debug('Config set to %j', config); //Only want config to print once, which happens when logger is initialized
-
-    const nocache = function (req, res, next) {
-        res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
-        res.header('Expires', '-1');
-        res.header('Pragma', 'no-cache');
-        next();
-    };
-    app.use(nocache);
-
-    const allowCrossOrigin = function (req, res, next) {
-        res.header('Access-Control-Allow-Origin', '*');
-        res.header('Access-Control-Allow-Headers', 'X-Requested-With,Content-Type,Authorization');
-        res.header('Access-Control-Allow-Methods', 'GET,PUT,PATCH,POST,DELETE');
-        next();
-    };
-    app.use(allowCrossOrigin);
-
-    // Static assets
-    app.get('*/StreamGL.js', (req, res) => {
-        res.sendFile(require.resolve('StreamGL/dist/StreamGL.js'));
-    });
-    app.get('*/StreamGL.map', (req, res) => {
-        res.sendFile(require.resolve('StreamGL/dist/StreamGL.map'));
-    });
-    app.use('/graph', (req, res, next) => {
-        return express.static(path.resolve(__dirname, 'assets'))(req, res, next);
-    });
-
-    // Dyn routing
-    app.get('/vizaddr/graph', (req, res) => {
-        res.json({
-            'hostname': config.HTTP_LISTEN_ADDRESS,
-            'port': config.HTTP_LISTEN_PORT,
-            'timestamp': Date.now()
-        });
-    });
-
-    // Both keyed by socket ID:
-    const servers = {};
-    const cachedVBOs = {};
-
-    io.on('connection', (socket) => {
-        servers[socket.id] = new VizServer(app, socket, cachedVBOs);
-    });
-
-    logger.info('Binding', config.HTTP_LISTEN_ADDRESS, config.HTTP_LISTEN_PORT);
-    const listen = Rx.Observable.bindNodeCallback(
-            http.listen.bind(http, config.HTTP_LISTEN_PORT, config.HTTP_LISTEN_ADDRESS))();
-
-    listen.do(() => {
-
-        // proxy worker requests
-        const from = '/worker/' + config.HTTP_LISTEN_PORT + '/';
-        const to = 'http://localhost:' + config.HTTP_LISTEN_PORT;
-        logger.info('setting up proxy', from, '->', to);
-        app.use(from, proxy(to, {
-            forwardPath: (req, res) => {
-                const pathToReplace = path.join('worker', config.HTTP_LISTEN_PORT, '/');
-                return url.parse(req.url).path.replace(new RegExp(pathToReplace),'/');
-            }
-        }));
-
-
-
-    }).subscribe(
-        () => { logger.info('\nViz worker listening...'); },
-        log.makeRxErrorHandler(logger, 'server-viz main')
-    );
-
-}
-
 
 module.exports = VizServer;

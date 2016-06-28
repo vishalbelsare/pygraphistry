@@ -6,7 +6,7 @@ const events = require('./SimpleEvents.js');
 const _ = require('underscore');
 const clientNotification = require('./clientNotification.js');
 
-const log         = require('common/logger.js');
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/NBody');
 
 const ELEMENTS_PER_POINTS = 2;

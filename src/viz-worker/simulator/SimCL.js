@@ -3,7 +3,7 @@
 const _ = require('underscore');
 const Q = require('q');
 const sprintf = require('sprintf-js').sprintf;
-const dijkstra = require('dijkstra');
+const dijkstra = require('@graphistry/dijkstra');
 const util = require('./util.js');
 const MoveNodes = require('./moveNodes.js');
 const MoveNodesByIds = require('./moveNodesByIds.js');
@@ -12,7 +12,7 @@ const SelectNodesInCircle = require('./SelectNodesInCircle.js');
 
 // const HistogramKernel = require('./histogramKernel.js');
 
-const log         = require('common/logger.js');
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz','graph-viz/js/SimCL.js');
 
 // const webcl = require('node-webcl');

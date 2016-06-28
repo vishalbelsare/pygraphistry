@@ -6,16 +6,14 @@
 //similar to main.js
 
 
-const Q = require('q'),
-    Rx = require('rxjs/Rx'),
-    _ = require('underscore'),
-    rConf = require('./renderer.config.js'),
-    loader = require('./data-loader.js'),
-    clientNotification = require('./clientNotification.js');
+const Q = require('q');
+const Rx = require('@graphistry/rxjs');
+const _ = require('underscore');
+const rConf = require('../../viz-shared/models/renderer');
 
-const log         = require('common/logger.js');
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/node-driver');
-const perf        = require('common/perfStats.js').createPerfMonitor();
+const perf        = require('@graphistry/common').perfStats.createPerfMonitor();
 
 
 /** @typedef {Object} GraphCount
@@ -138,7 +136,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
     // maybe enqueueing a event barrier and using its event might work?
     return Q.all(
             _.map(devBufs, (layout, name) => {
-                const stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
+                const stride = layout.stride || (layout.count * gl2Bytes(layout.type));
 
                 targetArrays[name] = {
                     buffer: new ArrayBuffer(bufferSizes[name]),
@@ -154,7 +152,7 @@ function fetchVBOs(graph, renderConfig, bufferNames, counts) {
             })
         ).then(() => {
             _.each(hostBufs, (layout, name) => {
-                // const stride = layout.stride || (layout.count * rConf.gl2Bytes(layout.type));
+                // const stride = layout.stride || (layout.count * gl2Bytes(layout.type));
 
                 logger.trace('Fetching host buffer %s', name);
                 const localBuffer = graph.simulator.dataframe.getLocalBuffer(name);
@@ -219,8 +217,21 @@ function fetchBufferByteLengths (counts, renderConfig) {
     ).map((model, name) => {
         const layout = _.values(model)[0];
         const count = counts[name].num;
-        return [name, count * (layout.stride || (rConf.gl2Bytes(layout.type) * layout.count))];
+        return [name, count * (layout.stride || (gl2Bytes(layout.type) * layout.count))];
     }).object().value();
+}
+
+function gl2Bytes(type) {
+    const types = {
+        'FLOAT': 4,
+        'UNSIGNED_BYTE': 1,
+        'UNSIGNED_SHORT': 2,
+        'UNSIGNED_INT': 4
+    };
+    if (!(type in types)) {
+        logger.die('Unknown GL type "%s"', type);
+    }
+    return types[type];
 }
 
 /**
@@ -253,7 +264,7 @@ function delayObservableGenerator (delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 export function createInteractionsLoop({
-        dataset, socket, graph,
+        dataset, /* socket, */ graph,
         //Observable {play: bool, layout: bool, ... cfg settings ...}
         //  play: animation stream
         //  layout: whether to actually call layout algorithms (e.g., don't for filtering)
@@ -280,8 +291,8 @@ export function createInteractionsLoop({
 
     return Observable
         .using(connectRenderTriggers, notifyClientLoadingDataset)
-        .mergeMapTo(loader.loadDatasetIntoSim(graph, dataset))
-        .mergeMap(loadDataFrameAndUpdateBuffers)
+        // .mergeMapTo(loader.loadDatasetIntoSim(graph, dataset))
+        // .mergeMap(loadDataFrameAndUpdateBuffers)
         .expand(runInteractionLoop);
 
     function connectRenderTriggers() {
@@ -300,34 +311,16 @@ export function createInteractionsLoop({
 
     function notifyClientLoadingDataset() {
         logger.trace('LOADING DATASET');
-        return Observable.from(clientNotification
-            .loadingStatus(socket, 'Loading dataset'));
-    }
-
-    function loadDataFrameAndUpdateBuffers({ dataframe, simulator }) {
-
-        // Load into dataframe data attributes that rely on the simulator existing.
-        const inDegrees = dataframe.getHostBuffer('backwardsEdges').degreesTyped;
-        const outDegrees = dataframe.getHostBuffer('forwardsEdges').degreesTyped;
-        const unsortedEdges = dataframe.getHostBuffer('unsortedEdges');
-
-        dataframe.loadDegrees(outDegrees, inDegrees);
-        dataframe.loadEdgeDestinations(unsortedEdges);
-
-        // Tell all layout algorithms to load buffers from dataframe, now that
-        // we're about to enable ticking
-        simulator.layoutAlgorithms.forEach((layoutAlgorithm) => {
-            layoutAlgorithm.updateDataframeBuffers(graph.simulator);
-        });
-
-        return clientNotification.loadingStatus(socket, 'Graph created', null, graph); // returns graph
+        return Observable.of('Loading dataset'));
+        // return Observable.from(clientNotification
+        //     .loadingStatus(socket, 'Loading dataset'));
     }
 
     function runInteractionLoop(graph) {
         return Observable.defer(() => {
-            perf.startTiming('tick_durationMS');
-            return renderTriggers;
-        })
+                perf.startTiming('tick_durationMS');
+                return renderTriggers;
+            })
             .filter(({ play }) => play)
             .take(1)
             .mergeMap(
@@ -368,7 +361,7 @@ export function create (dataset, socket, nBodyInstance) {
         logger.trace('LOADING DATASET');
         return Q.all([
             loader.loadDatasetIntoSim(graph, dataset),
-            clientNotification.loadingStatus(socket, 'Loading dataset')
+            // clientNotification.loadingStatus(socket, 'Loading dataset')
         ]);
     }).spread((graph) => {
         // Load into dataframe data attributes that rely on the simulator existing.
@@ -443,9 +436,9 @@ export function create (dataset, socket, nBodyInstance) {
         logger.trace('Graph created');
         return graph;
     })
-    .then((graph) =>
-        clientNotification.loadingStatus(socket, 'Graph created', null, graph) // returns graph
-    )
+    // .then((graph) =>
+    //     clientNotification.loadingStatus(socket, 'Graph created', null, graph) // returns graph
+    // )
     .fail((err) => {
         logger.die(err, 'Driver initialization error');
     })

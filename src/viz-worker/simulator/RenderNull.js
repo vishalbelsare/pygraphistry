@@ -6,7 +6,7 @@
 const RenderBase = require('./RenderBase.js');
 const Q = require('q');
 
-const log         = require('common/logger.js');
+const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/RenderNull.js');
 
 const createBuffer = Q.promised((renderer, data) => {

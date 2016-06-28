@@ -6,7 +6,7 @@ const fs = require('fs');
 const csv = require('csv');
 const flake = require('simpleflake');
 
-const log = require('common/logger.js');
+const log = require('@graphistry/common').logger;
 const logger = log.createLogger('graph-viz', 'graph-viz/js/DataFrame.js');
 
 const ExpressionCodeGenerator = require('./expressionCodeGenerator');

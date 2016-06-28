@@ -2,7 +2,7 @@
 
 var _ = require('underscore');
 var SimCL = require('./SimCL.js');
-var log         = require('common/logger.js');
+var log         = require('@graphistry/common').logger;
 var logger      = log.createLogger('graph-viz:cl:layoutconfig');
 var ForceAtlas2Naive     = require('./layouts/forceAtlas2Naive.js'),
     ForceAtlas2    = require('./layouts/forceAtlas2.js'),

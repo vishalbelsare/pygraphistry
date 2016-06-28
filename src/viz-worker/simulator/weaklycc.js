@@ -1,9 +1,9 @@
 'use strict';
 
 var _ = require('underscore');
-var log         = require('common/logger.js');
+var log         = require('@graphistry/common').logger;
 var logger      = log.createLogger('graph-viz', 'graph-viz/js/weaklycc.js');
-var perf = require('common/perfStats.js').createPerfMonitor();
+var perf = require('@graphistry/common').perfStats.createPerfMonitor();
 
 
 

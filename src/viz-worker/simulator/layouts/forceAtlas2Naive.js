@@ -5,7 +5,7 @@ var          _ = require('underscore'),
           Q = require('q'),
  LayoutAlgo = require('../layoutAlgo.js'),
      Kernel = require('../kernel.js'),
-    log        = require('common/logger.js'),
+    log        = require('@graphistry/common').logger,
     logger     = log.createLogger('graph-viz:cl:forceatlas2');
 
 
