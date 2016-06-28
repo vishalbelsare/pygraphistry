@@ -1,10 +1,8 @@
-#!/usr/bin/env node
-'use strict';
-
 // Set jshint to ignore `predef:'io'` in .jshintrc so we can manually define io here
 /* global -io */
 
 import Rx from '@graphistry/rxjs';
+// import testColormap2 from '../textures/test-colormap2.rgba';
 
 const Observable  = Rx.Observable;
 
@@ -62,7 +60,7 @@ const logger      = log.createLogger('graph-viz', 'graph-viz/viz-server.js');
 const perf        = require('@graphistry/common').perfStats.createPerfMonitor();
 
 try {
-    const memoryWatcher = require('memwatch');
+    const memoryWatcher = require('memwatch-next');
     if (memoryWatcher !== undefined) {
         memoryWatcher.on('leak', (info) => {
             logger.warn({'memory_leak': info});
@@ -1398,7 +1396,9 @@ VizServer.prototype.workbookForQuery = function (query) {
 
 VizServer.prototype.setupColorTexture = function () {
     this.colorTexture = new Rx.ReplaySubject(1);
-    const imgPath = path.resolve(__dirname, '../test-colormap2.rgba');
+    // const imgPath = path.resolve(__dirname, '../test-colormap2.rgba');
+    const imgPath = path.resolve('./www/test-colormap2.rgba');
+    // const imgPath = './test-colormap2.rgba';
     Rx.Observable.bindNodeCallback(fs.readFile)(imgPath)
         .flatMap((buffer) => {
             logger.trace('Loaded raw colorTexture', buffer.length);

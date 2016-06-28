@@ -140,7 +140,7 @@ var kernelSpecs = {
 }
 
 function EdgeBundling(clContext) {
-    LayoutAlgo.call(this, EdgeBundling.name);
+    LayoutAlgo.call(this, 'EdgeBundling');
 
     logger.debug('Creating edge bundling kernels');
 
@@ -157,7 +157,7 @@ function EdgeBundling(clContext) {
 EdgeBundling.prototype = Object.create(LayoutAlgo.prototype);
 EdgeBundling.prototype.constructor = EdgeBundling;
 
-EdgeBundling.name = 'EdgeBundling';
+// EdgeBundling.name = 'EdgeBundling';
 
 // Contains any temporary buffers needed for layout
 var layoutBuffers  = {};

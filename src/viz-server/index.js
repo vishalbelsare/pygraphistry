@@ -1,8 +1,7 @@
-'use strict';
-
 require('source-map-support').install();
 
 import { tellParent } from './support';
+
 import { config, logger, start } from './server';
 
 start().subscribe({

@@ -1,5 +1,5 @@
 import { Model, reaxtor } from 'reaxtor';
-import assets from './webpack-assets.json';
+// import assets from './webpack-assets.json';
 import stringify from 'json-stable-stringify';
 
 import initHTML from 'snabbdom-to-html/lib/init';
@@ -49,6 +49,7 @@ export function renderMiddleware(getDataSource, modules) {
 }
 
 function renderVDomToHTMLPage(model, vdom) {
+    const assets = require('./webpack-assets.json');
     return (`<!DOCTYPE html>
 ${toHTML(<html lang='en-us'>
             <head>
@@ -132,7 +133,7 @@ ${toHTML(<html lang='en-us'>
                     });
                 `]}</script>,
                 <script type="text/javascript">{[`
-                    var appCache = ${stringify(model && model.getCache() || {})};
+                    window.appCache = ${stringify(model && model.getCache() || {})};
                 `]}</script>,
                 <script type="text/javascript" src={assets.client.js}></script>
             ]}</body>

@@ -194,7 +194,7 @@ var kernelSpecs = {
 }
 
 function ForceAtlas2Barnes(clContext) {
-    LayoutAlgo.call(this, ForceAtlas2Barnes.name);
+    LayoutAlgo.call(this, 'ForceAtlas2Barnes');
     logger.trace('Creating ForceAtlasBarnes kernels');
     var that = this;
     _.each(kernelSpecs, function (kernel, name) {
@@ -209,7 +209,7 @@ function ForceAtlas2Barnes(clContext) {
 
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2Barnes.prototype.constructor = ForceAtlas2Barnes;
-ForceAtlas2Barnes.name = 'ForceAtlas2Barnes';
+// ForceAtlas2Barnes.name = 'ForceAtlas2Barnes';
 
 // ForceAtlas2 uses a bitmask flag in order to set settings preventOverlap, strongGravity,
 // dissuadeHubs, and linLog. layoutFlags keeps track of the current state of these settings.

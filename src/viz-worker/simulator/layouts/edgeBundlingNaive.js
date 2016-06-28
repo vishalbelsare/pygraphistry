@@ -10,7 +10,7 @@ var _          = require('underscore'),
 
 
 function EdgeBundling(clContext) {
-    LayoutAlgo.call(this, EdgeBundling.name);
+    LayoutAlgo.call(this, 'EdgeBundling');
 
     logger.trace('Creating GaussSeidel kernels');
     this.ebMidpoints = new Kernel('gaussSeidelMidpoints', EdgeBundling.argsMidpoints,
@@ -24,7 +24,7 @@ function EdgeBundling(clContext) {
 EdgeBundling.prototype = Object.create(LayoutAlgo.prototype);
 EdgeBundling.prototype.constructor = EdgeBundling;
 
-EdgeBundling.name = 'EdgeBundling';
+// EdgeBundling.name = 'EdgeBundling';
 EdgeBundling.argsMidpoints = ['numPoints', 'numSplits', 'inputMidPoints',
                               'outputMidPoints', 'tilePointsParam', 'width',
                               'height', 'charge', 'gravity', 'randValues', 'stepNumber'];

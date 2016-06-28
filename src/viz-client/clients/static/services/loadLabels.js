@@ -1,6 +1,5 @@
 import { loadViews } from './loadViews';
 import { loadResource } from './loadResource';
-import { cache as Cache } from '@graphistry/common';
 import { Observable, ReplaySubject } from '@graphistry/rxjs';
 import { ref as $ref, atom as $atom } from 'falcor-json-graph';
 

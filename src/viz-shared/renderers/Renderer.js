@@ -76,7 +76,7 @@ export class Renderer {
         return this;
     }
 
-    createBuffer(data, isNum = typeof data === 'number') {
+    createBuffer(data, name, isNum = typeof data === 'number') {
         logger.trace(
             'Creating (fake) null renderer buffer of type %s. Constructor: %o',
             typeof data, (data || {}).constructor
@@ -85,7 +85,7 @@ export class Renderer {
             buffer: null, gl: null,
             len: isNum ? data : data.byteLength,
             data: isNum ? null : data
-        });
+        }).toPromise();
     }
 
     render() {

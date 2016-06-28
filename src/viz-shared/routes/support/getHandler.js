@@ -45,10 +45,6 @@ export function getHandler(lists, loader, props) {
 
         return (values
             .map(mapObjectsToAtoms)
-            .do((pv) => {
-                console.log(`req: ${JSON.stringify(path)}`);
-                console.log(`res: ${JSON.stringify(pv.path)}`);
-            })
             .catch(captureErrorStacks)
         );
     }

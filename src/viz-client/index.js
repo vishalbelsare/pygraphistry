@@ -60,7 +60,8 @@ Observable
     .switchMap(
         ({ App, options }) => {
             const { model, ...props } = options;
-            return reaxtor(App, model, props)
+            return Observable
+                .from(reaxtor(App, model, props))
                 .debounceTime(0)
                 .take(1);
         },
@@ -70,9 +71,15 @@ Observable
     // but ignore the elements (since snabbdom patches the DOM for us).
     .scan(scanDOMWithOptions, [ null, getAppDOMNode() ])
     .map(([ options ]) => options)
-    .subscribe(({ model }) => {
-        debugger;
-    });
+    .subscribe(
+        ({ model }) => {
+            debugger;
+        },
+        (error) => {
+            // debugger;
+            console.error(error);
+        }
+    );
     // .subscribe(({ apiEvents, apiActions,
     //               uri, json, model, socket, options,
     //               vboUpdates, vboVersions, initialRenderState }) => {

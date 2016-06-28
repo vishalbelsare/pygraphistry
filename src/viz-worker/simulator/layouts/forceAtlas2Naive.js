@@ -10,7 +10,7 @@ var          _ = require('underscore'),
 
 
 function ForceAtlas2(clContext) {
-    LayoutAlgo.call(this, ForceAtlas2.name);
+    LayoutAlgo.call(this, 'ForceAtlas2Fast');
 
     logger.trace('Creating ForceAtlas2 kernels');
     this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
@@ -33,7 +33,7 @@ function ForceAtlas2(clContext) {
 ForceAtlas2.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2.prototype.constructor = ForceAtlas2;
 
-ForceAtlas2.name = 'ForceAtlas2Fast';
+// ForceAtlas2.name = 'ForceAtlas2Fast';
 ForceAtlas2.argsPoints = [
     'strongGravity', 'scalingRatio', 'gravity',
     'edgeInfluence', 'tilePointsParam',

@@ -13,11 +13,7 @@ export function workbook(dataset, workbookId = flake().toString('hex')) {
             0:       $ref(`workbooksById['${workbookId}']
                                 .viewsById['${viewId}']`),
         },
-        viewsById: {
-            [viewId]: {
-                id: viewId, scene: {}
-            }
-        },
+        viewsById: {},
         contentName: '',
         datasets: {
             length: 1,

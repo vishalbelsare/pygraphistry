@@ -115,7 +115,7 @@ export function vizWorker(app, server, sockets, caches) {
 
     function enrichLogs(socket) {
 
-        const { handshake: { query: { dataset, debugId, usertag }},
+        const { handshake: { query, query: { dataset, debugId, usertag }},
                 request: { connection: { remoteAddress }}} = socket;
 
         const metadata = { dataset, debugId, usertag };

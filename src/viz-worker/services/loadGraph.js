@@ -124,9 +124,12 @@ function downloadS3(url, s3Cache, { S3, BUCKET }) {
         .mergeMap(({ LastModified }) => Observable.from(s3Cache
             .get(url, new Date(LastModified)))
             .catch(() => loadDocument(params)
-                .do(({ Body }) => s3Cache.put(url, Body)))
+                .mergeMap(
+                    ({ Body }) => s3Cache.put(url, Body)),
+                    ({ Body }) => Body
+                )
         )
-        .catch(() => s3Cache.get(url, new Date(0)));
+        .catch(() => Observable.from(s3Cache.get(url, new Date(0))));
 }
 
 // If body is gzipped, decompress transparently

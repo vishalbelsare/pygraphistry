@@ -1,7 +1,3 @@
-#!/usr/bin/env node
-
-'use strict';
-
 //prebaked script to load uber data
 //similar to main.js
 
@@ -311,7 +307,7 @@ export function createInteractionsLoop({
 
     function notifyClientLoadingDataset() {
         logger.trace('LOADING DATASET');
-        return Observable.of('Loading dataset'));
+        return Observable.of('Loading dataset');
         // return Observable.from(clientNotification
         //     .loadingStatus(socket, 'Loading dataset'));
     }

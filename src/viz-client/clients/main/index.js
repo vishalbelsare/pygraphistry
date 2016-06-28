@@ -5,11 +5,13 @@ import { Observable, Scheduler } from '@graphistry/rxjs';
 
 export function initialize(options, debug) {
 
-    const socket = SocketIO(`/socket.io`, {
-        reconnection: false, query: {
+    const socket = SocketIO.Manager({
+        reconnection: false,
+        path: `/socket.io`,
+        query: {
             ...options, falcorClient: true
         }
-    });
+    }).socket('/');
 
     socket.io.engine.binaryType = 'arraybuffer';
 
@@ -48,19 +50,21 @@ function getAppCache() {
 
     let { appCache } = window;
 
-    if (!appCache && useLocalStorage && localStorage && localStorage.getItem) {
-        const localStorageCache = localStorage.getItem('graphistry-app-cache');
-        if (localStorageCache) {
-            try {
-                appCache = JSON.parse(localStorageCache);
-            } catch (e) {
+    if (!appCache) {
+        if (useLocalStorage && localStorage && localStorage.getItem) {
+            const localStorageCache = localStorage.getItem('graphistry-app-cache');
+            if (localStorageCache) {
+                try {
+                    appCache = JSON.parse(localStorageCache);
+                } catch (e) {
+                    appCache = {};
+                }
+            } else {
                 appCache = {};
             }
         } else {
             appCache = {};
         }
-    } else {
-        appCache = {};
     }
 
     console.log(appCache);
