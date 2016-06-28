@@ -11,7 +11,7 @@ export function initialize(options, debug) {
     const loadWorkbooksById = loadWorkbooks(workbooksById);
     const loadLabelsByIndexAndType = loadLabels(workbooksById);
 
-    const props = {};
+    const routesSharedState = {};
     const services = {
         loadConfig,
         loadViewsById,
@@ -19,12 +19,8 @@ export function initialize(options, debug) {
         loadLabelsByIndexAndType
     };
 
-    const getDataSource = getDataSourceFactory(services, props);
-    const socket = SocketIO(`/socket.io`, {
-        reconnection: false, query: {
-            ...options, falcorClient: true
-        }
-    });
+    const socket = new SocketIO();
+    const getDataSource = getDataSourceFactory(services, routesSharedState);
 
     return Observable.of({
         ...options, socket, model: new Model({

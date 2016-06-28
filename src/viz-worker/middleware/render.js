@@ -1,15 +1,20 @@
 import { Model, reaxtor } from 'reaxtor';
 // import assets from './webpack-assets.json';
 import stringify from 'json-stable-stringify';
+import styles from '../../viz-shared/views/graph.less';
 
-import initHTML from 'snabbdom-to-html/lib/init';
-import snabbdomToHTMLStyle from 'snabbdom-to-html/lib/modules/style';
-import snabbdomToHTMLAttributes from 'snabbdom-to-html/lib/modules/attributes';
+import initHTML from 'snabbdom-to-html/init';
+import snabbdomToHTMLClass from 'snabbdom-to-html/modules/class';
+import snabbdomToHTMLProps from 'snabbdom-to-html/modules/props';
+import snabbdomToHTMLStyle from 'snabbdom-to-html/modules/style';
+import snabbdomToHTMLAttributes from 'snabbdom-to-html/modules/attributes';
 
 import { inspect } from 'util';
 import { Observable } from '@graphistry/rxjs';
 
 const toHTML = initHTML([
+    snabbdomToHTMLClass,
+    snabbdomToHTMLProps,
     snabbdomToHTMLStyle,
     snabbdomToHTMLAttributes
 ]);
@@ -101,7 +106,7 @@ ${toHTML(<html lang='en-us'>
                 { /* FIXME: Include fpsmeter as part of the StreamGL bundle */ }
                 <script type="text/javascript" src="libs/fpsmeter.js" charset="utf-8"></script>
             </head>
-            <body class="graphistry-body">{[
+            <body class_={{ [styles["graphistry-body"] || "graphistry-body"]: true }}>{[
                 /* copied from index.fragment.handlebars */
                 <script type="text/javascript">{[`
                     var templatePaths = { API_ROOT: window.location.protocol + "//" + window.location.host + "/" };

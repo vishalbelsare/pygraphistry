@@ -1,129 +1,131 @@
+import styles from './graph.less';
+
 export function render(props = {}) {
     const
       { release = {} } = props,
       { current = {} } = release,
       { date: releaseDate = ''  } = current;
     return (
-        <div id='app' className="app">
-            <div className="content">
-                <div className="sim-container" tabindex="-1">
-                    <canvas id="simulation" className="sim"> WebGL not supported </canvas>
-                    <div id="marquee" className="marquee-outline off"></div>
-                    <div id="brush" className="marquee-outline off"></div>
+        <div id={styles["app"] || "app"} class_={{ [styles["app"] || "app"]: true }}>
+            <div class_={{ [styles["content"] || "content"]: true }}>
+                <div class_={{ [styles["sim-container"] || "sim-container"]: true }} tabindex="-1">
+                    <canvas id={styles["simulation"] || "simulation"} class_={{ [styles["sim"] || "sim"]: true }}> WebGL not supported </canvas>
+                    <div id={styles["marquee"] || "marquee"} class_={{ [styles["marquee-outline"] || "marquee-outline"]: true, [styles["off"] || "off"]: true }}></div>
+                    <div id={styles["brush"] || "brush"} class_={{ [styles["marquee-outline"] || "marquee-outline"]: true, [styles["off"] || "off"]: true }}></div>
                     { /* over canvas but below interactions */ }
-                    <div id="highlighted-point-cont">
-                        <div className="highlighted-point">
-                            <div className="highlighted-point-center"></div>
+                    <div id={styles["highlighted-point-cont"] || "highlighted-point-cont"}>
+                        <div class_={{ [styles["highlighted-point"] || "highlighted-point"]: true }}>
+                            <div class_={{ [styles["highlighted-point-center"] || "highlighted-point-center"]: true }}></div>
                         </div>
                     </div>
                 </div>
             </div>
             { /* /content */ }
-            <div className='section' id="menus">
-                <div className="accordion" id="controlState">
-                    <div className="accordion-group">
-                        <div className="accordion-heading">
-                            <div className="options-group" id="externalLinkButtonContainer">
+            <div class_={{ [styles["section"] || "section"]: true }} id={styles["menus"] || "menus"}>
+                <div class_={{ [styles["accordion"] || "accordion"]: true }} id={styles["controlState"] || "controlState"}>
+                    <div class_={{ [styles["accordion-group"] || "accordion-group"]: true }}>
+                        <div class_={{ [styles["accordion-heading"] || "accordion-heading"]: true }}>
+                            <div class_={{ [styles["options-group"] || "options-group"]: true }} id={styles["externalLinkButtonContainer"] || "externalLinkButtonContainer"}>
                                 { /* only show if in iframe */ }
-                                <a href="#" id="externalLinkButton" className="button nav-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Open in New Tab">
-                                    <i className="fa fa-external-link fa-2x"></i>
+                                <a href="#" id={styles["externalLinkButton"] || "externalLinkButton"} class_={{ [styles["button"] || "button"]: true, [styles["nav-button"] || "nav-button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Open in New Tab">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-external-link"] || "fa-external-link"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
                                 </a>
-                                <a href="#" id="fullscreenButton" className="button nav-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Expand to fullscreen">
-                                    <i className="fa fa-expand fa-2x"></i>
-                                </a>
-                            </div>
-                            <div title="View Controls" className="options-group">
-                                <a href="#" id="zoomin" className="button" data-container="body" data-toggle="tooltip" data-placement="right" title="Zoom in">
-                                    <i className="fa fa-search-plus fa-2x"></i>
-                                </a>
-                                <div className="divide-line"></div>
-                                <a href="#" id="zoomout" className="button" data-container="body" data-toggle="tooltip" data-placement="right" title="Zoom out">
-                                    <i className="fa fa-search-minus fa-2x"></i>
-                                </a>
-                                <div className="divide-line"></div>
-                                <a href="#" id="center" className="button" data-container="body" data-toggle="tooltip" data-placement="right" title="Center View">
-                                    <i className="fa fa-compress fa-2x"></i>
+                                <a href="#" id={styles["fullscreenButton"] || "fullscreenButton"} class_={{ [styles["button"] || "button"]: true, [styles["nav-button"] || "nav-button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Expand to fullscreen">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-expand"] || "fa-expand"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
                                 </a>
                             </div>
-                            <div title="Layout Controls" className="options-group">
-                                <a href="#" id="mouser" className="button">
-                                    <i className="fa fa-arrows fa-2x"></i>
+                            <div title="View Controls" class_={{ [styles["options-group"] || "options-group"]: true }}>
+                                <a href="#" id={styles["zoomin"] || "zoomin"} class_={{ [styles["button"] || "button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Zoom in">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-search-plus"] || "fa-search-plus"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
                                 </a>
-                                <a href="#" id="simulate" className="button modal-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Start/Stop Visual Clustering" data-toggle-group="selections">
-                                    <i className="fa fa-play-circle fa-2x"></i>
+                                <div class_={{ [styles["divide-line"] || "divide-line"]: true }}></div>
+                                <a href="#" id={styles["zoomout"] || "zoomout"} class_={{ [styles["button"] || "button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Zoom out">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-search-minus"] || "fa-search-minus"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
                                 </a>
-                                <div className="divide-line"></div>
-                                <a href="#" id="layoutSettingsButton" className="button panel-button" data-container="body" data-toggle="tooltip" data-placement="right" data-toggle-group="popouts" title="Layout Settings">
-                                    <i className="fa fa-cogs fa-2x"></i>
+                                <div class_={{ [styles["divide-line"] || "divide-line"]: true }}></div>
+                                <a href="#" id={styles["center"] || "center"} class_={{ [styles["button"] || "button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Center View">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-compress"] || "fa-compress"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
                                 </a>
                             </div>
-                            <div title="Selection Controls" className="options-group">
-                                <div className="divide-line"></div>
-                                <a href="#" id="viewSelectionButton" className="button modal-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Select Nodes" data-toggle-group="selections">
-                                    <span className="fa-stack">
-                                        <i className="fa fa-square-o fa-stack-2x" style="font-size: 2em"></i>
-                                        <i className="fa fa-arrows fa-stack-1x" style="font-size: 15px"></i>
+                            <div title="Layout Controls" class_={{ [styles["options-group"] || "options-group"]: true }}>
+                                <a href="#" id={styles["mouser"] || "mouser"} class_={{ [styles["button"] || "button"]: true }}>
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-arrows"] || "fa-arrows"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
+                                </a>
+                                <a href="#" id={styles["simulate"] || "simulate"} class_={{ [styles["button"] || "button"]: true, [styles["modal-button"] || "modal-button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Start/Stop Visual Clustering" data-toggle-group="selections">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-play-circle"] || "fa-play-circle"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
+                                </a>
+                                <div class_={{ [styles["divide-line"] || "divide-line"]: true }}></div>
+                                <a href="#" id={styles["layoutSettingsButton"] || "layoutSettingsButton"} class_={{ [styles["button"] || "button"]: true, [styles["panel-button"] || "panel-button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" data-toggle-group="popouts" title="Layout Settings">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-cogs"] || "fa-cogs"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
+                                </a>
+                            </div>
+                            <div title="Selection Controls" class_={{ [styles["options-group"] || "options-group"]: true }}>
+                                <div class_={{ [styles["divide-line"] || "divide-line"]: true }}></div>
+                                <a href="#" id={styles["viewSelectionButton"] || "viewSelectionButton"} class_={{ [styles["button"] || "button"]: true, [styles["modal-button"] || "modal-button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Select Nodes" data-toggle-group="selections">
+                                    <span class_={{ [styles["fa-stack"] || "fa-stack"]: true }}>
+                                        <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-square-o"] || "fa-square-o"]: true, [styles["fa-stack-2x"] || "fa-stack-2x"]: true }} style="font-size: 2em"></i>
+                                        <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-arrows"] || "fa-arrows"]: true, [styles["fa-stack-1x"] || "fa-stack-1x"]: true }} style="font-size: 15px"></i>
                                     </span>
                                 </a>
-                                <div className="divide-line"></div>
-                                <a href="#" id="brushButton" className="button modal-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Data Brush" data-toggle-group="selections">
-                                    <i className="fa" style="height: 0.9em; width: 0.9em; border-style: dashed; border-width: 0.1em"></i>
+                                <div class_={{ [styles["divide-line"] || "divide-line"]: true }}></div>
+                                <a href="#" id={styles["brushButton"] || "brushButton"} class_={{ [styles["button"] || "button"]: true, [styles["modal-button"] || "modal-button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Data Brush" data-toggle-group="selections">
+                                    <i class_={{ [styles["fa"] || "fa"]: true }} style="height: 0.9em; width: 0.9em; border-style: dashed; border-width: 0.1em"></i>
                                 </a>
                             </div>
-                            <div title="Panel Controls" className="options-group">
-                                <a href="#" id="histogramPanelControl" className="button panel-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Expand/Shrink Histogram Panel">
-                                    <i className="fa fa-bar-chart fa-2x"></i>
+                            <div title="Panel Controls" class_={{ [styles["options-group"] || "options-group"]: true }}>
+                                <a href="#" id={styles["histogramPanelControl"] || "histogramPanelControl"} class_={{ [styles["button"] || "button"]: true, [styles["panel-button"] || "panel-button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Expand/Shrink Histogram Panel">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-bar-chart"] || "fa-bar-chart"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
                                 </a>
-                                <div className="divide-line"></div>
-                                <a href="#" id="dataInspectorButton" className="button panel-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Data Inspector">
-                                    <i className="fa fa-table fa-2x"></i>
+                                <div class_={{ [styles["divide-line"] || "divide-line"]: true }}></div>
+                                <a href="#" id={styles["dataInspectorButton"] || "dataInspectorButton"} class_={{ [styles["button"] || "button"]: true, [styles["panel-button"] || "panel-button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Data Inspector">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-table"] || "fa-table"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
                                 </a>
-                                <a href="#" id="timeExplorerButton" className="button panel-button beta" data-container="body" data-toggle="tooltip" data-placement="right" title="Time Explorer">
-                                    <i className="fa fa-clock-o fa-2x"></i>
+                                <a href="#" id={styles["timeExplorerButton"] || "timeExplorerButton"} class_={{ [styles["button"] || "button"]: true, [styles["panel-button"] || "panel-button"]: true, [styles["beta"] || "beta"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Time Explorer">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-clock-o"] || "fa-clock-o"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
                                 </a>
-                                <div className="divide-line"></div>
-                                <a href="#" id="exclusionButton" className="button panel-button badged" data-container="body" data-toggle="tooltip" data-placement="right" title="Exclude" data-toggle-group="popouts">
-                                    <i className="fa fa-ban fa-2x"></i>
-                                    <small><span className="badge badge-info"></span></small>
+                                <div class_={{ [styles["divide-line"] || "divide-line"]: true }}></div>
+                                <a href="#" id={styles["exclusionButton"] || "exclusionButton"} class_={{ [styles["button"] || "button"]: true, [styles["panel-button"] || "panel-button"]: true, [styles["badged"] || "badged"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Exclude" data-toggle-group="popouts">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-ban"] || "fa-ban"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
+                                    <small><span class_={{ [styles["badge"] || "badge"]: true, [styles["badge-info"] || "badge-info"]: true }}></span></small>
                                 </a>
-                                <a href="#" id="filterButton" className="button panel-button badged" data-container="body" data-toggle="tooltip" data-placement="right" title="Filter" data-toggle-group="popouts">
-                                    <i className="fa fa-filter fa-2x"></i>
-                                    <small><span className="badge badge-info"></span></small>
+                                <a href="#" id={styles["filterButton"] || "filterButton"} class_={{ [styles["button"] || "button"]: true, [styles["panel-button"] || "panel-button"]: true, [styles["badged"] || "badged"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Filter" data-toggle-group="popouts">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-filter"] || "fa-filter"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
+                                    <small><span class_={{ [styles["badge"] || "badge"]: true, [styles["badge-info"] || "badge-info"]: true }}></span></small>
                                 </a>
-                                <a href="#" id="setsPanelButton" className="button panel-button badged beta" data-container="body" data-toggle="tooltip" data-placement="right" title="Sets" data-toggle-group="popouts">
-                                    <i className="fa fa-tag"></i>
-                                    <small><span className="badge badge-info"></span></small>
+                                <a href="#" id={styles["setsPanelButton"] || "setsPanelButton"} class_={{ [styles["button"] || "button"]: true, [styles["panel-button"] || "panel-button"]: true, [styles["badged"] || "badged"]: true, [styles["beta"] || "beta"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Sets" data-toggle-group="popouts">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-tag"] || "fa-tag"]: true }}></i>
+                                    <small><span class_={{ [styles["badge"] || "badge"]: true, [styles["badge-info"] || "badge-info"]: true }}></span></small>
                                 </a>
                                 { /*
-                                <a href="#" id="shortestpath" data-container="body" data-toggle="tooltip" data-placement="right" title="Find routes between two points" style="display:none">
-                                    <i className="fa fa-road fa-2x"></i>
+                                <a href="#" id={styles["shortestpath"] || "shortestpath"} data-container="body" data-toggle="tooltip" data-placement="right" title="Find routes between two points" style="display:none">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-road"] || "fa-road"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
                                 </a>
                                 */ }
                             </div>
                             { /* last options group */ }
-                            <div className="options-group">
-                                <a href="#" id="forkButton" className="button dialog-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Save A Copy">
-                                    <i className="fa fa-code-fork fa-2x"></i>
+                            <div class_={{ [styles["options-group"] || "options-group"]: true }}>
+                                <a href="#" id={styles["forkButton"] || "forkButton"} class_={{ [styles["button"] || "button"]: true, [styles["dialog-button"] || "dialog-button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Save A Copy">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-code-fork"] || "fa-code-fork"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
                                 </a>
-                                <div className="divide-line"></div>
-                                <a href="#" id="persistWorkbookButton" className="beta button dialog-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Save Workbook">
-                                    <i className="fa fa-floppy-o fa-2x"></i>
+                                <div class_={{ [styles["divide-line"] || "divide-line"]: true }}></div>
+                                <a href="#" id={styles["persistWorkbookButton"] || "persistWorkbookButton"} class_={{ [styles["beta"] || "beta"]: true, [styles["button"] || "button"]: true, [styles["dialog-button"] || "dialog-button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Save Workbook">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-floppy-o"] || "fa-floppy-o"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
                                 </a>
-                                <a href="#" id="persistButton" className="button dialog-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Share/Embed Snapshot">
-                                    <i className="fa fa-share-alt fa-2x"></i>
+                                <a href="#" id={styles["persistButton"] || "persistButton"} class_={{ [styles["button"] || "button"]: true, [styles["dialog-button"] || "dialog-button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Share/Embed Snapshot">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-share-alt"] || "fa-share-alt"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
                                 </a>
-                                <a href="#" id="goLiveButton" className="button nav-button" data-container="body" data-toggle="tooltip" data-placement="right" title="Go Live">
-                                    <i className="fa fa-share-square fa-2x"></i>
+                                <a href="#" id={styles["goLiveButton"] || "goLiveButton"} class_={{ [styles["button"] || "button"]: true, [styles["nav-button"] || "nav-button"]: true }} data-container="body" data-toggle="tooltip" data-placement="right" title="Go Live">
+                                    <i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-share-square"] || "fa-share-square"]: true, [styles["fa-2x"] || "fa-2x"]: true }}></i>
                                 </a>
                             </div>
                         </div>
                         { /* accordion heading */ }
                     </div>
                 </div>
-                <div id="renderingItems" className="settingsPanel">
-                    <p className="panelHeader text-center bg-primary">Rendering</p>
-                    <div className="form-horizontal">
-                        <div className="control-title">Background</div>
+                <div id={styles["renderingItems"] || "renderingItems"} class_={{ [styles["settingsPanel"] || "settingsPanel"]: true }}>
+                    <p class_={{ [styles["panelHeader"] || "panelHeader"]: true, [styles["text-center"] || "text-center"]: true, [styles["bg-primary"] || "bg-primary"]: true }}>Rendering</p>
+                    <div class_={{ [styles["form-horizontal"] || "form-horizontal"]: true }}>
+                        <div class_={{ [styles["control-title"] || "control-title"]: true }}>Background</div>
                         <style scoped="scoped">{[`
                             .colorpicker {
                                 right: 7em;
@@ -145,27 +147,27 @@ export function render(props = {}) {
                                 background: url(libs/images/select2.png) center;
                             }
                         `]}</style>
-                        <div id="colorpickers">
-                            <div className="form-group colorer">
-                                <label  className="control-label col-xs-4">Foreground</label>
-                                <div className="col-xs-8">
-                                    <div id="foregroundColor">
-                                        <div className="colorSelector">
+                        <div id={styles["colorpickers"] || "colorpickers"}>
+                            <div class_={{ [styles["form-group"] || "form-group"]: true, [styles["colorer"] || "colorer"]: true }}>
+                                <label  class_={{ [styles["control-label"] || "control-label"]: true, [styles["col-xs-4"] || "col-xs-4"]: true }}>Foreground</label>
+                                <div class_={{ [styles["col-xs-8"] || "col-xs-8"]: true }}>
+                                    <div id={styles["foregroundColor"] || "foregroundColor"}>
+                                        <div class_={{ [styles["colorSelector"] || "colorSelector"]: true }}>
                                             <div style="background-color: #000"></div>
                                         </div>
-                                        <div className="colorHolder"></div>
+                                        <div class_={{ [styles["colorHolder"] || "colorHolder"]: true }}></div>
                                     </div>
                                 </div>
                             </div>
                             { /* /form-group */ }
-                            <div className="form-group colorer">
-                                <label  className="control-label col-xs-4">Background</label>
-                                <div className="col-xs-8">
-                                    <div id="backgroundColor">
-                                        <div className="colorSelector">
+                            <div class_={{ [styles["form-group"] || "form-group"]: true, [styles["colorer"] || "colorer"]: true }}>
+                                <label  class_={{ [styles["control-label"] || "control-label"]: true, [styles["col-xs-4"] || "col-xs-4"]: true }}>Background</label>
+                                <div class_={{ [styles["col-xs-8"] || "col-xs-8"]: true }}>
+                                    <div id={styles["backgroundColor"] || "backgroundColor"}>
+                                        <div class_={{ [styles["colorSelector"] || "colorSelector"]: true }}>
                                             <div style="background-color: #fff"></div>
                                         </div>
-                                        <div className="colorHolder"></div>
+                                        <div class_={{ [styles["colorHolder"] || "colorHolder"]: true }}></div>
                                     </div>
                                 </div>
                             </div>
@@ -176,32 +178,32 @@ export function render(props = {}) {
                     { /* /form-horizontal */ }
                 </div>
                 { /* /renderingItems */ }
-                <div id="exclusionsPanel" className="exclusionsPanel">
-                    <p className="panelHeader text-center bg-primary">Exclusions</p>
-                    <div id="exclusions"></div>
-                    <div id="addExclusion" className="container-fluid">
-                        <div className="row">
-                            <div className="col-xs-12">
-                                <button type="button" className="btn btn-primary btn-xs addExclusionButton"
+                <div id={styles["exclusionsPanel"] || "exclusionsPanel"} class_={{ [styles["exclusionsPanel"] || "exclusionsPanel"]: true }}>
+                    <p class_={{ [styles["panelHeader"] || "panelHeader"]: true, [styles["text-center"] || "text-center"]: true, [styles["bg-primary"] || "bg-primary"]: true }}>Exclusions</p>
+                    <div id={styles["exclusions"] || "exclusions"}></div>
+                    <div id={styles["addExclusion"] || "addExclusion"} class_={{ [styles["container-fluid"] || "container-fluid"]: true }}>
+                        <div class_={{ [styles["row"] || "row"]: true }}>
+                            <div class_={{ [styles["col-xs-12"] || "col-xs-12"]: true }}>
+                                <button type="button" class_={{ [styles["btn"] || "btn"]: true, [styles["btn-primary"] || "btn-primary"]: true, [styles["btn-xs"] || "btn-xs"]: true, [styles["addExclusionButton"] || "addExclusionButton"]: true }}
                                 data-toggle="tooltip" title="New Exclusion">
-                                <span className="fa fa-plus"></span>
+                                <span class_={{ [styles["fa"] || "fa"]: true, [styles["fa-plus"] || "fa-plus"]: true }}></span>
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
                 { /* /exclusionsPanel */ }
-                <div id="filtersPanel" className="filtersPanel">
-                    <p className="panelHeader text-center bg-primary">Filters</p>
-                    <div id="filters"></div>
-                    <div id="addFilter"></div>
+                <div id={styles["filtersPanel"] || "filtersPanel"} class_={{ [styles["filtersPanel"] || "filtersPanel"]: true }}>
+                    <p class_={{ [styles["panelHeader"] || "panelHeader"]: true, [styles["text-center"] || "text-center"]: true, [styles["bg-primary"] || "bg-primary"]: true }}>Filters</p>
+                    <div id={styles["filters"] || "filters"}></div>
+                    <div id={styles["addFilter"] || "addFilter"}></div>
                 </div>
                 { /* /filtersPanel */ }
-                <div id="setsPanel" className="setsPanel container">
-                    <p className="panelHeader text-center bg-primary">Sets</p>
-                    <div className="btn-toolbar setsPanelToolbar" role="toolbar" aria-label="sets toolbar"></div>
-                    <div id="sets">
-                        <p id="setsEmptyMessage" className="text-muted text-center hidden">
+                <div id={styles["setsPanel"] || "setsPanel"} class_={{ [styles["setsPanel"] || "setsPanel"]: true, [styles["container"] || "container"]: true }}>
+                    <p class_={{ [styles["panelHeader"] || "panelHeader"]: true, [styles["text-center"] || "text-center"]: true, [styles["bg-primary"] || "bg-primary"]: true }}>Sets</p>
+                    <div class_={{ [styles["btn-toolbar"] || "btn-toolbar"]: true, [styles["setsPanelToolbar"] || "setsPanelToolbar"]: true }} role="toolbar" aria-label="sets toolbar"></div>
+                    <div id={styles["sets"] || "sets"}>
+                        <p id={styles["setsEmptyMessage"] || "setsEmptyMessage"} class_={{ [styles["text-muted"] || "text-muted"]: true, [styles["text-center"] || "text-center"]: true, [styles["hidden"] || "hidden"]: true }}>
                             <i>Sets appear here</i>
                         </p>
                     </div>
@@ -209,96 +211,96 @@ export function render(props = {}) {
                 { /* /setsPanel */ }
             </div>
             { /* /section */ }
-            <div className="status-bar"></div>
-            <div id="graph-legend" className="legend-container on">
-                <div className="toggles">
-                    <a href="#hideLegend"><i className="fa fa-minus-square hider" style="color: rgb(51,51,102)"></i></a>
-                    <a href="#revealLegend"><i className="fa fa-plus-square revealer" style="color: rgb(51,51,102)"></i></a>
+            <div class_={{ [styles["status-bar"] || "status-bar"]: true }}></div>
+            <div id={styles["graph-legend"] || "graph-legend"} class_={{ [styles["legend-container"] || "legend-container"]: true, [styles["on"] || "on"]: true }}>
+                <div class_={{ [styles["toggles"] || "toggles"]: true }}>
+                    <a href="#hideLegend"><i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-minus-square"] || "fa-minus-square"]: true, [styles["hider"] || "hider"]: true }} style="color: rgb(51,51,102)"></i></a>
+                    <a href="#revealLegend"><i class_={{ [styles["fa"] || "fa"]: true, [styles["fa-plus-square"] || "fa-plus-square"]: true, [styles["revealer"] || "revealer"]: true }} style="color: rgb(51,51,102)"></i></a>
                 </div>
-                <div className="legend-title"></div>
+                <div class_={{ [styles["legend-title"] || "legend-title"]: true }}></div>
                 <table>
                     <tr>
-                        <td><span className="legend-label">Nodes</span></td>
-                        <td><span className="legend-nodes"></span></td>
+                        <td><span class_={{ [styles["legend-label"] || "legend-label"]: true }}>Nodes</span></td>
+                        <td><span class_={{ [styles["legend-nodes"] || "legend-nodes"]: true }}></span></td>
                     </tr>
                     <tr>
-                        <td><span className="legend-label">Edges</span></td>
-                        <td><span className="legend-edges"></span></td>
+                        <td><span class_={{ [styles["legend-label"] || "legend-label"]: true }}>Edges</span></td>
+                        <td><span class_={{ [styles["legend-edges"] || "legend-edges"]: true }}></span></td>
                     </tr>
                 </table>
             </div>
             { /* /graph-legend */ }
-            <div id="inspector">
-                <div className="inspector-panels">
-                    <div className="inspector-tabs">
-                        <ul className="nav nav-tabs tabs-left sideways">
-                            <li className="active"><a href="#inspector-nodes" data-toggle="tab">Nodes</a></li>
+            <div id={styles["inspector"] || "inspector"}>
+                <div class_={{ [styles["inspector-panels"] || "inspector-panels"]: true }}>
+                    <div class_={{ [styles["inspector-tabs"] || "inspector-tabs"]: true }}>
+                        <ul class_={{ [styles["nav"] || "nav"]: true, [styles["nav-tabs"] || "nav-tabs"]: true, [styles["tabs-left"] || "tabs-left"]: true, [styles["sideways"] || "sideways"]: true }}>
+                            <li class_={{ [styles["active"] || "active"]: true }}><a href="#inspector-nodes" data-toggle="tab">Nodes</a></li>
                             <li><a href="#inspector-edges" data-toggle="tab">Edges</a></li>
                         </ul>
                     </div>
-                    <div className="tab-content">
-                        <div id="inspector-nodes" className="tab-pane active">
-                            <div className="inspector panel backgrid-container"></div>
+                    <div class_={{ [styles["tab-content"] || "tab-content"]: true }}>
+                        <div id={styles["inspector-nodes"] || "inspector-nodes"} class_={{ [styles["tab-pane"] || "tab-pane"]: true, [styles["active"] || "active"]: true }}>
+                            <div class_={{ [styles["inspector"] || "inspector"]: true, [styles["panel"] || "panel"]: true, [styles["backgrid-container"] || "backgrid-container"]: true }}></div>
                         </div>
-                        <div id="inspector-edges" className="tab-pane">
-                            <div className="inspector panel backgrid-container"></div>
+                        <div id={styles["inspector-edges"] || "inspector-edges"} class_={{ [styles["tab-pane"] || "tab-pane"]: true }}>
+                            <div class_={{ [styles["inspector"] || "inspector"]: true, [styles["panel"] || "panel"]: true, [styles["backgrid-container"] || "backgrid-container"]: true }}></div>
                         </div>
                     </div>
                 </div>
             </div>
             { /* /inspector */ }
-            <div id="inspector-overlay" className="panel"></div>
-            <div id="histogram" className="panel">
-                <div id="histograms"></div>
-                <div id="histogramErrors"></div>
-                <div id="addHistogram"></div>
+            <div id={styles["inspector-overlay"] || "inspector-overlay"} class_={{ [styles["panel"] || "panel"]: true }}></div>
+            <div id={styles["histogram"] || "histogram"} class_={{ [styles["panel"] || "panel"]: true }}>
+                <div id={styles["histograms"] || "histograms"}></div>
+                <div id={styles["histogramErrors"] || "histogramErrors"}></div>
+                <div id={styles["addHistogram"] || "addHistogram"}></div>
             </div>
             { /* /histogram */ }
-            <div id="timeExplorer" className="panel">
-                <div id="timeExplorerInitDiv"></div>
-                <div id="timeExplorerContents" className="hidden">
-                    <div id="timeExplorerDragBox" className="dragBox"></div>
-                    <div id="timeExplorerEncodingA" className="dragBox"></div>
-                    <div id="timeExplorerEncodingB" className="dragBox"></div>
-                    <div id="timeExplorerEncodingC" className="dragBox"></div>
-                    <div id="timeExplorerVerticalLine" className="verticalLine"></div>
-                    <div id="timeExplorerTop">
-                        <div className="row" id="timeFilterSliderRow">
-                            <div className="col-xs-12 noPadding" id="timeFilterSliderDiv" data-toggle="tooltip" data-placement="top" title="Drag to filter graph by time">
-                                <input className="time-panel-filter-slider hidden"
-                                       id="time-panel-filter-slider" type="text"
-                                       data-slider-id="time-panel-filter-slider"
+            <div id={styles["timeExplorer"] || "timeExplorer"} class_={{ [styles["panel"] || "panel"]: true }}>
+                <div id={styles["timeExplorerInitDiv"] || "timeExplorerInitDiv"}></div>
+                <div id={styles["timeExplorerContents"] || "timeExplorerContents"} class_={{ [styles["hidden"] || "hidden"]: true }}>
+                    <div id={styles["timeExplorerDragBox"] || "timeExplorerDragBox"} class_={{ [styles["dragBox"] || "dragBox"]: true }}></div>
+                    <div id={styles["timeExplorerEncodingA"] || "timeExplorerEncodingA"} class_={{ [styles["dragBox"] || "dragBox"]: true }}></div>
+                    <div id={styles["timeExplorerEncodingB"] || "timeExplorerEncodingB"} class_={{ [styles["dragBox"] || "dragBox"]: true }}></div>
+                    <div id={styles["timeExplorerEncodingC"] || "timeExplorerEncodingC"} class_={{ [styles["dragBox"] || "dragBox"]: true }}></div>
+                    <div id={styles["timeExplorerVerticalLine"] || "timeExplorerVerticalLine"} class_={{ [styles["verticalLine"] || "verticalLine"]: true }}></div>
+                    <div id={styles["timeExplorerTop"] || "timeExplorerTop"}>
+                        <div class_={{ [styles["row"] || "row"]: true }} id={styles["timeFilterSliderRow"] || "timeFilterSliderRow"}>
+                            <div class_={{ [styles["col-xs-12"] || "col-xs-12"]: true, [styles["noPadding"] || "noPadding"]: true }} id={styles["timeFilterSliderDiv"] || "timeFilterSliderDiv"} data-toggle="tooltip" data-placement="top" title="Drag to filter graph by time">
+                                <input class_={{ [styles["time-panel-filter-slider"] || "time-panel-filter-slider"]: true, [styles["hidden"] || "hidden"]: true }}
+                                       id={styles["time-panel-filter-slider"] || "time-panel-filter-slider"} type="text"
+                                       data-slider-id={styles["time-panel-filter-slider"] || "time-panel-filter-slider"}
                                        data-slider-min="0" data-slider-max="1000"
                                        data-slider-step="1" data-slider-value="[0, 1000]"
                                        data-slider-handle="filterhandle" />
                             </div>
                         </div>
                     </div>
-                    <div className="row timeExplorerBodyRow timeExplorerFixedHeight">
-                        { /* <div id="timeExplorerSideInput" className="col-xs-2 timeExplorerFixedHeight"></div> */ }
-                        <div id="timeExplorerVizContainer" className="col-xs-12 timeExplorerFixedHeight noPadding">
-                            <div id="timeExplorerBody" className="noPadding"></div>
-                            <div id="timeExplorerMain" className="noPadding"></div>
+                    <div class_={{ [styles["row"] || "row"]: true, [styles["timeExplorerBodyRow"] || "timeExplorerBodyRow"]: true, [styles["timeExplorerFixedHeight"] || "timeExplorerFixedHeight"]: true }}>
+                        { /* <div id={styles["timeExplorerSideInput"] || "timeExplorerSideInput"} class_={{ [styles["col-xs-2"] || "col-xs-2"]: true, [styles["timeExplorerFixedHeight"] || "timeExplorerFixedHeight"]: true }}></div> */ }
+                        <div id={styles["timeExplorerVizContainer"] || "timeExplorerVizContainer"} class_={{ [styles["col-xs-12"] || "col-xs-12"]: true, [styles["timeExplorerFixedHeight"] || "timeExplorerFixedHeight"]: true, [styles["noPadding"] || "noPadding"]: true }}>
+                            <div id={styles["timeExplorerBody"] || "timeExplorerBody"} class_={{ [styles["noPadding"] || "noPadding"]: true }}></div>
+                            <div id={styles["timeExplorerMain"] || "timeExplorerMain"} class_={{ [styles["noPadding"] || "noPadding"]: true }}></div>
                         </div>
                     </div>
-                    <div className="row timeExplorerFixedHeightAxis">
-                        <div className="timeExplorerFixedHeightAxis noPadding col-xs-12">
-                            <div id="timeExplorerAxisContainer" className="noPadding">
+                    <div class_={{ [styles["row"] || "row"]: true, [styles["timeExplorerFixedHeightAxis"] || "timeExplorerFixedHeightAxis"]: true }}>
+                        <div class_={{ [styles["timeExplorerFixedHeightAxis"] || "timeExplorerFixedHeightAxis"]: true, [styles["noPadding"] || "noPadding"]: true, [styles["col-xs-12"] || "col-xs-12"]: true }}>
+                            <div id={styles["timeExplorerAxisContainer"] || "timeExplorerAxisContainer"} class_={{ [styles["noPadding"] || "noPadding"]: true }}>
                             </div>
                         </div>
                     </div>
-                    <div id="timeExplorerBottom">
-                        <div className="row" id="timeEncodingSliderRow">
-                            <div className="col-xs-12 noPadding" id="timeEncodingSliderDiv" data-toggle="tooltip" data-placement="top" title="Drag to color graph by time">
-                                <input className="time-panel-encoding-slider-a hidden"
-                                       id="time-panel-encoding-slider-a" type="text"
-                                       data-slider-id="time-panel-encoding-slider-a"
+                    <div id={styles["timeExplorerBottom"] || "timeExplorerBottom"}>
+                        <div class_={{ [styles["row"] || "row"]: true }} id={styles["timeEncodingSliderRow"] || "timeEncodingSliderRow"}>
+                            <div class_={{ [styles["col-xs-12"] || "col-xs-12"]: true, [styles["noPadding"] || "noPadding"]: true }} id={styles["timeEncodingSliderDiv"] || "timeEncodingSliderDiv"} data-toggle="tooltip" data-placement="top" title="Drag to color graph by time">
+                                <input class_={{ [styles["time-panel-encoding-slider-a"] || "time-panel-encoding-slider-a"]: true, [styles["hidden"] || "hidden"]: true }}
+                                       id={styles["time-panel-encoding-slider-a"] || "time-panel-encoding-slider-a"} type="text"
+                                       data-slider-id={styles["time-panel-encoding-slider-a"] || "time-panel-encoding-slider-a"}
                                        data-slider-min="0" data-slider-max="1000"
                                        data-slider-step="1" data-slider-value="[0, 1000]"
                                        data-slider-handle="encoding-handle-a" />
-                                <input className="time-panel-encoding-slider-b hidden"
-                                       id="time-panel-encoding-slider-b" type="text"
-                                       data-slider-id="time-panel-encoding-slider-b"
+                                <input class_={{ [styles["time-panel-encoding-slider-b"] || "time-panel-encoding-slider-b"]: true, [styles["hidden"] || "hidden"]: true }}
+                                       id={styles["time-panel-encoding-slider-b"] || "time-panel-encoding-slider-b"} type="text"
+                                       data-slider-id={styles["time-panel-encoding-slider-b"] || "time-panel-encoding-slider-b"}
                                        data-slider-min="0" data-slider-max="1000"
                                        data-slider-step="1" data-slider-value="[0, 1000]"
                                        data-slider-handle="encoding-handle-b" />
@@ -308,22 +310,22 @@ export function render(props = {}) {
                 </div>
             </div>
             { /* /timeExplorer */ }
-            <div className="meter meter-graphnodes" style="left: 21em;">
-                <span className="flavor">graph</span>
+            <div class_={{ [styles["meter"] || "meter"]: true, [styles["meter-graphnodes"] || "meter-graphnodes"]: true }} style="left: 21em;">
+                <span class_={{ [styles["flavor"] || "flavor"]: true }}>graph</span>
                 <div style="padding: 0; min-width: 95px; height: 30px; line-height: 30px; text-align: right; text-shadow: rgba(0, 0, 0, 0.498039) 1px 1px 0; color: rgb(255, 255, 255); position: absolute; z-index: 10; left: 5px; top: 5px; right: auto; bottom: auto; margin: 0; cursor: pointer;">
                     <div style="position: absolute; top: 0; right: 0; padding: 0 5px; height: 40px; font-size: 24px; font-family: Consolas, 'Andale Mono', monospace; z-index: 2; line-height: 27px; text-align: right">
-                        <span id="graph-node-count">0</span>
+                        <span id={styles["graph-node-count"] || "graph-node-count"}>0</span>
                     </div>
                     <div style="position: absolute; top: 20px; right: 0; padding: 0 5px; height: 40px; font-size: 24px; font-family: Consolas, 'Andale Mono', monospace; z-index: 2; line-height: 27px; text-align: right">
-                        <span id="graph-edge-count">0</span>
+                        <span id={styles["graph-edge-count"] || "graph-edge-count"}>0</span>
                     </div>
                     <div style="position: absolute; top: 15px; left: 0; padding: 0 5px; height: 40px; font-size: 12px; line-height: 15px; font-family: sans-serif; text-align: left; z-index: 2;">nodes<br/>edges</div>
                     <div style="position: relative; height: 40px; z-index: 1; width: 145px;">&nbsp;</div>
                 </div>
             </div>
-            <div className="logo-container">
+            <div class_={{ [styles["logo-container"] || "logo-container"]: true }}>
                 <img src="img/logo_white_horiz.png" />
-                <div className="logo-version">{releaseDate}</div>
+                <div class_={{ [styles["logo-version"] || "logo-version"]: true }}>{releaseDate}</div>
             </div>
         </div>
     );

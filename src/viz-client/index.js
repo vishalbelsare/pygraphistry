@@ -23,7 +23,6 @@ const patchDOM = init([
     snabbdomAttributes, snabbdomEventlisteners
 ]);
 
-const useLocalStorage = false && __DEV__;
 const debug = _debug('graphistry:viz-client');
 
 Observable

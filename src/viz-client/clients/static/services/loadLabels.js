@@ -109,13 +109,9 @@ function loadLabel(labelTypesByIndex) {
 
                     delete labelsByType[labelType];
 
-                    let pending = false;
-                    for (const key in labelsByType) {
-                        pending = true;
-                        break;
-                    }
+                    const labelIndexHasPendingRequests = Object.keys(labelsByType).length > 0;
 
-                    if (pending === false) {
+                    if (labelIndexHasPendingRequests === false) {
                         delete labelTypesByIndex[labelIndex];
                     }
                 })
