@@ -1,4 +1,3 @@
-import flake from 'simpleflake';
 import { dataset as createDataset } from '../dataset';
 
 export function migrateDatasets(workbook) {

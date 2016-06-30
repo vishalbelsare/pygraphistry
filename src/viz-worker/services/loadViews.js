@@ -53,14 +53,21 @@ function assignViewToWorkbook(workbook, view) {
 
 function assignGraphToView(workbook, graph, view) {
 
-    const { simulator } = graph;
+    const { simulator, simulator: { dataframe }} = graph;
     const { settings, settingsById } = toSettings(
         workbook.id, view.id, ... fromLayoutAlgorithms(
             simulator.controls.layoutAlgorithms
         )
     );
 
+    const MAX_SIZE_TO_ALLOCATE = 2000000;
+
     view.graph = graph;
+    view.scene.hints = {
+        edges: Math.min(dataframe.numEdges(), MAX_SIZE_TO_ALLOCATE),
+        points: Math.min(dataframe.numPoints(), MAX_SIZE_TO_ALLOCATE)
+    };
+
     view.scene.settings = settings;
     view.scene.settingsById = {
         ... view.scene.settingsById, ... settingsById

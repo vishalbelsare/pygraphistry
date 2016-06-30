@@ -23,7 +23,7 @@ export function loadGraph(graphsById, config, s3Cache = new Cache(config.LOCAL_C
                 )
                 .do(() => logger.trace('LOADING DATASET'))
                 .mergeMap(({ metadata, dataset }) => unpackDataset(
-                    dataset, metadata, s3Cache, config, createGraph(metadata)
+                    createGraph(metadata), dataset, metadata, s3Cache, config
                 ))
                 .do(loadDataFrameAndUpdateBuffers)
                 .concat(Observable.never())
@@ -52,7 +52,7 @@ function downloadDataset(metadata, s3Cache, config) {
     return download(datasetURL, s3Cache, config);
 }
 
-function unpackDataset(dataset, metadata, s3Cache, config, graph) {
+function unpackDataset(graph, dataset, metadata, s3Cache, config) {
     const unpack = unpackers[metadata.type];
     return Observable
         .of({ dataset, count: 0 })
@@ -136,13 +136,13 @@ function loadVGraphJSON(graph, { body }, s3Cache, config) {
     const metadata = dataset.datasources[0];
     return downloadDataset(metadata, s3Cache, config)
         .mergeMap((dataset) => unpackDataset(
-            dataset, metadata, s3Cache, config, graph
+            graph, dataset, metadata, s3Cache, config
         ));
 }
 
-function loadDataFrameAndUpdateBuffers({ simulator }) {
+function loadDataFrameAndUpdateBuffers(graph) {
 
-    const { dataframe } = simulator;
+    const { simulator, simulator: { dataframe }} = graph;
     // Load into dataframe data attributes that rely on the simulator existing.
     const inDegrees = dataframe.getHostBuffer('backwardsEdges').degreesTyped;
     const outDegrees = dataframe.getHostBuffer('forwardsEdges').degreesTyped;

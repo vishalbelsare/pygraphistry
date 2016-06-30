@@ -7,7 +7,6 @@ export class App extends Component {
         return model.get(
             `release.current.date`,
             `workbooks.open.views.length`,
-            `workbooks.open.views.current`,
             `workbooks.open.views.current['id', 'title']`,
             `workbooks.open.views.current['background', 'foreground'].color`,
             `workbooks.open.views.current.labels['background', 'foreground'].color`,
@@ -28,12 +27,13 @@ export class App extends Component {
                 'enable', 'disable', 'depthFunc', 'clearColor',
                 'lineWidth', 'blendFuncSeparate', 'blendEquationSeparate'
             ]`,
+            `workbooks.open.views.current.scene.hints['edges', 'points']`,
             `workbooks.open.views.current.scene.camera['edges', 'points']['scaling', 'opacity']`,
             `workbooks.open.views.current.scene.camera['type', 'nearPlane', 'farPlane']`,
             `workbooks.open.views.current.scene.camera.bounds['top', 'left', 'bottom', 'right']`,
         );
     }
     render(model, state) {
-        return renderApp(state);
+        return [[ state, renderApp(state) ]];
     }
 }

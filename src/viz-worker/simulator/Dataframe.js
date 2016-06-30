@@ -4,7 +4,7 @@ const _ = require('underscore');
 const Q = require('q');
 const fs = require('fs');
 const csv = require('csv');
-const flake = require('simpleflake');
+const simpleflake = require('simpleflakes').simpleflake;
 
 const log = require('@graphistry/common').logger;
 const logger = log.createLogger('graph-viz', 'graph-viz/js/DataFrame.js');
@@ -22,8 +22,8 @@ const palettes    = require('./palettes');
 const baseDirPath = __dirname + '/../assets/dataframe/';
 
 function getUniqueId () {
-    const id = flake();
-    const stringId = id.toString('hex');
+    const id = simpleflake();
+    const stringId = id.toJSON();
     return stringId;
 }
 

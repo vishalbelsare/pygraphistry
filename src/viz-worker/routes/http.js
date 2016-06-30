@@ -8,10 +8,8 @@ import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 export function httpRoutes(services, routesSharedState, modules) {
     const getDataSource = getDataSourceFactory(services, routesSharedState);
     return [{
-        use: bodyParser.urlencoded({ extended: false })
-    }, {
-        route: `/graph/model.json`,
-        use: falcorMiddleware(getDataSource)
+        route: '/graph',
+        use: express.static(path.resolve(), { fallthrough: true })
     }, {
         route: `/graph/index.html`,
         use: renderMiddleware(getDataSource, modules)
@@ -19,7 +17,9 @@ export function httpRoutes(services, routesSharedState, modules) {
         route: `/graph/kernels/*`,
         use: (req, res, next) => res.status(404).send()
     }, {
-        route: '/graph',
-        use: express.static(path.resolve('www'), { fallthrough: false })
+        use: bodyParser.urlencoded({ extended: false })
+    }, {
+        route: `/graph/model.json`,
+        use: falcorMiddleware(getDataSource)
     }];
 }

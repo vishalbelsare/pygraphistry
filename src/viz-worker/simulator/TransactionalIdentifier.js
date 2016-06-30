@@ -1,18 +1,18 @@
 'use strict';
 
-var simpleflake = require('simpleflake');
+import { simpleflake, parseSimpleflake } from 'simpleflakes';
 
 // January 1, 2015
-simpleflake.options.epoch = Date.UTC(2015, 0, 1);
-var format = 'base58';
+const epoch = Date.UTC(2015, 0, 1);
+// var format = 'base58';
 
 /**
  * This defines a simple, distribution-safe identifier and wraps it into a convention for reading and writing.
  * @param id - optional identifier to provide.
  * @constructor
  */
-function TransactionalIdentifier(id) {
-    this.id = id === undefined ? simpleflake() : id;
+function TransactionalIdentifier(struct = { timestamp: 0, randomBits: 0 }) {
+    this.id = simpleflake(struct.timestamp, struct.randomBits, epoch);
 }
 
 /**
@@ -20,7 +20,7 @@ function TransactionalIdentifier(id) {
  * @returns {String}
  */
 TransactionalIdentifier.prototype.toString = function () {
-    return this.id.toString(format);
+    return this.id.toJSON();
 };
 
 /**
@@ -29,7 +29,7 @@ TransactionalIdentifier.prototype.toString = function () {
  * @returns {TransactionalIdentifier}
  */
 TransactionalIdentifier.fromString = function (inputString) {
-    return new TransactionalIdentifier(simpleflake.parse(inputString, format));
+    return new TransactionalIdentifier(parseSimpleflake(inputString));
 };
 
 module.exports = TransactionalIdentifier;

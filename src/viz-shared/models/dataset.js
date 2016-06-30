@@ -1,8 +1,8 @@
 import url from 'url';
-import flake from 'simpleflake';
+import { simpleflake } from 'simpleflakes';
 import { scenes } from './renderer';
 
-export function dataset(options, datasetId = flake().toString('hex')) {
+export function dataset(options, datasetId = simpleflake().toJSON()) {
 
     options = {
         type: 'default', scene: 'default',

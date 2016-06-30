@@ -573,7 +573,6 @@ function decode0 (graph, vg, metadata) {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
           vg.version, vg.name, vg.vertexCount, vg.edgeCount);
 
-    // TODO
     // notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.vertexCount);
 
     const attributes = getAttributes0(vg);
@@ -994,7 +993,6 @@ function decode1 (graph, vg, metadata) {
     const vgAttributes = getAttributes1(vg, metadata);
     const graphInfo = checkMetadataAgainstVGraph(metadata, vg, vgAttributes);
 
-    // TODO
     // notifyClientOfSizesForAllocation(graph.socket, vg.edgeCount, vg.vertexCount);
 
     const edges = new Array(vg.edgeCount);

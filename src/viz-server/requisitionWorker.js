@@ -1,5 +1,5 @@
 import url from 'url';
-import flake from 'simpleflake';
+import { simpleflake } from 'simpleflakes';
 import stringify from 'json-stable-stringify';
 import { tagUser } from './support';
 import { Observable, Subject } from '@graphistry/rxjs';
@@ -12,7 +12,7 @@ export function requisitionWorker({
     }) {
 
     let isLocked = false;
-    let latestClientId = flake().toString('hex');
+    let latestClientId = simpleflake().toJSON();
 
     const { requests } = server;
     const centralPort = config.HTTP_LISTEN_PORT;
@@ -71,6 +71,7 @@ export function requisitionWorker({
                                     Observable.throw({ shouldExit: true, exitCode: 0 })
                                 );
                             } else {
+                                latestClientId = simpleflake().toJSON();
                                 logger.info('Running locally, so not actually killing; setting setServing to false.');
                             }
                         }
@@ -91,9 +92,9 @@ export function requisitionWorker({
                 return reject({ request, response }).ignoreElements();
             } else if (requestIsIndex({ request })) {
                 const { query = {} } = request;
-                latestClientId = query.clientId || flake().toString('hex');
+                latestClientId = query.clientId || simpleflake().toJSON();
             } else {
-                latestClientId = flake().toString('hex');
+                latestClientId = simpleflake().toJSON();
             }
             isLocked = true;
             return accept({ request, response }, latestClientId);
@@ -158,7 +159,7 @@ export function requisitionWorker({
             .timeout(claimTimeout * 1000)
             .catch(() => {
                 isLocked = false;
-                latestClientId = flake().toString('hex');
+                latestClientId = simpleflake().toJSON();
                 logger.warn('Timeout to claim worker, setting self as unclaimed.');
                 return Observable.empty();
             });

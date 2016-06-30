@@ -1,8 +1,8 @@
-import flake from 'simpleflake';
+import { simpleflake } from 'simpleflakes';
 import { ref as $ref } from 'falcor-json-graph';
 
-export function workbook(dataset, workbookId = flake().toString('hex')) {
-    const viewId = flake().toString('hex');
+export function workbook(dataset, workbookId = simpleflake().toJSON()) {
+    const viewId = simpleflake().toJSON();
     return {
         id: workbookId,
         title: '',

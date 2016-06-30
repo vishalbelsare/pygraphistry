@@ -25,8 +25,8 @@ export function scene({ loadViewsById }, routesSharedState) {
         route: `workbooksById[{keys}]
                     .viewsById[{keys}]
                     .scene[
-                        'camera', 'server', 'options',
-                        'settings', 'settingsById'
+                        'hints', 'camera', 'server',
+                        'options', 'settings', 'settingsById'
                     ][{keys}]`
     }, {
         get: genericGetHandler,

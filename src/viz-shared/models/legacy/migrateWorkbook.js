@@ -1,10 +1,10 @@
-import flake from 'simpleflake';
+import { simpleflake } from 'simpleflakes';
 import { migrateViews } from './migrateViews';
 import { migrateDatasets } from './migrateDatasets';
 
 export function migrateWorkbook(workbook) {
     if (!workbook.id) {
-        workbook.id = flake().toString('hex');
+        workbook.id = simpleflake().toJSON();
     }
     return migrateDatasets(migrateViews(workbook));
 }

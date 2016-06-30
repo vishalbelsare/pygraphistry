@@ -9,55 +9,55 @@ var          _ = require('underscore'),
     logger     = log.createLogger('graph-viz:cl:forceatlas2');
 
 
-function ForceAtlas2(clContext) {
+function ForceAtlas2Fast(clContext) {
     LayoutAlgo.call(this, 'ForceAtlas2Fast');
 
-    logger.trace('Creating ForceAtlas2 kernels');
-    this.faPoints = new Kernel('faPointForces', ForceAtlas2.argsPoints,
-                               ForceAtlas2.argsType, 'layouts/forceAtlas2Naive/faPointForces.cl', clContext);
-    this.faEdges = new Kernel('faEdgeForces', ForceAtlas2.argsEdges,
-                               ForceAtlas2.argsType, 'layouts/forceAtlas2Naive/faEdgeForces.cl', clContext);
+    logger.trace('Creating ForceAtlas2Fast kernels');
+    this.faPoints = new Kernel('faPointForces', ForceAtlas2Fast.argsPoints,
+                               ForceAtlas2Fast.argsType, 'layouts/forceAtlas2Naive/faPointForces.cl', clContext);
+    this.faEdges = new Kernel('faEdgeForces', ForceAtlas2Fast.argsEdges,
+                               ForceAtlas2Fast.argsType, 'layouts/forceAtlas2Naive/faEdgeForces.cl', clContext);
 
-    this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2.argsSwings,
-                               ForceAtlas2.argsType, 'layouts/forceAtlas2Naive/faSwingsTractions.cl', clContext);
+    this.faSwings = new Kernel('faSwingsTractions', ForceAtlas2Fast.argsSwings,
+                               ForceAtlas2Fast.argsType, 'layouts/forceAtlas2Naive/faSwingsTractions.cl', clContext);
 
-    this.faIntegrate = new Kernel('faIntegrateLegacy', ForceAtlas2.argsIntegrate,
-                               ForceAtlas2.argsType, 'layouts/forceAtlas2Naive/faIntegrateLegacy.cl', clContext);
+    this.faIntegrate = new Kernel('faIntegrateLegacy', ForceAtlas2Fast.argsIntegrate,
+                               ForceAtlas2Fast.argsType, 'layouts/forceAtlas2Naive/faIntegrateLegacy.cl', clContext);
 
-    this.faIntegrateApprox = new Kernel('faIntegrateApprox', ForceAtlas2.argsIntegrateApprox,
-                               ForceAtlas2.argsType, 'layouts/forceAtlas2Naive/faIntegrateApprox.cl', clContext);
+    this.faIntegrateApprox = new Kernel('faIntegrateApprox', ForceAtlas2Fast.argsIntegrateApprox,
+                               ForceAtlas2Fast.argsType, 'layouts/forceAtlas2Naive/faIntegrateApprox.cl', clContext);
 
     this.kernels = this.kernels.concat([this.faPoints, this.faEdges, this.faSwings,
                                        this.faIntegrate, this.faIntegrateApprox]);
 }
-ForceAtlas2.prototype = Object.create(LayoutAlgo.prototype);
-ForceAtlas2.prototype.constructor = ForceAtlas2;
+ForceAtlas2Fast.prototype = Object.create(LayoutAlgo.prototype);
+ForceAtlas2Fast.prototype.constructor = ForceAtlas2Fast;
 
-// ForceAtlas2.name = 'ForceAtlas2Fast';
-ForceAtlas2.argsPoints = [
+// ForceAtlas2Fast.name = 'ForceAtlas2Fast';
+ForceAtlas2Fast.argsPoints = [
     'strongGravity', 'scalingRatio', 'gravity',
     'edgeInfluence', 'tilePointsParam',
     'tilePointsParam2', 'numPoints', 'tilesPerIteration', 'inputPositions',
     'width', 'height', 'stepNumber', 'pointDegrees', 'pointForces'
 ];
 
-ForceAtlas2.argsEdges = [
+ForceAtlas2Fast.argsEdges = [
     'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'edges',
     'workList', 'inputPoints', 'partialForces', 'stepNumber', 'outputForces'
 ];
 
-ForceAtlas2.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
+ForceAtlas2Fast.argsSwings = ['prevForces', 'curForces', 'swings' , 'tractions'];
 
-ForceAtlas2.argsIntegrate = [
+ForceAtlas2Fast.argsIntegrate = [
     'gSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'
 ];
 
-ForceAtlas2.argsIntegrateApprox = [
+ForceAtlas2Fast.argsIntegrateApprox = [
     'numPoints', 'tau', 'inputPositions', 'pointDegrees', 'curForces', 'swings',
     'tractions', 'outputPositions'
 ];
 
-ForceAtlas2.argsType = {
+ForceAtlas2Fast.argsType = {
     scalingRatio: cljs.types.float_t,
     gravity: cljs.types.float_t,
     edgeInfluence: cljs.types.uint_t,
@@ -89,7 +89,7 @@ ForceAtlas2.argsType = {
 }
 
 
-ForceAtlas2.prototype.setPhysics = function(cfg) {
+ForceAtlas2Fast.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
     var flags = this.faEdges.get('flags');
@@ -109,7 +109,7 @@ ForceAtlas2.prototype.setPhysics = function(cfg) {
 }
 
 
-ForceAtlas2.prototype.setEdges = function(simulator) {
+ForceAtlas2Fast.prototype.setEdges = function(simulator) {
     var numMidPoints = simulator.dataframe.getNumElements('midPoints');
     var numPoints = simulator.dataframe.getNumElements('point');
     var localPosSize =
@@ -275,7 +275,7 @@ function integrateApprox(simulator, faIntegrateApprox) {
 }
 
 
-ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
+ForceAtlas2Fast.prototype.tick = function(simulator, stepNumber) {
     var that = this;
     var tickTime = Date.now();
     return pointForces(simulator, that.faPoints, stepNumber)
@@ -305,4 +305,4 @@ ForceAtlas2.prototype.tick = function(simulator, stepNumber) {
 }
 
 
-module.exports = ForceAtlas2;
+module.exports = ForceAtlas2Fast;

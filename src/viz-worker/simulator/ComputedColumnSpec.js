@@ -1,11 +1,11 @@
 'use strict';
 
 const _       = require('underscore');
-const flake = require('simpleflake');
+const simpleflake = require('simpleflakes').simpleflake;
 
 function getUniqueId () {
-    const id = flake();
-    const stringId = id.toString('hex');
+    const id = simpleflake();
+    const stringId = id.toJSON();
     return stringId;
 }
 

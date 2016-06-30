@@ -535,9 +535,8 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
         });
 
     } else {
-        this.graph = new Rx.ReplaySubject(1);
         this.ticks = new Rx.ReplaySubject(1);
-        this.ticksMulti = new Rx.ReplaySubject(1);
+        this.ticksMulti = new Rx.Subject();
         this.updateVboSubject = new Rx.ReplaySubject(1);
 
         this.ticks.switch().subscribe(this.ticksMulti);
@@ -1397,7 +1396,7 @@ VizServer.prototype.workbookForQuery = function (query) {
 VizServer.prototype.setupColorTexture = function () {
     this.colorTexture = new Rx.ReplaySubject(1);
     // const imgPath = path.resolve(__dirname, '../test-colormap2.rgba');
-    const imgPath = path.resolve('./www/test-colormap2.rgba');
+    const imgPath = path.resolve('./test-colormap2.rgba');
     // const imgPath = './test-colormap2.rgba';
     Rx.Observable.bindNodeCallback(fs.readFile)(imgPath)
         .flatMap((buffer) => {
@@ -1594,9 +1593,9 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
 
     // ========== BASIC COMMANDS
     this.rememberVBOs({});
-    this.socket.on('disconnect', () => {
-        this.dispose();
-    });
+    // this.socket.on('disconnect', () => {
+    //     this.dispose();
+    // });
 
     // Used for tracking what needs to be sent
     // Starts as all active, and as client caches, whittles down
@@ -1949,18 +1948,16 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                 logger.trace('3. tell client about availability');
 
                 // for each buffer transfer
-                let clientAckStartTime;
-                let clientElapsed;
+                let clientAckStartTime = Date.now();
                 const transferredBuffers = [];
                 this.bufferTransferFinisher = function (bufferName) {
                     logger.trace({step: step}, '5a ?. sending a buffer %s', bufferName);
                     transferredBuffers.push(bufferName);
                     // console.log("Length", transferredBuffers.length, requestedBuffers.length);
                     if (transferredBuffers.length === requestedBuffers.length) {
-                        logger.trace('5b. started sending all');
-                        logger.trace('Socket...client ping ' + clientElapsed + 'ms');
                         const elapsedTime = (Date.now() - clientAckStartTime);
-                        logger.trace('Socket', '...client asked for all buffers' + elapsedTime + 'ms');
+                        logger.trace('5b. started sending all');
+                        logger.trace('Socket', '...client asked for all buffers in ' + elapsedTime + 'ms');
                     }
                 };
 
@@ -2002,10 +1999,9 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     // return updateVBOCommand.sendWithObservableResult(metadata);
                     return emitOnSocket('vbo_update', metadata);
                 }).do(
-                    (clientElapsedMsg) => {
+                    (clientElapsed) => {
                         logger.trace('6. client all received');
-                        clientElapsed = clientElapsedMsg;
-                        clientAckStartTime = Date.now();
+                        logger.trace('Socket', '...client received all buffers in ' + clientElapsed + 'ms');
                     });
 
                 return receivedAll;

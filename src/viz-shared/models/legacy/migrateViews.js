@@ -1,4 +1,4 @@
-import flake from 'simpleflake';
+import { simpleflake } from 'simpleflakes';
 import { ref as $ref } from 'falcor-json-graph';
 
 export function migrateViews(workbook) {
@@ -30,7 +30,7 @@ export function migrateViews(workbook) {
         }
 
         if (!view.id) {
-            view.id = flake().toString('hex')
+            view.id = simpleflake().toJSON()
         }
 
         viewsById[view.id] = view;

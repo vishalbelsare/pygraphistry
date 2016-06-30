@@ -270,31 +270,37 @@ export function createInteractionsLoop({
     const { globalControls: { simulationTime = 1 }} = graph;
     const { Observable, Scheduler, Subscription, ReplaySubject } = Rx;
 
-    const renderTriggers = Observable.concat(
-            Observable.of({ play: true, layout: false }),
-            Observable
-                .of({ play: false, layout: false })
+    const play = interactions.filter((x = { play: false }) => x && x.play);
+    const renderTriggers = Observable.merge(
+
+            play.startWith({ play: true, layout: false }),
+
+            play.filter((x = { layout: false }) => x && x.layout)
+                .mapTo({ play: false, layout: false })
+                .startWith({ play: false, layout: false })
                 .delay(simulationTime),
-            Observable
-                .of({ play: false, layout: false })
-                .delay(4), // <-- todo: magic numbers?
-            interactions
-                .filter((x = { play: false }) => x && x.play)
+
+            play.filter((x) => !x || !x.layout)
+                .mapTo({ play: false, layout: false })
+                .startWith({ play: false, layout: false })
+                .delay(4) // <-- todo: magic numbers?
         )
         .multicast(() => new ReplaySubject(1));
 
     let rtConnection;
 
     return Observable
-        .using(connectRenderTriggers, notifyClientLoadingDataset)
-        // .mergeMapTo(loader.loadDatasetIntoSim(graph, dataset))
-        // .mergeMap(loadDataFrameAndUpdateBuffers)
+        .using(connectRenderTriggers, () => {
+            logger.trace('LOADING DATASET');
+            return Observable.of(graph);
+        })
         .expand(runInteractionLoop);
 
     function connectRenderTriggers() {
         if(!rtConnection) {
             logger.trace('STARTING DRIVER');
             rtConnection = new Subscription(() => {
+                logger.trace('STOPPING DRIVER');
                 rtConnection = null;
             });
             rtConnection.add(renderTriggers.subscribe((v) => {
@@ -303,13 +309,6 @@ export function createInteractionsLoop({
             rtConnection.add(renderTriggers.connect());
         }
         return rtConnection;
-    }
-
-    function notifyClientLoadingDataset() {
-        logger.trace('LOADING DATASET');
-        return Observable.of('Loading dataset');
-        // return Observable.from(clientNotification
-        //     .loadingStatus(socket, 'Loading dataset'));
     }
 
     function runInteractionLoop(graph) {
@@ -325,7 +324,7 @@ export function createInteractionsLoop({
             )
             .mergeMap(
                 (x) => graph.tick(x),
-                (/*x*/) => {
+                (x) => {
                     perf.endTiming('tick_durationMS');
                     return graph;
                 }

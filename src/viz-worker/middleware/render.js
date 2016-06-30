@@ -35,7 +35,7 @@ export function renderMiddleware(getDataSource, modules) {
             )
             .debounceTime(0)
             .take(1)
-            .map(([model, vdom]) => renderVDomToHTMLPage(model, vdom))
+            .map(([model, [appState, vdom]]) => renderVDomToHTMLPage(model, vdom))
             .subscribe({
                 next(html) {
                     res.type('html').send(html);

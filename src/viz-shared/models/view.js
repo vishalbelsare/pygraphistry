@@ -1,18 +1,19 @@
 import Color from 'color';
-import flake from 'simpleflake';
+import { simpleflake } from 'simpleflakes';
 import { ref as $ref } from 'falcor-json-graph';
 
-export function view(workbookId, graph, viewId = flake().toString('hex')) {
+export function view(workbookId, graph, viewId = simpleflake().toJSON()) {
 
     const { scene = {} } = graph;
-    const filterId = flake().toString('hex');
-    const setIds = [ flake().toString('hex'),
-                     flake().toString('hex'),
-                     flake().toString('hex') ];
+    const filterId = simpleflake().toJSON();
+    const setIds = [ simpleflake().toJSON(),
+                     simpleflake().toJSON(),
+                     simpleflake().toJSON() ];
 
     return {
         id: viewId,
         scene: {
+            hints: { edges: 0, points: 0 },
             ...scene, camera: { ...scene.camera, ...{
                     edges: { scaling: 1, opacity: 1 },
                     points: { scaling: 1, opacity: 1 }

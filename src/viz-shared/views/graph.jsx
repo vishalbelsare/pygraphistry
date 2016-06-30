@@ -6,7 +6,7 @@ export function render(props = {}) {
       { current = {} } = release,
       { date: releaseDate = ''  } = current;
     return (
-        <div id={styles["app"] || "app"} class_={{ [styles["app"] || "app"]: true }}>
+        <div key_="app" id={styles["app"] || "app"} class_={{ [styles["app"] || "app"]: true }}>
             <div class_={{ [styles["content"] || "content"]: true }}>
                 <div class_={{ [styles["sim-container"] || "sim-container"]: true }} tabindex="-1">
                     <canvas id={styles["simulation"] || "simulation"} class_={{ [styles["sim"] || "sim"]: true }}> WebGL not supported </canvas>

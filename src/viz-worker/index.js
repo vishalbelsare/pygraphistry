@@ -76,7 +76,8 @@ export function vizWorker(app, server, sockets, caches) {
                 onSocketDispose(socket, vizServer),
                 onSocketSubscribe(socket, vizServer)
             );
-        }));
+        }))
+        .takeWhile((x) => x && x.type !== 'disconnect')
     }
 
     function onDispose() {
@@ -94,15 +95,17 @@ export function vizWorker(app, server, sockets, caches) {
                 socket.on(event, handler);
             });
 
-            let seedVizServer = Observable.empty();
             const { handshake: { query: options = {} }} = socket;
             const { workbook: workbookId } = options;
 
-            if (workbookId) {
+            const seedVizServer = Observable.if(
+                () => workbookId == null,
+                Observable.empty(),
+                Observable.defer(() => {
 
-                const workbookIds = [workbookId];
+                    const workbookIds = [workbookId];
 
-                seedVizServer = loadWorkbooksById({
+                    return loadWorkbooksById({
                         ...routesSharedState, workbookIds, options
                     })
                     .mergeMap(({ workbook }) => {
@@ -136,13 +139,15 @@ export function vizWorker(app, server, sockets, caches) {
                     })
                     .do((graph) => vizServer.graph.next(graph))
                     .ignoreElements();
-            }
+                })
+            );
 
             return seedVizServer.startWith({
                 socket, type: 'connection'
             })
-            .concat(Observable.never())
-            .takeUntil(Observable.fromEvent(socket, 'disconnect'))
+            .concat((Observable.fromEvent(socket, 'disconnect', () => ({
+                socket, type: 'disconnect'
+            }))));
         }
     }
 
@@ -154,6 +159,7 @@ export function vizWorker(app, server, sockets, caches) {
                 socketIORoutes.forEach(({ event, handler }) => {
                     socket.off(event, handler);
                 });
+                socket.disconnect();
             });
             return composite;
         }

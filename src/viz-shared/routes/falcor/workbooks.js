@@ -4,7 +4,7 @@ import {
     pathValue as $pathValue
 } from 'falcor-json-graph';
 
-import flake from 'simpleflake';
+import { simpleflake } from 'simpleflakes';
 import { getHandler, captureErrorStacks } from '../support';
 
 export function workbooks({ loadWorkbooksById }, routesSharedState) {
@@ -24,7 +24,7 @@ export function workbooks({ loadWorkbooksById }, routesSharedState) {
         const { request = {} } = this;
         const { cookies = {}, query = {} } = request;
         const options = { ...cookies, ...query };
-        const { workbook: workbookId = flake().toString('hex') } = options;
+        const { workbook: workbookId = simpleflake().toJSON() } = options;
         const workbookIds = [workbookId];
 
         this.request = request;
