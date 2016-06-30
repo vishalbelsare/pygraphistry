@@ -1,6 +1,6 @@
-import { Model } from 'reaxtor';
 import SocketIO from 'socket.io-client';
-import { RemoteDataSource } from './RemoteDataSource';
+import { Model, RemoteDataSource } from '../../falcor';
+import { handleVboUpdates } from '../../streamGL/client';
 import { Observable, Scheduler } from '@graphistry/rxjs';
 
 export function initialize(options, debug) {
@@ -22,8 +22,9 @@ export function initialize(options, debug) {
     return socketConnected
         .merge(socketErrorConnecting)
         .take(1)
-        .map((socket) => ({
-            ...options, socket,
+        .map(() => ({
+            ...options,
+            handleVboUpdates, socket,
             model: getAppModel(options)
         }));
 }
