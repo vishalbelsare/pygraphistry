@@ -156,8 +156,8 @@ const Kernel = function (name, argNames, argTypes, file, clContext) {
                 }
 
                 if (dirty) {
-                    logger.trace('Setting arg %d of kernel %s to value %s', i, name, val);
-                    ocl.setKernelArg(kernel, i, val, type);
+                    logger.trace('Setting arg %d type %s of kernel %s to value %s', i, type, name, val);
+                    ocl.setKernelArg(kernel, i, type, val);
                     argValues[arg].dirty = false;
                 }
             }

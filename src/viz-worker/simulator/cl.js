@@ -235,7 +235,8 @@ var compile = Q.promised(function (cl, source, kernels) {
         // compile and link program
         program = ocl.createProgramWithSource(cl.context, source);
         // Note: Include dir is not official webcl, won't work in the browser.
-        var includeDir = path.resolve(__dirname, '..', 'kernels');
+        // var includeDir = path.resolve(__dirname, '..', 'kernels');
+        var includeDir = path.resolve('./kernels');
         var clver = '';
         // use OpenCL 2.0 if available
         if (parseFloat(cl.deviceProps.MAX_CL_VERSION) >= 2.0 && ocl.VERSION_2_0) {
