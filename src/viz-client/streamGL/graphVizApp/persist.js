@@ -2,9 +2,8 @@
 
 const $               = window.$;
 const _               = require('underscore');
-const Rx              = require('rxjs/Rx');
+const Rx              = require('@graphistry/rxjs');
                         require('../rx-jquery-stub');
-const Handlebars      = require('handlebars');
 const Color           = require('color');
 
 const util            = require('./util.js');
@@ -12,6 +11,9 @@ const staticclient    = require('../staticclient.js');
 const marquee         = require('./marquee.js');
 const Command         = require('./command.js');
 const debug           = require('debug')('graphistry:StreamGL:persist');
+
+import persistLayoutTemplate from './persist/layout.handlebars';
+import persistWorkbookTemplate from './persist/workbook.handlebars';
 
 function joinEscapedParams (paramKeysAndEscapedValues) {
     return _.map(paramKeysAndEscapedValues, (paramValue, paramName) => paramName + '=' + paramValue).join('&');
@@ -91,8 +93,7 @@ module.exports = {
 
         Rx.Observable.fromEvent($btn, 'click')
             .map(() => {
-                return $(Handlebars.compile($('#persistWorkbookTemplate').html())(
-                    {defName: workbookName}));
+                return $(persistWorkbookTemplate({ defName: workbookName }));
             })
             .do(($modal) => {
                 $('body').append($modal);
@@ -153,8 +154,7 @@ module.exports = {
             // show
             .map(() => {
                 const contentKey = urlParams.contentKey || generateContentKey(urlParams);
-                return $(Handlebars.compile($('#persistLayoutTemplate').html())(
-                    {defName: contentKey}));
+                return $(persistLayoutTemplate({ defName: contentKey }));
             })
             .do(($modal) => {
                 $('body').append($modal);

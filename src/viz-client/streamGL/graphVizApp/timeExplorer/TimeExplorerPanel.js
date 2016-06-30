@@ -2,10 +2,10 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:TimeExplorer');
 var $       = window.$;
-var Rx      = require('rxjs/Rx');
+var Rx      = require('@graphistry/rxjs');
               require('../../rx-jquery-stub');
 var _       = require('underscore');
-var Handlebars = require('handlebars');
+
 var Backbone = require('backbone');
     Backbone.$ = $;
 
@@ -21,6 +21,8 @@ var timeBar = require('./timeBar.js');
 var timeExplorerBottomAxis = require('./timeExplorerBottomAxis.js');
 var userTimeBars = require('./userTimeBars.js');
 var timeExplorerUtils = require('./timeExplorerUtils.js');
+
+import timeBarInitializationMenuTemplate from './timeBarInitializationMenuTemplate.handlebars';
 
 //////////////////////////////////////////////////////////////////////////////
 // CONSTANTS
@@ -80,7 +82,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
         mainBarView: that.mainBarView,
         bottomAxisView: that.bottomAxisView,
 
-        timeBarInitializationMenuTemplate: Handlebars.compile($('#timeBarInitializationMenuTemplate').html()),
+        timeBarInitializationMenuTemplate: timeBarInitializationMenuTemplate,
 
         events: {
             'mousemove #timeExplorerVizContainer': 'mousemove',

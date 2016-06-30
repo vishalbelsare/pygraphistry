@@ -2,7 +2,7 @@
 
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:histogramBrush');
 const $       = window.$;
-const Rx      = require('rxjs/Rx');
+const Rx      = require('@graphistry/rxjs');
 import '../rx-jquery-stub';
 const _       = require('underscore');
 

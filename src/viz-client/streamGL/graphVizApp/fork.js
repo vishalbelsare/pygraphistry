@@ -2,13 +2,12 @@
 
 var $               = window.$;
 var _               = require('underscore');
-var Rx              = require('rxjs/Rx');
+var Rx              = require('@graphistry/rxjs');
                       require('../rx-jquery-stub');
-const Handlebars = require('handlebars');
-
 const util            = require('./util.js');
 const Command         = require('./command.js');
 
+import template from './fork/template.handlebars';
 
 function nameToLink (urlParams, name) {
     const overrides = {dataset: encodeURIComponent(name), play: 0};
@@ -34,8 +33,7 @@ module.exports = function (socket, urlParams) {
             } else {
                 defaultName = datasetParam.replace(/\.json$/, '_' + uid + '.json');
             }
-            return $(Handlebars.compile($('#forkTemplate').html())(
-                {defName: defaultName}));
+            return $(template({defName: defaultName}));
         })
         .do(($modal) => {
             $('body').append($modal);

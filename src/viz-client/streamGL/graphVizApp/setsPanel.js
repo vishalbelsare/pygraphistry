@@ -2,9 +2,9 @@
 
 var $       = window.$;
 //var _       = require('underscore');
-var Rx      = require('rxjs/Rx');
+var Rx      = require('@graphistry/rxjs');
 require('../rx-jquery-stub');
-const Handlebars = require('handlebars');
+
 const Backbone   = require('backbone');
       Backbone.$ = $;
 const _          = require('underscore');
@@ -12,6 +12,9 @@ const util       = require('./util.js');
 const Command    = require('./command.js');
 const VizSlice   = require('./VizSlice.js');
 
+import setTemplate from './sets/template.handlebars';
+import setTagTemplate from './sets/tagTemplate.handlebars';
+import setCreateTemplate from './sets/createTemplate.handlebars';
 
 function unionOfTwoMasks (x, y) {
     // TODO: this is a copy of DataframeMask.unionOfTwoMasks. de-duplicate through common code-share.
@@ -244,9 +247,9 @@ const VizSetView = Backbone.View.extend({
     initialize: function (options) {
         this.listenTo(this.model, 'destroy', this.remove);
         this.listenTo(this.model, 'change', this.render);
-        this.template = Handlebars.compile($('#setTemplate').html());
+        this.template = setTemplate;
         this.panel = options.panel;
-        this.renameTemplate = Handlebars.compile($('#setTagTemplate').html());
+        this.renameTemplate = setTagTemplate;
     },
     bindingsFor: function (vizSet) {
         const bindings = vizSet.toJSON();
@@ -341,7 +344,7 @@ const AllVizSetsView = Backbone.View.extend({
         this.$emptyMessage = $('#setsEmptyMessage');
         this.$setsControlButton = $('#setsPanelButton');
         this.$createSetContainer = $('.setsPanelToolbar', this.el);
-        this.createSetTemplate = Handlebars.compile($('#setCreateTemplate').html());
+        this.createSetTemplate = setCreateTemplate;
         this.createSetSelectionID = 'selection';
 
         // Show if we get no initial collection elements:

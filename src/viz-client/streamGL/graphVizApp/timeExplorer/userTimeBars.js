@@ -3,10 +3,10 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:TimeExplorer');
 var $       = window.$;
-var Rx      = require('rxjs/Rx');
+var Rx      = require('@graphistry/rxjs');
               require('../../rx-jquery-stub');
 var _       = require('underscore');
-var Handlebars = require('handlebars');
+
 var Backbone = require('backbone');
     Backbone.$ = $;
 
@@ -22,7 +22,7 @@ var QuerySelectionModel = require('../QuerySelectionModel.js');
 var timeExplorerUtils = require('./timeExplorerUtils.js');
 var timeBar = require('./timeBar.js');
 
-
+import timeExplorerBodyTemplate from './timeExplorerBodyTemplate.handlebars';
 
 var UserBarsModel = Backbone.Model.extend({});
 
@@ -46,7 +46,7 @@ var UserBarsView = Backbone.View.extend({
         this.listenTo(this.collection, 'remove', this.removeBar);
         this.listenTo(this.collection, 'reset', this.addAll);
 
-        this.template = Handlebars.compile($('#timeExplorerBodyTemplate').html());
+        this.template = timeExplorerBodyTemplate;
 
         this.render();
     },

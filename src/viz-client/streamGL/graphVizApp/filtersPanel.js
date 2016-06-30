@@ -2,9 +2,7 @@
 
 const $       = window.$;
 const _       = require('underscore');
-const Rx      = require('rxjs/Rx');
-import '../rx-jquery-stub';
-const Handlebars = require('handlebars');
+const Rx      = require('@graphistry/rxjs');
 const Backbone = require('backbone');
 Backbone.$ = $;
 const FilterControl       = require('./FilterControl.js');
@@ -14,6 +12,9 @@ const ExpressionPrinter   = require('./expressionPrinter.js');
 const Identifier          = require('./Identifier.js');
 const util          = require('./util.js');
 
+import '../rx-jquery-stub';
+import template from './filters/template.handlebars';
+import addFilterTemplate from './filters/addFilter.handlebars'
 
 const COLLAPSED_FILTER_HEIGHT = 80;
 
@@ -87,9 +88,9 @@ const FilterView = Backbone.View.extend({
     },
 
     initialize: function (options) {
+        this.template = template;
         this.control = options.control;
         this.listenTo(this.model, 'destroy', this.remove);
-        this.template = Handlebars.compile($('#filterTemplate').html());
     },
     render: function () {
         const bindings = {
@@ -285,16 +286,15 @@ const AllFiltersView = Backbone.View.extend({
     }
 });
 
-// Used to attach attributes to Add Filter dropdown:
-Handlebars.registerHelper('json', (context) => JSON.stringify(context));
-
-
-function FiltersPanel(socket, labelRequests, settingsChanges, toggle) {
+function FiltersPanel(socket, labelRequests, toggle) {
     //const $button = $('#filterButton');
 
-    this.control = new FilterControl(socket);
-
+    this.model = FilterModel;
     this.toggle = toggle;
+    this.control = new FilterControl(socket);
+    this.collection = new FilterCollection([], {
+        control: this.control
+    });
 
     this.labelRequestSubscription = labelRequests.filter(
         (labelRequest) => labelRequest.filterQuery !== undefined
@@ -302,21 +302,11 @@ function FiltersPanel(socket, labelRequests, settingsChanges, toggle) {
         this.collection.addFilter(labelRequest.filterQuery);
     }).subscribe(_.identity, util.makeErrorHandler('Handling a filter from a label'));
 
-    this.pruneOrphansSubscription = settingsChanges.filter((nameAndValue) => nameAndValue.name === 'pruneOrphans')
-        .map((nameAndValue) => nameAndValue.value).distinctUntilChanged()
-        .do((/*pruneOrphansEnabled*/) => this.runFilters())
-        .subscribe(_.identity, util.makeErrorHandler('Handle prune orphans settings change'));
-
     this.control.filtersResponsesSubject.take(1).do((filters) => {
         _.each(filters, (filter) => {
             this.collection.add(new FilterModel(filter));
         });
     }).subscribe(_.identity, util.makeErrorHandler('Reading filters from workbook'));
-    this.collection = new FilterCollection([], {
-        control: this.control
-    });
-
-    this.model = FilterModel;
 
     /** Exposes changes to the FilterCollection. */
     this.filtersSubject = new Rx.ReplaySubject(1);
@@ -335,7 +325,7 @@ function FiltersPanel(socket, labelRequests, settingsChanges, toggle) {
         (dfa, fs) => ({dataframeAttributes: dfa, filterSet: fs})
     ).do((data) => {
         // Setup add filter button.
-        const addFilterTemplate = Handlebars.compile($('#addFilterTemplate').html());
+        // const addFilterTemplate = Handlebars.compile($('#addFilterTemplate').html());
         // Flatten the keys used to access the column with the 'name' property stored on the column.
         const namespaceByType = {point: {}, edge: {}};
         _.each(data.dataframeAttributes, (columnsByName, type) => {
@@ -409,7 +399,6 @@ FiltersPanel.prototype.dispose = function () {
     this.filtersSubject.dispose();
     this.togglesSubscription.dispose();
     this.labelRequestSubscription.dispose();
-    this.pruneOrphansSubscription.dispose();
 };
 
 

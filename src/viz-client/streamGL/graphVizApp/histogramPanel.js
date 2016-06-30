@@ -2,10 +2,10 @@
 
 // const debug   = require('debug')('graphistry:StreamGL:graphVizApp:HistogramsPanel');
 const $       = window.$;
-const Rx      = require('rxjs/Rx');
+const Rx      = require('@graphistry/rxjs');
 import '../rx-jquery-stub';
 const _       = require('underscore');
-const Handlebars = require('handlebars');
+
 const Backbone = require('backbone');
 Backbone.$ = $;
 const d3      = require('d3');
@@ -20,6 +20,8 @@ const contentFormatter = require('./contentFormatter.js');
 const ExpressionPrinter = require('./expressionPrinter.js');
 const VizSlice = require('./VizSlice');
 
+import addHistogramTemplate from './histograms/addHistogram.handlebars';
+import histogramNoDropdown from './histograms/histogramNoDropdown.handlebars';
 
 //////////////////////////////////////////////////////////////////////////////
 // CONSTANTS
@@ -413,7 +415,7 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject, activeHighlight)
                 id: this.cid
             };
 
-            this.template = Handlebars.compile($('#histogramTemplateNoDropdown').html());
+            this.template = histogramNoDropdown;
             const html = this.template(params);
             this.$el.html(html);
             this.$el.attr('cid', this.cid);
@@ -627,9 +629,8 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject, activeHighlight)
                     /** @type {Array.<String>} */
                     const attributes = _.keys(newNamespaceAttributes);
                     // Setup add histogram button.
-                    const template = Handlebars.compile($('#addHistogramTemplate').html());
                     const params = { fields: attributes };
-                    const html = template(params);
+                    const html = addHistogramTemplate(params);
                     $('#addHistogram').html(html);
                 }
             );

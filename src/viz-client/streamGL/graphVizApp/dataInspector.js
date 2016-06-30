@@ -2,14 +2,14 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:dataInspector');
 var $       = window.$;
-var Rx      = require('rxjs/Rx');
+var Rx      = require('@graphistry/rxjs');
               require('../rx-jquery-stub');
 var _       = require('underscore');
 var Backbone = require('backbone');
     Backbone.$ = $;
-    require('backbone.paginator');
+    Backbone.PageableCollection = require('backbone.paginator');
 var Backgrid = require('backgrid');
-    require('backgrid-paginator');
+    require('@graphistry/backgrid-paginator');
     require('backgrid-filter');
 
 

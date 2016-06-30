@@ -2,9 +2,8 @@
 
 const $       = window.$;
 const _       = require('underscore');
-const Rx      = require('rxjs/Rx');
+const Rx      = require('@graphistry/rxjs');
                 require('../rx-jquery-stub');
-const Handlebars = require('handlebars');
 const Backbone = require('backbone');
       Backbone.$ = $;
 const FilterControl       = require('./FilterControl.js');
@@ -13,6 +12,7 @@ const ExpressionEditor    = require('./expressionEditor.js');
 const ExpressionPrinter   = require('./expressionPrinter.js');
 const util          = require('./util.js');
 
+import template from './exclusions/template.handlebars';
 
 const COLLAPSED_EXCLUSION_HEIGHT = 80;
 
@@ -51,9 +51,9 @@ const ExclusionView = Backbone.View.extend({
     },
 
     initialize: function (options) {
+        this.template = template;
         this.control = options.control;
         this.listenTo(this.model, 'destroy', this.remove);
-        this.template = Handlebars.compile($('#exclusionTemplate').html());
         this.listenTo(this.model, 'change', this.updateFromModel);
     },
     render: function () {
@@ -219,10 +219,6 @@ const AllExclusionsView = Backbone.View.extend({
         this.collection.each(this.addExclusion, this);
     }
 });
-
-// Used to attach attributes to Add Exclusion dropdown:
-Handlebars.registerHelper('json', (context) => JSON.stringify(context));
-
 
 function ExclusionsPanel (socket, control, labelRequests, toggle) {
     // const $button = $('#exclusionButton');

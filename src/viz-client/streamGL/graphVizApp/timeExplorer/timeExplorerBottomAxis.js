@@ -2,10 +2,10 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:TimeExplorer');
 var $       = window.$;
-var Rx      = require('rxjs/Rx');
+var Rx      = require('@graphistry/rxjs');
               require('../../rx-jquery-stub');
 var _       = require('underscore');
-var Handlebars = require('handlebars');
+
 var Backbone = require('backbone');
     Backbone.$ = $;
 
@@ -17,6 +17,8 @@ var Identifier = require('../Identifier');
 var contentFormatter = require('../contentFormatter.js');
 
 var timeExplorerUtils = require('./timeExplorerUtils.js');
+
+import timeBarBottomAxisTemplate from './timeBarBottomAxisTemplate.handlebars';
 
 //////////////////////////////////////////////////////////////////////////////
 // CONSTANTS
@@ -55,7 +57,7 @@ var BottomAxisView = Backbone.View.extend({
         // this.listenTo(this.model, 'change:key', this.render);
 
         var params = {};
-        this.template = Handlebars.compile($('#timeBarBottomAxisTemplate').html());
+        this.template = timeBarBottomAxisTemplate;
         var html = this.template(params);
         this.$el.html(html);
         this.$el.attr('cid', this.cid);
