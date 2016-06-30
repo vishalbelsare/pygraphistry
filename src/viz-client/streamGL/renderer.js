@@ -3,7 +3,7 @@
 const _           = require('underscore');
 // TODO: Upgrade to immutable v3 (from v2) -- breaking changes; our usage must be updated to match
 const Immutable   = require('immutable');
-const Rx          = require('rxjs/Rx');
+const Rx          = require('@graphistry/rxjs');
 const util        = require('./graphVizApp/util.js');
 const debug       = require('debug')('graphistry:StreamGL:renderer');
 
@@ -236,22 +236,25 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 
 
 //config * canvas
-function init(config, canvas, urlParams) {
-    config = Immutable.fromJS(config);
+function init(config, cameraModel, canvas, urlParams) {
+
+    const renderConfig = Immutable.fromJS(config);
     const renderPipeline = new Rx.ReplaySubject(1);
+    const bufferSizes = {};
+    const hostBuffers = {};
 
     let state = Immutable.Map({
-        config: config,
+        config: renderConfig,
         canvas: canvas,
 
         gl: undefined,
         ext: undefined,
         programs:       Immutable.Map({}),
-        buffers:        Immutable.Map({}),
-        bufferSizes:    {},
+        buffers:        {},
+        bufferSizes:    bufferSizes,
 
         //TODO make immutable
-        hostBuffers:    {},
+        hostBuffers:    hostBuffers,
         // Non-replay subject because in our animationFrame loop,
         // we can't use RxJS
         hostBuffersCache: {},
@@ -262,8 +265,8 @@ function init(config, canvas, urlParams) {
         fbos:           Immutable.Map({}),
         renderBuffers:  Immutable.Map({}),
         pixelreads:     {},
-        uniforms:       undefined,
-        options:        config.get('options').toJS(),
+        uniforms:       config.uniforms,
+        options:        config.options,
 
         boundBuffer:    undefined,
         bufferSize:     Immutable.Map({}),
@@ -274,7 +277,7 @@ function init(config, canvas, urlParams) {
         indexHostBuffers: {}, // {Uint32Array}
         indexGlBuffers: {}, // {GlBuffer}
 
-        activeIndices:  getActiveIndices(config),
+        activeIndices:  config.modes,
 
         //Observable {?start: [...], ?rendered: [...]}
         renderPipeline: renderPipeline,
@@ -294,20 +297,41 @@ function init(config, canvas, urlParams) {
     state = state.set('gl', gl);
     setGlOptions(gl, state.get('options'));
 
-    state = createPrograms(state);
-    state = createBuffers(state);
-    state = createUniforms(state);
+    state = state.set('programs', createPrograms(config, gl));
+    state = state.set('buffers', createBuffers(config, gl, bufferSizes, hostBuffers));
 
     debug('precreated', state.toJS());
     const camera = createCamera(state, pixelRatio, urlParams);
     state = state.set('camera', camera);
     setCamera(state);
 
+    cameraModel.changes()
+        .switchMap(
+            (model) => model.get(`['edges', 'points']['scaling', 'opacity']`),
+            (model, { json: camera }) => camera
+        )
+        .subscribe(({ edges, points }) => {
+            camera.edgeScaling = edges.scaling;
+            camera.pointScaling = points.scaling;
+            const uniforms = state.get('uniforms');
+            for (const key in uniforms) {
+                const map = uniforms[key];
+                if ('edgeOpacity' in map) {
+                    map.edgeOpacity = edges.opacity;
+                }
+                if ('pointOpacity' in map) {
+                    map.pointOpacity = points.opacity;
+                }
+            }
+        });
+
     debug('state pre', state.toJS());
-    state = state.mergeDeep(createRenderTargets(config, canvas, gl, camera));
+    state = state.mergeDeep(createRenderTargets(renderConfig,
+                                                config.targets,
+                                                canvas, gl, camera));
 
     debug('state pre b', state.toJS());
-    state = state.mergeDeep(createStandardTextures(config, canvas, gl));
+    state = state.mergeDeep(createStandardTextures(renderConfig, canvas, gl));
 
     debug('created', state.toJS());
     return state;
@@ -389,16 +413,10 @@ function getItemsForTrigger(state, trigger) {
     if (!trigger) {
         return undefined;
     }
-
-    const items = state.get('config').get('items').toJS();
-    const renderItems = _.chain(items).pick((i) => {
-        return _.contains(i.triggers, trigger);
-    }).map((i, name) => {
-        return name;
-    }).value();
-
-    const orderedItems = state.get('config').get('render').toJS();
-    return _.intersection(orderedItems, renderItems);
+    return state
+        .get('config')
+        .get('triggers')
+        .get(trigger).toJS();
 }
 
 /*
@@ -439,7 +457,9 @@ function getTextureDims(config, canvas, camera, name) {
         return {width: canvas.width, height: canvas.height};
     }
 
-    const textureConfig = config.get ? config.get('textures').get(name).toJS() : config.textures[name];
+    const textureConfig = config.get ?
+        config.get('textures').get(name).toJS() :
+        config.textures[name];
 
     //Retina-quality
     const width =
@@ -480,19 +500,9 @@ function initializeTexture(gl, texture, fbo, renderBuffer, width, height) {
 
 // create for each texture rendertarget, an offscreen fbo, texture, renderbuffer, and host buffer
 // note that not all textures are render targets (e.g., server reads)
-function createRenderTargets (config, canvas, gl, camera) {
+function createRenderTargets (config, neededTextures, canvas, gl, camera) {
 
-    const neededTextures =
-        _.chain(
-            config.get('render')
-            .map((itemName) => config.get('items').get(itemName))
-            .map((item) => item.get('renderTarget') || 'CANVAS')
-            .filter((renderTarget) => renderTarget !== 'CANVAS')
-            .toJS())
-        .uniq()
-        .value();
-
-    const textures      = neededTextures.map(gl.createTexture.bind(gl)),
+    const textures    = neededTextures.map(gl.createTexture.bind(gl)),
         fbos          = neededTextures.map(gl.createFramebuffer.bind(gl)),
         renderBuffers = neededTextures.map(gl.createRenderbuffer.bind(gl)),
         dimensions    = neededTextures.map(getTextureDims.bind('', config, canvas, camera)),
@@ -551,19 +561,16 @@ function setGlOptions (gl, glOpts) {
     });
 }
 
-
-function createPrograms(state) {
+function createPrograms(config, gl) {
     debug('Creating programs');
-    const gl = state.get('gl');
-
-    // for(const programName in programs) {
-    const createdPrograms = state.get('config').get('programs').map((programOptions, programName) => {
+    return Object.keys(config.programs).reduce((programs, programName) => {
+        const programOptions = config.programs[programName];
         debug('Compiling program', programName);
         const program = gl.createProgram();
 
         //// Create, compile and attach the shaders
         const vertShader = gl.createShader(gl.VERTEX_SHADER);
-        let sourceCode = programOptions.get('sources').get('vertex');
+        let sourceCode = programOptions.sources.vertex;
         let log;
         gl.shaderSource(vertShader, sourceCode);
         gl.compileShader(vertShader);
@@ -575,7 +582,7 @@ function createPrograms(state) {
         gl.attachShader(program, vertShader);
 
         const fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-        sourceCode = programOptions.get('sources').get('fragment');
+        sourceCode = programOptions.sources.fragment;
         gl.shaderSource(fragShader, sourceCode);
         gl.compileShader(fragShader);
         if(!(gl.isShader(fragShader) && gl.getShaderParameter(fragShader, gl.COMPILE_STATUS))) {
@@ -600,54 +607,34 @@ function createPrograms(state) {
             throw new Error('Could not validate GL program \'' + programName + '\'');
         }
 
-        return program;
-    }).cacheResult();
-    // We need cacheResult() or Immutable.js will re-run the map on every access, recreating all
-    // the GL programs from scratch on every access. This calls ensures the map is run only once.
+        programs[programName] = program;
 
-    return state.set('programs', createdPrograms);
+        return programs;
+    }, {});
 }
 
-
-function createBuffers(state) {
-    const gl = state.get('gl');
-    const models = state.get('config').get('models');
-
-    const createdBuffers = models.map((bufferOpts, bufferName) => {
-        debug('Creating buffer %s with options %o', bufferName, bufferOpts.toJS());
-        state.get('bufferSizes')[bufferName] = 0;
-        const vbo = gl.createBuffer();
-        return vbo;
-    }).cacheResult();
-
-    const hostBuffers = state.get('hostBuffers');
-    models.forEach((bufferOpts, bufferName) => {
-        const options = _.values(bufferOpts.toJS())[0];
-        if (options.datasource === 'HOST' || options.datasource === 'DEVICE') {
-            hostBuffers[bufferName] = new Rx.ReplaySubject(1);
-        }
-    });
-
-    return state.set('buffers', createdBuffers);
+function createBuffers(config, gl, bufferSizes, hostBuffers) {
+    return Object
+        .keys(config.models)
+        .reduce((buffers, name) => {
+            const model = config.models[name];
+            debug('Creating buffer %s with options %o', name, model);
+            bufferSizes[name] = 0;
+            for (const key in model) {
+                const { [key]: { datasource }} = model;
+                if (datasource === 'HOST' || datasource === 'DEVICE') {
+                    hostBuffers[name] = new Rx.ReplaySubject(1);
+                }
+            }
+            buffers[name] = gl.createBuffer();
+            return buffers;
+        }, {});
 }
-
-
-function createUniforms(state) {
-    const items = state.get('config').get('items').toJS();
-    const uniforms = _.object(_.map(items, (itemDef, itemName) => {
-        const map = _.object(_.map(itemDef.uniforms, (binding, uniform) => {
-            return [uniform, binding.defaultValues];
-        }));
-        return [itemName, map];
-    }));
-
-    return state.set('uniforms', uniforms);
-}
-
 
 function loadTextures(state, bindings) {
     _.each(bindings, loadTexture.bind('', state));
 }
+
 function loadTexture(state, textureNfo, name) {
 
     debug('load texture', name, textureNfo);
@@ -674,7 +661,7 @@ function loadTexture(state, textureNfo, name) {
  */
 function loadBuffers (state, bufferData) {
     const config = state.get('config').toJS();
-    const buffers = state.get('buffers').toJS();
+    const buffers = state.get('buffers');
 
     _.each(bufferData, (data, bufferName) => {
         debug('Loading buffer data for buffer %s (data type: %s, length: %s bytes)',
@@ -708,7 +695,7 @@ function loadBuffers (state, bufferData) {
 function allocateBufferSize(state, bufferName, sizeInBytes) {
     const gl = state.get('gl');
     const config = state.get('config').toJS();
-    const buffers = state.get('buffers').toJS();
+    const buffers = state.get('buffers');
     const bufferSizes = state.get('bufferSizes');
 
     const buffer = buffers[bufferName];
@@ -853,7 +840,7 @@ function setUniform(state, name, value) {
 function setCamera(state) {
     const config = state.get('config').toJS();
     const gl = state.get('gl');
-    const programs = state.get('programs').toJS();
+    const programs = state.get('programs');
     const uniforms = state.get('uniforms');
     const camera = state.get('camera');
 
@@ -982,9 +969,9 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
         gl          = state.get('gl'),
         options     = state.get('options'),
         ext         = state.get('ext'),
-        programs    = state.get('programs').toJS(),
+        programs    = state.get('programs'),
         numElements = state.get('numElements'),
-        buffers     = state.get('buffers').toJS();
+        buffers     = state.get('buffers');
 
     const toRender = getItemsForTrigger(state, renderListTrigger) || renderListOverride;
     if (toRender === undefined || toRender.length === 0) {
@@ -1195,23 +1182,7 @@ function getBufferNames (config, optFilter) {
 // (Server texture and bound to an active item)
 // RenderOptions -> [ string ]
 function getServerTextureNames (config) {
-    return _.chain(_.pairs(config.textures))
-        .filter((pair) => {
-            const datasource = pair[1].datasource;
-            return datasource === 'SERVER';
-        })
-        .pluck('0')
-        .filter((name) => {
-            const matchingItems = config.render.map((itemName) => {
-                const matchingItemTextures = _.values(((config.items[itemName] || {}).textureBindings))
-                    .filter((boundTexture) => {
-                        return boundTexture === name;
-                    });
-                return matchingItemTextures.length;
-            }).filter((hits) => hits);
-            return matchingItems.length > 0;
-        })
-        .value();
+    return config.server.textures;
 }
 
 // Immutable RenderOptions -> [ int ]

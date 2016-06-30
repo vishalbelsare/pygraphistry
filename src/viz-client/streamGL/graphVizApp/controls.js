@@ -2,11 +2,9 @@
 
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:controls');
 const $       = window.$;
-const Rx      = require('rxjs/Rx');
+const Rx      = require('@graphistry/rxjs');
                 require('../rx-jquery-stub');
-const d3      = require('d3');
 const _       = require('underscore');
-const Color   = require('color');
 
 const util            = require('./util.js');
 const dataInspector   = require('./dataInspector.js');
@@ -19,159 +17,12 @@ const runButton       = require('./runButton.js');
 const forkVgraph      = require('./fork.js');
 const persist         = require('./persist.js');
 const goLiveButton    = require('./goLiveButton.js');
-const colorPicker     = require('./colorpicker.js');
 const externalLink    = require('./externalLink.js');
 const fullscreenLink  = require('./fullscreenLink.js');
 const TimeExplorer    = require('./timeExplorer/timeExplorer.js');
 const contentFormatter = require('./contentFormatter.js');
 const Command         = require('./command.js');
 const VizSlice        = require('./VizSlice.js');
-
-function logScaling (minPos, maxPos, minVal, maxVal) {
-    return d3.scale.log().domain([minVal, maxVal]).range([minPos, maxPos]);
-}
-
-const PercentScale = d3.scale.linear().domain([0, 1]).range([0, 100]);
-const PointSizeScale = logScaling(0, 100, 0.1, 10);
-const EdgeSizeScale = logScaling(0, 100, 0.1, 10);
-
-// Setup client side controls.
-const encodingPerElementParams = [
-    {
-        name: 'pointScaling',
-        displayName: 'Point Size',
-        type: 'continuous',
-        value: PointSizeScale.invert(50),
-        max: 100.0,
-        min: 0,
-        scaling: PointSizeScale
-    },
-    {
-        name: 'edgeScaling',
-        displayName: 'Edge Size',
-        type: 'continuous',
-        value: EdgeSizeScale.invert(50),
-        max: 100.0,
-        min: 0,
-        scaling: EdgeSizeScale
-    },
-    {
-        name: 'pointOpacity',
-        displayName: 'Point Opacity',
-        type: 'continuous',
-        value: PercentScale.invert(100),
-        max: 100,
-        min: 0,
-        scaling: PercentScale
-    },
-    {
-        name: 'edgeOpacity',
-        displayName: 'Edge Opacity',
-        type: 'continuous',
-        value: PercentScale.invert(100),
-        max: 100,
-        min: 0,
-        scaling: PercentScale
-    },
-    {
-        name: 'pruneOrphans',
-        displayName: 'Prune Isolated Nodes',
-        type: 'bool',
-        value: false
-    }
-];
-
-
-function createStyleElement() {
-    const sheet = $('<style type="text/css">');
-    sheet.appendTo($('head'));
-    return sheet;
-}
-
-
-const encodingForLabelParams = [
-   {
-        name: 'labelForegroundColor',
-        displayName: 'Text Color',
-        type: 'color',
-        def: new Color('#1f1f33').rgbaString(),
-        cb: (() => {
-            const sheet = createStyleElement();
-            return (stream) => {
-                stream.auditTime(20).subscribe((c) => {
-                    sheet.text('.graph-label, .graph-label table { color: ' + c.rgbaString() + ' }');
-                });
-            };
-        })()
-    },
-    {
-        name: 'labelBackgroundColor',
-        displayName: 'Background Color',
-        type: 'color',
-        def: (new Color('#fff')).alpha(0.9).rgbaString(),
-        cb: (() => {
-            const sheet = createStyleElement();
-            return (stream) => {
-                stream.auditTime(20).subscribe((c) => {
-                    sheet.text('.graph-label .graph-label-container  { background-color: ' + c.rgbaString() + ' }');
-                });
-            };
-        })()
-    },
-    {
-        name: 'labelTransparency',
-        displayName: 'Transparency',
-        type: 'discrete',
-        value: 100,
-        step: 1,
-        max: 100,
-        min: 0,
-        scaling: PercentScale
-    },
-    {
-        name: 'labelsEnabled',
-        displayName: 'Show Labels',
-        type: 'bool',
-        value: true
-    },
-    {
-        name: 'poiEnabled',
-        displayName: 'Points of Interest',
-        type: 'bool',
-        value: true
-    }/*,
-    {
-        name: 'displayTimeZone',
-        displayName: 'Display Time Zone',
-        type: 'text',
-        value: ''
-    },*/
-
-];
-
-
-
-
-function setLayoutParameter(socket, algorithm, param, value, settingsChanges) {
-    const update = {};
-    const controls = {};
-
-    update[param] = value;
-    controls[algorithm] = update;
-
-    const payload = {
-        play: true,
-        layout: true,
-        simControls: controls
-    };
-
-    debug('Sending layout settings', payload);
-    socket.emit('interaction', payload);
-    settingsChanges.onNext({
-        name: algorithm + '.' + param,
-        value: value
-    });
-}
 
 // TODO FIXME Why do we need this to click on a switchboard instead of jquery?
 // Where this is used in the selection marquee handler, jquery functions don't seem to work.
@@ -329,7 +180,6 @@ function clicksFromPopoutControls ($elt) {
 
 function toggleLogo($cont, urlParams) {
     if ((urlParams.logo || '').toLowerCase() === 'false') {
-
         $cont.toggleClass('disabled', true);
     }
 }
@@ -363,289 +213,6 @@ function createLegend($elt, urlParams) {
 
     $elt.show();
 }
-
-
-//{?<param>: 'a'} * DOM *
-//  {type: 'continuous' + 'discrete', name: string, min: num, max: num, step: num, value: num}
-//  + {type: 'bool', name: string, value: bool}
-//  + {type: 'color', name: string, def: CSSColor, cb: (Stream {r,g,b,a}) -> () }
-//  * string -> DOM
-// (Will append at anchor position)
-function controlMaker (urlParams, param, type) {
-    let $input;
-    let initValue;
-    switch (param.type) {
-        case 'continuous':
-            initValue = urlParams[param.name] ? parseFloat(urlParams[param.name]) : param.value;
-            if (param.scaling !== undefined) {
-                initValue = param.scaling(initValue);
-            }
-            $input = $('<input>').attr({
-                class: type + '-menu-slider menu-slider',
-                id: param.name,
-                type: 'text',
-                'data-slider-id': param.name + 'Slider',
-                'data-slider-min': 0,
-                'data-slider-max': 100,
-                'data-slider-step': 1,
-                'data-slider-value': initValue
-            }).data('param', param);
-            break;
-        case 'discrete':
-            initValue = urlParams.hasOwnProperty(param.name) ? parseFloat(urlParams[param.name]) : param.value;
-            if (param.scaling !== undefined) {
-                initValue = param.scaling(initValue);
-            }
-            $input = $('<input>').attr({
-                class: type + '-menu-slider menu-slider',
-                id: param.name,
-                type: 'text',
-                'data-slider-id': param.name + 'Slider',
-                'data-slider-min': param.min,
-                'data-slider-max': param.max,
-                'data-slider-step': param.step,
-                'data-slider-value': initValue
-            }).data('param', param);
-            break;
-        case 'bool':
-            initValue = urlParams.hasOwnProperty(param.name) ? (urlParams[param.name] === 'true' || urlParams[param.name] === true) : param.value;
-            $input = $('<input>').attr({
-                class: type + '-checkbox',
-                id: param.name,
-                type: 'checkbox',
-                checked: initValue
-            }).data('param', param);
-            break;
-        case 'color':
-            initValue = urlParams[param.name] ? urlParams[param.name] : param.def;
-            $input = $('<div>').css({display: 'inline-block'})
-                .append($('<div>').addClass('colorSelector')
-                    .append($('<div>').css({opacity: 0.3, background: 'white'})))
-                .append($('<div>').addClass('colorHolder'));
-            param.cb(colorPicker.makeInspector($input, initValue));
-            break;
-        case 'text': {
-            const $innerInput = $('<input>').attr({
-                class: type + '-control-textbox form-control control-textbox',
-                id: param.name,
-                type: 'text'
-            }).data('param', param);
-
-            const $button = $('<button class="btn btn-default control-textbox-button">Set</button>');
-
-            const $wrappedInput = $('<div>').addClass('col-xs-8').addClass('inputWrapper')
-                .css('padding-left', '0px')
-                .append($innerInput);
-            const $wrappedButton = $('<div>').addClass('col-xs-4').addClass('buttonWrapper')
-                .css('padding-left', '0px')
-                .append($button);
-
-            $input = $('<div>').append($wrappedInput).append($wrappedButton);
-            break;
-        }
-        default:
-            console.warn('Ignoring param of unknown type', param);
-            $input = $('<div>').text('Unknown setting type' + param.type);
-    }
-
-    const $col = $('<div>').addClass('col-xs-8').append($input);
-    const $label = $('<label>').attr({
-        for: param.name,
-        class: 'control-label col-xs-4'
-    }).text(param.displayName);
-
-    return $('<div>')
-        .addClass('form-group')
-        .addClass(param.type === 'color' ? 'colorer' : param.type)
-        .append($label, $col);
-}
-
-
-function createControlHeader ($anchor, name) {
-    $('<div>')
-        .addClass('control-title').text(name)
-        .appendTo($anchor);
-}
-
-
-function createControls (socket, appState, urlParams) {
-    const getControlsCommand = new Command('Get layout controls', 'layout_controls', socket);
-    const rxControls = getControlsCommand.sendWithObservableResult(null)
-        .map((res) => {
-            if (res && res.success) {
-                debug('Received layout controls from server', res.controls);
-                return res.controls;
-            } else {
-                throw Error((res||{}).error || 'Cannot get layout_controls');
-            }
-        });
-
-    const $renderingItems = $('#renderingItems');
-    const $anchor = $renderingItems.children('.form-horizontal');
-
-    //start open offscreen for bootstrap insanity
-    $renderingItems.css({'left': '100%'}).toggleClass('open', true);
-
-    Rx.Observable.combineLatest(rxControls, appState.viewConfigChanges, (controls, viewConfig) => {
-        const parameters = viewConfig.parameters;
-        // TODO fix this so whitelisted urlParams can update viewConfig.parameters, and then those affect/init values.
-        _.extend(urlParams, parameters);
-
-        //workaround: https://github.com/nostalgiaz/bootstrap-switch/issues/446
-        setTimeout(() => {
-            $('#renderingItems').css({'left': '3.4em'}).toggleClass('open', false);
-        }, 2000);
-
-        //APPEARANCE
-        createControlHeader($anchor, 'Appearance');
-        _.each(encodingPerElementParams, (param) => {
-            $anchor.append(controlMaker(parameters, param, 'local'));
-        });
-
-        //LABELS
-        createControlHeader($anchor, 'Labels');
-        _.each(encodingForLabelParams, (param) => {
-            $anchor.append(controlMaker(parameters, param, 'local'));
-        });
-
-        //LAYOUT
-        _.each(controls, (la) => {
-            createControlHeader($anchor, la.name);
-            _.each(la.params, (param) => {
-                $anchor.append(controlMaker(parameters, param, 'layout'));
-            });
-        });
-
-        $('#renderingItems').find('[type=checkbox]').each(function () {
-            const $that = $(this);
-            const input = this;
-            $(input).bootstrapSwitch();
-            const param = $(input).data('param');
-            $(input).onAsObservable('switchChange.bootstrapSwitch').subscribe(
-                () => {
-                    if ($that.hasClass('layout-checkbox')) {
-                        setLayoutParameter(socket, param.algoName, param.name, input.checked, appState.settingsChanges);
-                    } else if ($that.hasClass('local-checkbox')) {
-                        setViewParameter(socket, param.name, input.checked, appState);
-                    }
-                },
-                util.makeErrorHandler('menu checkbox')
-            );
-        });
-
-
-        $('.menu-slider').each(function () {
-            const $that = $(this);
-            const $slider = $(this).bootstrapSlider({tooltip: 'hide'});
-            const param = $slider.data('param');
-
-            Rx.Observable.merge(
-                $slider.onAsObservable('slide'),
-                $slider.onAsObservable('slideStop')
-            ).distinctUntilChanged()
-            .auditTime(50)
-            .subscribe(
-                () => {
-                    if ($that.hasClass('layout-menu-slider')) {
-                        setLayoutParameter(socket, param.algoName,
-                                    param.name, Number($slider.val()), appState.settingsChanges);
-                    } else if ($that.hasClass('local-menu-slider')) {
-                        setViewParameter(socket, param.name, Number($slider.val()), appState);
-                    }
-                },
-                util.makeErrorHandler('menu slider')
-            );
-        });
-
-        $('.control-textbox-button').each(function () {
-            const input = this;
-
-            $(input).onAsObservable('click')
-                .do((evt) => {
-                    const $button = $(evt.target);
-                    const $input = $button.parent().siblings('.inputWrapper').first()
-                        .children('.control-textbox').first();
-                    const val = $input.val();
-                    const param = $input.data('param');
-
-                    if ($input.hasClass('layout-control-textbox')) {
-                        console.warn('Layout control textboxes are not supported yet.');
-                    } else if ($input.hasClass('local-control-textbox')) {
-                        setViewParameter(socket, param.name, val, appState);
-                    }
-
-                })
-                .subscribe(_.identity, util.makeErrorHandler('control text box'));
-        });
-
-
-    })
-    .subscribe(_.identity, util.makeErrorHandler('createControls'));
-}
-
-
-function setViewParameter(socket, name, pos, appState) {
-    const camera = appState.renderState.get('camera');
-    let val = pos;
-
-    function setUniform(key, value) {
-        const uniforms = appState.renderState.get('uniforms');
-        _.each(uniforms, (map) => {
-            if (key in map) {
-                map[key] = value;
-            }
-        });
-    }
-
-    switch (name) {
-        case 'pointScaling':
-            val = PointSizeScale.invert(pos);
-            camera.setPointScaling(val);
-            break;
-        case 'edgeScaling':
-            val = EdgeSizeScale.invert(pos);
-            camera.setEdgeScaling(val);
-            break;
-        case 'pointOpacity':
-            val = PercentScale.invert(pos);
-            setUniform(name, [val]);
-            break;
-        case 'edgeOpacity':
-            val = PercentScale.invert(pos);
-            setUniform(name, [val]);
-            break;
-        case 'labelTransparency': {
-            let opControl = $('#labelOpacity');
-            if (!opControl.length) {
-                opControl = $('<style>').appendTo($('body'));
-            }
-            val = PercentScale.invert(pos);
-            opControl.text('.graph-label { opacity: ' + val + '; }');
-            break;
-        }
-        case 'displayTimeZone':
-            contentFormatter.setTimeZone(val);
-            break;
-        case 'poiEnabled':
-            appState.poiIsEnabled.onNext(val);
-            break;
-        case 'labelsEnabled':
-            if (val) {
-                $('.graph-label-container').show();
-            } else {
-                $('.graph-label-container').hide();
-            }
-            break;
-    }
-
-    socket.emit('update_view_parameter', {name: name, value: val}, (response) => {
-        if (!response.success) {
-            throw Error('Update view parameter failed.');
-        }
-    });
-    appState.settingsChanges.onNext({name: name, value: pos});
-}
-
 
 function toggleButton ($panelButton, newEnableValue) {
     $panelButton.find('i').toggleClass('toggle-on', newEnableValue);
@@ -842,7 +409,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     const marquee = setupSelectionMarquee(appState, marqueeOn.toggleStatus);
     const brush = setupBrush(appState, turnOnBrush.toggleStatus);
-    const filtersPanel = new FiltersPanel(socket, appState.labelRequests, appState.settingsChanges, filtersOn.toggle);
+    const filtersPanel = new FiltersPanel(socket, appState.labelRequests, filtersOn.toggle);
     const exclusionsPanel = new ExclusionsPanel(socket, filtersPanel.control, appState.labelRequests, exclusionsOn.toggle);
     const filtersResponses = filtersPanel.control.filtersResponsesSubject;
     const histogramBrush = new HistogramBrush(socket, filtersPanel, readyForHistograms,
@@ -863,11 +430,6 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     setsPanel.setupSelectionInteraction(appState.activeSelection, appState.latestHighlightedObject);
 
     /*const timeExplorer = */new TimeExplorer(socket, $('#timeExplorer'), filtersPanel);
-
-    createControls(
-        socket,
-        appState,
-        urlParams);
 
     //tick stream until canceled/timed out (ends with finalCenter)
     const autoCentering =
@@ -909,12 +471,6 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     doneLoading
         .do(runButton.bind('', appState, socket, urlParams, isAutoCentering))
         .subscribe(_.identity, util.makeErrorHandler('layout button'));
-
-    appState.apiActions
-        .filter((e) => e.event === 'updateSetting')
-        .do((e) => {
-            setViewParameter(socket, e.setting, e.value, appState);
-        }).subscribe(_.identity, util.makeErrorHandler('updateSetting'));
 
     setupCameraApi(appState);
 }

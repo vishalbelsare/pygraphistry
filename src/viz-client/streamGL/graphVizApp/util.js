@@ -1,6 +1,6 @@
 'use strict';
 
-var Rx      = require('rxjs/Rx');
+var Rx      = require('@graphistry/rxjs');
 var _       = require('underscore');
 
 function makeErrorHandler(name) {

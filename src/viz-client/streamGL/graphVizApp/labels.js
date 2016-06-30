@@ -1,8 +1,11 @@
 'use strict';
 
+import Color from 'color';
+import { d3 as translate3d } from 'css3-translate';
+
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:labels');
 const $       = window.$;
-const Rx      = require('rxjs/Rx');
+const Rx      = require('@graphistry/rxjs');
               require('../rx-jquery-stub');
 const _       = require('underscore');
 
@@ -29,13 +32,13 @@ document.addEventListener('mousemove', (e) => {
     mousePosition.y = e.clientY || e.pageY;
 }, false);
 
-function setupLabelsAndCursor (appState, socket, urlParams, $eventTarget) {
+function setupLabelsAndCursor (appState, socket, urlParams, $eventTarget, labelsModel) {
     // Picks objects in priority based on order.
     const hitMapTextures = ['hitmap'];
     const latestHighlightedObject = setupLatestHighlightedObject(appState, $eventTarget, hitMapTextures);
 
     setupClickSelections(appState, $eventTarget);
-    setupLabels(appState, urlParams, $eventTarget, latestHighlightedObject);
+    setupLabels(appState, urlParams, $eventTarget, latestHighlightedObject, labelsModel);
     setupCursor(appState.renderState, appState.renderingScheduler, appState.isAnimatingOrSimulating,
             latestHighlightedObject, appState.activeSelection);
     setupClickDragInteractions(appState, socket, $eventTarget);
@@ -198,7 +201,7 @@ function setupClickSelections (appState, $eventTarget) {
 // move labels when new highlight or finish noisy rendering section
 // (or hide if off)
 // AppState * UrlParams * $DOM * Observable [ {dim: int, idx: int} ] * Observable DOM -> ()
-function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject) {
+function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject, labelsModel) {
 
     // TODO: Move this out of JS and into HTML.
     const $labelCont = $('<div>').addClass('graph-label-container');
@@ -209,28 +212,51 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
         return;
     }
 
-    appState.labelsAreEnabled.do((v) => {
-        $('html').toggleClass('labelsDisabled', !v);
-    }).subscribe(_.identity, util.makeErrorHandler('poi -> html status'));
+    const labelsUpdates = labelsModel.changes()
+        .switchMap(
+            (model) => model.get(
+                [['opacity', 'enabled', 'poiEnabled']],
+                [['background', 'foreground'], 'color']),
+            (model, { json }) => json
+        )
+        .scan(({$html, $sheet}, { opacity,
+                                  enabled, poiEnabled,
+                                  background, foreground }) => {
 
-    appState.cameraChanges.combineLatest(
-        appState.vboUpdates,
-        appState.isAnimating,
-        latestHighlightedObject,
-        appState.activeSelection,
-        appState.labelsAreEnabled,
-        appState.poiIsEnabled,
-        (camera, vboUpdates, isAnimating, highlighted, selection, labelsAreEnabled, poiIsEnabled) => ({
-            highlighted: highlighted,
-            selection: selection,
-            labelsAreEnabled: labelsAreEnabled,
-            poiIsEnabled: poiIsEnabled,
-            doneAnimating: !isAnimating
-        })
-    ).do((toShow) => {
-        renderLabels(appState, $labelCont, toShow.highlighted, toShow.selection, toShow.doneAnimating,
-            toShow.labelsAreEnabled, toShow.poiIsEnabled);
-    })
+            $html.toggleClass('labelsDisabled', !enabled);
+            $sheet.text(`
+                .graph-label {
+                    opacity: ${opacity};
+                }
+                .graph-label, .graph-label table {
+                    color: ${ new Color(foreground.color).rgbaString() };
+                }
+                .graph-label .graph-label-container  {
+                    background-color: ${new Color(background.color).rgbaString()};
+                }
+            `);
+
+            return {$html, $sheet, enabled, poiEnabled};
+        }, {
+            $html: $('html'),
+            $sheet: $('<style type="text/css">').appendTo('head')
+        });
+
+    Rx.Observable.combineLatest(
+        labelsUpdates, appState.cameraChanges,
+        appState.vboUpdates, appState.isAnimating,
+        latestHighlightedObject, appState.activeSelection,
+        ({ enabled: labelsAreEnabled, poiEnabled }, camera,
+            vboUpdates, isAnimating, highlighted, selection) => ({
+                doneAnimating: !isAnimating, highlighted,
+                selection, labelsAreEnabled, poiEnabled
+            })
+    )
+    .audit(() => Rx.Observable.of(1, Rx.Scheduler.animationFrame))
+    .do(({ selection, highlighted, doneAnimating, poiEnabled, labelsAreEnabled }) =>
+        renderLabels(appState, $labelCont, highlighted, selection,
+                     doneAnimating, labelsAreEnabled, poiEnabled)
+    )
     .subscribe(_.identity, util.makeErrorHandler('setuplabels'));
 }
 
@@ -409,8 +435,9 @@ function effectLabels(toClear, labels, newPos, highlighted, clicked, poi) {
         //
         // jQuery class methods aren't too slow, so we'll keep using for convenience.
         const rawElt = elt.elt[0];
-        rawElt.style.left = String(newPos[2*i]) + 'px';
-        rawElt.style.top = String(newPos[2*i + 1]) + 'px';
+        translate3d(rawElt, newPos[2*i], newPos[2*i + 1]);
+        // rawElt.style.left = String(newPos[2*i]) + 'px';
+        // rawElt.style.top = String(newPos[2*i + 1]) + 'px';
 
         elt.elt.removeClass('on');
         elt.elt.removeClass('clicked');

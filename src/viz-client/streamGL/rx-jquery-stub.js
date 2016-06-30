@@ -3,7 +3,7 @@
 'use strict';
 
 var $  = window.$;
-var Rx = require('rxjs/Rx');
+var Rx = require('@graphistry/rxjs');
 
 var proto = $.fn;
 

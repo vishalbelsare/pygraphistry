@@ -2,14 +2,15 @@
 
 // FIXME: Move this to graph-viz repo -- it shouldn't be a part of the core StreamGL library
 
+import Color from 'color';
+
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:vizApp');
 const $       = window.$;
 const _       = require('underscore');
-const Rx      = require('rxjs/Rx');
+const Rx      = require('@graphistry/rxjs');
               require('../rx-jquery-stub');
 
 const shortestPaths   = require('./shortestpaths.js');
-const colorPicker     = require('./colorpicker.js');
 const controls        = require('./controls.js');
 const canvas          = require('./canvas.js');
 const labels          = require('./labels.js');
@@ -23,13 +24,24 @@ const VizSlice        = require('./VizSlice.js');
 
 
 function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, apiActions,
-               workerParams, urlParams) {
+               workerParams, urlParams, rootModel, rootJSON) {
 
     debug('Initializing vizApp', 'URL params', urlParams);
 
     //////////////////////////////////////////////////////////////////////////
     // App State
     //////////////////////////////////////////////////////////////////////////
+
+    const openWorkbook = rootJSON.workbooks.open;
+    const { workbooks: { open: { views: {
+        current: currentView,
+        current: { scene: { hints: sceneHints }}
+    }}}} = rootJSON;
+
+    const hintsModel = rootModel.deref(sceneHints);
+    const labelsModel = rootModel.deref(currentView.labels);
+    const backgroundModel = rootModel.deref(currentView.background);
+    const currentViewModel = rootModel.deref(currentView);
 
     const labelRequests = new Rx.Subject();
     const poi = poiLib(socket, labelRequests);
@@ -42,8 +54,6 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
     const isAnimating = new Rx.ReplaySubject(1);
     isAnimating.onNext(false);
 
-    const settingsChanges = new Rx.ReplaySubject(1);
-    settingsChanges.onNext({});
     const activeSelection = new Rx.ReplaySubject(1);
     activeSelection.onNext(new VizSlice([]));
 
@@ -72,42 +82,9 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
 
     const latestHighlightedObject = new Rx.ReplaySubject(1);
 
-    const labelsAreEnabled = new Rx.ReplaySubject(1);
-    labelsAreEnabled.onNext(urlParams.hasOwnProperty('labels') ? urlParams.labels : true);
-    apiActions
-        .filter((msg) => msg && (msg.setting === 'labels'))
-        .do((msg) => {
-            labelsAreEnabled.onNext(msg.value);
-        }).subscribe(_.identity, util.makeErrorHandler('Error updating label enabling'));
-
-    const poiIsEnabled = new Rx.ReplaySubject(1);
-    poiIsEnabled.onNext(urlParams.hasOwnProperty('poi') ? urlParams.poi : true);
-    apiActions
-        .filter((msg) => msg && (msg.setting === 'poi'))
-        .do((msg) => {
-            poiIsEnabled.onNext(msg.value);
-        }).subscribe(_.identity, util.makeErrorHandler('renderPipeline error'));
-
     const viewConfigChanges = new Rx.ReplaySubject(1);
-    socket.emit('get_view_config', null, (response) => {
-        if (response.success) {
-            debug('Received view config from server', response.viewConfig);
-            viewConfigChanges.onNext(response.viewConfig);
-        } else {
-            throw Error('Failed to get viewConfig');
-        }
-    });
-    viewConfigChanges.do((viewConfig) => {
-        const parameters = viewConfig.parameters;
-        if (parameters !== undefined) {
-            if (parameters.poiEnabled !== undefined) {
-                poiIsEnabled.onNext(parameters.poiEnabled);
-            }
-            if (parameters.labelsEnabled !== undefined) {
-                labelsAreEnabled.onNext(parameters.labelsEnabled);
-            }
-        }
-    });
+
+    viewConfigChanges.next(currentView);
 
     const appState = {
         renderState: initialRenderState,
@@ -120,7 +97,6 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
         labelHover: labelHover,
         poi: poi,
         labelRequests: labelRequests,
-        settingsChanges: settingsChanges,
         marqueeOn: marqueeOn,
         marqueeActive: marqueeActive,
         marqueeDone: marqueeDone,
@@ -132,8 +108,6 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
         latestHighlightedObject: latestHighlightedObject,
         apiEvents: apiEvents,
         apiActions: apiActions,
-        poiIsEnabled: poiIsEnabled,
-        labelsAreEnabled: labelsAreEnabled,
         clickEvents: new Rx.ReplaySubject(0)
     };
 
@@ -142,8 +116,6 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
     //////////////////////////////////////////////////////////////////////////
 
     const $simCont   = $('.sim-container');
-    const $fgPicker  = $('#foregroundColor');
-    const $bgPicker  = $('#backgroundColor');
     const $spButton  = $('#shortestpath');
     const $toolbar   = $('#controlState');
 
@@ -151,6 +123,7 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
     // Setup
     //////////////////////////////////////////////////////////////////////////
 
+    const renderingScheduler =
     appState.renderingScheduler = new canvas.RenderingScheduler(appState.renderState,
                                                                 appState.vboUpdates,
                                                                 appState.vboVersions,
@@ -158,26 +131,25 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
                                                                 appState.isAnimating,
                                                                 appState.simulateOn,
                                                                 appState.activeSelection,
-                                                                socket);
+                                                                socket, hintsModel);
 
     canvas.setupCameraInteractions(appState, $simCont).subscribe(
         appState.cameraChanges,
         util.makeErrorHandler('cameraChanges')
     );
 
-    labels.setupLabelsAndCursor(appState, socket, urlParams, $simCont);
-    canvas.setupCameraInteractionRenderUpdates(appState.renderingScheduler, appState.cameraChanges,
-            appState.settingsChanges, appState.simulateOn);
+    labels.setupLabelsAndCursor(appState, socket, urlParams, $simCont, labelsModel);
+    canvas.setupCameraInteractionRenderUpdates(
+        appState.renderingScheduler,
+        appState.cameraChanges,
+        currentViewModel,
+        appState.simulateOn
+    );
 
     const highlighter = new Highighter(
         appState.latestHighlightedObject, appState.activeSelection, appState.renderingScheduler);
     highlighter.setupHighlight();
 
-    const backgroundColorObservable = colorPicker.backgroundColorObservable(initialRenderState, urlParams);
-    const foregroundColorObservable = colorPicker.foregroundColorObservable();
-    colorPicker.init($fgPicker, $bgPicker, foregroundColorObservable, backgroundColorObservable, socket, initialRenderState);
-    // TODO use colors.foregroundColor for the renderer/canvas!
-    canvas.setupBackgroundColor(appState.renderingScheduler, backgroundColorObservable);
     //TODO expose through cascade and provide to export
     if (urlParams['background-image']) {
         $simCont.css('background-image', 'url("' + urlParams['background-image'] + '")');
@@ -191,13 +163,29 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
 
     shortestPaths($spButton, poi, socket);
 
-    const doneLoading = vboUpdates.filter((update) => update === 'received')
+    const doneLoading = vboUpdates
+        .filter((update) => update === 'received')
         .take(1).do(ui.hideSpinnerShowBody).delay(100);
 
     controls.init(appState, socket, $toolbar, doneLoading, workerParams, urlParams);
+
     api.setupAPIHooks(socket, appState, doneLoading);
 
     Version(socket);
+
+    backgroundModel.changes()
+        .switchMap(
+            (model) => model.get('color'),
+            (model, { json }) => ({ model, json })
+        )
+        .map(({ json: { color }}) => [new Color(color).rgbaArray().map((x, i) =>
+            i === 3 ? x : x / 255
+        )])
+        .subscribe((bgColors) => {
+            renderingScheduler.renderState.get('options').clearColor = bgColors;
+            renderingScheduler
+                .renderScene('bgcolor', {trigger: 'renderSceneFast'});
+        });
 }
 
 

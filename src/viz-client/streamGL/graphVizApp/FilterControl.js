@@ -1,7 +1,7 @@
 'use strict';
 
 const _     = require('underscore');
-const Rx    = require('rxjs/Rx');
+const Rx    = require('@graphistry/rxjs');
 require('../rx-jquery-stub');
 const PEGUtil = require('pegjs-util');
 // const ASTY    = require('asty');

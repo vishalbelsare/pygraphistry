@@ -2,7 +2,7 @@
 
 const $               = window.$;
 const _               = require('underscore');
-const Rx              = require('rxjs/Rx');
+const Rx              = require('@graphistry/rxjs');
                       require('../rx-jquery-stub');
 const util            = require('./util.js');
 const Color           = require('color');

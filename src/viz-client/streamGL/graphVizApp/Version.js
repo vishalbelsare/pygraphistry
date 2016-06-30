@@ -13,7 +13,7 @@ var util    = require('./util.js');
 
 function Version (socket) {
 
-    console.info('Graphistry client', VERSION);
+    console.info(`Graphistry client ${__VERSION__}`);
 
     socket.emit('get_version', null, function (response) {
         if (response.success) {

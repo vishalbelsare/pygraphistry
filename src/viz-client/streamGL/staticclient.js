@@ -6,7 +6,7 @@
 
 const debug        = require('debug')('graphistry:StreamGL:staticclient');
 const $            = window.$;
-const Rx           = require('rxjs/Rx');
+const Rx           = require('@graphistry/rxjs');
                      require('./rx-jquery-stub');
 const _            = require('underscore');
 

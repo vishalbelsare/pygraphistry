@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:timeslider');
 var $       = window.$;
-var Rx      = require('rxjs/Rx');
+var Rx      = require('@graphistry/rxjs');
               require('../rx-jquery-stub');
 var FilterControl = require('./FilterControl.js');
 

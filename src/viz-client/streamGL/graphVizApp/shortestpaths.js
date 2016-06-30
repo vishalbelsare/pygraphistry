@@ -2,7 +2,7 @@
 
 var debug   = require('debug')('graphistry:StreamGL:shortestPaths');
 var $       = window.$;
-var Rx      = require('rxjs/Rx');
+var Rx      = require('@graphistry/rxjs');
               require('../rx-jquery-stub');
 
 //poi * labelDOM -> int U exn

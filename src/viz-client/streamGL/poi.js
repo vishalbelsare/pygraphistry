@@ -9,7 +9,7 @@
 const debug       = require('debug')('graphistry:StreamGL:poi');
 const _           = require('underscore');
 const $           = window.$;
-const Rx          = require('rxjs/Rx');
+const Rx          = require('@graphistry/rxjs');
                     require('./rx-jquery-stub');
 const Color       = require('color');
 

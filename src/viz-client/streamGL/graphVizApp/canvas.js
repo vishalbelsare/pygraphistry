@@ -2,8 +2,6 @@
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:canvas');
 var $       = window.$;
-var Rx      = require('rxjs/Rx');
-              require('../rx-jquery-stub');
 var _       = require('underscore');
 
 var interaction     = require('./interaction.js');
@@ -12,6 +10,9 @@ var renderer        = require('../renderer');
 var colorPicker     = require('./colorpicker.js');
 var VizSlice        = require('./VizSlice.js');
 
+require('../rx-jquery-stub');
+
+import { Observable, Subject } from '@graphistry/rxjs';
 
 function setupCameraInteractions(appState, $eventTarget) {
     var renderState = appState.renderState;
@@ -36,7 +37,7 @@ function setupCameraInteractions(appState, $eventTarget) {
 
     setupKeyInteractions(appState, $eventTarget);
 
-    return Rx.Observable.merge(
+    return Observable.merge(
         interactions,
         interaction.setupRotate($eventTarget, camera),
         interaction.setupCenter($('#center'),
@@ -60,35 +61,24 @@ function setupKeyInteractions(appState, $eventTarget) {
 
 }
 
-function setupCameraInteractionRenderUpdates(renderingScheduler, cameraStream, settingsChanges, simulateOn) {
+function setupCameraInteractionRenderUpdates(renderingScheduler, cameraStream, sceneModel, simulateOn) {
     const interactionRenderDelay = 200;
-    var timeOutFunction;
-
-    var renderFullIfNotSimulating = function () {
-        simulateOn.take(1).do(function (simulateIsOn) {
-            if (!simulateIsOn) {
-                renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFull'});
-                timeOutFunction = null;
-            }
-        }).subscribe(_.identity, util.makeErrorHandler('rendering full from camera interactions'));
-    };
-
-    var resetDelayedFullRender = function () {
-        // Clear previously set timeout if it exists
-        if (timeOutFunction) {
-            clearTimeout(timeOutFunction);
-        }
-
-        // Request new timeout
-        timeOutFunction = setTimeout(renderFullIfNotSimulating, interactionRenderDelay);
-    };
-
-    settingsChanges
-        .combineLatest(cameraStream, _.identity)
-        .do(function () {
-            resetDelayedFullRender();
-            renderingScheduler.renderScene('panzoom', {trigger: 'renderSceneFast'});
-        }).subscribe(_.identity, util.makeErrorHandler('render updates'));
+    return sceneModel.changes()
+        .combineLatest(cameraStream)
+        .do(() =>
+            renderingScheduler.renderScene('panzoom', {
+                trigger: 'renderSceneFast'
+            }),
+            util.makeErrorHandler('render updates')
+        )
+        .debounceTime(interactionRenderDelay)
+        .switchMapTo(simulateOn.take(1).filter((x) => !x))
+        .subscribe(() =>
+            renderingScheduler.renderScene('panzoom', {
+                trigger: 'renderSceneFull'
+            }),
+            util.makeErrorHandler('rendering full from camera interactions')
+        );
 }
 
 function setupBackgroundColor(renderingScheduler, bgColor) {
@@ -120,7 +110,7 @@ function getEdgeLabelPos (appState, edgeIndex) {
 
 
 function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates,
-                                  isAnimating, simulateOn, activeSelection, socket) {
+                                  isAnimating, simulateOn, activeSelection, socket, hintsModel) {
     var that = this;
     this.renderState = renderState;
     this.arrayBuffers = {};
@@ -128,15 +118,14 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
     this.lastMouseoverTask = undefined;
 
     var config = renderState.get('config').toJS();
-    this.attemptToAllocateBuffersOnHints(socket, config, renderState);
+    this.attemptToAllocateBuffersOnHints(config, renderState, hintsModel);
 
     /* Rendering queue */
-    var renderTasks = new Rx.Subject();
+    var renderTasks = new Subject();
     var renderQueue = {};
     var renderingPaused = true; // False when the animation loop is running.
 
-    var fullBufferNameList = renderer.getBufferNames(renderState.get('config').toJS())
-        .concat(
+    var fullBufferNameList = config.buffers.concat(
             //TODO move client-only into render.config dummies when more sane
             ['highlightedEdges', 'highlightedNodePositions', 'highlightedNodeSizes', 'highlightedNodeColors',
              'highlightedArrowStartPos', 'highlightedArrowEndPos', 'highlightedArrowNormalDir',
@@ -187,7 +176,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
     var hostBuffers = renderState.get('hostBuffers');
 
     // FIXME handle selection update buffers here.
-    Rx.Observable.combineLatest(hostBuffers.selectedPointIndexes, hostBuffers.selectedEdgeIndexes,
+    Observable.combineLatest(hostBuffers.selectedPointIndexes, hostBuffers.selectedEdgeIndexes,
         function (pointIndexes, edgeIndexes) {
             activeSelection.onNext(new VizSlice({point: pointIndexes, edge: edgeIndexes}));
         }).take(1).subscribe(_.identity, util.makeErrorHandler('Getting indexes of selections.'));
@@ -198,7 +187,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
     }).switchMap(function () {
 
         var bufUpdates = ['curPoints', 'logicalEdges', 'edgeColors', 'pointSizes', 'curMidPoints', 'edgeHeights', 'edgeSeqLens'].map(function (bufName) {
-            var bufUpdate = hostBuffers[bufName] || Rx.Observable.return();
+            var bufUpdate = hostBuffers[bufName] || Observable.return();
             return bufUpdate.do(function (data) {
                 that.appSnapshot.buffers[bufName] = data;
             });
@@ -266,7 +255,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
 
     // Setup resize handler, which tells renderer to resize textures
     // and the scheduler to rerun picking/populate textures. Split into fast/slow tasks
-    const resizes = Rx.Observable.fromEvent(window, 'resize').share();
+    const resizes = Observable.fromEvent(window, 'resize').share();
 
     resizes.debounceTime(100).delay(50)
         .do(() => {
@@ -429,49 +418,38 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
 }
 
 // Hook to preallocate memory when initial sizes are available.
-// We handle these by putting them into an Rx.subject and handling
+// We handle these by putting them into an subject and handling
 // each with a 1ms delay in between, to give the JS thread
 // some breathing room to handle other callbacks/repaints.
-RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (socket, config, renderState) {
-    var that = this;
-
-    socket.on('sizes_for_memory_allocation', function (numElements) {
-        _.extend(numElements, {
-            renderedSplits: config.numRenderedSplits
-        });
-        var allocationFunctions = that.allocateAllArrayBuffersFactory(config, numElements, renderState);
-
-        var largestModel = that.getLargestModelSize(config, numElements);
-        var maxElements = Math.max(_.max(_.values(numElements)), largestModel);
-        var activeIndices = renderState.get('activeIndices');
-        _.each(activeIndices, function (index) {
-            allocationFunctions.push(function () {
-                renderer.updateIndexBuffer.bind('', renderState, maxElements)(index);
-            });
-        });
-
-        var timeoutLength = 1;
-        var index = 0;
-        var process = function () {
-            // We've handled everything
-            if (index >= allocationFunctions.length) {
-                return;
-            }
-
-            // Do one big job, then increment
-            allocationFunctions[index]();
-            index++;
-
-            // Cede control to browser, then handle next element
-            setTimeout(process, timeoutLength);
-        };
-        process();
-
-    });
-
+RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (config, renderState, hintsModel) {
+    const timeoutLength = 1;
+    return hintsModel.changes()
+        .switchMap(
+            (model) => model.get(`['edges', 'points']`),
+            (model, { json: hints }) => hints
+        )
+        .switchMap(({ edges, points }) => {
+            const numElements = {
+                edges, points,
+                renderedSplits: config.numRenderedSplits
+            };
+            const allocationFunctions = this.allocateAllArrayBuffersFactory(config, numElements, renderState);
+            const largestModel = this.getLargestModelSize(config, numElements);
+            const maxElements = Math.max(_.max(_.values(numElements)), largestModel);
+            const activeIndices = renderState.get('activeIndices');
+            return Observable
+                .from(allocationFunctions.concat(activeIndices.map((index) =>
+                    renderer.updateIndexBuffer.bind('', renderState, maxElements, index)
+                )))
+                .concatMap((allocationFunction) => {
+                    // Do one big job, then increment
+                    allocationFunction();
+                    // Cede control to browser, then handle next element
+                    return Observable.timer(timeoutLength).take(1);
+                })
+        })
+        .subscribe();
 };
-
-
 
 //int * int * Int32Array * Float32Array -> {starts: Float32Array, ends: Float32Array}
 //Scatter: label each midEdge with containing edge's start/end pos (used for dynamic culling)

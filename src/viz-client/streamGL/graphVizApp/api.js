@@ -1,6 +1,6 @@
 'use strict';
 
-var Rx      = require('rxjs/Rx');
+var Rx      = require('@graphistry/rxjs');
               require('../rx-jquery-stub');
 const _       = require('underscore');
 
@@ -75,15 +75,15 @@ function setupAPIHooks (socket, appState, doneLoading) {
         });
     }).subscribe(_.identity, util.makeErrorHandler('API hook for activeSelection'));
 
-    appState.settingsChanges.do((setting) => {
-        _.each(event2subscribers.settingChanged, (subscriber) => {
-            postEvent(apiEvents, subscriber, {
-                event: 'settingChanged',
-                setting: setting.name,
-                value: setting.value
-            });
-        });
-    }).subscribe(_.identity, util.makeErrorHandler('API hook for settingsChanges'));
+    // appState.settingsChanges.do((setting) => {
+    //     _.each(event2subscribers.settingChanged, (subscriber) => {
+    //         postEvent(apiEvents, subscriber, {
+    //             event: 'settingChanged',
+    //             setting: setting.name,
+    //             value: setting.value
+    //         });
+    //     });
+    // }).subscribe(_.identity, util.makeErrorHandler('API hook for settingsChanges'));
 
     appState.simulateOn.do((bool) => {
         _.each(event2subscribers.simulating, (subscriber) => {

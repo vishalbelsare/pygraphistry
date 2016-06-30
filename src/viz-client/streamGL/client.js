@@ -7,7 +7,7 @@
 const urlModule    = require('url');
 const debug        = require('debug')('graphistry:StreamGL:client');
 const $            = window.$;
-const Rx           = require('rxjs/Rx');
+const Rx           = require('@graphistry/rxjs');
                      require('./rx-jquery-stub');
 const _            = require('underscore');
 const io           = require('socket.io-client');
@@ -347,7 +347,7 @@ function handleVboUpdates (socket, uri, renderState) {
 
                     debug('5a. got all VBO data', Date.now() - now, 'ms', bindings, thisStep);
                     //TODO may be able to move this early
-                    socket.emit('received_buffers');
+                    socket.emit('received_buffers', Date.now() - now);
 
                     try {
                         _.each(data.elements, (num, itemName) => {
