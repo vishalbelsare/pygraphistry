@@ -102,10 +102,6 @@ Observable
     .subscribe({
         next([ options, state ]) {
             // debugger;
-        },
-        error(error) {
-            // debugger;
-            console.error(error);
         }
     });
 

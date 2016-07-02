@@ -2,9 +2,9 @@ import { Router } from 'reaxtor';
 import { Observable } from '@graphistry/rxjs';
 import { falcorRoutes } from '../routes/falcor';
 
-export function getDataSourceFactory(services, routesSharedState) {
+export function getDataSourceFactory(services) {
 
-    const AppRouterBase = Router.createClass(falcorRoutes(services, routesSharedState));
+    const AppRouterBase = Router.createClass(falcorRoutes(services));
 
     class AppRouter extends AppRouterBase {
         constructor(options = {}) {
@@ -15,6 +15,13 @@ export function getDataSourceFactory(services, routesSharedState) {
                 }
             }
             this.routeUnhandledPathsTo({
+                get(paths) {
+                    console.log('unhandled paths:');
+                    console.log(paths
+                        .map((path) => JSON.stringify(path))
+                        .join('\n'));
+                    return Observable.empty();
+                },
                 set(jsonGraphEnv) {
                     return Observable.of(jsonGraphEnv);
                 }

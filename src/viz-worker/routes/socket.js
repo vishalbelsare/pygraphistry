@@ -1,3 +1,3 @@
-export function socketRoutes(services, routesSharedState) {
+export function socketRoutes(services) {
     return ([]);
 }

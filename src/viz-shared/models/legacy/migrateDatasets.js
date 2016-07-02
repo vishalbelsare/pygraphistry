@@ -1,12 +1,12 @@
-import { dataset as createDataset } from '../dataset';
+import { dataset as createDataset } from '../';
 
-export function migrateDatasets(workbook) {
+export function migrateDatasets(workbook, options) {
 
     if (workbook.datasets) {
         return workbook;
     }
 
-    const datasets = [];
+    const datasetsList = { length: 0 };
     const workbookDatasets = workbook.datasetReferences;
 
     for (const datasetId in workbookDatasets) {
@@ -15,13 +15,18 @@ export function migrateDatasets(workbook) {
             continue;
         }
 
-        datasets.push(createDataset({
+        datasetsList[datasetsList.length++] = createDataset({
             url: datasetId, name: datasetId,
             ... workbookDatasets[datasetId]
-        }, dataset.id));
+        }, dataset.id);
     }
 
-    workbook.datasets = datasets;
+    if (datasetsList.length === 0) {
+        datasetsList[datasetsList.length++] = createDataset(options);
+    }
+
+    workbook.datasets = datasetsList;
+
     delete workbook.datasetReferences;
 
     return workbook;

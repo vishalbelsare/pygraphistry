@@ -1,14 +1,15 @@
 import url from 'url';
-import { simpleflake } from 'simpleflakes';
 import { scenes } from './renderer';
+import { simpleflake } from 'simpleflakes';
 
 export function dataset(options, datasetId = simpleflake().toJSON()) {
 
+    const { bg } = options;
     options = {
         type: 'default', scene: 'default',
         mapper: 'default', device: 'default',
         vendor: 'default', controls: 'default',
-        id: datasetId, ... options
+        id: datasetId, backgroundColor: bg, ... options
     };
 
     if (!(options.scene in scenes)) {

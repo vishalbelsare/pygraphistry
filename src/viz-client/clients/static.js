@@ -1,9 +1,9 @@
-import { Model } from '../../falcor';
+import { Model } from '../falcor';
 import { SocketIO } from 'mock-socket';
 import { Observable, Scheduler } from '@graphistry/rxjs';
-import { handleVboUpdates } from '../../streamGL/staticclient';
-import { getDataSourceFactory } from '../../../viz-shared/middleware';
-import { loadConfig, loadViews, loadLabels, loadWorkbooks } from '../../services';
+import { handleVboUpdates } from '../streamGL/staticclient';
+import { getDataSourceFactory } from '../../viz-shared/middleware';
+import { loadConfig, loadViews, loadLabels, loadWorkbooks } from '../services';
 
 export function initialize(options, debug) {
 
@@ -12,8 +12,7 @@ export function initialize(options, debug) {
     const loadWorkbooksById = loadWorkbooks(workbooksById);
     const loadLabelsByIndexAndType = loadLabels(workbooksById);
 
-    const routesSharedState = {};
-    const services = {
+    const routeServices = {
         loadConfig,
         loadViewsById,
         loadWorkbooksById,
@@ -21,7 +20,7 @@ export function initialize(options, debug) {
     };
 
     const socket = new SocketIO();
-    const getDataSource = getDataSourceFactory(services, routesSharedState);
+    const getDataSource = getDataSourceFactory(routeServices);
 
     return Observable.of({
         ...options, handleVboUpdates, socket, model: new Model({

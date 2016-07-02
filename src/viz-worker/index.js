@@ -6,8 +6,8 @@ import { cache as Cache } from '@graphistry/common';
 import { reloadHot } from '../viz-shared/reloadHot';
 import removeExpressRoute from 'express-remove-route';
 import { logger as commonLogger } from '@graphistry/common';
-import { Observable, Subscription } from '@graphistry/rxjs';
-import { loadViews, loadLabels, loadWorkbooks } from './services';
+import { Observable, Subject, Subscription } from '@graphistry/rxjs';
+import { loadViews, loadLabels, loadVGraph, loadWorkbooks } from './services';
 
 const config = _config();
 const logger = commonLogger.createLogger('viz-worker:index.js');
@@ -17,15 +17,14 @@ export function vizWorker(app, server, sockets, caches) {
 
     const { requests } = server;
     const { vbos = {},
-            graphsById = {},
+            nBodiesById = {},
             workbooksById = {} } = caches;
 
-    const loadConfig = ({ config }) => Observable.of(config);
+    const loadConfig = () => Observable.of(config);
     const loadWorkbooksById = loadWorkbooks(workbooksById, config, s3Cache);
-    const loadViewsById = loadViews(workbooksById, graphsById, config, s3Cache);
-    const loadLabelsByIndexAndType = loadLabels(workbooksById, graphsById, config, s3Cache);
+    const loadViewsById = loadViews(workbooksById, nBodiesById, config, s3Cache);
+    const loadLabelsByIndexAndType = loadLabels(workbooksById, nBodiesById, config, s3Cache);
 
-    const routesSharedState = { config };
     const routeServices = {
         loadConfig,
         loadViewsById,
@@ -33,8 +32,8 @@ export function vizWorker(app, server, sockets, caches) {
         loadLabelsByIndexAndType
     };
 
-    const socketIORoutes = socketRoutes(routeServices, routesSharedState);
-    const expressAppRoutes = httpRoutes(routeServices, routesSharedState, reloadHot(module));
+    const socketIORoutes = socketRoutes(routeServices);
+    const expressAppRoutes = httpRoutes(routeServices, reloadHot(module));
 
     return Observable.using(onDispose, onSubscribe);
 
@@ -71,13 +70,12 @@ export function vizWorker(app, server, sockets, caches) {
 
         return requests.merge(sockets.map(enrichLogs).mergeMap(({ socket, metadata }) => {
             const vizServer = new VizServer(app, socket, vbos, metadata);
-            routesSharedState.server = vizServer;
             return Observable.using(
                 onSocketDispose(socket, vizServer),
                 onSocketSubscribe(socket, vizServer)
             );
         }))
-        .takeWhile((x) => x && x.type !== 'disconnect')
+        .takeWhile((x) => !x || (x && x.type !== 'disconnect'))
     }
 
     function onDispose() {
@@ -106,22 +104,31 @@ export function vizWorker(app, server, sockets, caches) {
                     const workbookIds = [workbookId];
 
                     return loadWorkbooksById({
-                        ...routesSharedState, workbookIds, options
+                        workbookIds, options
                     })
                     .mergeMap(({ workbook }) => {
                         const { value: viewRef } = workbook.views.current;
                         const viewIds = [viewRef[viewRef.length - 1]];
                         return loadViewsById({
-                            ...routesSharedState, workbookIds, viewIds, options
+                            workbookIds, viewIds, options
                         });
                     })
-                    .mergeMap(({ workbook, view }) => {
+                    .do(({ workbook, view }) => {
+                        const { nBody } = view;
+                        nBody.socket = socket;
+                        nBody.server = vizServer;
+                        logger.trace('assigned socket and viz-server to nBody');
+                    })
+                    .mergeMap(
+                        ({ workbook, view }) => loadVGraph(view.nBody, config, s3Cache),
+                        ({ workbook, view }, nBody) => ({ workbook, view, nBody })
+                    )
+                    .mergeMap(({ workbook, view, nBody }) => {
 
-                        const { scene, graph } = view;
-                        const { interactions, interactionsLoop } = graph;
+                        logger.trace('loaded nBody vGraph');
 
-                        graph.socket = socket;
-                        graph.server = vizServer;
+                        const { scene } = view;
+                        const { interactions, interactionsLoop } = nBody;
 
                         vizServer.animationStep = {
                             interact(x) {
@@ -133,11 +140,19 @@ export function vizWorker(app, server, sockets, caches) {
                         vizServer.workbookDoc.next(workbook);
                         vizServer.viewConfig.next(view);
                         vizServer.renderConfig.next(scene);
-                        vizServer.ticks.next(interactionsLoop);
 
-                        return vizServer.ticksMulti.take(1);
+                        return interactionsLoop;
                     })
-                    .do((graph) => vizServer.graph.next(graph))
+                    .multicast(() => new Subject(), (shared) => Observable.merge(
+                        shared.skip(1),
+                        shared.take(1).do((nBody) => {
+                            logger.trace('ticked graph');
+                            vizServer.graph.next(nBody);
+                        })
+                    ))
+                    .do((nBody) => {
+                        vizServer.ticksMulti.next(nBody);
+                    })
                     .ignoreElements();
                 })
             );

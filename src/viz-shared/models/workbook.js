@@ -15,10 +15,6 @@ export function workbook(dataset, workbookId = simpleflake().toJSON()) {
         },
         viewsById: {},
         contentName: '',
-        datasets: {
-            length: 1,
-            0: dataset,
-            current: dataset
-        }
+        datasets: { 0: dataset, length: 1 }
     };
 }

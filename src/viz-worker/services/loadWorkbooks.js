@@ -3,7 +3,7 @@ import path from 'path';
 import encodeS3URI from 'node-s3-url-encode';
 import { s3, cache as Cache } from '@graphistry/common';
 import { Observable, ReplaySubject } from '@graphistry/rxjs';
-import { migrateWorkbook, assignCurrentDataset } from '../../viz-shared/models/legacy';
+import { migrateWorkbook } from '../../viz-shared/models/legacy';
 import { dataset as createDataset,
          workbook as createWorkbook } from '../../viz-shared/models';
 
@@ -25,14 +25,11 @@ export function loadWorkbook(workbooksById, config, s3Cache = new Cache(config.L
             workbooksById[workbookId] : (
             workbooksById[workbookId] = Observable
                 .from(downloadWorkbook(workbookId, s3Cache, config))
-                .map((workbook) => migrateWorkbook(workbook))
-                .map((workbook) => assignCurrentDataset(workbook, options))
+                .map((workbook) => migrateWorkbook(workbook, options))
                 .catch(() => Observable
                     .of(createWorkbook(createDataset(options), workbookId)))
-                .concat(Observable.never())
                 .multicast(new ReplaySubject(1))
                 .refCount()
-                .take(1)
             );
     }
 }

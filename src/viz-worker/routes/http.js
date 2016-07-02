@@ -5,8 +5,8 @@ import { renderMiddleware } from '../middleware';
 import { getDataSourceFactory } from '../../viz-shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 
-export function httpRoutes(services, routesSharedState, modules) {
-    const getDataSource = getDataSourceFactory(services, routesSharedState);
+export function httpRoutes(services, modules) {
+    const getDataSource = getDataSourceFactory(services);
     return [{
         route: '/graph',
         use: express.static(path.resolve(), { fallthrough: true })

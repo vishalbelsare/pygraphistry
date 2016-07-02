@@ -1,6 +1,6 @@
 import SocketIO from 'socket.io-client';
-import { Model, RemoteDataSource } from '../../falcor';
-import { handleVboUpdates } from '../../streamGL/client';
+import { Model, RemoteDataSource } from '../falcor';
+import { handleVboUpdates } from '../streamGL/client';
 import { Observable, Scheduler } from '@graphistry/rxjs';
 
 export function initialize(options, debug) {

@@ -30,17 +30,18 @@ export function migrateViews(workbook) {
         }
 
         if (!view.id) {
-            view.id = simpleflake().toJSON()
+            view.id = simpleflake().toJSON();
         }
 
-        viewsById[view.id] = view;
+        // TODO: Migrate filters, exclusions, sets, parameters, legend, etc.
+        // viewsById[view.id] = view;
         viewsList[viewsList.length++] = $ref(`workbooksById['${workbook.id}'].viewsById['${view.id}']`);
     }
 
     if (!currentView) {
-        currentView = createView(workbook.id);
+        currentView = { id: simpleflake().toJSON() };
         currentViewIndex = viewsList.length;
-        viewsById[currentView.id] = currentView;
+        // viewsById[currentView.id] = currentView;
         viewsList[viewsList.length++] = $ref(`workbooksById['${workbook.id}'].viewsById['${currentView.id}']`);
     }
 
@@ -48,6 +49,8 @@ export function migrateViews(workbook) {
 
     workbook.views = viewsList;
     workbook.viewsById = viewsById;
+
+    delete workbook.currentView;
 
     return workbook;
 }

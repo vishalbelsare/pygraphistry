@@ -8,36 +8,47 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from '../support';
 
-export function views({ loadViewsById }, routesSharedState) {
+export function views({ loadViewsById }) {
 
-    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById, routesSharedState);
+    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById);
 
     return [{
         get: genericGetHandler,
         route: `workbooksById[{keys}]
                     .viewsById[{keys}]
-                    [{keys}]`
+                    [{keys}]`,
+        returns: `*`
+    }, {
+        get: genericGetHandler,
+        route: `workbooksById[{keys}]
+                    .viewsById[{keys}][
+                        'sets', 'panels', 'filters', 'settings'
+                    ][{integers}]`,
+        returns: `$ref('workbooksById[{workbookId}].viewsById[{viewId}][{listId}]')`
     }, {
         get: genericGetHandler,
         route: `workbooksById[{keys}]
                     .viewsById[{keys}][
                         'legend', 'background', 'foreground',
-                        'sets', 'panels', 'filters', 'settings',
                         'setsById', 'filtersById', 'settingsById'
-                    ][{keys}]`
+                    ][{keys}]`,
+        returns: `*`
     }, {
         get: genericGetHandler,
         route: `workbooksById[{keys}]
                     .viewsById[{keys}][
                         'legend', 'setsById',
                         'filtersById', 'settingsById'
-                    ][{keys}][{keys}]`
+                    ][{keys}][{keys}]`,
+        returns: `*`
     }, {
+        get: genericGetHandler,
         set: setViewColorsHandler,
         route: `workbooksById[{keys}]
                     .viewsById[{keys}]
                     ['background', 'foreground']
-                    .color`
+                    .color`,
+        returns: `Color<hsv>`
     }];
 
     function setViewColorsHandler(json) {
@@ -51,7 +62,7 @@ export function views({ loadViewsById }, routesSharedState) {
         .mergeMap(({ workbook, view }) => {
 
             const values = [];
-            const { graph, scene } = view;
+            const { nBody, scene } = view;
             const viewJSON = json
                 .workbooksById[workbook.id]
                 .viewsById[view.id];
@@ -72,12 +83,12 @@ export function views({ loadViewsById }, routesSharedState) {
                     scene.options.clearColor = [color.rgbaArray().map((x, i) =>
                         i === 3 ? x : x / 255
                     )];
-                } else if (graph) {
-                    graph.simulator.setColor({ rgb: {
+                } else if (nBody) {
+                    nBody.simulator.setColor({ rgb: {
                         r: color.red(), g: color.green(),
                         b: color.blue(), a: color.alpha()
                     }});
-                    graph.interactions.next({ play: true, layout: true });
+                    nBody.interactions.next({ play: true, layout: true });
                 }
             }
 

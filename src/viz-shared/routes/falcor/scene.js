@@ -7,9 +7,9 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from '../support';
 
-export function scene({ loadViewsById }, routesSharedState) {
+export function scene({ loadViewsById }) {
 
-    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById, routesSharedState);
+    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById);
 
     return [{
         get: genericGetHandler,
@@ -19,7 +19,8 @@ export function scene({ loadViewsById }, routesSharedState) {
                         'buffers', 'textures', 'targets', 'triggers',
                         'programs', 'uniforms', 'items', 'modes', 'models', 'render',
                         'arcHeight', 'numRenderedSplits', 'clientMidEdgeInterpolation'
-                    ]`
+                    ]`,
+        returns: `*`
     }, {
         get: genericGetHandler,
         route: `workbooksById[{keys}]
@@ -27,25 +28,29 @@ export function scene({ loadViewsById }, routesSharedState) {
                     .scene[
                         'hints', 'camera', 'server',
                         'options', 'settings', 'settingsById'
-                    ][{keys}]`
+                    ][{keys}]`,
+        returns: `*`
     }, {
         get: genericGetHandler,
         route: `workbooksById[{keys}]
                     .viewsById[{keys}]
                     .scene['camera', 'settingsById']
-                    [{keys}][{keys}]`
+                    [{keys}][{keys}]`,
+        returns: `*`
     }, {
         set: setCameraKeys1Handler,
         route: `workbooksById[{keys}]
                     .viewsById[{keys}]
                     .scene.camera
-                    [{keys}]`
+                    [{keys}]`,
+        returns: `*`
     }, {
         set: setCameraKeys2Handler,
         route: `workbooksById[{keys}]
                     .viewsById[{keys}]
                     .scene.camera
-                    [{keys}][{keys}]`
+                    [{keys}][{keys}]`,
+        returns: `*`
     }];
 
     function setCameraKeys1Handler(json) {
@@ -54,7 +59,7 @@ export function scene({ loadViewsById }, routesSharedState) {
         const { request: { query: options = {}}} = this;
 
         return loadViewsById({
-            ...routesSharedState, workbookIds, viewIds, options
+            workbookIds, viewIds, options
         })
         .mergeMap(({ workbook, view }) => {
 
@@ -86,7 +91,7 @@ export function scene({ loadViewsById }, routesSharedState) {
         const { request: { query: options = {}}} = this;
 
         return loadViewsById({
-            ...routesSharedState, workbookIds, viewIds, options
+            workbookIds, viewIds, options
         })
         .mergeMap(({ workbook, view }) => {
 

@@ -1,10 +1,9 @@
 import Color from 'color';
 import { simpleflake } from 'simpleflakes';
-import { ref as $ref } from 'falcor-json-graph';
+import { ref as $ref, atom as $atom } from 'falcor-json-graph';
 
-export function view(workbookId, graph, viewId = simpleflake().toJSON()) {
+export function view(workbookId, scene, options, viewId = simpleflake().toJSON()) {
 
-    const { scene = {} } = graph;
     const filterId = simpleflake().toJSON();
     const setIds = [ simpleflake().toJSON(),
                      simpleflake().toJSON(),
@@ -13,7 +12,10 @@ export function view(workbookId, graph, viewId = simpleflake().toJSON()) {
     return {
         id: viewId,
         scene: {
-            hints: { edges: 0, points: 0 },
+            hints: {
+                edges: $atom(undefined, { $expires: 1 }),
+                points: $atom(undefined, { $expires: 1})
+            },
             ...scene, camera: { ...scene.camera, ...{
                     edges: { scaling: 1, opacity: 1 },
                     points: { scaling: 1, opacity: 1 }
@@ -21,7 +23,7 @@ export function view(workbookId, graph, viewId = simpleflake().toJSON()) {
             }
         },
         title: '', pruneOrphans: false,
-        background: { color: getBackgroundColor(graph, scene) },
+        background: { color: getBackgroundColor(scene, options) },
         foreground: { color: new Color('#ffffff') },
         labels: {
             opacity: 1, enabled: true,
@@ -303,12 +305,12 @@ export function view(workbookId, graph, viewId = simpleflake().toJSON()) {
     };
 }
 
-function getBackgroundColor(graph, scene) {
+function getBackgroundColor(scene, requestOptions = {}) {
 
     const { options } = scene;
 
     if (options) {
-        let background = graph.backgroundColor;
+        let background = requestOptions.backgroundColor;
         if (typeof background !== 'undefined') {
             const { clearColor } = options;
             try {

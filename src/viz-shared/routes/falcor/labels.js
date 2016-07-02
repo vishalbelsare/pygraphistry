@@ -9,37 +9,41 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from '../support';
 
-export function labels({ loadViewsById, loadLabelsByIndexAndType }, routesSharedState) {
+export function labels({ loadViewsById, loadLabelsByIndexAndType }) {
 
-    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById, routesSharedState);
+    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById);
 
     return [{
         get: getLabelsByRangeAndTypeHandler,
         route: `workbooksById[{keys: workbookIds}]
                     .viewsById[{keys: viewIds}]
-                    .labels[{ranges: labelRanges}][
+                    .labels[{ranges}][
                         'edge', 'point'
-                    ]`
+                    ]`,
+        returns: `{ type, columns }`
     }, {
         get: genericGetHandler,
         set: setLabelKeysHandler,
         route: `workbooksById[{keys}]
                     .viewsById[{keys}]
-                    .labels[{keys}]`
+                    .labels[{keys}]`,
+        returns: `*`
     }, {
         get: genericGetHandler,
         set: setLabelColorsHandler,
         route: `workbooksById[{keys}]
                     .viewsById[{keys}]
                     .labels['background', 'foreground']
-                    .color`
+                    .color`,
+        returns: `Color<hsv>`
     }];
 
     function getLabelsByRangeAndTypeHandler(path) {
 
+        const { workbookIds, viewIds } = path;
         const labelTypes = [].concat(path[6]);
+        const labelRanges = [].concat(path[5]);
         const { request: { query: options = {}}} = this;
-        const { workbookIds, viewIds, labelRanges } = path;
 
         const labelIndexes = labelRanges.reduce((indexes, { from: index, to }) => {
             while (index <= to) {
@@ -49,7 +53,7 @@ export function labels({ loadViewsById, loadLabelsByIndexAndType }, routesShared
         }, []);
 
         return loadLabelsByIndexAndType({
-            ...routesSharedState, workbookIds, viewIds, labelTypes, labelIndexes, options
+            workbookIds, viewIds, labelTypes, labelIndexes, options
         })
         .map(({ workbook, view, label }) => {
             const { labels } = view;
@@ -72,7 +76,7 @@ export function labels({ loadViewsById, loadLabelsByIndexAndType }, routesShared
         const { request: { query: options = {}}} = this;
 
         return loadViewsById({
-            ...routesSharedState, workbookIds, viewIds, options
+            workbookIds, viewIds, options
         })
         .mergeMap(({ workbook, view }) => {
 
@@ -104,7 +108,7 @@ export function labels({ loadViewsById, loadLabelsByIndexAndType }, routesShared
         const { request: { query: options = {}}} = this;
 
         return loadViewsById({
-            ...routesSharedState, workbookIds, viewIds, options
+            workbookIds, viewIds, options
         })
         .mergeMap(({ workbook, view }) => {
 

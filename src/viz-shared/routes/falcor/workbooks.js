@@ -7,23 +7,35 @@ import {
 import { simpleflake } from 'simpleflakes';
 import { getHandler, captureErrorStacks } from '../support';
 
-export function workbooks({ loadWorkbooksById }, routesSharedState) {
+export function workbooks({ loadWorkbooksById }) {
 
-    const genericGetHandler = getHandler(['workbook'], loadWorkbooksById, routesSharedState);
+    const genericGetHandler = getHandler(['workbook'], loadWorkbooksById);
 
     return [{
         get: genericGetHandler,
         route: `workbooksById[{keys}]
-                    .views[{keys}]`
+                    .views['current']`,
+        returns: `ref('workbooksById[{workbookId}].views[{integer}]')`
+    }, {
+        get: genericGetHandler,
+        route: `workbooksById[{keys}]
+                    .views[{integers}]`,
+        returns: `ref('workbooksById[{workbookId}].viewsById[{viewId}]')`
+    }, {
+        get: genericGetHandler,
+        route: `workbooksById[{keys}]
+                    .views['length']`,
+        returns: `Number`
     }, {
         get: getOpenWorkbookReference,
-        route: `workbooks.open`
+        route: `workbooks.open`,
+        returns: `$ref('workbooksById[{workbookId}]')`
     }]
 
     function getOpenWorkbookReference(path) {
+
         const { request = {} } = this;
-        const { cookies = {}, query = {} } = request;
-        const options = { ...cookies, ...query };
+        const { query: options = {} } = request;
         const { workbook: workbookId = simpleflake().toJSON() } = options;
         const workbookIds = [workbookId];
 
@@ -32,7 +44,7 @@ export function workbooks({ loadWorkbooksById }, routesSharedState) {
         options.workbook = workbookId;
 
         return loadWorkbooksById({
-            ...routesSharedState, workbookIds, options
+            workbookIds, options
         })
         .map(({ workbook }) => $pathValue(
             `workbooks.open`, $ref(`workbooksById['${workbookId}']`)

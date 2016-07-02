@@ -247,13 +247,12 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
         appState.vboUpdates, appState.isAnimating,
         latestHighlightedObject, appState.activeSelection,
         ({ enabled: labelsAreEnabled, poiEnabled }, camera,
-            vboUpdates, isAnimating, highlighted, selection) => ({
+           vboUpdates, isAnimating, highlighted, selection) => ({
                 doneAnimating: !isAnimating, highlighted,
                 selection, labelsAreEnabled, poiEnabled
             })
     )
-    .audit(() => Rx.Observable.of(1, Rx.Scheduler.animationFrame))
-    .do(({ selection, highlighted, doneAnimating, poiEnabled, labelsAreEnabled }) =>
+    .switchMap(({ selection, highlighted, doneAnimating, poiEnabled, labelsAreEnabled }) =>
         renderLabels(appState, $labelCont, highlighted, selection,
                      doneAnimating, labelsAreEnabled, poiEnabled)
     )
@@ -272,15 +271,20 @@ function renderLabels(appState, $labelCont, highlighted, selected, doneAnimating
     const curPoints = appState.renderState.get('hostBuffers').curPoints;
     if (!curPoints) {
         console.warn('renderLabels called before curPoints available');
-        return;
+        return Rx.Observable.empty();
     }
 
-    curPoints.take(1)
-        .do((curPointsNow) => {
-            renderLabelsImmediate(appState, $labelCont, curPointsNow, highlighted, selected, doneAnimating,
-                labelsAreEnabled, poiIsEnabled);
-        })
-        .subscribe(_.identity, util.makeErrorHandler('renderLabels'));
+    return curPoints
+        .audit(() => Rx.Observable.of(1, Rx.Scheduler.animationFrame))
+        .take(1)
+        .do({
+            next(curPointsNow) {
+                debug('rendering labels');
+                renderLabelsImmediate(appState, $labelCont, curPointsNow, highlighted, selected, doneAnimating,
+                                      labelsAreEnabled, poiIsEnabled);
+            },
+            error: util.makeErrorHandler('renderLabels')
+        });
 }
 
 

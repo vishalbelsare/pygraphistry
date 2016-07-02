@@ -260,14 +260,14 @@ function delayObservableGenerator (delay, value, cb) {
 ///////////////////////////////////////////////////////////////////////////
 
 export function createInteractionsLoop({
-        dataset, /* socket, */ graph,
+        dataset, /* socket, */ nBody,
         //Observable {play: bool, layout: bool, ... cfg settings ...}
         //  play: animation stream
         //  layout: whether to actually call layout algorithms (e.g., don't for filtering)
         interactions
     }) {
 
-    const { globalControls: { simulationTime = 1 }} = graph;
+    const { globalControls: { simulationTime = 1 }} = nBody;
     const { Observable, Scheduler, Subscription, ReplaySubject } = Rx;
 
     const play = interactions.filter((x = { play: false }) => x && x.play);
@@ -292,7 +292,7 @@ export function createInteractionsLoop({
     return Observable
         .using(connectRenderTriggers, () => {
             logger.trace('LOADING DATASET');
-            return Observable.of(graph);
+            return Observable.of(nBody);
         })
         .expand(runInteractionLoop);
 
@@ -311,7 +311,7 @@ export function createInteractionsLoop({
         return rtConnection;
     }
 
-    function runInteractionLoop(graph) {
+    function runInteractionLoop(nBody) {
         return Observable.defer(() => {
                 perf.startTiming('tick_durationMS');
                 return renderTriggers;
@@ -319,14 +319,14 @@ export function createInteractionsLoop({
             .filter(({ play }) => play)
             .take(1)
             .mergeMap(
-                (x) => graph.updateSettings(x),
+                (x) => nBody.updateSettings(x),
                 (x) => x
             )
             .mergeMap(
-                (x) => graph.tick(x),
+                (x) => nBody.tick(x),
                 (x) => {
                     perf.endTiming('tick_durationMS');
-                    return graph;
+                    return nBody;
                 }
             )
             .subscribeOn(Scheduler.async);

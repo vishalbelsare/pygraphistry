@@ -9,22 +9,24 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from '../support';
 
-export function controls({ loadViewsById }, routesSharedState) {
+export function controls({ loadViewsById }) {
 
-    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById, routesSharedState);
+    const genericGetHandler = getHandler(['workbook', 'view'], loadViewsById);
 
     return [{
         get: genericGetHandler,
         route: `workbooksById[{keys}]
                     .viewsById[{keys}]
                     .settingsById[{keys}]
-                    .controls[{keys}]`
+                    .controls[{integers}]`,
+        returns: `$ref('workbooksById[{keys}].viewsById[{keys}].settingsById[{keys}].controlsById[{keys}]')`
     }, {
         get: genericGetHandler,
         route: `workbooksById[{keys}]
                     .viewsById[{keys}]
                     .settingsById[{keys}]
-                    .controlsById[{keys}]`
+                    .controlsById[{keys}]`,
+        returns: `*`
     }, {
         get: genericGetHandler,
         set: setViewControlKeysHandler,
@@ -39,14 +41,16 @@ export function controls({ loadViewsById }, routesSharedState) {
                     .viewsById[{keys}]
                     .scene
                     .settingsById[{keys}]
-                    .controls[{keys}]`
+                    .controls[{integers}]`,
+        returns: `$ref('workbooksById[{keys}].viewsById[{keys}].scene.settingsById[{keys}].controlsById[{keys}]')`
     }, {
         get: genericGetHandler,
         route: `workbooksById[{keys}]
                     .viewsById[{keys}]
                     .scene
                     .settingsById[{keys}]
-                    .controlsById[{keys}]`
+                    .controlsById[{keys}]`,
+        returns: `*`
     }, {
         get: genericGetHandler,
         set: setSceneControlKeysHandler,
@@ -55,14 +59,15 @@ export function controls({ loadViewsById }, routesSharedState) {
                     .scene
                     .settingsById[{keys}]
                     .controlsById
-                    [{keys}][{keys}]`
+                    [{keys}][{keys}]`,
+        returns: `*`
     }];
 
     function loadControls({
         workbookIds, viewIds, settingIds, controlIds, options
     }) {
         return loadViewsById({
-            ...routesSharedState, workbookIds, viewIds, options
+            workbookIds, viewIds, options
         })
         .mergeMap(
             ({ workbook, view }) => settingIds,
@@ -80,7 +85,7 @@ export function controls({ loadViewsById }, routesSharedState) {
         const { workbookIds, viewIds, settingIds, controlIds } = getIDsFromJSON(json);
 
         return loadControls({
-            ...routesSharedState, workbookIds, viewIds, settingIds, controlIds, options
+            workbookIds, viewIds, settingIds, controlIds, options
         })
         .mergeMap(({ workbook, view, settingId, controlId }) => {
 
@@ -121,7 +126,7 @@ export function controls({ loadViewsById }, routesSharedState) {
         const { workbookIds, viewIds, settingIds, controlIds } = getIDsFromJSON(json);
 
         return loadControls({
-            ...routesSharedState, workbookIds, viewIds, settingIds, controlIds, options
+            workbookIds, viewIds, settingIds, controlIds, options
         })
         .mergeMap(({ workbook, view, settingId, controlId }) => {
 
@@ -151,11 +156,11 @@ export function controls({ loadViewsById }, routesSharedState) {
                     $atom(control.value = controlJSON.value)
                 ));
 
-                const { graph } = view;
+                const { nBody } = view;
 
-                if (graph && graph.interactions) {
+                if (nBody && nBody.interactions) {
                     const { algoName } = control.props;
-                    graph.interactions.next({
+                    nBody.interactions.next({
                         play: true, layout: true, simControls: {
                             [algoName]: {
                                 [controlId]: control.value

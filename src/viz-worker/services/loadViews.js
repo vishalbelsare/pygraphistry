@@ -1,28 +1,31 @@
-import { cache as Cache } from '@graphistry/common';
-import { loadGraph } from './loadGraph';
-import { ref as $ref } from 'falcor-json-graph';
+import { loadNBody } from './loadNBody';
 import { loadWorkbooks } from './loadWorkbooks';
+import { cache as Cache } from '@graphistry/common';
 import { view as createView } from '../../viz-shared/models';
 import { Observable, ReplaySubject } from '@graphistry/rxjs';
 import { toClient as fromLayoutAlgorithms } from '../simulator/layout.config';
+import { ref as $ref,
+         atom as $atom } from 'falcor-json-graph';
 
-export function loadViews(workbooksById, graphsById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
-    const loadCurrentGraph = loadGraph(graphsById, config, s3Cache);
+export function loadViews(workbooksById, nBodiesById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
+
+    const loadDatasetNBody = loadNBody(nBodiesById, config, s3Cache);
     const loadWorkbooksById = loadWorkbooks(workbooksById, config, s3Cache);
+
     return function loadViewsById({ workbookIds, viewIds, options = {} }) {
         return loadWorkbooksById({
             workbookIds, options
         })
         .mergeMap(
-            ({ workbook }) => loadCurrentGraph({ workbook }),
-            ({ workbook }, graph) => ({ workbook, graph })
+            ({ workbook }) => loadDatasetNBody({ workbook, options }),
+            ({ workbook }, nBody) => ({ workbook, nBody })
         )
         .mergeMap(
-            ({ workbook, graph }) => viewIds,
-            ({ workbook, graph }, viewId) => ({
-                workbook, view: assignViewToWorkbook(workbook, assignGraphToView(
-                    workbook, graph, workbook.viewsById[viewId] || createView(
-                        workbook.id, graph, viewId
+            ({ workbook, nBody }) => viewIds,
+            ({ workbook, nBody }, viewId) => ({
+                workbook, view: assignViewToWorkbook(workbook, assignNBodyToView(
+                    workbook, nBody, workbook.viewsById[viewId] || createView(
+                        workbook.id, nBody.scene, options, viewId
                 )))
             })
         );
@@ -51,9 +54,9 @@ function assignViewToWorkbook(workbook, view) {
     return view;
 }
 
-function assignGraphToView(workbook, graph, view) {
+function assignNBodyToView(workbook, nBody, view) {
 
-    const { simulator, simulator: { dataframe }} = graph;
+    const { simulator, simulator: { dataframe }} = nBody;
     const { settings, settingsById } = toSettings(
         workbook.id, view.id, ... fromLayoutAlgorithms(
             simulator.controls.layoutAlgorithms
@@ -61,11 +64,17 @@ function assignGraphToView(workbook, graph, view) {
     );
 
     const MAX_SIZE_TO_ALLOCATE = 2000000;
+    const numEdges = dataframe.numEdges();
+    const numPoints = dataframe.numPoints();
 
-    view.graph = graph;
+    view.nBody = nBody;
     view.scene.hints = {
-        edges: Math.min(dataframe.numEdges(), MAX_SIZE_TO_ALLOCATE),
-        points: Math.min(dataframe.numPoints(), MAX_SIZE_TO_ALLOCATE)
+        edges: numEdges === undefined ?
+            $atom(undefined, { $expires: 1 }) :
+            Math.min(numEdges, MAX_SIZE_TO_ALLOCATE),
+        points: numPoints === undefined ?
+            $atom(undefined, { $expires: 1 }) :
+            Math.min(numPoints, MAX_SIZE_TO_ALLOCATE),
     };
 
     view.scene.settings = settings;

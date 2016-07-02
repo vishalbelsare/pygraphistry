@@ -15,10 +15,15 @@ import corsMiddleware from 'cors';
 import cookieParser from 'cookie-parser';
 import { nocache, allowCrossOrigin } from './middleware';
 
+import { docWorker } from '../doc-worker';
 import { etlWorker } from '../etl-worker';
 import { vizWorker } from '../viz-worker';
 
 const WORKERS = { etl: etlWorker, graph: vizWorker };
+
+if (__DEV__) {
+    WORKERS.doc = docWorker;
+}
 
 export const config = _config();
 export const logger = commonLogger.createLogger('viz-server:server');

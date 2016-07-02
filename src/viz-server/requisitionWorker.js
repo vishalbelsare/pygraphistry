@@ -53,7 +53,7 @@ export function requisitionWorker({
     return Observable
         .merge(claimThenIndexRequests, indexRequests)
         .scan(trackVizWorkerCaches, { caches: {} })
-        .switchMap(({ worker }) => worker.multicast(
+        .mergeMap(({ worker }) => worker.multicast(
             () => new Subject(), (worker) => Observable.merge(
                 worker.filter(({ type }) => type !== 'connection'),
                 worker.filter(({ type }) => type === 'connection')
@@ -62,22 +62,26 @@ export function requisitionWorker({
                     .distinctUntilChanged()
                     .do(logSocketHandshake)
                     .switchMap(mapSocketActivity)
-                    .mergeMap(({ isActive }) => {
-                        isLocked = isActive;
-                        if (isActive === false) {
-                            if (shouldExitOnDisconnect) {
-                                return Observable.concat(
-                                    Observable.of({ isActive }),
-                                    Observable.throw({ shouldExit: true, exitCode: 0 })
-                                );
-                            } else {
-                                latestClientId = simpleflake().toJSON();
-                                logger.info('Running locally, so not actually killing; setting setServing to false.');
-                            }
-                        }
-                        return Observable.of({ isActive });
-                    })
-        )));
+        )))
+        .mergeMap((event) => {
+            const { isActive } = (event || {});
+            if (isActive !== undefined) {
+                isLocked = isActive;
+                if (isActive === false) {
+                    if (shouldExitOnDisconnect) {
+                        return Observable.concat(
+                            Observable.of({ isActive }),
+                            Observable.throw({ shouldExit: true, exitCode: 0 })
+                        );
+                    } else {
+                        // latestClientId = simpleflake().toJSON();
+                        logger.info('Running locally, so not actually killing; setting setServing to false.');
+                    }
+                }
+            }
+            return Observable.of(event);
+        });
+
 
     function requestIsPathname(pathname) {
         return function requestIsPathname({ request }) {
@@ -173,11 +177,12 @@ export function requisitionWorker({
                     const { query: options = {} } = request;
                     socket.handshake.query = { ...options, ...query };
                     subscriber.next(socket);
+                    subscriber.complete();
                 } else {
                     logger.warn('Late claimant, notifying client of error');
                     socket.disconnect();
+                    subscriber.complete();
                 }
-                subscriber.complete();
             };
             socketServer.on('connection', handler);
             return () => {

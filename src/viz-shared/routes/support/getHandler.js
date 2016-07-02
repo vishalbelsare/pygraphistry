@@ -1,7 +1,7 @@
 import { mapObjectsToAtoms } from './mapObjectsToAtoms';
 import { captureErrorStacks } from './captureErrorStacks';
 
-export function getHandler(lists, loader, props) {
+export function getHandler(lists, loader, props = {}) {
     return function handler(path) {
 
         const { request = {} } = this;
