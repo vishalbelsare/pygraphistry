@@ -1,0 +1,10 @@
+.DS_Store
+node_modules
+config.json
+npm-debug.log
+tests.log
+build
+dist
+tmp
+www
+test_results
