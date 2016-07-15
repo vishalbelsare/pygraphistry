@@ -131,11 +131,14 @@ function insertRowCallRoute({ loadApp, calcTotals, insertRow }) {
         .mergeMap(({ app, row, index }) => {
             const { rows } = app;
             const { length } = rows;
+            app.urlIndex = (app.urlIndex + 1) % app.urls.length;
             const values = [
                 $pathValue(`total`, app.total),
                 $pathValue(`rows.length`, length),
-                $pathValue(`rows[${index}]`, rows[index])
+                $pathValue(`rows[${index}]`, rows[index]),
+                $pathValue(`urlIndex`, app.urlIndex),
             ];
+            $invalidation('urlIndex')
 
             if (index < length - 1) {
                 values.push($invalidation(`rows[${index + 1}..${length - 1}]`));

@@ -57,7 +57,6 @@ function setColumnValueCallRoute({ loadRowsById, calcTotals }) {
                 $pathValue(`total`, app.total),
                 $pathValue(`rowsById['${row.id}'].total`, row.total),
                 $pathValue(`rowsById['${row.id}'][${index}].value`, column.value),
-                $pathValue(`urlIndex`, 1),
             ])
             .map(mapObjectsToAtoms)
             .catch(captureErrorStacks);
