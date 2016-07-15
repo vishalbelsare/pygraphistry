@@ -1,0 +1,111 @@
+:root {
+    --app-font-size: 14px;
+    --row-font-size: 18px;
+    --scrollbar-width: 15px;
+}
+
+:global(body) {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+    font-size: var(--app-font-size);
+}
+
+.app {
+    display: block;
+    padding: 20px;
+}
+
+.frame {
+    width: 100%;
+    border: 1px solid black;
+    box-sizing: border-box;
+}
+
+
+.tcell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    & span {
+        padding: 3px;
+        display: inline-block;
+    }
+
+    & input[type=th] {
+
+        margin: 0;
+        padding: 5px;
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: inline-block;
+        vertical-align: middle;
+        box-sizing: border-box;
+        background: transparent;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        // font-size: var(--row-font-size);
+
+        &::-webkit-inner-spin-button,
+        &::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    }
+}
+
+tr {
+    display: block;
+
+    & i {
+        font-style: normal;
+        display: inline-block;
+    }
+
+    & .search:before {
+        right: 0;
+        position: relative;
+        font-awesome: search-plus;
+    }
+
+    & .splice:before {
+        right: 350%;
+        position: relative;
+        font-awesome: minus;
+    }
+
+    & .insert:before {
+        right: 175%;
+        position: relative;
+        font-awesome: plus;
+    }
+
+    & .splice, & .insert, & .search {
+        right: 5%;
+        display: none;
+        cursor: pointer;
+        position: absolute;
+        vertical-align: middle;
+    }
+
+    &:hover .splice, &:hover .insert, &:hover .search {
+        line-height: 200%;
+        display: inline-block;
+    }
+}
+
+td, th {
+    padding: 2px;
+    position: relative;
+    white-space: nowrap;
+    display: inline-block;
+    border: none;
+    margin-right: -1px;
+    border-right: 1px solid black;
+    // font-size: var(--row-font-size);
+
+    &:last-child {
+        border-right: none;
+    }
+}

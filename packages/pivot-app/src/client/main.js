@@ -1,25 +1,37 @@
+import 'rc-switch/assets/index.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+import ReactDOM from 'react-dom';
 import { decode } from 'querystring';
-import { Model, reaxtor } from 'reaxtor';
+import { Model } from '@graphistry/falcor';
 import { Observable, Scheduler } from 'rxjs';
 import { reloadHot } from '../shared/reloadHot';
 import DataSource from 'falcor-http-datasource';
-import { render as renderVDom } from './render';
+
+import { Provider } from 'react-redux';
+import { configureStore } from '../shared/store/configureStore';
 
 const useLocalStorage = __DEV__;
 const localStorageToken = 'pivots-app-cache';
 
 Observable
     .fromEvent(window, 'load', () => decode(window.location.search.substring(1)))
-    .switchMap(
-        (params) => reloadHot(module),
-        (params, { App }) => reaxtor(
-            App, getAppModel(), params
-        )
-    )
-    .switch()
-    .auditTime(0, Scheduler.animationFrame)
-    .scan(renderVDom, getAppDOMNode())
-    .subscribe();
+    .switchMap((params) => reloadHot(module))
+    .switchMap(({ App }) => {
+        const renderAsObservable = Observable.bindCallback(ReactDOM.render);
+        return renderAsObservable((
+            <Provider store={configureStore()}>
+                <App falcor={getAppModel()}/>
+            </Provider>
+        ), getAppDOMNode());
+    })
+    .subscribe({
+        next() {},
+        error(e) {
+            debugger;
+            console.error(e);
+        }
+    });
 
 function getAppDOMNode(appDomNode) {
     return appDomNode = (
@@ -35,14 +47,15 @@ function getAppDOMNode(appDomNode) {
 function getAppModel() {
     return window.appModel = new Model({
         cache: getAppCache(),
+        JSONWithHashCodes: true,
         scheduler: Scheduler.asap,
         source: new DataSource('/model.json'),
-        onChangesCompleted: function () {
-            useLocalStorage &&
-            localStorage && localStorage.setItem && localStorage.setItem(
-                localStorageToken, JSON.stringify(this.getCache())
-            );
-        }
+        // onChangesCompleted: function () {
+        //     useLocalStorage &&
+        //     localStorage && localStorage.setItem && localStorage.setItem(
+        //         localStorageToken, JSON.stringify(this.getCache())
+        //     );
+        // }
     });
 }
 
@@ -65,8 +78,6 @@ function getAppCache() {
     } else {
         appCache = {};
     }
-
-    console.log(appCache);
 
     return appCache;
 }

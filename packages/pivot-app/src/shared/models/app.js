@@ -3,17 +3,33 @@ import {
     atom as $atom,
     pathValue as $pathValue,
     pathInvalidation as $invalidation
-} from 'falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { simpleflake } from 'simpleflakes';
+import { investigation as createInvestigation } from '../models';
 
-export function app(cols = [], rows = [], id = simpleflake().toJSON()) {
+const cols = [
+    { name: 'Search' },
+    { name: 'Links' },
+    { name: 'Time'},
+];
+
+export function app(_investigations = [], id = simpleflake().toJSON()) {
+
+    const investigations = _investigations.map((cur, index) =>
+        createInvestigation(`Investigation: ${cur.name || index}`, cur)
+    );
+
+    const pivots = _investigations.reduce((prev, cur, index, array) => {
+        return [...prev, ...cur];
+    }, []);
+
     return {
 
+        id,
         title: 'Pivots',
-        url: '/graph.html',
+        url: 'http://www.graphistry.com/',
 
-        total: rows.reduce((total, row) => total + row.total, 0),
         /**
          *  cols: {
          *     total: 'Total', length: 3,
@@ -30,18 +46,38 @@ export function app(cols = [], rows = [], id = simpleflake().toJSON()) {
         },
 
         /**
-         *  rows: [
-         *     $ref(`rowsById['row-id-1']`) , ...
+         *  investigationsById: {
+         *    'investigations-id-1': {
+         *      ....
+         *    }, ...
+         *  }
+         */
+        investigationsById : investigations.reduce((investigations, investigation) => ({
+            ...investigations, [investigation.id]: investigation
+        }), {}),
+
+        /**
+         *  investigations: [
+         *     $ref(`investigationsById['investigation-id-1']`) , ...
          *  ]
          */
-        rows: rows.map((row, index) => (
-            $ref(`rowsById['${row.id}']`)
+        investigations: investigations.map((investigation, index) => (
+            $ref(`investigationsById['${investigation.id}']`)
         )),
 
         /**
-         *  rowsById: {
-         *    'row-id-1': {
-         *       id: 'row-id-1',
+         *  pivots: [
+         *     $ref(`pivotsById['row-id-1']`) , ...
+         *  ]
+         */
+
+        selectedInvestigation: $ref(`investigationsById['${investigations[0].id}']`),
+        //pivots: pivots,
+
+        /**
+         *  pivotsById: {
+         *    'pivot-id-1': {
+         *       id: 'pivot-id-1',
          *       total: 0, length: 3,
          *       0: { name: 'Column A', value: 0 },
          *       1: { name: 'Column B', value: 0 },
@@ -49,8 +85,8 @@ export function app(cols = [], rows = [], id = simpleflake().toJSON()) {
          *    }, ...
          *  }
          */
-        rowsById: rows.reduce((rows, row) => ({
-            ...rows, [row.id]: row
+        pivotsById: pivots.reduce((prev, cur, index, array) =>  ({
+            ...prev, [cur.id]: cur
         }), {})
     };
 }

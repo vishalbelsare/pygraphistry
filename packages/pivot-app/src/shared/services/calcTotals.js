@@ -7,7 +7,7 @@ export function calcTotals(input) {
     if (row) {
         row.total = Array
             .from(row)
-            .reduce((total, col) => total + col.value, 0);
+            .reduce((total, col) => 0, 0);
     }
 
     if (app) {
