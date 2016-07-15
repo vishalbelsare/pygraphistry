@@ -38,13 +38,18 @@ export class App extends Component {
 
 class GraphFrame extends Component {
     loadProps(model) {
-        return model.get(`['url', 'total']`);
+        return model.get(`['url', 'total', 'urls', 'urlIndex']`);
     }
-    render(model, { url, total }) {
+    render(model, { url, total, urls, urlIndex }) {
+        //return (
+            //<iframe
+                //src={`${url}?total=${total}`}
+                //class_={{ [graphFrameClassName]: true }}/>
+        //);
         return (
             <iframe
-                src={`${url}?total=${total}`}
-                class_={{ [graphFrameClassName]: true }}/>
+                src={`${urls[urlIndex]}`}
+                style='width:100%; height:500px; border:1px solid #DDD' />
         );
     }
-}
+} 

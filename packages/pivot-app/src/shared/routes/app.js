@@ -16,7 +16,7 @@ export function app({ loadApp, calcTotals, insertRow, spliceRow }) {
     return [{
         returns: `*`,
         get: appGetRoute,
-        route: `['id', 'url', 'title', 'total']`
+        route: `['id', 'url', 'title', 'total', 'urls', 'urlIndex']`
     }, {
         get: appGetRoute,
         returns: 'String',
