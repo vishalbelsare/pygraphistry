@@ -59,7 +59,6 @@ const rows = Array.from({ length: 7 }, (x, index) => (
 
 const app = createApp(cols, rows);
 
-console.log('select Pivot', selectPivot);
 
 const routeServices = {
     loadApp: loadApp(app),

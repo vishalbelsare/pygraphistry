@@ -161,8 +161,6 @@ function selectPivotCallRoute({ loadApp, calcTotals, insertRow, selectPivot }) {
             (app) => selectPivot({ app, id }),
         )
         .mergeMap(({ app, index }) => {
-            console.log("App url index", app.urlIndex);
-            console.log("Index", index);
             const { rows } = app;
             const { length } = rows;
             const values = [

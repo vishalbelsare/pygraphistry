@@ -4,7 +4,6 @@ import { row as createRow } from '../models';
 
 export function selectPivot({ app, id }) {
 
-    console.log("In Select pivot");
     const { rows, rowsById } = app;
     const index = id === undefined ?
         rows.length :
