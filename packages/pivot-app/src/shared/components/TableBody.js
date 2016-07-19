@@ -14,8 +14,10 @@ export class TableBody extends Container {
     createChild(props) {
         return new TableRow({
             ...props, field: 'value',
+            onSelectPivot: this.dispatch('select-pivot'),
             onInsertRow: this.dispatch('insert-row'),
-            onSpliceRow: this.dispatch('splice-row')
+            onSpliceRow: this.dispatch('splice-row'),
+            type:'th'
         });
     }
     loadState(model, props) {
@@ -27,7 +29,11 @@ export class TableBody extends Container {
             model.call('splice', [id])
         ));
 
-        return inserts.merge(splices).ignoreElements();
+        const selections = this.listen('select-pivot').switchMap((id) => (
+            model.call('selectPivot', [id])
+        ));
+
+        return inserts.merge(splices).merge(selections).ignoreElements();
     }
     render(model, state, ...rows) {
         return (

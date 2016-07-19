@@ -2,7 +2,7 @@ import { Container } from 'reaxtor';
 import { TableCell } from './TableCell';
 import { tcell as tableCellClassName,
          splice as spliceIconClassName,
-         insert as insertIconClassName } from './styles.css';
+         search as searchIconClassName } from './styles.css';
 
 export class TableRow extends Container {
     loadProps(model) {
@@ -33,7 +33,7 @@ export class TableRow extends Container {
         const tableCellVDoms = cellVDoms.concat(
                 <div class_={{ [tableCellClassName]: true }}>
                     <i on-click={[this.onSpliceRow, id]} class_={{ [spliceIconClassName]: true }}/>
-                    <i on-click={[this.onInsertRow, id]} class_={{ [insertIconClassName]: true }}/>
+                    <i on-click={[this.onSelectPivot, id]} class_={{ [searchIconClassName]: true }}/>
                 </div>
             )
             .map(createTableCell);

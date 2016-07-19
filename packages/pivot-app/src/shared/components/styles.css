@@ -63,6 +63,12 @@
             font-style: normal;
         }
 
+        & .search:before {
+            right: 0;
+            position: relative;
+            font-awesome: search-plus;
+        }
+
         & .splice:before {
             right: 125%;
             position: relative;
@@ -75,7 +81,7 @@
             font-awesome: plus;
         }
 
-        & .splice, & .insert {
+        & .splice, & .insert, & .search {
             right: 5%;
             display: none;
             cursor: pointer;
@@ -83,7 +89,7 @@
             vertical-align: middle;
         }
 
-        &:hover .splice, &:hover .insert {
+        &:hover .splice, &:hover .insert, &:hover .search {
             display: inline-block;
         }
     }

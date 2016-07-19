@@ -9,7 +9,7 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from './support';
 
-export function app({ loadApp, calcTotals, insertRow, spliceRow }) {
+export function app({ loadApp, calcTotals, insertRow, spliceRow, selectPivot }) {
 
     const appGetRoute = getHandler([], loadApp);
 
@@ -35,10 +35,13 @@ export function app({ loadApp, calcTotals, insertRow, spliceRow }) {
         returns: `$ref('rowsById[{ rowId }]')`
     }, {
         route: `rows.insert`,
-        call: insertRowCallRoute({ loadApp, calcTotals, insertRow })
+        call: insertRowCallRoute({ loadApp, calcTotals, insertRow, selectPivot })
     }, {
         route: `rows.splice`,
-        call: spliceRowCallRoute({ loadApp, calcTotals, spliceRow })
+        call: spliceRowCallRoute({ loadApp, calcTotals, spliceRow, selectPivot })
+    }, {
+        route: `rows.selectPivot`,
+        call: selectPivotCallRoute({ loadApp, calcTotals, spliceRow, selectPivot })
     }];
 }
 
@@ -132,6 +135,36 @@ function insertRowCallRoute({ loadApp, calcTotals, insertRow }) {
             const { rows } = app;
             const { length } = rows;
             app.urlIndex = (app.urlIndex + 1) % app.urls.length;
+            const values = [
+                $pathValue(`total`, app.total),
+                $pathValue(`rows.length`, length),
+                $pathValue(`rows[${index}]`, rows[index]),
+                $pathValue(`urlIndex`, app.urlIndex),
+            ];
+            $invalidation('urlIndex')
+
+            if (index < length - 1) {
+                values.push($invalidation(`rows[${index + 1}..${length - 1}]`));
+            }
+
+            return values;
+        })
+        .map(mapObjectsToAtoms)
+        .catch(captureErrorStacks);
+    }
+}
+
+function selectPivotCallRoute({ loadApp, calcTotals, insertRow, selectPivot }) {
+    return function selectPivotCall(path, args) {
+        const [id] = args;
+        return loadApp().mergeMap(
+            (app) => selectPivot({ app, id }),
+        )
+        .mergeMap(({ app, index }) => {
+            console.log("App url index", app.urlIndex);
+            console.log("Index", index);
+            const { rows } = app;
+            const { length } = rows;
             const values = [
                 $pathValue(`total`, app.total),
                 $pathValue(`rows.length`, length),

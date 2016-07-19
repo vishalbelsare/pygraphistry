@@ -18,6 +18,7 @@ export class Table extends Component {
             field: 'name', type: 'th',
             index: 0, depth: depth + 1,
             models: models.deref(`cols`),
+            onSelectPivot: tBody.dispatch('select-pivot'),
             onInsertRow: tBody.dispatch('insert-row'),
             onSpliceRow: tBody.dispatch('splice-row')
         });

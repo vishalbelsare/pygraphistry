@@ -7,23 +7,63 @@ import { getDataSourceFactory } from '../shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 
 import { app as createApp, row as createRow } from '../shared/models';
-import { loadApp, loadRows, insertRow, spliceRow, calcTotals } from '../shared/services';
+import { loadApp, loadRows, insertRow, spliceRow, calcTotals, selectPivot } from '../shared/services';
 
 const cols = [
-    { name: 'Column A' },
-    { name: 'Column B' },
-    { name: 'Column C' },
+    { name: 'Data source' },
+    { name: 'Condition' },
+    { name: 'Time'},
 ];
 
-const rows = Array.from({ length: 3 }, (x, index) => (
-    createRow(cols)
+const values = [
+    {
+    'Data source': 'FireEye',
+    'Condition': 'Really important events',
+    'Time': 'Game Time'
+    },
+    {
+    'Data source': 'Proxy Logs',
+    'Condition': 'Really important events',
+    'Time': 'Game Time'
+    },
+    {
+    'Data source': 'FireWall',
+    'Condition': 'Really important events',
+    'Time': 'Game Time'
+    },
+    {
+    'Data source': 'IDS',
+    'Condition': 'Really important events',
+    'Time': 'Game Time'
+    },
+    {
+    'Data source': 'DHCP',
+    'Condition': 'Really important events',
+    'Time': 'Game Time'
+    },
+    {
+    'Data source': 'Endpoint Protection',
+    'Condition': 'Really important events',
+    'Time': 'Game Time'
+    },
+    {
+    'Data source': 'FireEye',
+    'Condition': 'Really important events',
+    'Time': 'Game Time'
+    }
+]
+
+const rows = Array.from({ length: 7 }, (x, index) => (
+    createRow(cols, values[index])
 ));
 
 const app = createApp(cols, rows);
 
+console.log('select Pivot', selectPivot);
+
 const routeServices = {
     loadApp: loadApp(app),
-    insertRow, spliceRow, calcTotals,
+    insertRow, spliceRow, calcTotals, selectPivot,
     loadRowsById: loadRows(loadApp(app)),
 };
 
