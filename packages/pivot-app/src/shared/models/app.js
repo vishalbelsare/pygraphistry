@@ -21,7 +21,7 @@ export function app(cols = [], rows = [], id = simpleflake().toJSON()) {
         urlIndex: 0,
 
 
-        total: rows.reduce((total, row) => total + row.total, 0),
+        //total: rows.reduce((total, row) => total + row.total, 0),
         /**
          *  cols: {
          *     total: 'Total', length: 3,

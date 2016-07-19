@@ -22,17 +22,12 @@ export class Table extends Component {
             onSpliceRow: tBody.dispatch('splice-row')
         });
 
-        const tFoot = new TableFooter({
-            index: 2, depth: depth + 1,
-            models: models.pluck(0)
-        });
-
         return models.switchMapTo(
-            Observable.combineLatest(tHeadRow, tBody, tFoot),
+            Observable.combineLatest(tHeadRow, tBody),
             (componentInfo, childVDoms) => [...componentInfo, ...childVDoms]
         );
     }
-    render(model, state, tHeadRow, tBody, tFoot) {
+    render(model, state, tHeadRow, tBody) {
         return (
             <table class_={{ [tableClassName]: true }}
                    style_={{ border: 0, cellpadding: 0, cellspacing: 0 }}>
@@ -40,7 +35,6 @@ export class Table extends Component {
                     {tHeadRow}
                 </thead>
                 {tBody}
-                {tFoot}
             </table>
         );
     }

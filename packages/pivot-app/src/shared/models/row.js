@@ -11,7 +11,7 @@ export function row(cols, id = simpleflake().toJSON()) {
             .reduce((cols, col, index) => ({
                 ...cols,
                 [index]: col,
-                total: cols.total + col.value
+                //total: cols.total + col.value
             }), { length: cols.length, total: 0 })
     };
 }

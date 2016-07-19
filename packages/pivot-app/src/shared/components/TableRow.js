@@ -7,7 +7,7 @@ import { tcell as tableCellClassName,
 export class TableRow extends Container {
     loadProps(model) {
         return model.getItems(
-            () => `['id', 'total', 'length']`,
+            () => `['id', 'length']`,
             ({ json: { length }}) => !length ? [] : [
                 [{ length }, this.field]
             ]
@@ -19,7 +19,7 @@ export class TableRow extends Container {
             ...props, field: this.field, type: cellType
         });
     }
-    render(model, { id, total, length = 0 }, ...cellVDoms) {
+    render(model, { id, length = 0 }, ...cellVDoms) {
 
         const rowType = this.type || 'td';
         const cellWidth = Math.round(100 / (length + 1));
@@ -32,7 +32,6 @@ export class TableRow extends Container {
 
         const tableCellVDoms = cellVDoms.concat(
                 <div class_={{ [tableCellClassName]: true }}>
-                    <span>{total}</span>
                     <i on-click={[this.onSpliceRow, id]} class_={{ [spliceIconClassName]: true }}/>
                     <i on-click={[this.onInsertRow, id]} class_={{ [insertIconClassName]: true }}/>
                 </div>

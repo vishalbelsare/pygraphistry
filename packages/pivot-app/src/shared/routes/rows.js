@@ -52,10 +52,10 @@ function setColumnValueCallRoute({ loadRowsById, calcTotals }) {
                 column.value = value;
                 return { app, row, index, column };
             })
-            .mergeMap(calcTotals)
+            //.mergeMap(calcTotals)
             .mergeMap(({ app, row, index, column }) => [
                 $pathValue(`total`, app.total),
-                $pathValue(`rowsById['${row.id}'].total`, row.total),
+                //$pathValue(`rowsById['${row.id}'].total`, row.total),
                 $pathValue(`rowsById['${row.id}'][${index}].value`, column.value),
             ])
             .map(mapObjectsToAtoms)
