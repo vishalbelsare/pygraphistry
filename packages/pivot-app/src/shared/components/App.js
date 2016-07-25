@@ -41,14 +41,9 @@ class GraphFrame extends Component {
         return model.get(`['url', 'total', 'urls', 'urlIndex']`);
     }
     render(model, { url, total, urls, urlIndex }) {
-        //return (
-            //<iframe
-                //src={`${url}?total=${total}`}
-                //class_={{ [graphFrameClassName]: true }}/>
-        //);
         return (
             <iframe
-                src={`${urls[urlIndex]}`}
+                src={`${url}`}
                 style='width:100%; height:500px; border:1px solid #DDD' />
         );
     }

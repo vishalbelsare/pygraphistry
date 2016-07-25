@@ -168,8 +168,10 @@ function selectPivotCallRoute({ loadApp, calcTotals, insertRow, selectPivot }) {
                 $pathValue(`rows.length`, length),
                 $pathValue(`rows[${index}]`, rows[index]),
                 $pathValue(`urlIndex`, app.urlIndex),
+                $pathValue(`url`, app.url),
             ];
             $invalidation('urlIndex')
+            $invalidation('url')
 
             if (index < length - 1) {
                 values.push($invalidation(`rows[${index + 1}..${length - 1}]`));

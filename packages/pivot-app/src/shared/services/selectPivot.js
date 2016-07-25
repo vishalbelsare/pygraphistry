@@ -11,6 +11,7 @@ export function selectPivot({ app, id }) {
             ref[ref.length - 1] === id
         )) + 1;
     app.urlIndex = index - 1;
+    app.url = rowsById[id].url;
 
-    return Observable.of({ app, index });
+    return Observable.of({ app, index});
 }
