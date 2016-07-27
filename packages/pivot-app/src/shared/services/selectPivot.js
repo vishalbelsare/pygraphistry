@@ -1,8 +1,8 @@
 import { Observable } from 'rxjs';
 import { ref as $ref } from 'falcor-json-graph';
 import { row as createRow } from '../models';
-var pivotToSplunk =  require('../pivotToSplunk.js');
-var searchSplunkObservable = require('../searchSplunkObservable.js');
+var pivotToSplunk =  require('./pivotToSplunk.js');
+var searchSplunk = require('./searchSplunk.js');
 
 
 export function selectPivot({ app, id }) {
@@ -25,7 +25,7 @@ export function selectPivot({ app, id }) {
     }
 
     var searchQuery = pivotToSplunk.pivotToSplunk(pivotDict);
-    return searchSplunkObservable.searchSplunk(searchQuery).map(
+    return searchSplunk.searchSplunk(searchQuery).map(
         function (output) {
             return {app, index}
        }
