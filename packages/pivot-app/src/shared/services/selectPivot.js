@@ -1,6 +1,9 @@
 import { Observable } from 'rxjs';
 import { ref as $ref } from 'falcor-json-graph';
 import { row as createRow } from '../models';
+var pivotToSplunk =  require('../pivotToSplunk.js');
+var searchSplunkObservable = require('../searchSplunkObservable.js');
+
 
 export function selectPivot({ app, id }) {
 
@@ -12,6 +15,19 @@ export function selectPivot({ app, id }) {
         )) + 1;
     app.urlIndex = index - 1;
     app.url = rowsById[id].url;
+    const row = rowsById[id];
 
-    return Observable.of({ app, index});
+    // TODO There's a much cleaner way to do this.
+    var pivotDict = {};
+    for(var i = 0; i < row.length; i++) { 
+        const name = row[i].name;
+        pivotDict[name] =  row[i].value;
+    }
+
+    var searchQuery = pivotToSplunk.pivotToSplunk(pivotDict);
+    return searchSplunkObservable.searchSplunk(searchQuery).map(
+        function (output) {
+            return {app, index}
+       }
+    );
 }
