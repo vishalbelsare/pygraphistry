@@ -3,7 +3,7 @@ import { simpleflake } from 'simpleflakes';
 var _ = require('underscore');
 
 function shapeSplunkResults(splunkResults, pivotDict) {
-    var destination = pivotDict['Data source'];
+    var destination = pivotDict['Search'];
     var connection = pivotDict['connectTo'];
     var nodeLabels = [];
 	return splunkResults.flatMap(

@@ -27,7 +27,9 @@ export function selectPivot({ app, id }) {
         var name = row[i].name;
         pivotDict[cell['name']] =  cell['value'];
     }
-    pivotDict['connectTo'] = 'src';
+    pivotDict['connectTo'] = pivotDict['Links'];
+    console.log("Pivit doct", pivotDict);
+    console.log("ConnectTo", pivotDict['connectTo']);
 
     var searchQuery = pivotToSplunk.pivotToSplunk(pivotDict);
 	var splunkResults = searchSplunk.searchSplunk(searchQuery);
