@@ -6,6 +6,7 @@ var searchSplunk = require('./searchSplunk.js');
 var shapeSplunkResults = require('./shapeSplunkResults.js');
 var uploadGraph = require('./uploadGraph.js');
 
+var graphistryVizUrl = 'https://labs.graphistry.com/graph/graph.html?type=vgraph'
 
 export function selectPivot({ app, id }) {
 
@@ -26,6 +27,7 @@ export function selectPivot({ app, id }) {
         var name = row[i].name;
         pivotDict[cell['name']] =  cell['value'];
     }
+    pivotDict['connectTo'] = 'src';
 
     var searchQuery = pivotToSplunk.pivotToSplunk(pivotDict);
 	var splunkResults = searchSplunk.searchSplunk(searchQuery);
@@ -33,8 +35,9 @@ export function selectPivot({ app, id }) {
     var vizUrl = uploadGraph.uploadGraph(shapedResults);
 
 	return vizUrl.map(
-		function (shapedResult) {
-            console.log("Succesfully uploaded viz");
+		function (url) {
+            console.log("Succesfully uploaded viz", url);
+            app.url = graphistryVizUrl + '&dataset=' + url;
 			return {app, index}
 		}
 	);

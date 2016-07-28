@@ -4,6 +4,8 @@ var _ = require('underscore');
 
 var request = require('request');
 
+var hostname = 'http://labs.graphistry.com/graph/'
+
 //jsonGraph * (err? -> ())? -> ()
 function upload (data, cb) {
     cb = cb || function (err, data) {
@@ -27,7 +29,6 @@ function upload (data, cb) {
                     console.log(body);
                     throw new Error(body)
                 }
-                console.log("Uploaded dataset succesfully");
                 return cb(undefined, body);
             } catch (e) {
                 return cb(e);
@@ -76,7 +77,9 @@ function uploadGraph(shapedData) {
         function(graph) {
             var uploadDone = Observable.bindNodeCallback(upload.bind(upload));
             var vizUrl = uploadDone(graph);
-            return vizUrl;
+            return vizUrl.map(
+                () => graph.name
+            )
         }
     )
 }
