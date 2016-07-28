@@ -4,7 +4,7 @@ var _ = require('underscore');
 
 function shapeSplunkResults(splunkResults, pivotDict) {
     var destination = pivotDict['Search'];
-    var connection = pivotDict['connectTo'];
+    var connections = pivotDict['connectTo'];
     var nodeLabels = [];
 	return splunkResults.flatMap(
 		(results) => splunkResults
@@ -12,14 +12,19 @@ function shapeSplunkResults(splunkResults, pivotDict) {
                 var edges = [];
                 for(let i = 0; i < result.length; i++) {
                     var eventId = simpleflake().toJSON();
-                    nodeLabels.push({"node": eventId});
-                    edges.push(Object.assign({}, result[i], {'destination': destination, 'source': eventId}))
-                    nodeLabels.push({"node": destination});
-                    if (results[i][connection]) {
-                        nodeLabels.push({"node": results[i][connection]});
-                        edges.push(Object.assign({}, result[i], {'destination': results[i][connection], 'source': eventId}))
+                    nodeLabels.push({"node": eventId, type:'eventId'});
+                    edges.push(Object.assign({}, result[i], {'destination': destination, 'source': eventId, edgeType: ('eventId -> Search')}))
+                    nodeLabels.push({"node": destination, type:'Search'});
+                    var connectionsArray = connections.split(',').map((connection) => connection.trim());
+                    for(let j = 0; j < connectionsArray.length; j++) {
+                        var connection = connectionsArray[j];
+                        if (results[i][connection]) {
+                            nodeLabels.push({"node": result[i][connection], type:connection});
+                            edges.push(Object.assign({}, result[i], {'destination': results[i][connection], 'source': eventId, edgeType: ('eventId' + '->' + connection)}))
+                        }
                     }
                 }
+                
                 return {
                     name: ("splunkUpload" + simpleflake().toJSON()),
                     type: "edgelist",

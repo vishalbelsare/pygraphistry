@@ -28,14 +28,10 @@ export function selectPivot({ app, id }) {
         pivotDict[cell['name']] =  cell['value'];
     }
     pivotDict['connectTo'] = pivotDict['Links'];
-    console.log("Pivit doct", pivotDict);
-    console.log("ConnectTo", pivotDict['connectTo']);
-
     var searchQuery = pivotToSplunk.pivotToSplunk(pivotDict);
 	var splunkResults = searchSplunk.searchSplunk(searchQuery);
 	var shapedResults = shapeSplunkResults.shapeSplunkResults(splunkResults, pivotDict);
     var vizUrl = uploadGraph.uploadGraph(shapedResults);
-
 	return vizUrl.map(
 		function (url) {
             console.log("Succesfully uploaded viz", url);

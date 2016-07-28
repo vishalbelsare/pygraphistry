@@ -1,6 +1,6 @@
 function pivotToSplunk(pivotDict) {
     var searchCriteria = pivotDict['Search'];
-    return "search " + searchCriteria + " | head 1000";
+    return "search " + searchCriteria + " | head 500";
 }
 
 module.exports = {
