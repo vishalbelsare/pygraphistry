@@ -16,7 +16,6 @@ function upload (data, cb) {
 	console.log("About to upload data", data.name);
     
     request.post({
-        uri: 'http://localhost:3000/etl',
         uri: 'http://labs.graphistry.com/etl',
         qs:   query,
         json: data,
@@ -25,6 +24,7 @@ function upload (data, cb) {
             if (err) { return cb(err); }
             try {
                 if (!body.success) {
+                    console.log(body);
                     throw new Error(body)
                 }
                 console.log("Uploaded dataset succesfully");
@@ -44,16 +44,12 @@ var query = {
 }
 
 var simpleGraph = {
-    //'key': 'd6a5bfd7b91465fa8dd121002dfc51b84148cd1f01d7a4c925685897ac26f40b',
-    //'agent': 'pygraphistry',
-    //'agentversion': '0.9.30',
-    //'apiversion': 1,
     "name": "myUniqueGraphNamePaden",
     "type": "edgelist",
     "bindings": {
         "sourceField": "src",
         "destinationField": "dst",
-        "idField": "node"
+        //"idField": "node"
     },
     "graph": [
       {"src": "myNode1", "dst": "myNode2",
@@ -75,9 +71,14 @@ var simpleGraph = {
 }
 
 function uploadGraph(shapedData) {
-	var uploadDone = Observable.bindNodeCallback(upload.bind(upload));
-	var vizUrl = uploadDone(simpleGraph);
-	return vizUrl;
+    
+    return shapedData.flatMap(
+        function(graph) {
+            var uploadDone = Observable.bindNodeCallback(upload.bind(upload));
+            var vizUrl = uploadDone(graph);
+            return vizUrl;
+        }
+    )
 }
 
 module.exports = {

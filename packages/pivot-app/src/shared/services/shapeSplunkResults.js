@@ -4,15 +4,29 @@ var _ = require('underscore');
 
 function shapeSplunkResults(splunkResults, pivotDict) {
     var destination = pivotDict['Data source'];
+    var nodeLabels = [];
 	return splunkResults.flatMap(
 		(results) => splunkResults
             .delay(1000)
             .map(function(result) {
-                var shapedResult = Array(2);
+                var edges = Array(2);
                 for(let i = 0; i < result.length; i++) {
-                    shapedResult[i] =  Object.assign({}, result[i], {'destination': destination, 'source': simpleflake().toJSON()})
+                    var eventId = simpleflake().toJSON();
+                    nodeLabels.push({"node": eventId});
+                    edges[i] =  Object.assign({}, result[i], {'destination': destination, 'source': eventId})
+                    nodeLabels.push({"node": destination});
                 }
-                return shapedResult;
+                return {
+                    name: ("splunkUpload" + simpleflake().toJSON()),
+                    type: "edgelist",
+                    graph: edges, 
+                    labels: nodeLabels,
+                    bindings: {
+                        "sourceField": "source",
+                        "destinationField": "destination",
+                        "idField": "node"
+                    }
+                };
             })
 	)
 }
