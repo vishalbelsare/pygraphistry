@@ -4,17 +4,21 @@ var _ = require('underscore');
 
 function shapeSplunkResults(splunkResults, pivotDict) {
     var destination = pivotDict['Data source'];
+    var connection = pivotDict['connectTo'];
     var nodeLabels = [];
 	return splunkResults.flatMap(
 		(results) => splunkResults
             .map(function(result) {
-                console.log("Result length", result.length);
-                var edges = Array(result.length);
+                var edges = [];
                 for(let i = 0; i < result.length; i++) {
                     var eventId = simpleflake().toJSON();
                     nodeLabels.push({"node": eventId});
-                    edges[i] =  Object.assign({}, result[i], {'destination': destination, 'source': eventId})
+                    edges.push(Object.assign({}, result[i], {'destination': destination, 'source': eventId}))
                     nodeLabels.push({"node": destination});
+                    if (results[i][connection]) {
+                        nodeLabels.push({"node": results[i][connection]});
+                        edges.push(Object.assign({}, result[i], {'destination': results[i][connection], 'source': eventId}))
+                    }
                 }
                 return {
                     name: ("splunkUpload" + simpleflake().toJSON()),
