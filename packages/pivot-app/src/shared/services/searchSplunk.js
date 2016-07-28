@@ -10,7 +10,6 @@ service.login(function(err, success) {
 });
 
 function searchSplunk(searchQuery, callback) {
-    // Search everything and return the first 100 results
 
     // Set the search parameters
     var searchParams = {
@@ -19,7 +18,7 @@ function searchSplunk(searchQuery, callback) {
     };
 
     // A blocking search returns the job's SID when the search is done
-    console.log("Wait for the search to finish...");
+    console.log("Wait for the search to finish...", searchQuery);
 
     // Run a blocking search and get back a job
     var output;
@@ -52,7 +51,7 @@ function searchSplunk(searchQuery, callback) {
                 function(results, job) {
                 return ({results, job});
             });
-            var jobResults = getResults({});
+            var jobResults = getResults({count: job.properties().resultCount});
             return jobResults;
         }
     ).map(

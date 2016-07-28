@@ -7,9 +7,9 @@ function shapeSplunkResults(splunkResults, pivotDict) {
     var nodeLabels = [];
 	return splunkResults.flatMap(
 		(results) => splunkResults
-            .delay(1000)
             .map(function(result) {
-                var edges = Array(2);
+                console.log("Result length", result.length);
+                var edges = Array(result.length);
                 for(let i = 0; i < result.length; i++) {
                     var eventId = simpleflake().toJSON();
                     nodeLabels.push({"node": eventId});
