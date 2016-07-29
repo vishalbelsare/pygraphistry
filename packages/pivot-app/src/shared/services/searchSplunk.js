@@ -1,7 +1,7 @@
 var splunkjs = require('splunk-sdk');
 import { Observable } from 'rxjs';
 
-var service = new splunkjs.Service({username: "admin", password: "changeme"});
+var service = new splunkjs.Service({host: 'splunk.graphistry.com', username: "admin", password: "graphtheplanet"});
 
 service.login(function(err, success) {
     if (err) {
