@@ -27,15 +27,8 @@ export function shapeSplunkResults(splunkResults, pivotDict) {
                 }
                 
                 return {
-                    name: ("splunkUpload" + simpleflake().toJSON()),
-                    type: "edgelist",
                     graph: edges, 
                     labels: nodeLabels,
-                    bindings: {
-                        "sourceField": "source",
-                        "destinationField": "destination",
-                        "idField": "node"
-                    }
                 };
             })
 	)

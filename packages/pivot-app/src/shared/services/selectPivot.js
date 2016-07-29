@@ -31,8 +31,10 @@ export function selectPivot({ app, id }) {
     } else {
         var searchQuery = pivotToSplunk(pivotDict);
         var splunkResults = searchSplunk(searchQuery);
-        var shapedResults = shapeSplunkResults(splunkResults, pivotDict);
-        var vizUrl = uploadGraph(shapedResults);
+        var shapedResults = shapeSplunkResults(splunkResults, pivotDict)
+        .do((results) => row.results = results);
+
+        var vizUrl = uploadGraph(shapedResults, app, index);
     }
 	return vizUrl.map(
 		function (url) {

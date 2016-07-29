@@ -71,14 +71,43 @@ var simpleGraph = {
     ]
 }
 
-export function uploadGraph(shapedData) {
+export function uploadGraph(shapedData, app) {
     
     return shapedData.flatMap(
         function(graph) {
+            var allResults = [];
+            var row;
+            const rowsById = app.rowsById;
+
+            var name = ("splunkUpload" + simpleflake().toJSON())
+            var type = "edgelist";
+            var bindings = {
+                        "sourceField": "source",
+                        "destinationField": "destination",
+                        "idField": "node"
+            }
+            var mergedPivots = {
+                graph:[],
+                labels: []
+            };
+            for(let id in rowsById) {
+                row = rowsById[id]; 
+                if (row.results) {
+                    mergedPivots.graph = [...mergedPivots.graph, ...row.results.graph]
+                    mergedPivots.labels = [...mergedPivots.labels, ...row.results.labels];
+                }
+            }
+            var uploadData = {
+                graph: mergedPivots.graph,
+                labels: mergedPivots.labels,
+                name, type, bindings
+            }
+
+            //console.log(app.rowsById.filter((row) => (row.results)));
             var uploadDone = Observable.bindNodeCallback(upload.bind(upload));
-            var vizUrl = uploadDone(graph);
+            var vizUrl = uploadDone(uploadData);
             return vizUrl.map(
-                () => graph.name
+                () => name
             )
         }
     )
