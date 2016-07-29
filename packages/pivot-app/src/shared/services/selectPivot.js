@@ -16,8 +16,6 @@ export function selectPivot({ app, id }) {
         rows.findIndex(({ value: ref }) => (
             ref[ref.length - 1] === id
         )) + 1;
-    app.urlIndex = index - 1;
-    app.url = rowsById[id].url;
     const row = rowsById[id];
 
     // TODO There's a much cleaner way to do this.
@@ -27,14 +25,19 @@ export function selectPivot({ app, id }) {
         var name = row[i].name;
         pivotDict[cell['name']] =  cell['value'];
     }
-    var searchQuery = pivotToSplunk(pivotDict);
-	var splunkResults = searchSplunk(searchQuery);
-	var shapedResults = shapeSplunkResults(splunkResults, pivotDict);
-    var vizUrl = uploadGraph(shapedResults);
+    if (row.url) {
+        app.url = row.url;
+        return Observable.of({app, index});
+    } else {
+        var searchQuery = pivotToSplunk(pivotDict);
+        var splunkResults = searchSplunk(searchQuery);
+        var shapedResults = shapeSplunkResults(splunkResults, pivotDict);
+        var vizUrl = uploadGraph(shapedResults);
+    }
 	return vizUrl.map(
 		function (url) {
             console.log("Succesfully uploaded viz", url);
-            app.url = graphistryVizUrl + '&dataset=' + url;
+            app.url = row.url = graphistryVizUrl + '&dataset=' + url;
 			return {app, index}
 		}
 	);
