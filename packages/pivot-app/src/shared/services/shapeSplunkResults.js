@@ -4,7 +4,7 @@ var _ = require('underscore');
 
 function shapeSplunkResults(splunkResults, pivotDict) {
     var destination = pivotDict['Search'];
-    var connections = pivotDict['connectTo'];
+    var connections = pivotDict['Links'];
     var nodeLabels = [];
 	return splunkResults.flatMap(
 		(results) => splunkResults
