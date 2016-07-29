@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs';
 import { ref as $ref } from 'falcor-json-graph';
 import { row as createRow } from '../models';
-var pivotToSplunk =  require('./pivotToSplunk.js');
-var searchSplunk = require('./searchSplunk.js');
-var shapeSplunkResults = require('./shapeSplunkResults.js');
-var uploadGraph = require('./uploadGraph.js');
+import { pivotToSplunk } from './pivotToSplunk.js';
+import { searchSplunk } from './searchSplunk.js';
+import { shapeSplunkResults} from './shapeSplunkResults.js';
+import { uploadGraph} from './uploadGraph.js';
 
 var graphistryVizUrl = 'https://labs.graphistry.com/graph/graph.html?type=vgraph'
 
@@ -27,10 +27,10 @@ export function selectPivot({ app, id }) {
         var name = row[i].name;
         pivotDict[cell['name']] =  cell['value'];
     }
-    var searchQuery = pivotToSplunk.pivotToSplunk(pivotDict);
-	var splunkResults = searchSplunk.searchSplunk(searchQuery);
-	var shapedResults = shapeSplunkResults.shapeSplunkResults(splunkResults, pivotDict);
-    var vizUrl = uploadGraph.uploadGraph(shapedResults);
+    var searchQuery = pivotToSplunk(pivotDict);
+	var splunkResults = searchSplunk(searchQuery);
+	var shapedResults = shapeSplunkResults(splunkResults, pivotDict);
+    var vizUrl = uploadGraph(shapedResults);
 	return vizUrl.map(
 		function (url) {
             console.log("Succesfully uploaded viz", url);

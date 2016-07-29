@@ -71,7 +71,7 @@ var simpleGraph = {
     ]
 }
 
-function uploadGraph(shapedData) {
+export function uploadGraph(shapedData) {
     
     return shapedData.flatMap(
         function(graph) {
@@ -82,8 +82,4 @@ function uploadGraph(shapedData) {
             )
         }
     )
-}
-
-module.exports = {
-    uploadGraph: uploadGraph
 }

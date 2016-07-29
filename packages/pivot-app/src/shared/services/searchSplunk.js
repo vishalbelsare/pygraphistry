@@ -9,7 +9,7 @@ service.login(function(err, success) {
     }
 });
 
-function searchSplunk(searchQuery, callback) {
+export function searchSplunk(searchQuery, callback) {
 
     // Set the search parameters
     var searchParams = {
@@ -74,6 +74,3 @@ function searchSplunk(searchQuery, callback) {
     )
 }
 
-module.exports = {
-    searchSplunk: searchSplunk
-}

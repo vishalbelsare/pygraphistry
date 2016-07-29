@@ -1,8 +1,9 @@
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
+var hash = require('object-hash');
 var _ = require('underscore');
 
-function shapeSplunkResults(splunkResults, pivotDict) {
+export function shapeSplunkResults(splunkResults, pivotDict) {
     var destination = pivotDict['Search'];
     var connections = pivotDict['Links'];
     var nodeLabels = [];
@@ -38,8 +39,4 @@ function shapeSplunkResults(splunkResults, pivotDict) {
                 };
             })
 	)
-}
-
-module.exports = {
-    shapeSplunkResults: shapeSplunkResults
 }
