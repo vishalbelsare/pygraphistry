@@ -25,7 +25,7 @@ export function selectPivot({ app, id }) {
         var name = row[i].name;
         pivotDict[cell['name']] =  cell['value'];
     }
-    if (row.url) {
+    if (false && row.url) {
         app.url = row.url;
         return Observable.of({app, index});
     } else {
