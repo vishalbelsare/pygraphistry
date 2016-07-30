@@ -64,9 +64,10 @@ function downloadS3(url, s3Cache, { S3, BUCKET }) {
             .get(url, new Date(LastModified)))
             .catch(() => loadDocument(params)
                 .mergeMap(
-                    ({ Body }) => s3Cache.put(url, Body)),
+                    ({ Body }) => s3Cache.put(url, Body),
                     ({ Body }) => Body
                 )
+            )
         )
         .catch(() => Observable.from(s3Cache.get(url, new Date(0))));
 }
