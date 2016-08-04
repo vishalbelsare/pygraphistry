@@ -58,6 +58,7 @@ function renderVDomToHTMLPage(model, vdom) {
     return (`<!DOCTYPE html>
 ${toHTML(<html lang='en-us'>
             <head>
+                <meta charset="utf-8"/>
                 <meta name="robots" content="noindex, nofollow"/>
                 <meta http-equiv='x-ua-compatible' content='ie=edge'/>
                 <meta name='viewport' content='width=device-width, initial-scale=1'/>

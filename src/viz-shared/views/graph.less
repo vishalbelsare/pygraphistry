@@ -2221,32 +2221,31 @@ html {
     user-select: text;
 }
 
-html.nologo .logo-container {
-    display: none;
-}
-.logo-container {
-
-    &.disabled {
-        display: none;
-    }
-
+.app-branding {
     position: absolute;
     right: 0.8em;
     bottom: 0.8em;
+
+    padding-top: 2em;
+    width: 11em;
+
+    color: rgba(255, 255, 255, 0.5);
+    text-align: right;
+
+    background-image: url("../../viz-worker/static/img/logo_white_horiz.svg");
+    background-size: contain;
+    background-position: top;
+    background-repeat: no-repeat;
+
     pointer-events: none;
+}
 
-    img {
-        height: 3em
-    }
+.app-branding > .version {
+    font-size: 0.9em;
+}
 
-    div {
-        pointer-events: all;
-        color: white;
-        text-align: right;
-        margin-top: -1em;
-        font-size: 0.9em;
-        opacity: 0.5;
-    }
+html.nologo .app-branding, .app-branding.disabled {
+    display: none;
 }
 
 // Animations

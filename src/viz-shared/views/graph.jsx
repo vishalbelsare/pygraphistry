@@ -4,7 +4,7 @@ export function render(props = {}) {
     const
       { release = {} } = props,
       { current = {} } = release,
-      { date: releaseDate = ''  } = current;
+      { date: releaseDate = "\u00a0" } = current;   // "\u00a0" is Unicode version of HTML '&nbsp;'
     return (
         <div key_="app" id={styles["app"] || "app"} class_={{ [styles["app"] || "app"]: true }}>
             <div class_={{ [styles["content"] || "content"]: true }}>
@@ -323,10 +323,7 @@ export function render(props = {}) {
                     <div style="position: relative; height: 40px; z-index: 1; width: 145px;">&nbsp;</div>
                 </div>
             </div>
-            <div class_={{ [styles["logo-container"] || "logo-container"]: true }}>
-                <img src="img/logo_white_horiz.png" />
-                <div class_={{ [styles["logo-version"] || "logo-version"]: true }}>{releaseDate}</div>
-            </div>
+            <div class_={{ [styles["app-branding"] || "app-branding"]: true }}><span class_={{ [styles["version"] || "version"]: true }}>{releaseDate}</span></div>
         </div>
     );
 }
