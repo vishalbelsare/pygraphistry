@@ -59,21 +59,26 @@ export class TableCell extends Component {
             }));
     }
     render(model, state) {
-        //console.log("State", state);
-        const { type, field } = this;
+        const { type, field, isHeader } = this;
         const { [field]: value, placeholder = value } = state;
-        return (
-            <div class_={{ [tableCellClassName]: true }}>
-                <input
-                    type={type} value={value}
-                    readonly={false}
-                    disabled={false}
-                    placeholder={placeholder}
-                    on-blur={this.dispatch('blur')}
-                    on-focus={this.dispatch('focus')}
-                    on-input={this.dispatch('input')}
-                    on-keydown={this.dispatch('keydown')}/>
-            </div>
-        );
+        if (isHeader) {
+            return (<span> 
+                    {value}
+            </span>)
+        } else {
+            return (
+                <div class_={{ [tableCellClassName]: true }}>
+                    <input
+                        type={type} value={value}
+                        readonly={false}
+                        disabled={false}
+                        placeholder={placeholder}
+                        on-blur={this.dispatch('blur')}
+                        on-focus={this.dispatch('focus')}
+                        on-input={this.dispatch('input')}
+                        on-keydown={this.dispatch('keydown')}/>
+                </div>
+            );
+        }
     }
 }

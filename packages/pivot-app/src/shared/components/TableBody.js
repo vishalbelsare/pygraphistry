@@ -17,7 +17,7 @@ export class TableBody extends Container {
             onSelectPivot: this.dispatch('select-pivot'),
             onInsertRow: this.dispatch('insert-row'),
             onSpliceRow: this.dispatch('splice-row'),
-            type:'th'
+            type:'td'
         });
     }
     loadState(model, props) {
