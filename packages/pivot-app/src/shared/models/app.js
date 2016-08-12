@@ -11,7 +11,7 @@ export function app(cols = [], rows = [], id = simpleflake().toJSON()) {
     return {
 
         title: 'Pivots',
-        url: 'http://staging.graphistry.com/graph/graph.html?dataset=PyGraphistry/DP3S3MNXTY&type=vgraph&viztoken=a37dd223ad09bf9f238f7b88fea91782cb46d7f9&usertag=45d0e486-pygraphistry-0.9.30&splashAfter=1468608756&info=true',
+        url: 'http://www.graphistry.com/',
 
         urlIndex: 0,
 
