@@ -25,23 +25,18 @@ export class TableCell extends Component {
             placeholder: props[field],
             target, [field]: props[field],
         }))
-        .do((val) => console.log('reset on blur', (val)));
 
         const clearOnFocus = focused.map(({ target }) => ({
             target, [field]: '',
             placeholder: props[field],
         }))
-        .do((val) => console.log("clear on Focus", val));
 
 
         const writeOnChange = entered
             .merge(changeBlur)
-            .do(val => console.log('Write on Change', val))
             .map(({ target }) => ({
                 target, value: target.value || target.placeholder
             }))
-            .do(val => console.log('Write on change 2', val))
-            .do(val => document.activeElement.blur())
             .switchMap(
                 ({ target, value }) => model
                     .call('setValue', [value])
