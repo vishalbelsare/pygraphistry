@@ -7,11 +7,19 @@ import { tcell as tableCellClassName,
 export class TableRow extends Container {
     loadProps(model) {
         return model.getItems(
-            () => `['id', 'length']`,
+            () => `['id', 'length', 'enabled']`,
             ({ json: { length }}) => !length ? [] : [
                 [{ length }, this.field]
             ]
         );
+    }
+
+    loadState(model, props) {
+        var togglePivot = this.listen('toggle');
+        return togglePivot
+            .switchMap((event) =>
+            model.call('togglePivot'))
+            .switchMapTo(this.loadProps(model))
     }
     createChild(props) {
         //const cellType = this.type === 'th' ? 'text' : 'number';
@@ -21,7 +29,7 @@ export class TableRow extends Container {
             ...props, field: this.field, type: cellType, isHeader: isHeader
         });
     }
-    render(model, { id, length = 0 }, ...cellVDoms) {
+    render(model, { id, length = 0, enabled}, ...cellVDoms) {
 
         const rowType = this.type || 'td';
         const cellWidth = Math.round(95 / (length + 1));
@@ -42,19 +50,22 @@ export class TableRow extends Container {
 
         return (rowType === 'th') ? (
             <tr>
-                <th style_={{ width: `2%` }}>
-                    &nbsp;
-                </th>
+                <th style_={{ width: `2%` }}> &nbsp; </th>
                 {tableCellVDoms}
             </tr>) 
             : (
             <tr>
                 <td style_={{ width: `2%` }}>
-                    <input type="checkbox" />
+                    <input 
+                        type="checkbox" 
+                        on-click={this.dispatch('toggle')}
+                        checked={enabled}/>
                 </td>
                 {tableCellVDoms}
             </tr>
             );
     }
 }
+
+
 

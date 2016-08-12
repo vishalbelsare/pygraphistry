@@ -92,7 +92,7 @@ export function uploadGraph(shapedData, app) {
             };
             for(let id in rowsById) {
                 row = rowsById[id]; 
-                if (row.results) {
+                if (row.results && row.enabled) {
                     mergedPivots.graph = [...mergedPivots.graph, ...row.results.graph]
                     mergedPivots.labels = [...mergedPivots.labels, ...row.results.labels];
                 }

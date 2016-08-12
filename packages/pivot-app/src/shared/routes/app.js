@@ -164,18 +164,10 @@ function selectPivotCallRoute({ loadApp, calcTotals, insertRow, selectPivot }) {
             const { rows } = app;
             const { length } = rows;
             const values = [
-                $pathValue(`total`, app.total),
-                $pathValue(`rows.length`, length),
-                $pathValue(`rows[${index}]`, rows[index]),
-                $pathValue(`urlIndex`, app.urlIndex),
-                $pathValue(`url`, app.url),
+                $pathValue(`rows[${index}].enabled`, rows[index].enabled),
+                //$pathValue(`rows[${index}]`, rows[index]),
+                $pathValue('url', app.url),
             ];
-            $invalidation('urlIndex')
-            $invalidation('url')
-
-            if (index < length - 1) {
-                values.push($invalidation(`rows[${index + 1}..${length - 1}]`));
-            }
 
             return values;
         })

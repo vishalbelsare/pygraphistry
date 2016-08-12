@@ -21,7 +21,7 @@ export function rows({ loadRowsById, calcTotals }) {
     }, {
         returns: `String`,
         get: getRowsHandler,
-        route: `rowsById[{keys}]['id', 'total']`
+        route: `rowsById[{keys}]['id', 'total', 'enabled']`
     }, {
         get: getRowsHandler,
         returns: 'String | Number',
@@ -30,7 +30,37 @@ export function rows({ loadRowsById, calcTotals }) {
         returns: `String`,
         call: setColumnValueCallRoute({ loadRowsById, calcTotals }),
         route: `rowsById[{keys}][{integers}].setValue`
+    },{
+        returns: `String`,
+        call: togglePivotCallRoute({loadRowsById}),
+        route: `rowsById[{keys}].togglePivot`
     }];
+}
+
+function togglePivotCallRoute({loadRowsById}) {
+    return function togglePivot(path, args) {
+        const rowIds = [].concat(path[1]);
+        const columnIndexes = [].concat(path[2]);
+
+        return loadRowsById({ rowIds })
+            .mergeMap(
+                ({ app, row }) => columnIndexes,
+                ({ app, row }, index) => ({
+                    app, row, index
+                })
+            )
+            .map(({ app, row, index }) => {
+                row.enabled = !row.enabled;
+                const enabled = row.enabled;
+                return { app, row, index, enabled};
+            })
+            .mergeMap(({ app, row, index, enabled }) => [
+                $pathValue(`rowsById['${row.id}'].enabled`, row.enabled),
+            ])
+            .map(mapObjectsToAtoms)
+            .catch(captureErrorStacks);
+    }
+
 }
 
 function setColumnValueCallRoute({ loadRowsById, calcTotals }) {

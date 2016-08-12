@@ -15,7 +15,7 @@ export function selectPivot({ app, id }) {
         rows.length :
         rows.findIndex(({ value: ref }) => (
             ref[ref.length - 1] === id
-        )) + 1;
+    ));
     const row = rowsById[id];
 
     // TODO There's a much cleaner way to do this.
@@ -29,6 +29,7 @@ export function selectPivot({ app, id }) {
         app.url = row.url;
         return Observable.of({app, index});
     } else {
+        row.enabled = true;
         var searchQuery = pivotToSplunk(pivotDict);
         var splunkResults = searchSplunk(searchQuery);
         var shapedResults = shapeSplunkResults(splunkResults, pivotDict)
