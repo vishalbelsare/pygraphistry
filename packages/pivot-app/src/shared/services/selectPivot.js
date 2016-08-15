@@ -38,13 +38,6 @@ export function selectPivot({ app, id }) {
             time: obj[2]
         }
     });            
-    const viewHash = hash(enabledPivots);
-    if (uploadCache[viewHash]) {
-        const url = uploadCache[viewHash];
-        app.url = row.url = graphistryVizUrl + '&dataset=' + url;
-        return Observable.of({app, index});
-
-    }
 
     // TODO There's a much cleaner way to do this.
     var pivotDict = {};
@@ -53,17 +46,18 @@ export function selectPivot({ app, id }) {
         var name = row[i].name;
         pivotDict[cell['name']] =  cell['value'];
     }
-    if (false && row.url) {
-        app.url = row.url;
-        return Observable.of({app, index});
+
+    var shapedResults;
+    if (row.results) {
+        shapedResults = Observable.of(row.results);
     } else {
         var searchQuery = pivotToSplunk(pivotDict);
         var splunkResults = searchSplunk(searchQuery);
         var shapedResults = shapeSplunkResults(splunkResults, pivotDict)
         .do((results) => row.results = results);
-
-        var vizUrl = uploadGraph(shapedResults, app);
     }
+
+    var vizUrl = uploadGraph(shapedResults, app);
 	return vizUrl.map(
 		function (url) {
             uploadCache[viewHash] = url;
