@@ -71,11 +71,15 @@ var simpleGraph = {
     ]
 }
 
+const previousGraph = {
+    graph: [],
+    labels: []
+};
+
 export function uploadGraph(shapedData, app) {
     
     return shapedData.flatMap(
         function(graph) {
-            var allResults = [];
             var row;
             const rowsById = app.rowsById;
 
@@ -102,6 +106,19 @@ export function uploadGraph(shapedData, app) {
                 labels: mergedPivots.labels,
                 name, type, bindings
             }
+
+           var newEdges = _.difference(uploadData.graph, previousGraph.graph);
+           var removedEdges = _.difference(previousGraph.graph, uploadData.graph);
+           var newNodes = _.difference(uploadData.labels, previousGraph.labels);
+           var removedNodes = _.difference(previousGraph.labels, uploadData.labels);
+           console.log("New Edges", newEdges.length);
+           console.log("Removed edges", removedEdges.length);
+           console.log("New nodes", newNodes.length);
+           console.log("Removed nodes", removedNodes.length);
+           previousGraph.graph = uploadData.graph;
+           previousGraph.labels = uploadData.labels;
+
+
 
             //console.log(app.rowsById.filter((row) => (row.results)));
             var uploadDone = Observable.bindNodeCallback(upload.bind(upload));
