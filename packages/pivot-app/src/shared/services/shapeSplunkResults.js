@@ -18,9 +18,9 @@ export function shapeSplunkResults(splunkResults, pivotDict) {
                 var connectionsArray = connections.split(',').map((connection) => connection.trim());
                 for(let j = 0; j < connectionsArray.length; j++) {
                     var connection = connectionsArray[j];
-                    if (results[i][connection]) {
+                    if (result[i][connection]) {
                         nodeLabels.push({"node": result[i][connection], type:connection});
-                        edges.push(Object.assign({}, result[i], {'destination': results[i][connection], 'source': eventId, edgeType: ('eventId' + '->' + connection)}))
+                        edges.push(Object.assign({}, result[i], {'destination': result[i][connection], 'source': eventId, edgeType: ('eventId' + '->' + connection)}))
                     }
                 }
             }
