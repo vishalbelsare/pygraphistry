@@ -11,13 +11,6 @@ var jsonfile = require('jsonfile')
 
 var graphistryVizUrl = 'https://labs.graphistry.com/graph/graph.html?type=vgraph'
 
-var uploadCacheFile = './investigation.json'
-var uploadCache = {};
-jsonfile.readFile(uploadCacheFile, function(err, obj) {
-	uploadCache = obj;
-})
-
-
 export function selectPivot({ app, id }) {
 
     const { rows, rowsById } = app;
@@ -52,7 +45,7 @@ export function selectPivot({ app, id }) {
         shapedResults = Observable.of(row.results);
     } else {
         var searchQuery = pivotToSplunk(pivotDict);
-        var splunkResults = searchSplunk(searchQuery);
+        var splunkResults = searchSplunk(searchQuery)
         var shapedResults = shapeSplunkResults(splunkResults, pivotDict)
         .do((results) => row.results = results);
     }
@@ -60,10 +53,7 @@ export function selectPivot({ app, id }) {
     var vizUrl = uploadGraph(shapedResults, app);
 	return vizUrl.map(
 		function (url) {
-            uploadCache[viewHash] = url;
-			jsonfile.writeFile(uploadCacheFile, uploadCache, function (err) {
-				console.error(err)
-			})
+            console.log("Done uploading graph");
             app.url = row.url = graphistryVizUrl + '&dataset=' + url;
 			return {app, index}
 		}
