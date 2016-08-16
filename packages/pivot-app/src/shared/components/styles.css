@@ -70,13 +70,13 @@
         }
 
         & .splice:before {
-            right: 125%;
+            right: 250%;
             position: relative;
             font-awesome: minus;
         }
 
         & .insert:before {
-            right: 0;
+            right: 125%;
             position: relative;
             font-awesome: plus;
         }

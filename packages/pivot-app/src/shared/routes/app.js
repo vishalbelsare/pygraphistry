@@ -134,7 +134,6 @@ function insertRowCallRoute({ loadApp, calcTotals, insertRow }) {
         .mergeMap(({ app, row, index }) => {
             const { rows } = app;
             const { length } = rows;
-            app.urlIndex = (app.urlIndex + 1) % app.urls.length;
             const values = [
                 $pathValue(`total`, app.total),
                 $pathValue(`rows.length`, length),

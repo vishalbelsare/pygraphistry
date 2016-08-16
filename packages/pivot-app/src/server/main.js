@@ -34,7 +34,7 @@ var query = `${Object.keys(queryOptions)
     .join(' ')
 }`
 
-const rows = Array.from({ length: 6 },
+const rows = Array.from({ length: 1 },
     function(x, index) {
         if (index == 0) {
             return createRow(cols, {
