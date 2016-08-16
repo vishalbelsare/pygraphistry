@@ -21,7 +21,7 @@ export function rows({ loadRowsById, calcTotals }) {
     }, {
         returns: `String`,
         get: getRowsHandler,
-        route: `rowsById[{keys}]['id', 'total', 'enabled']`
+        route: `rowsById[{keys}]['id', 'total', 'enabled', 'resultCount']`
     }, {
         get: getRowsHandler,
         returns: 'String | Number',

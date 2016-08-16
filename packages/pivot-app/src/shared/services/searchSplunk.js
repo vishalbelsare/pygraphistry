@@ -69,7 +69,7 @@ export function searchSplunk(searchQuery, callback) {
                 output[i][field] = value;
               }
             }
-            return output
+            return {output, resultCount: job.properties().resultCount};
         }
     )
 }

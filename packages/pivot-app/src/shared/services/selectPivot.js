@@ -44,6 +44,9 @@ export function selectPivot({ app, id }) {
 
     var searchQuery = pivotToSplunk(pivotDict);
     var splunkResults = searchSplunk(searchQuery)
+        .do(({resultCount}) => {
+            row.resultCount = resultCount})
+        .map(({output}) => output);
     var shapedResults = shapeSplunkResults(splunkResults, pivotDict)
         .do((results) => row.results = results);
 

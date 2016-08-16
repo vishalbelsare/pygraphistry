@@ -165,6 +165,7 @@ function selectPivotCallRoute({ loadApp, calcTotals, insertRow, selectPivot }) {
             const { length } = rows;
             const values = [
                 $pathValue(`rows[${index}].enabled`, rows[index].enabled),
+                $pathValue(`rows[${index}].resultCount`, rows[index].resultCount),
                 //$pathValue(`rows[${index}]`, rows[index]),
                 $pathValue('url', app.url),
             ];

@@ -7,7 +7,7 @@ import { tcell as tableCellClassName,
 export class TableRow extends Container {
     loadProps(model) {
         return model.getItems(
-            () => `['id', 'length', 'enabled']`,
+            () => `['id', 'length', 'enabled', 'resultCount']`,
             ({ json: { length }}) => !length ? [] : [
                 [{ length }, this.field]
             ]
@@ -29,7 +29,7 @@ export class TableRow extends Container {
             ...props, field: this.field, type: cellType, isHeader: isHeader
         });
     }
-    render(model, { id, length = 0, enabled}, ...cellVDoms) {
+    render(model, { id, length = 0, enabled, resultCount=0}, ...cellVDoms) {
 
         const rowType = this.type || 'td';
         const cellWidth = Math.round(95 / (length + 1));
@@ -42,6 +42,7 @@ export class TableRow extends Container {
 
         const tableCellVDoms = cellVDoms.concat(
                 <div class_={{ [tableCellClassName]: true }}>
+                    <span> {(rowType === 'th') ? 'Result Count' : resultCount} </span>
                     <i on-click={[this.onSpliceRow, id]} class_={{ [spliceIconClassName]: true }}/>
                     <i on-click={[this.onSelectPivot, id]} class_={{ [searchIconClassName]: true }}/>
                 </div>
