@@ -44,7 +44,7 @@ class GraphFrame extends Component {
         return (
             <iframe
                 src={`${url}`}
-                style='width:100%; height:500px; border:1px solid #DDD' />
+                style='width:100%; height:700px; border:1px solid #DDD' />
         );
     }
 } 
