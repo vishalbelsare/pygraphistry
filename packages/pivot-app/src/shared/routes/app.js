@@ -40,8 +40,8 @@ export function app({ loadApp, calcTotals, insertRow, spliceRow, selectPivot }) 
         route: `rows.splice`,
         call: spliceRowCallRoute({ loadApp, calcTotals, spliceRow, selectPivot })
     }, {
-        route: `rows.selectPivot`,
-        call: selectPivotCallRoute({ loadApp, calcTotals, spliceRow, selectPivot })
+        route: `rows.searchPivot`,
+        call: searchPivotCallRoute({ loadApp, calcTotals, spliceRow, selectPivot })
     }];
 }
 
@@ -153,8 +153,8 @@ function insertRowCallRoute({ loadApp, calcTotals, insertRow }) {
     }
 }
 
-function selectPivotCallRoute({ loadApp, calcTotals, insertRow, selectPivot }) {
-    return function selectPivotCall(path, args) {
+function searchPivotCallRoute({ loadApp, calcTotals, insertRow, selectPivot }) {
+    return function searchPivotCall(path, args) {
         const [id] = args;
         return loadApp().mergeMap(
             (app) => selectPivot({ app, id }),

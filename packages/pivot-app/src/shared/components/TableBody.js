@@ -14,7 +14,7 @@ export class TableBody extends Container {
     createChild(props) {
         return new TableRow({
             ...props, field: 'value',
-            onSelectPivot: this.dispatch('select-pivot'),
+            onSelectPivot: this.dispatch('search-pivot'),
             onInsertRow: this.dispatch('insert-row'),
             onSpliceRow: this.dispatch('splice-row'),
             type:'td'
@@ -29,8 +29,8 @@ export class TableBody extends Container {
             model.call('splice', [id])
         ));
 
-        const selections = this.listen('select-pivot').switchMap((id) => (
-            model.call('selectPivot', [id])
+        const selections = this.listen('search-pivot').switchMap((id) => (
+            model.call('searchPivot', [id])
         ));
 
         return inserts.merge(splices).merge(selections).ignoreElements();
