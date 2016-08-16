@@ -14,7 +14,7 @@ export class TableBody extends Container {
     createChild(props) {
         return new TableRow({
             ...props, field: 'value',
-            onSelectPivot: this.dispatch('search-pivot'),
+            onSearchPivot: this.dispatch('search-pivot'),
             onInsertRow: this.dispatch('insert-row'),
             onSpliceRow: this.dispatch('splice-row'),
             type:'td'

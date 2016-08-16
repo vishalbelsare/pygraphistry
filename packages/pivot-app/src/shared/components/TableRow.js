@@ -42,7 +42,7 @@ export class TableRow extends Container {
                     <span> {(rowType === 'th') ? 'Result Count' : resultCount} </span>
                     <i on-click={[this.onSpliceRow, id]} class_={{ [spliceIconClassName]: true }}/>
                     <i on-click={[this.onInsertRow, id]} class_={{ [insertIconClassName]: true }}/>
-                    <i on-click={[this.onSelectPivot, id]} class_={{ [searchIconClassName]: true }}/>
+                    <i on-click={[this.onSearchPivot, id]} class_={{ [searchIconClassName]: true }}/>
                 </div>
             )
             .map(createTableCell);
