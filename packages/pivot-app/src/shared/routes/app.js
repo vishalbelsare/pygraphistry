@@ -38,7 +38,7 @@ export function app({ loadApp, calcTotals, insertRow, spliceRow, searchPivot, up
         call: insertRowCallRoute({ loadApp, calcTotals, insertRow, searchPivot })
     }, {
         route: `rows.splice`,
-        call: spliceRowCallRoute({ loadApp, calcTotals, spliceRow, searchPivot })
+        call: spliceRowCallRoute({ loadApp, calcTotals, spliceRow, searchPivot, uploadGraph })
     }, {
         route: `rows.searchPivot`,
         call: searchPivotCallRoute({ loadApp, calcTotals, spliceRow, searchPivot, uploadGraph })
@@ -184,7 +184,7 @@ function searchPivotCallRoute({ loadApp, calcTotals, insertRow, searchPivot, upl
     }
 }
 
-function spliceRowCallRoute({ loadApp, calcTotals, spliceRow }) {
+function spliceRowCallRoute({ loadApp, calcTotals, spliceRow, uploadGraph }) {
     return function spliceRowCall(path, args) {
         const [id] = args;
         return loadApp().mergeMap(
@@ -193,13 +193,20 @@ function spliceRowCallRoute({ loadApp, calcTotals, spliceRow }) {
                 app, row, index
             })
         )
-        .mergeMap(calcTotals)
-        .mergeMap(({ app, row, index }) => {
+        .mergeMap(
+            ({app}) => uploadGraph(app),
+             ({app, row, index}, name) => ({
+                 app, row, index, name
+             })
+        )
+        .mergeMap(({ app, row, index, name }) => {
+            app.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
             const { rows } = app;
             const { length } = rows;
             const values = [
                 $pathValue(`total`, app.total),
                 $pathValue(`rows.length`, length),
+                $pathValue('url', app.url),
                 $invalidation(`rowsById['${row.id}']`),
                 $invalidation(`rows[${index}..${length}]`),
             ];
