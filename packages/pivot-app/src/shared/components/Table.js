@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import { TableRow } from './TableRow';
 import { TableBody } from './TableBody';
-import { TableFooter } from './TableFooter';
+import { TableHeader } from './TableHeader';
 import { Component, Container } from 'reaxtor';
 import { table as tableClassName,
          thead as tableHeaderClassName } from './styles.css';
@@ -14,7 +14,7 @@ export class Table extends Component {
             models: models.deref(`rows`)
         });
 
-        const tHeadRow = new TableRow({
+        const tHeadRow = new TableHeader({
             field: 'name', type: 'th',
             index: 0, depth: depth + 1,
             models: models.deref(`cols`),

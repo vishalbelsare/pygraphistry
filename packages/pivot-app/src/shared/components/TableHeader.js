@@ -4,58 +4,45 @@ import { tcell as tableCellClassName,
          splice as spliceIconClassName,
          search as searchIconClassName } from './styles.css';
 
-export class TableRow extends Container {
+export class TableHeader extends Container {
     loadProps(model) {
         return model.getItems(
-            () => `['id', 'length', 'enabled', 'resultCount']`,
+            () => `['id', 'length']`,
             ({ json: { length }}) => !length ? [] : [
                 [{ length }, this.field]
             ]
         );
     }
 
-    loadState(model, props) {
-        var togglePivot = this.listen('toggle');
-        return togglePivot
-            .switchMap((event) =>
-            model.call('togglePivot'))
-            .switchMapTo(this.loadProps(model))
-    }
     createChild(props) {
         const cellType = 'text';
-        const isHeader = false;
+        const isHeader = true
         return new TableCell({
             ...props, field: this.field, type: cellType, isHeader: isHeader
         });
     }
-    render(model, { id, length = 0, enabled, resultCount}, ...cellVDoms) {
+    render(model, { id, length = 0}, ...cellVDoms) {
 
         const rowType = this.type || 'td';
         const cellWidth = Math.round(95 / (length + 1));
 
-        const createTableCell = (cellVDom) => 
-            (<td style_={{ width: `${cellWidth}%` }}>{cellVDom}</td>)        
+        const createTableCell = (cellVDom) => {
+            return (<th style_={{ width: `${cellWidth}%` }}>{cellVDom}</th>);
+        };
 
         const tableCellVDoms = cellVDoms.concat(
                 <div class_={{ [tableCellClassName]: true }}>
-                    <span> {(rowType === 'th') ? 'Result Count' : resultCount} </span>
+                    <span> Result Count </span>
                     <i on-click={[this.onSpliceRow, id]} class_={{ [spliceIconClassName]: true }}/>
                     <i on-click={[this.onSelectPivot, id]} class_={{ [searchIconClassName]: true }}/>
                 </div>
             )
             .map(createTableCell);
 
-        return (
-            <tr>
-                <td style_={{ width: `2%` }}>
-                    <input 
-                        type="checkbox" 
-                        on-click={this.dispatch('toggle')}
-                        checked={enabled}/>
-                </td>
+        return (<tr>
+                <th style_={{ width: `2%` }}> &nbsp; </th>
                 {tableCellVDoms}
-            </tr>
-            );
+            </tr>) 
     }
 }
 
