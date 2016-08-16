@@ -77,57 +77,53 @@ const previousGraph = {
     labels: []
 };
 
-export function uploadGraph(shapedData, app) {
+export function uploadGraph(app) {
 
-    return shapedData.flatMap(
-        function(graph) {
-            const rowsById = app.rowsById;
+    const rowsById = app.rowsById;
 
-            const name = ("splunkUpload" + simpleflake().toJSON())
-            const type = "edgelist";
-            const bindings = {
-                "sourceField": "source",
-                "destinationField": "destination",
-                "idField": "node"
-            }
-            const mergedPivots = {
-                graph:[],
-                labels: []
-            };
+    const name = ("splunkUpload" + simpleflake().toJSON())
+    const type = "edgelist";
+    const bindings = {
+        "sourceField": "source",
+        "destinationField": "destination",
+        "idField": "node"
+    }
+    const mergedPivots = {
+        graph:[],
+        labels: []
+    };
 
-            var row;
-            for(let id in rowsById) {
-                row = rowsById[id]; 
-                if (row.results && row.enabled) {
-                    mergedPivots.graph = [...mergedPivots.graph, ...row.results.graph]
-                    mergedPivots.labels = [...mergedPivots.labels, ...row.results.labels];
-                }
-            }
-
-            const newEdges = _.difference(mergedPivots.graph, previousGraph.graph);
-            const removedEdges = _.difference(previousGraph.graph, mergedPivots.graph);
-            const newNodes = _.difference(mergedPivots.labels, previousGraph.labels);
-            const removedNodes = _.difference(previousGraph.labels, mergedPivots.labels);
-
-            DataFrame.addEdges(newEdges);
-            DataFrame.removeEdges(removedEdges);
-            DataFrame.addNodes(newNodes);
-            DataFrame.removeNodes(removedNodes);
-
-            const uploadData = {
-                graph: DataFrame.getData().edges,
-                labels: DataFrame.getData().nodes,
-                name, type, bindings
-            }
-
-            previousGraph.graph = uploadData.graph;
-            previousGraph.labels = uploadData.labels;
-
-            const uploadDone = Observable.bindNodeCallback(upload.bind(upload));
-            const vizUrl = uploadDone(uploadData);
-            return vizUrl.map(
-                () => name
-            )
+    var row;
+    for(let id in rowsById) {
+        row = rowsById[id]; 
+        if (row.results && row.enabled) {
+            mergedPivots.graph = [...mergedPivots.graph, ...row.results.graph]
+            mergedPivots.labels = [...mergedPivots.labels, ...row.results.labels];
         }
+    }
+
+    const newEdges = _.difference(mergedPivots.graph, previousGraph.graph);
+    const removedEdges = _.difference(previousGraph.graph, mergedPivots.graph);
+    const newNodes = _.difference(mergedPivots.labels, previousGraph.labels);
+    const removedNodes = _.difference(previousGraph.labels, mergedPivots.labels);
+
+    DataFrame.addEdges(newEdges);
+    DataFrame.removeEdges(removedEdges);
+    DataFrame.addNodes(newNodes);
+    DataFrame.removeNodes(removedNodes);
+
+    const uploadData = {
+        graph: DataFrame.getData().edges,
+        labels: DataFrame.getData().nodes,
+        name, type, bindings
+    }
+
+    previousGraph.graph = uploadData.graph;
+    previousGraph.labels = uploadData.labels;
+
+    const uploadDone = Observable.bindNodeCallback(upload.bind(upload));
+    const vizUrl = uploadDone(uploadData);
+    return vizUrl.map(
+        () =>  name    
     )
 }

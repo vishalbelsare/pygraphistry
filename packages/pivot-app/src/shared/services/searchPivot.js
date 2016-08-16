@@ -22,16 +22,6 @@ export function searchPivot({ app, id }) {
     const row = rowsById[id];
     row.enabled = true;
 
-    var enabledPivots = _.filter(rowsById, function(row) {
-        return row.enabled
-    }).map((obj) => {
-        return {
-            search: obj[0],
-            links: obj[1],
-            time: obj[2]
-        }
-    });            
-
     // TODO There's a much cleaner way to do this.
     var pivotDict = {};
     for(var i = 0; i < row.length; i++) { 
@@ -41,21 +31,14 @@ export function searchPivot({ app, id }) {
     }
 
     var splunkResults;
-
     var searchQuery = pivotToSplunk(pivotDict);
     var splunkResults = searchSplunk(searchQuery)
         .do(({resultCount}) => {
             row.resultCount = resultCount})
         .map(({output}) => output);
     var shapedResults = shapeSplunkResults(splunkResults, pivotDict)
-        .do((results) => row.results = results);
+        .do((results) => row.results = results)
+        .map((results) => ({app, index}));
+    return shapedResults;
 
-    var vizUrl = uploadGraph(shapedResults, app);
-	return vizUrl.map(
-		function (url) {
-            console.log("Done uploading graph");
-            app.url = row.url = graphistryVizUrl + '&dataset=' + url;
-			return {app, index}
-		}
-	);
 }

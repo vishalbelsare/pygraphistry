@@ -9,7 +9,7 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from './support';
 
-export function app({ loadApp, calcTotals, insertRow, spliceRow, searchPivot }) {
+export function app({ loadApp, calcTotals, insertRow, spliceRow, searchPivot, uploadGraph }) {
 
     const appGetRoute = getHandler([], loadApp);
 
@@ -41,7 +41,7 @@ export function app({ loadApp, calcTotals, insertRow, spliceRow, searchPivot }) 
         call: spliceRowCallRoute({ loadApp, calcTotals, spliceRow, searchPivot })
     }, {
         route: `rows.searchPivot`,
-        call: searchPivotCallRoute({ loadApp, calcTotals, spliceRow, searchPivot })
+        call: searchPivotCallRoute({ loadApp, calcTotals, spliceRow, searchPivot, uploadGraph })
     }];
 }
 
@@ -153,13 +153,21 @@ function insertRowCallRoute({ loadApp, calcTotals, insertRow }) {
     }
 }
 
-function searchPivotCallRoute({ loadApp, calcTotals, insertRow, searchPivot }) {
+function searchPivotCallRoute({ loadApp, calcTotals, insertRow, searchPivot, uploadGraph }) {
     return function searchPivotCall(path, args) {
         const [id] = args;
         return loadApp().mergeMap(
             (app) => searchPivot({ app, id }),
         )
-        .mergeMap(({ app, index }) => {
+        .mergeMap(
+            ({app, index}) => uploadGraph(app),
+            ({app, index}, name) => ({
+                app, index, name
+            })
+        ) 
+        //.do(({app, index, name}) => console.log("Done uploading graph", name, "index", index))
+        .mergeMap(({ app, index, name }) => {
+            app.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
             const { rows } = app;
             const { length } = rows;
             const values = [
