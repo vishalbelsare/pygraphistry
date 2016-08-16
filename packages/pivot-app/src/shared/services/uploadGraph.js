@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
+var DataFrame =  require('../Dataframe')
 var _ = require('underscore');
 
 var request = require('request');
@@ -15,8 +16,8 @@ function upload (data, cb) {
             return console.log('success', data);
         }
     };
-	console.log("About to upload data", data.name);
-    
+    console.log("About to upload data", data.name);
+
     request.post({
         uri: 'http://labs.graphistry.com/etl',
         qs:   query,
@@ -33,8 +34,8 @@ function upload (data, cb) {
             } catch (e) {
                 return cb(e);
             }
-            }
-        });
+        }
+    });
 }
 
 var query = {
@@ -53,21 +54,21 @@ var simpleGraph = {
         //"idField": "node"
     },
     "graph": [
-      {"src": "myNode1", "dst": "myNode2",
-       "myEdgeField1": "I'm an edge!", "myCount": 7},
-      {"src": "myNode2", "dst": "myNode3",
-        "myEdgeField1": "I'm also an edge!", "myCount": 200}
+        {"src": "myNode1", "dst": "myNode2",
+            "myEdgeField1": "I'm an edge!", "myCount": 7},
+            {"src": "myNode2", "dst": "myNode3",
+                "myEdgeField1": "I'm also an edge!", "myCount": 200}
     ],
     "labels": [
-      {"node": "myNode1",
-       "myNodeField1": "I'm a node!",
-       "pointColor": 5},
-      {"node": "myNode2",
-       "myNodeField1": "I'm a node too!",
-       "pointColor": 4},
-      {"node": "myNode3",
-       "myNodeField1": "I'm a node three!",
-       "pointColor": 4}
+        {"node": "myNode1",
+            "myNodeField1": "I'm a node!",
+            "pointColor": 5},
+            {"node": "myNode2",
+                "myNodeField1": "I'm a node too!",
+                "pointColor": 4},
+                {"node": "myNode3",
+                    "myNodeField1": "I'm a node three!",
+                    "pointColor": 4}
     ]
 }
 
@@ -77,23 +78,24 @@ const previousGraph = {
 };
 
 export function uploadGraph(shapedData, app) {
-    
+
     return shapedData.flatMap(
         function(graph) {
-            var row;
             const rowsById = app.rowsById;
 
-            var name = ("splunkUpload" + simpleflake().toJSON())
-            var type = "edgelist";
-            var bindings = {
-                        "sourceField": "source",
-                        "destinationField": "destination",
-                        "idField": "node"
+            const name = ("splunkUpload" + simpleflake().toJSON())
+            const type = "edgelist";
+            const bindings = {
+                "sourceField": "source",
+                "destinationField": "destination",
+                "idField": "node"
             }
-            var mergedPivots = {
+            const mergedPivots = {
                 graph:[],
                 labels: []
             };
+
+            var row;
             for(let id in rowsById) {
                 row = rowsById[id]; 
                 if (row.results && row.enabled) {
@@ -101,28 +103,28 @@ export function uploadGraph(shapedData, app) {
                     mergedPivots.labels = [...mergedPivots.labels, ...row.results.labels];
                 }
             }
-            var uploadData = {
-                graph: mergedPivots.graph,
-                labels: mergedPivots.labels,
+
+            const newEdges = _.difference(mergedPivots.graph, previousGraph.graph);
+            const removedEdges = _.difference(previousGraph.graph, mergedPivots.graph);
+            const newNodes = _.difference(mergedPivots.labels, previousGraph.labels);
+            const removedNodes = _.difference(previousGraph.labels, mergedPivots.labels);
+
+            DataFrame.addEdges(newEdges);
+            DataFrame.removeEdges(removedEdges);
+            DataFrame.addNodes(newNodes);
+            DataFrame.removeNodes(removedNodes);
+
+            const uploadData = {
+                graph: DataFrame.getData().edges,
+                labels: DataFrame.getData().nodes,
                 name, type, bindings
             }
 
-           var newEdges = _.difference(uploadData.graph, previousGraph.graph);
-           var removedEdges = _.difference(previousGraph.graph, uploadData.graph);
-           var newNodes = _.difference(uploadData.labels, previousGraph.labels);
-           var removedNodes = _.difference(previousGraph.labels, uploadData.labels);
-           console.log("New Edges", newEdges.length);
-           console.log("Removed edges", removedEdges.length);
-           console.log("New nodes", newNodes.length);
-           console.log("Removed nodes", removedNodes.length);
-           previousGraph.graph = uploadData.graph;
-           previousGraph.labels = uploadData.labels;
+            previousGraph.graph = uploadData.graph;
+            previousGraph.labels = uploadData.labels;
 
-
-
-            //console.log(app.rowsById.filter((row) => (row.results)));
-            var uploadDone = Observable.bindNodeCallback(upload.bind(upload));
-            var vizUrl = uploadDone(uploadData);
+            const uploadDone = Observable.bindNodeCallback(upload.bind(upload));
+            const vizUrl = uploadDone(uploadData);
             return vizUrl.map(
                 () => name
             )
