@@ -40,15 +40,12 @@ export function selectPivot({ app, id }) {
         pivotDict[cell['name']] =  cell['value'];
     }
 
-    var shapedResults;
-    if (row.results) {
-        shapedResults = Observable.of(row.results);
-    } else {
-        var searchQuery = pivotToSplunk(pivotDict);
-        var splunkResults = searchSplunk(searchQuery)
-        var shapedResults = shapeSplunkResults(splunkResults, pivotDict)
+    var splunkResults;
+
+    var searchQuery = pivotToSplunk(pivotDict);
+    var splunkResults = searchSplunk(searchQuery)
+    var shapedResults = shapeSplunkResults(splunkResults, pivotDict)
         .do((results) => row.results = results);
-    }
 
     var vizUrl = uploadGraph(shapedResults, app);
 	return vizUrl.map(
