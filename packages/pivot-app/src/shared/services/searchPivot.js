@@ -11,7 +11,7 @@ var jsonfile = require('jsonfile')
 
 var graphistryVizUrl = 'https://labs.graphistry.com/graph/graph.html?type=vgraph'
 
-export function selectPivot({ app, id }) {
+export function searchPivot({ app, id }) {
 
     const { rows, rowsById } = app;
     const index = id === undefined ?

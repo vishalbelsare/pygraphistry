@@ -9,7 +9,7 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from './support';
 
-export function app({ loadApp, calcTotals, insertRow, spliceRow, selectPivot }) {
+export function app({ loadApp, calcTotals, insertRow, spliceRow, searchPivot }) {
 
     const appGetRoute = getHandler([], loadApp);
 
@@ -35,13 +35,13 @@ export function app({ loadApp, calcTotals, insertRow, spliceRow, selectPivot }) 
         returns: `$ref('rowsById[{ rowId }]')`
     }, {
         route: `rows.insert`,
-        call: insertRowCallRoute({ loadApp, calcTotals, insertRow, selectPivot })
+        call: insertRowCallRoute({ loadApp, calcTotals, insertRow, searchPivot })
     }, {
         route: `rows.splice`,
-        call: spliceRowCallRoute({ loadApp, calcTotals, spliceRow, selectPivot })
+        call: spliceRowCallRoute({ loadApp, calcTotals, spliceRow, searchPivot })
     }, {
         route: `rows.searchPivot`,
-        call: searchPivotCallRoute({ loadApp, calcTotals, spliceRow, selectPivot })
+        call: searchPivotCallRoute({ loadApp, calcTotals, spliceRow, searchPivot })
     }];
 }
 
@@ -153,11 +153,11 @@ function insertRowCallRoute({ loadApp, calcTotals, insertRow }) {
     }
 }
 
-function searchPivotCallRoute({ loadApp, calcTotals, insertRow, selectPivot }) {
+function searchPivotCallRoute({ loadApp, calcTotals, insertRow, searchPivot }) {
     return function searchPivotCall(path, args) {
         const [id] = args;
         return loadApp().mergeMap(
-            (app) => selectPivot({ app, id }),
+            (app) => searchPivot({ app, id }),
         )
         .mergeMap(({ app, index }) => {
             const { rows } = app;
