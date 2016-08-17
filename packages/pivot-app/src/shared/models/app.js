@@ -45,7 +45,7 @@ export function app(rows = [], id = simpleflake().toJSON()) {
         )),
 
         pivots: rows.map((row, index) => (
-            $ref(`rowsById['${row.id}']`)
+            $ref(`pivotsById['${row.id}']`)
         )),
 
         /**

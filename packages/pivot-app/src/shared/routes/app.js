@@ -30,9 +30,17 @@ export function app({ loadApp, calcTotals, insertRow, spliceRow, searchPivot, up
         route: `['cols', 'rows', 'pivots'].length`,
         get: listLengthGetRoute({ loadApp })
     }, {
-        route: `['cols', 'rows', 'pivots'][{ranges}]`,
+        route: `['rows'][{ranges}]`,
         get: rangesToListItemsGetRoute({ loadApp }),
         returns: `$ref('rowsById[{ rowId }]')`
+    }, {
+        route: `['cols'][{ranges}]`,
+        get: rangesToListItemsGetRoute({ loadApp }),
+        returns: `String`
+    }, {
+        route: `['pivots'][{ranges}]`,
+        get: rangesToListItemsGetRoute({ loadApp }),
+        returns: `$ref('pivotsById[{ rowId }]')`
     }, {
         route: `pivots.insert`,
         call: insertRowCallRoute({ loadApp, calcTotals, insertRow, searchPivot })
@@ -114,9 +122,9 @@ function rangesToListItemsGetRoute({ loadApp }) {
                 ({ name, list }) => indexes.filter((index) => (
                     index < list.length
                 )),
-                ({ name, list }, index) => $pathValue(`
-                    ${name}[${index}]`, list[index]
-                )
+                ({ name, list }, index) => {
+                    return $pathValue(` ${name}[${index}]`, list[index])
+                }
             );
     }
 }

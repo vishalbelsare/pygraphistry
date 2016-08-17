@@ -12,6 +12,7 @@ export function getHandler(lists, loader, props = {}) {
                 ...state, [`${list}Ids`]: [].concat(path[1 + (index * 2)])
             }), { ...props, options });
 
+
         const suffix = path.slice(lists.length * 2);
         const loaded = suffix.reduce((source, keys, index) => source.mergeMap(
                 ({ data, idxs }) => [].concat(keys),
@@ -29,9 +30,9 @@ export function getHandler(lists, loader, props = {}) {
         const values = loaded.map(({ data, idxs }) => {
 
             const seed = data[lists[lists.length - 1]] || data;
-            const path = lists.reduce((path, key) => path.concat(
-                `${key}sById`, data[key].id
-            ), []);
+            const path = lists.reduce((path, key) => {
+                return path.concat( `${key}sById`, data[key].id)
+            } , []);
 
             return (Array
                 .from(idxs, (key, index) => idxs[index])

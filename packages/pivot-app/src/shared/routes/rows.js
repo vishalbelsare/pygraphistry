@@ -10,14 +10,27 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from './support';
 
-export function rows({ loadRowsById, calcTotals }) {
+export function rows({ loadRowsById, loadPivotsById, calcTotals }) {
 
     const getRowsHandler = getHandler(['row'], loadRowsById);
+    const getPivotsHandler = getHandler(['pivot'], loadPivotsById);
 
     return [{
         returns: `Number`,
         get: getRowsHandler,
         route: `rowsById[{keys}].length`
+    }, {
+        returns: `Number`,
+        get: getPivotsHandler,
+        route: `pivotsById[{keys}].length`
+    }, {
+        returns: `String`,
+        get: getPivotsHandler,
+        route: `pivotsById[{keys}]['id', 'total', 'enabled', 'resultCount']`
+    }, {
+        returns: `String | Number`,
+        get: getPivotsHandler,
+        route: `pivotsById[{keys}][{integers}]['name', 'value']`
     }, {
         returns: `String`,
         get: getRowsHandler,
