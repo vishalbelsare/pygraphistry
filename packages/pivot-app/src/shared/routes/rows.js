@@ -10,16 +10,11 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from './support';
 
-export function rows({ loadRowsById, loadPivotsById, calcTotals }) {
+export function rows({ loadPivotsById, calcTotals }) {
 
-    const getRowsHandler = getHandler(['row'], loadRowsById);
     const getPivotsHandler = getHandler(['pivot'], loadPivotsById);
 
     return [{
-        returns: `Number`,
-        get: getRowsHandler,
-        route: `rowsById[{keys}].length`
-    }, {
         returns: `Number`,
         get: getPivotsHandler,
         route: `pivotsById[{keys}].length`
@@ -31,44 +26,36 @@ export function rows({ loadRowsById, loadPivotsById, calcTotals }) {
         returns: `String | Number`,
         get: getPivotsHandler,
         route: `pivotsById[{keys}][{integers}]['name', 'value']`
-    }, {
-        returns: `String`,
-        get: getRowsHandler,
-        route: `rowsById[{keys}]['id', 'total', 'enabled', 'resultCount']`
-    }, {
-        get: getRowsHandler,
-        returns: 'String | Number',
-        route: `rowsById[{keys}][{integers}]['name', 'value']`
-    }, {
-        returns: `String`,
-        call: setColumnValueCallRoute({ loadRowsById, calcTotals }),
-        route: `rowsById[{keys}][{integers}].setValue`
     },{
         returns: `String`,
-        call: togglePivotCallRoute({loadRowsById}),
-        route: `rowsById[{keys}].togglePivot`
+        call: setColumnValueCallRoute({ loadPivotsById, calcTotals }),
+        route: `pivotsById[{keys}][{integers}].setValue`
+    },{
+        returns: `String`,
+        call: togglePivotCallRoute({ loadPivotsById }),
+        route: `pivotsById[{keys}].togglePivot`
     }];
 }
 
-function togglePivotCallRoute({loadRowsById}) {
+function togglePivotCallRoute({loadPivotById}) {
     return function togglePivot(path, args) {
-        const rowIds = [].concat(path[1]);
+        const pivotIds = [].concat(path[1]);
         const columnIndexes = [].concat(path[2]);
 
-        return loadRowsById({ rowIds })
+        return loadPivotById({ pivotIds })
             .mergeMap(
-                ({ app, row }) => columnIndexes,
-                ({ app, row }, index) => ({
+                ({ app, pivot }) => columnIndexes,
+                ({ app, pivot }, index) => ({
                     app, row, index
                 })
             )
-            .map(({ app, row, index }) => {
-                row.enabled = !row.enabled;
-                const enabled = row.enabled;
-                return { app, row, index, enabled};
+            .map(({ app, pivot, index }) => {
+                pivot.enabled = !pivot.enabled;
+                const enabled = pivot.enabled;
+                return { app, pivot, index, enabled};
             })
-            .mergeMap(({ app, row, index, enabled }) => [
-                $pathValue(`rowsById['${row.id}'].enabled`, row.enabled),
+            .mergeMap(({ app, pivot, index, enabled }) => [
+                $pathValue(`pivotsById['${row.id}'].enabled`, row.enabled),
             ])
             .map(mapObjectsToAtoms)
             .catch(captureErrorStacks);
@@ -76,30 +63,29 @@ function togglePivotCallRoute({loadRowsById}) {
 
 }
 
-function setColumnValueCallRoute({ loadRowsById, calcTotals }) {
+function setColumnValueCallRoute({ loadPivotsById, calcTotals }) {
     return function setColumnValue(path, args) {
 
         const [ value ] = args;
-        const rowIds = [].concat(path[1]);
+        const pivotIds = [].concat(path[1]);
         const columnIndexes = [].concat(path[2]);
 
-        return loadRowsById({ rowIds })
+        return loadPivotsById({ pivotIds })
             .mergeMap(
-                ({ app, row }) => columnIndexes,
-                ({ app, row }, index) => ({
-                    app, row, index
+                ({ app, pivot }) => columnIndexes,
+                ({ app, pivot }, index) => ({
+                    app, pivot, index
                 })
             )
-            .map(({ app, row, index }) => {
-                const column = row[index];
+            .map(({ app, pivot, index }) => {
+                const column = pivot[index];
                 column.value = value;
-                return { app, row, index, column };
+                return { app, pivot, index, column };
             })
-            //.mergeMap(calcTotals)
-            .mergeMap(({ app, row, index, column }) => [
+            .mergeMap(({ app, pivot, index, column }) => [
                 $pathValue(`total`, app.total),
                 //$pathValue(`rowsById['${row.id}'].total`, row.total),
-                $pathValue(`rowsById['${row.id}'][${index}].value`, column.value),
+                $pathValue(`pivotsById['${pivot.id}'][${index}].value`, column.value),
             ])
             .map(mapObjectsToAtoms)
             .catch(captureErrorStacks);

@@ -9,7 +9,7 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from './support';
 
-export function app({ loadApp, calcTotals, insertRow, spliceRow, searchPivot, uploadGraph }) {
+export function app({ loadApp, calcTotals, insertPivot, spliceRow, searchPivot, uploadGraph }) {
 
     const appGetRoute = getHandler([], loadApp);
 
@@ -22,17 +22,9 @@ export function app({ loadApp, calcTotals, insertRow, spliceRow, searchPivot, up
         returns: 'String',
         route: `['cols'].id`
     }, {
-        get: appGetRoute,
-        returns: `String | Number`,
-        route: `['cols', 'rows'].total`
-    }, {
         returns: `Number`,
-        route: `['cols', 'rows', 'pivots'].length`,
+        route: `['cols', 'pivots'].length`,
         get: listLengthGetRoute({ loadApp })
-    }, {
-        route: `['rows'][{ranges}]`,
-        get: rangesToListItemsGetRoute({ loadApp }),
-        returns: `$ref('rowsById[{ rowId }]')`
     }, {
         route: `['cols'][{ranges}]`,
         get: rangesToListItemsGetRoute({ loadApp }),
@@ -43,7 +35,7 @@ export function app({ loadApp, calcTotals, insertRow, spliceRow, searchPivot, up
         returns: `$ref('pivotsById[{ rowId }]')`
     }, {
         route: `pivots.insert`,
-        call: insertRowCallRoute({ loadApp, calcTotals, insertRow, searchPivot })
+        call: insertRowCallRoute({ loadApp, calcTotals, insertPivot, searchPivot })
     }, {
         route: `pivots.splice`,
         call: spliceRowCallRoute({ loadApp, calcTotals, spliceRow, searchPivot, uploadGraph })
@@ -129,23 +121,23 @@ function rangesToListItemsGetRoute({ loadApp }) {
     }
 }
 
-function insertRowCallRoute({ loadApp, calcTotals, insertRow }) {
+function insertRowCallRoute({ loadApp, calcTotals, insertPivot }) {
     return function insertRowCall(path, args) {
+        console.log("Insert row called");
         const [id] = args;
         return loadApp().mergeMap(
-            (app) => insertRow({ app, id }),
-            (app, { row, index }) => ({
-                app, row, index
+            (app) => insertPivot({ app, id }),
+            (app, { pivot, index }) => ({
+                app, pivot, index
             })
         )
-        .mergeMap(calcTotals)
-        .mergeMap(({ app, row, index }) => {
-            const { rows } = app;
-            const { length } = rows;
+        .mergeMap(({ app, pivot, index }) => {
+            const { pivots } = app;
+            const { length } = pivots;
             const values = [
                 $pathValue(`total`, app.total),
                 $pathValue(`pivots.length`, length),
-                $pathValue(`pivots[${index}]`, rows[index]),
+                $pathValue(`pivots[${index}]`, pivots[index]),
                 $pathValue(`urlIndex`, app.urlIndex),
             ];
             $invalidation('urlIndex')
@@ -176,12 +168,11 @@ function searchPivotCallRoute({ loadApp, calcTotals, insertRow, searchPivot, upl
         //.do(({app, index, name}) => console.log("Done uploading graph", name, "index", index))
         .mergeMap(({ app, index, name }) => {
             app.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
-            const { rows } = app;
-            const { length } = rows;
+            const { pivots } = app;
+            const { length } = pivots;
             const values = [
-                $pathValue(`pivots[${index}].enabled`, rows[index].enabled),
-                $pathValue(`pivots[${index}].resultCount`, rows[index].resultCount),
-                //$pathValue(`rows[${index}]`, rows[index]),
+                $pathValue(`pivots[${index}].enabled`, pivots[index].enabled),
+                $pathValue(`pivots[${index}].resultCount`, pivots[index].resultCount),
                 $pathValue('url', app.url),
             ];
 

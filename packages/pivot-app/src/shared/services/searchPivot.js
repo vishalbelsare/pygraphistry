@@ -13,20 +13,20 @@ var graphistryVizUrl = 'https://labs.graphistry.com/graph/graph.html?type=vgraph
 
 export function searchPivot({ app, id }) {
 
-    const { rows, rowsById } = app;
+    const { pivots, pivotsById } = app;
     const index = id === undefined ?
-        rows.length :
-        rows.findIndex(({ value: ref }) => (
+        pivots.length :
+        pivots.findIndex(({ value: ref }) => (
             ref[ref.length - 1] === id
     ));
-    const row = rowsById[id];
-    row.enabled = true;
+    const pivot = pivotsById[id];
+    pivot.enabled = true;
 
     // TODO There's a much cleaner way to do this.
     var pivotDict = {};
-    for(var i = 0; i < row.length; i++) { 
-        var cell = row[i];
-        var name = row[i].name;
+    for(var i = 0; i < pivot.length; i++) { 
+        var cell = pivot[i];
+        var name = pivot[i].name;
         pivotDict[cell['name']] =  cell['value'];
     }
 
@@ -34,10 +34,10 @@ export function searchPivot({ app, id }) {
     var searchQuery = pivotToSplunk(pivotDict);
     var splunkResults = searchSplunk(searchQuery)
         .do(({resultCount}) => {
-            row.resultCount = resultCount})
+            pivot.resultCount = resultCount})
         .map(({output}) => output);
     var shapedResults = shapeSplunkResults(splunkResults, pivotDict)
-        .do((results) => row.results = results)
+        .do((results) => pivot.results = results)
         .map((results) => ({app, index}));
     return shapedResults;
 

@@ -7,7 +7,7 @@ import { getDataSourceFactory } from '../shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 
 import { app as createApp, row as createRow } from '../shared/models';
-import { loadApp, loadPivots, loadRows, insertRow, spliceRow, calcTotals, searchPivot, uploadGraph } from '../shared/services';
+import { loadApp, loadPivots, loadRows, insertPivot, spliceRow, calcTotals, searchPivot, uploadGraph } from '../shared/services';
 
 const cols = [
     { name: 'Search' },
@@ -54,7 +54,7 @@ const app = createApp(rows);
 
 const routeServices = {
     loadApp: loadApp(app),
-    insertRow, spliceRow, calcTotals, searchPivot, uploadGraph,
+    insertPivot, spliceRow, calcTotals, searchPivot, uploadGraph,
     loadRowsById: loadRows(loadApp(app)),
     loadPivotsById: loadPivots(loadApp(app)),
 };

@@ -1,5 +1,5 @@
 export * from './loadApp';
-export * from './insertRow';
+export * from './insertPivot';
 export * from './loadRows';
 export * from './loadPivots';
 export * from './spliceRow';
