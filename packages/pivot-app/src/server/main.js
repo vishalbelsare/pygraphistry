@@ -49,7 +49,7 @@ const rows = Array.from({ length: 1 },
     }
 );
 
-const app = createApp(cols, rows);
+const app = createApp(rows);
 
 
 const routeServices = {

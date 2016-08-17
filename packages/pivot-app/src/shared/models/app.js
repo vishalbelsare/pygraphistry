@@ -7,14 +7,17 @@ import {
 
 import { simpleflake } from 'simpleflakes';
 
-export function app(cols = [], rows = [], id = simpleflake().toJSON()) {
+const cols = [
+    { name: 'Search' },
+    { name: 'Links' },
+    { name: 'Time'},
+];
+
+export function app(rows = [], id = simpleflake().toJSON()) {
     return {
 
         title: 'Pivots',
         url: 'http://www.graphistry.com/',
-
-        urlIndex: 0,
-
 
         //total: rows.reduce((total, row) => total + row.total, 0),
         /**
