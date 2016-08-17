@@ -11,7 +11,7 @@ export class Table extends Component {
 
         const tBody = new TableBody({
             index: 1, depth: depth + 1,
-            models: models.deref(`rows`)
+            models: models.deref(`pivots`)
         });
 
         const tHeadRow = new TableHeader({

@@ -27,20 +27,20 @@ export function app({ loadApp, calcTotals, insertRow, spliceRow, searchPivot, up
         route: `['cols', 'rows'].total`
     }, {
         returns: `Number`,
-        route: `['cols', 'rows'].length`,
+        route: `['cols', 'rows', 'pivots'].length`,
         get: listLengthGetRoute({ loadApp })
     }, {
-        route: `['cols', 'rows'][{ranges}]`,
+        route: `['cols', 'rows', 'pivots'][{ranges}]`,
         get: rangesToListItemsGetRoute({ loadApp }),
         returns: `$ref('rowsById[{ rowId }]')`
     }, {
-        route: `rows.insert`,
+        route: `pivots.insert`,
         call: insertRowCallRoute({ loadApp, calcTotals, insertRow, searchPivot })
     }, {
-        route: `rows.splice`,
+        route: `pivots.splice`,
         call: spliceRowCallRoute({ loadApp, calcTotals, spliceRow, searchPivot, uploadGraph })
     }, {
-        route: `rows.searchPivot`,
+        route: `pivots.searchPivot`,
         call: searchPivotCallRoute({ loadApp, calcTotals, spliceRow, searchPivot, uploadGraph })
     }];
 }

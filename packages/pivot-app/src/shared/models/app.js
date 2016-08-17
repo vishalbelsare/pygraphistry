@@ -44,6 +44,10 @@ export function app(rows = [], id = simpleflake().toJSON()) {
             $ref(`rowsById['${row.id}']`)
         )),
 
+        pivots: rows.map((row, index) => (
+            $ref(`rowsById['${row.id}']`)
+        )),
+
         /**
          *  rowsById: {
          *    'row-id-1': {
@@ -56,6 +60,10 @@ export function app(rows = [], id = simpleflake().toJSON()) {
          *  }
          */
         rowsById: rows.reduce((rows, row) => ({
+            ...rows, [row.id]: row
+        }), {}),
+
+        pivotsById: rows.reduce((rows, row) => ({
             ...rows, [row.id]: row
         }), {})
     };
