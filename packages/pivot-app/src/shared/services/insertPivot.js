@@ -16,7 +16,6 @@ export function insertPivot({ app, id }) {
 
     pivotsById[pivot.id] = pivot;
     pivots.splice(index, 0, $ref(pivotRefPath));
-    console.log("New pivot", pivot);
 
     return Observable.of({ pivot, index });
 }

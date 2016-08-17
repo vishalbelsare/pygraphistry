@@ -79,7 +79,7 @@ const previousGraph = {
 
 export function uploadGraph(app) {
 
-    const rowsById = app.rowsById;
+    const pivotsById = app.pivotsById;
 
     const name = ("splunkUpload" + simpleflake().toJSON())
     const type = "edgelist";
@@ -93,12 +93,12 @@ export function uploadGraph(app) {
         labels: []
     };
 
-    var row;
-    for(let id in rowsById) {
-        row = rowsById[id]; 
-        if (row.results && row.enabled) {
-            mergedPivots.graph = [...mergedPivots.graph, ...row.results.graph]
-            mergedPivots.labels = [...mergedPivots.labels, ...row.results.labels];
+    var pivot;
+    for(let id in pivotsById) {
+        pivot = pivotsById[id]; 
+        if (pivot.results && pivot.enabled) {
+            mergedPivots.graph = [...mergedPivots.graph, ...pivot.results.graph]
+            mergedPivots.labels = [...mergedPivots.labels, ...pivot.results.labels];
         }
     }
 

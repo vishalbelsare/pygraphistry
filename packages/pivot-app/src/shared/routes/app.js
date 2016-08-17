@@ -9,7 +9,7 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from './support';
 
-export function app({ loadApp, calcTotals, insertPivot, spliceRow, searchPivot, uploadGraph }) {
+export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot, uploadGraph }) {
 
     const appGetRoute = getHandler([], loadApp);
 
@@ -32,21 +32,21 @@ export function app({ loadApp, calcTotals, insertPivot, spliceRow, searchPivot, 
     }, {
         route: `['pivots'][{ranges}]`,
         get: rangesToListItemsGetRoute({ loadApp }),
-        returns: `$ref('pivotsById[{ rowId }]')`
+        returns: `$ref('pivotsById[{ pivotId }]')`
     }, {
         route: `pivots.insert`,
-        call: insertRowCallRoute({ loadApp, calcTotals, insertPivot, searchPivot })
+        call: insertPivotCallRoute({ loadApp, insertPivot, searchPivot })
     }, {
         route: `pivots.splice`,
-        call: spliceRowCallRoute({ loadApp, calcTotals, spliceRow, searchPivot, uploadGraph })
+        call: splicePivotCallRoute({ loadApp, splicePivot, searchPivot, uploadGraph })
     }, {
         route: `pivots.searchPivot`,
-        call: searchPivotCallRoute({ loadApp, calcTotals, spliceRow, searchPivot, uploadGraph })
+        call: searchPivotCallRoute({ loadApp, searchPivot, uploadGraph })
     }];
 }
 
 function listLengthGetRoute({ loadApp }) {
-    return function getRowsLength(path) {
+    return function getPivotLength(path) {
 
         // The Array of list names (either `cols` or `rows`) from which to
         // retrieve each range.
@@ -121,9 +121,8 @@ function rangesToListItemsGetRoute({ loadApp }) {
     }
 }
 
-function insertRowCallRoute({ loadApp, calcTotals, insertPivot }) {
-    return function insertRowCall(path, args) {
-        console.log("Insert row called");
+function insertPivotCallRoute({ loadApp, calcTotals, insertPivot }) {
+    return function insertPivotCall(path, args) {
         const [id] = args;
         return loadApp().mergeMap(
             (app) => insertPivot({ app, id }),
@@ -153,7 +152,7 @@ function insertRowCallRoute({ loadApp, calcTotals, insertPivot }) {
     }
 }
 
-function searchPivotCallRoute({ loadApp, calcTotals, insertRow, searchPivot, uploadGraph }) {
+function searchPivotCallRoute({ loadApp, searchPivot, uploadGraph }) {
     return function searchPivotCall(path, args) {
         const [id] = args;
         return loadApp().mergeMap(
@@ -165,11 +164,9 @@ function searchPivotCallRoute({ loadApp, calcTotals, insertRow, searchPivot, upl
                 app, index, name
             })
         ) 
-        //.do(({app, index, name}) => console.log("Done uploading graph", name, "index", index))
         .mergeMap(({ app, index, name }) => {
             app.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
             const { pivots } = app;
-            const { length } = pivots;
             const values = [
                 $pathValue(`pivots[${index}].enabled`, pivots[index].enabled),
                 $pathValue(`pivots[${index}].resultCount`, pivots[index].resultCount),
@@ -183,30 +180,30 @@ function searchPivotCallRoute({ loadApp, calcTotals, insertRow, searchPivot, upl
     }
 }
 
-function spliceRowCallRoute({ loadApp, calcTotals, spliceRow, uploadGraph }) {
-    return function spliceRowCall(path, args) {
+function splicePivotCallRoute({ loadApp, splicePivot, uploadGraph }) {
+    return function splicePivotCall(path, args) {
         const [id] = args;
         return loadApp().mergeMap(
-            (app) => spliceRow({ app, id }),
-            (app, { row, index }) => ({
-                app, row, index
+            (app) => splicePivot({ app, id }),
+            (app, { pivot, index }) => ({
+                app, pivot, index
             })
         )
         .mergeMap(
             ({app}) => uploadGraph(app),
-             ({app, row, index}, name) => ({
-                 app, row, index, name
+             ({app, pivot, index}, name) => ({
+                 app, pivot, index, name
              })
         )
-        .mergeMap(({ app, row, index, name }) => {
+        .mergeMap(({ app, pivot, index, name }) => {
             app.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
-            const { rows } = app;
-            const { length } = rows;
+            const { pivots } = app;
+            const { length } = pivots;
             const values = [
                 $pathValue(`total`, app.total),
                 $pathValue(`pivots.length`, length),
                 $pathValue('url', app.url),
-                $invalidation(`pivotsById['${row.id}']`),
+                $invalidation(`pivotsById['${pivot.id}']`),
                 $invalidation(`pivots[${index}..${length}]`),
             ];
 

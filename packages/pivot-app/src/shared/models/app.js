@@ -19,7 +19,6 @@ export function app(rows = [], id = simpleflake().toJSON()) {
         title: 'Pivots',
         url: 'http://www.graphistry.com/',
 
-        //total: rows.reduce((total, row) => total + row.total, 0),
         /**
          *  cols: {
          *     total: 'Total', length: 3,
@@ -36,22 +35,18 @@ export function app(rows = [], id = simpleflake().toJSON()) {
         },
 
         /**
-         *  rows: [
-         *     $ref(`rowsById['row-id-1']`) , ...
+         *  pivots: [
+         *     $ref(`pivotsById['row-id-1']`) , ...
          *  ]
          */
-        rows: rows.map((row, index) => (
-            $ref(`rowsById['${row.id}']`)
-        )),
-
         pivots: rows.map((row, index) => (
             $ref(`pivotsById['${row.id}']`)
         )),
 
         /**
-         *  rowsById: {
-         *    'row-id-1': {
-         *       id: 'row-id-1',
+         *  pivotsById: {
+         *    'pivot-id-1': {
+         *       id: 'pivot-id-1',
          *       total: 0, length: 3,
          *       0: { name: 'Column A', value: 0 },
          *       1: { name: 'Column B', value: 0 },
@@ -59,10 +54,6 @@ export function app(rows = [], id = simpleflake().toJSON()) {
          *    }, ...
          *  }
          */
-        rowsById: rows.reduce((rows, row) => ({
-            ...rows, [row.id]: row
-        }), {}),
-
         pivotsById: rows.reduce((rows, row) => ({
             ...rows, [row.id]: row
         }), {})
