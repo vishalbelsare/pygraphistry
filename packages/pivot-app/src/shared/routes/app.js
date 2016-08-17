@@ -144,14 +144,14 @@ function insertRowCallRoute({ loadApp, calcTotals, insertRow }) {
             const { length } = rows;
             const values = [
                 $pathValue(`total`, app.total),
-                $pathValue(`rows.length`, length),
-                $pathValue(`rows[${index}]`, rows[index]),
+                $pathValue(`pivots.length`, length),
+                $pathValue(`pivots[${index}]`, rows[index]),
                 $pathValue(`urlIndex`, app.urlIndex),
             ];
             $invalidation('urlIndex')
 
             if (index < length - 1) {
-                values.push($invalidation(`rows[${index + 1}..${length - 1}]`));
+                values.push($invalidation(`pivots[${index + 1}..${length - 1}]`));
             }
 
             return values;
@@ -179,8 +179,8 @@ function searchPivotCallRoute({ loadApp, calcTotals, insertRow, searchPivot, upl
             const { rows } = app;
             const { length } = rows;
             const values = [
-                $pathValue(`rows[${index}].enabled`, rows[index].enabled),
-                $pathValue(`rows[${index}].resultCount`, rows[index].resultCount),
+                $pathValue(`pivots[${index}].enabled`, rows[index].enabled),
+                $pathValue(`pivots[${index}].resultCount`, rows[index].resultCount),
                 //$pathValue(`rows[${index}]`, rows[index]),
                 $pathValue('url', app.url),
             ];
@@ -213,10 +213,10 @@ function spliceRowCallRoute({ loadApp, calcTotals, spliceRow, uploadGraph }) {
             const { length } = rows;
             const values = [
                 $pathValue(`total`, app.total),
-                $pathValue(`rows.length`, length),
+                $pathValue(`pivots.length`, length),
                 $pathValue('url', app.url),
-                $invalidation(`rowsById['${row.id}']`),
-                $invalidation(`rows[${index}..${length}]`),
+                $invalidation(`pivotsById['${row.id}']`),
+                $invalidation(`pivots[${index}..${length}]`),
             ];
 
             return values;
