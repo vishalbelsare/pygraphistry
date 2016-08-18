@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import { bind } from 'lodash';
-import { Observable } from '@graphistry/rxjs';
+import { Observable } from 'rxjs';
 
 export function setupSplashOrContinue(body, options) {
 

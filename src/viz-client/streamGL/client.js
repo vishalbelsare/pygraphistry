@@ -6,15 +6,20 @@
 
 const urlModule    = require('url');
 const debug        = require('debug')('graphistry:StreamGL:client');
-const $            = window.$;
-const Rx           = require('@graphistry/rxjs');
-                     require('./rx-jquery-stub');
 const _            = require('underscore');
 const io           = require('socket.io-client');
 
 const renderer     = require('./renderer.js');
 const caption      = require('./caption.js');
 const Command      = require('./graphVizApp/command.js');
+
+import $ from 'jquery'
+import {
+    Observable, Subject,
+    BehaviorSubject, ReplaySubject
+} from 'rxjs';
+
+require('./rx-jquery-stub');
 
 
 /**
@@ -40,7 +45,7 @@ function makeFetcher (workerUrl, endpoint, queryKey) {
     return (socketID, bufferByteLengths, bufferName) => {
         debug('fetching', bufferName);
 
-        const res = new Rx.Subject();
+        const res = new Subject();
 
         const query = { id: socketID };
         query[queryKey] = bufferName;
@@ -106,7 +111,7 @@ function requestWorker(args) {
 
     let attempt = 0;
 
-    return Rx.Observable.return().flatMap(
+    return Observable.return().flatMap(
         () => {
             // wrap so can retry if claim race failure
             debug('Asking /vizaddr');
@@ -119,7 +124,7 @@ function requestWorker(args) {
 
             attempt++;
 
-            const ret = Rx.Observable.return(reply);
+            const ret = Observable.return(reply);
             return attempt === 1 ? ret : (ret.delay(1000));
 
         })
@@ -184,7 +189,7 @@ function connect (vizType, urlParams) {
 
     return requestWorker(vizAddrArgs)
         .flatMap((uri) => {
-            return Rx.Observable.return()
+            return Observable.return()
                 .do(() => {
                     attempt++;
                     if (attempt === 3) {
@@ -289,12 +294,12 @@ function handleVboUpdates (socket, uri, renderState) {
     debug('Server buffers/textures', bufferNames, textureNames);
 
     let lastHandshake = Date.now();
-    const vboUpdates = new Rx.BehaviorSubject('init');
+    const vboUpdates = new BehaviorSubject('init');
 
     const previousVersions = {buffers: {}, textures: {}};
     let vboUpdateStep = 0;
 
-    const vboVersions = new Rx.BehaviorSubject(previousVersions);
+    const vboVersions = new BehaviorSubject(previousVersions);
 
     socket.on('vbo_update', (data, handshake) => {
         debug('0. socket vbo update');
@@ -320,10 +325,10 @@ function handleVboUpdates (socket, uri, renderState) {
 
             debug('3. changed buffers/textures', previousVersions, data.versions, changedBufferNames, changedTextureNames, thisStep);
 
-            const readyBuffers = new Rx.ReplaySubject(1);
-            const readyTextures = new Rx.ReplaySubject(1);
+            const readyBuffers = new ReplaySubject(1);
+            const readyTextures = new ReplaySubject(1);
 
-            const readyToRender = Rx.Observable.zip(readyBuffers, readyTextures, _.identity).share();
+            const readyToRender = Observable.zip(readyBuffers, readyTextures, _.identity).share();
             readyToRender
                 .subscribe(() => {
                     debug('6. All buffers and textures received, completing', thisStep);
@@ -333,8 +338,8 @@ function handleVboUpdates (socket, uri, renderState) {
                 },
                 (err) => { console.error('6 err. readyToRender error', err, (err||{}).stack, thisStep); });
 
-            const bufferVBOs = Rx.Observable.combineLatest(
-                [Rx.Observable.return()]
+            const bufferVBOs = Observable.combineLatest(
+                [Observable.return()]
                     .concat(changedBufferNames.map(fetchBuffer.bind('', socket.io.engine.id, data.bufferByteLengths))))
                 .take(1);
 
@@ -369,8 +374,8 @@ function handleVboUpdates (socket, uri, renderState) {
                         const nfo = pair[1];
                         return [name, nfo.bytes]; }));
 
-            const texturesData = Rx.Observable.combineLatest(
-                [Rx.Observable.return()]
+            const texturesData = Observable.combineLatest(
+                [Observable.return()]
                     .concat(changedTextureNames.map(fetchTexture.bind('', socket.io.engine.id, textureLengths))))
                 .take(1);
 

@@ -1,7 +1,7 @@
 'use strict';
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:Version');
-var $       = window.$;
+import $ from 'jquery'
 var util    = require('./util.js');
 
 // Log server's version

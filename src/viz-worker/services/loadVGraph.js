@@ -1,6 +1,6 @@
 import url from 'url';
 import { loadDataset } from './loadDataset';
-import { Observable } from '@graphistry/rxjs';
+import { Observable } from 'rxjs';
 import { cache as Cache } from '@graphistry/common';
 import { load as _loadVGraph } from '../simulator/libs/VGraphLoader';
 

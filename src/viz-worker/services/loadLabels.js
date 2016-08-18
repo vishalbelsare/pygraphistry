@@ -3,8 +3,8 @@ import dataTypeUtil from '../simulator/dataTypes';
 
 import { loadViews } from './loadViews';
 import { cache as Cache } from '@graphistry/common';
-import { Observable, ReplaySubject } from '@graphistry/rxjs';
-import { ref as $ref, atom as $atom } from 'falcor-json-graph';
+import { Observable, ReplaySubject } from 'rxjs';
+import { ref as $ref, atom as $atom } from 'reaxtor-falcor-json-graph';
 
 export function loadLabels(workbooksById, nBodiesById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
 
@@ -49,10 +49,10 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
     }
 
     const titleColumnName = '_title';
-    const columnNames = dataframe.publicColumnNamesByType(labelType) || [];
+    const columnNames = dataframe.publicColumnNamesByType(labelType);
     const rows = dataframe.getRows(labelIndexes, labelType, columnNames);
 
-    const { dataTypesByColumnName, colorMappedByColumnName } = columnNames
+    const { dataTypesByColumnName, colorMappedByColumnName } = (columnNames || [])
         .reduce((memo, columnName) => {
 
             const { dataTypesByColumnName, colorMappedByColumnName } = memo;

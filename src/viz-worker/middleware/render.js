@@ -1,59 +1,104 @@
-import { Model, reaxtor } from 'reaxtor';
-// import assets from './webpack-assets.json';
-import stringify from 'json-stable-stringify';
-import styles from '../../viz-shared/views/graph.less';
-
-import initHTML from 'snabbdom-to-html/init';
-import snabbdomToHTMLClass from 'snabbdom-to-html/modules/class';
-import snabbdomToHTMLProps from 'snabbdom-to-html/modules/props';
-import snabbdomToHTMLStyle from 'snabbdom-to-html/modules/style';
-import snabbdomToHTMLAttributes from 'snabbdom-to-html/modules/attributes';
-
 import { inspect } from 'util';
-import { Observable } from '@graphistry/rxjs';
+import { Model } from 'reaxtor-falcor';
+import { Provider } from 'reaxtor-redux';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { configureStore } from '../../viz-shared/store/configureStore';
+import { renderToString as reactRenderToString } from 'react-dom/server';
+import stringify from 'json-stable-stringify';
 
-const toHTML = initHTML([
-    snabbdomToHTMLClass,
-    snabbdomToHTMLProps,
-    snabbdomToHTMLStyle,
-    snabbdomToHTMLAttributes
-]);
-
-const renderServerSide = true;
+// const renderServerSide = true;
+const renderServerSide = false;
 
 export function renderMiddleware(getDataSource, modules) {
     return function renderMiddleware(req, res) {
+        const { query: options } = req;
         try {
-            Observable.if(
-                () => !renderServerSide,
-     /* then */ Observable.of([null, <div id='app'/>]),
-     /* else */ modules.switchMap(({ App }) =>
-                    reaxtor(App, new Model(
-                           { source: getDataSource(req) }),
-                           {...req.cookies, ...req.query})
-                )
-            )
-            .debounceTime(0)
-            .take(1)
-            .map(([model, [appState, vdom]]) => renderVDomToHTMLPage(model, vdom))
-            .subscribe({
+
+            const renderedResults = !renderServerSide ?
+                Observable.of(renderFullPage()) :
+                renderAppWithHotReloading(modules, getDataSource(req), options);
+
+            renderedResults.take(1).subscribe({
                 next(html) {
                     res.type('html').send(html);
                 },
                 error(e, error = e && e.stack || inspect(e, { depth: null })) {
                     console.error(error);
-                    res.status(500).send(toHTML(<pre>{error}</pre>));
+                    if (e.boundPath) {
+                        console.error(stringify(e.boundPath));
+                        console.error(stringify(e.shortedPath));
+                    }
+                    res.status(500).send(reactRenderToString(<pre>{error}</pre>));
                 }
             });
         } catch (e) {
             const error = e && e.stack || inspect(e, { depth: null });
             console.error(error);
-            res.status(500).send(toHTML(<pre>{error}</pre>));
+            res.status(500).send(reactRenderToString(<pre>{error}</pre>));
         }
     }
 }
 
-function renderVDomToHTMLPage(model, vdom) {
+function renderAppWithHotReloading(modules, dataSource, options) {
+    return modules
+        .map(({ App }) => ({
+            App, falcor: new Model({ source: dataSource })
+        }))
+        .switchMap(
+            ({ App, falcor }) => falcor.get(...falcor.QL.call(null, App.fragment(options))),
+            ({ App, falcor }, initialState) => ({ App, falcor, initialState })
+        )
+        .map(({ App, falcor, initialState }) =>
+            renderFullPage(
+                falcor, options.workerID,
+                reactRenderToString(
+                    <Provider store={configureStore(initialState)} falcor={falcor}>
+                        <App {...options} key='viz-client'/>
+                    </Provider>
+                )
+            )
+        );
+}
+
+function renderFullPage(falcor, workerID = '', html = '') {
+    const assetSuffix = workerID && `?workerID=${workerID}` || '';
+    const { client } = require('./webpack-assets.json');
+    return `
+<!DOCTYPE html>
+<html lang='en-us'>
+    <head>
+        <meta name='robots' content='noindex, nofollow'/>
+        <meta http-equiv='x-ua-compatible' content='ie=edge'/>
+        <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'/>
+        <link rel='stylesheet' type='text/css' href='https://maxcdn.bootstrapcdn.com/bootstrap/latest/css/bootstrap.min.css'>${
+            client && client.css ?
+        `<link rel='stylesheet' type='text/css' href='${`${client.css}${assetSuffix}`}'/>`: ''
+        }
+    </head>
+    <body class='graphistry-body'>
+        <script type="text/javascript">
+            var templatePaths = { API_ROOT: window.location.protocol + "//" + window.location.host + "/graph/" };
+        </script>
+        <script type="text/javascript">
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//google-analytics.com/analytics.js','ga');
+        </script>
+        <div id='root'>
+            ${html}
+        </div>
+        <script>
+            window.__INITIAL_STATE__ = ${
+                stringify(falcor && falcor.getCache() || {})};
+        </script>
+        <script type="text/javascript" src="${`${client.js}${assetSuffix}`}"></script>
+    </body>
+</html>`;
+}
+
+
+function renderVDomToHTMLPage(model, vdom, workerID = '') {
     const assets = require('./webpack-assets.json');
     return (`<!DOCTYPE html>
 ${toHTML(<html lang='en-us'>
@@ -61,51 +106,63 @@ ${toHTML(<html lang='en-us'>
                 <meta charset="utf-8"/>
                 <meta name="robots" content="noindex, nofollow"/>
                 <meta http-equiv='x-ua-compatible' content='ie=edge'/>
-                <meta name='viewport' content='width=device-width, initial-scale=1'/>
+                <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'/>
+                <link rel="stylesheet" type='text/css' href={`css/jquery-ui-1.10.4.css?workerID=${workerID}`}/>
+                <link rel="stylesheet" type='text/css' href={`libs/jQRangeSlider-5.6.0/css/classic-min.css?workerID=${workerID}`}/>
+                <link rel="stylesheet" type='text/css' href={`libs/colorpicker/colorpicker.css?workerID=${workerID}`}/>
+                <link rel="stylesheet" type='text/css' href={`libs/bootstrap/css/bootstrap.css?workerID=${workerID}`}/>
+                <link rel="stylesheet" type='text/css' href={`libs/bootstrap-slider/css/bootstrap-slider.css?workerID=${workerID}`}/>
+                <link rel="stylesheet" type='text/css' href={`libs/bootstrap-switch.min.css?workerID=${workerID}`}/>
+                <link rel="stylesheet" type='text/css' href={`libs/bootstrap.vertical-tabs.min.css?workerID=${workerID}`}/>
 
-                <link rel="stylesheet" type='text/css' href="css/jquery-ui-1.10.4.css"/>
-                <link rel="stylesheet" type='text/css' href="libs/jQRangeSlider-5.6.0/css/classic-min.css"/>
-                <link rel="stylesheet" type='text/css' href="libs/colorpicker/colorpicker.css"/>
-                <link rel="stylesheet" type='text/css' href="libs/bootstrap/css/bootstrap.css"/>
-                <link rel="stylesheet" type='text/css' href="libs/bootstrap-slider/css/bootstrap-slider.css"/>
-                <link rel="stylesheet" type='text/css' href="libs/bootstrap-switch.min.css"/>
-                <link rel="stylesheet" type='text/css' href="libs/bootstrap.vertical-tabs.min.css"/>
-
+{/*
                 <link rel="stylesheet" type='text/css' href="libs/font-awesome/css/font-awesome.css"/>
                 <link rel="stylesheet" type='text/css' href="css/nunito.css"/>
 
                 <link rel="stylesheet" type='text/css' href="libs/backgrid.min.css"/>
                 <link rel="stylesheet" type='text/css' href="libs/backgrid-paginator.min.css"/>
-
+*/}
                 { /* App */ }
+{/*
                 <link rel="stylesheet" type='text/css' href="css/gpustreaming.css" media="screen" charset="utf-8"/>
+*/}
                 { /* <link rel="stylesheet" type='text/css' href="css/graph.css" media="screen" charset="utf-8"> */ }
-                <link rel='stylesheet' type='text/css' href={assets.client.css || ''}/>
 
+                <link rel='stylesheet' type='text/css' href={`${assets.client.css}?workerID=${workerID}`}/>
+
+{/*
                 <link rel="shortcut icon" href="/favicon.ico"/>
-
-                <script type="text/javascript" src="libs/jquery-2.1.1.js"></script>
+*/}
+                <script type="text/javascript" src={`libs/jquery-2.1.1.js?workerID=${workerID}`}></script>
                 { /* Libs (bootstrap etc.) */ }
-                <script type="text/javascript" src="libs/jquery-ui-1.10.4.min.js"></script>
+                <script type="text/javascript" src={`libs/jquery-ui-1.10.4.min.js?workerID=${workerID}`}></script>
+                <script type="text/javascript" src={`libs/jQRangeSlider-5.6.0/jQAllRangeSliders-min.js?workerID=${workerID}`}></script>
+                <script type="text/javascript" src={`libs/colorpicker/colorpicker.js?workerID=${workerID}`}></script>
+{/*
                 <script type="text/javascript" src="libs/underscore-min.js"></script>
                 <script type="text/javascript" src="libs/jquery.mousewheel-3.1.9.js"></script>
-                <script type="text/javascript" src="libs/jQRangeSlider-5.6.0/jQAllRangeSliders-min.js"></script>
-                <script type="text/javascript" src="libs/colorpicker/colorpicker.js"></script>
                 <script type="text/javascript" src="libs/spin.min.js"></script>
+*/}
 
                 { /* FIXME: Package Quo and bundle with StreamGL */ }
+{/*
                 <script type="text/javascript" src="libs/quo.js"></script>
 
                 <script type="text/javascript" src="libs/bootstrap/js/bootstrap.js"></script>
                 <script type="text/javascript" src="libs/bootstrap-slider/js/bootstrap-slider.js"></script>
                 <script type="text/javascript" src="libs/bootstrap-switch.min.js"></script>
+*/}
 
                 { /* Ace editor, ideally delayed until used. */ }
+{/*
                 <script type="text/javascript" src="libs/ace/src-noconflict/ace.js"></script>
                 <script type="text/javascript" src="libs/ace/src-noconflict/ext-language_tools.js"></script>
+*/}
 
                 { /* FIXME: Include fpsmeter as part of the StreamGL bundle */ }
+{/*
                 <script type="text/javascript" src="libs/fpsmeter.js" charset="utf-8"></script>
+*/}
             </head>
             <body class_={{ [styles["graphistry-body"] || "graphistry-body"]: true }}>{[
                 /* copied from index.fragment.handlebars */
@@ -119,10 +176,11 @@ ${toHTML(<html lang='en-us'>
                     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
                     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
                 `]}</script>,
+
                 <script type="text/javascript">{[`
-                    window.addEventListener("beforeunload", function (){ console.clear(); });
-                    window.addEventListener("DOMContentLoaded", function () {$('[data-toggle="tooltip"]').tooltip();});
-                    $.fn.bootstrapSwitch.defaults.size = 'small';
+                    // window.addEventListener("beforeunload", function (){ console.clear(); });
+                    // window.addEventListener("DOMContentLoaded", function () {$('[data-toggle="tooltip"]').tooltip();});
+                    // $.fn.bootstrapSwitch.defaults.size = 'small';
                 `]}</script>,
 
                 vdom,
@@ -141,7 +199,7 @@ ${toHTML(<html lang='en-us'>
                 <script type="text/javascript">{[`
                     window.appCache = ${stringify(model && model.getCache() || {})};
                 `]}</script>,
-                <script type="text/javascript" src={assets.client.js}></script>
+                <script type="text/javascript" src={`${assets.client.js}?workerID=${workerID}`}></script>
             ]}</body>
         </html>
         )}`

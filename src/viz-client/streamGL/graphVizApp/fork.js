@@ -1,9 +1,9 @@
 'use strict';
 
-var $               = window.$;
+import $ from 'jquery'
+import { Observable } from 'rxjs';
+
 var _               = require('underscore');
-var Rx              = require('@graphistry/rxjs');
-                      require('../rx-jquery-stub');
 const util            = require('./util.js');
 const Command         = require('./command.js');
 
@@ -20,7 +20,7 @@ function nameToLink (urlParams, name) {
 module.exports = function (socket, urlParams) {
     const $btn = $('#forkButton');
 
-    Rx.Observable.fromEvent($btn, 'click')
+    Observable.fromEvent($btn, 'click')
         // show
         .map(() => {
             const uid = util.createAlphaNumericUID();
@@ -40,7 +40,7 @@ module.exports = function (socket, urlParams) {
             $('.status', $modal).css('display', 'none');
             $modal.modal('show');
         })
-        .flatMap(($modal) => Rx.Observable.fromEvent($('.modal-footer button', $modal), 'click')
+        .flatMap(($modal) => Observable.fromEvent($('.modal-footer button', $modal), 'click')
             .map(_.constant($modal)))
         // notify server & wait
         .do(($modal) => {

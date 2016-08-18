@@ -1,6 +1,7 @@
 'use strict';
 
-const Rx      = require('@graphistry/rxjs');
+import { Observable } from 'rxjs';
+
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:command');
 
 
@@ -14,7 +15,7 @@ function Command (description, commandName, socket, disableErrorFiltering = true
 Command.prototype = {
     sendWithObservableResult: function (...args) {
         debug('Sent command ' + this.commandName, args);
-        const src = Rx.Observable.bindCallback(this.socket.emit.bind(this.socket))(this.commandName, ...args);
+        const src = Observable.bindCallback(this.socket.emit.bind(this.socket))(this.commandName, ...args);
         if (this.disableErrorFiltering === true) {
             return src;
         } else {

@@ -2,19 +2,19 @@
 
 'use strict';
 
-var $  = window.$;
-var Rx = require('@graphistry/rxjs');
+import $ from 'jquery'
+import { Observable, AsyncSubject } from 'rxjs';
 
 var proto = $.fn;
 
 function observableCreateRefCount(subscribe) {
-    return Rx.Observable.create(subscribe).publish().refCount();
+    return Observable.create(subscribe).publish().refCount();
 }
 
 var slice = Array.prototype.slice;
 
 $.ajaxAsObservable = function(settings) {
-    var subject = new Rx.AsyncSubject();
+    var subject = new AsyncSubject();
 
     var internalSettings = {
         success: function(data, textStatus, jqXHR) {

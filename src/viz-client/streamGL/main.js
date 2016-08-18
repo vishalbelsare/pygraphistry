@@ -2,14 +2,12 @@
 
 /* global FPSMeter */
 
-require('source-map-support').install();
-
 /**
  * Simple use of client.js with UI bindings
  * @module StreamGL/main
  */
 
-var Rx              = require('@graphistry/rxjs');
+var Rx              = require('rxjs');
 
 Rx.Observable.return = function (value) {
     return Rx.Observable.of(value);
@@ -31,7 +29,7 @@ Rx.Subscriber.prototype.dispose = Rx.Subscriber.prototype.unsubscribe;
 
 Rx.Subscription.prototype.dispose = Rx.Subscription.prototype.unsubscribe;
 
-const $               = window.$;
+import $ from 'jquery'
 const _               = require('underscore');
 const nodeutil        = require('util');
 const util            = require('./graphVizApp/util.js');

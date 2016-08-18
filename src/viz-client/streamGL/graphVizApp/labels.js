@@ -1,12 +1,11 @@
 'use strict';
 
+import $ from 'jquery'
 import Color from 'color';
 import { d3 as translate3d } from 'css3-translate';
+import { Observable, Scheduler } from 'rxjs';
 
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:labels');
-const $       = window.$;
-const Rx      = require('@graphistry/rxjs');
-              require('../rx-jquery-stub');
 const _       = require('underscore');
 
 const util            = require('./util.js');
@@ -91,7 +90,7 @@ function setupClickDragInteractions (appState, socket, $eventTarget) {
         return diff;
     };
 
-    Rx.Observable.fromEvent($eventTarget, 'mousedown')
+    Observable.fromEvent($eventTarget, 'mousedown')
         .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
         .switchMap((downEvt) => {
             return interaction.observableFilterForClickingSelectedPoints(downEvt, appState, true);
@@ -106,13 +105,13 @@ function setupClickDragInteractions (appState, socket, $eventTarget) {
 
             // These events are bound to the document so that we don't miss either
             // due to interactions with other dom elements
-            const mouseUpOnWindowStream = Rx.Observable.fromEvent(document, 'mouseup');
+            const mouseUpOnWindowStream = Observable.fromEvent(document, 'mouseup');
 
             // We make a handler here for mouse-outs of JUST the document.
             // That is, a mouseout event from a child of the document won't trigger this,
             // only someone mousing out of the window
             // Technique taken from http://stackoverflow.com/questions/923299/how-can-i-detect-when-the-mouse-leaves-the-window
-            const mouseOutOfWindowStream = Rx.Observable.fromEvent(document, 'mouseout')
+            const mouseOutOfWindowStream = Observable.fromEvent(document, 'mouseout')
                 .filter((e=window.event) => {
                     const from = e.relatedTarget || e.toElement;
                     return (!from || from.nodeName === 'HTML');
@@ -123,7 +122,7 @@ function setupClickDragInteractions (appState, socket, $eventTarget) {
 
 
             // Subscribe to mouse moves until we get a signal to stop, then send payload to server
-            return Rx.Observable.fromEvent($eventTarget, 'mousemove')
+            return Observable.fromEvent($eventTarget, 'mousemove')
                 .takeUntil(stopDraggingStream
                     .switchMap((upEvt) => {
                         const diff = worldCoordDiffFromMouseEvents(downEvt, upEvt, appState.renderingScheduler.renderState);
@@ -169,7 +168,7 @@ function setupClickSelections (appState, $eventTarget) {
                     : ($target.parents('.graph-label')[0]);
                 const pt = _.values(appState.poi.state.activeLabels)
                     .filter((lbl) => lbl.elt.get(0) === elt)[0];
-                targetElementStream = Rx.Observable.return(new VizSlice([pt]));
+                targetElementStream = Observable.return(new VizSlice([pt]));
 
             // Clicked on canvas, return latest highlighted object
             } else {
@@ -242,7 +241,7 @@ function setupLabels (appState, urlParams, $eventTarget, latestHighlightedObject
             $sheet: $('<style type="text/css">').appendTo('head')
         });
 
-    Rx.Observable.combineLatest(
+    Observable.combineLatest(
         labelsUpdates, appState.cameraChanges,
         appState.vboUpdates, appState.isAnimating,
         latestHighlightedObject, appState.activeSelection,
@@ -271,16 +270,17 @@ function renderLabels(appState, $labelCont, highlighted, selected, doneAnimating
     const curPoints = appState.renderState.get('hostBuffers').curPoints;
     if (!curPoints) {
         console.warn('renderLabels called before curPoints available');
-        return Rx.Observable.empty();
+        return Observable.empty();
     }
 
     return curPoints
-        .audit(() => Rx.Observable.of(1, Rx.Scheduler.animationFrame))
+        .audit(() => Observable.of(1, Scheduler.animationFrame))
         .take(1)
         .do({
             next(curPointsNow) {
                 debug('rendering labels');
-                renderLabelsImmediate(appState, $labelCont, curPointsNow, highlighted, selected, doneAnimating,
+                renderLabelsImmediate(appState, $labelCont, curPointsNow,
+                                      highlighted, selected, doneAnimating,
                                       labelsAreEnabled, poiIsEnabled);
             },
             error: util.makeErrorHandler('renderLabels')

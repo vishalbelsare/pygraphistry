@@ -1,10 +1,10 @@
-import { Subject } from '@graphistry/rxjs';
+import { Subject } from 'rxjs';
 import * as CLjs from '../simulator/cl';
 import * as SimCL from '../simulator/SimCL';
 import * as NBody from '../simulator/NBody';
 import Dataframe from '../simulator/Dataframe';
-import { scenes } from '../../viz-shared/models';
 import * as driver from '../simulator/node-driver';
+import { scenes } from '../../viz-shared/scene/model';
 import { Renderer } from '../../viz-shared/renderers';
 import { controls as layoutControls } from '../simulator/layout.config';
 

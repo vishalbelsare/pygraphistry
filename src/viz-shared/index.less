@@ -1,0 +1,16 @@
+@import './vars.less';
+@import './mixins.less';
+
+:global {
+    @import '~react-bootstrap-switch/src/less/bootstrap3/build.less';
+    .graphistry-body {
+        // visibility: hidden;
+        background-color: @graphistry-background !important;
+        height: 100%;
+        overflow:hidden;
+
+        .heading {
+            background: none;
+        }
+    }
+}

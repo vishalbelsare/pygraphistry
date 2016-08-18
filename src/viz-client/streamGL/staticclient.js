@@ -4,10 +4,10 @@
     Static-only facet for client.js
 */
 
+import $ from 'jquery'
+import { Observable, Subject, BehaviorSubject, ReplaySubject } from 'rxjs';
+
 const debug        = require('debug')('graphistry:StreamGL:staticclient');
-const $            = window.$;
-const Rx           = require('@graphistry/rxjs');
-                     require('./rx-jquery-stub');
 const _            = require('underscore');
 
 const renderer     = require('./renderer.js');
@@ -54,7 +54,7 @@ function makeFetcher () {
 
         debug('fetching', bufferName);
 
-        const res = new Rx.Subject();
+        const res = new Subject();
 
         // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
         const oReq = new XMLHttpRequest();
@@ -103,7 +103,7 @@ function fetchOffsetBuffer (bufferName) {
     debug('fetching', bufferName);
 
     // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Sending_and_Receiving_Binary_Data?redirectlocale=en-US&redirectslug=DOM%2FXMLHttpRequest%2FSending_and_Receiving_Binary_Data
-    const result = new Rx.ReplaySubject(1);
+    const result = new ReplaySubject(1);
     const oReq = new XMLHttpRequest();
     const assetURL = getStaticContentURL(contentKey, bufferName);
     const now = Date.now();
@@ -149,7 +149,7 @@ const LABEL_SIZE_LIMIT = Math.pow(2, 18);
 
 
 function getLabelViaRange(type, index, byteStart, byteEnd) {
-    const res = new Rx.Subject();
+    const res = new Subject();
     const oReq = new XMLHttpRequest();
     const assetURL = getStaticContentURL(contentKey, type + 'Labels.buffer');
     const byteStartString = byteStart !== undefined && byteStart.toString ? byteStart.toString(10) : '';
@@ -223,7 +223,7 @@ function getLabel (offsetsForType, type, index) {
     const translatedType = _.findKey(DimCodes, (dimCode) => { return dimCode === type; }) || type;
     const labelCache = labelsByType[translatedType];
     if (labelCache.hasOwnProperty(index)) {
-        const res = new Rx.Subject();
+        const res = new Subject();
         res.onNext(labelCache[index]);
         return res;
     }
@@ -241,7 +241,7 @@ module.exports = {
 
         contentKey = urlParams.contentKey;
 
-        const offsetsSource = Rx.Observable.combineLatest(
+        const offsetsSource = Observable.combineLatest(
             getLabelOffsets('point'),
             getLabelOffsets('edge'),
             (pointsOffsets, edgesOffsets) => {
@@ -249,10 +249,10 @@ module.exports = {
                 return [undefined, pointsOffsets, edgesOffsets];
             }
         );
-        const offsetsCombined = new Rx.ReplaySubject(1);
+        const offsetsCombined = new ReplaySubject(1);
         offsetsSource.subscribe(offsetsCombined);
 
-        return Rx.Observable.return({
+        return Observable.return({
             socket: {
                 on: (eventName) => {
                     debug('ignoring on event', eventName);
@@ -303,11 +303,11 @@ module.exports = {
     handleVboUpdates: (socket, uri, renderState) => {
         debug('handle vbo updates');
 
-        const vboUpdates = new Rx.ReplaySubject(1);
+        const vboUpdates = new ReplaySubject(1);
         vboUpdates.onNext('init');
 
         const previousVersions = {buffers: {}, textures: {}};
-        const vboVersions = new Rx.BehaviorSubject(previousVersions);
+        const vboVersions = new BehaviorSubject(previousVersions);
 
         const bufferBlackList = ['selectedPointIndexes', 'selectedEdgeIndexes'];
 
@@ -323,9 +323,9 @@ module.exports = {
                 const fetchBuffer = makeFetcher().bind(data.bufferByteLengths, '');
                 const fetchTexture = makeFetcher().bind(data.bufferByteLengths, '');
 
-                const readyBuffers = new Rx.ReplaySubject(1);
-                const readyTextures = new Rx.ReplaySubject(1);
-                const readyToRender = Rx.Observable.zip(readyBuffers, readyTextures, _.identity).share();
+                const readyBuffers = new ReplaySubject(1);
+                const readyTextures = new ReplaySubject(1);
+                const readyToRender = Observable.zip(readyBuffers, readyTextures, _.identity).share();
                 readyToRender.subscribe(
                     () => { vboUpdates.onNext('received'); },
                     (err) => { console.error('readyToRender error', err, (err||{}).stack); });
@@ -333,8 +333,8 @@ module.exports = {
                 const changedBufferNames = _.select(_.keys(data.bufferByteLengths),
                     (bufferName) => !_.contains(bufferBlackList, bufferName));
                 const bufferFileNames = changedBufferNames.map((bufferName) => bufferName + '.vbo');
-                const bufferVBOs = Rx.Observable.combineLatest(
-                    [Rx.Observable.return()]
+                const bufferVBOs = Observable.combineLatest(
+                    [Observable.return()]
                         .concat(bufferFileNames.map(fetchBuffer)))
                     .take(1);
                 bufferVBOs
@@ -357,8 +357,8 @@ module.exports = {
                         });
 
                 const changedTextureNames = [];
-                const texturesData = Rx.Observable.combineLatest(
-                    [Rx.Observable.return()]
+                const texturesData = Observable.combineLatest(
+                    [Observable.return()]
                         .concat(changedTextureNames.map(fetchTexture)))
                     .take(1);
                 texturesData

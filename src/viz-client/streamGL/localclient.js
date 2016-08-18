@@ -5,8 +5,8 @@
 */
 
 var debug        = require('debug')('graphistry:StreamGL:localclient');
-var $            = window.$;
-var Rx           = require('@graphistry/rxjs');
+import $ from 'jquery'
+var Rx           = require('rxjs');
                    require('./rx-jquery-stub');
 var _            = require('underscore');
 

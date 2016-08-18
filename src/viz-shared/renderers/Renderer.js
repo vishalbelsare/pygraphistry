@@ -1,4 +1,4 @@
-import { Observable } from '@graphistry/rxjs';
+import { Observable } from 'rxjs';
 import { logger as commonLogger } from '@graphistry/common';
 const logger = commonLogger.createLogger('viz-worker', 'viz-shared/renderers/Renderer.js');
 

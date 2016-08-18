@@ -1,17 +1,16 @@
 'use strict';
 
-const $               = window.$;
+import $ from 'jquery'
 const _               = require('underscore');
-const Rx              = require('@graphistry/rxjs');
-                      require('../rx-jquery-stub');
 const util            = require('./util.js');
 const Color           = require('color');
 
+import { Subject, ReplaySubject } from 'rxjs';
 
 //$DOM * hex -> Observable hex
 function makeInspector ($elt, hexColor) {
 
-    const colors = new Rx.Subject();
+    const colors = new Subject();
 
     $elt.find('.colorSelector').ColorPicker({
         color: hexColor,
@@ -105,13 +104,13 @@ module.exports = {
     renderConfigValueForColor: renderConfigValueForColor,
 
     foregroundColorObservable: function () {
-        const foregroundColorObservable = new Rx.ReplaySubject(1);
+        const foregroundColorObservable = new ReplaySubject(1);
         foregroundColorObservable.onNext(undefined);
         return foregroundColorObservable;
     },
 
     backgroundColorObservable: function (initialRenderState, urlParams) {
-        const backgroundColorObservable = new Rx.ReplaySubject(1);
+        const backgroundColorObservable = new ReplaySubject(1);
         let urlParamsBackgroundColor;
         if (urlParams.hasOwnProperty('bg')) {
             try {

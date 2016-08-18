@@ -1,7 +1,7 @@
 // Set jshint to ignore `predef:'io'` in .jshintrc so we can manually define io here
 /* global -io */
 
-import Rx from '@graphistry/rxjs';
+import Rx from 'rxjs';
 // import testColormap2 from '../textures/test-colormap2.rgba';
 
 const Observable  = Rx.Observable;
@@ -31,7 +31,7 @@ const Q           = require('q');
 const fs          = require('fs');
 const path        = require('path');
 const extend      = require('node.extend');
-const rConf       = require('../../viz-shared/models/renderer');
+const rConf       = require('../../viz-shared/scene/model');
 const lConf       = require('./layout.config.js');
 const cljs        = require('./cl.js');
 const loader      = require('./data-loader.js');

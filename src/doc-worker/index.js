@@ -7,7 +7,7 @@ import { cache as Cache } from '@graphistry/common';
 import removeExpressRoute from 'express-remove-route';
 import * as FalcorDocRouter from 'falcor-doc-router';
 import { falcorRoutes } from '../viz-shared/routes/falcor';
-import { Observable, Subscription } from '@graphistry/rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { getDataSourceFactory } from '../viz-shared/middleware';
 import GraphDescriptor from 'falcor-doc-router/graph-descriptor';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';

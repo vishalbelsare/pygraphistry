@@ -1,4 +1,3 @@
-:global {
 /*******/
 
 
@@ -29,7 +28,6 @@
 
 //canvas
 @meter-z:                       2100;
-@highlighted-point-z:           2200;
 @marquee-z:                     2300;
 
 
@@ -443,46 +441,6 @@ html.labelsDisabled .graph-label-container {
         margin: 0px;
     }
 
-}
-
-#highlighted-point-cont {
-    z-index: @highlighted-point-z;
-    position: absolute;
-    top: -10px;
-    left: -10px;
-    cursor: pointer;
-
-    &.draggable {
-        cursor: -webkit-grab;
-        cursor: -moz-grab;
-        cursor: grab;
-    }
-
-    .noselect();
-}
-
-.highlighted-point {
-    position: relative;
-    left: -9px;
-    top: -9px;
-    border: 2px solid rgba(0,0,0,0.8);
-    border-radius: 10px;
-    width: 20px;
-    height: 20px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.75);
-}
-
-.highlighted-point-center {
-    display: none;
-
-    position: relative;
-    left: 7px;
-    top: 7px;
-    border-radius: 4px;
-    background-color: white;
-    width: 5px;
-    height: 5px;
-    border: 1px solid rgb(51,51,102);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2266,6 +2224,4 @@ html.nologo .app-branding, .app-branding.disabled {
 
 @-webkit-keyframes "pulsate" {
     .graphistry-pulsate-keyframes()
-}
-
 }

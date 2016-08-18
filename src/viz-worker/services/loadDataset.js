@@ -1,6 +1,6 @@
 import url from 'url';
 import zlib from 'zlib';
-import { Observable } from '@graphistry/rxjs';
+import { Observable } from 'rxjs';
 import { cache as Cache } from '@graphistry/common';
 
 const downloaders = {

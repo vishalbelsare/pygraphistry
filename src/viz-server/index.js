@@ -1,7 +1,5 @@
 process.chdir('www');
 
-require('source-map-support').install();
-
 import { tellParent } from './support';
 
 import { config, logger, start } from './server';

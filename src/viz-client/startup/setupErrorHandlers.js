@@ -1,7 +1,7 @@
 import $ from 'jquery';
 import { format } from 'util';
 import { bind, partial } from 'lodash';
-import { Subject, Observable } from '@graphistry/rxjs';
+import { Subject, Observable } from 'rxjs';
 
 export function setupErrorHandlers(document, window, options) {
 
@@ -42,7 +42,7 @@ export function setupErrorHandlers(document, window, options) {
         .map((functionName) => {
             const notifier = new Subject();
             const originalFn = console[functionName];
-            console[functionName] = function() {
+            console[functionName] = function(message) {
                 originalFn.apply(this, arguments);
                 notifier.next({
                     message: format.apply(this, arguments)

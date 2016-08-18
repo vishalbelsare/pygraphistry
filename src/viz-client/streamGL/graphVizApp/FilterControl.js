@@ -1,8 +1,8 @@
 'use strict';
 
+import { Subject, ReplaySubject } from 'rxjs';
+
 const _     = require('underscore');
-const Rx    = require('@graphistry/rxjs');
-require('../rx-jquery-stub');
 const PEGUtil = require('pegjs-util');
 // const ASTY    = require('asty');
 
@@ -20,12 +20,12 @@ function queryParametersCore (type, attribute) {
 
 
 function FilterControl (socket) {
-    this.namespaceMetadataSubject = new Rx.ReplaySubject(1);
+    this.namespaceMetadataSubject = new ReplaySubject(1);
 
     this.namespaceCommand = new Command('getting column descriptions', 'get_namespace_metadata', socket, false);
     this.getFiltersCommand = new Command('getting filters', 'get_filters', socket);
     this.updateFiltersCommand = new Command('updating filters', 'update_filters', socket);
-    this.updateFiltersRequests = new Rx.Subject();
+    this.updateFiltersRequests = new Subject();
     this.runFilterCommand = new Command('filtering the view', 'filter', socket);
 
     this.encodeCommand = new Command('Encode a column', 'encode_by_column', socket);
@@ -34,11 +34,11 @@ function FilterControl (socket) {
 
     this.computeMaskCommand = new Command('List elements matching', 'computeMask', socket);
 
-    /** @type Rx.ReplaySubject */
-    this.filtersResponsesSubject = new Rx.ReplaySubject(1);
-    this.exclusionsResponsesSubject = new Rx.ReplaySubject(1);
-    /** @type Rx.ReplaySubject */
-    this.setsResponsesSubject = new Rx.ReplaySubject(1);
+    /** @type ReplaySubject */
+    this.filtersResponsesSubject = new ReplaySubject(1);
+    this.exclusionsResponsesSubject = new ReplaySubject(1);
+    /** @type ReplaySubject */
+    this.setsResponsesSubject = new ReplaySubject(1);
     // Get initial filters values:
     this.getFiltersCommand.sendWithObservableResult()
         .do((reply) => {
