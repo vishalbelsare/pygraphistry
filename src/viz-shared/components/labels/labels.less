@@ -1,0 +1,78 @@
+@import '../vars.less';
+
+.labels-container {
+
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    &.off .label {
+        display: none;
+    }
+}
+
+.label {
+
+    z-index: @graph-label-z;
+
+    /* shrink-to-fit: hidden bounding box for autosizing contents */
+    width: 30em;
+    cursor: pointer;
+    position: absolute;
+    pointer-events: none;
+
+    & .title {
+        :global(.fa-thumb-tack) {
+            display: none;
+        }
+
+        .exclude-by-title {
+            display: none;
+        }
+    }
+
+    /* clicked states */
+
+    &.clicked {
+        z-index: @graph-label-clicked-z;
+    }
+
+    &.clicked:hover {
+        z-index: @graph-label-hover-clicked-z;
+    }
+
+    &.on:not(.clicked) {
+        z-index: @graph-label-hover-z;
+    }
+
+    &.clicked, &:hover {
+
+        margin-top: -2px;
+        margin-left: -2px;
+
+        .labels-container {
+
+            background-color: white;
+            border-width: 3px;
+        }
+    }
+
+    /* scrollbar */
+    &::-webkit-scrollbar,
+    & .labels-container::-webkit-scrollbar,
+    & .label-contents::-webkit-scrollbar   {
+        appearance: none;
+        width: 7px;
+    }
+    &::-webkit-scrollbar-thumb,
+    & .labels-container::-webkit-scrollbar-thumb,
+    & .label-contents::-webkit-scrollbar-thumb {
+        border-radius: 4px;
+        background-color: rgba(0,0,0,.5);
+        box-shadow: 0 0 1px rgba(255,255,255,.5);
+    }
+}
+
+.label-contents {
+
+}

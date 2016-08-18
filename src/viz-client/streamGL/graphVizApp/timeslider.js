@@ -1,9 +1,9 @@
 'use strict';
 
+import $ from 'jquery'
+import { Subject } from 'rxjs';
+
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:timeslider');
-var $       = window.$;
-var Rx      = require('@graphistry/rxjs');
-              require('../rx-jquery-stub');
 var FilterControl = require('./FilterControl.js');
 
 module.exports = {
@@ -18,7 +18,7 @@ module.exports = {
         // var defaults = {min: MAX_BOUNDS/5, max:MAX_BOUNDS - MAX_BOUNDS/5};
         var defaults = {min: 10, max:MAX_BOUNDS - 10};
 
-        var hits = new Rx.Subject();
+        var hits = new Subject();
 
         $('#timeSlider2')
             .css({display: 'block'})

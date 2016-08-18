@@ -1,9 +1,8 @@
 'use strict';
 
+import $ from 'jquery'
+
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:TimeExplorer');
-var $       = window.$;
-var Rx      = require('@graphistry/rxjs');
-              require('../../rx-jquery-stub');
 var _       = require('underscore');
 var Handlebars = require('handlebars');
 var Backbone = require('backbone');

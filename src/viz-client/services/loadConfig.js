@@ -1,4 +1,4 @@
-import { Observable } from '@graphistry/rxjs';
+import { Observable } from 'rxjs';
 
 export function loadConfig() {
     return Observable.of({

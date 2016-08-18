@@ -1,9 +1,9 @@
 'use strict';
 
-const $               = window.$;
+import $ from 'jquery'
+import { Observable } from 'rxjs';
+
 const _               = require('underscore');
-const Rx              = require('@graphistry/rxjs');
-                        require('../rx-jquery-stub');
 const Color           = require('color');
 
 const util            = require('./util.js');
@@ -91,7 +91,7 @@ module.exports = {
     setupPersistWorkbookButton: ($btn, appState, socket, urlParams) => {
         let workbookName = urlParams.workbook;
 
-        Rx.Observable.fromEvent($btn, 'click')
+        Observable.fromEvent($btn, 'click')
             .map(() => {
                 return $(persistWorkbookTemplate({ defName: workbookName }));
             })
@@ -101,7 +101,7 @@ module.exports = {
                 $modal.modal('show');
             })
             .flatMap(($modal) => {
-                return Rx.Observable.fromEvent($('.modal-footer button', $modal), 'click')
+                return Observable.fromEvent($('.modal-footer button', $modal), 'click')
                     .map(_.constant($modal));
             })
             // notify server and wait
@@ -112,7 +112,7 @@ module.exports = {
             })
             .flatMap(($modal) => {
                 workbookName = $('.modal-body input', $modal).val();
-                return Rx.Observable.bindCallback(socket.emit.bind(socket))('persist_current_workbook', workbookName)
+                return Observable.bindCallback(socket.emit.bind(socket))('persist_current_workbook', workbookName)
                     .map((reply) => {
                         return {reply: reply, $modal: $modal, workbookName: workbookName};
                     });
@@ -150,7 +150,7 @@ module.exports = {
 
         maybeHide($btn, socket);
 
-        Rx.Observable.fromEvent($btn, 'click')
+        Observable.fromEvent($btn, 'click')
             // show
             .map(() => {
                 const contentKey = urlParams.contentKey || generateContentKey(urlParams);
@@ -162,7 +162,7 @@ module.exports = {
                 $modal.modal('show');
             })
             .flatMap(($modal) => {
-                return Rx.Observable.fromEvent($('.modal-footer button', $modal), 'click')
+                return Observable.fromEvent($('.modal-footer button', $modal), 'click')
                     .map(_.constant($modal));
             })
             // notify server & wait
@@ -173,7 +173,7 @@ module.exports = {
             })
             .flatMap(($modal) => {
                 const contentKey = $('.modal-body input', $modal).val();
-                return Rx.Observable.bindCallback(socket.emit.bind(socket))('persist_current_vbo', contentKey)
+                return Observable.bindCallback(socket.emit.bind(socket))('persist_current_vbo', contentKey)
                     .map((reply) => {
                         return {reply: reply, $modal: $modal, contentKey: contentKey};
                     });

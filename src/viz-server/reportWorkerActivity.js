@@ -1,6 +1,6 @@
 import request from 'request';
 import { connectToMongo } from './connectToMongo';
-import { Scheduler, Observable } from '@graphistry/rxjs';
+import { Scheduler, Observable } from 'rxjs';
 import { logger as commonLogger } from '@graphistry/common';
 
 const logger = commonLogger.createLogger('viz-server:pings');

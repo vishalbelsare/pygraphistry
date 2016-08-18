@@ -1,9 +1,9 @@
 'use strict';
 
+import $ from 'jquery'
+import { Observable, ReplaySubject } from 'rxjs';
+
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:TimeExplorer');
-var $       = window.$;
-var Rx      = require('@graphistry/rxjs');
-              require('../../rx-jquery-stub');
 var _       = require('underscore');
 
 var Backbone = require('backbone');
@@ -66,7 +66,7 @@ var TimeBarView = Backbone.View.extend({
 
         this.barModelSubject = this.model.get('barModelSubject');
         this.dataModelSubject = this.model.get('dataModelSubject');
-        this.newDataAndRenderSubject = new Rx.ReplaySubject(1);
+        this.newDataAndRenderSubject = new ReplaySubject(1);
         this.setupRenderRequestHandler();
 
         this.dataModelDiffer = timeExplorerUtils.makeDataModelDiffer('timeBarDataModelDiffer');
@@ -159,7 +159,7 @@ var TimeBarView = Backbone.View.extend({
 
     listenForUpdates: function () {
 
-        Rx.Observable.combineLatest(this.barModelSubject,
+        Observable.combineLatest(this.barModelSubject,
             this.dataModelSubject,
             (barModel, dataModel) => {
                 var changedBarKeys = this.barModelDiffer(barModel);

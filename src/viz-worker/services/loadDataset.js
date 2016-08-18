@@ -1,6 +1,6 @@
 import url from 'url';
 import zlib from 'zlib';
-import { Observable } from '@graphistry/rxjs';
+import { Observable } from 'rxjs';
 import { cache as Cache } from '@graphistry/common';
 
 const downloaders = {
@@ -64,9 +64,10 @@ function downloadS3(url, s3Cache, { S3, BUCKET }) {
             .get(url, new Date(LastModified)))
             .catch(() => loadDocument(params)
                 .mergeMap(
-                    ({ Body }) => s3Cache.put(url, Body)),
+                    ({ Body }) => s3Cache.put(url, Body),
                     ({ Body }) => Body
                 )
+            )
         )
         .catch(() => Observable.from(s3Cache.get(url, new Date(0))));
 }

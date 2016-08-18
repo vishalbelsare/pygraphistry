@@ -1,5 +1,5 @@
 import glMatrix from 'gl-matrix';
-import { Observable } from '@graphistry/rxjs';
+import { Observable } from 'rxjs';
 import { Renderer } from './Renderer';
 
 import pointVertex from '../shaders/point.vertex.glsl';

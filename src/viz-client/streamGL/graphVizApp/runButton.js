@@ -1,9 +1,9 @@
 'use strict';
 
 //var debug   = require('debug')('graphistry:StreamGL:graphVizApp:runButton');
-var $       = window.$;
-var Rx      = require('@graphistry/rxjs');
-              require('../rx-jquery-stub');
+import $ from 'jquery'
+import { Observable } from 'rxjs';
+
 const _       = require('underscore');
 
 const util            = require('./util.js');
@@ -22,20 +22,20 @@ module.exports = function (appState, socket, urlParams, isAutoCentering) {
     const $bolt = $('.fa', $graph);
     const numTicks = urlParams.play !== undefined ? urlParams.play : 5000;
 
-    const disable = Rx.Observable.merge(
+    const disable = Observable.merge(
         $('#viewSelectionButton').onAsObservable('click'),
         $('#histogramBrush').onAsObservable('click'));
 
     // Tick stream until canceled/timed out (end with 'false'), starts after first vbo update.
     const autoLayingOut =
-        Rx.Observable.merge(
-            Rx.Observable.return(Rx.Observable.interval(20)),
-            Rx.Observable.merge(
+        Observable.merge(
+            Observable.return(Observable.interval(20)),
+            Observable.merge(
                 $graph.onAsObservable('click')
                     .filter((evt) => evt.originalEvent !== undefined),
                 disable,
-                Rx.Observable.timer(numTicks)
-            ).take(1).map(_.constant(Rx.Observable.return(false))))
+                Observable.timer(numTicks)
+            ).take(1).map(_.constant(Observable.return(false))))
         .switchMap(_.identity);
 
     const runActions =
@@ -44,7 +44,7 @@ module.exports = function (appState, socket, urlParams, isAutoCentering) {
             .map((e) => { return e.play || false; });
 
     const runLayout =
-        Rx.Observable.fromEvent($graph, 'click')
+        Observable.fromEvent($graph, 'click')
             .map(() => { return $bolt.hasClass('toggle-on'); })
             .merge(disable.map(_.constant(true)))
             .merge(runActions.map((play) => !play))
@@ -55,7 +55,7 @@ module.exports = function (appState, socket, urlParams, isAutoCentering) {
             .switchMap((wasOn) => {
                 const isOn = !wasOn;
                 appState.simulateOn.onNext(isOn);
-                return isOn ? Rx.Observable.interval(INTERACTION_INTERVAL) : Rx.Observable.empty();
+                return isOn ? Observable.interval(INTERACTION_INTERVAL) : Observable.empty();
             });
 
     runLayout

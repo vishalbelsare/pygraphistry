@@ -1,6 +1,6 @@
 import { Model } from '../falcor';
 import { SocketIO } from 'mock-socket';
-import { Observable, Scheduler } from '@graphistry/rxjs';
+import { Observable, Scheduler } from 'rxjs';
 import { handleVboUpdates } from '../streamGL/staticclient';
 import { getDataSourceFactory } from '../../viz-shared/middleware';
 import { loadConfig, loadViews, loadLabels, loadWorkbooks } from '../services';

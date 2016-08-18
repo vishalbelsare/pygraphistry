@@ -1,11 +1,11 @@
 'use strict';
 
-const debug   = require('debug')('graphistry:StreamGL:graphVizApp:controls');
-const $       = window.$;
-const Rx      = require('@graphistry/rxjs');
-                require('../rx-jquery-stub');
-const _       = require('underscore');
+import $ from 'jquery'
 
+import { Observable, Subject, ReplaySubject } from 'rxjs';
+
+const debug   = require('debug')('graphistry:StreamGL:graphVizApp:controls');
+const _       = require('underscore');
 const util            = require('./util.js');
 const dataInspector   = require('./dataInspector.js');
 const FiltersPanel    = require('./filtersPanel.js');
@@ -147,9 +147,9 @@ function setupBrush(appState, isOn) {
 
     // Initialize both with an {all: true} selection
     const transformedSelections = marquee.selections.map(marqueeStateToTransformedRect)//.share()
-            .merge(Rx.Observable.from([{all: true}]));
+            .merge(Observable.from([{all: true}]));
     const transformedDrags = marquee.drags.map(marqueeStateToTransformedRect)//.share()
-            .merge(Rx.Observable.from([{all: true}]));
+            .merge(Observable.from([{all: true}]));
 
     return {
         bounds: marquee.selections,
@@ -165,14 +165,14 @@ function setupBrush(appState, isOn) {
 function clicksFromPopoutControls ($elt) {
     const mouseElements = $('.panel-button, .modal-button', $elt);
 
-    return Rx.Observable.merge(
+    return Observable.merge(
         ...mouseElements.get().map((elt) => {
-            return Rx.Observable.fromEvent(elt, 'mousedown')
+            return Observable.fromEvent(elt, 'mousedown')
                 .do((evt) => {
                     // Stop from propagating to canvas
                     evt.stopPropagation();
                 })
-                .switchMap(() => Rx.Observable.fromEvent(elt, 'mouseup'))
+                .switchMap(() => Observable.fromEvent(elt, 'mouseup'))
                 .map(_.constant(elt))
                 // .share();
         }))//.share();
@@ -239,13 +239,13 @@ function togglePanel ($panelButton, maybe$panel, newVisibility) {
 
 //TODO falcor for this
 //Subject {v: {undefined,null}+truthy, btn: DOM}
-const globalStream = new Rx.Subject();
+const globalStream = new Subject();
 function setupPanelControl (toolbarClicks, $panelButton, maybe$panel) {
 
     //TODO falcor
 
     //Subject {undefined,null} + truthy
-    const toggle = new Rx.Subject();
+    const toggle = new Subject();
 
     //notify others about programmatic toggle
     toggle.map(v => ({v, elt: $panelButton[0]}))
@@ -253,7 +253,7 @@ function setupPanelControl (toolbarClicks, $panelButton, maybe$panel) {
 
     // Observable {id: string, v: *}
     const toggleCmds =
-        Rx.Observable.merge(
+        Observable.merge(
 
             //external self-toggle
             toggle.map(v => ({id: 'external-cmd', v})),
@@ -300,7 +300,7 @@ function setupPanelControl (toolbarClicks, $panelButton, maybe$panel) {
         .do((newVisibility) => {
             togglePanel($panelButton, maybe$panel, newVisibility);
         })
-        .multicast(() => new Rx.ReplaySubject(1))
+        .multicast(() => new ReplaySubject(1))
         .refCount()
         // .share();
 
@@ -391,16 +391,16 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
 
     const $simulation = $('#simulation');
     const centeringDone =
-        Rx.Observable.merge(
-            Rx.Observable.fromEvent($center, 'click'),
-            Rx.Observable.fromEvent($graph, 'click'),
+        Observable.merge(
+            Observable.fromEvent($center, 'click'),
+            Observable.fromEvent($graph, 'click'),
             $simulation.onAsObservable('mousewheel'),
             $simulation.onAsObservable('mousedown'),
             $('#zoomin').onAsObservable('click'),
             $('#zoomout').onAsObservable('click'))
         //skip events autoplay triggers
         .filter((evt) => evt.originalEvent !== undefined)
-        .merge(Rx.Observable.timer(numTicks))
+        .merge(Observable.timer(numTicks))
         .map(_.constant(finalCenter));
 
     const readyForHistograms = centeringDone.zip(doneLoading)
@@ -414,7 +414,7 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     const filtersResponses = filtersPanel.control.filtersResponsesSubject;
     const histogramBrush = new HistogramBrush(socket, filtersPanel, readyForHistograms,
         appState.latestHighlightedObject);
-    histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
+    // histogramBrush.setupFiltersInteraction(filtersPanel, appState.poi);
     histogramBrush.setupMarqueeInteraction(brush);
     histogramBrush.setupApiInteraction(appState.apiActions);
     turnOnBrush.toggleStatus.first((value) => value === true).do(() => {
@@ -434,13 +434,13 @@ function init (appState, socket, $elt, doneLoading, workerParams, urlParams) {
     //tick stream until canceled/timed out (ends with finalCenter)
     const autoCentering =
         doneLoading.switchMap(() => {
-            return Rx.Observable.interval(50)
+            return Observable.interval(50)
                 .do(() => { debug('auto center interval'); })
                 .merge(centeringDone)
                 .takeUntil(centeringDone.delay(1));
         });
 
-    const isAutoCentering = new Rx.ReplaySubject(1);
+    const isAutoCentering = new ReplaySubject(1);
     autoCentering.subscribe(isAutoCentering, util.makeErrorHandler('bad auto-center'));
 
     autoCentering.subscribe(

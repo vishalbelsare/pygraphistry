@@ -5,7 +5,7 @@ import RxRouter from 'rx-router';
 import SocketIOServer from 'socket.io';
 import RxHTTPServer from 'rx-http-server';
 import _config from '@graphistry/config';
-import { BehaviorSubject, Observable, Subscription } from '@graphistry/rxjs';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 
 import { requisitionWorker } from './requisitionWorker';
 import { reportWorkerActivity } from './reportWorkerActivity';

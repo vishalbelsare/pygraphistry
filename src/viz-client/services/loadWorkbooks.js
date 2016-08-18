@@ -1,7 +1,7 @@
 import { loadResource } from './loadResource';
-import { Observable, ReplaySubject } from '@graphistry/rxjs';
+import { Observable, ReplaySubject } from 'rxjs';
 import { dataset as createDataset,
-         workbook as createWorkbook } from '../../viz-shared/models';
+         workbook as createWorkbook } from '../../viz-shared/workbooks/model';
 
 export function loadWorkbooks(workbooksById) {
     const loadWorkbookById = loadWorkbook(workbooksById);

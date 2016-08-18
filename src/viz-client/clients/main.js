@@ -1,7 +1,7 @@
 import SocketIO from 'socket.io-client';
 import { Model, RemoteDataSource } from '../falcor';
 import { handleVboUpdates } from '../streamGL/client';
-import { Observable, Scheduler } from '@graphistry/rxjs';
+import { Observable, Scheduler } from 'rxjs';
 
 export function initialize(options, debug) {
 
@@ -37,11 +37,11 @@ function getAppModel(options) {
             crossDomain: false, withCredentials: false
         }, options),
         onChangesCompleted: !__DEV__ ? null : function () {
-            window.appCache = this.getCache();
+            window.__INITIAL_STATE__ = this.getCache();
         }
     });
 }
 
 function getAppCache() {
-    return window.appCache || {};
+    return window.__INITIAL_STATE__ || {};
 }

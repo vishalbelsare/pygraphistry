@@ -1,4 +1,4 @@
-import { Observable } from '@graphistry/rxjs';
+import { Observable } from 'rxjs';
 import { MongoClient } from 'mongodb';
 
 export function connectToMongo({

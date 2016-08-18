@@ -1,25 +1,16 @@
 import styles from './graph.less';
+// const styles = {};
 
-export function render(props = {}) {
+export function render(props = {}, workbooksVDom) {
     const
       { release = {} } = props,
       { current = {} } = release,
       { date: releaseDate = ''  } = current;
     return (
-        <div key_="app" id={styles["app"] || "app"} class_={{ [styles["app"] || "app"]: true }}>
-            <div class_={{ [styles["content"] || "content"]: true }}>
-                <div class_={{ [styles["sim-container"] || "sim-container"]: true }} tabindex="-1">
-                    <canvas id={styles["simulation"] || "simulation"} class_={{ [styles["sim"] || "sim"]: true }}> WebGL not supported </canvas>
-                    <div id={styles["marquee"] || "marquee"} class_={{ [styles["marquee-outline"] || "marquee-outline"]: true, [styles["off"] || "off"]: true }}></div>
-                    <div id={styles["brush"] || "brush"} class_={{ [styles["marquee-outline"] || "marquee-outline"]: true, [styles["off"] || "off"]: true }}></div>
-                    { /* over canvas but below interactions */ }
-                    <div id={styles["highlighted-point-cont"] || "highlighted-point-cont"}>
-                        <div class_={{ [styles["highlighted-point"] || "highlighted-point"]: true }}>
-                            <div class_={{ [styles["highlighted-point-center"] || "highlighted-point-center"]: true }}></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div id={styles["app"] || "app"} class_={{ [styles["app"] || "app"]: true }}>
+            <div class_={{ [styles["content"] || "content"]: true }}>{[
+                workbooksVDom
+            ]}</div>
             { /* /content */ }
             <div class_={{ [styles["section"] || "section"]: true }} id={styles["menus"] || "menus"}>
                 <div class_={{ [styles["accordion"] || "accordion"]: true }} id={styles["controlState"] || "controlState"}>

@@ -1,7 +1,7 @@
 'use strict';
 
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:canvas');
-var $       = window.$;
+import $ from 'jquery'
 var _       = require('underscore');
 
 var interaction     = require('./interaction.js');
@@ -12,7 +12,7 @@ var VizSlice        = require('./VizSlice.js');
 
 require('../rx-jquery-stub');
 
-import { Observable, Subject } from '@graphistry/rxjs';
+import { Observable, Subject } from 'rxjs';
 
 function setupCameraInteractions(appState, $eventTarget) {
     var renderState = appState.renderState;
@@ -110,7 +110,8 @@ function getEdgeLabelPos (appState, edgeIndex) {
 
 
 function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates,
-                                  isAnimating, simulateOn, activeSelection, socket, hintsModel) {
+                                  isAnimating, simulateOn, activeSelection, socket,
+                                  labelsModel, hintsModel) {
     var that = this;
     this.renderState = renderState;
     this.arrayBuffers = {};
@@ -176,10 +177,29 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
     var hostBuffers = renderState.get('hostBuffers');
 
     // FIXME handle selection update buffers here.
-    Observable.combineLatest(hostBuffers.selectedPointIndexes, hostBuffers.selectedEdgeIndexes,
-        function (pointIndexes, edgeIndexes) {
-            activeSelection.onNext(new VizSlice({point: pointIndexes, edge: edgeIndexes}));
-        }).take(1).subscribe(_.identity, util.makeErrorHandler('Getting indexes of selections.'));
+    Observable.combineLatest(
+        hostBuffers.selectedEdgeIndexes,
+        hostBuffers.selectedPointIndexes
+    )
+    .switchMap(([edgeIndexes, pointIndexes]) => {
+
+        activeSelection.onNext(new VizSlice({
+            edge: edgeIndexes,
+            point: pointIndexes
+        }));
+
+        const activeEdges = edgeIndexes.map((idx) => ({
+            idx, dim: 2
+        }));
+        const activePoints = pointIndexes.map((idx) => ({
+            idx, dim: 1
+        }));
+
+        return labelsModel.setValue({
+            active: activeEdges.concat(activePoints)
+        });
+    })
+    .take(1).subscribe(_.identity, util.makeErrorHandler('Getting indexes of selections.'));
 
 
     vboUpdates.filter(function (status) {

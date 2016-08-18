@@ -1,9 +1,9 @@
 'use strict';
 
+import $ from 'jquery'
+import { Observable, ReplaySubject } from 'rxjs';
+
 var debug = require('debug')('graphistry:StreamGL:marquee');
-var $     = window.$;
-var Rx    = require('@graphistry/rxjs');
-            require('../rx-jquery-stub');
 var _     = require('underscore');
 var renderer = require('../renderer.js');
 var util     = require('./util.js');

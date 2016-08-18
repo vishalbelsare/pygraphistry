@@ -1,9 +1,9 @@
 'use strict';
 
-const $       = window.$;
+import $ from 'jquery'
+import { ReplaySubject } from 'rxjs';
+
 const _       = require('underscore');
-const Rx      = require('@graphistry/rxjs');
-                require('../rx-jquery-stub');
 const Backbone = require('backbone');
       Backbone.$ = $;
 const FilterControl       = require('./FilterControl.js');
@@ -252,7 +252,7 @@ function ExclusionsPanel (socket, control, labelRequests, toggle) {
     this.model = ExclusionModel;
 
     /** Exposes changes to the ExclusionCollection. */
-    this.exclusionsSubject = new Rx.ReplaySubject(1);
+    this.exclusionsSubject = new ReplaySubject(1);
     // Seed with a fresh exclusions list. Should come from persisted state.
     this.collection.on('change reset add remove', (/* model, options */) => {
         this.exclusionsSubject.onNext(this.collection);

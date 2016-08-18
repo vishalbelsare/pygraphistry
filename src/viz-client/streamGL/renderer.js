@@ -1,9 +1,10 @@
 'use strict';
 
+import { ReplaySubject } from 'rxjs';
+
 const _           = require('underscore');
 // TODO: Upgrade to immutable v3 (from v2) -- breaking changes; our usage must be updated to match
 const Immutable   = require('immutable');
-const Rx          = require('@graphistry/rxjs');
 const util        = require('./graphVizApp/util.js');
 const debug       = require('debug')('graphistry:StreamGL:renderer');
 
@@ -239,7 +240,7 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 function init(config, cameraModel, canvas, urlParams) {
 
     const renderConfig = Immutable.fromJS(config);
-    const renderPipeline = new Rx.ReplaySubject(1);
+    const renderPipeline = new ReplaySubject(1);
     const bufferSizes = {};
     const hostBuffers = {};
 
@@ -506,8 +507,7 @@ function createRenderTargets (config, neededTextures, canvas, gl, camera) {
         fbos          = neededTextures.map(gl.createFramebuffer.bind(gl)),
         renderBuffers = neededTextures.map(gl.createRenderbuffer.bind(gl)),
         dimensions    = neededTextures.map(getTextureDims.bind('', config, canvas, camera)),
-        pixelreads    = neededTextures.map(
-            (ignore, i) => new Uint8Array(dimensions[i].width * dimensions[i].height * 4));
+        pixelreads    = dimensions.map(({ width, height }) => new Uint8Array(width * height * 4));
 
     // bind
     _.zip(textures, fbos, renderBuffers, dimensions)
@@ -623,7 +623,7 @@ function createBuffers(config, gl, bufferSizes, hostBuffers) {
             for (const key in model) {
                 const { [key]: { datasource }} = model;
                 if (datasource === 'HOST' || datasource === 'DEVICE') {
-                    hostBuffers[name] = new Rx.ReplaySubject(1);
+                    hostBuffers[name] = new ReplaySubject(1);
                 }
             }
             buffers[name] = gl.createBuffer();

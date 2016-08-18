@@ -1,9 +1,7 @@
 'use strict';
 
-var $       = window.$;
-//var _       = require('underscore');
-var Rx      = require('@graphistry/rxjs');
-require('../rx-jquery-stub');
+import $ from 'jquery'
+import { Observable } from 'rxjs';
 
 const Backbone   = require('backbone');
       Backbone.$ = $;
@@ -289,7 +287,7 @@ const VizSetView = Backbone.View.extend({
                 $('input', this.$renameDialog).first().focus();
             });
             this.$renameDialog.modal('show');
-            this.renameDialogSubscription = Rx.Observable.fromEvent($('.modal-footer button', this.$renameDialog), 'click')
+            this.renameDialogSubscription = Observable.fromEvent($('.modal-footer button', this.$renameDialog), 'click')
                 .map(_.constant(this.$renameDialog)).subscribe((/*$modal*/) => {
                     const setTag = $input.val();
                     this.model.save('title', setTag, {panel: this.panel});
@@ -524,7 +522,7 @@ SetsPanel.prototype = {
     },
 
     refreshCollection: function () {
-        Rx.Observable.combineLatest(
+        Observable.combineLatest(
             this.getAllSets(),
             this.activeSelection,
             (response, activeSelection) => {
@@ -564,13 +562,13 @@ SetsPanel.prototype = {
     },
 
     /**
-     * @param {Rx.ReplaySubject} activeSelection
-     * @param {Rx.ReplaySubject} latestHighlightedObject
+     * @param {ReplaySubject} activeSelection
+     * @param {ReplaySubject} latestHighlightedObject
      */
     setupSelectionInteraction: function (activeSelection, latestHighlightedObject) {
-        /** @type {Rx.ReplaySubject} */
+        /** @type {ReplaySubject} */
         this.activeSelection = activeSelection;
-        /** @type {Rx.ReplaySubject} */
+        /** @type {ReplaySubject} */
         this.latestHighlightedObject = latestHighlightedObject;
         this.activeSelection.do((latestSelection) => {
             if (latestSelection.isEmpty()) {

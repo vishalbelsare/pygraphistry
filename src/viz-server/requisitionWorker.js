@@ -2,7 +2,7 @@ import url from 'url';
 import { simpleflake } from 'simpleflakes';
 import stringify from 'json-stable-stringify';
 import { tagUser } from './support';
-import { Observable, Subject } from '@graphistry/rxjs';
+import { Observable, Subject } from 'rxjs';
 
 export function requisitionWorker({
         config, logger, WORKERS,
@@ -17,7 +17,7 @@ export function requisitionWorker({
     const { requests } = server;
     const centralPort = config.HTTP_LISTEN_PORT;
     const centralAddr = config.HTTP_LISTEN_ADDRESS;
-    const claimTimeout = config.WORKER_CONNECT_TIMEOUT;
+    const claimTimeout = 200;//config.WORKER_CONNECT_TIMEOUT;
     const canLockWorker = config.ENVIRONMENT !== 'local';
     const shouldExitOnDisconnect = (
         config.ENVIRONMENT === 'production' ||

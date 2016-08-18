@@ -5,12 +5,11 @@
 //      -- sample texture to get subset of onscreen labels
 //      -- if label switched from on-to-off, check if sampling missed
 
+import $ from 'jquery'
+import { ReplaySubject } from 'rxjs';
 
 const debug       = require('debug')('graphistry:StreamGL:poi');
 const _           = require('underscore');
-const $           = window.$;
-const Rx          = require('@graphistry/rxjs');
-                    require('./rx-jquery-stub');
 const Color       = require('color');
 
 const picking     = require('./picking.js');
@@ -25,6 +24,11 @@ const TIME_BETWEEN_SAMPLES = 300; // ms
 const DimCodes = {
     point: 1,
     edge: 2
+};
+
+const DimCodesToTypes = {
+    1: 'point',
+    2: 'edge'
 };
 
 
@@ -198,7 +202,7 @@ function finishAll (activeLabels, inactiveLabels, hits) {
 function genLabel (instance, $labelCont, idx, info) {
 
 
-    const setter = new Rx.ReplaySubject(1);
+    const setter = new ReplaySubject(1);
 
     const $elt = $('<div>')
         .addClass('graph-label')
@@ -404,32 +408,37 @@ function createLabelDom (instance, dim, labelObj) {
 
 // TODO batch fetches
 // instance * int -> ReplaySubject_1 labelObj
-function getLabel (instance, data) {
+function getLabel (instance, labelsModel, data) {
     // TODO: Make cache aware of both idx and dim
     const idx = data.idx;
-    const dim = data.dim;
+    const dim = DimCodesToTypes[data.dim];
 
+    return labelsModel.getValue(`[${idx}]['${dim}']`);
+
+/*
     const key = cacheKey(idx, dim);
     const cache = instance.state.labelCache;
     if (!cache[key]) {
-        const labelObs = new Rx.ReplaySubject(1);
+        const labelObs = new ReplaySubject(1);
         cache[key] = labelObs;
         fetchLabel(instance, labelObs, idx, dim);
     }
     return cache[key];
+*/
 }
 
 
 // instance * int -> ReplaySubject_1 ?DOM
-function getLabelDom (instance, data) {
-    return getLabel(instance, data).map(
+function getLabelDom (instance, data, labelsModel) {
+    return getLabel(instance, data, labelsModel).map(
         (l) => l ? createLabelDom(instance, data.dim, l) : l);
 }
 
 // instance ->
 // Invalidates Cache but does not attempt to refill.
-function emptyCache (instance) {
-    instance.state.labelCache = {};
+function emptyCache (instance, labelsModel) {
+    // instance.state.labelCache = {};
+    // labelsModel.invalidate([]);
     _.each(instance.state.activeLabels, (val, key) => {
         instance.state.inactiveLabels.push(val);
         val.elt.css('display', 'none');
@@ -461,10 +470,10 @@ function emptyCache (instance) {
 
 /**
  * @param {socket.io socket} socket
- * @param {Rx.Subject} labelRequests
+ * @param {Subject} labelRequests
  * @returns POIHandler
  */
-function init (socket, labelRequests) {
+function init (socket, labelRequests, labelsModel) {
     debug('initializing label engine');
 
     const instance = {};
@@ -476,7 +485,7 @@ function init (socket, labelRequests) {
 
             socket: socket,
 
-            /** @type Rx.Subject */
+            /** @type Subject */
             labelRequests: labelRequests,
 
             /** @type ReplaySubject<> */
@@ -501,8 +510,8 @@ function init (socket, labelRequests) {
         },
 
         // int -> Subject ?HtmlString
-        getLabelDom: getLabelDom.bind('', instance),
-        getLabelObject: getLabel.bind('', instance),
+        getLabelDom: getLabelDom.bind('', instance, labelsModel),
+        getLabelObject: getLabel.bind('', instance, labelsModel),
 
         getActiveApprox: getActiveApprox,
         finishApprox: finishApprox,
@@ -511,7 +520,7 @@ function init (socket, labelRequests) {
         // $DOM * idx -> {elt: $DOM, idx: int, setIdx: Subject int}
         genLabel: genLabel.bind('', instance),
 
-        emptyCache: emptyCache.bind('', instance),
+        emptyCache: emptyCache.bind('', instance, labelsModel),
 
         // int * int -> String
         cacheKey: cacheKey

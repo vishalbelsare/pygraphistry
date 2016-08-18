@@ -1,9 +1,9 @@
 'use strict';
 
+import $ from 'jquery'
+import { Observable, Subject, ReplaySubject } from 'rxjs';
+
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:histogramBrush');
-const $       = window.$;
-const Rx      = require('@graphistry/rxjs');
-import '../rx-jquery-stub';
 const _       = require('underscore');
 
 const HistogramsPanel = require('./histogramPanel');
@@ -36,7 +36,7 @@ function handleFiltersResponse (filtersResponseObservable, poi) {
             }
 
             $histogramErrors.empty();
-            poi.emptyCache();
+            // poi.emptyCache();
         })
         .subscribe(_.identity, util.makeErrorHandler('Emit Filter'));
 }
@@ -64,15 +64,15 @@ function HistogramBrush (socket, filtersPanel, doneLoading, activeHighlight) {
     this.lastSelection = undefined;
     /** @type {Array<HistogramSpec>} */
     this.activeDataframeAttributes = [];
-    this.dataframeAttributeChange = new Rx.Subject();
+    this.dataframeAttributeChange = new Subject();
     /** @type ReplaySubject<Boolean> */
-    this.histogramsPanelReady = new Rx.ReplaySubject(1);
+    this.histogramsPanelReady = new ReplaySubject(1);
     this.activeHighlight = activeHighlight;
 
     /** @type ReplaySubject<GlobalStats> */
-    this.globalStats = new Rx.ReplaySubject(1);
+    this.globalStats = new ReplaySubject(1);
     /** @type Subject<HistogramChange> */
-    this.updateDataframeAttributeSubject = new Rx.Subject();
+    this.updateDataframeAttributeSubject = new Subject();
 
     this.binningCommand = new Command('binning column data', 'computeBinningForColumns', socket);
 
@@ -90,7 +90,7 @@ function HistogramBrush (socket, filtersPanel, doneLoading, activeHighlight) {
             return this.requestHistogram(histogramOrientation, newAttr, globalStats).map(() => result);
         } else {
             this.handleHistogramChange(delAttr, newAttr, histogramOrientation);
-            return Rx.Observable.of(result);
+            return Observable.of(result);
         }
     }).subscribe(_.identity, util.makeErrorHandler('Update Attribute'));
 
@@ -113,7 +113,7 @@ HistogramBrush.prototype.initializeGlobalData = function (filtersPanel) {
         goalNumberOfBins: HistogramsPanel.MAX_HORIZONTAL_BINS,
         maxInitialItems: maxInitialItems
     });
-    Rx.Observable.zip(globalStream, globalStreamSparklines, (histogramsReply, sparkLinesReply) => {
+    Observable.zip(globalStream, globalStreamSparklines, (histogramsReply, sparkLinesReply) => {
         checkReply(histogramsReply);
         checkReply(sparkLinesReply);
         /** @type {GlobalStats} */
@@ -332,7 +332,7 @@ HistogramBrush.prototype.updateHistogramData = function (data, globalStats, empt
  * @returns {Observable}
  */
 HistogramBrush.prototype.binningAcrossPointsAndEdges = function (params) {
-    return Rx.Observable.zip(
+    return Observable.zip(
         this.binningCommand.sendWithObservableResult(_.extend({}, params, {type: 'point'})),
         this.binningCommand.sendWithObservableResult(_.extend({}, params, {type: 'edge'})),
         (pointHists, edgeHists) => {
