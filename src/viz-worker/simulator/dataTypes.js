@@ -6,6 +6,8 @@ const _ = require('underscore');
 const DefaultLocale = 'en-US';
 // TODO customize based on user/content preferences, and/or per column.
 const LocaleCompareOptions = {usage: 'sort', numeric: true};
+// Construct a single Collator for compare calls (to avoid )
+const defaultLocaleCollator = new Intl.Collator(DefaultLocale, LocaleCompareOptions);
 
 const SupportedDataTypes = [
     'number',
@@ -17,6 +19,10 @@ const SupportedDataTypes = [
     /*'money',*/
     'object'
 ];
+
+function wrappedLocaleCompare (a, b) {
+    return defaultLocaleCollator.compare(a, b);
+}
 
 const DataTypesUtils = {
     numberSignifiesUndefined: function (value) {
@@ -102,7 +108,7 @@ const DataTypesUtils = {
     isLessThanForDataType: function (dataType) {
         switch (dataType) {
             case 'string':
-                return (a, b) => a.localeCompare(b, DefaultLocale, LocaleCompareOptions) === -1;
+                return (a, b) => wrappedLocaleCompare(a,b) === -1;
             default:
                 return (a, b) => a < b;
         }
@@ -114,7 +120,7 @@ const DataTypesUtils = {
             case 'integer':
                 return (a, b) => a - b;
             case 'string':
-                return (a, b) => a.localeCompare(b, DefaultLocale, LocaleCompareOptions);
+                return (a, b) => wrappedLocaleCompare(a,b);
             case 'date':
             case 'datetime':
                 return (a, b) => a.getTime() - b.getTime();
