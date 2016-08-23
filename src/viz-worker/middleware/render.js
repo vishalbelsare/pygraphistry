@@ -2,7 +2,7 @@ import { inspect } from 'util';
 import { Model } from 'reaxtor-falcor';
 import { Provider } from 'reaxtor-redux';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { configureStore } from '../../viz-shared/store/configureStore';
+import { configureStore } from 'viz-shared/store/configureStore';
 import { renderToString as reactRenderToString } from 'react-dom/server';
 import stringify from 'json-stable-stringify';
 
@@ -75,7 +75,7 @@ function renderFullPage(falcor, workerID = '', html = '') {
         `<link rel='stylesheet' type='text/css' href='${`${client.css}${assetSuffix}`}'/>`: ''
         }
     </head>
-    <body class='graphistry-body'>
+    <body class='graphistry-body table-container'>
         <script type="text/javascript">
             var templatePaths = { API_ROOT: window.location.protocol + "//" + window.location.host + "/graph/" };
         </script>

@@ -5,7 +5,7 @@ import { s3, cache as Cache } from '@graphistry/common';
 import { Observable, ReplaySubject } from 'rxjs';
 import { migrateWorkbook,
          dataset as createDataset,
-         workbook as createWorkbook } from '../../viz-shared/workbooks/model';
+         workbook as createWorkbook } from 'viz-shared/models/workbooks';
 
 export function loadWorkbooks(workbooksById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
     const loadWorkbookById = loadWorkbook(workbooksById, config, s3Cache);

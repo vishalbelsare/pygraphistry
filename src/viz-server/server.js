@@ -1,6 +1,7 @@
 import path from 'path';
 import express from 'express';
-import compression from 'compression'
+import compression from 'compression';
+import bodyParser from 'body-parser';
 import RxRouter from 'rx-router';
 import SocketIOServer from 'socket.io';
 import RxHTTPServer from 'rx-http-server';
@@ -56,6 +57,7 @@ export function start(options = {
     app.use(compression());
     app.use(cookieParser());
     app.use(allowCrossOrigin);
+    app.use(`/graph`, bodyParser.urlencoded({ extended: false }));
 
     if (config.ENVIRONMENT === 'local') {
         app.use(corsMiddleware({ origin: '*' }));

@@ -1,4 +1,4 @@
-import { App } from './app';
+import { App } from './containers/app';
 import { BehaviorSubject } from 'rxjs';
 
 export function reloadHot(module) {
@@ -7,11 +7,9 @@ export function reloadHot(module) {
 
     if (module.hot) {
         module.hot.accept([
-            './app/index.js'
+            './containers/app/index.js'
         ], () => {
-            hotModules.next({
-                App: require('./app').App
-            });
+            hotModules.next({ ...require('./containers/app') });
         })
     }
 

@@ -3,7 +3,7 @@ import { httpRoutes } from './routes/http';
 import { socketRoutes } from './routes/socket';
 import VizServer from './simulator/server-viz';
 import { cache as Cache } from '@graphistry/common';
-import { reloadHot } from '../viz-shared/reloadHot';
+import { reloadHot } from 'viz-shared/reloadHot';
 import removeExpressRoute from 'express-remove-route';
 import { logger as commonLogger } from '@graphistry/common';
 import { Observable, Subject, Subscription } from 'rxjs';

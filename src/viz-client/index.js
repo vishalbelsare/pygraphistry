@@ -28,10 +28,10 @@ import _debug from 'debug';
 import ReactDOM from 'react-dom';
 import { partial } from 'lodash';
 import { Provider } from 'reaxtor-redux';
-import { configureStore } from '../viz-shared/store/configureStore';
+import { configureStore } from 'viz-shared/store/configureStore';
 import { init as initRenderer } from './streamGL/renderer';
 import vizApp from './streamGL/graphVizApp/vizApp';
-import { reloadHot } from '../viz-shared/reloadHot';
+import { reloadHot } from 'viz-shared/reloadHot';
 import { setupTitle, setupAnalytics,
          getURLParameters, loadClientModule,
          setupErrorHandlers, setupDocumentElement,

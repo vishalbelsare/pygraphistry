@@ -3,7 +3,7 @@ import { loadWorkbooks } from './loadWorkbooks';
 import { cache as Cache } from '@graphistry/common';
 import { Observable, ReplaySubject } from 'rxjs';
 import { ref as $ref, atom as $atom } from 'reaxtor-falcor-json-graph';
-import { view as createView } from '../../viz-shared/views/model';
+import { view as createView } from 'viz-shared/models/views';
 import { toClient as fromLayoutAlgorithms } from '../simulator/layout.config';
 
 export function loadViews(workbooksById, nBodiesById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
@@ -55,19 +55,20 @@ function assignViewToWorkbook(workbook, view) {
 
 function assignNBodyToView(workbook, nBody, view) {
 
-    const { simulator, simulator: { dataframe }} = nBody;
-    const { settings, settingsById } = toSettings(
-        workbook.id, view.id, ... fromLayoutAlgorithms(
-            simulator.controls.layoutAlgorithms
-        )
-    );
+    const { simulator } = nBody;
+    const { dataframe } = simulator;
 
     const MAX_SIZE_TO_ALLOCATE = 2000000;
     const numEdges = dataframe.numEdges();
     const numPoints = dataframe.numPoints();
 
     view.nBody = nBody;
-    view.scene.hints = {
+
+    const { scene } = view;
+    const { layout } = scene;
+    const { options } = layout;
+
+    scene.hints = {
         edges: numEdges === undefined ?
             $atom(undefined, { $expires: 1 }) :
             Math.min(numEdges, MAX_SIZE_TO_ALLOCATE),
@@ -76,22 +77,42 @@ function assignNBodyToView(workbook, nBody, view) {
             Math.min(numPoints, MAX_SIZE_TO_ALLOCATE),
     };
 
-    let settingsIndex = -1;
-    const viewSettings = view.settings;
-    const settingsLength = settings.length;
-    const { settingsById: viewSettingsById } = view;
+    if (options.length === 0) {
+        const optionsPath = `workbooksById['${workbook.id}']
+                            .viewsById['${view.id}']
+                            .scene.layout.options`;
+        layout.options = ([]
+            .concat(fromLayoutAlgorithms(simulator.controls.layoutAlgorithms))
+            .reduce((options, { name, params }, index) => {
+                options.name = name;
+                options.id = name.toLowerCase();
+                return { ...options, ...toControls(optionsPath, params) };
+            }, options)
+        );
 
-    while (++settingsIndex < settingsLength) {
-
-        const settingsRef = settings[settingsIndex];
-        const { value: settingsPath } = settingsRef;
-        const settingsId = settingsPath[settingsPath.length - 1];
-
-        if (!(settingsId in viewSettingsById)) {
-            viewSettings[viewSettings.length++] = settingsRef;
-            viewSettingsById[settingsId] = settingsById[settingsId];
-        }
+        // const { settings, settingsById } = toSettings(
+        //     workbook.id, view.id, ... fromLayoutAlgorithms(
+        //         simulator.controls.layoutAlgorithms
+        //     )
+        // );
     }
+
+    // let settingsIndex = -1;
+    // const viewSettings = view.settings;
+    // const settingsLength = settings.length;
+    // const { settingsById: viewSettingsById } = view;
+
+    // while (++settingsIndex < settingsLength) {
+
+    //     const settingsRef = settings[settingsIndex];
+    //     const { value: settingsPath } = settingsRef;
+    //     const settingsId = settingsPath[settingsPath.length - 1];
+
+    //     if (!(settingsId in viewSettingsById)) {
+    //         viewSettings[viewSettings.length++] = settingsRef;
+    //         viewSettingsById[settingsId] = settingsById[settingsId];
+    //     }
+    // }
 
     return view;
 }
@@ -116,13 +137,14 @@ function toSettings(workbookId, viewId, ...settings) {
         settings.push($ref(`
             workbooksById['${workbookId}']
                 .viewsById['${viewId}']
+                .scene.layout
                 .settingsById['${settingsId}']`));
 
         return { settings, settingsById };
     }, { settings: [], settingsById: {} });
 }
 
-function toControls(workbookId, viewId, settingsId, ...params) {
+function toControls(options, params) {
     return params.reduce((controls, control, index) => {
 
         const { type, value } = control;
@@ -135,7 +157,11 @@ function toControls(workbookId, viewId, settingsId, ...params) {
                 props[key] = control[key]) &&
                 props || props), {});
 
-        controls[index] = { id, name, type, props, value };
+        controls[index] = {
+            id, name, type, props, value,
+            stateKey: 'value',
+            state: $ref(`${options}[${index}]`)
+        };
 
         return controls;
     }, { length: params.length });

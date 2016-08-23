@@ -1,7 +1,11 @@
 import Color from 'color';
 import { atom as $atom } from 'reaxtor-falcor-json-graph';
 
-export function mapObjectsToAtoms({ path, value }) {
+export function mapObjectsToAtoms(incoming) {
+    if (incoming.isMessage) {
+        return incoming;
+    }
+    let { path, value } = incoming;
     if (value && typeof value === 'object' && !value.$type) {
         value = $atom(value instanceof Color ?
             value.hsv() : value

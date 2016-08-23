@@ -1,22 +1,24 @@
 import { inspect } from 'util';
 import { Observable } from 'rxjs';
 import { Router } from 'reaxtor-falcor-router';
-import { falcorRoutes } from '../routes/falcor';
+import { falcor as routes } from '../routes';
 
 export function getDataSourceFactory(services) {
 
-    let AppRouter = createAppRouter(falcorRoutes(services));
+    let AppRouter = createAppRouter(routes(services));
 
     if (module.hot) {
         // Enable Webpack hot module replacement for routes
         module.hot.accept('../routes', () => {
-            const falcorRoutes = require('../routes').falcorRoutes;
-            AppRouter = createAppRouter(falcorRoutes(services));
+            const routes = require('../routes').falcor;
+            AppRouter = createAppRouter(routes(services));
         });
     }
 
-    return function getDataSource(request) {
-        return new AppRouter({ request });
+    return function getDataSource(request = {}) {
+        return new AppRouter({
+            request, options: { ...request.query }
+        });
     }
 }
 
@@ -54,7 +56,6 @@ function createAppRouter(routes) {
             console.log('\t' + paths
                 .map((path) => JSON.stringify(path))
                 .join('\n\t') + '\n');
-            debugger
             return super.get(paths);
         }
     };

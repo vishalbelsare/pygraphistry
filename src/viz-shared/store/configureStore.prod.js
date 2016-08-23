@@ -1,15 +1,12 @@
 import rootReducer from '../reducers';
 import { createStore, applyMiddleware } from 'redux';
-
-import toolbarEpic from '../toolbar/epics';
-import settingsEpic from '../settings/epics';
-
+import toolbar from '../reducers/toolbar';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
 
 export function configureStore(initialState) {
     return createStore(rootReducer, initialState, applyMiddleware(
         createEpicMiddleware(
-            combineEpics(toolbarEpic, settingsEpic)
+            combineEpics(toolbar)
         )
     ));
     // const fragmentMiddleware = createFragmentMiddleware(rootModel, rootFragment);

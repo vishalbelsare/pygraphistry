@@ -1,6 +1,6 @@
 import { ref as $ref } from 'reaxtor-falcor-json-graph';
 import { loadWorkbooks } from './loadWorkbooks';
-import { view as createView } from '../../viz-shared/views/model';
+import { view as createView } from 'viz-shared/models/views';
 
 export function loadViews(workbooksById) {
     const loadWorkbooksById = loadWorkbooks(workbooksById);

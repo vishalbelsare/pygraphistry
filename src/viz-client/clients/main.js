@@ -1,6 +1,7 @@
 import SocketIO from 'socket.io-client';
 import { Model, RemoteDataSource } from '../falcor';
 import { handleVboUpdates } from '../streamGL/client';
+import { falcorUpdateHandler } from '../startup/falcorUpdateHandler';
 import { Observable, Scheduler } from 'rxjs';
 
 export function initialize(options, debug) {
@@ -22,11 +23,15 @@ export function initialize(options, debug) {
     return socketConnected
         .merge(socketErrorConnecting)
         .take(1)
-        .map(() => ({
-            ...options,
-            handleVboUpdates, socket,
-            model: getAppModel(options)
-        }));
+        .mergeMap(() => {
+            const model = getAppModel(options);
+            const updateFalcorEvents = Observable.fromEvent(
+                socket, 'updateFalcorCache', ({ data }) => data
+            );
+            return falcorUpdateHandler(model, updateFalcorEvents)
+                .ignoreElements()
+                .startWith({ ...options, model, socket, handleVboUpdates })
+        });
 }
 
 function getAppModel(options) {

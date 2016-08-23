@@ -17,7 +17,7 @@ export function requisitionWorker({
     const { requests } = server;
     const centralPort = config.HTTP_LISTEN_PORT;
     const centralAddr = config.HTTP_LISTEN_ADDRESS;
-    const claimTimeout = 200;//config.WORKER_CONNECT_TIMEOUT;
+    const claimTimeout = -1;//config.WORKER_CONNECT_TIMEOUT;
     const canLockWorker = config.ENVIRONMENT !== 'local';
     const shouldExitOnDisconnect = (
         config.ENVIRONMENT === 'production' ||
@@ -159,6 +159,9 @@ export function requisitionWorker({
     }
 
     function awaitSocketConnection(activeClientId, request) {
+        if (claimTimeout === -1) {
+            return socketConnectionAsObservable(activeClientId, request);
+        }
         return socketConnectionAsObservable(activeClientId, request)
             .timeout(claimTimeout * 1000)
             .catch(() => {

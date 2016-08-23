@@ -1,6 +1,5 @@
 import path from 'path';
 import express from 'express';
-import bodyParser from 'body-parser';
 import { renderMiddleware } from '../middleware';
 import { getDataSourceFactory } from '../../viz-shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
@@ -16,9 +15,6 @@ export function httpRoutes(services, modules) {
     }, {
         route: '/graph/error',
         post: (req, res) => res.status(200).send()
-    }, {
-        route: `/graph`,
-        use: bodyParser.urlencoded({ extended: false })
     }, {
         route: `/graph/model.json`,
         use: falcorMiddleware(getDataSource)

@@ -5,7 +5,7 @@
 const Q = require('q');
 const Rx = require('rxjs');
 const _ = require('underscore');
-const rConf = require('../../viz-shared/scene/model');
+const rConf = require('viz-shared/models/scene');
 
 const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/node-driver');

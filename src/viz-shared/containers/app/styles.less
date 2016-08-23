@@ -1,0 +1,38 @@
+@import '../../index.less';
+
+html.nologo .logo-container {
+    display: none;
+}
+
+.app {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    position: absolute;
+}
+
+.logo-container {
+
+    &.disabled {
+        display: none;
+    }
+
+    right: 0.8em;
+    bottom: 0.8em;
+    position: absolute;
+    pointer-events: none;
+
+    img {
+        height: 3em;
+    }
+}
+
+.logo-version {
+    color: white;
+    opacity: 0.5;
+    margin-top: -1em;
+    font-size: 0.9em;
+    text-align: right;
+    pointer-events: all;
+}
