@@ -20,7 +20,19 @@ const SupportedDataTypes = [
     'object'
 ];
 
+// Taken from http://stackoverflow.com/questions/14313183/javascript-regex-how-do-i-check-if-the-string-is-ascii-only
+function isASCII(str, extended) {
+    return (extended ? /^[\x00-\xFF]*$/ : /^[\x00-\x7F]*$/).test(str);
+}
+
+function fastRoughStringCompare (a, b) {
+    return (a<b ? -1 : (a>b ? 1 : 0));
+}
+
 function wrappedLocaleCompare (a, b) {
+    if (isASCII(a) && isASCII(b)) {
+        return fastRoughStringCompare(a, b);
+    }
     return defaultLocaleCollator.compare(a, b);
 }
 
