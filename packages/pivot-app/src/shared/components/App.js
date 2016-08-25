@@ -17,7 +17,7 @@ export class App extends Component {
             index: 1, depth: depth + 1,
         });
 
-        const test = new TestComponent({
+        const test = new InvestigationComponent({
             models: models.pluck(0),
             index: 2, depth: depth + 1,
         });
@@ -42,15 +42,15 @@ export class App extends Component {
     }
 }
 
-class TestComponent extends Component {
+class InvestigationComponent extends Component {
     loadProps(model) {
-        return model.get(`['openInvestigation'].id`);
+        return model.get(`['openInvestigation'].name`);
     }
-    render(model, { openInvestigation: { id } }) {
-        console.log('Name of first pivot', id);
+    render(model, { openInvestigation: { name } }) {
+        console.log('Name of first pivot', name);
         return (
             <div>
-                <span> {`Investigation Name ${id}`} </span>
+                <span> {`Investigation Name ${name}`} </span>
             </div>
         );
     }

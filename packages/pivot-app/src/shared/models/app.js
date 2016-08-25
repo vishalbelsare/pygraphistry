@@ -52,15 +52,18 @@ export function app(rows = [], id = simpleflake().toJSON()) {
          *
          */
         //openInvestigation : $ref([`pivots`]),
-        openInvestigation : pivots[0],
+        openInvestigation : investigations[0],
 
         investigationsById : investigations.reduce((inve4tigations, investigation) => ({
             ...investigations, [investigation.id]: investigation
         }), {}),
 
-        investigations:investigations.map((investigation, index) => 
-            $ref(`investigationsById['${investigation.id}']`)
-        ),
+        //investigations:investigations.map((investigation, index) => 
+            //$ref(`investigationsById['${investigation.id}']`)
+        //),
+        investigations: rows.reduce((rows, row) => ({
+            ...rows, [row.id]: row
+        }), {}),
 
         selectedPivots: $ref(`['pivots']`),
 
