@@ -17,20 +17,40 @@ export class App extends Component {
             index: 1, depth: depth + 1,
         });
 
+        const test = new TestComponent({
+            models: models.pluck(0),
+            index: 2, depth: depth + 1,
+        });
+
         return models.switchMapTo(
-            Observable.combineLatest(iFrame, table),
+            Observable.combineLatest(iFrame, table, test),
             (componentInfo, childVDoms) => [ ...componentInfo, ...childVDoms]
         )
     }
     loadProps(model) {
         return model.get(`['title', 'total']`);
     }
-    render(model, { title }, iFrame, table) {
+    render(model, { title }, iFrame, table, test) {
         return (
             <div id='app' key_='app' class_={{ [appClassName]: true }}>
                 {iFrame}
+                {test}
                 <h2>{title}</h2>
                 {table}
+            </div>
+        );
+    }
+}
+
+class TestComponent extends Component {
+    loadProps(model) {
+        return model.get(`['pivots'][0]['id']`);
+    }
+    render(model, { url, total, urls, urlIndex , pivots }) {
+        console.log("Rendering pibots", pivots[0].id);
+        return (
+            <div>
+                <span> {`Investigation Id ${pivots[0].id}`} </span>
             </div>
         );
     }
