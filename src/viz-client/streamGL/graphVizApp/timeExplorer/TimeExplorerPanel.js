@@ -1,9 +1,9 @@
 'use strict';
 
+import $ from 'jquery'
+import { Observable } from 'rxjs';
+
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:TimeExplorer');
-var $       = window.$;
-var Rx      = require('@graphistry/rxjs');
-              require('../../rx-jquery-stub');
 var _       = require('underscore');
 
 var Backbone = require('backbone');
@@ -257,10 +257,10 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             });
 
             var defaultFakeEvent = {value: [0, 1000]};
-            var aSliderObservable = this.$encodingSliderA.onAsObservable('slide').merge(Rx.Observable.from([defaultFakeEvent]));
-            var bSliderObservable = this.$encodingSliderB.onAsObservable('slide').merge(Rx.Observable.from([defaultFakeEvent]));
-            var aSlideStopObservable = this.$encodingSliderA.onAsObservable('slideStop').merge(Rx.Observable.from([defaultFakeEvent]));
-            var bSlideStopObservable = this.$encodingSliderB.onAsObservable('slideStop').merge(Rx.Observable.from([defaultFakeEvent]));
+            var aSliderObservable = this.$encodingSliderA.onAsObservable('slide').merge(Observable.from([defaultFakeEvent]));
+            var bSliderObservable = this.$encodingSliderB.onAsObservable('slide').merge(Observable.from([defaultFakeEvent]));
+            var aSlideStopObservable = this.$encodingSliderA.onAsObservable('slideStop').merge(Observable.from([defaultFakeEvent]));
+            var bSlideStopObservable = this.$encodingSliderB.onAsObservable('slideStop').merge(Observable.from([defaultFakeEvent]));
 
             var wrappedToRatioInfo = function (wrapped) {
                 var {aEvt, bEvt} = wrapped;
@@ -373,7 +373,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
                 };
             };
 
-            Rx.Observable.combineLatest(aSliderObservable, bSliderObservable,
+            Observable.combineLatest(aSliderObservable, bSliderObservable,
                 (aEvt, bEvt) => {
                     return {aEvt, bEvt};
                 }
@@ -413,7 +413,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
 
             }).subscribe(_.identity, util.makeErrorHandler('handling time encoding slider'));
 
-            Rx.Observable.combineLatest(aSlideStopObservable, bSlideStopObservable,
+            Observable.combineLatest(aSlideStopObservable, bSlideStopObservable,
                 (aEvt, bEvt) => {
                     return {aEvt, bEvt};
                 }
@@ -523,7 +523,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             var lastX = evt.pageX;
             var width = this.$timeExplorerVizContainer.width();
 
-            var positionChanges = Rx.Observable.fromEvent(this.$timeExplorerVizContainer, 'mousemove')
+            var positionChanges = Observable.fromEvent(this.$timeExplorerVizContainer, 'mousemove')
                 .flatMap((evt) => {
                     return this.dataModelSubject.take(1).map((dataModel) => {
                         return {dataModel, evt};
@@ -552,13 +552,13 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             // That is, a mouseout event from a child of the document won't trigger this,
             // only someone mouseing out of the window
             // Technique taken from http://stackoverflow.com/questions/923299/how-can-i-detect-when-the-mouse-leaves-the-window
-            const mouseOutOfWindowStream = Rx.Observable.fromEvent(document, 'mouseout')
+            const mouseOutOfWindowStream = Observable.fromEvent(document, 'mouseout')
                 .filter((e=window.event) => {
                     const from = e.relatedTarget || e.toElement;
                     return (!from || from.nodeName === 'HTML');
                 });
 
-            Rx.Observable.fromEvent(document, 'mouseup')
+            Observable.fromEvent(document, 'mouseup')
                 .merge(mouseOutOfWindowStream)
                 .take(1)
                 .do(function () {
@@ -629,7 +629,7 @@ function TimeExplorerPanel (socket, $parent, metadata, explorer) {
             }
 
             allSubjects.push(idZipFunc);
-            Rx.Observable.zip.apply(Rx.Observable, allSubjects).take(1).do((ids) => {
+            Observable.zip.apply(Observable, allSubjects).take(1).do((ids) => {
 
                 // TODO: Make it so this doesn't eagerly run
 

@@ -1,5 +1,5 @@
-import { App } from './components/App';
-import { BehaviorSubject } from '@graphistry/rxjs';
+import { App } from './containers/app';
+import { BehaviorSubject } from 'rxjs';
 
 export function reloadHot(module) {
 
@@ -7,11 +7,9 @@ export function reloadHot(module) {
 
     if (module.hot) {
         module.hot.accept([
-            './components/App.js'
+            './containers/app/index.js'
         ], () => {
-            hotModules.next({
-                App: require('./components/App')
-            });
+            hotModules.next({ ...require('./containers/app') });
         })
     }
 

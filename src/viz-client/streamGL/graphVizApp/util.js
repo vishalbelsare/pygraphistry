@@ -1,6 +1,7 @@
 'use strict';
 
-var Rx      = require('@graphistry/rxjs');
+import { Subject, ReplaySubject } from 'rxjs';
+
 var _       = require('underscore');
 
 function makeErrorHandler(name) {
@@ -15,13 +16,13 @@ function makeErrorHandler(name) {
 //
 // First arg:   Stream
 //
-// Returns a stream that has hashes {data: data, ready: Rx.Subject}
+// Returns a stream that has hashes {data: data, ready: Subject}
 // When ready for a new element, put data into ready, e.g.,
 // hash.ready.onNext(hash.data)
 function bufferUntilReady(stream) {
-    const lastElem = new Rx.Subject();
-    const newStream = new Rx.Subject();
-    const replayStream = new Rx.ReplaySubject(1);
+    const lastElem = new Subject();
+    const newStream = new Subject();
+    const replayStream = new ReplaySubject(1);
 
     // Feed stream into replayStream so we can
     // always handle the last request.

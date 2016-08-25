@@ -1,9 +1,9 @@
 'use strict';
 
+import $ from 'jquery'
+import { Observable, ReplaySubject } from 'rxjs';
+
 var debug   = require('debug')('graphistry:StreamGL:graphVizApp:dataInspector');
-var $       = window.$;
-var Rx      = require('@graphistry/rxjs');
-              require('../rx-jquery-stub');
 var _       = require('underscore');
 var Backbone = require('backbone');
     Backbone.$ = $;
@@ -66,7 +66,7 @@ function init (appState, socket, workerUrl, marquee, filtersResponses, isOnSubje
 
         // Now that we have grids, we need to process updates.
         // TODO: This triggers on simulate, when it shouldn't have to (should it?)
-        Rx.Observable.combineLatest(marqueeTriggers, filtersResponses, isOnSubject, (sel, filters, isOn) => ({
+        Observable.combineLatest(marqueeTriggers, filtersResponses, isOnSubject, (sel, filters, isOn) => ({
             sel: sel, filters: filters, isOn: isOn
         })).filter((data) => {
             // Filter so it only triggers a fetch when inspector is visible.
@@ -312,7 +312,7 @@ function setupSearchBar(searchField, dataFrame, $inspector, workerUrl, dim) {
     // Attach Autosearch Handlers
     //////////////////////////////////////////////////////////////////////
 
-    const searchRequests = new Rx.ReplaySubject(1);
+    const searchRequests = new ReplaySubject(1);
 
     const attemptSearch = function (e) {
         // Because we clobber the handler for this.

@@ -1,7 +1,7 @@
 import { loadViews } from './loadViews';
 import { loadResource } from './loadResource';
-import { Observable, ReplaySubject } from '@graphistry/rxjs';
-import { ref as $ref, atom as $atom } from 'falcor-json-graph';
+import { Observable, ReplaySubject } from 'rxjs';
+import { ref as $ref, atom as $atom } from 'reaxtor-falcor-json-graph';
 
 /** Arbitrary limit to prevent large range requests, ~ 260kb. */
 const LABEL_SIZE_LIMIT = Math.pow(2, 18);

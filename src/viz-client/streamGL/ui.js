@@ -1,6 +1,6 @@
 'use strict';
 
-var $ = window.$;
+import $ from 'jquery'
 
 
 // [ string ] * [ DOM ]_1 -> ()

@@ -1,10 +1,10 @@
 'use strict';
 
 
+import $ from 'jquery'
+import { Observable, Subject } from 'rxjs';
+
 var $$       = window.Quo;
-var $        = window.$;
-var Rx       = require('@graphistry/rxjs');
-               require('../rx-jquery-stub');
 var _        = require('underscore');
 var debug    = require('debug')('graphistry:StreamGL:interaction');
 var util     = require('./util.js');
@@ -22,7 +22,7 @@ var util     = require('./util.js');
  *                                        drag events on.
  * @param  {Camera} camera              - The camera object to update based off of drag events.
  *
- * @return {Rx.Observable} Rx stream with Camera objects for every drag event.
+ * @return {Observable} Rx stream with Camera objects for every drag event.
  */
 function setupDrag($eventTarget, camera, appState) {
     var $sim = $('#simulation');
@@ -111,7 +111,7 @@ function setupMousemove($eventTarget) {
                 y: evt.clientY - bounds.top
             };
         })
-        .merge(Rx.Observable.return(initial));
+        .merge(Observable.return(initial));
 }
 
 
@@ -123,7 +123,7 @@ function setupMousemove($eventTarget) {
 // feature-gated by 3d
 function setupRotate($eventTarget, camera) {
 
-    var presses = new Rx.Subject();
+    var presses = new Subject();
 
     $eventTarget.keydown(function (e) { presses.onNext(e); });
 
@@ -187,7 +187,7 @@ function setupScroll($eventTarget, canvas, camera, appState) {
 }
 
 function setupZoomButton($elt, camera, zoomFactor) {
-    return Rx.Observable.fromEvent($elt, 'click')
+    return Observable.fromEvent($elt, 'click')
         .map(function () {
             return zoom(camera, zoomFactor);
         });
@@ -283,13 +283,13 @@ function straightLineDist(p1, p2) {
  * @param  {HTMLElement} eventTarget - The raw DOM element to detect swipe events on.
  * @param  {Camera} camera           - The camera object to update based off of swipe events.
  *
- * @return {Rx.Observable} Rx stream with Camera objects for every swipe event.
+ * @return {Observable} Rx stream with Camera objects for every swipe event.
  */
 function setupSwipe(eventTarget, camera) {
     var $$eventTarget = $$(eventTarget);
 
-    return Rx.Observable.fromEvent($$eventTarget, 'swiping')
-        .merge(Rx.Observable.fromEvent($$eventTarget, 'swipe')
+    return Observable.fromEvent($$eventTarget, 'swiping')
+        .merge(Observable.fromEvent($$eventTarget, 'swipe')
             .map( function (ev) {ev.preventDefault(); return 0; }))
 
         .scan(function (acc, ev) {
@@ -343,8 +343,8 @@ function setupSwipe(eventTarget, camera) {
 function setupPinch(eventTarget, camera) {
     var $$eventTarget = $$(eventTarget);
 
-    return Rx.Observable.fromEvent($$eventTarget, 'pinching')
-        .merge(Rx.Observable.fromEvent($$eventTarget, 'pinch')
+    return Observable.fromEvent($$eventTarget, 'pinching')
+        .merge(Observable.fromEvent($$eventTarget, 'pinch')
             .map( function (ev) {ev.preventDefault(); return 0; }))
 
         .scan(function (acc, ev) {

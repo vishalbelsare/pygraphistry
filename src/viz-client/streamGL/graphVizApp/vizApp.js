@@ -3,17 +3,16 @@
 // FIXME: Move this to graph-viz repo -- it shouldn't be a part of the core StreamGL library
 
 import Color from 'color';
+import $ from 'jquery';
+import { Subject, ReplaySubject } from 'rxjs';
 
 const debug   = require('debug')('graphistry:StreamGL:graphVizApp:vizApp');
-const $       = window.$;
 const _       = require('underscore');
-const Rx      = require('@graphistry/rxjs');
-              require('../rx-jquery-stub');
 
 const shortestPaths   = require('./shortestpaths.js');
 const controls        = require('./controls.js');
 const canvas          = require('./canvas.js');
-const labels          = require('./labels.js');
+// const labels          = require('./labels.js');
 const ui              = require('../ui.js');
 const poiLib          = require('../poi.js');
 const util            = require('./util.js');
@@ -43,35 +42,35 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
     const backgroundModel = rootModel.deref(currentView.background);
     const currentViewModel = rootModel.deref(currentView);
 
-    const labelRequests = new Rx.Subject();
-    const poi = poiLib(socket, labelRequests);
+    const labelRequests = new Subject();
+    // const poi = poiLib(socket, labelRequests, labelsModel);
 
     // Observable DOM
-    const labelHover = new Rx.Subject();
+    const labelHover = new Subject();
 
-    const cameraChanges = new Rx.ReplaySubject(1);
+    const cameraChanges = new ReplaySubject(1);
     cameraChanges.onNext(initialRenderState.get('camera'));
-    const isAnimating = new Rx.ReplaySubject(1);
+    const isAnimating = new ReplaySubject(1);
     isAnimating.onNext(false);
 
-    const activeSelection = new Rx.ReplaySubject(1);
+    const activeSelection = new ReplaySubject(1);
     activeSelection.onNext(new VizSlice([]));
 
     // Marquee button selected
-    const marqueeOn = new Rx.ReplaySubject(1);
+    const marqueeOn = new ReplaySubject(1);
     marqueeOn.onNext(false);
     // Marquee being drawn / dragged
-    const marqueeActive = new Rx.ReplaySubject(1);
+    const marqueeActive = new ReplaySubject(1);
     marqueeActive.onNext(false);
     // Marquee finished drawing on the canvas
     // TODO: Do we really need this?
-    const marqueeDone = new Rx.ReplaySubject(1);
+    const marqueeDone = new ReplaySubject(1);
     marqueeDone.onNext(false);
     // Simulate button selected
-    const simulateOn = new Rx.ReplaySubject(1);
+    const simulateOn = new ReplaySubject(1);
     simulateOn.onNext(false);
     // Brush button selected
-    const brushOn = new Rx.ReplaySubject(1);
+    const brushOn = new ReplaySubject(1);
     brushOn.onNext(false);
     // Is any marquee type toggled on?
     const anyMarqueeOn = marqueeOn
@@ -80,9 +79,9 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
     const isAnimatingOrSimulating = isAnimating
         .flatMap((animating) => simulateOn.map((simulating) => animating || simulating));
 
-    const latestHighlightedObject = new Rx.ReplaySubject(1);
+    const latestHighlightedObject = new ReplaySubject(1);
 
-    const viewConfigChanges = new Rx.ReplaySubject(1);
+    const viewConfigChanges = new ReplaySubject(1);
 
     viewConfigChanges.next(currentView);
 
@@ -90,7 +89,7 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
         renderState: initialRenderState,
         vboUpdates: vboUpdates,
         vboVersions: vboVersions,
-        hitmapUpdates: new Rx.ReplaySubject(1),
+        hitmapUpdates: new ReplaySubject(1),
         cameraChanges: cameraChanges,
         viewConfigChanges: viewConfigChanges,
         isAnimating: isAnimating,
@@ -108,7 +107,7 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
         latestHighlightedObject: latestHighlightedObject,
         apiEvents: apiEvents,
         apiActions: apiActions,
-        clickEvents: new Rx.ReplaySubject(0)
+        clickEvents: new ReplaySubject(0)
     };
 
     //////////////////////////////////////////////////////////////////////////
@@ -131,14 +130,14 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
                                                                 appState.isAnimating,
                                                                 appState.simulateOn,
                                                                 appState.activeSelection,
-                                                                socket, hintsModel);
+                                                                socket, labelsModel, hintsModel);
 
     canvas.setupCameraInteractions(appState, $simCont).subscribe(
         appState.cameraChanges,
         util.makeErrorHandler('cameraChanges')
     );
 
-    labels.setupLabelsAndCursor(appState, socket, urlParams, $simCont, labelsModel);
+    // labels.setupLabelsAndCursor(appState, socket, urlParams, $simCont, labelsModel);
     canvas.setupCameraInteractionRenderUpdates(
         appState.renderingScheduler,
         appState.cameraChanges,
@@ -161,7 +160,7 @@ function init (socket, initialRenderState, vboUpdates, vboVersions, apiEvents, a
         $('#simulation').css('opacity', urlParams.opacity);
     }
 
-    shortestPaths($spButton, poi, socket);
+    // shortestPaths($spButton, poi, socket);
 
     const doneLoading = vboUpdates
         .filter((update) => update === 'received')

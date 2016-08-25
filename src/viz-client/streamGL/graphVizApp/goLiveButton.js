@@ -1,6 +1,6 @@
 'use strict';
 
-var $               = window.$;
+import $ from 'jquery'
 var _               = require('underscore');
 
 

@@ -1,11 +1,11 @@
-import { Subject } from '@graphistry/rxjs';
+import { Subject } from 'rxjs';
 import * as CLjs from '../simulator/cl';
 import * as SimCL from '../simulator/SimCL';
 import * as NBody from '../simulator/NBody';
 import Dataframe from '../simulator/Dataframe';
-import { scenes } from '../../viz-shared/models';
 import * as driver from '../simulator/node-driver';
-import { Renderer } from '../../viz-shared/renderers';
+import { Renderer } from 'viz-shared/renderers';
+import { scenes } from 'viz-shared/models/scene';
 import { controls as layoutControls } from '../simulator/layout.config';
 
 export function nBody(dataset) {

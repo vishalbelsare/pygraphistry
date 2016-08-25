@@ -3,10 +3,10 @@ import { httpRoutes } from './routes/http';
 import { socketRoutes } from './routes/socket';
 import VizServer from './simulator/server-viz';
 import { cache as Cache } from '@graphistry/common';
-import { reloadHot } from '../viz-shared/reloadHot';
+import { reloadHot } from 'viz-shared/reloadHot';
 import removeExpressRoute from 'express-remove-route';
 import { logger as commonLogger } from '@graphistry/common';
-import { Observable, Subject, Subscription } from '@graphistry/rxjs';
+import { Observable, Subject, Subscription } from 'rxjs';
 import { loadViews, loadLabels, loadVGraph, loadWorkbooks } from './services';
 
 const config = _config();
@@ -68,7 +68,11 @@ export function vizWorker(app, server, sockets, caches) {
             }
         });
 
-        return requests.merge(sockets.map(enrichLogs).mergeMap(({ socket, metadata }) => {
+        return requests.do(({ request }) => {
+            console.log(`----------> got request ${request.url} ${
+                request.body && JSON.stringify(request.body) || ''
+            }`);
+        }).merge(sockets.map(enrichLogs).mergeMap(({ socket, metadata }) => {
             const vizServer = new VizServer(app, socket, vbos, metadata);
             return Observable.using(
                 onSocketDispose(socket, vizServer),
@@ -82,7 +86,13 @@ export function vizWorker(app, server, sockets, caches) {
         return new Subscription(function disposeVizWorker() {
             expressAppRoutes
                 .filter(({ route }) => route)
-                .forEach(({ route }) => removeExpressRoute(app, route));
+                .forEach(({ route }) => {
+                    try {
+                        removeExpressRoute(app, route)
+                    } catch(e) {
+                        // todo: log routes we can't remove?
+                    }
+                });
         });
     }
 
@@ -136,7 +146,8 @@ export function vizWorker(app, server, sockets, caches) {
                             }
                         };
 
-                        // TODO: refactor server-viz to remove dependency on stateful shared Subjects
+                        // TODO: refactor server-viz to remove dependency on
+                        // stateful shared Subjects
                         vizServer.workbookDoc.next(workbook);
                         vizServer.viewConfig.next(view);
                         vizServer.renderConfig.next(scene);

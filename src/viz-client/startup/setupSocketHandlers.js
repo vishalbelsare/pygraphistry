@@ -1,4 +1,4 @@
-import { Observable } from '@graphistry/rxjs';
+import { Observable } from 'rxjs';
 import { vboUpdates } from '../app/events/vboUpdates';
 import { loadingStatus } from '../app/events/loadingStatus';
 import { sizesForMalloc } from '../app/events/sizesForMalloc';

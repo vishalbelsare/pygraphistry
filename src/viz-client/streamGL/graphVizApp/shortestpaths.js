@@ -1,8 +1,8 @@
 'use strict';
 
 var debug   = require('debug')('graphistry:StreamGL:shortestPaths');
-var $       = window.$;
-var Rx      = require('@graphistry/rxjs');
+import $ from 'jquery'
+var Rx      = require('rxjs');
               require('../rx-jquery-stub');
 
 //poi * labelDOM -> int U exn

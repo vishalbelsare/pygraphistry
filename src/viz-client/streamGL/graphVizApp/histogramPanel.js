@@ -1,11 +1,10 @@
 'use strict';
 
 // const debug   = require('debug')('graphistry:StreamGL:graphVizApp:HistogramsPanel');
-const $       = window.$;
-const Rx      = require('@graphistry/rxjs');
-import '../rx-jquery-stub';
-const _       = require('underscore');
+import $ from 'jquery'
+import { Observable, Subject, ReplaySubject } from 'rxjs';
 
+const _       = require('underscore');
 const Backbone = require('backbone');
 Backbone.$ = $;
 const d3      = require('d3');
@@ -371,9 +370,9 @@ function HistogramsPanel (filtersPanel, updateAttributeSubject, activeHighlight)
     // How the model-view communicate back to underlying Rx.
     this.updateAttributeSubject = updateAttributeSubject;
     this.activeHighlight = activeHighlight;
-    this.highlightRequests = new Rx.Subject();
-    /** @type Rx.ReplaySubject<Boolean> */
-    this.mouseIsDown = new Rx.ReplaySubject(1);
+    this.highlightRequests = new Subject();
+    /** @type ReplaySubject<Boolean> */
+    this.mouseIsDown = new ReplaySubject(1);
     this.mouseIsDown.onNext(false);
     /** Histogram-specific/owned filter information, keyed/unique per attribute.
      * @type Object.<HistogramFilterSpec> */
@@ -757,7 +756,7 @@ HistogramsPanel.prototype.queryForBinRange = function (attribute, firstBin, last
 HistogramsPanel.prototype.setupHighlightRequests = function () {
     this.highlightRequests.debounceTime(250).combineLatest(this.mouseIsDown).switchMap(([query, mouseIsDown]) => {
         if (query === undefined || mouseIsDown) {
-            return Rx.Observable.of({success: true, computedMask: []});
+            return Observable.of({success: true, computedMask: []});
         } else {
             return this.highlightElementsMatchingQuery(query.attribute, query.ast);
         }
@@ -810,7 +809,7 @@ HistogramsPanel.prototype.setupApiInteraction = function (apiActions) {
         })
         .flatMap((command) => {
             //poll until exists on DOM & return
-            return Rx.Observable.interval(10).timeInterval()
+            return Observable.interval(10).timeInterval()
                 .map(() => {
                     return $('.histogramDiv .attributeName')
                         .filter(() => $(this).text() === command.attribute).parents('.histogramDiv');
@@ -1404,7 +1403,7 @@ HistogramsPanel.prototype.handleHistogramMouseDown = function (redrawCallback, i
     const startedInLastFilter = binInLastFilter(lastHistogramFilter, startBin);
     let mouseMoved = false;
 
-    const positionChanges = Rx.Observable.fromEvent($parent, 'mouseover')
+    const positionChanges = Observable.fromEvent($parent, 'mouseover')
         .map((evt) => {
             const $col = $(evt.target).parent();
             const binNum = $col.attr('binnumber');
@@ -1435,7 +1434,7 @@ HistogramsPanel.prototype.handleHistogramMouseDown = function (redrawCallback, i
             redrawCallback();
         }).subscribe(_.identity, util.makeErrorHandler('Histogram Filter Dragging'));
 
-    Rx.Observable.fromEvent($(document.body), 'mouseup')
+    Observable.fromEvent($(document.body), 'mouseup')
         .take(1)
         .do(() => {
             this.mouseIsDown.onNext(false);

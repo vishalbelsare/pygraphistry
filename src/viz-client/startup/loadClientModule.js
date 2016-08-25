@@ -1,4 +1,4 @@
-import { Observable } from '@graphistry/rxjs';
+import { Observable } from 'rxjs';
 
 // Have to hard-code the client module names instead of specifying them
 // dynamically so webpack can statically analyze the `require.ensure` calls.

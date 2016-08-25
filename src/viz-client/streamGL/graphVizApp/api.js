@@ -1,17 +1,15 @@
 'use strict';
 
-var Rx      = require('@graphistry/rxjs');
-              require('../rx-jquery-stub');
 const _       = require('underscore');
-
 const util    = require('./util.js');
 const Command = require('./command.js');
 
+import { Subject } from 'rxjs';
 
 /**
  * @param {Socket} socket
  * @param {VizSlice} slice
- * @returns {Rx.Observable}
+ * @returns {Observable}
  */
 function encodeEntities (socket, slice) {
     const getGlobalIDsCommand = new Command('Transforming IDs to global index', 'get_global_ids', socket, false);
@@ -22,7 +20,7 @@ function encodeEntities (socket, slice) {
 function setupAPIHooks (socket, appState, doneLoading) {
     const apiEvents = appState.apiEvents;
     const apiActions = appState.apiActions;
-    const apiRequests = new Rx.Subject();
+    const apiRequests = new Subject();
 
     const event2subscribers = {};
     const subscriber2event = {};
@@ -191,14 +189,14 @@ function nodePosition (appState, subscriber) {
 
 
 function nodeLabel (appState, subscriber) {
-    appState.poi.getLabelObject({dim: 1, idx: subscriber.node.viewIdx}).do((label) => {
-        console.log('LABEL',label);
-        postEvent(appState.apiEvents, subscriber, {
-            event: 'node.getLabel',
-            node: subscriber.node,
-            label: label
-        });
-    }).subscribe(_.identity, util.makeErrorHandler('nodeLabel'));
+    // appState.poi.getLabelObject({dim: 1, idx: subscriber.node.viewIdx}).do((label) => {
+    //     console.log('LABEL',label);
+    //     postEvent(appState.apiEvents, subscriber, {
+    //         event: 'node.getLabel',
+    //         node: subscriber.node,
+    //         label: label
+    //     });
+    // }).subscribe(_.identity, util.makeErrorHandler('nodeLabel'));
 }
 
 module.exports = {

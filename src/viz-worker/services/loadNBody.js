@@ -2,8 +2,8 @@ import url from 'url';
 import { loadDataset } from './loadDataset';
 import { nBody as createNBody } from '../models';
 import { cache as Cache } from '@graphistry/common';
-import { Observable, ReplaySubject } from '@graphistry/rxjs';
-import { dataset as createDataset } from '../../viz-shared/models';
+import { Observable, ReplaySubject } from 'rxjs';
+import { dataset as createDataset } from 'viz-shared/models/workbooks';
 
 export function loadNBody(nBodiesById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
     return function loadDatasetNBody({ workbook, options = {} }) {

@@ -9,7 +9,7 @@ const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz:data:vgraphwriter');
 
 const ProtoBuf = require('protobufjs/dist/protobuf-light');
-const protoBufDefinitions = ProtoBuf.loadJson(require('./graph_vector.proto')).build();
+const protoBufDefinitions = ProtoBuf.loadJson(require('viz-shared/vgraph/graph_vector.proto')).build();
 
 /* Hack way to serialize positions while waiting for dataframe */
 function serializePositions(graph) {

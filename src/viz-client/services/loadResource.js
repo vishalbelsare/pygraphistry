@@ -1,4 +1,4 @@
-import { Observable } from '@graphistry/rxjs';
+import { Observable } from 'rxjs';
 
 // Site-level configuration:
 export const BUCKET_REGION = 'us-west-1';

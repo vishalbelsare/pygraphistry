@@ -1,7 +1,8 @@
 import SocketIO from 'socket.io-client';
 import { Model, RemoteDataSource } from '../falcor';
 import { handleVboUpdates } from '../streamGL/client';
-import { Observable, Scheduler } from '@graphistry/rxjs';
+import { falcorUpdateHandler } from '../startup/falcorUpdateHandler';
+import { Observable, Scheduler } from 'rxjs';
 
 export function initialize(options, debug) {
 
@@ -22,11 +23,15 @@ export function initialize(options, debug) {
     return socketConnected
         .merge(socketErrorConnecting)
         .take(1)
-        .map(() => ({
-            ...options,
-            handleVboUpdates, socket,
-            model: getAppModel(options)
-        }));
+        .mergeMap(() => {
+            const model = getAppModel(options);
+            const updateFalcorEvents = Observable.fromEvent(
+                socket, 'updateFalcorCache', ({ data }) => data
+            );
+            return falcorUpdateHandler(model, updateFalcorEvents)
+                .ignoreElements()
+                .startWith({ ...options, model, socket, handleVboUpdates })
+        });
 }
 
 function getAppModel(options) {
@@ -37,11 +42,11 @@ function getAppModel(options) {
             crossDomain: false, withCredentials: false
         }, options),
         onChangesCompleted: !__DEV__ ? null : function () {
-            window.appCache = this.getCache();
+            window.__INITIAL_STATE__ = this.getCache();
         }
     });
 }
 
 function getAppCache() {
-    return window.appCache || {};
+    return window.__INITIAL_STATE__ || {};
 }

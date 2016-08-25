@@ -1,8 +1,10 @@
 'use strict';
 
-const $       = window.$;
+import $ from 'jquery'
+import { ReplaySubject } from 'rxjs';
+
 const _       = require('underscore');
-const Rx      = require('@graphistry/rxjs');
+
 const Backbone = require('backbone');
 Backbone.$ = $;
 const FilterControl       = require('./FilterControl.js');
@@ -309,7 +311,7 @@ function FiltersPanel(socket, labelRequests, toggle) {
     }).subscribe(_.identity, util.makeErrorHandler('Reading filters from workbook'));
 
     /** Exposes changes to the FilterCollection. */
-    this.filtersSubject = new Rx.ReplaySubject(1);
+    this.filtersSubject = new ReplaySubject(1);
     // Seed with a fresh filters list. Should come from persisted state.
     this.collection.on('change reset add remove', (/*model, options*/) => {
         this.filtersSubject.onNext(this.collection);

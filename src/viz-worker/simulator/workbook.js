@@ -1,6 +1,6 @@
 'use strict';
 
-const Rx      = require('@graphistry/rxjs');
+const Rx      = require('rxjs');
 
 const persist = require('./persist.js');
 

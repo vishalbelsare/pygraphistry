@@ -1,9 +1,9 @@
 import url from 'url';
 import zlib from 'zlib';
 import _config from '@graphistry/config';
-import { scenes } from '../../viz-shared/models';
 import { graph as createGraph } from '../models';
-import { Observable, ReplaySubject } from '@graphistry/rxjs';
+import { Observable, ReplaySubject } from 'rxjs';
+import { scenes } from 'viz-shared/models/scene';
 import { load as loadVGraph } from '../simulator/libs/VGraphLoader';
 import { cache as Cache, logger as commonLogger } from '@graphistry/common';
 const logger = commonLogger.createLogger('viz-worker', 'viz-worker/services/loadGraph.js');
