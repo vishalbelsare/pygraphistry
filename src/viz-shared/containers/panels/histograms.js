@@ -1,11 +1,11 @@
 import React from 'react'
 // import styles from './styles.less';
 import classNames from 'classnames';
-import { connect } from 'reaxtor-redux';
+import { container } from 'reaxtor-redux';
 import { HistogramsFragment, HistogramFragment } from './fragments';
 import { Button, Panel, MenuItem, ListGroup, ListGroupItem } from 'react-bootstrap';
 
-export const Histograms = connect(
+export const Histograms = container(
      HistogramsFragment, (histograms) => ({
      histograms, name: histograms.name, open: histograms.open })
 )(({ histograms = [], name, open }) => {
@@ -14,7 +14,7 @@ export const Histograms = connect(
         // <ListGroup fill>
         // {histograms.map((exclusion) => (
         //     <ListGroupItem key={exclusion.key}>
-        //         <Exclusion falcor={exclusion}/>
+        //         <Exclusion data={exclusion}/>
         //     </ListGroupItem>
         // ))}
         // </ListGroup>

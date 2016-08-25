@@ -86,7 +86,13 @@ export function vizWorker(app, server, sockets, caches) {
         return new Subscription(function disposeVizWorker() {
             expressAppRoutes
                 .filter(({ route }) => route)
-                .forEach(({ route }) => removeExpressRoute(app, route));
+                .forEach(({ route }) => {
+                    try {
+                        removeExpressRoute(app, route)
+                    } catch(e) {
+                        // todo: log routes we can't remove?
+                    }
+                });
         });
     }
 

@@ -1,4 +1,4 @@
-import { connect } from 'reaxtor-redux';
+import { container } from 'reaxtor-redux';
 import { renderNothing } from 'recompose';
 
 // import { Sets } from './sets';
@@ -9,7 +9,7 @@ import { Settings } from './settings';
 // import { Exclusions } from './exclusions';
 // import { Histograms } from './histograms';
 
-export const Panel = connect(
+export const Panel = container(
     ({ id, name, ...rest } = {}, { side }) => {
         if (!id && !name) {
             return `{ panels: { ${side} } }`;
@@ -26,7 +26,7 @@ export const Panel = connect(
 function renderPanel({ side, panel = {} } = {}) {
     const Content = componentForSideAndType(side, panel.id);
     return (
-        <Content falcor={panel}/>
+        <Content data={panel}/>
     );
 }
 

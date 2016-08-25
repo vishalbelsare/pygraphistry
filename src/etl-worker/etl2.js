@@ -1,5 +1,7 @@
 'use strict';
 
+import { Observable } from 'rxjs';
+
 var _        = require('underscore');
 var Q        = require('q');
 var urllib   = require('url');
@@ -13,8 +15,6 @@ var apiKey   = require('@graphistry/common').api;
 var Cache    = require('@graphistry/common').cache;
 var logger   = Log.createLogger('etlworker:etl2');
 var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
-
-
 
 var supportedAgents = ['pygraphistry'];
 
@@ -145,9 +145,27 @@ function uploadAndCache(data, key, opts) {
     }
 }
 
+export function processRequest(req, params) {
+    return Observable.defer(() => {
+
+        logger.info('ETL2: Got request, params:', params);
+        if (!_.contains(supportedAgents, params.agent)) {
+            return Observable.throw(new Error('Unsupported agent: ' + params.agent));
+        }
+
+        var msg = parseParts(req.files);
+
+        logger.debug('Message parts', _.keys(msg));
+        logger.debug('Message metadata', msg.metadata);
+
+        return Observable.from(etl(msg, params));
+    }).do((info) => {
+        logger.info('ETL2 successful, dataset name is', info.name);
+    });
+}
 
 // Request * Response * Object -> Q(Object)
-function process(req, res, params) {
+export function process(req, res, params) {
     logger.info('ETL2: Got request, params:', params);
 
     if (!_.contains(supportedAgents, params.agent)) {
@@ -166,8 +184,3 @@ function process(req, res, params) {
         return info;
     });
 }
-
-
-module.exports = {
-    process: process
-};

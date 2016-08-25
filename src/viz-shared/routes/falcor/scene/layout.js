@@ -10,6 +10,7 @@ import { getHandler,
 export function layout(path, base) {
     return function layout({ loadViewsById }) {
         const getValues = getHandler(path, loadViewsById);
+        const setValues = setHandler(path, loadViewsById);
         return [{
             get: getValues,
             route: `${base}.layout[{keys}]`
@@ -18,6 +19,7 @@ export function layout(path, base) {
             route: `${base}.layout['options', 'settings'][{keys}]`
         }, {
             get: getValues,
+            set: setValues,
             route: `${base}.layout['options'][{keys}][{keys}]`
         }];
     }

@@ -1,11 +1,11 @@
 import React from 'react'
 // import styles from './styles.less';
 import classNames from 'classnames';
-import { connect } from 'reaxtor-redux';
+import { container } from 'reaxtor-redux';
 import { InspectorFragment } from './fragments';
 import { Button, Panel, MenuItem, ListGroup, ListGroupItem } from 'react-bootstrap';
 
-export const Inspector = connect(
+export const Inspector = container(
      InspectorFragment, (inspector) => ({
      Inspector, name: inspector.name, open: inspector.open })
 )(({ Inspector = [], name, open }) => {

@@ -11,15 +11,22 @@ export function labels(path, base) {
     return function labels({ loadViewsById, loadLabelsByIndexAndType }) {
 
         const getValues = getHandler(path, loadViewsById);
+        const setValues = setHandler(path, loadViewsById);
+        const setColors = setHandler(path, loadViewsById, (color, path, context) => {
+            return new Color(color).hsv();
+        }, { valueKey: 'color' });
+
 
         return [{
             get: getValues,
+            set: setValues,
             route: `${base}.labels[{keys}]`
         }, {
             get: getValues,
             route: `${base}.labels['edge', 'point'][{keys}]`
         }, {
             get: getValues,
+            set: setColors,
             route: `${base}.labels['background', 'foreground'][{keys}]`
         }, {
             get: getLabelsByTypeAndRangeHandler,
@@ -29,6 +36,7 @@ export function labels(path, base) {
             route: `${base}.labels['options', 'settings'][{keys}]`
         }, {
             get: getValues,
+            set: setValues,
             route: `${base}.labels['options'][{keys}][{keys}]`
         }]
 

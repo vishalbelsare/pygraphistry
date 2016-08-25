@@ -1,7 +1,7 @@
 import React from 'react'
 import styles from './styles.less';
 import classNames from 'classnames';
-import { connect } from 'reaxtor-redux';
+import { container } from 'reaxtor-redux';
 import { FiltersFragment, FilterFragment } from './fragments';
 import {
     Button, Panel,
@@ -23,7 +23,7 @@ const deleteExpressionTooltip = (
     <Tooltip id='delete-expression-tooltip'>Delete Expression</Tooltip>
 );
 
-export const Filters = connect(
+export const Filters = container(
      FiltersFragment, (filters) => ({
      filters, name: filters.name, open: filters.open })
 )(({ filters = [], name = '', open = false, style }) => {
@@ -31,14 +31,14 @@ export const Filters = connect(
         <ListGroup>
         {filters.map((filter) => [
             <ListGroupItem key={filter.key}>
-                <Filter falcor={filter}/>
+                <Filter data={filter}/>
             </ListGroupItem>
         ])}
         </ListGroup>
     );
 });
 
-export const Filter = connect(
+export const Filter = container(
     FilterFragment
 )(({ id, title, attribute, level, query }) => {
     return (

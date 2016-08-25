@@ -1,6 +1,6 @@
-import { connect } from 'reaxtor-redux';
+import { container } from 'reaxtor-redux';
 
-export const Labels = connect(
+export const Labels = container(
     ({ edge = [], point = [], settings = [] } = {}) => `{
         id, name,
         selection, timeZone,

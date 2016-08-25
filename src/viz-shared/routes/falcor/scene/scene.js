@@ -36,6 +36,7 @@ export function scene(path, base) {
         }, {
             returns: `*`,
             get: getValues,
+            set: setValues,
             route: `${base}['scene']['options'][{keys}][{keys}]`,
         }];
     }

@@ -1,11 +1,11 @@
 import React from 'react'
 // import styles from './styles.less';
 import classNames from 'classnames';
-import { connect } from 'reaxtor-redux';
+import { container } from 'reaxtor-redux';
 import { TimebarFragment } from './fragments';
 import { Button, Panel, MenuItem, ListGroup, ListGroupItem } from 'react-bootstrap';
 
-export const Timebar = connect(
+export const Timebar = container(
     TimebarFragment
 )(({ name, open }) => {
     return  (
@@ -13,7 +13,7 @@ export const Timebar = connect(
         // <ListGroup fill>
         // {sets.map((set) => (
         //     <ListGroupItem key={set.key}>
-        //         <Set falcor={set}/>
+        //         <Set data={set}/>
         //     </ListGroupItem>
         // ))}
         // </ListGroup>

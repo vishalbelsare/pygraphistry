@@ -1,6 +1,6 @@
 import { inspect } from 'util';
 import { Model } from 'reaxtor-falcor';
-import { Provider } from 'reaxtor-redux';
+import { Provider } from 'react-redux';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { configureStore } from 'viz-shared/store/configureStore';
 import { renderToString as reactRenderToString } from 'react-dom/server';
@@ -52,8 +52,8 @@ function renderAppWithHotReloading(modules, dataSource, options) {
             renderFullPage(
                 falcor, options.workerID,
                 reactRenderToString(
-                    <Provider store={configureStore(initialState)} falcor={falcor}>
-                        <App {...options} key='viz-client'/>
+                    <Provider store={configureStore(initialState)}>
+                        <App {...options} falcor={falcor} key='viz-client'/>
                     </Provider>
                 )
             )

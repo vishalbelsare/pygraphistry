@@ -1,9 +1,9 @@
-import { connect } from 'reaxtor-redux';
+import { container } from 'reaxtor-redux';
 import { Canvas } from './canvas';
 import { Labels } from './labels';
 import { Selection } from './selection';
 
-export const Scene = connect(
+export const Scene = container(
     ({ labels, layout = {}, selection, settings = [] } = {}) => {
         const { settings: layoutSettings = [] } = layout;
         return `{
@@ -54,8 +54,8 @@ function renderScene({ scene, labels, selection }) {
                       color: `white`, textAlign: `center` }}>
             {/*<canvas className='canvas'/>*/}
             <Canvas key='canvas' {...scene}/>
-            <Labels key='labels' falcor={labels}/>
-            <Selection key='selection' falcor={selection}/>
+            <Labels key='labels' data={labels}/>
+            <Selection key='selection' data={selection}/>
         </div>
     );
 }

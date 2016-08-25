@@ -18,7 +18,7 @@ const logger      = log.createLogger('graph-viz', 'graph-viz/js/libs/VGraphLoade
 const perf        = require('@graphistry/common').perfStats.createPerfMonitor();
 
 const ProtoBuf = require('protobufjs/dist/protobuf-light');
-const protoBufDefinitions = ProtoBuf.loadJson(require('./graph_vector.proto')).build();
+const protoBufDefinitions = ProtoBuf.loadJson(require('viz-shared/vgraph/graph_vector.proto')).build();
 
 const VERTEX = protoBufDefinitions.VectorGraph.AttributeTarget.VERTEX;
 const EDGE   = protoBufDefinitions.VectorGraph.AttributeTarget.EDGE;

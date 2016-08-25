@@ -69,13 +69,13 @@ export function scene(workbookId, viewId, scene) {
                     type: 'color',
                     name: 'Foreground Color',
                     stateKey: 'color',
-                    state: $ref(`${view}.scene.foreground`)
+                    state: $ref(`${view}.foreground`)
                 }, {
                     id: 'background-color',
                     type: 'color',
                     name: 'Background Color',
                     stateKey: 'color',
-                    state: $ref(`${view}.scene.background`)
+                    state: $ref(`${view}.background`)
                 }]
             }
         }

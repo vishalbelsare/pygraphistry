@@ -33,7 +33,7 @@ export function views(path, view) {
                 nBody.interactions.next({ play: true, layout: true });
             }
             return color.hsv();
-        });
+        }, { valueKey: 'color' });
 
         return [{
             get: getValues,

@@ -1,16 +1,16 @@
 import React from 'react'
 import classNames from 'classnames';
-import { connect } from 'reaxtor-redux';
+import { container } from 'reaxtor-redux';
 import { ViewFragment } from './fragments';
 
 import { Toolbar } from 'viz-shared/containers/toolbar';
 
-export const View = connect(
+export const View = container(
      ViewFragment
 )(({ toolbar }) => {
     return (
         <div className={styles['view']}>
-            <Toolbar falcor={toolbar}/>
+            <Toolbar data={toolbar}/>
         </div>
     )
 });
@@ -27,7 +27,7 @@ import { Inspector } from '../inspector';
 import { Exclusions } from '../exclusions';
 import { Histograms } from '../histograms';
 
-export const View = connect(
+export const View = container(
      ViewFragment
 )(({ title = '', sets, scene,
      timebar, toolbar, filters, settings,
@@ -40,45 +40,45 @@ export const View = connect(
     return (
         <div className={styles['view']}>
             {scene ?
-            <Scene falcor={scene}/> : null}
+            <Scene data={scene}/> : null}
             <DockingPanel side='left' isOpen={isLeftPanelOpen} isRelatedOpen={isBottomPanelOpen}>
                 { sets.open ?
                 <Panel collapsible expanded={sets.open} header={sets.name}>
-                    <Sets fill falcor={sets}/>
+                    <Sets fill data={sets}/>
                 </Panel> : null }
                 { filters.open ?
                 <Panel collapsible expanded={filters.open} header={filters.name}>
-                    <Filters fill falcor={filters}/>
+                    <Filters fill data={filters}/>
                 </Panel> : null }
                 { settings.open ?
                 <Panel collapsible expanded={settings.open} header={settings.name}>
-                    <Settings fill falcor={settings}/>
+                    <Settings fill data={settings}/>
                 </Panel> : null }
                 { exclusions.open ?
                 <Panel collapsible expanded={exclusions.open} header={exclusions.name}>
-                    <Exclusions fill falcor={exclusions}/>
+                    <Exclusions fill data={exclusions}/>
                 </Panel> : null }
             </DockingPanel>
             <DockingPanel side='right' isOpen={isRightPanelOpen}>
-                <Histograms falcor={histograms}/>
+                <Histograms data={histograms}/>
             </DockingPanel>
             <DockingPanel side='bottom' isOpen={isBottomPanelOpen} isRelatedOpen={isRightPanelOpen}>
                 {inspector.open && timebar.open ?
                     <Tabs animation={false} defaultActiveKey={1}>
                         <Tab eventKey={1} title={inspector.name}>
-                            <Inspector falcor={inspector}/>
+                            <Inspector data={inspector}/>
                         </Tab>
                         <Tab eventKey={2} title={timebar.name}>
-                            <Timebar falcor={timebar}/>
+                            <Timebar data={timebar}/>
                         </Tab>
                     </Tabs>
                 : inspector.open ?
-                    <Inspector falcor={inspector}/>
+                    <Inspector data={inspector}/>
                 : timebar.open ?
-                    <Timebar falcor={timebar}/>
+                    <Timebar data={timebar}/>
                 : null }
             </DockingPanel>
-            <Toolbar falcor={toolbar}/>
+            <Toolbar data={toolbar}/>
         </div>
     );
 });

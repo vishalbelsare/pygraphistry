@@ -65,32 +65,4 @@ function toggleReducer({ type, value, values, state, falcor, stateKey }) {
         $value(`value`, val),
         $value(`state['${stateKey}']`, val)
     ).progressively();
-
-    // return falcor._clone({ _path: [] }).set($value(path, val));
-
-    // const rootModel = falcor._materialize()._clone({_path: []});
-    // return rootModel
-    //     .getValue(path)
-    //     .catch((e) => falcor.get(`state`))
-    //     .map((state) => state && state.$type ?
-    //         state.value : state)
-    //     .map((state) => {
-
-    //         let idx = -1, val;
-    //         const n = value.length,
-    //               s = JSON.stringify(state);
-
-    //         while (++idx < n) {
-    //             val = value[idx];
-    //             val = val && val.$type ? val.value : val;
-    //             if (JSON.stringify(val) !== s) {
-    //                 val = value[idx];
-    //                 break;
-    //             }
-    //         }
-    //         return val;
-    //     })
-    //     .mergeMap((nextState) => {
-    //         return rootModel.set($value(path, nextState));
-    //     });
 }

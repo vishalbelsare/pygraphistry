@@ -1,6 +1,6 @@
-import { connect } from 'reaxtor-redux';
+import { container } from 'reaxtor-redux';
 
-export const Selection = connect(
+export const Selection = container(
     ({ edge = [], point = [] } = {}) => `{
         rect, type, label,
         edge: { length, [0...${edge.length}] },

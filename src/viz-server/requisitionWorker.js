@@ -17,20 +17,28 @@ export function requisitionWorker({
     const { requests } = server;
     const centralPort = config.HTTP_LISTEN_PORT;
     const centralAddr = config.HTTP_LISTEN_ADDRESS;
-    const claimTimeout = -1;//config.WORKER_CONNECT_TIMEOUT;
+    const claimTimeout = config.WORKER_CONNECT_TIMEOUT;
     const canLockWorker = config.ENVIRONMENT !== 'local';
     const shouldExitOnDisconnect = (
         config.ENVIRONMENT === 'production' ||
-        config.ENVIRONMENT === 'staging'
+        config.ENVIRONMENT === 'staging' ||
+        config.WORKER_RESTART
     );
 
+    const acceptETL = Observable.bindNodeCallback(etlAccepted);
+    const rejectETL = Observable.bindNodeCallback(etlRejected);
     const acceptIndex = Observable.bindNodeCallback(indexAccepted);
     const rejectIndex = Observable.bindNodeCallback(redirectIndex);
     const acceptClaim = Observable.bindNodeCallback(claimAccepted);
     const rejectClaim = Observable.bindNodeCallback(claimRejected);
 
+    const requestIsETL = requestIsPathname('/etl');
     const requestIsClaim = requestIsPathname('/claim');
     const requestIsIndex = requestIsPathname('/index.html');
+
+    const eltRequests = requests
+        .filter(requestIsETL)
+        .mergeMap(requisition(acceptETL, rejectETL));
 
     const claimRequests = requests
         .filter(requestIsClaim)
@@ -51,7 +59,11 @@ export function requisitionWorker({
         .map((arr) => arr.slice(1));
 
     return Observable
-        .merge(claimThenIndexRequests, indexRequests)
+        .merge(
+            eltRequests,
+            indexRequests,
+            claimThenIndexRequests
+        )
         .scan(trackVizWorkerCaches, { caches: {} })
         .mergeMap(({ worker }) => worker.multicast(
             () => new Subject(), (worker) => Observable.merge(
@@ -64,14 +76,18 @@ export function requisitionWorker({
                     .switchMap(mapSocketActivity)
         )))
         .mergeMap((event) => {
-            const { isActive } = (event || {});
+            const { isActive, ...restEventProps } = (event || {});
             if (isActive !== undefined) {
                 isLocked = isActive;
                 if (isActive === false) {
                     if (shouldExitOnDisconnect) {
                         return Observable.concat(
                             Observable.of({ isActive }),
-                            Observable.throw({ shouldExit: true, exitCode: 0 })
+                            Observable.throw({
+                                exitCode: 0,
+                                shouldExit: true,
+                                ...restEventProps
+                            })
                         );
                     } else {
                         // latestClientId = simpleflake().toJSON();
@@ -96,7 +112,7 @@ export function requisitionWorker({
                 return reject({ request, response }).ignoreElements();
             } else if (requestIsIndex({ request })) {
                 const { query = {} } = request;
-                latestClientId = query.clientId || simpleflake().toJSON();
+                latestClientId = query.clientId || latestClientId || simpleflake().toJSON();
             } else {
                 latestClientId = simpleflake().toJSON();
             }
@@ -116,6 +132,14 @@ export function requisitionWorker({
             return true;
         }
         return false;
+    }
+
+    function etlAccepted({ request, response }, clientId, callback) {
+        callback(null, [clientId, 'etl', request, response]);
+    }
+
+    function etlRejected({ request, response }, callback) {
+        return claimRejected({ response }, callback);
     }
 
     function claimAccepted({ response }, clientId, callback) {
@@ -151,11 +175,14 @@ export function requisitionWorker({
     }
 
     function trackVizWorkerCaches({ caches }, [activeClientId, clientType, request, response]) {
+
         const sockets = awaitSocketConnection(activeClientId, request);
-        const worker = WORKERS[clientType](app, server, sockets, caches);
-        return {
-            caches, worker: worker.merge(Observable.of({ request, response }))
-        };
+
+        const worker = WORKERS[clientType](app, {
+            ...server, requests: server.requests.startWith({ request, response })
+        }, sockets, caches);
+
+        return { caches, worker };
     }
 
     function awaitSocketConnection(activeClientId, request) {

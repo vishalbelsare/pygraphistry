@@ -1,5 +1,7 @@
 'use strict';
 
+import { Observable } from 'rxjs';
+
 var urllib   = require('url');
 var crypto   = require('crypto');
 var _        = require('underscore');
@@ -85,9 +87,17 @@ function s3Upload(binaryBuffer, metadata) {
     return s3.upload(config.S3, config.BUCKET, metadata, binaryBuffer, {ContentEncoding: 'gzip'});
 }
 
+export function processRequest(req, params) {
+    return Observable.defer(() => {
+        logger.info({ etlparams: params }, 'ETL1 request submitted');
+        return Observable.from(etl(req.body));
+    }).do((info) => {
+        logger.info('ETL1 successful, dataset name is', info.name);
+    });
+}
 
 // (Int -> ()) * Request * Response * Object -> Promise()
-function process(req, res, params) {
+export function process(req, res, params) {
     logger.info({etlparams: params}, 'ETL1 request submitted');
 
     return Q(req.body).then(function (msg) {
@@ -105,7 +115,3 @@ function process(req, res, params) {
     });
 }
 
-
-module.exports = {
-    process: process
-};

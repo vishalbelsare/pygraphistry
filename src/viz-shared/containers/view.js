@@ -1,5 +1,5 @@
 import Dock from 'react-dock';
-import { connect } from 'reaxtor-redux';
+import { container } from 'reaxtor-redux';
 import { Popover } from 'react-bootstrap';
 import { Scene } from 'viz-shared/containers/scene';
 import { Panel } from 'viz-shared/containers/panels';
@@ -18,43 +18,45 @@ function viewFragment({ scene, toolbar } = {}) {
 }
 
 function renderView({ scene, panels = {}, toolbar } = {}) {
-    const { left, right, bottom } = panels;
-    const isLeftPanelOpen = !!left;
-    const isRightPanelOpen = !!right;
-    const isBottomPanelOpen = !!bottom;
+    const { left = {}, right = {}, bottom = {} } = panels;
+    const isLeftPanelOpen = !!panels.left;
+    const isRightPanelOpen = !!panels.right;
+    const isBottomPanelOpen = !!panels.bottom;
     return (
         <div style={{ position: `absolute`, width: `100%`, height: `100%` }}>
-            <Scene falcor={scene}/>
-            <Popover key='left-panel'
+            <Scene data={scene}/>
+            <Popover key={left.key}
                      placement='right'
                      id='left-panel'
-                     title={left && left.name}
-                     rootClose={true}
+                     title={left.name}
                      positionTop={5}
                      positionLeft={42}
                      style={popoverStyles(isLeftPanelOpen)}>
-                <Panel side='left' falcor={left || {}}/>
+                <Panel side='left' key={left.key} data={left}/>
             </Popover>
-            <Dock dimMode='none'
+            <Dock fluid
+                  size={0.2}
+                  dimMode='none'
                   position='right'
-                  key='right-panel'
-                  defaultSize={0.2}
+                  key={right.key}
                   isVisible={isRightPanelOpen}>
-                <Panel side='right' falcor={right || {}}/>
+                <Panel side='right' key={right.key} data={right}/>
             </Dock>
-            <Dock dimMode='none'
+            <Dock fluid
+                  dimMode='none'
                   position='bottom'
-                  key='bottom-panel'
+                  key={bottom.key}
                   isVisible={isBottomPanelOpen}
-                  defaultSize={1 - (1/Math.sqrt(2))}>
-                <Panel side='bottom' falcor={bottom || {}}/>
+                  size={1 - (1/Math.sqrt(2))}>
+                <Panel side='bottom' key={bottom.key} data={bottom}/>
             </Dock>
-            <Toolbar falcor={toolbar} {...{left, right, bottom}}/>
+            <Toolbar key={toolbar.key} data={toolbar}
+                     {...{left, right, bottom}}/>
         </div>
     );
 }
 
-export const View = connect(
+export const View = container(
     viewFragment
 )(renderView);
 

@@ -1,5 +1,5 @@
 import React from 'react'
-import { connect } from 'reaxtor-redux';
+import { container } from 'reaxtor-redux';
 import {
     Slider,
     TextInput,
@@ -8,6 +8,7 @@ import {
 } from 'viz-shared/components/settings'
 
 import { Grid, Row, Col } from 'react-bootstrap';
+import { setControlValue } from 'viz-shared/actions/settings';
 
 const controlsById = {
     // 'display-time-zone': displayTimeZoneInput
@@ -21,7 +22,7 @@ const controlsByType = {
     'continuous': Slider
 };
 
-export const Settings = connect(
+export const Settings = container(
     ({ settings = [] } = {}) => `{
         id, name, settings: {
             length, [0...${settings.length}]: ${
@@ -31,7 +32,7 @@ export const Settings = connect(
     }`
 )(renderSettings);
 
-export const Options = connect(
+export const Options = container(
     (options = []) => `{
         name, length, [0...${options.length}]: ${
             Control.fragment()
@@ -40,22 +41,22 @@ export const Options = connect(
     (options) => ({ options, name: options.name })
 )(renderOptions);
 
-export const Control = connect(
+export const Control = container(
     ({ stateKey } = {}) => !stateKey ?
         `{ id, name, type, props, stateKey }` :
         `{ id, name, type, props, stateKey, state: { ${stateKey} } }`
     ,
-    ({ stateKey, state, ...control }) => ({
-        state: state && state[stateKey], ...control
+    ({ state, stateKey, ...control }) => ({
+        state: state && stateKey && state[stateKey], stateKey, ...control
     }),
-    { setValue }
+    { setValue: setControlValue }
 )(renderControl);
 
 function renderSettings({ settings = [] } = {}) {
     return (
         <div>
         {settings.map((options) => (
-            <Options key={options.key} falcor={options}/>
+            <Options key={options.key} data={options}/>
         ))}
         </div>
     );
@@ -71,7 +72,7 @@ function renderOptions({ name, options = [] } = {}) {
                 </Col>
             </Row>}
         {options.map((control, index) => (
-            <Control key={`${index}: ${control.key}`} falcor={control}/>
+            <Control key={control.key} data={control}/>
         ))}
         </Grid>
     )
@@ -85,8 +86,4 @@ function renderControl({ id, type, ...rest } = {}) {
     return (
         <Component id={id} type={type} {...rest}/>
    );
-}
-
-function setValue(id, type, value) {
-    return { type: 'set-control-value', id, type, value };
 }

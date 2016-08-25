@@ -1,11 +1,11 @@
-import { connect } from 'reaxtor-redux';
+import { container } from 'reaxtor-redux';
 import { selectToolbarItem } from 'viz-shared/actions/toolbar';
 import { ButtonList,
          ButtonListItem,
          ButtonListItems
 } from 'viz-shared/components/toolbar';
 
-export const Toolbar = connect(
+export const Toolbar = container(
     // toolbar fragment
     (toolbar = []) => `{
         visible, length, [0...${toolbar.length}]: ${
@@ -18,7 +18,7 @@ export const Toolbar = connect(
     })
 )(renderToolbar);
 
-export const ToolbarItems = connect(
+export const ToolbarItems = container(
     // toolbar items fragment
     (items = []) => `{
         length, [0...${items.length}]: ${
@@ -29,7 +29,7 @@ export const ToolbarItems = connect(
     (items) => ({ items })
 )(renderToolbarItems);
 
-export const ToolbarItem = connect(
+export const ToolbarItem = container(
     // toolbar item fragment
     ({ type, stateKey } = {}) => {
         if (type === 'call') {
@@ -66,7 +66,7 @@ function renderToolbar({ toolbar = [], left, right, bottom, ...props } = {}) {
     return (
         <ButtonList {...props}>
         {toolbar.map((items) => (
-            <ToolbarItems key={items.key} falcor={items}
+            <ToolbarItems key={items.key} data={items}
                           {...{ left, right, bottom }}/>
         ))}
         </ButtonList>
@@ -77,7 +77,7 @@ function renderToolbarItems({ items = [], left, right, bottom, ...props } = {}) 
     return (
         <ButtonListItems {...props}>
         {items.map((item) => (
-            <ToolbarItem key={item.key} falcor={item}
+            <ToolbarItem key={item.key} data={item}
                          {...{ left, right, bottom }}/>
         ))}
         </ButtonListItems>

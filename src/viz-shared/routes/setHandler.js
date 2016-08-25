@@ -3,7 +3,7 @@ const  { slice } = Array.prototype;
 import { mapObjectsToAtoms } from './mapObjectsToAtoms';
 import { captureErrorStacks } from './captureErrorStacks';
 
-export function setHandler(lists, loader, mapValue, props = {}) {
+export function setHandler(lists, loader, mapValue, { valueKey, ...props } = {}) {
     return function handler(json) {
 
         const { request = {} } = this;
@@ -13,7 +13,7 @@ export function setHandler(lists, loader, mapValue, props = {}) {
         );
 
         const loaded = suffix.reduce((source, json, index) => source.mergeMap(
-                ({ data, idxs }) => expandJSON(json, index, { data, idxs })
+                ({ data, idxs }) => expandJSON(json, index, { data, idxs }, valueKey)
             ),
             loader(state).map((data) => ({ data, idxs: { length: 0 } }))
         );
@@ -91,18 +91,25 @@ function getListsAndSuffixes(state, suffix, lists, depth, json) {
     return { state, suffix };
 }
 
-function expandJSON(json, index, { data, idxs, vals }) {
+function expandJSON(json, index, { data, idxs, vals }, valueKey) {
     if (!json || json.$type || typeof json !== 'object') {
         return [{ data, idxs, vals }];
     }
     return mergeMapArray(Object.keys(json), (key, vals = json[key]) => (
+        key === valueKey ? [{
+            vals, data, idxs: {
+                ...idxs,
+                [index]: key,
+                length: index + 1
+            }
+        }] :
         expandJSON(json[key], index + 1, {
             vals, data, idxs: {
                 ...idxs,
                 [index]: key,
                 length: index + 1
             }
-        })
+        }, valueKey)
     ));
 }
 

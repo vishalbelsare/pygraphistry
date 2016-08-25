@@ -1,3 +1,7 @@
+import 'rc-slider/assets/index.css';
+import 'rc-switch/assets/index.css';
+import 'rc-color-picker/assets/index.css';
+
 import {
     Observable, Subscriber, Subscription,
     Subject, AsyncSubject, BehaviorSubject, ReplaySubject
@@ -27,7 +31,7 @@ import $ from 'jquery';
 import _debug from 'debug';
 import ReactDOM from 'react-dom';
 import { partial } from 'lodash';
-import { Provider } from 'reaxtor-redux';
+import { Provider } from 'react-redux';
 import { configureStore } from 'viz-shared/store/configureStore';
 import { init as initRenderer } from './streamGL/renderer';
 import vizApp from './streamGL/graphVizApp/vizApp';
@@ -79,8 +83,8 @@ Observable
                 () => [store.getState(), options]
             );
             return renderAsObservable((
-                <Provider store={store} falcor={model}>
-                    <App key='viz-client'/>
+                <Provider store={store}>
+                    <App falcor={model} key='viz-client'/>
                 </Provider>
             ), getRootDOMNode());
         }
