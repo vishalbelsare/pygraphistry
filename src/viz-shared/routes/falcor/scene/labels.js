@@ -1,7 +1,10 @@
+import Color from 'color';
+
 import {
     ref as $ref,
     pathValue as $value
 } from 'reaxtor-falcor-json-graph';
+
 import { getHandler,
          setHandler,
          mapObjectsToAtoms,

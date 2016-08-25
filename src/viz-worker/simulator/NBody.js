@@ -130,7 +130,7 @@ function setVertices (graph, points) {
 }
 
 
-// Uint32Array * Float32Array -> Float32Array
+// Uint32Array * Array<Array[x,y]> -> Float32Array
 function scatterEdgePos (edges, curPos) {
     const res = new Float32Array(edges.length * 2);
 
@@ -138,10 +138,10 @@ function scatterEdgePos (edges, curPos) {
         const src = edges[2 * edge];
         const dst = edges[2 * edge + 1];
 
-        res[4 * edge] = curPos[2 * src];
-        res[4 * edge + 1] = curPos[2 * src + 1];
-        res[4 * edge + 2] = curPos[2 * dst];
-        res[4 * edge + 3] = curPos[2 * dst + 1];
+        res[4 * edge] = curPos[src][0];
+        res[4 * edge + 1] = curPos[src][1];
+        res[4 * edge + 2] = curPos[dst][0];
+        res[4 * edge + 3] = curPos[dst][1];
     }
 
     return res;
