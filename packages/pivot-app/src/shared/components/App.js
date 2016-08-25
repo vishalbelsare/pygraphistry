@@ -44,13 +44,13 @@ export class App extends Component {
 
 class TestComponent extends Component {
     loadProps(model) {
-        return model.get(`['pivots'][0]['id']`);
+        return model.get(`['openInvestigation'].id`);
     }
-    render(model, { url, total, urls, urlIndex , pivots }) {
-        console.log("Rendering pibots", pivots[0].id);
+    render(model, { openInvestigation: { id } }) {
+        console.log('Name of first pivot', id);
         return (
             <div>
-                <span> {`Investigation Id ${pivots[0].id}`} </span>
+                <span> {`Investigation Name ${id}`} </span>
             </div>
         );
     }

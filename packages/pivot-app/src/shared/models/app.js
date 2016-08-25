@@ -14,6 +14,17 @@ const cols = [
 ];
 
 export function app(rows = [], id = simpleflake().toJSON()) {
+    const pivots = rows.map((row, index) => (
+            $ref(`pivotsById['${row.id}']`)
+        ));
+
+    pivots.name = 'ordered';
+
+    const pivotsInReverse = [...pivots].reverse();
+
+    pivotsInReverse.name = 'reverse';
+
+    const investigations = [pivots, pivotsInReverse];
     return {
 
         title: 'Pivots',
@@ -33,15 +44,34 @@ export function app(rows = [], id = simpleflake().toJSON()) {
             total: 'Total',
             length: cols.length,
         },
+        /*
+         *
+         *    openInvestigation : [
+         *        $ref(`investigationById['investigation-id-1']`),
+         *    ]
+         *
+         */
+        //openInvestigation : $ref([`pivots`]),
+        openInvestigation : pivots[0],
+
+        investigationsById : investigations.reduce((inve4tigations, investigation) => ({
+            ...investigations, [investigation.id]: investigation
+        }), {}),
+
+        investigations:investigations.map((investigation, index) => 
+            $ref(`investigationsById['${investigation.id}']`)
+        ),
+
+        selectedPivots: $ref(`['pivots']`),
+
+        //firstInvestigation = pivots
 
         /**
          *  pivots: [
          *     $ref(`pivotsById['row-id-1']`) , ...
          *  ]
          */
-        pivots: rows.map((row, index) => (
-            $ref(`pivotsById['${row.id}']`)
-        )),
+        pivots: pivots,
 
         /**
          *  pivotsById: {
