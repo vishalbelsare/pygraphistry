@@ -7,7 +7,7 @@ export class Investigation extends Component {
 
     render(model, { iname }) {
         return (
-                <span> {iname} </span>
+                <option> {iname} </option>
         );
     }
 }

@@ -26,9 +26,13 @@ export class InvestigationList extends Container {
 
     render(model, state, ...investigations) {
         return (
-                <div>
-                    { investigations }
-                </div>
+            <div>
+                <h3> Current Investigation 
+                    <select>
+                        { investigations }
+                    </select>
+                </h3>
+           </div>
         )
     }
 }

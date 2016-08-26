@@ -39,8 +39,8 @@ export class Table extends Component {
             <table class_={{ [tableClassName]: true }}
                    style_={{ border: 0, cellpadding: 0, cellspacing: 0 }}>
                 <thead class_={{ [tableHeaderClassName]: true }}>
-                    {tHeadRow}
                     {investigationList}
+                    {tHeadRow}
                 </thead>
                 {tBody}
             </table>
