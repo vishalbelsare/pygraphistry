@@ -9,7 +9,7 @@ export class InvestigationList extends Container {
         return model.getItems(
             () => `['length']`,
             ({json : { length }} ) =>  !length ? [] : [
-                 [{ length }, 'length']
+                 [{ length }, 'name']
             ]
         );
     }

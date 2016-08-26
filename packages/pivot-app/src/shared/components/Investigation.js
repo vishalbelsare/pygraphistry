@@ -2,12 +2,12 @@ import { Component } from 'reaxtor';
 
 export class Investigation extends Component {
     loadProps(model) {
-        return model.get(`['iname']`);
+        return model.get(`['name']`);
     }
 
-    render(model, { iname }) {
+    render(model, { name }) {
         return (
-                <option> {iname} </option>
+                <option> {name} </option>
         );
     }
 }

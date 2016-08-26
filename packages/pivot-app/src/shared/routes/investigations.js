@@ -21,7 +21,7 @@ export function investigations({ loadInvestigationsById }) {
     }, {
         returns: `String`,
         get: getInvestigationsHandler,
-        route: `investigationsById[{keys}]['id','iname', 'value']`
+        route: `investigationsById[{keys}]['id','name', 'value']`
     //}, {
         //returns: `String | Number`,
         //get: getInvestigationHandler,
