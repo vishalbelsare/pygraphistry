@@ -1,4 +1,5 @@
 export * from './loadApp';
+export * from './loadInvestigations';
 export * from './insertPivot';
 export * from './loadRows';
 export * from './loadPivots';

@@ -18,11 +18,13 @@ export function app(rows = [], id = simpleflake().toJSON()) {
             $ref(`pivotsById['${row.id}']`)
         ));
 
-    pivots.name = 'ordered';
+    pivots.iname = 'ordered';
+    pivots.id = simpleflake().toJSON();
 
     const pivotsInReverse = [...pivots].reverse();
 
-    pivotsInReverse.name = 'reverse';
+    pivotsInReverse.iname = 'reverse';
+    pivotsInReverse.id = simpleflake().toJSON();
 
     const investigations = [pivots, pivotsInReverse];
     return {
@@ -44,30 +46,26 @@ export function app(rows = [], id = simpleflake().toJSON()) {
             total: 'Total',
             length: cols.length,
         },
-        /*
-         *
-         *    openInvestigation : [
-         *        $ref(`investigationById['investigation-id-1']`),
-         *    ]
-         *
-         */
-        //openInvestigation : $ref([`pivots`]),
-        openInvestigation : investigations[0],
 
-        investigationsById : investigations.reduce((inve4tigations, investigation) => ({
+        /**
+         *  investigationsById: {
+         *    'investigations-id-1': {
+         *      .... 
+         *    }, ...
+         *  }
+         */
+        investigationsById : investigations.reduce((investigations, investigation) => ({
             ...investigations, [investigation.id]: investigation
         }), {}),
 
-        //investigations:investigations.map((investigation, index) => 
-            //$ref(`investigationsById['${investigation.id}']`)
-        //),
-        investigations: rows.reduce((rows, row) => ({
-            ...rows, [row.id]: row
-        }), {}),
-
-        selectedPivots: $ref(`['pivots']`),
-
-        //firstInvestigation = pivots
+        /**
+         *  investigations: [
+         *     $ref(`investigationsById['investigation-id-1']`) , ...
+         *  ]
+         */
+        investigations: investigations.map((investigation, index) => (
+            $ref(`investigationsById['${investigation.id}']`)
+        )),
 
         /**
          *  pivots: [

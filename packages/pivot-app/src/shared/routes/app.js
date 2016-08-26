@@ -16,14 +16,14 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
     return [{
         returns: `*`,
         get: appGetRoute,
-        route: `['id', 'url', 'title', 'total', 'urls', 'urlIndex', 'openInvestigation']`
+        route: `['id', 'url', 'title', 'total', 'urls', 'urlIndex']`
     }, {
         get: appGetRoute,
         returns: 'String',
         route: `['cols'].id`
     }, {
         returns: `Number`,
-        route: `['cols', 'pivots'].length`,
+        route: `['cols', 'pivots', 'investigations'].length`,
         get: listLengthGetRoute({ loadApp })
     }, {
         route: `['cols'][{ranges}]`,
@@ -33,6 +33,10 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
         route: `['pivots'][{ranges}]`,
         get: rangesToListItemsGetRoute({ loadApp }),
         returns: `$ref('pivotsById[{ pivotId }]')`
+    }, {
+        route: `['investigations'][{ranges}]`,
+        get: rangesToListItemsGetRoute({ loadApp }),
+        returns: `$ref('investigationsById[{investigationId}]')`
     }, {
         route: `pivots.insert`,
         call: insertPivotCallRoute({ loadApp, insertPivot, searchPivot })
