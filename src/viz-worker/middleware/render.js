@@ -6,8 +6,8 @@ import { configureStore } from 'viz-shared/store/configureStore';
 import { renderToString as reactRenderToString } from 'react-dom/server';
 import stringify from 'json-stable-stringify';
 
-// const renderServerSide = true;
-const renderServerSide = false;
+const renderServerSide = true;
+// const renderServerSide = false;
 
 export function renderMiddleware(getDataSource, modules) {
     return function renderMiddleware(req, res) {
@@ -45,17 +45,38 @@ function renderAppWithHotReloading(modules, dataSource, options) {
             App, falcor: new Model({ source: dataSource })
         }))
         .switchMap(
-            ({ App, falcor }) => falcor.get(...falcor.QL.call(null, App.fragment(options))),
-            ({ App, falcor }, initialState) => ({ App, falcor, initialState })
+            ({ App, falcor }) => Observable
+                .of({ prev: null, data: {}, loading: true })
+                .expand(({ prev, data, loading }) => {
+                    if (loading === false) {
+                        return Observable.empty();
+                    }
+                    const query = App.fragment(data, options);
+                    if (query !== prev) {
+                        return falcor
+                            .get(...falcor.QL.call(null, query))
+                            .map(({ json }) => ({
+                                prev: query, loading: true,
+                                data: Object.assign(data, json)
+                            }))
+                            .catch((error) => Observable.of({
+                                data, loading: false
+                            }))
+                    } else if (loading === true) {
+                        return Observable.of({ data, loading: false });
+                    }
+                })
+                .takeLast(1),
+            ({ App, falcor }, { data }) => ({ App, falcor, data })
         )
-        .map(({ App, falcor, initialState }) =>
+        .map(({ App, falcor, data }) =>
             renderFullPage(
-                falcor, options.workerID,
-                reactRenderToString(
-                    <Provider store={configureStore(initialState)}>
-                        <App {...options} falcor={falcor} key='viz-client'/>
-                    </Provider>
-                )
+                falcor, options.workerID
+                // , reactRenderToString(
+                //     <Provider store={configureStore(initialState)}>
+                //         <App {...options} falcor={falcor} key='viz-client'/>
+                //     </Provider>
+                // )
             )
         );
 }
@@ -85,9 +106,7 @@ function renderFullPage(falcor, workerID = '', html = '') {
             m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
             })(window,document,'script','//google-analytics.com/analytics.js','ga');
         </script>
-        <div id='root'>
-            ${html}
-        </div>
+        <div id='root'>${html}</div>
         <script>
             window.__INITIAL_STATE__ = ${
                 stringify(falcor && falcor.getCache() || {})};
