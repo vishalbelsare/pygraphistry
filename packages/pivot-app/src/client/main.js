@@ -1,25 +1,34 @@
+import ReactDOM from 'react-dom';
 import { decode } from 'querystring';
-import { Model, reaxtor } from 'reaxtor';
+import { Model } from 'reaxtor-falcor';
 import { Observable, Scheduler } from 'rxjs';
 import { reloadHot } from '../shared/reloadHot';
 import DataSource from 'falcor-http-datasource';
-import { render as renderVDom } from './render';
+
+import { Provider } from 'react-redux';
+import { configureStore } from '../shared/store/configureStore';
 
 const useLocalStorage = __DEV__;
 const localStorageToken = 'pivots-app-cache';
 
 Observable
     .fromEvent(window, 'load', () => decode(window.location.search.substring(1)))
-    .switchMap(
-        (params) => reloadHot(module),
-        (params, { App }) => reaxtor(
-            App, getAppModel(), params
-        )
-    )
-    .switch()
-    .auditTime(0, Scheduler.animationFrame)
-    .scan(renderVDom, getAppDOMNode())
-    .subscribe();
+    .switchMap((params) => reloadHot(module))
+    .switchMap(({ App }) => {
+        const renderAsObservable = Observable.bindCallback(ReactDOM.render);
+        return renderAsObservable((
+            <Provider store={configureStore()}>
+                <App falcor={getAppModel()}/>
+            </Provider>
+        ), getAppDOMNode());
+    })
+    .subscribe({
+        next() {},
+        error(e) {
+            debugger;
+            console.error(e);
+        }
+    });
 
 function getAppDOMNode(appDomNode) {
     return appDomNode = (
