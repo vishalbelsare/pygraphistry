@@ -1,12 +1,17 @@
 import React from 'react'
+import InvestigationList from './InvestigationList'
 import { DevTools } from './DevTools';
 import { hoistStatics } from 'recompose';
 import { connect, container } from 'reaxtor-redux';
 
-function renderApp({ title, total }) {
+function renderApp({ title, investigations }) {
     return (
         <div>
-            <h1>{title} - {total}</h1>
+            <h1>{title}</h1>
+            {investigations ? 
+                <InvestigationList data={investigations}/> 
+                : null
+            }
             <DevTools/>
         </div>
     );
@@ -14,7 +19,10 @@ function renderApp({ title, total }) {
 
 const App = container(
     ({ cols = [], pivots = [], investigations = [] } = {}) => `{
-        title
+        title,
+        investigations: ${
+            InvestigationList.fragment(investigations)
+        }
     }`
     /* todo:
         url, total, urls, urlIndex,
