@@ -3,7 +3,7 @@
 /// <reference path="../typings/rx/rx.d.ts"/>
 'use strict';
 
-var Rx          = require('@graphistry/rxjs');
+var Rx          = require('rxjs');
 var Observable  = Rx.Observable;
 
 Rx.Observable.return = function (value) {

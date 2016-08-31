@@ -5,7 +5,7 @@
 
 require('source-map-support').install();
 
-var Rx          = require('@graphistry/rxjs');
+var Rx = require('rxjs');
 
 Rx.Observable.return = function (value) {
     return Rx.Observable.of(value);

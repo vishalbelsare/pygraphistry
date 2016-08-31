@@ -43,7 +43,7 @@
     "protobufjs": "~3.8.0",
     "q": "~1.1.0",
     "request": "~2.54.0",
-    "@graphistry/rxjs": "5.0.0-beta.9",
+    "rxjs": "~5.0.0-beta.11",
     "socket.io-client": "~1.3.5",
     "source-map-support": "~0.4.0",
     "sprintf-js": "~1.0.0",
