@@ -1,7 +1,8 @@
 import { container } from 'reaxtor-redux';
 import { setInvestigationName } from '../actions/investigationList';
 
-function renderInvestigationList({ investigations, setInvestigationName }) {
+function renderInvestigationList({ investigations, setInvestigationName, ...props }) {
+    console.log("Props", props);
     return (
         <div className='investigation-list-comp'> { investigations ?
                 <select onChange = {(ev) => setInvestigationName(ev)}>

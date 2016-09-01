@@ -6,7 +6,7 @@ import {
 } from 'reaxtor-falcor-json-graph';
 
 import { Observable } from 'rxjs';
-import { SET_INVESTIGATION_NAME } from 'viz-shared/actions/investigationList';
+import { SET_INVESTIGATION_NAME } from '../actions/investigationList';
 
 export default function investigation(action$, store) {
         return setInvestigationName(action$, store);
@@ -18,7 +18,7 @@ function setInvestigationName(action$, store) {
             .groupBy(({ id }) => id)
             .mergeMap((actionsById) => actionsById.switchMap(
                             ({ stateKey, falcor, state }) => falcor.set(
-                                                $value(`state['${stateKey}']`, state)
+                                                $value(`state['selectedInvestigation']`, 0)
                                             ).progressively()
                         ))
             .ignoreElements();

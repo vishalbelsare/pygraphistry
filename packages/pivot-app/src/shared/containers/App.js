@@ -4,17 +4,23 @@ import TableBody from './TableBody.js'
 import { DevTools } from './DevTools';
 import { hoistStatics } from 'recompose';
 import { connect, container } from 'reaxtor-redux';
+import { setInvestigationName } from '../actions/investigationList';
 
-function renderApp({ title, investigations, selectedInvestigation }) {
+
+function renderApp({ title, investigations, selectedInvestigation, setInvestigationName }) {
     return (
         <div>
             <h1>{title}</h1>
-            {investigations ? 
-                <InvestigationList data={investigations}/> 
-                : null
-            }
-            {selectedInvestigation ? 
-                <TableBody data={selectedInvestigation}/> 
+            <div className='investigation-list-comp'> { investigations ?
+                <select onChange = {(ev) => setInvestigationName(ev)}>
+                    { investigations.map((investigation, index) =>
+                        <option key={`${index}: ${investigation.name}`}> {investigation.name} </option>
+                    )}
+                </select> :
+                null}
+            </div>
+            {selectedInvestigation ?
+                <TableBody data={selectedInvestigation}/>
                 : null
             }
             <DevTools/>
@@ -25,11 +31,16 @@ function renderApp({ title, investigations, selectedInvestigation }) {
 const App = container(
     ({ cols = [], investigations = [], selectedInvestigation } = {}) => `{
         title,
-        investigations: ${
-            InvestigationList.fragment(investigations)
+        investigations: {
+            'length',
+            [0...${investigations.length}]: { name }
         },
-        selectedInvestigation: ${TableBody.fragment(selectedInvestigation)}
-    }`
+        selectedInvestigation: {
+            'name', 
+            'pivots': { length }
+        }
+    }`, 
+    (state) => (state),
     /* todo:
         url, total, urls, urlIndex,
         cols: ${
@@ -42,6 +53,7 @@ const App = container(
             InvestigationList.fragment(investigations)
         }
     */
+    { setInvestigationName: setInvestigationName }
 )(renderApp);
 
 export default hoistStatics(connect)(App);
