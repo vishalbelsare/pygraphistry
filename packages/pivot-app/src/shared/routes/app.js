@@ -6,12 +6,14 @@ import {
 } from 'falcor-json-graph';
 
 import { getHandler,
+        setHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from './support';
 
 export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot, uploadGraph }) {
 
     const appGetRoute = getHandler([], loadApp);
+    const appSetRoute = setHandler([], loadApp);
 
     return [{
         returns: `*`,
@@ -19,6 +21,7 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
         route: `['id', 'url', 'title', 'total', 'urls', 'urlIndex']`
     }, {
         get: appGetRoute,
+		set: appSetRoute,
         returns: `$ref('investigationsById[{investigationId}])`,
         route: `['selectedInvestigation']`
     }, {

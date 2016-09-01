@@ -18,7 +18,7 @@ function setInvestigationName(action$, store) {
             .groupBy(({ id }) => id)
             .mergeMap((actionsById) => actionsById.switchMap(
                             ({ stateKey, falcor, state }) => falcor.set(
-                                                $value(`state['selectedInvestigation']`, 0)
+                                                $value(`['selectedInvestigation']`, 0)
                                             ).progressively()
                         ))
             .ignoreElements();
