@@ -79,11 +79,9 @@ export function app(rows = [], id = simpleflake().toJSON()) {
          *     $ref(`pivotsById['row-id-1']`) , ...
          *  ]
          */
+
+        selectedInvestigation: $ref(`investigationsById['${investigation1.id}']`),
         pivots: pivots,
-
-        //selectedInvestigation : $ref(`investigations[0]`),
-
-        //pivots: $ref(`['investigations'][0]`),
 
         /**
          *  pivotsById: {

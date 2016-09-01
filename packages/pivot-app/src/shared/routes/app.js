@@ -19,6 +19,10 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
         route: `['id', 'url', 'title', 'total', 'urls', 'urlIndex']`
     }, {
         get: appGetRoute,
+        returns: `$ref('investigationsById[{investigationId}])`,
+        route: `['selectedInvestigation']`
+    }, {
+        get: appGetRoute,
         returns: 'String',
         route: `['cols'].id`
     }, {

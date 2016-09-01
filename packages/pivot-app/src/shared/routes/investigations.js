@@ -22,6 +22,10 @@ export function investigations({ loadInvestigationsById }) {
         returns: `String`,
         get: getInvestigationsHandler,
         route: `investigationsById[{keys}]['id','name', 'value']`
+    }, {
+        returns: `pivots`,
+        get: getInvestigationsHandler,
+        route: `investigationsById[{keys}]['pivots']`
     //}, {
         //returns: `String | Number`,
         //get: getInvestigationHandler,

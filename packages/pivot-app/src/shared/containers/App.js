@@ -1,15 +1,20 @@
 import React from 'react'
 import InvestigationList from './InvestigationList'
+import TableBody from './TableBody.js'
 import { DevTools } from './DevTools';
 import { hoistStatics } from 'recompose';
 import { connect, container } from 'reaxtor-redux';
 
-function renderApp({ title, investigations }) {
+function renderApp({ title, investigations, selectedInvestigation }) {
     return (
         <div>
             <h1>{title}</h1>
             {investigations ? 
                 <InvestigationList data={investigations}/> 
+                : null
+            }
+            {selectedInvestigation ? 
+                <TableBody data={selectedInvestigation}/> 
                 : null
             }
             <DevTools/>
@@ -18,11 +23,12 @@ function renderApp({ title, investigations }) {
 }
 
 const App = container(
-    ({ cols = [], pivots = [], investigations = [] } = {}) => `{
+    ({ cols = [], investigations = [], selectedInvestigation } = {}) => `{
         title,
         investigations: ${
             InvestigationList.fragment(investigations)
-        }
+        },
+        selectedInvestigation: ${TableBody.fragment(selectedInvestigation)}
     }`
     /* todo:
         url, total, urls, urlIndex,
