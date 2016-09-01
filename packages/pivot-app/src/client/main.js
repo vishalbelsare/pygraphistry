@@ -75,7 +75,5 @@ function getAppCache() {
         appCache = {};
     }
 
-    console.log(appCache);
-
     return appCache;
 }

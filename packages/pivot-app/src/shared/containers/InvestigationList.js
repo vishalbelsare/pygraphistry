@@ -1,19 +1,15 @@
-//import { Investigation } from './Investigation';
-import Investigation from './Investigation';
 import { container } from 'reaxtor-redux';
-//import { app as appClassName,
-         //frame as graphFrameClassName } from './styles.css';
+import { setInvestigationName } from '../actions/investigationList';
 
-function renderInvestigationList({ investigations }) {
+function renderInvestigationList({ investigations, setInvestigationName }) {
     return (
-        <div>
-            Investigations { investigations.length }
-            <select>
-                { investigations.map((investigation, index) => 
-                    <Investigation key={`${index}: ${investigation.name}`} data={investigation} />
-                )
-                }
-            </select>
+        <div className='investigation-list-comp'> { investigations ?
+                <select onChange = {(ev) => setInvestigationName(ev)}>
+                    { investigations.map((investigation, index) =>
+                        <option key={`${index}: ${investigation.name}`}> {investigation.name} </option>
+                    )}
+                </select> :
+                null}
         </div>
     );
 }
@@ -21,10 +17,8 @@ function renderInvestigationList({ investigations }) {
 function mapStateToFragment(investigations = []) {
     return `{
         'length',
-        [0...${investigations.length}]: ${
-            Investigation.fragment()
-}
-        }`;
+        [0...${investigations.length}]: { name }
+    }`;
 }
 
 function mapFragmentToProps(investigationsList) {
@@ -33,7 +27,8 @@ function mapFragmentToProps(investigationsList) {
 
 export default container(
     mapStateToFragment,
-    mapFragmentToProps
+    mapFragmentToProps,
+    { setInvestigationName: setInvestigationName }
 )(renderInvestigationList);
 
 
