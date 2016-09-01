@@ -21,9 +21,24 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
         route: `['id', 'url', 'title', 'total', 'urls', 'urlIndex']`
     }, {
         get: appGetRoute,
-		set: appSetRoute,
+        set: function(json) {
+            const selectedInvestigation = json.selectedInvestigation;
+            const value = selectedInvestigation.value;
+            var values = [$pathValue('selectedInvestigation', selectedInvestigation)]
+            return values
+            // TODO Why doesn't this work? 
+            //return (values
+                    //.map(mapObjectsToAtoms)
+                    //.do((pv) => {
+                    //console.log(`set: ${JSON.stringify(json)}`);
+                    //console.log(`res: ${JSON.stringify(pv.path)}`);
+                    //})
+                    //.catch(captureErrorStacks)
+            //);
+
+        },
         returns: `$ref('investigationsById[{investigationId}])`,
-        route: `['selectedInvestigation']`
+        route: `selectedInvestigation`
     }, {
         get: appGetRoute,
         returns: 'String',

@@ -12,9 +12,18 @@ function renderApp({ title, investigations, selectedInvestigation, setInvestigat
         <div>
             <h1>{title}</h1>
             <div className='investigation-list-comp'> { investigations ?
-                <select onChange = {(ev) => setInvestigationName(ev)}>
+                <select onChange = {
+                    function(ev) {
+                        const selectedId = ev.target.options[ev.target.selectedIndex].value;
+                        return ev.preventDefault() || setInvestigationName({id: selectedId});
+                    }
+                }>
                     { investigations.map((investigation, index) =>
-                        <option key={`${index}: ${investigation.name}`}> {investigation.name} </option>
+                        <option
+                            value={`${investigation.id}`}
+                            key={`${index}: ${investigation.name}`}>
+                            {investigation.name}
+                        </option>
                     )}
                 </select> :
                 null}
@@ -33,13 +42,13 @@ const App = container(
         title,
         investigations: {
             'length',
-            [0...${investigations.length}]: { name }
+            [0...${investigations.length}]: { name, id }
         },
         selectedInvestigation: {
-            'name', 
+            'name',
             'pivots': { length }
         }
-    }`, 
+    }`,
     (state) => (state),
     /* todo:
         url, total, urls, urlIndex,
