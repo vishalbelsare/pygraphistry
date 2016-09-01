@@ -1,17 +1,21 @@
 import { container } from 'reaxtor-redux';
 
-function renderTableBody({ pivots = [] } = {}) {
-    console.log(pivots);
+function renderTableBody({ name, pivots = [] } = {}) {
     return (
-        <div>
-            Selected Investigation Name: {pivots.length}
+        <div> 
+            <div>
+                Selected Investigation Name: { name }
+            </div>
+            <div>
+                Number of pivots in investigaiton: { pivots.length }
+            </div>
         </div>
     )
 }
 
 function mapStateToFragment({ pivots } = {}) {
-    console.log("In Table body", pivots );
     return `{
+        name,
         pivots: { length }
     }`
 }
