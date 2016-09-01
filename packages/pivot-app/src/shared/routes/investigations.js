@@ -25,11 +25,11 @@ export function investigations({ loadInvestigationsById }) {
     }, {
         returns: `pivots`,
         get: getInvestigationsHandler,
-        route: `investigationsById[{keys}]['pivots']`
+        route: `investigationsById[{keys}][{integers}]`
     //}, {
         //returns: `String | Number`,
-        //get: getInvestigationHandler,
-        //route: `investigationById[{keys}][{integers}]['name', 'value']`
+        //get: getInvestigationsHandler,
+        //route: `investigationsById[{keys}][{integers}]['name']`
     }];
 }
 

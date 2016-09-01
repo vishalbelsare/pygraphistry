@@ -74,14 +74,14 @@ export function getHandler(lists, loader, props = {}) {
 
         return (values
             .map(mapObjectsToAtoms)
-            .do((pv) => {
+            //.do((pv) => {
                 //console.log(`get: ${JSON.stringify(path)}`);
                 //if (pv.isMessage) {
                     //console.log(`additionalPath: ${JSON.stringify(pv.additionalPath)}`);
                 //} else {
                     //console.log(`res: ${JSON.stringify(pv.path)}`);
                 //}
-            })
+            //})
             .catch(captureErrorStacks)
         );
     }

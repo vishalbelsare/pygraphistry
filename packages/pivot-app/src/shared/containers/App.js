@@ -6,28 +6,35 @@ import { hoistStatics } from 'recompose';
 import { connect, container } from 'reaxtor-redux';
 import { setInvestigationName } from '../actions/investigationList';
 
+function renderInvestigationList({ investigations, setInvestigationName }) {
+    return (
+            <div className='investigation-list-comp'> { investigations ?
+                <select
+                    onChange = {
+                        (ev) => (
+                            ev.preventDefault() ||
+                            setInvestigationName({id : ev.target.options[ev.target.selectedIndex].value})
+                        )
+                    }>
+                {
+                    investigations.map( (investigation, index) =>
+                    <option value={`${investigation.id}`} key={`${index}: ${investigation.name}`}>
+                        {investigation.name}
+                    </option>
+                    )
+                }
+                </select> :
+                null}
+            </div>
+    );
+}
+
 
 function renderApp({ title, investigations, selectedInvestigation, setInvestigationName }) {
     return (
         <div>
             <h1>{title}</h1>
-            <div className='investigation-list-comp'> { investigations ?
-                <select onChange = {
-                    function(ev) {
-                        const selectedId = ev.target.options[ev.target.selectedIndex].value;
-                        return ev.preventDefault() || setInvestigationName({id: selectedId});
-                    }
-                }>
-                    { investigations.map((investigation, index) =>
-                        <option
-                            value={`${investigation.id}`}
-                            key={`${index}: ${investigation.name}`}>
-                            {investigation.name}
-                        </option>
-                    )}
-                </select> :
-                null}
-            </div>
+            { renderInvestigationList({ investigations , setInvestigationName}) }
             {selectedInvestigation ?
                 <TableBody data={selectedInvestigation}/>
                 : null
@@ -44,10 +51,7 @@ const App = container(
             'length',
             [0...${investigations.length}]: { name, id }
         },
-        selectedInvestigation: {
-            'name',
-            'pivots': { length }
-        }
+        selectedInvestigation: ${TableBody.fragment(selectedInvestigation)}
     }`,
     (state) => (state),
     /* todo:
