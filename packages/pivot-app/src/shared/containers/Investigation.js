@@ -24,16 +24,11 @@ function renderTableHeader() {
 
 function renderTable(pivots) {
     return (
-        <table className={tableClassName}
-            style={{ border: 0, cellpadding: 0, cellspacing: 0 }}>
-            {
-                renderTableHeader()
-            }
+        <table className={tableClassName} >
+            { renderTableHeader() }
             <tbody className={tableBodyClassName}>
-                {
-                    pivots.map((pivot) => (
-                        (<PivotRow key={`${pivot.id}`} data={pivot} />)
-                    ))
+                { pivots.map((pivot) => (
+                    (<PivotRow key={`${pivot.id}`} data={pivot} />)))
                 }
             </tbody>
         </table>
@@ -50,9 +45,7 @@ function renderInvestigation({length = 0, name = 'default', pivots = []}) {
                 Number of pivots in investigaiton: { length }
                 </div>
                 <div>
-            {
-                renderTable(pivots)
-            }
+                { renderTable(pivots) }
                 </div>
             </div>
         );
