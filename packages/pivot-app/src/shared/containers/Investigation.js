@@ -6,7 +6,7 @@ import { table as tableClassName,
     thead as tableHeaderClassName} from './styles.less';
 
 // TODO reuse table row
-function renderTableHeader(length) {
+function renderTableHeader() {
     const cellWidth = Math.round(95 / (4));
     console.log('Cell width', cellWidth)
     return (
@@ -22,29 +22,38 @@ function renderTableHeader(length) {
     );
 }
 
-
-function renderInvestigation({length = 0, name = 'default', pivots = []}) {
+function renderTable(pivots) {
     return (
-            <div>
-                <div>
-                    Selected Investigation Name: { name }
-                </div>
-                <div>
-                Number of pivots in investigaiton: { length }
-                </div>
-                <table className={tableClassName}
-                       style={{ border: 0, cellpadding: 0, cellspacing: 0 }}>
-               {
-                   renderTableHeader(length)
-               }
-                    <tbody className={tableBodyClassName}>
+        <table className={tableClassName}
+            style={{ border: 0, cellpadding: 0, cellspacing: 0 }}>
+            {
+                renderTableHeader()
+            }
+            <tbody className={tableBodyClassName}>
                 {
                     pivots.map((pivot) => (
                         (<PivotRow key={`${pivot.id}`} data={pivot} />)
                     ))
                 }
-                    </tbody>
-                </table>
+            </tbody>
+        </table>
+    );
+}
+
+function renderInvestigation({length = 0, name = 'default', pivots = []}) {
+    return (
+            <div>
+                <div>
+                Selected Investigation Name: { name }
+                </div>
+                <div>
+                Number of pivots in investigaiton: { length }
+                </div>
+                <div>
+            {
+                renderTable(pivots)
+            }
+                </div>
             </div>
         );
 }
