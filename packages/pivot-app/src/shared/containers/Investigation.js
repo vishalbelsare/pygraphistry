@@ -5,7 +5,6 @@ import { table as tableClassName,
          tbody as tableBodyClassName } from './styles.less';
 
 
-console.log(tableClassName);
 function renderInvestigation({length = 0, name = 'default', pivots = []}) {
     return (
             <div>
