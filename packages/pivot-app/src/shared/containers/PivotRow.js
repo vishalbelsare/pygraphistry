@@ -1,10 +1,16 @@
 import { container } from 'reaxtor-redux';
-import { tcell as tableCellClassName } from './styles.less';
+import { tcell as tableCellClassName,
+         splice as spliceIconClassName,
+         insert as insertIconClassName,
+         search as searchIconClassName } from './styles.less';
 
 function renderResultCount(resultCount) {
     return (
-        <div className={{ [tableCellClassName]: true }}>
+        <div className={ tableCellClassName }>
             <span> {resultCount} </span>
+            <i className={ spliceIconClassName }/>
+            <i className={ insertIconClassName }/>
+            <i className={ searchIconClassName }/>
         </div>
     );
 }
