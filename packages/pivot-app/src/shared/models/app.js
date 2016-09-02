@@ -6,6 +6,7 @@ import {
 } from 'falcor-json-graph';
 
 import { simpleflake } from 'simpleflakes';
+import { investigation as createInvestigation } from '../models';
 
 const cols = [
     { name: 'Search' },
@@ -13,30 +14,19 @@ const cols = [
     { name: 'Time'},
 ];
 
-export function app(rows = [], id = simpleflake().toJSON()) {
-    const pivots = rows.map((row, index) => (
-            $ref(`pivotsById['${row.id}']`)
-        ));
+export function app(_investigations = [], id = simpleflake().toJSON()) {
 
+    const investigations = _investigations.map((cur, index) =>
+        createInvestigation(`Investigation: ${cur.name || index}`, cur)
+    );
 
-    const investigation1 = {
-        id: simpleflake().toJSON(),
-        name: 'ordered',
-        length: pivots.length,
-        ...pivots
-    }
-
-    const investigation2 = {
-        id: simpleflake().toJSON(),
-        name: 'reversed',
-        length: pivots.length,
-        ...pivots
-    }
-
-    const investigations = [investigation1, investigation2];
+    const pivots = _investigations.reduce((prev, cur, index, array) => {
+        return [...prev, ...cur];
+    }, []);
 
     return {
 
+        id,
         title: 'Pivots',
         url: 'http://www.graphistry.com/',
 
@@ -58,7 +48,7 @@ export function app(rows = [], id = simpleflake().toJSON()) {
         /**
          *  investigationsById: {
          *    'investigations-id-1': {
-         *      .... 
+         *      ....
          *    }, ...
          *  }
          */
@@ -81,7 +71,7 @@ export function app(rows = [], id = simpleflake().toJSON()) {
          *  ]
          */
 
-        selectedInvestigation: $ref(`investigationsById['${investigation1.id}']`),
+        selectedInvestigation: $ref(`investigationsById['${investigations[0].id}']`),
         //pivots: pivots,
 
         /**
@@ -95,8 +85,8 @@ export function app(rows = [], id = simpleflake().toJSON()) {
          *    }, ...
          *  }
          */
-        pivotsById: rows.reduce((rows, row) => ({
-            ...rows, [row.id]: row
+        pivotsById: pivots.reduce((prev, cur, index, array) =>  ({
+            ...prev, [cur.id]: cur
         }), {})
     };
 }

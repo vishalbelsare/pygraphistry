@@ -29,7 +29,8 @@ function mapStateToFragment({length = 0, name = 'default', pivots = []} = {}) {
 }
 
 function mapFragmentToProps(fragment) {
-    return { pivots: fragment, name: fragment.name, length: fragment.length};
+    const output =  { pivots: fragment, name: fragment.name, length: fragment.length};
+    return output;
 }
 
 export default container(
