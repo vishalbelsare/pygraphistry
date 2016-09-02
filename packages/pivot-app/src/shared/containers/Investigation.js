@@ -1,4 +1,6 @@
 import { container } from 'reaxtor-redux';
+import PivotRow from './PivotRow';
+import PivotTable from './PivotTable';
 
 function renderInvestigation({length = 0, name = 'default', pivots = []}) {
     return (
@@ -9,21 +11,23 @@ function renderInvestigation({length = 0, name = 'default', pivots = []}) {
                 <div>
                 Number of pivots in investigaiton: { length }
                 </div>
-            {
-                pivots.map((pivot, index) =>
-                ( <div key={`${pivot.id}`}> {pivot.id} </div> )
-                )
-            }
+                <div>
+                {
+                    pivots.map((pivot, index) => (
+                        (<PivotRow key={`${pivot.id}`} data={pivot} />)
+                    ))
+                }
+                </div>
             </div>
         )
 }
 
-function mapStateToFragment({length = 0, name = 'default', pivots = []} = {}) {
+function mapStateToFragment({selectedInvestigation = {}, length = 0, name = 'default', ...rest} = {}) {
     return `{
                 'name',
                 'length',
-                [0...${length}]: {
-                    'id'
+                [0...${length}]: ${
+                    PivotRow.fragment()
                 }
             }`;
 }
