@@ -1,54 +1,40 @@
-//import { Investigation } from './Investigation';
 import { container } from 'reaxtor-redux';
-//import { app as appClassName,
-         //frame as graphFrameClassName } from './styles.css';
 
-function renderInvestigation({ name = 'undefined' }) {
+function renderInvestigation({length = 0, name = 'default', pivots = []}) {
     return (
-        <option> {name} </option>
-    );
+            <div>
+                <div>
+                    Selected Investigation Name: { name }
+                </div>
+                <div>
+                Number of pivots in investigaiton: { length }
+                </div>
+            {
+                pivots.map((pivot, index) =>
+                ( <div key={`${pivot.id}`}> {pivot.id} </div> )
+                )
+            }
+            </div>
+        )
 }
 
-function mapStateToFragment(investigation = {}) {
+function mapStateToFragment({length = 0, name = 'default', pivots = []} = {}) {
     return `{
-        name
-    }`;
+                'name',
+                'length',
+                [0...${length}]: {
+                    'id'
+                }
+            }`;
+}
+
+function mapFragmentToProps(fragment) {
+    const output =  { pivots: fragment, name: fragment.name, length: fragment.length};
+    return output;
 }
 
 export default container(
-    mapStateToFragment
-)(renderInvestigation);
+        mapStateToFragment,
+        mapFragmentToProps
+)(renderInvestigation)
 
-
-//export class InvestigationList extends Container {
-    //loadProps(model) {
-        //return model.getItems(
-            //() => `['length']`,
-            //({json : { length }} ) =>  !length ? [] : [
-                 //[{ length }, 'name']
-            //]
-        //);
-    //}
-
-    //createChild(props) {
-        //return new Investigation({
-            //...props, field: this.field,
-        //});
-    //}
-
-    ////loadState(model, props) {
-        ////return this.loadProps(model)
-    ////}
-
-    //render(model, state, ...investigations) {
-        //return (
-            //<div>
-                //<h3> Current Investigation 
-                    //<select>
-                        //{ investigations }
-                    //</select>
-                //</h3>
-           //</div>
-        //)
-    //}
-//}
