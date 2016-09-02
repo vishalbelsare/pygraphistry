@@ -20,7 +20,7 @@ export const App = hoistStatics(connect)(container(
             release: { current: { date }},
             workbooks: {
                 length, open: {
-                    views: {
+                    id, title, views: {
                         length, current: ${
                             View.fragment(view)
                         }
@@ -46,7 +46,7 @@ function renderApp({ release = {}, workbooks = [], ...props } = {}) {
                 </div>
             </div>
             {view ? <View key='view' data={view} /> : null}
-            <DevTools/>
+            <DevTools key='dev-tools'/>
         </div>
     );
 }

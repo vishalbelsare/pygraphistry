@@ -5,11 +5,6 @@ export const Labels = container(
         id, name,
         selection, timeZone,
         opacity, enabled, poiEnabled,
-        settings: {
-            length, [0...${settings.length}]: {
-                id
-            }
-        },
         ['background', 'foreground']: { color },
         edge: { length, [0...${edge.length}]  },
         point: { length, [0...${point.length}] }

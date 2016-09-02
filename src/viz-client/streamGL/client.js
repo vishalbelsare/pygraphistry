@@ -288,8 +288,10 @@ function handleVboUpdates (socket, uri, renderState) {
     //socketID, textureByteLengths, textureName
     const fetchTexture = makeFetcher(uri, 'texture', 'texture');
 
-    const bufferNames = renderer.getServerBufferNames(renderState.get('config').toJS());
-    const textureNames = renderer.getServerTextureNames(renderState.get('config').toJS());
+    // const bufferNames = renderer.getServerBufferNames(renderState.get('config').toJS());
+    // const textureNames = renderer.getServerTextureNames(renderState.get('config').toJS());
+    const bufferNames = renderState.get('config').toJS().server.buffers;
+    const textureNames = renderState.get('config').toJS().server.textures;
 
     debug('Server buffers/textures', bufferNames, textureNames);
 

@@ -6,9 +6,27 @@ import { Observable, Scheduler } from 'rxjs';
 
 export function initialize(options, debug) {
 
+    const appModel = getAppModel(options);
+    return appModel
+        .get(`workbooks.open.id`)
+        .mergeMap(
+            ({ json }) => initSocket(options, json.workbooks.open.id),
+            ({ json }, socket) => ({ model: appModel, socket })
+        )
+        .mergeMap(({ model, socket }) =>
+            falcorUpdateHandler(model, Observable.fromEvent(
+                socket, 'updateFalcorCache'
+            ))
+            .ignoreElements()
+            .startWith({ ...options, model, socket, handleVboUpdates })
+        );
+}
+
+function initSocket(options, workbook) {
+
     const socket = SocketIO.Manager({
         path: `/socket.io`, reconnection: false,
-        query: { ...options, falcorClient: true }
+        query: { ...options, workbook, falcorClient: true }
     }).socket('/');
 
     socket.io.engine.binaryType = 'arraybuffer';
@@ -21,32 +39,21 @@ export function initialize(options, debug) {
     .mergeMap((e) => Observable.throw(e));
 
     return socketConnected
-        .merge(socketErrorConnecting)
-        .take(1)
-        .mergeMap(() => {
-            const model = getAppModel(options);
-            const updateFalcorEvents = Observable.fromEvent(
-                socket, 'updateFalcorCache', ({ data }) => data
-            );
-            return falcorUpdateHandler(model, updateFalcorEvents)
-                .ignoreElements()
-                .startWith({ ...options, model, socket, handleVboUpdates })
-        });
+        .take(1).mapTo(socket)
+        .merge(socketErrorConnecting);
 }
 
 function getAppModel(options) {
     return new Model({
         cache: getAppCache(),
         scheduler: Scheduler.asap,
+        allowFromWhenceYouCame: true,
         source: new RemoteDataSource('/graph/model.json', {
             crossDomain: false, withCredentials: false
-        }, options),
-        onChangesCompleted: !__DEV__ ? null : function () {
-            window.__INITIAL_STATE__ = this.getCache();
-        }
+        }, options)
     });
 }
 
 function getAppCache() {
-    return window.__INITIAL_STATE__ || {};
+    return window.__INITIAL_CACHE__ || {};
 }

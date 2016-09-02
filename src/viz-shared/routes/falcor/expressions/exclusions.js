@@ -14,7 +14,6 @@ export function exclusions(path, base) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
-        const getExclusions = getHandler(path.concat('exclusion'), loadExclusionsById);
 
         return [{
             returns: `*`,
@@ -27,24 +26,6 @@ export function exclusions(path, base) {
             get: getValues,
             set: setValues,
             route: `${base}['exclusions'].controls[{keys}][{keys}]`
-        }, {
-            returns: `*`,
-            get: getExclusions,
-            route: `${base}['exclusionsById'][{keys}][{keys}]`,
         }];
-
-        function loadExclusionsById({
-            workbookIds, viewIds, exclusionIds, controlIds, options
-        }) {
-            return loadViewsById({
-                workbookIds, viewIds, options
-            })
-            .mergeMap(
-                ({ workbook, view }) => exclusionIds,
-                ({ workbook, view }, exclusionId) => ({
-                    workbook, view, exclusion: view.exclusionsById[exclusionId]
-                })
-            );
-        }
     }
 }

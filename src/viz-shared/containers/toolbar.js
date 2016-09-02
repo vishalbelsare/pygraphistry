@@ -47,38 +47,44 @@ export const ToolbarItem = container(
     },
     ({ stateKey, state, value, type, ...item }, props) => {
         state = state && state[stateKey];
-        let selected = false;
+        let selected = false, overlay;
         if (type === 'toggle') {
-            let panel = props[stateKey];
-            if (value && Array.isArray(value)) {
-                selected = panel && value[value.length - 1] === panel.id;
+            if (Array.isArray(value)) {
+                let panel = props[stateKey];
+                if (panel && value[value.length - 1] === panel.id) {
+                    selected = true;
+                    overlay = props[`${stateKey}Overlay`];
+                }
             } else if (value) {
                 selected = true;
             }
         }
-        return { ...item, type, value, state, stateKey, selected };
+        return { ...item, type, value, state, overlay, stateKey, selected };
     },
     // bind action creators
     { onItemSelected: selectToolbarItem }
 )(ButtonListItem);
 
-function renderToolbar({ toolbar = [], left, right, bottom, ...props } = {}) {
+function renderToolbar({ toolbar = [], leftOverlay, left, right, bottom, ...props } = {}) {
     return (
         <ButtonList {...props}>
-        {toolbar.map((items) => (
-            <ToolbarItems key={items.key} data={items}
-                          {...{ left, right, bottom }}/>
+        {toolbar.map((items, index) => (
+            <ToolbarItems data={items} key={index}
+                          left={left} leftOverlay={leftOverlay}
+                          right={right} bottom={bottom}/>
         ))}
         </ButtonList>
     );
 }
 
-function renderToolbarItems({ items = [], left, right, bottom, ...props } = {}) {
+function renderToolbarItems({ items = [], leftOverlay, left, right, bottom, ...props } = {}) {
     return (
         <ButtonListItems {...props}>
-        {items.map((item) => (
-            <ToolbarItem key={item.key} data={item}
-                         {...{ left, right, bottom }}/>
+        {items.map((item, index) => (
+            <ToolbarItem data={item}
+                         key={`${index}: ${item.id}`}
+                         left={left} leftOverlay={leftOverlay}
+                         right={right} bottom={bottom}/>
         ))}
         </ButtonListItems>
     );

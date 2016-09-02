@@ -82,14 +82,14 @@ const getUniformLocationFast = addressMemoizer(uniformLocations, 'uniform', 'get
 /** The program currently in use by GL
  * @type {?WebGLProgram} */
 let activeProgram = null;
-function useProgram(gl, program) {
+function useProgram(gl, program, programName) {
     if (activeProgram !== program) {
-        debug('Use program: on slow path');
+        debug(`Use program ${programName}: on slow path`);
         gl.useProgram(program);
         activeProgram = program;
         return true;
     }
-    debug('Use program: on fast path');
+    debug(`Use program ${programName}: on fast path`);
 
     return false;
 }
@@ -182,7 +182,7 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 
     disableActiveVertexAttribArrays(gl);
 
-    useProgram(gl, program);
+    useProgram(gl, program, programName);
 
 
     _.each(bindings.attributes, (binding, attribute) => {
@@ -237,7 +237,7 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 
 
 //config * canvas
-function init(config, cameraModel, canvas, urlParams) {
+function init(config, canvas, urlParams) {
 
     const renderConfig = Immutable.fromJS(config);
     const renderPipeline = new ReplaySubject(1);
@@ -268,6 +268,7 @@ function init(config, cameraModel, canvas, urlParams) {
         pixelreads:     {},
         uniforms:       config.uniforms,
         options:        config.options,
+        items:          config.items,
 
         boundBuffer:    undefined,
         bufferSize:     Immutable.Map({}),
@@ -305,26 +306,6 @@ function init(config, cameraModel, canvas, urlParams) {
     const camera = createCamera(state, pixelRatio, urlParams);
     state = state.set('camera', camera);
     setCamera(state);
-
-    cameraModel.changes()
-        .switchMap(
-            (model) => model.get(`['edges', 'points']['scaling', 'opacity']`),
-            (model, { json: camera }) => camera
-        )
-        .subscribe(({ edges, points }) => {
-            camera.edgeScaling = edges.scaling;
-            camera.pointScaling = points.scaling;
-            const uniforms = state.get('uniforms');
-            for (const key in uniforms) {
-                const map = uniforms[key];
-                if ('edgeOpacity' in map) {
-                    map.edgeOpacity = edges.opacity;
-                }
-                if ('pointOpacity' in map) {
-                    map.pointOpacity = points.opacity;
-                }
-            }
-        });
 
     debug('state pre', state.toJS());
     state = state.mergeDeep(createRenderTargets(renderConfig,
@@ -836,6 +817,26 @@ function setUniform(state, name, value) {
     });
 }
 
+    // cameraModel.changes()
+    //     .switchMap(
+    //         (model) => model.get(`['edges', 'points']['scaling', 'opacity']`),
+    //         (model, { json: camera }) => camera
+    //     )
+    //     .subscribe(({ edges, points }) => {
+    //         camera.edgeScaling = edges.scaling;
+    //         camera.pointScaling = points.scaling;
+    //         const uniforms = state.get('uniforms');
+    //         for (const key in uniforms) {
+    //             const map = uniforms[key];
+    //             if ('edgeOpacity' in map) {
+    //                 map.edgeOpacity = edges.opacity;
+    //             }
+    //             if ('pointOpacity' in map) {
+    //                 map.pointOpacity = points.opacity;
+    //             }
+    //         }
+    //     });
+
 
 function setCamera(state) {
     const config = state.get('config').toJS();
@@ -844,10 +845,28 @@ function setCamera(state) {
     const uniforms = state.get('uniforms');
     const camera = state.get('camera');
 
+    const { edges = {}, points = {} } = config.camera;
+    const { opacity: edgeOpacity = 1,
+            scaling: edgeScaling = camera.edgeScaling } = edges;
+    const { opacity: pointOpacity = 1,
+            scaling: pointScaling = camera.pointScaling } = points;
+
+    camera.setEdgeScaling(edgeScaling);
+    camera.setPointScaling(pointScaling);
+
     const numVertices = state.get('numElements').pointculled || 0;
 
     // Set zoomScalingFactor uniform if it exists.
     _.each(uniforms, (map) => {
+
+        if ('edgeOpacity' in map) {
+            map.edgeOpacity = edgeOpacity;
+        }
+
+        if ('pointOpacity' in map) {
+            map.pointOpacity = pointOpacity;
+        }
+
         if ('zoomScalingFactor' in map) {
             // TODO: Actually get number of nodes from the server
             const scalingFactor = camera.semanticZoom(numVertices);
@@ -874,7 +893,7 @@ function setCamera(state) {
     _.each(config.programs, (programConfig, programName) => {
         debug('Setting camera for program %s', programName);
         const program = programs[programName];
-        useProgram(gl, program);
+        useProgram(gl, program, programName);
 
         const mvpLoc = getUniformLocationFast(gl, program, programName, programConfig.camera);
         gl.uniformMatrix4fv(mvpLoc, false, camera.getMatrix());

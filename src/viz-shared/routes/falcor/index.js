@@ -2,8 +2,9 @@ import { app } from './app';
 import { views } from './views';
 import { toolbar } from './toolbar';
 import { workbooks } from './workbooks';
+import { inspector, timebar } from './panels';
 import { scene, camera, labels, layout, selection } from './scene';
-import { filters, exclusions, histograms, inspector, sets, timebar } from './panels';
+import { filters, exclusions, histograms, expressions } from './expressions';
 
 export function routes(services) {
 
@@ -25,11 +26,12 @@ export function routes(services) {
         layout(['workbook', 'view'], `${view}.scene`)(services),
         selection(['workbook', 'view'], `${view}.scene`)(services),
 
-        sets(['workbook', 'view'], view)(services),
-        filters(['workbook', 'view'], view)(services),
         timebar(['workbook', 'view'], view)(services),
         inspector(['workbook', 'view'], view)(services),
+
+        filters(['workbook', 'view'], view)(services),
         exclusions(['workbook', 'view'], view)(services),
         histograms(['workbook', 'view'], view)(services),
+        expressions(['workbook', 'view'], view)(services),
     ]));
 }

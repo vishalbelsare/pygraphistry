@@ -84,7 +84,7 @@ const FilterView = Backbone.View.extend({
         'click .disableFilterButton': 'disable',
         'click .disabledFilterButton': 'enable',
         'click .expandFilterButton': 'expand',
-        'click .expendedFilterButton': 'shrink',
+        'click .expandedFilterButton': 'shrink',
         'click .deleteFilterButton': 'delete',
         'change textarea.filterExpression': 'updateQuery'
     },

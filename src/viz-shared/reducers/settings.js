@@ -5,7 +5,7 @@ import {
     pathInvalidation as $invalidate
 } from 'reaxtor-falcor-json-graph';
 
-import { Observable } from 'rxjs';
+import { Observable, Scheduler } from 'rxjs';
 import { SET_CONTROL_VALUE } from 'viz-shared/actions/settings';
 
 export default function settings(action$, store) {
@@ -16,10 +16,11 @@ function setControlValue(action$, store) {
     return action$
         .ofType(SET_CONTROL_VALUE)
         .groupBy(({ id }) => id)
-        .mergeMap((actionsById) => actionsById.switchMap(
-            ({ stateKey, falcor, state }) => falcor.set(
-                $value(`state['${stateKey}']`, state)
-            ).progressively()
-        ))
+        .mergeMap((actionsById) => actionsById
+            .auditTime(0, Scheduler.async)
+            .switchMap(({ stateKey, falcor, state }) => falcor
+                .set($value(`state['${stateKey}']`, state))
+                .progressively()
+            ))
         .ignoreElements();
 }

@@ -15,32 +15,32 @@ export function labels(path, base) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
-        const setColors = setHandler(path, loadViewsById, (color, path, context) => {
-            return new Color(color).hsv();
-        }, { valueKey: 'color' });
-
+        const setColors = setHandler(path, loadViewsById,
+            { color: true },
+            ( color, path, context) => new Color(color)
+        );
 
         return [{
             get: getValues,
             set: setValues,
-            route: `${base}.labels[{keys}]`
+            route: `${base}['labels'][{keys}]`
         }, {
             get: getValues,
-            route: `${base}.labels['edge', 'point'][{keys}]`
+            route: `${base}['labels']['edge', 'point'][{keys}]`
         }, {
             get: getValues,
             set: setColors,
-            route: `${base}.labels['background', 'foreground'][{keys}]`
+            route: `${base}['labels']['background', 'foreground'][{keys}]`
         }, {
             get: getLabelsByTypeAndRangeHandler,
-            route: `${base}.labelsByType['edge', 'point'][{ranges}]`
+            route: `${base}['labelsByType']['edge', 'point'][{ranges}]`
         }, {
             get: getValues,
-            route: `${base}.labels['options', 'settings'][{keys}]`
+            route: `${base}['labels']['options', 'settings'][{keys}]`
         }, {
             get: getValues,
             set: setValues,
-            route: `${base}.labels['options'][{keys}][{keys}]`
+            route: `${base}['labels']['options'][{keys}][{keys}]`
         }]
 
         function getLabelsByTypeAndRangeHandler(path) {

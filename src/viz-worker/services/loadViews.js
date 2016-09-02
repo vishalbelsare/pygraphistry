@@ -58,24 +58,11 @@ function assignNBodyToView(workbook, nBody, view) {
     const { simulator } = nBody;
     const { dataframe } = simulator;
 
-    const MAX_SIZE_TO_ALLOCATE = 2000000;
-    const numEdges = dataframe.numEdges();
-    const numPoints = dataframe.numPoints();
-
     view.nBody = nBody;
 
     const { scene } = view;
     const { layout } = scene;
     const { options } = layout;
-
-    scene.hints = {
-        edges: numEdges === undefined ?
-            $atom(undefined, { $expires: 1 }) :
-            Math.min(numEdges, MAX_SIZE_TO_ALLOCATE),
-        points: numPoints === undefined ?
-            $atom(undefined, { $expires: 1 }) :
-            Math.min(numPoints, MAX_SIZE_TO_ALLOCATE),
-    };
 
     if (options.length === 0) {
         const optionsPath = `workbooksById['${workbook.id}']
@@ -89,30 +76,7 @@ function assignNBodyToView(workbook, nBody, view) {
                 return { ...options, ...toControls(optionsPath, params) };
             }, options)
         );
-
-        // const { settings, settingsById } = toSettings(
-        //     workbook.id, view.id, ... fromLayoutAlgorithms(
-        //         simulator.controls.layoutAlgorithms
-        //     )
-        // );
     }
-
-    // let settingsIndex = -1;
-    // const viewSettings = view.settings;
-    // const settingsLength = settings.length;
-    // const { settingsById: viewSettingsById } = view;
-
-    // while (++settingsIndex < settingsLength) {
-
-    //     const settingsRef = settings[settingsIndex];
-    //     const { value: settingsPath } = settingsRef;
-    //     const settingsId = settingsPath[settingsPath.length - 1];
-
-    //     if (!(settingsId in viewSettingsById)) {
-    //         viewSettings[viewSettings.length++] = settingsRef;
-    //         viewSettingsById[settingsId] = settingsById[settingsId];
-    //     }
-    // }
 
     return view;
 }
@@ -122,27 +86,6 @@ const controlLeafKeys = {
     id: true, type: true,
     name: true, value: true
 };
-
-function toSettings(workbookId, viewId, ...settings) {
-    return settings.reduce(({ settings, settingsById }, { name, params }) => {
-
-        const settingsId = name.toLowerCase();
-
-        settingsById[settingsId] = {
-            name, id: settingsId, ...toControls(
-                workbookId, viewId, settingsId, ...params
-            )
-        };
-
-        settings.push($ref(`
-            workbooksById['${workbookId}']
-                .viewsById['${viewId}']
-                .scene.layout
-                .settingsById['${settingsId}']`));
-
-        return { settings, settingsById };
-    }, { settings: [], settingsById: {} });
-}
 
 function toControls(options, params) {
     return params.reduce((controls, control, index) => {

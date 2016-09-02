@@ -4,3 +4,4 @@ export * from './loadLabels';
 export * from './loadVGraph';
 export * from './loadDataset';
 export * from './loadWorkbooks';
+export * from './sendFalcorUpdate';

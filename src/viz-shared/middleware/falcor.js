@@ -51,12 +51,12 @@ function createAppRouter(routes) {
                 }
             });
         }
-        get(paths) {
-            console.log('\n============requested paths:');
-            console.log('\t' + paths
-                .map((path) => JSON.stringify(path))
-                .join('\n\t') + '\n');
-            return super.get(paths);
-        }
+        // get(paths) {
+        //     console.log('\n============requested paths:');
+        //     console.log('\t' + paths
+        //         .map((path) => JSON.stringify(path))
+        //         .join('\n\t') + '\n');
+        //     return super.get(paths);
+        // }
     };
 }

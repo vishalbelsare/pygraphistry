@@ -1,6 +1,7 @@
 import createLogger from 'redux-logger';
 import { DevTools } from '../components';
 import rootReducer from '../reducers';
+import scene from '../reducers/scene';
 import toolbar from '../reducers/toolbar';
 import settings from '../reducers/settings';
 import { compose, createStore, applyMiddleware } from 'redux';
@@ -10,7 +11,7 @@ export function configureStore(initialState) {
 
     const store = createStore(rootReducer, initialState, compose(
             applyMiddleware(createEpicMiddleware(
-                combineEpics(toolbar, settings)
+                combineEpics(scene, toolbar, settings)
             ), createLogger()),
             DevTools.instrument()
         )

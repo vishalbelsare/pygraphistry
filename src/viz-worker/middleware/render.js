@@ -71,7 +71,7 @@ function renderAppWithHotReloading(modules, dataSource, options) {
         )
         .map(({ App, falcor, data }) =>
             renderFullPage(
-                falcor, options.workerID
+                data, falcor, options.workerID
                 // , reactRenderToString(
                 //     <Provider store={configureStore(initialState)}>
                 //         <App {...options} falcor={falcor} key='viz-client'/>
@@ -81,7 +81,7 @@ function renderAppWithHotReloading(modules, dataSource, options) {
         );
 }
 
-function renderFullPage(falcor, workerID = '', html = '') {
+function renderFullPage(data, falcor, workerID = '', html = '') {
     const assetSuffix = workerID && `?workerID=${workerID}` || '';
     const { client } = require('./webpack-assets.json');
     return `
@@ -109,6 +109,8 @@ function renderFullPage(falcor, workerID = '', html = '') {
         <div id='root'>${html}</div>
         <script>
             window.__INITIAL_STATE__ = ${
+                stringify(data || {})};
+            window.__INITIAL_CACHE__ = ${
                 stringify(falcor && falcor.getCache() || {})};
         </script>
         <script type="text/javascript" src="${`${client.js}${assetSuffix}`}"></script>

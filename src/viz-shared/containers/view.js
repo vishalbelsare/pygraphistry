@@ -2,11 +2,11 @@ import Dock from 'react-dock';
 import { container } from 'reaxtor-redux';
 import { Popover } from 'react-bootstrap';
 import { Scene } from 'viz-shared/containers/scene';
-import { Panel } from 'viz-shared/containers/panels';
+import { Panel } from 'viz-shared/containers/panel';
 import { Toolbar } from 'viz-shared/containers/toolbar';
 
-function viewFragment({ scene, toolbar } = {}) {
-    return `{
+export const View = container(
+    ({ scene, toolbar } = {}) => `{
         scene: ${ Scene.fragment(scene) },
         panels: {
             left: { id, name },
@@ -14,8 +14,8 @@ function viewFragment({ scene, toolbar } = {}) {
             bottom: { id, name }
         },
         toolbar: ${ Toolbar.fragment(toolbar) }
-    }`;
-}
+    }`
+)(renderView);
 
 function renderView({ scene, panels = {}, toolbar } = {}) {
     const { left = {}, right = {}, bottom = {} } = panels;
@@ -25,40 +25,36 @@ function renderView({ scene, panels = {}, toolbar } = {}) {
     return (
         <div style={{ position: `absolute`, width: `100%`, height: `100%` }}>
             <Scene data={scene}/>
-            <Popover key={left.key}
-                     placement='right'
-                     id='left-panel'
-                     title={left.name}
-                     positionTop={5}
-                     positionLeft={42}
-                     style={popoverStyles(isLeftPanelOpen)}>
-                <Panel side='left' key={left.key} data={left}/>
-            </Popover>
+            <Panel data={left}
+                   key='left'
+                   side='left'
+                   placement='right'
+                   id='left-panel'
+                   title={left.name}
+                   positionTop={5}
+                   positionLeft={42}
+                   style={popoverStyles(isLeftPanelOpen)}/>
             <Dock fluid
                   size={0.2}
                   dimMode='none'
+                  key='right'
                   position='right'
-                  key={right.key}
                   isVisible={isRightPanelOpen}>
-                <Panel side='right' key={right.key} data={right}/>
+                <Panel side='right' data={right}/>
             </Dock>
             <Dock fluid
                   dimMode='none'
+                  key='bottom'
                   position='bottom'
-                  key={bottom.key}
                   isVisible={isBottomPanelOpen}
                   size={1 - (1/Math.sqrt(2))}>
-                <Panel side='bottom' key={bottom.key} data={bottom}/>
+                <Panel side='bottom' data={bottom}/>
             </Dock>
-            <Toolbar key={toolbar.key} data={toolbar}
-                     {...{left, right, bottom}}/>
+            <Toolbar data={toolbar} left={left}
+                     right={right} bottom={bottom}/>
         </div>
     );
 }
-
-export const View = container(
-    viewFragment
-)(renderView);
 
 function popoverStyles(isOpen) {
     return {

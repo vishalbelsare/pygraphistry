@@ -9,48 +9,62 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from 'viz-shared/routes';
 
-export function settings(path, route) {
-    return function settings({ loadViewsById }) {
+export function filters(path, base) {
+    return function filters({ loadViewsById }) {
 
         const getValues = getHandler(path, loadViewsById);
-        const getSettingValues = getHandler(path.concat('setting'), loadSettingsById);
+        const setValues = setHandler(path, loadViewsById);
+        const getFilters = getHandler(path.concat('filter'), loadFiltersById);
 
         return [{
+            returns: `*`,
             get: getValues,
-            route: `${route}.settings.length`,
-            returns: `Number`
-        }, {
-            get: getValues,
-            route: `${route}.settings['name', 'open']`,
-            returns: `String`
+            route: `${base}['filters'][{keys}]`,
         }, {
             get: getValues,
-            route: `${route}.settings[{integers}]`,
-            returns: `$ref('workbooksById[{workbookId}].viewsById[{viewId}][{listId}]')`
+            route: `${base}['filters'].controls[{keys}]`
         }, {
-            get: getSettingValues,
-            route: `${route}.settingsById[{keys}]['id', 'name', 'length']`,
-            returns: `*`
+            get: getValues,
+            set: setValues,
+            route: `${base}['filters'].controls[{keys}][{keys}]`
         }, {
-            get: getSettingValues,
-            set: setControlHandler,
-            route: `${route}.settingsById[{keys}][{integers}][{keys}]`
+            call: addFilter,
+            route: `${base}['filters'].add`
+        }, {
+            call: removeFilter,
+            route: `${base}['filters'].remove`
         }];
 
-        function loadSettingsById({
-            workbookIds, viewIds, settingIds, controlIds, options
+        function addFilter(path, args) {
+            const workbookIds = [].concat(path[1]);
+            const viewIds = [].concat(path[3]);
+            return loadViewsById({
+                workbookIds, viewIds
+            })
+            .mergeMap(({ workbook, view }) => {
+                const { filters, exclusions } = view;
+            });
+        }
+
+        function removeFilter(path, args) {
+
+        }
+
+        function loadFiltersById({
+            workbookIds, viewIds, filterIds, options
         }) {
             return loadViewsById({
                 workbookIds, viewIds, options
             })
             .mergeMap(
-                ({ workbook, view }) => settingIds,
-                ({ workbook, view }, settingId) => ({
-                    workbook, view, setting: view.settingsById[settingId]
+                ({ workbook, view }) => filterIds,
+                ({ workbook, view }, filterId) => ({
+                    workbook, view, filter: view.filtersById[filterId]
                 })
             );
         }
 
+/*
         function loadControls({
             workbookIds, viewIds, settingIds, controlIds, options
         }) {
@@ -122,5 +136,6 @@ export function settings(path, route) {
             .map(mapObjectsToAtoms)
             .catch(captureErrorStacks);
         }
+*/
     }
 }

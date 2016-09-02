@@ -3,12 +3,16 @@ const  { slice } = Array.prototype;
 import { mapObjectsToAtoms } from './mapObjectsToAtoms';
 import { captureErrorStacks } from './captureErrorStacks';
 
-export function getHandler(lists, loader, props = {}) {
+function defaultPropsResolver(routerInstance) {
+    const { request  = {} } = routerInstance;
+    const { query = {} } = request;
+    return query;
+}
+
+export function getHandler(lists, loader, getInitialProps = defaultPropsResolver) {
     return function handler(path) {
 
-        const { request = {} } = this;
-        const { query: options = {} } = request;
-        const state = { ...props, options };
+        const state = { ...getInitialProps(this) };
 
         let list, index = -1, count = lists.length;
 
@@ -74,14 +78,14 @@ export function getHandler(lists, loader, props = {}) {
 
         return (values
             .map(mapObjectsToAtoms)
-            .do((pv) => {
-                console.log(`get: ${JSON.stringify(path)}`);
-                if (pv.isMessage) {
-                    console.log(`additionalPath: ${JSON.stringify(pv.additionalPath)}`);
-                } else {
-                    console.log(`res: ${JSON.stringify(pv.path)}`);
-                }
-            })
+            // .do((pv) => {
+            //     console.log(`get: ${JSON.stringify(path)}`);
+            //     if (pv.isMessage) {
+            //         console.log(`additionalPath: ${JSON.stringify(pv.additionalPath)}`);
+            //     } else {
+            //         console.log(`res: ${JSON.stringify(pv.path)}`);
+            //     }
+            // })
             .catch(captureErrorStacks)
         );
     }

@@ -27,15 +27,21 @@ Subscriber.prototype.dispose = Subscriber.prototype.unsubscribe;
 
 Subscription.prototype.dispose = Subscription.prototype.unsubscribe;
 
+import {
+    compose,
+    withContext,
+    hoistStatics
+} from 'recompose';
+
 import $ from 'jquery';
 import _debug from 'debug';
 import ReactDOM from 'react-dom';
+import { PropTypes } from 'react';
 import { partial } from 'lodash';
 import { Provider } from 'react-redux';
 import { configureStore } from 'viz-shared/store/configureStore';
-import { init as initRenderer } from './streamGL/renderer';
-import vizApp from './streamGL/graphVizApp/vizApp';
-import { reloadHot } from 'viz-shared/reloadHot';
+
+import { reloadHot } from 'viz-client/reloadHot';
 import { setupTitle, setupAnalytics,
          getURLParameters, loadClientModule,
          setupErrorHandlers, setupDocumentElement,
@@ -74,10 +80,23 @@ Observable
             App, options: { ...options, ...options2 }
         })
     )
+    .map(({ App, options }) => ({
+        options,
+        App: hoistStatics(withContext(
+            { play: PropTypes.number,
+              socket: PropTypes.object,
+              pixelRatio: PropTypes.number,
+              handleVboUpdates: PropTypes.func }, () => (
+            { play: options.play,
+              socket: options.socket,
+              pixelRatio: options.pixelRatio,
+              handleVboUpdates: options.handleVboUpdates }
+        )))(App)
+    }))
     .switchMap(
         ({ App, options }) => {
             const { model, ...props } = options;
-            const store = configureStore({});
+            const store = configureStore(getInitialState());
             const renderAsObservable = Observable.bindCallback(
                 ReactDOM.render,
                 () => [store.getState(), options]
@@ -110,20 +129,10 @@ function getRootDOMNode(appDomNode) {
     );
 }
 
+function getInitialState() {
+    return window.__INITIAL_STATE__ || {};
+}
+
 function initVizApp([ initialAppState, options ]) {
-
-    const uri = { href: '/graph/', pathname: '' };
-    const canvas = $('#simulation')[0];
-    const { model, socket, handleVboUpdates } = options;
-
-    window.appModel = model;
-
-    // const { workbooks: { open: { views: { current: { scene }}}}} = initialAppState;
-    // const initialRenderState = initRenderer(scene, model.deref(scene.camera), canvas, options);
-    // const { vboUpdates, vboVersions } = handleVboUpdates(socket, uri, initialRenderState);
-    // const apiEvents = new Subject();
-    // const apiActions = new Subject();
-
-    // vizApp(socket, initialRenderState, vboUpdates, vboVersions,
-    //        apiEvents, apiActions, uri, options, model, initialAppState);
+    window.appModel = options.model;
 }

@@ -3,7 +3,6 @@ import {
     pathValue as $value,
     pathInvalidation as $invalidate
 } from 'reaxtor-falcor-json-graph';
-import Color from 'color';
 import { getHandler,
          setHandler,
          mapObjectsToAtoms,
@@ -14,26 +13,6 @@ export function views(path, view) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
-        const setColors = setHandler(path, loadViewsById, (color, path, context) => {
-
-            color = new Color(color);
-            const { view } = context;
-            const { nBody, scene } = view;
-            const type = path[path.length - 2];
-
-            if (type === 'background' && scene) {
-                scene.options.clearColor = [color.rgbaArray().map((x, i) =>
-                    i === 3 ? x : x / 255
-                )];
-            } else if (type === 'foreground' && nBody) {
-                nBody.simulator.setColor({ rgb: {
-                    r: color.red(), g: color.green(),
-                    b: color.blue(), a: color.alpha()
-                }});
-                nBody.interactions.next({ play: true, layout: true });
-            }
-            return color.hsv();
-        }, { valueKey: 'color' });
 
         return [{
             get: getValues,
@@ -44,11 +23,6 @@ export function views(path, view) {
             set: setValues,
             route: `${view}.panels['left', 'right', 'bottom']`,
             returns: `Reference`
-        }, {
-            get: getValues,
-            set: setColors,
-            route: `${view}['background', 'foreground'].color`,
-            returns: `Color<hsv>`
         }];
     }
 }

@@ -24,6 +24,9 @@ export function workbooks(path, base) {
             returns: `$ref('workbooksById[{workbookId}]')`
         }, {
             get: getValues,
+            route: `${workbook}[{keys}]`
+        }, {
+            get: getValues,
             route: `${workbook}['views'][{keys}]`
         }, {
             get: getValues,

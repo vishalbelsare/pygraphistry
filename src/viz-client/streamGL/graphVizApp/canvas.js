@@ -110,8 +110,7 @@ function getEdgeLabelPos (appState, edgeIndex) {
 
 
 function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates,
-                                  isAnimating, simulateOn, activeSelection, socket,
-                                  labelsModel, hintsModel) {
+                             isAnimating, simulateOn, activeSelection, hints) {
     var that = this;
     this.renderState = renderState;
     this.arrayBuffers = {};
@@ -119,7 +118,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
     this.lastMouseoverTask = undefined;
 
     var config = renderState.get('config').toJS();
-    this.attemptToAllocateBuffersOnHints(config, renderState, hintsModel);
+    this.attemptToAllocateBuffersOnHints(config, renderState, hints);
 
     /* Rendering queue */
     var renderTasks = new Subject();
@@ -179,28 +178,17 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
     // FIXME handle selection update buffers here.
     Observable.combineLatest(
         hostBuffers.selectedEdgeIndexes,
-        hostBuffers.selectedPointIndexes
-    )
-    .switchMap(([edgeIndexes, pointIndexes]) => {
-
-        activeSelection.onNext(new VizSlice({
+        hostBuffers.selectedPointIndexes,
+        (edgeIndexes, pointIndexes) => new VizSlice({
             edge: edgeIndexes,
             point: pointIndexes
-        }));
-
-        const activeEdges = edgeIndexes.map((idx) => ({
-            idx, dim: 2
-        }));
-        const activePoints = pointIndexes.map((idx) => ({
-            idx, dim: 1
-        }));
-
-        return labelsModel.setValue({
-            active: activeEdges.concat(activePoints)
-        });
-    })
-    .take(1).subscribe(_.identity, util.makeErrorHandler('Getting indexes of selections.'));
-
+        })
+    )
+    .take(1)
+    .subscribe(
+        (slice) => activeSelection.next(slice),
+        util.makeErrorHandler('Getting indexes of selections.')
+    );
 
     vboUpdates.filter(function (status) {
         return status === 'received';
@@ -441,34 +429,51 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
 // We handle these by putting them into an subject and handling
 // each with a 1ms delay in between, to give the JS thread
 // some breathing room to handle other callbacks/repaints.
-RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (config, renderState, hintsModel) {
+RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (config, renderState, { edges, points } = {}) {
+
+    const { numHintElements = {} } = this;
+
+    if (numHintElements.edges === edges &&
+        numHintElements.points === points) {
+        return;
+    }
+
+    if (edges === 0 && points === 0) {
+        return;
+    }
+
     const timeoutLength = 1;
-    return hintsModel.changes()
-        .switchMap(
-            (model) => model.get(`['edges', 'points']`),
-            (model, { json: hints }) => hints
-        )
-        .switchMap(({ edges, points }) => {
-            const numElements = {
-                edges, points,
-                renderedSplits: config.numRenderedSplits
-            };
-            const allocationFunctions = this.allocateAllArrayBuffersFactory(config, numElements, renderState);
-            const largestModel = this.getLargestModelSize(config, numElements);
-            const maxElements = Math.max(_.max(_.values(numElements)), largestModel);
-            const activeIndices = renderState.get('activeIndices');
-            return Observable
-                .from(allocationFunctions.concat(activeIndices.map((index) =>
-                    renderer.updateIndexBuffer.bind('', renderState, maxElements, index)
-                )))
-                .concatMap((allocationFunction) => {
-                    // Do one big job, then increment
-                    allocationFunction();
-                    // Cede control to browser, then handle next element
-                    return Observable.timer(timeoutLength).take(1);
-                })
+    const { hintsAllocationCycle } = this;
+
+    if (hintsAllocationCycle) {
+        hintsAllocationCycle.unsubscribe();
+    }
+
+    const numElements = {
+        edges, points,
+        renderedSplits: config.numRenderedSplits
+    };
+
+    this.numHintElements = numElements;
+
+    const activeIndices = renderState.get('activeIndices');
+    const largestModel = this.getLargestModelSize(config, numElements);
+    const maxElements = Math.max(_.max(_.values(numElements)), largestModel);
+    const allocationFunctions = this.allocateAllArrayBuffersFactory(config, numElements, renderState);
+
+    this.hintsAllocationCycle = Observable
+        .from(allocationFunctions.concat(activeIndices.map((index) =>
+            renderer.updateIndexBuffer.bind('', renderState, maxElements, index)
+        )))
+        .concatMap((allocationFunction) => {
+            // Do one big job, then increment
+            allocationFunction();
+            // Cede control to browser, then handle next element
+            return Observable.timer(timeoutLength).take(1);
         })
-        .subscribe();
+        .subscribe(null, null, () => {
+            debug('Finished allocating buffers for hints', numElements);
+        });
 };
 
 //int * int * Int32Array * Float32Array -> {starts: Float32Array, ends: Float32Array}
@@ -1433,14 +1438,16 @@ RenderingScheduler.prototype.allocateAllArrayBuffersFactory = function (config, 
                 // the rest of render config.
                 var sizeInBytes = eval(desc.sizeHint) * desc.count * bytesPerElement; // jshint ignore:line
 
-                // Allocate arraybuffers for RenderingScheduler
-                functions.push(function () {
-                    that.allocateArrayBufferOnHint(modelName, sizeInBytes);
-                });
-                // Allocate GPU buffer in renderer
-                functions.push(function () {
-                    renderer.allocateBufferSize(renderState, modelName, sizeInBytes);
-                });
+                if (!isNaN(sizeInBytes)) {
+                    // Allocate arraybuffers for RenderingScheduler
+                    functions.push(function () {
+                        that.allocateArrayBufferOnHint(modelName, sizeInBytes);
+                    });
+                    // Allocate GPU buffer in renderer
+                    functions.push(function () {
+                        renderer.allocateBufferSize(renderState, modelName, sizeInBytes);
+                    });
+                }
             }
         });
     });
@@ -1482,7 +1489,7 @@ RenderingScheduler.prototype.getTypedArray = function (name, Constructor, length
 // figure out the size of our largest model for letting the
 // renderer create index buffers.
 RenderingScheduler.prototype.getLargestModelSize = function (config, numElements) {
-    debug('Getting largerst model size for: ', numElements);
+    debug('Getting largest model size for: ', numElements);
     var sizes = _.map(config.models, function (model) {
         return _.map(model, function (desc) {
             if (desc.sizeHint) {

@@ -7,8 +7,8 @@ import {
 export function camera(scene) {
     return {
         camera: {
-            center: $atom({ x: 0.5, y: 0.5 }),
             width: 1, height: 1, zoom: 1,
+            center: $atom({ x: 0.5, y: 0.5 }),
             edges: { scaling: 1, opacity: 1 },
             points: { scaling: 1, opacity: 1 },
             controls: [{

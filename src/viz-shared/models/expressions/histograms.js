@@ -7,13 +7,12 @@ import {
 export function histograms(workbookId, viewId) {
     const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
     return {
-        histogramsById: {},
         histograms: {
             length: 0,
-            open: false,
             id: 'histograms',
             name: 'Histograms',
             scene: $ref(`${view}.scene`),
+            templates: $ref(`${view}.expressions`),
             controls: [{
                 id: 'toggle-histograms',
                 name: 'Histograms',

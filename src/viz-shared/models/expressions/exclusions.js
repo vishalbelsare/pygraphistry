@@ -10,9 +10,9 @@ export function exclusions(workbookId, viewId) {
         exclusionsById: {},
         exclusions: {
             length: 0,
-            open: false,
             id: 'exclusions',
             name: 'Exclusions',
+            templates: $ref(`${view}.expressions`),
             controls: [{
                 id: 'toggle-exclusions',
                 name: 'Exclusions',

@@ -1,12 +1,12 @@
-import React from 'react'
+import React from 'react';
+import { findDOMNode } from 'react-dom'
 import styles from './styles.less';
 import classNames from 'classnames';
 
 import {
     Button, Tooltip, OverlayTrigger,
     ButtonGroup, ButtonToolbar,
-    ListGroup, ListGroupItem,
-    Popover
+    ListGroup, ListGroupItem
 } from 'react-bootstrap';
 
 export function ButtonList({ children, visible, ...props }) {
@@ -52,16 +52,16 @@ export function ButtonListItem({ onItemSelected, ...props }) {
     return (
         <OverlayTrigger placement='right'
                         overlay={ButtonListItemTooltip(name)}>
-            <Button
-               active={selected} href='#'
-               onClick={(e) => e.preventDefault() || onItemSelected(props)}
-               className={classNames({
-                    [styles[id]]: true,
-                    [styles['fa']]: true,
-                    [styles['fa-fw']]: true,
-                    [styles['selected']]: selected,
-                    [styles['button-list-item']]: true
-               })}
+            <Button href='#'
+                    active={selected}
+                    onClick={(e) => e.preventDefault() || onItemSelected(props)}
+                    className={classNames({
+                         [styles[id]]: true,
+                         [styles['fa']]: true,
+                         [styles['fa-fw']]: true,
+                         [styles['selected']]: selected,
+                         [styles['button-list-item']]: true
+                    })}
             />
         </OverlayTrigger>
     );
