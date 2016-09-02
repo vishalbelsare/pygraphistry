@@ -1,7 +1,11 @@
 import { container } from 'reaxtor-redux';
 import PivotRow from './PivotRow';
-import PivotTable from './PivotTable';
+//import PivotTable from './PivotTable';
+import { table as tableClassName,
+         tbody as tableBodyClassName } from './styles.less';
 
+
+console.log(tableClassName);
 function renderInvestigation({length = 0, name = 'default', pivots = []}) {
     return (
             <div>
@@ -11,15 +15,18 @@ function renderInvestigation({length = 0, name = 'default', pivots = []}) {
                 <div>
                 Number of pivots in investigaiton: { length }
                 </div>
-                <div>
+                <table className={tableClassName}
+                       style={{ border: 0, cellpadding: 0, cellspacing: 0 }}>
+                    <tbody className={tableBodyClassName}>
                 {
-                    pivots.map((pivot, index) => (
+                    pivots.map((pivot) => (
                         (<PivotRow key={`${pivot.id}`} data={pivot} />)
                     ))
                 }
-                </div>
+                    </tbody>
+                </table>
             </div>
-        )
+        );
 }
 
 function mapStateToFragment({selectedInvestigation = {}, length = 0, name = 'default', ...rest} = {}) {

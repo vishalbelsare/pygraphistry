@@ -1,17 +1,40 @@
 import { container } from 'reaxtor-redux';
+import { tcell as tableCellClassName } from './styles.less'
 
 function renderPivotRow({id, length, fields}) {
+    console.log("Length", length)
+    const cellWidth = Math.round(95 / (length + 1));
+    const resultCountVdom = (
+        <div className={{ [tableCellClassName]: true }}>
+            <span> {0} </span>
+        </div>
+    )
     return (
-        <div>
-            <div> Pivot Id: {id}, Length of pivot: {length} </div>
-            <div>
+            <tr>
+                <td style={{ width: `2%` }}>
+                    <input 
+                        type="checkbox" 
+                        checked='true'/>
+                </td>
             {
                 fields.map((field, index) =>
-                    <div key={`${id}: ${index}`}> {field.value} </div>
+                <td key={`${id}: ${index}`}
+                    style={{ width: `${cellWidth}%`}}>
+                    <div className={tableCellClassName}>
+                        <input
+                            type='th'
+                            value={field.value}
+                            readOnly={true}
+                            disabled={false}
+                        />
+                    </div>
+                </td>
                 )
             }
-            </div>
-        </div>
+                <td style={{ width: `${cellWidth}%`}}>
+                    {resultCountVdom}
+                </td>
+            </tr>
         );
 }
 
