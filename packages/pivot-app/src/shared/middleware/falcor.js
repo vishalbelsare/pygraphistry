@@ -1,5 +1,5 @@
 import { inspect } from 'util';
-import { Router } from 'reaxtor';
+import { Router } from 'reaxtor-falcor-router';
 import { Observable } from 'rxjs';
 import { routes } from '../routes';
 
