@@ -8,7 +8,6 @@ import { table as tableClassName,
 // TODO reuse table row
 function renderTableHeader() {
     const cellWidth = Math.round(95 / (4));
-    console.log('Cell width', cellWidth)
     return (
         <thead className={tableHeaderClassName}>
             <tr >

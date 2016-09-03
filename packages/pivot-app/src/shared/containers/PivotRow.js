@@ -3,6 +3,7 @@ import { tcell as tableCellClassName,
          splice as spliceIconClassName,
          insert as insertIconClassName,
          search as searchIconClassName } from './styles.less';
+import { setPivotValue } from '../actions/PivotRow';
 
 function renderResultCount(resultCount) {
     return (
@@ -25,7 +26,8 @@ function renderCheckBox(checked) {
     )
 }
 
-function renderPivotRow({id, length, fields}) {
+
+function renderPivotRow({id, length, fields, setPivotValue}) {
     const cellWidth = Math.round(95 / (length + 1));
     return (
             <tr>
@@ -38,8 +40,12 @@ function renderPivotRow({id, length, fields}) {
                         <input
                             type='th'
                             value={field.value}
-                            readOnly={true}
+                            readOnly={false}
                             disabled={false}
+                            onChange={
+                                (ev) => (ev.preventDefault() ||
+                                    setPivotValue({index, target: ev.target.value}))
+                            }
                         />
                     </div>
                 </td>
@@ -71,6 +77,7 @@ function mapFragmentToProps(fragment) {
 
 export default container(
         mapStateToFragment,
-        mapFragmentToProps
+        mapFragmentToProps,
+        {setPivotValue: setPivotValue}
 )(renderPivotRow);
 

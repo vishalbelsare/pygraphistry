@@ -6,6 +6,7 @@ import {
 
 import { Observable } from 'rxjs';
 import { getHandler,
+        setHandler,
          getIDsFromJSON,
          mapObjectsToAtoms,
          captureErrorStacks } from './support';
@@ -13,6 +14,7 @@ import { getHandler,
 export function rows({ loadPivotsById, calcTotals }) {
 
     const getPivotsHandler = getHandler(['pivot'], loadPivotsById);
+    const setPivotsHandler = setHandler(['pivot'], loadPivotsById);
 
     return [{
         returns: `Number`,
@@ -25,6 +27,7 @@ export function rows({ loadPivotsById, calcTotals }) {
     }, {
         returns: `String | Number`,
         get: getPivotsHandler,
+        set: setPivotsHandler,
         route: `pivotsById[{keys}][{integers}]['name', 'value']`
     },{
         returns: `String`,
