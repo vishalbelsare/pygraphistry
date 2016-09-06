@@ -11,14 +11,18 @@ var jsonfile = require('jsonfile')
 
 var graphistryVizUrl = 'https://labs.graphistry.com/graph/graph.html?type=vgraph'
 
-export function searchPivot({ app, id }) {
+export function searchPivot({ investigation, app, index }) {
 
-    const { pivots, pivotsById } = app;
-    const index = id === undefined ?
-        pivots.length :
-        pivots.findIndex(({ value: ref }) => (
-            ref[ref.length - 1] === id
-    ));
+    const pivots = investigation;
+    const { pivotsById } = app;
+    console.log('index', index);
+    //const index = id === undefined ?
+        //pivots.length :
+        //pivots.findIndex(({ value: ref }) => (
+            //ref[ref.length - 1] === id
+    //));
+    const id = investigation[index].value[1];
+    console.log('Id', id);
     const pivot = pivotsById[id];
     pivot.enabled = true;
 
@@ -38,7 +42,7 @@ export function searchPivot({ app, id }) {
         .map(({output}) => output);
     var shapedResults = shapeSplunkResults(splunkResults, pivotDict)
         .do((results) => pivot.results = results)
-        .map((results) => ({app, index}));
+        .map((results) => ({app, investigation, pivot,  index}));
     return shapedResults;
 
 }

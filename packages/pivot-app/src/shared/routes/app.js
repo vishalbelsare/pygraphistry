@@ -65,9 +65,6 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
     }, {
         route: `pivots.splice`,
         call: splicePivotCallRoute({ loadApp, splicePivot, searchPivot, uploadGraph })
-    }, {
-        route: `pivots.searchPivot`,
-        call: searchPivotCallRoute({ loadApp, searchPivot, uploadGraph })
     }];
 }
 
