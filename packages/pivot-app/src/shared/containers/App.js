@@ -29,11 +29,19 @@ function renderInvestigationList({ investigations, setInvestigationName }) {
     );
 }
 
+function renderGraphFrame(url) {
+    return (
+        <iframe
+            src={`${url}`}
+            style={{width:'100%',  height:'700px', border:'10px solid #DDD'}} />
+    );
+}
 
 function renderApp({ title, investigations, selectedInvestigation, setInvestigationName }) {
     return (
         <div>
             <h1>{title}</h1>
+            { renderGraphFrame('http://www.graphistry.com/') }
             { renderInvestigationList({ investigations , setInvestigationName}) }
             {selectedInvestigation ?
                 <Investigation data={selectedInvestigation}/>
