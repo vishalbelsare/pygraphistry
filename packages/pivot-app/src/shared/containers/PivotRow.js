@@ -39,7 +39,7 @@ function renderPivotRow({id, length, fields, setPivotValue}) {
                     <div className={tableCellClassName}>
                         <input
                             type='th'
-                            value={field.value}
+                            defaultValue={field.value}
                             readOnly={false}
                             disabled={false}
                             onChange={
