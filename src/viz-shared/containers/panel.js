@@ -1,5 +1,5 @@
 import { Popover } from 'react-bootstrap';
-import { container } from 'reaxtor-redux';
+import { container } from '@graphistry/falcor-react-redux';
 import { renderNothing } from 'recompose';
 
 // import { Timebar } from './timebar';

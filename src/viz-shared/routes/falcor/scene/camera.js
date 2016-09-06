@@ -1,7 +1,7 @@
 import {
     ref as $ref,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 import { getHandler,
          setHandler,
          mapObjectsToAtoms,

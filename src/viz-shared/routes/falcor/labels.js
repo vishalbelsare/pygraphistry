@@ -3,7 +3,7 @@ import Color from 'color';
 import {
     ref as $ref,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { getHandler,
          setHandler,
@@ -23,7 +23,10 @@ export function labels(path, base) {
         return [{
             get: getValues,
             set: setValues,
-            route: `${base}['labels'][{keys}]`
+            route: `${base}['labels'][
+                'id',  'name',  'opacity',  'enabled',
+                'timeZone', 'selection', 'poiEnabled'
+            ]`
         }, {
             get: getValues,
             route: `${base}['labels']['edge', 'point'][{keys}]`
@@ -32,15 +35,27 @@ export function labels(path, base) {
             set: setColors,
             route: `${base}['labels']['background', 'foreground'][{keys}]`
         }, {
-            get: getLabelsByTypeAndRangeHandler,
-            route: `${base}['labelsByType']['edge', 'point'][{ranges}]`
+            returns: `*`,
+            get: getValues,
+            route: `${base}['labels'].controls[{keys}]`
+        }, {
+            returns: `*`,
+            get: getValues,
+            set: setValues,
+            route: `${base}['labels'].controls[{keys}][{keys}]`
         }, {
             get: getValues,
-            route: `${base}['labels']['options', 'settings'][{keys}]`
+            route: `${base}['labels'].settings[{keys}]`
+        }, {
+            get: getValues,
+            route: `${base}['labels'].options[{keys}]`
         }, {
             get: getValues,
             set: setValues,
-            route: `${base}['labels']['options'][{keys}][{keys}]`
+            route: `${base}['labels'].options[{keys}][{keys}]`
+        }, {
+            get: getLabelsByTypeAndRangeHandler,
+            route: `${base}['labelsByType']['edge', 'point'][{ranges}]`
         }]
 
         function getLabelsByTypeAndRangeHandler(path) {

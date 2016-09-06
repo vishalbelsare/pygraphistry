@@ -2,7 +2,7 @@ import {
     ref as $ref,
     atom as $atom,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 export function camera(scene) {
     return {
@@ -15,23 +15,19 @@ export function camera(scene) {
                 id: 'zoom-in',
                 name: 'Zoom in',
                 type: 'multiply',
-                stateKey: 'zoom',
-                state: $ref(`${scene}.camera`),
-                value: $atom(1 / 1.25)
+                value: $atom(1 / 1.25),
+                values: $atom($ref(`${scene}.camera.zoom`).value)
             }, {
                 id: 'zoom-out',
                 name: 'Zoom out',
                 type: 'multiply',
-                stateKey: 'zoom',
-                state: $ref(`${scene}.camera`),
-                value: $atom(1.25)
+                value: $atom(1.25),
+                values: $atom($ref(`${scene}.camera.zoom`).value)
             }, {
                 id: 'center-camera',
                 name: 'Center view',
-                type: 'reset',
-                stateKey: 'center',
-                state: $ref(`${scene}.camera`),
-                value: $atom([$atom({ x: 0.5, y: 0.5 })])
+                type: 'call',
+                value: $ref(`${scene}.camera.center`)
             }],
             options: {
                 id: 'appearance',

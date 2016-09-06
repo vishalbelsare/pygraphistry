@@ -3,7 +3,7 @@ import {
     atom as $atom,
     pathValue as $value,
     pathInvalidation as $invalidate
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { Observable, Scheduler } from 'rxjs';
 import { SET_CONTROL_VALUE } from 'viz-shared/actions/settings';
@@ -17,7 +17,7 @@ function setControlValue(action$, store) {
         .ofType(SET_CONTROL_VALUE)
         .groupBy(({ id }) => id)
         .mergeMap((actionsById) => actionsById
-            .auditTime(0, Scheduler.async)
+            .debounceTime(100, Scheduler.async)
             .switchMap(({ stateKey, falcor, state }) => falcor
                 .set($value(`state['${stateKey}']`, state))
                 .progressively()

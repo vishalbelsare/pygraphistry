@@ -1,4 +1,4 @@
-import { ref as $ref, atom as $atom } from 'reaxtor-falcor-json-graph';
+import { ref as $ref, atom as $atom } from '@graphistry/falcor-json-graph';
 
 export function toolbar(workbookId, viewId) {
     const workbook = `workbooksById['${workbookId}']`;
@@ -10,8 +10,13 @@ export function toolbar(workbookId, viewId) {
                 visible: true,
                 length: 4, ...[
                     $ref(`${view}.scene.camera.controls`),
-                    $ref(`${view}.scene.controls`),
-                    $ref(`${view}.scene.selection.controls`),
+                    [
+                        $ref(`${view}.scene.controls[0]`),
+                        $ref(`${view}.scene.controls[1]`),
+                        $ref(`${view}.labels.controls[0]`),
+                        $ref(`${view}.layout.controls[0]`),
+                    ],
+                    $ref(`${view}.selection.controls`),
                     [
                         $ref(`${view}.histograms.controls[0]`),
                         $ref(`${view}.inspector.controls[0]`),
@@ -26,8 +31,13 @@ export function toolbar(workbookId, viewId) {
                 visible: true,
                 length: 4, ...[
                     $ref(`${view}.scene.camera.controls`),
-                    $ref(`${view}.scene.controls`),
-                    $ref(`${view}.scene.selection.controls`),
+                    [
+                        $ref(`${view}.scene.controls[0]`),
+                        $ref(`${view}.scene.controls[1]`),
+                        $ref(`${view}.labels.controls[0]`),
+                        $ref(`${view}.layout.controls[0]`),
+                    ],
+                    $ref(`${view}.selection.controls`),
                     [
                         $ref(`${view}.histograms.controls[0]`),
                         $ref(`${view}.inspector.controls[0]`),

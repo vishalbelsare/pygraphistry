@@ -1,13 +1,10 @@
 import Color from 'color';
 import { camera } from './camera';
-import { labels } from './labels';
-import { layout } from './layout';
-import { selection } from './selection';
 import {
     ref as $ref,
     atom as $atom,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 export function scene(workbookId, viewId, scene, options) {
     const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
@@ -16,35 +13,31 @@ export function scene(workbookId, viewId, scene, options) {
             id: 'scene',
             name: 'Scene',
             simulating: true,
-            hints: {
-                edges: $atom(undefined),
-                points: $atom(undefined)
+            canvas: {
+                ...scene,
+                foreground: { color: new Color('#ffffff') },
+                hints: { edges: undefined, points: undefined },
+                background: { color: getBackgroundColor(scene, options) }
             },
-            ...labels(`${view}.scene`),
-            ...layout(`${view}.scene`),
-            ...selection(view, `${view}.scene`),
-            ...scene,
             camera: {
                 ...scene.camera,
                 ...camera(`${view}.scene`).camera
             },
-            foreground: { color: new Color('#ffffff') },
-            background: { color: getBackgroundColor(scene, options) },
             settings: [{
                     id: 'canvas',
                     name: 'Canvas',
                     length: 2, ...[{
-                        id: 'foreground-color',
+                        id: 'point-colors',
                         type: 'color',
-                        name: 'Foreground Color',
+                        name: 'Point Colors',
                         stateKey: 'color',
-                        state: $ref(`${view}.scene.foreground`)
+                        state: $ref(`${view}.scene.canvas.foreground`)
                     }, {
                         id: 'background-color',
                         type: 'color',
                         name: 'Background Color',
                         stateKey: 'color',
-                        state: $ref(`${view}.scene.background`)
+                        state: $ref(`${view}.scene.canvas.background`)
                     }]
                 },
                 $ref(`${view}.scene.camera.options`)
@@ -53,34 +46,27 @@ export function scene(workbookId, viewId, scene, options) {
                 id: 'toggle-simulating',
                 name: 'Toggle visual clustering',
                 type: 'toggle',
-                stateKey: 'simulating',
-                state: $ref(`${view}.scene`),
-                value: true,
-                values: $atom([true, false])
+                value: 1,
+                values: $atom([[
+                    $value(`${view}.scene.simulating`, $atom(false))
+                ], [
+                    $value(`${view}.scene.simulating`, $atom(true))
+                ]])
             }, {
                 id: 'toggle-scene-settings',
                 name: 'Scene settings',
                 type: 'toggle',
-                stateKey: 'left',
-                state: $ref(`${view}.panels`),
-                value: $atom(undefined),
-                values: $atom([$ref(`${view}.scene`), $atom(undefined)])
-            }, {
-                id: 'toggle-label-settings',
-                name: 'Label settings',
-                type: 'toggle',
-                stateKey: 'left',
-                state: $ref(`${view}.panels`),
-                value: $atom(undefined),
-                values: $atom([$ref(`${view}.scene.labels`), $atom(undefined)])
-            }, {
-                id: 'toggle-layout-settings',
-                name: 'Layout settings',
-                type: 'toggle',
-                stateKey: 'left',
-                state: $ref(`${view}.panels`),
-                value: $atom(undefined),
-                values: $atom([$ref(`${view}.scene.layout`), $atom(undefined)])
+                value: 0,
+                values: $atom([[
+                    $value(`${view}.panels.left`, $atom(undefined))
+                ], [
+                    $value(`${view}.panels.left`, $ref(`${view}.scene`)),
+                    $value(`${view}.labels.controls[0].value`, $atom(0)),
+                    $value(`${view}.layout.controls[0].value`, $atom(0)),
+                    $value(`${view}.sets.controls[0].value`, $atom(0)),
+                    $value(`${view}.filters.controls[0].value`, $atom(0)),
+                    $value(`${view}.exclusions.controls[0].value`, $atom(0)),
+                ]])
             }]
         }
     };

@@ -1,5 +1,5 @@
 import { simpleflake } from 'simpleflakes';
-import { ref as $ref } from 'reaxtor-falcor-json-graph';
+import { ref as $ref } from '@graphistry/falcor-json-graph';
 
 export function migrateViews(workbook) {
 

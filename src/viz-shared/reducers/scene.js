@@ -3,7 +3,7 @@ import {
     atom as $atom,
     pathValue as $value,
     pathInvalidation as $invalidate
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { Observable, Scheduler } from 'rxjs';
 import { LAYOUT_SCENE, LAYOUT_CAMERA } from 'viz-shared/actions/scene';
@@ -16,6 +16,7 @@ export default function scene(action$, store) {
 }
 
 function layoutScene(action$) {
+    // return Observable.never();
     return action$
         .auditTime(40)
         .exhaustMap(({ falcor, simulating }) =>

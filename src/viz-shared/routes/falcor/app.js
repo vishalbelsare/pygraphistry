@@ -1,4 +1,4 @@
-import { ref as $ref, pathValue as $value } from 'reaxtor-falcor-json-graph';
+import { ref as $ref, pathValue as $value } from '@graphistry/falcor-json-graph';
 
 export function app({ loadConfig }) {
     return [{

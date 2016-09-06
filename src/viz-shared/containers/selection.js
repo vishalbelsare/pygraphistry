@@ -1,4 +1,4 @@
-import { container } from 'reaxtor-redux';
+import { container } from '@graphistry/falcor-react-redux';
 
 export const Selection = container(
     ({ edge = [], point = [] } = {}) => `{

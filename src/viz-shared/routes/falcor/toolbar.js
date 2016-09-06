@@ -3,7 +3,7 @@ import {
     ref as $ref,
     pathValue as $value,
     pathInvalidation as $invalidate
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { getHandler,
          setHandler,

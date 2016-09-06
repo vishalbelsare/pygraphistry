@@ -1,31 +1,20 @@
-import DataSource from 'falcor-http-datasource';
+import SocketDataSource from '@graphistry/falcor-socket-datasource';
 
-const whiteListedParams = [
-    'bg', 'view', 'type', 'scene',
-    'device', 'mapper', 'vendor', 'usertag',
-    'dataset', 'workbook', 'controls', 'viztoken'
-];
-
-export class RemoteDataSource extends DataSource {
-
-    constructor(url, config, options) {
-        super(url, config);
-        this.extraRequestParams = whiteListedParams.reduce((params, key) => {
-            if (options.hasOwnProperty(key)) {
-                params.push(`${key}=${options[key]}`);
-            }
-            return params;
-        }, []).join('&');
+export class RemoteDataSource extends SocketDataSource {
+    constructor(url, config) {
+        super(url, config, 'falcor-request', 'cancel-falcor-request');
+        this.socket.on('falcor-update', this.falcorUpdateHandler.bind(this));
     }
-
-    onBeforeRequest(config) {
-        const { extraRequestParams } = this;
-        if (extraRequestParams) {
-            if (config.data) {
-                config.data += '&' + extraRequestParams;
-            } else if (config.url) {
-                config.url += '&' + extraRequestParams;
-            }
+    falcorUpdateHandler({ paths, invalidated, jsonGraph }) {
+        const { model } = this;
+        if (!model) {
+            return;
+        }
+        if (invalidated && Array.isArray(invalidated)) {
+            model.invalidate(...invalidated);
+        }
+        if (paths && jsonGraph) {
+            model._setJSONGs(model, [{ paths, jsonGraph }]);
         }
     }
 }

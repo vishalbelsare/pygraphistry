@@ -2,7 +2,7 @@ import { loadNBody } from './loadNBody';
 import { loadWorkbooks } from './loadWorkbooks';
 import { cache as Cache } from '@graphistry/common';
 import { Observable, ReplaySubject } from 'rxjs';
-import { ref as $ref, atom as $atom } from 'reaxtor-falcor-json-graph';
+import { ref as $ref, atom as $atom } from '@graphistry/falcor-json-graph';
 import { view as createView } from 'viz-shared/models/views';
 import { toClient as fromLayoutAlgorithms } from '../simulator/layout.config';
 
@@ -60,14 +60,13 @@ function assignNBodyToView(workbook, nBody, view) {
 
     view.nBody = nBody;
 
-    const { scene } = view;
-    const { layout } = scene;
+    const { layout } = view;
     const { options } = layout;
 
     if (options.length === 0) {
         const optionsPath = `workbooksById['${workbook.id}']
                             .viewsById['${view.id}']
-                            .scene.layout.options`;
+                            .layout.options`;
         layout.options = ([]
             .concat(fromLayoutAlgorithms(simulator.controls.layoutAlgorithms))
             .reduce((options, { name, params }, index) => {

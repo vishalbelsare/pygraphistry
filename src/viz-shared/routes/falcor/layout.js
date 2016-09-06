@@ -1,7 +1,7 @@
 import {
     ref as $ref,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 import { getHandler,
          setHandler,
          mapObjectsToAtoms,
@@ -11,10 +11,11 @@ export function layout(path, base) {
     return function layout({ loadViewsById }) {
 
         const getValues = getHandler(path, loadViewsById);
-        const setValues = setHandler(path, loadViewsById, {}, (value, path, { view }) => {
+        const setValues = setHandler(path, loadViewsById);
+        const setLayoutOptionValues = setHandler(path, loadViewsById, {}, (value, path, { view }) => {
             const { nBody } = view;
             if (nBody) {
-                const { scene: { layout: { options }}} = view;
+                const { layout: { options }} = view;
                 const control = options[path[path.length - 2]];
                 const { id, props } = control;
                 const { algoName } = props;
@@ -31,16 +32,28 @@ export function layout(path, base) {
 
         return [{
             get: getValues,
-            route: `${base}['layout'][{keys}]`
+            route: `${base}['layout']['id', 'name']`
         }, {
+            returns: `*`,
             get: getValues,
-            route: `${base}['layout']['options', 'settings'][{keys}]`
+            route: `${base}['layout'].controls[{keys}]`
         }, {
+            returns: `*`,
             get: getValues,
-            route: `${base}['layout']['options'][{keys}][{keys}]`
-        }, {
             set: setValues,
-            route: `${base}['layout']['options'][{keys}].value`
+            route: `${base}['layout'].controls[{keys}][{keys}]`
+        }, {
+            get: getValues,
+            route: `${base}['layout'].settings[{keys}]`
+        }, {
+            get: getValues,
+            route: `${base}['layout'].options[{keys}]`
+        }, {
+            get: getValues,
+            route: `${base}['layout'].options[{keys}][{keys}]`
+        }, {
+            set: setLayoutOptionValues,
+            route: `${base}['layout'].options[{keys}].value`
         }];
     }
 }

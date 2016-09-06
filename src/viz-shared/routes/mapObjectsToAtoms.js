@@ -1,5 +1,5 @@
 import Color from 'color';
-import { atom as $atom } from 'reaxtor-falcor-json-graph';
+import { atom as $atom } from '@graphistry/falcor-json-graph';
 
 export function mapObjectsToAtoms(incoming) {
     if (incoming.isMessage) {

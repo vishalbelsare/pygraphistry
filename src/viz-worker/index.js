@@ -43,7 +43,7 @@ export function vizWorker(app, server, sockets, caches) {
             .mergeMap(({ socket, metadata }) => {
                 // debugger
                 const sendUpdate = sendFalcorUpdate(socket, getDataSourceFactory(routeServices));
-                const socketIORoutes = socketRoutes(routeServices, sendUpdate);
+                const socketIORoutes = socketRoutes(routeServices, socket);
                 const vizServer = new VizServer(app, socket, vbos, metadata);
                 return Observable.using(
                     removeSocketHandlersOnSocketDispose(socket, vizServer, socketIORoutes),
@@ -129,7 +129,7 @@ export function vizWorker(app, server, sockets, caches) {
             composite.add(vizServer);
             composite.add(function disposeVizWorkerSocket() {
                 socketIORoutes.forEach(({ event, handler }) => {
-                    socket.off(event, handler);
+                    socket.removeListener(event, handler);
                 });
                 socket.disconnect();
             });
@@ -200,7 +200,7 @@ export function vizWorker(app, server, sockets, caches) {
                 // stateful shared Subjects
                 vizServer.workbookDoc.next(workbook);
                 vizServer.viewConfig.next(view);
-                vizServer.renderConfig.next(scene);
+                vizServer.renderConfig.next({ ...scene.canvas, camera: scene.camera });
 
                 return interactionsLoop;
             })
@@ -215,7 +215,7 @@ export function vizWorker(app, server, sockets, caches) {
                 })
                 .mergeMap(
                     (nBody) => sendUpdate(
-                        `workbooks.open.views.current.scene.hints`,
+                        `workbooks.open.views.current.scene.canvas.hints`,
                         `workbooks.open.views.current.expressions.length`
                     ),
                     (nBody) => nBody

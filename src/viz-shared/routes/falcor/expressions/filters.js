@@ -2,7 +2,7 @@ import {
     ref as $ref,
     atom as $atom,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 import Color from 'color';
 import { getHandler,
          setHandler,

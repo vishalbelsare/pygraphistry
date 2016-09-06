@@ -3,7 +3,7 @@ import {
     ref as $ref,
     atom as $atom,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 export function filters(workbookId, viewId, defaultFilter = {}) {
 
@@ -25,10 +25,17 @@ export function filters(workbookId, viewId, defaultFilter = {}) {
                 id: 'toggle-filters',
                 name: 'Filters',
                 type: 'toggle',
-                stateKey: 'left',
-                state: $ref(`${view}.panels`),
-                value: $atom(undefined),
-                values: $atom([$ref(`${view}.filters`), $atom(undefined)])
+                value: 0,
+                values: $atom([[
+                    $value(`${view}.panels.left`, $atom(undefined))
+                ], [
+                    $value(`${view}.panels.left`, $ref(`${view}.filters`)),
+                    $value(`${view}.scene.controls[1].value`, $atom(0)),
+                    $value(`${view}.labels.controls[0].value`, $atom(0)),
+                    $value(`${view}.layout.controls[0].value`, $atom(0)),
+                    $value(`${view}.sets.controls[0].value`, $atom(0)),
+                    $value(`${view}.exclusions.controls[0].value`, $atom(0)),
+                ]])
             }]
         }
     };

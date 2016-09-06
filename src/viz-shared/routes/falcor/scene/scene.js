@@ -3,7 +3,7 @@ import Color from 'color';
 import {
     ref as $ref,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { getHandler,
          setHandler,
@@ -41,21 +41,25 @@ export function scene(path, base) {
         );
 
         return [{
-            returns: `*`,
             get: getValues,
-            route: `${base}['scene'][{keys}]`
-        }, {
             set: setValues,
             route: `${base}['scene'].simulating`
         }, {
             get: getValues,
+            route: `${base}['scene']['id', 'name']`
+        }, {
+            returns: `*`,
+            get: getValues,
+            route: `${base}['scene'].canvas[{keys}]`
+        }, {
+            get: getValues,
             set: setColors,
-            route: `${base}['scene']['background', 'foreground'].color`,
+            route: `${base}['scene'].canvas['background', 'foreground'].color`,
             returns: `Color<hsv>`
         }, {
             returns: `*`,
             get: getValues,
-            route: `${base}['scene']['hints', 'server', 'options'][{keys}]`,
+            route: `${base}['scene'].canvas['hints', 'server', 'options'][{keys}]`,
         }, {
             returns: `*`,
             get: getValues,

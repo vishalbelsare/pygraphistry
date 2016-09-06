@@ -4,8 +4,9 @@ import { scenes } from '../scene';
 import { simpleflake } from 'simpleflakes';
 import {
     ref as $ref,
-    atom as $atom
-} from 'reaxtor-falcor-json-graph';
+    atom as $atom,
+    pathValue as $value
+} from '@graphistry/falcor-json-graph';
 
 export * from './migrateViews';
 export * from './migrateDatasets';
@@ -30,10 +31,12 @@ export function workbook(dataset, workbookId = simpleflake().toJSON()) {
             id: 'fullscreen-workbook',
             name: 'Full screen',
             type: 'toggle',
-            stateKey: 'fullscreen',
-            state: $ref(`${workbook}`),
-            value: $atom(false),
-            values: $atom([true, false])
+            value: 0,
+            values: $atom([[
+                $value(`${workbook}.fullscreen`, $atom(false))
+            ], [
+                $value(`${workbook}.fullscreen`, $atom(true))
+            ]])
         }, {
             id: 'fork-workbook',
             name: 'Copy workbook',

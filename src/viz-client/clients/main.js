@@ -1,32 +1,44 @@
 import SocketIO from 'socket.io-client';
-import { Model, RemoteDataSource } from '../falcor';
-import { handleVboUpdates } from '../streamGL/client';
-import { falcorUpdateHandler } from '../startup/falcorUpdateHandler';
+import { Model } from '../falcor';
 import { Observable, Scheduler } from 'rxjs';
+import { handleVboUpdates } from '../streamGL/client';
+import SocketDataSource from '@graphistry/falcor-socket-datasource';
 
 export function initialize(options, debug) {
 
-    const appModel = getAppModel(options);
-    return appModel
-        .get(`workbooks.open.id`)
-        .mergeMap(
-            ({ json }) => initSocket(options, json.workbooks.open.id),
-            ({ json }, socket) => ({ model: appModel, socket })
-        )
-        .mergeMap(({ model, socket }) =>
-            falcorUpdateHandler(model, Observable.fromEvent(
-                socket, 'updateFalcorCache'
-            ))
-            .ignoreElements()
-            .startWith({ ...options, model, socket, handleVboUpdates })
-        );
+    let workbook = options.workbook;
+
+    if (workbook == null) {
+        const { workbooks } = getAppCache();
+        if (workbooks && workbooks.open) {
+            const { value } = workbooks.open;
+            workbook = value && value[value.length - 1] || null;
+        }
+    }
+
+    return initSocket(options, workbook).map((socket) => ({
+        ...options, handleVboUpdates, socket, model: getAppModel(options, socket)
+    }));
 }
 
 function initSocket(options, workbook) {
 
+    const whiteListedQueryParams = [
+        'bg', 'view', 'type', 'scene',
+        'device', 'mapper', 'vendor', 'usertag',
+        'dataset', 'workbook', 'controls', 'viztoken'
+    ];
+
+    const socketQuery = whiteListedQueryParams.reduce((params, key) => {
+        if (options.hasOwnProperty(key)) {
+            params[key] = options[key];
+        }
+        return params;
+    }, {});
+
     const socket = SocketIO.Manager({
         path: `/socket.io`, reconnection: false,
-        query: { ...options, workbook, falcorClient: true }
+        query: { ...socketQuery, workbook, falcorClient: true }
     }).socket('/');
 
     socket.io.engine.binaryType = 'arraybuffer';
@@ -43,15 +55,16 @@ function initSocket(options, workbook) {
         .merge(socketErrorConnecting);
 }
 
-function getAppModel(options) {
-    return new Model({
-        cache: getAppCache(),
+function getAppModel(options, socket) {
+    const source = new SocketDataSource(socket, 'falcor-request');
+    const model = new Model({
+        source, cache: getAppCache(),
+        JSONWithHashCodes: true,
         scheduler: Scheduler.asap,
-        allowFromWhenceYouCame: true,
-        source: new RemoteDataSource('/graph/model.json', {
-            crossDomain: false, withCredentials: false
-        }, options)
+        allowFromWhenceYouCame: true
     });
+    source.model = model;
+    return model;
 }
 
 function getAppCache() {

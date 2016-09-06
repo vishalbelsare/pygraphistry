@@ -1,6 +1,6 @@
 import React from 'react'
 import { Popover } from 'react-bootstrap';
-import { container } from 'reaxtor-redux';
+import { container } from '@graphistry/falcor-react-redux';
 import {
     Slider,
     TextInput,

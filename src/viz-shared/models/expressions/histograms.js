@@ -2,7 +2,7 @@ import {
     ref as $ref,
     atom as $atom,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 export function histograms(workbookId, viewId) {
     const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
@@ -17,10 +17,12 @@ export function histograms(workbookId, viewId) {
                 id: 'toggle-histograms',
                 name: 'Histograms',
                 type: 'toggle',
-                stateKey: 'right',
-                state: $ref(`${view}.panels`),
-                value: $atom(undefined),
-                values: $atom([$ref(`${view}.histograms`), $atom(undefined)])
+                value: 0,
+                values: $atom([[
+                    $value(`${view}.panels.right`, $atom(undefined))
+                ], [
+                    $value(`${view}.panels.right`, $ref(`${view}.histograms`))
+                ]])
             }]
         }
     };

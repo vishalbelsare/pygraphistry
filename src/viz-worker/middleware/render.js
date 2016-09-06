@@ -1,10 +1,12 @@
 import { inspect } from 'util';
-import { Model } from 'reaxtor-falcor';
+import { Model } from '@graphistry/falcor';
 import { Provider } from 'react-redux';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { configureStore } from 'viz-shared/store/configureStore';
 import { renderToString as reactRenderToString } from 'react-dom/server';
 import stringify from 'json-stable-stringify';
+import FalcorQuerySyntax from '@graphistry/falcor-query-syntax';
+import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
 
 const renderServerSide = true;
 // const renderServerSide = false;
@@ -45,28 +47,9 @@ function renderAppWithHotReloading(modules, dataSource, options) {
             App, falcor: new Model({ source: dataSource })
         }))
         .switchMap(
-            ({ App, falcor }) => Observable
-                .of({ prev: null, data: {}, loading: true })
-                .expand(({ prev, data, loading }) => {
-                    if (loading === false) {
-                        return Observable.empty();
-                    }
-                    const query = App.fragment(data, options);
-                    if (query !== prev) {
-                        return falcor
-                            .get(...falcor.QL.call(null, query))
-                            .map(({ json }) => ({
-                                prev: query, loading: true,
-                                data: Object.assign(data, json)
-                            }))
-                            .catch((error) => Observable.of({
-                                data, loading: false
-                            }))
-                    } else if (loading === true) {
-                        return Observable.of({ data, loading: false });
-                    }
-                })
-                .takeLast(1),
+            ({ App, falcor }) => fetchDataUntilSettled({
+                data: {}, falcor, fragment: App.fragment
+            }),
             ({ App, falcor }, { data }) => ({ App, falcor, data })
         )
         .map(({ App, falcor, data }) =>

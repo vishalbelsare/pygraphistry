@@ -2,7 +2,7 @@ import {
     ref as $ref,
     error as $error,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { simpleflake } from 'simpleflakes';
 import { getHandler, setHandler, captureErrorStacks } from 'viz-shared/routes';

@@ -12,7 +12,7 @@ import { RenderingScheduler } from 'viz-client/streamGL/graphVizApp/canvas';
 
 function assignCanvasRefToRenderer(renderer) {
     return function(canvas) {
-        renderer.canvas = canvas;
+        renderer.canvasElement = canvas;
     }
 }
 
@@ -20,52 +20,63 @@ class Renderer extends React.Component {
     constructor(props, context) {
         super(props, context);
         this.autoCenter = false;
-        this.autoSimulate = false;
         this.autoSimulateCount = 0;
         this.autoSimulateTotal = 10;
         this.assignCanvasRef = assignCanvasRefToRenderer(this);
     }
     shouldComponentUpdate(nextProps) {
 
-        const { scene: nextScene, scene: { hints: nextHints, camera: nextCamera }} = nextProps;
-        const { scene: currScene, scene: { hints: currHints, camera: currCamera }} = this.props;
+        const { camera: nextCamera,
+                canvas: nextCanvas,
+                simulating: nextSimulating,
+                canvas: { hints: nextHints }} = nextProps;
+        const { camera: currCamera,
+                canvas: currCanvas,
+                simulating: currSimulating,
+                canvas: { hints: currHints }} = this.props;
 
-        if (shallowEqual(currHints, nextHints)) {
+        if (currSimulating !== nextSimulating) {
+            return true;
+        }
+
+        if (!shallowEqual(currHints, nextHints)) {
             return true;
         }
 
         const { edges: nextEdges, points: nextPoints } = nextCamera;
         const { edges: currEdges, points: currPoints } = currCamera;
 
-        if (shallowEqual(currEdges, nextEdges)) {
+        if (!shallowEqual(currEdges, nextEdges)) {
             return true;
         }
 
-        if (shallowEqual(currPoints, nextPoints)) {
+        if (!shallowEqual(currPoints, nextPoints)) {
             return true;
         }
 
-        if (shallowEqual(currCamera, nextCamera)) {
+        if (!shallowEqual(currCamera, nextCamera)) {
             return true;
         }
 
-        return shallowEqual(currScene, nextScene);
+        return !shallowEqual(currCanvas, nextCanvas);
     }
     updateDirtyScene(cameraDirty = false, layoutDirty = false) {
 
-        const { scene: { camera, simulating }} = this.props;
+        const { camera, simulating } = this.props;
         const { layoutScene, layoutCamera } = this.props;
 
         if (cameraDirty) {
 
             const { center } = camera;
             const { renderState } = this;
-            const cameraInstance = renderState.get('camera');
+            const cameraInstance = renderState.camera;
 
             layoutCamera({
                 cameraInstance,
                 points: this.curPoints,
-                center: this.autoCenter || (center.x === 0.5 && center.y === 0.5),
+                center:(this.autoCenter =
+                        this.autoSimulateCount++ < this.autoSimulateTotal) || (
+                        center.x === 0.5 && center.y === 0.5),
                 camera: {
                     ...camera,
                     width: cameraInstance.width,
@@ -74,11 +85,11 @@ class Renderer extends React.Component {
             });
         }
 
-        if (layoutDirty) {
-            if (this.autoSimulate) {
-                layoutScene({ simulating:
-                    this.autoCenter =
-                    this.autoSimulate =
+        if (layoutDirty && false) {
+            if (this.autoCenter) {
+                layoutScene({
+                    simulating:
+                    this.autoCenter = simulating &&
                     this.autoSimulateCount++ < this.autoSimulateTotal
                 });
             } else {
@@ -89,30 +100,37 @@ class Renderer extends React.Component {
     componentWillUpdate(nextProps) {
 
         const { simulateOn } = this;
-        const { scene: { simulating }} = nextProps;
+        const { renderState, renderingScheduler } = this;
+        const { simulating: nextSimulating, canvas: { hints: nextHints } } = nextProps;
+        const { simulating: currSimulating, canvas: { hints: currHints } } = this.props;
 
-        simulateOn.next(simulating);
+        if (nextSimulating !== currSimulating) {
+            simulateOn.next(nextSimulating);
+        }
+
+        if (!shallowEqual(currHints, nextHints)) {
+            renderingScheduler.attemptToAllocateBuffersOnHints(
+                nextProps.canvas, renderState, nextHints
+            );
+        }
     }
     componentDidUpdate(prevProps) {
 
-        const { props, renderState, renderingScheduler } = this;
-        const { scene: { hints: prevHints, camera: prevCamera }} = prevProps;
-        const { scene: { hints: currHints, camera: currCamera, simulating }} = props;
-
-        if (shallowEqual(prevHints, currHints)) {
-            renderingScheduler.attemptToAllocateBuffersOnHints(props.scene, renderState, currHints);
-        }
+        const { camera: prevCamera } = prevProps;
+        const { camera: currCamera, simulating } = this.props;
 
         this.updateDirtyScene(
-            this.autoCenter || shallowEqual(prevCamera, currCamera),
-            this.autoSimulate || simulating
+            this.autoCenter,// || !shallowEqual(prevCamera, currCamera),
+            simulating
         );
     }
     componentDidMount() {
 
-        const { props, canvas } = this;
-        const { scene, socket, play = 10, handleVboUpdates, ...restProps } = props;
-        const { camera, hints, simulating } = scene;
+        const { props, canvasElement } = this;
+        const { camera, canvas, socket, simulating,
+                play = 10, handleVboUpdates, ...restProps } = props;
+
+        const { hints } = canvas;
         const uri = { href: '/graph/', pathname: '' };
 
         const simulateOn = new ReplaySubject(1);
@@ -124,7 +142,7 @@ class Renderer extends React.Component {
         simulateOn.next(simulating);
         activeSelection.next(new VizSlice([]));
 
-        const renderState = initRenderer(scene, canvas, restProps);
+        const renderState = initRenderer({ ...canvas, camera }, canvasElement, restProps);
         const { vboUpdates, vboVersions } = handleVboUpdates(socket, uri, renderState);
 
         const renderingScheduler = new RenderingScheduler(renderState, vboUpdates,
@@ -142,14 +160,14 @@ class Renderer extends React.Component {
         this.isAnimating = isAnimating;
         this.hitmapUpdates = hitmapUpdates;
         this.activeSelection = activeSelection;
-        this.curPoints = renderState.get('hostBuffers').curPoints;
+        this.curPoints = renderState.hostBuffers.curPoints;
 
         vboUpdates
             .filter((update) => update === 'received')
             .take(1).subscribe(() => {
                 this.updateDirtyScene(
-                    this.autoCenter = this.props.scene.simulating,
-                    this.autoSimulate = this.props.scene.simulating
+                    this.autoCenter = this.props.simulating,
+                    this.props.simulating
                 );
             });
     }

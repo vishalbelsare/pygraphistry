@@ -1,5 +1,5 @@
 import React from 'react';
-import { container } from 'reaxtor-redux';
+import { container } from '@graphistry/falcor-react-redux';
 
 export function Renderer() {
     return (

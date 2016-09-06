@@ -16,8 +16,8 @@ import { Observable, Subject } from 'rxjs';
 
 function setupCameraInteractions(appState, $eventTarget) {
     var renderState = appState.renderState;
-    var camera = renderState.get('camera');
-    var canvas = renderState.get('canvas');
+    var camera = renderState.camera;
+    var canvas = renderState.canvas;
 
     //pan/zoom
     //Observable Event
@@ -41,7 +41,7 @@ function setupCameraInteractions(appState, $eventTarget) {
         interactions,
         interaction.setupRotate($eventTarget, camera),
         interaction.setupCenter($('#center'),
-                                renderState.get('hostBuffers').curPoints,
+                                renderState.hostBuffers.curPoints,
                                 camera),
         interaction.setupZoomButton($('#zoomin'), camera, 1 / 1.25)
             .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)),
@@ -83,7 +83,7 @@ function setupCameraInteractionRenderUpdates(renderingScheduler, cameraStream, s
 
 function setupBackgroundColor(renderingScheduler, bgColor) {
     bgColor.do(function (color) {
-        renderingScheduler.renderState.get('options').clearColor = [colorPicker.renderConfigValueForColor(color)];
+        renderingScheduler.renderState.options.clearColor = [colorPicker.renderConfigValueForColor(color)];
         renderingScheduler.renderScene('bgcolor', {trigger: 'renderSceneFast'});
     }).subscribe(_.identity, util.makeErrorHandler('background color updates'));
 }
@@ -95,7 +95,7 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
 //  TODO use camera if edge goes off-screen
 //RenderState * int -> {x: float,  y: float}
 function getEdgeLabelPos (appState, edgeIndex) {
-    var numRenderedSplits = appState.renderState.get('config').get('numRenderedSplits');
+    var numRenderedSplits = appState.renderState.config.numRenderedSplits;
     var split = Math.floor(numRenderedSplits/2);
 
     var appSnapshot = appState.renderingScheduler.appSnapshot;
@@ -117,7 +117,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
     // Remember last task in case you need to rerender mouseovers without an update.
     this.lastMouseoverTask = undefined;
 
-    var config = renderState.get('config').toJS();
+    var config = renderState.config;
     this.attemptToAllocateBuffersOnHints(config, renderState, hints);
 
     /* Rendering queue */
@@ -173,7 +173,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         that.appSnapshot.simulating = val;
     }, util.makeErrorHandler('simulate updates'));
 
-    var hostBuffers = renderState.get('hostBuffers');
+    var hostBuffers = renderState.hostBuffers;
 
     // FIXME handle selection update buffers here.
     Observable.combineLatest(
@@ -456,7 +456,7 @@ RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (config,
 
     this.numHintElements = numElements;
 
-    const activeIndices = renderState.get('activeIndices');
+    const activeIndices = renderState.activeIndices;
     const largestModel = this.getLargestModelSize(config, numElements);
     const maxElements = Math.max(_.max(_.values(numElements)), largestModel);
     const allocationFunctions = this.allocateAllArrayBuffersFactory(config, numElements, renderState);
@@ -551,7 +551,7 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
     var midSpringsEndpoints = that.expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints);
 
     //TODO have server pre-compute real heights, and use them here
-    //var edgeHeights = renderState.get('hostBuffersCache').edgeHeights;
+    //var edgeHeights = renderState.hostBuffersCache.edgeHeights;
     var srcPointIdx;
     var dstPointIdx;
     var srcPointX;
@@ -963,10 +963,10 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
     var that = this;
     var appSnapshot = that.appSnapshot;
     var renderState = that.renderState;
-    var edgeMode = renderState.get('config').get('edgeMode');
-    var edgeHeight = renderState.get('config').get('arcHeight');
-    var clientMidEdgeInterpolation = renderState.get('config').get('clientMidEdgeInterpolation');
-    var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
+    var edgeMode = renderState.config.edgeMode;
+    var edgeHeight = renderState.config.arcHeight;
+    var clientMidEdgeInterpolation = renderState.config.clientMidEdgeInterpolation;
+    var numRenderedSplits = renderState.config.numRenderedSplits;
     var midSpringsPos;
     var midEdgesColors;
     var start;
@@ -1080,7 +1080,7 @@ RenderingScheduler.prototype.renderMovePointsOverlay = function (task) {
     var {appSnapshot, renderState} = this;
     var {buffers} = appSnapshot;
     var {diff, sel} = task.data;
-    var hostBuffers = renderState.get('hostBuffersCache');
+    var hostBuffers = renderState.hostBuffersCache;
 
     var hostNodePositions = new Float32Array(hostBuffers.curPoints.buffer);
     var hostNodeSizes = hostBuffers.pointSizes;
@@ -1157,7 +1157,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
     var appSnapshot = that.appSnapshot;
     var renderState = that.renderState;
     var buffers = appSnapshot.buffers;
-    var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
+    var numRenderedSplits = renderState.config.numRenderedSplits;
 
     // HACK for GIS
     if (!numRenderedSplits && numRenderedSplits !== 0) {
@@ -1201,7 +1201,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
 
 
     var logicalEdges = new Uint32Array(buffers.logicalEdges.buffer);
-    var hostBuffers = renderState.get('hostBuffersCache');
+    var hostBuffers = renderState.hostBuffersCache;
     var forwardsEdgeStartEndIdxs = new Uint32Array(hostBuffers.forwardsEdgeStartEndIdxs.buffer);
 
     var forwardsEdgeToUnsortedEdge = new Uint32Array(hostBuffers.forwardsEdgeToUnsortedEdge.buffer);

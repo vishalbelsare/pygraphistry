@@ -2,7 +2,7 @@ import {
     ref as $ref,
     atom as $atom,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 export function inspector(workbookId, viewId) {
     const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
@@ -13,16 +13,19 @@ export function inspector(workbookId, viewId) {
             id: 'inspector',
             name: 'Data inspector',
             scene: $ref(`${view}.scene`),
-            // values: $ref(`${view}.scene.selection.edges`),
-            // values: $ref(`${view}.scene.selection.points`),
+            // edges: $ref(`${view}.scene.selection.edges`),
+            // points: $ref(`${view}.scene.selection.points`),
             controls: [{
                 id: 'toggle-inspector',
                 name: 'Inspector',
                 type: 'toggle',
-                stateKey: 'bottom',
-                state: $ref(`${view}.panels`),
-                value: $atom(undefined),
-                values: $atom([$ref(`${view}.inspector`), $atom(undefined)])
+                value: 0,
+                values: $atom([[
+                    $value(`${view}.panels.bottom`, $atom(undefined))
+                ], [
+                    $value(`${view}.panels.bottom`, $ref(`${view}.inspector`)),
+                    $value(`${view}.timebar.controls[0].value`, $atom(0)),
+                ]])
             }]
         }
     }

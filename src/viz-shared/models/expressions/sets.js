@@ -3,7 +3,7 @@ import {
     ref as $ref,
     atom as $atom,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 export function sets(workbookId, viewId, setIds = [ simpleflake().toJSON(),
                                                     simpleflake().toJSON(),
@@ -23,10 +23,17 @@ export function sets(workbookId, viewId, setIds = [ simpleflake().toJSON(),
                 id: 'toggle-sets',
                 name: 'Sets',
                 type: 'toggle',
-                stateKey: 'left',
-                state: $ref(`${view}.panels`),
-                value: $atom(undefined),
-                values: $atom([$ref(`${view}.sets`), $atom(undefined)])
+                value: 0,
+                values: $atom([[
+                    $value(`${view}.panels.left`, $atom(undefined))
+                ], [
+                    $value(`${view}.panels.left`, $ref(`${view}.sets`)),
+                    $value(`${view}.scene.controls[1].value`, $atom(0)),
+                    $value(`${view}.labels.controls[0].value`, $atom(0)),
+                    $value(`${view}.layout.controls[0].value`, $atom(0)),
+                    $value(`${view}.filters.controls[0].value`, $atom(0)),
+                    $value(`${view}.exclusions.controls[0].value`, $atom(0)),
+                ]])
             }]
         },
         setsById: {

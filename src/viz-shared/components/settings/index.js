@@ -2,7 +2,7 @@ import d3 from 'd3';
 import styles from './styles.less';
 import React from 'react';
 import Color from 'color';
-import RcSlider from 'rc-slider';
+import RcSlider from '@graphistry/rc-slider';
 import RcSwitch from 'rc-switch';
 import RcColorPicker from 'rc-color-picker';
 import { FormControl } from 'react-bootstrap';
