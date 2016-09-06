@@ -5,13 +5,18 @@ import { tcell as tableCellClassName,
          search as searchIconClassName } from './styles.less';
 import { setPivotValue } from '../actions/PivotRow';
 
-function renderResultCount(resultCount) {
+function renderResultCount({id, resultCount, searchPivot}) {
     return (
         <div className={ tableCellClassName }>
             <span> {resultCount} </span>
             <i className={ spliceIconClassName }/>
             <i className={ insertIconClassName }/>
-            <i className={ searchIconClassName }/>
+            <i className={ searchIconClassName }
+                onClick={ (ev) => {
+                        console.log('IN render result count', id);
+                        searchPivot({index: id});
+                    }
+                }/>
         </div>
     );
 }
@@ -27,7 +32,7 @@ function renderCheckBox(checked) {
 }
 
 
-function renderPivotRow({id, length, fields, setPivotValue}) {
+function renderPivotRow({id, length, fields, searchPivot, setPivotValue}) {
     const cellWidth = Math.round(95 / (length + 1));
     return (
             <tr>
@@ -52,7 +57,7 @@ function renderPivotRow({id, length, fields, setPivotValue}) {
                 )
             }
                 <td style={{ width: `${cellWidth}%`}}>
-                    {renderResultCount(0)}
+                    {renderResultCount({id, resultCount:0, searchPivot})}
                 </td>
             </tr>
         );

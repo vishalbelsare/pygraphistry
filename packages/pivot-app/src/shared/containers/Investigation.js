@@ -5,6 +5,11 @@ import { table as tableClassName,
     tbody as tableBodyClassName,
     thead as tableHeaderClassName} from './styles.less';
 
+import { splicePivot,
+        addPivot,
+        searchPivot
+} from '../actions/investigation'
+
 // TODO reuse table row
 function renderTableHeader() {
     const cellWidth = Math.round(95 / (4));
@@ -21,20 +26,20 @@ function renderTableHeader() {
     );
 }
 
-function renderTable(pivots) {
+function renderTable(pivots, searchPivot) {
     return (
         <table className={tableClassName} >
             { renderTableHeader() }
             <tbody className={tableBodyClassName}>
                 { pivots.map((pivot) => (
-                    (<PivotRow key={`${pivot.id}`} data={pivot} />)))
+                    (<PivotRow searchPivot={searchPivot} key={`${pivot.id}`} data={pivot} />)))
                 }
             </tbody>
         </table>
     );
 }
 
-function renderInvestigation({length = 0, name = 'default', pivots = []}) {
+function renderInvestigation({length = 0, name = 'default', pivots = [], searchPivot }) {
     return (
             <div>
                 <div>
@@ -44,7 +49,7 @@ function renderInvestigation({length = 0, name = 'default', pivots = []}) {
                 Number of pivots in investigaiton: { length }
                 </div>
                 <div>
-                { renderTable(pivots) }
+                { renderTable(pivots, searchPivot) }
                 </div>
             </div>
         );
@@ -66,7 +71,12 @@ function mapFragmentToProps(fragment) {
 }
 
 export default container(
-        mapStateToFragment,
-        mapFragmentToProps
+    mapStateToFragment,
+    mapFragmentToProps,
+    {
+        splicePivot: splicePivot,
+        addPivot: addPivot,
+        searchPivot: searchPivot
+    }
 )(renderInvestigation)
 
