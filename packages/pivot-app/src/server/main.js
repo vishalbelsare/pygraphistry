@@ -56,12 +56,12 @@ const pivots1 = Array.from({ length: 1 },
     }
 );
 
-const pivots2 = Array.from({ length: 6 },
+const pivots2 = Array.from({ length: 2 },
     function(x, index) {
         if (index == 0) {
             return createRow(cols, {
-                'Search': `${query}   | spath output=dataset path="metadata.dataset" | search dataset="*" `,
-                'Links': 'msg, dataset',
+                'Search': `malware`,
+                'Links': 'dest_ip, misc',
                 'Time': '07/28/2016'
             })
         }
@@ -70,7 +70,8 @@ const pivots2 = Array.from({ length: 6 },
         }
     }
 );
-pivots1.name = 'default'
+pivots1.name = 'Dataset Errors'
+pivots2.name = 'Malware'
 
 const app = createApp([pivots1, pivots2]);
 
