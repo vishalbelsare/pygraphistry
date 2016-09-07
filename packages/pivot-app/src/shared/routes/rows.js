@@ -2,7 +2,7 @@ import {
     ref as $ref,
     atom as $atom,
     pathValue as $pathValue
-} from 'falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { Observable } from 'rxjs';
 import { getHandler,

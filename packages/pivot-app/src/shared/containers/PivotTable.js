@@ -1,4 +1,4 @@
-import { container } from 'reaxtor-redux';
+import { container } from '@graphistry/falcor-react-redux';
 
 function renderPivotTable({length = 0, id = 'default', pivots = []}) {
     return (
@@ -16,11 +16,11 @@ function mapStateToFragment({length = 0} = {}) {
     console.log('Arguemts in pivots Table', arguments)
     console.log('Length', length)
     return `{
-                'id', 
+                'id',
                 'length'
             }`;
     //return `{
-                //'id', 
+                //'id',
                 //'length',
                 //[0...${length}]: {
                     //'name'

@@ -2,7 +2,7 @@ import React from 'react'
 import Investigation from './Investigation.js'
 import { DevTools } from './DevTools';
 import { hoistStatics } from 'recompose';
-import { connect, container } from 'reaxtor-redux';
+import { connect, container } from '@graphistry/falcor-react-redux';
 import { setInvestigationName } from '../actions/investigationList';
 
 function renderInvestigationList({ investigations, setInvestigationName }) {
@@ -32,7 +32,12 @@ function renderGraphFrame(url) {
     return (
         <iframe
             src={`${url}`}
-            style={{width:'100%',  height:'700px', border:'10px solid #DDD'}} />
+            style={{
+                width:'100%',
+                height:'700px',
+                border:'10px solid #DDD',
+                boxSizing: 'border-box'
+            }} />
     );
 }
 

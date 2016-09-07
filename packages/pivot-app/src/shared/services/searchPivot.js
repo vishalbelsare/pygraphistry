@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { ref as $ref } from 'falcor-json-graph';
+import { ref as $ref } from '@graphistry/falcor-json-graph';
 import { row as createRow } from '../models';
 import { pivotToSplunk } from './pivotToSplunk.js';
 import { searchSplunk } from './searchSplunk.js';
@@ -28,7 +28,7 @@ export function searchPivot({ investigation, app, index }) {
 
     // TODO There's a much cleaner way to do this.
     var pivotDict = {};
-    for(var i = 0; i < pivot.length; i++) { 
+    for(var i = 0; i < pivot.length; i++) {
         var cell = pivot[i];
         var name = pivot[i].name;
         pivotDict[cell['name']] =  cell['value'];

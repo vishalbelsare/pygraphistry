@@ -1,4 +1,4 @@
-import { container } from 'reaxtor-redux';
+import { container } from '@graphistry/falcor-react-redux';
 import { tcell as tableCellClassName,
          splice as spliceIconClassName,
          insert as insertIconClassName,

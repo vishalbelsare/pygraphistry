@@ -3,7 +3,7 @@ import {
             atom as $atom,
             pathValue as $value,
             pathInvalidation as $invalidate
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { combineReducers } from 'redux'
 import { Observable } from 'rxjs';
@@ -19,7 +19,7 @@ export function searchPivot(action$, store) {
             .groupBy(({ id }) => id)
             .mergeMap((actionsById) => actionsById.switchMap(
                 ({ stateKey, falcor, state, index, target }) => {
-                    return falcor.call(`['searchPivot']`, [`${index}`])
+                    return falcor.call(`searchPivot`, [index])
                 .progressively()
                 }
             ))
