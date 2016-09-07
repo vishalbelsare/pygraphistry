@@ -59,6 +59,7 @@ function mapStateToFragment({selectedInvestigation = {}, length = 0, name = 'def
     return `{
                 'name',
                 'length',
+                'url',
                 [0...${length}]: ${
                     PivotRow.fragment()
                 }

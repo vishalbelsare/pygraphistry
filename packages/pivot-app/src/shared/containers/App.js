@@ -36,11 +36,11 @@ function renderGraphFrame(url) {
     );
 }
 
-function renderApp({ url, title, investigations, selectedInvestigation, setInvestigationName }) {
+function renderApp({ title, investigations, selectedInvestigation, setInvestigationName }) {
     return (
         <div>
             <h1>{title}</h1>
-            { renderGraphFrame(url) }
+            { renderGraphFrame(selectedInvestigation.url) }
             { renderInvestigationList({ investigations , setInvestigationName}) }
             {selectedInvestigation ?
                 <Investigation data={selectedInvestigation}/>
@@ -53,7 +53,6 @@ function renderApp({ url, title, investigations, selectedInvestigation, setInves
 
 const App = container(
     ({ cols = [], investigations = [], selectedInvestigation } = {}) => `{
-        url,
         title,
         investigations: {
             'length',

@@ -7,12 +7,12 @@ import {
 
 import { simpleflake } from 'simpleflakes';
 
-export function investigation(name = 'default', pivots, id = simpleflake().toJSON()) {
+export function investigation(name = 'default', pivots, url = 'http://www.graphistry.com', id = simpleflake().toJSON()) {
     const pivotRefs = pivots.map((pivot, index) => (
         $ref(`pivotsById['${pivot.id}']`)
     ))
     return {
-        id, name, length: pivots.length,
+        url, id, name, length: pivots.length,
         ...pivotRefs
     }
 }

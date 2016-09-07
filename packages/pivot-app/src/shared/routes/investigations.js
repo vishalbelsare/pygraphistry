@@ -21,7 +21,7 @@ export function investigations({ loadInvestigationsById, loadPivotsById, searchP
     }, {
         returns: `String`,
         get: getInvestigationsHandler,
-        route: `investigationsById[{keys}]['id','name', 'value']`
+        route: `investigationsById[{keys}]['id','name', 'value', 'url']`
     }, {
         returns: `pivots`,
         get: getInvestigationsHandler,
@@ -38,7 +38,6 @@ export function investigations({ loadInvestigationsById, loadPivotsById, searchP
 
 function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPivot, uploadGraph }) {
     return function searchPivotCall(path, args) {
-        console.log('Path', path, 'Args', args)
         const id = path[1];
         const index = args[0];
         return loadInvestigationsById({investigationIds: id})
@@ -52,12 +51,12 @@ function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPi
             })
         ) 
         .mergeMap(({ app, investigation, pivot, index, name }) => {
-            app.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
-            console.log('Upload finished')
+            investigation.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
+            console.log('Upload finished investigation')
             const values = [
                 //$pathValue(`pivots[${index}].enabled`, pivots[index].enabled),
                 //$pathValue(`pivots[${index}].resultCount`, pivots[index].resultCount),
-                $pathValue('url', app.url),
+                $pathValue(`investigationsById['${id}'].url`, investigation.url),
             ];
 
             return values;

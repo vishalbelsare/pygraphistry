@@ -18,7 +18,7 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
     return [{
         returns: `*`,
         get: appGetRoute,
-        route: `['id', 'url', 'title', 'total', 'urls', 'urlIndex']`
+        route: `['id', 'title', 'total', 'urls', 'urlIndex']`
     }, {
         get: appGetRoute,
         set: function(json) {
