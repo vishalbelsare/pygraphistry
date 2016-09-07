@@ -77,7 +77,7 @@ const previousGraph = {
     labels: []
 };
 
-export function uploadGraph(app) {
+export function uploadGraph({app, investigation}) {
 
     const pivotsById = app.pivotsById;
 
@@ -93,8 +93,13 @@ export function uploadGraph(app) {
         labels: []
     };
 
+    var investigationPivotIds = [];
+    for(let i = 0; i < investigation.length; i++) {
+        investigationPivotIds.push(investigation[i].value[1])
+    }
+
     var pivot;
-    for(let id in pivotsById) {
+    for(let id of investigationPivotIds) {
         pivot = pivotsById[id]; 
         if (pivot.results && pivot.enabled) {
             mergedPivots.graph = [...mergedPivots.graph, ...pivot.results.graph]

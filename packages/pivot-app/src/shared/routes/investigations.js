@@ -45,7 +45,7 @@ function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPi
             ({app, investigation}) => searchPivot({ app, investigation, index }),
         )
         .mergeMap(
-            ({app, investigation, pivot, index}) => uploadGraph(app),
+            ({app, investigation, pivot, index}) => uploadGraph({ app, investigation }),
             ({app, investigation, pivot, index}, name) => ({
                 app, index, name, investigation, pivot
             })

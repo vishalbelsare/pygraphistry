@@ -15,14 +15,12 @@ export function searchPivot({ investigation, app, index }) {
 
     const pivots = investigation;
     const { pivotsById } = app;
-    console.log('index', index);
     //const index = id === undefined ?
         //pivots.length :
         //pivots.findIndex(({ value: ref }) => (
             //ref[ref.length - 1] === id
     //));
     const id = investigation[index].value[1];
-    console.log('Id', id);
     const pivot = pivotsById[id];
     pivot.enabled = true;
 
