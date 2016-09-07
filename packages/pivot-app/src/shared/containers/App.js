@@ -1,5 +1,4 @@
 import React from 'react'
-import InvestigationList from './InvestigationList'
 import Investigation from './Investigation.js'
 import { DevTools } from './DevTools';
 import { hoistStatics } from 'recompose';
@@ -41,7 +40,7 @@ function renderApp({ title, investigations, selectedInvestigation, setInvestigat
     return (
         <div>
             <h1>{title}</h1>
-            { renderGraphFrame('http://www.graphistry.com/') }
+            { renderGraphFrame(selectedInvestigation.url) }
             { renderInvestigationList({ investigations , setInvestigationName}) }
             {selectedInvestigation ?
                 <Investigation data={selectedInvestigation}/>

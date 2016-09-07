@@ -19,8 +19,7 @@ export function searchPivot(action$, store) {
             .groupBy(({ id }) => id)
             .mergeMap((actionsById) => actionsById.switchMap(
                 ({ stateKey, falcor, state, index, target }) => {
-                    console.log('id in searchPivot', index)
-                    return falcor.call(`['searchPivot']`)
+                    return falcor.call(`['searchPivot']`, [`${index}`])
                 .progressively()
                 }
             ))

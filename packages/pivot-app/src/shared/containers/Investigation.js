@@ -31,8 +31,8 @@ function renderTable(pivots, searchPivot) {
         <table className={tableClassName} >
             { renderTableHeader() }
             <tbody className={tableBodyClassName}>
-                { pivots.map((pivot) => (
-                    (<PivotRow searchPivot={searchPivot} key={`${pivot.id}`} data={pivot} />)))
+                { pivots.map((pivot, index) => (
+                    (<PivotRow index={index} searchPivot={searchPivot} key={`${pivot.id}`} data={pivot} />)))
                 }
             </tbody>
         </table>
@@ -59,6 +59,7 @@ function mapStateToFragment({selectedInvestigation = {}, length = 0, name = 'def
     return `{
                 'name',
                 'length',
+                'url',
                 [0...${length}]: ${
                     PivotRow.fragment()
                 }
