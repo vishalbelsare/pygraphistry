@@ -11,10 +11,14 @@ export function investigation(name = 'default', pivots, url = 'http://www.graphi
     const pivotRefs = pivots.map((pivot, index) => (
         $ref(`pivotsById['${pivot.id}']`)
     ))
-    return {
-        url, id, name, length: pivots.length,
-        ...pivotRefs
-    }
+    pivotRefs.url = url;
+    pivotRefs.name = name;
+    pivotRefs.id = id;
+    return pivotRefs;
+    //return {
+        //url, id, name, length: pivots.length,
+        //...pivotRefs
+    //}
 }
 
 

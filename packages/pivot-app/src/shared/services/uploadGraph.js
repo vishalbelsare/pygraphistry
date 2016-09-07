@@ -93,14 +93,9 @@ export function uploadGraph({app, investigation}) {
         labels: []
     };
 
-    var investigationPivotIds = [];
-    for(let i = 0; i < investigation.length; i++) {
-        investigationPivotIds.push(investigation[i].value[1])
-    }
-
     var pivot;
-    for(let id of investigationPivotIds) {
-        pivot = pivotsById[id]; 
+    for(let pivotRef of investigation) {
+        pivot = pivotsById[pivotRef.value[1]]; 
         if (pivot.results && pivot.enabled) {
             mergedPivots.graph = [...mergedPivots.graph, ...pivot.results.graph]
             mergedPivots.labels = [...mergedPivots.labels, ...pivot.results.labels];
