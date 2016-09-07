@@ -1,7 +1,7 @@
 import { inspect } from 'util';
-import { Router } from 'reaxtor-falcor-router';
 import { Observable } from 'rxjs';
 import { routes } from '../routes';
+import Router from '@graphistry/falcor-router';
 
 export function getDataSourceFactory(services) {
 

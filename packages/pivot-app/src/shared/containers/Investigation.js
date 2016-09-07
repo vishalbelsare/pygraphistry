@@ -1,4 +1,4 @@
-import { container } from 'reaxtor-redux';
+import { container } from '@graphistry/falcor-react-redux';
 import PivotRow from './PivotRow';
 //import PivotTable from './PivotTable';
 import { table as tableClassName,

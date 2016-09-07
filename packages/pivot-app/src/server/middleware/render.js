@@ -1,10 +1,12 @@
 import { inspect } from 'util';
 import { Observable } from 'rxjs';
-import { Model } from 'reaxtor-falcor';
+import { Model } from '@graphistry/falcor';
 import assets from '../webpack-assets.json'
 import { renderToString as reactRenderToString } from 'react-dom/server';
+import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
 
-const renderServerSide = false;
+// const renderServerSide = false;
+const renderServerSide = true;
 
 export function renderMiddleware(getDataSource, modules) {
     return function renderMiddleware(req, res) {
@@ -42,28 +44,9 @@ function renderAppWithHotReloading(modules, dataSource, options = {}) {
             App, falcor: new Model({ source: dataSource })
         }))
         .switchMap(
-            ({ App, falcor }) => Observable
-                .of({ prev: null, data: {}, loading: true })
-                .expand(({ prev, data, loading }) => {
-                    if (loading === false) {
-                        return Observable.empty();
-                    }
-                    const query = App.fragment(data, options);
-                    if (query !== prev) {
-                        return falcor
-                            .get(...falcor.QL.call(null, query))
-                            .map(({ json }) => ({
-                                prev: query, loading: true,
-                                data: Object.assign(data, json)
-                            }))
-                            .catch((error) => Observable.of({
-                                data, loading: false
-                            }))
-                    } else if (loading === true) {
-                        return Observable.of({ data, loading: false });
-                    }
-                })
-                .takeLast(1),
+            ({ App, falcor }) => fetchDataUntilSettled({
+                data: {}, falcor, fragment: App.fragment
+            }),
             ({ App, falcor }, { data }) => ({ App, falcor, data })
         )
         .map(({ App, falcor, data }) => renderFullPage(falcor));

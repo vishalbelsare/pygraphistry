@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { ref as $ref } from 'falcor-json-graph';
+import { ref as $ref } from '@graphistry/falcor-json-graph';
 import { row as createRow } from '../models';
 
 export function insertPivot({ app, id }) {

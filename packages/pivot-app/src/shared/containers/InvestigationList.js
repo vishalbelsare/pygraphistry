@@ -1,4 +1,4 @@
-import { container } from 'reaxtor-redux';
+import { container } from '@graphistry/falcor-react-redux';
 import { setInvestigationName } from '../actions/investigationList';
 
 function renderInvestigationList({ investigations, setInvestigationName, ...props }) {
@@ -56,7 +56,7 @@ export default container(
     //render(model, state, ...investigations) {
         //return (
             //<div>
-                //<h3> Current Investigation 
+                //<h3> Current Investigation
                     //<select>
                         //{ investigations }
                     //</select>

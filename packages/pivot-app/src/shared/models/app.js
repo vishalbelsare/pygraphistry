@@ -3,7 +3,7 @@ import {
     atom as $atom,
     pathValue as $pathValue,
     pathInvalidation as $invalidation
-} from 'falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { simpleflake } from 'simpleflakes';
 import { investigation as createInvestigation } from '../models';

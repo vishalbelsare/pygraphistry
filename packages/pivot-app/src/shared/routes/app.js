@@ -3,7 +3,7 @@ import {
     atom as $atom,
     pathValue as $pathValue,
     pathInvalidation as $invalidation
-} from 'falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { getHandler,
         setHandler,
@@ -26,7 +26,7 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
             const value = selectedInvestigation.value;
             var values = [$pathValue('selectedInvestigation', selectedInvestigation)]
             return values
-            // TODO Why doesn't this work? 
+            // TODO Why doesn't this work?
             //return (values
                     //.map(mapObjectsToAtoms)
                     //.do((pv) => {
@@ -186,7 +186,7 @@ function searchPivotCallRoute({ loadApp, searchPivot, uploadGraph }) {
             ({app, index}, name) => ({
                 app, index, name
             })
-        ) 
+        )
         .mergeMap(({ app, index, name }) => {
             app.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
             const { pivots } = app;

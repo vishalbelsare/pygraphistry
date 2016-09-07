@@ -3,7 +3,7 @@ import {
             atom as $atom,
             pathValue as $value,
             pathInvalidation as $invalidate
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { Observable } from 'rxjs';
 import { SET_INVESTIGATION_NAME } from '../actions/investigationList';

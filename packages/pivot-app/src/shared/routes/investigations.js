@@ -2,7 +2,7 @@ import {
     ref as $ref,
     atom as $atom,
     pathValue as $pathValue
-} from 'falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { Observable } from 'rxjs';
 import { getHandler,
@@ -49,7 +49,7 @@ function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPi
             ({app, investigation, pivot, index}, name) => ({
                 app, index, name, investigation, pivot
             })
-        ) 
+        )
         .mergeMap(({ app, investigation, pivot, index, name }) => {
             investigation.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
             console.log('Upload finished investigation')

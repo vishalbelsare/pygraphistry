@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom';
 import { decode } from 'querystring';
-import { Model } from 'reaxtor-falcor';
+import { Model } from '@graphistry/falcor';
 import { Observable, Scheduler } from 'rxjs';
 import { reloadHot } from '../shared/reloadHot';
 import DataSource from 'falcor-http-datasource';
@@ -44,14 +44,15 @@ function getAppDOMNode(appDomNode) {
 function getAppModel() {
     return window.appModel = new Model({
         cache: getAppCache(),
+        JSONWithHashCodes: true,
         scheduler: Scheduler.asap,
         source: new DataSource('/model.json'),
-        onChangesCompleted: function () {
-            useLocalStorage &&
-            localStorage && localStorage.setItem && localStorage.setItem(
-                localStorageToken, JSON.stringify(this.getCache())
-            );
-        }
+        // onChangesCompleted: function () {
+        //     useLocalStorage &&
+        //     localStorage && localStorage.setItem && localStorage.setItem(
+        //         localStorageToken, JSON.stringify(this.getCache())
+        //     );
+        // }
     });
 }
 
