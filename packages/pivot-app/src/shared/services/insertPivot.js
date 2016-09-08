@@ -2,12 +2,12 @@ import { Observable } from 'rxjs';
 import { ref as $ref } from '@graphistry/falcor-json-graph';
 import { row as createRow } from '../models';
 
-export function insertPivot({ app, id }) {
+export function insertPivot({ app, id, investigation }) {
 
-    const { pivots, pivotsById } = app;
+    const { pivotsById } = app;
     const index = id === undefined ?
-        pivots.length :
-        pivots.findIndex(({ value: ref }) => (
+        investigation.length :
+        investigation.findIndex(({ value: ref }) => (
             ref[ref.length - 1] === id
         )) + 1;
 
@@ -15,7 +15,7 @@ export function insertPivot({ app, id }) {
     const pivotRefPath = `pivotsById['${pivot.id}']`;
 
     pivotsById[pivot.id] = pivot;
-    pivots.splice(index, 0, $ref(pivotRefPath));
+    investigation.splice(index, 0, $ref(pivotRefPath));
 
-    return Observable.of({ pivot, index });
+    return Observable.of({app, pivot, investigation, index });
 }

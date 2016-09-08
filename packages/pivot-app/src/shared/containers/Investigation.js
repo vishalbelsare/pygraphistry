@@ -6,7 +6,7 @@ import { table as tableClassName,
     thead as tableHeaderClassName} from './styles.less';
 
 import { splicePivot,
-        addPivot,
+        insertPivot,
         searchPivot
 } from '../actions/investigation'
 
@@ -26,20 +26,20 @@ function renderTableHeader() {
     );
 }
 
-function renderTable(pivots, searchPivot) {
+function renderTable(pivots, searchPivot, insertPivot) {
     return (
         <table className={tableClassName} >
             { renderTableHeader() }
             <tbody className={tableBodyClassName}>
                 { pivots.map((pivot, index) => (
-                    (<PivotRow index={index} searchPivot={searchPivot} key={`${pivot.id}`} data={pivot} />)))
+                    (<PivotRow index={index} insertPivot={insertPivot} searchPivot={searchPivot} key={`${pivot.id}`} data={pivot} />)))
                 }
             </tbody>
         </table>
     );
 }
 
-function renderInvestigation({length = 0, name = 'default', pivots = [], searchPivot }) {
+function renderInvestigation({length = 0, name = 'default', pivots = [], searchPivot, insertPivot }) {
     return (
             <div>
                 <div>
@@ -49,7 +49,7 @@ function renderInvestigation({length = 0, name = 'default', pivots = [], searchP
                 Number of pivots in investigaiton: { length }
                 </div>
                 <div>
-                { renderTable(pivots, searchPivot) }
+                { renderTable(pivots, searchPivot, insertPivot) }
                 </div>
             </div>
         );
@@ -76,7 +76,7 @@ export default container(
     mapFragmentToProps,
     {
         splicePivot: splicePivot,
-        addPivot: addPivot,
+        insertPivot: insertPivot,
         searchPivot: searchPivot
     }
 )(renderInvestigation)

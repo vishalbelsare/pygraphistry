@@ -7,10 +7,10 @@ import {
 
 import { combineReducers } from 'redux'
 import { Observable } from 'rxjs';
-import { SEARCH_PIVOT, ADD_PIVOT } from '../actions/investigation';
+import { SEARCH_PIVOT, INSERT_PIVOT } from '../actions/investigation';
 import { combineEpics } from 'redux-observable';
 
-export const investigation = combineEpics(searchPivot, addPivot)
+export const investigation = combineEpics(searchPivot, insertPivot)
 
 export function searchPivot(action$, store) {
         return action$
@@ -25,9 +25,9 @@ export function searchPivot(action$, store) {
             .ignoreElements();
 }
 
-export function addPivot(action$, store) {
+export function insertPivot(action$, store) {
         return action$
-            .ofType(ADD_PIVOT)
+            .ofType(INSERT_PIVOT)
             .groupBy(({ id }) => id)
             .mergeMap((actionsById) => actionsById.switchMap(
                 ({ stateKey, falcor, state, index, target }) => {

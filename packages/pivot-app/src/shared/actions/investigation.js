@@ -1,7 +1,7 @@
 export const SET_PIVOT_VALUE = 'set-pivot-value';
 export const SEARCH_PIVOT = 'search-pivot';
 export const SPLICE_PIVOT = 'splice-pivot';
-export const ADD_PIVOT = 'add-pivot';
+export const INSERT_PIVOT = 'insert-pivot';
 
 export const searchPivot = ({index}) => {
     return ({
@@ -15,8 +15,8 @@ export const splicePivot = ({ index, target, ...props }) => {
     });
 };
 
-export const addPivot = ({ index, target, ...props }) => {
+export const insertPivot = ({ index }) => {
     return ({
-        ...props, index, target, type: ADD_PIVOT
+        index, type: INSERT_PIVOT
     });
 };

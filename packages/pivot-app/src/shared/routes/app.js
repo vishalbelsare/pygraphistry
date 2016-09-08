@@ -60,9 +60,6 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
         get: rangesToListItemsGetRoute({ loadApp }),
         returns: `$ref('investigationsById[{investigationId}]')`
     }, {
-        route: `pivots.insert`,
-        call: insertPivotCallRoute({ loadApp, insertPivot, searchPivot })
-    }, {
         route: `pivots.splice`,
         call: splicePivotCallRoute({ loadApp, splicePivot, searchPivot, uploadGraph })
     }];
@@ -141,37 +138,6 @@ function rangesToListItemsGetRoute({ loadApp }) {
                     return $pathValue(` ${name}[${index}]`, list[index])
                 }
             );
-    }
-}
-
-function insertPivotCallRoute({ loadApp, calcTotals, insertPivot }) {
-    return function insertPivotCall(path, args) {
-        const [id] = args;
-        return loadApp().mergeMap(
-            (app) => insertPivot({ app, id }),
-            (app, { pivot, index }) => ({
-                app, pivot, index
-            })
-        )
-        .mergeMap(({ app, pivot, index }) => {
-            const { pivots } = app;
-            const { length } = pivots;
-            const values = [
-                $pathValue(`total`, app.total),
-                $pathValue(`pivots.length`, length),
-                $pathValue(`pivots[${index}]`, pivots[index]),
-                $pathValue(`urlIndex`, app.urlIndex),
-            ];
-            $invalidation('urlIndex')
-
-            if (index < length - 1) {
-                values.push($invalidation(`pivots[${index + 1}..${length - 1}]`));
-            }
-
-            return values;
-        })
-        .map(mapObjectsToAtoms)
-        .catch(captureErrorStacks);
     }
 }
 
