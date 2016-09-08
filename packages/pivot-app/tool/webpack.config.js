@@ -89,7 +89,7 @@ function clientConfig(
                 loader: 'css?module&minimize&localIdentName=[local]_[hash:6]!postcss!less'
             })
     });
-    config.plugins.push(new AssetsPlugin({ path: path.resolve('./www') }));
+    config.plugins.push(new AssetsPlugin({ path: path.resolve('./build') }));
     config.plugins.push(new webpack.DefinePlugin({
         global: 'window',
         DEBUG: isDevBuild,
