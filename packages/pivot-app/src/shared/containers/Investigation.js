@@ -11,35 +11,6 @@ import { splicePivot,
         searchPivot
 } from '../actions/investigation'
 
-// TODO reuse table row
-function renderTableHeader() {
-    const cellWidth = Math.round(95 / (4));
-    return (
-        <thead className={tableHeaderClassName}>
-            <tr >
-                <th style={{ width: `2%` }}> &nbsp; </th>
-                <th style={{ width: `${cellWidth}%` }} > Search </th>
-                <th style={{ width: `${cellWidth}%` }} > Extract nodes </th>
-                <th style={{ width: `${cellWidth}%` }} > Time </th>
-                <th style={{ width: `${cellWidth}%` }} > Result </th>
-            </tr>
-        </thead>
-    );
-}
-
-function renderTable(pivots, searchPivot) {
-    return (
-        <table className={tableClassName} >
-            { renderTableHeader() }
-            <tbody className={tableBodyClassName}>
-                { pivots.map((pivot, index) => (
-                    (<PivotRow index={index} searchPivot={searchPivot} key={`${pivot.id}`} data={pivot} />)))
-                }
-            </tbody>
-        </table>
-    );
-}
-
 function renderInvestigation({length = 0, name = 'default', pivots = [], searchPivot }) {
     const cellWidth = Math.round(88 / (4));
     return (
@@ -51,6 +22,7 @@ function renderInvestigation({length = 0, name = 'default', pivots = [], searchP
             Number of pivots in investigation: { length }
             </div>
             <Table>
+                { /* TODO reuse table row */ }
                 <thead>
                     <tr>
                         <th style={{ width: `6%` }}> &nbsp; </th>
@@ -75,13 +47,10 @@ function renderInvestigation({length = 0, name = 'default', pivots = [], searchP
 
 function mapStateToFragment({selectedInvestigation = {}, length = 0, name = 'default', ...rest} = {}) {
     return `{
-                'name',
-                'length',
-                'url',
-                [0...${length}]: ${
-                    PivotRow.fragment()
-                }
-            }`;
+        'url', 'name', 'length', [0...${length}]: ${
+            PivotRow.fragment()
+        }
+    }`;
 }
 
 function mapFragmentToProps(fragment) {

@@ -6,7 +6,7 @@ import { tcell as tableCellClassName,
 import { setPivotValue } from '../actions/PivotRow';
 import RcSwitch from 'rc-switch';
 
-function renderResultCount({index, resultCount, searchPivot}) {
+function ResultCount({ index, resultCount, searchPivot }) {
     return (
         <div className={ tableCellClassName }>
             <span> {resultCount} </span>
@@ -20,28 +20,6 @@ function renderResultCount({index, resultCount, searchPivot}) {
         </div>
     );
 }
-
-function renderCheckBox(checked) {
-    return (
-            <td style={{ width: `2%` }}>
-                <input
-                    type="checkbox"
-                    defaultChecked={checked}/>
-            </td>
-    )
-}
-
-function PivotSelectedCell({ checked, onChange }) {
-    return (
-        <td style={{ width: `2%` }}>
-            <input
-                type="checkbox"
-                onChange={onChange}
-                defaultChecked={checked}/>
-        </td>
-    )
-}
-
 
 function renderPivotRow({id, index, length, fields, searchPivot, setPivotValue}) {
     const cellWidth = Math.round(88 / (length + 1));
@@ -71,7 +49,7 @@ function renderPivotRow({id, index, length, fields, searchPivot, setPivotValue})
             )
         }
             <td style={{ width: `${cellWidth}%`}}>
-                {renderResultCount({index, resultCount:0, searchPivot})}
+                <ResultCount index={index} resultCount={0} searchPivot={searchPivot}/>
             </td>
         </tr>
     );
