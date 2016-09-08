@@ -1,3 +1,4 @@
+import Color from 'color';
 import React, { PropTypes } from 'react';
 import { Subject, Observable, ReplaySubject } from 'rxjs';
 import {
@@ -63,69 +64,10 @@ class Renderer extends React.Component {
 
         return !shallowEqual(currScene, nextScene);
     }
-    updateDirtyScene(cameraDirty = false, layoutDirty = false) {
-
-        const { scene, layoutScene, layoutCamera } = this.props;
-        const { camera, simulating } = scene;
-
-        if (cameraDirty && false) {
-
-            const { center } = camera;
-            const { renderState } = this;
-            const cameraInstance = renderState.camera;
-
-            layoutCamera({
-                cameraInstance,
-                points: this.curPoints,
-                center:(this.autoCenter =
-                        this.autoSimulateCount++ < this.autoSimulateTotal) || (
-                        center.x === 0.5 && center.y === 0.5),
-                camera: {
-                    ...camera,
-                    width: cameraInstance.width,
-                    height: cameraInstance.height
-                },
-            });
-        }
-
-        if (layoutDirty && false) {
-            if (this.autoCenter) {
-                layoutScene({
-                    simulating:
-                    this.autoCenter = simulating &&
-                    this.autoSimulateCount++ < this.autoSimulateTotal
-                });
-            } else {
-                layoutScene({ simulating });
-            }
-        }
-    }
     componentWillUpdate(nextProps) {
-
-        const { simulateOn } = this;
-        const { renderState, renderingScheduler } = this;
-        const { scene: { hints: nextHints, simulating: nextSimulating } } = nextProps;
-        const { scene: { hints: currHints, simulating: currSimulating } } = this.props;
-
-        if (nextSimulating !== currSimulating) {
-            simulateOn.next(nextSimulating);
-        }
-
-        if (!shallowEqual(currHints, nextHints)) {
-            renderingScheduler.attemptToAllocateBuffersOnHints(
-                nextProps.scene, renderState, nextHints
-            );
-        }
+        this.scheduleRenderTasks(this.props, nextProps);
     }
     componentDidUpdate(prevProps) {
-
-        const { scene: { camera: prevCamera } } = prevProps;
-        const { scene: { camera: currCamera, simulating } } = this.props;
-
-        this.updateDirtyScene(
-            this.autoCenter,// || !shallowEqual(prevCamera, currCamera),
-            simulating
-        );
     }
     componentDidMount() {
 
@@ -182,7 +124,6 @@ class Renderer extends React.Component {
                         height: cameraInstance.height
                     },
                 });
-                // this.updateDirtyScene(this.autoCenter = this.props.simulating);
             });
     }
     componentWillUnmount() {
@@ -216,6 +157,42 @@ class Renderer extends React.Component {
         isAnimating && isAnimating.unsubscribe();
         hitmapUpdates && hitmapUpdates.unsubscribe();
         activeSelection && activeSelection.unsubscribe();
+    }
+    scheduleRenderTasks(currProps, nextProps) {
+
+        const { simulateOn } = this;
+        const { renderState, renderingScheduler } = this;
+
+        const { scene: {
+                hints: currHints,
+                simulating: currSimulating,
+                background: { color: currBGColor },
+        }} = currProps;
+
+        const { scene: {
+                hints: nextHints,
+                simulating: nextSimulating,
+                background: { color: nextBGColor },
+        }} = nextProps;
+
+        if (nextSimulating !== currSimulating) {
+            simulateOn.next(nextSimulating);
+        }
+
+        if (!shallowEqual(currHints, nextHints)) {
+            renderingScheduler.attemptToAllocateBuffersOnHints(
+                nextProps.scene, renderState, nextHints
+            );
+        }
+
+        if (nextBGColor !== currBGColor) {
+            renderState.options.clearColor = [
+                new Color(nextBGColor).rgbaArray().map((x, i) =>
+                    i === 3 ? x : x / 255
+                )
+            ];
+            renderingScheduler.renderScene('bgcolor', { trigger: 'renderSceneFast' });
+        }
     }
     render() {
         return (

@@ -99,10 +99,13 @@ export function ColorPicker({
             </Col>
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
                 <RcColorPicker animation='slide-up'
-                               defaultColor={state.hexString()}
-                               defaultAlpha={state.alpha() * 100}
-                               onChange={({ hsv }) => setValue({
-                                   id, type, ...rest, state: hsv
+                               color={state.hexString()}
+                               alpha={state.alpha() * 100}
+                               onChange={({ color, alpha }) => setValue({
+                                   id, type, ...rest,
+                                   state: new Color(color)
+                                       .alpha(alpha * .01)
+                                       .rgbaString()
                                })}/>
             </Col>
         </Row>

@@ -6,19 +6,19 @@ import {
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 
-export function scene(workbookId, viewId, scene, options) {
+export function scene(workbookId, viewId, rendererScene, options) {
     const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
     return {
         scene: {
             id: 'scene',
             name: 'Scene',
             simulating: true,
-            ...scene,
+            ...rendererScene,
             foreground: { color: new Color('#ffffff') },
             hints: { edges: undefined, points: undefined },
-            background: { color: getBackgroundColor(scene, options) },
+            background: { color: getBackgroundColor(rendererScene, options) },
             camera: {
-                ...scene.camera,
+                ...rendererScene.camera,
                 ...camera(`${view}.scene`).camera
             },
             settings: [{

@@ -15,9 +15,7 @@ export function scene(path, base) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
-        const setColors = setHandler(path, loadViewsById,
-            { color: true },
-            ( color, path, context) => {
+        const setColors = setHandler(path, loadViewsById, {}, ( color, path, context) => {
 
                 color = new Color(color);
                 const { view } = context;
