@@ -2,6 +2,13 @@
 
 ## Development Setup
 
+### Prerequisites
+
+* Node 6.x.x
+* NPM 3.x.x
+
+### Setup
+
 1. Create an account on [NPM](https://www.npmjs.com/)
 2. Ask Matt to add your account to the Graphistry organization
 3. Register NPM with your online account: `npm adduser`
