@@ -9,9 +9,9 @@ export const searchPivot = ({index}) => {
     });
 };
 
-export const splicePivot = ({ index, target, ...props }) => {
+export const splicePivot = ({ index }) => {
     return ({
-        ...props, index, target, type: SPLICE_PIVOT
+        index, type: SPLICE_PIVOT
     });
 };
 

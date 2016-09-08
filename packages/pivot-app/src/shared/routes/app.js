@@ -63,9 +63,6 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
         route: `['investigations'][{ranges}]`,
         get: rangesToListItemsGetRoute({ loadApp }),
         returns: `$ref('investigationsById[{investigationId}]')`
-    }, {
-        route: `pivots.splice`,
-        call: splicePivotCallRoute({ loadApp, splicePivot, searchPivot, uploadGraph })
     }];
 }
 

@@ -11,7 +11,7 @@ import { splicePivot,
         searchPivot
 } from '../actions/investigation'
 
-function renderInvestigation({length = 0, name = 'default', pivots = [], searchPivot, insertPivot }) {
+function renderInvestigation({length = 0, name = 'default', pivots = [], searchPivot, insertPivot, splicePivot }) {
     const cellWidth = Math.round(88 / (4));
     return (
         <div>
@@ -38,6 +38,7 @@ function renderInvestigation({length = 0, name = 'default', pivots = [], searchP
                               index={index}
                               key={`${index}: ${pivot.id}`}
                               searchPivot={searchPivot}
+                              splicePivot={splicePivot}
                               insertPivot={insertPivot}/>
 
                 ))}

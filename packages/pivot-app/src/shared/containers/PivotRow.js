@@ -7,7 +7,7 @@ import { setPivotValue } from '../actions/PivotRow';
 import { Button, Glyphicon, ButtonGroup, Badge } from 'react-bootstrap'
 import RcSwitch from 'rc-switch';
 
-function ResultCount({ index, resultCount, searchPivot, insertPivot }) {
+function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot }) {
     return (
         <div>
         <ButtonGroup style={{float:'right'}} >
@@ -20,7 +20,7 @@ function ResultCount({ index, resultCount, searchPivot, insertPivot }) {
     );
 }
 
-function renderPivotRow({id, index, enabled, resultCount, length, fields, searchPivot, setPivotValue, insertPivot}) {
+function renderPivotRow({id, index, enabled, resultCount, length, fields, searchPivot, setPivotValue, splicePivot, insertPivot}) {
     const cellWidth = Math.round(88 / (length + 1));
     return (
         <tr>
@@ -50,7 +50,7 @@ function renderPivotRow({id, index, enabled, resultCount, length, fields, search
         }
             <td style={{ width: `${cellWidth}%`}}>
                 <ResultCount index={index} resultCount={resultCount} searchPivot={searchPivot}
-                            insertPivot={insertPivot}/>
+                            insertPivot={insertPivot} splicePivot={splicePivot}/>
             </td>
         </tr>
     );

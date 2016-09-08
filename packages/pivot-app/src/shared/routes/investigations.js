@@ -11,7 +11,7 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from './support';
 
-export function investigations({ loadInvestigationsById, loadPivotsById, searchPivot, insertPivot, uploadGraph }) {
+export function investigations({ loadInvestigationsById, loadPivotsById, searchPivot, splicePivot, insertPivot, uploadGraph }) {
 
     const getInvestigationsHandler = getHandler(['investigation'], loadInvestigationsById);
 
@@ -33,20 +33,39 @@ export function investigations({ loadInvestigationsById, loadPivotsById, searchP
     }, {
         route: `investigationsById[{keys}].insertPivot`,
         call: insertPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPivot, insertPivot})
-    //}, {
-        //returns: `String | Number`,
-        //get: getInvestigationsHandler,
-        //route: `investigationsById[{keys}][{integers}]['name']`
+    }, {
+        route: `investigationsById[{keys}].splicePivot`,
+        call: splicePivotCallRoute({ loadInvestigationsById, loadPivotsById, splicePivot})
     }];
 }
 
-function insertPivotCallRoute({ loadInvestigationsById, calcTotals, insertPivot }) {
+function splicePivotCallRoute({ loadInvestigationsById, splicePivot }) {
+    return function splicePivotCall(path, args) {
+        const id = path[1];
+        const index = args[0];
+        return loadInvestigationsById({investigationIds: id})
+            .mergeMap(
+                ({ app, investigation}) => splicePivot({ app, index, id, investigation })
+        )
+        .mergeMap(({ app, index, id, investigation }) => {
+            const values = [
+                $pathValue(`investigationsById['${id}'].length`, investigation.length),
+                $invalidation(`investigationsById['${id}'][${0}..${investigation.length}]`),
+            ];
+            return values;
+        })
+        .map(mapObjectsToAtoms)
+        .catch(captureErrorStacks);
+    }
+}
+
+function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
     return function insertPivotCall(path, args) {
         const id = path[1];
         const index = args[0];
         return loadInvestigationsById({investigationIds: id})
             .mergeMap(
-            ({ app, investigation}) => insertPivot({ app, index, id, investigation }),
+            ({ app, investigation}) => insertPivot({ app, index, id, investigation })
         )
         .mergeMap(({ app, pivot, investigation, index }) => {
             const length = investigation.length
