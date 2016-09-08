@@ -57,7 +57,7 @@ function renderFullPage(model, html = '') {
     `<!DOCTYPE html>
     <html lang='en-us'>
         <head>
-             <link rel='stylesheet' type='text/css' href='${assets.client.css || ''}'/>
+            <link rel='stylesheet' type='text/css' href='${assets.client.css || ''}'/>
         </head>
         <body>
         <div id='app'>${html}</div>

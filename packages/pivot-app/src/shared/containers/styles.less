@@ -22,110 +22,90 @@
     box-sizing: border-box;
 }
 
-.table {
-    display: block;
+
+.tcell {
     overflow: hidden;
-}
+    text-overflow: ellipsis;
 
-.tbody {
-    overflow-x: hidden;
-    overflow-y: overlay;
-    max-height: 300px;
-    font-size: var(--row-font-size);
-}
-
-.thead tr {
-    border-bottom: 1px solid black;
-}
-
-.tfoot tr {
-    border-top: 1px solid black;
-}
-
-.thead, .tbody, .tfoot {
-
-    display: block;
-    text-align: left;
-    padding-right: var(--scrollbar-width);
-
-    & .tcell {
-        font-weight: bold;
+    & span {
+        padding: 3px;
+        display: inline-block;
     }
-    & .tcell, & .tcell input {
+
+    & input[type=th] {
+
+        margin: 0;
+        padding: 5px;
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: inline-block;
+        vertical-align: middle;
+        box-sizing: border-box;
+        background: transparent;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
+        // font-size: var(--row-font-size);
 
-    & tr {
-        display: block;
-
-        & i {
-            font-style: normal;
-        }
-
-        & .search:before {
-            right: 0;
-            position: relative;
-            font-awesome: search-plus;
-        }
-
-        & .splice:before {
-            right: 250%;
-            position: relative;
-            font-awesome: minus;
-        }
-
-        & .insert:before {
-            right: 125%;
-            position: relative;
-            font-awesome: plus;
-        }
-
-        & .splice, & .insert, & .search {
-            right: 5%;
-            display: none;
-            cursor: pointer;
-            position: absolute;
-            vertical-align: middle;
-        }
-
-        &:hover .splice, &:hover .insert, &:hover .search {
-            display: inline-block;
-        }
-    }
-
-    & td, & th {
-        padding: 2px;
-        position: relative;
-        white-space: nowrap;
-        display: inline-block;
-        border: none;
-        margin-right: -1px;
-        border-right: 1px solid black;
-        font-size: var(--row-font-size);
-
-        &:last-child {
-            border-right: none;
-        }
-        & span {
-            padding: 5px;
-        }
-        & input {
-
+        &::-webkit-inner-spin-button,
+        &::-webkit-outer-spin-button {
+            -webkit-appearance: none;
             margin: 0;
-            padding: 5px;
-            width: 100%;
-            border: none;
-            box-sizing: border-box;
-            background: transparent;
-            font-size: var(--row-font-size);
-
-            &::-webkit-inner-spin-button,
-            &::-webkit-outer-spin-button {
-                -webkit-appearance: none;
-                margin: 0;
-            }
         }
+    }
+}
 
+tr {
+    display: block;
+
+    & i {
+        font-style: normal;
+        display: inline-block;
+    }
+
+    & .search:before {
+        right: 0;
+        position: relative;
+        font-awesome: search-plus;
+    }
+
+    & .splice:before {
+        right: 350%;
+        position: relative;
+        font-awesome: minus;
+    }
+
+    & .insert:before {
+        right: 175%;
+        position: relative;
+        font-awesome: plus;
+    }
+
+    & .splice, & .insert, & .search {
+        right: 5%;
+        display: none;
+        cursor: pointer;
+        position: absolute;
+        vertical-align: middle;
+    }
+
+    &:hover .splice, &:hover .insert, &:hover .search {
+        line-height: 200%;
+        display: inline-block;
+    }
+}
+
+td, th {
+    padding: 2px;
+    position: relative;
+    white-space: nowrap;
+    display: inline-block;
+    border: none;
+    margin-right: -1px;
+    border-right: 1px solid black;
+    // font-size: var(--row-font-size);
+
+    &:last-child {
+        border-right: none;
     }
 }

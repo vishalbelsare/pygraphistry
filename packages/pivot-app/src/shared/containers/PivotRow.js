@@ -4,8 +4,9 @@ import { tcell as tableCellClassName,
          insert as insertIconClassName,
          search as searchIconClassName } from './styles.less';
 import { setPivotValue } from '../actions/PivotRow';
+import RcSwitch from 'rc-switch';
 
-function renderResultCount({index, resultCount, searchPivot, insertPivot}) {
+function ResultCount({ index, resultCount, searchPivot }) {
     return (
         <div className={ tableCellClassName }>
             <span> {resultCount} </span>
@@ -25,56 +26,46 @@ function renderResultCount({index, resultCount, searchPivot, insertPivot}) {
     );
 }
 
-function renderCheckBox(checked) {
+function renderPivotRow({id, index, length, fields, searchPivot, setPivotValue}) {
+    const cellWidth = Math.round(88 / (length + 1));
     return (
-            <td style={{ width: `2%` }}>
-                <input
-                    type="checkbox"
-                    checked='true'/>
+        <tr>
+            <td style={{ width: `6%` }}>
+                <RcSwitch defaultChecked={true}
+                          checkedChildren={'On'}
+                          unCheckedChildren={'Off'}/>
             </td>
-    )
-}
-
-
-function renderPivotRow({id, index, length, fields, searchPivot, insertPivot, setPivotValue}) {
-    const cellWidth = Math.round(95 / (length + 1));
-    return (
-            <tr>
-                {renderCheckBox(true)}
-            {
-                fields.map((field, index) =>
-                <td key={`${id}: ${index}`}
-                    style={{ width: `${cellWidth}%`}}>
-                    <div className={tableCellClassName}>
-                        <input
-                            type='th'
-                            defaultValue={field.value}
-                            readOnly={false}
-                            disabled={false}
-                            onChange={
-                                (ev) => (ev.preventDefault() ||
-                                    setPivotValue({index, target: ev.target.value}))
-                            }
-                        />
-                    </div>
-                </td>
-                )
-            }
-                <td style={{ width: `${cellWidth}%`}}>
-                    {renderResultCount({index, resultCount:0, searchPivot, insertPivot})}
-                </td>
-            </tr>
-        );
+        {fields.map((field, index) =>
+            <td key={`${id}: ${index}`}
+                style={{ width: `${cellWidth}%`}}>
+                <div className={tableCellClassName}>
+                    <input
+                        type='th'
+                        defaultValue={field.value}
+                        readOnly={false}
+                        disabled={false}
+                        onChange={
+                            (ev) => (ev.preventDefault() ||
+                                setPivotValue({index, target: ev.target.value}))
+                        }
+                    />
+                </div>
+            </td>
+            )
+        }
+            <td style={{ width: `${cellWidth}%`}}>
+                <ResultCount index={index} resultCount={0} searchPivot={searchPivot}/>
+            </td>
+        </tr>
+    );
 }
 
 function mapStateToFragment({length = 0} = {}) {
     return `{
-                'id',
-                'length',
-                [0...${length}]: {
-                    value
-                }
-            }`;
+        'id', 'length', [0...${length}]: {
+            value
+        }
+    }`;
 }
 
 function mapFragmentToProps(fragment) {

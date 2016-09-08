@@ -1,52 +1,31 @@
 import React from 'react'
 import Investigation from './Investigation.js'
+import InvestigationDropdown from './InvestigationDropdown.js'
 import { DevTools } from './DevTools';
 import { hoistStatics } from 'recompose';
 import { connect, container } from '@graphistry/falcor-react-redux';
 import { setInvestigationName } from '../actions/investigationList';
 
-function renderInvestigationList({ investigations, setInvestigationName }) {
+function GraphFrame({ url }) {
     return (
-            <div className='investigation-list-comp'> { investigations ?
-                <select
-                    onChange = {
-                        (ev) => (
-                            ev.preventDefault() ||
-                            setInvestigationName({id : ev.target.options[ev.target.selectedIndex].value})
-                        )
-                    }>
-                {
-                    investigations.map( (investigation, index) =>
-                    <option value={`${investigation.id}`} key={`${index}: ${investigation.name}`}>
-                        {investigation.name}
-                    </option>
-                    )
-                }
-                </select> :
-                null}
-            </div>
+        <iframe src={url} scrolling="no" style={{
+            width:'100%',
+            height:'700px',
+            border:'10px solid #DDD',
+            boxSizing: 'border-box',
+            overflow: 'hidden'
+        }} />
     );
 }
 
-function renderGraphFrame(url) {
-    return (
-        <iframe
-            src={`${url}`}
-            style={{
-                width:'100%',
-                height:'700px',
-                border:'10px solid #DDD',
-                boxSizing: 'border-box'
-            }} />
-    );
-}
-
-function renderApp({ title, investigations, selectedInvestigation, setInvestigationName }) {
+function renderApp({ title, investigations, setInvestigationName, selectedInvestigation = {} }) {
     return (
         <div>
             <h1>{title}</h1>
-            { renderGraphFrame(selectedInvestigation.url) }
-            { renderInvestigationList({ investigations , setInvestigationName}) }
+            <GraphFrame url={selectedInvestigation.url}/>
+            <InvestigationDropdown data={investigations}
+                                   setInvestigationName={setInvestigationName}
+                                   selectedInvestigation={selectedInvestigation}/>
             {selectedInvestigation ?
                 <Investigation data={selectedInvestigation}/>
                 : null
@@ -59,13 +38,13 @@ function renderApp({ title, investigations, selectedInvestigation, setInvestigat
 const App = container(
     ({ cols = [], investigations = [], selectedInvestigation } = {}) => `{
         title,
-        investigations: {
-            'length',
-            [0...${investigations.length}]: { name, id }
+        investigations: ${
+            InvestigationDropdown.fragment()
         },
         selectedInvestigation: ${Investigation.fragment(selectedInvestigation)}
     }`,
-    (state) => (state),
+    (state) => state,
+    { setInvestigationName: setInvestigationName }
     /* todo:
         url, total, urls, urlIndex,
         cols: ${
@@ -78,7 +57,6 @@ const App = container(
             InvestigationList.fragment(investigations)
         }
     */
-    { setInvestigationName: setInvestigationName }
 )(renderApp);
 
 export default hoistStatics(connect)(App);

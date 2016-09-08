@@ -1,24 +1,28 @@
 import { container } from '@graphistry/falcor-react-redux';
-import { setInvestigationName } from '../actions/investigationList';
+import { DropdownButton, MenuItem } from 'react-bootstrap';
 
-function renderInvestigationList({ investigations, setInvestigationName, ...props }) {
-    console.log("Props", props);
+function InvestigationDropdown({ investigations, selectedInvestigation, setInvestigationName, ...props }) {
+    if (investigations.length === 0) {
+        return null;
+    }
+    // debugger
     return (
-        <div className='investigation-list-comp'> { investigations ?
-                <select onChange = {(ev) => setInvestigationName(ev)}>
-                    { investigations.map((investigation, index) =>
-                        <option key={`${index}: ${investigation.name}`}> {investigation.name} </option>
-                    )}
-                </select> :
-                null}
-        </div>
+        <DropdownButton id='investigations-list-dropdown'
+                        title={selectedInvestigation.name || 'Investigations'}
+                        onSelect={(id, event) => setInvestigationName({ id })}>
+        {investigations.map(({ id, name }, index) => (
+            <MenuItem eventKey={id} key={`${index}: ${id}`}>
+                {name}
+            </MenuItem>
+        ))}
+        </DropdownButton>
     );
 }
 
 function mapStateToFragment(investigations = []) {
     return `{
         'length',
-        [0...${investigations.length}]: { name }
+        [0...${investigations.length}]: { id, name }
     }`;
 }
 
@@ -28,9 +32,8 @@ function mapFragmentToProps(investigationsList) {
 
 export default container(
     mapStateToFragment,
-    mapFragmentToProps,
-    { setInvestigationName: setInvestigationName }
-)(renderInvestigationList);
+    mapFragmentToProps
+)(InvestigationDropdown);
 
 
 //export class InvestigationList extends Container {
