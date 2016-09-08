@@ -4,23 +4,18 @@ import { tcell as tableCellClassName,
          insert as insertIconClassName,
          search as searchIconClassName } from './styles.less';
 import { setPivotValue } from '../actions/PivotRow';
+import { Button, Glyphicon, ButtonGroup, Badge } from 'react-bootstrap'
 import RcSwitch from 'rc-switch';
 
 function ResultCount({ index, resultCount, searchPivot, insertPivot }) {
     return (
-        <div className={ tableCellClassName }>
-            <span> {resultCount} </span>
-            <i className={ spliceIconClassName }/>
-            <i className={ insertIconClassName }
-                onClick={(ev) => {
-                    return insertPivot({index})}
-                }
-            />
-            <i className={ searchIconClassName }
-                onClick={ (ev) => {
-                        searchPivot({index: index});
-                    }
-                }/>
+        <div>
+        <ButtonGroup style={{float:'right'}} >
+            <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus" /></Button>
+            <Button onClick={(ev) => splicePivot({index})}><Glyphicon glyph="minus" /></Button>
+            <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="search" /></Button>
+        </ButtonGroup>
+        <Badge> {resultCount} </Badge>
         </div>
     );
 }
