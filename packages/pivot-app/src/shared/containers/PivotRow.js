@@ -3,7 +3,7 @@ import { tcell as tableCellClassName,
          splice as spliceIconClassName,
          insert as insertIconClassName,
          search as searchIconClassName } from './styles.less';
-import { setPivotValue } from '../actions/PivotRow';
+import { setPivotValue, togglePivot } from '../actions/PivotRow';
 import { Button, Glyphicon, ButtonGroup, Badge } from 'react-bootstrap'
 import RcSwitch from 'rc-switch';
 
@@ -20,7 +20,7 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
     );
 }
 
-function renderPivotRow({id, index, enabled, resultCount, length, fields, searchPivot, setPivotValue, splicePivot, insertPivot}) {
+function renderPivotRow({id, index, enabled, resultCount, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot}) {
     const cellWidth = Math.round(88 / (length + 1));
     return (
         <tr>
@@ -28,6 +28,9 @@ function renderPivotRow({id, index, enabled, resultCount, length, fields, search
                 <RcSwitch defaultChecked={false}
                           checked={enabled}
                           checkedChildren={'On'}
+                          onChange={(ev) => {
+                              togglePivot({ index, enabled: ev })}
+                          }
                           unCheckedChildren={'Off'}/>
             </td>
         {fields.map((field, index) =>
@@ -74,6 +77,7 @@ function mapFragmentToProps(fragment) {
 export default container(
         mapStateToFragment,
         mapFragmentToProps,
-        {setPivotValue: setPivotValue}
+    {setPivotValue: setPivotValue,
+    togglePivot: togglePivot}
 )(renderPivotRow);
 
