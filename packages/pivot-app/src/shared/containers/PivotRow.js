@@ -6,7 +6,7 @@ import { tcell as tableCellClassName,
 import { setPivotValue } from '../actions/PivotRow';
 import RcSwitch from 'rc-switch';
 
-function ResultCount({ index, resultCount, searchPivot }) {
+function ResultCount({ index, resultCount, searchPivot, insertPivot }) {
     return (
         <div className={ tableCellClassName }>
             <span> {resultCount} </span>
@@ -26,7 +26,7 @@ function ResultCount({ index, resultCount, searchPivot }) {
     );
 }
 
-function renderPivotRow({id, index, length, fields, searchPivot, setPivotValue}) {
+function renderPivotRow({id, index, length, fields, searchPivot, setPivotValue, insertPivot}) {
     const cellWidth = Math.round(88 / (length + 1));
     return (
         <tr>
@@ -54,7 +54,7 @@ function renderPivotRow({id, index, length, fields, searchPivot, setPivotValue})
             )
         }
             <td style={{ width: `${cellWidth}%`}}>
-                <ResultCount index={index} resultCount={0} searchPivot={searchPivot}/>
+                <ResultCount index={index} resultCount={0} searchPivot={searchPivot} insertPivot={insertPivot}/>
             </td>
         </tr>
     );
