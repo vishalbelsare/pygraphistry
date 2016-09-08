@@ -13,7 +13,6 @@ function ResultCount({ index, resultCount, searchPivot, insertPivot }) {
             <i className={ spliceIconClassName }/>
             <i className={ insertIconClassName }
                 onClick={(ev) => {
-                    console.log('clicked')
                     return insertPivot({index})}
                 }
             />
@@ -26,13 +25,13 @@ function ResultCount({ index, resultCount, searchPivot, insertPivot }) {
     );
 }
 
-function renderPivotRow({id, index, resultCount, length, fields, searchPivot, setPivotValue, insertPivot}) {
-    console.log('Result count', resultCount)
+function renderPivotRow({id, index, enabled, resultCount, length, fields, searchPivot, setPivotValue, insertPivot}) {
     const cellWidth = Math.round(88 / (length + 1));
     return (
         <tr>
             <td style={{ width: `6%` }}>
-                <RcSwitch defaultChecked={true}
+                <RcSwitch defaultChecked={false}
+                          checked={enabled}
                           checkedChildren={'On'}
                           unCheckedChildren={'Off'}/>
             </td>
@@ -64,7 +63,7 @@ function renderPivotRow({id, index, resultCount, length, fields, searchPivot, se
 
 function mapStateToFragment({length = 0} = {}) {
     return `{
-        'resultCount', 'id', 'length', [0...${length}]: {
+        'enabled', 'resultCount', 'id', 'length', [0...${length}]: {
             value
         }
     }`;
@@ -73,9 +72,8 @@ function mapStateToFragment({length = 0} = {}) {
 function mapFragmentToProps(fragment) {
     //const output =  { pivots: fragment, name: fragment.name, length: fragment.length};
     //console.log('output', output);
-    console.log(fragment)
-    const {id, length, resultCount} = fragment;
-    return {id, length, fields:fragment, resultCount};
+    const {id, length, resultCount, enabled} = fragment;
+    return {id, length, fields:fragment, enabled, resultCount};
 }
 
 export default container(

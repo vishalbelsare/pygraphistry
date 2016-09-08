@@ -85,6 +85,7 @@ function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPi
             const values = [
                 $pathValue(`investigationsById['${id}'].url`, investigation.url),
                 $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
+                $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
             ];
 
             return values;
