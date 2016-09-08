@@ -1,13 +1,9 @@
 import {
-    ref as $ref,
-    atom as $atom,
     pathValue as $pathValue,
     pathInvalidation as $invalidation
 } from '@graphistry/falcor-json-graph';
 
-import { Observable } from 'rxjs';
 import { getHandler,
-         getIDsFromJSON,
          mapObjectsToAtoms,
          captureErrorStacks } from './support';
 
@@ -47,7 +43,7 @@ function splicePivotCallRoute({ loadInvestigationsById, splicePivot }) {
             .mergeMap(
                 ({ app, investigation}) => splicePivot({ app, index, id, investigation })
         )
-        .mergeMap(({ app, index, id, investigation }) => {
+        .mergeMap(({ investigation }) => {
             const values = [
                 $pathValue(`investigationsById['${id}'].length`, investigation.length),
                 $invalidation(`investigationsById['${id}'][${0}..${investigation.length}]`),
@@ -56,50 +52,50 @@ function splicePivotCallRoute({ loadInvestigationsById, splicePivot }) {
         })
         .map(mapObjectsToAtoms)
         .catch(captureErrorStacks);
-    }
+    };
 }
 
 function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
     return function insertPivotCall(path, args) {
         const id = path[1];
-        const index = args[0];
+        const clickedIndex = args[0];
         return loadInvestigationsById({investigationIds: id})
             .mergeMap(
-            ({ app, investigation}) => insertPivot({ app, index, id, investigation })
+            ({ app, investigation}) => insertPivot({ app, clickedIndex, id, investigation })
         )
-        .mergeMap(({ app, pivot, investigation, index }) => {
-            const length = investigation.length
+        .mergeMap(({ investigation, nextIndex }) => {
+            const length = investigation.length;
             const values = [
                 $pathValue(`investigationsById['${id}'].length`, investigation.length),
-                $pathValue(`investigationsById['${id}'][${index}]`, investigation[index]),
+                $pathValue(`investigationsById['${id}'][${nextIndex}]`, investigation[nextIndex]),
             ];
 
-            if (index < investigation.length - 1) {
-                values.push($invalidation(`investigationsById['${id}'][${index + 1}..${length - 1}]`));
+            if (nextIndex < investigation.length - 1) {
+                values.push($invalidation(`investigationsById['${id}'][${nextIndex + 1}..${length - 1}]`));
             }
 
             return values;
         })
         .map(mapObjectsToAtoms)
         .catch(captureErrorStacks);
-    }
+    };
 }
 
-function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPivot, uploadGraph }) {
+function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph }) {
     return function searchPivotCall(path, args) {
         const id = path[1];
         const index = args[0];
         return loadInvestigationsById({investigationIds: id})
             .mergeMap(
-            ({app, investigation}) => searchPivot({ app, investigation, index }),
+            ({app, investigation}) => searchPivot({ app, investigation, index })
         )
         .mergeMap(
-            ({app, investigation, pivot, index}) => uploadGraph({ app, investigation }),
-            ({app, investigation, pivot, index}, name) => ({
+            ({app, investigation}) => uploadGraph({ app, investigation }),
+            ({app, investigation, pivot}, name) => ({
                 app, index, name, investigation, pivot
             })
         )
-        .mergeMap(({ app, investigation, pivot, index, name }) => {
+        .mergeMap(({investigation, pivot, name }) => {
             investigation.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
             const values = [
                 $pathValue(`investigationsById['${id}'].url`, investigation.url),
@@ -111,5 +107,5 @@ function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPi
         })
         .map(mapObjectsToAtoms)
         .catch(captureErrorStacks);
-    }
+    };
 }

@@ -1,17 +1,13 @@
 import {
-    ref as $ref,
-    atom as $atom,
     pathValue as $pathValue
 } from '@graphistry/falcor-json-graph';
 
-import { Observable } from 'rxjs';
 import { getHandler,
         setHandler,
-         getIDsFromJSON,
          mapObjectsToAtoms,
          captureErrorStacks } from './support';
 
-export function rows({ loadPivotsById, calcTotals }) {
+export function pivots({ loadPivotsById, calcTotals }) {
 
     const getPivotsHandler = getHandler(['pivot'], loadPivotsById);
     const setPivotsHandler = setHandler(['pivot'], loadPivotsById);
@@ -41,15 +37,15 @@ export function rows({ loadPivotsById, calcTotals }) {
 }
 
 function togglePivotCallRoute({loadPivotById}) {
-    return function togglePivot(path, args) {
+    return function togglePivot(path) {
         const pivotIds = [].concat(path[1]);
         const columnIndexes = [].concat(path[2]);
 
         return loadPivotById({ pivotIds })
             .mergeMap(
-                ({ app, pivot }) => columnIndexes,
+                ({ app, pivot}) => columnIndexes,
                 ({ app, pivot }, index) => ({
-                    app, row, index
+                    app, pivot, index
                 })
             )
             .map(({ app, pivot, index }) => {

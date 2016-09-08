@@ -1,3 +1,3 @@
 export * from './app';
-export * from './row';
+export * from './pivots';
 export * from './investigation';

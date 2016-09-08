@@ -40,7 +40,7 @@ export function searchPivot({ investigation, app, index }) {
         .map(({output}) => output);
     var shapedResults = shapeSplunkResults(splunkResults, pivotDict)
         .do((results) => pivot.results = results)
-        .map((results) => ({app, investigation, pivot,  index}));
+        .map((results) => ({app, investigation, pivot}));
     return shapedResults;
 
 }

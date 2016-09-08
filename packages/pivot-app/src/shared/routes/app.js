@@ -1,16 +1,11 @@
 import {
-    ref as $ref,
-    atom as $atom,
     pathValue as $pathValue,
-    pathInvalidation as $invalidation
 } from '@graphistry/falcor-json-graph';
 
 import { getHandler,
-        setHandler,
-         mapObjectsToAtoms,
-         captureErrorStacks } from './support';
+        setHandler } from './support';
 
-export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot, uploadGraph }) {
+export function app({ loadApp }) {
 
     const appGetRoute = getHandler([], loadApp);
     const appSetRoute = setHandler([], loadApp);
@@ -22,24 +17,6 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
     }, {
         get: appGetRoute,
         set: appSetRoute,
-        /*
-        set: function(json) {
-            const selectedInvestigation = json.selectedInvestigation;
-            const value = selectedInvestigation.value;
-            var values = [$pathValue('selectedInvestigation', selectedInvestigation)]
-            return values
-            // TODO Why doesn't this work?
-            //return (values
-                    //.map(mapObjectsToAtoms)
-                    //.do((pv) => {
-                    //console.log(`set: ${JSON.stringify(json)}`);
-                    //console.log(`res: ${JSON.stringify(pv.path)}`);
-                    //})
-                    //.catch(captureErrorStacks)
-            //);
-
-        },
-        */
         returns: `$ref('investigationsById[{investigationId}])`,
         route: `selectedInvestigation`
     }, {
@@ -49,7 +26,6 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
     }, {
         returns: `Number`,
         route: `['cols', 'pivots', 'investigations'].length`,
-        // get: listLengthGetRoute({ loadApp })
         get: appGetRoute
     }, {
         route: `['cols'][{ranges}]`,
@@ -66,28 +42,12 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
     }];
 }
 
-function listLengthGetRoute({ loadApp }) {
-    return function getPivotLength(path) {
-
-        // The Array of list names (either `cols` or `rows`) from which to
-        // retrieve each range.
-        const listNames = [].concat(path[0]);
-
-        return loadApp().mergeMap(
-            (app) => listNames,
-            (app, listName) => $pathValue(
-                `${listName}.length`, app[listName].length
-            )
-        );
-    }
-}
-
 function rangesToListItemsGetRoute({ loadApp }) {
     return function rangesToListItems(path) {
 
         // The Array of list names (either `cols` or `rows`) from which to
         // retrieve each range.
-        const listNames = [].concat(path[0])
+        const listNames = [].concat(path[0]);
 
         // An Array of Ranges ([{ from: int, to: int }, ...])
         //
@@ -117,7 +77,7 @@ function rangesToListItemsGetRoute({ loadApp }) {
                         (x, index) => index + from
                     )
                 );
-        }, []);
+            }, []);
 
         return loadApp()
             // enumerate each list from the app state ...
@@ -139,67 +99,5 @@ function rangesToListItemsGetRoute({ loadApp }) {
                     return $pathValue(` ${name}[${index}]`, list[index])
                 }
             );
-    }
-}
-
-function searchPivotCallRoute({ loadApp, searchPivot, uploadGraph }) {
-    return function searchPivotCall(path, args) {
-        const [id] = args;
-        return loadApp().mergeMap(
-            (app) => searchPivot({ app, id }),
-        )
-        .mergeMap(
-            ({app, index}) => uploadGraph(app),
-            ({app, index}, name) => ({
-                app, index, name
-            })
-        )
-        .mergeMap(({ app, index, name }) => {
-            app.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
-            const { pivots } = app;
-            const values = [
-                $pathValue(`pivots[${index}].enabled`, pivots[index].enabled),
-                $pathValue(`pivots[${index}].resultCount`, pivots[index].resultCount),
-                $pathValue('url', app.url),
-            ];
-
-            return values;
-        })
-        .map(mapObjectsToAtoms)
-        .catch(captureErrorStacks);
-    }
-}
-
-function splicePivotCallRoute({ loadApp, splicePivot, uploadGraph }) {
-    return function splicePivotCall(path, args) {
-        const [id] = args;
-        return loadApp().mergeMap(
-            (app) => splicePivot({ app, id }),
-            (app, { pivot, index }) => ({
-                app, pivot, index
-            })
-        )
-        .mergeMap(
-            ({app}) => uploadGraph(app),
-             ({app, pivot, index}, name) => ({
-                 app, pivot, index, name
-             })
-        )
-        .mergeMap(({ app, pivot, index, name }) => {
-            app.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
-            const { pivots } = app;
-            const { length } = pivots;
-            const values = [
-                $pathValue(`total`, app.total),
-                $pathValue(`pivots.length`, length),
-                $pathValue('url', app.url),
-                $invalidation(`pivotsById['${pivot.id}']`),
-                $invalidation(`pivots[${index}..${length}]`),
-            ];
-
-            return values;
-        })
-        .map(mapObjectsToAtoms)
-        .catch(captureErrorStacks);
-    }
+    };
 }

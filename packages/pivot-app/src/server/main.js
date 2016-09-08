@@ -7,7 +7,7 @@ import { getDataSourceFactory } from '../shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 
 import { simpleflake } from 'simpleflakes';
-import { app as createApp, row as createRow, investigation as createInvestigation } from '../shared/models';
+import { app as createApp, pivot as createPivot, investigation as createInvestigation } from '../shared/models';
 import { loadApp, loadInvestigations, loadPivots, loadRows, insertPivot, splicePivot, calcTotals, searchPivot, uploadGraph } from '../shared/services';
 
 import {
@@ -44,14 +44,14 @@ var query = `${Object.keys(queryOptions)
 const pivots1 = Array.from({ length: 1 },
     function(x, index) {
         if (index == 0) {
-            return createRow(cols, {
+            return createPivot(cols, {
                 'Search': `${query}   | spath output=dataset path="metadata.dataset" | search dataset="*" `,
                 'Links': 'msg, dataset',
                 'Time': '07/28/2016'
             })
         }
         else {
-            return createRow(cols, placeHolder)
+            return createPivot(cols, placeHolder)
         }
     }
 );
@@ -59,14 +59,14 @@ const pivots1 = Array.from({ length: 1 },
 const pivots2 = Array.from({ length: 2 },
     function(x, index) {
         if (index == 0) {
-            return createRow(cols, {
+            return createPivot(cols, {
                 'Search': `malware`,
                 'Links': 'dest_ip, misc',
                 'Time': '07/28/2016'
             })
         }
         else {
-            return createRow(cols, placeHolder)
+            return createPivot(cols, placeHolder)
         }
     }
 );

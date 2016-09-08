@@ -1,11 +1,11 @@
 import { app } from './app';
-import { rows } from './rows';
+import { pivots } from './pivots';
 import { investigations } from './investigations';
 
 export function routes(services) {
     return ([]
         .concat(app(services))
-        .concat(rows(services))
+        .concat(pivots(services))
         .concat(investigations(services))
     );
 }
