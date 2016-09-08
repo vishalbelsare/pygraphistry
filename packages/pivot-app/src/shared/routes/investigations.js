@@ -46,7 +46,7 @@ function insertPivotCallRoute({ loadInvestigationsById, calcTotals, insertPivot 
         const index = args[0];
         return loadInvestigationsById({investigationIds: id})
             .mergeMap(
-            ({ app, investigation}) => insertPivot({ app, id, investigation }),
+            ({ app, investigation}) => insertPivot({ app, index, id, investigation }),
         )
         .mergeMap(({ app, pivot, investigation, index }) => {
             const length = investigation.length
