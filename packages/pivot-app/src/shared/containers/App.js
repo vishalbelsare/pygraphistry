@@ -4,49 +4,52 @@ import { DevTools } from './DevTools';
 import { hoistStatics } from 'recompose';
 import { connect, container } from '@graphistry/falcor-react-redux';
 import { setInvestigationName } from '../actions/investigationList';
+import { DropdownButton, MenuItem } from 'react-bootstrap';
 
-function renderInvestigationList({ investigations, setInvestigationName }) {
+function InvestigationList({ investigations = [], selectedInvestigation, setInvestigationName }) {
+    if (investigations.length === 0) {
+        return null;
+    }
     return (
-            <div className='investigation-list-comp'> { investigations ?
-                <select
-                    onChange = {
-                        (ev) => (
-                            ev.preventDefault() ||
-                            setInvestigationName({id : ev.target.options[ev.target.selectedIndex].value})
-                        )
-                    }>
-                {
-                    investigations.map( (investigation, index) =>
-                    <option value={`${investigation.id}`} key={`${index}: ${investigation.name}`}>
-                        {investigation.name}
-                    </option>
-                    )
-                }
-                </select> :
-                null}
-            </div>
+        <DropdownButton id='investigations-list-dropdown'
+                        title={selectedInvestigation.name || 'Investigations'}
+                        onSelect={(id, event) => setInvestigationName({ id })}>
+        {investigations.map(({ id, name }, index) => (
+            <MenuItem eventKey={id} key={`${index}: ${id}`}>
+                {name}
+            </MenuItem>
+        ))}
+        </DropdownButton>
     );
 }
 
-function renderGraphFrame(url) {
+function GraphFrame({ url }) {
     return (
-        <iframe
-            src={`${url}`}
+        <iframe src={url}
+            scrolling="no"
+            onWheel={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                return false;
+            }}
             style={{
                 width:'100%',
                 height:'700px',
                 border:'10px solid #DDD',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                overflow: 'hidden'
             }} />
     );
 }
 
-function renderApp({ title, investigations, selectedInvestigation, setInvestigationName }) {
+function renderApp({ title, investigations, selectedInvestigation = {}, setInvestigationName }) {
     return (
         <div>
             <h1>{title}</h1>
-            { renderGraphFrame(selectedInvestigation.url) }
-            { renderInvestigationList({ investigations , setInvestigationName}) }
+            <GraphFrame url={selectedInvestigation.url}/>
+            <InvestigationList investigations={investigations}
+                               selectedInvestigation={selectedInvestigation}
+                               setInvestigationName={setInvestigationName}/>
             {selectedInvestigation ?
                 <Investigation data={selectedInvestigation}/>
                 : null

@@ -21,6 +21,8 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
         route: `['id', 'title', 'total', 'urls', 'urlIndex']`
     }, {
         get: appGetRoute,
+        set: appSetRoute,
+        /*
         set: function(json) {
             const selectedInvestigation = json.selectedInvestigation;
             const value = selectedInvestigation.value;
@@ -37,6 +39,7 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
             //);
 
         },
+        */
         returns: `$ref('investigationsById[{investigationId}])`,
         route: `selectedInvestigation`
     }, {
@@ -46,7 +49,8 @@ export function app({ loadApp, calcTotals, insertPivot, splicePivot, searchPivot
     }, {
         returns: `Number`,
         route: `['cols', 'pivots', 'investigations'].length`,
-        get: listLengthGetRoute({ loadApp })
+        // get: listLengthGetRoute({ loadApp })
+        get: appGetRoute
     }, {
         route: `['cols'][{ranges}]`,
         get: rangesToListItemsGetRoute({ loadApp }),

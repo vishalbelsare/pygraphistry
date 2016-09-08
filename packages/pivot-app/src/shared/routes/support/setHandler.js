@@ -66,25 +66,26 @@ export function setHandler(lists, loader, mapValue, { valueKey, ...props } = {})
 
 function getListsAndSuffixes(state, suffix, lists, depth, json) {
 
-    const list = `${lists[depth]}Ids`;
-    const byId = `${lists[depth]}sById`;
-    const node = json[byId];
+    if (!json || json.$type ||
+        depth === lists.length ||
+        typeof json !== 'object') {
+        suffix.push(json);
+    } else {
 
-    let keyIdx = -1;
-    const keys = state[list] || (state[list] = []);
+        const list = `${lists[depth]}Ids`;
+        const byId = `${lists[depth]}sById`;
+        const node = json[byId];
 
-    for (const key in node) {
+        let keyIdx = -1;
+        const keys = state[list] || (state[list] = []);
 
-        const next = node[key];
+        for (const key in node) {
 
-        keys[++keyIdx] = key;
+            const next = node[key];
 
-        if (next && !next.$type &&
-            depth < lists.length - 1 &&
-            typeof next === 'object') {
+            keys[++keyIdx] = key;
+
             getListsAndSuffixes(state, suffix, lists, depth + 1, next);
-        } else {
-            suffix.push(next);
         }
     }
 

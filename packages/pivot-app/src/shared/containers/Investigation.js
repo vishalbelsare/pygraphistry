@@ -1,4 +1,5 @@
 import { container } from '@graphistry/falcor-react-redux';
+import { Table } from 'react-bootstrap';
 import PivotRow from './PivotRow';
 //import PivotTable from './PivotTable';
 import { table as tableClassName,
@@ -40,19 +41,36 @@ function renderTable(pivots, searchPivot) {
 }
 
 function renderInvestigation({length = 0, name = 'default', pivots = [], searchPivot }) {
+    const cellWidth = Math.round(88 / (4));
     return (
+        <div>
             <div>
-                <div>
-                Selected Investigation Name: { name }
-                </div>
-                <div>
-                Number of pivots in investigaiton: { length }
-                </div>
-                <div>
-                { renderTable(pivots, searchPivot) }
-                </div>
+            Selected Investigation Name: { name }
             </div>
-        );
+            <div>
+            Number of pivots in investigation: { length }
+            </div>
+            <Table>
+                <thead>
+                    <tr>
+                        <th style={{ width: `6%` }}> &nbsp; </th>
+                        <th style={{ width: `${cellWidth}%` }}>Search</th>
+                        <th style={{ width: `${cellWidth}%` }}>Extract nodes</th>
+                        <th style={{ width: `${cellWidth}%` }}>Time</th>
+                        <th style={{ width: `${cellWidth}%` }}>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {pivots.map((pivot, index) => (
+                    <PivotRow data={pivot}
+                              index={index}
+                              key={`${index}: ${pivot.id}`}
+                              searchPivot={searchPivot}/>
+                ))}
+                </tbody>
+            </Table>
+        </div>
+    );
 }
 
 function mapStateToFragment({selectedInvestigation = {}, length = 0, name = 'default', ...rest} = {}) {
