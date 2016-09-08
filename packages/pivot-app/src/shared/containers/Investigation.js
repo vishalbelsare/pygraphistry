@@ -6,8 +6,6 @@ import { table as tableClassName,
     tbody as tableBodyClassName,
     thead as tableHeaderClassName} from './styles.less';
 
-import { Button, ButtonGroup, Glyphicon } from 'react-bootstrap';
-
 import { splicePivot,
         insertPivot,
         searchPivot
@@ -16,33 +14,37 @@ import { splicePivot,
 function renderInvestigation({length = 0, name = 'default', pivots = [], searchPivot, insertPivot, splicePivot }) {
     const cellWidth = Math.round(88 / (4));
     return (
-        <Table>
-            { /* TODO reuse table row */ }
-            <thead>
-                <tr>
-                    <th style={{ width: `8%` }}> 
-                        <ButtonGroup vertical block style={{float:'left'}} >
-                            <Button onClick={(ev) => null}><Glyphicon glyph="play-circle" /></Button>
-                        </ButtonGroup>
-                    </th>
-                    <th style={{ width: `${cellWidth}%` }}>Search</th>
-                    <th style={{ width: `${cellWidth}%` }}>Extract nodes</th>
-                    <th style={{ width: `${cellWidth}%` }}>Time</th>
-                    <th style={{ width: `${cellWidth}%` }}>Result</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div>
+            <div>
+            Selected Investigation Name: { name }
+            </div>
+            <div>
+            Number of pivots in investigation: { length }
+            </div>
+            <Table>
+                { /* TODO reuse table row */ }
+                <thead>
+                    <tr>
+                        <th style={{ width: `6%` }}> &nbsp; </th>
+                        <th style={{ width: `${cellWidth}%` }}>Search</th>
+                        <th style={{ width: `${cellWidth}%` }}>Extract nodes</th>
+                        <th style={{ width: `${cellWidth}%` }}>Time</th>
+                        <th style={{ width: `${cellWidth}%` }}>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
                 {pivots.map((pivot, index) => (
                     <PivotRow data={pivot}
-                        index={index}
-                        key={`${index}: ${pivot.id}`}
-                        searchPivot={searchPivot}
-                        splicePivot={splicePivot}
-                        insertPivot={insertPivot}/>
+                              index={index}
+                              key={`${index}: ${pivot.id}`}
+                              searchPivot={searchPivot}
+                              splicePivot={splicePivot}
+                              insertPivot={insertPivot}/>
 
                 ))}
-            </tbody>
-        </Table>
+                </tbody>
+            </Table>
+        </div>
     );
 }
 
