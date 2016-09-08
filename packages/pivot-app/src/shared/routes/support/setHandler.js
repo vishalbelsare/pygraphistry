@@ -55,10 +55,10 @@ export function setHandler(lists, loader, mapValue, { valueKey, ...props } = {})
 
         return (values
             .map(mapObjectsToAtoms)
-            .do((pv) => {
-                console.log(`set: ${JSON.stringify(json)}`);
-                console.log(`res: ${JSON.stringify(pv.path)}`);
-            })
+            //.do((pv) => {
+                //console.log(`set: ${JSON.stringify(json)}`);
+                //console.log(`res: ${JSON.stringify(pv.path)}`);
+            //})
             .catch(captureErrorStacks)
         );
     }

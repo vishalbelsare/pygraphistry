@@ -3,7 +3,7 @@ import { ref as $ref } from '@graphistry/falcor-json-graph';
 
 export function row(cols, values = {'Search': 'Enter search query', 'Links': 'None', 'Time': '07/28/2016'}, id = simpleflake().toJSON(), enabled = false) {
     return {
-        resultCount:0,
+        resultCount:50,
         enabled,
         id,
         length: cols.length,

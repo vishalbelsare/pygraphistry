@@ -26,7 +26,8 @@ function ResultCount({ index, resultCount, searchPivot, insertPivot }) {
     );
 }
 
-function renderPivotRow({id, index, length, fields, searchPivot, setPivotValue, insertPivot}) {
+function renderPivotRow({id, index, resultCount, length, fields, searchPivot, setPivotValue, insertPivot}) {
+    console.log('Result count', resultCount)
     const cellWidth = Math.round(88 / (length + 1));
     return (
         <tr>
@@ -54,7 +55,8 @@ function renderPivotRow({id, index, length, fields, searchPivot, setPivotValue, 
             )
         }
             <td style={{ width: `${cellWidth}%`}}>
-                <ResultCount index={index} resultCount={0} searchPivot={searchPivot} insertPivot={insertPivot}/>
+                <ResultCount index={index} resultCount={resultCount} searchPivot={searchPivot}
+                            insertPivot={insertPivot}/>
             </td>
         </tr>
     );
@@ -62,7 +64,7 @@ function renderPivotRow({id, index, length, fields, searchPivot, setPivotValue, 
 
 function mapStateToFragment({length = 0} = {}) {
     return `{
-        'id', 'length', [0...${length}]: {
+        'resultCount', 'id', 'length', [0...${length}]: {
             value
         }
     }`;
@@ -71,8 +73,9 @@ function mapStateToFragment({length = 0} = {}) {
 function mapFragmentToProps(fragment) {
     //const output =  { pivots: fragment, name: fragment.name, length: fragment.length};
     //console.log('output', output);
-    const {id, length } = fragment;
-    return {id, length, fields:fragment};
+    console.log(fragment)
+    const {id, length, resultCount} = fragment;
+    return {id, length, fields:fragment, resultCount};
 }
 
 export default container(
