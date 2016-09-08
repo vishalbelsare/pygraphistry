@@ -331,11 +331,16 @@ function setFlags(state, name, bool) {
     flags[name] = bool;
 }
 
+// var webglDebug = require('webgl-debug');
+// function throwOnGLError(err, funcName, args) {
+//     throw webglDebug.glEnumToString(err) + " was caused by call to: " + funcName;
+// };
 
 function createContext(state, pixelRatio) {
     const canvas = state.canvas;
     const aa = pixelRatio <= 1; // Disable AA on retina display
     const glOptions = {antialias: aa, premultipliedAlpha: false};
+    // let gl = webglDebug.makeDebugContext(canvas.getContext('webgl', glOptions), throwOnGLError);
     let gl = canvas.getContext('webgl', glOptions);
     if (gl === null) {
         gl = canvas.getContext('experimental-webgl', glOptions);

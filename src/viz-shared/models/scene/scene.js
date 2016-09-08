@@ -13,12 +13,10 @@ export function scene(workbookId, viewId, scene, options) {
             id: 'scene',
             name: 'Scene',
             simulating: true,
-            canvas: {
-                ...scene,
-                foreground: { color: new Color('#ffffff') },
-                hints: { edges: undefined, points: undefined },
-                background: { color: getBackgroundColor(scene, options) }
-            },
+            ...scene,
+            foreground: { color: new Color('#ffffff') },
+            hints: { edges: undefined, points: undefined },
+            background: { color: getBackgroundColor(scene, options) },
             camera: {
                 ...scene.camera,
                 ...camera(`${view}.scene`).camera
@@ -31,13 +29,13 @@ export function scene(workbookId, viewId, scene, options) {
                         type: 'color',
                         name: 'Point Colors',
                         stateKey: 'color',
-                        state: $ref(`${view}.scene.canvas.foreground`)
+                        state: $ref(`${view}.scene.foreground`)
                     }, {
                         id: 'background-color',
                         type: 'color',
                         name: 'Background Color',
                         stateKey: 'color',
-                        state: $ref(`${view}.scene.canvas.background`)
+                        state: $ref(`${view}.scene.background`)
                     }]
                 },
                 $ref(`${view}.scene.camera.options`)

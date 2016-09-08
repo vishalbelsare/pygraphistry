@@ -17,7 +17,7 @@ function setControlValue(action$, store) {
         .ofType(SET_CONTROL_VALUE)
         .groupBy(({ id }) => id)
         .mergeMap((actionsById) => actionsById
-            .debounceTime(100, Scheduler.async)
+            .auditTime(100, Scheduler.async)
             .switchMap(({ stateKey, falcor, state }) => falcor
                 .set($value(`state['${stateKey}']`, state))
                 .progressively()

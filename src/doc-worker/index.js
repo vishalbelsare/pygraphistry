@@ -6,10 +6,10 @@ import ReactDomServer from 'react-dom/server';
 import { cache as Cache } from '@graphistry/common';
 import removeExpressRoute from 'express-remove-route';
 import * as FalcorDocRouter from 'falcor-doc-router';
-import { falcorRoutes } from '../viz-shared/routes/falcor';
 import { Observable, Subscription } from 'rxjs';
 import { getDataSourceFactory } from '../viz-shared/middleware';
 import GraphDescriptor from 'falcor-doc-router/graph-descriptor';
+import { routes as falcorRoutes } from '../viz-shared/routes/falcor';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 import { loadViews, loadLabels, loadVGraph, loadWorkbooks } from '../viz-worker/services';
 
@@ -58,7 +58,7 @@ export function docWorker(app, server, sockets, caches) {
                     .descriptor();
 
                 const reactEl = React.createElement(GraphDescriptor, {
-                    descriptor, isCollapsed: false
+                    descriptor, expanded: true
                 });
                 const html = ReactDomServer.renderToStaticMarkup(reactEl);
 

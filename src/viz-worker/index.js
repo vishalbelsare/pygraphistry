@@ -200,7 +200,7 @@ export function vizWorker(app, server, sockets, caches) {
                 // stateful shared Subjects
                 vizServer.workbookDoc.next(workbook);
                 vizServer.viewConfig.next(view);
-                vizServer.renderConfig.next({ ...scene.canvas, camera: scene.camera });
+                vizServer.renderConfig.next(scene);
 
                 return interactionsLoop;
             })
@@ -215,7 +215,7 @@ export function vizWorker(app, server, sockets, caches) {
                 })
                 .mergeMap(
                     (nBody) => sendUpdate(
-                        `workbooks.open.views.current.scene.canvas.hints`,
+                        `workbooks.open.views.current.scene.hints`,
                         `workbooks.open.views.current.expressions.length`
                     ),
                     (nBody) => nBody

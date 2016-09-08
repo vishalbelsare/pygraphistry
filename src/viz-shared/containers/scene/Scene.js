@@ -19,33 +19,29 @@ export const Scene = compose(
                     bounds: { top, left, bottom, right }
                 },
 
-                canvas: {
-                    background: { color },
-                    foreground: { color },
-                    hints: { edges, points },
-                    server: { buffers, textures },
-                    options: {
-                        enable, disable, depthFunc, clearColor,
-                        lineWidth, blendFuncSeparate, blendEquationSeparate
-                    },
-                    items, modes, render, models, uniforms,
-                    targets, programs, arcHeight, triggers, buffers, textures,
-                    numRenderedSplits, clientMidEdgeInterpolation
-                }
+                background: { color },
+                foreground: { color },
+                hints: { edges, points },
+                server: { buffers, textures },
+                options: {
+                    enable, disable, depthFunc, clearColor,
+                    lineWidth, blendFuncSeparate, blendEquationSeparate
+                },
+                items, modes, render, models, uniforms,
+                targets, programs, arcHeight, triggers, buffers, textures,
+                numRenderedSplits, clientMidEdgeInterpolation
             }`
         },
-        (scene) => scene,
+        (scene) => ({ scene }),
         { layoutScene, layoutCamera }
     )
 )(renderScene);
 
-function renderScene({ camera, canvas, simulating, Renderer, layoutScene, layoutCamera }) {
+function renderScene({ scene, Renderer, layoutScene, layoutCamera }) {
     return (
         <div style={{ width: `100%`, height: `100%`, position: `absolute` }}>
             <Renderer key='renderer'
-                      camera={camera}
-                      canvas={canvas}
-                      simulating={simulating}
+                      scene={scene}
                       layoutScene={layoutScene}
                       layoutCamera={layoutCamera}/>
         </div>

@@ -93,7 +93,7 @@ function assignHintsToScene(scene, dataframe) {
     const numEdges = dataframe.numEdges();
     const numPoints = dataframe.numPoints();
 
-    scene.canvas.hints = {
+    scene.hints = {
         edges: Math.min(numEdges, MAX_SIZE_TO_ALLOCATE),
         points: Math.min(numPoints, MAX_SIZE_TO_ALLOCATE),
     };
