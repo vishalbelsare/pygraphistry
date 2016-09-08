@@ -4,63 +4,49 @@ import { tcell as tableCellClassName,
          insert as insertIconClassName,
          search as searchIconClassName } from './styles.less';
 import { setPivotValue, togglePivot } from '../actions/PivotRow';
-import { HelpBlock, Button, Glyphicon, ButtonGroup, Badge, FormGroup, FormControl, ControlLabel } from 'react-bootstrap'
+import { Button, Glyphicon, ButtonGroup, Badge } from 'react-bootstrap'
 import RcSwitch from 'rc-switch';
 
 function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot }) {
     return (
         <div>
+        <ButtonGroup style={{float:'right'}} >
+            <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus" /></Button>
+            <Button onClick={(ev) => splicePivot({index})}><Glyphicon glyph="minus" /></Button>
+            <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="search" /></Button>
+        </ButtonGroup>
         <Badge> {resultCount} </Badge>
         </div>
     );
-    //return (
-        //<div>
-        //<ButtonGroup style={{float:'right'}} >
-            //<Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus" /></Button>
-            //<Button onClick={(ev) => splicePivot({index})}><Glyphicon glyph="minus" /></Button>
-            //<Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="search" /></Button>
-        //</ButtonGroup>
-        //<Badge> {resultCount} </Badge>
-        //</div>
-    //);
 }
 
 function renderPivotRow({id, index, enabled, resultCount, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot}) {
     const cellWidth = Math.round(88 / (length + 1));
     return (
         <tr>
-            <td style={{ width: `8%` }}>
+            <td style={{ width: `6%` }}>
                 <RcSwitch defaultChecked={false}
                           checked={enabled}
                           checkedChildren={'On'}
                           onChange={(ev) => {
                               togglePivot({ index, enabled: ev })}
                           }
-                  unCheckedChildren={'Off'}/>
-                  <ButtonGroup bsSize='xsmall' style={{float:'right'}} >
-                      <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus" /></Button>
-                          <Button onClick={(ev) => splicePivot({index})}><Glyphicon glyph="minus" /></Button>
-                          <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="search" /></Button>
-                  </ButtonGroup>
+                          unCheckedChildren={'Off'}/>
             </td>
         {fields.map((field, index) =>
             <td key={`${id}: ${index}`}
                 style={{ width: `${cellWidth}%`}}>
                 <div className={tableCellClassName}>
-                <form>
-                    <FormControl
-                        bsSize="small"
-                        style={{ overflow:'scroll' }}
-                        type="text"
+                    <input
+                        type='th'
                         defaultValue={field.value}
-                        placeholder="Enter text"
-                        onChange={(ev) => {
-                            console.log('Ev', ev.target.value)
-                            setPivotValue({index, target:ev.target.value})}
+                        readOnly={false}
+                        disabled={false}
+                        onChange={
+                            (ev) => (ev.preventDefault() ||
+                                setPivotValue({index, target: ev.target.value}))
                         }
                     />
-                    <FormControl.Feedback />
-                </form>
                 </div>
             </td>
             )
