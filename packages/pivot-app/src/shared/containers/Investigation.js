@@ -5,9 +5,7 @@ import PivotRow from './PivotRow';
 import { table as tableClassName,
     tbody as tableBodyClassName,
     thead as tableHeaderClassName} from './styles.less';
-
 import styles from './styles.less';
-
 import { splicePivot,
         insertPivot,
         searchPivot
@@ -36,9 +34,8 @@ function renderInvestigation({length = 0, templates = 'all', name = 'default', p
                               insertPivot={insertPivot}/>
 
                 ))}
-                </tbody>
-            </Table>
-        </div>
+            </tbody>
+        </Table>
     );
 }
 
