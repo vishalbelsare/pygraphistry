@@ -1,0 +1,19 @@
+{
+    "ecmaVersion": 6,
+    "libs": [
+        "browser",
+        "jquery"
+    ], "plugins": {
+        "node": {},
+        "modules": {},
+        "es_modules": {},
+        "doc_comment": {
+            "fullDocs": true
+        }
+    }, "loadEagerly": [
+        "src/**/*.js",
+        "src/*.js"
+    ], "dontLoad": [
+        "build/*"
+    ]
+}
