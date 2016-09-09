@@ -9,10 +9,10 @@ import { simpleflake } from 'simpleflakes';
 import { investigation as createInvestigation } from '../models';
 
 const cols = [
+    { name: 'Mode'},
     { name: 'Search' },
     { name: 'Links' },
-    { name: 'Time'},
-    { name: 'Mode'}
+    { name: 'Time'}
 ];
 
 export function app(_investigations = [], id = simpleflake().toJSON()) {

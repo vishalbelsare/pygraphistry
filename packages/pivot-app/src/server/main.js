@@ -17,10 +17,10 @@ import {
     pathInvalidation as $invalidation
 } from '@graphistry/falcor-json-graph';
 const cols = [
+    { name: 'Mode'},
     { name: 'Search' },
     { name: 'Links' },
-    { name: 'Time'},
-    { name: 'Mode'},
+    { name: 'Time'}
 ];
 
 const placeHolder = {
