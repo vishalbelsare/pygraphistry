@@ -127,7 +127,7 @@ function renderApp({ title, investigations, setInvestigationName, selectedInvest
         </div>
 
 
-        <footer className="footer" style={{height: '300px', overflow: 'hidden'}}>
+        <footer className="footer" style={{height: '300px', overflow: 'auto'}}>
             <div className="container-fluid">
                 {selectedInvestigation ?
                     <Investigation data={selectedInvestigation}/>
