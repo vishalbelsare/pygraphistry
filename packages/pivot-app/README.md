@@ -14,5 +14,6 @@
 3. Register NPM with your online account: `npm adduser`
 4. Clone pivot-app using git. Open terminal in the pivot-app folder.
 5. Install dependencies with `npm install`.
-6. Compile and run app with `npm run dev`
-7. Open browser on [localhost:3000](http://localhost:3000)
+6. Compile with `npm run dev`
+7. Run with `npm run watch`
+8. Open browser on [localhost:3000](http://localhost:3000)
