@@ -21,7 +21,7 @@ function renderInvestigation({length = 0, name = 'default', pivots = [], searchP
                 <tbody>
                 {pivots.map((pivot, index) => (
                     <PivotRow data={pivot}
-                              index={index}
+                              rowIndex={index}
                               key={`${index}: ${pivot.id}`}
                               searchPivot={searchPivot}
                               splicePivot={splicePivot}
