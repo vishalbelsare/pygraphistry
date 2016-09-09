@@ -12,6 +12,66 @@ var jsonfile = require('jsonfile')
 var graphistryVizUrl = 'https://labs.graphistry.com/graph/graph.html?type=vgraph'
 
 
+
+
+//TODO how to dynamically lookup?
+// {int -> [ { ... } ]
+var pivotCache = {};
+
+
+function joinTemplate (str) {
+    var hit = str.match(/{(.*)} -{(.*)}-> {(.*)}/);
+}
+
+function buildLookup(text, lookups, level) {
+    var out = text;
+
+    //Special casing of [search] -[field]-> [source]
+    var hit = out.match(/\[(.*)\] *-\[(.*)\]-> *\[(.*)\]/);
+    if (hit) {
+        var search = hit[1];
+        var field = hit[2];
+        var source = hit[3];
+
+        if (search.match(/\{{ *pivot/)) {
+            //to avoid duplication of results, if base is a {{pivotX}}, do a lookup rather than re-search
+            //(join copies fields from base into result, and '*' linkage will therefore double link those,
+            // so this heuristic avoids that issue here)
+            var vals = _.uniq(_.map(pivotCache[search.match(/\d+/)[0]], function (row) {
+                return row[field];
+            }));
+            var match = `"${ field }"="` + vals.join(`" OR "${ field }"="`) + '"';
+            out = `"Alert Category"="${ source }" index="alert_graph_demo" ${ match }`;
+        } else {
+            //double linkage ok because would not have had otherwise
+            out = `"Alert Category"="${ source }" index="alert_graph_demo" | join "${ field }" overwrite=false [search ${ search }]`;
+        }
+    }
+
+    //regular macro
+    for (var i = 0; i < level; i++) {
+        out = out.replace(new RegExp('\\{\\{pivot' + i + '\\}\\}', 'g'), lookups[i] + ' | fields *');
+    }
+
+    return out;
+}
+
+function buildLookups (pivots, pivotsById) {
+    var lookups = {};
+    for (var i = 0; i < pivots.length; i++) {
+        var pivotID = pivots[i].value[1];
+        var lookup = buildLookup(pivotsById[pivotID][0].value, lookups, i);
+        lookups[i] = lookup;
+    }
+    return lookups;
+}
+
+function expandTemplate(pivots, pivotsById, text) {
+    var lookups = buildLookups(pivots, pivotsById);
+    return buildLookup(text, lookups, pivots.length);
+}
+
+
 export function searchPivot({app, investigation, maybeId }) {
 
     const pivots = investigation;
