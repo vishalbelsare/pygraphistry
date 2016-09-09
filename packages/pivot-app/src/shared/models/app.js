@@ -12,6 +12,7 @@ const cols = [
     { name: 'Search' },
     { name: 'Links' },
     { name: 'Time'},
+    { name: 'Mode'}
 ];
 
 export function app(_investigations = [], id = simpleflake().toJSON()) {

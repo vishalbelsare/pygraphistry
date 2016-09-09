@@ -20,12 +20,14 @@ const cols = [
     { name: 'Search' },
     { name: 'Links' },
     { name: 'Time'},
+    { name: 'Mode'},
 ];
 
 const placeHolder = {
     'Search': 'Input Splunk Query',
     'Links': 'Connect to Attributes',
     'Time': '07/28/1016/',
+    'Mode': 'Search',
 }
 
 const queryOptions = {
@@ -47,7 +49,8 @@ const pivots1 = Array.from({ length: 1 },
             return createPivot(cols, {
                 'Search': `${query}   | spath output=dataset path="metadata.dataset" | search dataset="*" `,
                 'Links': 'msg, dataset',
-                'Time': '07/28/2016'
+                'Time': '07/28/2016',
+                'Mode': 'Search'
             })
         }
         else {
@@ -62,7 +65,8 @@ const pivots2 = Array.from({ length: 2 },
             return createPivot(cols, {
                 'Search': `malware`,
                 'Links': 'dest_ip, misc',
-                'Time': '07/28/2016'
+                'Time': '07/28/2016',
+                'Mode': 'Search'
             })
         }
         else {
