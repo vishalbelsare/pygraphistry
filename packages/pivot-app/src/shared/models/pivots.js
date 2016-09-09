@@ -1,7 +1,7 @@
 import { simpleflake } from 'simpleflakes';
 import { ref as $ref } from '@graphistry/falcor-json-graph';
 
-export function pivot(cols, values = {'Search': 'Enter search query', 'Mode': 'Search', 'Links': 'None', 'Time': '07/28/2016'}, id = simpleflake().toJSON(), enabled = false) {
+export function pivot(cols, values = {'Search': 'Enter search query', 'Mode': 'Search', 'Input': 'Pivot 0', 'Links': 'None', 'Time': '07/28/2016'}, id = simpleflake().toJSON(), enabled = false) {
     return {
         resultCount:0,
         enabled,

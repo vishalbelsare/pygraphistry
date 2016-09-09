@@ -18,6 +18,7 @@ import {
 } from '@graphistry/falcor-json-graph';
 const cols = [
     { name: 'Mode'},
+    { name: 'Input' },
     { name: 'Search' },
     { name: 'Links' },
     { name: 'Time'}
@@ -28,6 +29,7 @@ const placeHolder = {
     'Links': 'Connect to Attributes',
     'Time': '07/28/1016/',
     'Mode': 'Search',
+    'Input': 'Pivot 0'
 }
 
 const queryOptions = {
@@ -50,7 +52,8 @@ const pivots1 = Array.from({ length: 1 },
                 'Search': `${query}   | spath output=dataset path="metadata.dataset" | search dataset="*" `,
                 'Links': 'msg, dataset',
                 'Time': '07/28/2016',
-                'Mode': 'Search'
+                'Mode': 'Search',
+                'Input': 'Pivot 0'
             })
         }
         else {
@@ -66,7 +69,8 @@ const pivots2 = Array.from({ length: 2 },
                 'Search': `malware`,
                 'Links': 'dest_ip, misc',
                 'Time': '07/28/2016',
-                'Mode': 'Search'
+                'Mode': 'Search',
+                'Input': 'Pivot 0'
             })
         }
         else {
