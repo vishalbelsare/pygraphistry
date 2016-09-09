@@ -10,6 +10,7 @@ import { investigation as createInvestigation } from '../models';
 
 const cols = [
     { name: 'Mode'},
+    { name: 'Input' },
     { name: 'Search' },
     { name: 'Links' },
     { name: 'Time'}
