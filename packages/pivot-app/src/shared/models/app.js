@@ -17,7 +17,7 @@ const cols = [
 export function app(_investigations = [], id = simpleflake().toJSON()) {
 
     const investigations = _investigations.map((cur, index) =>
-        createInvestigation(`Investigation: ${cur.name || index}`, cur)
+        createInvestigation(`CASE: ${cur.name || index}`, cur)
     );
 
     const pivots = _investigations.reduce((prev, cur, index, array) => {

@@ -6,6 +6,7 @@ import { tcell as tableCellClassName,
 import { setPivotValue, togglePivot } from '../actions/PivotRow';
 import { Button, Glyphicon, ButtonGroup, Badge } from 'react-bootstrap'
 import RcSwitch from 'rc-switch';
+import styles from './styles.less';
 
 function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot }) {
     return (
@@ -14,6 +15,8 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
             <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus" /></Button>
             <Button onClick={(ev) => splicePivot({index})}><Glyphicon glyph="minus" /></Button>
             <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="search" /></Button>
+            <Button ><Glyphicon glyph="calendar" /></Button>
+            <Button ><Glyphicon glyph="cog" /></Button>
         </ButtonGroup>
         <Badge> {resultCount} </Badge>
         </div>
@@ -21,10 +24,9 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
 }
 
 function renderPivotRow({id, index, enabled, resultCount, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot}) {
-    const cellWidth = Math.round(88 / (length + 1));
     return (
         <tr>
-            <td style={{ width: `6%` }}>
+            <td className={styles.pivotToggle}>
                 <RcSwitch defaultChecked={false}
                           checked={enabled}
                           checkedChildren={'On'}
@@ -34,8 +36,9 @@ function renderPivotRow({id, index, enabled, resultCount, length, fields, search
                           unCheckedChildren={'Off'}/>
             </td>
         {fields.map((field, index) =>
-            <td key={`${id}: ${index}`}
-                style={{ width: `${cellWidth}%`}}>
+            <td key={`${id}: ${index}`} style={ index > 0 ? {display: 'none'} : {} }
+                className={styles['pivotData' + index]}
+            >
                 <div className={tableCellClassName}>
                     <input
                         type='th'
@@ -51,10 +54,11 @@ function renderPivotRow({id, index, enabled, resultCount, length, fields, search
             </td>
             )
         }
-            <td style={{ width: `${cellWidth}%`}}>
+            <td className={styles.pivotIcons}>
                 <ResultCount index={index} resultCount={resultCount} searchPivot={searchPivot}
-                            insertPivot={insertPivot} splicePivot={splicePivot}/>
+                    insertPivot={insertPivot} splicePivot={splicePivot}/>
             </td>
+
         </tr>
     );
 }

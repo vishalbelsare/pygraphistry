@@ -6,6 +6,8 @@ import { table as tableClassName,
     tbody as tableBodyClassName,
     thead as tableHeaderClassName} from './styles.less';
 
+import styles from './styles.less';
+
 import { splicePivot,
         insertPivot,
         searchPivot
@@ -14,24 +16,8 @@ import { splicePivot,
 function renderInvestigation({length = 0, name = 'default', pivots = [], searchPivot, insertPivot, splicePivot }) {
     const cellWidth = Math.round(88 / (4));
     return (
-        <div>
-            <div>
-            Selected Investigation Name: { name }
-            </div>
-            <div>
-            Number of pivots in investigation: { length }
-            </div>
+        <div className={styles.pivots}>
             <Table>
-                { /* TODO reuse table row */ }
-                <thead>
-                    <tr>
-                        <th style={{ width: `6%` }}> &nbsp; </th>
-                        <th style={{ width: `${cellWidth}%` }}>Search</th>
-                        <th style={{ width: `${cellWidth}%` }}>Extract nodes</th>
-                        <th style={{ width: `${cellWidth}%` }}>Time</th>
-                        <th style={{ width: `${cellWidth}%` }}>Result</th>
-                    </tr>
-                </thead>
                 <tbody>
                 {pivots.map((pivot, index) => (
                     <PivotRow data={pivot}
