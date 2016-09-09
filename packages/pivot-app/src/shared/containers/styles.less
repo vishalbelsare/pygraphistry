@@ -128,10 +128,11 @@ td, th {
 }
 
 :local(.pivotToggle) {
-    width: 30px;
+    width: 70px;
 }
 :local(.pivotData0) {
-    width: 100%;
+    //https://github.com/less/less.js/issues/974
+    width: ~"calc(100% - 320px)";
 }
 :local(.pivotData1) {
 
