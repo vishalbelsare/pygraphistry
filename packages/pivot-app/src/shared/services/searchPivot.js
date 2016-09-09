@@ -11,15 +11,17 @@ var jsonfile = require('jsonfile')
 
 var graphistryVizUrl = 'https://labs.graphistry.com/graph/graph.html?type=vgraph'
 
-export function searchPivot({ investigation, app, index }) {
+
+export function searchPivot({app, investigation, maybeId }) {
 
     const pivots = investigation;
     const { pivotsById } = app;
-    //const index = id === undefined ?
-        //pivots.length :
-        //pivots.findIndex(({ value: ref }) => (
-            //ref[ref.length - 1] === id
-    //));
+    const index = !maybeId ?
+        (pivots.length - 1) :
+        pivots.findIndex(({ value: ref }) => (
+            ref[ref.length - 1] === maybeId
+    ));
+
     const id = investigation[index].value[1];
     const pivot = pivotsById[id];
     pivot.enabled = true;
