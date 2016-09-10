@@ -108,7 +108,7 @@ function renderApp({ title, investigations, setInvestigationName, selectedInvest
                     <a className="navbar-brand" href="#">Untitled3 (32)</a>
                 </div>
 
-               <div class="collapse navbar-collapse">
+               <div className="collapse navbar-collapse">
                     <a href="#" className="navbar-brand" style={
                         {'fontSize': '1.7em',
                          'margin': 0,
