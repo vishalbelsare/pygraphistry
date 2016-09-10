@@ -126,12 +126,12 @@ function renderApp({ title, investigations, setInvestigationName, selectedInvest
         </nav>
 
 
-        <div className="content" id="graphistry-canvas-wrapper" style={{height: '-webkit-calc(100% - 60px - 300px)', width: '100%', overflow: 'hidden', minHeight: '0px'}}>
+        <div className="content" id="graphistry-canvas-wrapper" style={{height: '-webkit-calc(100% - 60px - 200px)', width: '100%', overflow: 'hidden', minHeight: '0px'}}>
             <GraphFrame url={selectedInvestigation.url}/>
         </div>
 
 
-        <footer className="footer" style={{height: '300px', overflow: 'auto'}}>
+        <footer className="footer" style={{height: '200px', overflow: 'auto'}}>
             <div className="container-fluid">
                 {selectedInvestigation ?
                     <Investigation data={selectedInvestigation}/>
