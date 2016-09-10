@@ -53,7 +53,7 @@ function renderPivotCellByIndex (
                     >
                     {pivotNames.map((name, index) => {
                         return (<MenuItem eventKey={name} key={`${index}: ${id}`}>
-                            {name}
+                            {name.replace('Pivot', 'Step')}
                         </MenuItem>)}
                     )}
                     </DropdownButton>
@@ -63,7 +63,7 @@ function renderPivotCellByIndex (
             if (fields[fieldToIndex['Mode']].value === 'Search') {
                 return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}>
                     <div className={tableCellClassName}>
-                        <input
+                        <label>Using query</label> <input
                             type='th'
                             defaultValue={fields[fieldToIndex['Search']].value}
                             readOnly={false}
@@ -79,7 +79,7 @@ function renderPivotCellByIndex (
                 const inputNames = _.range(0, 10).map((i) => "Pivot " + i); //TODO use rowIndex
                 console.log('INPUT NAMES', rowIndex, '->', inputNames);
                 return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}>
-                        <DropdownButton id={"pivotInputSelector" + id}
+                        <label>From data</label> <DropdownButton id={"pivotInputSelector" + id}
                             title={fields[fieldToIndex['Input']].value}
                             onSelect={
                                 (mode, evt) => setPivotValue({index: fieldToIndex['Input'], target: mode})
@@ -99,9 +99,9 @@ function renderPivotCellByIndex (
 
 
 function renderPivotRow({id, rowIndex, enabled, resultCount, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot}) {
-    console.log("my pivot row: ", rowIndex);
+    console.log("my pivot row: ", rowIndex, enabled);
     return (
-        <tr id={"pivotRow" + id}>
+        <tr id={"pivotRow" + id} className={styles['row-toggled-' + (enabled ? 'on' : 'off')]}>
             <td className={styles.pivotToggle}>
                 <RcSwitch defaultChecked={false}
                           checked={enabled}
@@ -114,7 +114,7 @@ function renderPivotRow({id, rowIndex, enabled, resultCount, length, fields, sea
             { fields.map((field, fldIndex) => renderPivotCellByIndex(
                 field, fldIndex,
                 id, rowIndex, enabled, resultCount, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot)) }
-            <td className={styles.pivotResultCount}>
+            <td className={styles.pivotResultCount + ' ' + styles['result-count-' + (enabled ? 'on' : 'off')]}>
                     <Badge> {resultCount} </Badge>
             </td>
             <td className={styles.pivotIcons}>
