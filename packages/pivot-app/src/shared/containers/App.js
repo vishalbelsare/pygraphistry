@@ -9,7 +9,7 @@ import styles from './styles.less';
 
 function GraphFrame({ url }) {
     return (
-        <iframe src={url} scrolling="no" style={{
+        <iframe allowFullScreen="true" src={url} scrolling="no" style={{
             width:'100%',
             height:'700px',
             border:'0px solid #DDD',
