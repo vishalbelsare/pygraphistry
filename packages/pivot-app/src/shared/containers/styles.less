@@ -155,10 +155,26 @@ td, th {
 }
 :local(.pivotData0) {
     width: 200px;
+    button {
+        font-weight: bold;
+    }
+    button:not(:hover) {
+        border: 0;
+        background: transparent;
+    }
 }
 :local(.pivotData1) {
     //https://github.com/less/less.js/issues/974
-    width: ~"calc(100% - 530px)";
+    width: ~"calc(100% - 540px)";
+
+    button {
+        font-weight: bold;
+    }
+    button:not(:hover) {
+        border: 0;
+        background: transparent;
+    }
+
 }
 :local(.pivotData2) {
     display: none;
@@ -170,7 +186,7 @@ td, th {
     display: none;
 }
 :local(.pivotResultCount) {
-    width: 30px;
+    width: 40px;
 }
 :local(.pivotIcons) {
     width: 230px;

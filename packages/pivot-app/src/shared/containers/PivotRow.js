@@ -13,12 +13,13 @@ import PivotTemplates from '../models/PivotTemplates';
 function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot }) {
     return (
         <div>
-        <ButtonGroup style={{float:'right'}} >
-            <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus" /></Button>
-            <Button onClick={(ev) => splicePivot({index})}><Glyphicon glyph="minus" /></Button>
+        <ButtonGroup>
             <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="search" /></Button>
-            <Button ><Glyphicon glyph="calendar" /></Button>
             <Button ><Glyphicon glyph="cog" /></Button>
+        </ButtonGroup>
+        <ButtonGroup style={{marginLeft: '0.7em'}}>
+            <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
+            <Button onClick={(ev) => splicePivot({index})}><Glyphicon glyph="trash" /></Button>
         </ButtonGroup>
         </div>
     );

@@ -21,12 +21,12 @@ function renderInvestigation({length = 0, name = 'default', pivots = [], searchP
                 <thead>
                     <tr>
                         <td className={styles.pivotToggle}></td>
-                        <td className={styles.pivotData0 + ' pivotTypeSelector'}>Type</td>
-                        <td className={styles.pivotData1}>Input</td>
+                        <td className={styles.pivotData0 + ' pivotTypeSelector'}>Step</td>
+                        <td className={styles.pivotData1}>Parameters</td>
                         <td className={styles.pivotData2}></td>
                         <td className={styles.pivotData3}></td>
                         <td className={styles.pivotData4}></td>
-                        <td className={styles.pivotResultCount}>Results</td>
+                        <td className={styles.pivotResultCount}>Hits</td>
                         <td className={styles.pivotIcons}></td>
                     </tr>
                 </thead>
