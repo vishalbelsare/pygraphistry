@@ -11,7 +11,7 @@ function GraphFrame({ url }) {
     return (
         <iframe allowFullScreen="true" src={url} scrolling="no" style={{
             width:'100%',
-            height:'700px',
+            height: '100%',
             border:'0px solid #DDD',
             boxSizing: 'border-box',
             overflow: 'hidden'
@@ -86,7 +86,7 @@ function renderApp({ title, investigations, setInvestigationName, selectedInvest
 
     <div className="main-panel" style={{width: 'calc(100% - 90px)', height: '100%'}}>
 
-        <nav className="navbar navbar-default navbar-fixed" style={{height: '61px'}}>
+        <nav className="navbar navbar-default navbar-fixed" style={{height: '61px', overflow: 'hidden'}}>
             <div className="container-fluid">
                 <div className="navbar-header">
                     <button type="button" className="navbar-toggle" data-toggle="collapse">
