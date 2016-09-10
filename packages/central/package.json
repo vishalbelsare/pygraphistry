@@ -18,6 +18,9 @@
     "graphistry-central": "./bin/central"
   },
   "dependencies": {
+    "@graphistry/falcor": "^0.2.3",
+    "@graphistry/falcor-json-graph": "^1.1.5",
+    "@graphistry/falcor-router": "^0.5.3",
     "StreamGL": "graphistry/StreamGL",
     "babel-cli": "~6.5.1",
     "babel-plugin-transform-runtime": "~6.8.0",
@@ -33,11 +36,8 @@
     "express-handlebars": "~3.0.0",
     "express-http-proxy": "~0.6.0",
     "express-urlrewrite": "~1.2.0",
-    "falcor": "graphistry/falcor",
     "falcor-express": "netflix/falcor-express",
-    "falcor-json-graph": "graphistry/falcor-json-graph",
     "falcor-path-syntax": "netflix/falcor-path-syntax",
-    "falcor-router": "graphistry/falcor-router",
     "graph-viz": "graphistry/graph-viz",
     "hbs": "~4.0.0",
     "mongodb": "~2.0.25",
