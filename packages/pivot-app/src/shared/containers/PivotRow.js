@@ -8,6 +8,7 @@ import { Button, Glyphicon, ButtonGroup, Badge, DropdownButton, MenuItem } from 
 import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import _ from 'underscore';
+import PivotTemplates from '../models/PivotTemplates';
 
 function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot }) {
     return (
@@ -41,9 +42,9 @@ function renderPivotCellByIndex (
         case 0:
             //return <td key={`${id}: ${fldIndex}`} className="pivotTypeSelector">Searcher</td>;
 
-            const pivotNames = ['Search','pivot 1', 'pivot 2'];
+            const pivotNames = Object.keys(PivotTemplates.pivots);
 
-            return (<td key={`${id}: ${fldIndex}`} className="pivotTypeSelector pivotData0">
+            return (<td key={`${id}: ${fldIndex}`} className={styles.pivotData0 + ' pivotTypeSelector'}>
                     <DropdownButton id={"pivotTypeSelector" + id} title={field.value}
                     onSelect={
                         (mode, evt) => {

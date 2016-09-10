@@ -10,6 +10,8 @@ import { simpleflake } from 'simpleflakes';
 import { app as createApp, pivot as createPivot, investigation as createInvestigation } from '../shared/models';
 import { loadApp, loadInvestigations, loadPivots, loadRows, insertPivot, splicePivot, calcTotals, searchPivot, uploadGraph } from '../shared/services';
 
+import PivotTemplates from '../shared/models/PivotTemplates';
+
 import {
     ref as $ref,
     atom as $atom,
@@ -28,7 +30,7 @@ const placeHolder = {
     'Search': 'Input Splunk Query',
     'Links': 'Connect to Attributes',
     'Time': '07/28/1016/',
-    'Mode': 'Search',
+    'Mode': PivotTemplates.get('Search').name,
     'Input': 'Pivot 0'
 }
 
@@ -52,8 +54,8 @@ const pivots1 = Array.from({ length: 1 },
                 'Search': `${query}   | spath output=dataset path="metadata.dataset" | search dataset="*" `,
                 'Links': 'msg, dataset',
                 'Time': '07/28/2016',
-                'Mode': 'Search',
-                'Input': 'Pivot 0'
+                'Mode': PivotTemplates.get('Search').name,
+                'Input': 'none'
             })
         }
         else {
@@ -69,8 +71,8 @@ const pivots2 = Array.from({ length: 2 },
                 'Search': `malware`,
                 'Links': 'dest_ip, misc',
                 'Time': '07/28/2016',
-                'Mode': 'Search',
-                'Input': 'Pivot 0'
+                'Mode': PivotTemplates.get('Search').name,
+                'Input': 'none'
             })
         }
         else {
@@ -78,10 +80,44 @@ const pivots2 = Array.from({ length: 2 },
         }
     }
 );
-pivots1.name = 'Dataset Errors'
-pivots2.name = 'Malware'
 
-const app = createApp([pivots1, pivots2]);
+
+const pivots3 = [
+    createPivot(cols, {
+        'Search': 'BRO8ZA4A "Alert Category"="Fire Eye" index="alert_graph_demo"',
+        'Links': '*',
+        'Time': '',
+        'Mode': PivotTemplates.get('Search').name,
+        'Input': 'none'
+    }),
+    createPivot(cols, {
+        'Search': '[{{pivot0}}] -[Message]-> [Fire Eye]',
+        'Links': '*',
+        'Time': '',
+        'Mode': PivotTemplates.get('Expand with Fire Eye').name,
+        'Input': 'Pivot 0'
+    }),
+    createPivot(cols, {
+        'Search': '[{{pivot1}}] -[Fire Eye URL]-> [blue coat proxy]',
+        'Links': '*',
+        'Time': '',
+        'Mode': PivotTemplates.get('Expand with Blue Coat').name,
+        'Input': 'Pivot 1'
+    }),
+    createPivot(cols, {
+        'Search': '[{{pivot2}}] -[External IPs]-> [Firewall]',
+        'Links': '*',
+        'Time': '',
+        'Mode': PivotTemplates.get('Expand with Firewall').name,
+        'Input': 'Pivot 2'
+    })
+];
+
+pivots1.name = 'Dataset Errors';
+pivots2.name = 'Malware';
+pivots3.name = 'Botnet BRO8ZA4A';
+
+const app = createApp([pivots3, pivots1, pivots2]);
 
 const routeServices = {
     loadApp: loadApp(app),

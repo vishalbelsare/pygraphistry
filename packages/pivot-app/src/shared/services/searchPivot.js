@@ -33,7 +33,7 @@ function buildLookup(text, lookups, level) {
         var field = hit[2];
         var source = hit[3];
 
-        if (search.match(/\{{ *pivot/)) {
+        if (search.match(/\{\{ *pivot/)) {
             //to avoid duplication of results, if base is a {{pivotX}}, do a lookup rather than re-search
             //(join copies fields from base into result, and '*' linkage will therefore double link those,
             // so this heuristic avoids that issue here)
@@ -59,48 +59,66 @@ function buildLookup(text, lookups, level) {
 function buildLookups (pivots, pivotsById) {
     var lookups = {};
     for (var i = 0; i < pivots.length; i++) {
-        var pivotID = pivots[i].value[1];
-        var lookup = buildLookup(pivotsById[pivotID][0].value, lookups, i);
+        var lookup = buildLookup(pivotToSearchString(pivots[i], {pivotsById}), lookups, i);
+        console.log('pivot', i, '->', lookup);
         lookups[i] = lookup;
     }
     return lookups;
 }
 
-function expandTemplate(pivots, pivotsById, text) {
+function expandTemplate(pivots, {pivotsById}, text) {
     var lookups = buildLookups(pivots, pivotsById);
     return buildLookup(text, lookups, pivots.length);
 }
 
 
-export function searchPivot({app, investigation, maybeId }) {
+
+function pivotIdToSearchString (id, {pivotsById}) {
+    const pivot = pivotsById[id];
+    for(var i = 0; i < pivot.length; i++) {
+        if (pivot[i].name === 'Search') {
+            return pivot[i].value;
+        }
+    }
+    throw new Error('could not find Search in pivot id ', id);
+}
+function pivotToSearchString(pivot, {pivotsById}) {
+    return pivotIdToSearchString(pivot.value[1], {pivotsById});
+}
+
+export function searchPivot({app, investigation, index }) {
+
+
 
     const pivots = investigation;
     const { pivotsById } = app;
-    const index = !maybeId ?
-        (pivots.length - 1) :
-        pivots.findIndex(({ value: ref }) => (
-            ref[ref.length - 1] === maybeId
-    ));
+    var index = index === null || index === undefined ? (pivots.length - 1) : index;
 
     const id = investigation[index].value[1];
     const pivot = pivotsById[id];
     pivot.enabled = true;
 
-    // TODO There's a much cleaner way to do this.
-    var pivotDict = {};
-    for(var i = 0; i < pivot.length; i++) {
-        var cell = pivot[i];
-        var name = pivot[i].name;
-        pivotDict[cell['name']] =  cell['value'];
-    }
+    //{'Search': string, 'Mode': string, ...}
+    const pivotFields =
+        _.object(
+            _.range(0, pivot.length)
+                .map((i) => [pivot[i].name, pivot[i].value]));
 
-    var splunkResults;
-    var searchQuery = pivotToSplunk(pivotDict);
-    var splunkResults = searchSplunk(searchQuery)
+    const rawSearch = pivotIdToSearchString(id, app);
+    var query = expandTemplate(pivots, app, rawSearch);
+    var searchQuery = pivotToSplunk({'Search': query});
+    console.log('======= Search ======')
+    console.log(rawSearch)
+    console.log('------- Expansion ---');
+    console.log(searchQuery);
+    const splunkResults = searchSplunk(searchQuery)
         .do(({resultCount}) => {
             pivot.resultCount = resultCount})
+         .do((rows) => {
+            pivotCache[index] = rows.output;
+            console.log('saved pivot ', index, '# results:', rows.output.length); })
         .map(({output}) => output);
-    var shapedResults = shapeSplunkResults(splunkResults, pivotDict)
+    var shapedResults = shapeSplunkResults(splunkResults, pivotFields, index)
         .do((results) => pivot.results = results)
         .map((results) => ({app, investigation, pivot}));
     return shapedResults;
