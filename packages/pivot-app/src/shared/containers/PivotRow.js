@@ -40,6 +40,8 @@ function renderPivotCellByIndex (
     field, fldIndex,
     id, rowIndex, enabled, resultCount, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot) {
 
+    const template = PivotTemplates.get(fields[fieldToIndex['Mode']].value);
+
     switch (fldIndex) {
         case 0:
             //return <td key={`${id}: ${fldIndex}`} className="pivotTypeSelector">Searcher</td>;
@@ -62,37 +64,39 @@ function renderPivotCellByIndex (
                 </td>);
 
         case 1:
-            if (fields[fieldToIndex['Mode']].value === 'Search') {
-                return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}>
-                    <div className={tableCellClassName}>
-                        <label>Using query</label> <input
-                            type='th'
-                            defaultValue={fields[fieldToIndex['Search']].value}
-                            readOnly={false}
-                            disabled={false}
-                            onChange={
-                                (ev) => (ev.preventDefault() ||
-                                    setPivotValue({index: fieldToIndex['Search'], target: ev.target.value}))
-                            }
-                        />
-                    </div>
-                </td>);
-            } else {
-                const inputNames = _.range(0, 10).map((i) => "Pivot " + i); //TODO use rowIndex
-                console.log('INPUT NAMES', rowIndex, '->', inputNames);
-                return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}>
-                        <label>From data</label> <DropdownButton id={"pivotInputSelector" + id}
-                            title={fields[fieldToIndex['Input']].value}
-                            onSelect={
-                                (mode, evt) => setPivotValue({index: fieldToIndex['Input'], target: mode})
-                            } >
-                            {inputNames.map((name, index) => (
-                                <MenuItem eventKey={name} key={`${index}: ${id}`}>
-                                    {name}
-                                </MenuItem>)
-                            )}
-                            </DropdownButton>
-                    </td>)
+            switch (template.kind) {
+                case 'text':
+                    return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}>
+                        <div className={tableCellClassName}>
+                            <label>{template.label}</label> <input
+                                type='th'
+                                defaultValue={fields[fieldToIndex['Search']].value}
+                                readOnly={false}
+                                disabled={false}
+                                onChange={
+                                    (ev) => (ev.preventDefault() ||
+                                        setPivotValue({index: fieldToIndex['Search'], target: ev.target.value}))
+                                }
+                            />
+                        </div>
+                    </td>);
+                case 'button':
+                    const inputNames = _.range(0, rowIndex).map((i) => "Pivot " + i);
+                    return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}>
+                            <label>{template.label}</label> <DropdownButton id={"pivotInputSelector" + id}
+                                title={fields[fieldToIndex['Input']].value.replace('Pivot', 'Step')}
+                                onSelect={
+                                    (mode, evt) => setPivotValue({index: fieldToIndex['Input'], target: mode})
+                                } >
+                                {inputNames.map((name, index) => (
+                                    <MenuItem eventKey={name} key={`${index}: ${id}`}>
+                                        {name.replace('Pivot', 'Step')}
+                                    </MenuItem>)
+                                )}
+                                </DropdownButton>
+                        </td>);
+                default:
+                    throw new Error('Unkown template kind ' + template.kind);
             }
         default:
             return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}></td>);
@@ -101,7 +105,6 @@ function renderPivotCellByIndex (
 
 
 function renderPivotRow({id, rowIndex, enabled, resultCount, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot}) {
-    console.log("my pivot row: ", rowIndex, enabled);
     return (
         <tr id={"pivotRow" + id} className={styles['row-toggled-' + (enabled ? 'on' : 'off')]}>
             <td className={styles.pivotToggle}>

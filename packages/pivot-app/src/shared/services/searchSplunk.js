@@ -1,5 +1,7 @@
 var splunkjs = require('splunk-sdk');
 import { Observable } from 'rxjs';
+import { pivotToSearchString, pivotIdToSearchString, expandTemplate }
+  from './support/splunkMacros.js';
 
 var service = new splunkjs.Service({
   host: process.env.SPLUNK_HOST || 'splunk.graphistry.com',
