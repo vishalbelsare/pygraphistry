@@ -18,6 +18,18 @@ function renderInvestigation({length = 0, name = 'default', pivots = [], searchP
     return (
         <div className={styles.pivots}>
             <Table>
+                <thead>
+                    <tr>
+                        <td className={styles.pivotToggle}></td>
+                        <td className={styles.pivotData0 + ' pivotTypeSelector'}>Type</td>
+                        <td className={styles.pivotData1}>Input</td>
+                        <td className={styles.pivotData2}></td>
+                        <td className={styles.pivotData3}></td>
+                        <td className={styles.pivotData4}></td>
+                        <td className={styles.pivotResultCount}>Results</td>
+                        <td className={styles.pivotIcons}></td>
+                    </tr>
+                </thead>
                 <tbody>
                 {pivots.map((pivot, index) => (
                     <PivotRow data={pivot}

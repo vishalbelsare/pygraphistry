@@ -20,7 +20,6 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
             <Button ><Glyphicon glyph="calendar" /></Button>
             <Button ><Glyphicon glyph="cog" /></Button>
         </ButtonGroup>
-        <Badge> {resultCount} </Badge>
         </div>
     );
 }
@@ -93,7 +92,7 @@ function renderPivotCellByIndex (
                     </td>)
             }
         default:
-            return (<td key={`${id}: ${fldIndex}`} style={ {display: 'none'} }></td>);
+            return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}></td>);
     }
 };
 
@@ -114,6 +113,9 @@ function renderPivotRow({id, rowIndex, enabled, resultCount, length, fields, sea
             { fields.map((field, fldIndex) => renderPivotCellByIndex(
                 field, fldIndex,
                 id, rowIndex, enabled, resultCount, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot)) }
+            <td className={styles.pivotResultCount}>
+                    <Badge> {resultCount} </Badge>
+            </td>
             <td className={styles.pivotIcons}>
                 <ResultCount index={rowIndex} resultCount={resultCount} searchPivot={searchPivot}
                     insertPivot={insertPivot} splicePivot={splicePivot}/>

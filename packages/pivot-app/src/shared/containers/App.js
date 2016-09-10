@@ -5,6 +5,7 @@ import { DevTools } from './DevTools';
 import { hoistStatics } from 'recompose';
 import { connect, container } from '@graphistry/falcor-react-redux';
 import { setInvestigationName } from '../actions/investigationList';
+import styles from './styles.less';
 
 function GraphFrame({ url }) {
     return (
@@ -85,7 +86,7 @@ function renderApp({ title, investigations, setInvestigationName, selectedInvest
 
     <div className="main-panel" style={{width: 'calc(100% - 90px)', height: '100%'}}>
 
-        <nav className="navbar navbar-default navbar-fixed" style={{height: '65px'}}>
+        <nav className="navbar navbar-default navbar-fixed" style={{height: '61px'}}>
             <div className="container-fluid">
                 <div className="navbar-header">
                     <button type="button" className="navbar-toggle" data-toggle="collapse">
@@ -101,22 +102,25 @@ function renderApp({ title, investigations, setInvestigationName, selectedInvest
                            selectedInvestigation={selectedInvestigation}/>
                     </span>
 
-                    <a className="navbar-brand" href="#">Original</a>
-                    <a className="navbar-brand" href="#">Fork1 (340)</a>
-                    <a className="navbar-brand on" href="#">Fork2 (58)</a>
-                    <a className="navbar-brand" href="#">Fork3 (32)</a>
+                    <a className="navbar-brand" href="#">Input</a>
+                    <a className="navbar-brand on" href="#">Untitled1 (20)</a>
+                    <a className="navbar-brand" href="#">Untitled2 (58)</a>
+                    <a className="navbar-brand" href="#">Untitled3 (32)</a>
                 </div>
-                <div className="collapse navbar-collapse">
 
-                    <ul className="nav navbar-nav navbar-right">
-                        <li>
-                           <a href="">
-                               &nbsp;
-                            </a>
-                        </li>
-
-
-                    </ul>
+               <div class="collapse navbar-collapse">
+                    <a href="#" className="navbar-brand" style={
+                        {'fontSize': '1.7em',
+                         'margin': 0,
+                         'right': '1em',
+                         'color': 'white',
+                         'position': 'absolute',
+                         'height': '60px',
+                         'borderLeft': '1px solid #8095e0',
+                         'paddingLeft': '1.5em'}
+                    }>
+                        <i className="pe-7s-plus"></i>
+                    </a>
                 </div>
             </div>
         </nav>

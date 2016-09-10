@@ -102,7 +102,7 @@ td, th {
     display: inline-block;
     border: none;
     margin-right: -1px;
-    border-right: 1px solid black;
+    border-right: 1px solid #ddd;
     // font-size: var(--row-font-size);
 
     &:last-child {
@@ -113,18 +113,41 @@ td, th {
 
 :local(.dropdownbutton) {
     button {
-        background: transparent;
-        color: white;
-        border-radius: 15px;
-        border-color: white;
-        font-weight: bold;
-        opacity: 1.0;
 
+        height: 60px;
+        border-radius: 0px;
+        margin: 0px 1em 0em -15px !important;
+        border: 0;
+        border-right: 1px solid #8095e0 !important;
+        padding: 0;
+        padding-right: 2em;
+        padding-left: 2em;
+
+        background: transparent;
+        color: white !important;
+        opacity: 1.0 !important;
+        font-weight: bold;
+        font-size: 18px !important;
+
+    }
+
+    button:hover, button:active, button:focus {
+        background-color: #8095e0 !important;
+        color: white !important;
     }
 }
 
 :local(.pivots) {
+    thead td {
+        border: none;
+        text-align: center;
+        text-transform: uppercase;
+        font-weight: bold;
+    }
 
+    tbody tr:nth-child(even) {
+        background-color: #f4f4f4;
+    }
 }
 
 :local(.pivotToggle) {
@@ -135,17 +158,20 @@ td, th {
 }
 :local(.pivotData1) {
     //https://github.com/less/less.js/issues/974
-    width: ~"calc(100% - 520px)";
+    width: ~"calc(100% - 530px)";
 }
 :local(.pivotData2) {
-
+    display: none;
 }
 :local(.pivotData3) {
-
+    display: none;
 }
 :local(.pivotData4) {
-
+    display: none;
+}
+:local(.pivotResultCount) {
+    width: 30px;
 }
 :local(.pivotIcons) {
-    width: 250px;
+    width: 230px;
 }
