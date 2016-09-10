@@ -156,8 +156,20 @@ td, th {
     }
 }
 
+:local(.row-toggled-on), :local(.row-toggled-off) {
+    height: 50px;
+    & > td {
+        height: 50px;
+    }
+}
+
 :local(.pivotToggle) {
-    width: 70px;
+    width: 90px;
+    span {
+        font-weight: bold;
+        font-color: #777;
+        margin-right: 1em;
+    }
 }
 :local(.pivotData0) {
 
@@ -175,7 +187,7 @@ td, th {
 }
 :local(.pivotData1) {
     //https://github.com/less/less.js/issues/974
-    width: ~"calc(100% - 540px)";
+    width: ~"calc(100% - 570px)";
 
     button {
         font-weight: bold;
@@ -198,7 +210,8 @@ td, th {
 
     label {
         font-weight: normal;
-        text-transform: uppercase;
+        //text-transform: uppercase;
+        text-align: right;
         margin-left: 1em;
         margin-right: 1em;
         width: 100px;
@@ -216,6 +229,7 @@ td, th {
 }
 :local(.pivotResultCount) {
     width: 40px;
+    text-align: center;
 }
 :local(.result-count-on) { }
 :local(.result-count-off) {

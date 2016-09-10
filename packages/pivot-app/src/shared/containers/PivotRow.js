@@ -14,11 +14,13 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
     return (
         <div>
         <ButtonGroup>
-            <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="search" /></Button>
+            <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="play" /></Button>
             <Button ><Glyphicon glyph="cog" /></Button>
         </ButtonGroup>
         <ButtonGroup style={{marginLeft: '0.7em'}}>
             <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
+        </ButtonGroup>
+        <ButtonGroup style={{marginLeft: '0.7em'}}>
             <Button onClick={(ev) => splicePivot({index})}><Glyphicon glyph="trash" /></Button>
         </ButtonGroup>
         </div>
@@ -53,7 +55,7 @@ function renderPivotCellByIndex (
                     >
                     {pivotNames.map((name, index) => {
                         return (<MenuItem eventKey={name} key={`${index}: ${id}`}>
-                            {name.replace('Pivot', 'Step')}
+                            {name}
                         </MenuItem>)}
                     )}
                     </DropdownButton>
@@ -103,6 +105,7 @@ function renderPivotRow({id, rowIndex, enabled, resultCount, length, fields, sea
     return (
         <tr id={"pivotRow" + id} className={styles['row-toggled-' + (enabled ? 'on' : 'off')]}>
             <td className={styles.pivotToggle}>
+                <span>{ rowIndex }</span>
                 <RcSwitch defaultChecked={false}
                           checked={enabled}
                           checkedChildren={'On'}
