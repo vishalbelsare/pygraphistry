@@ -13,7 +13,7 @@ import {
     error as $error,
     pathValue as $pathValue,
     pathInvalidation as $pathInvalidation,
-} from 'falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 export function workerRoutes() {
     return [{

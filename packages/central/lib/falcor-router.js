@@ -1,4 +1,4 @@
-import Router from 'falcor-router';
+import Router from '@graphistry/falcor-router';
 import { workerRoutes } from './routes/worker-routes';
 
 const FalcorRouterBase = Router.createClass([].concat(
