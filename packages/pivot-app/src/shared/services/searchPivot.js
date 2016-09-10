@@ -9,9 +9,6 @@ var _ = require('underscore');
 var hash = require('object-hash');
 var jsonfile = require('jsonfile')
 
-var graphistryVizUrl = 'https://labs.graphistry.com/graph/graph.html?type=vgraph'
-
-
 
 
 //TODO how to dynamically lookup?

@@ -1,7 +1,10 @@
 var splunkjs = require('splunk-sdk');
 import { Observable } from 'rxjs';
 
-var service = new splunkjs.Service({host: 'splunk.graphistry.com', username: "admin", password: "graphtheplanet"});
+var service = new splunkjs.Service({
+  host: process.env.SPLUNK_HOST || 'splunk.graphistry.com',
+  username: process.env.SPLUNK_USER || "admin",
+  password: process.env.SPLUNK_PWD || "graphtheplanet"});
 
 service.login(function(err, success) {
     if (err) {
@@ -43,11 +46,11 @@ export function searchSplunk(searchQuery, callback) {
         function(job) {
               console.log("Search job properties\n---------------------");
               console.log("Search job ID:         " + job.sid);
-              console.log("The number of events:  " + job.properties().eventCount); 
+              console.log("The number of events:  " + job.properties().eventCount);
               console.log("The number of results: " + job.properties().resultCount);
               console.log("Search duration:       " + job.properties().runDuration + " seconds");
               console.log("This job expires in:   " + job.properties().ttl + " seconds");
-            var getResults = Observable.bindNodeCallback(job.results.bind(job), 
+            var getResults = Observable.bindNodeCallback(job.results.bind(job),
                 function(results, job) {
                 return ({results, job});
             });

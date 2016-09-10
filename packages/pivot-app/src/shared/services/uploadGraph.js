@@ -5,8 +5,6 @@ var _ = require('underscore');
 
 var request = require('request');
 
-var hostname = 'http://labs.graphistry.com/graph/'
-
 //jsonGraph * (err? -> ())? -> ()
 function upload (data, cb) {
     cb = cb || function (err, data) {
@@ -19,10 +17,10 @@ function upload (data, cb) {
     console.log("About to upload data", data.name);
 
     request.post({
-        uri: 'http://labs.graphistry.com/etl',
+        uri: (process.env.GRAPHISTRY_ETL || process.env.GRAPHISTRY || 'http://labs.graphistry.com') + '/etl',
         qs:   query,
         json: data,
-        callback: 
+        callback:
             function (err, resp, body) {
             if (err) { return cb(err); }
             try {
@@ -39,7 +37,7 @@ function upload (data, cb) {
 }
 
 var query = {
-    'key': 'd6a5bfd7b91465fa8dd121002dfc51b84148cd1f01d7a4c925685897ac26f40b',
+    'key': process.env.GRAPHISTRY_API_KEY || 'd6a5bfd7b91465fa8dd121002dfc51b84148cd1f01d7a4c925685897ac26f40b',
     'agent': 'pygraphistry',
     'agentversion': '0.9.30',
     'apiversion': 1,
@@ -95,7 +93,7 @@ export function uploadGraph({app, investigation}) {
 
     var pivot;
     for(let pivotRef of investigation) {
-        pivot = pivotsById[pivotRef.value[1]]; 
+        pivot = pivotsById[pivotRef.value[1]];
         if (pivot.results && pivot.enabled) {
             mergedPivots.graph = [...mergedPivots.graph, ...pivot.results.graph]
             mergedPivots.labels = [...mergedPivots.labels, ...pivot.results.labels];
@@ -124,6 +122,6 @@ export function uploadGraph({app, investigation}) {
     const uploadDone = Observable.bindNodeCallback(upload.bind(upload));
     const vizUrl = uploadDone(uploadData);
     return vizUrl.map(
-        () =>  name    
+        () =>  name
     )
 }
