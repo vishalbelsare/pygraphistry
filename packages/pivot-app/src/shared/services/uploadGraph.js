@@ -100,6 +100,17 @@ export function uploadGraph({app, investigation}) {
         }
     }
 
+    // Hack for demo. 
+    const edges = mergedPivots.graph;
+    const seen = {};
+    const dedupEdges = edges.filter(({source, destination}) => {
+        const isFiltered = seen.hasOwnProperty(JSON.stringify({source, destination})) ?
+            false :
+            seen[JSON.stringify({source, destination})] = true
+        return isFiltered;
+    })
+    mergedPivots.graph = dedupEdges;
+
     const newEdges = _.difference(mergedPivots.graph, previousGraph.graph);
     const removedEdges = _.difference(previousGraph.graph, mergedPivots.graph);
     const newNodes = _.difference(mergedPivots.labels, previousGraph.labels);
@@ -114,7 +125,7 @@ export function uploadGraph({app, investigation}) {
         graph: DataFrame.getData().edges,
         labels: DataFrame.getData().nodes,
         name, type, bindings
-    }
+    };
 
     previousGraph.graph = uploadData.graph;
     previousGraph.labels = uploadData.labels;
