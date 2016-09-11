@@ -86,7 +86,7 @@ function renderApp({ title, investigations, setInvestigationName, selectedInvest
 
     <div className="main-panel" style={{width: 'calc(100% - 90px)', height: '100%'}}>
 
-        <nav className="navbar navbar-default navbar-fixed" style={{height: '61px', overflow: 'hidden'}}>
+        <nav className="navbar navbar-default navbar-fixed" style={{height: '61px'}}>
             <div className="container-fluid">
                 <div className="navbar-header">
                     <button type="button" className="navbar-toggle" data-toggle="collapse">
