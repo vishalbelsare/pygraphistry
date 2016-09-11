@@ -3,6 +3,8 @@ import {
     pathInvalidation as $invalidation
 } from '@graphistry/falcor-json-graph';
 
+import { Observable } from 'rxjs';
+
 import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from './support';
@@ -23,6 +25,9 @@ export function investigations({ loadInvestigationsById, loadPivotsById, searchP
         returns: `pivots`,
         get: getInvestigationsHandler,
         route: `investigationsById[{keys}][{integers}]`
+    }, {
+        route: `investigationsById[{keys}].play`,
+        call: playCallRoute({ loadInvestigationsById, loadPivotsById, searchPivot, uploadGraph })
     }, {
         route: `investigationsById[{keys}].searchPivot`,
         call: searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPivot, uploadGraph })
@@ -81,14 +86,12 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
     };
 }
 
-function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph }) {
-    return function searchPivotCall(path, args) {
+function playCallRoute({ loadInvestigationsById, searchPivot, uploadGraph }) {
+    return function playInvestigationCall(path, args) {
+        console.log("Play!")
         const id = path[1];
         const index = args[0];
         return loadInvestigationsById({investigationIds: id})
-            .mergeMap(
-            ({app, investigation}) => searchPivot({ app, investigation, index })
-        )
         .mergeMap(
             ({app, investigation}) => uploadGraph({ app, investigation }),
             ({app, investigation, pivot}, name) => ({
@@ -101,14 +104,47 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
             console.log('  URL: ', investigation.url);
             const values = [
                 $pathValue(`investigationsById['${id}'].url`, investigation.url),
-                $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
-                $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
-                $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
             ];
 
             return values;
         })
         .map(mapObjectsToAtoms)
-        .catch(captureErrorStacks);
-    };
+        .catch(captureErrorStacks)
+    }
+}
+
+function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph }) {
+    return function searchPivotCall(path, args) {
+        const id = path[1];
+        const index = args[0];
+        return loadInvestigationsById({investigationIds: id})
+        .mergeMap(
+            ({app, investigation}) => {
+                return Observable.if(
+                    () => ( true ),
+                    searchPivot({ app, investigation, index })
+                        .mergeMap(
+                                ({app, investigation}) => uploadGraph({ app, investigation }),
+                                ({app, investigation, pivot}, name) => ({
+                                    app, index, name, investigation, pivot
+                                })
+                        )
+                        .mergeMap(({investigation, pivot, name }) => {
+                            investigation.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
+                            const values = [
+                                $pathValue(`investigationsById['${id}'].url`, investigation.url),
+                                $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
+                                $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
+                                $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
+                            ];
+
+                            return values;
+                        })
+                        .map(mapObjectsToAtoms)
+                        .catch(captureErrorStacks),
+                    Observable.of([])
+                )
+            }
+        )
+    }
 }

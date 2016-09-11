@@ -8,7 +8,8 @@ import { table as tableClassName,
 import styles from './styles.less';
 import { splicePivot,
         insertPivot,
-        searchPivot
+        searchPivot,
+        playInvestigation
 } from '../actions/investigation'
 
 function renderInvestigation({length = 0, templates = 'all', name = 'default', pivots = [], searchPivot, insertPivot, splicePivot }) {
@@ -58,7 +59,8 @@ export default container(
     {
         splicePivot: splicePivot,
         insertPivot: insertPivot,
-        searchPivot: searchPivot
+        searchPivot: searchPivot,
+        playInvestigation: playInvestigation
     }
 )(renderInvestigation)
 

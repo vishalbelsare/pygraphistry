@@ -7,10 +7,24 @@ import {
 
 import { combineReducers } from 'redux'
 import { Observable } from 'rxjs';
-import { SEARCH_PIVOT, INSERT_PIVOT, SPLICE_PIVOT } from '../actions/investigation';
+import { PLAY_INVESTIGATION, SEARCH_PIVOT, INSERT_PIVOT, SPLICE_PIVOT } from '../actions/investigation';
 import { combineEpics } from 'redux-observable';
 
-export const investigation = combineEpics(searchPivot, insertPivot, splicePivot)
+export const investigation = combineEpics(searchPivot, insertPivot, splicePivot, playInvestigation);
+
+export function playInvestigation(action$, store) {
+        return action$
+            .ofType(PLAY_INVESTIGATION)
+            .do((val) => console.log('Val', val))
+            .groupBy(({ id }) => id)
+            .mergeMap((actionsById) => actionsById.switchMap(
+                ({ stateKey, falcor, state, index, target }) => {
+                    return falcor.call(`play`)
+                .progressively()
+                }
+            ))
+            .ignoreElements();
+}
 
 export function searchPivot(action$, store) {
         return action$
