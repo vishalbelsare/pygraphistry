@@ -123,16 +123,8 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
                 return Observable.if(
                     () => ( true ),
                     searchPivot({ app, investigation, index })
-                        .mergeMap(
-                                ({app, investigation}) => uploadGraph({ app, investigation }),
-                                ({app, investigation, pivot}, name) => ({
-                                    app, index, name, investigation, pivot
-                                })
-                        )
-                        .mergeMap(({investigation, pivot, name }) => {
-                            investigation.url = 'https://labs.graphistry.com/graph/graph.html?type=vgraph&dataset=' + name;
+                        .mergeMap(({investigation, pivot, app }) => {
                             const values = [
-                                $pathValue(`investigationsById['${id}'].url`, investigation.url),
                                 $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
                                 $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
                                 $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
