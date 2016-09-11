@@ -40,13 +40,14 @@ function renderPivotCellByIndex (
     field, fldIndex,
     id, rowIndex, enabled, resultCount, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot) {
 
-    const template = PivotTemplates.get(fields[fieldToIndex['Mode']].value);
+    //TODO instead of 'all', use investigation's template's pivotset
+    const template = PivotTemplates.get('all', fields[fieldToIndex['Mode']].value);
 
     switch (fldIndex) {
         case 0:
             //return <td key={`${id}: ${fldIndex}`} className="pivotTypeSelector">Searcher</td>;
 
-            const pivotNames = Object.keys(PivotTemplates.pivots);
+            const pivotNames = PivotTemplates.templatePivotNames('all');
 
             return (<td key={`${id}: ${fldIndex}`} className={styles.pivotData0 + ' pivotTypeSelector'}>
                     <DropdownButton id={"pivotTypeSelector" + id} title={field.value}

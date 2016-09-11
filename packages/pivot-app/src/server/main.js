@@ -30,7 +30,7 @@ const placeHolder = {
     'Search': 'Input Splunk Query',
     'Links': 'Connect to Attributes',
     'Time': '07/28/1016/',
-    'Mode': PivotTemplates.get('Search Splunk').name,
+    'Mode': PivotTemplates.get('splunk', 'Search Splunk').name,
     'Input': 'Pivot 0'
 }
 
@@ -47,6 +47,18 @@ var query = `${Object.keys(queryOptions)
     .join(' ')
 }`
 
+
+const pivots0 = [
+    createPivot(cols, {
+        'Search': '',
+        'Links': '*',
+        'Time': '',
+        'Mode': PivotTemplates.get('all', 'Search Splunk').name,
+        'Input': 'none'
+    })
+];
+
+
 const pivots1 = Array.from({ length: 1 },
     function(x, index) {
         if (index == 0) {
@@ -54,7 +66,7 @@ const pivots1 = Array.from({ length: 1 },
                 'Search': `${query}   | spath output=dataset path="metadata.dataset" | search dataset="*" `,
                 'Links': 'msg, dataset',
                 'Time': '07/28/2016',
-                'Mode': PivotTemplates.get('Search Splunk').name,
+                'Mode': PivotTemplates.get('alert_demo', 'Search Splunk (alerts)').name,
                 'Input': 'none'
             })
         }
@@ -71,7 +83,7 @@ const pivots2 = Array.from({ length: 2 },
                 'Search': `malware`,
                 'Links': 'dest_ip, misc',
                 'Time': '07/28/2016',
-                'Mode': PivotTemplates.get('Search Splunk').name,
+                'Mode': PivotTemplates.get('alert_demo', 'Search Splunk (alerts)').name,
                 'Input': 'none'
             })
         }
@@ -87,37 +99,67 @@ const pivots3 = [
         'Search': 'BRO8ZA4A',
         'Links': '*',
         'Time': '',
-        'Mode': PivotTemplates.get('Search FireEye').name,
+        'Mode': PivotTemplates.get('alert_demo', 'Search FireEye').name,
         'Input': 'none'
     }),
     createPivot(cols, {
         'Search': '',
         'Links': '*',
         'Time': '',
-        'Mode': PivotTemplates.get('Expand with Fire Eye').name,
+        'Mode': PivotTemplates.get('alert_demo', 'Expand with Fire Eye').name,
         'Input': 'Pivot 0'
     }),
     createPivot(cols, {
         'Search': '',
         'Links': '*',
         'Time': '',
-        'Mode': PivotTemplates.get('Expand with Blue Coat').name,
+        'Mode': PivotTemplates.get('alert_demo', 'Expand with Blue Coat').name,
         'Input': 'Pivot 1'
     }),
     createPivot(cols, {
         'Search': '',
         'Links': '*',
         'Time': '',
-        'Mode': PivotTemplates.get('Expand with Firewall').name,
+        'Mode': PivotTemplates.get('alert_demo', 'Expand with Firewall').name,
         'Input': 'Pivot 2'
     })
 ];
 
-pivots1.name = 'Dataset Errors';
-pivots2.name = 'Malware';
-pivots3.name = 'Botnet BRO8ZA4A';
+const pivots4 = [
+    createPivot(cols, {
+        'Search': '',
+        'Links': '*',
+        'Time': '',
+        'Mode': PivotTemplates.get('alert_demo', 'Search Splunk (alerts)').name,
+        'Input': 'none'
+    })
+];
 
-const app = createApp([pivots3, pivots1, pivots2]);
+
+const pivots5 = [
+    createPivot(cols, {
+        'Search': '',
+        'Links': '*',
+        'Time': '',
+        'Mode': PivotTemplates.get('health_demo', 'Search Splunk (health)').name,
+        'Input': 'none'
+    })
+];
+
+pivots0.name = 'Empty (splunk)';
+pivots0.templates = 'all';
+pivots1.name = 'Dataset Errors';
+pivots1.templates = 'alert_demo';
+pivots2.name = 'Malware';
+pivots1.templates = 'alert_demo';
+pivots3.name = 'Botnet BRO8ZA4A';
+pivots1.templates = 'alert_demo';
+pivots4.name = 'Empty (alerts)';
+pivots4.templates = 'alert_demo';
+pivots5.name = 'Empty (health)';
+pivots5.templates = 'health_demo';
+
+const app = createApp([pivots3, pivots0, pivots4, pivots5, pivots1, pivots2]);
 
 const routeServices = {
     loadApp: loadApp(app),
