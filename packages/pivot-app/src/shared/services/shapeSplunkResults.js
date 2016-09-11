@@ -44,6 +44,33 @@ const SKIP = {
     'weight': true
 };
 
+const colorMap = {
+    'Host': 0,
+    'Internal IPs': 1,
+    'User': 2,
+    'External IPs': 3,
+    'Fire Eye MD5': 4,
+    'Message': 5,
+    'Fire Eye URL': 6,
+    'EventID': 7,
+    'Search': 8
+};
+
+const nodeSizes = {
+    'Host':1.0,
+    'Internal IPs':1.5,
+    'Fire Eye Source IP': 10.1,
+    'External IPs':1.5,
+    'User':0.5,
+    //    'AV Alert Name':5.1,
+    'Fire Eye MD5':10.1,
+    //'Fire Eye Alert Name':10.1,
+    'Fire Eye URL':2.1,
+    'Message': 7.1,
+    'EventID':0.1,
+    'Search': 1,
+};
+
 export function shapeSplunkResults(splunkResults, pivotDict, index) {
     const destination = pivotDict['Search'];
     const connections = pivotDict['Links'];
@@ -57,7 +84,8 @@ export function shapeSplunkResults(splunkResults, pivotDict, index) {
             for(let i = 0; i < rows.length; i++) {
                 const row = rows[i];
                 const eventID = row['EventID'] || simpleflake().toJSON();
-                nodeLabels.push({"node": eventID, type:'EventID'});
+                nodeLabels.push({'node': eventID, type:'EventID', pointColor: colorMap['EventID'],
+                                pointSize: nodeSizes['EventID']});
 
                 const fields =
                     isStar ?
@@ -74,13 +102,15 @@ export function shapeSplunkResults(splunkResults, pivotDict, index) {
                             {'destination': destination,
                              'source': eventID,
                              'edgeType': ('EventID->Search'),
-                             'pivot': index}))
-                        nodeLabels.push({"node": destination, type:'Search'});
+                             'pivot': index}));
+                        nodeLabels.push({'node': destination, type:'Search',
+                                        pointColor: colorMap['Search'], pointSize: colorMap['Search']});
                         continue;
                     }
 
                     if (row[field]) {
-                        nodeLabels.push({"node": row[field], type: field});
+                        nodeLabels.push({'node': row[field], type: field,
+                            pointColor: colorMap[field], pointSize: colorMap[field]});
                         edges.push(Object.assign({}, row,
                             {'destination': row[field],
                              'source': eventID,
@@ -95,5 +125,5 @@ export function shapeSplunkResults(splunkResults, pivotDict, index) {
                 graph: edges,
                 labels: nodeLabels,
             };
-        })
+        });
 }
