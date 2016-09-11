@@ -79,12 +79,14 @@ export function shapeSplunkResults(splunkResults, pivotDict, index) {
                         continue;
                     }
 
-                    nodeLabels.push({"node": row[field], type: field});
-                    edges.push(Object.assign({}, row,
-                        {'destination': row[field],
-                         'source': eventID,
-                         'edgeType': ('EventID->' + field),
-                         'pivot': index}));
+                    if (row[field]) {
+                        nodeLabels.push({"node": row[field], type: field});
+                        edges.push(Object.assign({}, row,
+                            {'destination': row[field],
+                             'source': eventID,
+                             'edgeType': ('EventID->' + field),
+                             'pivot': index}));
+                    }
                 }
 
             }
