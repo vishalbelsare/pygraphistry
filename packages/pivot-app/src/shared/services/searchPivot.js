@@ -33,7 +33,8 @@ export function searchPivot({app, investigation, index }) {
         _.object(
             _.range(0, pivot.length)
                 .map((i) => [pivot[i].name, pivot[i].value]));
-    const template = PivotTemplates.get(pivotFields.Mode);
+    //TODO when constrained investigation pivotset templating, change 'all'-> investigation.templates
+    const template = PivotTemplates.get('all', pivotFields.Mode);
 
     if (template.transport !== 'Splunk') {
         throw new Error('Only expected Splunk transports, got: ' + template.transport);

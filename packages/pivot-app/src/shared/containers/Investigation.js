@@ -13,7 +13,7 @@ import { splicePivot,
         searchPivot
 } from '../actions/investigation'
 
-function renderInvestigation({length = 0, name = 'default', pivots = [], searchPivot, insertPivot, splicePivot }) {
+function renderInvestigation({length = 0, templates = 'all', name = 'default', pivots = [], searchPivot, insertPivot, splicePivot }) {
     const cellWidth = Math.round(88 / (4));
     return (
         <div className={styles.pivots}>
