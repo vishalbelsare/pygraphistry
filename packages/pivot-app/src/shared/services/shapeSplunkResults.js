@@ -6,21 +6,39 @@ import _  from 'underscore';
 
 //Do not make these nodes in '*' mode
 const SKIP = {
-    '_bkt': true,
-    '_cd': true,
-    '_indextime': true,
-    '_raw': true,
-    '_serial': true,
-    '_si': true,
-    '_sourcetype': true,
-    '_time': true,
-    '_timediff': true,
+
+    //MYSTERY
+    'tag::eventtype': true,
+
+    //ALERT DEMO //TODO stitch in based on pivot
     'Alert Category': true,
     'destination': true,
     'destinationType': true,
     'Search': true,
     'Search Depth': true,
     'edgeType': true,
+    'weight': true,
+
+
+    //SPLUNK //TODO stitch in based on pivot
+    '_bkt': true,
+    '_cd': true,
+    '_indextime': true,
+    '_kv': true,
+    '_raw': true,
+    '_serial': true,
+    '_si': true,
+    '_sourcetype': true,
+    '_time': true,
+    '_timediff': true,
+    'date_minute': true,
+    'date_second': true,
+    'date_hour': true,
+    'date_mday': true,
+    'date_month': true,
+    'date_wday': true,
+    'date_year': true,
+    'date_zone': true,
     'extracted_source': true,
     'extracted_sourceType': true,
     'host': true,
@@ -41,7 +59,13 @@ const SKIP = {
     'unix_group': true,
     'vendor': true,
     'vendor_product': true,
-    'weight': true
+
+    //HEALTH DEMO //TODO stitch in based on pivot
+    'AdmissionEndDate': true,
+    'AdmissionStartDate': true,
+    'LabDateTime': true,
+    'LabValue': true,
+    'LabUnits': true
 };
 
 export function shapeSplunkResults(splunkResults, pivotDict, index) {
@@ -62,7 +86,7 @@ export function shapeSplunkResults(splunkResults, pivotDict, index) {
                 const fields =
                     isStar ?
                         _.filter(Object.keys(row), function (field) {
-                            return !SKIP[field] && field.toLowerCase() !== 'eventid';
+                            return !SKIP[field] && (field.toLowerCase() !== 'eventid');
                         })
                     : _.filter(connectionsArray, function (field) { return row[field]; });
 
