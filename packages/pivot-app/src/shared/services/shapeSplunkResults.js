@@ -15,23 +15,7 @@ const SKIP = {
     'LabUnits': true
 };
 
-const nodeSizes = {
-    'Host':1.0,
-    'Internal IPs':1.5,
-    'Fire Eye Source IP': 10.1,
-    'External IPs':1.5,
-    'User':0.5,
-    //    'AV Alert Name':5.1,
-    'Fire Eye MD5':10.1,
-    //'Fire Eye Alert Name':10.1,
-    'Fire Eye URL':2.1,
-    'Message': 7.1,
-    'EventID':0.1,
-    'Search': 1,
-};
-
 export function shapeSplunkResults(splunkResults, pivotDict, index, encodings) {
-    console.log('Encodings', encodings)
     const destination = pivotDict['Search'];
     const connections = pivotDict['Links'];
     const connectionsArray = connections.split(',').map((connection) => connection.trim());
@@ -44,8 +28,7 @@ export function shapeSplunkResults(splunkResults, pivotDict, index, encodings) {
             for(let i = 0; i < rows.length; i++) {
                 const row = rows[i];
                 const eventID = row['EventID'] || simpleflake().toJSON();
-                nodeLabels.push({'node': eventID, type:'EventID',
-                                pointSize: nodeSizes['EventID']});
+                nodeLabels.push({'node': eventID, type:'EventID'});
 
                 const fields =
                     isStar ?
@@ -63,14 +46,12 @@ export function shapeSplunkResults(splunkResults, pivotDict, index, encodings) {
                              'source': eventID,
                              'edgeType': ('EventID->Search'),
                              'pivot': index}));
-                        nodeLabels.push({'node': destination, type:'Search',
-                                        pointSize: nodeSizes['Search']});
+                        nodeLabels.push({'node': destination, type:'Search'});
                         continue;
                     }
 
                     if (row[field]) {
-                        nodeLabels.push({'node': row[field], type: field,
-                            pointSize: nodeSizes[field]});
+                        nodeLabels.push({'node': row[field], type: field});
                         edges.push(Object.assign({}, row,
                             {'destination': row[field],
                              'source': eventID,
@@ -81,9 +62,22 @@ export function shapeSplunkResults(splunkResults, pivotDict, index, encodings) {
 
             }
 
-            const pointEncoding = encodings.pointColor;
-
-            nodeLabels.map((node) => pointEncoding(node));
+            // Encodings 
+            if (encodings && encodings.point) {
+                nodeLabels.map((node) =>
+                    Object.keys(encodings.point).map((key) => {
+                        encodings.point[key](node);
+                    }
+                ));
+            }
+            
+            if (encodings && encodings.edge) {
+                edges.map((edge) =>
+                    Object.keys(encodings.edge).map((key) => {
+                        encodings.edge[key](edge);
+                    }
+                ));
+            }
 
             return {
                 graph: edges,

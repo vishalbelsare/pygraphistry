@@ -37,12 +37,38 @@ const ALERT_DEMO_NODE_COLORS = {
     'Search': 8
 };
 
+const ALERT_DEMO_NODE_SIZES = {
+    'Host':1.0,
+    'Internal IPs':1.5,
+    'Fire Eye Source IP': 10.1,
+    'External IPs':1.5,
+    'User':0.5,
+    //    'AV Alert Name':5.1,
+    'Fire Eye MD5':10.1,
+    //'Fire Eye Alert Name':10.1,
+    'Fire Eye URL':2.1,
+    'Message': 7.1,
+    'EventID':0.1,
+    'Search': 1,
+};
+
+const ALERT_DEMO_ENCODINGS = {
+    point: {
+        pointColor: function(node) {
+            node.pointColor = ALERT_DEMO_NODE_COLORS[node.type];
+        },
+        pointSizes: function(node) {
+            node.pointSize = ALERT_DEMO_NODE_SIZES[node.type];
+        }
+    }
+}
+
 const FIREEYE_FIELDS = [
-            `EventID`,
-            `Fire Eye MD5`,
-            `Fire Eye URL`,
-            `Internal IPs`,
-            `Message`,
+    `EventID`,
+    `Fire Eye MD5`,
+    `Fire Eye URL`,
+    `Internal IPs`,
+    `Message`,
 ]
 
 const SEARCH_FIREEYE = {
@@ -56,11 +82,7 @@ const SEARCH_FIREEYE = {
             return `search EventID=${ fields['Search'] } ${SPLUNK_INDICES.FIREEYE} ${constructFieldString(this.fields)}`;
         },
         fields: FIREEYE_FIELDS,
-        encodings: {
-            pointColor: function(node) {
-                node.pointColor = ALERT_DEMO_NODE_COLORS[node.type];
-            }
-        }
+        encodings: ALERT_DEMO_ENCODINGS
     }
 };
 
@@ -77,7 +99,8 @@ const FIREEYE = {
                 `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.FIREEYE}]`;
             return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this.fields)}`;
         },
-        fields: FIREEYE_FIELDS
+        fields: FIREEYE_FIELDS,
+        encodings: ALERT_DEMO_ENCODINGS
     }
 };
 
@@ -97,7 +120,8 @@ const BLUECOAT = {
         fields: [
             'Fire Eye URL',
             'External IPs'
-        ]
+        ],
+        encodings: ALERT_DEMO_ENCODINGS
     }
 };
 
@@ -117,7 +141,8 @@ const FIREWALL = {
         fields: [
             'External IPs',
             'Internal IPs'
-        ]
+        ],
+        encodings: ALERT_DEMO_ENCODINGS
     }
 };
 
