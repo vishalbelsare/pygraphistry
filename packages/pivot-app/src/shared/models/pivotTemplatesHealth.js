@@ -10,7 +10,7 @@ const SEARCH_SPLUNK_HEALTH = {
     transport: 'Splunk',
     splunk: {
         toSplunk: function (pivots, app, fields, pivotCache) {
-            return `${fields['Search']} ${SPLUNK_INDICES.HEALTH}`
+            return `search ${fields['Search']} ${SPLUNK_INDICES.HEALTH}`
         }
     }
 };
@@ -24,7 +24,7 @@ const SEARCH_PATIENT = {
     transport: 'Splunk',
     splunk: {
         toSplunk: function (pivots, app, fields, pivotCache) {
-            return `PatientID=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH}`
+            return `search PatientID=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH}`
         }
     }
 };
@@ -37,7 +37,7 @@ const SEARCH_LAB = {
     transport: 'Splunk',
     splunk: {
         toSplunk: function (pivots, app, fields, pivotCache) {
-            return `LabName=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH}`
+            return `search LabName=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH}`
         }
     }
 };

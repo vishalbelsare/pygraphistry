@@ -83,7 +83,7 @@ const pivots2 = Array.from({ length: 2 },
                 'Search': `malware`,
                 'Links': 'dest_ip, misc',
                 'Time': '07/28/2016',
-                'Mode': PivotTemplates.get('alert_demo', 'Search Splunk (alerts)').name,
+                'Mode': PivotTemplates.get('splunk', 'Search Splunk').name,
                 'Input': 'none'
             })
         }

@@ -12,7 +12,7 @@ const SEARCH_SPLUNK = {
     transport: 'Splunk',
     splunk: {
         toSplunk: function (pivots, app, fields, pivotCache) {
-            return `${fields['Search']}`
+            return `search ${fields['Search']} | fields - _*`
         }
     }
 };

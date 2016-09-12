@@ -7,81 +7,12 @@ import _  from 'underscore';
 //Do not make these nodes in '*' mode
 const SKIP = {
 
-    //MYSTERY
-    'tag::eventtype': true,
-
-    //ALERT DEMO //TODO stitch in based on pivot
-    'Alert Category': true,
-    'destination': true,
-    'destinationType': true,
-    'dst': true,
-    'dstB': true,
-    'Search': true,
-    'Search Depth': true,
-    'src': true,
-    'srcA': true,
-    'edgeType': true,
-    'weight': true,
-
-
-    //SPLUNK //TODO stitch in based on pivot
-    '_bkt': true,
-    '_cd': true,
-    '_indextime': true,
-    '_kv': true,
-    '_raw': true,
-    '_serial': true,
-    '_si': true,
-    '_sourcetype': true,
-    '_time': true,
-    '_timediff': true,
-    'date_minute': true,
-    'date_second': true,
-    'date_hour': true,
-    'date_mday': true,
-    'date_month': true,
-    'date_wday': true,
-    'date_year': true,
-    'date_zone': true,
-    'extracted_source': true,
-    'extracted_sourceType': true,
-    'host': true,
-    'index': true,
-    'index_time': true,
-    'level': true,
-    'linecount': true,
-    'module': true,
-    'punct': true,
-    'Search': true,
-    'source': true,
-    'sourcetype': true,
-    'splunk_server': true,
-    'splunk_server_group': true,
-    'time': true,
-    'timestamp': true,
-    'unix_category': true,
-    'unix_group': true,
-    'vendor': true,
-    'vendor_product': true,
-
     //HEALTH DEMO //TODO stitch in based on pivot
     'AdmissionEndDate': true,
     'AdmissionStartDate': true,
     'LabDateTime': true,
     'LabValue': true,
     'LabUnits': true
-};
-
-const colorMap = {
-    'Host': 0,
-    'Internal IPs': 1,
-    'User': 2,
-    'External IPs': 3,
-    'Fire Eye MD5': 4,
-    'Message': 5,
-    'Fire Eye URL': 6,
-    'EventID': 7,
-    'Search': 8
 };
 
 const nodeSizes = {
@@ -99,7 +30,8 @@ const nodeSizes = {
     'Search': 1,
 };
 
-export function shapeSplunkResults(splunkResults, pivotDict, index) {
+export function shapeSplunkResults(splunkResults, pivotDict, index, encodings) {
+    console.log('Encodings', encodings)
     const destination = pivotDict['Search'];
     const connections = pivotDict['Links'];
     const connectionsArray = connections.split(',').map((connection) => connection.trim());
@@ -112,7 +44,7 @@ export function shapeSplunkResults(splunkResults, pivotDict, index) {
             for(let i = 0; i < rows.length; i++) {
                 const row = rows[i];
                 const eventID = row['EventID'] || simpleflake().toJSON();
-                nodeLabels.push({'node': eventID, type:'EventID', pointColor: colorMap['EventID'],
+                nodeLabels.push({'node': eventID, type:'EventID',
                                 pointSize: nodeSizes['EventID']});
 
                 const fields =
@@ -132,13 +64,13 @@ export function shapeSplunkResults(splunkResults, pivotDict, index) {
                              'edgeType': ('EventID->Search'),
                              'pivot': index}));
                         nodeLabels.push({'node': destination, type:'Search',
-                                        pointColor: colorMap['Search'], pointSize: colorMap['Search']});
+                                        pointSize: nodeSizes['Search']});
                         continue;
                     }
 
                     if (row[field]) {
                         nodeLabels.push({'node': row[field], type: field,
-                            pointColor: colorMap[field], pointSize: colorMap[field]});
+                            pointSize: nodeSizes[field]});
                         edges.push(Object.assign({}, row,
                             {'destination': row[field],
                              'source': eventID,
@@ -148,6 +80,10 @@ export function shapeSplunkResults(splunkResults, pivotDict, index) {
                 }
 
             }
+
+            const pointEncoding = encodings.pointColor;
+
+            nodeLabels.map((node) => pointEncoding(node));
 
             return {
                 graph: edges,
