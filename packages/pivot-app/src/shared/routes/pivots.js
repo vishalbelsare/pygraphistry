@@ -24,7 +24,7 @@ export function pivots({ loadPivotsById, calcTotals }) {
     }, {
         returns: `String`,
         get: getPivotsHandler,
-        route: `pivotsById[{keys}]['id', 'total', 'resultCount']`
+        route: `pivotsById[{keys}]['id', 'total', 'resultCount', 'resultSummary']`
     }, {
         returns: `String | Number`,
         get: getPivotsHandler,

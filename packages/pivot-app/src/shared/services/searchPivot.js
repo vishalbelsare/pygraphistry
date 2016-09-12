@@ -6,6 +6,7 @@ import { searchSplunk } from './searchSplunk.js';
 import { shapeSplunkResults} from './shapeSplunkResults.js';
 import { uploadGraph} from './uploadGraph.js';
 import PivotTemplates from '../models/PivotTemplates';
+import { categoryToColorInt, intToHex } from './support/palette.js';
 var _ = require('underscore');
 var hash = require('object-hash');
 var jsonfile = require('jsonfile')
@@ -16,6 +17,25 @@ var jsonfile = require('jsonfile')
 // {int -> [ { ... } ]
 var pivotCache = {};
 
+
+function summarizeOutput ({labels}) {
+    const hist = {};
+    for (var i = 0; i < labels.length; i++) {
+        hist[labels[i].type] = {count: 0, example: i, name: '', color: ''};
+    }
+    const summaries = _.values(hist);
+
+    for (var i = 0; i < labels.length; i++) {
+        hist[labels[i].type].count++;
+    }
+
+    _.each(summaries, (summary) => {
+        summary.name = labels[summary.example].type;
+        summary.color = intToHex(categoryToColorInt[labels[summary.example].pointColor]);
+    });
+
+    return {entities: summaries, resultCount: labels.length};
+}
 
 
 export function searchPivot({app, investigation, index }) {
@@ -47,14 +67,18 @@ export function searchPivot({app, investigation, index }) {
     console.log('------- Expansion ---');
     console.log(searchQuery);
     const splunkResults = searchSplunk(searchQuery)
-        .do(({resultCount}) => {
-            pivot.resultCount = resultCount})
-         .do((rows) => {
+        .do(({resultCount, output}) => {
+            pivot.resultCount = resultCount;
+        })
+        .do((rows) => {
             pivotCache[index] = rows.output;
             console.log('saved pivot ', index, '# results:', rows.output.length); })
         .map(({output}) => output);
     var shapedResults = shapeSplunkResults(splunkResults, pivotFields, index)
-        .do((results) => pivot.results = results)
+        .do((results) => {
+            pivot.results = results;
+            pivot.resultSummary = summarizeOutput(results);
+        })
         .map((results) => ({app, investigation, pivot}));
     return shapedResults;
 

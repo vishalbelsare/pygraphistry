@@ -11,6 +11,7 @@ export function pivot(cols, values =
     'Time': '07/28/2016'}, id = simpleflake().toJSON(), enabled = false) {
     return {
         resultCount:0,
+        resultSummary: {entities: [], resultCount: 0},
         enabled,
         id,
         length: cols.length,

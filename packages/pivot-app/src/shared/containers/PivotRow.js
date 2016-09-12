@@ -38,7 +38,7 @@ const fieldToIndex = {
 
 function renderPivotCellByIndex (
     field, fldIndex,
-    id, rowIndex, enabled, resultCount, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot) {
+    id, rowIndex, enabled, resultCount, resultSummary, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot) {
 
     //TODO instead of 'all', use investigation's template's pivotset
     const template = PivotTemplates.get('all', fields[fieldToIndex['Mode']].value);
@@ -105,7 +105,7 @@ function renderPivotCellByIndex (
 };
 
 
-function renderPivotRow({id, rowIndex, enabled, resultCount, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot}) {
+function renderPivotRow({id, rowIndex, enabled, resultCount, resultSummary, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot}) {
     return (
         <tr id={"pivotRow" + id} className={styles['row-toggled-' + (enabled ? 'on' : 'off')]}>
             <td className={styles.pivotToggle}>
@@ -120,7 +120,7 @@ function renderPivotRow({id, rowIndex, enabled, resultCount, length, fields, sea
             </td>
             { fields.map((field, fldIndex) => renderPivotCellByIndex(
                 field, fldIndex,
-                id, rowIndex, enabled, resultCount, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot)) }
+                id, rowIndex, enabled, resultCount, resultSummary, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot)) }
             <td className={styles.pivotResultCount + ' ' + styles['result-count-' + (enabled ? 'on' : 'off')]}>
                     <Badge> {resultCount} </Badge>
             </td>
@@ -135,7 +135,7 @@ function renderPivotRow({id, rowIndex, enabled, resultCount, length, fields, sea
 
 function mapStateToFragment({length = 0} = {}) {
     return `{
-        'enabled', 'resultCount', 'id', 'length', [0...${length}]: {
+        'enabled', 'resultCount', 'resultSummary', 'id', 'length', [0...${length}]: {
             value
         }
     }`;
@@ -144,8 +144,8 @@ function mapStateToFragment({length = 0} = {}) {
 function mapFragmentToProps(fragment) {
     //const output =  { pivots: fragment, name: fragment.name, length: fragment.length};
     //console.log('output', output);
-    const {id, length, resultCount, enabled} = fragment;
-    return {id, length, fields:fragment, enabled, resultCount};
+    const {id, length, resultCount, resultSummary, enabled} = fragment;
+    return {id, length, fields:fragment, enabled, resultCount, resultSummary};
 }
 
 export default container(

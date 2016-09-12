@@ -101,6 +101,7 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
             const values = [
                 $pathValue(`investigationsById['${id}'].url`, investigation.url),
                 $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
+                $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
                 $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
             ];
 

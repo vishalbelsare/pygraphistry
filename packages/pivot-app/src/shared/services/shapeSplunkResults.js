@@ -14,8 +14,12 @@ const SKIP = {
     'Alert Category': true,
     'destination': true,
     'destinationType': true,
+    'dst': true,
+    'dstB': true,
     'Search': true,
     'Search Depth': true,
+    'src': true,
+    'srcA': true,
     'edgeType': true,
     'weight': true,
 
