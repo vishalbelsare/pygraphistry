@@ -5,7 +5,7 @@ import PivotTemplates from '../models/PivotTemplates';
 
 export function pivot(cols, values =
     {'Search': 'Enter search query',
-    'Mode': PivotTemplates.get('Search Splunk').name,
+    'Mode': PivotTemplates.get('all', 'Search Splunk').name,
     'Input': 'Pivot 0',
     'Links': 'None',
     'Time': '07/28/2016'}, id = simpleflake().toJSON(), enabled = false) {

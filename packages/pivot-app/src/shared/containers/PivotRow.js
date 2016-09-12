@@ -36,7 +36,6 @@ const fieldToIndex = {
 
 
 function renderEntitySummaries (id, resultSummary) {
-    console.log('summary: ', resultSummary);
     return (<div className={styles.pivotEntitySummaries}>
         {
             _.sortBy(resultSummary.entities, (summary) => summary.name)

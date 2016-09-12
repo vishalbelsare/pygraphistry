@@ -81,7 +81,13 @@ const colorMap = {
     'Message': 5,
     'Fire Eye URL': 6,
     'EventID': 7,
-    'Search': 8
+    'Search': 8,
+
+    'LabName': 0,
+    'AdmissionID': 1,
+    'PatientID': 2,
+    'PrimaryDiagnosisCode': 3,
+    'PrimaryDiagnosisDescription': 4
 };
 
 const nodeSizes = {
