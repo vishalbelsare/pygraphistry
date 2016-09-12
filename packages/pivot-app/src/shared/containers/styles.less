@@ -157,9 +157,9 @@ td, th {
 }
 
 :local(.row-toggled-on), :local(.row-toggled-off) {
-    height: 50px;
+    height: 70px;
     & > td {
-        height: 50px;
+        height: 70px;
     }
 }
 
@@ -192,6 +192,7 @@ td, th {
     button {
         font-weight: bold;
         text-decoration: underline;
+        padding-bottom: 0px;
     }
     button:not(:hover) {
         border-color: transparent;
@@ -219,6 +220,59 @@ td, th {
     }
 
 }
+:local(.pivotEntitySummaries) {
+    text-align: right;
+    margin: 5px 10px 0px 0px;
+    overflow-x: scroll; //not on parent due to browser clipping the dropdown
+}
+:local(.pivotEntitySummary) {
+    display: inline-block;
+    overflow: hidden;
+    height: 20px;
+    margin: 0 0 0 7px;
+    padding: 0 5px 0 0px;
+    border-radius: 5px;
+    border: 1px solid #777;
+}
+:local(.pivotEntityPill) {
+    display: inline-block;
+    height: 20px;
+    width: 10px;
+    border-right: 1px solid #777;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+:local(.pivotEntityCount) {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 12px;
+    vertical-align: top;
+    display: inline-block;
+    margin-left: 2px;
+    color: #777;
+    border-right: 1px solid #777;
+    padding: 2px 3px 0px 3px;
+    height: 20px;
+
+    border-right: 1px solid #777;
+}
+:local(.pivotEntityName) {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 12px;
+    vertical-align: top;
+    display: inline-block;
+    margin-left: 2px;
+    color: #777;
+    //border-right: 1px solid #777; //use when also showing count
+    padding: 2px 3px 0px 3px;
+    height: 20px;
+
+    width: 70px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
 :local(.pivotData2) {
     display: none;
 }

@@ -4,7 +4,8 @@ import { tcell as tableCellClassName,
          insert as insertIconClassName,
          search as searchIconClassName } from './styles.less';
 import { setPivotValue, togglePivot } from '../actions/PivotRow';
-import { Button, Glyphicon, ButtonGroup, Badge, DropdownButton, MenuItem } from 'react-bootstrap'
+import { Button, Glyphicon, ButtonGroup, Badge, DropdownButton,
+    MenuItem, Tooltip, OverlayTrigger} from 'react-bootstrap'
 import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import _ from 'underscore';
@@ -34,6 +35,24 @@ const fieldToIndex = {
 };
 
 
+function renderEntitySummaries (id, resultSummary) {
+    console.log('summary: ', resultSummary);
+    return (<div className={styles.pivotEntitySummaries}>
+        {
+            _.sortBy(resultSummary.entities, (summary) => summary.name)
+             .map(({name, count, color}, index)=>(
+                <OverlayTrigger  placement="top" overlay={
+                    <Tooltip id={`tooltipEntity_${id}_${index}`}>{name}</Tooltip>
+                } key={`${index}: entitySummary_${id}`}>
+                <span className={styles.pivotEntitySummary}>
+                        <span style={{backgroundColor: color}} className={styles.pivotEntityPill}></span>
+                        {/*<span className={styles.pivotEntityCount}>{count}</span>*/}
+                        <span className={styles.pivotEntityName}>{name}</span>
+                </span>
+                </OverlayTrigger>))
+        }
+        </div>);
+}
 
 
 function renderPivotCellByIndex (
@@ -80,6 +99,7 @@ function renderPivotCellByIndex (
                                 }
                             />
                         </div>
+                        { renderEntitySummaries(id, resultSummary) }
                     </td>);
                 case 'button':
                     const inputNames = _.range(0, rowIndex).map((i) => "Pivot " + i);
@@ -95,6 +115,7 @@ function renderPivotCellByIndex (
                                     </MenuItem>)
                                 )}
                                 </DropdownButton>
+                            { renderEntitySummaries(id, resultSummary) }
                         </td>);
                 default:
                     throw new Error('Unkown template kind ' + template.kind);
