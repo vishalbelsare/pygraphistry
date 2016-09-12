@@ -33,6 +33,7 @@ const SKIP = {
     '_serial': true,
     '_si': true,
     '_sourcetype': true,
+    '_subsecond': true,
     '_time': true,
     '_timediff': true,
     'date_minute': true,

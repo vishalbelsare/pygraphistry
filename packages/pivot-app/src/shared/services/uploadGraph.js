@@ -28,6 +28,7 @@ function upload (data, cb) {
                     console.log(body);
                     throw new Error(body)
                 }
+                console.log("  -> Uploaded", body);
                 return cb(undefined, body);
             } catch (e) {
                 return cb(e);
@@ -100,7 +101,7 @@ export function uploadGraph({app, investigation}) {
         }
     }
 
-    // Hack for demo. 
+    // Hack for demo.
     const edges = mergedPivots.graph;
     const seen = {};
     const dedupEdges = edges.filter(({source, destination}) => {

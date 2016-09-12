@@ -103,9 +103,11 @@ function renderApp({ title, investigations, setInvestigationName, selectedInvest
                     </span>
 
                     <a className="navbar-brand" href="#">Input</a>
-                    <a className="navbar-brand on" href="#">Untitled1 (20)</a>
+                    <a className="navbar-brand on" href="#">Untitled_1</a>
+                    { /*
                     <a className="navbar-brand" href="#">Untitled2 (58)</a>
                     <a className="navbar-brand" href="#">Untitled3 (32)</a>
+                    */ }
                 </div>
 
                <div className="collapse navbar-collapse">

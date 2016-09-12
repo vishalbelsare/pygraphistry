@@ -97,7 +97,8 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
         )
         .mergeMap(({investigation, pivot, name }) => {
             investigation.url = (process.env.GRAPHISTRY_VIEWER || process.env.GRAPHISTRY || 'https://labs.graphistry.com')
-                + '/graph/graph.html?play=500&bg=%23eeeeee&type=vgraph&dataset=' + name;
+                + '/graph/graph.html?play=500&bg=%23eeeeee&type=vgraph&info=true&dataset=' + name;
+            console.log('  URL: ', investigation.url);
             const values = [
                 $pathValue(`investigationsById['${id}'].url`, investigation.url),
                 $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),

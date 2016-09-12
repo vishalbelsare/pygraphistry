@@ -32,7 +32,7 @@ function buildLookup(text, pivotCache) {
                 const fieldMatch = `"${ field }"="${ vals.join(`" OR "${ field }"="`) }"`;
                 match = match + (match ? ' OR ' : '') + fieldMatch;
             }
-            return `${ source } ${ match } | uniq `;
+            return `${ source } ${ match } | head 10000 | uniq `;
         } else {
             //this is disjunctive on field matches
             //  for conjunctive, do " | join x, y, z [ search ... ]"
