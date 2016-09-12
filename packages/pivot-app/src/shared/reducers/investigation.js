@@ -18,9 +18,17 @@ export function playInvestigation(action$, store) {
             .do((val) => console.log('Val', val))
             .groupBy(({ id }) => id)
             .mergeMap((actionsById) => actionsById.switchMap(
-                ({ stateKey, falcor, state, index, target }) => {
-                    return falcor.call(`play`)
-                .progressively()
+                ({ stateKey, falcor, state, length, target }) => {
+                    console.log('length', length)
+                    return Observable.forkJoin(
+                        [...Array(length).keys()].map((index) => (
+                            falcor.call(`searchPivot`, [index]
+                            )
+                        ))
+                    ).mergeMap(
+                        () => falcor.call(`play`)
+                        .progressively()
+                    )
                 }
             ))
             .ignoreElements();

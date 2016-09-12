@@ -12,13 +12,18 @@ import { splicePivot,
         playInvestigation
 } from '../actions/investigation'
 
-function renderInvestigation({length = 0, templates = 'all', name = 'default', pivots = [], searchPivot, insertPivot, splicePivot }) {
+function renderInvestigation({length = 0, templates = 'all', name = 'default', pivots = [], searchPivot, insertPivot, splicePivot, playInvestigation}) {
     const cellWidth = Math.round(88 / (4));
     return (
         <div className={styles.pivots}>
             <Table>
                 <thead>
                     <tr>
+                    <th style={{ width: `8%` }}> 
+                        <ButtonGroup vertical block style={{float:'left'}} >
+                            <Button onClick={(ev) => playInvestigation({length: pivots.length})}><Glyphicon glyph="play-circle" /></Button>
+                        </ButtonGroup>
+                    </th>
                         <td className={styles.pivotToggle}></td>
                         <td className={styles.pivotData0 + ' pivotTypeSelector'}>Step</td>
                         <td colSpan="4" className={styles.pivotData1}>Parameters</td>

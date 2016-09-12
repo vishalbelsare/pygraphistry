@@ -21,9 +21,9 @@ export const insertPivot = ({ index }) => {
     });
 };
 
-export const playInvestigation = ({ index }) => {
+export const playInvestigation = ({ length }) => {
     return ({
-        index, type: PLAY_INVESTIGATION
+        length, type: PLAY_INVESTIGATION
     });
 };
 
