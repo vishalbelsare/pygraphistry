@@ -1,3 +1,5 @@
+import { expandTemplate } from '../services/support/splunkMacros.js';
+
 const SPLUNK_INDICES = {
         HEALTH: 'index="health_demo"'
 };
@@ -10,7 +12,7 @@ const SEARCH_SPLUNK_HEALTH = {
     transport: 'Splunk',
     splunk: {
         toSplunk: function (pivots, app, fields, pivotCache) {
-            return `${fields['Search']} ${SPLUNK_INDICES.HEALTH}`
+            return `${SPLUNK_INDICES.HEALTH} ${fields['Search']}`
         }
     }
 };
@@ -42,6 +44,23 @@ const SEARCH_LAB = {
     }
 };
 
+const PATIENT = {
+    name: 'Expand Patients',
+    label: 'Any Patient in:',
+    kind: 'button',
+
+    transport: 'Splunk',
+    splunk: {
+        toSplunk: function (pivots, app, fields, pivotCache) {
+            const attribs = 'PatientID';
+            const rawSearch =
+                `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.HEALTH}]`;
+            return expandTemplate(rawSearch, pivotCache);
+        }
+    }
+};
+
+
 export default [
-    SEARCH_SPLUNK_HEALTH, SEARCH_PATIENT, SEARCH_LAB
+    SEARCH_SPLUNK_HEALTH, SEARCH_PATIENT, SEARCH_LAB, PATIENT
 ];
