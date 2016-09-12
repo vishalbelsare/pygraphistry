@@ -22,7 +22,7 @@ function upload (data, cb) {
         uri: 'http://labs.graphistry.com/etl',
         qs:   query,
         json: data,
-        callback: 
+        callback:
             function (err, resp, body) {
             if (err) { return cb(err); }
             try {
@@ -94,8 +94,8 @@ export function uploadGraph({app, investigation}) {
     };
 
     var pivot;
-    for(let pivotRef of investigation) {
-        pivot = pivotsById[pivotRef.value[1]]; 
+    for(let pivotRef of investigation.pivots) {
+        pivot = pivotsById[pivotRef.value[1]];
         if (pivot.results && pivot.enabled) {
             mergedPivots.graph = [...mergedPivots.graph, ...pivot.results.graph]
             mergedPivots.labels = [...mergedPivots.labels, ...pivot.results.labels];
@@ -124,6 +124,6 @@ export function uploadGraph({app, investigation}) {
     const uploadDone = Observable.bindNodeCallback(upload.bind(upload));
     const vizUrl = uploadDone(uploadData);
     return vizUrl.map(
-        () =>  name    
+        () =>  name
     )
 }

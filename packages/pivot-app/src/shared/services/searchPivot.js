@@ -12,16 +12,8 @@ var jsonfile = require('jsonfile')
 var graphistryVizUrl = 'https://labs.graphistry.com/graph/graph.html?type=vgraph'
 
 export function searchPivot({ investigation, app, index }) {
-
-    const pivots = investigation;
-    const { pivotsById } = app;
-    //const index = id === undefined ?
-        //pivots.length :
-        //pivots.findIndex(({ value: ref }) => (
-            //ref[ref.length - 1] === id
-    //));
-    const id = investigation[index].value[1];
-    const pivot = pivotsById[id];
+    const id = investigation.pivots[index].value[1];
+    const pivot = app.pivotsById[id];
     pivot.enabled = true;
 
     // TODO There's a much cleaner way to do this.
