@@ -7,6 +7,7 @@ import {
 
 import { simpleflake } from 'simpleflakes';
 import { investigation as createInvestigation } from '../models';
+import _ from 'underscore';
 
 const cols = [
     { name: 'Search' },
@@ -16,13 +17,11 @@ const cols = [
 
 export function app(_investigations = [], id = simpleflake().toJSON()) {
 
-    const investigations = _investigations.map((cur, index) =>
-        createInvestigation(`Investigation: ${cur.name || index}`, cur)
+    const investigations = _investigations.map((inv, idx) =>
+        createInvestigation(inv, idx)
     );
 
-    const pivots = _investigations.reduce((prev, cur, index, array) => {
-        return [...prev, ...cur];
-    }, []);
+    const pivots = _.flatten(_investigations.map((i) => i.pivots));
 
     return {
 

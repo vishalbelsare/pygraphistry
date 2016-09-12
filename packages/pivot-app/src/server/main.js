@@ -70,10 +70,20 @@ const pivots2 = Array.from({ length: 2 },
         }
     }
 );
-pivots1.name = 'Dataset Errors'
-pivots2.name = 'Malware'
 
-const app = createApp([pivots1, pivots2]);
+const investigation1 = {
+    name: 'Dataset Errors',
+    pivots: pivots1
+}
+
+const investigation2 = {
+    name: 'Very Mal Ware',
+    pivots: pivots2
+}
+
+const app = createApp([investigation1, investigation2]);
+
+console.log('App', JSON.stringify(app, null, 4))
 
 const routeServices = {
     loadApp: loadApp(app),

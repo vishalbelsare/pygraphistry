@@ -48,17 +48,23 @@ function renderInvestigation({length = 0, name = 'default', pivots = [], searchP
     );
 }
 
-function mapStateToFragment({selectedInvestigation = {}, length = 0, name = 'default', ...rest} = {}) {
+function mapStateToFragment({selectedInvestigation = {}, name = 'default', pivots = []} = {}) {
     return `{
-        'url', 'name', 'length', [0...${length}]: ${
-            PivotRow.fragment()
+        'url', 'name',
+        pivots: {
+            'length', [0...${pivots.length}]: ${
+                PivotRow.fragment()
+            }
         }
     }`;
 }
 
 function mapFragmentToProps(fragment) {
-    const output =  { pivots: fragment, name: fragment.name, length: fragment.length};
-    return output;
+    return {
+        pivots: fragment.pivots,
+        name: fragment.name,
+        length: fragment.pivots.length
+    };
 }
 
 export default container(
