@@ -7,7 +7,7 @@ export function pivot(cols, values =
     {'Search': 'Enter search query',
     'Mode': PivotTemplates.get('all', 'Search Splunk').name,
     'Input': 'Pivot 0',
-    'Links': 'None',
+    'Links': '*',
     'Time': '07/28/2016'}, id = simpleflake().toJSON(), enabled = false) {
     return {
         resultCount:0,
