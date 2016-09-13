@@ -63,10 +63,10 @@ const pivots1 = Array.from({ length: 1 },
     function(x, index) {
         if (index == 0) {
             return createPivot(cols, {
-                'Search': `${query}   | spath output=dataset path="metadata.dataset" | search dataset="*" `,
-                'Links': 'msg, dataset',
+                'Search': `${query}`,
+                'Links': '*',
                 'Time': '07/28/2016',
-                'Mode': PivotTemplates.get('alert_demo', 'Search Splunk (alerts)').name,
+                'Mode': PivotTemplates.get('all', 'Search Splunk (dataset)').name,
                 'Input': 'none'
             })
         }
