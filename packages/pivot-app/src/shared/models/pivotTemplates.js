@@ -12,7 +12,33 @@ const SEARCH_SPLUNK = {
     transport: 'Splunk',
     splunk: {
         toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search ${fields['Search']} | fields - _*`
+            return `search ${fields['Search']} | fields - _* | head 500`
+        }
+    }
+};
+
+const DATASET_ERROR_NODE_COLORS = {
+    'dataset': 1,
+    'msg': 5,
+    'EventID': 7
+}
+
+const SEARCH_SPLUNK_DATASET = {
+    name: 'Search Splunk (dataset)',
+    label: 'Query:',
+    kind: 'text',
+
+    transport: 'Splunk',
+    splunk: {
+        toSplunk: function (pivots, app, fields, pivotCache) {
+            return `search ${fields['Search']} | spath output=dataset path="metadata.dataset" | search dataset="*"  | fields msg, dataset | fields - _* | head 10`
+        },
+        encodings: {
+            point: {
+                pointColor: function(node) {
+                    node.pointColor = DATASET_ERROR_NODE_COLORS[node.type];
+                }
+            }
         }
     }
 };
@@ -32,7 +58,7 @@ memoizeTemplate('splunk', [SEARCH_SPLUNK]);
 memoizeTemplate('alert_demo', [SEARCH_SPLUNK].concat(ALERT_TEMPLATES))
 memoizeTemplate('health_demo', [SEARCH_SPLUNK].concat(HEALTH_TEMPLATES));
 
-memoizeTemplate('all', [SEARCH_SPLUNK].concat(ALERT_TEMPLATES).concat(HEALTH_TEMPLATES));
+memoizeTemplate('all', [SEARCH_SPLUNK, SEARCH_SPLUNK_DATASET].concat(ALERT_TEMPLATES).concat(HEALTH_TEMPLATES));
 
 
 /*
