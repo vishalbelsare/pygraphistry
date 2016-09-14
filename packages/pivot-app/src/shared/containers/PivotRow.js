@@ -147,11 +147,6 @@ function renderPivotRow({id, rowIndex, enabled, resultCount, resultSummary, leng
                               togglePivot({ rowIndex, enabled: ev })}
                           }
                   unCheckedChildren={'Off'}/>
-                  <ButtonGroup bsSize='xsmall' style={{float:'right'}} >
-                      <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus" /></Button>
-                          <Button onClick={(ev) => splicePivot({index})}><Glyphicon glyph="minus" /></Button>
-                          <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="search" /></Button>
-                  </ButtonGroup>
             </td>
             { fields.map((field, fldIndex) => renderPivotCellByIndex(
                 field, fldIndex,
