@@ -1,7 +1,6 @@
 import { Observable } from 'rxjs';
 import { ref as $ref } from '@graphistry/falcor-json-graph';
 import { row as createRow } from '../models';
-import { pivotToSplunk } from './pivotToSplunk.js';
 import { searchSplunk } from './searchSplunk.js';
 import { shapeSplunkResults} from './shapeSplunkResults.js';
 import { uploadGraph} from './uploadGraph.js';
@@ -60,11 +59,8 @@ export function searchPivot({app, investigation, index }) {
         throw new Error('Only expected Splunk transports, got: ' + template.transport);
     }
 
-    const query = template.splunk.toSplunk(pivots, app, pivotFields, pivotCache);
-    var searchQuery = pivotToSplunk({'Search': query});
+    const searchQuery = template.splunk.toSplunk(pivots, app, pivotFields, pivotCache);
     console.log('======= Search ======')
-    console.log(query)
-    console.log('------- Expansion ---');
     console.log(searchQuery);
     const splunkResults = searchSplunk(searchQuery)
         .do(({resultCount, output}) => {
@@ -74,7 +70,7 @@ export function searchPivot({app, investigation, index }) {
             pivotCache[index] = rows.output;
             console.log('saved pivot ', index, '# results:', rows.output.length); })
         .map(({output}) => output);
-    var shapedResults = shapeSplunkResults(splunkResults, pivotFields, index)
+    var shapedResults = shapeSplunkResults(splunkResults, pivotFields, index, template.splunk.encodings)
         .do((results) => {
             pivot.results = results;
             pivot.resultSummary = summarizeOutput(results);

@@ -19,6 +19,7 @@ function buildLookup(text, pivotCache) {
         console.log('looking at: ', {search, fields, source});
 
         if (search.match(/\{\{ *pivot/i)) {
+            //[{{pivot1}}] -[ URL ] -> [ bluecoat ]
             //to avoid duplication of results, if base is a {{pivotX}}, do a lookup rather than re-search
             //(join copies fields from base into result, and '*' linkage will therefore double link those,
             // so this heuristic avoids that issue here)
@@ -34,6 +35,7 @@ function buildLookup(text, pivotCache) {
             }
             return `${ source } ${ match } | head 10000 | uniq `;
         } else {
+            //[search Fireeye botnet] -> [ URL ] -> [ bluecoat ]
             //this is disjunctive on field matches
             //  for conjunctive, do " | join x, y, z [ search ... ]"
             var out = '';
@@ -70,4 +72,8 @@ function pivotIdToTemplate(id, {pivotsById}) {
 
 function pivotToTemplate () {
     return pivotIdToTemplate(pivot.value[1], {pivotsById});
+}
+
+export function constructFieldString(fields) {
+    return ` | fields "${fields.join('" , "')}" | fields - _*`;
 }
