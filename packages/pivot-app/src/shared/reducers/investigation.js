@@ -20,15 +20,21 @@ export function playInvestigation(action$, store) {
             .mergeMap((actionsById) => actionsById.switchMap(
                 ({ stateKey, falcor, state, length, target }) => {
                     console.log('length', length)
-                    return Observable.forkJoin(
-                        [...Array(length).keys()].map((index) => (
-                            falcor.call(`searchPivot`, [index]
-                            )
-                        ))
-                    ).mergeMap(
-                        () => falcor.call(`play`)
-                        .progressively()
+                    return Observable.concat(
+                        [...Array(length).keys()].map((index) => {
+                            console.log('Search!')
+                            return falcor.call(`searchPivot`, [index])
+                            }
+                        )
                     )
+                    .do((val) => console.log('Return of concat', val))
+                    .last()
+                    .do((val) => console.log('Return of last', val))
+                    .
+                    mergeMap(
+                    () => falcor.call(`play`)
+                    .progressively()
+                )
                 }
             ))
             .ignoreElements();
