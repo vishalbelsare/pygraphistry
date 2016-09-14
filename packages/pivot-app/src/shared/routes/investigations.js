@@ -88,7 +88,6 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
 
 function playCallRoute({ loadInvestigationsById, searchPivot, uploadGraph }) {
     return function playInvestigationCall(path, args) {
-        console.log("Play!")
         const id = path[1];
         const index = args[0];
         return loadInvestigationsById({investigationIds: id})
