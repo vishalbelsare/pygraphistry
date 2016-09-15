@@ -33,8 +33,9 @@ export function searchPivot(action$, store) {
             .groupBy(({ id }) => id)
             .mergeMap((actionsById) => actionsById.switchMap(
                 ({ stateKey, falcor, state, index, target }) => {
-                    return falcor.call(`searchPivot`, [index])
-                .progressively()
+                    return Observable.from(falcor.set($value(`['${index}']['enabled']`, true)))
+                       .concat(falcor.call(`searchPivot`, [index]))
+                       .concat(falcor.call(`play`))
                 }
             ))
             .ignoreElements();
