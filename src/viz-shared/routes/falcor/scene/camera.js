@@ -1,7 +1,7 @@
 import {
     ref as $ref,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 import { getHandler,
          setHandler,
          mapObjectsToAtoms,
@@ -25,11 +25,11 @@ export function camera(path, base) {
             returns: `*`
         }, {
             get: getValues,
-            route: `${base}['camera']['controls', 'options'][{keys}]`
+            route: `${base}['camera']['controls'][{keys}]`
         }, {
             get: getValues,
             set: setValues,
-            route: `${base}['camera']['controls', 'options'][{keys}][{keys}]`
+            route: `${base}['camera']['controls'][{keys}][{keys}]`
         }];
     }
 }

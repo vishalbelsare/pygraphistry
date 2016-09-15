@@ -24,7 +24,9 @@ export function initialize(options, debug) {
 
     return Observable.of({
         ...options, handleVboUpdates, socket, model: new Model({
-            scheduler: scheduler.asap,
+            JSONWithHashCodes: true,
+            scheduler: Scheduler.asap,
+            allowFromWhenceYouCame: true,
             source: getDataSource({
                 request: { query: options }
             })

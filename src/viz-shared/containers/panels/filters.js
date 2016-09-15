@@ -1,68 +1,50 @@
 import React from 'react'
-import styles from './styles.less';
-import classNames from 'classnames';
-import { container } from 'reaxtor-redux';
-import { FiltersFragment, FilterFragment } from './fragments';
+import { container } from '@graphistry/falcor-react-redux';
 import {
-    Button, Panel,
-    Tooltip, OverlayTrigger,
-    ListGroup, ListGroupItem
-} from 'react-bootstrap';
+    FilterItem,
+    FiltersList,
+    FilterTemplates
+} from 'viz-shared/components/filters';
 
-// import ToggleButton from 'react-bootstrap-switch';
-
-const filterExpressionTooltip = (
-    <Tooltip id='filter-expression-tooltip'>Filter Expression</Tooltip>
-);
-
-const expressionEnabledTooltip = (
-    <Tooltip id='expression-enabled-tooltip'>Enabled</Tooltip>
-);
-
-const deleteExpressionTooltip = (
-    <Tooltip id='delete-expression-tooltip'>Delete Expression</Tooltip>
-);
+import {
+    addFilter,
+    removeFilter,
+    setFilterEnabled,
+    updateFilterExpression
+} from 'viz-shared/actions/filters';
 
 export const Filters = container(
-     FiltersFragment, (filters) => ({
-     filters, name: filters.name, open: filters.open })
-)(({ filters = [], name = '', open = false, style }) => {
-    return (
-        <ListGroup>
-        {filters.map((filter) => [
-            <ListGroupItem key={filter.key}>
-                <Filter data={filter}/>
-            </ListGroupItem>
-        ])}
-        </ListGroup>
-    );
-});
+    ({ length = 0, templates = [] }) => `{
+        id, name, length, [0...${length}]: ${
+            Filter.fragment()
+        },
+        templates: {
+            length, [0...${templates.length}]: {
+                name, dataType
+            }
+        }
+    }`,
+    (filters) => ({ filters, templates: filters.templates }),
+    { addFilter, removeFilter }
+)(renderFilters);
 
 export const Filter = container(
-    FilterFragment
-)(({ id, title, attribute, level, query }) => {
+    () => `{
+        id, title, level, query,
+        controlType, enabled, attribute
+    }`,
+    (filter) => filter,
+    { setFilterEnabled, updateFilterExpression }
+)(FilterItem);
+
+function renderFilters({ filters = [], removeFilter, ...props }) {
     return (
-        <div>
-            <OverlayTrigger
-                placement='top'
-                overlay={filterExpressionTooltip}>
-                <textarea defaultValue={query.inputString}/>
-            </OverlayTrigger>
-            {level === 'system' ?
-            <div>
-                <OverlayTrigger placement='top'
-                                overlay={expressionEnabledTooltip}>
-                    <ToggleButton onText='Enabled' offText='Disabled'/>
-                </OverlayTrigger>
-                <OverlayTrigger placement='right'
-                                overlay={deleteExpressionTooltip}>
-                    <Button href='javascript:void(0)' className={classNames({
-                        [styles['fa']]: true,
-                        [styles['fa-close']]: true
-                    })}/>
-                </OverlayTrigger>
-            </div>
-            : null}
-        </div>
+        <FiltersList {...props}>
+        {filters.map((filter, index) => (
+            <Filter data={filter}
+                    key={`${index}: ${filter.id}`}
+                    removeFilter={removeFilter}/>
+        ))}
+        </FiltersList>
     );
-});
+}

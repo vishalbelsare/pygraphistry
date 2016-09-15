@@ -1,6 +1,6 @@
 import React from 'react'
 import classNames from 'classnames';
-import { container } from 'reaxtor-redux';
+import { container } from '@graphistry/falcor-react-redux';
 import { ViewFragment } from './fragments';
 
 import { Toolbar } from 'viz-shared/containers/toolbar';

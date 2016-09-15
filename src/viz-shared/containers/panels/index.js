@@ -1,8 +1,9 @@
-import { container } from 'reaxtor-redux';
+import { Popover } from 'react-bootstrap';
+import { container } from '@graphistry/falcor-react-redux';
 import { renderNothing } from 'recompose';
 
 // import { Sets } from './sets';
-// import { Filters } from './filters';
+import { Filters } from './filters';
 // import { Timebar } from './timebar';
 import { Settings } from './settings';
 // import { Inspector } from './inspector';
@@ -23,10 +24,10 @@ export const Panel = container(
     (panel) => ({ panel })
 )(renderPanel);
 
-function renderPanel({ side, panel = {} } = {}) {
+function renderPanel({ side, panel = {}, ...props } = {}) {
     const Content = componentForSideAndType(side, panel.id);
     return (
-        <Content data={panel}/>
+        <Content data={panel} {...props}/>
     );
 }
 
@@ -51,17 +52,19 @@ function componentForSideAndType(side, id) {
     );
 }
 
-function Sets() {
+function Sets({ name, ...props }) {
     return (
-        <h1>Sets</h1>
+        <Popover {...props}>
+            <h1>Sets</h1>
+        </Popover>
     );
 }
 
-function Filters() {
-    return (
-        <h1>Filters</h1>
-    );
-}
+// function Filters() {
+//     return (
+//         <h1>Filters</h1>
+//     );
+// }
 
 function Timebar() {
     return (
@@ -75,9 +78,11 @@ function Inspector() {
     );
 }
 
-function Exclusions() {
+function Exclusions({ name, ...props }) {
     return (
-        <h1>Exclusions</h1>
+        <Popover {...props}>
+            <h1>Exclusions</h1>
+        </Popover>
     );
 }
 

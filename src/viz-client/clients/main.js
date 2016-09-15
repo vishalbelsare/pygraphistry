@@ -1,14 +1,44 @@
 import SocketIO from 'socket.io-client';
-import { Model, RemoteDataSource } from '../falcor';
-import { handleVboUpdates } from '../streamGL/client';
-import { falcorUpdateHandler } from '../startup/falcorUpdateHandler';
+import { Model } from '../falcor';
 import { Observable, Scheduler } from 'rxjs';
+import { handleVboUpdates } from '../streamGL/client';
+import SocketDataSource from '@graphistry/falcor-socket-datasource';
 
 export function initialize(options, debug) {
 
+    let workbook = options.workbook;
+
+    if (workbook == null) {
+        const { workbooks } = getAppCache();
+        if (workbooks && workbooks.open) {
+            const { value } = workbooks.open;
+            workbook = value && value[value.length - 1] || null;
+        }
+    }
+
+    return initSocket(options, workbook).map((socket) => ({
+        ...options, handleVboUpdates, socket, model: getAppModel(options, socket)
+    }));
+}
+
+function initSocket(options, workbook) {
+
+    const whiteListedQueryParams = [
+        'bg', 'view', 'type', 'scene',
+        'device', 'mapper', 'vendor', 'usertag',
+        'dataset', 'workbook', 'controls', 'viztoken'
+    ];
+
+    const socketQuery = whiteListedQueryParams.reduce((params, key) => {
+        if (options.hasOwnProperty(key)) {
+            params[key] = options[key];
+        }
+        return params;
+    }, {});
+
     const socket = SocketIO.Manager({
         path: `/socket.io`, reconnection: false,
-        query: { ...options, falcorClient: true }
+        query: { ...socketQuery, workbook, falcorClient: true }
     }).socket('/');
 
     socket.io.engine.binaryType = 'arraybuffer';
@@ -21,32 +51,22 @@ export function initialize(options, debug) {
     .mergeMap((e) => Observable.throw(e));
 
     return socketConnected
-        .merge(socketErrorConnecting)
-        .take(1)
-        .mergeMap(() => {
-            const model = getAppModel(options);
-            const updateFalcorEvents = Observable.fromEvent(
-                socket, 'updateFalcorCache', ({ data }) => data
-            );
-            return falcorUpdateHandler(model, updateFalcorEvents)
-                .ignoreElements()
-                .startWith({ ...options, model, socket, handleVboUpdates })
-        });
+        .take(1).mapTo(socket)
+        .merge(socketErrorConnecting);
 }
 
-function getAppModel(options) {
-    return new Model({
-        cache: getAppCache(),
+function getAppModel(options, socket) {
+    const source = new SocketDataSource(socket, 'falcor-request');
+    const model = new Model({
+        source, cache: getAppCache(),
+        JSONWithHashCodes: true,
         scheduler: Scheduler.asap,
-        source: new RemoteDataSource('/graph/model.json', {
-            crossDomain: false, withCredentials: false
-        }, options),
-        onChangesCompleted: !__DEV__ ? null : function () {
-            window.__INITIAL_STATE__ = this.getCache();
-        }
+        allowFromWhenceYouCame: true
     });
+    source.model = model;
+    return model;
 }
 
 function getAppCache() {
-    return window.__INITIAL_STATE__ || {};
+    return window.__INITIAL_CACHE__ || {};
 }

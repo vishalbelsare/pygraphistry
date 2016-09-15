@@ -118,10 +118,10 @@ export class GLRenderer extends Renderer {
 
     setCamera2d(left, right, bottom, top) {
 
-        const { gl, canvas, programs } = this;
+        const { gl, programs } = this;
         const { mat2d, mat3, vec2 } = glMatrix;
 
-        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
         const lr = 1 / (left - right);
         const bt = 1 / (bottom - top);
@@ -416,7 +416,7 @@ function loadImage(url) {
         let errorHappened = false;
         try {
             const image = new Image();
-            image.onload = () => observer.next(image);
+            image.onload = () => { observer.next(image); observer.complete(); };
             image.onerror = (e) => observer.error(e);
             image.src = url;
         } catch (e) {
@@ -425,8 +425,6 @@ function loadImage(url) {
         } finally {
             if (errorHappened) {
                 observer.error(errorValue);
-            } else {
-                observer.complete();
             }
         }
         return () => {

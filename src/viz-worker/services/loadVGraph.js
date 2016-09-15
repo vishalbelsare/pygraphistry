@@ -11,21 +11,22 @@ const unpackers = {
     'jsonMeta': loadVGraphJSON
 };
 
-export function loadVGraph(nBody, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
+export function loadVGraph(view, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
     return Observable
-        .of({ nBody, loaded: false })
+        .of({ view, loaded: false })
         .expand(loadAndUnpackVGraph(config, s3Cache))
         .takeLast(1)
-        .map(loadDataFrameAndUpdateBuffers)
+        .mergeMap(loadDataFrameAndUpdateBuffers)
 }
 
 function loadAndUnpackVGraph(config, s3Cache) {
-    return function loadAndUnpackVGraph({ nBody, loaded }) {
+    return function loadAndUnpackVGraph({ view, loaded }) {
 
         if (loaded === true) {
             return Observable.empty();
         }
 
+        const { nBody } = view;
         const { dataset } = nBody;
         const unpack = unpackers[dataset.type];
 
@@ -33,10 +34,16 @@ function loadAndUnpackVGraph(config, s3Cache) {
             .map((buffer) => ({ metadata: dataset, body: buffer }))
             .mergeMap(
                 (tuple) => unpack(nBody, tuple, config, s3Cache),
-                (tuple, nBodyOrTuple) => ((nBodyOrTuple.loaded === false) ?
-                    { ...nBodyOrTuple } :
-                    { nBody: nBodyOrTuple, loaded: true }
-                )
+                (tuple, nBodyOrTuple) => {
+                    let loaded = false;
+                    if (nBodyOrTuple.loaded === false) {
+                        view.nBody = nBodyOrTuple.nBody;
+                    } else {
+                        loaded = true;
+                        view.nBody = nBodyOrTuple;
+                    }
+                    return { view, loaded };
+                }
             );
     }
 }
@@ -52,9 +59,10 @@ function loadVGraphJSON(nBody, { metadata: dataset, body: buffer }, config, s3Ca
     return Observable.of({ nBody, loaded: false })
 }
 
-function loadDataFrameAndUpdateBuffers({ nBody }) {
+function loadDataFrameAndUpdateBuffers({ view }) {
 
-    const { simulator, simulator: { dataframe }} = nBody;
+    const { nBody } = view;
+    const { simulator, simulator: { dataframe, layoutAlgorithms }} = nBody;
     // Load into dataframe data attributes that rely on the simulator existing.
     const inDegrees = dataframe.getHostBuffer('backwardsEdges').degreesTyped;
     const outDegrees = dataframe.getHostBuffer('forwardsEdges').degreesTyped;
@@ -63,11 +71,65 @@ function loadDataFrameAndUpdateBuffers({ nBody }) {
     dataframe.loadDegrees(outDegrees, inDegrees);
     dataframe.loadEdgeDestinations(unsortedEdges);
 
+    view.scene = assignHintsToScene(view.scene, dataframe);
+    view.expressionTemplates = createExpressionTemplates(dataframe);
+
     // Tell all layout algorithms to load buffers from dataframe, now that
     // we're about to enable ticking
-    simulator.layoutAlgorithms.forEach((layoutAlgorithm) => {
-        layoutAlgorithm.updateDataframeBuffers(simulator);
-    });
+    return Observable.forkJoin(...layoutAlgorithms.map((algo) =>
+        Observable.from(algo.updateDataframeBuffers(simulator)))
+    ).mapTo(view);
+}
 
-    return nBody;
+function assignHintsToScene(scene, dataframe) {
+
+    const MAX_SIZE_TO_ALLOCATE = 2000000;
+    const numEdges = dataframe.numEdges();
+    const numPoints = dataframe.numPoints();
+
+    scene.hints = {
+        edges: Math.min(numEdges, MAX_SIZE_TO_ALLOCATE),
+        points: Math.min(numPoints, MAX_SIZE_TO_ALLOCATE),
+    };
+
+    return scene;
+}
+
+function createExpressionTemplates(dataframe) {
+
+    const expressionTemplates = [];
+    const columnsByComponentType = dataframe.getColumnsByType(true);
+
+    /*        { point, edge } */
+    for (const componentType in columnsByComponentType) {
+
+        if (!columnsByComponentType.hasOwnProperty(componentType)) {
+            continue;
+        }
+
+        const columnsByName = columnsByComponentType[componentType];
+
+        for (const columnName in columnsByName) {
+
+            if (!columnsByName.hasOwnProperty(columnName)) {
+                continue;
+            }
+
+            const column = columnsByName[columnName];
+            const expressionName = columnName === column.name ?
+                columnName : column.name;
+
+            const expresionAttribute = columnName.indexOf(componentType) === 0 ?
+                expressionName : `${componentType}:${expressionName}`;
+
+            expressionTemplates.push({
+                componentType,
+                name: expressionName,
+                dataType: column.type,
+                attribute: expresionAttribute
+            });
+        }
+    }
+
+    return expressionTemplates;
 }

@@ -2,7 +2,7 @@ import {
     ref as $ref,
     atom as $atom,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 export function timebar(workbookId, viewId) {
     const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
@@ -15,10 +15,13 @@ export function timebar(workbookId, viewId) {
                 id: 'toggle-timebar',
                 name: 'Timebar',
                 type: 'toggle',
-                stateKey: 'bottom',
-                state: $ref(`${view}.panels`),
-                value: $atom(undefined),
-                values: $atom([$ref(`${view}.timebar`), $atom(undefined)])
+                value: 0,
+                values: $atom([[
+                    $value(`${view}.panels.bottom`, $atom(undefined))
+                ], [
+                    $value(`${view}.panels.bottom`, $ref(`${view}.timebar`)),
+                    $value(`${view}.inspector.controls[0].value`, $atom(0)),
+                ]])
             }]
         }
     };

@@ -1,61 +1,55 @@
-import { container } from 'reaxtor-redux';
-import { Canvas } from './canvas';
-import { Labels } from './labels';
-import { Selection } from './selection';
+import React, { PropTypes } from 'react';
+import { container } from '@graphistry/falcor-react-redux';
+import { compose, getContext, hoistStatics } from 'recompose';
+import {
+    moveCamera,
+    layoutScene,
+    centerCamera
+} from 'viz-shared/actions/scene';
 
-export const Scene = container(
-    ({ labels, layout = {}, selection, settings = [] } = {}) => {
-        const { settings: layoutSettings = [] } = layout;
-        return `{
-            labels: ${
-                Labels.fragment(labels)
-            },
-            selection: ${
-                Selection.fragment(selection)
-            },
-            id, name, settings: {
-                length, [0...${settings.length}]: {
-                    id
-                }
-            },
-            layout: {
-                id, name, settings: {
-                    length, [0...${layoutSettings.length}]: {
-                        id
-                    }
-                }
-            },
-            camera: {
-                type, nearPlane, farPlane,
-                bounds: { top, left, bottom, right },
-                ['edges', 'points']: { scaling, opacity }
-            },
-            hints: { edges, points },
-            server: { buffers, textures },
-            options: {
-                enable, disable, depthFunc, clearColor,
-                lineWidth, blendFuncSeparate, blendEquationSeparate
-            },
-            items, modes, render, models, uniforms,
-            targets, programs, arcHeight, triggers, buffers, textures,
-            numRenderedSplits, clientMidEdgeInterpolation
-        }`
-    },
-    (scene) => ({
-        scene,
-        labels: scene.labels,
-        selection: scene.selection
-    })
+export const Scene = compose(
+    hoistStatics(getContext({ Renderer: PropTypes.func })),
+    container(
+        ({ labels, selection, Renderer } = {}) => {
+            return `{
+
+                id, name, simulating,
+                showArrows, pruneOrphans,
+
+                camera: {
+                    type, zoom, center,
+                    nearPlane, farPlane,
+                    edges: { scaling, opacity },
+                    points: { scaling, opacity },
+                    bounds: { top, left, bottom, right }
+                },
+
+                background: { color },
+                foreground: { color },
+                hints: { edges, points },
+                server: { buffers, textures },
+                options: {
+                    enable, disable, depthFunc, clearColor,
+                    lineWidth, blendFuncSeparate, blendEquationSeparate
+                },
+                items, modes, render, models, uniforms,
+                targets, programs, arcHeight, triggers, buffers, textures,
+                numRenderedSplits, clientMidEdgeInterpolation
+            }`
+        },
+        (scene) => ({ scene }),
+        { moveCamera, centerCamera, layoutScene }
+    )
 )(renderScene);
 
-function renderScene({ scene, labels, selection }) {
+function renderScene({ scene, Renderer, moveCamera, centerCamera, layoutScene }) {
     return (
-        <div style={{ width: `100%`, heigth: `100%`, position: `absolute`,
-                      color: `white`, textAlign: `center` }}>
-            {/*<canvas className='canvas'/>*/}
-            <Canvas key='canvas' {...scene}/>
-            <Labels key='labels' data={labels}/>
-            <Selection key='selection' data={selection}/>
+        <div style={{ width: `100%`, height: `100%`, position: `absolute` }}>
+            <Renderer key='renderer'
+                      scene={scene}
+                      moveCamera={moveCamera}
+                      layoutScene={layoutScene}
+                      centerCamera={centerCamera}/>
         </div>
     );
 }

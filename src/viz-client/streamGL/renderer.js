@@ -3,8 +3,6 @@
 import { ReplaySubject } from 'rxjs';
 
 const _           = require('underscore');
-// TODO: Upgrade to immutable v3 (from v2) -- breaking changes; our usage must be updated to match
-const Immutable   = require('immutable');
 const util        = require('./graphVizApp/util.js');
 const debug       = require('debug')('graphistry:StreamGL:renderer');
 
@@ -82,14 +80,14 @@ const getUniformLocationFast = addressMemoizer(uniformLocations, 'uniform', 'get
 /** The program currently in use by GL
  * @type {?WebGLProgram} */
 let activeProgram = null;
-function useProgram(gl, program) {
+function useProgram(gl, program, programName) {
     if (activeProgram !== program) {
-        debug('Use program: on slow path');
+        debug(`Use program ${programName}: on slow path`);
         gl.useProgram(program);
         activeProgram = program;
         return true;
     }
-    debug('Use program: on fast path');
+    debug(`Use program ${programName}: on fast path`);
 
     return false;
 }
@@ -174,15 +172,15 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
     bindings.attributes = bindings.attributes || {};
     bindings.uniforms = bindings.uniforms || {};
 
-    const gl = state.get('gl');
-    const uniforms = state.get('uniforms');
-    const indexGlBuffers = state.get('indexGlBuffers');
+    const gl = state.gl;
+    const uniforms = state.uniforms;
+    const indexGlBuffers = state.indexGlBuffers;
 
     debug('Binding program %s', programName);
 
     disableActiveVertexAttribArrays(gl);
 
-    useProgram(gl, program);
+    useProgram(gl, program, programName);
 
 
     _.each(bindings.attributes, (binding, attribute) => {
@@ -219,11 +217,11 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 
     _.each(bindings.textureBindings || {}, (binding, textureName) => {
 
-        debug('  binding texture', binding, textureName, state.get('textures').get(binding));
+        debug('  binding texture', binding, textureName, state.textures[binding]);
 
         const location = getUniformLocationFast(gl, program, programName, textureName);
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, state.get('textures').get(binding));
+        gl.bindTexture(gl.TEXTURE_2D, state.textures[binding]);
         gl.uniform1i(location, 0);
 
     });
@@ -237,20 +235,20 @@ function bindProgram(state, program, programName, itemName, bindings, buffers, m
 
 
 //config * canvas
-function init(config, cameraModel, canvas, urlParams) {
+function init(config, canvas, urlParams) {
 
-    const renderConfig = Immutable.fromJS(config);
+    const renderConfig = config;
     const renderPipeline = new ReplaySubject(1);
     const bufferSizes = {};
     const hostBuffers = {};
 
-    let state = Immutable.Map({
+    let state = {
         config: renderConfig,
         canvas: canvas,
 
         gl: undefined,
         ext: undefined,
-        programs:       Immutable.Map({}),
+        programs:       {},
         buffers:        {},
         bufferSizes:    bufferSizes,
 
@@ -262,15 +260,16 @@ function init(config, cameraModel, canvas, urlParams) {
         camera:         undefined,
 
         //{item -> gl obj}
-        textures:       Immutable.Map({}),
-        fbos:           Immutable.Map({}),
-        renderBuffers:  Immutable.Map({}),
+        textures:       {},
+        fbos:           {},
+        renderBuffers:  {},
         pixelreads:     {},
         uniforms:       config.uniforms,
         options:        config.options,
+        items:          config.items,
 
         boundBuffer:    undefined,
-        bufferSize:     Immutable.Map({}),
+        bufferSize:     {},
         numElements:    {},
         flags: {interpolateMidPoints: true},
 
@@ -285,7 +284,7 @@ function init(config, cameraModel, canvas, urlParams) {
 
         //Observable [...]
         rendered: renderPipeline.pluck('rendered').filter(_.identity)
-    });
+    };
 
     resizeCanvas(state);
 
@@ -295,59 +294,53 @@ function init(config, cameraModel, canvas, urlParams) {
 
     const pixelRatio = urlParams.pixelRatio || window.devicePixelRatio || 1;
     const gl = createContext(state, pixelRatio);
-    state = state.set('gl', gl);
-    setGlOptions(gl, state.get('options'));
+    state.gl = gl;
+    setGlOptions(gl, state.options);
 
-    state = state.set('programs', createPrograms(config, gl));
-    state = state.set('buffers', createBuffers(config, gl, bufferSizes, hostBuffers));
+    state.programs = createPrograms(config, gl);
+    state.buffers = createBuffers(config, gl, bufferSizes, hostBuffers);
 
-    debug('precreated', state.toJS());
+    debug('precreated', state);
     const camera = createCamera(state, pixelRatio, urlParams);
-    state = state.set('camera', camera);
+    state.camera = camera;
     setCamera(state);
 
-    cameraModel.changes()
-        .switchMap(
-            (model) => model.get(`['edges', 'points']['scaling', 'opacity']`),
-            (model, { json: camera }) => camera
-        )
-        .subscribe(({ edges, points }) => {
-            camera.edgeScaling = edges.scaling;
-            camera.pointScaling = points.scaling;
-            const uniforms = state.get('uniforms');
-            for (const key in uniforms) {
-                const map = uniforms[key];
-                if ('edgeOpacity' in map) {
-                    map.edgeOpacity = edges.opacity;
-                }
-                if ('pointOpacity' in map) {
-                    map.pointOpacity = points.opacity;
-                }
-            }
-        });
+    debug('state pre', state);
 
-    debug('state pre', state.toJS());
-    state = state.mergeDeep(createRenderTargets(renderConfig,
-                                                config.targets,
-                                                canvas, gl, camera));
+    const serverTextures = createStandardTextures(renderConfig, canvas, gl);
+    const { fbos, textures, renderBuffers, pixelreads } = createRenderTargets(
+        renderConfig, config.targets, canvas, gl, camera
+    );
 
-    debug('state pre b', state.toJS());
-    state = state.mergeDeep(createStandardTextures(renderConfig, canvas, gl));
+    state = {
+        ...state,
+        fbos,
+        renderBuffers,
+        pixelreads,
+        textures: { ...textures, ...serverTextures }
+    };
 
-    debug('created', state.toJS());
+    debug('state pre b', state);
+
+    debug('created', state);
     return state;
 }
 
 function setFlags(state, name, bool) {
-    const flags = state.get('flags');
+    const flags = state.flags;
     flags[name] = bool;
 }
 
+// var webglDebug = require('webgl-debug');
+// function throwOnGLError(err, funcName, args) {
+//     throw webglDebug.glEnumToString(err) + " was caused by call to: " + funcName;
+// };
 
 function createContext(state, pixelRatio) {
-    const canvas = state.get('canvas');
+    const canvas = state.canvas;
     const aa = pixelRatio <= 1; // Disable AA on retina display
     const glOptions = {antialias: aa, premultipliedAlpha: false};
+    // let gl = webglDebug.makeDebugContext(canvas.getContext('webgl', glOptions), throwOnGLError);
     let gl = canvas.getContext('webgl', glOptions);
     if (gl === null) {
         gl = canvas.getContext('experimental-webgl', glOptions);
@@ -376,29 +369,35 @@ function enableExtensions(gl, extensions) {
 */
 
 
-function createCamera(state, pixelRatio, urlParams) {
-    const canvas = state.get('canvas');
-    const camConfig = state.get('config').get('camera');
+function createCamera(state, pixelRatio, urlParams = {}) {
+    const canvas = state.canvas;
+    const camConfig = state.config.camera;
 
-    let bounds = camConfig.get('bounds');
+    let bounds = camConfig.bounds || {};
+
     if (bounds === 'CANVAS') {
-        bounds = Immutable.fromJS({
+        bounds = {
             left: 0, right: canvas.width,
             top: 0, bottom: canvas.height
-        });
+        };
+    } else {
+        const { top = bounds.top,
+                left = bounds.left,
+                right = bounds.right,
+                bottom = bounds.bottom } = urlParams;
+        bounds = { top, left, right, bottom };
     }
-    bounds = bounds.merge(_.pick(urlParams, 'left', 'right', 'top', 'bottom'));
 
     /** Allow &camera=3d to override camera type (defaults to 2d); currently deprecated/ignored. */
     const mode =
-        urlParams && urlParams.camera ? (urlParams.camera === '3d' ? '3d' : '2d')
-        : camConfig.get('type') === '3d' ? '3d'
+        urlParams.camera ? (urlParams.camera === '3d' ? '3d' : '2d')
+        : camConfig.type === '3d' ? '3d'
         : '2d';
 
     const camera = new cameras.Camera2d(
-        bounds.get('left'), bounds.get('right'),
-        bounds.get('top'), bounds.get('bottom'),
-        camConfig.get('nearPlane'), camConfig.get('farPlane'),
+        bounds.left, bounds.right,
+        bounds.top, bounds.bottom,
+        camConfig.nearPlane, camConfig.farPlane,
         mode);
 
     console.info('Display\'s pixel ratio is', pixelRatio);
@@ -414,18 +413,15 @@ function getItemsForTrigger(state, trigger) {
     if (!trigger) {
         return undefined;
     }
-    return state
-        .get('config')
-        .get('triggers')
-        .get(trigger).toJS();
+    return state.config.triggers[trigger];
 }
 
 /*
  * Update the size of the canvas to match what is visible
  */
 function resizeCanvas(state) {
-    const canvas = state.get('canvas');
-    const camera = state.get('camera');
+    const canvas = state.canvas;
+    const camera = state.camera;
 
     // window.devicePixelRatio should only be read on resize, when the gl backbuffer is
     // reallocated. All other code paths should use camera.pixelRatio!
@@ -458,9 +454,7 @@ function getTextureDims(config, canvas, camera, name) {
         return {width: canvas.width, height: canvas.height};
     }
 
-    const textureConfig = config.get ?
-        config.get('textures').get(name).toJS() :
-        config.textures[name];
+    const textureConfig = config.textures[name];
 
     //Retina-quality
     const width =
@@ -525,10 +519,10 @@ function createRenderTargets (config, neededTextures, canvas, gl, camera) {
 
 // ... -> {<name>: glTexture}
 function createStandardTextures(config, canvas, gl) {
-    const names = getServerTextureNames(config.toJS());
+    const names = getServerTextureNames(config);
     debug('standard texture names', names);
     const textures = names.map(gl.createTexture.bind(gl));
-    return {textures: _.object(_.zip(names, textures))};
+    return _.object(_.zip(names, textures));
 }
 
 /**
@@ -639,9 +633,9 @@ function loadTexture(state, textureNfo, name) {
 
     debug('load texture', name, textureNfo);
 
-    const gl = state.get('gl');
+    const gl = state.gl;
 
-    const texture = state.get('textures').get(name);
+    const texture = state.textures[name];
     debug('  got texture', texture);
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -660,8 +654,8 @@ function loadTexture(state, textureNfo, name) {
  * @returns {Boolean} success flag
  */
 function loadBuffers (state, bufferData) {
-    const config = state.get('config').toJS();
-    const buffers = state.get('buffers');
+    const config = state.config;
+    const buffers = state.buffers;
 
     _.each(bufferData, (data, bufferName) => {
         debug('Loading buffer data for buffer %s (data type: %s, length: %s bytes)',
@@ -683,8 +677,8 @@ function loadBuffers (state, bufferData) {
         loadBuffer(state, buffers[bufferName], bufferName, model, data);
 
         if (model.datasource === 'HOST' || model.datasource === 'DEVICE') {
-            state.get('hostBuffers')[bufferName].onNext(data);
-            state.get('hostBuffersCache')[bufferName] = data;
+            state.hostBuffers[bufferName].onNext(data);
+            state.hostBuffersCache[bufferName] = data;
         }
         return true;
     });
@@ -693,10 +687,10 @@ function loadBuffers (state, bufferData) {
 // Eagerly allocate a buffer for a given buffer name if one of that size
 // doesn't already exist
 function allocateBufferSize(state, bufferName, sizeInBytes) {
-    const gl = state.get('gl');
-    const config = state.get('config').toJS();
-    const buffers = state.get('buffers');
-    const bufferSizes = state.get('bufferSizes');
+    const gl = state.gl;
+    const config = state.config;
+    const buffers = state.buffers;
+    const bufferSizes = state.bufferSizes;
 
     const buffer = buffers[bufferName];
     const model = _.values(config.models[bufferName])[0];
@@ -712,8 +706,8 @@ function allocateBufferSize(state, bufferName, sizeInBytes) {
 
 
 function loadBuffer(state, buffer, bufferName, model, data) {
-    const gl = state.get('gl');
-    const bufferSizes = state.get('bufferSizes');
+    const gl = state.gl;
+    const bufferSizes = state.bufferSizes;
 
     if(typeof bufferSizes[bufferName] === 'undefined') {
         console.error('loadBuffer: No size for buffer', bufferName);
@@ -789,9 +783,9 @@ function expandHostBuffer(gl, length, repetition, oldHostBuffer) {
 }
 
 function updateIndexBuffer(state, length, repetition) {
-    const gl = state.get('gl');
-    const indexHostBuffers = state.get('indexHostBuffers');
-    const indexGlBuffers = state.get('indexGlBuffers');
+    const gl = state.gl;
+    const indexHostBuffers = state.indexHostBuffers;
+    const indexGlBuffers = state.indexGlBuffers;
 
     length = Math.ceil(length);
 
@@ -824,11 +818,11 @@ function updateIndexBuffer(state, length, repetition) {
 
 /** A mapping of scene items to the number of elements that should be rendered for them */
 function setNumElements(state, item, newNumElements) {
-    state.get('numElements')[item] = newNumElements;
+    state.numElements[item] = newNumElements;
 }
 
 function setUniform(state, name, value) {
-    const uniforms = state.get('uniforms');
+    const uniforms = state.uniforms;
     _.each(uniforms, (map) => {
         if (name in map) {
             map[name] = value;
@@ -836,18 +830,56 @@ function setUniform(state, name, value) {
     });
 }
 
+    // cameraModel.changes()
+    //     .switchMap(
+    //         (model) => model.get(`['edges', 'points']['scaling', 'opacity']`),
+    //         (model, { json: camera }) => camera
+    //     )
+    //     .subscribe(({ edges, points }) => {
+    //         camera.edgeScaling = edges.scaling;
+    //         camera.pointScaling = points.scaling;
+    //         const uniforms = state.get('uniforms');
+    //         for (const key in uniforms) {
+    //             const map = uniforms[key];
+    //             if ('edgeOpacity' in map) {
+    //                 map.edgeOpacity = edges.opacity;
+    //             }
+    //             if ('pointOpacity' in map) {
+    //                 map.pointOpacity = points.opacity;
+    //             }
+    //         }
+    //     });
+
 
 function setCamera(state) {
-    const config = state.get('config').toJS();
-    const gl = state.get('gl');
-    const programs = state.get('programs');
-    const uniforms = state.get('uniforms');
-    const camera = state.get('camera');
+    const config = state.config;
+    const gl = state.gl;
+    const programs = state.programs;
+    const uniforms = state.uniforms;
+    const camera = state.camera;
 
-    const numVertices = state.get('numElements').pointculled || 0;
+    const { edges = {}, points = {} } = config.camera;
+    const { opacity: edgeOpacity = 1,
+            scaling: edgeScaling = camera.edgeScaling } = edges;
+    const { opacity: pointOpacity = 1,
+            scaling: pointScaling = camera.pointScaling } = points;
+
+    camera.setEdgeScaling(edgeScaling);
+    camera.setPointScaling(pointScaling);
+
+    const numVertices = state.numElements.pointculled || 0;
 
     // Set zoomScalingFactor uniform if it exists.
     _.each(uniforms, (map) => {
+
+        if ('edgeOpacity' in map) {
+            map.edgeOpacity = edgeOpacity;
+        }
+
+        if ('pointOpacity' in map) {
+            map.pointOpacity = pointOpacity;
+        }
+
         if ('zoomScalingFactor' in map) {
             // TODO: Actually get number of nodes from the server
             const scalingFactor = camera.semanticZoom(numVertices);
@@ -874,7 +906,7 @@ function setCamera(state) {
     _.each(config.programs, (programConfig, programName) => {
         debug('Setting camera for program %s', programName);
         const program = programs[programName];
-        useProgram(gl, program);
+        useProgram(gl, program, programName);
 
         const mvpLoc = getUniformLocationFast(gl, program, programName, programConfig.camera);
         gl.uniformMatrix4fv(mvpLoc, false, camera.getMatrix());
@@ -883,14 +915,14 @@ function setCamera(state) {
 
 //if maybeDims provided, also resize texture if needed
 function updateRenderTarget (state, renderTarget, maybeDims) {
-    const gl = state.get('gl');
+    const gl = state.gl;
 
     const isChangedTarget = renderTarget !== lastRenderTarget;
 
     const isMaybeResized = renderTarget && (renderTarget !== 'CANVAS') && maybeDims;
     let isResized;
     if (isMaybeResized) {
-        const pixelreads = state.get('pixelreads');
+        const pixelreads = state.pixelreads;
         const outbuffer = pixelreads[renderTarget];
         if (!outbuffer || outbuffer.length !== maybeDims.width * maybeDims.height * 4) {
             isResized = true;
@@ -901,11 +933,11 @@ function updateRenderTarget (state, renderTarget, maybeDims) {
 
     if (isResized) {
             debug('resizing texture', renderTarget, maybeDims.width, maybeDims.height);
-        const textures = state.get('textures').toJS();
+        const textures = state.textures;
         const texture = textures[renderTarget];
-        const fbos = state.get('fbos').toJS();
+        const fbos = state.fbos;
         const fbo = fbos[renderTarget];
-        const renderBuffers = state.get('renderBuffers').toJS();
+        const renderBuffers = state.renderBuffers;
         const renderBuffer = renderBuffers[renderTarget];
 
         initializeTexture(gl, texture, fbo, renderBuffer, maybeDims.width, maybeDims.height);
@@ -913,15 +945,15 @@ function updateRenderTarget (state, renderTarget, maybeDims) {
 
     if (isChangedTarget || isResized) {
         debug('  rebinding renderTarget', renderTarget);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.get('fbos').get(renderTarget) : null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget ? state.fbos[renderTarget] : null);
         lastRenderTarget = renderTarget;
     }
 
 }
 
 function copyCanvasToTexture(state, textureName) {
-    const gl = state.get('gl');
-    const textures = state.get('textures').toJS();
+    const gl = state.gl;
+    const textures = state.textures;
     const canvas = gl.canvas;
 
     updateRenderTarget(state, textureName);
@@ -964,14 +996,14 @@ function setupFullscreenBuffer(state) {
  * @param {Function<Boolean>} callback - Callback executed after readPixels
  */
 function render(state, tag, renderListTrigger, renderListOverride, readPixelsOverride, callback) {
-    const config      = state.get('config').toJS(),
-        camera      = state.get('camera'),
-        gl          = state.get('gl'),
-        options     = state.get('options'),
-        ext         = state.get('ext'),
-        programs    = state.get('programs'),
-        numElements = state.get('numElements'),
-        buffers     = state.get('buffers');
+    const config    = state.config,
+        camera      = state.camera,
+        gl          = state.gl,
+        options     = state.options,
+        ext         = state.ext,
+        programs    = state.programs,
+        numElements = state.numElements,
+        buffers     = state.buffers;
 
     const toRender = getItemsForTrigger(state, renderListTrigger) || renderListOverride;
     if (toRender === undefined || toRender.length === 0) {
@@ -983,12 +1015,11 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
     }
 
     debug('==== Rendering a frame (tag: ' + tag +')', toRender);
-    state.get('renderPipeline').onNext({start: toRender});
+    state.renderPipeline.onNext({start: toRender});
 
     // Update index buffers based on largest currently loaded buffer.
     const maxElements = Math.max(_.max(_.values(numElements)), 0);
-    state.get('activeIndices')
-        .forEach(updateIndexBuffer.bind('', state, maxElements));
+    state.activeIndices.forEach(updateIndexBuffer.bind('', state, maxElements));
 
     const itemToTarget = function (itemName) {
         const itemDef = config.items[itemName];
@@ -1009,7 +1040,7 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
     const texturesToRead = [];
 
     sortedItems.forEach((item) => {
-        const numElementsForItem = state.get('numElements')[item];
+        const numElementsForItem = state.numElements[item];
         if (typeof numElementsForItem === 'undefined' || numElementsForItem === 0) {
             debug('Not rendering item "%s" because it doesn\'t have a non-zero numElements',
                 item);
@@ -1027,7 +1058,7 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
             debug('reading back texture', renderTarget);
 
             const dims = getTextureDims(config, gl.canvas, camera, renderTarget);
-            const pixelreads = state.get('pixelreads');
+            const pixelreads = state.pixelreads;
             let texture = pixelreads[renderTarget];
             const readDims = readPixelsOverride || { x: 0, y: 0, width: dims.width, height: dims.height };
 
@@ -1044,7 +1075,7 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
         });
     }
 
-    state.get('renderPipeline').onNext({ tag: tag, rendered: toRender });
+    state.renderPipeline.onNext({ tag: tag, rendered: toRender });
 
     gl.flush();
 
@@ -1087,7 +1118,7 @@ function setTextureUniforms(state, config, itemDef, renderTarget) {
 
 function renderItem(state, config, camera, gl, options, ext, programs, buffers, clearedFBOs, item) {
     const itemDef = config.items[item];
-    const numElements = state.get('numElements')[item];
+    const numElements = state.numElements[item];
     const renderTarget = itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
 
     debug('Rendering item "%s" (%d elements)', item, numElements);
@@ -1112,7 +1143,7 @@ function renderItem(state, config, camera, gl, options, ext, programs, buffers, 
         clearedFBOs[renderTarget] = true;
     }
 
-    setGlOptions(gl, _.omit(_.extend({}, state.get('options'), itemDef.glOptions), 'clearColor', 'lineWidth'));
+    setGlOptions(gl, _.omit(_.extend({}, state.options, itemDef.glOptions), 'clearColor', 'lineWidth'));
 
     const depthFunc = ((itemDef.glOptions || {}).depthFunc || config.options.depthFunc)[0][0];
     gl.depthFunc(gl[depthFunc]);
@@ -1187,7 +1218,6 @@ function getServerTextureNames (config) {
 
 // Immutable RenderOptions -> [ int ]
 function getActiveIndices (config) {
-    config = config.toJS();
 
     const renderItems = config.render;
     const activeIndexModesLists = renderItems.map((itemName) => {

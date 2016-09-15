@@ -65,7 +65,7 @@ export function requisitionWorker({
             claimThenIndexRequests
         )
         .scan(trackVizWorkerCaches, { caches: {} })
-        .mergeMap(({ worker }) => worker.multicast(
+        .switchMap(({ worker }) => worker.multicast(
             () => new Subject(), (worker) => Observable.merge(
                 worker.filter(({ type }) => type !== 'connection'),
                 worker.filter(({ type }) => type === 'connection')
@@ -111,7 +111,7 @@ export function requisitionWorker({
                 logger.info('GPU worker already claimed');
                 return reject({ request, response }).ignoreElements();
             } else if (requestIsIndex({ request })) {
-                const { query = {} } = request;
+                const { query = {} } = url.parse(request.url);
                 latestClientId = query.clientId || latestClientId || simpleflake().toJSON();
             } else {
                 latestClientId = simpleflake().toJSON();
@@ -124,8 +124,8 @@ export function requisitionWorker({
     function workerIsLocked(request) {
         if (canLockWorker && isLocked) {
             if (requestIsIndex({ request })) {
-                const { clientId } = request.query;
-                if (clientId === latestClientId) {
+                const { query = {} } = url.parse(request.url);
+                if (query.clientId === latestClientId) {
                     return false;
                 }
             }

@@ -197,7 +197,7 @@ function getControls (controlsName) {
 }
 
 VizServer.prototype.resetState = function (dataset, socket) {
-    logger.info({socketID: socket.id}, 'RESETTING APP STATE');
+    logger.info({socketID: socket.client.id}, 'RESETTING APP STATE');
 
     // FIXME explicitly destroy last graph if it exists?
 
@@ -479,7 +479,7 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
     log.addMetadataField(loggerMetadata);
 
     const socketLogger = logger.child({
-        socketID: socket.id
+        socketID: socket.client.id
     });
 
     socketLogger.info('Client connected');
@@ -1496,7 +1496,7 @@ VizServer.prototype.defineRoutesInApp = function (app) {
             const id = req.query.id;
 
             res.set('Content-Encoding', 'gzip');
-            const VBOs = (id === appRouteResponder.socket.id ?
+            const VBOs = (id === appRouteResponder.socket.client.id ?
                 appRouteResponder.lastCompressedVBOs : appRouteResponder.cachedVBOs[id]);
             if (VBOs) {
                 res.send(VBOs[bufferName]);
@@ -1586,7 +1586,7 @@ VizServer.prototype.defineRoutesInApp = function (app) {
 
 VizServer.prototype.rememberVBOs = function (VBOs) {
     this.lastCompressedVBOs = VBOs;
-    this.cachedVBOs[this.socket.id] = this.lastCompressedVBOs;
+    this.cachedVBOs[this.socket.client.id] = this.lastCompressedVBOs;
 };
 
 VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
@@ -2032,10 +2032,10 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
 
 VizServer.prototype.dispose =
 VizServer.prototype.unsubscribe = function () {
-    logger.info('disconnecting', this.socket.id);
+    logger.info('disconnecting', this.socket.client.id);
     delete this.lastCompressedVBOs;
     delete this.bufferTransferFinisher;
-    delete this.cachedVBOs[this.socket.id];
+    delete this.cachedVBOs[this.socket.client.id];
     this.isActive = false;
 };
 

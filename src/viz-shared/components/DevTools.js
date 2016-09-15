@@ -8,18 +8,19 @@ export const DevTools = createDevTools(
     <DockMonitor defaultIsVisible={false}
                  toggleVisibilityKey="ctrl-h"
                  changePositionKey="ctrl-w">
-        <Inspector/>
+        <Inspector select={(state) => {
+            do {
+                const { workbooks } = state;
+                if (!workbooks) { state = state; break; }
+                const { open: workbook } = workbooks;
+                if (!workbook) { state = workbooks; break; }
+                const { views } = workbook;
+                if (!views) { state = workbook; break; }
+                const { current: view } = views;
+                if (!view) { state = views; break; }
+                state = view; break;
+            } while (true);
+            return state;
+        }}/>
     </DockMonitor>
 );
-
-//     <LogMonitor select={(state) => {
-//         const { workbooks } = state;
-//         if (!workbooks) { return state; }
-//         const { open: workbook } = workbooks;
-//         if (!workbook) { return workbooks; }
-//         const { views } = workbook;
-//         if (!views) { return workbook; }
-//         const { current: view } = views;
-//         if (!view) { return views; }
-//         return view;
-//     }} />

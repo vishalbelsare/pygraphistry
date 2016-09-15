@@ -16,8 +16,8 @@ import { Observable, Subject } from 'rxjs';
 
 function setupCameraInteractions(appState, $eventTarget) {
     var renderState = appState.renderState;
-    var camera = renderState.get('camera');
-    var canvas = renderState.get('canvas');
+    var camera = renderState.camera;
+    var canvas = renderState.canvas;
 
     //pan/zoom
     //Observable Event
@@ -41,7 +41,7 @@ function setupCameraInteractions(appState, $eventTarget) {
         interactions,
         interaction.setupRotate($eventTarget, camera),
         interaction.setupCenter($('#center'),
-                                renderState.get('hostBuffers').curPoints,
+                                renderState.hostBuffers.curPoints,
                                 camera),
         interaction.setupZoomButton($('#zoomin'), camera, 1 / 1.25)
             .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)),
@@ -83,7 +83,7 @@ function setupCameraInteractionRenderUpdates(renderingScheduler, cameraStream, s
 
 function setupBackgroundColor(renderingScheduler, bgColor) {
     bgColor.do(function (color) {
-        renderingScheduler.renderState.get('options').clearColor = [colorPicker.renderConfigValueForColor(color)];
+        renderingScheduler.renderState.options.clearColor = [colorPicker.renderConfigValueForColor(color)];
         renderingScheduler.renderScene('bgcolor', {trigger: 'renderSceneFast'});
     }).subscribe(_.identity, util.makeErrorHandler('background color updates'));
 }
@@ -95,7 +95,7 @@ function setupBackgroundColor(renderingScheduler, bgColor) {
 //  TODO use camera if edge goes off-screen
 //RenderState * int -> {x: float,  y: float}
 function getEdgeLabelPos (appState, edgeIndex) {
-    var numRenderedSplits = appState.renderState.get('config').get('numRenderedSplits');
+    var numRenderedSplits = appState.renderState.config.numRenderedSplits;
     var split = Math.floor(numRenderedSplits/2);
 
     var appSnapshot = appState.renderingScheduler.appSnapshot;
@@ -110,16 +110,15 @@ function getEdgeLabelPos (appState, edgeIndex) {
 
 
 function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates,
-                                  isAnimating, simulateOn, activeSelection, socket,
-                                  labelsModel, hintsModel) {
+                             isAnimating, simulateOn, activeSelection, hints) {
     var that = this;
     this.renderState = renderState;
     this.arrayBuffers = {};
     // Remember last task in case you need to rerender mouseovers without an update.
     this.lastMouseoverTask = undefined;
 
-    var config = renderState.get('config').toJS();
-    this.attemptToAllocateBuffersOnHints(config, renderState, hintsModel);
+    var config = renderState.config;
+    this.attemptToAllocateBuffersOnHints(config, renderState, hints);
 
     /* Rendering queue */
     var renderTasks = new Subject();
@@ -174,33 +173,22 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         that.appSnapshot.simulating = val;
     }, util.makeErrorHandler('simulate updates'));
 
-    var hostBuffers = renderState.get('hostBuffers');
+    var hostBuffers = renderState.hostBuffers;
 
     // FIXME handle selection update buffers here.
     Observable.combineLatest(
         hostBuffers.selectedEdgeIndexes,
-        hostBuffers.selectedPointIndexes
-    )
-    .switchMap(([edgeIndexes, pointIndexes]) => {
-
-        activeSelection.onNext(new VizSlice({
+        hostBuffers.selectedPointIndexes,
+        (edgeIndexes, pointIndexes) => new VizSlice({
             edge: edgeIndexes,
             point: pointIndexes
-        }));
-
-        const activeEdges = edgeIndexes.map((idx) => ({
-            idx, dim: 2
-        }));
-        const activePoints = pointIndexes.map((idx) => ({
-            idx, dim: 1
-        }));
-
-        return labelsModel.setValue({
-            active: activeEdges.concat(activePoints)
-        });
-    })
-    .take(1).subscribe(_.identity, util.makeErrorHandler('Getting indexes of selections.'));
-
+        })
+    )
+    .take(1)
+    .subscribe(
+        (slice) => activeSelection.next(slice),
+        util.makeErrorHandler('Getting indexes of selections.')
+    );
 
     vboUpdates.filter(function (status) {
         return status === 'received';
@@ -441,34 +429,51 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
 // We handle these by putting them into an subject and handling
 // each with a 1ms delay in between, to give the JS thread
 // some breathing room to handle other callbacks/repaints.
-RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (config, renderState, hintsModel) {
+RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (config, renderState, { edges, points } = {}) {
+
+    const { numHintElements = {} } = this;
+
+    if (numHintElements.edges === edges &&
+        numHintElements.points === points) {
+        return;
+    }
+
+    if (edges === 0 && points === 0) {
+        return;
+    }
+
     const timeoutLength = 1;
-    return hintsModel.changes()
-        .switchMap(
-            (model) => model.get(`['edges', 'points']`),
-            (model, { json: hints }) => hints
-        )
-        .switchMap(({ edges, points }) => {
-            const numElements = {
-                edges, points,
-                renderedSplits: config.numRenderedSplits
-            };
-            const allocationFunctions = this.allocateAllArrayBuffersFactory(config, numElements, renderState);
-            const largestModel = this.getLargestModelSize(config, numElements);
-            const maxElements = Math.max(_.max(_.values(numElements)), largestModel);
-            const activeIndices = renderState.get('activeIndices');
-            return Observable
-                .from(allocationFunctions.concat(activeIndices.map((index) =>
-                    renderer.updateIndexBuffer.bind('', renderState, maxElements, index)
-                )))
-                .concatMap((allocationFunction) => {
-                    // Do one big job, then increment
-                    allocationFunction();
-                    // Cede control to browser, then handle next element
-                    return Observable.timer(timeoutLength).take(1);
-                })
+    const { hintsAllocationCycle } = this;
+
+    if (hintsAllocationCycle) {
+        hintsAllocationCycle.unsubscribe();
+    }
+
+    const numElements = {
+        edges, points,
+        renderedSplits: config.numRenderedSplits
+    };
+
+    this.numHintElements = numElements;
+
+    const activeIndices = renderState.activeIndices;
+    const largestModel = this.getLargestModelSize(config, numElements);
+    const maxElements = Math.max(_.max(_.values(numElements)), largestModel);
+    const allocationFunctions = this.allocateAllArrayBuffersFactory(config, numElements, renderState);
+
+    this.hintsAllocationCycle = Observable
+        .from(allocationFunctions.concat(activeIndices.map((index) =>
+            renderer.updateIndexBuffer.bind('', renderState, maxElements, index)
+        )))
+        .concatMap((allocationFunction) => {
+            // Do one big job, then increment
+            allocationFunction();
+            // Cede control to browser, then handle next element
+            return Observable.timer(timeoutLength).take(1);
         })
-        .subscribe();
+        .subscribe(null, null, () => {
+            debug('Finished allocating buffers for hints', numElements);
+        });
 };
 
 //int * int * Int32Array * Float32Array -> {starts: Float32Array, ends: Float32Array}
@@ -546,7 +551,7 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
     var midSpringsEndpoints = that.expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints);
 
     //TODO have server pre-compute real heights, and use them here
-    //var edgeHeights = renderState.get('hostBuffersCache').edgeHeights;
+    //var edgeHeights = renderState.hostBuffersCache.edgeHeights;
     var srcPointIdx;
     var dstPointIdx;
     var srcPointX;
@@ -958,10 +963,10 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
     var that = this;
     var appSnapshot = that.appSnapshot;
     var renderState = that.renderState;
-    var edgeMode = renderState.get('config').get('edgeMode');
-    var edgeHeight = renderState.get('config').get('arcHeight');
-    var clientMidEdgeInterpolation = renderState.get('config').get('clientMidEdgeInterpolation');
-    var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
+    var edgeMode = renderState.config.edgeMode;
+    var edgeHeight = renderState.config.arcHeight;
+    var clientMidEdgeInterpolation = renderState.config.clientMidEdgeInterpolation;
+    var numRenderedSplits = renderState.config.numRenderedSplits;
     var midSpringsPos;
     var midEdgesColors;
     var start;
@@ -1075,7 +1080,7 @@ RenderingScheduler.prototype.renderMovePointsOverlay = function (task) {
     var {appSnapshot, renderState} = this;
     var {buffers} = appSnapshot;
     var {diff, sel} = task.data;
-    var hostBuffers = renderState.get('hostBuffersCache');
+    var hostBuffers = renderState.hostBuffersCache;
 
     var hostNodePositions = new Float32Array(hostBuffers.curPoints.buffer);
     var hostNodeSizes = hostBuffers.pointSizes;
@@ -1152,7 +1157,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
     var appSnapshot = that.appSnapshot;
     var renderState = that.renderState;
     var buffers = appSnapshot.buffers;
-    var numRenderedSplits = renderState.get('config').get('numRenderedSplits');
+    var numRenderedSplits = renderState.config.numRenderedSplits;
 
     // HACK for GIS
     if (!numRenderedSplits && numRenderedSplits !== 0) {
@@ -1196,7 +1201,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
 
 
     var logicalEdges = new Uint32Array(buffers.logicalEdges.buffer);
-    var hostBuffers = renderState.get('hostBuffersCache');
+    var hostBuffers = renderState.hostBuffersCache;
     var forwardsEdgeStartEndIdxs = new Uint32Array(hostBuffers.forwardsEdgeStartEndIdxs.buffer);
 
     var forwardsEdgeToUnsortedEdge = new Uint32Array(hostBuffers.forwardsEdgeToUnsortedEdge.buffer);
@@ -1433,14 +1438,16 @@ RenderingScheduler.prototype.allocateAllArrayBuffersFactory = function (config, 
                 // the rest of render config.
                 var sizeInBytes = eval(desc.sizeHint) * desc.count * bytesPerElement; // jshint ignore:line
 
-                // Allocate arraybuffers for RenderingScheduler
-                functions.push(function () {
-                    that.allocateArrayBufferOnHint(modelName, sizeInBytes);
-                });
-                // Allocate GPU buffer in renderer
-                functions.push(function () {
-                    renderer.allocateBufferSize(renderState, modelName, sizeInBytes);
-                });
+                if (!isNaN(sizeInBytes)) {
+                    // Allocate arraybuffers for RenderingScheduler
+                    functions.push(function () {
+                        that.allocateArrayBufferOnHint(modelName, sizeInBytes);
+                    });
+                    // Allocate GPU buffer in renderer
+                    functions.push(function () {
+                        renderer.allocateBufferSize(renderState, modelName, sizeInBytes);
+                    });
+                }
             }
         });
     });
@@ -1482,7 +1489,7 @@ RenderingScheduler.prototype.getTypedArray = function (name, Constructor, length
 // figure out the size of our largest model for letting the
 // renderer create index buffers.
 RenderingScheduler.prototype.getLargestModelSize = function (config, numElements) {
-    debug('Getting largerst model size for: ', numElements);
+    debug('Getting largest model size for: ', numElements);
     var sizes = _.map(config.models, function (model) {
         return _.map(model, function (desc) {
             if (desc.sizeHint) {

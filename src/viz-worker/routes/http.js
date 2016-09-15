@@ -1,7 +1,7 @@
 import path from 'path';
 import express from 'express';
 import { renderMiddleware } from '../middleware';
-import { getDataSourceFactory } from '../../viz-shared/middleware';
+import { getDataSourceFactory } from 'viz-shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 
 export function httpRoutes(services, modules) {

@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('underscore');
+const Q           = require('q');
 const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/layoutAlgo.js');
 
@@ -42,6 +43,7 @@ LayoutAlgo.prototype.tick = function (simulator, stepNumber) {
 };
 LayoutAlgo.prototype.updateDataframeBuffers = function (simulator) {
     console.log('Default stup for updateDataframeBuffers. Please implement.');
+    return Q();
 };
 
 module.exports = LayoutAlgo;

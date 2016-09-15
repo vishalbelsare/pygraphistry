@@ -1,7 +1,7 @@
 import { inspect } from 'util';
 import { Observable } from 'rxjs';
-import { Router } from 'reaxtor-falcor-router';
 import { falcor as routes } from '../routes';
+import Router from '@graphistry/falcor-router';
 
 export function getDataSourceFactory(services) {
 
@@ -51,12 +51,12 @@ function createAppRouter(routes) {
                 }
             });
         }
-        get(paths) {
-            console.log('\n============requested paths:');
-            console.log('\t' + paths
-                .map((path) => JSON.stringify(path))
-                .join('\n\t') + '\n');
-            return super.get(paths);
-        }
+        // get(paths) {
+        //     console.log('\n============requested paths:');
+        //     console.log('\t' + paths
+        //         .map((path) => JSON.stringify(path))
+        //         .join('\n\t') + '\n');
+        //     return super.get(paths);
+        // }
     };
 }

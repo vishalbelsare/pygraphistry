@@ -2,7 +2,7 @@ import d3 from 'd3';
 import styles from './styles.less';
 import React from 'react';
 import Color from 'color';
-import RcSlider from 'rc-slider';
+import RcSlider from '@graphistry/rc-slider';
 import RcSwitch from 'rc-switch';
 import RcColorPicker from 'rc-color-picker';
 import { FormControl } from 'react-bootstrap';
@@ -36,7 +36,7 @@ export function Slider({
             </Col>
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
                 <RcSlider min={props.min} max={props.max}
-                          step={props.step} value={state}
+                          step={props.step} defaultValue={state}
                           tipFormatter={tipFormatter}
                           tipTransitionName='rc-slider-tooltip-zoom-down'
                           onChange={(newState) => setValue({
@@ -58,7 +58,7 @@ export function TextInput({
                 <span>{name}</span>
             </Col>
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
-                <input type='text' value={state}
+                <input type='text' defaultValue={state}
                        onChange={(ev) => setValue({
                            id, type, ...rest, state: ev.target.value
                        })}
@@ -77,7 +77,7 @@ export function ToggleButton({
                 <span>{name}</span>
             </Col>
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
-                <RcSwitch checked={state}
+                <RcSwitch defaultChecked={state}
                           checkedChildren={'On'}
                           unCheckedChildren={'Off'}
                           onChange={(newState) => setValue({
@@ -101,8 +101,11 @@ export function ColorPicker({
                 <RcColorPicker animation='slide-up'
                                color={state.hexString()}
                                alpha={state.alpha() * 100}
-                               onChange={({ hsv }) => setValue({
-                                   id, type, ...rest, state: hsv
+                               onChange={({ color, alpha }) => setValue({
+                                   id, type, ...rest,
+                                   state: new Color(color)
+                                       .alpha(alpha * .01)
+                                       .rgbaString()
                                })}/>
             </Col>
         </Row>

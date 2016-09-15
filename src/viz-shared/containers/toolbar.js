@@ -1,4 +1,4 @@
-import { container } from 'reaxtor-redux';
+import { container } from '@graphistry/falcor-react-redux';
 import { selectToolbarItem } from 'viz-shared/actions/toolbar';
 import { ButtonList,
          ButtonListItem,
@@ -31,54 +31,35 @@ export const ToolbarItems = container(
 
 export const ToolbarItem = container(
     // toolbar item fragment
-    ({ type, stateKey } = {}) => {
-        if (type === 'call') {
+    ({ type } = {}) => {
+        if (!type || type === 'call') {
             return `{ id, name, type, value }`;
-        } else if (!stateKey) {
-            return `{ id, name, type, value, values, stateKey }`;
-        } else if (type !== 'toggle') {
-            return `{
-                id, name, type, value, stateKey, state: { ${stateKey} }
-            }`;
         }
-        return `{
-            id, name, type, value, values, stateKey, state: { ${stateKey} }
-        }`;
+        return `{ id, name, type, value, values }`;
     },
-    ({ stateKey, state, value, type, ...item }, props) => {
-        state = state && state[stateKey];
-        let selected = false;
-        if (type === 'toggle') {
-            let panel = props[stateKey];
-            if (value && Array.isArray(value)) {
-                selected = panel && value[value.length - 1] === panel.id;
-            } else if (value) {
-                selected = true;
-            }
-        }
-        return { ...item, type, value, state, stateKey, selected };
-    },
+    ({ type, value, values ,...rest }, props) => ({
+        selected: (type === 'toggle') && value !== 0,
+        type, value, values, ...rest
+    }),
     // bind action creators
     { onItemSelected: selectToolbarItem }
 )(ButtonListItem);
 
-function renderToolbar({ toolbar = [], left, right, bottom, ...props } = {}) {
+function renderToolbar({ toolbar = [], ...props } = {}) {
     return (
         <ButtonList {...props}>
-        {toolbar.map((items) => (
-            <ToolbarItems key={items.key} data={items}
-                          {...{ left, right, bottom }}/>
+        {toolbar.map((items, index) => (
+            <ToolbarItems data={items} key={index}/>
         ))}
         </ButtonList>
     );
 }
 
-function renderToolbarItems({ items = [], left, right, bottom, ...props } = {}) {
+function renderToolbarItems({ items = [], ...props } = {}) {
     return (
         <ButtonListItems {...props}>
-        {items.map((item) => (
-            <ToolbarItem key={item.key} data={item}
-                         {...{ left, right, bottom }}/>
+        {items.map((item, index) => (
+            <ToolbarItem data={item} key={`${index}: ${item.id}`}/>
         ))}
         </ButtonListItems>
     );

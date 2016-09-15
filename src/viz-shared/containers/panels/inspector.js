@@ -1,7 +1,7 @@
 import React from 'react'
 // import styles from './styles.less';
 import classNames from 'classnames';
-import { container } from 'reaxtor-redux';
+import { container } from '@graphistry/falcor-react-redux';
 import { InspectorFragment } from './fragments';
 import { Button, Panel, MenuItem, ListGroup, ListGroupItem } from 'react-bootstrap';
 

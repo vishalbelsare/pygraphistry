@@ -4,7 +4,7 @@ import dataTypeUtil from '../simulator/dataTypes';
 import { loadViews } from './loadViews';
 import { cache as Cache } from '@graphistry/common';
 import { Observable, ReplaySubject } from 'rxjs';
-import { ref as $ref, atom as $atom } from 'reaxtor-falcor-json-graph';
+import { ref as $ref, atom as $atom } from '@graphistry/falcor-json-graph';
 
 export function loadLabels(workbooksById, nBodiesById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
 

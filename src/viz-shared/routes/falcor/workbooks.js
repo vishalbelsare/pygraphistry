@@ -2,7 +2,7 @@ import {
     ref as $ref,
     error as $error,
     pathValue as $value
-} from 'reaxtor-falcor-json-graph';
+} from '@graphistry/falcor-json-graph';
 
 import { simpleflake } from 'simpleflakes';
 import { getHandler, setHandler, captureErrorStacks } from 'viz-shared/routes';
@@ -22,6 +22,9 @@ export function workbooks(path, base) {
             get: getOpenWorkbookReference,
             route: `${base}['workbooks'].open`,
             returns: `$ref('workbooksById[{workbookId}]')`
+        }, {
+            get: getValues,
+            route: `${workbook}[{keys}]`
         }, {
             get: getValues,
             route: `${workbook}['views'][{keys}]`

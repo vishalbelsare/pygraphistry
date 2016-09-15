@@ -1,4 +1,4 @@
-import { ref as $ref } from 'reaxtor-falcor-json-graph';
+import { ref as $ref } from '@graphistry/falcor-json-graph';
 import { loadWorkbooks } from './loadWorkbooks';
 import { view as createView } from 'viz-shared/models/views';
 

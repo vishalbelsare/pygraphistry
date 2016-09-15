@@ -36,13 +36,14 @@ require('./rx-jquery-stub');
  *     when calling the returned function.
  */
 function makeFetcher (workerUrl, endpoint, queryKey) {
+    return fetch;
     /**
      * @param {String} socketID
      * @param {Object.<Number>} bufferByteLengths
      * @param {String} bufferName
      * @returns Observable<ArrayBuffer>
      */
-    return (socketID, bufferByteLengths, bufferName) => {
+    function fetch(socketID, bufferByteLengths, bufferName) {
         debug('fetching', bufferName);
 
         const res = new Subject();
@@ -288,8 +289,10 @@ function handleVboUpdates (socket, uri, renderState) {
     //socketID, textureByteLengths, textureName
     const fetchTexture = makeFetcher(uri, 'texture', 'texture');
 
-    const bufferNames = renderer.getServerBufferNames(renderState.get('config').toJS());
-    const textureNames = renderer.getServerTextureNames(renderState.get('config').toJS());
+    // const bufferNames = renderer.getServerBufferNames(renderState.get('config').toJS());
+    // const textureNames = renderer.getServerTextureNames(renderState.get('config').toJS());
+    const bufferNames = renderState.config.server.buffers;
+    const textureNames = renderState.config.server.textures;
 
     debug('Server buffers/textures', bufferNames, textureNames);
 
