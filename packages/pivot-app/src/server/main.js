@@ -54,7 +54,8 @@ const pivots0 = [
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('all', 'Search Splunk').name,
-        'Input': 'none'
+        'Input': 'none',
+        'enabled': true
     })
 ];
 
@@ -67,7 +68,8 @@ const pivots1 = Array.from({ length: 1 },
                 'Links': '*',
                 'Time': '07/28/2016',
                 'Mode': PivotTemplates.get('all', 'Search Splunk (dataset)').name,
-                'Input': 'none'
+                'Input': 'none',
+                'enabled': true
             })
         }
         else {
@@ -84,7 +86,8 @@ const pivots2 = Array.from({ length: 2 },
                 'Links': 'dest_ip, misc',
                 'Time': '07/28/2016',
                 'Mode': PivotTemplates.get('splunk', 'Search Splunk').name,
-                'Input': 'none'
+                'Input': 'none',
+                'enabled': true
             })
         }
         else {
@@ -100,28 +103,32 @@ const pivots3 = [
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Search FireEye').name,
-        'Input': 'none'
+        'Input': 'none',
+        'enabled': true
     }),
     createPivot(cols, {
         'Search': '',
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Expand with Fire Eye').name,
-        'Input': 'Pivot 0'
+        'Input': 'Pivot 0',
+        'enabled': true
     }),
     createPivot(cols, {
         'Search': '',
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Expand with Blue Coat').name,
-        'Input': 'Pivot 1'
+        'Input': 'Pivot 1',
+        'enabled': true
     }),
     createPivot(cols, {
         'Search': '',
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Expand with Firewall').name,
-        'Input': 'Pivot 2'
+        'Input': 'Pivot 2',
+        'enabled': false
     })
 ];
 
@@ -131,7 +138,8 @@ const pivots4 = [
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Search Splunk (alerts)').name,
-        'Input': 'none'
+        'Input': 'none',
+        'enabled': true
     })
 ];
 
@@ -142,7 +150,8 @@ const pivots5 = [
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('health_demo', 'Search Splunk (health)').name,
-        'Input': 'none'
+        'Input': 'none',
+        'enabled': true
     })
 ];
 
@@ -160,6 +169,8 @@ pivots5.name = 'Empty (health)';
 pivots5.templates = 'health_demo';
 
 const app = createApp([pivots3, pivots0, pivots4, pivots5, pivots1, pivots2]);
+
+console.log(JSON.stringify(app, null, 4));
 
 const routeServices = {
     loadApp: loadApp(app),
