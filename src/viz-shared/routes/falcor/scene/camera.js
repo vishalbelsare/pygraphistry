@@ -25,11 +25,11 @@ export function camera(path, base) {
             returns: `*`
         }, {
             get: getValues,
-            route: `${base}['camera']['controls', 'options'][{keys}]`
+            route: `${base}['camera']['controls'][{keys}]`
         }, {
             get: getValues,
             set: setValues,
-            route: `${base}['camera']['controls', 'options'][{keys}][{keys}]`
+            route: `${base}['camera']['controls'][{keys}][{keys}]`
         }];
     }
 }

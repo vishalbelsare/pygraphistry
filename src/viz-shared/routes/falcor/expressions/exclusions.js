@@ -3,17 +3,23 @@ import {
     atom as $atom,
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
+
 import Color from 'color';
+import { addExpressionHandler } from './expressions';
+
 import { getHandler,
          setHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from 'viz-shared/routes';
 
 export function exclusions(path, base) {
-    return function exclusions({ loadViewsById }) {
+    return function exclusions({ loadViewsById, addExpression }) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
+        const addExclusion = addExpressionHandler({
+            loadViewsById, addExpression, expressionType: 'exclusion'
+        });
 
         return [{
             returns: `*`,
@@ -26,6 +32,9 @@ export function exclusions(path, base) {
             get: getValues,
             set: setValues,
             route: `${base}['exclusions'].controls[{keys}][{keys}]`
+        }, , {
+            call: addExclusion,
+            route: `${base}['exclusions'].add`
         }];
     }
 }

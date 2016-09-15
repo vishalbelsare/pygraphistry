@@ -44,7 +44,7 @@ export function scene(path, base) {
             route: `${base}['scene'][{keys}]`
         }, {
             set: setValues,
-            route: `${base}['scene'].simulating`
+            route: `${base}['scene']['pruneOrphans', 'showArrows', 'simulating']`
         }, {
             get: getValues,
             set: setColors,

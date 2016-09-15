@@ -1,3 +1,4 @@
+import { Gestures } from 'rxjs-gestures';
 import {
     ref as $ref,
     atom as $atom,
@@ -6,13 +7,43 @@ import {
 } from '@graphistry/falcor-json-graph';
 
 import { Observable, Scheduler } from 'rxjs';
-import { LAYOUT_SCENE, LAYOUT_CAMERA } from 'viz-shared/actions/scene';
+import {
+    CAMERA_MOVE,
+    LAYOUT_SCENE,
+    CENTER_CAMERA,
+} from 'viz-shared/actions/scene';
 
 export default function scene(action$, store) {
     return Observable.merge(
+        moveCamera(action$.ofType(CAMERA_MOVE), store),
         layoutScene(action$.ofType(LAYOUT_SCENE), store),
-        layoutCamera(action$.ofType(LAYOUT_CAMERA), store)
-    );
+        centerCamera(action$.ofType(CENTER_CAMERA), store)
+    )
+    .ignoreElements();
+}
+
+function moveCamera(action$) {
+    return action$.mergeMap(({ event: startEvent, falcor }) => {
+        return Observable
+            .from(falcor.getValue(['camera', 'center']))
+            .mergeMap(({ x, y }) => {
+                return Gestures
+                    .pan(Observable.of(startEvent))
+                    .mergeMap((pan) => {
+                        return pan
+                            .decelerate()
+                            .map(({ deltaXTotal, deltaYTotal }) => ({
+                                x: x - deltaXTotal,
+                                y: y - deltaYTotal
+                            }));
+                    });
+            })
+            .switchMap((center) => {
+                return falcor.set({
+                    json: { camera: { center: $atom(center) }}
+                }).progressively()
+            });
+        });
 }
 
 function layoutScene(action$) {
@@ -21,11 +52,10 @@ function layoutScene(action$) {
         .auditTime(40)
         .exhaustMap(({ falcor, simulating }) =>
             falcor.call('layout', [simulating])
-        )
-        .ignoreElements()
+        );
 }
 
-function layoutCamera(action$) {
+function centerCamera(action$) {
     return action$
         .auditTime(0)
         .exhaustMap(({ falcor, center, camera, points, cameraInstance }) => {
@@ -65,11 +95,10 @@ function layoutCamera(action$) {
                     });
                 })
                 .mergeMap((dimensions) => falcor
-                    .set({json: { camera: dimensions }})
+                    .set({ json: { camera: dimensions }})
                     .progressively()
                 );
-        })
-        .ignoreElements();
+        });
 }
 
 function getBoundingBox(points) {

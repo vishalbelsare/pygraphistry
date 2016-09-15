@@ -1,87 +1,157 @@
 import ace from 'brace';
+import React from 'react';
 import ReactAce from 'react-ace';
+import { expression } from 'viz-shared/models/expressions';
+
+const { Range: AceRange } = ace.acequire('ace/range');
+const { Anchor: AceAnchor } = ace.acequire('ace/anchor');
 
 import 'brace/theme/chrome';
+import 'brace/ext/language_tools';
 import 'viz-client/streamGL/graphVizApp/aceExpressionMode';
 import 'viz-client/streamGL/graphVizApp/aceExpressionSnippets';
 
 class AceEditor extends ReactAce {
     onChange(event) {
-        if (this.props.onChange && !this.silent) {
-            const value = this.editor.getValue();
-            this.props.onChange(value, event);
+        if (this.props.onChange) {
+            this.props.onChange(this.editor, event);
         }
     }
 }
 
-export function ExpressionEditor({ name, value, onChange, ...props }) {
-    return (
-        <AceEditor
-            mode='graphistry' theme='chrome'
-            minLines={1} maxLines={4}
-            showGutter={false} enableSnippets={true}
-            enableLiveAutocompletion={true}
-            enableBasicAutocompletion={true}
-            setOptions={{
-                wrap: true,
-                useSoftTabs: true,
-                autoScrollEditorIntoView: true
-            }}
-            editorProps={{
-                $blockScrolling: Infinity,
-                behavioursEnabled: true,
-                wrapBehavioursEnabled: true,
-                highlightActiveLine: false,
-                highlightSelectedWord: true,
-                autoScrollEditorIntoView: true,
-                completers: [new DataframeCompleter([])]
-            }}
-            ref={(thisRef) => {
-                if (!thisRef) { return; }
-                const { editor } = thisRef;
-                if (!editor) { return; }
-                editor.getSession().setUseSoftTabs(true);
-            }}
-            value={value} name={name}
-            onChange={onChange} {...props}
-        />
-    );
+export class ExpressionEditor extends React.Component {
+    constructor(props, context) {
+        super(props, context);
+        this.state = { annotations: [] };
+        this.onChange = this.onChange.bind(this);
+    }
+    onChange(editor, event) {
+        const { query } = expression(editor.getValue());
+        if (query.error) {
+            const syntaxError = query.error;
+            if (syntaxError) {
+                const row = syntaxError.line && syntaxError.line - 1;
+                let startColumn = syntaxError.column;
+                if (event && event.lines[row].length <= startColumn) {
+                    startColumn--;
+                }
+                this.setState({
+                    annotations: [
+                        new InlineAnnotation(editor.session, {
+                            row: row,
+                            column: startColumn,
+                            endColumn: startColumn + 1,
+                            text: syntaxError.message,
+                            type: 'error'
+                        })
+                    ]
+                });
+            } else {
+                this.setState({
+                    annotations: [
+                        new InlineAnnotation(editor.session, {
+                            text: 'Unknown',
+                            type: 'warning'
+                        })
+                    ]
+                });
+            }
+        } else if (this.props.onChange) {
+            this.props.onChange(query, event);
+        }
+    }
+    render() {
+        const { annotations = [] } = this.state;
+        const { templates, onChange, ...props } = this.props;
+        return (
+            <AceEditor
+                theme='chrome' mode='graphistry'
+                minLines={1} maxLines={4}
+                showGutter={false}
+                enableSnippets={true}
+                enableLiveAutocompletion={true}
+                enableBasicAutocompletion={true}
+                annotations={annotations}
+                setOptions={{
+                    wrap: true,
+                    useSoftTabs: true,
+                    behavioursEnabled: true,
+                    highlightActiveLine: false,
+                    highlightSelectedWord: true,
+                    wrapBehavioursEnabled: true,
+                    autoScrollEditorIntoView: true,
+                }}
+                editorProps={{
+                    $blockScrolling: Infinity,
+                    // behavioursEnabled: true,
+                    // wrapBehavioursEnabled: true,
+                    // highlightActiveLine: false,
+                    // highlightSelectedWord: true
+                }}
+                onLoad={(editor) => {
+                    editor.getSession().setUseSoftTabs(true);
+                    editor.completers.push(new DataframeCompleter(templates));
+                }}
+                onChange={this.onChange}
+                {...props}/>
+        );
+    }
 }
+
+// export function ExpressionEditor({ name, value, onChange, templates, ...props }) {
+//     return (
+//         <AceEditor
+//             theme='chrome' mode='graphistry'
+//             minLines={1} maxLines={4}
+//             showGutter={false}
+//             enableSnippets={true}
+//             enableLiveAutocompletion={true}
+//             enableBasicAutocompletion={true}
+//             setOptions={{
+//                 wrap: true,
+//                 useSoftTabs: true,
+//                 autoScrollEditorIntoView: true
+//             }}
+//             editorProps={{
+//                 $blockScrolling: Infinity,
+//                 behavioursEnabled: true,
+//                 wrapBehavioursEnabled: true,
+//                 highlightActiveLine: false,
+//                 highlightSelectedWord: true,
+//                 autoScrollEditorIntoView: true
+//             }}
+//             name={name}
+//             value={value}
+//             onLoad={(editor) => {
+//                 editor.getSession().setUseSoftTabs(true);
+//                 editor.completers.push(new DataframeCompleter(templates));
+//             }}
+//             onChange={onChange}
+//             {...props}
+//         />
+//     );
+// }
 
 /**
  * @param {Object} namespaceMetadata
  * @constructor
  */
 class DataframeCompleter {
-    constructor(namespaceMetadata) {
-        this.setNamespaceMetadata(namespaceMetadata);
+    constructor(templates = []) {
+
         this.caseSensitive = false;
-    }
 
-    // insertMatch(editor, data) {
-    // }
-
-    setNamespaceMetadata(namespaceMetadata) {
-        this.namespaceMetadata = namespaceMetadata;
-        const newNamespaceAttributes = {};
-        _.each(namespaceMetadata, function (columnsByName, type) {
-            _.each(columnsByName, function (column, attributeName) {
-                var prefixedAttribute = Identifier.clarifyWithPrefixSegment(attributeName, type);
-                newNamespaceAttributes[prefixedAttribute] = column;
-                if (newNamespaceAttributes[attributeName] === undefined) {
-                    newNamespaceAttributes[attributeName] = column;
-                }
-                var columnName = column.name;
-                if (columnName !== undefined && columnName !== attributeName) {
-                    if (newNamespaceAttributes[columnName] === undefined) {
-                        newNamespaceAttributes[columnName] = column;
-                        newNamespaceAttributes[Identifier.clarifyWithPrefixSegment(columnName, type)] = column;
-                    }
-                }
-            });
-        });
-        /** @type {Array.<String>} */
-        this.namespaceAttributes = _.keys(newNamespaceAttributes);
+        /**
+        [{
+            name, componentType,
+            dataType, attribute
+        }....]
+         */
+        this.templates = Object.keys(templates.reduce((templates, { name, attribute }) => {
+            templates[name] = true;
+            templates[attribute] = true;
+            return templates;
+        }, {}));
     }
 
     /**
@@ -93,33 +163,35 @@ class DataframeCompleter {
      * @param {Function} callback
      */
     getCompletions(editor, session, pos, prefix, callback) {
-        if (prefix.length === 0 || !this.namespaceAttributes) {
+
+        const { templates, caseSensitive } = this;
+
+        if (!templates || templates.length === 0 || prefix.length === 0) {
             callback(null, []);
             return;
         }
-        if (!this.caseSensitive) {
+
+        if (!caseSensitive) {
             prefix = prefix.toLowerCase();
         }
-        var scoredAttributes = _.map(this.namespaceAttributes, function (value) {
-            var matchValue = this.caseSensitive ? value : value.toLowerCase();
-            var lastIdx = matchValue.lastIndexOf(prefix, 0);
+
+        const scores = [];
+
+        let index = -1;
+        const len = templates.length;
+
+        while (++index < len) {
+            const value = templates[index];
+            const matchValue = caseSensitive ? value : value.toLowerCase();
+            const lastIdx = matchValue.lastIndexOf(prefix, 0);
             if (lastIdx === 0) {
-                return [value, 1];
+                scores.push({ name: value, value, score: 1, meta: 'identifier' });
             } else if (lastIdx === value.lastIndexOf(':', 0) + 1) {
-                return [value, 0.8];
+                scores.push({ name: value, value, score: 0.8, meta: 'identifier' });
             }
-            return [value, 0];
-        }, this).filter(function (scoreAndValue) {
-            return scoreAndValue[1] > 0;
-        });
-        callback(null, scoredAttributes.map(function (scoreAndValue) {
-            return {
-                name: scoreAndValue[0],
-                value: scoreAndValue[0],
-                score: scoreAndValue[1],
-                meta: 'identifier'
-            };
-        }));
+        }
+
+        callback(null, scores);
     }
 }
 
@@ -127,23 +199,21 @@ class InlineAnnotation {
     constructor(session, info) {
         this.session = session;
         this.info = info;
-        var Anchor = ace.require('ace/anchor').Anchor;
-        this.startAnchor = new Anchor(session.getDocument(), info.row, info.column);
-        this.endAnchor = new Anchor(session.getDocument(), info.row, info.endColumn);
+        this.startAnchor = new AceAnchor(session.getDocument(), info.row, info.column);
+        this.endAnchor = new AceAnchor(session.getDocument(), info.row, info.endColumn);
         this.startAnchor.on('change', this.update.bind(this));
         this.endAnchor.on('change', this.update.bind(this));
         this.marker = null;
         this.update();
     }
     update() {
-        var AceRange = ace.require('ace/range').Range;
         var anchorRange = AceRange.fromPoints(this.startAnchor.getPosition(), this.endAnchor.getPosition());
         if (this.marker) {
             this.session.removeMarker(this.marker);
         }
         var clazz = this.info.class || ('marker-highlight-' + this.info.type);
         if (this.info.text) {
-            this.marker = this.session.addMarker(anchorRange, clazz, function(stringBuilder, range, left, top, config) {
+            this.marker = this.session.addMarker(anchorRange, clazz, (stringBuilder, range, left, top, config) => {
                 var height = config.lineHeight;
                 var width = (range.end.column - range.start.column) * config.characterWidth;
 
@@ -154,7 +224,7 @@ class InlineAnnotation {
                     'top:', top, 'px;',
                     'left:', left, 'px;', '\'></div>'
                 );
-            }.bind(this), true);
+            }, true);
         } else {
             this.marker = this.session.addMarker(anchorRange, clazz, this.info.type);
         }
@@ -167,3 +237,19 @@ class InlineAnnotation {
         }
     }
 }
+
+
+/**
+ * Fiddly way to ensure markers are cleared, because lifecycle management is hard.
+function clearAnnotationsAndMarkers(session) {
+    session.getAnnotations()
+        .forEach((annotation) => annotation.remove());
+    session.clearAnnotations();
+    const markers = session.getMarkers(true);
+    for (const markerId in markers) {
+        if (markers.hasOwnProperty(markerId)) {
+            session.removeMarker(markerId);
+        }
+    }
+};
+ */

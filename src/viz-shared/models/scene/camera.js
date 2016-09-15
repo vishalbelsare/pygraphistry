@@ -28,52 +28,7 @@ export function camera(scene) {
                 name: 'Center view',
                 type: 'call',
                 value: $ref(`${scene}.camera.center`)
-            }],
-            options: {
-                id: 'appearance',
-                name: 'Appearance',
-                length: 4, ...[{
-                    id: 'point-size',
-                    type: 'discrete',
-                    name: 'Point Size',
-                    props: {
-                        min: 1, max: 100,
-                        step: 1, scale: 'log'
-                    },
-                    stateKey: 'scaling',
-                    state: $ref(`${scene}.camera.points`)
-                }, {
-                    id: 'edge-size',
-                    type: 'discrete',
-                    name: 'Edge Size',
-                    props: {
-                        min: 1, max: 100,
-                        step: 1, scale: 'log'
-                    },
-                    stateKey: 'scaling',
-                    state: $ref(`${scene}.camera.edges`)
-                }, {
-                    id: 'point-opacity',
-                    type: 'discrete',
-                    name: 'Point Opacity',
-                    props: {
-                        min: 1, max: 100,
-                        step: 1, scale: 'percent'
-                    },
-                    stateKey: 'opacity',
-                    state: $ref(`${scene}.camera.points`)
-                }, {
-                    id: 'edge-opacity',
-                    type: 'discrete',
-                    name: 'Edge Opacity',
-                    props: {
-                        min: 1, max: 100,
-                        step: 1, scale: 'percent'
-                    },
-                    stateKey: 'opacity',
-                    state: $ref(`${scene}.camera.edges`)
-                }]
-            }
+            }]
         }
     };
 }

@@ -1,7 +1,11 @@
 import React, { PropTypes } from 'react';
 import { container } from '@graphistry/falcor-react-redux';
 import { compose, getContext, hoistStatics } from 'recompose';
-import { layoutScene, layoutCamera } from 'viz-shared/actions/scene';
+import {
+    moveCamera,
+    layoutScene,
+    centerCamera
+} from 'viz-shared/actions/scene';
 
 export const Scene = compose(
     hoistStatics(getContext({ Renderer: PropTypes.func })),
@@ -10,6 +14,7 @@ export const Scene = compose(
             return `{
 
                 id, name, simulating,
+                showArrows, pruneOrphans,
 
                 camera: {
                     type, zoom, center,
@@ -33,17 +38,18 @@ export const Scene = compose(
             }`
         },
         (scene) => ({ scene }),
-        { layoutScene, layoutCamera }
+        { moveCamera, centerCamera, layoutScene }
     )
 )(renderScene);
 
-function renderScene({ scene, Renderer, layoutScene, layoutCamera }) {
+function renderScene({ scene, Renderer, moveCamera, centerCamera, layoutScene }) {
     return (
         <div style={{ width: `100%`, height: `100%`, position: `absolute` }}>
             <Renderer key='renderer'
                       scene={scene}
+                      moveCamera={moveCamera}
                       layoutScene={layoutScene}
-                      layoutCamera={layoutCamera}/>
+                      centerCamera={centerCamera}/>
         </div>
     );
 }

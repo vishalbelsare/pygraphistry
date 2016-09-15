@@ -114,7 +114,7 @@ class Renderer extends React.Component {
                 const cameraInstance = renderState.camera;
 
                 this.props.layoutScene({ simulating: false });
-                this.props.layoutCamera({
+                this.props.centerCamera({
                     cameraInstance,
                     points: this.curPoints,
                     center: true,
@@ -150,6 +150,7 @@ class Renderer extends React.Component {
         this.activeSelection = null;
         this.renderingScheduler = null;
 
+        interactions && interactions.unsubscribe();
         curPoints && curPoints.unsubscribe();
         vboUpdates && vboUpdates.unsubscribe();
         vboVersions && vboVersions.unsubscribe();
@@ -164,15 +165,17 @@ class Renderer extends React.Component {
         const { renderState, renderingScheduler } = this;
 
         const { scene: {
-                hints: currHints,
-                simulating: currSimulating,
-                background: { color: currBGColor },
+            hints: currHints,
+            camera: currCamera,
+            simulating: currSimulating,
+            background: { color: currBGColor },
         }} = currProps;
 
         const { scene: {
-                hints: nextHints,
-                simulating: nextSimulating,
-                background: { color: nextBGColor },
+            hints: nextHints,
+            camera: nextCamera,
+            simulating: nextSimulating,
+            background: { color: nextBGColor },
         }} = nextProps;
 
         if (nextSimulating !== currSimulating) {
@@ -193,15 +196,32 @@ class Renderer extends React.Component {
             ];
             renderingScheduler.renderScene('bgcolor', { trigger: 'renderSceneFast' });
         }
+
+        if (!shallowEqual(currCamera.center, nextCamera.center)) {
+            this.renderedFull = false;
+            renderState.camera.center = nextCamera.center;
+            renderingScheduler.renderScene('panzoom', {
+                trigger: 'renderSceneFast'
+            });
+        } else if (!nextSimulating && !this.renderedFull) {
+            this.renderedFull = true;
+            renderingScheduler.renderScene('panzoom', {
+                trigger: 'renderSceneFull'
+            });
+        }
     }
     render() {
         return (
-            <canvas ref={this.assignCanvasRef} id='simulation' style={{
-                width: `100%`,
-                height:`100%`,
-                top: 0, left: 0,
-                right: 0, bottom: 0,
-                position:`absolute` }}>
+            <canvas ref={this.assignCanvasRef}
+                    id='simulation'
+                    onMouseDown={this.props.moveCamera}
+                    style={{
+                        width: `100%`,
+                        height:`100%`,
+                        top: 0, left: 0,
+                        right: 0, bottom: 0,
+                        position:`absolute`
+                    }}>
                 WebGL not supported
             </canvas>
         );

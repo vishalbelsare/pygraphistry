@@ -13,6 +13,8 @@ export function scene(workbookId, viewId, rendererScene, options) {
             id: 'scene',
             name: 'Scene',
             simulating: true,
+            showArrows: true,
+            pruneOrphans: false,
             ...rendererScene,
             foreground: { color: new Color('#ffffff') },
             hints: { edges: undefined, points: undefined },
@@ -21,25 +23,6 @@ export function scene(workbookId, viewId, rendererScene, options) {
                 ...rendererScene.camera,
                 ...camera(`${view}.scene`).camera
             },
-            settings: [{
-                    id: 'canvas',
-                    name: 'Canvas',
-                    length: 2, ...[{
-                        id: 'point-colors',
-                        type: 'color',
-                        name: 'Point Colors',
-                        stateKey: 'color',
-                        state: $ref(`${view}.scene.foreground`)
-                    }, {
-                        id: 'background-color',
-                        type: 'color',
-                        name: 'Background Color',
-                        stateKey: 'color',
-                        state: $ref(`${view}.scene.background`)
-                    }]
-                },
-                $ref(`${view}.scene.camera.options`)
-            ],
             controls: [{
                 id: 'toggle-simulating',
                 name: 'Toggle visual clustering',
@@ -65,6 +48,79 @@ export function scene(workbookId, viewId, rendererScene, options) {
                     $value(`${view}.filters.controls[0].value`, $atom(0)),
                     $value(`${view}.exclusions.controls[0].value`, $atom(0)),
                 ]])
+            }],
+            settings: [{
+                id: 'canvas',
+                name: 'Canvas',
+                length: 2, ...[{
+                    id: 'point-colors',
+                    type: 'color',
+                    name: 'Point Colors',
+                    stateKey: 'color',
+                    state: $ref(`${view}.scene.foreground`)
+                }, {
+                    id: 'background-color',
+                    type: 'color',
+                    name: 'Background Color',
+                    stateKey: 'color',
+                    state: $ref(`${view}.scene.background`)
+                }]
+            }, {
+                id: 'appearance',
+                name: 'Appearance',
+                length: 6, ...[{
+                    id: 'point-size',
+                    type: 'discrete',
+                    name: 'Point Size',
+                    props: {
+                        min: 1, max: 100,
+                        step: 1, scale: 'log'
+                    },
+                    stateKey: 'scaling',
+                    state: $ref(`${view}.scene.camera.points`)
+                }, {
+                    id: 'edge-size',
+                    type: 'discrete',
+                    name: 'Edge Size',
+                    props: {
+                        min: 1, max: 100,
+                        step: 1, scale: 'log'
+                    },
+                    stateKey: 'scaling',
+                    state: $ref(`${view}.scene.camera.edges`)
+                }, {
+                    id: 'point-opacity',
+                    type: 'discrete',
+                    name: 'Point Opacity',
+                    props: {
+                        min: 1, max: 100,
+                        step: 1, scale: 'percent'
+                    },
+                    stateKey: 'opacity',
+                    state: $ref(`${view}.scene.camera.points`)
+                }, {
+                    id: 'edge-opacity',
+                    type: 'discrete',
+                    name: 'Edge Opacity',
+                    props: {
+                        min: 1, max: 100,
+                        step: 1, scale: 'percent'
+                    },
+                    stateKey: 'opacity',
+                    state: $ref(`${view}.scene.camera.edges`)
+                }, {
+                    id: 'show-arrows',
+                    type: 'bool',
+                    name: 'Show Arrows',
+                    stateKey: 'showArrows',
+                    state: $ref(`${view}.scene`)
+                }, {
+                    id: 'prune-orphans',
+                    type: 'bool',
+                    name: 'Prune Isolated Nodes',
+                    stateKey: 'pruneOrphans',
+                    state: $ref(`${view}.scene`)
+                }]
             }]
         }
     };

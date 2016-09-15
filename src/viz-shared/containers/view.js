@@ -65,7 +65,6 @@ function renderView({ scene, panels = {}, labels, toolbar, selection } = {}) {
 function popoverStyles(isOpen) {
     return {
         zIndex: 'initial',
-        minWidth: `300px`,
         opacity: Number(isOpen),
         visibility: isOpen && 'visible' || 'hidden',
         reansform: `translate3d(${Number(!isOpen) * -10}%, 0, 0)`,

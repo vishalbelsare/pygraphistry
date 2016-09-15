@@ -1,3 +1,4 @@
+import { expression } from './expressions';
 import {
     ref as $ref,
     atom as $atom,
@@ -12,7 +13,7 @@ export function exclusions(workbookId, viewId) {
             length: 0,
             id: 'exclusions',
             name: 'Exclusions',
-            templates: $ref(`${view}.expressions`),
+            templates: $ref(`${view}.expressionTemplates`),
             controls: [{
                 id: 'toggle-exclusions',
                 name: 'Exclusions',
@@ -31,4 +32,11 @@ export function exclusions(workbookId, viewId) {
             }]
         }
     }
+}
+
+export function exclusion(input, name, dataType, attribute) {
+    return {
+        ...expression(input, name, dataType, attribute),
+        expressionType: 'exclusion'
+    };
 }

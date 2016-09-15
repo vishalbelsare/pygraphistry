@@ -9,7 +9,8 @@ import { Observable, Subject, Subscription } from 'rxjs';
 import { logger as commonLogger } from '@graphistry/common';
 import { getDataSourceFactory } from 'viz-shared/middleware';
 import { loadViews, loadLabels, loadVGraph,
-         loadWorkbooks, sendFalcorUpdate } from './services';
+         loadWorkbooks, sendFalcorUpdate,
+         maskDataframe, addExpression } from './services';
 
 const config = _config();
 const logger = commonLogger.createLogger('viz-worker:index.js');
@@ -18,9 +19,9 @@ const s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
 export function vizWorker(app, server, sockets, caches) {
 
     const { requests } = server;
-    const { vbos = {},
-            nBodiesById = {},
-            workbooksById = {} } = caches;
+    const vbos = caches.vbos || (caches.vbos = {});
+    const nBodiesById = caches.nBodiesById || (caches.nBodiesById = {});
+    const workbooksById = caches.workbooksById || (caches.workbooksById = {});
 
     const loadConfig = () => Observable.of(config);
     const loadWorkbooksById = loadWorkbooks(workbooksById, config, s3Cache);
@@ -28,10 +29,14 @@ export function vizWorker(app, server, sockets, caches) {
     const loadLabelsByIndexAndType = loadLabels(workbooksById, nBodiesById, config, s3Cache);
 
     const routeServices = {
+
         loadConfig,
         loadViewsById,
         loadWorkbooksById,
-        loadLabelsByIndexAndType
+        loadLabelsByIndexAndType,
+
+        addExpression,
+        maskDataframe,
     };
 
     const getDataSource = getDataSourceFactory(routeServices);
@@ -42,7 +47,7 @@ export function vizWorker(app, server, sockets, caches) {
         .mergeMap(() => requests.merge(sockets.map(enrichLogs)
             .mergeMap(({ socket, metadata }) => {
                 // debugger
-                const sendUpdate = sendFalcorUpdate(socket, getDataSourceFactory(routeServices));
+                const sendUpdate = sendFalcorUpdate(socket, getDataSource);
                 const socketIORoutes = socketRoutes(routeServices, socket);
                 const vizServer = new VizServer(app, socket, vbos, metadata);
                 return Observable.using(
@@ -216,7 +221,7 @@ export function vizWorker(app, server, sockets, caches) {
                 .mergeMap(
                     (nBody) => sendUpdate(
                         `workbooks.open.views.current.scene.hints`,
-                        `workbooks.open.views.current.expressions.length`
+                        `workbooks.open.views.current.expressionTemplates.length`
                     ),
                     (nBody) => nBody
                 )

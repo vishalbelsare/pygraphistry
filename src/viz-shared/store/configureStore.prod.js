@@ -3,12 +3,13 @@ import { createStore, applyMiddleware } from 'redux';
 import scene from '../reducers/scene';
 import toolbar from '../reducers/toolbar';
 import settings from '../reducers/settings';
+import expressions from '../reducers/expressions';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
 
 export function configureStore(initialState) {
     return createStore(rootReducer, initialState, applyMiddleware(
         createEpicMiddleware(
-            combineEpics(scene, toolbar, settings)
+            combineEpics(scene, toolbar, settings, expressions)
         )
     ));
 }

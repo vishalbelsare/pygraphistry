@@ -1,3 +1,4 @@
+import { expression } from './expressions';
 import { simpleflake } from 'simpleflakes';
 import {
     ref as $ref,
@@ -20,7 +21,7 @@ export function filters(workbookId, viewId, defaultFilter = {}) {
             name: 'Filters',
             ...defaultFilters,
             length: defaultFilters.length,
-            templates: $ref(`${view}.expressions`),
+            templates: $ref(`${view}.expressionTemplates`),
             controls: [{
                 id: 'toggle-filters',
                 name: 'Filters',
@@ -38,5 +39,12 @@ export function filters(workbookId, viewId, defaultFilter = {}) {
                 ]])
             }]
         }
+    };
+}
+
+export function filter(input, name, dataType, attribute) {
+    return {
+        ...expression(input, name, dataType, attribute),
+        expressionType: 'filter'
     };
 }

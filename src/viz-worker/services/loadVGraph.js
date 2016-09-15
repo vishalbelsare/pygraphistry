@@ -16,7 +16,7 @@ export function loadVGraph(view, config, s3Cache = new Cache(config.LOCAL_CACHE_
         .of({ view, loaded: false })
         .expand(loadAndUnpackVGraph(config, s3Cache))
         .takeLast(1)
-        .map(loadDataFrameAndUpdateBuffers)
+        .mergeMap(loadDataFrameAndUpdateBuffers)
 }
 
 function loadAndUnpackVGraph(config, s3Cache) {
@@ -44,10 +44,6 @@ function loadAndUnpackVGraph(config, s3Cache) {
                     }
                     return { view, loaded };
                 }
-                // (tuple, nBodyOrTuple) => ((nBodyOrTuple.loaded === false) ?
-                //     { ...nBodyOrTuple } :
-                //     { nBody: nBodyOrTuple, loaded: true }
-                // )
             );
     }
 }
@@ -65,8 +61,8 @@ function loadVGraphJSON(nBody, { metadata: dataset, body: buffer }, config, s3Ca
 
 function loadDataFrameAndUpdateBuffers({ view }) {
 
-    const { nBody, filters } = view;
-    const { simulator, simulator: { dataframe }} = nBody;
+    const { nBody } = view;
+    const { simulator, simulator: { dataframe, layoutAlgorithms }} = nBody;
     // Load into dataframe data attributes that rely on the simulator existing.
     const inDegrees = dataframe.getHostBuffer('backwardsEdges').degreesTyped;
     const outDegrees = dataframe.getHostBuffer('forwardsEdges').degreesTyped;
@@ -75,16 +71,14 @@ function loadDataFrameAndUpdateBuffers({ view }) {
     dataframe.loadDegrees(outDegrees, inDegrees);
     dataframe.loadEdgeDestinations(unsortedEdges);
 
+    view.scene = assignHintsToScene(view.scene, dataframe);
+    view.expressionTemplates = createExpressionTemplates(dataframe);
+
     // Tell all layout algorithms to load buffers from dataframe, now that
     // we're about to enable ticking
-    simulator.layoutAlgorithms.forEach((layoutAlgorithm) => {
-        layoutAlgorithm.updateDataframeBuffers(simulator);
-    });
-
-    view.scene = assignHintsToScene(view.scene, dataframe);
-    view.expressions = createExpressionTemplates(dataframe);
-
-    return view;
+    return Observable.forkJoin(...layoutAlgorithms.map((algo) =>
+        Observable.from(algo.updateDataframeBuffers(simulator)))
+    ).mapTo(view);
 }
 
 function assignHintsToScene(scene, dataframe) {
@@ -103,7 +97,7 @@ function assignHintsToScene(scene, dataframe) {
 
 function createExpressionTemplates(dataframe) {
 
-    const expressions = [];
+    const expressionTemplates = [];
     const columnsByComponentType = dataframe.getColumnsByType(true);
 
     /*        { point, edge } */
@@ -128,7 +122,8 @@ function createExpressionTemplates(dataframe) {
             const expresionAttribute = columnName.indexOf(componentType) === 0 ?
                 expressionName : `${componentType}:${expressionName}`;
 
-            expressions.push({
+            expressionTemplates.push({
+                componentType,
                 name: expressionName,
                 dataType: column.type,
                 attribute: expresionAttribute
@@ -136,5 +131,5 @@ function createExpressionTemplates(dataframe) {
         }
     }
 
-    return expressions;
+    return expressionTemplates;
 }
