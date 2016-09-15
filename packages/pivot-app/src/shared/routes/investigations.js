@@ -119,9 +119,15 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
         return loadInvestigationsById({investigationIds: id})
         .mergeMap(
             ({app, investigation}) => {
+                const pivots = investigation;
+                const { pivotsById } = app;
+
+                const pivotId = investigation[index].value[1];
+                const pivot = pivotsById[pivotId];
+                console.log('Search pivot investigation', investigation)
                 return Observable.if(
-                    () => ( true ),
-                    searchPivot({ app, investigation, index })
+                    () => ( pivot.enabled ),
+                    searchPivot({ app, investigation, pivot, index })
                         .mergeMap(({investigation, pivot, app }) => {
                             const values = [
                                 $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
