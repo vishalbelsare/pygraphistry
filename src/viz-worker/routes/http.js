@@ -13,6 +13,10 @@ export function httpRoutes(services, modules) {
         route: `/graph/kernels/*`,
         use: (req, res, next) => res.status(404).send()
     }, {
+        // Block access to viz-server's source code
+        route: `/graph/viz-server.js(.map)?`,
+        use: (req, res, next) => res.status(404).send()
+    }, {
         route: '/graph/error',
         post: (req, res) => res.status(200).send()
     }, {
