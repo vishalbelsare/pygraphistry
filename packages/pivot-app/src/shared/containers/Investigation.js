@@ -19,8 +19,8 @@ function renderInvestigation({length = 0, templates = 'all', name = 'default', s
     return (
         <div className={styles.pivots}>
             { status ?
-            <Alert bsStyle="danger" className={styles.alert} onDismiss={dismissAlert}>
-                <strong> {status} </strong>
+            <Alert bsStyle={status.type} className={styles.alert} onDismiss={dismissAlert}>
+                <strong> {status.message} </strong>
             </Alert>
             : null
             }

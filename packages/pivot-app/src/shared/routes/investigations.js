@@ -117,7 +117,8 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
         })
         .catch((e) => {
             console.log(e)
-            const values = [$pathValue(`investigationsById['${id}'].status`, e.message)];
+            const status = {type: 'danger', 'message': e.message};
+            const values = [$pathValue(`investigationsById['${id}'].status`, status)];
             return Observable.from(values);
         })
         .map(mapObjectsToAtoms)
