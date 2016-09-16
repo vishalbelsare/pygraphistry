@@ -2,6 +2,7 @@ import {
     pathValue as $pathValue,
     pathInvalidation as $invalidation
 } from '@graphistry/falcor-json-graph';
+import { Observable } from 'rxjs';
 
 import { getHandler,
          mapObjectsToAtoms,
@@ -90,7 +91,12 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
             ({app, investigation}) => searchPivot({ app, investigation, index })
         )
         .mergeMap(
-            ({app, investigation}) => uploadGraph({ app, investigation }),
+            ({app, investigation}) =>
+                uploadGraph({ app, investigation })
+                .catch((e) => {
+                    console.log('Error was thrown!', e)
+                    return Observable.empty();
+                }),
             ({app, investigation, pivot}, name) => ({
                 app, index, name, investigation, pivot
             })
