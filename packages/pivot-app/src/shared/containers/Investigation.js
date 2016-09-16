@@ -10,15 +10,16 @@ import styles from './styles.less';
 
 import { splicePivot,
         insertPivot,
-        searchPivot
+        searchPivot,
+        dismissAlert
 } from '../actions/investigation'
 
-function renderInvestigation({length = 0, templates = 'all', name = 'default', status, pivots = [], searchPivot, insertPivot, splicePivot }) {
+function renderInvestigation({length = 0, templates = 'all', name = 'default', status, pivots = [], searchPivot, insertPivot, splicePivot, dismissAlert }) {
     const cellWidth = Math.round(88 / (4));
     return (
         <div className={styles.pivots}>
             { status ?
-            <Alert bsStyle="danger">
+            <Alert bsStyle="danger" onDismiss={dismissAlert}>
                 <strong> {status} </strong>
             </Alert>
             : null
@@ -68,7 +69,8 @@ export default container(
     {
         splicePivot: splicePivot,
         insertPivot: insertPivot,
-        searchPivot: searchPivot
+        searchPivot: searchPivot,
+        dismissAlert: dismissAlert
     }
 )(renderInvestigation)
 

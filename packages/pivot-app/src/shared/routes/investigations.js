@@ -5,12 +5,14 @@ import {
 import { Observable } from 'rxjs';
 
 import { getHandler,
-         mapObjectsToAtoms,
-         captureErrorStacks } from './support';
+    setHandler,
+    mapObjectsToAtoms,
+    captureErrorStacks } from './support';
 
 export function investigations({ loadInvestigationsById, loadPivotsById, searchPivot, splicePivot, insertPivot, uploadGraph }) {
 
     const getInvestigationsHandler = getHandler(['investigation'], loadInvestigationsById);
+    const setInvestigationsHandler = setHandler(['investigation'], loadInvestigationsById);
 
     return [{
         returns: `Number`,
@@ -19,6 +21,7 @@ export function investigations({ loadInvestigationsById, loadPivotsById, searchP
     }, {
         returns: `String`,
         get: getInvestigationsHandler,
+        set: setInvestigationsHandler,
         route: `investigationsById[{keys}]['id','name', 'value', 'url', 'status']`
     }, {
         returns: `pivots`,
