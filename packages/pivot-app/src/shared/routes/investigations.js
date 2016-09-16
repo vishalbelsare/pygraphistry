@@ -19,7 +19,7 @@ export function investigations({ loadInvestigationsById, loadPivotsById, searchP
     }, {
         returns: `String`,
         get: getInvestigationsHandler,
-        route: `investigationsById[{keys}]['id','name', 'value', 'url']`
+        route: `investigationsById[{keys}]['id','name', 'value', 'url', 'status']`
     }, {
         returns: `pivots`,
         get: getInvestigationsHandler,
@@ -93,10 +93,7 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
         .mergeMap(
             ({app, investigation}) =>
                 uploadGraph({ app, investigation })
-                .catch((e) => {
-                    console.log('Error was thrown!', e)
-                    return Observable.empty();
-                }),
+            ,
             ({app, investigation, pivot}, name) => ({
                 app, index, name, investigation, pivot
             })
@@ -110,9 +107,15 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
                 $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
                 $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
                 $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
+                $pathValue(`investigationsById['${id}'].status`, undefined)
             ];
 
             return values;
+        })
+        .catch((e) => {
+            console.log(e)
+            const values = [$pathValue(`investigationsById['${id}'].status`, e.message)];
+            return Observable.from(values);
         })
         .map(mapObjectsToAtoms)
         .catch(captureErrorStacks);
