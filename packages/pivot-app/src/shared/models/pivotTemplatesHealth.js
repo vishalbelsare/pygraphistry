@@ -53,10 +53,11 @@ const SEARCH_SPLUNK_HEALTH = {
     transport: 'Splunk',
     splunk: {
         toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search ${SPLUNK_INDICES.HEALTH} ${fields['Search']} ${constructFieldString(this.fields)}`
+            return `search ${SPLUNK_INDICES.HEALTH} ${fields['Search']} ${constructFieldString(this)}`
         },
         fields: HEALTH_FIELDS,
-        encodings: HEALTH_DEMO_ENCODINGS
+        encodings: HEALTH_DEMO_ENCODINGS,
+        attributes: HEALTH_ATTRIBUTES
     }
 };
 
@@ -69,10 +70,11 @@ const SEARCH_PATIENT = {
     transport: 'Splunk',
     splunk: {
         toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search PatientID=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this.fields)}`
+            return `search PatientID=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
         },
         fields: HEALTH_FIELDS,
-        encodings: HEALTH_DEMO_ENCODINGS
+        encodings: HEALTH_DEMO_ENCODINGS,
+        attributes: HEALTH_ATTRIBUTES
     }
 };
 
@@ -84,10 +86,11 @@ const SEARCH_LAB = {
     transport: 'Splunk',
     splunk: {
         toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search LabName=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this.fields)}`
+            return `search LabName=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
         },
         fields: HEALTH_FIELDS,
-        encodings: HEALTH_DEMO_ENCODINGS
+        encodings: HEALTH_DEMO_ENCODINGS,
+        attributes: HEALTH_ATTRIBUTES
     }
 };
 
@@ -102,10 +105,11 @@ const PATIENT = {
             const attribs = 'PatientID';
             const rawSearch =
                 `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.HEALTH}]`;
-            return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this.fields)}`;
+            return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
         fields: HEALTH_FIELDS,
-        encodings: HEALTH_DEMO_ENCODINGS
+        encodings: HEALTH_DEMO_ENCODINGS,
+        attributes: HEALTH_ATTRIBUTES
     }
 };
 
