@@ -170,8 +170,6 @@ pivots5.templates = 'health_demo';
 
 const app = createApp([pivots3, pivots0, pivots4, pivots5, pivots1, pivots2]);
 
-console.log(JSON.stringify(app, null, 4));
-
 const routeServices = {
     loadApp: loadApp(app),
     loadInvestigationsById: loadInvestigations(loadApp(app)),
