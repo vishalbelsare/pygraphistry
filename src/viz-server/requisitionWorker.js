@@ -3,9 +3,10 @@ import { simpleflake } from 'simpleflakes';
 import stringify from 'json-stable-stringify';
 import { tagUser } from './support';
 import { Observable, Subject } from 'rxjs';
+import { loadWorkerModule } from './loadWorkerModule';
 
 export function requisitionWorker({
-        config, logger, WORKERS,
+        config, logger,
         app /*: Express */,
         server /*: RxHTTPServer */,
         socketServer /*: SocketIO */
@@ -64,6 +65,7 @@ export function requisitionWorker({
             indexRequests,
             claimThenIndexRequests
         )
+        .switchMap(loadWorker)
         .scan(trackVizWorkerCaches, { caches: {} })
         .switchMap(({ worker }) => worker.multicast(
             () => new Subject(), (worker) => Observable.merge(
@@ -174,11 +176,17 @@ export function requisitionWorker({
         response.end(callback);
     }
 
-    function trackVizWorkerCaches({ caches }, [activeClientId, clientType, request, response]) {
+    function loadWorker([activeClientId, clientType, request, response]) {
+        return loadWorkerModule(clientType).map((workerModule) => [
+            activeClientId, workerModule, request, response
+        ]);
+    }
+
+    function trackVizWorkerCaches({ caches }, [activeClientId, workerModule, request, response]) {
 
         const sockets = awaitSocketConnection(activeClientId, request);
 
-        const worker = WORKERS[clientType](app, {
+        const worker = workerModule(app, {
             ...server, requests: server.requests.startWith({ request, response })
         }, sockets, caches);
 

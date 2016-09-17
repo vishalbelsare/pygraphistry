@@ -1498,8 +1498,12 @@ RenderingScheduler.prototype.getLargestModelSize = function (config, numElements
                 // It evals a size hint from render config into a number.
                 // We do this because we can't send these functions over the network with
                 // the rest of render config.
-                var num = eval(desc.sizeHint); // jshint ignore:line
-                return num;
+                //
+                // disabled because this doesn't survive minification
+                //
+                // var num = eval(desc.sizeHint); // jshint ignore:line
+                // return num;
+                return 0;
             } else {
                 return 0;
             }

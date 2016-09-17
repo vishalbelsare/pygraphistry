@@ -1,5 +1,6 @@
 import url from 'url';
 import { inspect } from 'util';
+import faviconStats from './favicon-assets.json';
 import webpackAssets from './webpack-assets.json';
 import { Model } from '@graphistry/falcor';
 import { Provider } from 'react-redux';
@@ -79,17 +80,24 @@ function renderAppWithHotReloading(modules, dataSource, options) {
         );
 }
 
-function renderFullPage(data, falcor, workerID = '', html = '') {
+function renderFullPage(data, falcor, workerID = '10', html = '') {
     const assetSuffix = workerID && `?workerID=${workerID}` || '';
-    const { client } = webpackAssets;
+    const { client, vendor } = webpackAssets;
+    const { html: iconsHTML } = faviconStats;
     return `
 <!DOCTYPE html>
 <html lang='en-us'>
     <head>
         <meta name='robots' content='noindex, nofollow'/>
         <meta http-equiv='x-ua-compatible' content='ie=edge'/>
-        <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'/>
-        <link rel='stylesheet' type='text/css' href='https://maxcdn.bootstrapcdn.com/bootstrap/latest/css/bootstrap.min.css'>${
+        <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'/>${
+            iconsHTML.map((tag) =>
+                tag.replace(/href=\"(.*?)\"/g, (match, url) =>
+                    `href='${url}${assetSuffix}'`
+                )
+            ).join('\n')
+        }
+        <!--link rel='stylesheet' type='text/css' href='https://maxcdn.bootstrapcdn.com/bootstrap/latest/css/bootstrap.min.css'-->${
             client && client.css ?
         `<link rel='stylesheet' type='text/css' href='${`${client.css}${assetSuffix}`}'/>`: ''
         }
@@ -111,6 +119,7 @@ function renderFullPage(data, falcor, workerID = '', html = '') {
             window.__INITIAL_CACHE__ = ${
                 stringify(falcor && falcor.getCache() || {})};
         </script>
+        <script type="text/javascript" src="${`${vendor.js}${assetSuffix}`}"></script>
         <script type="text/javascript" src="${`${client.js}${assetSuffix}`}"></script>
     </body>
 </html>`;

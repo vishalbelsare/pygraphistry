@@ -16,16 +16,6 @@ import corsMiddleware from 'cors';
 import cookieParser from 'cookie-parser';
 import { nocache, allowCrossOrigin } from './middleware';
 
-import { docWorker } from '../doc-worker';
-import { etlWorker } from '../etl-worker';
-import { vizWorker } from '../viz-worker';
-
-const WORKERS = { etl: etlWorker, graph: vizWorker };
-
-if (__DEV__) {
-    WORKERS.doc = docWorker;
-}
-
 export const config = _config();
 export const logger = commonLogger.createLogger('viz-server:server');
 
@@ -71,7 +61,7 @@ export function start(options = {
             config.VIZ_LISTEN_ADDRESS
         )
         .mergeMap((server) => requisitionWorker({
-                config, logger, WORKERS,
+                config, logger,
                 app, server, socketServer
             })
             .multicast(
