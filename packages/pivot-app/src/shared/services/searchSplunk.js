@@ -19,7 +19,7 @@ export function searchSplunk(searchQuery, callback) {
     // Set the search parameters
     var searchParams = {
       exec_mode: "blocking",
-      earliest_time: "2012-06-20T16:27:43.000-07:00"
+      earliest_time: "1980-06-20T16:27:43.000-07:00"
     };
 
     // A blocking search returns the job's SID when the search is done
