@@ -45,8 +45,7 @@ function renderEntitySummaries (id, resultSummary) {
                 } key={`${index}: entitySummary_${id}`}>
                 <span className={styles.pivotEntitySummary}>
                         <span style={{backgroundColor: color}} className={styles.pivotEntityPill}></span>
-                        {/*<span className={styles.pivotEntityCount}>{count}</span>*/}
-                        <span className={styles.pivotEntityName}>{name}</span>
+                        <span className={styles.pivotEntityName}>{count}</span>
                 </span>
                 </OverlayTrigger>))
         }
