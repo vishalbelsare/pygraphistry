@@ -80,7 +80,7 @@ function renderAppWithHotReloading(modules, dataSource, options) {
         );
 }
 
-function renderFullPage(data, falcor, workerID = '10', html = '') {
+function renderFullPage(data, falcor, workerID = '', html = '') {
     const assetSuffix = workerID && `?workerID=${workerID}` || '';
     const { client, vendor } = webpackAssets;
     const { html: iconsHTML } = faviconStats;
