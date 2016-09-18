@@ -27,10 +27,6 @@ export function shapeSplunkResults(splunkResults, pivotDict, index, encodings, a
             for(let i = 0; i < rows.length; i++) {
                 const row = rows[i];
                 const eventID = row['EventID'] || simpleflake().toJSON();
-                nodeLabels.push(
-                    Object.assign({},
-                        _.pick(row, attribs),
-                        {'node': eventID, type:'EventID'}));
 
                 const fields =
                     isStar ?
@@ -38,8 +34,12 @@ export function shapeSplunkResults(splunkResults, pivotDict, index, encodings, a
                             return !SKIP[field] && (field.toLowerCase() !== 'eventid');
                         })
                     : _.filter(connectionsArray, function (field) { return row[field]; });
-
                 const attribs = (attributes || []).concat(fields);
+
+                nodeLabels.push(
+                    Object.assign({},
+                        _.pick(row, attribs),
+                        {'node': eventID, type:'EventID'}));
 
 
                 for (var j = 0; j < fields.length; j++) {
