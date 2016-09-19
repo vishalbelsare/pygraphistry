@@ -14,7 +14,7 @@ export function pivot(cols, values =
     return {
         resultCount:0,
         resultSummary: {entities: [], resultCount: 0},
-        enabled: values.enabled,
+        enabled: true,
         id,
         length: cols.length,
         ...Array

@@ -136,10 +136,10 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
         return loadInvestigationsById({investigationIds: id})
         .mergeMap(
             ({app, investigation}) => {
-                const pivots = investigation;
+                const pivots = investigation.pivots;
                 const { pivotsById } = app;
 
-                const pivotId = investigation[index].value[1];
+                const pivotId = investigation.pivots[index].value[1];
                 const pivot = pivotsById[pivotId];
                 console.log('Search pivot investigation', investigation)
                 return Observable.if(
