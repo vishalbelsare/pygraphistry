@@ -113,7 +113,7 @@ function playCallRoute({ loadInvestigationsById, searchPivot, uploadGraph }) {
             console.log('  URL: ', investigation.url);
             const values = [
                 $pathValue(`investigationsById['${id}'].url`, investigation.url),
-                $pathValue(`investigationsById['${id}'].status`, undefined)
+                $pathValue(`investigationsById['${id}'].status`, null)
             ];
 
             return values;
@@ -146,12 +146,12 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
                     () => ( pivot.enabled ),
                     searchPivot({ app, investigation, pivot, index })
                         .mergeMap(({investigation, pivot, app }) => {
-                            investigation.status = undefined
+                            investigation.status = null
                             const values = [
                                 $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
                                 $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
                                 $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
-                                $pathValue(`investigationsById['${id}'].status`, undefined)
+                                $pathValue(`investigationsById['${id}'].status`, null)
                             ];
 
                             return values;
