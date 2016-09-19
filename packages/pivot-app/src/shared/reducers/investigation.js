@@ -7,10 +7,23 @@ import {
 
 import { combineReducers } from 'redux'
 import { Observable } from 'rxjs';
-import { SEARCH_PIVOT, INSERT_PIVOT, SPLICE_PIVOT } from '../actions/investigation';
+import { SEARCH_PIVOT, INSERT_PIVOT, SPLICE_PIVOT, DISMISS_ALERT } from '../actions/investigation';
 import { combineEpics } from 'redux-observable';
 
-export const investigation = combineEpics(searchPivot, insertPivot, splicePivot)
+export const investigation = combineEpics(searchPivot, insertPivot, splicePivot, dismissAlert)
+
+export function dismissAlert(action$, store) {
+    return action$
+        .ofType(DISMISS_ALERT)
+        .groupBy(({ id }) => id)
+        .mergeMap((actionsById) => actionsById.switchMap(
+            ({ falcor}) => {
+                return falcor.set($value(`['status']`, null))
+                .progressively()
+            }
+        ))
+        .ignoreElements();
+}
 
 export function searchPivot(action$, store) {
         return action$

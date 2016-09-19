@@ -11,6 +11,7 @@ export function investigation(name = 'default', pivots, templates = 'all', url =
     const pivotRefs = pivots.map((pivot, index) => (
         $ref(`pivotsById['${pivot.id}']`)
     ))
+    pivotRefs.status = undefined;
     pivotRefs.url = url;
     pivotRefs.name = name;
     pivotRefs.id = id;

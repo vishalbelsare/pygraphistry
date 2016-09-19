@@ -56,7 +56,12 @@ export function searchSplunk(searchQuery, callback) {
                 function(results, job) {
                 return ({results, job});
             });
-            var jobResults = getResults({count: job.properties().resultCount});
+            var jobResults = getResults({count: job.properties().resultCount}).catch(
+                (e) => {
+                    return Observable.throw(new Error(
+                        `${e.data.messages[0].text} ========>  Splunk Query: ${searchQuery}`));
+                }
+            )
             return jobResults;
         }
     ).map(
