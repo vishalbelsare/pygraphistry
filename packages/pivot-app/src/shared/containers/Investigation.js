@@ -1,5 +1,5 @@
 import { container } from '@graphistry/falcor-react-redux';
-import { Table } from 'react-bootstrap';
+import { Table, Alert } from 'react-bootstrap';
 import PivotRow from './PivotRow';
 //import PivotTable from './PivotTable';
 import { table as tableClassName,
@@ -10,13 +10,20 @@ import styles from './styles.less';
 
 import { splicePivot,
         insertPivot,
-        searchPivot
+        searchPivot,
+        dismissAlert
 } from '../actions/investigation'
 
-function renderInvestigation({length = 0, templates = 'all', name = 'default', pivots = [], searchPivot, insertPivot, splicePivot }) {
+function renderInvestigation({length = 0, templates = 'all', name = 'default', status, pivots = [], searchPivot, insertPivot, splicePivot, dismissAlert }) {
     const cellWidth = Math.round(88 / (4));
     return (
         <div className={styles.pivots}>
+            { status ?
+            <Alert bsStyle={status.type} className={styles.alert} onDismiss={dismissAlert}>
+                <strong> {status.message} </strong>
+            </Alert>
+            : null
+            }
             <Table>
                 <thead>
                     <tr>
@@ -44,7 +51,7 @@ function renderInvestigation({length = 0, templates = 'all', name = 'default', p
 
 function mapStateToFragment({selectedInvestigation = {}, name = 'default', pivots = []} = {}) {
     return `{
-        'url', 'name',
+        'url', 'name', 'status',
         pivots: {
             'length', [0...${pivots.length}]: ${
                 PivotRow.fragment()
@@ -57,6 +64,7 @@ function mapFragmentToProps(fragment) {
     return {
         pivots: fragment.pivots,
         name: fragment.name,
+        status: fragment.status,
         length: fragment.pivots.length
     };
 }
@@ -67,7 +75,8 @@ export default container(
     {
         splicePivot: splicePivot,
         insertPivot: insertPivot,
-        searchPivot: searchPivot
+        searchPivot: searchPivot,
+        dismissAlert: dismissAlert
     }
 )(renderInvestigation)
 

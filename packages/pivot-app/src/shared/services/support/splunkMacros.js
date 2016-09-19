@@ -74,6 +74,8 @@ function pivotToTemplate () {
     return pivotIdToTemplate(pivot.value[1], {pivotsById});
 }
 
-export function constructFieldString(fields) {
-    return ` | fields "${fields.join('" , "')}" | fields - _*`;
+export function constructFieldString(pivotTemplate) {
+    const fields = (pivotTemplate.fields || [])
+        .concat(pivotTemplate.attributes || []);
+    return ` | fields "${fields.join('" "')}" | fields - _*`;
 }

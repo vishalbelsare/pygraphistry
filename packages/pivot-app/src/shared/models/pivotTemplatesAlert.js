@@ -75,7 +75,7 @@ const SEARCH_FIREEYE = {
     transport: 'Splunk',
     splunk: {
         toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search EventID=${ fields['Search'] } ${SPLUNK_INDICES.FIREEYE} ${constructFieldString(this.fields)}`;
+            return `search EventID=${ fields['Search'] } ${SPLUNK_INDICES.FIREEYE} ${constructFieldString(this)}`;
         },
         fields: FIREEYE_FIELDS,
         encodings: ALERT_DEMO_ENCODINGS
@@ -93,7 +93,7 @@ const FIREEYE = {
             const attribs = 'EventID, Message, Fire Eye MD5, Fire Eye URL, Internal IPs, External IPs';
             const rawSearch =
                 `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.FIREEYE}]`;
-            return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this.fields)}`;
+            return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
         fields: FIREEYE_FIELDS,
         encodings: ALERT_DEMO_ENCODINGS
@@ -111,7 +111,7 @@ const BLUECOAT = {
             const attribs = 'Fire Eye URL';
             const rawSearch =
                 `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.BLUECOAT}]`;
-            return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this.fields)}`;
+            return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
         fields: [
             'Fire Eye URL',
@@ -132,7 +132,7 @@ const FIREWALL = {
             const attribs = 'External IPs';
             const rawSearch =
                 `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.FIREWALL}]`;
-            return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this.fields)}`;
+            return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
         fields: [
             'External IPs',

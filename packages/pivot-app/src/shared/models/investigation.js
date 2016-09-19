@@ -13,6 +13,7 @@ export function investigation(investigation, index, id = simpleflake().toJSON())
         url: investigation.url || 'http://www.graphistry.com',
         id: id,
         templates: 'all',
+        status: null,
         pivots: investigation.pivots.map((pivot) => $ref(`pivotsById['${pivot.id}']`))
     };
 }
