@@ -1,23 +1,25 @@
 import expressApp from './app.js'
 import bodyParser from 'body-parser';
+import { simpleflake } from 'simpleflakes';
 
 import { reloadHot } from '../shared/reloadHot';
 import { renderMiddleware } from './middleware';
 import { getDataSourceFactory } from '../shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
-
-import { simpleflake } from 'simpleflakes';
 import { app as createApp, pivot as createPivot, investigation as createInvestigation } from '../shared/models';
-import { loadApp, loadInvestigations, loadPivots, loadRows, insertPivot, splicePivot, calcTotals, searchPivot, uploadGraph } from '../shared/services';
+import { loadApp, loadInvestigations, loadPivots, loadRows, insertPivot,
+         splicePivot, calcTotals, searchPivot, uploadGraph } from '../shared/services';
 
 import PivotTemplates from '../shared/models/PivotTemplates';
-
 import {
     ref as $ref,
     atom as $atom,
     pathValue as $pathValue,
     pathInvalidation as $invalidation
 } from '@graphistry/falcor-json-graph';
+
+
+
 const cols = [
     { name: 'Mode'},
     { name: 'Input' },
@@ -146,6 +148,33 @@ const pivots5 = [
     })
 ];
 
+const investigation1 = {
+    name: 'Dataset Errors',
+    pivots: pivots1
+}
+
+const investigation2 = {
+    name: 'Very Mal Ware',
+    pivots: pivots2
+}
+
+const investigation3 = {
+    name: 'Botnet',
+    pivots: pivots3
+}
+
+const investigation4 = {
+    name: 'Empty alerts',
+    pivots: pivots4
+}
+
+const investigation5 = {
+    name: 'Empty health',
+    pivots: pivots5
+}
+const app = createApp([investigation1, investigation2, investigation3,
+                       investigation4, investigation5]);
+
 pivots0.name = 'Empty (splunk)';
 pivots0.templates = 'all';
 pivots1.name = 'Dataset Errors';
@@ -158,8 +187,6 @@ pivots4.name = 'Empty (alerts)';
 pivots4.templates = 'alert_demo';
 pivots5.name = 'Empty (health)';
 pivots5.templates = 'health_demo';
-
-const app = createApp([pivots3, pivots0, pivots4, pivots5, pivots1, pivots2]);
 
 const routeServices = {
     loadApp: loadApp(app),

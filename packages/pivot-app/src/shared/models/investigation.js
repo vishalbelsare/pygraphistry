@@ -7,19 +7,14 @@ import {
 
 import { simpleflake } from 'simpleflakes';
 
-export function investigation(name = 'default', pivots, templates = 'all', url = process.env.GRAPHISTRY_HOMEPAGE || 'http://www.graphistry.com/', id = simpleflake().toJSON()) {
-    const pivotRefs = pivots.map((pivot, index) => (
-        $ref(`pivotsById['${pivot.id}']`)
-    ))
-    pivotRefs.url = url;
-    pivotRefs.name = name;
-    pivotRefs.id = id;
-    pivotRefs.templates = templates;
-    return pivotRefs;
-    //return {
-        //url, id, name, length: pivots.length,
-        //...pivotRefs
-    //}
+export function investigation(investigation, index, id = simpleflake().toJSON()) {
+    return {
+        name: `Investigation: ${investigation.name || index}`,
+        url: investigation.url || 'http://www.graphistry.com',
+        id: id,
+        templates: 'all',
+        pivots: investigation.pivots.map((pivot) => $ref(`pivotsById['${pivot.id}']`))
+    };
 }
 
 

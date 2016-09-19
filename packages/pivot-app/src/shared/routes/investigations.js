@@ -12,17 +12,17 @@ export function investigations({ loadInvestigationsById, loadPivotsById, searchP
     const getInvestigationsHandler = getHandler(['investigation'], loadInvestigationsById);
 
     return [{
-        returns: `Number`,
-        get: getInvestigationsHandler,
-        route: `investigationsById[{keys}]['length']`
-    }, {
         returns: `String`,
         get: getInvestigationsHandler,
         route: `investigationsById[{keys}]['id','name', 'value', 'url']`
     }, {
+        returns: `Number`,
+        get: getInvestigationsHandler,
+        route: `investigationsById[{keys}]['pivots']['length']`
+    }, {
         returns: `pivots`,
         get: getInvestigationsHandler,
-        route: `investigationsById[{keys}][{integers}]`
+        route: `investigationsById[{keys}]['pivots'][{integers}]`
     }, {
         route: `investigationsById[{keys}].searchPivot`,
         call: searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPivot, uploadGraph })
