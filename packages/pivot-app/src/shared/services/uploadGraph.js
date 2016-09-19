@@ -131,6 +131,10 @@ export function uploadGraph({app, investigation}) {
     previousGraph.graph = uploadData.graph;
     previousGraph.labels = uploadData.labels;
 
+    if (uploadData.graph.length === 0) {
+        return Observable.throw(new Error('No edges to upload!'));
+    }
+
     const uploadDone = Observable.bindNodeCallback(upload.bind(upload));
     const vizUrl = uploadDone(uploadData);
     return vizUrl.map(

@@ -14,7 +14,7 @@ const SKIP = {
 };
 
 
-export function shapeSplunkResults(splunkResults, pivotDict, index, encodings) {
+export function shapeSplunkResults(splunkResults, pivotDict, index, encodings, attributes) {
     const destination = pivotDict['Search'];
     const connections = pivotDict['Links'];
     const connectionsArray = connections.split(',').map((connection) => connection.trim());
@@ -27,7 +27,6 @@ export function shapeSplunkResults(splunkResults, pivotDict, index, encodings) {
             for(let i = 0; i < rows.length; i++) {
                 const row = rows[i];
                 const eventID = row['EventID'] || simpleflake().toJSON();
-                nodeLabels.push({'node': eventID, type:'EventID'});
 
                 const fields =
                     isStar ?
@@ -35,23 +34,32 @@ export function shapeSplunkResults(splunkResults, pivotDict, index, encodings) {
                             return !SKIP[field] && (field.toLowerCase() !== 'eventid');
                         })
                     : _.filter(connectionsArray, function (field) { return row[field]; });
+                const attribs = (attributes || []).concat(fields);
+
+                nodeLabels.push(
+                    Object.assign({},
+                        _.pick(row, attribs),
+                        {'node': eventID, type:'EventID'}));
+
 
                 for (var j = 0; j < fields.length; j++) {
                     const field = fields[j];
 
                     if (field === 'Search') {
-                        edges.push(Object.assign({}, row,
-                            {'destination': destination,
-                             'source': eventID,
-                             'edgeType': ('EventID->Search'),
-                             'pivot': index}));
+                        edges.push(
+                            Object.assign({},
+                                _.pick(row, attribs),
+                                {'destination': destination,
+                                 'source': eventID,
+                                 'edgeType': 'EventID->Search',
+                                 'pivot': index}));
                         nodeLabels.push({'node': destination, type:'Search'});
                         continue;
                     }
 
                     if (row[field]) {
                         nodeLabels.push({'node': row[field], type: field});
-                        edges.push(Object.assign({}, row,
+                        edges.push(Object.assign({}, _.pick(row, attribs),
                             {'destination': row[field],
                              'source': eventID,
                              'edgeType': ('EventID->' + field),

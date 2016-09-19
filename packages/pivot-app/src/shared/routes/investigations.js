@@ -2,16 +2,19 @@ import {
     pathValue as $pathValue,
     pathInvalidation as $invalidation
 } from '@graphistry/falcor-json-graph';
+import { Observable } from 'rxjs';
 
 import { Observable } from 'rxjs';
 
 import { getHandler,
-         mapObjectsToAtoms,
-         captureErrorStacks } from './support';
+    setHandler,
+    mapObjectsToAtoms,
+    captureErrorStacks } from './support';
 
 export function investigations({ loadInvestigationsById, loadPivotsById, searchPivot, splicePivot, insertPivot, uploadGraph }) {
 
     const getInvestigationsHandler = getHandler(['investigation'], loadInvestigationsById);
+    const setInvestigationsHandler = setHandler(['investigation'], loadInvestigationsById);
 
     return [{
         returns: `Number`,
@@ -20,7 +23,8 @@ export function investigations({ loadInvestigationsById, loadPivotsById, searchP
     }, {
         returns: `String`,
         get: getInvestigationsHandler,
-        route: `investigationsById[{keys}]['id','name', 'value', 'url']`
+        set: setInvestigationsHandler,
+        route: `investigationsById[{keys}]['id','name', 'value', 'url', 'status']`
     }, {
         returns: `pivots`,
         get: getInvestigationsHandler,
@@ -92,7 +96,9 @@ function playCallRoute({ loadInvestigationsById, searchPivot, uploadGraph }) {
         const index = args[0];
         return loadInvestigationsById({investigationIds: id})
         .mergeMap(
-            ({app, investigation}) => uploadGraph({ app, investigation }),
+            ({app, investigation}) =>
+                uploadGraph({ app, investigation })
+            ,
             ({app, investigation, pivot}, name) => ({
                 app, index, name, investigation, pivot
             })
@@ -103,9 +109,19 @@ function playCallRoute({ loadInvestigationsById, searchPivot, uploadGraph }) {
             console.log('  URL: ', investigation.url);
             const values = [
                 $pathValue(`investigationsById['${id}'].url`, investigation.url),
+                $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
+                $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
+                $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
+                $pathValue(`investigationsById['${id}'].status`, undefined)
             ];
 
             return values;
+        })
+        .catch((e) => {
+            console.log(e)
+            const status = {type: 'danger', 'message': e.message};
+            const values = [$pathValue(`investigationsById['${id}'].status`, status)];
+            return Observable.from(values);
         })
         .map(mapObjectsToAtoms)
         .catch(captureErrorStacks)

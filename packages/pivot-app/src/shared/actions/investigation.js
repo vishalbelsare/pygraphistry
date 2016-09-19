@@ -2,6 +2,7 @@ export const SEARCH_PIVOT = 'search-pivot';
 export const SPLICE_PIVOT = 'splice-pivot';
 export const INSERT_PIVOT = 'insert-pivot';
 export const PLAY_INVESTIGATION = 'play-investigation';
+export const DISMISS_ALERT = 'dismiss-alert';
 
 export const searchPivot = ({index}) => {
     return ({
@@ -27,3 +28,8 @@ export const playInvestigation = ({ length }) => {
     });
 };
 
+export const dismissAlert = () => {
+    return ({
+        type: DISMISS_ALERT
+    });
+}

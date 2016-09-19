@@ -63,7 +63,7 @@ export function searchPivot({app, investigation, pivot, index }) {
             pivotCache[index] = rows.output;
             console.log('saved pivot ', index, '# results:', rows.output.length); })
         .map(({output}) => output);
-    var shapedResults = shapeSplunkResults(splunkResults, pivotFields, index, template.splunk.encodings)
+    var shapedResults = shapeSplunkResults(splunkResults, pivotFields, index, template.splunk.encodings, template.splunk.attributes)
         .do((results) => {
             pivot.results = results;
             pivot.resultSummary = summarizeOutput(results);
