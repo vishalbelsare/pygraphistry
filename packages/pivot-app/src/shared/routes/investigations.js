@@ -52,8 +52,8 @@ function splicePivotCallRoute({ loadInvestigationsById, splicePivot }) {
         )
         .mergeMap(({ investigation }) => {
             const values = [
-                $pathValue(`investigationsById['${id}'].length`, investigation.length),
-                $invalidation(`investigationsById['${id}'][${0}..${investigation.length}]`),
+                $pathValue(`investigationsById['${id}'].length`, investigation.pivots.length),
+                $invalidation(`investigationsById['${id}']['pivots'][${0}..${investigation.pivots.length}]`),
             ];
             return values;
         })
