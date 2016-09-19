@@ -37,7 +37,10 @@ function summarizeOutput ({labels}) {
 }
 
 
-export function searchPivot({app, investigation, pivot, index }) {
+export function searchPivot({app, investigation, index }) {
+    const id = investigation.pivots[index].value[1];
+    const pivot = app.pivotsById[id];
+    pivot.enabled = true;
 
     //{'Search': string, 'Mode': string, ...}
     console.log('Pivot', pivot)
@@ -52,8 +55,8 @@ export function searchPivot({app, investigation, pivot, index }) {
         throw new Error('Only expected Splunk transports, got: ' + template.transport);
     }
 
-    const searchQuery = template.splunk.toSplunk(investigation, app, pivotFields, pivotCache);
-    console.log('======= Search ======');
+    const searchQuery = template.splunk.toSplunk(investigation.pivots, app, pivotFields, pivotCache);
+    console.log('======= Search ======')
     console.log(searchQuery);
     const splunkResults = searchSplunk(searchQuery)
         .do(({resultCount, output}) => {

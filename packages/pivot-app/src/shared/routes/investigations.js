@@ -15,18 +15,18 @@ export function investigations({ loadInvestigationsById, loadPivotsById, searchP
     const setInvestigationsHandler = setHandler(['investigation'], loadInvestigationsById);
 
     return [{
-        returns: `Number`,
-        get: getInvestigationsHandler,
-        route: `investigationsById[{keys}]['length']`
-    }, {
         returns: `String`,
         get: getInvestigationsHandler,
         set: setInvestigationsHandler,
         route: `investigationsById[{keys}]['id','name', 'value', 'url', 'status']`
     }, {
+        returns: `Number`,
+        get: getInvestigationsHandler,
+        route: `investigationsById[{keys}]['pivots']['length']`
+    }, {
         returns: `pivots`,
         get: getInvestigationsHandler,
-        route: `investigationsById[{keys}][{integers}]`
+        route: `investigationsById[{keys}]['pivots'][{integers}]`
     }, {
         route: `investigationsById[{keys}].play`,
         call: playCallRoute({ loadInvestigationsById, loadPivotsById, searchPivot, uploadGraph })

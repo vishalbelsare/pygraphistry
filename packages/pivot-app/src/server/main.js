@@ -1,23 +1,25 @@
 import expressApp from './app.js'
 import bodyParser from 'body-parser';
+import { simpleflake } from 'simpleflakes';
 
 import { reloadHot } from '../shared/reloadHot';
 import { renderMiddleware } from './middleware';
 import { getDataSourceFactory } from '../shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
-
-import { simpleflake } from 'simpleflakes';
 import { app as createApp, pivot as createPivot, investigation as createInvestigation } from '../shared/models';
-import { loadApp, loadInvestigations, loadPivots, loadRows, insertPivot, splicePivot, calcTotals, searchPivot, uploadGraph } from '../shared/services';
+import { loadApp, loadInvestigations, loadPivots, loadRows, insertPivot,
+         splicePivot, calcTotals, searchPivot, uploadGraph } from '../shared/services';
 
 import PivotTemplates from '../shared/models/PivotTemplates';
-
 import {
     ref as $ref,
     atom as $atom,
     pathValue as $pathValue,
     pathInvalidation as $invalidation
 } from '@graphistry/falcor-json-graph';
+
+
+
 const cols = [
     { name: 'Mode'},
     { name: 'Input' },
@@ -54,8 +56,7 @@ const pivots0 = [
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('all', 'Search Splunk').name,
-        'Input': 'none',
-        'enabled': true
+        'Input': 'none'
     })
 ];
 
@@ -68,8 +69,7 @@ const pivots1 = Array.from({ length: 1 },
                 'Links': '*',
                 'Time': '07/28/2016',
                 'Mode': PivotTemplates.get('all', 'Search Splunk (dataset)').name,
-                'Input': 'none',
-                'enabled': true
+                'Input': 'none'
             })
         }
         else {
@@ -86,8 +86,7 @@ const pivots2 = Array.from({ length: 2 },
                 'Links': 'dest_ip, misc',
                 'Time': '07/28/2016',
                 'Mode': PivotTemplates.get('splunk', 'Search Splunk').name,
-                'Input': 'none',
-                'enabled': true
+                'Input': 'none'
             })
         }
         else {
@@ -103,32 +102,28 @@ const pivots3 = [
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Search FireEye').name,
-        'Input': 'none',
-        'enabled': true
+        'Input': 'none'
     }),
     createPivot(cols, {
         'Search': '',
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Expand with Fire Eye').name,
-        'Input': 'Pivot 0',
-        'enabled': true
+        'Input': 'Pivot 0'
     }),
     createPivot(cols, {
         'Search': '',
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Expand with Blue Coat').name,
-        'Input': 'Pivot 1',
-        'enabled': true
+        'Input': 'Pivot 1'
     }),
     createPivot(cols, {
         'Search': '',
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Expand with Firewall').name,
-        'Input': 'Pivot 2',
-        'enabled': false
+        'Input': 'Pivot 2'
     })
 ];
 
@@ -138,8 +133,7 @@ const pivots4 = [
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Search Splunk (alerts)').name,
-        'Input': 'none',
-        'enabled': true
+        'Input': 'none'
     })
 ];
 
@@ -150,10 +144,36 @@ const pivots5 = [
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('health_demo', 'Search Splunk (health)').name,
-        'Input': 'none',
-        'enabled': true
+        'Input': 'none'
     })
 ];
+
+const investigation1 = {
+    name: 'Dataset Errors',
+    pivots: pivots1
+}
+
+const investigation2 = {
+    name: 'Very Mal Ware',
+    pivots: pivots2
+}
+
+const investigation3 = {
+    name: 'Botnet',
+    pivots: pivots3
+}
+
+const investigation4 = {
+    name: 'Empty alerts',
+    pivots: pivots4
+}
+
+const investigation5 = {
+    name: 'Empty health',
+    pivots: pivots5
+}
+const app = createApp([investigation1, investigation2, investigation3,
+                       investigation4, investigation5]);
 
 pivots0.name = 'Empty (splunk)';
 pivots0.templates = 'all';
@@ -167,8 +187,6 @@ pivots4.name = 'Empty (alerts)';
 pivots4.templates = 'alert_demo';
 pivots5.name = 'Empty (health)';
 pivots5.templates = 'health_demo';
-
-const app = createApp([pivots3, pivots0, pivots4, pivots5, pivots1, pivots2]);
 
 const routeServices = {
     loadApp: loadApp(app),
