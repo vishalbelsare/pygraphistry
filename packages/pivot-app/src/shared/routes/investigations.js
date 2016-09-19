@@ -71,14 +71,15 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
             ({ app, investigation}) => insertPivot({ app, clickedIndex, id, investigation })
         )
         .mergeMap(({ investigation, nextIndex }) => {
-            const length = investigation.length;
+            const pivots = investigation.pivots
+            const length = pivots.length;
             const values = [
-                $pathValue(`investigationsById['${id}'].length`, investigation.length),
-                $pathValue(`investigationsById['${id}'][${nextIndex}]`, investigation[nextIndex]),
+                $pathValue(`investigationsById['${id}']['pivots'].length`, length),
+                $pathValue(`investigationsById['${id}']['pivots'][${nextIndex}]`, pivots[nextIndex]),
             ];
 
-            if (nextIndex < investigation.length - 1) {
-                values.push($invalidation(`investigationsById['${id}'][${nextIndex + 1}..${length - 1}]`));
+            if (nextIndex < length - 1) {
+                values.push($invalidation(`investigationsById['${id}']['pivots'][${nextIndex + 1}..${length - 1}]`));
             }
 
             return values;
@@ -90,6 +91,7 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
 
 function playCallRoute({ loadInvestigationsById, searchPivot, uploadGraph }) {
     return function playInvestigationCall(path, args) {
+        console.log('Play was called!')
         const id = path[1];
         const index = args[0];
         return loadInvestigationsById({investigationIds: id})
