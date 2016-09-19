@@ -8,11 +8,13 @@ export function pivot(cols, values =
     'Mode': PivotTemplates.get('all', 'Search Splunk').name,
     'Input': 'Pivot 0',
     'Links': '*',
-    'Time': '07/28/2016'}, id = simpleflake().toJSON(), enabled = false) {
+    'Time': '07/28/2016',
+    'enabled': true
+    }, id = simpleflake().toJSON()) {
     return {
         resultCount:0,
         resultSummary: {entities: [], resultCount: 0},
-        enabled,
+        enabled: values.enabled,
         id,
         length: cols.length,
         ...Array

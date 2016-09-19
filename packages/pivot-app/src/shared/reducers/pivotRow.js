@@ -14,7 +14,7 @@ export function setPivotValue(action$, store) {
     return action$
         .ofType(SET_PIVOT_VALUE)
         .groupBy(({ id }) => id)
-        .mergeMap((actionsById) => actionsById.switchMap(
+        .mergeMap((actionsById) => actionsById.debounceTime(100).switchMap(
             ({ stateKey, falcor, state, index, target, id }) => {
                 return falcor.set(
                     $value(`[${index}]['value']`, target)
