@@ -10,12 +10,11 @@ import styles from './styles.less';
 import { splicePivot,
         insertPivot,
         searchPivot,
-        playInvestigation
-        searchPivot,
+        playInvestigation,
         dismissAlert
 } from '../actions/investigation'
 
-function renderInvestigation({length = 0, templates = 'all', name = 'default', pivots = [], searchPivot, insertPivot, splicePivot, dismissAlert, playInvestigation }) {
+function renderInvestigation({length = 0, templates = 'all', status, name = 'default', pivots = [], searchPivot, insertPivot, splicePivot, dismissAlert, playInvestigation }) {
     const cellWidth = Math.round(88 / (4));
     return (
         <div className={styles.pivots}>
@@ -75,8 +74,7 @@ export default container(
         splicePivot: splicePivot,
         insertPivot: insertPivot,
         searchPivot: searchPivot,
-        playInvestigation: playInvestigation
-        searchPivot: searchPivot
+        playInvestigation: playInvestigation,
         searchPivot: searchPivot,
     }
 )(renderInvestigation)

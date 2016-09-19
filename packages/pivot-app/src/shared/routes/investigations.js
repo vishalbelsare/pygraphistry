@@ -4,8 +4,6 @@ import {
 } from '@graphistry/falcor-json-graph';
 import { Observable } from 'rxjs';
 
-import { Observable } from 'rxjs';
-
 import { getHandler,
     setHandler,
     mapObjectsToAtoms,
@@ -96,22 +94,25 @@ function playCallRoute({ loadInvestigationsById, searchPivot, uploadGraph }) {
         const index = args[0];
         return loadInvestigationsById({investigationIds: id})
         .mergeMap(
-            ({app, investigation}) =>
-                uploadGraph({ app, investigation })
+            ({app, investigation}) => {
+                if ( !investigation.status) {
+                    console.log('Upload graph')
+                    return uploadGraph({ app, investigation })
+                } else {
+                    return Observable.empty();
+                }
+            }
             ,
-            ({app, investigation, pivot}, name) => ({
-                app, index, name, investigation, pivot
+            ({app, investigation}, name) => ({
+                app, index, name, investigation
             })
         )
-        .mergeMap(({investigation, pivot, name }) => {
+        .mergeMap(({investigation, name }) => {
             investigation.url = (process.env.GRAPHISTRY_VIEWER || process.env.GRAPHISTRY || 'https://labs.graphistry.com')
                 + '/graph/graph.html?play=500&bg=%23eeeeee&type=vgraph&info=true&dataset=' + name;
             console.log('  URL: ', investigation.url);
             const values = [
                 $pathValue(`investigationsById['${id}'].url`, investigation.url),
-                $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
-                $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
-                $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
                 $pathValue(`investigationsById['${id}'].status`, undefined)
             ];
 
@@ -145,13 +146,22 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
                     () => ( pivot.enabled ),
                     searchPivot({ app, investigation, pivot, index })
                         .mergeMap(({investigation, pivot, app }) => {
+                            investigation.status = undefined
                             const values = [
                                 $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
                                 $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
                                 $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
+                                $pathValue(`investigationsById['${id}'].status`, undefined)
                             ];
 
                             return values;
+                        })
+                        .catch((e) => {
+                            console.log(e)
+                            const status = {type: 'danger', 'message': e.message};
+                            investigation.status = status
+                            const values = [$pathValue(`investigationsById['${id}'].status`, status)];
+                            return Observable.from(values);
                         })
                         .map(mapObjectsToAtoms)
                         .catch(captureErrorStacks),
