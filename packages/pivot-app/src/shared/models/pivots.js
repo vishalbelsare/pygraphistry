@@ -9,12 +9,11 @@ export function pivot(cols, values =
     'Input': 'Pivot 0',
     'Links': '*',
     'Time': '07/28/2016',
-    'enabled': true
-    }, id = simpleflake().toJSON()) {
+    }, enabled=true,  id = simpleflake().toJSON()) {
     return {
         resultCount:0,
         resultSummary: {entities: [], resultCount: 0},
-        enabled: true,
+        enabled,
         id,
         length: cols.length,
         ...Array

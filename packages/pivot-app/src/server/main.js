@@ -57,7 +57,7 @@ const pivots0 = [
         'Time': '',
         'Mode': PivotTemplates.get('all', 'Search Splunk').name,
         'Input': 'none'
-    })
+    }, true)
 ];
 
 
@@ -70,10 +70,10 @@ const pivots1 = Array.from({ length: 1 },
                 'Time': '07/28/2016',
                 'Mode': PivotTemplates.get('all', 'Search Splunk (dataset)').name,
                 'Input': 'none'
-            })
+            }, true)
         }
         else {
-            return createPivot(cols, placeHolder)
+            return createPivot(cols, placeHolder, true)
         }
     }
 );
@@ -87,7 +87,7 @@ const pivots2 = Array.from({ length: 2 },
                 'Time': '07/28/2016',
                 'Mode': PivotTemplates.get('splunk', 'Search Splunk').name,
                 'Input': 'none'
-            })
+            }, true)
         }
         else {
             return createPivot(cols, placeHolder)
@@ -103,28 +103,28 @@ const pivots3 = [
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Search FireEye').name,
         'Input': 'none'
-    }),
+    }, true),
     createPivot(cols, {
         'Search': '',
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Expand with Fire Eye').name,
         'Input': 'Pivot 0'
-    }),
+    }, true),
     createPivot(cols, {
         'Search': '',
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Expand with Blue Coat').name,
         'Input': 'Pivot 1'
-    }),
+    }, true),
     createPivot(cols, {
         'Search': '',
         'Links': '*',
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Expand with Firewall').name,
         'Input': 'Pivot 2'
-    })
+    }, false)
 ];
 
 const pivots4 = [
@@ -134,7 +134,7 @@ const pivots4 = [
         'Time': '',
         'Mode': PivotTemplates.get('alert_demo', 'Search Splunk (alerts)').name,
         'Input': 'none'
-    })
+    }, true)
 ];
 
 
@@ -145,7 +145,7 @@ const pivots5 = [
         'Time': '',
         'Mode': PivotTemplates.get('health_demo', 'Search Splunk (health)').name,
         'Input': 'none'
-    })
+    }, true)
 ];
 
 const investigation1 = {
