@@ -1,5 +1,8 @@
 import expressApp from './app.js'
 import bodyParser from 'body-parser';
+import glob from 'glob';
+import fs from 'fs';
+import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
 
 import { reloadHot } from '../shared/reloadHot';
@@ -172,47 +175,42 @@ const investigation5 = {
     name: 'Empty health',
     pivots: pivots5
 }
-const app = createApp([investigation1, investigation2, investigation3,
-                       investigation4, investigation5]);
 
-pivots0.name = 'Empty (splunk)';
-pivots0.templates = 'all';
-pivots1.name = 'Dataset Errors';
-pivots1.templates = 'alert_demo';
-pivots2.name = 'Malware';
-pivots1.templates = 'alert_demo';
-pivots3.name = 'Botnet BRO8ZA4A';
-pivots1.templates = 'alert_demo';
-pivots4.name = 'Empty (alerts)';
-pivots4.templates = 'alert_demo';
-pivots5.name = 'Empty (health)';
-pivots5.templates = 'health_demo';
 
-const routeServices = {
-    loadApp: loadApp(app),
-    loadInvestigationsById: loadInvestigations(loadApp(app)),
-    insertPivot, splicePivot, calcTotals, searchPivot, uploadGraph,
-    loadRowsById: loadRows(loadApp(app)),
-    loadPivotsById: loadPivots(loadApp(app)),
-};
+init();
 
-const modules = reloadHot(module);
-const getDataSource = getDataSourceFactory(routeServices);
+function init(investigations) {
+    //const app = createApp(investigations);
+    const app = createApp([investigation1, investigation2, investigation3,
+                           investigation4, investigation5]);
+    //console.log(require('util').inspect(app, false, 6));
 
-expressApp.use('/index.html', renderMiddleware(getDataSource, modules));
-expressApp.use('/graph.html', function(req, res) {
-    const { query: options = {} } = req;
-    res.type('html').send(`
-        <!DOCTYPE html>
-        <html lang='en-us'>
-            <body>
-                <h1>total: ${options.total}</h1>
-            </body>
-        </html>
-    `);
-});
+    const routeServices = {
+        loadApp: loadApp(app),
+        loadInvestigationsById: loadInvestigations(loadApp(app)),
+        insertPivot, splicePivot, calcTotals, searchPivot, uploadGraph,
+        loadRowsById: loadRows(loadApp(app)),
+        loadPivotsById: loadPivots(loadApp(app)),
+    };
 
-expressApp.use(bodyParser.urlencoded({ extended: false }));
-expressApp.use('/model.json', falcorMiddleware(getDataSource));
+    const modules = reloadHot(module);
+    const getDataSource = getDataSourceFactory(routeServices);
 
-expressApp.use('/', renderMiddleware(getDataSource, modules));
+    expressApp.use('/index.html', renderMiddleware(getDataSource, modules));
+    expressApp.use('/graph.html', function(req, res) {
+        const { query: options = {} } = req;
+        res.type('html').send(`
+            <!DOCTYPE html>
+            <html lang='en-us'>
+                <body>
+                    <h1>total: ${options.total}</h1>
+                </body>
+            </html>
+        `);
+    });
+
+    expressApp.use(bodyParser.urlencoded({ extended: false }));
+    expressApp.use('/model.json', falcorMiddleware(getDataSource));
+
+    expressApp.use('/', renderMiddleware(getDataSource, modules));
+}
