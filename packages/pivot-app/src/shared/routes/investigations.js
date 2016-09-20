@@ -143,10 +143,8 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
 
                 const pivotId = investigation.pivots[index].value[1];
                 const pivot = pivotsById[pivotId];
-                console.log('Search pivot investigation', investigation)
-                return Observable.if(
-                    () => ( pivot.enabled ),
-                    searchPivot({ app, investigation, pivot, index })
+                if (pivot.enabled) {
+                    return searchPivot({ app, investigation, pivot, index })
                         .mergeMap(({investigation, pivot, app }) => {
                             investigation.status = null
                             const values = [
@@ -166,9 +164,10 @@ function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph
                             return Observable.from(values);
                         })
                         .map(mapObjectsToAtoms)
-                        .catch(captureErrorStacks),
-                    Observable.of([])
-                )
+                        .catch(captureErrorStacks);
+                } else {
+                    return Observable.of([])
+                }
             }
         )
     }
