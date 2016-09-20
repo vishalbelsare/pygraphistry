@@ -1,6 +1,7 @@
 import { expandTemplate, constructFieldString } from '../services/support/splunkMacros.js';
 
 const SPLUNK_INDICES = {
+    //EVENT_GEN: 'index=event_gen | search source="eventGen100k.csv" | search sourcetype="csv" | search'
     EVENT_GEN: 'index=event_gen'
 }
 

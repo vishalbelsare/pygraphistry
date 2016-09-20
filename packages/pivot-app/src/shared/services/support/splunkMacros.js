@@ -29,11 +29,12 @@ function buildLookup(text, pivotCache) {
                 const vals = _.uniq(_.map(pivotCache[search.match(/\d+/)[0]], function (row) {
                     return row[field];
                 }));
-                console.log('the vals:', vals);
+                console.log('the vals:', vals, 'length', vals.length);
                 const fieldMatch = `"${ field }"="${ vals.join(`" OR "${ field }"="`) }"`;
+                //const fieldMatch = `"${ field }"::"${ vals.join(`" OR "${ field }"::"`) }"`;
                 match = match + (match ? ' OR ' : '') + fieldMatch;
             }
-            return `${ source } ${ match } | head 10000 | uniq `;
+            return `${ source } ${ match } | head 10000 `;
         } else {
             //[search Fireeye botnet] -> [ URL ] -> [ bluecoat ]
             //this is disjunctive on field matches
