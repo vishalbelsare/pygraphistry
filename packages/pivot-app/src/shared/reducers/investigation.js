@@ -7,10 +7,25 @@ import {
 
 import { combineReducers } from 'redux'
 import { Observable } from 'rxjs';
-import { SEARCH_PIVOT, INSERT_PIVOT, SPLICE_PIVOT, DISMISS_ALERT } from '../actions/investigation';
+import { SEARCH_PIVOT, INSERT_PIVOT, SPLICE_PIVOT, PLAY_INVESTIGATION, DISMISS_ALERT } from '../actions/investigation';
 import { combineEpics } from 'redux-observable';
 
-export const investigation = combineEpics(searchPivot, insertPivot, splicePivot, dismissAlert)
+export const investigation = combineEpics(searchPivot, insertPivot, splicePivot, playInvestigation, dismissAlert);
+
+export function playInvestigation(action$, store) {
+        return action$
+            .ofType(PLAY_INVESTIGATION)
+            .groupBy(({ id }) => id)
+            .mergeMap((actionsById) => actionsById.switchMap(
+                ({ stateKey, falcor, state, length, target }) => {
+                    return Observable
+                        .range(0, length)
+                        .concatMap((index) => falcor.call(`searchPivot`, [index]))
+                        .concat(falcor.call(`play`))
+                }
+            ))
+            .ignoreElements();
+}
 
 export function dismissAlert(action$, store) {
     return action$
@@ -31,8 +46,9 @@ export function searchPivot(action$, store) {
             .groupBy(({ id }) => id)
             .mergeMap((actionsById) => actionsById.switchMap(
                 ({ stateKey, falcor, state, index, target }) => {
-                    return falcor.call(`searchPivot`, [index])
-                .progressively()
+                    return Observable.from(falcor.set($value(`pivots['${index}']['enabled']`, true)))
+                       .concat(falcor.call(`searchPivot`, [index]))
+                       .concat(falcor.call(`play`))
                 }
             ))
             .ignoreElements();

@@ -4,8 +4,8 @@ import { tcell as tableCellClassName,
          insert as insertIconClassName,
          search as searchIconClassName } from './styles.less';
 import { setPivotValue, togglePivot } from '../actions/PivotRow';
-import { Button, Glyphicon, ButtonGroup, Badge, DropdownButton,
-    MenuItem, Tooltip, OverlayTrigger} from 'react-bootstrap'
+import { Badge, Button, ButtonGroup, ControlLabel, DropdownButton, FormControl, FormGroup,
+    Glyphicon, HelpBlock, MenuItem, OverlayTrigger, Tooltip, } from 'react-bootstrap'
 import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import _ from 'underscore';
@@ -26,6 +26,16 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
         </ButtonGroup>
         </div>
     );
+    //return (
+        //<div>
+        //<ButtonGroup style={{float:'right'}} >
+            //<Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus" /></Button>
+            //<Button onClick={(ev) => splicePivot({index})}><Glyphicon glyph="minus" /></Button>
+            //<Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="search" /></Button>
+        //</ButtonGroup>
+        //<Badge> {resultCount} </Badge>
+        //</div>
+    //);
 }
 
 const fieldToIndex = {
@@ -135,7 +145,7 @@ function renderPivotRow({id, rowIndex, enabled, resultCount, resultSummary, leng
                           onChange={(ev) => {
                               togglePivot({ rowIndex, enabled: ev })}
                           }
-                          unCheckedChildren={'Off'}/>
+                  unCheckedChildren={'Off'}/>
             </td>
             { fields.map((field, fldIndex) => renderPivotCellByIndex(
                 field, fldIndex,

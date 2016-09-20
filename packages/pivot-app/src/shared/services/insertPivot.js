@@ -11,7 +11,7 @@ export function insertPivot({ app, clickedIndex, investigation }) {
 
     pivotsById[pivot.id] = pivot;
     const nextIndex = clickedIndex + 1;
-    investigation.splice(nextIndex, 0, $ref(pivotRefPath));
+    investigation.pivots.splice(nextIndex, 0, $ref(pivotRefPath));
 
     return Observable.of({app, pivot, investigation, nextIndex });
 }

@@ -43,6 +43,7 @@ export function searchPivot({app, investigation, index }) {
     pivot.enabled = true;
 
     //{'Search': string, 'Mode': string, ...}
+    console.log('Pivot', pivot)
     const pivotFields =
         _.object(
             _.range(0, pivot.length)
