@@ -2,6 +2,7 @@ import _ from 'underscore';
 
 import ALERT_TEMPLATES from './pivotTemplatesAlert.js';
 import HEALTH_TEMPLATES from './pivotTemplatesHealth.js';
+import EVENT_GEN_TEMPLATES from './pivotTemplatesEventGen.js'
 
 
 const SEARCH_SPLUNK = {
@@ -61,8 +62,12 @@ function memoizeTemplate (templateName, templatePivots) {
 memoizeTemplate('splunk', [SEARCH_SPLUNK]);
 memoizeTemplate('alert_demo', [SEARCH_SPLUNK].concat(ALERT_TEMPLATES))
 memoizeTemplate('health_demo', [SEARCH_SPLUNK].concat(HEALTH_TEMPLATES));
+memoizeTemplate('event_gen', [SEARCH_SPLUNK].concat(EVENT_GEN_TEMPLATES));
 
-memoizeTemplate('all', [SEARCH_SPLUNK, SEARCH_SPLUNK_DATASET].concat(ALERT_TEMPLATES).concat(HEALTH_TEMPLATES));
+memoizeTemplate('all', [SEARCH_SPLUNK, SEARCH_SPLUNK_DATASET]
+    .concat(ALERT_TEMPLATES)
+    .concat(HEALTH_TEMPLATES)
+    .concat(EVENT_GEN_TEMPLATES));
 
 
 /*
