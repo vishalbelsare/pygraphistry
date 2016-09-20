@@ -1,5 +1,6 @@
 import { inspect } from 'util';
 const  { slice } = Array.prototype;
+import { Observable } from 'rxjs';
 import { mapObjectsToAtoms } from './mapObjectsToAtoms';
 import { captureErrorStacks } from './captureErrorStacks';
 
@@ -30,7 +31,7 @@ export function getHandler(lists, loader, props = {}) {
                     }
                 })
             ),
-            loader(state).map((data) => ({ data, idxs: { length: 0 } }))
+            Observable.defer(() => loader(state)).map((data) => ({ data, idxs: { length: 0 } }))
         );
 
         const values = loaded.mergeMap(({ data, idxs }) => {
