@@ -1,25 +1,46 @@
 import { simpleflake } from 'simpleflakes';
-import { ref as $ref } from '@graphistry/falcor-json-graph';
 import PivotTemplates from '../models/PivotTemplates';
 
 
-export function pivot(cols, values =
-    {'Search': 'Enter search query',
-    'Mode': PivotTemplates.get('all', 'Search Splunk').name,
-    'Input': 'Pivot 0',
-    'Links': '*',
-    'Time': '07/28/2016',
-    }, enabled=true,  id = simpleflake().toJSON()) {
+function toHackyModel(pivotModel) {
+    const cols = [
+        { name: 'Mode'},
+        { name: 'Input' },
+        { name: 'Search' },
+        { name: 'Links' },
+        { name: 'Time'}
+    ];
+
     return {
-        resultCount:0,
-        resultSummary: {entities: [], resultCount: 0},
-        enabled,
-        id,
+        ...pivotModel,
         length: cols.length,
-        ...Array
-            .from(cols)
-            .map((col) => ({
-                ...col, value:values[col.name]
-            }))
+        ...Array.from(cols).map((col) => ({
+            ...col,
+            value: pivotModel.pivotParameters[col.name.toLowerCase()]
+        }))
     };
+}
+
+export function createPivotModel(serializedPivot) {
+    const defaults = {
+        id: simpleflake().toJSON(),
+        enabled: false,
+        pivotParameters: {
+            search: 'Enter search query',
+            mode: PivotTemplates.get('all', 'Search Splunk').name,
+            input: 'none',
+            links: '*',
+            time: '09/21/2016'
+        }
+    }
+
+    const normalizedPivot = {...defaults, ...serializedPivot};
+
+    const initialSoftState = {
+        status: null,
+        resultCount: 0,
+        resultSummary: {entities: []},
+    }
+
+    return toHackyModel({...normalizedPivot, ...initialSoftState});
 }

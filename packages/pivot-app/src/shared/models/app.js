@@ -23,8 +23,6 @@ export function app(_investigations = [], id = simpleflake().toJSON()) {
         createInvestigation(inv, idx)
     );
 
-    const pivots = _.flatten(_investigations.map((i) => i.pivots));
-
     return {
 
         id,
@@ -86,8 +84,9 @@ export function app(_investigations = [], id = simpleflake().toJSON()) {
          *    }, ...
          *  }
          */
-        pivotsById: pivots.reduce((prev, cur, index, array) =>  ({
+        /*pivotsById: pivots.reduce((prev, cur, index, array) =>  ({
             ...prev, [cur.id]: cur
-        }), {})
+        }), {})*/
+        //pivotsById: []
     };
 }

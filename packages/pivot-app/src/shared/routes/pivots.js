@@ -1,11 +1,7 @@
 import {
-    pathValue as $pathValue
-} from '@graphistry/falcor-json-graph';
-
-import { getHandler,
-        setHandler,
-         mapObjectsToAtoms,
-         captureErrorStacks } from './support';
+    getHandler,
+    setHandler,
+} from './support';
 
 export function pivots({ loadPivotsById, calcTotals }) {
 
