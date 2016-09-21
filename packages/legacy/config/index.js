@@ -87,8 +87,11 @@ function defaults() {
 
         PYGRAPHISTRY: {
             minVersion: '0.9.0',
-            latestVersion: '0.9.27'
+            latestVersion: '0.9.30'
         },
+
+        RELEASE: 'June 2016: R1',  // human-readable, shown under logo
+        ARTIFACT: 'unavailable', // override w/ a docker or jenkins tag
 
         LOCAL_CACHE: true,
         LOCAL_CACHE_DIR: '/tmp/graphistry/data_cache',
