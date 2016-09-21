@@ -17,7 +17,7 @@ import { loadApp, loadInvestigations, loadPivots, loadRows, insertPivot,
 const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
 const globAsObservable =Observable.bindNodeCallback(glob);
 
-globAsObservable('appdata/investigations/*.json')
+globAsObservable('tests/appdata/investigations/*.json')
     .flatMap(x => x)
     .flatMap(file => {
         return readFileAsObservable(file).map(JSON.parse);
@@ -37,7 +37,7 @@ function init(investigations) {
         loadInvestigationsById: loadInvestigations(loadApp(app)),
         insertPivot, splicePivot, calcTotals, searchPivot, uploadGraph,
         loadRowsById: loadRows(loadApp(app)),
-        loadPivotsById: loadPivots(loadApp(app), 'appdata/pivots/*.json'),
+        loadPivotsById: loadPivots(loadApp(app), 'tests/appdata/pivots/*.json'),
     };
 
     const modules = reloadHot(module);
