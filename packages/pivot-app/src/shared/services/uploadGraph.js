@@ -76,10 +76,7 @@ const previousGraph = {
     labels: []
 };
 
-export function uploadGraph({app, investigation}) {
-
-    const pivotsById = app.pivotsById;
-
+export function uploadGraph({app, pivots}) {
     const name = ("splunkUpload" + simpleflake().toJSON())
     const type = "edgelist";
     const bindings = {
@@ -92,14 +89,12 @@ export function uploadGraph({app, investigation}) {
         labels: []
     };
 
-    var pivot;
-    for(let pivotRef of investigation.pivots) {
-        pivot = pivotsById[pivotRef.value[1]];
+    pivots.forEach(pivot => {
         if (pivot.results && pivot.enabled) {
             mergedPivots.graph = [...mergedPivots.graph, ...pivot.results.graph]
             mergedPivots.labels = [...mergedPivots.labels, ...pivot.results.labels];
         }
-    }
+    });
 
     // Hack for demo.
     const edges = mergedPivots.graph;
