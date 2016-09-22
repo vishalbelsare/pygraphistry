@@ -7,7 +7,7 @@ import {
 
 import { simpleflake } from 'simpleflakes';
 
-export function investigation(serializedInvestigation, index) {
+export function createInvestigationModel(serializedInvestigation, index) {
     const defaults = {
         name: `Investigation: ${index}`,
         url: 'http://www.graphistry.com',

@@ -6,7 +6,7 @@ import {
 } from '@graphistry/falcor-json-graph';
 
 import { simpleflake } from 'simpleflakes';
-import { investigation as createInvestigation } from '../models';
+import { createInvestigationModel } from '../models';
 import _ from 'underscore';
 
 const cols = [
@@ -20,7 +20,7 @@ const cols = [
 export function app(_investigations = [], id = simpleflake().toJSON()) {
 
     const investigations = _investigations.map((inv, idx) =>
-        createInvestigation(inv, idx)
+        createInvestigationModel(inv, idx)
     );
 
     return {
@@ -64,14 +64,7 @@ export function app(_investigations = [], id = simpleflake().toJSON()) {
             $ref(`investigationsById['${investigation.id}']`)
         )),
 
-        /**
-         *  pivots: [
-         *     $ref(`pivotsById['row-id-1']`) , ...
-         *  ]
-         */
-
         selectedInvestigation: $ref(`investigationsById['${investigations[0].id}']`),
-        //pivots: pivots,
 
         /**
          *  pivotsById: {
@@ -84,9 +77,6 @@ export function app(_investigations = [], id = simpleflake().toJSON()) {
          *    }, ...
          *  }
          */
-        /*pivotsById: pivots.reduce((prev, cur, index, array) =>  ({
-            ...prev, [cur.id]: cur
-        }), {})*/
-        //pivotsById: []
+        pivotsById: {}
     };
 }

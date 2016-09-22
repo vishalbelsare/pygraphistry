@@ -152,7 +152,7 @@ function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPi
                                 ];
 
                             })
-                            .catch(notifyClientOfErrors(investigation.id))
+                            .catch(notifyClientOfErrors(id))
                             .map(mapObjectsToAtoms);
                     } else {
                         return Observable.of([]);
@@ -160,20 +160,21 @@ function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPi
                 })
 
             })
-            .catch(captureErrorStacks)
+            .catch(notifyClientOfErrors(id))
     }
 }
 
-function notifyClientOfErrors(investigationId) {
+function notifyClientOfErrors(investigationIds) {
     return function(e) {
+        console.log(investigationIds)
         console.error(e);
 
         const status = {
             type: 'danger',
-            message: e.message
+            message: e.message || 'Unknown Error'
         };
 
-        const value = $pathValue(`investigationsById['${investigationId}'].status`, status);
+        const value = $pathValue(`investigationsById['${investigationIds}'].status`, status);
         return Observable.from([value]);
     }
 }
