@@ -10,7 +10,7 @@ import { simpleflake } from 'simpleflakes';
 export function investigation(investigation, index, id = simpleflake().toJSON()) {
     return {
         name: `Investigation: ${investigation.name || index}`,
-        url: investigation.url || 'http://www.graphistry.com',
+        url: investigation.url || process.env.BLANK_PAGE || 'http://www.graphistry.com',
         id: id,
         templates: 'all',
         status: null,
