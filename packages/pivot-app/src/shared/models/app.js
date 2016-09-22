@@ -27,7 +27,7 @@ export function app(_investigations = [], id = simpleflake().toJSON()) {
 
         id,
         title: 'Pivots',
-        url: 'http://www.graphistry.com/',
+        url: process.env.BLANK_PAGE || 'http://www.graphistry.com/',
 
         /**
          *  cols: {
