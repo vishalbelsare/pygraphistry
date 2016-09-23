@@ -24,10 +24,12 @@ export function app(_investigations = [], id = simpleflake().toJSON()) {
     );
 
     return {
-
         id,
         title: 'Pivots',
         url: 'http://www.graphistry.com/',
+        apiKey: 'd6a5bfd7b91465fa8dd121002dfc51b84148cd1f01d7a4c925685897ac26f40b',
+        vizService: 'https://labs.graphistry.com/graph/graph.html?play=500&bg=%23eeeeee&type=vgraph&info=true',
+        etlService: 'https://labs.graphistry.com/etl',
 
         /**
          *  cols: {

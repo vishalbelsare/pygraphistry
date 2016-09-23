@@ -37,14 +37,14 @@ function summarizeOutput ({labels}) {
 }
 
 
-export function searchPivot({app, investigation, pivot, index }) {
-    pivot.enabled = true;
-
+function searchSplunkPivot({app, pivot, index}) {
     //{'Search': string, 'Mode': string, ...}
     const pivotFields =
         _.object(
             _.range(0, pivot.length)
-                .map((i) => [pivot[i].name, pivot[i].value]));
+                .map((i) => [pivot[i].name, pivot[i].value])
+        );
+
     //TODO when constrained investigation pivotset templating, change 'all'-> investigation.templates
     const template = PivotTemplates.get('all', pivotFields.Mode);
 
@@ -52,23 +52,35 @@ export function searchPivot({app, investigation, pivot, index }) {
         throw new Error('Only expected Splunk transports, got: ' + template.transport);
     }
 
-    const searchQuery = template.splunk.toSplunk(investigation.pivots, app, pivotFields, pivotCache);
+    const searchQuery = template.splunk.toSplunk(null, app, pivotFields, pivotCache);
+
     console.log('======= Search ======')
     console.log(searchQuery);
+
     const splunkResults = searchSplunk(searchQuery)
         .do(({resultCount, output}) => {
             pivot.resultCount = resultCount;
         })
         .do((rows) => {
             pivotCache[index] = rows.output;
-            console.log('saved pivot ', index, '# results:', rows.output.length); })
+            console.log('saved pivot ', index, '# results:', rows.output.length);
+        })
         .map(({output}) => output);
-    var shapedResults = shapeSplunkResults(splunkResults, pivotFields, index, template.splunk.encodings, template.splunk.attributes)
+
+    return shapeSplunkResults(splunkResults, pivotFields, index,
+                              template.splunk.encodings, template.splunk.attributes)
         .do((results) => {
             pivot.results = results;
             pivot.resultSummary = summarizeOutput(results);
         })
-        .map((results) => ({app, investigation, pivot}));
-    return shapedResults;
+        .map((results) => ({app, pivot}));
+}
 
+
+export function searchPivot({loadPivotsById, pivotIds, index}) {
+    return loadPivotsById({pivotIds: pivotIds})
+        .mergeMap(({app, pivot}) => {
+            pivot.enabled = true;
+            return searchSplunkPivot({app, pivot, index})
+        })
 }

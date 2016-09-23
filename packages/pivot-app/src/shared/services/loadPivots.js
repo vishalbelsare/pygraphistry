@@ -17,13 +17,13 @@ export function loadPivots(loadApp, globPath, pivotsByIdCache = {}) {
     function loadPivotById(pivotId) {
         return pivots$
                 .filter(pivot => pivot.id === pivotId)
-                .map(createPivotModel)
     }
 
     const service = new SimpleServiceWithCache({
         loadApp: loadApp,
         resultName: 'pivot',
         loadById: loadPivotById,
+        createModel: createPivotModel,
         cache: pivotsByIdCache
     });
 

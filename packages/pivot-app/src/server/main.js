@@ -15,7 +15,7 @@ import { loadApp, loadInvestigations, loadPivots, loadRows, insertPivot,
 
 
 const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
-const globAsObservable =Observable.bindNodeCallback(glob);
+const globAsObservable = Observable.bindNodeCallback(glob);
 
 globAsObservable('tests/appdata/investigations/*.json')
     .flatMap(x => x)

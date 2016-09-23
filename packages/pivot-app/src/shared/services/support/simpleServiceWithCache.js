@@ -1,10 +1,11 @@
 import { Observable, ReplaySubject } from 'rxjs';
 
 export default class SimpleServiceWithCache {
-    constructor({loadApp, resultName, loadById, cache = {}}) {
+    constructor({loadApp, resultName, loadById, createModel, cache = {}}) {
         this.loadApp = loadApp;
         this.resultName = resultName;
         this.loadById = loadById;
+        this.createModel = createModel
         this.cache = cache;
     }
 
@@ -20,11 +21,25 @@ export default class SimpleServiceWithCache {
     }
 
     loadByIds(reqIds) {
+        const index = `${this.resultName}sById`
+
         return this.loadApp().mergeMap(
-            () => Observable.from(reqIds).flatMap((id) => this.lookupId(id)),
+            (app) => {
+                return Observable.from(reqIds)
+                    .flatMap((id) => {
+                        if (id in app[index]) {
+                            return Observable.from([app[index][id]])
+                        } else {
+                            return this.lookupId(id)
+                                .map(this.createModel)
+                                .do(result => app[index][id] = result)
+                        }
+                    })
+            },
             (app, result) => {
-                app[this.resultName] = result;
-                return app;
+                let res = {app: app}
+                res[this.resultName] = result;
+                return res;
             }
         )
     }

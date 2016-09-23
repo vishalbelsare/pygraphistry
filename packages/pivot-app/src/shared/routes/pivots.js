@@ -1,10 +1,15 @@
 import {
+    pathValue as $pathValue,
+    pathInvalidation as $invalidation
+} from '@graphistry/falcor-json-graph';
+import {
     getHandler,
     setHandler,
+    captureErrorStacks,
+    mapObjectsToAtoms
 } from './support';
 
-export function pivots({ loadPivotsById, calcTotals }) {
-
+export function pivots({loadPivotsById, calcTotals, searchPivot}) {
     const getPivotsHandler = getHandler(['pivot'], loadPivotsById);
     const setPivotsHandler = setHandler(['pivot'], loadPivotsById);
 
@@ -26,5 +31,27 @@ export function pivots({ loadPivotsById, calcTotals }) {
         get: getPivotsHandler,
         set: setPivotsHandler,
         route: `pivotsById[{keys}][{integers}]['name', 'value']`
+    }, {
+        route: `pivotsById[{keys}].searchPivot`,
+        call: searchPivotCallRoute({loadPivotsById, searchPivot})
     }];
+}
+
+function searchPivotCallRoute({loadPivotsById, searchPivot}) {
+    return function searchPivotCall(path, args) {
+        const pivotIds = path[1];
+        const index = args[0];
+
+        return searchPivot({loadPivotsById, pivotIds, index})
+            .mergeMap(({app, pivot}) => {
+                return [
+                    $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
+                    $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
+                    $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
+                ];
+
+            })
+            .map(mapObjectsToAtoms)
+            .catch(captureErrorStacks)
+    }
 }
