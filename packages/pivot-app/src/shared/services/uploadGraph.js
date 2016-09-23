@@ -57,32 +57,6 @@ function getQuery(key) {
     };
 }
 
-var simpleGraph = {
-    "name": "myUniqueGraphNamePaden",
-    "type": "edgelist",
-    "bindings": {
-        "sourceField": "src",
-        "destinationField": "dst",
-        //"idField": "node"
-    },
-    "graph": [
-        {"src": "myNode1", "dst": "myNode2",
-            "myEdgeField1": "I'm an edge!", "myCount": 7},
-            {"src": "myNode2", "dst": "myNode3",
-                "myEdgeField1": "I'm also an edge!", "myCount": 200}
-    ],
-    "labels": [
-        {"node": "myNode1",
-            "myNodeField1": "I'm a node!",
-            "pointColor": 5},
-            {"node": "myNode2",
-                "myNodeField1": "I'm a node too!",
-                "pointColor": 4},
-                {"node": "myNode3",
-                    "myNodeField1": "I'm a node three!",
-                    "pointColor": 4}
-    ]
-}
 
 const previousGraph = {
     graph: [],
@@ -90,23 +64,7 @@ const previousGraph = {
 };
 
 
-export function uploadGraph({loadInvestigationsById, loadPivotsById, investigationIds}) {
-    return loadInvestigationsById({investigationIds})
-        .mergeMap(
-            ({app, investigation}) => loadPivotsById({pivotIds: investigation.pivots.map(x => x.value[1])})
-                .map(({app, pivot}) => pivot)
-                .toArray()
-                .map(createGraph)
-                .switchMap(data => upload(app.etlService, app.apiKey, data))
-                .do((name) => {
-                    investigation.url = `${app.vizService}&dataset=${name}`;
-                    console.log('  URL: ', investigation.url);
-                }),
-            ({app, investigation}) => ({app, investigation})
-        )
-}
-
-export function createGraph(pivots) {
+function createGraph(pivots) {
     const name = ("splunkUpload" + simpleflake().toJSON())
     const type = "edgelist";
     const bindings = {
@@ -157,4 +115,21 @@ export function createGraph(pivots) {
     previousGraph.labels = uploadData.labels;
 
     return uploadData;
+}
+
+
+export function uploadGraph({loadInvestigationsById, loadPivotsById, investigationIds}) {
+    return loadInvestigationsById({investigationIds})
+        .mergeMap(
+            ({app, investigation}) => loadPivotsById({pivotIds: investigation.pivots.map(x => x.value[1])})
+                .map(({app, pivot}) => pivot)
+                .toArray()
+                .map(createGraph)
+                .switchMap(data => upload(app.etlService, app.apiKey, data))
+                .do((name) => {
+                    investigation.url = `${app.vizService}&dataset=${name}`;
+                    console.log('  URL: ', investigation.url);
+                }),
+            ({app, investigation}) => ({app, investigation})
+        )
 }
