@@ -50,7 +50,7 @@ export function searchPivot(action$, store) {
             .mergeMap((actionsById) => actionsById.switchMap(
                 ({ stateKey, falcor, state, index, target }) => {
                     return Observable.from(falcor.set($value(`pivots['${index}']['enabled']`, true)))
-                       .concat(falcor.call(['pivots', index, 'searchPivot'], [index]))
+                       .concat(falcor.call(['pivots', index, 'searchPivot']))
                        .concat(falcor.call(`play`))
                 }
             ))

@@ -37,7 +37,7 @@ function summarizeOutput ({labels}) {
 }
 
 
-function searchSplunkPivot({app, pivot, index}) {
+function searchSplunkPivot({app, pivot}) {
     //{'Search': string, 'Mode': string, ...}
     const pivotFields =
         _.object(
@@ -62,12 +62,12 @@ function searchSplunkPivot({app, pivot, index}) {
             pivot.resultCount = resultCount;
         })
         .do((rows) => {
-            pivotCache[index] = rows.output;
-            console.log('saved pivot ', index, '# results:', rows.output.length);
+            pivotCache[pivot.id] = rows.output;
+            console.log('saved pivot ', pivot.id, '# results:', rows.output.length);
         })
         .map(({output}) => output);
 
-    return shapeSplunkResults(splunkResults, pivotFields, index,
+    return shapeSplunkResults(splunkResults, pivotFields, pivot.id,
                               template.splunk.encodings, template.splunk.attributes)
         .do((results) => {
             pivot.results = results;
@@ -77,10 +77,10 @@ function searchSplunkPivot({app, pivot, index}) {
 }
 
 
-export function searchPivot({loadPivotsById, pivotIds, index}) {
+export function searchPivot({loadPivotsById, pivotIds}) {
     return loadPivotsById({pivotIds: pivotIds})
         .mergeMap(({app, pivot}) => {
             pivot.enabled = true;
-            return searchSplunkPivot({app, pivot, index})
+            return searchSplunkPivot({app, pivot})
         })
 }

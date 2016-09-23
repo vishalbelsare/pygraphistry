@@ -40,9 +40,8 @@ export function pivots({loadPivotsById, calcTotals, searchPivot}) {
 function searchPivotCallRoute({loadPivotsById, searchPivot}) {
     return function searchPivotCall(path, args) {
         const pivotIds = path[1];
-        const index = args[0];
 
-        return searchPivot({loadPivotsById, pivotIds, index})
+        return searchPivot({loadPivotsById, pivotIds})
             .mergeMap(({app, pivot}) => {
                 return [
                     $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
