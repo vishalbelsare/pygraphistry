@@ -5,13 +5,13 @@ var _ = require('underscore');
 
 var request = require('request');
 
-function upload(etlService, data) {
+function upload(etlService, apiKey, data) {
     const upload0Wrapped = Observable.bindNodeCallback(upload0.bind(null));
 
     if (data.graph.length === 0) {
         return Observable.throw(new Error('No edges to upload!'));
     }
-    return upload0Wrapped(etlService, data)
+    return upload0Wrapped(etlService, apiKey, data)
         .map(() =>  data.name)
 }
 
@@ -28,7 +28,7 @@ function upload0(etlService, apiKey, data, cb) {
 
     request.post({
         uri: etlService,
-        qs: query(apiKey),
+        qs: getQuery(apiKey),
         json: data,
         callback:
             function (err, resp, body) {
@@ -48,11 +48,13 @@ function upload0(etlService, apiKey, data, cb) {
 }
 
 
-function getQuery(key) = {
-    'key': key,
-    'agent': 'pivot-app',
-    'agentversion': '0.0.1',
-    'apiversion': 1,
+function getQuery(key) {
+    return {
+        'key': key,
+        'agent': 'pivot-app',
+        'agentversion': '0.0.1',
+        'apiversion': 1
+    };
 }
 
 var simpleGraph = {
@@ -92,14 +94,14 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, investigati
     return loadInvestigationsById({investigationIds})
         .mergeMap(
             ({app, investigation}) => loadPivotsById({pivotIds: investigation.pivots.map(x => x.value[1])})
-                    .map(({app, pivot}) => pivot)
-                    .toArray()
-                    .map(createGraph)
-                    .switchMap(data => upload(app.etlService, app.apiKey, data))
-                    .do((name) => {
-                        investigation.url = `${app.vizService}&dataset=${name}`;
-                        console.log('  URL: ', investigation.url);
-                    }),
+                .map(({app, pivot}) => pivot)
+                .toArray()
+                .map(createGraph)
+                .switchMap(data => upload(app.etlService, app.apiKey, data))
+                .do((name) => {
+                    investigation.url = `${app.vizService}&dataset=${name}`;
+                    console.log('  URL: ', investigation.url);
+                }),
             ({app, investigation}) => ({app, investigation})
         )
 }
