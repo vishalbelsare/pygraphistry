@@ -5,7 +5,8 @@ import {
             pathInvalidation as $invalidate
 } from '@graphistry/falcor-json-graph';
 
-import { combineReducers } from 'redux'
+import _ from 'underscore';
+import { combineReducers } from 'redux';
 import { Observable } from 'rxjs';
 import { SEARCH_PIVOT, INSERT_PIVOT, SPLICE_PIVOT, PLAY_INVESTIGATION, DISMISS_ALERT } from '../actions/investigation';
 import { combineEpics } from 'redux-observable';
@@ -18,10 +19,12 @@ export function playInvestigation(action$, store) {
             .groupBy(({ id }) => id)
             .mergeMap((actionsById) => actionsById.switchMap(
                 ({ stateKey, falcor, state, length, target }) => {
-                    return Observable
-                        .range(0, length)
-                        .concatMap((index) => falcor.call(`searchPivot`, [index]))
-                        .concat(falcor.call(`play`))
+                    const indices = _.range(0, length)
+                    return Observable.from(
+                            falcor.call(['pivots', indices, 'searchPivot'])
+                        ).concat(
+                            falcor.call('play')
+                        )
                 }
             ))
             .ignoreElements();
