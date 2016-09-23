@@ -1,6 +1,8 @@
+import { Observable } from 'rxjs';
 import {
     pathValue as $pathValue,
-    pathInvalidation as $invalidation
+    pathInvalidation as $invalidation,
+    error as $error
 } from '@graphistry/falcor-json-graph';
 import {
     getHandler,
@@ -41,16 +43,33 @@ function searchPivotCallRoute({loadPivotsById, searchPivot}) {
     return function searchPivotCall(path, args) {
         const pivotIds = path[1];
 
-        return searchPivot({loadPivotsById, pivotIds})
+        return Observable.defer(() => searchPivot({loadPivotsById, pivotIds}))
             .mergeMap(({app, pivot}) => {
+                console.log('NORMAL CLIENT RESPONSE PATH')
+                console.log(pivot.status)
                 return [
                     $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
                     $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
                     $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
+                    $pathValue(`pivotsById['${pivot.id}']['status']`, pivot.status)
                 ];
-
             })
             .map(mapObjectsToAtoms)
-            .catch(captureErrorStacks)
+            .catch(captureErrorAndNotifyClient(pivotIds))
+    }
+}
+
+function captureErrorAndNotifyClient(pivotIds) {
+    return function(e) {
+        console.log('HARD ERRORS', e)
+        captureErrorStacks(e);
+
+        console.log($error, $error('test'))
+        console.log($pathValue(`pivotsById['${pivotIds}']['status']`, $error('$error error')))
+
+        //return Observable.from([]);
+        return Observable.from([
+            $pathValue(`pivotsById['${pivotIds}']['status']`, $error('$error error'))
+        ]);
     }
 }

@@ -88,10 +88,9 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
 
 function playCallRoute({ loadInvestigationsById, loadPivotsById, uploadGraph }) {
     return function playInvestigationCall(path, args) {
-        console.log('Play was called!')
         const investigationIds = path[1];
 
-        return uploadGraph({loadInvestigationsById, loadPivotsById, investigationIds})
+        return Observable.defer(() => uploadGraph({loadInvestigationsById, loadPivotsById, investigationIds}))
             .mergeMap(({app, investigation}) => {
                 return [
                     $pathValue(`investigationsById['${investigationIds}'].url`, investigation.url),
@@ -115,5 +114,15 @@ function notifyClientOfErrors(investigationIds) {
 
         const value = $pathValue(`investigationsById['${investigationIds}'].status`, status);
         return Observable.from([value]);
+    }
+}
+
+function captureErrorAndNotifyClient(investigationIds) {
+    return function(e) {
+        captureErrorStacks(e);
+
+        return Observable.from([
+            $pathValue(`investigationsById['${investigationIds}']['status']`)
+        ]);
     }
 }

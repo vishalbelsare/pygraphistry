@@ -164,7 +164,7 @@ function renderPivotRow({id, rowIndex, enabled, resultCount, resultSummary, leng
 
 function mapStateToFragment({length = 0} = {}) {
     return `{
-        'enabled', 'resultCount', 'resultSummary', 'id', 'length', [0...${length}]: {
+        'enabled', 'status', 'resultCount', 'resultSummary', 'id', 'length', [0...${length}]: {
             value
         }
     }`;

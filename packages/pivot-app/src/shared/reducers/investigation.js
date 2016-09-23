@@ -22,9 +22,13 @@ export function playInvestigation(action$, store) {
                     const indices = _.range(0, length)
                     return Observable.from(
                             falcor.call(['pivots', indices, 'searchPivot'])
-                        ).concat(
-                            falcor.call('play')
-                        )
+                        ).catch(e => {
+                            console.error('redux', e)
+                            throw e
+                        })
+                    //.concat(
+                    //        falcor.call('play')
+                    //    )
                 }
             ))
             .ignoreElements();
@@ -51,7 +55,7 @@ export function searchPivot(action$, store) {
                 ({ stateKey, falcor, state, index, target }) => {
                     return Observable.from(falcor.set($value(`pivots['${index}']['enabled']`, true)))
                        .concat(falcor.call(['pivots', index, 'searchPivot']))
-                       .concat(falcor.call(`play`))
+                    //.concat(falcor.call(`play`))
                 }
             ))
             .ignoreElements();

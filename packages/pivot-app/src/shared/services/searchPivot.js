@@ -67,11 +67,15 @@ function searchSplunkPivot({app, pivot}) {
         })
         .map(({output}) => output);
 
+    null.fooo
+    //return Observable.throw(new Error('testme'))
+
     return shapeSplunkResults(splunkResults, pivotFields, pivot.id,
                               template.splunk.encodings, template.splunk.attributes)
         .do((results) => {
             pivot.results = results;
             pivot.resultSummary = summarizeOutput(results);
+            pivot.status = {ok: true};
         })
         .map((results) => ({app, pivot}));
 }
@@ -81,6 +85,16 @@ export function searchPivot({loadPivotsById, pivotIds}) {
     return loadPivotsById({pivotIds: pivotIds})
         .mergeMap(({app, pivot}) => {
             pivot.enabled = true;
+
             return searchSplunkPivot({app, pivot})
-        })
+                .catch(e => {
+                    console.error('SOFT ERROR')
+
+                    pivot.status = {
+                        ok: false,
+                        message: e.message || 'Unknown Error'
+                    };
+                    return Observable.of({app, pivot});
+                });
+        });
 }
