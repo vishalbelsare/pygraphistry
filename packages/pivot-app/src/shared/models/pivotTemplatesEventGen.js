@@ -22,16 +22,33 @@ const SEARCH_SPLUNK_EVENT_GEN = {
     }
 }
 
-const EXPAND_SEARCH_PALO_ALTO = {
-    name: 'Expand Palo Alto Search',
-    label: 'Query',
-    kind: 'text',
+const SEARCH_SPLUNK_EVENT_MAP = {
+    name: 'Map',
+    label: 'Any Dest IP in',
+    kind: 'button',
 
     transport: 'Splunk',
     splunk: {
         toSplunk: function(pivots, app, fields, pivotCache) {
+            const subsearch = `search ${SPLUNK_INDICES.EVENT_GEN} | search [| loadjob ${pivotCache[0].splunkSearchID} | fields dest | dedup dest ] | fields dest, src | fields  - _*`;
+            return subsearch;
+        },
+        fields: [
+            'dest',
+            'src'
+        ],
+    }
+}
+
+const EXPAND_SEARCH_PALO_ALTO = {
+    name: 'Expand Palo Alto Search',
+    label: 'Query',
+    kind: 'text',
+    transport: 'Splunk',
+    splunk: {
+        toSplunk: function(pivots, app, fields, pivotCache) {
             const rawSearch = `[${fields['Search']}] -[url]-> [${SPLUNK_INDICES.EVENT_GEN}]`
-            return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this.fields)}`;
+            return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
         fields: [
             'url',
@@ -136,5 +153,5 @@ const SEARCH_PALO_ALTO_DEST_TO_SRC = {
 export default [
     SEARCH_SPLUNK_EVENT_GEN, SEARCH_PALO_ALTO, SEARCH_PALO_ALTO_USER_TO_DEST,
     SEARCH_PALO_ALTO_DEST_TO_URL, SEARCH_PALO_ALTO_DEST_TO_SRC,
-    SEARCH_PALO_ALTO_DEST_TO_THREAT, EXPAND_SEARCH_PALO_ALTO
+    SEARCH_PALO_ALTO_DEST_TO_THREAT, EXPAND_SEARCH_PALO_ALTO, SEARCH_SPLUNK_EVENT_MAP
 ]

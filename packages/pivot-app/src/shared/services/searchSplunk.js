@@ -79,7 +79,7 @@ export function searchSplunk(searchQuery, callback) {
                 output[i][field] = value;
               }
             }
-            return {output, resultCount: job.properties().resultCount};
+            return {output, resultCount: job.properties().resultCount, splunkSearchID: job.sid};
         }
     )
 }

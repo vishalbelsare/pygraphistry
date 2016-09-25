@@ -26,7 +26,7 @@ function buildLookup(text, pivotCache) {
             var match = '';
             for (var i = 0; i < fields.length; i++) {
                 const field = fields[i];
-                const vals = _.uniq(_.map(pivotCache[search.match(/\d+/)[0]], function (row) {
+                const vals = _.uniq(_.map(pivotCache[search.match(/\d+/)[0]].results, function (row) {
                     return row[field];
                 }));
                 console.log('the vals:', vals, 'length', vals.length);

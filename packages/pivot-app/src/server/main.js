@@ -14,6 +14,7 @@ import { loadApp, loadInvestigations, loadPivots, loadRows, insertPivot,
          splicePivot, calcTotals, searchPivot, uploadGraph } from '../shared/services';
 
 
+
 const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
 const globAsObservable =Observable.bindNodeCallback(glob);
 

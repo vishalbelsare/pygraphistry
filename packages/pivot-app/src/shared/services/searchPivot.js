@@ -53,15 +53,16 @@ export function searchPivot({app, investigation, pivot, index }) {
     }
 
     const searchQuery = template.splunk.toSplunk(investigation.pivots, app, pivotFields, pivotCache);
+    pivot.searchQuery = searchQuery;
     console.log('======= Search ======')
     console.log(searchQuery);
     const splunkResults = searchSplunk(searchQuery)
         .do(({resultCount, output}) => {
             pivot.resultCount = resultCount;
         })
-        .do((rows) => {
-            pivotCache[index] = rows.output;
-            console.log('saved pivot ', index, '# results:', rows.output.length); })
+        .do(({output, splunkSearchID}) => {
+            pivotCache[index] = { results: output, query:searchQuery, search: pivotFields['Search'], splunkSearchID };
+            console.log('saved pivot ', index, '# results:', output.length); })
         .map(({output}) => output);
     var shapedResults = shapeSplunkResults(splunkResults, pivotFields, index, template.splunk)
         .do((results) => {
