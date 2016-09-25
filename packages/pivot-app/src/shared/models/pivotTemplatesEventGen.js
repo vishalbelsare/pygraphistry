@@ -24,19 +24,19 @@ const SEARCH_SPLUNK_EVENT_GEN = {
 
 const SEARCH_SPLUNK_EVENT_MAP = {
     name: 'Map',
-    label: 'Any Dest IP in',
-    kind: 'button',
+    label: 'Query',
+    kind: 'text',
 
     transport: 'Splunk',
     splunk: {
         toSplunk: function(pivots, app, fields, pivotCache) {
-            const subsearch = `search ${SPLUNK_INDICES.EVENT_GEN} | search [| loadjob ${pivotCache[0].splunkSearchID} | fields dest | dedup dest ] | fields dest, src | fields  - _*`;
-            return subsearch;
+            const [source, dest] = fields['Search'].split(',');
+            console.log('Source', source, 'Dest', dest);
+            const subsearch = `[| loadjob ${pivotCache[0].splunkSearchID} |  fields ${source} | dedup ${source}]`;
+            return `search ${SPLUNK_INDICES.EVENT_GEN} | search ${subsearch} | fields ${source}, ${dest} | fields  - _*`;
         },
-        fields: [
-            'dest',
-            'src'
-        ],
+        //source: 'dest',
+        //dest: 'src'
     }
 }
 
