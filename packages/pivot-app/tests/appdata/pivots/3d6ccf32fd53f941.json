@@ -2,7 +2,7 @@
     "pivotParameters": {
         "mode": "Search Splunk",
         "input": "none",
-        "search": "malware",
+        "search": "malware | fields dest_ip, misc",
         "time": "09/23/2016"
     },
     "enabled": false,
