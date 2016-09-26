@@ -7,7 +7,6 @@ function toHackyModel(pivotModel) {
         { name: 'Mode'},
         { name: 'Input' },
         { name: 'Search' },
-        { name: 'Links' },
         { name: 'Time'}
     ];
 
@@ -29,7 +28,6 @@ export function createPivotModel(serializedPivot) {
             search: 'Enter search query',
             mode: PivotTemplates.get('all', 'Search Splunk').name,
             input: 'none',
-            links: '*',
             time: '09/21/2016'
         }
     }

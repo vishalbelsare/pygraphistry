@@ -67,8 +67,7 @@ function searchSplunkPivot({app, pivot}) {
         })
         .map(({output}) => output);
 
-    return shapeSplunkResults(splunkResults, pivotFields, pivot.id,
-                              template.splunk.encodings, template.splunk.attributes)
+    return shapeSplunkResults(splunkResults, pivotFields, pivot.id, template.splunk)
         .do((results) => {
             pivot.results = results;
             pivot.resultSummary = summarizeOutput(results);

@@ -3,7 +3,6 @@
         "mode": "Expand with Blue Coat",
         "input": "Pivot 1",
         "search": "",
-        "links": "*",
         "time": "09/21/2016"
     },
     "enabled": false,

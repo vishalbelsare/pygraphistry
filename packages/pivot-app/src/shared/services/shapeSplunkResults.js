@@ -14,11 +14,11 @@ const SKIP = {
 };
 
 
-export function shapeSplunkResults(splunkResults, pivotDict, index, encodings, attributes) {
-    const destination = pivotDict['Search'];
-    const connections = pivotDict['Links'];
-    const connectionsArray = connections.split(',').map((connection) => connection.trim());
-    const isStar = connectionsArray.indexOf('*') != -1;
+export function shapeSplunkResults(splunkResults, pivotDict, index, template) {
+    const encodings = template.encodings;
+    const attributes = template.attributes;
+    const connectionsArray = template.links;
+    const isStar = (connectionsArray === undefined) || (connectionsArray.indexOf('*') != -1);
 
     return splunkResults
         .map(function(rows) {
