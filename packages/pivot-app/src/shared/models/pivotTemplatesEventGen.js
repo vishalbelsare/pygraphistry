@@ -30,12 +30,15 @@ const USER_TO_DEST_IP = {
     transport: 'Splunk',
     splunk: {
         toSplunk: function(pivots, app, fields, pivotCache) {
-            return `search ${SPLUNK_INDICES.EVENT_GEN} ${fields['Search']} | fields action, user, dest
-            | rename _cd AS EventID
-            | fields - _*
-            | head 100`
+            return `search ${SPLUNK_INDICES.EVENT_GEN} ${fields['Search']}
+                ${constructFieldString(this)}
+                | head 100`;
             //return `search ${SPLUNK_INDICES.EVENT_GEN} ${fields['Search']} | head 1000 | fields - _*`
         },
+        connections: [
+            'user',
+            'dest'
+        ],
         attributes: [
             'action',
         ]

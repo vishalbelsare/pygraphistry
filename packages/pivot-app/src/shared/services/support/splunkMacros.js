@@ -76,7 +76,7 @@ function pivotToTemplate () {
 }
 
 export function constructFieldString(pivotTemplate) {
-    const fields = (pivotTemplate.fields || [])
+    const fields = (pivotTemplate.connections || [])
         .concat(pivotTemplate.attributes || []);
     return `| rename _cd as EventID | fields "EventID" "${fields.join('","')}" | fields - _*`;
 }

@@ -77,7 +77,7 @@ const SEARCH_FIREEYE = {
         toSplunk: function (pivots, app, fields, pivotCache) {
             return `search EventID=${ fields['Search'] } ${SPLUNK_INDICES.FIREEYE} ${constructFieldString(this)}`;
         },
-        fields: FIREEYE_FIELDS,
+        connections: FIREEYE_FIELDS,
         encodings: ALERT_DEMO_ENCODINGS
     }
 };
@@ -95,7 +95,7 @@ const FIREEYE = {
                 `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.FIREEYE}]`;
             return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
-        fields: FIREEYE_FIELDS,
+        connections: FIREEYE_FIELDS,
         encodings: ALERT_DEMO_ENCODINGS
     }
 };
@@ -113,7 +113,7 @@ const BLUECOAT = {
                 `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.BLUECOAT}]`;
             return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
-        fields: [
+        connections: [
             'Fire Eye URL',
             'External IPs'
         ],
@@ -134,7 +134,7 @@ const FIREWALL = {
                 `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.FIREWALL}]`;
             return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
-        fields: [
+        connections: [
             'External IPs',
             'Internal IPs'
         ],
