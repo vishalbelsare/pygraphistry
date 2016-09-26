@@ -11,7 +11,7 @@ import { Observable } from 'rxjs';
 import { SEARCH_PIVOT, INSERT_PIVOT, SPLICE_PIVOT, PLAY_INVESTIGATION, DISMISS_ALERT } from '../actions/investigation';
 import { combineEpics } from 'redux-observable';
 
-export const investigation = combineEpics(searchPivot, insertPivot, splicePivot, playInvestigation, dismissAlert);
+export const investigation = combineEpics(searchPivot, insertPivot, splicePivot, playInvestigation, dismissAlert)
 
 export function playInvestigation(action$, store) {
         return action$
@@ -22,13 +22,9 @@ export function playInvestigation(action$, store) {
                     const indices = _.range(0, length)
                     return Observable.from(
                             falcor.call(['pivots', indices, 'searchPivot'])
-                        ).catch(e => {
-                            console.error('redux', e)
-                            throw e
-                        })
-                    //.concat(
-                    //        falcor.call('play')
-                    //    )
+                        ).concat(
+                            falcor.call('play')
+                        );
                 }
             ))
             .ignoreElements();
@@ -54,8 +50,8 @@ export function searchPivot(action$, store) {
             .mergeMap((actionsById) => actionsById.switchMap(
                 ({ stateKey, falcor, state, index, target }) => {
                     return Observable.from(falcor.set($value(`pivots['${index}']['enabled']`, true)))
-                       .concat(falcor.call(['pivots', index, 'searchPivot']))
-                    //.concat(falcor.call(`play`))
+                        .concat(falcor.call(['pivots', index, 'searchPivot']))
+                        .concat(falcor.call(`play`))
                 }
             ))
             .ignoreElements();

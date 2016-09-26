@@ -37,7 +37,7 @@ export function createPivotModel(serializedPivot) {
     const normalizedPivot = {...defaults, ...serializedPivot};
 
     const initialSoftState = {
-        status: null,
+        status: {ok: true},
         resultCount: 0,
         resultSummary: {entities: []},
     }

@@ -5,7 +5,7 @@ import { tcell as tableCellClassName,
          search as searchIconClassName } from './styles.less';
 import { setPivotValue, togglePivot } from '../actions/PivotRow';
 import { Badge, Button, ButtonGroup, ControlLabel, DropdownButton, FormControl, FormGroup,
-    Glyphicon, HelpBlock, MenuItem, OverlayTrigger, Tooltip, } from 'react-bootstrap'
+    Glyphicon, HelpBlock, MenuItem, OverlayTrigger, Tooltip, Alert } from 'react-bootstrap'
 import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import _ from 'underscore';
@@ -134,7 +134,17 @@ function renderPivotCellByIndex (
 };
 
 
-function renderPivotRow({id, rowIndex, enabled, resultCount, resultSummary, length, fields, searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot}) {
+function renderPivotRow({id, status, rowIndex, enabled, resultCount, resultSummary, length, fields,
+                         searchPivot, togglePivot, setPivotValue, splicePivot, insertPivot}) {
+
+    const statusIndicator =
+        status.ok ?
+            (<div/>)
+        :
+            (<Alert bsStyle={'danger'} className={styles.alert}>
+                <strong> {status.message} </strong>
+            </Alert>)
+
     return (
         <tr id={"pivotRow" + id} className={styles['row-toggled-' + (enabled ? 'on' : 'off')]}>
             <td className={styles.pivotToggle}>
@@ -156,8 +166,8 @@ function renderPivotRow({id, rowIndex, enabled, resultCount, resultSummary, leng
             <td className={styles.pivotIcons}>
                 <ResultCount index={rowIndex} resultCount={resultCount} searchPivot={searchPivot}
                     insertPivot={insertPivot} splicePivot={splicePivot}/>
+                {statusIndicator}
             </td>
-
         </tr>
     );
 }
@@ -173,8 +183,8 @@ function mapStateToFragment({length = 0} = {}) {
 function mapFragmentToProps(fragment) {
     //const output =  { pivots: fragment, name: fragment.name, length: fragment.length};
     //console.log('output', output);
-    const {id, length, resultCount, resultSummary, enabled} = fragment;
-    return {id, length, fields:fragment, enabled, resultCount, resultSummary};
+    const {id, status, length, resultCount, resultSummary, enabled} = fragment;
+    return {id, status, length, fields:fragment, enabled, resultCount, resultSummary};
 }
 
 export default container(

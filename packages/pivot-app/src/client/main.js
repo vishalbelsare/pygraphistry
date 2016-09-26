@@ -50,6 +50,7 @@ function getAppModel() {
         JSONWithHashCodes: true,
         scheduler: Scheduler.asap,
         source: new DataSource('/model.json'),
+        treatErrorsAsValues: true,
         // onChangesCompleted: function () {
         //     useLocalStorage &&
         //     localStorage && localStorage.setItem && localStorage.setItem(

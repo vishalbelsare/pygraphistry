@@ -67,9 +67,6 @@ function searchSplunkPivot({app, pivot}) {
         })
         .map(({output}) => output);
 
-    null.fooo
-    //return Observable.throw(new Error('testme'))
-
     return shapeSplunkResults(splunkResults, pivotFields, pivot.id,
                               template.splunk.encodings, template.splunk.attributes)
         .do((results) => {
@@ -88,8 +85,6 @@ export function searchPivot({loadPivotsById, pivotIds}) {
 
             return searchSplunkPivot({app, pivot})
                 .catch(e => {
-                    console.error('SOFT ERROR')
-
                     pivot.status = {
                         ok: false,
                         message: e.message || 'Unknown Error'

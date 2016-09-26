@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import { simpleflake } from 'simpleflakes';
 import {
     pathValue as $pathValue,
     pathInvalidation as $invalidation,
@@ -8,6 +9,7 @@ import {
     getHandler,
     setHandler,
     captureErrorStacks,
+    logErrorWithCode,
     mapObjectsToAtoms
 } from './support';
 
@@ -27,7 +29,7 @@ export function pivots({loadPivotsById, calcTotals, searchPivot}) {
     }, {
         returns: `String`,
         get: getPivotsHandler,
-        route: `pivotsById[{keys}]['id', 'total', 'resultCount', 'resultSummary']`
+        route: `pivotsById[{keys}]['id', 'total', 'resultCount', 'resultSummary', 'status']`
     }, {
         returns: `String | Number`,
         get: getPivotsHandler,
@@ -45,8 +47,6 @@ function searchPivotCallRoute({loadPivotsById, searchPivot}) {
 
         return Observable.defer(() => searchPivot({loadPivotsById, pivotIds}))
             .mergeMap(({app, pivot}) => {
-                console.log('NORMAL CLIENT RESPONSE PATH')
-                console.log(pivot.status)
                 return [
                     $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
                     $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
@@ -61,15 +61,15 @@ function searchPivotCallRoute({loadPivotsById, searchPivot}) {
 
 function captureErrorAndNotifyClient(pivotIds) {
     return function(e) {
-        console.log('HARD ERRORS', e)
-        captureErrorStacks(e);
+        const errorCode = logErrorWithCode(e);
+        const status = {
+            ok: false,
+            code: errorCode,
+            message: `Server Error (code: ${errorCode})`
+        }
 
-        console.log($error, $error('test'))
-        console.log($pathValue(`pivotsById['${pivotIds}']['status']`, $error('$error error')))
-
-        //return Observable.from([]);
         return Observable.from([
-            $pathValue(`pivotsById['${pivotIds}']['status']`, $error('$error error'))
+            $pathValue(`pivotsById['${pivotIds}']['status']`, $error(status))
         ]);
     }
 }
