@@ -1,6 +1,6 @@
-{ 
+{
     "id": "3d6cb21fbf0d004d" ,
-    "name": "Very Mal Ware",
+    "name": "Malware",
     "templates": "all",
     "pivots": [
         "3d6ccf32fd53f941",
