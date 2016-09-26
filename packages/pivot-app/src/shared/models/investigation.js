@@ -7,15 +7,24 @@ import {
 
 import { simpleflake } from 'simpleflakes';
 
-export function investigation(investigation, index, id = simpleflake().toJSON()) {
-    return {
-        name: `Investigation: ${investigation.name || index}`,
-        url: investigation.url || process.env.BLANK_PAGE || 'http://www.graphistry.com',
-        id: id,
-        templates: 'all',
+export function createInvestigationModel(serializedInvestigation, index) {
+    const defaults = {
+        name: `Investigation: ${index}`,
+        url: process.env.BLANK_PAGE || 'http://www.graphistry.com',
+        id: simpleflake().toJSON(),
+        pivots: []
+    }
+
+    const normalizedInvestigation = {...defaults, ...serializedInvestigation};
+
+    const initialSoftState = {
         status: null,
-        pivots: investigation.pivots.map((pivot) => $ref(`pivotsById['${pivot.id}']`))
-    };
+        pivots: normalizedInvestigation.pivots.map((pivotId) =>
+            $ref(`pivotsById['${pivotId}']`)
+        )
+    }
+
+    return {...normalizedInvestigation, ...initialSoftState};
 }
 
 

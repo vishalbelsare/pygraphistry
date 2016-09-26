@@ -1,0 +1,11 @@
+{
+    "pivotParameters": {
+        "mode": "Search Splunk",
+        "input": "none",
+        "search": "malware",
+        "links": "dest_ip, misc",
+        "time": "09/23/2016"
+    },
+    "enabled": false,
+    "id": "3d6ccf32fd53f941"
+}

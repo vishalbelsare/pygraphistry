@@ -1,0 +1,11 @@
+{
+    "pivotParameters": {
+        "mode": "Search FireEye",
+        "input": "none",
+        "search": "BR08ZA4a",
+        "links": "*",
+        "time": "09/21/2016"
+    },
+    "enabled": false,
+    "id": "3d71f90b9596e46b"
+}

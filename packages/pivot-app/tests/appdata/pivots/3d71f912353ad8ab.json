@@ -1,0 +1,11 @@
+{
+    "pivotParameters": {
+        "mode": "Expand with Firewall",
+        "input": "Pivot 2",
+        "search": "",
+        "links": "*",
+        "time": "09/21/2016"
+    },
+    "enabled": false,
+    "id": "3d71f912353ad8ab"
+}

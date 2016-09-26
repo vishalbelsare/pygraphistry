@@ -1,0 +1,11 @@
+{ 
+    "id": "3d71c8f6113b8758",
+    "name": "Bootnet",
+    "templates": "all",
+    "pivots": [
+        "3d71f90b9596e46b",
+        "3d71f91065dea000",
+        "3d71f91439c3fb52",
+        "3d71f912353ad8ab"
+    ]
+}

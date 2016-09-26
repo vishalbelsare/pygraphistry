@@ -89,26 +89,30 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
     };
 }
 
-function playCallRoute({ loadInvestigationsById, searchPivot, uploadGraph }) {
+function playCallRoute({ loadInvestigationsById, loadPivotsById, uploadGraph }) {
     return function playInvestigationCall(path, args) {
         console.log('Play was called!')
         const id = path[1];
         const index = args[0];
+
         return loadInvestigationsById({investigationIds: id})
-        .mergeMap(
-            ({app, investigation}) => {
-                if ( !investigation.status) {
-                    console.log('Upload graph')
-                    return uploadGraph({ app, investigation })
-                } else {
-                    return Observable.empty();
-                }
-            }
-            ,
-            ({app, investigation}, name) => ({
-                app, index, name, investigation
-            })
-        )
+            .mergeMap(
+                ({app, investigation}) => {
+                    if (!investigation.status) {
+                        return loadPivotsById({pivotIds: investigation.pivots.map(x => x.value[1])})
+                            .map(({app, pivot}) => pivot)
+                            .reduce((acc, x) => acc.concat([x]), [])
+                            .switchMap(pivots => {
+                                return uploadGraph({app, pivots: pivots})
+                            })
+                    } else {
+                        return Observable.empty();
+                    }
+                },
+                ({app, investigation}, name) => ({
+                    app, index, name, investigation
+                })
+            )
         .mergeMap(({investigation, name }) => {
             investigation.url = (process.env.GRAPHISTRY_VIEWER || process.env.GRAPHISTRY || 'https://labs.graphistry.com')
                 + '/graph/graph.html?play=500&bg=%23eeeeee&type=vgraph&info=true&dataset=' + name;
@@ -120,55 +124,57 @@ function playCallRoute({ loadInvestigationsById, searchPivot, uploadGraph }) {
 
             return values;
         })
-        .catch((e) => {
-            console.log(e)
-            const status = {type: 'danger', 'message': e.message};
-            const values = [$pathValue(`investigationsById['${id}'].status`, status)];
-            return Observable.from(values);
-        })
+        .catch(notifyClientOfErrors(id))
         .map(mapObjectsToAtoms)
         .catch(captureErrorStacks)
     }
 }
 
-function searchPivotCallRoute({ loadInvestigationsById, searchPivot, uploadGraph }) {
+function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPivot}) {
     return function searchPivotCall(path, args) {
         const id = path[1];
         const index = args[0];
+
         return loadInvestigationsById({investigationIds: id})
-        .mergeMap(
-            ({app, investigation}) => {
-                const pivots = investigation.pivots;
-                const { pivotsById } = app;
-
+            .mergeMap(({app, investigation}) => {
                 const pivotId = investigation.pivots[index].value[1];
-                const pivot = pivotsById[pivotId];
-                if (pivot.enabled) {
-                    return searchPivot({ app, investigation, pivot, index })
-                        .mergeMap(({investigation, pivot, app }) => {
-                            investigation.status = null
-                            const values = [
-                                $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
-                                $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
-                                $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
-                                $pathValue(`investigationsById['${id}'].status`, null)
-                            ];
 
-                            return values;
-                        })
-                        .catch((e) => {
-                            console.log(e)
-                            const status = {type: 'danger', 'message': e.message};
-                            investigation.status = status
-                            const values = [$pathValue(`investigationsById['${id}'].status`, status)];
-                            return Observable.from(values);
-                        })
-                        .map(mapObjectsToAtoms)
-                        .catch(captureErrorStacks);
-                } else {
-                    return Observable.of([])
-                }
-            }
-        )
+                return loadPivotsById({pivotIds: [pivotId]}).mergeMap(({app, pivot}) => {
+                    if (pivot.enabled) { //TODO Suspicious
+                        return searchPivot({app, investigation, pivot, index})
+                            .mergeMap(({investigation, pivot, app}) => {
+                                investigation.status = null
+                                return [
+                                    $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
+                                    $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
+                                    $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
+                                    $pathValue(`investigationsById['${id}'].status`, null)
+                                ];
+
+                            })
+                            .catch(notifyClientOfErrors(id))
+                            .map(mapObjectsToAtoms);
+                    } else {
+                        return Observable.of([]);
+                    }
+                })
+
+            })
+            .catch(notifyClientOfErrors(id))
+    }
+}
+
+function notifyClientOfErrors(investigationIds) {
+    return function(e) {
+        console.log(investigationIds)
+        console.error(e);
+
+        const status = {
+            type: 'danger',
+            message: e.message || 'Unknown Error'
+        };
+
+        const value = $pathValue(`investigationsById['${investigationIds}'].status`, status);
+        return Observable.from([value]);
     }
 }

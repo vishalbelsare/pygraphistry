@@ -37,13 +37,10 @@ function summarizeOutput ({labels}) {
 }
 
 
-export function searchPivot({app, investigation, index }) {
-    const id = investigation.pivots[index].value[1];
-    const pivot = app.pivotsById[id];
+export function searchPivot({app, investigation, pivot, index }) {
     pivot.enabled = true;
 
     //{'Search': string, 'Mode': string, ...}
-    console.log('Pivot', pivot)
     const pivotFields =
         _.object(
             _.range(0, pivot.length)
