@@ -22,8 +22,8 @@ const SEARCH_SPLUNK_EVENT_GEN = {
     }
 }
 
-const USER_TO_DEST_IP = {
-    name: 'PAN - User to Dest IP',
+const PAN_SEARCH_TO_USER_DEST = {
+    name: 'PAN - Search to user/dest',
     label: 'Query',
     kind: 'text',
 
@@ -45,6 +45,31 @@ const USER_TO_DEST_IP = {
     }
 };
 
+const PAN_SEARCH_TO_USER_DEST_GROUPED = {
+    name: 'PAN - From Search to user/dest (grouped)',
+    label: 'Query',
+    kind: 'text',
+
+    transport: 'Splunk',
+    splunk: {
+        toSplunk: function(pivots, app, fields, pivotCache) {
+            const search = fields['Search'];
+            return `search ${SPLUNK_INDICES.EVENT_GEN} | search ${search} |  stats count, min(_time), max(_time) values(dest_port) by dest user |
+                 convert ctime(min(_time)) as startTime, ctime(max(_time)) as endTime | fields  - _*, min(_time), max(_time)`;
+        },
+        connections: [
+            'dest',
+            'user'
+        ],
+        attributes: [
+            'count',
+            'startTime',
+            'endTime',
+            'values(dest_port)'
+        ]
+    }
+};
+
 const SEARCH_SPLUNK_EVENT_MAP = {
     name: 'Map',
     label: 'Query',
@@ -62,8 +87,8 @@ const SEARCH_SPLUNK_EVENT_MAP = {
     }
 }
 
-const PALO_ALTO_DEST_TO_USER = {
-    name: 'PAN - dest to user',
+const PAN_DEST_TO_USER = {
+    name: 'PAN - From dest to user',
     label: 'Query',
     kind: 'text',
 
@@ -72,8 +97,12 @@ const PALO_ALTO_DEST_TO_USER = {
         toSplunk: function(pivots, app, fields, pivotCache) {
             const index = fields['Search'];
             const subsearch = `[| loadjob ${pivotCache[index].splunkSearchID} |  fields dest | dedup dest]`;
-            return `search ${SPLUNK_INDICES.EVENT_GEN} | search ${subsearch} |  fields dest, user, action | fields - _*`;
+            return `search ${SPLUNK_INDICES.EVENT_GEN} | search ${subsearch} ${constructFieldString(this)}`;
         },
+        connections: [
+            'dest',
+            'user'
+        ],
         attributes: [
             'action',
             'count',
@@ -84,8 +113,8 @@ const PALO_ALTO_DEST_TO_USER = {
     }
 }
 
-const PALO_ALTO_DEST_TO_USER_GROUPED = {
-    name: 'PAN - dest to user grouped',
+const PAN_DEST_TO_USER_GROUPED = {
+    name: 'PAN - From dest to user (grouped)',
     label: 'Query',
     kind: 'text',
 
@@ -97,6 +126,10 @@ const PALO_ALTO_DEST_TO_USER_GROUPED = {
             return `search ${SPLUNK_INDICES.EVENT_GEN} | search ${subsearch} |  stats count, min(_time), max(_time) values(dest_port) by dest user |
                  convert ctime(min(_time)) as startTime, ctime(max(_time)) as endTime | fields  - _*, min(_time), max(_time)`;
         },
+        connections: [
+            'dest',
+            'user'
+        ],
         attributes: [
             'count',
             'startTime',
@@ -104,10 +137,10 @@ const PALO_ALTO_DEST_TO_USER_GROUPED = {
             'values(dest_port)'
         ]
     }
-}
+};
 
-const PALO_ALTO_DEST_TO_SOURCE = {
-    name: 'PAN - dest to source',
+const PAN_DEST_TO_SRC_GROUPED = {
+    name: 'PAN - From dest to src (grouped)',
     label: 'Query',
     kind: 'text',
 
@@ -119,6 +152,10 @@ const PALO_ALTO_DEST_TO_SOURCE = {
             return `search ${SPLUNK_INDICES.EVENT_GEN} | search ${subsearch} |  stats count, min(_time), max(_time) values(dest_port) by dest src |
                  convert ctime(min(_time)) as startTime, ctime(max(_time)) as endTime | fields  - _*, min(_time), max(_time)`;
         },
+        connections: [
+            'dest',
+            'user'
+        ],
         attributes: [
             'count',
             'startTime',
@@ -126,7 +163,7 @@ const PALO_ALTO_DEST_TO_SOURCE = {
             'values(dest_port)'
         ]
     }
-}
+};
 
 const EXPAND_SEARCH_PALO_ALTO = {
     name: 'Expand Palo Alto Search',
@@ -239,8 +276,5 @@ const SEARCH_PALO_ALTO_DEST_TO_SRC = {
 }
 
 export default [
-    SEARCH_SPLUNK_EVENT_GEN, SEARCH_PALO_ALTO, SEARCH_PALO_ALTO_USER_TO_DEST,
-    SEARCH_PALO_ALTO_DEST_TO_URL, SEARCH_PALO_ALTO_DEST_TO_SRC,
-    SEARCH_PALO_ALTO_DEST_TO_THREAT, EXPAND_SEARCH_PALO_ALTO, SEARCH_SPLUNK_EVENT_MAP,
-    PALO_ALTO_DEST_TO_SOURCE, USER_TO_DEST_IP, PALO_ALTO_DEST_TO_USER, PALO_ALTO_DEST_TO_USER_GROUPED
+    PAN_SEARCH_TO_USER_DEST, PAN_DEST_TO_USER, PAN_DEST_TO_USER_GROUPED, PAN_SEARCH_TO_USER_DEST_GROUPED
 ]
