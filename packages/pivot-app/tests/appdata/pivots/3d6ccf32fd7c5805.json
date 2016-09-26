@@ -3,7 +3,6 @@
         "mode": "Search Splunk",
         "input": "Pivot 0",
         "search": "Input Splunk Query",
-        "links": "Connect to Attributes",
         "time": "09/22/2016"
     },
     "enabled": false,
