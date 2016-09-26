@@ -40,6 +40,29 @@ const SEARCH_SPLUNK_EVENT_MAP = {
     }
 }
 
+const PALO_ALTO_DEST_TO_SOURCE = {
+    name: 'pan - dest to source',
+    label: 'Query',
+    kind: 'text',
+
+    transport: 'Splunk',
+    splunk: {
+        toSplunk: function(pivots, app, fields, pivotCache) {
+            const [source, dest] = fields['Search'].split(',');
+            console.log('Source', source, 'Dest', dest);
+            const subsearch = `[| loadjob ${pivotCache[0].splunkSearchID} |  fields ${source} | dedup ${source}]`;
+            return `search ${SPLUNK_INDICES.EVENT_GEN} | search ${subsearch} |  stats count, min(_time), max(_time) values(dest_port) by ${source} ${dest} |
+                 convert ctime(min(_time)) as startTime, ctime(max(_time)) as endTime | fields  - _*`;
+        },
+        attributes: [
+            'count',
+            'startTime',
+            'endTime',
+            'values(dest_port)'
+        ]
+    }
+}
+
 const EXPAND_SEARCH_PALO_ALTO = {
     name: 'Expand Palo Alto Search',
     label: 'Query',
@@ -153,5 +176,5 @@ const SEARCH_PALO_ALTO_DEST_TO_SRC = {
 export default [
     SEARCH_SPLUNK_EVENT_GEN, SEARCH_PALO_ALTO, SEARCH_PALO_ALTO_USER_TO_DEST,
     SEARCH_PALO_ALTO_DEST_TO_URL, SEARCH_PALO_ALTO_DEST_TO_SRC,
-    SEARCH_PALO_ALTO_DEST_TO_THREAT, EXPAND_SEARCH_PALO_ALTO, SEARCH_SPLUNK_EVENT_MAP
+    SEARCH_PALO_ALTO_DEST_TO_THREAT, EXPAND_SEARCH_PALO_ALTO, SEARCH_SPLUNK_EVENT_MAP, PALO_ALTO_DEST_TO_SOURCE
 ]
