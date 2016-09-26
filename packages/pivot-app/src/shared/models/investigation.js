@@ -10,7 +10,7 @@ import { simpleflake } from 'simpleflakes';
 export function createInvestigationModel(serializedInvestigation, index) {
     const defaults = {
         name: `Investigation: ${index}`,
-        url: 'http://www.graphistry.com',
+        url: process.env.BLANK_PAGE || 'http://www.graphistry.com',
         id: simpleflake().toJSON(),
         pivots: []
     }
