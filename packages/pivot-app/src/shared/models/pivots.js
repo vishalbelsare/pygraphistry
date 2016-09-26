@@ -7,7 +7,6 @@ function toHackyModel(pivotModel) {
         { name: 'Mode'},
         { name: 'Input' },
         { name: 'Search' },
-        { name: 'Links' },
         { name: 'Time'}
     ];
 

@@ -39,7 +39,11 @@ const SEARCH_SPLUNK_DATASET = {
                     node.pointColor = DATASET_ERROR_NODE_COLORS[node.type];
                 }
             }
-        }
+        },
+        links: [
+            'msg',
+            'dataset'
+        ]
     }
 };
 

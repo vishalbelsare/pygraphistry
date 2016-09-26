@@ -3,7 +3,6 @@
         "mode": "Search Splunk (dataset)",
         "input": "none",
         "search": "(hosts=staging* OR labs*) (level=60 OR 50 OR 40) (source=/var/log/graphistry-json/*.log)",
-        "links": "*",
         "time": "09/21/2016"
     },
     "enabled": false,
