@@ -18,6 +18,24 @@ const SEARCH_SPLUNK = {
     }
 };
 
+const SEARCH_SPLUNK_MAP = {
+    name: 'Splunk Map',
+    label: 'Query',
+    kind: 'text',
+
+    transport: 'Splunk',
+    splunk: {
+        toSplunk: function(pivots, app, fields, pivotCache) {
+            const [source, dest] = fields['Search'].split(',');
+            console.log('Source', source, 'Dest', dest);
+            const subsearch = `[| loadjob ${pivotCache[0].splunkSearchID} |  fields ${source} | dedup ${source}]`;
+            return `search ${subsearch} | fields ${source}, ${dest} | dedup 10 ${source} ${dest} | fields  - _*`;
+        },
+        //source: 'dest',
+        //dest: 'src'
+    }
+}
+
 const DATASET_ERROR_NODE_COLORS = {
     'dataset': 1,
     'msg': 5,
@@ -64,7 +82,7 @@ memoizeTemplate('alert_demo', [SEARCH_SPLUNK].concat(ALERT_TEMPLATES))
 memoizeTemplate('health_demo', [SEARCH_SPLUNK].concat(HEALTH_TEMPLATES));
 memoizeTemplate('event_gen', [SEARCH_SPLUNK].concat(EVENT_GEN_TEMPLATES));
 
-memoizeTemplate('all', [SEARCH_SPLUNK, SEARCH_SPLUNK_DATASET]
+memoizeTemplate('all', [SEARCH_SPLUNK, SEARCH_SPLUNK_DATASET, SEARCH_SPLUNK_MAP]
     .concat(ALERT_TEMPLATES)
     .concat(HEALTH_TEMPLATES)
     .concat(EVENT_GEN_TEMPLATES));
