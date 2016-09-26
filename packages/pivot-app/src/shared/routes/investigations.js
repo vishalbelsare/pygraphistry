@@ -1,13 +1,17 @@
 import {
     pathValue as $pathValue,
-    pathInvalidation as $invalidation
+    pathInvalidation as $invalidation,
+    error as $error
 } from '@graphistry/falcor-json-graph';
 import { Observable } from 'rxjs';
 
-import { getHandler,
+import {
+    getHandler,
     setHandler,
     mapObjectsToAtoms,
-    captureErrorStacks } from './support';
+    captureErrorStacks,
+    logErrorWithCode
+} from './support';
 
 export function investigations({ loadInvestigationsById, loadPivotsById, searchPivot, splicePivot, insertPivot, uploadGraph }) {
 
@@ -61,29 +65,30 @@ function splicePivotCallRoute({ loadInvestigationsById, splicePivot }) {
 
 function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
     return function insertPivotCall(path, args) {
-        const id = path[1];
-        const clickedIndex = args[0];
-        return loadInvestigationsById({investigationIds: id})
-            .mergeMap(
-            ({ app, investigation}) => insertPivot({ app, clickedIndex, id, investigation })
-        )
-        .mergeMap(({ investigation, nextIndex }) => {
-            const pivots = investigation.pivots
-            const length = pivots.length;
-            const values = [
-                $pathValue(`investigationsById['${id}']['pivots'].length`, length),
-                $pathValue(`investigationsById['${id}']['pivots'][${nextIndex}]`, pivots[nextIndex]),
-            ];
+        const investigationIds = path[1];
+        const pivotIndex = args[0];
 
-            if (nextIndex < length - 1) {
-                values.push($invalidation(`investigationsById['${id}']['pivots'][${nextIndex + 1}..${length - 1}]`));
-            }
+        return Observable.defer(() => insertPivot({loadInvestigationsById, investigationIds, pivotIndex}))
+            .mergeMap(({investigation, insertedIndex}) => {
+                const pivots = investigation.pivots
+                const length = pivots.length;
 
-            return values;
-        })
-        .map(mapObjectsToAtoms)
-        .catch(captureErrorStacks);
-    };
+                const values = [
+                    $pathValue(`investigationsById['${investigation.id}']['pivots'].length`, length),
+                    $pathValue(`investigationsById['${investigation.id}']['pivots'][${insertedIndex}]`, pivots[insertedIndex]),
+                ];
+
+                if (insertedIndex < length - 1) { // Inserted pivot is not the last one in the list
+                    values.push($invalidation(
+                        `investigationsById['${investigation.id}']['pivots'][${insertedIndex + 1}..${length - 1}]`
+                    ));
+                }
+
+                return values;
+            })
+            .map(mapObjectsToAtoms)
+            .catch(captureErrorAndNotifyClient(investigationIds));
+    }
 }
 
 function playCallRoute({ loadInvestigationsById, loadPivotsById, uploadGraph }) {
