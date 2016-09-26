@@ -36,7 +36,7 @@ export function dismissAlert(action$, store) {
         .groupBy(({ id }) => id)
         .mergeMap((actionsById) => actionsById.switchMap(
             ({ falcor}) => {
-                return falcor.set($value(`['status']`, null))
+                return falcor.set($value(`['status']`, {ok: true}))
                 .progressively()
             }
         ))

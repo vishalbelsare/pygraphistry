@@ -18,7 +18,7 @@ export function createInvestigationModel(serializedInvestigation, index) {
     const normalizedInvestigation = {...defaults, ...serializedInvestigation};
 
     const initialSoftState = {
-        status: null,
+        status: {ok: true},
         pivots: normalizedInvestigation.pivots.map((pivotId) =>
             $ref(`pivotsById['${pivotId}']`)
         )

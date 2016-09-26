@@ -18,8 +18,8 @@ function renderInvestigation({length = 0, templates = 'all', status, name = 'def
     const cellWidth = Math.round(88 / (4));
     return (
         <div className={styles.pivots}>
-            { status ?
-            <Alert bsStyle={status.type} className={styles.alert} onDismiss={dismissAlert}>
+            { !status.ok ?
+            <Alert bsStyle={'danger'} className={styles.alert} onDismiss={dismissAlert}>
                 <strong> {status.message} </strong>
             </Alert>
             : null
@@ -27,7 +27,7 @@ function renderInvestigation({length = 0, templates = 'all', status, name = 'def
             <Table>
                 <thead>
                     <tr>
-                    <th className={styles.pivotToggle}> 
+                    <th className={styles.pivotToggle}>
                         <ButtonGroup vertical block style={{float:'left'}} >
                             <Button onClick={(ev) => playInvestigation({length: pivots.length})}><Glyphicon glyph="play-circle" /></Button>
                         </ButtonGroup>
@@ -82,6 +82,7 @@ export default container(
         searchPivot: searchPivot,
         playInvestigation: playInvestigation,
         searchPivot: searchPivot,
+        dismissAlert: dismissAlert,
     }
 )(renderInvestigation)
 

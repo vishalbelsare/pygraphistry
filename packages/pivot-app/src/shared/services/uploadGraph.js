@@ -129,6 +129,13 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, investigati
                 .do((name) => {
                     investigation.url = `${app.vizService}&dataset=${name}`;
                     console.log('  URL: ', investigation.url);
+                })
+                .catch(e => {
+                    investigation.status = {
+                        ok: false,
+                        message: e.message || 'Unknown Error'
+                    };
+                    return Observable.of({});
                 }),
             ({app, investigation}) => ({app, investigation})
         )

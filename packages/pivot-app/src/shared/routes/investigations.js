@@ -94,35 +94,25 @@ function playCallRoute({ loadInvestigationsById, loadPivotsById, uploadGraph }) 
             .mergeMap(({app, investigation}) => {
                 return [
                     $pathValue(`investigationsById['${investigationIds}'].url`, investigation.url),
-                    $invalidation(`investigationsById['${investigationIds}'].status`)
+                    $pathValue(`investigationsById['${investigationIds}'].status`, investigation.status)
                 ];
             })
             .map(mapObjectsToAtoms)
-            .catch(captureErrorStacks);
-    }
-}
-
-function notifyClientOfErrors(investigationIds) {
-    return function(e) {
-        console.log(investigationIds)
-        console.error(e);
-
-        const status = {
-            type: 'danger',
-            message: e.message || 'Unknown Error'
-        };
-
-        const value = $pathValue(`investigationsById['${investigationIds}'].status`, status);
-        return Observable.from([value]);
+            .catch(captureErrorAndNotifyClient(investigationIds));
     }
 }
 
 function captureErrorAndNotifyClient(investigationIds) {
     return function(e) {
-        captureErrorStacks(e);
+        const errorCode = logErrorWithCode(e);
+        const status = {
+            ok: false,
+            code: errorCode,
+            message: `Server Error (code: ${errorCode})`
+        }
 
         return Observable.from([
-            $pathValue(`investigationsById['${investigationIds}']['status']`)
+            $pathValue(`investigationsById['${investigationIds}']['status']`, $error(status))
         ]);
     }
 }
