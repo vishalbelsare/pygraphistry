@@ -45,21 +45,19 @@ export function investigations({ loadInvestigationsById, loadPivotsById, searchP
 
 function splicePivotCallRoute({ loadInvestigationsById, splicePivot }) {
     return function splicePivotCall(path, args) {
-        const id = path[1];
-        const index = args[0];
-        return loadInvestigationsById({investigationIds: id})
-            .mergeMap(
-                ({ app, investigation}) => splicePivot({ app, index, id, investigation })
-        )
-        .mergeMap(({ investigation }) => {
-            const values = [
-                $pathValue(`investigationsById['${id}'].length`, investigation.pivots.length),
-                $invalidation(`investigationsById['${id}']['pivots'][${0}..${investigation.pivots.length}]`),
-            ];
-            return values;
-        })
-        .map(mapObjectsToAtoms)
-        .catch(captureErrorStacks);
+        const investigationIds = path[1];
+        const pivotIndex = args[0];
+
+        return Observable.defer(() => splicePivot({loadInvestigationsById, investigationIds,
+                                                   pivotIndex, deleteCount: 1}))
+            .mergeMap(({app, investigation}) => {
+                return [
+                    $pathValue(`investigationsById['${investigationIds}']['pivots'].length`, investigation.pivots.length),
+                    $invalidation(`investigationsById['${investigationIds}']['pivots'][${0}..${investigation.pivots.length}]`)
+                ];
+            })
+            .map(mapObjectsToAtoms)
+            .catch(captureErrorAndNotifyClient(investigationIds));
     };
 }
 
