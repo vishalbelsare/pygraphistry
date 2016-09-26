@@ -6,6 +6,13 @@ import _  from 'underscore';
 
 //Do not make these nodes in '*' mode
 const SKIP = {
+
+    'count': true,
+    'endTime': true,
+    'values(dest_port)': true,
+    'startTime': true,
+    'endTime': true,
+
     'AdmissionEndDate': true,
     'AdmissionStartDate': true,
     'LabDateTime': true,
