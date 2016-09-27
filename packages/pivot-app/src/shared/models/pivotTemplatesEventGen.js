@@ -90,6 +90,8 @@ const PAN_SEARCH_TO_USER_THREAT = {
             'threat_name'
         ],
         attributes: [
+            'vendor_action',
+            'category',
             'time',
             'url',
             'severity',
@@ -141,8 +143,10 @@ const PAN_USER_TO_THREAT = {
             'threat_name'
         ],
         attributes: [
+            'vendor_action',
             'time',
             'action',
+            'category',
             'severity',
             'url',
         ],
