@@ -6,6 +6,31 @@ const SPLUNK_INDICES = {
     PAN: 'index=event_gen | search vendor="Palo Alto Networks"'
 }
 
+const PAN_NODE_COLORS = {
+    'EventID': 7,
+    'user': 1,
+    'dest': 3,
+    'threat_name': 5,
+}
+
+const PAN_NODE_SIZES = {
+    'EventID': 0.1,
+    'dest': 1.1,
+    'user': 5,
+    'threat_name': 10
+}
+
+const PAN_ENCODINGS = {
+    point: {
+        pointColor: function(node) {
+            node.pointColor = PAN_NODE_COLORS[node.type];
+        },
+        pointSizes: function(node) {
+            node.pointSize = PAN_NODE_SIZES[node.type];
+        }
+    }
+}
+
 const SEARCH_SPLUNK_EVENT_GEN = {
     name: 'Search Splunk (event gen)',
     label: 'Query',
@@ -66,7 +91,8 @@ const PAN_SEARCH_TO_USER_THREAT = {
         attributes: [
             'severity',
             'action'
-        ]
+        ],
+        encodings: PAN_ENCODINGS
     }
 };
 
@@ -115,7 +141,8 @@ const PAN_USER_TO_THREAT = {
             'action',
             'severity',
             'url',
-        ]
+        ],
+        encodings: PAN_ENCODINGS
     }
 }
 
