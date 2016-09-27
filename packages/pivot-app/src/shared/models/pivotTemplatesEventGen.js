@@ -67,6 +67,7 @@ const PAN_SEARCH_TO_USER_DEST = {
         ],
         attributes: [
             'action',
+            'time'
         ]
     }
 };
@@ -89,6 +90,8 @@ const PAN_SEARCH_TO_USER_THREAT = {
             'threat_name'
         ],
         attributes: [
+            'time',
+            'url',
             'severity',
             'action'
         ],
@@ -138,6 +141,7 @@ const PAN_USER_TO_THREAT = {
             'threat_name'
         ],
         attributes: [
+            'time',
             'action',
             'severity',
             'url',
