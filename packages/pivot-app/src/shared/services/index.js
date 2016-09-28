@@ -2,7 +2,6 @@ export * from './loadApp';
 export * from './loadInvestigations';
 export * from './newInvestigation';
 export * from './insertPivot';
-export * from './loadRows';
 export * from './loadPivots';
 export * from './splicePivot';
 export * from './searchPivot';
