@@ -1,7 +1,6 @@
 import { container } from '@graphistry/falcor-react-redux';
 import { Table, Alert } from 'react-bootstrap';
 import PivotRow from './PivotRow';
-//import PivotTable from './PivotTable';
 import { table as tableClassName,
     tbody as tableBodyClassName,
     thead as tableHeaderClassName} from './styles.less';
