@@ -33,9 +33,19 @@ export function searchSplunk(searchQuery, callback) {
         earliest_time: "1980-06-20T16:27:43.000-07:00"
     };
 
-    service.getJob(searchJobId, splunkNameSpace, (err, job) => {
-        job ? console.log('Job with id:', searchJobId, ' already exists!') : console.log('No job found');
-    });
+    const getJobObservable = Observable.bindNodeCallback(service.getJob.bind(service));
+
+    getJobObservable(searchJobId, splunkNameSpace).subscribe(
+        function () {
+            console.log('Next: success!');
+        },
+        function (err) {
+            console.log('Error ' + err);
+        },
+        function () {
+            console.log('Retrieved job successfully');
+        }
+    );
 
     // Run a blocking search and get back a job
     var output;
