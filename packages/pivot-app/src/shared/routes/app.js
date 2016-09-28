@@ -4,7 +4,6 @@ import {
     pathValue as $pathValue,
     pathInvalidation as $invalidation,
 } from '@graphistry/falcor-json-graph';
-import { createInvestigation } from '../services';
 import {
     getHandler,
     setHandler,

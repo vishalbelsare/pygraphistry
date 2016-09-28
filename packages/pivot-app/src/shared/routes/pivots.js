@@ -12,7 +12,7 @@ import {
     mapObjectsToAtoms
 } from './support';
 
-export function pivots({loadPivotsById, calcTotals, searchPivot}) {
+export function pivots({loadPivotsById, searchPivot}) {
     const getPivotsHandler = getHandler(['pivot'], loadPivotsById);
     const setPivotsHandler = setHandler(['pivot'], loadPivotsById);
 
