@@ -1,4 +1,5 @@
 var splunkjs = require('splunk-sdk');
+var stringHash = require('string-hash');
 import { Observable } from 'rxjs';
 import { pivotToSearchString, pivotIdToSearchString, expandTemplate }
   from './support/splunkMacros.js';
@@ -16,22 +17,34 @@ service.login(function(err, success) {
 
 export function searchSplunk(searchQuery, callback) {
 
-    // Set the search parameters
-    var searchParams = {
-      exec_mode: "blocking",
-      earliest_time: "1980-06-20T16:27:43.000-07:00"
+    const searchJobId = `pivot-app::${stringHash(searchQuery)}`;
+
+    console.log('Search job id', searchJobId);
+
+    const splunkNameSpace = {
+        owner: 'padentomasello',
+        app: 'search'
     };
 
-    // A blocking search returns the job's SID when the search is done
-    console.log("Wait for the search to finish...", searchQuery);
+    // Set the search parameters
+    const searchParams = {
+        id: searchJobId,
+        exec_mode: "blocking",
+        earliest_time: "1980-06-20T16:27:43.000-07:00"
+    };
+
+    service.getJob(searchJobId, splunkNameSpace, (err, job) => {
+        job ? console.log('Job with id:', searchJobId, ' already exists!') : console.log('No job found');
+    });
 
     // Run a blocking search and get back a job
     var output;
 
     var serviceObservable = Observable.bindNodeCallback(service.search.bind(service));
     var serviceResult = serviceObservable(
-      searchQuery,
-      searchParams
+        searchQuery,
+        searchParams,
+        splunkNameSpace
     );
 
 
