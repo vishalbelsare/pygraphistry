@@ -13,7 +13,8 @@ import {
     logErrorWithCode
 } from './support';
 
-export function investigations({ loadInvestigationsById, saveInvestigationsById, loadPivotsById,
+export function investigations({ loadInvestigationsById, saveInvestigationsById,
+                                 loadPivotsById, cloneInvestigationsById,
                                  searchPivot, splicePivot, insertPivot, uploadGraph }) {
 
 
@@ -45,6 +46,9 @@ export function investigations({ loadInvestigationsById, saveInvestigationsById,
     }, {
         route: `investigationsById[{keys}].save`,
         call: saveCallRoute({ loadInvestigationsById, loadPivotsById, saveInvestigationsById})
+    }, {
+        route: `investigationsById[{keys}].clone`,
+        call: cloneCallRoute({ loadInvestigationsById, loadPivotsById, cloneInvestigationsById})
     }];
 }
 
@@ -115,6 +119,20 @@ function saveCallRoute({ loadInvestigationsById, loadPivotsById, saveInvestigati
         const investigationIds = path[1];
 
         return Observable.defer(() => saveInvestigationsById({loadInvestigationsById, loadPivotsById, investigationIds}))
+            .mergeMap(({app, investigation}) => [])
+            .map(mapObjectsToAtoms)
+            .catch(captureErrorAndNotifyClient(investigationIds));
+    }
+}
+
+
+import {cloneInvestigationModel} from '../models';
+function cloneCallRoute({ loadInvestigationsById, loadPivotsById, cloneInvestigationsById }) {
+
+    return function(path, args) {
+        const investigationIds = path[1];
+
+        return Observable.defer(() => loadInvestigationsById(investigationIds))
             .mergeMap(({app, investigation}) => {
                 return [];
             })

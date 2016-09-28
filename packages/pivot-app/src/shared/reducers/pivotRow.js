@@ -1,23 +1,25 @@
 import {
-    pathValue as $value,
+    pathValue as $pathValue,
 } from '@graphistry/falcor-json-graph';
 import { combineReducers } from 'redux'
-import { SET_PIVOT_VALUE, TOGGLE_PIVOT } from '../actions/pivotRow';
+import {
+    TOGGLE_PIVOT,
+    SET_PIVOT_PARAMETERS
+} from '../actions/pivotRow';
 import { Observable } from 'rxjs';
+import _ from 'underscore';
 import { combineEpics } from 'redux-observable';
 
+export const pivot = combineEpics(togglePivot, setPivotParameters);
 
-
-export const pivot = combineEpics(setPivotValue, togglePivot);
-
-export function setPivotValue(action$, store) {
+function togglePivot(action$, store) {
     return action$
-        .ofType(SET_PIVOT_VALUE)
+        .ofType(TOGGLE_PIVOT)
         .groupBy(({ id }) => id)
-        .mergeMap((actionsById) => actionsById.debounceTime(100).switchMap(
-            ({ stateKey, falcor, state, index, target, id }) => {
+        .mergeMap((actionsById) => actionsById.switchMap(
+            ({ falcor, index, enabled}) => {
                 return falcor.set(
-                    $value(`[${index}]['value']`, target)
+                    $pathValue(`['enabled']`, enabled)
                 )
                     .progressively()
             }
@@ -25,17 +27,17 @@ export function setPivotValue(action$, store) {
         .ignoreElements();
 }
 
-export function togglePivot(action$, store) {
+function setPivotParameters(action$, store) {
     return action$
-        .ofType(TOGGLE_PIVOT)
-        .groupBy(({ id }) => id)
-        .mergeMap((actionsById) => actionsById.switchMap(
-            ({ falcor, index, enabled}) => {
-                return falcor.set(
-                    $value(`['enabled']`, enabled)
+        .ofType(SET_PIVOT_PARAMETERS)
+        .mergeMap(({falcor, params}) =>
+            Observable.from(
+                _.map(params, (value, key) =>
+                    falcor.set(
+                        $pathValue(['pivotParameters', key], value)
+                    )
                 )
-                    .progressively()
-            }
-        ))
+            ).mergeAll()
+        )
         .ignoreElements();
 }

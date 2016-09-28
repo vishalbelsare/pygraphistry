@@ -28,12 +28,13 @@ export function pivots({loadPivotsById, searchPivot}) {
     }, {
         returns: `String`,
         get: getPivotsHandler,
-        route: `pivotsById[{keys}]['id', 'total', 'resultCount', 'resultSummary', 'status']`
+        route: `pivotsById[{keys}]['id', 'total', 'resultCount', 'resultSummary',
+                                   'status', 'pivotParameters', 'pivotParameterKeys']`
     }, {
         returns: `String | Number`,
         get: getPivotsHandler,
         set: setPivotsHandler,
-        route: `pivotsById[{keys}][{integers}]['name', 'value']`
+        route: `pivotsById[{keys}]['pivotParameters']['mode', 'input', 'search', 'time']`
     }, {
         route: `pivotsById[{keys}].searchPivot`,
         call: searchPivotCallRoute({loadPivotsById, searchPivot})

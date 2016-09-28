@@ -24,6 +24,9 @@ export function createPivotModel(serializedPivot) {
     const defaults = {
         id: simpleflake().toJSON(),
         enabled: false,
+        pivotParameterKeys: [
+            'mode', 'input', 'search', 'time'
+        ],
         pivotParameters: {
             search: 'Enter search query',
             mode: PivotTemplates.get('all', 'Search Splunk').name,
@@ -40,5 +43,5 @@ export function createPivotModel(serializedPivot) {
         resultSummary: {entities: []},
     }
 
-    return toHackyModel({...normalizedPivot, ...initialSoftState});
+    return {...normalizedPivot, ...initialSoftState};
 }

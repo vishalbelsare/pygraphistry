@@ -59,6 +59,8 @@ function saveInvestigation(action$, store) {
 function copyInvestigation(action$, store) {
     return action$
         .ofType(COPY_INVESTIGATION)
-        .do(a => console.log('copypy',a.id))
+        .mergeMap(({falcor, id}) =>
+            Observable.from(falcor.call(['investigationsById', id, 'clone']))
+        )
         .ignoreElements();
 }

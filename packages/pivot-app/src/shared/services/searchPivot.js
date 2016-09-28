@@ -38,21 +38,14 @@ function summarizeOutput ({labels}) {
 
 
 function searchSplunkPivot({app, pivot}) {
-    //{'Search': string, 'Mode': string, ...}
-    const pivotFields =
-        _.object(
-            _.range(0, pivot.length)
-                .map((i) => [pivot[i].name, pivot[i].value])
-        );
-
     //TODO when constrained investigation pivotset templating, change 'all'-> investigation.templates
-    const template = PivotTemplates.get('all', pivotFields.Mode);
+    const template = PivotTemplates.get('all', pivot.pivotParameters.mode);
 
     if (template.transport !== 'Splunk') {
         throw new Error('Only expected Splunk transports, got: ' + template.transport);
     }
 
-    const searchQuery = template.splunk.toSplunk(null, app, pivotFields, pivotCache);
+    const searchQuery = template.splunk.toSplunk(null, app, pivot.pivotParameters, pivotCache);
 
     console.log('======= Search ======')
     console.log(searchQuery);
@@ -67,7 +60,7 @@ function searchSplunkPivot({app, pivot}) {
         })
         .map(({output}) => output);
 
-    return shapeSplunkResults(splunkResults, pivotFields, pivot.id, template.splunk)
+    return shapeSplunkResults(splunkResults, pivot.pivotParameters, pivot.id, template.splunk)
         .do((results) => {
             pivot.results = results;
             pivot.resultSummary = summarizeOutput(results);
