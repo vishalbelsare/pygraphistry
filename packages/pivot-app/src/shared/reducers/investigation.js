@@ -1,19 +1,31 @@
 import {
-        ref as $ref,
-            atom as $atom,
-            pathValue as $value,
-            pathInvalidation as $invalidate
+    ref as $ref,
+    atom as $atom,
+    pathValue as $value,
+    pathInvalidation as $invalidate
 } from '@graphistry/falcor-json-graph';
 
 import _ from 'underscore';
 import { combineReducers } from 'redux';
 import { Observable } from 'rxjs';
-import { SEARCH_PIVOT, INSERT_PIVOT, SPLICE_PIVOT, PLAY_INVESTIGATION, DISMISS_ALERT } from '../actions/investigation';
+import {
+    SEARCH_PIVOT,
+    INSERT_PIVOT,
+    SPLICE_PIVOT,
+    PLAY_INVESTIGATION,
+    DISMISS_ALERT
+} from '../actions/investigation';
 import { combineEpics } from 'redux-observable';
 
-export const investigation = combineEpics(searchPivot, insertPivot, splicePivot, playInvestigation, dismissAlert)
+export const investigation = combineEpics(
+    searchPivot,
+    insertPivot,
+    splicePivot,
+    playInvestigation,
+    dismissAlert
+);
 
-export function playInvestigation(action$, store) {
+function playInvestigation(action$, store) {
         return action$
             .ofType(PLAY_INVESTIGATION)
             .groupBy(({ id }) => id)
@@ -30,7 +42,7 @@ export function playInvestigation(action$, store) {
             .ignoreElements();
 }
 
-export function dismissAlert(action$, store) {
+function dismissAlert(action$, store) {
     return action$
         .ofType(DISMISS_ALERT)
         .groupBy(({ id }) => id)
@@ -43,7 +55,7 @@ export function dismissAlert(action$, store) {
         .ignoreElements();
 }
 
-export function searchPivot(action$, store) {
+function searchPivot(action$, store) {
         return action$
             .ofType(SEARCH_PIVOT)
             .groupBy(({ id }) => id)
@@ -57,7 +69,7 @@ export function searchPivot(action$, store) {
             .ignoreElements();
 }
 
-export function splicePivot(action$, store) {
+function splicePivot(action$, store) {
         return action$
             .ofType(SPLICE_PIVOT)
             .groupBy(({ id }) => id)
@@ -70,7 +82,7 @@ export function splicePivot(action$, store) {
             .ignoreElements();
 }
 
-export function insertPivot(action$, store) {
+function insertPivot(action$, store) {
         return action$
             .ofType(INSERT_PIVOT)
             .groupBy(({ id }) => id)

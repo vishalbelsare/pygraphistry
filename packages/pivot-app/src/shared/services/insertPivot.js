@@ -4,13 +4,13 @@ import { createPivotModel } from '../models';
 
 export function insertPivot({ loadInvestigationsById, investigationIds, pivotIndex }) {
     return loadInvestigationsById({investigationIds})
-        .mergeMap(({app, investigation}) => {
+        .map(({app, investigation}) => {
             const pivot = createPivotModel({});
             app.pivotsById[pivot.id] = pivot;
 
             const insertedIndex = pivotIndex + 1;
             investigation.pivots.splice(insertedIndex, 0, $ref(`pivotsById['${pivot.id}']`))
 
-            return Observable.of({app, pivot, investigation, insertedIndex});
+            return ({app, pivot, investigation, insertedIndex});
         });
 }

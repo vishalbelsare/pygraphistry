@@ -32,6 +32,7 @@ export function getDataSourceFactory(services) {
                     console.log(`args: ${inspect(args, { depth: null })}`);
                     console.log(`refPaths: ${inspect(refPaths, { depth: null })}`);
                     console.log(`thisPaths: ${inspect(thisPaths, { depth: null })}`);
+                    return Observable.empty();
                 }
             });
         }

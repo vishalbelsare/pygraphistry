@@ -9,7 +9,7 @@ import { simpleflake } from 'simpleflakes';
 
 export function createInvestigationModel(serializedInvestigation, index) {
     const defaults = {
-        name: `Investigation: ${index}`,
+        name: `Untitled Investigation ${index}`,
         url: 'http://www.graphistry.com',
         id: simpleflake().toJSON(),
         pivots: []
@@ -27,4 +27,9 @@ export function createInvestigationModel(serializedInvestigation, index) {
     return {...normalizedInvestigation, ...initialSoftState};
 }
 
-
+export function serializeInvestigationModel({name, url, id, templates, pivots}) {
+    return {
+        name, url, id, templates,
+        pivots: pivots.map(pivotRef => pivotRef.value[1])
+    };
+}

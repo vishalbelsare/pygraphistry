@@ -2,7 +2,7 @@ import { container } from '@graphistry/falcor-react-redux';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import styles from './styles.less';
 
-function InvestigationDropdown({ investigations, selectedInvestigation, setInvestigationName, ...props }) {
+function InvestigationDropdown({ investigations, selectedInvestigation, selectInvestigation, ...props }) {
     if (investigations.length === 0) {
         return null;
     }
@@ -11,7 +11,7 @@ function InvestigationDropdown({ investigations, selectedInvestigation, setInves
         <div className={styles.dropdownbutton}>
             <DropdownButton id='investigations-list-dropdown'
                             title={selectedInvestigation.name || 'Investigations'}
-                            onSelect={(id, event) => setInvestigationName({ id })}>
+                            onSelect={(id, event) => selectInvestigation({ id })}>
             {investigations.map(({ id, name }, index) => (
                 <MenuItem eventKey={id} key={`${index}: ${id}`}>
                     {name}

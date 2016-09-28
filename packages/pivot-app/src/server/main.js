@@ -10,8 +10,12 @@ import { renderMiddleware } from './middleware';
 import { getDataSourceFactory } from '../shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 import { app as createApp } from '../shared/models';
-import { loadApp, loadInvestigations, loadPivots, loadRows, insertPivot,
-         splicePivot, calcTotals, searchPivot, uploadGraph } from '../shared/services';
+import {
+    loadApp,
+    loadInvestigations, saveInvestigations, createInvestigation,
+    loadPivots, insertPivot, splicePivot, searchPivot,
+    uploadGraph
+} from '../shared/services';
 
 
 const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
@@ -35,9 +39,11 @@ function init(investigations) {
     const routeServices = {
         loadApp: loadApp(app),
         loadInvestigationsById: loadInvestigations(loadApp(app)),
-        insertPivot, splicePivot, calcTotals, searchPivot, uploadGraph,
-        loadRowsById: loadRows(loadApp(app)),
+        saveInvestigationsById: saveInvestigations(loadApp(app), 'tests/appdata/investigations'),
+        createInvestigation,
         loadPivotsById: loadPivots(loadApp(app), 'tests/appdata/pivots/*.json'),
+        insertPivot, splicePivot, searchPivot,
+        uploadGraph
     };
 
     const modules = reloadHot(module);

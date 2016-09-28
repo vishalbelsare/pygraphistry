@@ -8,7 +8,6 @@ import {
 import {
     getHandler,
     setHandler,
-    captureErrorStacks,
     logErrorWithCode,
     mapObjectsToAtoms
 } from './support';
@@ -42,7 +41,7 @@ export function pivots({loadPivotsById, calcTotals, searchPivot}) {
 }
 
 function searchPivotCallRoute({loadPivotsById, searchPivot}) {
-    return function searchPivotCall(path, args) {
+    return function(path, args) {
         const pivotIds = path[1];
 
         return Observable.defer(() => searchPivot({loadPivotsById, pivotIds}))

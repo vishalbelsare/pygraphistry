@@ -13,7 +13,9 @@ import {
     logErrorWithCode
 } from './support';
 
-export function investigations({ loadInvestigationsById, loadPivotsById, searchPivot, splicePivot, insertPivot, uploadGraph }) {
+export function investigations({ loadInvestigationsById, saveInvestigationsById, loadPivotsById,
+                                 searchPivot, splicePivot, insertPivot, uploadGraph }) {
+
 
     const getInvestigationsHandler = getHandler(['investigation'], loadInvestigationsById);
     const setInvestigationsHandler = setHandler(['investigation'], loadInvestigationsById);
@@ -33,18 +35,21 @@ export function investigations({ loadInvestigationsById, loadPivotsById, searchP
         route: `investigationsById[{keys}]['pivots'][{integers}]`
     }, {
         route: `investigationsById[{keys}].play`,
-        call: playCallRoute({ loadInvestigationsById, loadPivotsById, searchPivot, uploadGraph })
+        call: playCallRoute({ loadInvestigationsById, loadPivotsById, uploadGraph })
     }, {
         route: `investigationsById[{keys}].insertPivot`,
-        call: insertPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPivot, insertPivot})
+        call: insertPivotCallRoute({ loadInvestigationsById, insertPivot})
     }, {
         route: `investigationsById[{keys}].splicePivot`,
-        call: splicePivotCallRoute({ loadInvestigationsById, loadPivotsById, splicePivot})
+        call: splicePivotCallRoute({ loadInvestigationsById, splicePivot})
+    }, {
+        route: `investigationsById[{keys}].save`,
+        call: saveCallRoute({ loadInvestigationsById, loadPivotsById, saveInvestigationsById})
     }];
 }
 
 function splicePivotCallRoute({ loadInvestigationsById, splicePivot }) {
-    return function splicePivotCall(path, args) {
+    return function(path, args) {
         const investigationIds = path[1];
         const pivotIndex = args[0];
 
@@ -62,7 +67,7 @@ function splicePivotCallRoute({ loadInvestigationsById, splicePivot }) {
 }
 
 function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
-    return function insertPivotCall(path, args) {
+    return function(path, args) {
         const investigationIds = path[1];
         const pivotIndex = args[0];
 
@@ -90,7 +95,7 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
 }
 
 function playCallRoute({ loadInvestigationsById, loadPivotsById, uploadGraph }) {
-    return function playInvestigationCall(path, args) {
+    return function(path, args) {
         const investigationIds = path[1];
 
         return Observable.defer(() => uploadGraph({loadInvestigationsById, loadPivotsById, investigationIds}))
@@ -99,6 +104,19 @@ function playCallRoute({ loadInvestigationsById, loadPivotsById, uploadGraph }) 
                     $pathValue(`investigationsById['${investigationIds}'].url`, investigation.url),
                     $pathValue(`investigationsById['${investigationIds}'].status`, investigation.status)
                 ];
+            })
+            .map(mapObjectsToAtoms)
+            .catch(captureErrorAndNotifyClient(investigationIds));
+    }
+}
+
+function saveCallRoute({ loadInvestigationsById, loadPivotsById, saveInvestigationsById }) {
+    return function(path, args) {
+        const investigationIds = path[1];
+
+        return Observable.defer(() => saveInvestigationsById({loadInvestigationsById, loadPivotsById, investigationIds}))
+            .mergeMap(({app, investigation}) => {
+                return [];
             })
             .map(mapObjectsToAtoms)
             .catch(captureErrorAndNotifyClient(investigationIds));
