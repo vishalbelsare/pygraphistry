@@ -11,7 +11,7 @@ import {
     setInvestigationName,
     saveInvestigation,
     copyInvestigation
-} from '../actions/investigationList';
+} from '../actions/app';
 import styles from './styles.less';
 
 function GraphFrame({ url }) {
@@ -198,18 +198,6 @@ const App = container(
         saveInvestigation: saveInvestigation,
         copyInvestigation: copyInvestigation
     }
-    /* todo:
-        url, total, urls, urlIndex,
-        cols: ${
-            TableHeader.fragment(cols)
-        },
-        pivots: ${
-            TableBody.fragment(pivots)
-        },
-        investigations: ${
-            InvestigationList.fragment(investigations)
-        }
-    */
 )(renderApp);
 
 export default hoistStatics(connect)(App);

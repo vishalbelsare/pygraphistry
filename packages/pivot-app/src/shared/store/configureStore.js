@@ -3,7 +3,7 @@ import rootReducer from '../reducers/';
 import { DevTools } from '../containers';
 import { compose, createStore, applyMiddleware } from 'redux';
 import { createFragmentMiddleware } from '@graphistry/falcor-react-redux';
-import { app } from '../reducers/investigationList';
+import { app } from '../reducers/app';
 import { investigation } from '../reducers/investigation';
 import { pivot } from '../reducers/pivotRow';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';

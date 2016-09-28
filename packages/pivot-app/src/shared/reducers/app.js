@@ -12,7 +12,7 @@ import {
     SET_INVESTIGATION_NAME,
     SAVE_INVESTIGATION,
     COPY_INVESTIGATION
-} from '../actions/investigationList';
+} from '../actions/app';
 
 
 export const app = combineEpics(createInvestigation, selectInvestigation, setInvestigationName,
