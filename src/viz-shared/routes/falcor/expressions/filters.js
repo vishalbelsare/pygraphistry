@@ -1,12 +1,7 @@
 import {
-    ref as $ref,
-    atom as $atom,
-    error as $error,
-    pathValue as $value
-} from '@graphistry/falcor-json-graph';
-
-import Color from 'color';
-import { addExpressionHandler } from './expressions';
+    addExpressionHandler,
+    removeExpressionHandler
+} from './expressions';
 
 import { getHandler,
          setHandler,
@@ -14,12 +9,15 @@ import { getHandler,
          captureErrorStacks } from 'viz-shared/routes';
 
 export function filters(path, base) {
-    return function filters({ loadViewsById, addExpression }) {
+    return function filters({ loadViewsById, addExpression, removeExpressionById }) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
         const addFilter = addExpressionHandler({
-            loadViewsById, addExpression, expressionType: 'filter'
+            addExpression, expressionType: 'filter'
+        });
+        const removeFilter = removeExpressionHandler({
+            removeExpressionById, expressionType: 'filter'
         });
 
         return [{
@@ -40,9 +38,5 @@ export function filters(path, base) {
             call: removeFilter,
             route: `${base}['filters'].remove`
         }];
-
-        function removeFilter(path, args) {
-
-        }
     }
 }

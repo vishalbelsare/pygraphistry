@@ -1,4 +1,5 @@
 import Color from 'color';
+import { Observable } from 'rxjs';
 
 import {
     ref as $ref,
@@ -16,8 +17,10 @@ export function labels(path, base) {
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
         const setColors = setHandler(path, loadViewsById,
-            { color: true },
-            ( color, path, context) => new Color(color)
+            (node, key, color, path, data) => Observable.of({
+                path, value: node[key] = new Color(color)
+            }),
+            { color: true }
         );
 
         return [{
@@ -29,7 +32,7 @@ export function labels(path, base) {
             ]`
         }, {
             get: getValues,
-            route: `${base}['labels']['edge', 'point'][{keys}]`
+            route: `${base}['labels']['edges', 'points'][{keys}]`
         }, {
             get: getValues,
             set: setColors,

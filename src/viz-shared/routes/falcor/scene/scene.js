@@ -1,4 +1,5 @@
 import Color from 'color';
+import { Observable } from 'rxjs';
 
 import {
     ref as $ref,
@@ -15,18 +16,16 @@ export function scene(path, base) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
-        const setColors = setHandler(path, loadViewsById, {}, ( color, path, context) => {
+        const setColors = setHandler(path, loadViewsById,
+            (node, key, color, path, { view }) => Observable.defer(() => {
 
-                color = new Color(color);
-                const { view } = context;
+                node[key] = color = new Color(color);
+
                 const { nBody, scene } = view;
                 const type = path[path.length - 2];
 
-                if (type === 'background' && scene) {
-                    scene.options.clearColor = [color.rgbaArray().map((x, i) =>
-                        i === 3 ? x : x / 255
-                    )];
-                } else if (type === 'foreground' && nBody) {
+                // todo: move this into a service call
+                if (type === 'foreground' && nBody) {
                     nBody.simulator.setColor({ rgb: {
                         r: color.red(), g: color.green(),
                         b: color.blue(), a: color.alpha()
@@ -34,8 +33,8 @@ export function scene(path, base) {
                     nBody.interactions.next({ play: true, layout: true });
                 }
 
-                return color;
-            }
+                return Observable.of({ path, value: color });
+            })
         );
 
         return [{
@@ -47,13 +46,17 @@ export function scene(path, base) {
             route: `${base}['scene']['pruneOrphans', 'showArrows', 'simulating']`
         }, {
             get: getValues,
+            route: `${base}['scene']['edges', 'points'][{keys}]`,
+            returns: `Number`
+        }, {
+            set: setValues,
+            route: `${base}['scene']['edges', 'points']['scaling', 'opacity']`,
+            returns: `Number`
+        }, {
+            get: getValues,
             set: setColors,
             route: `${base}['scene']['background', 'foreground'].color`,
-            returns: `Color<hsv>`
-        }, {
-            returns: `*`,
-            get: getValues,
-            route: `${base}['scene']['hints', 'server', 'options'][{keys}]`,
+            returns: `Color`
         }, {
             returns: `*`,
             get: getValues,
@@ -76,29 +79,6 @@ export function scene(path, base) {
             get: getValues,
             set: setValues,
             route: `${base}['scene']['settings'][{keys}][{keys}][{keys}]`,
-        }, {
-            call: handleLayoutRequest,
-            route: `${base}['scene'].layout`
         }];
-
-        function handleLayoutRequest(path, [simulating = false]) {
-            const workbookIds = [].concat(path[1]);
-            const viewIds = [].concat(path[3]);
-            return loadViewsById({
-                workbookIds, viewIds
-            })
-            .map(({ workbook, view }) => {
-                const { nBody, scene } = view;
-                if (nBody && nBody.interactions) {
-                    nBody.interactions.next({ play: true, layout: true });
-                }
-                return $value(`
-                    workbooksById['${workbook.id}']
-                        viewsById['${view.id}']
-                        .scene.simulating`,
-                    scene.simulating = simulating
-                );
-            });
-        }
     }
 }

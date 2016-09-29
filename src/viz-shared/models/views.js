@@ -27,7 +27,7 @@ export function views(workbookId, viewId = simpleflake().toJSON()) {
     };
 }
 
-export function view(workbookId, rendererScene, options, viewId = simpleflake().toJSON()) {
+export function view(workbookId, sceneID = 'default', viewId = simpleflake().toJSON()) {
     return {
         id: viewId, title: '',
         panels: {
@@ -35,14 +35,14 @@ export function view(workbookId, rendererScene, options, viewId = simpleflake().
             right: undefined,
             bottom: undefined
         },
-        ...expressions(workbookId, viewId),
+        ...scene(workbookId, viewId, sceneID),
+        ...labels(workbookId, viewId),
+        ...layout(workbookId, viewId),
         ...legend(workbookId, viewId),
         ...timebar(workbookId, viewId),
         ...toolbar(workbookId, viewId),
         ...inspector(workbookId, viewId),
-        ...labels(workbookId, viewId),
-        ...layout(workbookId, viewId),
         ...selection(workbookId, viewId),
-        ...scene(workbookId, viewId, rendererScene, options),
+        ...expressions(workbookId, viewId),
     };
 }

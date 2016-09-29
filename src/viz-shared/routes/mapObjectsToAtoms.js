@@ -5,9 +5,11 @@ export function mapObjectsToAtoms(incoming) {
     if (incoming.isMessage) {
         return incoming;
     }
-    let { path, value } = incoming;
-    if (value && typeof value === 'object' && !value.$type) {
-        value = $atom(value instanceof Color ? value.rgbaString() : value);
+    let { path, value, ...rest } = incoming;
+    if (value instanceof Color) {
+        value = value.rgbaString();
+    } else if (value && typeof value === 'object' && !value.$type) {
+        value = $atom(value);
     }
-    return { path, value };
+    return { path, value, ...rest };
 }

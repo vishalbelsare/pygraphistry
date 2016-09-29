@@ -2,6 +2,7 @@ export const ADD_EXPRESSION = 'add-expression';
 export const REMOVE_EXPRESSION = 'remove-expression';
 export const UPDATE_EXPRESSION = 'update-expression';
 export const SET_EXPRESSION_ENABLED = 'set-expression-enabled';
+export const CANCEL_UPDATE_EXPRESSION = `cancel-${UPDATE_EXPRESSION}`;
 
 export const addExpression = ({ ...props }) => ({
     ...props, type: ADD_EXPRESSION
@@ -17,4 +18,8 @@ export const updateExpression = ({ ...props }) => ({
 
 export const setExpressionEnabled = ({ ...props }) => ({
     ...props, type: SET_EXPRESSION_ENABLED
+});
+
+export const cancelUpdateExpression = ({ ...props }) => ({
+    ...props, type: CANCEL_UPDATE_EXPRESSION
 });

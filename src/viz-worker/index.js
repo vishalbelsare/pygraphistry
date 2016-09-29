@@ -1,58 +1,56 @@
 import _config from '@graphistry/config';
-import { httpRoutes } from './routes/http';
-import { socketRoutes } from './routes/socket';
-import VizServer from './simulator/server-viz';
 import { cache as Cache } from '@graphistry/common';
-import { reloadHot } from 'viz-worker/reloadHot';
-import removeExpressRoute from 'express-remove-route';
-import { Observable, Subject, Subscription } from 'rxjs';
 import { logger as commonLogger } from '@graphistry/common';
+
+import { Observable, Subject, Subscription } from 'rxjs';
+import removeExpressRoute from 'express-remove-route';
+
+import { services } from 'viz-worker/services';
+import { reloadHot } from 'viz-worker/reloadHot';
+import { httpRoutes } from 'viz-worker/routes/http';
+import { socketRoutes } from 'viz-worker/routes/socket';
+import VizServer from 'viz-worker/simulator/server-viz';
+import { addExpressRoutes, removeExpressRoutes,
+         addSocketHandlers, removeSocketHandlers } from 'viz-worker/startup';
+
 import { getDataSourceFactory } from 'viz-shared/middleware';
-import { loadViews, loadLabels, loadVGraph,
-         loadWorkbooks, sendFalcorUpdate,
-         maskDataframe, addExpression } from './services';
 
 const config = _config();
 const logger = commonLogger.createLogger('viz-worker:index.js');
-const s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
 
 export function vizWorker(app, server, sockets, caches) {
 
     const { requests } = server;
     const vbos = caches.vbos || (caches.vbos = {});
+    const s3Cache = caches.s3Cache || (caches.s3Cache =
+        new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE));
     const nBodiesById = caches.nBodiesById || (caches.nBodiesById = {});
     const workbooksById = caches.workbooksById || (caches.workbooksById = {});
 
-    const loadConfig = () => Observable.of(config);
-    const loadWorkbooksById = loadWorkbooks(workbooksById, config, s3Cache);
-    const loadViewsById = loadViews(workbooksById, nBodiesById, config, s3Cache);
-    const loadLabelsByIndexAndType = loadLabels(workbooksById, nBodiesById, config, s3Cache);
-
-    const routeServices = {
-
-        loadConfig,
-        loadViewsById,
-        loadWorkbooksById,
-        loadLabelsByIndexAndType,
-
-        addExpression,
-        maskDataframe,
-    };
+    const routeServices = services({
+        vbos, config, s3Cache, nBodiesById, workbooksById
+    });
 
     const getDataSource = getDataSourceFactory(routeServices);
-    const expressAppRoutes = httpRoutes(routeServices, reloadHot(module));
+    const expressRoutes = httpRoutes(routeServices, reloadHot(module));
+    const { loadWorkbooksById, loadViewsById,
+            loadVGraph, maskDataframe, sendFalcorUpdate } = routeServices;
 
-    return Observable
-        .using(removeExpressRoutesOnDispose, addExpressRoutesOnSubscribe)
-        .mergeMap(() => requests.merge(sockets.map(enrichLogs)
+    return Observable.using(
+            removeExpressRoutes(app, expressRoutes),
+            addExpressRoutes(app, expressRoutes)
+        )
+        .mergeMap(() => requests.merge(sockets
+            .map(enrichLogs)
             .mergeMap(({ socket, metadata }) => {
-                // debugger
+
                 const sendUpdate = sendFalcorUpdate(socket, getDataSource);
                 const socketIORoutes = socketRoutes(routeServices, socket);
                 const vizServer = new VizServer(app, socket, vbos, metadata);
+
                 return Observable.using(
-                    removeSocketHandlersOnSocketDispose(socket, vizServer, socketIORoutes),
-                    addSocketHandlersOnSocketSubscribe(socket, vizServer, socketIORoutes)
+                    removeSocketHandlers(socket, vizServer, socketIORoutes),
+                    addSocketHandlers(socket, vizServer, socketIORoutes)
                 )
                 .multicast(() => new Subject(), (shared) => Observable.merge(
                     shared, shared
@@ -64,83 +62,6 @@ export function vizWorker(app, server, sockets, caches) {
             })
         ))
         .takeWhile((x) => !x || (x && x.type !== 'disconnect'))
-
-    function addExpressRoutesOnSubscribe(subscription) {
-
-        expressAppRoutes.forEach(({ route, all, use, get, put, post, delete: del }) => {
-            const idx = route ? 1 : 0;
-            const args = route ? [route] : [];
-            if (all) {
-                args[idx] = all;
-                app.all.apply(app, args);
-            } else if (use) {
-                args[idx] = use;
-                app.use.apply(app, args);
-            } else {
-                if (get) {
-                    args[idx] = get;
-                    app.get.apply(app, args);
-                }
-                if (put) {
-                    args[idx] = put;
-                    app.put.apply(app, args);
-                }
-                if (post) {
-                    args[idx] = post;
-                    app.post.apply(app, args);
-                }
-                if (del) {
-                    args[idx] = del;
-                    app.delete.apply(app, args);
-                }
-            }
-        });
-
-        return Observable.of({});
-    }
-
-    function removeExpressRoutesOnDispose() {
-        return new Subscription(function disposeVizWorker() {
-            expressAppRoutes
-                .filter(({ route }) => route)
-                .forEach(({ route }) => {
-                    try {
-                        removeExpressRoute(app, route)
-                    } catch(e) {
-                        // todo: log routes we can't remove?
-                    }
-                });
-        });
-    }
-
-    function addSocketHandlersOnSocketSubscribe(socket, vizServer, socketIORoutes) {
-        return function addSocketHandlersOnSocketSubscribe(subscription) {
-
-            socketIORoutes.forEach(({ event, handler }) => {
-                socket.on(event, handler);
-            });
-
-            const disconnect = Observable.fromEvent(socket, 'disconnect', () => (
-                                             { socket, type: 'disconnect' }));
-            const connection = Observable.of({ socket, type: 'connection' });
-
-            return connection.concat(disconnect);
-        }
-    }
-
-    function removeSocketHandlersOnSocketDispose(socket, vizServer, socketIORoutes) {
-        return function removeSocketHandlersOnSocketDispose() {
-            const composite = new Subscription();
-            composite.add(vizServer);
-            composite.add(function disposeVizWorkerSocket() {
-                socketIORoutes.forEach(({ event, handler }) => {
-                    socket.removeListener(event, handler);
-                });
-                socket.disconnect();
-            });
-            return composite;
-        }
-    }
 
     function enrichLogs(socket) {
 
@@ -192,7 +113,7 @@ export function vizWorker(app, server, sockets, caches) {
 
                 logger.trace('loaded nBody vGraph');
 
-                const { nBody, scene } = view;
+                const { nBody } = view;
                 const { interactions, interactionsLoop } = nBody;
 
                 vizServer.animationStep = {
@@ -205,27 +126,26 @@ export function vizWorker(app, server, sockets, caches) {
                 // stateful shared Subjects
                 vizServer.workbookDoc.next(workbook);
                 vizServer.viewConfig.next(view);
-                vizServer.renderConfig.next(scene);
+                vizServer.renderConfig.next(nBody.scene);
 
-                return interactionsLoop;
-            })
-            .do((nBody) => {
-                vizServer.ticksMulti.next(nBody);
+                return interactionsLoop.map((nBody) => ({ view, nBody }));
             })
             .multicast(() => new Subject(), (shared) => Observable.merge(
                 shared.skip(1),
-                shared.take(1).do((nBody) => {
+                shared.take(1).do(({ nBody }) => {
                     logger.trace('ticked graph');
                     vizServer.graph.next(nBody);
                 })
                 .mergeMap(
-                    (nBody) => sendUpdate(
-                        `workbooks.open.views.current.scene.hints`,
-                        `workbooks.open.views.current.expressionTemplates.length`
-                    ),
-                    (nBody) => nBody
+                    ({ view, nBody }) => maskDataframe({ view }),
+                    ({ view, nBody }) => ({ view, nBody })
                 )
-            ));
+                .mergeMap(({ nBody }) => sendUpdate(
+                    `workbooks.open.views.current.expressionTemplates.length`,
+                    `workbooks.open.views.current.scene['edges', 'points'].elements`
+                ))
+            ))
+            .do(({ nBody }) => vizServer.ticksMulti.next(nBody));
         }
     }
 }

@@ -60,7 +60,11 @@ export function renderMiddleware(getDataSource, modules) {
 function renderAppWithHotReloading(modules, dataSource, options) {
     return modules
         .map(({ App }) => ({
-            App, falcor: new Model({ source: dataSource })
+            App, falcor: new Model({
+                source: dataSource,
+                recycleJSON: true,
+                treatErrorsAsValues: true
+            })
         }))
         .switchMap(
             ({ App, falcor }) => fetchDataUntilSettled({
@@ -114,9 +118,9 @@ function renderFullPage(data, falcor, workerID = '', html = '') {
         </script>
         <div id='root'>${html}</div>
         <script>
-            window.__INITIAL_STATE__ = ${
-                stringify(data || {})};
-            window.__INITIAL_CACHE__ = ${
+            var __INITIAL_STATE__ = ${
+                stringify(data && data.toJSON() || data || {})};
+            var __INITIAL_CACHE__ = ${
                 stringify(falcor && falcor.getCache() || {})};
         </script>
         <script type="text/javascript" src="${`${vendor.js}${assetSuffix}`}"></script>

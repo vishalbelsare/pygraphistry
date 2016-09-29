@@ -1,5 +1,5 @@
 import url from 'url';
-import { loadDataset } from './loadDataset';
+import { loadDataset } from './datasets';
 import { Observable } from 'rxjs';
 import { cache as Cache } from '@graphistry/common';
 import { load as _loadVGraph } from '../simulator/libs/VGraphLoader';
@@ -76,9 +76,13 @@ function loadDataFrameAndUpdateBuffers({ view }) {
 
     // Tell all layout algorithms to load buffers from dataframe, now that
     // we're about to enable ticking
-    return Observable.forkJoin(...layoutAlgorithms.map((algo) =>
-        Observable.from(algo.updateDataframeBuffers(simulator)))
-    ).mapTo(view);
+    return Observable.merge(
+        ...layoutAlgorithms.map((algo) =>
+            Observable.from(algo.updateDataframeBuffers(simulator))
+        )
+    )
+    .toArray()
+    .mapTo(view);
 }
 
 function assignHintsToScene(scene, dataframe) {
@@ -87,49 +91,87 @@ function assignHintsToScene(scene, dataframe) {
     const numEdges = dataframe.numEdges();
     const numPoints = dataframe.numPoints();
 
-    scene.hints = {
-        edges: Math.min(numEdges, MAX_SIZE_TO_ALLOCATE),
-        points: Math.min(numPoints, MAX_SIZE_TO_ALLOCATE),
-    };
+    scene.edges.elements = Math.min(numEdges, MAX_SIZE_TO_ALLOCATE);
+    scene.points.elements = Math.min(numPoints, MAX_SIZE_TO_ALLOCATE);
 
     return scene;
 }
 
 function createExpressionTemplates(dataframe) {
 
-    const expressionTemplates = [];
+    const templates = {}, allColumnsByType = {};
     const columnsByComponentType = dataframe.getColumnsByType(true);
 
     /*        { point, edge } */
     for (const componentType in columnsByComponentType) {
 
-        if (!columnsByComponentType.hasOwnProperty(componentType)) {
-            continue;
-        }
-
         const columnsByName = columnsByComponentType[componentType];
+        const columnsForComponent = allColumnsByType[componentType] || (
+            allColumnsByType[componentType] = {});
 
         for (const columnName in columnsByName) {
 
-            if (!columnsByName.hasOwnProperty(columnName)) {
-                continue;
-            }
-
             const column = columnsByName[columnName];
-            const expressionName = columnName === column.name ?
-                columnName : column.name;
+            columnsForComponent[columnName] = column;
 
-            const expresionAttribute = columnName.indexOf(componentType) === 0 ?
-                expressionName : `${componentType}:${expressionName}`;
-
-            expressionTemplates.push({
-                componentType,
-                name: expressionName,
-                dataType: column.type,
-                attribute: expresionAttribute
-            });
+            // If column.name is different than the columnName key,
+            // insert the column with the name as well.
+            if (column.name !== columnName && !columnsForComponent[column.name]) {
+                columnsForComponent[column.name] = column;
+            }
         }
     }
 
-    return expressionTemplates;
+    const { point: pointColumns, edge: edgeColumns } = allColumnsByType;
+
+    for (const columnName in pointColumns) {
+
+        const column = pointColumns[columnName];
+        const attribute = columnName.indexOf('point') === 0 ? columnName : `point:${columnName}`;
+
+        if (edgeColumns.hasOwnProperty(columnName)) {
+
+            const edgeColumn = edgeColumns[columnName];
+            const edgeAttribute = columnName.indexOf('edge') === 0 ? columnName : `edge:${columnName}`;
+
+            templates[attribute] = {
+                attribute,
+                name: columnName,
+                dataType: column.type,
+                componentType: 'point'
+            };
+
+            templates[edgeAttribute] = {
+                name: columnName,
+                attribute: edgeAttribute,
+                dataType: edgeColumn.type,
+                componentType: 'edge'
+            };
+
+        } else if (!templates.hasOwnProperty(columnName)) {
+            templates[attribute] = {
+                attribute,
+                name: columnName,
+                dataType: column.type,
+                componentType: 'point'
+            };
+        }
+    }
+
+    for (const columnName in edgeColumns) {
+        const column = edgeColumns[columnName];
+        const attribute = columnName.indexOf('edge') === 0 ? columnName : `edge:${columnName}`;
+        if (!templates.hasOwnProperty(columnName)) {
+            templates[attribute] = {
+                attribute,
+                name: columnName,
+                dataType: column.type,
+                componentType: 'edge'
+            };
+        }
+    }
+
+    return Object
+        .keys(templates)
+        .map((key) => templates[key]);
 }

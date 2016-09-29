@@ -333,7 +333,10 @@ function setFlags(state, name, bool) {
 
 // var webglDebug = require('webgl-debug');
 // function throwOnGLError(err, funcName, args) {
-//     throw webglDebug.glEnumToString(err) + " was caused by call to: " + funcName;
+//     if (window.pauseOnGLError) {
+//         debugger;
+//     }
+//     console.log(webglDebug.glEnumToString(err) + " was caused by call to: " + funcName);
 // };
 
 function createContext(state, pixelRatio) {
@@ -413,7 +416,11 @@ function getItemsForTrigger(state, trigger) {
     if (!trigger) {
         return undefined;
     }
-    return state.config.triggers[trigger];
+    const { items, triggers } = state.config;
+    const itemNamesForTrigger = triggers[trigger];
+    return itemNamesForTrigger.filter((itemName) => {
+        return !!items[itemName];
+    });
 }
 
 /*
@@ -830,27 +837,6 @@ function setUniform(state, name, value) {
     });
 }
 
-    // cameraModel.changes()
-    //     .switchMap(
-    //         (model) => model.get(`['edges', 'points']['scaling', 'opacity']`),
-    //         (model, { json: camera }) => camera
-    //     )
-    //     .subscribe(({ edges, points }) => {
-    //         camera.edgeScaling = edges.scaling;
-    //         camera.pointScaling = points.scaling;
-    //         const uniforms = state.get('uniforms');
-    //         for (const key in uniforms) {
-    //             const map = uniforms[key];
-    //             if ('edgeOpacity' in map) {
-    //                 map.edgeOpacity = edges.opacity;
-    //             }
-    //             if ('pointOpacity' in map) {
-    //                 map.pointOpacity = points.opacity;
-    //             }
-    //         }
-    //     });
-
-
 function setCamera(state) {
     const config = state.config;
     const gl = state.gl;
@@ -858,40 +844,25 @@ function setCamera(state) {
     const uniforms = state.uniforms;
     const camera = state.camera;
 
-    const { edges = {}, points = {} } = config.camera;
-    const { opacity: edgeOpacity = 1,
-            scaling: edgeScaling = camera.edgeScaling } = edges;
-    const { opacity: pointOpacity = 1,
-            scaling: pointScaling = camera.pointScaling } = points;
-
-    camera.setEdgeScaling(edgeScaling);
-    camera.setPointScaling(pointScaling);
+    const { edgeScaling, pointScaling } = camera;
 
     const numVertices = state.numElements.pointculled || 0;
 
     // Set zoomScalingFactor uniform if it exists.
     _.each(uniforms, (map) => {
 
-        if ('edgeOpacity' in map) {
-            map.edgeOpacity = edgeOpacity;
-        }
-
-        if ('pointOpacity' in map) {
-            map.pointOpacity = pointOpacity;
-        }
-
         if ('zoomScalingFactor' in map) {
             // TODO: Actually get number of nodes from the server
             const scalingFactor = camera.semanticZoom(numVertices);
-            map.zoomScalingFactor = scalingFactor;
+            map['zoomScalingFactor'] = scalingFactor;
         }
 
         if ('maxScreenSize' in map) {
-            map.maxScreenSize = Math.max(camera.width, camera.height);
+            map['maxScreenSize'] = Math.max(camera.width, camera.height);
         }
 
         if ('maxCanvasSize' in map) {
-            map.maxCanvasSize = Math.max(gl.canvas.width, gl.canvas.height);
+            map['maxCanvasSize'] = Math.max(gl.canvas.width, gl.canvas.height);
         }
     });
 

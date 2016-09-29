@@ -1,14 +1,12 @@
-import { loadViews } from './loadViews';
-import { loadResource } from './loadResource';
+import { loadResource } from './resource';
 import { Observable, ReplaySubject } from 'rxjs';
 import { ref as $ref, atom as $atom } from '@graphistry/falcor-json-graph';
 
 /** Arbitrary limit to prevent large range requests, ~ 260kb. */
 const LABEL_SIZE_LIMIT = Math.pow(2, 18);
 
-export function loadLabels(workbooksById, labelsByIndex = {}, labelOffsetsByType = {}) {
+export function loadLabels(loadViewsById, labelsByIndex = {}, labelOffsetsByType = {}) {
 
-    const loadViewsById = loadViews(workbooksById);
     const loadLabelByIndexAndType = loadLabel(labelsByIndex);
     const loadOffsetBufferByType = loadOffsetBuffer(labelOffsetsByType);
 
@@ -123,7 +121,7 @@ function loadLabel(labelTypesByIndex) {
 }
 
 function loadOffsetBuffer(labelOffsetsByType) {
-    return function loadOffsetBufferByType(labelType, { contentKey }) {
+    return function loadOffsetBufferByType(labelType, { contentKey = '' }) {
         return (labelType in labelOffsetsByType) ?
             labelOffsetsByType[labelType] : (
             labelOffsetsByType[labelType] = loadResource(
@@ -131,7 +129,6 @@ function loadOffsetBuffer(labelOffsetsByType) {
                     contentKey, responseType: 'arraybuffer'
                 })
                 .map(({ response }) => new Uint32Array(response))
-                .concat(Observable.never())
                 .multicast(new ReplaySubject(1))
                 .refCount()
                 .take(1)

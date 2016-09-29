@@ -2,33 +2,36 @@ import {
     ref as $ref,
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
+
+import { Observable } from 'rxjs';
+
 import { getHandler,
          setHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from 'viz-shared/routes';
 
 export function layout(path, base) {
-    return function layout({ loadViewsById }) {
+    return function layout({ loadViewsById, setLayoutControlById }) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
-        const setLayoutOptionValues = setHandler(path, loadViewsById, {}, (value, path, { view }) => {
-            const { nBody } = view;
-            if (nBody) {
-                const { layout: { options }} = view;
-                const control = options[path[path.length - 2]];
-                const { id, props } = control;
-                const { algoName } = props;
-                nBody.interactions.next({
-                    play: true, layout: true, simControls: {
-                        [algoName]: {
-                            [id]: value
-                        }
-                    }
-                });
-            }
-            return value;
-        });
+        const setLayoutOptionValues = setHandler(path, loadViewsById,
+            (control, key, value, path, { workbook, view }) => Observable.defer(() => {
+
+                control[key] = value;
+
+                const { id, props: { algoName }} = control;
+
+                return setLayoutControlById({
+                    workbookId: workbook.id,
+                    viewId: view.id,
+                    algoName,
+                    value,
+                    id
+                })
+                .mapTo({ path, value });
+            })
+        );
 
         return [{
             get: getValues,

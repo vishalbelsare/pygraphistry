@@ -58,12 +58,11 @@ export function workbook(dataset, workbookId = simpleflake().toJSON()) {
 
 export function dataset(options, datasetId = simpleflake().toJSON()) {
 
-    const { bg } = options;
     options = {
         type: 'default', scene: 'default',
         mapper: 'default', device: 'default',
         vendor: 'default', controls: 'default',
-        id: datasetId, backgroundColor: bg, ... options
+        id: datasetId, ...options
     };
 
     if (!(options.scene in scenes)) {

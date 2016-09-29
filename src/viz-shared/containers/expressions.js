@@ -9,11 +9,24 @@ import {
     addExpression,
     removeExpression,
     updateExpression,
-    setExpressionEnabled
+    setExpressionEnabled,
+    cancelUpdateExpression
 } from 'viz-shared/actions/expressions';
 
+let Expressions = ({ templates = [], expressions = [], removeExpression, ...props }) => {
+    return (
+        <ExpressionsList templates={templates} {...props}>
+        {expressions.map((expression, index) => (
+            <Expression data={expression}
+                        templates={templates}
+                        key={`${index}: ${expression.id}`}
+                        removeExpression={removeExpression}/>
+        ))}
+        </ExpressionsList>
+    );
+};
 
-export const Expressions = container(
+Expressions = container(
     ({ length = 0, templates = [] }) => `{
         id, name, length, [0...${length}]: ${
             Expression.fragment()
@@ -30,27 +43,18 @@ export const Expressions = container(
         templates: expressions.templates
     }),
     { addExpression, removeExpression }
-)(renderExpressions);
+)(Expressions);
 
-export const Expression = container(
+let Expression = container(
     () => `{
-        id, input, level, query,
+        id, input, level,
         name, enabled, attribute,
         dataType, componentType, expressionType
     }`,
     (expression) => expression,
-    { setExpressionEnabled, updateExpression }
+    { updateExpression,
+      setExpressionEnabled,
+      cancelUpdateExpression }
 )(ExpressionItem);
 
-function renderExpressions({ templates = [], expressions = [], removeExpression, ...props }) {
-    return (
-        <ExpressionsList templates={templates} {...props}>
-        {expressions.map((expression, index) => (
-            <Expression data={expression}
-                        templates={templates}
-                        key={`${index}: ${expression.id}`}
-                        removeExpression={removeExpression}/>
-        ))}
-        </ExpressionsList>
-    );
-}
+export { Expressions, Expression };

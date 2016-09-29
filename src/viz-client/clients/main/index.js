@@ -1,8 +1,7 @@
 import SocketIO from 'socket.io-client';
-import { Model } from '../falcor';
 import { Observable, Scheduler } from 'rxjs';
-import { handleVboUpdates } from '../streamGL/client';
-import SocketDataSource from '@graphistry/falcor-socket-datasource';
+import { Model, RemoteDataSource } from 'viz-client/falcor';
+import { handleVboUpdates } from 'viz-client/streamGL/client';
 
 export function initialize(options, debug) {
 
@@ -17,7 +16,10 @@ export function initialize(options, debug) {
     }
 
     return initSocket(options, workbook).map((socket) => ({
-        ...options, handleVboUpdates, socket, model: getAppModel(options, socket)
+        ...options,
+        socket,
+        handleVboUpdates,
+        model: getAppModel(options, socket)
     }));
 }
 
@@ -56,12 +58,13 @@ function initSocket(options, workbook) {
 }
 
 function getAppModel(options, socket) {
-    const source = new SocketDataSource(socket, 'falcor-request');
+    const source = new RemoteDataSource(socket, 'falcor-request');
     const model = new Model({
         source, cache: getAppCache(),
-        JSONWithHashCodes: true,
+        recycleJSON: true,
         scheduler: Scheduler.asap,
-        allowFromWhenceYouCame: true
+        treatErrorsAsValues: true,
+        allowFromWhenceYouCame: true,
     });
     source.model = model;
     return model;

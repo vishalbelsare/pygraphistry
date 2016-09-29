@@ -6,6 +6,16 @@ export function toolbar(workbookId, viewId) {
     return {
         toolbar: $ref(`${view}.toolbars['stable']`),
         toolbars: {
+            static: {
+                visible: true,
+                length: 2, ...[
+                    $ref(`${view}.scene.camera.controls`),
+                    [
+                        $ref(`${view}.scene.controls[1]`),
+                        $ref(`${view}.labels.controls[0]`),
+                    ]
+                ]
+            },
             stable: {
                 visible: true,
                 length: 4, ...[
@@ -23,7 +33,6 @@ export function toolbar(workbookId, viewId) {
                         $ref(`${view}.timebar.controls[0]`),
                         $ref(`${view}.exclusions.controls[0]`),
                         $ref(`${view}.filters.controls[0]`),
-                        // $ref(`${view}.sets.controls[0]`),
                     ]
                 ]
             },
@@ -44,7 +53,6 @@ export function toolbar(workbookId, viewId) {
                         $ref(`${view}.timebar.controls[0]`),
                         $ref(`${view}.exclusions.controls[0]`),
                         $ref(`${view}.filters.controls[0]`),
-                        $ref(`${view}.sets.controls[0]`),
                     ]
                 ]
             },

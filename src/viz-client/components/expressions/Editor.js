@@ -1,6 +1,8 @@
 import ace from 'brace';
 import React from 'react';
+import { Subject } from 'rxjs';
 import ReactAce from 'react-ace';
+import styles from './styles.less';
 import { expression } from 'viz-shared/models/expressions';
 
 const { Range: AceRange } = ace.acequire('ace/range');
@@ -13,59 +15,91 @@ import 'viz-client/streamGL/graphVizApp/aceExpressionSnippets';
 
 class AceEditor extends ReactAce {
     onChange(event) {
-        if (this.props.onChange) {
+        if (this.props.onChange && !this.silent) {
             this.props.onChange(this.editor, event);
         }
     }
 }
 
-export class ExpressionEditor extends React.Component {
+export class Editor extends React.Component {
     constructor(props, context) {
         super(props, context);
-        this.state = { annotations: [] };
         this.onChange = this.onChange.bind(this);
+        this.onChangeSubject = new Subject();
+        this.state = { value: props.value, annotations: [] };
     }
     onChange(editor, event) {
-        const { query } = expression(editor.getValue());
-        if (query.error) {
-            const syntaxError = query.error;
-            if (syntaxError) {
-                const row = syntaxError.line && syntaxError.line - 1;
-                let startColumn = syntaxError.column;
-                if (event && event.lines[row].length <= startColumn) {
-                    startColumn--;
-                }
-                this.setState({
-                    annotations: [
-                        new InlineAnnotation(editor.session, {
-                            row: row,
-                            column: startColumn,
-                            endColumn: startColumn + 1,
-                            text: syntaxError.message,
-                            type: 'error'
-                        })
-                    ]
-                });
-            } else {
-                this.setState({
-                    annotations: [
-                        new InlineAnnotation(editor.session, {
-                            text: 'Unknown',
-                            type: 'warning'
-                        })
-                    ]
-                });
-            }
-        } else if (this.props.onChange) {
-            this.props.onChange(query, event);
+        const value = editor.getValue();
+        if (value === this.state.value) {
+            return;
         }
+        this.setState({ value });
+        this.onChangeSubject.next({ editor, event, value });
+    }
+    componentDidMount() {
+        this.onChangeSubscription = this.onChangeSubject
+            .auditTime(0)
+            .distinctUntilChanged()
+            .subscribe(({ editor, event, value }) => {
+
+                const { query } = expression(value);
+
+                clearAnnotationsAndMarkers(editor.session);
+
+                if (this.props.onChange) {
+                    this.props.onChange(value);
+                }
+
+                if (query.error) {
+                    const syntaxError = query.error;
+                    if (syntaxError) {
+                        const row = syntaxError.line && syntaxError.line - 1;
+                        let startColumn = syntaxError.column;
+                        if (event && event.lines[row].length <= startColumn) {
+                            startColumn--;
+                        }
+                        this.setState({
+                            annotations: [
+                                new InlineAnnotation(editor.session, {
+                                    row: row,
+                                    column: startColumn,
+                                    endColumn: startColumn + 1,
+                                    text: syntaxError.message,
+                                    type: 'error'
+                                })
+                            ]
+                        });
+                    } else {
+                        this.setState({
+                            annotations: [
+                                new InlineAnnotation(editor.session, {
+                                    text: 'Unknown',
+                                    type: 'warning'
+                                })
+                            ]
+                        });
+                    }
+                } else if (this.props.onUpdate) {
+                    this.props.onUpdate(value);
+                }
+            });
+    }
+    componentWillUnmount() {
+        if (this.onChangeSubscription) {
+            this.onChangeSubscription.unsubscribe();
+            this.onChangeSubscription = undefined;
+        }
+    }
+    componentWillReceiveProps(nextProps) {
+        this.setState({ value: nextProps.value });
     }
     render() {
         const { annotations = [] } = this.state;
-        const { templates, onChange, ...props } = this.props;
+        const { templates, onChange, value, ...props } = this.props;
         return (
             <AceEditor
-                theme='chrome' mode='graphistry'
+                theme='chrome'
+                mode='graphistry'
                 minLines={1} maxLines={4}
                 showGutter={false}
                 enableSnippets={true}
@@ -92,45 +126,12 @@ export class ExpressionEditor extends React.Component {
                     editor.getSession().setUseSoftTabs(true);
                     editor.completers.push(new DataframeCompleter(templates));
                 }}
+                value={this.state.value}
                 onChange={this.onChange}
                 {...props}/>
         );
     }
 }
-
-// export function ExpressionEditor({ name, value, onChange, templates, ...props }) {
-//     return (
-//         <AceEditor
-//             theme='chrome' mode='graphistry'
-//             minLines={1} maxLines={4}
-//             showGutter={false}
-//             enableSnippets={true}
-//             enableLiveAutocompletion={true}
-//             enableBasicAutocompletion={true}
-//             setOptions={{
-//                 wrap: true,
-//                 useSoftTabs: true,
-//                 autoScrollEditorIntoView: true
-//             }}
-//             editorProps={{
-//                 $blockScrolling: Infinity,
-//                 behavioursEnabled: true,
-//                 wrapBehavioursEnabled: true,
-//                 highlightActiveLine: false,
-//                 highlightSelectedWord: true,
-//                 autoScrollEditorIntoView: true
-//             }}
-//             name={name}
-//             value={value}
-//             onLoad={(editor) => {
-//                 editor.getSession().setUseSoftTabs(true);
-//                 editor.completers.push(new DataframeCompleter(templates));
-//             }}
-//             onChange={onChange}
-//             {...props}
-//         />
-//     );
-// }
 
 /**
  * @param {Object} namespaceMetadata
@@ -211,7 +212,7 @@ class InlineAnnotation {
         if (this.marker) {
             this.session.removeMarker(this.marker);
         }
-        var clazz = this.info.class || ('marker-highlight-' + this.info.type);
+        var clazz = this.info.class || styles['marker-highlight-' + this.info.type];
         if (this.info.text) {
             this.marker = this.session.addMarker(anchorRange, clazz, (stringBuilder, range, left, top, config) => {
                 var height = config.lineHeight;
@@ -241,6 +242,7 @@ class InlineAnnotation {
 
 /**
  * Fiddly way to ensure markers are cleared, because lifecycle management is hard.
+ */
 function clearAnnotationsAndMarkers(session) {
     session.getAnnotations()
         .forEach((annotation) => annotation.remove());
@@ -252,4 +254,3 @@ function clearAnnotationsAndMarkers(session) {
         }
     }
 };
- */

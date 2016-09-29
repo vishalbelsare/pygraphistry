@@ -1,28 +1,15 @@
 import Dock from 'react-dock';
 import { container } from '@graphistry/falcor-react-redux';
-import { Popover } from 'react-bootstrap';
+import { Overlay } from 'react-bootstrap';
 import { Scene } from 'viz-shared/containers/scene';
 import { Panel } from 'viz-shared/containers/panel';
 import { Toolbar } from 'viz-shared/containers/toolbar';
 import { Labels } from 'viz-shared/containers/labels';
 import { Selection } from 'viz-shared/containers/selection';
 
-export const View = container(
-    ({ scene, labels, toolbar, selection } = {}) => `{
-        scene: ${ Scene.fragment(scene) },
-        panels: {
-            left: { id, name },
-            right: { id, name },
-            bottom: { id, name }
-        },
-        layout: { id, name },
-        labels: ${ Labels.fragment(labels) },
-        toolbar: ${ Toolbar.fragment(toolbar) },
-        selection: ${ Selection.fragment(selection) }
-    }`
-)(renderView);
-
-function renderView({ scene, panels = {}, labels, toolbar, selection } = {}) {
+let View = ({
+    scene, panels = {}, labels, toolbar, selection
+} = {}) => {
     const { left = {}, right = {}, bottom = {} } = panels;
     const isLeftPanelOpen = !!panels.left;
     const isRightPanelOpen = !!panels.right;
@@ -32,12 +19,10 @@ function renderView({ scene, panels = {}, labels, toolbar, selection } = {}) {
             <Scene data={scene}/>
             <Labels data={labels}/>
             <Selection data={selection}/>
-            <Panel data={left}
-                   key='left'
-                   side='left'
+            <Panel side='left'
+                   data={left}
+                   name={left.name}
                    placement='right'
-                   id='left-panel'
-                   title={left.name}
                    positionTop={5}
                    positionLeft={42}
                    style={popoverStyles(isLeftPanelOpen)}/>
@@ -60,17 +45,29 @@ function renderView({ scene, panels = {}, labels, toolbar, selection } = {}) {
             <Toolbar data={toolbar}/>
         </div>
     );
-}
+};
+
+View = container(
+    ({ scene, labels, toolbar, selection } = {}) => `{
+        scene: ${ Scene.fragment(scene) },
+        panels: {
+            left: { id, name },
+            right: { id, name },
+            bottom: { id, name }
+        },
+        layout: { id, name },
+        labels: ${ Labels.fragment(labels) },
+        toolbar: ${ Toolbar.fragment(toolbar) },
+        selection: ${ Selection.fragment(selection) }
+    }`
+)(View);
 
 function popoverStyles(isOpen) {
     return {
         zIndex: 'initial',
         opacity: Number(isOpen),
         visibility: isOpen && 'visible' || 'hidden',
-        reansform: `translate3d(${Number(!isOpen) * -10}%, 0, 0)`,
-        transition: isOpen &&
-            `opacity 0.2s, transform 0.2s, visibility 0s` ||
-            `opacity 0.2s, transform 0.2s, visibility 0s linear 0.2s`
     };
 }
 
+export { View };

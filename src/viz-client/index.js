@@ -28,13 +28,6 @@ Subscriber.prototype.dispose = Subscriber.prototype.unsubscribe;
 
 Subscription.prototype.dispose = Subscription.prototype.unsubscribe;
 
-import {
-    compose,
-    withContext,
-    hoistStatics
-} from 'recompose';
-
-import $ from 'jquery';
 import _debug from 'debug';
 import ReactDOM from 'react-dom';
 import { PropTypes } from 'react';
@@ -43,10 +36,15 @@ import { Provider } from 'react-redux';
 import { configureStore } from 'viz-shared/store/configureStore';
 
 import { reloadHot } from 'viz-client/reloadHot';
-import { setupTitle, setupAnalytics,
-         getURLParameters, loadClientModule,
-         setupErrorHandlers, setupDocumentElement,
-         setupSplashOrContinue } from './startup';
+import {
+    setupTitle,
+    setupAnalytics,
+    getURLParameters,
+    loadClientModule,
+    setupErrorHandlers,
+    setupDocumentElement,
+    setupSplashOrContinue } from './startup';
+import { setupLegacyInterop } from './legacy';
 
 const debug = _debug('graphistry:viz-client');
 
@@ -81,19 +79,7 @@ Observable
             App, options: { ...options, ...options2 }
         })
     )
-    .map(({ App, options }) => ({
-        options,
-        App: hoistStatics(withContext(
-            { play: PropTypes.number,
-              socket: PropTypes.object,
-              pixelRatio: PropTypes.number,
-              handleVboUpdates: PropTypes.func }, () => (
-            { play: options.play,
-              socket: options.socket,
-              pixelRatio: options.pixelRatio,
-              handleVboUpdates: options.handleVboUpdates }
-        )))(App)
-    }))
+    .map(partial(setupLegacyInterop, document))
     .switchMap(
         ({ App, options }) => {
             const { model, ...props } = options;

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Popover } from 'react-bootstrap';
+import { Panel } from 'react-bootstrap';
 import { container } from '@graphistry/falcor-react-redux';
 import {
     Slider,
@@ -23,47 +23,17 @@ const controlsByType = {
     'continuous': Slider
 };
 
-export const Settings = container(
-    ({ settings = [] } = {}) => `{
-        id, name, settings: {
-            length, [0...${settings.length}]: ${
-                Options.fragment()
-            }
-        }
-    }`
-)(renderSettings);
-
-export const Options = container(
-    (options = []) => `{
-        name, length, [0...${options.length}]: ${
-            Control.fragment()
-        }
-    }`,
-    (options) => ({ options, name: options.name })
-)(renderOptions);
-
-export const Control = container(
-    ({ stateKey } = {}) => !stateKey ?
-        `{ id, name, type, props, stateKey }` :
-        `{ id, name, type, props, stateKey, state: { ${stateKey} } }`
-    ,
-    ({ state, stateKey, ...control }) => ({
-        state: state && stateKey && state[stateKey], stateKey, ...control
-    }),
-    { setValue: setControlValue }
-)(renderControl);
-
-function renderSettings({ name, settings = [], ...props } = {}) {
+let Settings = ({ id, name, settings = [], ...props } = {}) => {
     return (
-        <Popover {...props}>
+        <Panel header={name} style={{ minWidth: `350px` }}>
         {settings.map((options, index) => (
             <Options data={options} key={`${index}: ${options.name}`}/>
         ))}
-        </Popover>
+        </Panel>
     );
-}
+};
 
-function renderOptions({ name, options = [] } = {}) {
+let Options = ({ name, options = [] } = {}) => {
     return (
         <Grid fluid style={{ padding: 0 }}>
         {name &&
@@ -76,10 +46,10 @@ function renderOptions({ name, options = [] } = {}) {
             <Control data={control} key={`${index}: ${control.id}`}/>
         ))}
         </Grid>
-    )
-}
+    );
+};
 
-function renderControl({ id, type, ...rest } = {}) {
+let Control = ({ id, type, ...rest } = {}) => {
     const Component = controlsById[id] || controlsByType[type];
     if (!Component) {
         return null;
@@ -87,4 +57,35 @@ function renderControl({ id, type, ...rest } = {}) {
     return (
         <Component id={id} type={type} {...rest}/>
    );
-}
+};
+
+Settings = container(
+    ({ settings = [] } = {}) => `{
+        id, name, settings: {
+            length, [0...${settings.length || 0}]: ${
+                Options.fragment()
+            }
+        }
+    }`
+)(Settings);
+
+Options = container(
+    (options = []) => `{
+        name, length, [0...${options.length || 0}]: ${
+            Control.fragment()
+        }
+    }`,
+    (options) => ({ options, name: options.name })
+)(Options);
+
+Control = container(
+    ({ stateKey } = {}) => !stateKey ?
+        `{ id, name, type, props, stateKey }` :
+        `{ id, name, type, props, stateKey, state: { ${stateKey} } }`,
+    ({ state, stateKey, ...control }) => ({
+        state: state && stateKey && state[stateKey], stateKey, ...control
+    }),
+    { setValue: setControlValue }
+)(Control);
+
+export { Settings, Options, Control };

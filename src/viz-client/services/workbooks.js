@@ -1,4 +1,4 @@
-import { loadResource } from './loadResource';
+import { loadResource } from './resource';
 import { Observable, ReplaySubject } from 'rxjs';
 import { dataset as createDataset,
          workbook as createWorkbook } from 'viz-shared/models/workbooks';
@@ -19,12 +19,10 @@ export function loadWorkbook(workbooksById) {
     return function loadWorkbookById({ workbookId, options = {} }) {
         return (workbookId in workbooksById) ?
             workbooksById[workbookId] : (
-            workbooksById[workbookId] = Observable
-                .zip(downloadMetadata(options), downloadScene(options))
-                .map(([metadata, scene]) => createWorkbook(createDataset({
-                    ...options, ...metadata, scene
+            workbooksById[workbookId] = downloadMetadata(options)
+                .map((metadata) => createWorkbook(createDataset({
+                    ...options, ...metadata
                 }), workbookId))
-                .concat(Observable.never())
                 .multicast(new ReplaySubject(1))
                 .refCount()
             );
@@ -35,13 +33,4 @@ function downloadMetadata({ contentKey = '' }) {
     return loadResource('metadata.json', { contentKey })
         .map(({ response }) => response)
         .catch(() => Observable.of({}));
-}
-
-function downloadScene({ contentKey = '' }) {
-    return loadResource('renderconfig.json', { contentKey })
-        .map(({ response }) => response)
-        .catch((error) => {
-            console.error('Error retrieving render config.', error);
-            throw new Error('Content Not Found');
-        });
 }

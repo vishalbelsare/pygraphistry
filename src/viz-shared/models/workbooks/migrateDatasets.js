@@ -1,6 +1,6 @@
 import { dataset as createDataset } from './';
 
-export function migrateDatasets(workbook, options) {
+export function migrateDatasets(workbook, options = {}) {
 
     if (workbook.datasets) {
         return workbook;
@@ -16,8 +16,10 @@ export function migrateDatasets(workbook, options) {
         }
 
         datasetsList[datasetsList.length++] = createDataset({
-            url: datasetId, name: datasetId,
-            ... workbookDatasets[datasetId]
+            bg: options.bg,
+            url: datasetId,
+            name: datasetId,
+            ... workbookDatasets[datasetId],
         }, dataset.id);
     }
 

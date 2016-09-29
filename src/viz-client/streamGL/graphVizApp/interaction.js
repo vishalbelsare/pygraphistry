@@ -186,11 +186,10 @@ function setupScroll($eventTarget, canvas, camera, appState) {
         });
 }
 
-function setupZoomButton($elt, camera, zoomFactor) {
-    return Observable.fromEvent($elt, 'click')
-        .map(function () {
-            return zoom(camera, zoomFactor);
-        });
+function setupZoomButton(toggleZoom, camera, zoomFactor) {
+    return toggleZoom.map(function () {
+        return zoom(camera, zoomFactor);
+    });
 }
 
 // Camera * Float * {x : Float, y: Float}
@@ -215,45 +214,50 @@ function zoom(camera, zoomFactor, zoomPoint) {
 }
 
 
-function setupCenter($toggle, curPoints, camera) {
-    return $toggle.onAsObservable('click')
+function setupCenter(toggleCenter, curPoints, camera) {
+    return toggleCenter
         .auditTime(1)
         .switchMap(function () {
             debug('click on center');
             return curPoints.take(1).map(function (curPoints) {
                 var points = new Float32Array(curPoints.buffer);
-
                 // Don't attempt to center when nothing is on screen
                 if (points.length < 1) {
                     return camera;
                 }
-
-                var bbox = {
-                    left: Number.MAX_VALUE, right: Number.MIN_VALUE,
-                    top: Number.MAX_VALUE, bottom: Number.MIN_VALUE
-                };
-
-                for (var i = 0; i < points.length; i+=2) {
-                    var x = points[i];
-                    var y = points[i+1];
-                    bbox.left = x < bbox.left ? x : bbox.left;
-                    bbox.right = x > bbox.right ? x : bbox.right;
-                    bbox.top = y < bbox.top ? y : bbox.top;
-                    bbox.bottom = y > bbox.bottom ? y : bbox.bottom;
-                }
-
-                if (points.length === 1) {
-                    bbox.left -= 0.1;
-                    bbox.right += 0.1;
-                    bbox.top -= 0.1;
-                    bbox.bottom += 0.1;
-                }
-
-                debug('Bounding box: ', bbox);
-                camera.centerOn(bbox.left, bbox.right, bbox.bottom * -1, bbox.top * -1);
+                const { top, left, right, bottom } = getBoundingBox(points);
+                // debug('Bounding box: ', bbox);
+                camera.centerOn(left, right, bottom * -1, top * -1);
                 return camera;
             });
         });
+}
+
+function getBoundingBox(points) {
+
+    const len = points.length;
+
+    let index = -2,
+        top = Number.MAX_VALUE, left = Number.MAX_VALUE,
+        right = Number.MIN_VALUE, bottom = Number.MIN_VALUE;
+
+    while ((index += 2) < len) {
+        const x = points[index];
+        const y = points[index + 1];
+        top = y < top ? y : top;
+        left = x < left ? x : left;
+        right = x > right ? x : right;
+        bottom = y > bottom ? y : bottom;
+    }
+
+    if (len === 1) {
+        top -= 0.1;
+        left -= 0.1;
+        right += 0.1;
+        bottom += 0.1;
+    }
+
+    return { top, left, right, bottom };
 }
 
 ///////////////////////////////////////////////////////////////////////////////

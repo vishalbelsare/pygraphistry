@@ -37,12 +37,12 @@ function callReducer({ type, value, falcor }) {
 // values: $atom($ref(`${view}.scene.camera.zoom`).value)
 
 function multiplyReducer({ type, value, values, falcor }) {
+    falcor = falcor._clone({ _path: [] });
     return Observable
         .from(falcor.getValue(values))
         .mergeMap((state) => falcor
-            ._clone({ _path: [] })
             .set($value(values, state * value))
-            .progressively());
+        );
 }
 
 // value: 0,
@@ -58,10 +58,7 @@ function toggleReducer({ type, value, values, falcor }) {
     values = values[value];
 
     return Observable.merge(
-        falcor.set($value(`value`, value)).progressively(),
-        falcor
-            ._clone({ _path: [] })
-            .set(...values)
-            .progressively()
+        falcor.set($value(`value`, value)),
+        falcor._clone({ _path: [] }).set(...values)
     );
 }
