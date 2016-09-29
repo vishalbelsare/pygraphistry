@@ -39,6 +39,7 @@ import {
 import {
     setupRotate,
     setupCenter,
+    setupScroll,
     setupZoomButton
 } from 'viz-client/streamGL/graphVizApp/interaction';
 
@@ -241,7 +242,7 @@ class Renderer extends React.Component {
             return;
         }
 
-        const { play, socket } = props;
+        const { play, socket, simulation } = props;
 
         let {
             renderState,
@@ -266,37 +267,56 @@ class Renderer extends React.Component {
             hasDOMListeners = true;
 
             const { camera } = renderState;
-            const rotateSource = setupRotate($(container), camera);
             const centerSource = setupCenter(toggleCenter, curPoints, camera);
             const zoomInSource = setupZoomButton(toggleZoomIn, camera, 1 / 1.25);
             const zoomOutSource = setupZoomButton(toggleZoomOut, camera, 1.25);
+            const rotateSource = setupRotate($(container), camera).do(() => {
+                // this.renderFast = true;
+                this.renderPanZoom = true;
+                this.forceUpdate();
+            });
+            const scrollSource = setupScroll(
+                $(container), simulation,
+                camera, { marqueeOn, brushOn }
+            ).do(() => {
+                // this.renderFast = true;
+                this.renderPanZoom = true;
+                this.forceUpdate();
+            });
+
             const panSource = Gestures
                 .pan(container)
                 .mergeMap((pan) => Observable.defer(() => {
                     const { offsetWidth, offsetHeight } = container;
-                    const forceRatio = 0.5 * (
+                    const forceRatio = 2 * (
                         (camera.width / offsetWidth) +
                         (camera.height / offsetHeight));
-                    const { x: originX, y: originY } = camera.center;
-                    return pan.decelerate(0.25, 9.8 / forceRatio).do({
-                        next: ({ movementXTotal, movementYTotal }) => {
-                            camera.center.x = originX - (movementXTotal * camera.width / offsetWidth);
-                            camera.center.y = originY - (movementYTotal * camera.height / offsetHeight);
-                            this.renderFast = true;
-                            this.renderPanZoom = true;
-                            this.forceUpdate();
-                        },
-                        complete: () => {
-                            this.renderFast = false;
-                            this.renderPanZoom = true;
-                            this.forceUpdate();
-                        }
-                    })
+                    return pan
+                        .decelerate(0.25, 9.8 * forceRatio)
+                        .filter(({ movementX, movementY }) => (
+                            movementX !== 0 || movementY !== 0
+                        ))
+                        .do({
+                            next: ({ movementX, movementY }) => {
+                                camera.center.x -= movementX * camera.width / offsetWidth;
+                                camera.center.y -= movementY * camera.height / offsetHeight;
+                                this.renderFast = true;
+                                this.renderPanZoom = true;
+                                this.forceUpdate();
+                            },
+                            complete: () => {
+                                this.renderFast = false;
+                                this.renderPanZoom = true;
+                                this.forceUpdate();
+                            }
+                        })
                 }).repeat())
                 .mapTo(camera);
 
             cameraChangesSource = Observable.merge(
-                rotateSource, centerSource, zoomInSource, zoomOutSource, panSource
+                rotateSource, centerSource,
+                zoomInSource, zoomOutSource,
+                scrollSource, panSource
             );
             // cameraChangesSource = setupCameraInteractions({
             //     toggleZoomIn, toggleZoomOut,
@@ -430,10 +450,12 @@ class Renderer extends React.Component {
                 clearTimeout(renderFast);
                 renderFast = undefined;
                 // console.log('clearing renderFast');
-            } else if (typeof renderFast === 'undefined') {
+            }
+            if (typeof renderFast === 'undefined') {
                 // console.log('enqueueing renderFast');
                 renderFast = setTimeout(() => {
                     // console.log('executing renderFast');
+                    this.renderFast = false;
                     this.renderPanZoom = true;
                     this.forceUpdate();
                 }, 200);

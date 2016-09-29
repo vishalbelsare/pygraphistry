@@ -170,13 +170,13 @@ function setupScroll($eventTarget, canvas, camera, appState) {
         .do(function (wheelEvent) {
             wheelEvent.preventDefault();
         })
-        .map(function(wheelEvent) {
+        .map(function({ originalEvent }) {
             var bounds = $eventTarget[0].getBoundingClientRect();
-            var zoomFactor = (wheelEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
+            var zoomFactor = (originalEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
 
             var canvasPos = {
-                x: (wheelEvent.clientX - bounds.left),
-                y: (wheelEvent.clientY - bounds.top)
+                x: (originalEvent.clientX - bounds.left),
+                y: (originalEvent.clientY - bounds.top)
             };
 
             var screenPos = camera.canvas2ScreenCoords(canvasPos.x, canvasPos.y, canvas);
