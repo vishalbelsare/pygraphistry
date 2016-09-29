@@ -20,7 +20,6 @@ function setControlValue(action$, store) {
             .auditTime(100, Scheduler.async)
             .switchMap(({ stateKey, falcor, state }) => falcor
                 .set($value(`state['${stateKey}']`, state))
-                .progressively()
             ))
         .ignoreElements();
 }

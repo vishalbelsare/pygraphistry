@@ -154,10 +154,8 @@
 
         this.width = width;
         this.height = height;
-        this.center = {
-            x: centerX,
-            y: centerY
-        };
+        this.center.x = centerX;
+        this.center.y = centerY;
     };
 
     Camera2d.prototype.centerOn = function(left, right, top, bottom) {
@@ -175,10 +173,8 @@
             this.height = nheight;
             this.width = nheight * aspectRatio;
         }
-        this.center = {
-            x: left + (nwidth / 2.0),
-            y: top + (nheight / 2.0)
-        };
+        this.center.x = left + (nwidth * 0.5);
+        this.center.y = top + (nheight * 0.5);
     };
 
 

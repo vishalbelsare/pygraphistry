@@ -2,9 +2,10 @@ import d3 from 'd3';
 import styles from './styles.less';
 import React from 'react';
 import Color from 'color';
-import RcSlider from '@graphistry/rc-slider';
 import RcSwitch from 'rc-switch';
+import classNames from 'classnames';
 import RcColorPicker from 'rc-color-picker';
+import RcSlider from '@graphistry/rc-slider';
 import { FormControl } from 'react-bootstrap';
 import { Grid, Row, Col, ControlLabel } from 'react-bootstrap';
 
@@ -35,13 +36,14 @@ export function Slider({
                 <span>{name}</span>
             </Col>
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
-                <RcSlider min={props.min} max={props.max}
-                          step={props.step} defaultValue={state}
+                <RcSlider key={`${id}-slider`}
+                          min={props.min} max={props.max}
+                          step={props.step} value={state}
                           tipFormatter={tipFormatter}
                           tipTransitionName='rc-slider-tooltip-zoom-down'
                           onChange={(newState) => setValue({
                               id, type, ...rest,
-                              state: scales[scale].invert(newState)
+                              state: state = scales[scale].invert(newState)
                           })}
                           {...rest}/>
             </Col>
@@ -58,9 +60,9 @@ export function TextInput({
                 <span>{name}</span>
             </Col>
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
-                <input type='text' defaultValue={state}
+                <input key={`${id}-input`} type='text' defaultValue={state}
                        onChange={(ev) => setValue({
-                           id, type, ...rest, state: ev.target.value
+                           id, type, ...rest, state: state = ev.target.value
                        })}
                        {...rest}/>
             </Col>
@@ -77,11 +79,12 @@ export function ToggleButton({
                 <span>{name}</span>
             </Col>
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
-                <RcSwitch defaultChecked={state}
+                <RcSwitch key={`${id}-toggle`}
+                          checked={state}
                           checkedChildren={'On'}
                           unCheckedChildren={'Off'}
                           onChange={(newState) => setValue({
-                              id, type, ...rest, state: newState
+                              id, type, ...rest, state: state = newState
                           })}/>
             </Col>
         </Row>
@@ -98,12 +101,13 @@ export function ColorPicker({
                 <span>{name}</span>
             </Col>
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
-                <RcColorPicker animation='slide-up'
+                <RcColorPicker key={`${id}-colors`}
+                               animation='slide-up'
                                color={state.hexString()}
                                alpha={state.alpha() * 100}
                                onChange={({ color, alpha }) => setValue({
                                    id, type, ...rest,
-                                   state: new Color(color)
+                                   state: state = new Color(color)
                                        .alpha(alpha * .01)
                                        .rgbaString()
                                })}/>

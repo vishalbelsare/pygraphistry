@@ -7,10 +7,8 @@ import {
 export function camera(scene) {
     return {
         camera: {
-            width: 1, height: 1, zoom: 1,
-            center: $atom({ x: 0.5, y: 0.5 }),
-            edges: { scaling: 1, opacity: 1 },
-            points: { scaling: 1, opacity: 1 },
+            zoom: 1,
+            center: true,
             controls: [{
                 id: 'zoom-in',
                 name: 'Zoom in',
@@ -26,8 +24,16 @@ export function camera(scene) {
             }, {
                 id: 'center-camera',
                 name: 'Center view',
-                type: 'call',
-                value: $ref(`${scene}.camera.center`)
+                type: 'toggle',
+                value: 0,
+                values: $atom([[
+                    $value(`${scene}.camera.zoom`, $atom(1)),
+                    $value(`${scene}.camera.center`, $atom(true))
+                ], [
+                    $value(`${scene}.camera.zoom`, $atom(1)),
+                    $value(`${scene}.camera.center`, $atom(false)),
+                    $value(`${scene}.camera.controls[2].value`, $atom(0))
+                ]])
             }]
         }
     };

@@ -115,7 +115,9 @@ export const models = {
             'offset': 0,
             'stride': 8,
             'normalize': false,
-            'sizeHint': 'numElements.edge * (numElements.renderedSplits + 1) * 2'
+            'sizeHint': (numElements) => {
+                return numElements.edge * (numElements.renderedSplits + 1) * 2;
+            }
         }
     },
     'midSpringsStarts': {
@@ -127,7 +129,9 @@ export const models = {
             'offset': 0,
             'stride': 8,
             'normalize': false,
-            'sizeHint': 'numElements.edge * (numElements.renderedSplits + 1) * 2'
+            'sizeHint': (numElements) => {
+                return numElements.edge * (numElements.renderedSplits + 1) * 2;
+            }
         }
     },
     'midSpringsEnds': {
@@ -139,7 +143,9 @@ export const models = {
             'offset': 0,
             'stride': 8,
             'normalize': false,
-            'sizeHint': 'numElements.edge * (numElements.renderedSplits + 1) * 2'
+            'sizeHint': (numElements) => {
+                return numElements.edge * (numElements.renderedSplits + 1) * 2;
+            }
         }
     },
     'selectedMidSpringsPos': {
@@ -206,7 +212,9 @@ export const models = {
             'offset': 0,
             'stride': 8,
             'normalize': false,
-            'sizeHint': 'numElements.edge * 2 * 3'
+            'sizeHint': (numElements) => {
+                return numElements.edge * 2 * 3;
+            }
         }
     },
     'arrowEndPos': {
@@ -218,7 +226,9 @@ export const models = {
             'offset': 0,
             'stride': 8,
             'normalize': false,
-            'sizeHint': 'numElements.edge * 2 * 3'
+            'sizeHint': (numElements) => {
+                return numElements.edge * 2 * 3;
+            }
         }
     },
     'arrowNormalDir': {
@@ -230,7 +240,9 @@ export const models = {
             'offset': 0,
             'stride': 0,
             'normalize': false,
-            'sizeHint': 'numElements.edge * 3'
+            'sizeHint': (numElements) => {
+                return numElements.edge * 3;
+            }
         }
     },
     'highlightedArrowStartPos': {
@@ -396,7 +408,9 @@ export const models = {
             'offset': 0,
             'stride': 0,
             'normalize': false,
-            'sizeHint': 'numElements.edge * 3'
+            'sizeHint': (numElements) => {
+                return numElements.edge * 3;
+            }
         }
     },
     'selectedArrowPointSizes': {
@@ -486,7 +500,9 @@ export const models = {
             'offset': 0,
             'stride': 0,
             'normalize': true,
-            'sizeHint': 'numElements.edge * (numElements.renderedSplits + 1) * 2'
+            'sizeHint': (numElements) => {
+                return numElements.edge * (numElements.renderedSplits + 1) * 2;
+            }
         }
     },
     'arrowColors': {
@@ -498,7 +514,9 @@ export const models = {
             'offset': 0,
             'stride': 0,
             'normalize': true,
-            'sizeHint': 'numElements.edge * 3'
+            'sizeHint': (numElements) => {
+                return numElements.edge * 3;
+            }
         }
     },
     'pointColors': {

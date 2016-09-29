@@ -7,7 +7,7 @@ export function maskDataframe({ view }) {
     const { dataframe, simulator } = nBody;
 
     const { selectionMasks, exclusionMasks, limits, errors } =
-        groupExpressionsByTypeWithLimitsAndErrors({ dataframe, simulator, expressionsById });
+        groupExpressionsByTypeWithLimitsAndErrors({ dataframe, expressionsById });
 
     const applyMasksAndEmitUpdatedBuffers = Observable.defer(() => {
 
@@ -53,11 +53,15 @@ export function maskDataframe({ view }) {
     function updateLayoutDataframeBuffers(updatedBuffers) {
         if (updatedBuffers !== false) {
             const { layoutAlgorithms } = simulator;
-            return Observable.forkJoin(...layoutAlgorithms.map((algo) =>
-                Observable.from(algo.updateDataframeBuffers(simulator))
-            )).mapTo(updatedBuffers);
+            return Observable.merge(
+                ...layoutAlgorithms.map((algo) =>
+                    Observable.from(algo.updateDataframeBuffers(simulator))
+                )
+            )
+            .toArray()
+            .mapTo(updatedBuffers);
         }
-        return Observable.of(updatedBuffers)
+        return Observable.of(updatedBuffers);
     }
 
     function tickSimulatorAndNotifyVBOLoop(updatedBuffers) {
@@ -67,14 +71,20 @@ export function maskDataframe({ view }) {
                 'edgeColors', 'logicalEdges', 'springsPos'
             ]);
             const { server } = nBody;
-            if (server && server.updateVboSubject) {
-                server.updateVboSubject.next(nBody);
+            if (server) {
+                // we don't have to do this -- nice
+                // if (server.viewConfig) {
+                //     server.viewConfig.next(view);
+                // }
+                if (server.updateVboSubject) {
+                    server.updateVboSubject.next(nBody);
+                }
             }
         }
     }
 }
 
-function groupExpressionsByTypeWithLimitsAndErrors({ dataframe, simulator, expressionsById }) {
+function groupExpressionsByTypeWithLimitsAndErrors({ dataframe, expressionsById }) {
 
     const limits = { edge: Infinity, point: Infinity };
     const selectionMasks = [], exclusionMasks = [], errors = [];
@@ -83,18 +93,24 @@ function groupExpressionsByTypeWithLimitsAndErrors({ dataframe, simulator, expre
     for (const expressionId in expressionsById) {
 
         const expression = expressionsById[expressionId];
-        const { query, enabled, componentType, attribute, expressionType } = expression;
 
-        if (query === undefined) {
+        if (!expression || !expressionsById.hasOwnProperty(expressionId)) {
             continue;
         }
+
+        const { query, enabled } = expression;
+
+        if (query === undefined || !enabled) {
+            continue;
+        }
+
+        const { componentType, attribute, expressionType } = expression;
 
         if (expressionType === 'filter') {
 
             const { ast } = query;
 
-            if (ast &&
-                ast.value !== undefined &&
+            if (ast && ast.value !== undefined &&
                 ast.type === 'LimitExpression') {
                 limits.edge =
                 limits.point = codeGenerator.evaluateExpressionFree(ast.value);
@@ -102,7 +118,7 @@ function groupExpressionsByTypeWithLimitsAndErrors({ dataframe, simulator, expre
             }
         }
 
-        const expressionQuery = { attribute, type: componentType, ...query };
+        const expressionQuery = { ...query, attribute, type: componentType };
         const masks = dataframe.getMasksForQuery(expressionQuery, errors);
 
         if (masks !== undefined) {
@@ -110,8 +126,8 @@ function groupExpressionsByTypeWithLimitsAndErrors({ dataframe, simulator, expre
             // Record the size of the filtered set for UI feedback:
             expression.maskSizes = masks.maskSize();
             (expressionType === 'filter' ?
-                selectionMasks :
-                exclusionMasks).push(masks);
+                selectionMasks : exclusionMasks
+            ).push(masks);
         }
     }
 

@@ -34,7 +34,6 @@ export function filters(workbookId, viewId, defaultFilter = {}) {
                     $value(`${view}.scene.controls[1].value`, $atom(0)),
                     $value(`${view}.labels.controls[0].value`, $atom(0)),
                     $value(`${view}.layout.controls[0].value`, $atom(0)),
-                    $value(`${view}.sets.controls[0].value`, $atom(0)),
                     $value(`${view}.exclusions.controls[0].value`, $atom(0)),
                 ]])
             }]

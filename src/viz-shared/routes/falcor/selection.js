@@ -9,8 +9,10 @@ import { getHandler,
 
 export function selection(path, base) {
     return function selection({ loadViewsById }) {
+
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
+
         return [{
             get: getValues,
             route: `${base}['selection'][{keys}]`

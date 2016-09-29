@@ -1,18 +1,20 @@
 import { container } from '@graphistry/falcor-react-redux';
 
-export const Labels = container(
-    ({ edge = [], point = [], settings = [] } = {}) => `{
+let Labels = ({ edges, points }) => {
+    return (
+        <h1>LABELS</h1>
+    )
+};
+
+Labels = container(
+    ({ edges = [], points = [] } = {}) => `{
         id, name,
         selection, timeZone,
         opacity, enabled, poiEnabled,
         ['background', 'foreground']: { color },
-        edge: { length, [0...${edge.length}]  },
-        point: { length, [0...${point.length}] }
+        edges: { length, [0...${edges.length || 0}]  },
+        points: { length, [0...${points.length || 0}] }
     }`
-)(renderLabels);
+)(Labels);
 
-function renderLabels({ edge, point }) {
-    return (
-        <h1>LABELS</h1>
-    )
-}
+export { Labels }

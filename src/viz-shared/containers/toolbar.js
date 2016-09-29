@@ -5,10 +5,20 @@ import { ButtonList,
          ButtonListItems
 } from 'viz-shared/components/toolbar';
 
-export const Toolbar = container(
+let Toolbar = ({ toolbar = [], ...props } = {}) => {
+    return (
+        <ButtonList {...props}>
+        {toolbar.map((items, index) => (
+            <ToolbarItems data={items} key={index}/>
+        ))}
+        </ButtonList>
+    );
+};
+
+Toolbar = container(
     // toolbar fragment
-    (toolbar = []) => `{
-        visible, length, [0...${toolbar.length}]: ${
+    ({ length = 0 } = {}) => `{
+        visible, length, [0...${length}]: ${
             ToolbarItems.fragment()
         }
     }`,
@@ -16,20 +26,31 @@ export const Toolbar = container(
     (toolbar = []) => ({
         toolbar, visible: toolbar.visible
     })
-)(renderToolbar);
+)(Toolbar);
 
-export const ToolbarItems = container(
+let ToolbarItems = ({ items = [], ...props } = {}) => {
+    return (
+        <ButtonListItems {...props}>
+        {items.map((item, index) => (
+            <ToolbarItem data={item}
+                         key={`${index}: ${item.id}`}/>
+        ))}
+        </ButtonListItems>
+    );
+}
+
+ToolbarItems = container(
     // toolbar items fragment
-    (items = []) => `{
-        length, [0...${items.length}]: ${
+    ({ length = 0 } = {}) => `{
+        length, [0...${length}]: ${
             ToolbarItem.fragment()
         }
     }`,
     // map fragment to component props
     (items) => ({ items })
-)(renderToolbarItems);
+)(ToolbarItems);
 
-export const ToolbarItem = container(
+let ToolbarItem = container(
     // toolbar item fragment
     ({ type } = {}) => {
         if (!type || type === 'call') {
@@ -45,22 +66,4 @@ export const ToolbarItem = container(
     { onItemSelected: selectToolbarItem }
 )(ButtonListItem);
 
-function renderToolbar({ toolbar = [], ...props } = {}) {
-    return (
-        <ButtonList {...props}>
-        {toolbar.map((items, index) => (
-            <ToolbarItems data={items} key={index}/>
-        ))}
-        </ButtonList>
-    );
-}
-
-function renderToolbarItems({ items = [], ...props } = {}) {
-    return (
-        <ButtonListItems {...props}>
-        {items.map((item, index) => (
-            <ToolbarItem data={item} key={`${index}: ${item.id}`}/>
-        ))}
-        </ButtonListItems>
-    );
-}
+export { Toolbar, ToolbarItems, ToolbarItem };

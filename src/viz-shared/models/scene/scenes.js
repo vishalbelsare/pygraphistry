@@ -21,30 +21,10 @@ for (const itemName in items) {
     }
 }
 
-const options = {
-    'enable': [['BLEND'], ['DEPTH_TEST']],
-    'disable': [['CULL_FACE']],
-    'blendFuncSeparate': [['SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'ONE', 'ONE']],
-    'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
-    'depthFunc': [['LEQUAL']],
-    'clearColor': [[51/255, 51/255, 57/255, 1.0]],
-    'lineWidth': [[1]]
-};
-
-const transparentOptions = { ...options, ...{
-    clearColor: [[51/255, 51/255, 57/255, 0.0]]
-}};
-
-const camera2D = {
-    'type': '2d',
-    'bounds': {'top': -1, 'left': 0, 'bottom': 0, 'right': 1},
-    'nearPlane': -1,
-    'farPlane': 10
-};
-
 const gis = {
-    'options': options,
+    'id': 'gis',
     'camera': camera2D,
+    'options': createDefaultOptions,
     'clientMidEdgeInterpolation': false,
     //'numRenderedSplits':7 ,
     'render': [
@@ -56,8 +36,9 @@ const gis = {
 };
 
 const scene = {
-    'options': options,
+    'id': 'default',
     'camera': camera2D,
+    'options': createDefaultOptions,
     'numRenderedSplits': 8,
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
@@ -71,8 +52,9 @@ const scene = {
 };
 
 const transparent = {
-    'options': transparentOptions,
+    'id': 'transparent',
     'camera': camera2D,
+    'options': createTransparentOptions,
     'numRenderedSplits': 8,
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
@@ -85,9 +67,10 @@ const transparent = {
     ]
 };
 
-export const netflowStraight = {
-    'options': options,
+const netflowStraight = {
+    'id': 'netflowStraight',
     'camera': camera2D,
+    'options': createDefaultOptions,
     'numRenderedSplits': 0,
     'clientMidEdgeInterpolation': true,
     'render': [
@@ -109,6 +92,8 @@ export const scenes = {
 function generateScene(scene, items, models, programs, textures) {
 
     const render = scene.render.slice();
+    const createCamera = scene.camera;
+    const createOptions = scene.options;
 
     return function generate() {
 
@@ -193,6 +178,8 @@ function generateScene(scene, items, models, programs, textures) {
 
             return scene;
         }, { ...scene, ...{
+             camera: createCamera(),
+             options: createOptions(),
              modes : {}, triggers: {},
              items : {}, programs: {},
              buffers: {}, textures: {},
@@ -209,3 +196,35 @@ function generateScene(scene, items, models, programs, textures) {
         return generatedScene;
     }
 }
+
+function createDefaultOptions() {
+    return {
+        'enable': [['BLEND'], ['DEPTH_TEST']],
+        'disable': [['CULL_FACE']],
+        'blendFuncSeparate': [['SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'ONE', 'ONE']],
+        'blendEquationSeparate': [['FUNC_ADD', 'FUNC_ADD']],
+        'depthFunc': [['LEQUAL']],
+        'clearColor': [[51/255, 51/255, 57/255, 1.0]],
+        'lineWidth': [[1]]
+    };
+}
+
+function createTransparentOptions() {
+    return {
+        ...createDefaultOptions(),
+        clearColor: [[51/255, 51/255, 57/255, 0.0]]
+    };
+}
+
+function camera2D() {
+    return {
+        'type': '2d',
+        'bounds': {
+            'top': -1, 'left': 0,
+            'bottom': 0, 'right': 1
+        },
+        'nearPlane': -1,
+        'farPlane': 10
+    };
+}
+

@@ -1,8 +1,8 @@
 import SocketDataSource from '@graphistry/falcor-socket-datasource';
 
 export class RemoteDataSource extends SocketDataSource {
-    constructor(url, config) {
-        super(url, config, 'falcor-request', 'cancel-falcor-request');
+    constructor(...args) {
+        super(...args);
         this.socket.on('falcor-update', this.falcorUpdateHandler.bind(this));
     }
     falcorUpdateHandler({ paths, invalidated, jsonGraph }) {
@@ -15,6 +15,8 @@ export class RemoteDataSource extends SocketDataSource {
         }
         if (paths && jsonGraph) {
             model._setJSONGs(model, [{ paths, jsonGraph }]);
+            model._root.onChangesCompleted &&
+            model._root.onChangesCompleted.call(model);
         }
     }
 }

@@ -1,4 +1,5 @@
 import { inspect } from 'util';
+import { Observable } from 'rxjs';
 const  { slice } = Array.prototype;
 import { mapObjectsToAtoms } from './mapObjectsToAtoms';
 import { captureErrorStacks } from './captureErrorStacks';
@@ -23,7 +24,7 @@ export function getHandler(lists, loader, getInitialProps = defaultPropsResolver
             );
         }
 
-        const suffix = path.slice(count * 2);
+        const suffix = slice.call(path, count * 2);
         const loaded = suffix.reduce((source, keys, index) => source.mergeMap(
                 ({ data, idxs }) => [].concat(keys),
                 ({ data, idxs }, key) => ({
@@ -34,7 +35,9 @@ export function getHandler(lists, loader, getInitialProps = defaultPropsResolver
                     }
                 })
             ),
-            loader(state).map((data) => ({ data, idxs: { length: 0 } }))
+            Observable
+                .defer(() => loader(state))
+                .map((data) => ({ data, idxs: { length: 0 } }))
         );
 
         const values = loaded.mergeMap(({ data, idxs }) => {

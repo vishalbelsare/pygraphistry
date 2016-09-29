@@ -1,10 +1,13 @@
-import { inspect } from 'util';
+const  { isArray } = Array;
 const  { slice } = Array.prototype;
+
+import { inspect } from 'util';
+import { Observable } from 'rxjs';
 import { mapObjectsToAtoms } from './mapObjectsToAtoms';
 import { captureErrorStacks } from './captureErrorStacks';
 
-function defaultValueMapper(vals, path, data) {
-    return vals;
+function defaultValueMapper(node, key, value, path, data) {
+    return Observable.of({ path, value: node[key] = value });
 }
 
 function defaultPropsResolver(routerInstance) {
@@ -13,9 +16,12 @@ function defaultPropsResolver(routerInstance) {
     return query;
 }
 
-export function setHandler(lists, loader, valueKeys = {},
-                           mapValue = defaultValueMapper,
+export function setHandler(lists, loader, mapValue, valueKeys = {},
                            getInitialProps = defaultPropsResolver) {
+
+    if (typeof mapValue !== 'function') {
+        mapValue = defaultValueMapper;
+    }
 
     return function handler(json) {
 
@@ -26,10 +32,12 @@ export function setHandler(lists, loader, valueKeys = {},
         const loaded = suffix.reduce((source, json, index) => source.mergeMap(
                 ({ data, idxs }) => expandJSON(json, index, { data, idxs }, valueKeys)
             ),
-            loader(state).map((data) => ({ data, idxs: { length: 0 } }))
+            Observable
+                .defer(() => loader(state))
+                .map((data) => ({ data, idxs: { length: 0 } }))
         );
 
-        const values = loaded.map(({ data, idxs, vals }) => {
+        const values = loaded.mergeMap(({ data, idxs, vals }) => {
 
             const path = [];
             let index = -1, count = lists.length,
@@ -54,13 +62,23 @@ export function setHandler(lists, loader, valueKeys = {},
                 key = idxs[index];
                 path[++pathId] = key;
 
-                value = index < count - 1 ?
-                    value[key] || (value[key] = {}) :
-                    { path, value: value[key] =
-                        mapValue(vals, path, data) };
+                if (index < count - 1) {
+                    value = value[key] || (value[key] = {});
+                    continue;
+                }
+
+                value = mapValue(value, key, vals, path, data);
 
             } while (++index < count);
 
+            if (!value || typeof value !== 'object') {
+                value = [{ path, value }];
+            } else if (typeof value.subscribe !== 'function' && !isArray(value)) {
+                if (!value.path) {
+                    value = { path, value };
+                }
+                value = [value];
+            }
             return value;
         });
 

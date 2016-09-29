@@ -1,16 +1,9 @@
-import { loadNBody } from './loadNBody';
-import { loadWorkbooks } from './loadWorkbooks';
-import { cache as Cache } from '@graphistry/common';
-import { Observable, ReplaySubject } from 'rxjs';
-import { ref as $ref, atom as $atom } from '@graphistry/falcor-json-graph';
+import Color from 'color';
 import { view as createView } from 'viz-shared/models/views';
+import { ref as $ref, atom as $atom } from '@graphistry/falcor-json-graph';
 import { toClient as fromLayoutAlgorithms } from '../simulator/layout.config';
 
-export function loadViews(workbooksById, nBodiesById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
-
-    const loadDatasetNBody = loadNBody(nBodiesById, config, s3Cache);
-    const loadWorkbooksById = loadWorkbooks(workbooksById, config, s3Cache);
-
+export function loadViews(loadDatasetNBody, loadWorkbooksById) {
     return function loadViewsById({ workbookIds, viewIds, options = {} }) {
         return loadWorkbooksById({
             workbookIds, options
@@ -24,7 +17,7 @@ export function loadViews(workbooksById, nBodiesById, config, s3Cache = new Cach
             ({ workbook, nBody }, viewId) => ({
                 workbook, view: assignViewToWorkbook(workbook, assignNBodyToView(
                     workbook, nBody, workbook.viewsById[viewId] || createView(
-                        workbook.id, nBody.scene, options, viewId
+                        workbook.id, nBody.scene.id, viewId
                 )))
             })
         );
@@ -55,20 +48,31 @@ function assignViewToWorkbook(workbook, view) {
 
 function assignNBodyToView(workbook, nBody, view) {
 
-    const { simulator } = nBody;
-    const { dataframe } = simulator;
+    const { scene, layout, layout: { options }} = view;
+    const { simulator: { controls: { layoutAlgorithms } }} = nBody;
 
     view.nBody = nBody;
 
-    const { layout } = view;
-    const { options } = layout;
+    let background = nBody.bg;
+
+    if (typeof background !== 'undefined') {
+        try {
+            background = new Color(background);
+        } catch (e) {
+            background = scene.background.color;
+        }
+    } else {
+        background = scene.background.color;
+    }
+
+    scene.background.color = background;
 
     if (options.length === 0) {
         const optionsPath = `workbooksById['${workbook.id}']
                             .viewsById['${view.id}']
                             .layout.options`;
         layout.options = ([]
-            .concat(fromLayoutAlgorithms(simulator.controls.layoutAlgorithms))
+            .concat(fromLayoutAlgorithms(layoutAlgorithms))
             .reduce((options, { name, params }, index) => {
                 options.name = name;
                 options.id = name.toLowerCase();

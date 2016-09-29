@@ -24,25 +24,26 @@ const deleteExpressionTooltip = (
 );
 
 export function ExpressionsList({
-    templates = [], addExpression, children, name, ...props
+    id, templates = [], addExpression,
+    children, name, ...props
 }) {
     return (
-        <Popover {...props} className={styles['expressions-list']}>
-            <Panel style={{ margin: 0 }} footer={
-                <ExpressionTemplates name={name}
-                                     templates={templates}
-                                     addExpression={addExpression}/>
-                }>
-                <ListGroup fill>
-                {children.map((child) => (
-                    <ListGroupItem key={child.key}
-                                   style={{ paddingLeft: 0, paddingRight: 0 }}>
-                        {child}
-                    </ListGroupItem>
-                ))}
-                </ListGroup>
-            </Panel>
-        </Popover>
+        <Panel header={name} style={{ margin: 0 }}
+               className={styles['expressions-list']}
+               footer={(
+                   <ExpressionTemplates name={name}
+                                        templates={templates}
+                                        addExpression={addExpression}/>
+               )}>
+            <ListGroup fill>
+            {children.map((child) => (
+                <ListGroupItem key={child.key}
+                               style={{ paddingLeft: 0, paddingRight: 0 }}>
+                    {child}
+                </ListGroupItem>
+            ))}
+            </ListGroup>
+        </Panel>
     );
 }
 
@@ -67,8 +68,9 @@ export const ExpressionItem = getContext(
     ExpressionEditor,
     id, input, level,
     dataType, expressionType,
-    query, name, enabled, attribute, templates,
-    removeExpression, updateExpression, setExpressionEnabled
+    name, enabled, attribute, templates,
+    removeExpression, updateExpression,
+    setExpressionEnabled, cancelUpdateExpression
 }) {
     const isSystem = level === 'system';
     return (
@@ -82,9 +84,8 @@ export const ExpressionItem = getContext(
                     <div style={{ border: `1px solid gray`, borderRadius: `3px` }}>
                         <ExpressionEditor name={`expression-${id}`} width='100%'
                                           value={input} templates={templates} readOnly={isSystem}
-                                          onChange={(query) => updateExpression({
-                                              query, id, attribute
-                                          })}/>
+                                          onChange={(input) => cancelUpdateExpression({ id })}
+                                          onUpdate={(input) => updateExpression({ id, input })}/>
                     </div>
                 </OverlayTrigger>
             </Col>
@@ -97,7 +98,7 @@ export const ExpressionItem = getContext(
                                   checkedChildren={'On'}
                                   unCheckedChildren={'Off'}
                                   onChange={(newEnabled) => setExpressionEnabled({
-                                      enabled: newEnabled
+                                      id, enabled: newEnabled
                                   })}/>
                     </OverlayTrigger>
                 </Col>

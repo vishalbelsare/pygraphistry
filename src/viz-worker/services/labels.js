@@ -1,15 +1,12 @@
 import palettes from '../simulator/palettes';
 import dataTypeUtil from '../simulator/dataTypes';
 
-import { loadViews } from './loadViews';
+import { loadViews } from './views';
 import { cache as Cache } from '@graphistry/common';
 import { Observable, ReplaySubject } from 'rxjs';
 import { ref as $ref, atom as $atom } from '@graphistry/falcor-json-graph';
 
-export function loadLabels(workbooksById, nBodiesById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
-
-    const loadViewsById = loadViews(workbooksById, nBodiesById, config, s3Cache);
-
+export function loadLabels(loadViewsById) {
     return function loadLabelsByIndexAndType({ workbookIds, viewIds, labelTypes, labelIndexes, options = {} }) {
         return loadViewsById({
             workbookIds, viewIds, options

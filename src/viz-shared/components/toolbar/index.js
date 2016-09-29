@@ -52,7 +52,7 @@ export function ButtonListItem({ onItemSelected, ...props }) {
     return (
         <OverlayTrigger placement='right'
                         overlay={ButtonListItemTooltip(name)}>
-            <Button href='#'
+            <Button id={id} href='#'
                     active={selected}
                     onClick={(e) => e.preventDefault() || onItemSelected(props)}
                     className={classNames({

@@ -6,14 +6,14 @@ export function loadClientModule(options, debug) {
     return Observable.create((subscriber) => {
         const { client = 'main' } = options;
         if (client === 'main') {
-            require.ensure(['../clients/main.js'], (require) => {
-                subscriber.next(require('../clients/main.js').initialize);
+            require.ensure(['../clients/main/index.js'], (require) => {
+                subscriber.next(require('../clients/main/index.js').initialize);
                 subscriber.complete();
             });
         } else if (client === 'static') {
             debug('IS_STATIC', true);
-            require.ensure(['../clients/static.js'], (require) => {
-                subscriber.next(require('../clients/static.js').initialize);
+            require.ensure(['../clients/static/index.js'], (require) => {
+                subscriber.next(require('../clients/static/index.js').initialize);
                 subscriber.complete();
             });
         } else {

@@ -40,25 +40,22 @@ function setupCameraInteractions(appState, $eventTarget) {
     return Observable.merge(
         interactions,
         interaction.setupRotate($eventTarget, camera),
-        interaction.setupCenter($('#center'),
-                                renderState.hostBuffers.curPoints,
-                                camera),
-        interaction.setupZoomButton($('#zoomin'), camera, 1 / 1.25)
+        interaction.setupCenter(appState.toggleCenter, appState.curPoints, camera),
+        interaction.setupZoomButton(appState.toggleZoomIn, camera, 1 / 1.25)
             .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity)),
-        interaction.setupZoomButton($('#zoomout'), camera, 1.25)
+        interaction.setupZoomButton(appState.toggleZoomOut, camera, 1.25)
             .switchMap(util.observableFilter(appState.anyMarqueeOn, util.notIdentity))
     );
 }
 
-function setupKeyInteractions(appState, $eventTarget) {
+function setupKeyInteractions({ activeSelection }, $eventTarget) {
     // Deselect on escape;
     $eventTarget.keyup(function (evt) {
         var ESC_KEYCODE = 27;
         if (evt.keyCode === ESC_KEYCODE) {
-            appState.activeSelection.onNext(new VizSlice({point: [], edge: []}));
+            activeSelection.next(new VizSlice({point: [], edge: []}));
         }
     });
-
 }
 
 function setupCameraInteractionRenderUpdates(renderingScheduler, cameraStream, sceneModel, simulateOn) {
@@ -111,7 +108,6 @@ function getEdgeLabelPos (appState, edgeIndex) {
 
 function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates,
                              isAnimating, simulateOn, activeSelection, hints) {
-    var that = this;
     this.renderState = renderState;
     this.arrayBuffers = {};
     // Remember last task in case you need to rerender mouseovers without an update.
@@ -169,8 +165,8 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
     /*
      * Rx hooks to maintain the appSnapshot up-to-date
      */
-    simulateOn.subscribe(function (val) {
-        that.appSnapshot.simulating = val;
+    simulateOn.subscribe((val) => {
+        this.appSnapshot.simulating = val;
     }, util.makeErrorHandler('simulate updates'));
 
     var hostBuffers = renderState.hostBuffers;
@@ -190,51 +186,46 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         util.makeErrorHandler('Getting indexes of selections.')
     );
 
-    vboUpdates.filter(function (status) {
-        return status === 'received';
-    }).switchMap(function () {
-
-        var bufUpdates = ['curPoints', 'logicalEdges', 'edgeColors', 'pointSizes', 'curMidPoints', 'edgeHeights', 'edgeSeqLens'].map(function (bufName) {
-            var bufUpdate = hostBuffers[bufName] || Observable.return();
-            return bufUpdate.do(function (data) {
-                that.appSnapshot.buffers[bufName] = data;
+    vboUpdates
+        .filter((status) => status === 'received')
+        .switchMap(() => {
+            var bufUpdates = [
+                'curPoints', 'logicalEdges', 'edgeColors',
+                'pointSizes', 'curMidPoints', 'edgeHeights', 'edgeSeqLens'
+            ].map((bufName) => {
+                var bufUpdate = hostBuffers[bufName] || Observable.return();
+                return bufUpdate.do((data) => {
+                    this.appSnapshot.buffers[bufName] = data;
+                });
             });
-        });
-        return vboVersions
-            .zip(bufUpdates[0], bufUpdates[1], bufUpdates[2], bufUpdates[3], bufUpdates[4], bufUpdates[5], bufUpdates[6]);
+            return vboVersions.zip(...bufUpdates, (vboVersions) => vboVersions);
+        }).switchMap((vboVersions) => {
+            return simulateOn.map((simulateIsOn) => {
+                return {vboVersions, simulateIsOn};
+            });
+        }).do(({ vboVersions, simulateIsOn }) => {
+            _.each(vboVersions, (buffersByType) => {
+                _.each(buffersByType, (versionNumber, name) => {
+                    if (this.appSnapshot.bufferReceivedVersions[name] !== undefined) {
+                        this.appSnapshot.bufferReceivedVersions[name] = versionNumber;
+                    }
+                });
+            });
 
-    }).switchMap(function (zippedArray) {
-        var vboVersions = zippedArray[0];
+            // TODO: This can end up firing renderSceneFull multiple times at the end of
+            // a simulation session, since multiple VBOs will continue to come in
+            // while simulateIsOn = false
+            var triggerToUse = simulateIsOn ? 'renderSceneFast' : 'renderSceneFull';
 
-        return simulateOn.map((simulateIsOn) => {
-            return {vboVersions, simulateIsOn};
-        });
-
-    }).do(function (vboVersionAndSimulateStatus) {
-        var {vboVersions, simulateIsOn} = vboVersionAndSimulateStatus;
-
-        _.each(vboVersions, function (buffersByType) {
-            _.each(buffersByType, function (versionNumber, name) {
-                if (that.appSnapshot.bufferReceivedVersions[name] !== undefined) {
-                    that.appSnapshot.bufferReceivedVersions[name] = versionNumber;
+            this.appSnapshot.vboUpdated = true;
+            this.renderScene('vboupdate', {trigger: triggerToUse});
+            this.renderScene('vboupdate_picking', {
+                items: ['pointsampling'],
+                callback: () => {
+                    hitmapUpdates.onNext();
                 }
             });
-        });
-
-        // TODO: This can end up firing renderSceneFull multiple times at the end of
-        // a simulation session, since multiple VBOs will continue to come in
-        // while simulateIsOn = false
-        var triggerToUse = simulateIsOn ? 'renderSceneFast' : 'renderSceneFull';
-
-        that.appSnapshot.vboUpdated = true;
-        that.renderScene('vboupdate', {trigger: triggerToUse});
-        that.renderScene('vboupdate_picking', {
-            items: ['pointsampling'],
-            callback: function () {
-                hitmapUpdates.onNext();
-            }
-        });
-    }).subscribe(_.identity, util.makeErrorHandler('render vbo updates'));
+        }).subscribe(_.identity, util.makeErrorHandler('render vbo updates'));
 
 
     /* Push a render task into the renderer queue
@@ -250,24 +241,13 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         });
     };
 
-    /* Move render tasks into a tagged dictionary. For each tag, only the latest task
-     * is rendered; others are skipped. */
-    renderTasks.subscribe(function (task) {
-        debug('Queueing frame on behalf of', task.tag);
-        renderQueue[task.tag] = task;
-
-        if (renderingPaused) {
-            startRenderingLoop();
-        }
-    });
-
     // Setup resize handler, which tells renderer to resize textures
     // and the scheduler to rerun picking/populate textures. Split into fast/slow tasks
     const resizes = Observable.fromEvent(window, 'resize').share();
 
     resizes.debounceTime(100).delay(50)
         .do(() => {
-            renderer.resizeCanvas(renderState);
+            renderer.resizeCanvas(this.renderState);
         }).subscribe(_.identity, util.makeErrorHandler('resize fast handler'));
 
     resizes.debounceTime(500)
@@ -282,7 +262,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
      * Helpers to start/stop the rendering loop within an animation frame. The rendering loop
      * stops when idle for a second and starts again at the next render update.
      */
-    function startRenderingLoop() {
+    var startRenderingLoop = () => {
         var SLOW_EFFECT_DELAY = 125;
         var PAUSE_RENDERING_DELAY = 500;
 
@@ -293,7 +273,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         // or to check the delta against it to see if we should render slow effects.
         var shouldUpdateRenderTime = true;
 
-        function loop() {
+        const loop = () => {
             var nextFrameId = window.requestAnimationFrame(loop);
 
             // Nothing to render
@@ -332,14 +312,14 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
             if (tagsWithRenderFull.length > 0) {
                 // TODO: Generalize this code block
                 shouldUpdateRenderTime = true;
-                that.appSnapshot.fullScreenBufferDirty = true;
+                this.appSnapshot.fullScreenBufferDirty = true;
                 if (quietSignaled) {
                     isAnimating.onNext(true);
                     quietSignaled = false;
                 }
 
-                that.renderSlowEffects();
-                that.appSnapshot.vboUpdated = false;
+                this.renderSlowEffects();
+                this.appSnapshot.vboUpdated = false;
                 _.each(tagsWithRenderFull, (tag) => {
                     delete renderQueue[tag];
                 });
@@ -350,9 +330,9 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
             // interactions
             if (_.keys(renderQueue).indexOf('movePointsOverlay') > -1) {
 
-                if (!that.appSnapshot.fullScreenBufferDirty) {
+                if (!this.appSnapshot.fullScreenBufferDirty) {
                     shouldUpdateRenderTime = true;
-                    that.renderMovePointsOverlay(renderQueue.movePointsOverlay);
+                    this.renderMovePointsOverlay(renderQueue.movePointsOverlay);
                 }
 
                 delete renderQueue.movePointsOverlay;
@@ -367,9 +347,9 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
             if (_.keys(renderQueue).indexOf('mouseOver') > -1) {
                 // Only handle mouseovers if the fullscreen buffer
                 // from rendering all edges (full scene) is clean
-                if (!that.appSnapshot.fullScreenBufferDirty) {
+                if (!this.appSnapshot.fullScreenBufferDirty) {
                     shouldUpdateRenderTime = true;
-                    that.renderMouseoverEffects(renderQueue.mouseOver);
+                    this.renderMouseoverEffects(renderQueue.mouseOver);
                 }
                 delete renderQueue.mouseOver;
             }
@@ -386,28 +366,28 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
                 // TODO: Generalize this code block
                 if (isRenderingToScreen) {
                     shouldUpdateRenderTime = true;
-                    that.appSnapshot.fullScreenBufferDirty = true;
+                    this.appSnapshot.fullScreenBufferDirty = true;
                     if (quietSignaled) {
                         isAnimating.onNext(true);
                         quietSignaled = false;
                     }
                 }
 
-                renderer.setCamera(renderState);
-                _.each(renderQueue, function (renderTask, tag) {
-                    renderer.render(renderState, tag, renderTask.trigger, renderTask.items,
+                renderer.setCamera(this.renderState);
+                _.each(renderQueue, (renderTask, tag) => {
+                    renderer.render(this.renderState, tag, renderTask.trigger, renderTask.items,
                                     renderTask.readPixels, renderTask.callback);
                 });
                 renderQueue = {};
 
                 // If anything is selected, we need to do the copy to texture + darken
                 // TODO: Investigate performance of this.
-                if (isRenderingToScreen && that.lastMouseoverTask &&
-                        (that.lastMouseoverTask.data.selected.nodeIndices.length + that.lastMouseoverTask.data.selected.edgeIndices.length > 0)
-                ) {
-                    renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
-                    renderer.setupFullscreenBuffer(renderState);
-                    that.renderMouseoverEffects();
+                if (isRenderingToScreen && this.lastMouseoverTask && (
+                    this.lastMouseoverTask.data.selected.nodeIndices.length +
+                    this.lastMouseoverTask.data.selected.edgeIndices.length > 0)) {
+                    renderer.copyCanvasToTexture(this.renderState, 'steadyStateTexture');
+                    renderer.setupFullscreenBuffer(this.renderState);
+                    this.renderMouseoverEffects();
                 }
 
             }
@@ -423,13 +403,24 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         window.cancelAnimationFrame(nextFrameId);
         renderingPaused = true;
     }
+
+    /* Move render tasks into a tagged dictionary. For each tag, only the latest task
+     * is rendered; others are skipped. */
+    renderTasks.subscribe(function (task) {
+        debug('Queueing frame on behalf of', task.tag);
+        renderQueue[task.tag] = task;
+
+        if (renderingPaused) {
+            startRenderingLoop();
+        }
+    });
 }
 
 // Hook to preallocate memory when initial sizes are available.
 // We handle these by putting them into an subject and handling
 // each with a 1ms delay in between, to give the JS thread
 // some breathing room to handle other callbacks/repaints.
-RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (config, renderState, { edges, points } = {}) {
+RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (config, renderState, { edges = 0, points = 0 } = {}) {
 
     const { numHintElements = {} } = this;
 
@@ -521,7 +512,6 @@ RenderingScheduler.prototype.expandMidEdgeEndpoints = function(numEdges, numRend
 //  * int * float
 //  -> {midSpringsPos: Float32Array, midSpringsStarts: Float32Array, midSpringsEnds: Float32Array}
 RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferSnapshots, numRenderedSplits, edgeHeight) {
-    var that = this;
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
 
@@ -532,7 +522,7 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
 
     var numVertices = (2 * numEdges) * (numRenderedSplits + 1);
 
-    bufferSnapshots.midSpringsPos = that.getTypedArray('midSpringsPos', Float32Array, numVertices * 2);
+    bufferSnapshots.midSpringsPos = this.getTypedArray('midSpringsPos', Float32Array, numVertices * 2);
 
     var midSpringsPos = bufferSnapshots.midSpringsPos;
     var midEdgesPerEdge = numRenderedSplits + 1;
@@ -548,7 +538,7 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
     };
 
     //for each midEdge, start x/y & end x/y
-    var midSpringsEndpoints = that.expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints);
+    var midSpringsEndpoints = this.expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints);
 
     //TODO have server pre-compute real heights, and use them here
     //var edgeHeights = renderState.hostBuffersCache.edgeHeights;
@@ -668,7 +658,6 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
 
 
 RenderingScheduler.prototype.expandLogicalMidEdges = function (bufferSnapshots) {
-    var that = this;
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curMidPoints = new Float32Array(bufferSnapshots.curMidPoints.buffer);
     var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
@@ -684,10 +673,10 @@ RenderingScheduler.prototype.expandLogicalMidEdges = function (bufferSnapshots) 
 
 
     //for each midEdge, start x/y & end x/y
-    var midSpringsEndpoints = that.expandMidEdgeEndpoints(numEdges, numSplits, logicalEdges, curPoints);
+    var midSpringsEndpoints = this.expandMidEdgeEndpoints(numEdges, numSplits, logicalEdges, curPoints);
 
 
-    bufferSnapshots.midSpringsPos = that.getTypedArray('midSpringsPos', Float32Array, numVertices * 2);
+    bufferSnapshots.midSpringsPos = this.getTypedArray('midSpringsPos', Float32Array, numVertices * 2);
     var midSpringsPos = bufferSnapshots.midSpringsPos;
 
     for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
@@ -960,9 +949,8 @@ RenderingScheduler.prototype.makeArrows = function (bufferSnapshots, edgeMode, n
  * are not allowed as they would schedule work outside the animation frame.
  */
 RenderingScheduler.prototype.renderSlowEffects = function () {
-    var that = this;
-    var appSnapshot = that.appSnapshot;
-    var renderState = that.renderState;
+    var appSnapshot = this.appSnapshot;
+    var renderState = this.renderState;
     var edgeMode = renderState.config.edgeMode;
     var edgeHeight = renderState.config.arcHeight;
     var clientMidEdgeInterpolation = renderState.config.clientMidEdgeInterpolation;
@@ -978,7 +966,7 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
         //ARCS
         start = Date.now();
 
-        expanded = that.expandLogicalEdges(renderState, appSnapshot.buffers, numRenderedSplits, edgeHeight);
+        expanded = this.expandLogicalEdges(renderState, appSnapshot.buffers, numRenderedSplits, edgeHeight);
         midSpringsPos = expanded.midSpringsPos;
         appSnapshot.buffers.midSpringsPos = midSpringsPos;
         appSnapshot.buffers.midSpringsStarts = expanded.midSpringsStarts;
@@ -995,7 +983,7 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
             appSnapshot.bufferReceivedVersions.edgeColors !== appSnapshot.bufferComputedVersions.edgeColors);
 
         if (shouldRecomputeEdgeColors) {
-            midEdgesColors = that.getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);
+            midEdgesColors = this.getMidEdgeColors(appSnapshot.buffers, numEdges, numRenderedSplits);
         }
         end1 = Date.now();
         if (shouldRecomputeEdgeColors) {
@@ -1011,7 +999,7 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
         renderer.setNumElements(renderState, 'midedgeculled', midSpringsPos.length / 2);
         end2 = Date.now();
         debug('Edges expanded in', end1 - start, '[ms], and loaded in', end2 - end1, '[ms]');
-        that.makeArrows(appSnapshot.buffers, edgeMode, numRenderedSplits);
+        this.makeArrows(appSnapshot.buffers, edgeMode, numRenderedSplits);
         end3 = Date.now();
         renderer.loadBuffers(renderState, {'arrowStartPos': appSnapshot.buffers.arrowStartPos});
         renderer.loadBuffers(renderState, {'arrowEndPos': appSnapshot.buffers.arrowEndPos});
@@ -1033,7 +1021,7 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
         //TODO deprecate/integrate?
         start = Date.now();
 
-        expanded = that.expandLogicalMidEdges(appSnapshot.buffers);
+        expanded = this.expandLogicalMidEdges(appSnapshot.buffers);
         midSpringsPos = expanded.midSpringsPos;
 
         renderer.loadBuffers(renderState, {'midSpringsPos': midSpringsPos});
@@ -1048,16 +1036,16 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
 
     renderer.setCamera(renderState);
     renderer.render(renderState, 'fullscene', 'renderSceneFull');
-    renderer.render(renderState, 'picking', 'picking', undefined, undefined, function () {
-        that.appSnapshot.hitmapUpdates.onNext();
+    renderer.render(renderState, 'picking', 'picking', undefined, undefined, () => {
+        this.appSnapshot.hitmapUpdates.onNext();
     });
 
     // TODO: Make steadyStateTextureDark instead of just doing it in the shader.
     renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
     renderer.setupFullscreenBuffer(renderState);
-    that.renderMouseoverEffects();
+    this.renderMouseoverEffects();
 
-    that.appSnapshot.fullScreenBufferDirty = false;
+    this.appSnapshot.fullScreenBufferDirty = false;
 };
 
 function getSortedConnectedEdges (nodeId, forwardsEdgeStartEndIdxs) {
@@ -1076,7 +1064,6 @@ function getSortedConnectedEdges (nodeId, forwardsEdgeStartEndIdxs) {
 }
 
 RenderingScheduler.prototype.renderMovePointsOverlay = function (task) {
-    var that = this;
     var {appSnapshot, renderState} = this;
     var {buffers} = appSnapshot;
     var {diff, sel} = task.data;
@@ -1153,9 +1140,8 @@ RenderingScheduler.prototype.renderMovePointsOverlay = function (task) {
  */
 
 RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
-    var that = this;
-    var appSnapshot = that.appSnapshot;
-    var renderState = that.renderState;
+    var appSnapshot = this.appSnapshot;
+    var renderState = this.renderState;
     var buffers = appSnapshot.buffers;
     var numRenderedSplits = renderState.config.numRenderedSplits;
 
@@ -1174,7 +1160,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
         return;
     }
 
-    task = task || that.lastMouseoverTask;
+    task = task || this.lastMouseoverTask;
     if (!task) {
         return;
     }
@@ -1185,7 +1171,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
     // We need to be careful not to accidentally modify the internals of this cached task.
     // To be safe, we always cache it as a separate copy. Sucks because we need to know its full structure
     // here too, but whatever.
-    that.lastMouseoverTask = {
+    this.lastMouseoverTask = {
         trigger: 'mouseOverEdgeHighlight',
         data: {
             highlight: {
@@ -1289,7 +1275,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
             buffers.highlightedNodeColors[idx] = hostNodeColors[val];
         });
 
-        that.populateArrowBuffers(highlightedEdgeIndices, buffers.midSpringsPos, buffers.highlightedArrowStartPos,
+        this.populateArrowBuffers(highlightedEdgeIndices, buffers.midSpringsPos, buffers.highlightedArrowStartPos,
                 buffers.highlightedArrowEndPos, buffers.highlightedArrowNormalDir, hostNodeSizes,
                 logicalEdges, buffers.highlightedArrowPointSizes, buffers.highlightedArrowPointColors,
                 buffers.edgeColors, numRenderedSplits);
@@ -1370,7 +1356,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
             buffers.selectedNodeColors[idx] = hostNodeColors[val];
         });
 
-        that.populateArrowBuffers(selectedEdgeIndices, buffers.midSpringsPos, buffers.selectedArrowStartPos,
+        this.populateArrowBuffers(selectedEdgeIndices, buffers.midSpringsPos, buffers.selectedArrowStartPos,
                 buffers.selectedArrowEndPos, buffers.selectedArrowNormalDir, hostNodeSizes,
                 logicalEdges, buffers.selectedArrowPointSizes, buffers.selectedArrowPointColors,
                 buffers.edgeColors, numRenderedSplits);
@@ -1414,12 +1400,11 @@ RenderingScheduler.prototype.renderMovePointsTemporaryPositions = function (diff
 // Given a render config and info about number of nodes/edges,
 // generate an array of functions that will allocate memory for them
 RenderingScheduler.prototype.allocateAllArrayBuffersFactory = function (config, numElements, renderState) {
-    var that = this;
     var functions = [];
     debug('Allocating all arraybuffers on hint for numElements: ', numElements);
-    _.each(config.models, function (model, modelName) {
-        _.each(model, function (desc) {
-            if (desc.sizeHint) {
+    _.each(config.models, (model, modelName) => {
+        _.each(model, (desc) => {
+            if (typeof desc.sizeHint === 'function') {
                 // Default to 4;
                 // TODO: Have a proper lookup for bytelengths
                 var bytesPerElement = 4;
@@ -1431,20 +1416,16 @@ RenderingScheduler.prototype.allocateAllArrayBuffersFactory = function (config, 
                     bytesPerElement = 1;
                 }
 
-                // HACK
-                // TODO: Replace this eval with a safer way (function lookup in common?)
-                // It evals a size hint from render config into a number.
-                // We do this because we can't send these functions over the network with
-                // the rest of render config.
-                var sizeInBytes = eval(desc.sizeHint) * desc.count * bytesPerElement; // jshint ignore:line
+                // It compute a size hint from the render config.
+                var sizeInBytes = desc.sizeHint(numElements) * desc.count * bytesPerElement;
 
                 if (!isNaN(sizeInBytes)) {
                     // Allocate arraybuffers for RenderingScheduler
-                    functions.push(function () {
-                        that.allocateArrayBufferOnHint(modelName, sizeInBytes);
+                    functions.push(() => {
+                        this.allocateArrayBufferOnHint(modelName, sizeInBytes);
                     });
                     // Allocate GPU buffer in renderer
-                    functions.push(function () {
+                    functions.push(() => {
                         renderer.allocateBufferSize(renderState, modelName, sizeInBytes);
                     });
                 }
@@ -1492,18 +1473,9 @@ RenderingScheduler.prototype.getLargestModelSize = function (config, numElements
     debug('Getting largest model size for: ', numElements);
     var sizes = _.map(config.models, function (model) {
         return _.map(model, function (desc) {
-            if (desc.sizeHint) {
-                // HACK
-                // TODO: Replace this eval with a safer way (function lookup in common?)
-                // It evals a size hint from render config into a number.
-                // We do this because we can't send these functions over the network with
-                // the rest of render config.
-                //
-                // disabled because this doesn't survive minification
-                //
-                // var num = eval(desc.sizeHint); // jshint ignore:line
-                // return num;
-                return 0;
+            if (typeof desc.sizeHint === 'function') {
+                // Compute a size hint from the render config.
+                return desc.sizeHint(numElements);
             } else {
                 return 0;
             }
@@ -1512,6 +1484,17 @@ RenderingScheduler.prototype.getLargestModelSize = function (config, numElements
     var maxNum = _.max(_.flatten(sizes));
     return maxNum;
 };
+
+RenderingScheduler.prototype.dispose =
+RenderingScheduler.prototype.unsubscribe = function() {
+
+    const { hintsAllocationCycle } = this;
+
+    if (hintsAllocationCycle) {
+        hintsAllocationCycle.unsubscribe();
+    }
+    this.hintsAllocationCycle = null;
+}
 
 module.exports = {
     setupBackgroundColor: setupBackgroundColor,

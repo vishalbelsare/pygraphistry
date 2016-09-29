@@ -1,8 +1,8 @@
 import { PropTypes } from 'react';
 import { App } from 'viz-shared/containers/app';
 import { Renderer } from './renderer';
-import { ExpressionEditor } from './ExpressionEditor';
 import { withContext, hoistStatics } from 'recompose';
+import { Editor as ExpressionEditor } from './expressions';
 
 const ClientApp = hoistStatics(
     withContext(

@@ -24,7 +24,6 @@ export function layout(workbookId, viewId) {
                     $value(`${view}.panels.left`, $ref(`${view}.layout`)),
                     $value(`${view}.scene.controls[1].value`, $atom(0)),
                     $value(`${view}.labels.controls[0].value`, $atom(0)),
-                    $value(`${view}.sets.controls[0].value`, $atom(0)),
                     $value(`${view}.filters.controls[0].value`, $atom(0)),
                     $value(`${view}.exclusions.controls[0].value`, $atom(0)),
                 ]])

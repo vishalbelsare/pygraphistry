@@ -1,5 +1,5 @@
 import url from 'url';
-import { loadDataset } from './loadDataset';
+import { loadDataset } from './datasets';
 import { nBody as createNBody } from '../models';
 import { cache as Cache } from '@graphistry/common';
 import { Observable, ReplaySubject } from 'rxjs';
@@ -25,6 +25,23 @@ export function loadNBody(nBodiesById, config, s3Cache = new Cache(config.LOCAL_
     }
 }
 
+export function setLayoutControl(loadViewsById) {
+    return function ({ workbookId, viewId, algoName, value, id }) {
+        return loadViewsById({
+            workbookIds: [workbookId], viewIds: [viewId]
+        }).do(({ view }) => {
+            const { nBody } = view;
+            nBody.interactions.next({
+                play: true, layout: true, simControls: {
+                    [algoName]: {
+                        [id]: value
+                    }
+                }
+            });
+        });
+    }
+}
+
 function getCurrentDataset(workbook, options) {
 
     const { datasets } = workbook;
@@ -40,7 +57,8 @@ function getCurrentDataset(workbook, options) {
         }
     }
 
-    return datasets[datasetsIndex] || (datasets[datasetsIndex] = createDataset(options));
+    return datasets[datasetsIndex] || (
+           datasets[datasetsIndex] = createDataset(options));
 }
 
 function loadDatasetSourceMetadata(config, s3Cache) {

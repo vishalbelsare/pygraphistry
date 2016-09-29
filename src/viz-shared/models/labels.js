@@ -12,7 +12,7 @@ export function labels(workbookId, viewId) {
         labels: {
             id: 'labels',
             name: 'Labels',
-            edge: [], point: [],
+            edges: [], points: [],
             opacity: 1, enabled: true,
             timeZone: '', poiEnabled: true,
             selection: $ref(`${view}.selection.label`),
@@ -32,7 +32,6 @@ export function labels(workbookId, viewId) {
                     $value(`${view}.panels.left`, $ref(`${view}.labels`)),
                     $value(`${view}.scene.controls[1].value`, $atom(0)),
                     $value(`${view}.layout.controls[0].value`, $atom(0)),
-                    $value(`${view}.sets.controls[0].value`, $atom(0)),
                     $value(`${view}.filters.controls[0].value`, $atom(0)),
                     $value(`${view}.exclusions.controls[0].value`, $atom(0)),
                 ]])
