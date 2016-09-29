@@ -135,7 +135,7 @@ const PAN_USER_TO_THREAT = {
     splunk: {
         toSplunk: function(pivots, app, fields, pivotCache) {
             const index = fields['Search'];
-            const subsearch = `(severity="critical" OR severity="medium" OR severity="low") [| loadjob ${pivotCache[index].splunkSearchID} |  fields user | dedup user]`;
+            const subsearch = `(severity="critical" OR severity="medium" OR severity="low") [| loadjob "${pivotCache[index].splunkSearchID}" |  fields user | dedup user]`;
             return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} ${constructFieldString(this)}`;
         },
         connections: [
