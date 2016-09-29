@@ -42,7 +42,7 @@ let Panel = ({
         );
     }
     return (
-        <Popover id={id}
+        <Popover id={`${side}-panel`}
                  name={name}
                  style={style}
                  placement={placement}
