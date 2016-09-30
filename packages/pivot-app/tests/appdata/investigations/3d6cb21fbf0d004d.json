@@ -1,7 +1,7 @@
 {
-    "id": "3d6cb21fbf0d004d" ,
     "name": "Malware",
-    "templates": "all",
+    "url": "http://www.graphistry.com",
+    "id": "3d6cb21fbf0d004d",
     "pivots": [
         "3d6ccf32fd53f941",
         "3d6ccf32fd7c5805"

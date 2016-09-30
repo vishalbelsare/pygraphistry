@@ -37,39 +37,52 @@ function summarizeOutput ({labels}) {
 }
 
 
-export function searchPivot({app, investigation, pivot, index }) {
-    pivot.enabled = true;
-
-    //{'Search': string, 'Mode': string, ...}
-    const pivotFields =
-        _.object(
-            _.range(0, pivot.length)
-                .map((i) => [pivot[i].name, pivot[i].value]));
+function searchSplunkPivot({app, pivot}) {
     //TODO when constrained investigation pivotset templating, change 'all'-> investigation.templates
-    const template = PivotTemplates.get('all', pivotFields.Mode);
+    const template = PivotTemplates.get('all', pivot.pivotParameters.mode);
 
     if (template.transport !== 'Splunk') {
         throw new Error('Only expected Splunk transports, got: ' + template.transport);
     }
 
-    const searchQuery = template.splunk.toSplunk(investigation.pivots, app, pivotFields, pivotCache);
+    const searchQuery = template.splunk.toSplunk(pivot.pivotParameters, pivotCache);
     pivot.searchQuery = searchQuery;
+
     console.log('======= Search ======')
     console.log(searchQuery);
+
     const splunkResults = searchSplunk(searchQuery)
         .do(({resultCount, output}) => {
             pivot.resultCount = resultCount;
         })
         .do(({output, splunkSearchID}) => {
-            pivotCache[index] = { results: output, query:searchQuery, search: pivotFields['Search'], splunkSearchID };
-            console.log('saved pivot ', index, '# results:', output.length); })
+            pivotCache[pivot.id] = { results: output, query:searchQuery, splunkSearchID };
+            console.log('saved pivot ', pivot.id, '# results:', output.length);
+        })
         .map(({output}) => output);
-    var shapedResults = shapeSplunkResults(splunkResults, pivotFields, index, template.splunk)
+
+    return shapeSplunkResults(splunkResults, pivot.pivotParameters, pivot.id, template.splunk)
         .do((results) => {
             pivot.results = results;
             pivot.resultSummary = summarizeOutput(results);
+            pivot.status = {ok: true};
         })
-        .map((results) => ({app, investigation, pivot}));
-    return shapedResults;
+        .map((results) => ({app, pivot}));
+}
 
+
+export function searchPivot({loadPivotsById, pivotIds}) {
+    return loadPivotsById({pivotIds: pivotIds})
+        .mergeMap(({app, pivot}) => {
+            pivot.enabled = true;
+
+            return searchSplunkPivot({app, pivot})
+                .catch(e => {
+                    pivot.status = {
+                        ok: false,
+                        message: e.message || 'Unknown Error'
+                    };
+                    return Observable.of({app, pivot});
+                });
+        });
 }

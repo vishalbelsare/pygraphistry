@@ -1,10 +1,17 @@
-import React from 'react'
-import Investigation from './Investigation.js'
-import InvestigationDropdown from './InvestigationDropdown.js'
+import React from 'react';
+import { ButtonGroup, Button, Glyphicon } from 'react-bootstrap';
+import Investigation from './Investigation.js';
+import InvestigationDropdown from './InvestigationDropdown.js';
 import { DevTools } from './DevTools';
 import { hoistStatics } from 'recompose';
 import { connect, container } from '@graphistry/falcor-react-redux';
-import { setInvestigationName } from '../actions/investigationList';
+import {
+    selectInvestigation,
+    createInvestigation,
+    setInvestigationName,
+    saveInvestigation,
+    copyInvestigation
+} from '../actions/app';
 import styles from './styles.less';
 
 function GraphFrame({ url }) {
@@ -20,7 +27,9 @@ function GraphFrame({ url }) {
 }
 
 //note magic voodoo attribs on root element
-function renderApp({ title, investigations, setInvestigationName, selectedInvestigation = {} }) {
+function renderApp({ title, investigations, selectedInvestigation = {},
+                     selectInvestigation, createInvestigation, setInvestigationName,
+                     saveInvestigation, copyInvestigation }) {
     return (
 
 <div className="wrapper">
@@ -98,20 +107,21 @@ function renderApp({ title, investigations, setInvestigationName, selectedInvest
 
                     <span className="simple-text" style={{display: 'inline-block', float: 'left'}}>
                         <InvestigationDropdown data={investigations}
-                           setInvestigationName={setInvestigationName}
+                           selectInvestigation={selectInvestigation}
                            selectedInvestigation={selectedInvestigation}/>
                     </span>
 
-                    <a className="navbar-brand" href="#">Input</a>
-                    <a className="navbar-brand on" href="#">Untitled_1</a>
-                    { /*
-                    <a className="navbar-brand" href="#">Untitled2 (58)</a>
-                    <a className="navbar-brand" href="#">Untitled3 (32)</a>
-                    */ }
+                    <input key={selectedInvestigation.id + 'setInvestigationNameTextBox'}
+                        className="navbar-brand on" type='text' value={selectedInvestigation.name}
+                        readOnly={false} disabled={false} onChange={
+                            (ev) => ev.preventDefault() || setInvestigationName(ev.target.value)
+                        }
+                    />
+
                 </div>
 
-               <div className="collapse navbar-collapse">
-                    <a href="#" className="navbar-brand" style={
+                <div className="collapse navbar-collapse">
+                   {/*<a href="#" className="navbar-brand" style={
                         {'fontSize': '1.7em',
                          'margin': 0,
                          'right': '1em',
@@ -121,8 +131,19 @@ function renderApp({ title, investigations, setInvestigationName, selectedInvest
                          'borderLeft': '1px solid #8095e0',
                          'paddingLeft': '1.5em'}
                     }>
-                        <i className="pe-7s-plus"></i>
-                    </a>
+                    <i className="pe-7s-plus"></i> */}
+                    <ButtonGroup>
+                            <Button onClick={createInvestigation}>
+                                <Glyphicon glyph="plus" />
+                                </Button>
+                            <Button onClick={(e) => copyInvestigation(selectedInvestigation.id)}>
+                                <Glyphicon glyph="duplicate" />
+                            </Button>
+                            <Button onClick={(e) => saveInvestigation(selectedInvestigation.id)}>
+                                <Glyphicon glyph="floppy-disk" />
+                            </Button>
+                        </ButtonGroup>
+                    {/*</a>*/}
                 </div>
             </div>
         </nav>
@@ -161,19 +182,13 @@ const App = container(
         selectedInvestigation: ${Investigation.fragment(selectedInvestigation)}
     }`,
     (state) => state,
-    { setInvestigationName: setInvestigationName }
-    /* todo:
-        url, total, urls, urlIndex,
-        cols: ${
-            TableHeader.fragment(cols)
-        },
-        pivots: ${
-            TableBody.fragment(pivots)
-        },
-        investigations: ${
-            InvestigationList.fragment(investigations)
-        }
-    */
+    {
+        selectInvestigation: selectInvestigation,
+        createInvestigation: createInvestigation,
+        setInvestigationName: setInvestigationName,
+        saveInvestigation: saveInvestigation,
+        copyInvestigation: copyInvestigation
+    }
 )(renderApp);
 
 export default hoistStatics(connect)(App);

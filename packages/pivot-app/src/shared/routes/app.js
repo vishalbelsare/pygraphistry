@@ -1,11 +1,16 @@
+import { Observable } from 'rxjs';
 import {
+    ref as $ref,
     pathValue as $pathValue,
+    pathInvalidation as $invalidation,
 } from '@graphistry/falcor-json-graph';
+import {
+    getHandler,
+    setHandler,
+    logErrorWithCode
+} from './support';
 
-import { getHandler,
-        setHandler } from './support';
-
-export function app({ loadApp }) {
+export function app({ loadApp, createInvestigation }) {
 
     const appGetRoute = getHandler([], loadApp);
     const appSetRoute = setHandler([], loadApp);
@@ -13,7 +18,7 @@ export function app({ loadApp }) {
     return [{
         returns: `*`,
         get: appGetRoute,
-        route: `['id', 'title', 'total', 'urls', 'urlIndex']`
+        route: `['id', 'title', 'url']`
     }, {
         get: appGetRoute,
         set: appSetRoute,
@@ -39,7 +44,24 @@ export function app({ loadApp }) {
         route: `['investigations'][{ranges}]`,
         get: rangesToListItemsGetRoute({ loadApp }),
         returns: `$ref('investigationsById[{investigationId}]')`
+    }, {
+        route: `createInvestigation`,
+        call: createInvestigationCallRoute({ loadApp, createInvestigation })
     }];
+}
+
+function createInvestigationCallRoute({loadApp, createInvestigation}) {
+    return function(path, args) {
+        return Observable.defer(() => createInvestigation({loadApp}))
+            .mergeMap(({app, numInvestigations}) => {
+                return [
+                    $pathValue(`['investigations'].length`, numInvestigations),
+                    $pathValue(`selectedInvestigation`, app.selectedInvestigation),
+                    $invalidation(`['investigations']['${numInvestigations - 1}']`)
+                ];
+            })
+            .catch(logErrorWithCode);
+    };
 }
 
 function rangesToListItemsGetRoute({ loadApp }) {

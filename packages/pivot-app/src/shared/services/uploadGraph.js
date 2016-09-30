@@ -5,8 +5,18 @@ var _ = require('underscore');
 
 var request = require('request');
 
+function upload(etlService, apiKey, data) {
+    const upload0Wrapped = Observable.bindNodeCallback(upload0.bind(null));
+
+    if (data.graph.length === 0) {
+        return Observable.throw(new Error('No edges to upload!'));
+    }
+    return upload0Wrapped(etlService, apiKey, data)
+        .map(() =>  data.name)
+}
+
 //jsonGraph * (err? -> ())? -> ()
-function upload (data, cb) {
+function upload0(etlService, apiKey, data, cb) {
     cb = cb || function (err, data) {
         if (err) {
             return console.error('exn', err);
@@ -17,8 +27,8 @@ function upload (data, cb) {
     console.log("About to upload data", data.name);
 
     request.post({
-        uri: (process.env.GRAPHISTRY_ETL || process.env.GRAPHISTRY || 'http://labs.graphistry.com') + '/etl',
-        qs:   query,
+        uri: etlService,
+        qs: getQuery(apiKey),
         json: data,
         callback:
             function (err, resp, body) {
@@ -37,46 +47,24 @@ function upload (data, cb) {
     });
 }
 
-var query = {
-    'key': process.env.GRAPHISTRY_API_KEY || 'd6a5bfd7b91465fa8dd121002dfc51b84148cd1f01d7a4c925685897ac26f40b',
-    'agent': 'pygraphistry',
-    'agentversion': '0.9.30',
-    'apiversion': 1,
+
+function getQuery(key) {
+    return {
+        'key': key,
+        'agent': 'pivot-app',
+        'agentversion': '0.0.1',
+        'apiversion': 1
+    };
 }
 
-var simpleGraph = {
-    "name": "myUniqueGraphNamePaden",
-    "type": "edgelist",
-    "bindings": {
-        "sourceField": "src",
-        "destinationField": "dst",
-        //"idField": "node"
-    },
-    "graph": [
-        {"src": "myNode1", "dst": "myNode2",
-            "myEdgeField1": "I'm an edge!", "myCount": 7},
-            {"src": "myNode2", "dst": "myNode3",
-                "myEdgeField1": "I'm also an edge!", "myCount": 200}
-    ],
-    "labels": [
-        {"node": "myNode1",
-            "myNodeField1": "I'm a node!",
-            "pointColor": 5},
-            {"node": "myNode2",
-                "myNodeField1": "I'm a node too!",
-                "pointColor": 4},
-                {"node": "myNode3",
-                    "myNodeField1": "I'm a node three!",
-                    "pointColor": 4}
-    ]
-}
 
 const previousGraph = {
     graph: [],
     labels: []
 };
 
-export function uploadGraph({app, pivots}) {
+
+function createGraph(pivots) {
     const name = ("splunkUpload" + simpleflake().toJSON())
     const type = "edgelist";
     const bindings = {
@@ -126,13 +114,29 @@ export function uploadGraph({app, pivots}) {
     previousGraph.graph = uploadData.graph;
     previousGraph.labels = uploadData.labels;
 
-    if (uploadData.graph.length === 0) {
-        return Observable.throw(new Error('No edges to upload!'));
-    }
+    return uploadData;
+}
 
-    const uploadDone = Observable.bindNodeCallback(upload.bind(upload));
-    const vizUrl = uploadDone(uploadData);
-    return vizUrl.map(
-        () =>  name
-    )
+
+export function uploadGraph({loadInvestigationsById, loadPivotsById, investigationIds}) {
+    return loadInvestigationsById({investigationIds})
+        .mergeMap(
+            ({app, investigation}) => loadPivotsById({pivotIds: investigation.pivots.map(x => x.value[1])})
+                .map(({app, pivot}) => pivot)
+                .toArray()
+                .map(createGraph)
+                .switchMap(data => upload(app.etlService, app.apiKey, data))
+                .do((name) => {
+                    investigation.url = `${app.vizService}&dataset=${name}`;
+                    console.log('  URL: ', investigation.url);
+                })
+                .catch(e => {
+                    investigation.status = {
+                        ok: false,
+                        message: e.message || 'Unknown Error'
+                    };
+                    return Observable.of({});
+                }),
+            ({app, investigation}) => ({app, investigation})
+        )
 }

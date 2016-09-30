@@ -38,8 +38,8 @@ const SEARCH_SPLUNK_EVENT_GEN = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function(pivots, app, fields, pivotCache) {
-            return `search ${SPLUNK_INDICES.EVENT_GEN} ${fields['Search']}
+        toSplunk: function(pivotParameters, pivotCache) {
+            return `search ${SPLUNK_INDICES.EVENT_GEN} ${pivotParameters['input']}
             | rename _cd AS EventID
             | fields - _*
             | head 100`
@@ -55,8 +55,8 @@ const PAN_SEARCH_TO_USER_DEST = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function(pivots, app, fields, pivotCache) {
-            return `search ${SPLUNK_INDICES.PAN} ${fields['Search']}
+        toSplunk: function(pivotParameters, pivotCache) {
+            return `search ${SPLUNK_INDICES.PAN} ${pivotParameters['input']}
                 ${constructFieldString(this)}
                 | head 100`;
             //return `search ${SPLUNK_INDICES.EVENT_GEN} ${fields['Search']} | head 1000 | fields - _*`
@@ -79,8 +79,8 @@ const PAN_SEARCH_TO_USER_THREAT = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function(pivots, app, fields, pivotCache) {
-            return `search ${SPLUNK_INDICES.PAN} ${fields['Search']}
+        toSplunk: function(pivotParameters, pivotCache) {
+            return `search ${SPLUNK_INDICES.PAN} ${pivotParameters['input']}
                 ${constructFieldString(this)}
                 | head 100`;
             //return `search ${SPLUNK_INDICES.EVENT_GEN} ${fields['Search']} | head 1000 | fields - _*`
@@ -108,8 +108,8 @@ const PAN_SEARCH_TO_USER_DEST_GROUPED = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function(pivots, app, fields, pivotCache) {
-            const search = fields['Search'];
+        toSplunk: function(pivotParameters, pivotCache) {
+            const search = pivotParameters['input'];
             return `search ${SPLUNK_INDICES.PAN} | search ${search} |  stats count, min(_time), max(_time) values(dest_port) by dest user |
                  convert ctime(min(_time)) as startTime, ctime(max(_time)) as endTime | rename _cd as EventID | fields  - _*, min(_time), max(_time)`;
         },
@@ -133,8 +133,8 @@ const PAN_USER_TO_THREAT = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function(pivots, app, fields, pivotCache) {
-            const index = fields['Search'];
+        toSplunk: function(pivotParameters, pivotCache) {
+            const index = pivotParameters['input'];
             const subsearch = `(severity="critical" OR severity="medium" OR severity="low") [| loadjob "${pivotCache[index].splunkSearchID}" |  fields user | dedup user]`;
             return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} ${constructFieldString(this)}`;
         },
@@ -161,8 +161,8 @@ const PAN_DEST_TO_USER = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function(pivots, app, fields, pivotCache) {
-            const index = fields['Search'];
+        toSplunk: function(pivotParamenters) {
+            const index = fields['input'];
             const subsearch = `[| loadjob ${pivotCache[index].splunkSearchID} |  fields dest | dedup dest]`;
             return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} ${constructFieldString(this)}`;
         },
@@ -187,8 +187,8 @@ const PAN_DEST_TO_USER_GROUPED = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function(pivots, app, fields, pivotCache) {
-            const index = fields['Search'];
+        toSplunk: function(pivotParameters, pivotCache) {
+            const index = pivotParameters['Search'];
             const subsearch = `[| loadjob ${pivotCache[index].splunkSearchID} |  fields dest | dedup dest]`;
             return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} |  stats count, min(_time), max(_time) values(dest_port) by dest user |
                  convert ctime(min(_time)) as startTime, ctime(max(_time)) as endTime | fields  - _*, min(_time), max(_time)`;
@@ -213,7 +213,7 @@ const PAN_DEST_TO_SRC_GROUPED = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function(pivots, app, fields, pivotCache) {
+        toSplunk: function(pivotParameters, pivotCache) {
             const index = fields['Search'];
             const subsearch = `[| loadjob ${pivotCache[index].splunkSearchID} |  fields dest | dedup dest}]`;
             return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} |  stats count, min(_time), max(_time) values(dest_port) by dest src |

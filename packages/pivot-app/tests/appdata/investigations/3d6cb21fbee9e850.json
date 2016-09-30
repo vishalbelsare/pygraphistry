@@ -1,7 +1,7 @@
 {
-    "id": "3d6cb21fbee9e850",
     "name": "Dataset Errors",
-    "templates": "all",
+    "url": "http://www.graphistry.com",
+    "id": "3d6cb21fbee9e850",
     "pivots": [
         "3d6ccf32fd3adc09"
     ]
