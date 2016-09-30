@@ -128,14 +128,14 @@ const PAN_SEARCH_TO_USER_DEST_GROUPED = {
 
 const PAN_USER_TO_THREAT = {
     name: 'PAN - From user to threat',
-    label: 'Query',
-    kind: 'text',
+    label: 'Expand on users from',
+    kind: 'button',
 
     transport: 'Splunk',
     splunk: {
         toSplunk: function(pivotParameters, pivotCache) {
-            const index = pivotParameters['input'];
-            const subsearch = `(severity="critical" OR severity="medium" OR severity="low") [| loadjob "${pivotCache[index].splunkSearchID}" |  fields user | dedup user]`;
+            const subsearchId = pivotParameters['input'];
+            const subsearch = `(severity="critical" OR severity="medium" OR severity="low") [| loadjob "${pivotCache[subsearchId].splunkSearchID}" |  fields user | dedup user]`;
             return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} ${constructFieldString(this)}`;
         },
         connections: [
