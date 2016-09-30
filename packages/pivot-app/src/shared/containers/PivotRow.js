@@ -131,10 +131,9 @@ function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
 };
 
 
-function renderPivotRow(arg) {
-
-    const {id, status, rowIndex, enabled, resultCount, resultSummary, pivotParameters, pivotParameterKeys,
-        searchPivot, togglePivot, setPivotParameters, splicePivot, insertPivot} = arg;
+function renderPivotRow({id, status, rowIndex, enabled, resultCount, resultSummary,
+                         pivotParameters, pivotParameterKeys, searchPivot, togglePivot,
+                         setPivotParameters, splicePivot, insertPivot}) {
 
     const statusIndicator =
         status.ok ?
