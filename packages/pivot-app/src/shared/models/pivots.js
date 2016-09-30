@@ -37,3 +37,12 @@ export function createPivotModel(serializedPivot) {
 export function serializePivotModel(pivot) {
     return _.pick(pivot, _.keys(defaults));
 }
+
+export function clonePivotModel(pivot) {
+    const deepCopy = JSON.parse(JSON.stringify(serializePivotModel(pivot)));
+    return {
+        ...deepCopy,
+        id: simpleflake().toJSON(),
+        ...initialSoftState
+    };
+}

@@ -12,7 +12,7 @@ import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 import { app as createApp } from '../shared/models';
 import {
     loadApp,
-    investigationStore, createInvestigation,
+    investigationStore, createInvestigation, cloneInvestigationsById,
     pivotStore, insertPivot, splicePivot, searchPivot,
     uploadGraph
 } from '../shared/services';
@@ -45,6 +45,7 @@ function init(investigations) {
         loadInvestigationsById,
         saveInvestigationsById,
         createInvestigation,
+        cloneInvestigationsById,
         loadPivotsById: loadPivotsById,
         savePivotsById: savePivotsById,
         insertPivot, splicePivot, searchPivot,

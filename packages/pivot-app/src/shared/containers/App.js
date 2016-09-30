@@ -136,7 +136,7 @@ function renderApp({ title, investigations, selectedInvestigation = {},
                             <Button onClick={createInvestigation}>
                                 <Glyphicon glyph="plus" />
                                 </Button>
-                            <Button disabled={true} onClick={(e) => copyInvestigation(selectedInvestigation.id)}>
+                            <Button onClick={(e) => copyInvestigation(selectedInvestigation.id)}>
                                 <Glyphicon glyph="duplicate" />
                             </Button>
                             <Button onClick={(e) => saveInvestigation(selectedInvestigation.id)}>

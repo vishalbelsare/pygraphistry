@@ -124,16 +124,17 @@ function saveCallRoute({ loadInvestigationsById, savePivotsById, saveInvestigati
     }
 }
 
-
-import {cloneInvestigationModel} from '../models';
 function cloneCallRoute({ loadInvestigationsById, loadPivotsById, cloneInvestigationsById }) {
 
     return function(path, args) {
         const investigationIds = path[1];
-
-        return Observable.defer(() => loadInvestigationsById(investigationIds))
-            .mergeMap(({app, investigation}) => {
-                return [];
+        return Observable.defer(() => cloneInvestigationsById({loadInvestigationsById, loadPivotsById, investigationIds}))
+            .mergeMap(({app, clonedInvestigation, numInvestigations}) => {
+                return [
+                    $pathValue(`['investigations'].length`, numInvestigations),
+                    $pathValue(`selectedInvestigation`, app.selectedInvestigation),
+                    $invalidation(`['investigations']['${numInvestigations - 1}']`)
+                ];
             })
             .map(mapObjectsToAtoms)
             .catch(captureErrorAndNotifyClient(investigationIds));

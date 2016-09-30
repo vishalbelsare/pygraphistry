@@ -6,6 +6,7 @@ import {
 } from '@graphistry/falcor-json-graph';
 import _ from 'underscore';
 import { simpleflake } from 'simpleflakes';
+import { clonePivotModel } from './pivots';
 
 function defaults(index) {
     return {
@@ -42,11 +43,13 @@ export function serializeInvestigationModel(investigation) {
     return hardState;
 }
 
-export function cloneInvestigationModel(investigation) {
+export function cloneInvestigationModel(investigation, clonedPivots) {
+    const deepCopy = JSON.parse(JSON.stringify(serializeInvestigationModel(investigation)));
+
     return {
+        ...deepCopy,
+        ...initialSoftState(_.pluck(clonedPivots, 'id')),
         id: simpleflake().toJSON(),
         name: `Copy of ${investigation.name}`,
-        ...initialSoftState([]),
-        ...investigation
     };
 }
