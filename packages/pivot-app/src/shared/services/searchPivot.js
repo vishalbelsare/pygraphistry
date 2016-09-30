@@ -46,7 +46,6 @@ function searchSplunkPivot({app, pivot}) {
     }
 
     const searchQuery = template.splunk.toSplunk(pivot.pivotParameters, pivotCache);
-    pivot.searchQuery = searchQuery;
 
     console.log('======= Search ======')
     console.log(searchQuery);
