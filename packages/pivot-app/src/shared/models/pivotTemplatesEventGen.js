@@ -1,4 +1,5 @@
 import { expandTemplate, constructFieldString } from '../services/support/splunkMacros.js';
+var _ = require('underscore');
 
 const SPLUNK_INDICES = {
     //EVENT_GEN: 'index=event_gen | search source="eventGen100k.csv" | search sourcetype="csv" | search'
@@ -134,10 +135,22 @@ const PAN_USER_TO_THREAT = {
     transport: 'Splunk',
     splunk: {
         toSplunk: function(pivotParameters, pivotCache) {
-            const subsearchId = pivotParameters['input'];
-            const subsearch = `(severity="critical" OR severity="medium" OR severity="low") [| loadjob "${pivotCache[subsearchId].splunkSearchID}" |  fields user | dedup user]`;
-            return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} ${constructFieldString(this)}`;
-        },
+            const subSearchId = pivotParameters['input'];
+            const isGlobalSearch = (subSearchId === '*');
+            var subsearch = '';
+            console.log('pivotCache', pivotCache, 'subsearchId', subSearchId)
+            if (isGlobalSearch) {
+                const list  = _.map(Object.keys(pivotCache), (pivotId) => (`[| loadjob "${pivotCache[pivotId].splunkSearchID}" | fields user | dedup user]`));
+                console.log('List', list);
+                subsearch = list.join(' | append ');
+                console.log('subsearch');
+            } else {
+                subsearch = `[| loadjob "${pivotCache[subSearchId].splunkSearchID}" |  fields user | dedup user]`
+            }
+
+            return `search ${SPLUNK_INDICES.PAN}
+                    | search (severity="critical" OR severity="medium" OR severity="low") ${subsearch} ${constructFieldString(this)}`;
+            },
         connections: [
             'user',
             'threat_name'
