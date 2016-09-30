@@ -225,8 +225,9 @@ function setupCenter(toggleCenter, curPoints, camera) {
                 if (points.length < 1) {
                     return camera;
                 }
-                const { top, left, right, bottom } = getBoundingBox(points);
-                // debug('Bounding box: ', bbox);
+                const bbox = getBoundingBox(points);
+                debug('Bounding box: ', bbox);
+                const { top, left, right, bottom } = bbox;
                 camera.centerOn(left, right, bottom * -1, top * -1);
                 return camera;
             });

@@ -7,7 +7,7 @@ import {
 export function camera(scene) {
     return {
         camera: {
-            zoom: 1,
+            zoom: true,
             center: true,
             controls: [{
                 id: 'zoom-in',
@@ -27,10 +27,9 @@ export function camera(scene) {
                 type: 'toggle',
                 value: 0,
                 values: $atom([[
-                    $value(`${scene}.camera.zoom`, $atom(1)),
-                    $value(`${scene}.camera.center`, $atom(true))
+                    $value(`${scene}.camera.center`, $atom(true)),
                 ], [
-                    $value(`${scene}.camera.zoom`, $atom(1)),
+                    $value(`${scene}.camera.zoom`, $atom(true)),
                     $value(`${scene}.camera.center`, $atom(false)),
                     $value(`${scene}.camera.controls[2].value`, $atom(0))
                 ]])

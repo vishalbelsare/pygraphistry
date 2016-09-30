@@ -232,18 +232,10 @@ class Renderer extends React.Component {
             selectedPointIndexesSource
         });
     }
-    setupDOMAndSourceListeners(props, state) {
+    setupDOMAndSourceListeners(props = {}, state = {}) {
 
         const { container } = this;
-
-        if (!container || (
-            state.hasDOMListeners &&
-            state.hasSourceListeners)) {
-            return;
-        }
-
         const { play, socket, simulation } = props;
-
         let {
             renderState,
             curPointsSource,
@@ -257,6 +249,11 @@ class Renderer extends React.Component {
             selectedEdgeIndexesSource,
             selectedPointIndexesSource,
         } = state;
+
+        if (!container || !simulation || !renderState || (
+            hasDOMListeners && hasSourceListeners)) {
+            return;
+        }
 
         hasSourceListeners = true;
 
@@ -272,6 +269,7 @@ class Renderer extends React.Component {
             const zoomOutSource = setupZoomButton(toggleZoomOut, camera, 1.25);
             const rotateSource = setupRotate($(container), camera).do(() => {
                 // this.renderFast = true;
+                this.props.camera.center = camera.center;
                 this.renderPanZoom = true;
                 this.forceUpdate();
             });
@@ -280,6 +278,7 @@ class Renderer extends React.Component {
                 camera, { marqueeOn, brushOn }
             ).do(() => {
                 // this.renderFast = true;
+                this.props.camera.center = camera.center;
                 this.renderPanZoom = true;
                 this.forceUpdate();
             });
@@ -300,6 +299,7 @@ class Renderer extends React.Component {
                             next: ({ movementX, movementY }) => {
                                 camera.center.x -= movementX * camera.width / offsetWidth;
                                 camera.center.y -= movementY * camera.height / offsetHeight;
+                                this.props.camera.center = camera.center;
                                 this.renderFast = true;
                                 this.renderPanZoom = true;
                                 this.forceUpdate();
@@ -585,8 +585,8 @@ class Renderer extends React.Component {
         currCamera, nextCamera,
         renderState, renderingScheduler
     }) {
-        if (currCamera.center !== nextCamera.center &&
-            typeof nextCamera.center === 'boolean') {
+        if (typeof nextCamera.center === 'boolean' &&
+            typeof nextCamera.zoom === 'boolean') {
             toggleCenter.next();
             return true;
         } else if (nextCamera.zoom < currCamera.zoom) {

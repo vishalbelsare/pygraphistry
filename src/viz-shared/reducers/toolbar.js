@@ -41,7 +41,7 @@ function multiplyReducer({ type, value, values, falcor }) {
     return Observable
         .from(falcor.getValue(values))
         .mergeMap((state) => falcor
-            .set($value(values, state * value))
+            .set($value(values, Number(state) * value))
         );
 }
 
