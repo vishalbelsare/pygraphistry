@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 import fs  from 'fs';
 import path from 'path';
+import glob from 'glob';
 import { serializeInvestigationModel } from '../models';
 
 
@@ -32,8 +33,19 @@ export function investigationStore(loadApp, pathPrefix) {
             });
     }
 
+
     return {
         loadInvestigationsById,
         saveInvestigationsById
     };
+}
+
+export function listInvestigations(pathPrefix) {
+    const globAsObservable = Observable.bindNodeCallback(glob);
+    const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
+
+    return globAsObservable(path.resolve('tests/appdata/investigations', '*.json'))
+        .flatMap(x => x)
+        .flatMap(file => readFileAsObservable(file).map(JSON.parse))
+        .toArray();
 }
