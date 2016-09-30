@@ -20,6 +20,10 @@ export default class SimpleServiceWithCache {
         }
     }
 
+    evictFromCache(reqId) {
+        delete this.cache[reqId];
+    }
+
     loadByIds(reqIds) {
         const index = `${this.resultName}sById`
 

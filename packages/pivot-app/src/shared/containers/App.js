@@ -110,25 +110,17 @@ function renderApp({ title, investigations, selectedInvestigation = {},
                            selectInvestigation={selectInvestigation}
                            selectedInvestigation={selectedInvestigation}/>
                     </span>
-                    { /*
-                    <a className="navbar-brand" href="#">Input</a>
-                    <a className="navbar-brand on" href="#">Untitled_1</a>
-                    */ }
 
                     <input key={selectedInvestigation.id + 'setInvestigationNameTextBox'}
                         className="navbar-brand on" type='text' value={selectedInvestigation.name}
                         readOnly={false} disabled={false} onChange={
-                            (ev) => setInvestigationName(ev.target.value)
+                            (ev) => ev.preventDefault() || setInvestigationName(ev.target.value)
                         }
                     />
 
-                    { /*
-                    <a className="navbar-brand" href="#">Untitled2 (58)</a>
-                    <a className="navbar-brand" href="#">Untitled3 (32)</a>
-                    */ }
                 </div>
 
-               <div className="collapse navbar-collapse">
+                <div className="collapse navbar-collapse">
                    {/*<a href="#" className="navbar-brand" style={
                         {'fontSize': '1.7em',
                          'margin': 0,
@@ -140,12 +132,11 @@ function renderApp({ title, investigations, selectedInvestigation = {},
                          'paddingLeft': '1.5em'}
                     }>
                     <i className="pe-7s-plus"></i> */}
-                    <span/>
                     <ButtonGroup>
                             <Button onClick={createInvestigation}>
                                 <Glyphicon glyph="plus" />
                                 </Button>
-                            <Button onClick={(e) => copyInvestigation(selectedInvestigation.id)}>
+                            <Button disabled={true} onClick={(e) => copyInvestigation(selectedInvestigation.id)}>
                                 <Glyphicon glyph="duplicate" />
                             </Button>
                             <Button onClick={(e) => saveInvestigation(selectedInvestigation.id)}>

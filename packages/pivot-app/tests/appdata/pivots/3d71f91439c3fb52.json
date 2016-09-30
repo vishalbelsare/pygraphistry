@@ -1,10 +1,16 @@
 {
+    "id": "3d71f91439c3fb52",
+    "enabled": false,
+    "pivotParameterKeys": [
+        "mode",
+        "input",
+        "search",
+        "time"
+    ],
     "pivotParameters": {
         "mode": "Expand with Blue Coat",
         "input": "Pivot 1",
         "search": "",
         "time": "09/21/2016"
-    },
-    "enabled": false,
-    "id": "3d71f91439c3fb52"
+    }
 }

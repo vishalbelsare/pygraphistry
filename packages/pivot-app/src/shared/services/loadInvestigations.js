@@ -3,8 +3,11 @@ import fs  from 'fs';
 import path from 'path';
 import { serializeInvestigationModel } from '../models';
 
-export function loadInvestigations(loadApp) {
-    return function loadInvestigationsById({ investigationIds }) {
+
+export function investigationStore(loadApp, pathPrefix) {
+    const writeFileAsObservable = Observable.bindNodeCallback(fs.writeFile);
+
+    function loadInvestigationsById({ investigationIds }) {
         return loadApp()
             .mergeMap(
             (app) => investigationIds.filter((investigationId) => (
@@ -14,20 +17,23 @@ export function loadInvestigations(loadApp) {
                 app, investigation: app.investigationsById[investigationId]
             })
         );
-    };
-}
+    }
 
-export function saveInvestigations(loadApp, pathPrefix) {
-    const writeFileAsObservable = Observable.bindNodeCallback(fs.writeFile);
-
-    return function saveInvestigationsById({loadInvestigationsById, investigationIds}) {
+    function saveInvestigationsById({loadInvestigationsById, savePivotsById, investigationIds}) {
         return loadInvestigationsById({investigationIds})
             .mergeMap(({app, investigation}) => {
                 const filePath = path.resolve(pathPrefix, investigation.id + '.json')
                 const content = JSON.stringify(serializeInvestigationModel(investigation), null, 4);
+                const pivotIds = investigation.pivots.map(x => x.value[1])
 
-                return writeFileAsObservable(filePath, content)
-                    .map(() => Observable.of({app, investigation}));
+                return savePivotsById({pivotIds})
+                    .switchMap(() => writeFileAsObservable(filePath, content))
+                    .map(() => ({app, investigation}));
             });
+    }
+
+    return {
+        loadInvestigationsById,
+        saveInvestigationsById
     };
 }

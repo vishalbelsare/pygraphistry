@@ -14,9 +14,8 @@ import {
 } from './support';
 
 export function investigations({ loadInvestigationsById, saveInvestigationsById,
-                                 loadPivotsById, cloneInvestigationsById,
+                                 loadPivotsById, savePivotsById, cloneInvestigationsById,
                                  searchPivot, splicePivot, insertPivot, uploadGraph }) {
-
 
     const getInvestigationsHandler = getHandler(['investigation'], loadInvestigationsById);
     const setInvestigationsHandler = setHandler(['investigation'], loadInvestigationsById);
@@ -45,7 +44,7 @@ export function investigations({ loadInvestigationsById, saveInvestigationsById,
         call: splicePivotCallRoute({ loadInvestigationsById, splicePivot})
     }, {
         route: `investigationsById[{keys}].save`,
-        call: saveCallRoute({ loadInvestigationsById, loadPivotsById, saveInvestigationsById})
+        call: saveCallRoute({ loadInvestigationsById, saveInvestigationsById, savePivotsById})
     }, {
         route: `investigationsById[{keys}].clone`,
         call: cloneCallRoute({ loadInvestigationsById, loadPivotsById, cloneInvestigationsById})
@@ -114,11 +113,11 @@ function playCallRoute({ loadInvestigationsById, loadPivotsById, uploadGraph }) 
     }
 }
 
-function saveCallRoute({ loadInvestigationsById, loadPivotsById, saveInvestigationsById }) {
+function saveCallRoute({ loadInvestigationsById, savePivotsById, saveInvestigationsById }) {
     return function(path, args) {
         const investigationIds = path[1];
 
-        return Observable.defer(() => saveInvestigationsById({loadInvestigationsById, loadPivotsById, investigationIds}))
+        return Observable.defer(() => saveInvestigationsById({loadInvestigationsById, savePivotsById, investigationIds}))
             .mergeMap(({app, investigation}) => [])
             .map(mapObjectsToAtoms)
             .catch(captureErrorAndNotifyClient(investigationIds));

@@ -12,8 +12,8 @@ import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 import { app as createApp } from '../shared/models';
 import {
     loadApp,
-    loadInvestigations, saveInvestigations, createInvestigation,
-    loadPivots, insertPivot, splicePivot, searchPivot,
+    investigationStore, createInvestigation,
+    pivotStore, insertPivot, splicePivot, searchPivot,
     uploadGraph
 } from '../shared/services';
 
@@ -36,12 +36,17 @@ globAsObservable('tests/appdata/investigations/*.json')
 function init(investigations) {
     const app = createApp(investigations);
 
+    const {loadPivotsById, savePivotsById} = pivotStore(loadApp(app), 'tests/appdata/pivots');
+    const {loadInvestigationsById, saveInvestigationsById} =
+        investigationStore(loadApp(app), 'tests/appdata/investigations');
+
     const routeServices = {
         loadApp: loadApp(app),
-        loadInvestigationsById: loadInvestigations(loadApp(app)),
-        saveInvestigationsById: saveInvestigations(loadApp(app), 'tests/appdata/investigations'),
+        loadInvestigationsById,
+        saveInvestigationsById,
         createInvestigation,
-        loadPivotsById: loadPivots(loadApp(app), 'tests/appdata/pivots/*.json'),
+        loadPivotsById: loadPivotsById,
+        savePivotsById: savePivotsById,
         insertPivot, splicePivot, searchPivot,
         uploadGraph
     };
