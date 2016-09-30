@@ -45,7 +45,7 @@ function searchSplunkPivot({app, pivot}) {
         throw new Error('Only expected Splunk transports, got: ' + template.transport);
     }
 
-    const searchQuery = template.splunk.toSplunk(null, app, pivot.pivotParameters, pivotCache);
+    const searchQuery = template.splunk.toSplunk(pivot.pivotParameters, pivotCache);
 
     console.log('======= Search ======')
     console.log(searchQuery);
