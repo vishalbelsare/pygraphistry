@@ -2,6 +2,7 @@ import { Observable } from 'rxjs';
 import { ref as $ref } from '@graphistry/falcor-json-graph';
 import {
     createInvestigationModel,
+    createPivotModel,
     cloneInvestigationModel,
     clonePivotModel
 } from '../models';
@@ -23,7 +24,9 @@ function insertPivots(app, pivots) {
 export function createInvestigation({ loadApp }) {
     return loadApp()
         .map(app => {
-            const newInvestigation = createInvestigationModel({}, app.investigations.length)
+            const pivot0 = createPivotModel({});
+            const newInvestigation = createInvestigationModel({pivots: [pivot0.id]}, app.investigations.length);
+            insertPivots(app, [pivot0]);
             const numInvestigations = insertAndSelectInvestigation(app, newInvestigation);
 
             return ({app, newInvestigation, numInvestigations});

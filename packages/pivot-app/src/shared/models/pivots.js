@@ -3,18 +3,20 @@ import PivotTemplates from '../models/PivotTemplates';
 import _ from 'underscore';
 
 
-const defaults = {
-    id: simpleflake().toJSON(),
-    enabled: false,
-    pivotParameterKeys: [
-        'mode', 'input', 'search', 'time'
-    ],
-    pivotParameters: {
-        search: 'Enter search query',
-        mode: PivotTemplates.get('all', 'Search Splunk').name,
-        input: 'none',
-        time: '09/21/2016'
-    }
+function defaults() {
+    return {
+        id: simpleflake().toJSON(),
+        enabled: false,
+        pivotParameterKeys: [
+            'mode', 'input', 'search', 'time'
+        ],
+        pivotParameters: {
+            search: 'Enter search query',
+            mode: PivotTemplates.get('all', 'Search Splunk').name,
+            input: 'none',
+            time: '09/21/2016'
+        }
+    };
 }
 
 const initialSoftState = {
@@ -25,7 +27,7 @@ const initialSoftState = {
 
 export function createPivotModel(serializedPivot) {
     const normalizedPivot = {
-        ...defaults,
+        ...defaults(),
         ...serializedPivot
     };
     return {
@@ -35,7 +37,7 @@ export function createPivotModel(serializedPivot) {
 }
 
 export function serializePivotModel(pivot) {
-    return _.pick(pivot, _.keys(defaults));
+    return _.pick(pivot, _.keys(defaults()));
 }
 
 export function clonePivotModel(pivot) {

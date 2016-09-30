@@ -40,7 +40,7 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
             <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
         </ButtonGroup>
         <ButtonGroup style={{marginLeft: '0.7em'}}>
-            <Button onClick={(ev) => splicePivot({index})}><Glyphicon glyph="trash" /></Button>
+            <Button disabled={index === 0} onClick={(ev) => splicePivot({index})}><Glyphicon glyph="trash" /></Button>
         </ButtonGroup>
         </div>
     );
