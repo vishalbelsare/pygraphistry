@@ -45,6 +45,7 @@ function renderInvestigation({length = 0, templates = 'all', status, name = 'def
                 <tbody>
                     {pivots.map((pivot, index) => (
                         <PivotRow data={pivot}
+                                  pivots={pivots}
                                   rowIndex={index}
                                   key={`${index}: ${pivot.id}`}
                                   searchPivot={searchPivot}

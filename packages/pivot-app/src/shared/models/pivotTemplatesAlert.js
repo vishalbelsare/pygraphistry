@@ -74,8 +74,8 @@ const SEARCH_FIREEYE = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search EventID=${ fields['Search'] } ${SPLUNK_INDICES.FIREEYE} ${constructFieldString(this)}`;
+        toSplunk: function (pivotParameters, pivotCache) {
+            return `search EventID=${ pivotParameters['input'] } ${SPLUNK_INDICES.FIREEYE} ${constructFieldString(this)}`;
         },
         fields: FIREEYE_FIELDS,
         encodings: ALERT_DEMO_ENCODINGS
@@ -89,10 +89,12 @@ const FIREEYE = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
+        toSplunk: function (pivotParameters, pivotCache) {
             const attribs = 'EventID, Message, Fire Eye MD5, Fire Eye URL, Internal IPs, External IPs';
+            console.log('pivot cache', pivotParameters);
+            console.log('pivotParameters', pivotCache);
             const rawSearch =
-                `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.FIREEYE}]`;
+                `[{{${pivotParameters['input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.FIREEYE}]`;
             return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
         fields: FIREEYE_FIELDS,
