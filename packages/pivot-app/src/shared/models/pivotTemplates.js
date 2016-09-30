@@ -30,8 +30,8 @@ const SEARCH_SPLUNK_DATASET = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search ${fields['Search']} | spath output=dataset path="metadata.dataset" | search dataset="*"  | fields msg, dataset | fields - _* | head 10`
+        toSplunk: function (pivotParameters, pivotCache) {
+            return `search ${pivotParameters['input']} | spath output=dataset path="metadata.dataset" | search dataset="*"  | fields msg, dataset | fields - _* | head 10`
         },
         encodings: {
             point: {
