@@ -107,17 +107,22 @@ function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
                         { renderEntitySummaries(id, resultSummary) }
                     </td>);
                 case 'button':
+                    const previousPivots = pivots.slice(0, -1);
                     return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}>
 						<FormGroup controlId={'inputSelector' + id }>
-							<ControlLabel>Steps</ControlLabel>
+							<ControlLabel>{ template.label }</ControlLabel>
                             <FormControl
                                 componentClass="select"
                                 placeholder="select"
                                 onChange={
                                     (ev) => (ev.preventDefault() || setPivotParameters({[field]: ev.target.value}))
                                 }>
+                                <option
+                                    key={`${id} + *`}
+                                    value={'*'}>  All Pivots 
+                                </option>
                                 {
-                                    pivots.map((pivot, index) => (
+                                    previousPivots.map((pivot, index) => (
                                         <option
                                             key={`${pivot.id} + ${index}`}
                                             value={`${pivot.id}`}> { `Step ${index}` }
