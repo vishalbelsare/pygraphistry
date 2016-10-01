@@ -92,6 +92,7 @@
         this.width = right - left;
         this.height = bottom - top;
         this.center = {
+            z: 0,
             x: left + (this.width / 2.0),
             y: top + (this.height / 2.0)
         };

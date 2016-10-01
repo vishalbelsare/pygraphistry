@@ -12,7 +12,14 @@ let Scene = ({
             <Renderer
                 key='renderer'
                 edges={{ ...edges }}
-                camera={{ ...camera }}
+                camera={{
+                    zoom: camera.zoom,
+                    version: camera.$__version,
+                    center: {
+                        ...camera.center,
+                        version: camera.center.$__version
+                    }
+                }}
                 points={{ ...points }}
                 background={{ ...background }}
                 sceneID={id} simulating={simulating}
@@ -29,7 +36,7 @@ Scene = compose(
         simulating,
         showArrows,
         pruneOrphans,
-        camera: { zoom, center },
+        camera: { zoom, center: { x, y, z } },
         edges: { scaling, opacity, elements },
         points: { scaling, opacity, elements },
         ['background', 'foreground']: { color }

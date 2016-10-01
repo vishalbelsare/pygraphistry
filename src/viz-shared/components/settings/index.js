@@ -6,6 +6,7 @@ import RcSwitch from 'rc-switch';
 import classNames from 'classnames';
 import RcColorPicker from 'rc-color-picker';
 import RcSlider from '@graphistry/rc-slider';
+import { Panel } from 'react-bootstrap';
 import { FormControl } from 'react-bootstrap';
 import { Grid, Row, Col, ControlLabel } from 'react-bootstrap';
 
@@ -20,6 +21,28 @@ const tooltipFormatters = {
     none: (x) => x,
     percent: (x) => `${x}%`
 };
+
+export function SettingsList({ id, name, children = [], ...props } = {}) {
+    return (
+        <Panel header={name} style={{ minWidth: `350px` }}>
+            {children}
+        </Panel>
+    );
+}
+
+export function ControlsList({ name, children = [], ...props } = {}) {
+    return (
+        <Grid fluid style={{ padding: 0 }}>
+        {name &&
+            <Row>
+                <Col xs={12} sm={12} md={12} lg={12}>
+                    <h5>{name}</h5>
+                </Col>
+            </Row>}
+            {children}
+        </Grid>
+    );
+}
 
 export function Slider({
     id, name, type, props = {},
@@ -38,7 +61,7 @@ export function Slider({
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
                 <RcSlider key={`${id}-slider`}
                           min={props.min} max={props.max}
-                          step={props.step} value={state}
+                          step={props.step} defaultValue={state}
                           tipFormatter={tipFormatter}
                           tipTransitionName='rc-slider-tooltip-zoom-down'
                           onChange={(newState) => setValue({

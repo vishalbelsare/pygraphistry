@@ -32,8 +32,7 @@ import {
     init as initRenderer
 } from 'viz-client/streamGL/renderer';
 import {
-    RenderingScheduler,
-    setupCameraInteractions
+    RenderingScheduler
 } from 'viz-client/streamGL/graphVizApp/canvas';
 
 import {
@@ -133,7 +132,7 @@ class Renderer extends React.Component {
 
         let { renderFast, renderPanZoom, renderBGColor } = this;
 
-        const { renderingScheduler } = this.state;
+        const { renderState, renderingScheduler } = this.state;
         const { simBackgroundImage: backgroundImage = 'none' } = this.props;
 
         if (renderBGColor) {
@@ -153,6 +152,8 @@ class Renderer extends React.Component {
             if (typeof renderFast !== 'number') {
                 renderFast = undefined;
             }
+            this.props.camera.center.x = renderState.camera.center.x;
+            this.props.camera.center.y = renderState.camera.center.y;
         }
 
         this.renderFast = renderFast;
@@ -267,63 +268,48 @@ class Renderer extends React.Component {
             const centerSource = setupCenter(toggleCenter, curPoints, camera);
             const zoomInSource = setupZoomButton(toggleZoomIn, camera, 1 / 1.25);
             const zoomOutSource = setupZoomButton(toggleZoomOut, camera, 1.25);
-            const rotateSource = setupRotate($(container), camera).do(() => {
-                // this.renderFast = true;
-                this.props.camera.center = camera.center;
-                this.renderPanZoom = true;
-                this.forceUpdate();
-            });
+
+            const rotateSource = setupRotate($(container), camera);
             const scrollSource = setupScroll(
                 $(container), simulation,
                 camera, { marqueeOn, brushOn }
-            ).do(() => {
-                // this.renderFast = true;
-                this.props.camera.center = camera.center;
-                this.renderPanZoom = true;
-                this.forceUpdate();
-            });
+            );
 
             const panSource = Gestures
                 .pan(container)
-                .mergeMap((pan) => Observable.defer(() => {
+                .switchMap((pan) => {
                     const { offsetWidth, offsetHeight } = container;
-                    const forceRatio = 2 * (
-                        (camera.width / offsetWidth) +
-                        (camera.height / offsetHeight));
-                    return pan
-                        .decelerate(0.25, 9.8 * forceRatio)
-                        .filter(({ movementX, movementY }) => (
-                            movementX !== 0 || movementY !== 0
-                        ))
-                        .do({
-                            next: ({ movementX, movementY }) => {
+                    // const forceRatio = 0.5 * (
+                    //     (camera.width / offsetWidth) +
+                    //     (camera.height / offsetHeight));
+                    // .decelerate(0.25, 9.8 / forceRatio)
+                    return pan.multicast(
+                        () => new Subject(),
+                        (pan) => Observable.merge(
+                            pan.filter(({ movementX, movementY }) => (
+                                movementX !== 0 || movementY !== 0
+                            ))
+                            .do(({ movementX, movementY }) => {
                                 camera.center.x -= movementX * camera.width / offsetWidth;
                                 camera.center.y -= movementY * camera.height / offsetHeight;
-                                this.props.camera.center = camera.center;
                                 this.renderFast = true;
-                                this.renderPanZoom = true;
-                                this.forceUpdate();
-                            },
-                            complete: () => {
+                            }),
+                            pan.takeLast(1).do(() => {
                                 this.renderFast = false;
-                                this.renderPanZoom = true;
-                                this.forceUpdate();
-                            }
-                        })
-                }).repeat())
+                            })
+                        ))
+                        .repeat()
+                })
                 .mapTo(camera);
 
             cameraChangesSource = Observable.merge(
-                rotateSource, centerSource,
-                zoomInSource, zoomOutSource,
-                scrollSource, panSource
-            );
-            // cameraChangesSource = setupCameraInteractions({
-            //     toggleZoomIn, toggleZoomOut,
-            //     brushOn, curPoints, marqueeOn,
-            //     renderState, toggleCenter, anyMarqueeOn,
-            //     activeSelection, latestHighlightedObject,
-            // }, $(this.container));
+                rotateSource, scrollSource, panSource,
+                centerSource, zoomInSource, zoomOutSource
+            )
+            .do((camera) => {
+                this.renderPanZoom = true;
+                this.forceUpdate();
+            });
         }
 
         renderSubscription = Observable.merge(
@@ -348,12 +334,12 @@ class Renderer extends React.Component {
                     })
                     .takeWhile(() => this.props.simulating === true)
                     .concat(Observable.timer(100).do(() => {
-                        this.renderFast = false;
+                        // this.renderFast = false;
                         this.renderPanZoom = true;
                         this.forceUpdate();
                     }))
                     .do(() => {
-                        if (this.props.camera.center === true) {
+                        if (this.props.simulating === true) {
                             toggleCenter.next();
                         }
                     })
@@ -585,10 +571,20 @@ class Renderer extends React.Component {
         currCamera, nextCamera,
         renderState, renderingScheduler
     }) {
-        if (typeof nextCamera.center === 'boolean' &&
-            typeof nextCamera.zoom === 'boolean') {
-            toggleCenter.next();
-            return true;
+        if (currCamera.version === nextCamera.version) {
+            return false;
+        }
+        const { center: currCenter } = currCamera;
+        const { center: nextCenter } = nextCamera;
+        if (currCenter.version !== nextCenter.version) {
+            if (nextCamera.center.x === 0 &&
+                nextCamera.center.y === 0 &&
+                nextCamera.center.z === 0 &&
+                !shallowEqual(currCamera.center, nextCamera.center)) {
+                toggleCenter.next();
+                return true;
+            }
+            return false;
         } else if (nextCamera.zoom < currCamera.zoom) {
             toggleZoomIn.next();
             return true;
