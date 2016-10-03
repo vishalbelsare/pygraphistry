@@ -8,6 +8,7 @@ import {
 } from 'rxjs';
 
 import {
+    pointSizes,
     toggleZoomIn,
     toggleCenter,
     toggleZoomOut,
@@ -42,14 +43,39 @@ import {
     setupZoomButton
 } from 'viz-client/streamGL/graphVizApp/interaction';
 
+const arraySlice = Array.prototype.slice;
+const events = [
+    'touchEnd',
+    'mouseMove',
+    'touchMove',
+    'touchStart',
+    'touchCancel',
+];
+
 class Renderer extends React.Component {
     constructor(props, context) {
         super(props, context);
         this.assignContainerRef = (x) => this.container = x;
+        events.forEach((eventName) => {
+            this[eventName] = (event) => {
+                const { renderState } = this.state;
+                const dispatch = this.props[eventName];
+                if (!dispatch || !renderState) {
+                    return;
+                }
+                const { simulating, selection = {} } = this.props;
+                dispatch({
+                    selectionType: selection.type,
+                    event, simulating, renderState
+                });
+            };
+        });
+
         this.arrowItems = {};
         this.renderFast = undefined;
         this.renderPanZoom = null;
         this.renderBGColor = null;
+        this.renderMouseOver = null;
         this.state = {
             hasVBOListeners: false,
             hasDOMListeners: false,
@@ -126,14 +152,18 @@ class Renderer extends React.Component {
         this.renderFast = undefined;
         this.renderPanZoom = null;
         this.renderBGColor = null;
+        this.renderMouseOver = null;
         this.assignContainerRef = null;
+        events.forEach((eventName) => this[eventName] = null)
     }
     render() {
 
-        let { renderFast, renderPanZoom, renderBGColor } = this;
+        let { renderFast, renderPanZoom,
+              renderMouseOver, renderBGColor } = this;
 
         const { renderState, renderingScheduler } = this.state;
-        const { simBackgroundImage: backgroundImage = 'none' } = this.props;
+        const { highlight, selection,
+                simBackgroundImage: backgroundImage = 'none' } = this.props;
 
         if (renderBGColor) {
             renderBGColor = false;
@@ -152,17 +182,40 @@ class Renderer extends React.Component {
             if (typeof renderFast !== 'number') {
                 renderFast = undefined;
             }
-            this.props.camera.center.x = renderState.camera.center.x;
-            this.props.camera.center.y = renderState.camera.center.y;
+        }
+
+        if (renderMouseOver) {
+            renderMouseOver = false;
+            renderingScheduler.renderScene('mouseOver', {
+                trigger: 'mouseOverEdgeHighlight',
+                data: {
+                    highlight: {
+                        nodeIndices: arraySlice.call(highlight.point || []),
+                        edgeIndices: arraySlice.call(highlight.edge || []),
+                    },
+                    selected: {
+                        nodeIndices: arraySlice.call(selection.point || []),
+                        edgeIndices: arraySlice.call(selection.edge || []),
+                    }
+                }
+            });
         }
 
         this.renderFast = renderFast;
         this.renderPanZoom = renderPanZoom;
         this.renderBGColor = renderBGColor;
+        this.renderMouseOver = renderMouseOver;
 
         return (
             <div id='simulation-container'
                  ref={this.assignContainerRef}
+                 onMouseUp={this.touchEnd}
+                 onMouseMove={this.mouseMove}
+                 onMouseDown={this.touchStart}
+                 onTouchEnd={this.touchEnd}
+                 onTouchMove={this.touchMove}
+                 onTouchStart={this.touchStart}
+                 onTouchCancel={this.touchCancel}
                  style={{
                     width: `100%`,
                     height:`100%`,
@@ -198,6 +251,7 @@ class Renderer extends React.Component {
         const renderState = initRenderer(scene, simulation, rendererOptions);
         const { hostBuffers: {
             'curPoints': curPointsSource,
+            'pointSizes': pointSizesSource,
             'selectedEdgeIndexes': selectedEdgeIndexesSource,
             'selectedPointIndexes': selectedPointIndexesSource
         }} = renderState;
@@ -225,6 +279,7 @@ class Renderer extends React.Component {
             renderState,
             curPointsSource,
             hasVBOListeners,
+            pointSizesSource,
             vboUpdatesSource,
             vboVersionsSource,
             hasSourceListeners,
@@ -241,6 +296,7 @@ class Renderer extends React.Component {
             renderState,
             curPointsSource,
             hasDOMListeners,
+            pointSizesSource,
             vboUpdatesSource,
             vboVersionsSource,
             hasSourceListeners,
@@ -317,6 +373,7 @@ class Renderer extends React.Component {
             // Eventually we need to refactor the render loop to work
             // within the React component lifecycle, then delete this code.
             curPointsSource.do(curPoints),
+            pointSizesSource.do(pointSizes),
             vboUpdatesSource.do(vboUpdates),
             vboVersionsSource.do(vboVersions),
             cameraChangesSource.do(cameraChanges),
@@ -366,8 +423,10 @@ class Renderer extends React.Component {
             edges: currEdges = {},
             camera: currCamera = {},
             points: currPoints = {},
-            simulating: currSimulating,
+            highlight: currHighlight = {},
+            selection: currSelection = {},
             background: currBackground = {},
+            simulating: currSimulating = true,
             showArrows: currShowArrows = true,
         } = currProps;
 
@@ -375,68 +434,49 @@ class Renderer extends React.Component {
             edges: nextEdges = currEdges,
             camera: nextCamera = currCamera,
             points: nextPoints = currPoints,
-            simulating: nextSimulating = currSimulating,
+            highlight: nextHighlight = currHighlight,
+            selection: nextSelection = currSelection,
             background: nextBackground = currBackground,
+            simulating: nextSimulating = currSimulating,
             showArrows: nextShowArrows = currShowArrows,
         } = nextProps;
 
         let renderFast = this.renderFast,
             renderBGColor = this.renderBGColor,
-            renderPanZoom = this.renderPanZoom;
+            renderPanZoom = this.renderPanZoom,
+            renderMouseOver = this.renderMouseOver;
 
-        renderBGColor = this.updateBackground({
-            currBackground, nextBackground,
-            renderState, renderingScheduler
-        }) || renderBGColor;
-
-        renderPanZoom = (this.updateNumElements({
+        const updateArg = {
             currEdges, currPoints,
             nextEdges, nextPoints,
-            renderState, renderingScheduler
-        }) && false) || renderPanZoom;
-
-        renderPanZoom = this.updateSimulating({
+            currCamera, nextCamera,
+            currHighlight, nextHighlight,
+            currSelection, nextSelection,
+            currBackground, nextBackground,
+            currShowArrows, nextShowArrows,
             currSimulating, nextSimulating,
             renderState, renderingScheduler
-        }) || renderPanZoom;
+        };
 
-        renderPanZoom = this.updateEdgeScaling({
-            currEdges, nextEdges,
-            renderState, renderingScheduler
-        }) || renderPanZoom;
+        renderBGColor = this.updateBackground(updateArg) || renderBGColor;
+        renderPanZoom = (this.updateNumElements(updateArg) && false) || renderPanZoom;
+        renderPanZoom = this.updateEdgeScaling(updateArg) || renderPanZoom;
+        renderPanZoom = this.updatePointScaling(updateArg) || renderPanZoom;
+        renderPanZoom = this.updateEdgeOpacity(updateArg) || renderPanZoom;
+        renderPanZoom = this.updatePointOpacity(updateArg) || renderPanZoom;
+        renderPanZoom = this.updateShowArrows(updateArg) || renderPanZoom;
+        renderPanZoom = this.updateCameraCenterAndZoom(updateArg) || renderPanZoom;
+        renderPanZoom = (this.updateSimulating(updateArg) || renderPanZoom) && !nextSimulating;
+        renderMouseOver = (this.updateSceneHighlight(updateArg) || renderMouseOver) && !nextSimulating;
+        renderMouseOver = (this.updateSceneSelection(updateArg) || renderMouseOver) && !nextSimulating;
 
-        renderPanZoom = this.updatePointScaling({
-            currPoints, nextPoints,
-            renderState, renderingScheduler
-        }) || renderPanZoom;
-
-        renderPanZoom = this.updateEdgeOpacity({
-            currEdges, nextEdges,
-            renderState, renderingScheduler
-        }) || renderPanZoom;
-
-        renderPanZoom = this.updatePointOpacity({
-            currPoints, nextPoints,
-            renderState, renderingScheduler
-        }) || renderPanZoom;
-
-        renderPanZoom = this.updateShowArrows({
-            currShowArrows, nextShowArrows,
-            renderState, renderingScheduler
-        }) || renderPanZoom;
-
-        renderPanZoom = this.updateCameraCenterAndZoom({
-            currCamera, nextCamera,
-            renderState, renderingScheduler
-        }) || renderPanZoom;
-
-        if (renderPanZoom) {
-            // console.log('requesting renderPanZoom', renderFast);
+        if (renderPanZoom || renderBGColor) {
             if (typeof renderFast === 'number') {
                 clearTimeout(renderFast);
                 renderFast = undefined;
                 // console.log('clearing renderFast');
             }
+            // console.log('requesting renderPanZoom', renderFast);
             if (typeof renderFast === 'undefined') {
                 // console.log('enqueueing renderFast');
                 renderFast = setTimeout(() => {
@@ -451,6 +491,7 @@ class Renderer extends React.Component {
         this.renderFast = renderFast;
         this.renderPanZoom = renderPanZoom;
         this.renderBGColor = renderBGColor;
+        this.renderMouseOver = renderMouseOver;
     }
     updateNumElements({
         currEdges, currPoints,
@@ -571,12 +612,12 @@ class Renderer extends React.Component {
         currCamera, nextCamera,
         renderState, renderingScheduler
     }) {
-        if (currCamera.version === nextCamera.version) {
+        if (currCamera.$__version === nextCamera.$__version) {
             return false;
         }
         const { center: currCenter } = currCamera;
         const { center: nextCenter } = nextCamera;
-        if (currCenter.version !== nextCenter.version) {
+        if (currCenter.$__version !== nextCenter.$__version) {
             if (nextCamera.center.x === 0 &&
                 nextCamera.center.y === 0 &&
                 nextCamera.center.z === 0 &&
@@ -593,6 +634,34 @@ class Renderer extends React.Component {
             return true;
         }
         return false;
+    }
+    updateSceneHighlight({
+        currHighlight, nextHighlight,
+        renderState, renderingScheduler
+    }) {
+        const { edge: currEdge, point: currPoint } = currHighlight;
+        const { edge: nextEdge, point: nextPoint } = nextHighlight;
+        if (!currEdge || !currPoint) {
+            return !!(nextEdge || nextPoint);
+        }
+        return (
+            currEdge.$__version !== nextEdge.$__version ||
+            currPoint.$__version !== nextPoint.$__version
+        );
+    }
+    updateSceneSelection({
+        currSelection, nextSelection,
+        renderState, renderingScheduler
+    }) {
+        const { edge: currEdge, point: currPoint } = currSelection;
+        const { edge: nextEdge, point: nextPoint } = nextSelection;
+        if (!currEdge || !currPoint) {
+            return !!(nextEdge || nextPoint);
+        }
+        return (
+            currEdge.$__version !== nextEdge.$__version ||
+            currPoint.$__version !== nextPoint.$__version
+        );
     }
 }
 

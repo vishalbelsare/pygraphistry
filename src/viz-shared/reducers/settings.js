@@ -8,7 +8,7 @@ import {
 import { Observable, Scheduler } from 'rxjs';
 import { SET_CONTROL_VALUE } from 'viz-shared/actions/settings';
 
-export default function settings(action$, store) {
+export function settings(action$, store) {
     return setControlValue(action$, store);
 }
 
@@ -18,8 +18,8 @@ function setControlValue(action$, store) {
         .groupBy(({ id }) => id)
         .mergeMap((actionsById) => actionsById
             .auditTime(100, Scheduler.async)
-            .switchMap(({ stateKey, falcor, state }) => falcor
-                .set($value(`state['${stateKey}']`, state))
+            .switchMap(({ falcor, value }) => falcor
+                .set($value(['value', null], value))
             ))
         .ignoreElements();
 }

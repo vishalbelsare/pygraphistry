@@ -56,29 +56,45 @@ let Control = ({ id, type, ...rest } = {}) => {
 Settings = container(
     ({ settings = [] } = {}) => `{
         id, name, settings: {
-            length, [0...${settings.length || 0}]: ${
-                Options.fragment()
-            }
+            length ${Array
+            .from(settings, (xs, i) => xs)
+            .reduce((xs, options, index) => `
+                ${xs},
+                ${index}: ${
+                    Options.fragment(options)
+                }`
+            , '')}
         }
     }`
 )(Settings);
 
 Options = container(
     (options = []) => `{
-        name, length, [0...${options.length || 0}]: ${
-            Control.fragment()
-        }
+        name, length ${Array
+        .from(options, (xs, i) => xs)
+        .reduce((xs, control, index) => `
+            ${xs},
+            ${index}: ${
+                Control.fragment(control)
+            }
+        `, '')}
     }`,
     (options) => ({ options, name: options.name })
 )(Options);
 
+// Control = container(
+//     ({ stateKey } = {}) => !stateKey ?
+//         `{ id, name, type, props, stateKey }` :
+//         `{ id, name, type, props, stateKey, state: { ${stateKey} } }`,
+//     ({ state, stateKey, ...control }) => ({
+//         state: state && stateKey && state[stateKey], stateKey, ...control
+//     }),
+//     { setValue: setControlValue }
+// )(Control);
+
 Control = container(
-    ({ stateKey } = {}) => !stateKey ?
-        `{ id, name, type, props, stateKey }` :
-        `{ id, name, type, props, stateKey, state: { ${stateKey} } }`,
-    ({ state, stateKey, ...control }) => ({
-        state: state && stateKey && state[stateKey], stateKey, ...control
-    }),
+    () => `{ id, name, type, props, value: {${null}} }`,
+    (x) => x,
     { setValue: setControlValue }
 )(Control);
 

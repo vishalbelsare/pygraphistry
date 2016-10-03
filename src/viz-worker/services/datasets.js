@@ -4,9 +4,10 @@ import { Observable } from 'rxjs';
 import { cache as Cache } from '@graphistry/common';
 
 const downloaders = {
-    's3': downloadS3, 'null': downloadS3,
-    'http': downloadWWW.bind(undefined, require('http')),
-    'https': downloadWWW.bind(undefined, require('https'))
+    's3:': downloadS3,
+    'null': downloadS3,
+    'http:': downloadWWW.bind(undefined, require('http')),
+    'https:': downloadWWW.bind(undefined, require('https'))
 };
 
 export function loadDataset(dataset, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {

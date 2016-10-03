@@ -13,19 +13,13 @@ export function inspector(workbookId, viewId) {
             id: 'inspector',
             name: 'Data inspector',
             scene: $ref(`${view}.scene`),
-            // edges: $ref(`${view}.scene.selection.edges`),
-            // points: $ref(`${view}.scene.selection.points`),
+            edges: $ref(`${view}.scene.selection.edges`),
+            points: $ref(`${view}.scene.selection.points`),
             controls: [{
+                selected: false,
+                view: $ref(`${view}`),
                 id: 'toggle-inspector',
                 name: 'Inspector',
-                type: 'toggle',
-                value: 0,
-                values: $atom([[
-                    $value(`${view}.panels.bottom`, $atom(undefined))
-                ], [
-                    $value(`${view}.panels.bottom`, $ref(`${view}.inspector`)),
-                    $value(`${view}.timebar.controls[0].value`, $atom(0)),
-                ]])
             }]
         }
     }

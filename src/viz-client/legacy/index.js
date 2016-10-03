@@ -25,6 +25,7 @@ export const latestHighlightedObject = new ReplaySubject(1);
 
 // Declare implicit dependencies that we're currently hard-coded to anyway.
 export const curPoints = new ReplaySubject(1);
+export const pointSizes = new ReplaySubject(1);
 export const selectedEdgeIndexes = new ReplaySubject(1);
 export const selectedPointIndexes = new ReplaySubject(1);
 

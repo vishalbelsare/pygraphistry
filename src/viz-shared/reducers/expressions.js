@@ -14,7 +14,7 @@ import {
     CANCEL_UPDATE_EXPRESSION,
 } from 'viz-shared/actions/expressions';
 
-export default function expressions(action$, store) {
+export function expressions(action$, store) {
     return Observable.merge(
         addExpression(action$.ofType(ADD_EXPRESSION), store),
         updateExpression(action$, store),

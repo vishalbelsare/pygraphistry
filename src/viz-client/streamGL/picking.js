@@ -12,7 +12,7 @@ var dimensionBitMask = 1 << 23;
  * @param {Number} raw
  * @returns {VizSliceElement}
  */
-function decodeGpuElement (raw) {
+function decodeGpuElement (raw, hit = {idx: -1, dim: 0}) {
     // Sit down and grab a drink. This might take a while.
     //
     // By now, I'm sure you've realized that we're checking against
@@ -43,10 +43,14 @@ function decodeGpuElement (raw) {
 
     // Check if it's 0 or garbage data.
     if (raw === 0 || raw === MAX || raw === undefined) {
-        return {dim: 0, idx: -1};
+        hit.dim = 0;
+        hit.idx = -1;
+    } else {
+        hit.dim = decodeGpuDim(raw);
+        hit.idx = decodeGpuIndex(raw);
     }
 
-    return {dim: decodeGpuDim(raw), idx: decodeGpuIndex(raw)};
+    return hit;
 }
 
 // A function that decodes gpu color data into index
@@ -64,11 +68,9 @@ function decodeGpuIndex (raw) {
 
 // A function that decodes gpu color data into dimension (e.g., node vs edge)
 function decodeGpuDim (raw) {
-
     // Set dimension based on highest bit flag
     var dim = ((raw & dimensionBitMask) !== 0) ? 2 : 1;
     return dim;
-
 }
 
 
@@ -76,22 +78,22 @@ function decodeGpuDim (raw) {
  * returns idx or -1
  * @returns {VizSliceElement}
  */
-function hitTest(maps, width, height, x, y, numRenderedSplits) {
+function hitTest(maps, width, height, x, y, numRenderedSplits, hit = {idx: -1, dim: 0}) {
     // debug('hit testing', texture);
-    var retObj = {idx: -1, dim: 0};
 
     var canvasIdx = (height - y) * width + x;
     for (var i = 0; i < maps.length; i++) {
         var raw = maps[i][canvasIdx];
-        retObj = decodeGpuElement(raw);
-        if (retObj.idx > -1) {
-            if (retObj.dim === 2) {
-                retObj.idx = Math.floor(retObj.idx / (numRenderedSplits + 1));
+        hit = decodeGpuElement(raw, hit);
+        if (hit.idx > -1) {
+            if (hit.dim === 2) {
+                hit.idx = Math.floor(hit.idx / (numRenderedSplits + 1));
             }
-            return retObj;
+            return hit;
         }
     }
-    return retObj;
+    hit.dim = 0;
+    return hit;
 }
 
 
@@ -100,16 +102,16 @@ function hitTest(maps, width, height, x, y, numRenderedSplits) {
  * returns idx or -1
  * @returns {VizSliceElement}
  */
-function hitTestCircumference(maps, width, height, x, y, r, numRenderedSplits) {
+function hitTestCircumference(maps, width, height, x, y, r, numRenderedSplits, hit = {idx: -1, dim: 0}) {
     for (var attempt = 0; attempt < r * 2 * Math.PI; attempt++) {
         var attemptX = x + r * Math.round(Math.cos(attempt / r));
         var attemptY = y + r * Math.round(Math.sin(attempt / r));
-        var hit = hitTest(maps, width, height, attemptX, attemptY, numRenderedSplits);
+        hit = hitTest(maps, width, height, attemptX, attemptY, numRenderedSplits, hit);
         if (hit.idx > -1) {
             return hit;
         }
     }
-    return {idx: -1, dim: 0};
+    return hit;
 }
 
 /**
@@ -123,10 +125,10 @@ function hitTestCircumference(maps, width, height, x, y, r, numRenderedSplits) {
  * @returns {VizSliceElement}
  */
 function hitTestN(state, textures, x, y, r) {
-    var numRenderedSplits = state.get('config').get('numRenderedSplits');
+    var numRenderedSplits = state.config.numRenderedSplits;
 
     var activeTextures = _.filter(textures, function (texture) {
-        return state.get('pixelreads')[texture];
+        return state.pixelreads[texture];
     });
     if (!activeTextures.length) {
         debug('no texture for hit test, escape early');
@@ -134,36 +136,38 @@ function hitTestN(state, textures, x, y, r) {
     }
 
 
-    var SAMPLER = state.get('config').get('textures').get('hitmap').toJS();
+    var SAMPLER = state.config.textures.hitmap;
     var SAMPLE_RATE_WIDTH = SAMPLER.width ?  0.01 * SAMPLER.width.value : 1;
     var SAMPLE_RATE_HEIGHT = SAMPLER.height ? 0.01 * SAMPLER.height.value : 1;
 
-    var canvas = state.get('gl').canvas;
+    var canvas = state.gl.canvas;
     //already retina-expanded
     var textureWidth = Math.floor(canvas.width * SAMPLE_RATE_WIDTH);
     var textureHeight = Math.floor(canvas.height * SAMPLE_RATE_HEIGHT);
-    var pixelRatio = state.get('camera').pixelRatio;
+    var pixelRatio = state.camera.pixelRatio;
 
     var retinaX = Math.floor(x * pixelRatio * SAMPLE_RATE_WIDTH);
     var retinaY = Math.floor(y * pixelRatio * SAMPLE_RATE_HEIGHT);
 
+    var hit = {idx: -1, dim: 0};
     var maps = _.map(activeTextures, function (texture) {
-        return new Uint32Array(state.get('pixelreads')[texture].buffer);
+        return new Uint32Array(state.pixelreads[texture].buffer);
     });
 
     // If no r, just do plain hitTest
     if (!r) {
-        return hitTest(maps, textureWidth, textureHeight, retinaX, retinaY, numRenderedSplits);
+        return hitTest(maps, textureWidth, textureHeight, retinaX, retinaY, numRenderedSplits, hit);
     }
 
     //look up to r px away
     for (var offset = 0; offset < r; offset++) {
-        var hitOnCircle = hitTestCircumference(maps, textureWidth, textureHeight, retinaX, retinaY, offset + 1, numRenderedSplits);
-        if (hitOnCircle.idx > -1) {
-            return hitOnCircle;
+        hit = hitTestCircumference(maps, textureWidth, textureHeight, retinaX, retinaY, offset + 1, numRenderedSplits, hit);
+        if (hit.idx > -1) {
+            return hit;
         }
     }
-    return {idx: -1, dim: 0};
+    hit.dim = 0;
+    return hit;
 }
 
 module.exports = {

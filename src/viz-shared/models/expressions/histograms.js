@@ -14,15 +14,10 @@ export function histograms(workbookId, viewId) {
             scene: $ref(`${view}.scene`),
             templates: $ref(`${view}.expressions`),
             controls: [{
+                selected: false,
+                view: $ref(`${view}`),
                 id: 'toggle-histograms',
                 name: 'Histograms',
-                type: 'toggle',
-                value: 0,
-                values: $atom([[
-                    $value(`${view}.panels.right`, $atom(undefined))
-                ], [
-                    $value(`${view}.panels.right`, $ref(`${view}.histograms`))
-                ]])
             }]
         }
     };
