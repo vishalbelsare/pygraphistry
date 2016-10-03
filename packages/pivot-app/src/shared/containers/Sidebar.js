@@ -1,7 +1,11 @@
 import { container } from '@graphistry/falcor-react-redux';
 
 
-function renderSidebar() {
+function renderSidebar({activeScreen}) {
+    function active(target) {
+        return activeScreen === target ? 'active' : '';
+    }
+
     return (
         <div className="sidebar" data-color="blue" id="left-nav">
             <div className="sidebar-wrapper">
@@ -11,7 +15,7 @@ function renderSidebar() {
                     </div>
                 </div>
                 <ul className="nav">
-                    <li>
+                    <li className={active('home')}>
                         <a href="#">
                             <i className="pe-7s-user"></i>
                             <p>&nbsp;</p>
@@ -29,7 +33,7 @@ function renderSidebar() {
                             <p>&nbsp;</p>
                         </a>
                     </li>
-                    <li className="active">
+                    <li className={active('investigation')}>
                         <a href="#">
                             <i className="pe-7s-graph1"></i>
                             <p>&nbsp;</p>
