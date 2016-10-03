@@ -15,14 +15,14 @@ export function selection(path, base) {
 
         return [{
             get: getValues,
-            route: `${base}['selection'][{keys}]`
+            route: `${base}['highlight', 'selection'][{keys}]`
         }, {
             set: setValues,
-            route: `${base}['selection']['type', 'rect', 'label']`
+            route: `${base}['highlight', 'selection']['type', 'rect', 'label']`
         }, {
             get: getValues,
             set: setValues,
-            route: `${base}['selection']['edge', 'point'][{keys}]`
+            route: `${base}['highlight', 'selection']['edge', 'point'][{keys}]`
         }, {
             get: getValues,
             route: `${base}['selection'].controls[{keys}]`

@@ -36,21 +36,13 @@ let Panel = ({
         id, side, name, style, ...props
     } = {}) => {
     const Content = componentForSideAndType(side, panel.id);
-    if (side !== 'left') {
-        return (
-            <Content name={name} side={side} data={panel} style={style} {...props}/>
-        );
-    }
     return (
-        <Popover id={`${side}-panel`}
-                 name={name}
+        <Content name={name}
+                 side={side}
+                 data={panel}
                  style={style}
-                 placement={placement}
-                 positionTop={positionTop}
-                 positionLeft={positionLeft}
-                 className={panelStyles['panel-left']}>
-            <Content name={name} side={side} data={panel} {...props}/>
-        </Popover>
+                 className={panelStyles[`panel-${side}`]}
+                 {...props}/>
     );
 };
 

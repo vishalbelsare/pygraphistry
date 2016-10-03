@@ -1,4 +1,5 @@
 import { container } from '@graphistry/falcor-react-redux';
+import { Settings } from 'viz-shared/containers/settings';
 
 let Labels = ({ edges, points }) => {
     return (
@@ -7,13 +8,14 @@ let Labels = ({ edges, points }) => {
 };
 
 Labels = container(
-    ({ edges = [], points = [] } = {}) => `{
+    ({ edges = [], points = [], settings } = {}) => `{
         id, name,
         selection, timeZone,
         opacity, enabled, poiEnabled,
         ['background', 'foreground']: { color },
         edges: { length, [0...${edges.length || 0}]  },
-        points: { length, [0...${points.length || 0}] }
+        points: { length, [0...${points.length || 0}] },
+        ...${ Settings.fragment({ settings }) }
     }`
 )(Labels);
 

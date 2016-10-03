@@ -25,11 +25,14 @@ const deleteExpressionTooltip = (
 
 export function ExpressionsList({
     id, templates = [], addExpression,
-    children, name, ...props
+    className = '', style = {}, children, name, ...props
 }) {
     return (
-        <Panel header={name} style={{ margin: 0 }}
-               className={styles['expressions-list']}
+        <Panel header={name} style={{ ...style, display: `block`, margin: 0 }}
+               className={classNames({
+                   [className]: !!className,
+                   [styles['expressions-list']]: true,
+               })}
                footer={(
                    <ExpressionTemplates name={name}
                                         templates={templates}

@@ -1,3 +1,5 @@
+import { PropTypes } from 'react';
+import { getContext, hoistStatics } from 'recompose';
 import { container } from '@graphistry/falcor-react-redux';
 import { selectToolbarItem } from 'viz-shared/actions/toolbar';
 import { ButtonList,
@@ -52,18 +54,16 @@ ToolbarItems = container(
 
 let ToolbarItem = container(
     // toolbar item fragment
-    ({ type } = {}) => {
-        if (!type || type === 'call') {
-            return `{ id, name, type, value }`;
-        }
-        return `{ id, name, type, value, values }`;
-    },
-    ({ type, value, values ,...rest }, props) => ({
-        selected: (type === 'toggle') && value !== 0,
-        type, value, values, ...rest
-    }),
+    () => `{ id, name, view, selected }`,
+    (x) => x,
     // bind action creators
     { onItemSelected: selectToolbarItem }
 )(ButtonListItem);
+
+ToolbarItem = hoistStatics(
+    getContext({
+        socket: PropTypes.object
+    })
+)(ToolbarItem);
 
 export { Toolbar, ToolbarItems, ToolbarItem };

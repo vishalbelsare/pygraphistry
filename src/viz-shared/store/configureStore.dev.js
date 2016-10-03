@@ -1,28 +1,21 @@
 import deepExtend from 'deep-extend';
 import createLogger from 'redux-logger';
 import { DevTools } from '../components';
-import rootReducer from '../reducers';
-import toolbar from '../reducers/toolbar';
-import settings from '../reducers/settings';
-import expressions from '../reducers/expressions';
 import { compose, createStore, applyMiddleware } from 'redux';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
 
-export function configureStore(initialState) {
+export function configureStore(initialState, rootReducer, epics) {
 
     const store = createStore(
         rootReducer, initialState, compose(
-            // (createStore) =>
-            //     (reducer, initialState, enhancer) =>
-            //         createStore(deepExtendReducer(reducer), initialState, enhancer),
             applyMiddleware(
                 createEpicMiddleware(
-                    combineEpics(toolbar, settings, expressions)
+                    combineEpics(...epics)
                 ),
                 createLogger({
                     diff: true,
-                    collapsed: collapseFalcorUpdates,
-                    stateTransformer: deepExtendState
+                    collapsed: true,
+                    // stateTransformer: deepExtendState
                 })),
             DevTools.instrument()
         )
@@ -45,10 +38,4 @@ function collapseFalcorUpdates(getState, action) {
 
 function deepExtendState(state) {
     return deepExtend({}, state);
-}
-
-function deepExtendReducer(reducer) {
-    return function deepExtendReducer(state = {}, action) {
-        return deepExtend({}, reducer(state, action));
-    }
 }

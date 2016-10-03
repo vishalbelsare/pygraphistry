@@ -60,25 +60,25 @@ export function scene(path, base) {
         }, {
             returns: `*`,
             get: getValues,
-            route: `${base}['scene']['controls'][{keys}]`
+            route: `${base}['scene'].controls[{keys}]`
         }, {
             returns: `*`,
             get: getValues,
             set: setValues,
-            route: `${base}['scene']['controls'][{keys}][{keys}]`
+            route: `${base}['scene'].controls[{keys}][{keys}]`
         }, {
             returns: `*`,
             get: getValues,
-            route: `${base}['scene']['settings'][{keys}]`,
+            route: `${base}['scene'].settings[{keys}]`,
         }, {
             returns: `*`,
             get: getValues,
-            route: `${base}['scene']['settings'][{keys}][{keys}]`,
+            route: `${base}['scene'].settings[{keys}][{keys}]`,
         }, {
             returns: `*`,
             get: getValues,
             set: setValues,
-            route: `${base}['scene']['settings'][{keys}][{keys}][{keys}]`,
+            route: `${base}['scene'].settings[{keys}][{keys}][{keys}]`,
         }];
     }
 }

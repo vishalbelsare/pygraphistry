@@ -6,7 +6,7 @@ import { Model } from '@graphistry/falcor';
 import { Provider } from 'react-redux';
 import { simpleflake } from 'simpleflakes';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { configureStore } from 'viz-shared/store/configureStore';
+// import { configureStore } from 'viz-shared/store/configureStore';
 import { renderToString as reactRenderToString } from 'react-dom/server';
 import stringify from 'json-stable-stringify';
 import FalcorQuerySyntax from '@graphistry/falcor-query-syntax';
@@ -76,7 +76,7 @@ function renderAppWithHotReloading(modules, dataSource, options) {
             renderFullPage(
                 data, falcor, options.workerID
                 // , reactRenderToString(
-                //     <Provider store={configureStore(initialState)}>
+                //     <Provider store={configureStore(initialState, rootReducer, epics)}>
                 //         <App {...options} falcor={falcor} key='viz-client'/>
                 //     </Provider>
                 // )
@@ -118,10 +118,8 @@ function renderFullPage(data, falcor, workerID = '', html = '') {
         </script>
         <div id='root'>${html}</div>
         <script>
-            var __INITIAL_STATE__ = ${
-                stringify(data && data.toJSON() || data || {})};
-            var __INITIAL_CACHE__ = ${
-                stringify(falcor && falcor.getCache() || {})};
+            var __INITIAL_STATE__ = ${stringify(data && data.toJSON() || {})};
+            var __INITIAL_CACHE__ = ${stringify(falcor && falcor.getCache() || {})};
         </script>
         <script type="text/javascript" src="${`${vendor.js}${assetSuffix}`}"></script>
         <script type="text/javascript" src="${`${client.js}${assetSuffix}`}"></script>

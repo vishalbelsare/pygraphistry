@@ -12,16 +12,10 @@ export function timebar(workbookId, viewId) {
             id: 'timebar',
             name: 'Timebar',
             controls: [{
+                selected: false,
+                view: $ref(`${view}`),
                 id: 'toggle-timebar',
                 name: 'Timebar',
-                type: 'toggle',
-                value: 0,
-                values: $atom([[
-                    $value(`${view}.panels.bottom`, $atom(undefined))
-                ], [
-                    $value(`${view}.panels.bottom`, $ref(`${view}.timebar`)),
-                    $value(`${view}.inspector.controls[0].value`, $atom(0)),
-                ]])
             }]
         }
     };

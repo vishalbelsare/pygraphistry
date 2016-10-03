@@ -15,20 +15,10 @@ export function exclusions(workbookId, viewId) {
             name: 'Exclusions',
             templates: $ref(`${view}.expressionTemplates`),
             controls: [{
+                selected: false,
+                view: $ref(`${view}`),
                 id: 'toggle-exclusions',
-                name: 'Exclusions',
-                type: 'toggle',
-                value: 0,
-                values: $atom([[
-                    $value(`${view}.panels.left`, $atom(undefined))
-                ], [
-                    $value(`${view}.panels.left`, $ref(`${view}.exclusions`)),
-                    $value(`${view}.scene.controls[1].value`, $atom(0)),
-                    $value(`${view}.labels.controls[0].value`, $atom(0)),
-                    $value(`${view}.layout.controls[0].value`, $atom(0)),
-                    $value(`${view}.sets.controls[0].value`, $atom(0)),
-                    $value(`${view}.filters.controls[0].value`, $atom(0)),
-                ]])
+                name: 'Exclusions'
             }]
         }
     }

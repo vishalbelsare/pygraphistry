@@ -25,7 +25,7 @@ export function routes(services) {
         toolbar(['workbook', 'view'], `${view}`)(services),
 
         scene(['workbook', 'view'], `${view}`)(services),
-        camera(['workbook', 'view'], `${view}.scene`)(services),
+        camera(['workbook', 'view'], `${view}`)(services),
 
         labels(['workbook', 'view'], `${view}`)(services),
         layout(['workbook', 'view'], `${view}`)(services),

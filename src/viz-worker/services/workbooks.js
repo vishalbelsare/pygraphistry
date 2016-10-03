@@ -28,6 +28,7 @@ export function loadWorkbook(workbooksById, config, s3Cache = new Cache(config.L
                 .map((workbook) => migrateWorkbook(workbook, options))
                 .catch(() => Observable
                     .of(createWorkbook(createDataset(options), workbookId)))
+                .take(1)
                 .multicast(new ReplaySubject(1))
                 .refCount()
             );

@@ -22,19 +22,10 @@ export function labels(workbookId, viewId) {
                 $ref(`${view}.labels.options`),
             ],
             controls: [{
+                selected: false,
+                view: $ref(`${view}`),
                 id: 'toggle-label-settings',
                 name: 'Label settings',
-                type: 'toggle',
-                value: 0,
-                values: $atom([[
-                    $value(`${view}.panels.left`, $atom(undefined))
-                ], [
-                    $value(`${view}.panels.left`, $ref(`${view}.labels`)),
-                    $value(`${view}.scene.controls[1].value`, $atom(0)),
-                    $value(`${view}.layout.controls[0].value`, $atom(0)),
-                    $value(`${view}.filters.controls[0].value`, $atom(0)),
-                    $value(`${view}.exclusions.controls[0].value`, $atom(0)),
-                ]])
             }],
             options: {
                 id: 'label-options',
@@ -43,14 +34,16 @@ export function labels(workbookId, viewId) {
                     id: 'text-color',
                     type: 'color',
                     name: 'Text Color',
-                    stateKey: 'color',
-                    state: $ref(`${view}.labels.foreground`)
+                    value: $ref(`${view}.labels.foreground.color`),
+                    // stateKey: 'color',
+                    // state: $ref(`${view}.labels.foreground`)
                 }, {
                     id: 'background-color',
                     type: 'color',
                     name: 'Background Color',
-                    stateKey: 'color',
-                    state: $ref(`${view}.labels.background`)
+                    value: $ref(`${view}.labels.background.color`),
+                    // stateKey: 'color',
+                    // state: $ref(`${view}.labels.background`)
                 }, {
                     id: 'transparency',
                     type: 'discrete',
@@ -59,20 +52,23 @@ export function labels(workbookId, viewId) {
                         min: 0, max: 100,
                         step: 1, scale: 'percent'
                     },
-                    stateKey: 'opacity',
-                    state: $ref(`${view}.labels`)
+                    value: $ref(`${view}.labels.opacity`),
+                    // stateKey: 'opacity',
+                    // state: $ref(`${view}.labels`)
                 }, {
                     id: 'show-labels',
                     type: 'bool',
                     name: 'Show Labels',
-                    stateKey: 'enabled',
-                    state: $ref(`${view}.labels`)
+                    value: $ref(`${view}.labels.enabled`),
+                    // stateKey: 'enabled',
+                    // state: $ref(`${view}.labels`)
                 }, {
                     id: 'show-points-of-interest',
                     type: 'bool',
                     name: 'Show Points of Interest',
-                    stateKey: 'poiEnabled',
-                    state: $ref(`${view}.labels`)
+                    value: $ref(`${view}.labels.poiEnabled`),
+                    // stateKey: 'poiEnabled',
+                    // state: $ref(`${view}.labels`)
                 }]
             }
         }

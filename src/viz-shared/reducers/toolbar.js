@@ -7,58 +7,273 @@ import {
 import { Observable } from 'rxjs';
 import { SELECT_TOOLBAR_ITEM } from 'viz-shared/actions/toolbar';
 
-export default function toolbar(action$, store) {
-    return selectToolbarItem(action$, store);
+export function toolbar(action$, store) {
+    return selectToolbarItem(action$, store).ignoreElements();
 }
 
 const reducers = {
-    call: callReducer,
-    toggle: toggleReducer,
-    multiply: multiplyReducer
+    'zoom-in': zoomIn,
+    'zoom-out': zoomOut,
+    'center-camera': centerCamera,
+    'open-workbook': openWorkbook,
+    'fork-workbook': forkWorkbook,
+    'save-workbook': saveWorkbook,
+    'embed-workbook': embedWorkbook,
+    'fullscreen-workbook': fullscreenWorkbook,
+    'toggle-filters': toggleFilters,
+    'toggle-timebar': toggleTimebar,
+    'toggle-inspector': toggleInspector,
+    'toggle-histograms': toggleHistograms,
+    'toggle-exclusions': toggleExclusions,
+    'toggle-simulating': toggleSimulating,
+    'toggle-select-nodes': toggleSelectNodes,
+    'toggle-window-nodes': toggleWindowNodes,
+    'toggle-label-settings': toggleLabelSettings,
+    'toggle-scene-settings': toggleSceneSettings,
+    'toggle-layout-settings': toggleLayoutSettings
 };
 
 function selectToolbarItem(action$, store) {
     return action$
         .ofType(SELECT_TOOLBAR_ITEM)
         .groupBy(({ id }) => id)
-        .mergeMap((actionsById) => actionsById.exhaustMap(
-            ({ controlType, ...props }) => reducers[controlType]({
-                type: controlType, ...props
-            }))
-        )
-        .ignoreElements();
+        .mergeMap((actionsById) => actionsById.switchMap(
+            ({ id, ...props }) => reducers[id]({
+                id, ...props
+            })
+        ));
 }
 
-function callReducer({ type, value, falcor }) {
-    return falcor._clone({ _path: [] }).call(value);
+function zoomIn({ view, falcor }) {
+    return falcor
+        .getValue(`view.camera.zoom`)
+        .mergeMap((zoom) => falcor.set($value(
+            `view.camera.zoom`, zoom * (1 / 1.25)
+        )))
 }
 
-// value: $atom(1 / 1.25),
-// values: $atom($ref(`${view}.scene.camera.zoom`).value)
-
-function multiplyReducer({ type, value, values, falcor }) {
-    falcor = falcor._clone({ _path: [] });
-    return Observable
-        .from(falcor.getValue(values))
-        .mergeMap((state) => falcor
-            .set($value(values, state * value))
-        );
+function zoomOut({ view, falcor }) {
+    return falcor
+        .getValue(`view.camera.zoom`)
+        .mergeMap((zoom) => falcor.set($value(
+            `view.camera.zoom`, zoom * (1.25)
+        )))
 }
 
-// value: 0,
-// values: $atom([[
-//     $value(`${view}.scene.simulating`, $atom(false))
-// ], [
-//     $value(`${view}.scene.simulating`, $atom(true))
-// ]])
-
-function toggleReducer({ type, value, values, falcor }) {
-
-    value  = (value + 1) % values.length;
-    values = values[value];
-
-    return Observable.merge(
-        falcor.set($value(`value`, value)),
-        falcor._clone({ _path: [] }).set(...values)
+function centerCamera({ view, falcor }) {
+    return falcor.set(
+        $value(`view.camera.zoom`, 1),
+        $value(`view.camera.center['x', 'y', 'z']`, 0),
     );
+}
+
+function toggleSimulating({ view, falcor, socket, selected }) {
+    if (selected) {
+        return falcor.set(
+            $value(`selected`, false),
+            $value(`view.scene.simulating`, false)
+        );
+    } else {
+        return Observable.merge(
+            falcor.set(
+                $value(`selected`, true),
+                $value(`view.scene.simulating`, true)
+            ),
+            !socket &&
+                Observable.empty() ||
+                Observable.interval(40).do(() => {
+                    socket.emit('interaction', { play: true, layout: true });
+                })
+        );
+    }
+}
+
+function toggleFilters({ view, falcor, selected }) {
+    if (selected) {
+        return falcor.set(
+            $value(`selected`, false),
+            $value(`view.panels.left`, undefined)
+        );
+    } else {
+        return falcor.set(
+            $value(`selected`, true),
+            $value(`view.scene.controls[1].selected`, false),
+            $value(`view.labels.controls[0].selected`, false),
+            $value(`view.layout.controls[0].selected`, false),
+            $value(`view.exclusions.controls[0].selected`, false),
+            $value(`view.panels.left`, $ref(view.concat(`filters`)))
+        );
+    }
+}
+
+function toggleExclusions({ view, falcor, selected }) {
+    if (selected) {
+        return falcor.set(
+            $value(`selected`, false),
+            $value(`view.panels.left`, undefined)
+        );
+    } else {
+        return falcor.set(
+            $value(`selected`, true),
+            $value(`view.scene.controls[1].selected`, false),
+            $value(`view.labels.controls[0].selected`, false),
+            $value(`view.layout.controls[0].selected`, false),
+            $value(`view.filters.controls[0].selected`, false),
+            $value(`view.panels.left`, $ref(view.concat(`exclusions`)))
+        );
+    }
+}
+
+function toggleHistograms({ view, falcor, selected }) {
+    if (selected) {
+        return falcor.set(
+            $value(`selected`, false),
+            $value(`view.panels.right`, undefined)
+        );
+    } else {
+        return falcor.set(
+            $value(`selected`, true),
+            $value(`view.panels.right`, $ref(view.concat(`histograms`)))
+        );
+    }
+}
+
+function toggleTimebar({ view, falcor, selected }) {
+    if (selected) {
+        return falcor.set(
+            $value(`selected`, false),
+            $value(`view.panels.bottom`, undefined)
+        );
+    } else {
+        return falcor.set(
+            $value(`selected`, true),
+            $value(`view.inspector.controls[0].selected`, false),
+            $value(`view.panels.bottom`, $ref(view.concat(`timebar`)))
+        );
+    }
+}
+
+function toggleInspector({ view, falcor, selected }) {
+    if (selected) {
+        return falcor.set(
+            $value(`selected`, false),
+            $value(`view.panels.bottom`, undefined)
+        );
+    } else {
+        return falcor.set(
+            $value(`selected`, true),
+            $value(`view.timebar.controls[0].selected`, false),
+            $value(`view.panels.bottom`, $ref(view.concat(`inspector`)))
+        );
+    }
+}
+
+function toggleLabelSettings({ view, falcor, selected }) {
+    if (selected) {
+        return falcor.set(
+            $value(`selected`, false),
+            $value(`view.panels.left`, undefined)
+        );
+    } else {
+        return falcor.set(
+            $value(`selected`, true),
+            $value(`view.scene.controls[1].selected`, false),
+            $value(`view.layout.controls[0].selected`, false),
+            $value(`view.filters.controls[0].selected`, false),
+            $value(`view.exclusions.controls[0].selected`, false),
+            $value(`view.panels.left`, $ref(view.concat(`labels`)))
+        );
+    }
+}
+
+function toggleSceneSettings({ view, falcor, selected }) {
+    if (selected) {
+        return falcor.set(
+            $value(`selected`, false),
+            $value(`view.panels.left`, undefined)
+        );
+    } else {
+        return falcor.set(
+            $value(`selected`, true),
+            $value(`view.labels.controls[0].selected`, false),
+            $value(`view.layout.controls[0].selected`, false),
+            $value(`view.filters.controls[0].selected`, false),
+            $value(`view.exclusions.controls[0].selected`, false),
+            $value(`view.panels.left`, $ref(view.concat(`scene`)))
+        );
+    }
+}
+
+function toggleLayoutSettings({ view, falcor, selected }) {
+    if (selected) {
+        return falcor.set(
+            $value(`selected`, false),
+            $value(`view.panels.left`, undefined)
+        );
+    } else {
+        return falcor.set(
+            $value(`selected`, true),
+            $value(`view.scene.controls[1].selected`, false),
+            $value(`view.labels.controls[0].selected`, false),
+            $value(`view.filters.controls[0].selected`, false),
+            $value(`view.exclusions.controls[0].selected`, false),
+            $value(`view.panels.left`, $ref(view.concat(`layout`)))
+        );
+    }
+}
+
+function toggleSelectNodes({ view, falcor, selected }) {
+    if (selected) {
+        return falcor.set(
+            $value(`selected`, false),
+            $value(`view.selection.type`, null)
+        );
+    } else {
+        return falcor.set(
+            $value(`selected`, true),
+            $value(`view.selection.type`, 'select'),
+            $value(`view.timebar.controls[0].selected`, false),
+            $value(`view.inspector.controls[0].selected`, true),
+            $value(`view.selection.controls[1].selected`, false),
+            $value(`view.panels.bottom`, $ref(view.concat(`inspector`))),
+        );
+    }
+}
+
+function toggleWindowNodes({ view, falcor, selected }) {
+    if (selected) {
+        return falcor.set(
+            $value(`selected`, false),
+            $value(`view.selection.type`, null)
+        );
+    } else {
+        return falcor.set(
+            $value(`selected`, true),
+            $value(`view.selection.type`, 'window'),
+            $value(`view.timebar.controls[0].selected`, false),
+            $value(`view.inspector.controls[0].selected`, true),
+            $value(`view.selection.controls[0].selected`, false),
+            $value(`view.panels.bottom`, $ref(view.concat(`inspector`))),
+        );
+    }
+}
+
+function openWorkbook({ falcor, selected }) {
+    return Observable.empty();
+}
+
+function forkWorkbook({ falcor, selected }) {
+    return Observable.empty();
+}
+
+function saveWorkbook({ falcor, selected }) {
+    return Observable.empty();
+}
+
+function embedWorkbook({ falcor, selected }) {
+    return Observable.empty();
+}
+
+function fullscreenWorkbook({ falcor, selected }) {
+    return Observable.empty();
 }

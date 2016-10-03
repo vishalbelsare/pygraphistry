@@ -1,14 +1,14 @@
 import React from 'react'
-import { Panel } from 'react-bootstrap';
 import { container } from '@graphistry/falcor-react-redux';
 import {
     Slider,
     TextInput,
     ToggleButton,
-    ColorPicker
+    ColorPicker,
+    SettingsList,
+    ControlsList,
 } from 'viz-shared/components/settings'
 
-import { Grid, Row, Col } from 'react-bootstrap';
 import { setControlValue } from 'viz-shared/actions/settings';
 
 const controlsById = {
@@ -25,27 +25,21 @@ const controlsByType = {
 
 let Settings = ({ id, name, settings = [], ...props } = {}) => {
     return (
-        <Panel header={name} style={{ minWidth: `350px` }}>
+        <SettingsList name={name} {...props}>
         {settings.map((options, index) => (
             <Options data={options} key={`${index}: ${options.name}`}/>
         ))}
-        </Panel>
+        </SettingsList>
     );
 };
 
-let Options = ({ name, options = [] } = {}) => {
+let Options = ({ name, options = [], ...props } = {}) => {
     return (
-        <Grid fluid style={{ padding: 0 }}>
-        {name &&
-            <Row>
-                <Col xs={12} sm={12} md={12} lg={12}>
-                    <h6>{name}</h6>
-                </Col>
-            </Row>}
+        <ControlsList name={name}  {...props}>
         {options.map((control, index) => (
             <Control data={control} key={`${index}: ${control.id}`}/>
         ))}
-        </Grid>
+        </ControlsList>
     );
 };
 
@@ -62,29 +56,45 @@ let Control = ({ id, type, ...rest } = {}) => {
 Settings = container(
     ({ settings = [] } = {}) => `{
         id, name, settings: {
-            length, [0...${settings.length || 0}]: ${
-                Options.fragment()
-            }
+            length ${Array
+            .from(settings, (xs, i) => xs)
+            .reduce((xs, options, index) => `
+                ${xs},
+                ${index}: ${
+                    Options.fragment(options)
+                }`
+            , '')}
         }
     }`
 )(Settings);
 
 Options = container(
     (options = []) => `{
-        name, length, [0...${options.length || 0}]: ${
-            Control.fragment()
-        }
+        name, length ${Array
+        .from(options, (xs, i) => xs)
+        .reduce((xs, control, index) => `
+            ${xs},
+            ${index}: ${
+                Control.fragment(control)
+            }
+        `, '')}
     }`,
     (options) => ({ options, name: options.name })
 )(Options);
 
+// Control = container(
+//     ({ stateKey } = {}) => !stateKey ?
+//         `{ id, name, type, props, stateKey }` :
+//         `{ id, name, type, props, stateKey, state: { ${stateKey} } }`,
+//     ({ state, stateKey, ...control }) => ({
+//         state: state && stateKey && state[stateKey], stateKey, ...control
+//     }),
+//     { setValue: setControlValue }
+// )(Control);
+
 Control = container(
-    ({ stateKey } = {}) => !stateKey ?
-        `{ id, name, type, props, stateKey }` :
-        `{ id, name, type, props, stateKey, state: { ${stateKey} } }`,
-    ({ state, stateKey, ...control }) => ({
-        state: state && stateKey && state[stateKey], stateKey, ...control
-    }),
+    () => `{ id, name, type, props, value: {${null}} }`,
+    (x) => x,
     { setValue: setControlValue }
 )(Control);
 

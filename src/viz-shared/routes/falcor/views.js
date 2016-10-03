@@ -8,7 +8,7 @@ import { getHandler,
          mapObjectsToAtoms,
          captureErrorStacks } from 'viz-shared/routes';
 
-export function views(path, view) {
+export function views(path, base) {
     return function views({ loadViewsById }) {
 
         const getValues = getHandler(path, loadViewsById);
@@ -16,12 +16,12 @@ export function views(path, view) {
 
         return [{
             get: getValues,
-            route: `${view}['id', 'title']`,
+            route: `${base}['id', 'title']`,
             returns: `String`
         }, {
             get: getValues,
             set: setValues,
-            route: `${view}.panels['left', 'right', 'bottom']`,
+            route: `${base}['panels']['left', 'right', 'bottom']`,
             returns: `Reference`
         }];
     }

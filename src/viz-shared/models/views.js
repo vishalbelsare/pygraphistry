@@ -1,4 +1,5 @@
 import { scene } from './scene';
+import { camera } from './scene/camera';
 import { legend } from './legend';
 import { toolbar } from './toolbar';
 import { labels } from './labels';
@@ -6,8 +7,6 @@ import { layout } from './layout';
 import { selection } from './selection';
 import { timebar, inspector } from './panels';
 import { expressions } from './expressions';
-
-
 import { simpleflake } from 'simpleflakes';
 import {
     ref as $ref,
@@ -28,6 +27,7 @@ export function views(workbookId, viewId = simpleflake().toJSON()) {
 }
 
 export function view(workbookId, sceneID = 'default', viewId = simpleflake().toJSON()) {
+    const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
     return {
         id: viewId, title: '',
         panels: {
@@ -35,6 +35,7 @@ export function view(workbookId, sceneID = 'default', viewId = simpleflake().toJ
             right: undefined,
             bottom: undefined
         },
+        ...camera(view),
         ...scene(workbookId, viewId, sceneID),
         ...labels(workbookId, viewId),
         ...layout(workbookId, viewId),
@@ -43,6 +44,6 @@ export function view(workbookId, sceneID = 'default', viewId = simpleflake().toJ
         ...toolbar(workbookId, viewId),
         ...inspector(workbookId, viewId),
         ...selection(workbookId, viewId),
-        ...expressions(workbookId, viewId),
+        ...expressions(workbookId, viewId)
     };
 }

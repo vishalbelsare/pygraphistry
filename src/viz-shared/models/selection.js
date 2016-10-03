@@ -7,40 +7,26 @@ import {
 export function selection(workbookId, viewId) {
     const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
     return {
-        selection: {
-            type: $atom(undefined),
-            rect: $atom(undefined),
-            label: $atom(undefined),
+        highlight: {
+            label: null,
             edge: [],
             point: [],
+        },
+        selection: {
+            type: null,
+            rect: null,
+            label: null,
+            edge: [], point: [],
             controls: [{
+                selected: false,
+                view: $ref(`${view}`),
                 id: 'toggle-select-nodes',
                 name: 'Select nodes',
-                type: 'toggle',
-                value: 0,
-                values: $atom([[
-                    $value(`${view}.selection.type`, $atom(undefined)),
-                ], [
-                    $value(`${view}.selection.type`, $atom('select')),
-                    $value(`${view}.panels.bottom`, $ref(`${view}.inspector`)),
-                    $value(`${view}.selection.controls[1].value`, $atom(0)),
-                    $value(`${view}.inspector.controls[0].value`, $atom(1)),
-                    $value(`${view}.timebar.controls[0].value`, $atom(0)),
-                ]])
             }, {
+                selected: false,
+                view: $ref(`${view}`),
                 id: 'toggle-window-nodes',
                 name: 'Data brush',
-                type: 'toggle',
-                value: 0,
-                values: $atom([[
-                    $value(`${view}.selection.type`, $atom(undefined)),
-                ], [
-                    $value(`${view}.selection.type`, $atom('window')),
-                    $value(`${view}.panels.bottom`, $ref(`${view}.inspector`)),
-                    $value(`${view}.selection.controls[0].value`, $atom(0)),
-                    $value(`${view}.inspector.controls[0].value`, $atom(1)),
-                    $value(`${view}.timebar.controls[0].value`, $atom(0)),
-                ]]),
             }]
         }
     }

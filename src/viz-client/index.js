@@ -34,6 +34,9 @@ import { PropTypes } from 'react';
 import { partial } from 'lodash';
 import { Provider } from 'react-redux';
 import { configureStore } from 'viz-shared/store/configureStore';
+import * as reducers from './reducers';
+let { default: rootReducer, ...epics } = reducers;
+epics = Object.keys(epics).map((x) => epics[x]);
 
 import { reloadHot } from 'viz-client/reloadHot';
 import {
@@ -83,7 +86,7 @@ Observable
     .switchMap(
         ({ App, options }) => {
             const { model, ...props } = options;
-            const store = configureStore(getInitialState());
+            const store = configureStore(getInitialState(), rootReducer, epics);
             const renderAsObservable = Observable.bindCallback(
                 ReactDOM.render,
                 () => [store.getState(), options]

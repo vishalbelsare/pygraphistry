@@ -6,6 +6,7 @@ import RcSwitch from 'rc-switch';
 import classNames from 'classnames';
 import RcColorPicker from 'rc-color-picker';
 import RcSlider from '@graphistry/rc-slider';
+import { Panel } from 'react-bootstrap';
 import { FormControl } from 'react-bootstrap';
 import { Grid, Row, Col, ControlLabel } from 'react-bootstrap';
 
@@ -21,14 +22,38 @@ const tooltipFormatters = {
     percent: (x) => `${x}%`
 };
 
+export function SettingsList({ id, name, side, style = {}, children = [], ...props } = {}) {
+    return (
+        <Panel header={name}
+               style={{ ...style, minWidth: `350px` }}
+               {...props}>
+            {children}
+        </Panel>
+    );
+}
+
+export function ControlsList({ name, children = [], ...props } = {}) {
+    return (
+        <Grid fluid style={{ padding: 0 }}>
+        {name &&
+            <Row>
+                <Col xs={12} sm={12} md={12} lg={12}>
+                    <h5 style={{ marginTop: 0 }}>{name}</h5>
+                </Col>
+            </Row>}
+            {children}
+        </Grid>
+    );
+}
+
 export function Slider({
     id, name, type, props = {},
-    state = 0, setValue, ...rest } = {}) {
+    value = 0, setValue, ...rest } = {}) {
     const { scale = 'none' } = props;
     const tipFormatter = tooltipFormatters[scale];
-    state = scales[scale](state);
-    if (isNaN(state)) {
-        state = props.min || 0;
+    value = scales[scale](value);
+    if (isNaN(value)) {
+        value = props.min || 0;
     }
     return (
         <Row className={styles['control-row']}>
@@ -38,12 +63,12 @@ export function Slider({
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
                 <RcSlider key={`${id}-slider`}
                           min={props.min} max={props.max}
-                          step={props.step} value={state}
+                          step={props.step} defaultValue={value}
                           tipFormatter={tipFormatter}
                           tipTransitionName='rc-slider-tooltip-zoom-down'
                           onChange={(newState) => setValue({
                               id, type, ...rest,
-                              state: state = scales[scale].invert(newState)
+                              value: value = scales[scale].invert(newState)
                           })}
                           {...rest}/>
             </Col>
@@ -53,16 +78,16 @@ export function Slider({
 
 export function TextInput({
     id, name, type, props,
-    state = '', setValue, ...rest } = {}) {
+    value = '', setValue, ...rest } = {}) {
     return (
         <Row className={styles['control-row']}>
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control-label']}>
                 <span>{name}</span>
             </Col>
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
-                <input key={`${id}-input`} type='text' defaultValue={state}
+                <input key={`${id}-input`} type='text' defaultValue={value}
                        onChange={(ev) => setValue({
-                           id, type, ...rest, state: state = ev.target.value
+                           id, type, ...rest, value: value = ev.target.value
                        })}
                        {...rest}/>
             </Col>
@@ -72,7 +97,7 @@ export function TextInput({
 
 export function ToggleButton({
     id, name, type, props,
-    state = false, setValue, ...rest } = {}) {
+    value = false, setValue, ...rest } = {}) {
     return (
         <Row className={styles['control-row']}>
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control-label']}>
@@ -80,11 +105,11 @@ export function ToggleButton({
             </Col>
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
                 <RcSwitch key={`${id}-toggle`}
-                          checked={state}
+                          checked={value}
                           checkedChildren={'On'}
                           unCheckedChildren={'Off'}
                           onChange={(newState) => setValue({
-                              id, type, ...rest, state: state = newState
+                              id, type, ...rest, value: value = newState
                           })}/>
             </Col>
         </Row>
@@ -93,8 +118,8 @@ export function ToggleButton({
 
 export function ColorPicker({
     id, name, type, props,
-    state = 0, setValue, ...rest } = {}) {
-    state = new Color(state);
+    value = 0, setValue, ...rest } = {}) {
+    value = new Color(value);
     return (
         <Row className={styles['control-row']}>
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control-label']}>
@@ -103,12 +128,11 @@ export function ColorPicker({
             <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
                 <RcColorPicker key={`${id}-colors`}
                                animation='slide-up'
-                               color={state.hexString()}
-                               alpha={state.alpha() * 100}
+                               color={value.hexString()}
                                onChange={({ color, alpha }) => setValue({
                                    id, type, ...rest,
-                                   state: state = new Color(color)
-                                       .alpha(alpha * .01)
+                                   value: (value = new Color(color)
+                                       .alpha(alpha * .01))
                                        .rgbaString()
                                })}/>
             </Col>

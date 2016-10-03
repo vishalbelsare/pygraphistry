@@ -23,35 +23,30 @@ export function workbook(dataset, workbookId = simpleflake().toJSON()) {
         ...views(workbookId),
 
         controls: [{
+            selected: false,
+            workbook: $ref(`${workbook}`),
             id: 'open-workbook',
             name: 'Open workbook',
-            type: 'call',
-            value: $ref(`${workbook}.open`)
         }, {
+            selected: false,
+            workbook: $ref(`${workbook}`),
             id: 'fullscreen-workbook',
             name: 'Full screen',
-            type: 'toggle',
-            value: 0,
-            values: $atom([[
-                $value(`${workbook}.fullscreen`, $atom(false))
-            ], [
-                $value(`${workbook}.fullscreen`, $atom(true))
-            ]])
         }, {
+            selected: false,
+            workbook: $ref(`${workbook}`),
             id: 'fork-workbook',
             name: 'Copy workbook',
-            type: 'call',
-            value: $ref(`${workbook}.fork`)
         }, {
+            selected: false,
+            workbook: $ref(`${workbook}`),
             id: 'save-workbook',
             name: 'Save workbook',
-            type: 'call',
-            value: $ref(`${workbook}.save`)
         }, {
+            selected: false,
+            workbook: $ref(`${workbook}`),
             id: 'embed-workbook',
             name: 'Share workbook',
-            type: 'call',
-            value: $ref(`${workbook}.embed`)
         }]
     };
 }

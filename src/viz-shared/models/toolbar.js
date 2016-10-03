@@ -9,7 +9,7 @@ export function toolbar(workbookId, viewId) {
             static: {
                 visible: true,
                 length: 2, ...[
-                    $ref(`${view}.scene.camera.controls`),
+                    $ref(`${view}.camera.controls`),
                     [
                         $ref(`${view}.scene.controls[1]`),
                         $ref(`${view}.labels.controls[0]`),
@@ -19,7 +19,7 @@ export function toolbar(workbookId, viewId) {
             stable: {
                 visible: true,
                 length: 4, ...[
-                    $ref(`${view}.scene.camera.controls`),
+                    $ref(`${view}.camera.controls`),
                     [
                         $ref(`${view}.scene.controls[0]`),
                         $ref(`${view}.scene.controls[1]`),
@@ -39,7 +39,7 @@ export function toolbar(workbookId, viewId) {
             beta: {
                 visible: true,
                 length: 4, ...[
-                    $ref(`${view}.scene.camera.controls`),
+                    $ref(`${view}.camera.controls`),
                     [
                         $ref(`${view}.scene.controls[0]`),
                         $ref(`${view}.scene.controls[1]`),

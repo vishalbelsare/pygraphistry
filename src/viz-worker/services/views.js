@@ -105,8 +105,8 @@ function toControls(options, params) {
 
         controls[index] = {
             id, name, type, props, value,
-            stateKey: 'value',
-            state: $ref(`${options}[${index}]`)
+            // stateKey: 'value',
+            // state: $ref(`${options}[${index}]`)
         };
 
         return controls;
