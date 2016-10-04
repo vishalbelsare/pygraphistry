@@ -26,58 +26,33 @@ function upload0(etlService, apiKey, data, cb) {
         }
     };
 
-    const shouldZip = false;
-    if (shouldZip) {
-        zlib.gzip(new Buffer(JSON.stringify(data), {level : 9 }), (err, buffer) => {
-            if (!err) {
-                const headers = {'Content-Encoding': 'gzip', 'Content-Type': 'application/json'};
-                request.post({
-                    uri: etlService,
-                    qs: getQuery(apiKey),
-                    headers: headers,
-                    body: buffer,
-                    callback:
-                    function (err, resp, body) {
-                        const json = JSON.parse(body);
-                        if (err) { return cb(err); }
-                        try {
-                            if (!json.success) {
-                                console.log('body in succes?', body);
-                                throw new Error(body)
-                            }
-                            console.log("  -> Uploaded", body);
-                            return cb(undefined, body);
-                        } catch (e) {
-                            return cb(e);
+    zlib.gzip(new Buffer(JSON.stringify(data), {level : 1 }), (err, buffer) => {
+        if (!err) {
+            const headers = {'Content-Encoding': 'gzip', 'Content-Type': 'application/json'};
+            request.post({
+                uri: etlService,
+                qs: getQuery(apiKey),
+                headers: headers,
+                body: buffer,
+                callback: function (err, resp, body) {
+                    const json = JSON.parse(body);
+                    if (err) { return cb(err); }
+                    try {
+                        if (!json.success) {
+                            console.log('body in succes?', body);
+                            throw new Error(body);
                         }
+                        console.log('  -> Uploaded', body);
+                        return cb(undefined, body);
+                    } catch (e) {
+                        return cb(e);
                     }
-                });
-            } else {
-                return console.log('Errror!');
-            }
-        })
-    } else {
-        console.log('Not zipping')
-        request.post({
-            uri: etlService,
-            qs: getQuery(apiKey),
-            json: data,
-            callback:
-            function (err, resp, body) {
-                if (err) { return cb(err); }
-                try {
-                    if (!body.success) {
-                        console.log(body);
-                        throw new Error(body)
-                    }
-                    console.log("  -> Uploaded", body);
-                    return cb(undefined, body);
-                } catch (e) {
-                    return cb(e);
                 }
-            }
-        });
-    }
+            });
+        } else {
+            return console.log('Error!');
+        }
+    });
 }
 
 
