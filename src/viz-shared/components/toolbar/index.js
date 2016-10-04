@@ -50,7 +50,8 @@ export function ButtonListItem({ onItemSelected, ...props }) {
     const { id, name, selected } = props;
 
     return (
-        <OverlayTrigger placement='right'
+        <OverlayTrigger trigger='hover'
+                        placement='right'
                         overlay={ButtonListItemTooltip(name)}>
             <Button id={id} href='#'
                     active={selected}

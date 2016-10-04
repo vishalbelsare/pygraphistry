@@ -620,8 +620,7 @@ class Renderer extends React.Component {
         if (currCenter.$__version !== nextCenter.$__version) {
             if (nextCamera.center.x === 0 &&
                 nextCamera.center.y === 0 &&
-                nextCamera.center.z === 0 &&
-                !shallowEqual(currCamera.center, nextCamera.center)) {
+                nextCamera.center.z === 0) {
                 toggleCenter.next();
                 return true;
             }
