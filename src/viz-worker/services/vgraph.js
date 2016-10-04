@@ -53,9 +53,10 @@ function loadVGraphJSON(nBody, { metadata: dataset, body: buffer }, config, s3Ca
     const datasource = json.datasources[0];
     nBody.dataset = {
         ...dataset,
-        ...datasource, type: 'vgraph',
+        ...json, type: 'vgraph',
         url: url.parse(datasource.url)
     };
+
     return Observable.of({ nBody, loaded: false })
 }
 
