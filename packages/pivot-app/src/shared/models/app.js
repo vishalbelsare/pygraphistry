@@ -9,13 +9,6 @@ import { simpleflake } from 'simpleflakes';
 import { createInvestigationModel } from '../models';
 import _ from 'underscore';
 
-const cols = [
-    { name: 'Mode'},
-    { name: 'Input' },
-    { name: 'Search' },
-    { name: 'Links' },
-    { name: 'Time'}
-];
 
 export function app(_investigations = [], id = simpleflake().toJSON()) {
 
@@ -30,21 +23,6 @@ export function app(_investigations = [], id = simpleflake().toJSON()) {
         apiKey: process.env.GRAPHISTRY_API_KEY || 'd6a5bfd7b91465fa8dd121002dfc51b84148cd1f01d7a4c925685897ac26f40b',
         vizService: `${process.env.GRAPHISTRY_VIEWER || 'https://labs.graphistry.com'}/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&info=true`,
         etlService: `${process.env.GRAPHISTRY_ETL || 'https://labs.graphistry.com'}/etl`,
-
-        /**
-         *  cols: {
-         *     total: 'Total', length: 3,
-         *     0: { name: 'Column A' },
-         *     1: { name: 'Column B' },
-         *     2: { name: 'Column C' }, ...
-         *  }
-         */
-        cols: {
-            ...cols,
-            id: 'cols',
-            total: 'Total',
-            length: cols.length,
-        },
 
         /**
          *  investigationsById: {

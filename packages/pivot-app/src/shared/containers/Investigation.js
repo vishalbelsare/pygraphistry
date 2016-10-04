@@ -14,7 +14,8 @@ import { splicePivot,
         dismissAlert
 } from '../actions/investigation'
 
-function renderInvestigation({length = 0, templates = 'all', status, name = 'default', pivots = [],
+
+function renderInvestigation({status, pivots = [],
                               searchPivot, insertPivot, splicePivot, dismissAlert,
                               playInvestigation, saveInvestigation }) {
     const cellWidth = Math.round(88 / (4));
@@ -59,7 +60,7 @@ function renderInvestigation({length = 0, templates = 'all', status, name = 'def
     );
 }
 
-function mapStateToFragment({selectedInvestigation = {}, name = 'default', pivots = []} = {}) {
+function mapStateToFragment({selectedInvestigation = {}, pivots = []} = {}) {
     return `{
         'url', 'name', 'status', 'id',
         pivots: {
@@ -73,9 +74,7 @@ function mapStateToFragment({selectedInvestigation = {}, name = 'default', pivot
 function mapFragmentToProps(fragment) {
     return {
         pivots: fragment.pivots,
-        name: fragment.name,
         status: fragment.status,
-        length: fragment.pivots.length
     };
 }
 

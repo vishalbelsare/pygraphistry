@@ -1,45 +1,35 @@
 import expressApp from './app.js'
 import bodyParser from 'body-parser';
-import glob from 'glob';
-import fs from 'fs';
 import { Observable } from 'rxjs';
-import { simpleflake } from 'simpleflakes';
-
 import { reloadHot } from '../shared/reloadHot';
 import { renderMiddleware } from './middleware';
 import { getDataSourceFactory } from '../shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 import { app as createApp } from '../shared/models';
 import {
-    loadApp,
+    loadApp, listInvestigations,
     investigationStore, createInvestigation, cloneInvestigationsById,
     pivotStore, insertPivot, splicePivot, searchPivot,
     uploadGraph
 } from '../shared/services';
 
 
+const investigationPath = 'tests/appdata/investigations';
+const pivotPath = 'tests/appdata/pivots';
 
-const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
-const globAsObservable = Observable.bindNodeCallback(glob);
-
-globAsObservable('tests/appdata/investigations/*.json')
-    .flatMap(x => x)
-    .flatMap(file => {
-        return readFileAsObservable(file).map(JSON.parse);
-    }).reduce(
-        (acc, x) =>acc.concat([x]),
-        []
-    ).subscribe(
-        investigations => init(investigations),
-        x => console.error(x)
-    );
+listInvestigations(investigationPath)
+    .do(init)
+    .subscribe(
+        () => console.log('Initialized'),
+        (e) => console.error(e)
+    )
 
 function init(investigations) {
     const app = createApp(investigations);
 
-    const {loadPivotsById, savePivotsById} = pivotStore(loadApp(app), 'tests/appdata/pivots');
+    const {loadPivotsById, savePivotsById} = pivotStore(loadApp(app), pivotPath);
     const {loadInvestigationsById, saveInvestigationsById} =
-        investigationStore(loadApp(app), 'tests/appdata/investigations');
+        investigationStore(loadApp(app), investigationPath);
 
     const routeServices = {
         loadApp: loadApp(app),

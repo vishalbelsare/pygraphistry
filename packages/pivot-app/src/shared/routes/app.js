@@ -25,12 +25,8 @@ export function app({ loadApp, createInvestigation }) {
         returns: `$ref('investigationsById[{investigationId}])`,
         route: `selectedInvestigation`
     }, {
-        get: appGetRoute,
-        returns: 'String',
-        route: `['cols'].id`
-    }, {
         returns: `Number`,
-        route: `['cols', 'pivots', 'investigations'].length`,
+        route: `['pivots', 'investigations'].length`,
         get: appGetRoute
     }, {
         route: `['cols'][{ranges}]`,

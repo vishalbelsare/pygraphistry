@@ -1,44 +1,53 @@
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
-var DataFrame =  require('../Dataframe')
+var DataFrame =  require('../Dataframe');
 var _ = require('underscore');
+var zlib = require('zlib');
 
 var request = require('request');
 
 function upload(etlService, apiKey, data) {
+    const gzipObservable = Observable.bindNodeCallback(zlib.gzip.bind(zlib));
     const upload0Wrapped = Observable.bindNodeCallback(upload0.bind(null));
 
     if (data.graph.length === 0) {
         return Observable.throw(new Error('No edges to upload!'));
     }
-    return upload0Wrapped(etlService, apiKey, data)
-        .map(() =>  data.name)
+
+    const gzipped = gzipObservable(new Buffer(JSON.stringify(data), { level : 1}));
+    return gzipped.flatMap(
+        function(buffer) {
+            return upload0Wrapped(etlService, apiKey, buffer)
+                .map(() =>  data.name)
+        }
+    )
 }
 
 //jsonGraph * (err? -> ())? -> ()
 function upload0(etlService, apiKey, data, cb) {
-    cb = cb || function (err, data) {
+    cb = cb || function (err, resp) {
         if (err) {
             return console.error('exn', err);
         } else {
-            return console.log('success', data);
+            return console.log('success', resp);
         }
     };
-    console.log("About to upload data", data.name);
 
+    const headers = {'Content-Encoding': 'gzip', 'Content-Type': 'application/json'};
     request.post({
         uri: etlService,
         qs: getQuery(apiKey),
-        json: data,
-        callback:
-            function (err, resp, body) {
+        headers: headers,
+        body: data,
+        callback: function (err, resp, body) {
+            const json = JSON.parse(body);
             if (err) { return cb(err); }
             try {
-                if (!body.success) {
-                    console.log(body);
-                    throw new Error(body)
+                if (!json.success) {
+                    console.log('body in succes?', body);
+                    throw new Error(body);
                 }
-                console.log("  -> Uploaded", body);
+                console.log('  -> Uploaded', body);
                 return cb(undefined, body);
             } catch (e) {
                 return cb(e);
