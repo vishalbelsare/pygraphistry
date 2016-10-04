@@ -1,5 +1,4 @@
 import url from 'url';
-import { loadDataset } from './datasets';
 import { nBody as createNBody } from '../models';
 import { cache as Cache } from '@graphistry/common';
 import { Observable, ReplaySubject } from 'rxjs';
@@ -12,8 +11,6 @@ export function loadNBody(nBodiesById, config, s3Cache = new Cache(config.LOCAL_
             nBodiesById[dataset.id] : (
             nBodiesById[dataset.id] = Observable
                 .of(dataset)
-                .expand(loadDatasetSourceMetadata(config, s3Cache))
-                .takeLast(1)
                 .map(createNBody)
                 .multicast(new ReplaySubject(1))
                 .refCount()
@@ -59,20 +56,4 @@ function getCurrentDataset(workbook, options) {
 
     return datasets[datasetsIndex] || (
            datasets[datasetsIndex] = createDataset(options));
-}
-
-function loadDatasetSourceMetadata(config, s3Cache) {
-    return function loadDatasetSourceMetadata(dataset) {
-        return (dataset.type !== 'jsonMeta') ?
-            Observable.empty() :
-            loadDataset(dataset, config, s3Cache).map((buffer) => {
-                const json = JSON.parse(buffer.toString('utf8'));
-                const datasource = json.datasources[0];
-                return {
-                    ...dataset,
-                    ...datasource, type: 'vgraph',
-                    url: url.parse(datasource.url)
-                };
-            });
-    }
 }

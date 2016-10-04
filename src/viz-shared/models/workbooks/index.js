@@ -66,7 +66,9 @@ export function dataset(options, datasetId = simpleflake().toJSON()) {
 
     options.name = options.name || options.dataset;
 
-    const datasetURLOrId = options.dataset || options.url || options.id;
+    const datasetURLOrId = (options.dataset &&
+         decodeURIComponent(options.dataset)) ||
+         options.url || options.id;
 
     if (datasetURLOrId) {
         options.url = url.parse(datasetURLOrId);
