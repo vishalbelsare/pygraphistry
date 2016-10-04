@@ -172,7 +172,7 @@ function setupScroll($eventTarget, canvas, camera, appState) {
         })
         .map(function({ originalEvent }) {
             var bounds = $eventTarget[0].getBoundingClientRect();
-            var zoomFactor = (originalEvent.deltaY < 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
+            var zoomFactor = (originalEvent.deltaY > 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
 
             var canvasPos = {
                 x: (originalEvent.clientX - bounds.left),
