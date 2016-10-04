@@ -1,7 +1,7 @@
 import { container } from '@graphistry/falcor-react-redux';
+import { switchScreen } from '../actions/app.js';
 
-
-function renderSidebar({activeScreen}) {
+function renderSidebar({activeScreen, switchScreen}) {
     function active(target) {
         return activeScreen === target ? 'active' : '';
     }
@@ -16,7 +16,7 @@ function renderSidebar({activeScreen}) {
                 </div>
                 <ul className="nav">
                     <li className={active('home')}>
-                        <a href="#">
+                        <a href="#" onClick={() => switchScreen('home')}>
                             <i className="pe-7s-user"></i>
                             <p>&nbsp;</p>
                         </a>
@@ -34,7 +34,7 @@ function renderSidebar({activeScreen}) {
                         </a>
                     </li>
                     <li className={active('investigation')}>
-                        <a href="#">
+                        <a href="#" onClick={() => switchScreen('investigation')}>
                             <i className="pe-7s-graph1"></i>
                             <p>&nbsp;</p>
                         </a>
@@ -64,9 +64,10 @@ function renderSidebar({activeScreen}) {
     );
 }
 
-export default renderSidebar
-/*export default container(
-    () => {},
+export default container(
+    () => `{title}`,
     (state) => state,
-    {}
-)(renderSidebar);*/
+    {
+        switchScreen: switchScreen
+    }
+)(renderSidebar);

@@ -1,4 +1,5 @@
 export * from './loadApp';
+export * from './loadUsers';
 export * from './loadInvestigations';
 export * from './newInvestigation';
 export * from './insertPivot';

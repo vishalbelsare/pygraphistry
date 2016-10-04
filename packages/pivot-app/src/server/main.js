@@ -7,8 +7,10 @@ import { getDataSourceFactory } from '../shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 import { app as createApp } from '../shared/models';
 import {
-    loadApp, listInvestigations,
-    investigationStore, createInvestigation, cloneInvestigationsById,
+    loadApp,
+    userStore,
+    listInvestigations, investigationStore,
+    createInvestigation, cloneInvestigationsById,
     pivotStore, insertPivot, splicePivot, searchPivot,
     uploadGraph
 } from '../shared/services';
@@ -27,12 +29,14 @@ listInvestigations(investigationPath)
 function init(investigations) {
     const app = createApp(investigations);
 
+    const {loadUsersById} = userStore(loadApp(app));
+    const {loadInvestigationsById, saveInvestigationsById} = investigationStore(loadApp(app),
+                                                                                investigationPath);
     const {loadPivotsById, savePivotsById} = pivotStore(loadApp(app), pivotPath);
-    const {loadInvestigationsById, saveInvestigationsById} =
-        investigationStore(loadApp(app), investigationPath);
 
     const routeServices = {
         loadApp: loadApp(app),
+        loadUsersById,
         loadInvestigationsById,
         saveInvestigationsById,
         createInvestigation,

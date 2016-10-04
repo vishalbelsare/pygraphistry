@@ -5,10 +5,16 @@ import { hoistStatics } from 'recompose';
 import { connect, container } from '@graphistry/falcor-react-redux';
 
 
-function renderApp({ title }) {
+function renderApp({ currentUser }) {
+    const screens = {
+        'undefined': (<HomeScreen/>),
+        'home': (<HomeScreen/>),
+        'investigation': (<InvestigationScreen/>)
+    }
+
     return (
         <div>
-            <InvestigationScreen/>
+            { screens[currentUser.activeScreen] }
             <DevTools/>
         </div>
     );
@@ -16,9 +22,11 @@ function renderApp({ title }) {
 
 const App = container(
     () => `{
-        title
+        currentUser: {
+            'activeScreen'
+        }
     }`,
-    (state) => state,
+    state => state,
     {}
 )(renderApp);
 

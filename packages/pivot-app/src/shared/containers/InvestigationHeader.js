@@ -7,7 +7,7 @@ import {
     setInvestigationName,
     saveInvestigation,
     copyInvestigation
-} from '../actions/app';
+} from '../actions/investigationScreen';
 
 
 function renderInvestigationHeader({investigations, selectedInvestigation, createInvestigation,
@@ -25,11 +25,11 @@ function renderInvestigationHeader({investigations, selectedInvestigation, creat
                     </button>
 
                     <span className="simple-text" style={{display: 'inline-block', float: 'left'}}>
-                        { investigations === undefined ?
-                            null :
+                        { investigations.length > 0 ?
                             <InvestigationDropdown data={investigations}
                                 selectInvestigation={selectInvestigation}
                                 selectedInvestigation={selectedInvestigation} />
+                            : null
                         }
                     </span>
 
@@ -59,14 +59,25 @@ function renderInvestigationHeader({investigations, selectedInvestigation, creat
     );
 }
 
-export default container(
-    ({ investigations = [] } = {}) =>
-    `{
-        investigations: ${
-            InvestigationDropdown.fragment()
+function mapStateToFragment() {
+    return `{
+        currentUser: {
+            investigations: ${
+                InvestigationDropdown.fragment()
+            }
         }
-    }`,
-    (state) => state,
+    }`;
+}
+
+function mapFragmentToProps({ currentUser = {} } = {}) {
+    return {
+        investigations: currentUser.investigations || []
+    };
+}
+
+export default container(
+    mapStateToFragment,
+    mapFragmentToProps,
     {
         selectInvestigation: selectInvestigation,
         createInvestigation: createInvestigation,
