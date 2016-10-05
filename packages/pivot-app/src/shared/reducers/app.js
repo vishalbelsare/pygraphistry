@@ -19,6 +19,8 @@ function switchScreen(action$, store) {
         .mergeMap(({falcor, screen}) =>
             falcor.set(
                 $value(`currentUser.activeScreen`, screen)
-            ).progressively()
-        ).ignoreElements();
+            )
+            .progressively()
+        )
+        .ignoreElements();
 }

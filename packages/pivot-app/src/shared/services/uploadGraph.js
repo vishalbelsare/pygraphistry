@@ -127,19 +127,29 @@ function createGraph(pivots) {
 }
 
 
-export function uploadGraph({loadInvestigationsById, loadPivotsById, investigationIds}) {
+export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersById,
+                             investigationIds}) {
     return loadInvestigationsById({investigationIds})
         .mergeMap(
-            ({app, investigation}) => loadPivotsById({pivotIds: investigation.pivots.map(x => x.value[1])})
-                .map(({app, pivot}) => pivot)
-                .toArray()
-                .map(createGraph)
-                .switchMap(data => upload(app.etlService, app.apiKey, data))
-                .do((name) => {
-                    investigation.url = `${app.vizService}&dataset=${name}`;
+            ({app, investigation}) =>
+                Observable.combineLatest(
+                    loadUsersById({userIds: [app.currentUser.value[1]]}),
+                    loadPivotsById({pivotIds: investigation.pivots.map(x => x.value[1])})
+                        .map(({app, pivot}) => pivot)
+                        .toArray()
+                        .map(createGraph),
+                    ({user}, data) => ({user, data})
+                )
+                .switchMap(({user, data}) =>
+                    upload(user.etlService, user.apiKey, data)
+                        .map(dataset => ({user, dataset}))
+                )
+                .do(({user, dataset}) => {
+                    investigation.url = `${user.vizService}&dataset=${dataset}`;
                     console.log('  URL: ', investigation.url);
                 })
                 .catch(e => {
+                    console.error(e);
                     investigation.status = {
                         ok: false,
                         message: e.message || 'Unknown Error'

@@ -13,7 +13,7 @@ import {
     logErrorWithCode
 } from './support';
 
-export function investigations({ loadInvestigationsById, saveInvestigationsById,
+export function investigations({ loadUsersById, loadInvestigationsById, saveInvestigationsById,
                                  loadPivotsById, savePivotsById, cloneInvestigationsById,
                                  searchPivot, splicePivot, insertPivot, uploadGraph }) {
 
@@ -35,7 +35,7 @@ export function investigations({ loadInvestigationsById, saveInvestigationsById,
         route: `investigationsById[{keys}]['pivots'][{integers}]`
     }, {
         route: `investigationsById[{keys}].play`,
-        call: playCallRoute({ loadInvestigationsById, loadPivotsById, uploadGraph })
+        call: playCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph })
     }, {
         route: `investigationsById[{keys}].insertPivot`,
         call: insertPivotCallRoute({ loadInvestigationsById, insertPivot})
@@ -97,11 +97,12 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
     }
 }
 
-function playCallRoute({ loadInvestigationsById, loadPivotsById, uploadGraph }) {
+function playCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph }) {
     return function(path, args) {
         const investigationIds = path[1];
 
-        return Observable.defer(() => uploadGraph({loadInvestigationsById, loadPivotsById, investigationIds}))
+        return Observable.defer(() => uploadGraph({loadInvestigationsById, loadPivotsById,
+                                                   loadUsersById, investigationIds}))
             .mergeMap(({app, investigation}) => {
                 return [
                     $pathValue(`investigationsById['${investigationIds}'].url`, investigation.url),

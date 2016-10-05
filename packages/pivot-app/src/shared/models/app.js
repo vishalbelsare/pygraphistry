@@ -11,6 +11,9 @@ import _ from 'underscore';
 
 
 function makeTestUser(investigations){
+    const suffix = '/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&info=true';
+    const padenKey = 'd6a5bfd7b91465fa8dd121002dfc51b84148cd1f01d7a4c925685897ac26f40b';
+
     return {
         name: 'Bobby B0b',
         id: '0',
@@ -18,11 +21,9 @@ function makeTestUser(investigations){
         investigations: investigations.map((investigation, index) => (
             $ref(`investigationsById['${investigation.id}']`)
         )),
-        apiKey: process.env.GRAPHISTRY_API_KEY ||
-                'd6a5bfd7b91465fa8dd121002dfc51b84148cd1f01d7a4c925685897ac26f40b',
-        vizService: `${process.env.GRAPHISTRY_VIEWER || 'https://labs.graphistry.com'}/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&info=true`,
-        etlService: `${process.env.GRAPHISTRY_ETL ||
-                'https://labs.graphistry.com'}/etl`,
+        apiKey: process.env.GRAPHISTRY_API_KEY || padenKey,
+        vizService: `${process.env.GRAPHISTRY_VIEWER || 'https://labs.graphistry.com'}${suffix}`,
+        etlService: `${process.env.GRAPHISTRY_ETL || 'https://labs.graphistry.com'}/etl`,
     };
 }
 
