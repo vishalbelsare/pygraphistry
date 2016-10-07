@@ -123,8 +123,11 @@ function saveCallRoute({ loadInvestigationsById, savePivotsById, saveInvestigati
     return function(path, args) {
         const investigationIds = path[1];
 
-        return Observable.defer(() => saveInvestigationsById({loadInvestigationsById, savePivotsById, investigationIds}))
-            .mergeMap(({app, investigation}) => [])
+        return Observable.defer(() => saveInvestigationsById({loadInvestigationsById, savePivotsById,
+                                                              investigationIds}))
+            .mergeMap(({app, investigation}) => [
+                $pathValue(`investigationsById['${investigationIds}'].modifiedOn`, investigation.modifiedOn)
+            ])
             .map(mapObjectsToAtoms)
             .catch(captureErrorAndNotifyClient(investigationIds));
     }
