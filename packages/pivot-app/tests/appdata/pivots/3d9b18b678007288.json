@@ -1,0 +1,16 @@
+{
+    "id": "3d9b18b678007288",
+    "enabled": false,
+    "pivotParameterKeys": [
+        "mode",
+        "input",
+        "search",
+        "time"
+    ],
+    "pivotParameters": {
+        "search": "Enter search query",
+        "mode": "Search Splunk",
+        "input": "none",
+        "time": "09/21/2016"
+    }
+}
