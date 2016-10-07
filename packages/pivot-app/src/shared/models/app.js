@@ -15,9 +15,9 @@ function makeTestUser(investigations){
     const padenKey = 'd6a5bfd7b91465fa8dd121002dfc51b84148cd1f01d7a4c925685897ac26f40b';
 
     return {
-        name: 'Bobby B0b',
+        name: 'Bobby Bobo',
         id: '0',
-        activeScreen: 'investigation',
+        activeScreen: 'home',
         investigations: investigations.map((investigation, index) => (
             $ref(`investigationsById['${investigation.id}']`)
         )),

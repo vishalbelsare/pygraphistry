@@ -17,6 +17,10 @@ export function users({ loadApp, loadUsersById }) {
         set: setHandler(['user'], loadUsersById),
         returns: `String`,
     }, {
+        returns: `String`,
+        route: `['usersById'][{keys}].name`,
+        get: getHandler(['user'], loadUsersById)
+    }, {
         returns: `Number`,
         route: `['usersById'][{keys}]['investigations'].length`,
         get: getHandler(['user'], loadUsersById)

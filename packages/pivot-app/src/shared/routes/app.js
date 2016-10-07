@@ -12,7 +12,7 @@ import {
 } from './support';
 
 
-export function app({ loadApp, createInvestigation }) {
+export function app({ loadApp, createInvestigation, loadUsersById }) {
     const appGetRoute = getHandler([], loadApp);
     const appSetRoute = setHandler([], loadApp);
 
@@ -31,19 +31,19 @@ export function app({ loadApp, createInvestigation }) {
         returns: `$ref('pivotsById[{ pivotId }]')`
     }, {
         route: `createInvestigation`,
-        call: createInvestigationCallRoute({ loadApp, createInvestigation })
+        call: createInvestigationCallRoute({ loadApp, loadUsersById, createInvestigation })
     }];
 }
 
 
-function createInvestigationCallRoute({loadApp, createInvestigation}) {
+function createInvestigationCallRoute({loadApp, createInvestigation, loadUsersById}) {
     return function(path, args) {
-        return Observable.defer(() => createInvestigation({loadApp}))
-            .mergeMap(({app, numInvestigations}) => {
+        return Observable.defer(() => createInvestigation({loadApp, loadUsersById}))
+            .mergeMap(({app, user, numInvestigations}) => {
                 return [
-                    $pathValue(`['investigations'].length`, numInvestigations),
+                    $pathValue(`['usersById'][${user.id}]['investigations'].length`, numInvestigations),
                     $pathValue(`selectedInvestigation`, app.selectedInvestigation),
-                    $invalidation(`['investigations']['${numInvestigations - 1}']`)
+                    $invalidation(`['usersById'][${user.id}]['investigations']['${numInvestigations - 1}']`)
                 ];
             })
             .catch(logErrorWithCode);

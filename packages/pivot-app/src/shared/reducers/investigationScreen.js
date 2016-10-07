@@ -6,17 +6,18 @@ import {
 } from '@graphistry/falcor-json-graph';
 import { combineEpics } from 'redux-observable';
 import { Observable } from 'rxjs';
+import _ from 'underscore';
 import {
     SELECT_INVESTIGATION,
     CREATE_INVESTIGATION,
-    SET_INVESTIGATION_NAME,
+    SET_INVESTIGATION_PARAMS,
     SAVE_INVESTIGATION,
     COPY_INVESTIGATION
 } from '../actions/investigationScreen.js';
 
 
 export const investigationScreen = combineEpics(
-    createInvestigation, selectInvestigation, setInvestigationName,
+    createInvestigation, selectInvestigation, setInvestigationParams,
     saveInvestigation, copyInvestigation
 );
 
@@ -40,12 +41,17 @@ function selectInvestigation(action$, store) {
             .ignoreElements();
 }
 
-function setInvestigationName(action$, store) {
+function setInvestigationParams(action$, store) {
     return action$
-        .ofType(SET_INVESTIGATION_NAME)
-        .mergeMap(({ falcor, name}) =>
-            falcor.set($value('selectedInvestigation.name', name)).progressively()
-        )
+        .ofType(SET_INVESTIGATION_PARAMS)
+        .mergeMap(({falcor, params, id}) => {
+            const root = id ? ['investigationsById', id] : ['selectedInvestigation']
+            return Observable.from(
+                _.map(params, (value, key) =>
+                    falcor.set($value(root.concat([key]), value))
+                )
+            ).mergeAll()
+        })
         .ignoreElements();
 }
 

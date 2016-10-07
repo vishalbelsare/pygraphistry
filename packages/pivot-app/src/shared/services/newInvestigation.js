@@ -7,12 +7,12 @@ import {
     clonePivotModel
 } from '../models';
 
-function insertAndSelectInvestigation(app, newInvestigation) {
+function insertAndSelectInvestigation(app, user, newInvestigation) {
     app.investigationsById[newInvestigation.id] = newInvestigation;
-    app.investigations.push(newInvestigation);
+    user.investigations.push(newInvestigation);
     app.selectedInvestigation = $ref(`investigationsById['${newInvestigation.id}']`);
 
-    return app.investigations.length;
+    return user.investigations.length;
 }
 
 function insertPivots(app, pivots) {
@@ -21,30 +21,37 @@ function insertPivots(app, pivots) {
     });
 }
 
-export function createInvestigation({ loadApp }) {
+export function createInvestigation({ loadApp, loadUsersById }) {
     return loadApp()
-        .map(app => {
+        .switchMap(app =>
+            loadUsersById({userIds: [app.currentUser.value[1]]})
+        )
+        .map(({app, user}) => {
             const pivot0 = createPivotModel({});
-            const newInvestigation = createInvestigationModel({pivots: [pivot0.id]}, app.investigations.length);
+            const newInvestigation = createInvestigationModel({pivots: [pivot0.id]}, user.investigations.length);
             insertPivots(app, [pivot0]);
-            const numInvestigations = insertAndSelectInvestigation(app, newInvestigation);
+            const numInvestigations = insertAndSelectInvestigation(app, user, newInvestigation);
 
-            return ({app, newInvestigation, numInvestigations});
+            return ({app, user, newInvestigation, numInvestigations});
         });
 }
 
-export function cloneInvestigationsById({ loadInvestigationsById, loadPivotsById, investigationIds }) {
+export function cloneInvestigationsById({ loadInvestigationsById, loadPivotsById, loadUsersById, investigationIds }) {
     return loadInvestigationsById({investigationIds})
         .mergeMap(({app, investigation}) =>
-            loadPivotsById({pivotIds: investigation.pivots.map(x => x.value[1])})
-                .map(({pivot}) => clonePivotModel(pivot))
-                .toArray()
-                .map(clonedPivots => {
-                    insertPivots(app, clonedPivots);
-                    const clonedInvestigation = cloneInvestigationModel(investigation, clonedPivots);
-                    const numInvestigations = insertAndSelectInvestigation(app, clonedInvestigation);
+            Observable.combineLatest(
+                loadPivotsById({pivotIds: investigation.pivots.map(x => x.value[1])})
+                    .map(({pivot}) => clonePivotModel(pivot))
+                    .toArray(),
+                loadUsersById({userIds: [app.currentUser.value[1]]}),
+                (clonedPivots, {user}) => ({clonedPivots, user})
+            )
+            .map(({clonedPivots, user}) => {
+                insertPivots(app, clonedPivots);
+                const clonedInvestigation = cloneInvestigationModel(investigation, clonedPivots);
+                const numInvestigations = insertAndSelectInvestigation(app, user, clonedInvestigation);
 
-                    return ({app, clonedInvestigation, numInvestigations});
-                })
+                return ({app, user, clonedInvestigation, numInvestigations});
+            })
         )
 }

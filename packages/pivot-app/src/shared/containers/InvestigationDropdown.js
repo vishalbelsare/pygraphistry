@@ -8,7 +8,7 @@ function renderInvestigationDropdown({ investigations, selectedInvestigation, se
         <div className={styles.dropdownbutton}>
             <DropdownButton id='investigations-list-dropdown'
                             title={selectedInvestigation.name || 'Investigations'}
-                            onSelect={(id, event) => selectInvestigation({ id })}>
+                            onSelect={(id, event) => selectInvestigation(id)}>
             {investigations.map(({ id, name }, index) => (
                 <MenuItem eventKey={id} key={`${index}: ${id}`}>
                     {name}

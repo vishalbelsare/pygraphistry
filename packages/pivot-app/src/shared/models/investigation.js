@@ -13,6 +13,9 @@ function defaults(index) {
         name: `Untitled Investigation ${index}`,
         url: process.env.BLANK_PAGE || 'http://www.graphistry.com',
         id: simpleflake().toJSON(),
+        description: 'Created to explore lorem ipsum',
+        tags: ['Demo'],
+        modifiedOn: (new Date()).toDateString(),
         pivots: []
     };
 }

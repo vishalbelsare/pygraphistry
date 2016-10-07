@@ -24,7 +24,14 @@ export function investigationStore(loadApp, pathPrefix) {
         return loadInvestigationsById({investigationIds})
             .mergeMap(({app, investigation}) => {
                 const filePath = path.resolve(pathPrefix, investigation.id + '.json')
-                const content = JSON.stringify(serializeInvestigationModel(investigation), null, 4);
+                const content =
+                    JSON.stringify({
+                        ...serializeInvestigationModel(investigation),
+                        modifiedOn: (new Date()).toDateString()
+                    },
+                    null,
+                    4
+                );
                 const pivotIds = investigation.pivots.map(x => x.value[1])
 
                 return savePivotsById({pivotIds})

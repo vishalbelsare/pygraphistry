@@ -1,23 +1,25 @@
 export const SELECT_INVESTIGATION = 'select-investigation';
 export const CREATE_INVESTIGATION = 'create-investigation';
-export const SET_INVESTIGATION_NAME = 'set-investigation-name';
+export const SET_INVESTIGATION_PARAMS = 'set-investigation-params';
 export const SAVE_INVESTIGATION = 'save-investigation';
 export const COPY_INVESTIGATION = 'copy-investigation';
 
-export const selectInvestigation = ({ id, type, ...props }) => {
-    return ({
-        ...props, id: id, type: SELECT_INVESTIGATION
-    });
+export function selectInvestigation(id) {
+    return {
+        id: id,
+        type: SELECT_INVESTIGATION
+    };
 }
 
 export function createInvestigation() {
     return {type: CREATE_INVESTIGATION};
 }
 
-export function setInvestigationName(name) {
+export function setInvestigationParams(params, id) {
     return {
-        type: SET_INVESTIGATION_NAME,
-        name: name
+        type: SET_INVESTIGATION_PARAMS,
+        params: params,
+        id: id
     };
 }
 

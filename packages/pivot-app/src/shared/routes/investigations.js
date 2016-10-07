@@ -24,7 +24,7 @@ export function investigations({ loadUsersById, loadInvestigationsById, saveInve
         returns: `String`,
         get: getInvestigationsHandler,
         set: setInvestigationsHandler,
-        route: `investigationsById[{keys}]['id','name', 'value', 'url', 'status']`
+        route: `investigationsById[{keys}]['id','name', 'url', 'status', 'tags', 'description', 'modifiedOn']`
     }, {
         returns: `Number`,
         get: getInvestigationsHandler,
@@ -47,7 +47,7 @@ export function investigations({ loadUsersById, loadInvestigationsById, saveInve
         call: saveCallRoute({ loadInvestigationsById, saveInvestigationsById, savePivotsById})
     }, {
         route: `investigationsById[{keys}].clone`,
-        call: cloneCallRoute({ loadInvestigationsById, loadPivotsById, cloneInvestigationsById})
+        call: cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, cloneInvestigationsById})
     }];
 }
 
@@ -125,16 +125,16 @@ function saveCallRoute({ loadInvestigationsById, savePivotsById, saveInvestigati
     }
 }
 
-function cloneCallRoute({ loadInvestigationsById, loadPivotsById, cloneInvestigationsById }) {
-
+function cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, cloneInvestigationsById }) {
     return function(path, args) {
         const investigationIds = path[1];
-        return Observable.defer(() => cloneInvestigationsById({loadInvestigationsById, loadPivotsById, investigationIds}))
-            .mergeMap(({app, clonedInvestigation, numInvestigations}) => {
+        return Observable.defer(() => cloneInvestigationsById({loadInvestigationsById, loadPivotsById,
+                                                               loadUsersById, investigationIds}))
+            .mergeMap(({app, user, clonedInvestigation, numInvestigations}) => {
                 return [
-                    $pathValue(`['investigations'].length`, numInvestigations),
+                    $pathValue(`['usersById'][${user.id}]['investigations'].length`, numInvestigations),
                     $pathValue(`selectedInvestigation`, app.selectedInvestigation),
-                    $invalidation(`['investigations']['${numInvestigations - 1}']`)
+                    $invalidation(`['usersById'][${user.id}]['investigations']['${numInvestigations - 1}']`)
                 ];
             })
             .map(mapObjectsToAtoms)

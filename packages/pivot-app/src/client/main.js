@@ -1,5 +1,6 @@
 import 'rc-switch/assets/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'react-bootstrap-table/dist/react-bootstrap-table.min.css';
 
 import ReactDOM from 'react-dom';
 import { decode } from 'querystring';
