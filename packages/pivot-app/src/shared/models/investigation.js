@@ -15,7 +15,7 @@ function defaults(index) {
         id: simpleflake().toJSON(),
         description: 'Created to explore lorem ipsum',
         tags: ['Demo'],
-        modifiedOn: (new Date()).toDateString(),
+        modifiedOn: Date.now(),
         pivots: []
     };
 }

@@ -24,7 +24,12 @@ export function investigations({ loadUsersById, loadInvestigationsById, saveInve
         returns: `String`,
         get: getInvestigationsHandler,
         set: setInvestigationsHandler,
-        route: `investigationsById[{keys}]['id','name', 'url', 'status', 'tags', 'description', 'modifiedOn']`
+        route: `investigationsById[{keys}]['id','name', 'url', 'status', 'tags', 'description']`
+    }, {
+        returns: `Number`,
+        get: getInvestigationsHandler,
+        set: setInvestigationsHandler,
+        route: `investigationsById[{keys}]['modifiedOn']`
     }, {
         returns: `Number`,
         get: getInvestigationsHandler,

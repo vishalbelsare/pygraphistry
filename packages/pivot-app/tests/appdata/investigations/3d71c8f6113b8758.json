@@ -1,7 +1,12 @@
 {
-    "name": "Botnet",
+    "name": "Bootnet",
     "url": "http://www.graphistry.com",
     "id": "3d71c8f6113b8758",
+    "description": "Track down a botnet infection across multiple security vendors",
+    "tags": [
+        "Demo"
+    ],
+    "modifiedOn": 1475875109611,
     "pivots": [
         "3d71f90b9596e46b",
         "3d71f91065dea000",

@@ -90,6 +90,10 @@ function investigationTable({user, investigations, switchScreen, selectInvestiga
         );
     }
 
+    function dateFormatter(epoch, row) {
+        return (new Date(epoch)).toLocaleString()
+    }
+
     function onAfterSaveCell(row, column) {
         if (['name', 'description'].includes(column)) {
             setInvestigationParams({[column]: row[column]}, row.id);
@@ -113,7 +117,8 @@ function investigationTable({user, investigations, switchScreen, selectInvestiga
                         selectRow={selectRowProp}
                         cellEdit={cellEditProp}
                         striped={false}
-                        hover={false}>
+                        hover={false}
+                        options={{defaultSortName: 'modifiedOn', defaultSortOrder: 'desc'}}>
             <TableHeaderColumn dataField="id" isKey={true} hidden={true} editable={false}/>
             <TableHeaderColumn dataField="name" dataSort={true} width="200px">
                 Name
@@ -122,7 +127,7 @@ function investigationTable({user, investigations, switchScreen, selectInvestiga
                 Description
             </TableHeaderColumn>
             <TableHeaderColumn dataField="modifiedOn" dataSort={true} editable={false}
-                                width="150px" dataAlign="center">
+                               dataFormat={dateFormatter} width="180px" dataAlign="center">
                 Last Modified
             </TableHeaderColumn>
             {/*
@@ -147,19 +152,18 @@ function renderHomeScreen({user, investigations, switchScreen, selectInvestigati
     return (
         <div className="wrapper">
             <Sidebar activeScreen='home'/>
-
             <div className="main-panel" style={{width: 'calc(100% - 90px)', height: '100%'}}>
                 <Panel>
                     {
                         welcomeBar(user, investigations)
                     }
                     <Panel header="Ongoing Investigations">
-                        <span style={{'margin-left': '10px'}}/>
+                        <span style={{marginLeft: '10px'}}/>
                         <ButtonGroup>
                             <Button onClick={() => createInvestigation()}>
                                 <Glyphicon glyph="plus"/>
                             </Button>
-                            <Button onClick={(e) => console.log('delete clicked')}>
+                            <Button onClick={(e) => alert('not implemented')}>
                                 <Glyphicon glyph="trash"/>
                             </Button>
                         </ButtonGroup>

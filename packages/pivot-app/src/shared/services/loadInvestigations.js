@@ -27,7 +27,7 @@ export function investigationStore(loadApp, pathPrefix) {
                 const content =
                     JSON.stringify({
                         ...serializeInvestigationModel(investigation),
-                        modifiedOn: (new Date()).toDateString()
+                        modifiedOn: Date.now()
                     },
                     null,
                     4
