@@ -51,18 +51,6 @@ function init(investigations) {
     const getDataSource = getDataSourceFactory(routeServices);
 
     expressApp.use('/index.html', renderMiddleware(getDataSource, modules));
-    expressApp.use('/graph.html', function(req, res) {
-        const { query: options = {} } = req;
-        res.type('html').send(`
-            <!DOCTYPE html>
-            <html lang='en-us'>
-                <body>
-                    <h1>total: ${options.total}</h1>
-                </body>
-            </html>
-        `);
-    });
-
     expressApp.use(bodyParser.urlencoded({ extended: false }));
     expressApp.use('/model.json', falcorMiddleware(getDataSource));
 
