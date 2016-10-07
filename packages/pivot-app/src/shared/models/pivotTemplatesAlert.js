@@ -15,8 +15,8 @@ const SEARCH_SPLUNK_ALERT = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search ${SPLUNK_INDICES.ALL} ${ fields['Search'] }`
+        toSplunk: function (pivotParameters, pivotCache) {
+            return `search ${SPLUNK_INDICES.ALL} ${pivotParameters.input}`
         }
     }
 };
