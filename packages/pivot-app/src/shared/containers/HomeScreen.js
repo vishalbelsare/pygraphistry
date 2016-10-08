@@ -1,3 +1,5 @@
+import React from 'react';
+import _ from 'underscore';
 import {
     BootstrapTable,
     TableHeaderColumn
@@ -20,6 +22,7 @@ import {
     copyInvestigation,
     createInvestigation,
     setInvestigationParams,
+    deleteInvestigations
 } from '../actions/investigationScreen.js';
 import { container } from '@graphistry/falcor-react-redux';
 import Sidebar from './Sidebar.js';
@@ -63,7 +66,7 @@ function welcomeBar(user, investigations) {
 }
 
 function investigationTable({user, investigations, switchScreen, selectInvestigation, copyInvestigation,
-                             setInvestigationParams}) {
+                             setInvestigationParams, selectHandler}) {
     function tagsFormatter(tags, row) {
         return (
             <p> {
@@ -105,6 +108,7 @@ function investigationTable({user, investigations, switchScreen, selectInvestiga
     const selectRowProp = {
         mode: 'checkbox',
         clickToSelect: false,
+        onSelect: selectHandler
     };
     const cellEditProp = {
         mode: 'dbclick',
@@ -144,7 +148,8 @@ function investigationTable({user, investigations, switchScreen, selectInvestiga
 }
 
 function renderHomeScreen({user, investigations, switchScreen, selectInvestigation, copyInvestigation,
-                           createInvestigation, setInvestigationParams}) {
+                           createInvestigation, setInvestigationParams},
+                          {selection}, selectHandler, deleteHandler) {
     if (user === undefined) {
         return null;
     }
@@ -163,14 +168,14 @@ function renderHomeScreen({user, investigations, switchScreen, selectInvestigati
                             <Button onClick={() => createInvestigation()}>
                                 <Glyphicon glyph="plus"/>
                             </Button>
-                            <Button onClick={(e) => alert('not implemented')}>
+                            <Button onClick={() => deleteHandler()}>
                                 <Glyphicon glyph="trash"/>
                             </Button>
                         </ButtonGroup>
                         {
                             investigationTable({
                                 user, investigations, switchScreen, selectInvestigation,
-                                copyInvestigation, setInvestigationParams
+                                copyInvestigation, setInvestigationParams, selectHandler
                             })
                         }
                     </Panel>
@@ -180,10 +185,42 @@ function renderHomeScreen({user, investigations, switchScreen, selectInvestigati
     );
 }
 
+class HomeScreen extends React.Component {
+    constructor(props, context) {
+        super(props, context);
+        this.state = {
+            selection: []
+        }
+    }
+
+    render() {
+        return renderHomeScreen(
+            this.props,
+            this.state,
+            this.selectHandler.bind(this),
+            this.deleteHandler.bind(this)
+        );
+    }
+
+    selectHandler(row, selected) {
+        const selection = this.state.selection;
+        const newSelection = selected ? selection.concat([row.id])
+                                      : _.reject(selection, (x) => x === row.id)
+        this.setState({
+            selection: newSelection
+        });
+    }
+
+    deleteHandler() {
+        console.log(this.props.user)
+        this.props.deleteInvestigations(this.props.user.id, this.state.selection);
+    }
+}
+
 function mapStateToFragment({currentUser = {investigations: []}}) {
     return `{
         currentUser: {
-            'name',
+            'name', 'id',
             investigations: {
                 'length',
                 [0...${(currentUser.investigations).length}]: {
@@ -209,6 +246,7 @@ export default container(
         selectInvestigation: selectInvestigation,
         copyInvestigation: copyInvestigation,
         createInvestigation: createInvestigation,
-        setInvestigationParams: setInvestigationParams
+        setInvestigationParams: setInvestigationParams,
+        deleteInvestigations: deleteInvestigations
     }
-)(renderHomeScreen);
+)(HomeScreen);

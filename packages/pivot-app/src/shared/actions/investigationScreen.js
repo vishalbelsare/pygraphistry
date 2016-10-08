@@ -3,6 +3,7 @@ export const CREATE_INVESTIGATION = 'create-investigation';
 export const SET_INVESTIGATION_PARAMS = 'set-investigation-params';
 export const SAVE_INVESTIGATION = 'save-investigation';
 export const COPY_INVESTIGATION = 'copy-investigation';
+export const DELETE_INVESTIGATIONS = 'delete-investigations';
 
 export function selectInvestigation(id) {
     return {
@@ -34,5 +35,13 @@ export function copyInvestigation(id) {
     return {
         type: COPY_INVESTIGATION,
         id: id
+    }
+}
+
+export function deleteInvestigations(userId, investigationIds) {
+    return {
+        type: DELETE_INVESTIGATIONS,
+        userId: userId,
+        investigationIds: investigationIds
     }
 }

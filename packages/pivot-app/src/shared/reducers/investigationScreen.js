@@ -12,13 +12,14 @@ import {
     CREATE_INVESTIGATION,
     SET_INVESTIGATION_PARAMS,
     SAVE_INVESTIGATION,
-    COPY_INVESTIGATION
+    COPY_INVESTIGATION,
+    DELETE_INVESTIGATIONS
 } from '../actions/investigationScreen.js';
 
 
 export const investigationScreen = combineEpics(
     createInvestigation, selectInvestigation, setInvestigationParams,
-    saveInvestigation, copyInvestigation
+    saveInvestigation, copyInvestigation, deleteInvestigations
 );
 
 function createInvestigation(action$, store) {
@@ -69,6 +70,17 @@ function copyInvestigation(action$, store) {
         .ofType(COPY_INVESTIGATION)
         .mergeMap(({falcor, id}) =>
             Observable.from(falcor.call(['investigationsById', id, 'clone']))
+        )
+        .ignoreElements();
+}
+
+function deleteInvestigations(action$, store) {
+    return action$
+        .ofType(DELETE_INVESTIGATIONS)
+        .mergeMap(({falcor, userId, investigationIds}) =>
+            Observable.from(
+                falcor.call(['usersById', userId, 'deleteInvestigations'], [investigationIds])
+            )
         )
         .ignoreElements();
 }
