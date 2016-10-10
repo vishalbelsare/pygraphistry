@@ -69,6 +69,11 @@ class InputSelector extends React.Component {
         super(props, context)
     }
 
+    componentWillMount() {
+        const setPivotParameters = this.props.setPivotParameters;
+        setPivotParameters({input: '*'});
+    }
+
     render() {
         const previousPivots = this.props.previousPivots;
         const label = this.props.label;
