@@ -60,7 +60,6 @@ const ALERT_DEMO_ENCODINGS = {
 }
 
 const FIREEYE_FIELDS = [
-    `EventID`,
     `Fire Eye MD5`,
     `Fire Eye URL`,
     `Internal IPs`,
