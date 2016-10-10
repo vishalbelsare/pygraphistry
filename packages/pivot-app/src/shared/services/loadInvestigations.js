@@ -2,22 +2,40 @@ import { Observable } from 'rxjs';
 import fs  from 'fs';
 import path from 'path';
 import glob from 'glob';
-import { serializeInvestigationModel } from '../models';
+import SimpleServiceWithCache from './support/simpleServiceWithCache.js';
+import {
+    createInvestigationModel,
+    serializeInvestigationModel
+} from '../models';
 
 
-export function investigationStore(loadApp, pathPrefix) {
+export function investigationStore(loadApp, pathPrefix, investigationsByIdCache = {}) {
+    const globAsObservable = Observable.bindNodeCallback(glob);
+    const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
     const writeFileAsObservable = Observable.bindNodeCallback(fs.writeFile);
 
-    function loadInvestigationsById({ investigationIds }) {
-        return loadApp()
-            .mergeMap(
-            (app) => investigationIds.filter((investigationId) => (
-                investigationId in app.investigationsById
-            )),
-            (app, investigationId) => ({
-                app, investigation: app.investigationsById[investigationId]
-            })
-        );
+    const investigations$ = globAsObservable(path.resolve(pathPrefix, '*.json'))
+        .flatMap(x => x)
+        .flatMap(file => {
+            return readFileAsObservable(file).map(JSON.parse);
+        })
+
+    function loadInvestigationById(investigationId) {
+        return investigations$
+            .filter(investigation => investigation.id === investigationId);
+    }
+
+    const service = new SimpleServiceWithCache({
+        loadApp: loadApp,
+        resultName: 'investigation',
+        loadById: loadInvestigationById,
+        createModel: createInvestigationModel,
+        cache: investigationsByIdCache
+    });
+
+
+    function loadInvestigationsById({investigationIds}) {
+        return service.loadByIds(investigationIds)
     }
 
     function saveInvestigationsById({loadInvestigationsById, savePivotsById, investigationIds}) {
@@ -29,11 +47,13 @@ export function investigationStore(loadApp, pathPrefix) {
                 const pivotIds = investigation.pivots.map(x => x.value[1])
 
                 return savePivotsById({pivotIds})
-                    .switchMap(() => writeFileAsObservable(filePath, content))
+                    .switchMap(() => {
+                        service.evictFromCache(investigation.id);
+                        return writeFileAsObservable(filePath, content);
+                    })
                     .map(() => ({app, investigation}));
             });
     }
-
 
     return {
         loadInvestigationsById,
