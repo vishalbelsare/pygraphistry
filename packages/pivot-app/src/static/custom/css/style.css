@@ -1,35 +1,13 @@
+@media (max-width: 991px) {
+    .sidebar {
+        display: block !important;
+    }
+}
+
 .new-investigation {
     border: 1px dashed #e3e7fa;
 }
 
-#left-nav .logo {
-    text-align: center;
-}
-
-#left-nav .logo img {
-    height: 40px;
-}
-.logo-wrapper {
-    padding: 0px;
-    margin: 0px;
-    width: 30px;
-    overflow: hidden;
-    margin-left: 15px;
-}
-
-#left-nav {
-    width: 90px;
-}
-#left-nav .sidebar-wrapper {
-    width: 90;
-}
-#left-nav li {
-    height: 60px;
-    width: 90px;
-}
-#left-nav p {
-    height: 30px;
-}
 
 
 #pivot-nav {

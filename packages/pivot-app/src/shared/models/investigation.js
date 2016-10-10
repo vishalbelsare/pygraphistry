@@ -11,9 +11,9 @@ import { clonePivotModel } from './pivots';
 function defaults(index) {
     return {
         name: `Untitled Investigation ${index}`,
-        url: process.env.BLANK_PAGE || 'http://www.graphistry.com',
+        url: '/custom/html/splash.html',
         id: simpleflake().toJSON(),
-        description: 'Created to explore lorem ipsum',
+        description: '',
         tags: ['Demo'],
         modifiedOn: Date.now(),
         pivots: []
