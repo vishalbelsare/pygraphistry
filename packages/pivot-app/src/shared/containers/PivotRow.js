@@ -15,6 +15,7 @@ import {
     ButtonGroup,
     ControlLabel,
     DropdownButton,
+    Form,
     FormControl,
     FormGroup,
     Glyphicon,
@@ -28,6 +29,7 @@ import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import _ from 'underscore';
 import PivotTemplates from '../models/PivotTemplates';
+import React from 'react'
 
 function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot }) {
     return (
@@ -63,8 +65,57 @@ function renderEntitySummaries (id, resultSummary) {
         </div>);
 }
 
+class InputSelector extends React.Component {
+    constructor(props, context) {
+        super(props, context)
+    }
+
+    componentWillMount() {
+        const setPivotParameters = this.props.setPivotParameters;
+        const fldValue = this.props.fldValue;
+        if (!fldValue) {
+            setPivotParameters({input: this.props.previousPivots.map((pivot) => pivot.id).join(' , ')});
+        }
+    }
+
+    render() {
+        const previousPivots = this.props.previousPivots;
+        const label = this.props.label;
+        const setPivotParameters = this.props.setPivotParameters;
+        const fldValue = this.props.fldValue;
+        return (
+            <Form inline>
+                <FormGroup controlId={'inputSelector'}>
+                    <ControlLabel>{ label }</ControlLabel>
+                    <FormControl 
+                        componentClass="select"
+                        placeholder="select"
+                        value={fldValue}
+                        onChange={
+                            (ev) => (ev.preventDefault() || setPivotParameters({input: ev.target.value}))
+                        }>
+                        <option
+                            key={'*'}
+                            value={'*'}>  All Pivots
+                        </option>
+                        {
+                            previousPivots.map((pivot, index) => (
+                                <option
+                                    key={`${pivot.id} + ${index}`}
+                                    value={`${pivot.id}`}> { `Step ${index}` }
+                                </option>
+                            ))
+                        }
+                    </FormControl>
+                </FormGroup>
+            </Form>
+        )
+    }
+
+}
+
 function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
-    id, rowIndex, resultSummary, searchPivot, togglePivot, setPivotParameters, splicePivot, insertPivot) {
+    id, rowIndex, resultSummary, pivots, searchPivot, togglePivot, setPivotParameters, splicePivot, insertPivot) {
 
     //TODO instead of 'all', use investigation's template's pivotset
     const template = PivotTemplates.get('all', mode);
@@ -107,20 +158,12 @@ function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
                         { renderEntitySummaries(id, resultSummary) }
                     </td>);
                 case 'button':
-                    const inputNames = _.range(0, rowIndex).map((i) => "Pivot " + i);
+                    const previousPivots = pivots.slice(0, rowIndex);
                     return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}>
-                            <label>{template.label}</label> <DropdownButton id={"pivotInputSelector" + id}
-                                title={fldValue.replace('Pivot', 'Step')}
-                                onSelect={
-                                    (val, evt) => setPivotParameters({[field]: val})
-                                } >
-                                {inputNames.map((name, index) => (
-                                    <MenuItem eventKey={name} key={`${index}: ${id}`}>
-                                        {name.replace('Pivot', 'Step')}
-                                    </MenuItem>)
-                                )}
-                                </DropdownButton>
-                            { renderEntitySummaries(id, resultSummary) }
+                                <div>
+                                    <InputSelector fldValue={fldValue} setPivotParameters={setPivotParameters} label={template.label} previousPivots={previousPivots}/>
+                                </div>
+                                { renderEntitySummaries(id, resultSummary) }
                         </td>);
                 default:
                     throw new Error('Unkown template kind ' + template.kind);
@@ -133,7 +176,7 @@ function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
 
 function renderPivotRow({id, status, rowIndex, enabled, resultCount, resultSummary,
                          pivotParameters, pivotParameterKeys, searchPivot, togglePivot,
-                         setPivotParameters, splicePivot, insertPivot}) {
+                         setPivotParameters, splicePivot, insertPivot, pivots}) {
 
     const statusIndicator =
         status.ok ?
@@ -158,7 +201,7 @@ function renderPivotRow({id, status, rowIndex, enabled, resultCount, resultSumma
             {
                 pivotParameterKeys.map((key, index) =>
                     renderPivotCellByIndex(
-                        key, index, pivotParameters[key], pivotParameters['mode'], id, rowIndex, resultSummary,
+                        key, index, pivotParameters[key], pivotParameters['mode'], id, rowIndex, resultSummary, pivots,
                         searchPivot, togglePivot, setPivotParameters, splicePivot, insertPivot
                     )
                 )

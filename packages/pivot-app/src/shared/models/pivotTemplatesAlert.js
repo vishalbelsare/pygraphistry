@@ -77,7 +77,7 @@ const SEARCH_FIREEYE = {
         toSplunk: function (pivotParameters, pivotCache) {
             return `search EventID=${ pivotParameters['input'] } ${SPLUNK_INDICES.FIREEYE} ${constructFieldString(this)}`;
         },
-        fields: FIREEYE_FIELDS,
+        connections: FIREEYE_FIELDS,
         encodings: ALERT_DEMO_ENCODINGS
     }
 };
@@ -89,13 +89,13 @@ const FIREEYE = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
+        toSplunk: function (pivotParameters, pivotCache) {
             const attribs = 'EventID, Message, Fire Eye MD5, Fire Eye URL, Internal IPs, External IPs';
             const rawSearch =
-                `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.FIREEYE}]`;
+                `[{{${pivotParameters['input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.FIREEYE}]`;
             return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
-        fields: FIREEYE_FIELDS,
+        connections: FIREEYE_FIELDS,
         encodings: ALERT_DEMO_ENCODINGS
     }
 };
@@ -107,13 +107,13 @@ const BLUECOAT = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
+        toSplunk: function (pivotParameters, pivotCache) {
             const attribs = 'Fire Eye URL';
             const rawSearch =
-                `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.BLUECOAT}]`;
+                `[{{${pivotParameters['input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.BLUECOAT}]`;
             return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
-        fields: [
+        connections: [
             'Fire Eye URL',
             'External IPs'
         ],
@@ -128,13 +128,13 @@ const FIREWALL = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
+        toSplunk: function (pivotParameters, pivotCache) {
             const attribs = 'External IPs';
             const rawSearch =
-                `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.FIREWALL}]`;
+                `[{{${pivotParameters['input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.FIREWALL}]`;
             return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
-        fields: [
+        connections: [
             'External IPs',
             'Internal IPs'
         ],

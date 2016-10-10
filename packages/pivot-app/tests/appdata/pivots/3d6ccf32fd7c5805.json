@@ -9,7 +9,7 @@
     ],
     "pivotParameters": {
         "mode": "Search Splunk",
-        "input": "Pivot 0",
+        "input": "none",
         "search": "Input Splunk Query",
         "time": "09/22/2016"
     }

@@ -13,7 +13,7 @@ function defaults() {
         pivotParameters: {
             search: 'Enter search query',
             mode: PivotTemplates.get('all', 'Search Splunk').name,
-            input: 'none',
+            input: '*',
             time: '09/21/2016'
         }
     };

@@ -6,6 +6,7 @@ import _  from 'underscore';
 
 //Do not make these nodes in '*' mode
 const SKIP = {
+
     'AdmissionEndDate': true,
     'AdmissionStartDate': true,
     'LabDateTime': true,
@@ -17,7 +18,7 @@ const SKIP = {
 export function shapeSplunkResults(splunkResults, pivotDict, index, template) {
     const encodings = template.encodings;
     const attributes = template.attributes;
-    const connectionsArray = template.links;
+    const connectionsArray = template.connections;
     const isStar = (connectionsArray === undefined) || (connectionsArray.indexOf('*') != -1);
 
     return splunkResults

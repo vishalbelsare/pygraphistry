@@ -79,6 +79,7 @@
     "source-map-support": "~0.4.1",
     "splunk-sdk": "~1.8.0",
     "sprintf-js": "~1.0.0",
+    "string-hash": "^1.1.0",
     "string-replace-webpack-plugin": "0.0.3",
     "style-loader": "~0.13.1",
     "symbol-observable": "1.0.1",

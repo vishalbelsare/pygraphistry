@@ -46,6 +46,7 @@ function renderInvestigation({status, pivots = [],
                 <tbody>
                     {pivots.map((pivot, index) => (
                         <PivotRow data={pivot}
+                                  pivots={pivots}
                                   rowIndex={index}
                                   key={`${index}: ${pivot.id}`}
                                   searchPivot={searchPivot}

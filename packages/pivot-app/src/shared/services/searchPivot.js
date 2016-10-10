@@ -54,9 +54,9 @@ function searchSplunkPivot({app, pivot}) {
         .do(({resultCount, output}) => {
             pivot.resultCount = resultCount;
         })
-        .do((rows) => {
-            pivotCache[pivot.id] = rows.output;
-            console.log('saved pivot ', pivot.id, '# results:', rows.output.length);
+        .do(({output, splunkSearchID}) => {
+            pivotCache[pivot.id] = { results: output, query:searchQuery, splunkSearchID };
+            console.log('saved pivot ', pivot.id, '# results:', output.length);
         })
         .map(({output}) => output);
 
