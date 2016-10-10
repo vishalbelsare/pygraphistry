@@ -28,6 +28,7 @@ import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import _ from 'underscore';
 import PivotTemplates from '../models/PivotTemplates';
+import React from 'react'
 
 function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot }) {
     return (
@@ -61,6 +62,43 @@ function renderEntitySummaries (id, resultSummary) {
                 </OverlayTrigger>))
         }
         </div>);
+}
+
+class InputSelector extends React.Component {
+    constructor(props, context) {
+        super(props, context)
+    }
+
+    render() {
+        const previousPivots = this.props.previousPivots;
+        const label = this.props.label;
+        const setPivotParameters = this.props.setPivotParameters;
+        return (
+            <FormGroup controlId={'inputSelector'}>
+                <ControlLabel>{ label }</ControlLabel>
+                <FormControl
+                    componentClass="select"
+                    placeholder="select"
+                    onChange={
+                        (ev) => (ev.preventDefault() || setPivotParameters({input: ev.target.value}))
+                    }>
+                    <option
+                        key={'*'}
+                        value={'*'}>  All Pivots
+                    </option>
+                    {
+                        previousPivots.map((pivot, index) => (
+                            <option
+                                key={`${pivot.id} + ${index}`}
+                                value={`${pivot.id}`}> { `Step ${index}` }
+                            </option>
+                        ))
+                    }
+                </FormControl>
+            </FormGroup>
+        )
+    }
+
 }
 
 function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
@@ -109,28 +147,7 @@ function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
                 case 'button':
                     const previousPivots = pivots.slice(0, -1);
                     return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}>
-						<FormGroup controlId={'inputSelector' + id }>
-							<ControlLabel>{ template.label }</ControlLabel>
-                            <FormControl
-                                componentClass="select"
-                                placeholder="select"
-                                onChange={
-                                    (ev) => (ev.preventDefault() || setPivotParameters({[field]: ev.target.value}))
-                                }>
-                                <option
-                                    key={`${id} + *`}
-                                    value={'*'}>  All Pivots 
-                                </option>
-                                {
-                                    previousPivots.map((pivot, index) => (
-                                        <option
-                                            key={`${pivot.id} + ${index}`}
-                                            value={`${pivot.id}`}> { `Step ${index}` }
-                                        </option>
-                                    ))
-                                }
-							</FormControl>
-						</FormGroup>
+                        <InputSelector setPivotParameters={setPivotParameters} label={template.label} previousPivots={previousPivots}/>
                         </td>);
                 default:
                     throw new Error('Unkown template kind ' + template.kind);
