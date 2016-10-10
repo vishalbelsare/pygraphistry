@@ -71,7 +71,8 @@ class InputSelector extends React.Component {
 
     componentWillMount() {
         const setPivotParameters = this.props.setPivotParameters;
-        setPivotParameters({input: '*'});
+        console.log(this.props.previousPivots);
+        setPivotParameters({input: this.props.previousPivots.map((pivot) => pivot.id).join(' , ')});
     }
 
     render() {
@@ -150,7 +151,7 @@ function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
                         { renderEntitySummaries(id, resultSummary) }
                     </td>);
                 case 'button':
-                    const previousPivots = pivots.slice(0, -1);
+                    const previousPivots = pivots.slice(0, rowIndex);
                     return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}>
                         <InputSelector setPivotParameters={setPivotParameters} label={template.label} previousPivots={previousPivots}/>
                         </td>);
