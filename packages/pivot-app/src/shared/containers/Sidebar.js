@@ -1,5 +1,6 @@
 import { container } from '@graphistry/falcor-react-redux';
 import { switchScreen } from '../actions/app.js';
+import styles from './styles.less';
 
 function renderSidebar({activeScreen, switchScreen}) {
     function active(target) {
@@ -7,10 +8,10 @@ function renderSidebar({activeScreen, switchScreen}) {
     }
 
     return (
-        <div className="sidebar" data-color="blue" id="left-nav">
+        <div className={`sidebar ${styles['left-nav']}`} data-color="blue" id="left-nav">
             <div className="sidebar-wrapper">
-                <div className="logo">
-                    <div className="logo-wrapper">
+                <div className={styles.logo}>
+                    <div>
                         <img src="/custom/img/logo.png"/>
                     </div>
                 </div>

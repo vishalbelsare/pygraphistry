@@ -14,7 +14,9 @@ import {
     Col,
     Image,
     Media,
-    Label
+    Label,
+    OverlayTrigger,
+    Tooltip
 } from 'react-bootstrap';
 import { switchScreen } from '../actions/app';
 import {
@@ -26,22 +28,23 @@ import {
 } from '../actions/investigationScreen.js';
 import { container } from '@graphistry/falcor-react-redux';
 import Sidebar from './Sidebar.js';
-
+import styles from "./styles.less"
 
 function welcomeBar(user, investigations) {
     return (
-        <Grid><Row>
+        <Grid><Row className={styles['welcome-bar']}>
             <Col md={4}>
                 <Panel>
                     <Media.Left align="middle">
                         <Image width={84}
                             height={84}
-                            src="http://www.fondosgratis.mx/archivos/temp/6282/400_1234535297_bapeabathingapespongebobbylastemp.jpg"
+                            src="/custom/img/abstract-user-flat-3.svg"
+                            className={styles['user-icon']}
                             circle/>
                     </Media.Left>
                     <Media.Body>
-                        <Media.Heading>{user.name}</Media.Heading>
-                        <a href='#'>Edit profile</a>
+                        <Media.Heading className={styles['user-greeting-heading']}>Greetings!</Media.Heading>
+                        <span className={styles['user-greeting-message']}>Welcome, {user.name}!</span>
                     </Media.Body>
                 </Panel>
              </Col>
@@ -55,7 +58,7 @@ function welcomeBar(user, investigations) {
             </Col>
             <Col md={4}>
                 <Panel>
-                    <h2 className="text-center">42</h2>
+                    <h2 className="text-center">0</h2>
                     <div className="text-center">
                         Templates
                     </div>
@@ -77,18 +80,26 @@ function investigationTable({user, investigations, switchScreen, selectInvestiga
         );
     }
 
+
+    function nameFormatter(name, row) {
+        return (<a href="#"
+                    onClick={
+                        () => {selectInvestigation(row.id); switchScreen('investigation')} }>
+                    { name }
+                </a>)
+    }
+    function descriptionFormatter(description, row) {
+        return nameFormatter(description, row);
+    }
+
     function idFormatter(id, row) {
         return (
             <div>
-                <Button bsStyle="primary" onClick={
-                    () => {selectInvestigation(id); switchScreen('investigation')}
-                }>
-                    <Glyphicon glyph="eye-open"/> Open
-                </Button>
-                &nbsp;
+
                 <Button onClick={() => copyInvestigation(id)}>
-                    <Glyphicon glyph="duplicate"/> Copy
+                    Copy
                 </Button>
+
             </div>
         );
     }
@@ -108,7 +119,8 @@ function investigationTable({user, investigations, switchScreen, selectInvestiga
     const selectRowProp = {
         mode: 'checkbox',
         clickToSelect: false,
-        onSelect: selectHandler
+        onSelect: selectHandler,
+        bgColor: '#fee'
     };
     const cellEditProp = {
         mode: 'dbclick',
@@ -117,17 +129,19 @@ function investigationTable({user, investigations, switchScreen, selectInvestiga
     };
 
     return (
+        <div className={styles['investigation-table']}>
         <BootstrapTable data={investigations}
                         selectRow={selectRowProp}
                         cellEdit={cellEditProp}
                         striped={false}
-                        hover={false}
+                        hover={true}
+                        pagination={true}
                         options={{defaultSortName: 'modifiedOn', defaultSortOrder: 'desc'}}>
             <TableHeaderColumn dataField="id" isKey={true} hidden={true} editable={false}/>
-            <TableHeaderColumn dataField="name" dataSort={true} width="200px">
+            <TableHeaderColumn dataField="name" dataSort={true} width="200px" dataFormat={nameFormatter}>
                 Name
             </TableHeaderColumn>
-            <TableHeaderColumn dataField="description">
+            <TableHeaderColumn dataField="description" dataFormat={descriptionFormatter}>
                 Description
             </TableHeaderColumn>
             <TableHeaderColumn dataField="modifiedOn" dataSort={true} editable={false}
@@ -143,6 +157,7 @@ function investigationTable({user, investigations, switchScreen, selectInvestiga
                 Actions
             </TableHeaderColumn>
         </BootstrapTable>
+        </div>
    );
 
 }
@@ -157,21 +172,31 @@ function renderHomeScreen({user, investigations, switchScreen, selectInvestigati
     return (
         <div className="wrapper">
             <Sidebar activeScreen='home'/>
-            <div className="main-panel" style={{width: 'calc(100% - 90px)', height: '100%'}}>
-                <Panel>
+            <div className={`main-panel ${styles['main-panel']}`} style={{width: 'calc(100% - 90px)', height: '100%'}}>
+                <Panel className={styles['main-panel-panel']}>
                     {
                         welcomeBar(user, investigations)
                     }
-                    <Panel header="Ongoing Investigations">
-                        <span style={{marginLeft: '10px'}}/>
-                        <ButtonGroup>
-                            <Button onClick={() => createInvestigation()}>
-                                <Glyphicon glyph="plus"/>
-                            </Button>
-                            <Button onClick={() => deleteHandler()}>
-                                <Glyphicon glyph="trash"/>
-                            </Button>
-                        </ButtonGroup>
+                    <Panel header="Open Investigations" className={styles['panel']}>
+                        <div className={styles['investigations-buttons']}>
+
+                            <OverlayTrigger
+                                placement="top"
+                                overlay={<Tooltip id="AddNewInvestigationTooltip">Add New Investigation</Tooltip>}>
+                                <Button onClick={() => createInvestigation()} className={`btn-primary ${styles['add-new-investigation']}`}>
+                                    <Glyphicon glyph="plus"/>
+                                </Button>
+                            </OverlayTrigger>
+
+                            <OverlayTrigger
+                                placement="top"
+                                overlay={<Tooltip id="DeleteInvestigationsTooltip">Delete Selected Investigations</Tooltip>}>
+                                <Button onClick={() => deleteHandler()} className={`btn-danger ${styles['delete-investigations']}`}>
+                                    <Glyphicon glyph="trash"/>
+                                </Button>
+                            </OverlayTrigger>
+
+                        </div>
                         {
                             investigationTable({
                                 user, investigations, switchScreen, selectInvestigation,
