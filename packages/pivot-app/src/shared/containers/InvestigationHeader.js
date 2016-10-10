@@ -4,7 +4,6 @@ import InvestigationDropdown from './InvestigationDropdown.js';
 import {
     selectInvestigation,
     createInvestigation,
-    setInvestigationParams,
     saveInvestigation,
     copyInvestigation
 } from '../actions/investigationScreen';
@@ -32,20 +31,13 @@ function renderInvestigationHeader({investigations, selectedInvestigation, creat
                             : null
                         }
                     </span>
-
-                    <input key={selectedInvestigation.id + 'setInvestigationNameTextBox'}
-                        className="navbar-brand on" type='text' value={selectedInvestigation.name}
-                        readOnly={false} disabled={false} onChange={
-                            (ev) => ev.preventDefault() || setInvestigationParams({name: ev.target.value})
-                        }
-                    />
                 </div>
 
                 <div className="collapse navbar-collapse">
-                    <ButtonGroup>
+                    <ButtonGroup bsSize="large">
                         <Button onClick={createInvestigation}>
                             <Glyphicon glyph="plus" />
-                            </Button>
+                        </Button>
                         <Button onClick={(e) => copyInvestigation(selectedInvestigation.id)}>
                             <Glyphicon glyph="duplicate" />
                         </Button>
@@ -81,7 +73,6 @@ export default container(
     {
         selectInvestigation: selectInvestigation,
         createInvestigation: createInvestigation,
-        setInvestigationParams: setInvestigationParams,
         saveInvestigation: saveInvestigation,
         copyInvestigation: copyInvestigation
     }
