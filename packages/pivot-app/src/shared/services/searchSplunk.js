@@ -23,11 +23,6 @@ export function searchSplunk(searchQuery) {
 
     console.log('Search job id', searchJobId);
 
-    const splunkNameSpace = {
-        owner: 'padentomasello',
-        app: 'search'
-    };
-
     // Set the search parameters
     const searchParams = {
         id: searchJobId,
@@ -38,14 +33,13 @@ export function searchSplunk(searchQuery) {
     const getJobObservable = Observable.bindNodeCallback(service.getJob.bind(service));
     const serviceObservable = Observable.bindNodeCallback(service.search.bind(service));
 
-    return getJobObservable(searchJobId, splunkNameSpace)
+    return getJobObservable(searchJobId)
         .catch(
             () => {
                 console.log('No job was found, creating new search job');
                 const serviceResult = serviceObservable(
                     searchQuery,
-                    searchParams,
-                    splunkNameSpace
+                    searchParams
                 );
                 return serviceResult.flatMap(
                     function(job) {
