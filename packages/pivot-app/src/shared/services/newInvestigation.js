@@ -9,8 +9,9 @@ import {
 
 function insertAndSelectInvestigation(app, user, newInvestigation) {
     app.investigationsById[newInvestigation.id] = newInvestigation;
-    user.investigations.push(newInvestigation);
-    app.selectedInvestigation = $ref(`investigationsById['${newInvestigation.id}']`);
+    const newRef = $ref(`investigationsById['${newInvestigation.id}']`);
+    user.investigations.push(newRef);
+    app.selectedInvestigation = newRef;
 
     return user.investigations.length;
 }
