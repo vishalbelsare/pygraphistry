@@ -11,7 +11,7 @@ import { switchScreen } from '../actions/app.js';
 
 function renderInvestigationBody(selectedInvestigation) {
     return (
-        <div>
+        <div className="main-panel" style={{width: 'calc(100% - 90px)', height: '100%'}}>
             <InvestigationHeader selectedInvestigation={selectedInvestigation} />
 
             <div className="content" id="graphistry-canvas-wrapper"
@@ -34,16 +34,18 @@ function renderInvestigationBody(selectedInvestigation) {
 
 function renderInvestigationPlaceholder(switchScreen) {
     return (
-        <Panel>
-            <Alert bsStyle="danger">
-                <h4>No Investigation to Open!</h4>
-                <p>
-                    Please&nbsp;
-                        <a href='#' onClick={() => switchScreen('home')}>create an investigation</a>
-                    &nbsp;first.
-                </p>
-            </Alert>
-        </Panel>
+        <div className="main-panel" style={{width: 'calc(100% - 90px)', height: '100%'}}>
+            <Panel>
+                <Alert bsStyle="danger">
+                    <h4>No Investigation to Open!</h4>
+                    <p>
+                        Please&nbsp;
+                            <a href='#' onClick={() => switchScreen('home')}>create an investigation</a>
+                        &nbsp;first.
+                    </p>
+                </Alert>
+            </Panel>
+        </div>
     )
 }
 
@@ -55,9 +57,7 @@ function renderInvestigationScreen({ selectedInvestigation, switchScreen }) {
     return (
         <div className="wrapper">
             <Sidebar activeScreen='investigation'/>
-            <div className="main-panel" style={{width: 'calc(100% - 90px)', height: '100%'}}>
-                { body }
-            </div>
+            { body }
         </div>
     );
 }
