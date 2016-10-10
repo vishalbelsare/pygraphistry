@@ -1,6 +1,6 @@
 {
     "name": "Bootnet",
-    "url": "http://www.graphistry.com",
+    "url": "/custom/html/splash.html",
     "id": "3d71c8f6113b8758",
     "description": "Track down a botnet infection across multiple security vendors",
     "tags": [
