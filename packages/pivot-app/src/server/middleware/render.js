@@ -41,7 +41,11 @@ export function renderMiddleware(getDataSource, modules) {
 function renderAppWithHotReloading(modules, dataSource, options = {}) {
     return modules
         .map(({ App }) => ({
-            App, falcor: new Model({ source: dataSource })
+            App, falcor: new Model({
+                source: dataSource,
+                recycleJSON: true,
+                treatErrorsAsValues: true
+            })
         }))
         .switchMap(
             ({ App, falcor }) => fetchDataUntilSettled({

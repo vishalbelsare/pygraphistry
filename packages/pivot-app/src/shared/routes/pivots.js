@@ -29,7 +29,7 @@ export function pivots({loadPivotsById, searchPivot}) {
         returns: `String`,
         get: getPivotsHandler,
         route: `pivotsById[{keys}]['id', 'total', 'resultCount', 'resultSummary',
-                                   'status', 'pivotParameters', 'pivotParameterKeys']`
+                                   'status', 'pivotParameterKeys']`
     }, {
         returns: `String | Number`,
         get: getPivotsHandler,

@@ -181,7 +181,9 @@ function mapStateToFragment({pivotParameterKeys = [], pivotParameters = {}} = {}
         pivotParameterKeys: {
             'length', [0...${pivotParameterKeys.length}]
         },
-        pivotParameters
+        pivotParameters: {
+            mode, input, search, time
+        }
     }`;
 }
 
