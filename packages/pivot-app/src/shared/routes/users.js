@@ -51,11 +51,20 @@ function deleteInvestigationsCallRoute({loadUsersById}) {
                     investigationIds.includes(i.value[1])
                 );
                 const oldLength = user.investigations.length;
-
                 user.investigations = newInvestigations;
+
+                const selectedInvestigationId = app.selectedInvestigation !== undefined ?
+                                                app.selectedInvestigation.value[1] :
+                                                undefined;
+                if (investigationIds.includes(selectedInvestigationId)) {
+                    app.selectedInvestigation  = newInvestigations.length > 0 ? user.investigations[0]
+                                                                              : undefined;
+                }
+
                 return [
                     $pathValue(`['usersById'][${user.id}]['investigations']['length']`, newInvestigations.length),
-                    $invalidation(`['usersById'][${user.id}]['investigations'][${0}..${oldLength}]`)
+                    $invalidation(`['usersById'][${user.id}]['investigations'][${0}..${oldLength}]`),
+                    $invalidation(`['selectedInvestigation']`)
                 ];
             })
             .catch(logErrorWithCode)

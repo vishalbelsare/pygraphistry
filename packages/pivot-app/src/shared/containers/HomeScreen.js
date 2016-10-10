@@ -43,8 +43,12 @@ function welcomeBar(user, investigations) {
                             circle/>
                     </Media.Left>
                     <Media.Body>
-                        <Media.Heading className={styles['user-greeting-heading']}>Greetings!</Media.Heading>
-                        <span className={styles['user-greeting-message']}>Welcome, {user.name}!</span>
+                        <Media.Heading className={styles['user-greeting-heading']}>
+                            Greetings!
+                        </Media.Heading>
+                        <span className={styles['user-greeting-message']}>
+                            Welcome, {user.name}!
+                        </span>
                     </Media.Body>
                 </Panel>
              </Col>
@@ -80,7 +84,6 @@ function investigationTable({user, investigations, switchScreen, selectInvestiga
         );
     }
 
-
     function nameFormatter(name, row) {
         return (<a href="#"
                     onClick={
@@ -88,18 +91,16 @@ function investigationTable({user, investigations, switchScreen, selectInvestiga
                     { name }
                 </a>)
     }
-    function descriptionFormatter(description, row) {
-        return nameFormatter(description, row);
-    }
+    //function descriptionFormatter(description, row) {
+    //    return nameFormatter(description, row);
+    //}
 
     function idFormatter(id, row) {
         return (
             <div>
-
                 <Button onClick={() => copyInvestigation(id)}>
                     Copy
                 </Button>
-
             </div>
         );
     }
@@ -116,47 +117,54 @@ function investigationTable({user, investigations, switchScreen, selectInvestiga
         }
     }
 
+    function selectAllHandler(selected, rows) {
+        selectHandler(rows, selected);
+    }
+
     const selectRowProp = {
         mode: 'checkbox',
         clickToSelect: false,
         onSelect: selectHandler,
+        onSelectAll: selectAllHandler,
         bgColor: '#fee'
     };
     const cellEditProp = {
-        mode: 'dbclick',
+        mode: 'click',
         blurToSave: true,
         afterSaveCell: onAfterSaveCell
     };
 
     return (
         <div className={styles['investigation-table']}>
-        <BootstrapTable data={investigations}
-                        selectRow={selectRowProp}
-                        cellEdit={cellEditProp}
-                        striped={false}
-                        hover={true}
-                        pagination={true}
-                        options={{defaultSortName: 'modifiedOn', defaultSortOrder: 'desc'}}>
-            <TableHeaderColumn dataField="id" isKey={true} hidden={true} editable={false}/>
-            <TableHeaderColumn dataField="name" dataSort={true} width="200px" dataFormat={nameFormatter}>
-                Name
-            </TableHeaderColumn>
-            <TableHeaderColumn dataField="description" dataFormat={descriptionFormatter}>
-                Description
-            </TableHeaderColumn>
-            <TableHeaderColumn dataField="modifiedOn" dataSort={true} editable={false}
-                               dataFormat={dateFormatter} width="180px" dataAlign="center">
-                Last Modified
-            </TableHeaderColumn>
-            {/*
-            <TableHeaderColumn dataField="tags" dataFormat={tagsFormatter} editable={false}>
-                Tags
-            </TableHeaderColumn>
-            */}
-            <TableHeaderColumn dataField="id" dataFormat={idFormatter} width='172px' editable={false}>
-                Actions
-            </TableHeaderColumn>
-        </BootstrapTable>
+            <BootstrapTable data={investigations}
+                            selectRow={selectRowProp}
+                            cellEdit={cellEditProp}
+                            striped={false}
+                            hover={true}
+                            pagination={true}
+                            options={{defaultSortName: 'modifiedOn', defaultSortOrder: 'desc'}}>
+                <TableHeaderColumn dataField="id" isKey={true} hidden={true} editable={false}/>
+                <TableHeaderColumn dataField="name" dataSort={true} width="200px" dataFormat={nameFormatter}>
+                    Name
+                </TableHeaderColumn>
+                <TableHeaderColumn dataField="description">
+                    Description
+                </TableHeaderColumn>
+                <TableHeaderColumn dataField="modifiedOn" dataSort={true} editable={false}
+                                   dataFormat={dateFormatter} width="180px" dataAlign="center">
+                    Last Modified
+                </TableHeaderColumn>
+
+                {/*
+                <TableHeaderColumn dataField="tags" dataFormat={tagsFormatter} editable={false}>
+                    Tags
+                </TableHeaderColumn>
+                */}
+
+                <TableHeaderColumn dataField="id" dataFormat={idFormatter} width='172px' editable={false}>
+                    Actions
+                </TableHeaderColumn>
+            </BootstrapTable>
         </div>
    );
 
@@ -172,30 +180,36 @@ function renderHomeScreen({user, investigations, switchScreen, selectInvestigati
     return (
         <div className="wrapper">
             <Sidebar activeScreen='home'/>
-            <div className={`main-panel ${styles['main-panel']}`} style={{width: 'calc(100% - 90px)', height: '100%'}}>
+            <div className={`main-panel ${styles['main-panel']}`}
+                 style={{width: 'calc(100% - 90px)', height: '100%'}}>
                 <Panel className={styles['main-panel-panel']}>
                     {
                         welcomeBar(user, investigations)
                     }
                     <Panel header="Open Investigations" className={styles['panel']}>
                         <div className={styles['investigations-buttons']}>
-
-                            <OverlayTrigger
-                                placement="top"
-                                overlay={<Tooltip id="AddNewInvestigationTooltip">Add New Investigation</Tooltip>}>
-                                <Button onClick={() => createInvestigation()} className={`btn-primary ${styles['add-new-investigation']}`}>
+                            <OverlayTrigger placement="top"
+                                            overlay={
+                                                <Tooltip id="AddNewInvestigationTooltip">
+                                                    Add New Investigation
+                                                </Tooltip>
+                                            }>
+                                <Button onClick={() => createInvestigation()}
+                                        className={`btn-primary ${styles['add-new-investigation']}`}>
                                     <Glyphicon glyph="plus"/>
                                 </Button>
                             </OverlayTrigger>
-
-                            <OverlayTrigger
-                                placement="top"
-                                overlay={<Tooltip id="DeleteInvestigationsTooltip">Delete Selected Investigations</Tooltip>}>
-                                <Button onClick={() => deleteHandler()} className={`btn-danger ${styles['delete-investigations']}`}>
+                            <OverlayTrigger placement="top"
+                                            overlay={
+                                                <Tooltip id="DeleteInvestigationsTooltip">
+                                                    Delete Selected Investigations
+                                                </Tooltip>
+                                            }>
+                                <Button onClick={() => deleteHandler()}
+                                        className={`btn-danger ${styles['delete-investigations']}`}>
                                     <Glyphicon glyph="trash"/>
                                 </Button>
                             </OverlayTrigger>
-
                         </div>
                         {
                             investigationTable({
@@ -228,17 +242,20 @@ class HomeScreen extends React.Component {
     }
 
     selectHandler(row, selected) {
+        const ids = Array.isArray(row) ? row.map(x => x.id) : [row.id];
         const selection = this.state.selection;
-        const newSelection = selected ? selection.concat([row.id])
-                                      : _.reject(selection, (x) => x === row.id)
+        const newSelection = selected ? selection.concat(ids)
+                                      : _.reject(selection, (x) => ids.includes(x))
         this.setState({
             selection: newSelection
         });
     }
 
     deleteHandler() {
-        console.log(this.props.user)
         this.props.deleteInvestigations(this.props.user.id, this.state.selection);
+        this.setState({
+            selection: []
+        });
     }
 }
 
