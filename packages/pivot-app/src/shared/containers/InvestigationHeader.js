@@ -17,7 +17,7 @@ function renderInvestigationHeader({investigations, selectedInvestigation, creat
                                     selectInvestigation, setInvestigationParams, copyInvestigation,
                                     saveInvestigation}) {
     return (
-        <nav className="navbar navbar-default navbar-fixed" style={{height: '61px'}}>
+        <nav className={`navbar navbar-default navbar-fixed ${styles['investigation-nav']}`}>
             <div className={`container-fluid ${styles['investigation-header']}`}>
                 <div>
                     <span className="simple-text" style={{display: 'inline-block', float: 'left'}}>
