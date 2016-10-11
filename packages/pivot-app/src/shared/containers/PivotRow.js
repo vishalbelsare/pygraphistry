@@ -87,7 +87,7 @@ class InputSelector extends React.Component {
             <Form inline>
                 <FormGroup controlId={'inputSelector'}>
                     <ControlLabel>{ label }</ControlLabel>
-                    <FormControl 
+                    <FormControl
                         componentClass="select"
                         placeholder="select"
                         value={fldValue}
@@ -199,7 +199,7 @@ function renderPivotRow({id, status, rowIndex, enabled, resultCount, resultSumma
                   unCheckedChildren={'Off'}/>
             </td>
             {
-                pivotParameterKeys.map((key, index) =>
+                pivotParameters && pivotParameterKeys.map((key, index) =>
                     renderPivotCellByIndex(
                         key, index, pivotParameters[key], pivotParameters['mode'], id, rowIndex, resultSummary, pivots,
                         searchPivot, togglePivot, setPivotParameters, splicePivot, insertPivot
@@ -223,9 +223,13 @@ function mapStateToFragment({pivotParameterKeys = [], pivotParameters = {}} = {}
         'enabled', 'status', 'resultCount', 'resultSummary', 'id',
         pivotParameterKeys: {
             'length', [0...${pivotParameterKeys.length}]
-        },
-        pivotParameters: {
-            mode, input, search, time
+        }
+        ${
+            pivotParameterKeys.length > 0 ?
+                `,pivotParameters: {
+                    ${pivotParameterKeys.join(',')}
+                }` :
+                ''
         }
     }`;
 }

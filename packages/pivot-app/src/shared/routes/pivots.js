@@ -34,7 +34,7 @@ export function pivots({loadPivotsById, searchPivot}) {
         returns: `String | Number`,
         get: getPivotsHandler,
         set: setPivotsHandler,
-        route: `pivotsById[{keys}]['pivotParameters']['mode', 'input', 'search', 'time']`
+        route: `pivotsById[{keys}]['pivotParameters'][{keys}]`
     }, {
         route: `pivotsById[{keys}].searchPivot`,
         call: searchPivotCallRoute({loadPivotsById, searchPivot})
