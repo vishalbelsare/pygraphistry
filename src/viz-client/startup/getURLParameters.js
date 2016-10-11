@@ -1,49 +1,62 @@
-export function getURLParameters(debug, query) {
+import url from 'url';
 
-    const params = (query || '').split('&').reduce((params, pair) => {
+/**
+ *  Parses the URL *as seen by the browser*, and converts the query parameters into a set of
+ *  nominally valid, normalized program options.
+ *
+ *  NB: This functions uses the browser's `window.location.href` URL as the source of program
+ *  options. This may differ from the URL of the request as seen by the viz-app server, once nginx
+ *  and others have rewrittect, redirected, and reverse proxied the request from the browser to the
+ *  viz-app server. Since running in local dev mode doesn't use nginx, you won't observe that
+ *  behavior when running locally; however, this behavior is almost *always* happening when deployed
+ *  to a server.
+ *
+ *  @param   {Function}  debug  Debugging log output function
+ *  @param   {String}    href   The full URL from the browser.
+ *
+ *  @return  {Object}    An object with keys corresponding to each nominally valid, normalized
+ *  parameter in the URL query string, with their corresponding values.
+ */
+export function getURLParameters(debug, href) {
+    const { query = {} } = url.parse(href, true);
+    var options = { client: 'main' };
 
-        const tok = pair.split('=');
-        let key = decodeURIComponent(tok.shift());
-        let val = decodeURIComponent(tok.join('='));
+    for(var param in query) {
+        if(!query.hasOwnProperty(param)) { continue };
 
-        switch (val.toLowerCase()) {
+        // Special-case normalization for certain params
+        switch(param) {
+            case 'static':
+                options.client = 'static';
+                continue;
+            case 'offline':
+                options.client = 'offline';
+                continue;
+            case 'datasetname':
+                options.dataset = query.datasetname;
+                break;
+        }
+
+        // Normalize param value
+        switch(query[param].toLowerCase()) {
             case '':
             case 'yes':
             case 'true':
-                val = true;
+                options[param] = true;
                 break;
             case 'no':
             case 'false':
-                val  = false;
+                options[param] = false;
                 break;
             case 'null':
-                val = null;
+                options[param] = null;
                 break;
             default:
-                val = !isNaN(val) ? Number(val) : val;
+                options[param] = !isNaN(query[param]) ? Number(query[param]) : query[param];
                 break;
         }
-
-        if (key === 'static') {
-            key = 'client';
-            val = 'static';
-        } else if (key === 'offline') {
-            key = 'client';
-            val = 'offline';
-        }
-
-        params[key] = val;
-
-        return params;
-    }, { client: 'main' });
-
-    // For compatibility with old way of specifying dataset
-    if (params.hasOwnProperty('datasetname')) {
-        params.dataset = params.datasetname;
     }
 
-    debug('Parsed URL parameters:', params);
-
-    return params;
+    debug('Parsed URL parameters:', options);
+    return options;
 }
-
