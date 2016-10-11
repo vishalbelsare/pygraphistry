@@ -49,7 +49,7 @@ function getAppDOMNode(appDomNode) {
 function getAppModel() {
     return window.appModel = new Model({
         cache: getAppCache(),
-        JSONWithHashCodes: true,
+        recycleJSON: true,
         scheduler: Scheduler.asap,
         source: new DataSource('/model.json'),
         treatErrorsAsValues: true,
