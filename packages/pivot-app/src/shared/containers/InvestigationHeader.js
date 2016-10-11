@@ -1,5 +1,7 @@
 import { container } from '@graphistry/falcor-react-redux';
-import { ButtonGroup, Button, Glyphicon } from 'react-bootstrap';
+import { ButtonGroup, Button, Glyphicon,
+    OverlayTrigger, Tooltip
+} from 'react-bootstrap';
 import InvestigationDropdown from './InvestigationDropdown.js';
 import {
     selectInvestigation,
@@ -7,6 +9,8 @@ import {
     saveInvestigation,
     copyInvestigation
 } from '../actions/investigationScreen';
+
+import styles from './styles.less';
 
 
 function renderInvestigationHeader({investigations, selectedInvestigation, createInvestigation,
@@ -34,16 +38,37 @@ function renderInvestigationHeader({investigations, selectedInvestigation, creat
                 </div>
 
                 <div className="collapse navbar-collapse">
-                    <ButtonGroup bsSize="large">
-                        <Button onClick={createInvestigation}>
-                            <Glyphicon glyph="plus" />
-                        </Button>
-                        <Button onClick={(e) => copyInvestigation(selectedInvestigation.id)}>
-                            <Glyphicon glyph="duplicate" />
-                        </Button>
-                        <Button onClick={(e) => saveInvestigation(selectedInvestigation.id)}>
-                            <Glyphicon glyph="floppy-disk" />
-                        </Button>
+                    <ButtonGroup bsSize="large" className={styles['investigation-header-buttons']}>
+                        <OverlayTrigger placement="bottom"
+                            overlay={
+                                <Tooltip id="CreateNewInvestigationTooltip">
+                                    Create new investigation
+                                </Tooltip>
+                            }>
+                            <Button onClick={createInvestigation}>
+                                <Glyphicon glyph="plus" />
+                            </Button>
+                        </OverlayTrigger>
+                        <OverlayTrigger placement="bottom"
+                            overlay={
+                                <Tooltip id="CopyInvestigationTooltip">
+                                    Make a copy
+                                </Tooltip>
+                            }>
+                            <Button onClick={(e) => copyInvestigation(selectedInvestigation.id)}>
+                                <Glyphicon glyph="duplicate" />
+                            </Button>
+                        </OverlayTrigger>
+                        <OverlayTrigger placement="bottom"
+                            overlay={
+                                <Tooltip id="SaveInvestigationTooltip">
+                                    Save changes
+                                </Tooltip>
+                            }>
+                            <Button onClick={(e) => saveInvestigation(selectedInvestigation.id)}>
+                                <Glyphicon glyph="floppy-disk" />
+                            </Button>
+                        </OverlayTrigger>
                     </ButtonGroup>
                 </div>
             </div>
