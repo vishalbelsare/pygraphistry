@@ -23,24 +23,36 @@ require('./rx-jquery-stub');
 
 
 /**
- * Creates a function which fetches takes an object ID, and fetches the object of that type, with
- * that ID, from the viz worker.
+ *  Factory for creating a "fetch VBOs" function. You specify the worker's base URL, the name of the
+ *  "fetch VBO" endpoint in the worker, and the type of VBO being fetched. It returns a function
+ *  that can be called to do a XHR fetch a named buffer of the specified VBO type.
  *
- * @param {Url} workerUrl - The base address to the worker to fetch from (for example,
- *     `localhost:8000` or `example.com/worker/10000`).
- * @param {String} endpoint - The name of the REST API endpoint which is responsible for serving
- *     objects of this type (for example, `vbo`).
- * @param {String} queryKey - The key used in the query string constructed to fetch objects from
- *     the server (for example, `buffer` will construct a URL like
- *     `example.com/worker/10000/vbo?buffer=...`). The value will be the object ID, and passed in
- *     when calling the returned function.
+ *  For example, if the server
+ *
+ *  @param   {Url}  workerUrl  The worker's address. For example, example.com/worker/10/
+ *  @param   {String}  endpoint   The name of the worker's "fetch VBO" endpoint. For example. "vbo".
+ *  This will be appended to the workerUrl to construct the fetch request's path.
+ *  @param   {String}  queryKey   The type of VBO being fetched. For example, "buffer" or "texture".
+ *  Fetch requests will have a query that includes "?<queryKey>=<bufferName>", for example,
+ *  "?buffer=curMidPoints". This doesn't affect the JavaScript type of the data, it's just used for
+ *  indicating to the server what VBO is being requested.
+ *
+ *  @return  {[type]}             [description]
  */
 function makeFetcher (workerUrl, endpoint, queryKey) {
     return fetch;
     /**
-     * @param {String} socketID
-     * @param {Object.<Number>} bufferByteLengths
-     * @param {String} bufferName
+     *  Does an XHR GET request for the <queryKey> VBO with the given name, returning an Uint8Array
+     *  of the fetched data, trimmed to the size specified in bufferByteLengths.
+     *
+     * @param {String} socketID  The ID from the socket.io socket connected to the server. This is
+     * included in the XHR fetch request's query, so that the server can match the XHR request with
+     * a valid socket.io connection, for security/routing purposes.
+     * @param {Object.<Number>} bufferByteLengths An object that maps buffer names to buffer sizes.
+     * The fetched ArrayBuffer object will be trimmed to this size. (I don't know what this is for!)
+     * @param {String} bufferName The name of the VBO being fetched. For example, if queryKey is
+     * "texture", and "bufferName" is "background", the texture named "background" will be fetched.
+     *
      * @returns Observable<ArrayBuffer>
      */
     function fetch(socketID, bufferByteLengths, bufferName) {
@@ -281,6 +293,14 @@ function createRenderer (socket, canvas, urlParams) {
  * @return {BehaviorSubject} {'init', 'start', 'received', 'rendered'} Rx subject that fires every time a frame is rendered.
  */
 function handleVboUpdates (socket, uri, renderState) {
+    // The server sends `vbo_update` messages to us, containing the current revision number of each
+    // of its buffers & textures, along with metadata for each of those VBOs (byte length and number
+    // of elements for buffers; width, height, and byte length for textures).
+    // This function listens for those message, then compares the server's VBO revision numbers to
+    // our own. If they differ, it will do an XHR fetch for those named buffers from the server. It
+    // then loads those buffers into the renderer (making use of the metadata included in the
+    // `vbo_update` message for things like buffer size, properties, etc.)
+
     //string * {<name> -> int} * name -> Subject ArrayBuffer
     //socketID, bufferByteLengths, bufferName
     const fetchBuffer = makeFetcher(uri, 'vbo', 'buffer');
