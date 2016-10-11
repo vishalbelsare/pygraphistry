@@ -18,15 +18,8 @@ function renderInvestigationHeader({investigations, selectedInvestigation, creat
                                     saveInvestigation}) {
     return (
         <nav className="navbar navbar-default navbar-fixed" style={{height: '61px'}}>
-            <div className="container-fluid">
-                <div className="navbar-header">
-                    <button type="button" className="navbar-toggle" data-toggle="collapse">
-                        <span className="sr-only">Toggle navigation</span>
-                        <span className="icon-bar"></span>
-                        <span className="icon-bar"></span>
-                        <span className="icon-bar"></span>
-                    </button>
-
+            <div className={`container-fluid ${styles['investigation-header']}`}>
+                <div>
                     <span className="simple-text" style={{display: 'inline-block', float: 'left'}}>
                         { investigations.length > 0 ?
                             <InvestigationDropdown data={investigations}
@@ -36,8 +29,7 @@ function renderInvestigationHeader({investigations, selectedInvestigation, creat
                         }
                     </span>
                 </div>
-
-                <div className="collapse navbar-collapse">
+                <div>
                     <ButtonGroup bsSize="large" className={styles['investigation-header-buttons']}>
                         <OverlayTrigger placement="bottom"
                             overlay={

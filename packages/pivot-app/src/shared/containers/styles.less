@@ -253,6 +253,26 @@ td, th {
     position: relative
 }
 
+:local(.investigation-header) {
+    text-align: right;
+    white-space: nowrap;
+
+    & > div:first-child {
+        float: left;
+        text-align: left;
+    }
+
+    & > div:nth-child(2) {
+        display: inline-block;
+    }
+}
+@media (max-width: 600px) {
+    :local(.investigation-header) {
+        & > div:nth-child(2) {
+            display: none;
+        }
+    }
+}
 
 :local(.investigations-dropdownbutton) {
     & > * {
@@ -285,7 +305,7 @@ td, th {
 :local(.investigation-header-buttons) {
 
     float: right;
-    margin-right: -30px;
+    margin-right: -15px;
     border-left: 1px solid #8ca0e8;
 
     & > button {
