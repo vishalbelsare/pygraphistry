@@ -16,7 +16,7 @@
 :local(.logo) {
     width: 90px;
     text-align: center;
-    border-bottom: 1px solid #5b8bde;
+    border-bottom: 1px solid #3f7ed9;
     padding-top: 10px;
     padding-bottom: 10px;
 
@@ -36,7 +36,7 @@
 
 
 
-@investigation-header-height: 61px;
+@investigation-header-height: 40px;
 @investigation-header-padding-top: ~"calc( (@{investigation-header-height} - 1px - 34px)/2 )";
 @investigation-footer-height: 250px;
 
@@ -340,7 +340,9 @@ td, th {
     }
 
     & > *:not(.is-open) > div:nth-child(2) {
-        border-color: #96a8ea; //input border
+        //input border
+        border-color: transparent;
+
     }
 }
 
