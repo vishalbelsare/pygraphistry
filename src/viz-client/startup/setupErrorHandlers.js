@@ -6,7 +6,7 @@ import { Subject, Observable } from 'rxjs';
 export function setupErrorHandlers(document, window, options) {
 
     const $document = $(document);
-    const reportURL = window.templatePaths.API_ROOT + 'error';
+    const reportURL = 'error';
 
     // Report all unhandled JS errors
     const unhandledExceptions = Observable.fromEvent(window, 'error', (errorEvent) => {

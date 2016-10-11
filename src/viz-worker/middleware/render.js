@@ -17,24 +17,28 @@ const renderServerSide = true;
 
 export function renderMiddleware(getDataSource, modules) {
     return function renderMiddleware(req, res) {
-
         const { query: options = {} } = req;
+        const reqURL = url.parse(req.originalUrl);
 
         if (options.workbook === undefined) {
-            const reqURL = url.parse(req.originalUrl);
-            return res.redirect(url.parse(url.format({
-                ...reqURL, search: undefined, query: {
-                    ...options,
-                    workbook: simpleflake().toJSON()
-                }
-            })).href);
+            // `workerid` should only be assigned by nginx, and not used as part of the redirect
+            delete options.workerid;
+            const redirectUrl = url.format({
+                    ...reqURL,
+                    search: undefined,
+                    query: {
+                        ...options,
+                        workbook: simpleflake().toJSON()
+                    }
+                });
+
+            return res.redirect(redirectUrl);
         }
 
         try {
-
             const renderedResults = !renderServerSide ?
-                Observable.of(renderFullPage()) :
-                renderAppWithHotReloading(modules, getDataSource(req), options);
+                Observable.of(renderFullPage(null, null, req, options.workerid)) :
+                renderAppWithHotReloading(modules, getDataSource(req), options, req);
 
             renderedResults.take(1).subscribe({
                 next(html) {
@@ -57,7 +61,7 @@ export function renderMiddleware(getDataSource, modules) {
     }
 }
 
-function renderAppWithHotReloading(modules, dataSource, options) {
+function renderAppWithHotReloading(modules, dataSource, options, req) {
     return modules
         .map(({ App }) => ({
             App, falcor: new Model({
@@ -74,7 +78,7 @@ function renderAppWithHotReloading(modules, dataSource, options) {
         )
         .map(({ App, falcor, data }) =>
             renderFullPage(
-                data, falcor, options.workerID
+                data, falcor, req, options.workerid
                 // , reactRenderToString(
                 //     <Provider store={configureStore(initialState, rootReducer, epics)}>
                 //         <App {...options} falcor={falcor} key='viz-client'/>
@@ -84,26 +88,32 @@ function renderAppWithHotReloading(modules, dataSource, options) {
         );
 }
 
-function renderFullPage(data, falcor, workerID = '', html = '') {
-    const assetSuffix = workerID && `?workerID=${workerID}` || '';
+
+function renderFullPage(data, falcor, req, workerid = '', html = '') {
+    const baseUrl = `//${req.headers['host']}/worker/${workerid}${req.originalUrl}`;
+    // const assetSuffix = workerid && `?workerid=${workerid}` || '';
     const { client, vendor } = webpackAssets;
     const { html: iconsHTML } = faviconStats;
     return `
 <!DOCTYPE html>
 <html lang='en-us'>
     <head>
+        ${workerid ? `<base href="${baseUrl}">` : ''}
+        <script type="text/javascript">
+            window.graphistryPath = "${ workerid ? `/worker/${workerid}` : ''}";
+        </script>
         <meta name='robots' content='noindex, nofollow'/>
         <meta http-equiv='x-ua-compatible' content='ie=edge'/>
         <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'/>${
             iconsHTML.map((tag) =>
                 tag.replace(/href=\"(.*?)\"/g, (match, url) =>
-                    `href='${url}${assetSuffix}'`
+                    `href='${url}'`
                 )
             ).join('\n')
         }
         <!--link rel='stylesheet' type='text/css' href='https://maxcdn.bootstrapcdn.com/bootstrap/latest/css/bootstrap.min.css'-->${
             client && client.css ?
-        `<link rel='stylesheet' type='text/css' href='${`${client.css}${assetSuffix}`}'/>`: ''
+        `<link rel='stylesheet' type='text/css' href='${`${client.css}`}'/>`: ''
         }
     </head>
     <body class='graphistry-body table-container'>
@@ -121,8 +131,8 @@ function renderFullPage(data, falcor, workerID = '', html = '') {
             var __INITIAL_STATE__ = ${stringify(data && data.toJSON() || {})};
             var __INITIAL_CACHE__ = ${stringify(falcor && falcor.getCache() || {})};
         </script>
-        <script type="text/javascript" src="${`${vendor.js}${assetSuffix}`}"></script>
-        <script type="text/javascript" src="${`${client.js}${assetSuffix}`}"></script>
+        <script type="text/javascript" src="${`${vendor.js}`}"></script>
+        <script type="text/javascript" src="${`${client.js}`}"></script>
     </body>
 </html>`;
 }

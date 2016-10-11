@@ -246,7 +246,7 @@ class Renderer extends React.Component {
         } = props;
 
         const scene = scenes[sceneID]();
-        const uri = { href: '/graph/', pathname: '' };
+        const uri = { href: `${window.graphistryPath}/graph/`, pathname: `${window.graphistryPath}` };
         const rendererOptions = { pixelRatio, ...simCameraBounds };
         const renderState = initRenderer(scene, simulation, rendererOptions);
         const { hostBuffers: {
