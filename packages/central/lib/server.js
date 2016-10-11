@@ -23,8 +23,6 @@ Rx.Subscriber.prototype.dispose = Rx.Subscriber.prototype.unsubscribe;
 
 Rx.Subscription.prototype.dispose = Rx.Subscription.prototype.unsubscribe;
 
-import FalcorServer from 'falcor-express';
-import { FalcorRouter } from './falcor-router';
 import { ensureValidUrl } from './support/ensureValidUrl';
 
 var fs          = require('fs');
@@ -226,12 +224,6 @@ app.use('/', express.static(MAIN_STATIC_PATH));
 apiKey.init(app);
 
 app.use(bodyParser.urlencoded({ extended: false }));
-
-// middleware to handle Falcor get/put/post requests
-app.use('/model.json', FalcorServer.dataSourceRoute(function(request, response) {
-    return new FalcorRouter({ config, logger, request });
-}));
-
 
 // Templated graph.html, e.g., for release tag
 app.engine('.hbs', exphbs({extname: '.hbs'}));
