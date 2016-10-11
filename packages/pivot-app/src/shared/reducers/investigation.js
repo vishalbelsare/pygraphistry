@@ -31,12 +31,10 @@ function playInvestigation(action$, store) {
             .groupBy(({ id }) => id)
             .mergeMap((actionsById) => actionsById.switchMap(
                 ({ stateKey, falcor, state, length, target }) => {
-                    const indices = _.range(0, length)
-                    return Observable.from(
-                            falcor.call(['pivots', indices, 'searchPivot'])
-                        ).concat(
-                            falcor.call('play')
-                        );
+                    return Observable
+                        .range(0, length)
+                        .concatMap((index) => falcor.call(['pivots', [index], 'searchPivot']))
+                        .concat(falcor.call(`play`))
                 }
             ))
             .ignoreElements();
