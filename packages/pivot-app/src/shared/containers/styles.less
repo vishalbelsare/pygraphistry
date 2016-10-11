@@ -253,30 +253,71 @@ td, th {
     position: relative
 }
 
+:local(.investigation-header) {
+    text-align: right;
+    white-space: nowrap;
 
-:local(.dropdownbutton) {
-    button {
-
-        height: 60px;
-        border-radius: 0px;
-        margin: 0px 1em 0em -15px !important;
-        border: 0;
-        border-right: 1px solid #8095e0 !important;
-        padding: 0;
-        padding-right: 2em;
-        padding-left: 2em;
-
-        background: transparent;
-        color: white !important;
-        opacity: 1.0 !important;
-        font-weight: bold;
-        font-size: 18px !important;
-
+    & > div:first-child {
+        float: left;
+        text-align: left;
     }
 
-    button:hover, button:active, button:focus {
-        background-color: #8095e0 !important;
+    & > div:nth-child(2) {
+        display: inline-block;
+    }
+}
+@media (max-width: 600px) {
+    :local(.investigation-header) {
+        & > div:nth-child(2) {
+            display: none;
+        }
+    }
+}
+
+:local(.investigations-dropdownbutton) {
+    & > * {
+        width: 15em;
+        height: 61px;
+        padding-top: 12px;
+        padding-right: 15px;
+        border-right: 1px solid rgb(150, 168, 234);
+    }
+    & > * > *:nth-child(2) {
+        border-radius: 10px;
+        margin-right: 15px;
+        background-color: #6580e1;
+        border-color: white;
+
+        span {
+            color: white !important; //input text
+        }
+    }
+
+    & > * > *:nth-child(2) > span:nth-child(2) > span {
+        border-color: #96a8ea transparent transparent; //arrow
+    }
+
+    & > *:not(.is-open) > div:nth-child(2) {
+        border-color: #96a8ea; //input border
+    }
+}
+
+:local(.investigation-header-buttons) {
+
+    float: right;
+    margin-right: -15px;
+    border-left: 1px solid #8ca0e8;
+
+    & > button {
+        margin: 0px !important;
+        height: 61px;
+        border-radius: 0px !important;
+        background-color: transparent !important;
         color: white !important;
+        border: 0px;
+        border-right: 1px solid #96a8ea !important;
+        padding: 0px !important;
+        width: 90px;
     }
 }
 
