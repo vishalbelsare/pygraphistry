@@ -34,19 +34,28 @@ function init(testUser) {
     const app = createAppModel(testUser);
 
     const {loadUsersById} = userStore(loadApp(app));
-    const {loadInvestigationsById, saveInvestigationsById} = investigationStore(loadApp(app),
-                                                                                investigationPath);
-    const {loadPivotsById, savePivotsById} = pivotStore(loadApp(app), pivotPath);
+    const {
+        loadInvestigationsById,
+        saveInvestigationsById,
+        deleteInvestigationsById
+    } = investigationStore(loadApp(app), investigationPath);
+    const {
+        loadPivotsById,
+        savePivotsById,
+        deletePivotsById
+    } = pivotStore(loadApp(app), pivotPath);
 
     const routeServices = {
         loadApp: loadApp(app),
         loadUsersById,
         loadInvestigationsById,
         saveInvestigationsById,
+        deleteInvestigationsById,
         createInvestigation,
         cloneInvestigationsById,
-        loadPivotsById: loadPivotsById,
-        savePivotsById: savePivotsById,
+        loadPivotsById,
+        savePivotsById,
+        deletePivotsById,
         insertPivot, splicePivot, searchPivot,
         uploadGraph
     };

@@ -13,6 +13,7 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
     const globAsObservable = Observable.bindNodeCallback(glob);
     const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
     const writeFileAsObservable = Observable.bindNodeCallback(fs.writeFile);
+    const renameAsObservable = Observable.bindNodeCallback(fs.rename);
 
     const pivots$ = globAsObservable(path.resolve(pathPrefix, '*.json'))
         .flatMap(x => x)
@@ -50,8 +51,24 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
             });
     }
 
+    function deletePivotsById({pivotIds}) {
+        return loadApp()
+            .mergeMap((app) =>
+                Observable.from(pivotIds)
+                    .switchMap(pivotId => {
+                        const filePath = path.resolve(pathPrefix, pivotId + '.json');
+                        return renameAsObservable(filePath, `${filePath}.deleted`)
+                            .catch(e => e.code === 'ENOENT' ? Observable.of(null)
+                                                            : Observable.throw(e))
+                            .switchMap(() => service.unloadByIds([pivotId]));
+                    })
+                    .map(() => {app})
+            );
+    }
+
     return {
         loadPivotsById,
-        savePivotsById
+        savePivotsById,
+        deletePivotsById
     };
 }

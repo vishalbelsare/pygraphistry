@@ -8,3 +8,4 @@ dist
 tmp
 www
 test_results
+appdata/*.deleted
