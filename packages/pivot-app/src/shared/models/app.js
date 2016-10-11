@@ -9,8 +9,7 @@ import { simpleflake } from 'simpleflakes';
 import { createInvestigationModel } from '../models';
 import _ from 'underscore';
 
-
-function makeTestUser(investigations){
+export function makeTestUser(investigations) {
     const suffix = '/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&info=true';
     const padenKey = 'd6a5bfd7b91465fa8dd121002dfc51b84148cd1f01d7a4c925685897ac26f40b';
 
@@ -27,12 +26,7 @@ function makeTestUser(investigations){
     };
 }
 
-export function app(_investigations = [], id = simpleflake().toJSON()) {
-
-    const investigations = _investigations.map((inv, idx) =>
-        createInvestigationModel(inv, idx)
-    );
-
+export function createAppModel(testUser, id = simpleflake().toJSON()) {
     return {
         id,
         title: 'Pivots',
@@ -44,20 +38,9 @@ export function app(_investigations = [], id = simpleflake().toJSON()) {
          *    }, ...
          *  }
          */
-        investigationsById : investigations.reduce((investigations, investigation) => ({
-            ...investigations, [investigation.id]: investigation
-        }), {}),
+        investigationsById: {},
 
-        /**
-         *  investigations: [
-         *     $ref(`investigationsById['investigation-id-1']`) , ...
-         *  ]
-         */
-        /*investigations: investigations.map((investigation, index) => (
-            $ref(`investigationsById['${investigation.id}']`)
-        )),*/
-
-        selectedInvestigation: $ref(`investigationsById['${investigations[0].id}']`),
+        selectedInvestigation: testUser.investigations[0],
 
         /**
          *  pivotsById: {
@@ -73,7 +56,7 @@ export function app(_investigations = [], id = simpleflake().toJSON()) {
         currentUser: $ref(`usersById['0']`),
 
         usersById: {
-            '0': makeTestUser(investigations)
+            '0': testUser
         }
     };
 }

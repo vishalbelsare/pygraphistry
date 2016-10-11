@@ -33,8 +33,8 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
         cache: pivotsByIdCache
     });
 
-    function loadPivotsById({pivotIds: reqIds}) {
-        return service.loadByIds(reqIds)
+    function loadPivotsById({pivotIds}) {
+        return service.loadByIds(pivotIds)
     }
 
     function savePivotsById({pivotIds}) {

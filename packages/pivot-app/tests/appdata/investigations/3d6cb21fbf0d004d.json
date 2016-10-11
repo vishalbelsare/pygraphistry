@@ -1,6 +1,6 @@
 {
     "name": "Malware",
-    "url": "http://www.graphistry.com",
+    "url": "/custom/html/splash.html",
     "id": "3d6cb21fbf0d004d",
     "description": "Malware infection detected by PAN",
     "tags": [
