@@ -20,18 +20,16 @@ export function selectNodesOnPan(selectNodesPanGesture) {
                 `highlight['edge', 'point']`,
                 `selection['edge', 'point']`
             );
-            if (indexes.length === 0) {
-                values.push(
-                    $value(`selection.rect`, null),
-                    $value(`selection['edge', 'point'].length`, 0),
-                    $value(`highlight['edge', 'point'].length`, 0)
-                );
-            } else {
-                values.push({ json: {
-                    highlight: { edge: [], point: [] },
-                    selection: { edge: [], point: indexes, rect: null }
-                }});
-            }
+            values.push({ json: {
+                highlight: { edge: [], point: [] },
+                selection: { edge: [], point: indexes,
+                             type: undefined, rect: null,
+                             controls: { 0: { selected: false }  ,
+                                         1: { selected: false } }}
+            }});
+            // if (indexes.length > 0) {
+            //     falcor = falcor.withoutDataSource();
+            // }
         }
         return { rect, falcor, indexes, values, invalidations };
     });

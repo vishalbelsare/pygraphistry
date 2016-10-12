@@ -1160,30 +1160,30 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
         return;
     }
 
-    task = task || this.lastMouseoverTask;
-    if (!task) {
+    if (task) {
+
+        // Cache a copy of the task in case we need to execute again with our last task.
+        // TODO: Consider restructuring it so that this isn't a stateful function.
+        //
+        // We need to be careful not to accidentally modify the internals of this cached task.
+        // To be safe, we always cache it as a separate copy. Sucks because we need to know its full structure
+        // here too, but whatever.
+        this.lastMouseoverTask = {
+            trigger: 'mouseOverEdgeHighlight',
+            data: {
+                highlight: {
+                    nodeIndices: _.clone(task.data.highlight.nodeIndices),
+                    edgeIndices: _.clone(task.data.highlight.edgeIndices)
+                },
+                selected: {
+                    nodeIndices: _.clone(task.data.selected.nodeIndices),
+                    edgeIndices: _.clone(task.data.selected.edgeIndices)
+                }
+            }
+        };
+    } else if (!(task = this.lastMouseoverTask)) {
         return;
     }
-
-    // Cache a copy of the task in case we need to execute again with our last task.
-    // TODO: Consider restructuring it so that this isn't a stateful function.
-    //
-    // We need to be careful not to accidentally modify the internals of this cached task.
-    // To be safe, we always cache it as a separate copy. Sucks because we need to know its full structure
-    // here too, but whatever.
-    this.lastMouseoverTask = {
-        trigger: 'mouseOverEdgeHighlight',
-        data: {
-            highlight: {
-                nodeIndices: _.clone(task.data.highlight.nodeIndices),
-                edgeIndices: _.clone(task.data.highlight.edgeIndices)
-            },
-            selected: {
-                nodeIndices: _.clone(task.data.selected.nodeIndices),
-                edgeIndices: _.clone(task.data.selected.edgeIndices)
-            }
-        }
-    };
 
 
     var logicalEdges = new Uint32Array(buffers.logicalEdges.buffer);

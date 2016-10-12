@@ -9,28 +9,28 @@ import { Subject } from 'rxjs';
 import { cameraChanges } from 'viz-client/legacy';
 
 export function moveCameraOnPanEvents(starts, pans) {
-    return pans
-        .repeat()
-        .mergeMap((pan) => pan
-            // .filter(({ movementX, movementY }) => !!(movementX || movementY))
-            .multicast(createSubject, (pan) => pan.merge(
-                pan.takeLast(1).do((point) => {
-                    point.buttons = 0;
-                })
-            ))
-            .takeUntil(starts))
-        .map((point) => {
+    return pans.repeat().mergeMap(
+            (pan) => pan
+                .filter(({ movementX, movementY }) => !!(movementX || movementY))
+                .multicast(createSubject, (pan) => pan.merge(
+                    pan.takeLast(1).do((point) => {
+                        point.buttons = 0;
+                    })
+                ))
+                .takeUntil(starts),
+            (pan, point) => {
 
-            const { movementX = 0, movementY = 0,
-                    camera: { center: { x, y } },
-                    camera: { center, width, height },
-                    simulationWidth = 1, simulationHeight = 1 } = point;
+                const { movementX = 0, movementY = 0,
+                        camera: { center: { x, y } },
+                        camera: { center, width, height },
+                        simulationWidth = 1, simulationHeight = 1 } = point;
 
-            center.x = x - (movementX * width / simulationWidth);
-            center.y = y - (movementY * height / simulationHeight);
+                center.x = x - (movementX * width / simulationWidth);
+                center.y = y - (movementY * height / simulationHeight);
 
-            return point;
-        })
+                return point;
+            }
+        )
         .do(({ camera } = {}) => {
             if (camera) {
                 cameraChanges.next(camera);
