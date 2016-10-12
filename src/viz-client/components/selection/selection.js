@@ -21,22 +21,85 @@ import {
 } from 'recompose';
 
 function onPointTouchStart(event) {
-    const { target = {} } = event,
-          { dataset = {} } = target,
-          { pointIndex } = dataset;
-    const { dispatch, simulating, renderState } = onPointTouchStart;
-    if (true || simulating || !dispatch || typeof pointIndex === 'undefined') {
+
+    const { dispatch,
+            simulating,
+            renderState,
+            selectedPoints,
+            highlightedPoint,
+            renderingScheduler } = onPointTouchStart;
+
+    if (simulating ||
+        !dispatch ||
+        !renderState ||
+        !renderingScheduler ||
+        !selectedPoints.length ||
+        (highlightedPoint === undefined) || !(
+        ~selectedPoints.indexOf(highlightedPoint))) {
         return;
     }
+
     dispatch({
         event,
+        renderingScheduler,
+        selectionType: 'select',
         simulating, renderState,
         camera: renderState.camera,
-        selectionType: 'select',
-        // simulationWidth,
-        // simulationHeight,
-        pointIndex: Number(pointIndex)
+        pointIndexes: selectedPoints,
     });
+}
+
+const SelectionArea = ({ rect }) => {
+    if (!rect) {
+        return null;
+    }
+    return (
+        <div className={classNames({
+            [styles['draggable']]: true,
+            [styles['selection-area']]: true
+        })} style={{
+            width: rect.w || 0,
+            height: rect.h || 0,
+            transform: `translate3d(${
+               rect.x || 0}px, ${
+               rect.y || 0}px, 0)`
+        }}/>
+    );
+}
+
+const HighlightPoint = ({ index, sizes, points, renderState, onPointSelected }) => {
+
+    if (index === undefined) {
+        return null;
+    }
+
+    const camera = renderState.camera;
+    const scalingFactor = camera.semanticZoom(sizes.length);
+    const { x, y } = camera.canvasCoords(points[2 * index],
+                                         points[2 * index + 1],
+                                         renderState.canvas,
+                                         camera.getMatrix());
+
+    // Clamp like in pointculled shader
+    const size = Math.max(5, Math.min(
+        scalingFactor * sizes[index], 50)) / camera.pixelRatio;
+
+    return (
+        <div key={`selection-point-${index}`}
+             className={classNames({
+                [styles['selection-point']]: true,
+                [styles['draggable']]: !!onPointSelected
+             })}
+             onMouseDown={onPointSelected}
+             onTouchStart={onPointSelected}
+             style={{
+                 borderRadius: size * 0.5,
+                 width: size, height: size,
+                 transform: `translate3d(${
+                    x - (size * 0.5)}px, ${
+                    y - (size * 0.5)}px, 0)`
+             }}/>
+    );
 }
 
 const WithPointsAndSizes = mapPropsStream((props) => props.combineLatest(
@@ -49,22 +112,36 @@ const WithPointsAndSizes = mapPropsStream((props) => props.combineLatest(
     (props, sizes, points) => ({ ...props, sizes, points })
 ));
 
-let Selection = ({ simulating,
-                   sizes, points,
-                   onPointSelected,
-                   point: pointIndexes = [],
-                   renderState, renderingScheduler }) => {
+const Selection = compose(
+    getContext({
+        renderState: PropTypes.object,
+        renderingScheduler: PropTypes.object,
+    }),
+    WithPointsAndSizes
+)(({ rect, type,
+     simulating,
+     sizes, points,
+     onPointSelected,
+     point: pointIndexes = [],
+     renderState, renderingScheduler,
+     highlight: { point: highlightPoints = [] } = {} }) => {
 
-    let camera, canvas;
+    if (simulating || !renderState || !renderingScheduler) {
+        highlightPoints = [];
+        renderState = undefined;
+        onPointSelected = undefined;
+        renderingScheduler = undefined;
+    }
 
-    if (!renderState || simulating) {
-        pointIndexes = [];
-    } else {
-        camera = renderState.camera;
-        canvas = renderState.canvas;
-        onPointTouchStart.dispatch = onPointSelected;
+    const highlightedPoint = highlightPoints[0];
+
+    if (onPointSelected) {
         onPointTouchStart.simulating = simulating;
         onPointTouchStart.renderState = renderState;
+        onPointTouchStart.dispatch = onPointSelected;
+        onPointTouchStart.selectedPoints = pointIndexes;
+        onPointTouchStart.highlightedPoint = highlightedPoint;
+        onPointTouchStart.renderingScheduler = renderingScheduler;
     }
 
     return (
@@ -72,42 +149,15 @@ let Selection = ({ simulating,
             width: `100%`,
             height: `100%`,
             position: `absolute`,
-            background: `transparent` }}>{
-            pointIndexes.map((pointIndex) => {
-                const scalingFactor = camera.semanticZoom(sizes.length);
-                const { x, y } = camera.canvasCoords(points[2 * pointIndex],
-                                                     points[2 * pointIndex + 1],
-                                                     canvas, camera.getMatrix());
-                // Clamp like in pointculled shader
-                const size = Math.max(5, Math.min(scalingFactor * sizes[pointIndex], 50)) / camera.pixelRatio;
-                return (
-                    <div data-point-index={pointIndex}
-                         key={`selection-point-${pointIndex}`}
-                         className={classNames({
-                            [styles['selection-point']]: true,
-                            [styles['draggable']]: !!onPointSelected
-                         })}
-                         onMouseDown={onPointSelected && onPointTouchStart}
-                         onTouchStart={onPointSelected && onPointTouchStart}
-                         style={{
-                             borderRadius: size * 0.5,
-                             width: size, height: size,
-                             transform: `translate3d(${
-                                x - (size * 0.5)}px, ${
-                                y - (size * 0.5)}px, 0)`
-                         }}/>
-                );
-            })
-        }</div>
+            background: `transparent` }}>
+            <HighlightPoint key='highlight-point'
+                            index={highlightedPoint}
+                            renderState={renderState}
+                            sizes={sizes} points={points}
+                            onPointSelected={onPointTouchStart}/>
+            <SelectionArea key='selection-rect' rect={rect}/>
+        </div>
     );
-};
-
-Selection = compose(
-    getContext({
-        renderState: PropTypes.object,
-        renderingScheduler: PropTypes.object,
-    }),
-    WithPointsAndSizes
-)(Selection);
+});
 
 export { Selection };

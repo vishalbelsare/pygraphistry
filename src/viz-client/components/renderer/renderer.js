@@ -35,6 +35,7 @@ class Renderer extends React.Component {
         this.renderPanZoom = undefined;
         this.renderBGColor = undefined;
         this.renderMouseOver = undefined;
+        this.hasRenderedSelectionOnce = false;
         this.cameraChangesSubscription = new Subscription();
         this.assignContainerRef = (x) => this.container = x;
     }
@@ -124,19 +125,24 @@ class Renderer extends React.Component {
 
             if (renderMouseOver) {
                 renderMouseOver = false;
-                renderingScheduler.renderScene('mouseOver', {
-                    trigger: 'mouseOverEdgeHighlight',
-                    data: {
-                        highlight: {
-                            edgeIndices: arraySlice.call(highlight.edge || []),
-                            nodeIndices: arraySlice.call(highlight.point || []),
-                        },
-                        selected: {
-                            edgeIndices: arraySlice.call(selection.edge || []),
-                            nodeIndices: arraySlice.call(selection.point || []),
+                this.hasRenderedSelectionOnce = true;
+                renderingScheduler.renderScene('mouseOver',
+                    // trick the rendering scheduler into believing
+                    // it _really_ wants to render this mouseover task
+                    renderingScheduler.lastMouseoverTask = {
+                        trigger: 'mouseOverEdgeHighlight',
+                        data: {
+                            highlight: {
+                                edgeIndices: arraySlice.call(highlight.edge || []),
+                                nodeIndices: arraySlice.call(highlight.point || []),
+                            },
+                            selected: {
+                                edgeIndices: arraySlice.call(selection.edge || []),
+                                nodeIndices: arraySlice.call(selection.point || []),
+                            }
                         }
                     }
-                });
+                );
             }
 
             this.renderFast = renderFast;
@@ -188,10 +194,11 @@ class Renderer extends React.Component {
             showArrows: nextShowArrows = currShowArrows,
         } = nextProps;
 
-        let renderFast = this.renderFast,
-            renderBGColor = this.renderBGColor,
-            renderPanZoom = this.renderPanZoom,
-            renderMouseOver = this.renderMouseOver;
+        let { renderFast,
+              renderBGColor,
+              renderPanZoom,
+              renderMouseOver,
+              hasRenderedSelectionOnce } = this;
 
         const updateArg = {
             currEdges, currPoints,
@@ -207,15 +214,23 @@ class Renderer extends React.Component {
 
         renderBGColor = this.updateBackground(updateArg) || renderBGColor;
         renderPanZoom = this.updateNumElements(updateArg) && false || renderPanZoom;
-        renderPanZoom = this.updateEdgeScaling(updateArg) && (renderFast = true) || renderPanZoom;
-        renderPanZoom = this.updatePointScaling(updateArg) && (renderFast = true) || renderPanZoom;
-        renderPanZoom = this.updateEdgeOpacity(updateArg) && (renderFast = true) || renderPanZoom;
-        renderPanZoom = this.updatePointOpacity(updateArg) && (renderFast = true) || renderPanZoom;
-        renderPanZoom = this.updateShowArrows(updateArg) && (renderFast = true) || renderPanZoom;
+        renderPanZoom = this.updateEdgeScaling(updateArg) || renderPanZoom;
+        renderPanZoom = this.updatePointScaling(updateArg) || renderPanZoom;
+        renderPanZoom = this.updateEdgeOpacity(updateArg) || renderPanZoom;
+        renderPanZoom = this.updatePointOpacity(updateArg) || renderPanZoom;
+        renderPanZoom = this.updateShowArrows(updateArg) || renderPanZoom;
         renderPanZoom = this.updateCameraCenterAndZoom(updateArg) || renderPanZoom;
         renderPanZoom = this.updateSimulating(updateArg) || renderPanZoom && !nextSimulating;
         renderMouseOver = this.updateSceneHighlight(updateArg) || renderMouseOver && !nextSimulating;
-        renderMouseOver = this.updateSceneSelection(updateArg) || renderMouseOver && !nextSimulating;
+
+        if (hasRenderedSelectionOnce === true) {
+            renderMouseOver = this.updateSceneSelection(updateArg) || renderMouseOver && !nextSimulating;
+        } else {
+            const { edge: nextEdge, point: nextPoint } = nextSelection;
+            renderMouseOver = (nextEdge && nextEdge.length) ||
+                              (nextPoint && nextPoint.length) ||
+                              (renderMouseOver);
+        }
 
         if (renderPanZoom || renderBGColor) {
             if (typeof renderFast === 'number') {

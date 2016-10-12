@@ -2,9 +2,6 @@ export function pointIndexesInRect(points, topLeft, bottomRight) {
     const indexes = [];
     const { y: top, x: left } = topLeft;
     const { y: bottom, x: right } = bottomRight;
-    if ((right - left < 0) || (bottom - top < 0)) {
-        return indexes;
-    }
     let index = -1, point = -2, total = points.length;
     while ((point += 2) < total) {
         const x = points[point], y = points[point + 1];

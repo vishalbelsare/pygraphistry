@@ -15,6 +15,7 @@ import {
 
 let View = ({
     touchCancel,
+    onPointSelected,
     selectToolbarItem,
     touchEnd, mouseMove,
     touchMove, touchStart,
