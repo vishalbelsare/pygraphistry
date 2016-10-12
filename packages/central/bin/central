@@ -1,17 +1,16 @@
 #!/usr/bin/env node
 'use strict';
-/// <reference path="../typings/node/node.d.ts"/>
-var server = require('../dist/server.js');
+
+var server = require('../dist/index.js');
 var logger = server.logger;
 
 server.start().subscribe(
-    function () {
-        logger.info('Central listening on %s:%d', server.config.listenIP,
-                                               server.config.listenPort);
+    function (serverInfo) {
+        logger.info('Central listening on %s:%d', serverInfo.address, serverInfo.port);
     },
     function (err) {
         logger.error('Central failed to start server on %s:%s. Exiting...',
-                  server.config.listenIP, server.config.listenPort, err);
+            err.serverAddress, err.serverPort, err);
         process.exit(1);
     }
 );

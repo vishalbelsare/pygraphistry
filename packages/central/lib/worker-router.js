@@ -23,7 +23,7 @@ Rx.Subscriber.prototype.dispose = Rx.Subscriber.prototype.unsubscribe;
 Rx.Subscription.prototype.dispose = Rx.Subscription.prototype.unsubscribe;
 
 var os          = require('os');
-var _           = require('underscore');
+var _           = require('lodash');
 var request     = require('request');
 var MongoClient = require('mongodb').MongoClient;
 
@@ -36,7 +36,7 @@ var mongoClientConnect = Rx.Observable.bindNodeCallback(MongoClient.connect.bind
 var dbObs = ((config.ENVIRONMENT === 'local') ?
     (Rx.Observable.empty()) :
     (mongoClientConnect(config.MONGO_SERVER, {auto_reconnect: true})
-        .map(function(database) { return  database.db(config.DATABASE); }))
+        .map(function(database) { return database.db(config.DATABASE); }))
 ).publishReplay(1);
 
 dbObs.connect();
@@ -80,39 +80,40 @@ function getIPs() {
     var freshDate = new Date(Date.now() - (config.GPU_PING_TIMEOUT * 1000));
 
     return dbObs.flatMap(function(db) {
-            // Find all the server running workers, sort by available GPU memory
-            var workerServers = db.collection('gpu_monitor').find(
-                    {'updated': {'$gt': freshDate}},
-                    {'sort': [['gpu_memory_free', 'desc']]}
-                );
+        // Find all the server running workers, sort by available GPU memory
+        var workerServers = db.collection('gpu_monitor')
+            .find(
+                {'updated': {'$gt': freshDate}},
+                {'sort': [['gpu_memory_free', 'desc']]}
+            );
 
-            return Rx.Observable
-                .bindNodeCallback(workerServers.toArray.bind(workerServers))()
-                .flatMap(function (ips) {
-                    if (ips.length < 1) {
-                        logger.info('No worker currently registered to this cluster.');
-                        return Rx.Observable.throw(new Error(
-                            'There are no worker currently registered to this cluster. Please contact help@graphistry.com for further assistance.'));
-                    }
+        return Rx.Observable
+            .bindNodeCallback(workerServers.toArray.bind(workerServers))()
+            .flatMap(function (ips) {
+                if (ips.length < 1) {
+                    logger.info('No worker currently registered to this cluster.');
+                    return Rx.Observable.throw(new Error(
+                        'There are no worker currently registered to this cluster. Please contact help@graphistry.com for further assistance.'));
+                }
 
-                    // Find all idle node processes
-                    var nodeCollection = db.collection('node_monitor').find({
-                        'active': false,
-                        'updated': {'$gt': freshDate}
-                    });
-
-                    return Rx.Observable
-                        .bindNodeCallback(nodeCollection.toArray.bind(nodeCollection))()
-                        .map(function (results) {
-                            if (!results.length) {
-                                logger.info('All workers are currently busy');
-                                var msg = "All workers are currently busy, and your request can't be serviced at this time. Please contact help@graphistry.com for private access. (Reason: could not find an available worker in the worker ping database.)";
-                                throw new Error(msg);
-                            }
-                            return {servers: ips, workers: results};
-                        });
+                // Find all idle node processes
+                var nodeCollection = db.collection('node_monitor').find({
+                    'active': false,
+                    'updated': {'$gt': freshDate}
                 });
-        });
+
+                return Rx.Observable
+                    .bindNodeCallback(nodeCollection.toArray.bind(nodeCollection))()
+                    .map(function (results) {
+                        if (!results.length) {
+                            logger.info('All workers are currently busy');
+                            var msg = "All workers are currently busy, and your request can't be serviced at this time. Please contact help@graphistry.com for private access. (Reason: could not find an available worker in the worker ping database.)";
+                            throw new Error(msg);
+                        }
+                        return {servers: ips, workers: results};
+                    });
+            });
+    });
 }
 
 
@@ -157,10 +158,12 @@ function combineWorkerInfo (servers, workers) {
 
     // Try each IP in order of free space
     for (var i in servers) {
+        if(!servers.hasOwnProperty(i)) { continue; }
+
         var ip = servers[i]['ip'];
 
         for (var j in workers) {
-            if (workers[j]['ip'] != ip) {
+            if (workers[j]['ip'] !== ip) {
                 continue;
             }
 
@@ -182,13 +185,11 @@ function combineWorkerInfo (servers, workers) {
  * error if this process was unsuccessful.
  */
 
-export function pickWorker(cb) {
-
+export function pickWorker() {
     const ips = Observable.defer(() => {
-
         if (config.ENVIRONMENT !== 'local') {
             return getIPs().flatMap(({ servers, workers }) => {
-                return Observable.from(combineWorkerInfo(servers, workers))
+                return Observable.from(combineWorkerInfo(servers, workers));
             });
         }
 
@@ -206,50 +207,43 @@ export function pickWorker(cb) {
     // Observable sequentially. Since we unsubscribe as soon as we receive the
     // first valid result, we don't execute any more handshakes than we need to.
     return ips.concatMap(
-        (workerNfo) => handshakeIp(workerNfo),
-        (workerNfo, success) => success ? workerNfo : false
-    )
-    // Skip events until workerNfo isn't false
-    .skipWhile((workerNfo) => workerNfo === false)
-    // Coerce any errors into a format we can digest
-    .catch((err) => Observable.throw({
-        type: 'unhandled',
-        message: 'assign_worker error',
-        error: err || new Error('Unexpected error while assigning workers.'),
-    }))
-    // take the first workerNfo to succeed
-    .take(1)
-    // throw an error if the source completes without yielding a workerNfo
-    .single()
-    // If `last` throws an error, coerce it into a format we can digest, otherwise re-throw.
-    .catch((err) => {
-        if (!err || err.type !== 'unhandled') {
-            err = {
-                type: 'exhausted', message: 'assign_worker exhausted search (too many users?)',
-                error: new Error('Too many users, please contact help@graphistry.com for private access.')
-            };
-        }
-        return Observable.throw(err);
-    })
-    .do({
-        next(worker) {
-            // If we get a worker, we know everything succeeded.
-            logger.debug("Assigning worker on %s, port %d", worker.hostname, worker.port);
-        },
-        error({ type, error, message }) {
-            // If we get a message, log it and send it back.
-            if (type === 'exhausted') {
-                logger.error(message);
-            } else {
-                logger.error(error, message);
+                (workerNfo) => handshakeIp(workerNfo),
+                (workerNfo, success) => success ? workerNfo : false
+            )
+        // Skip events until workerNfo isn't false
+        .skipWhile((workerNfo) => workerNfo === false)
+        // Coerce any errors into a format we can digest
+        .catch((err) => Observable.throw({
+            type: 'unhandled',
+            message: 'assign_worker error',
+            error: err || new Error('Unexpected error while assigning workers.'),
+        }))
+        // take the first workerNfo to succeed
+        .take(1)
+        // throw an error if the source completes without yielding a workerNfo
+        .single()
+        // If `last` throws an error, coerce it into a format we can digest, otherwise re-throw.
+        .catch((err) => {
+            if (!err || err.type !== 'unhandled') {
+                err = {
+                    type: 'exhausted', message: 'assign_worker exhausted search (too many users?)',
+                    error: new Error('Too many users, please contact help@graphistry.com for private access.')
+                };
             }
-        }
-    });
-}
-
-export function pickWorkerCB(cb) {
-    return pickWorker().subscribe(
-        (worker) => cb(null, worker),
-        ({ type, error, message }) => cb(error)
-    );
+            return Observable.throw(err);
+        })
+        .do({
+            next(worker) {
+                // If we get a worker, we know everything succeeded.
+                logger.debug("Assigning worker on %s, port %d", worker.hostname, worker.port);
+            },
+            error({ type, error, message }) {
+                // If we get a message, log it and send it back.
+                if (type === 'exhausted') {
+                    logger.error(message);
+                } else {
+                    logger.error(error, message);
+                }
+            }
+        });
 }
