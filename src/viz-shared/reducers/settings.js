@@ -17,7 +17,7 @@ function setControlValue(action$, store) {
         .ofType(SET_CONTROL_VALUE)
         .groupBy(({ id }) => id)
         .mergeMap((actionsById) => actionsById
-            .auditTime(100, Scheduler.async)
+            .auditTime(0, Scheduler.animationFrame)
             .switchMap(({ falcor, value }) => falcor
                 .set($value(['value', null], value))
             ))

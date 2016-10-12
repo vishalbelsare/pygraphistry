@@ -3,7 +3,6 @@ import styles from './styles.less';
 import React from 'react';
 import Color from 'color';
 import RcSwitch from 'rc-switch';
-import classNames from 'classnames';
 import RcColorPicker from 'rc-color-picker';
 import RcSlider from '@graphistry/rc-slider';
 import { Panel } from 'react-bootstrap';

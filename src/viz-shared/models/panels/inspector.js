@@ -17,7 +17,6 @@ export function inspector(workbookId, viewId) {
             points: $ref(`${view}.scene.selection.points`),
             controls: [{
                 selected: false,
-                view: $ref(`${view}`),
                 id: 'toggle-inspector',
                 name: 'Inspector',
             }]

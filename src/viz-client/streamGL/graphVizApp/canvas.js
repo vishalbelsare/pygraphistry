@@ -172,19 +172,19 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
     var hostBuffers = renderState.hostBuffers;
 
     // FIXME handle selection update buffers here.
-    Observable.combineLatest(
-        hostBuffers.selectedEdgeIndexes,
-        hostBuffers.selectedPointIndexes,
-        (edgeIndexes, pointIndexes) => new VizSlice({
-            edge: edgeIndexes,
-            point: pointIndexes
-        })
-    )
-    .take(1)
-    .subscribe(
-        (slice) => activeSelection.next(slice),
-        util.makeErrorHandler('Getting indexes of selections.')
-    );
+    // Observable.combineLatest(
+    //     hostBuffers.selectedEdgeIndexes,
+    //     hostBuffers.selectedPointIndexes,
+    //     (edgeIndexes, pointIndexes) => new VizSlice({
+    //         edge: edgeIndexes,
+    //         point: pointIndexes
+    //     })
+    // )
+    // .take(1)
+    // .subscribe(
+    //     (slice) => activeSelection.next(slice),
+    //     util.makeErrorHandler('Getting indexes of selections.')
+    // );
 
     vboUpdates
         .filter((status) => status === 'received')

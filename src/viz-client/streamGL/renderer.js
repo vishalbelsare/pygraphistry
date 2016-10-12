@@ -333,23 +333,27 @@ function setFlags(state, name, bool) {
 
 // var webglDebug = require('webgl-debug');
 // function throwOnGLError(err, funcName, args) {
-//     if (window.pauseOnGLError) {
-//         debugger;
+//     const message = webglDebug.glEnumToString(err) + " was caused by call to: " + funcName;
+//     try {
+//         throw new Error(message);
+//     } catch (e) {
+//         if (e) {
+//             console.log(e.message);
+//             console.log(e.stack || e.toString());
+//         }
 //     }
-//     console.log(webglDebug.glEnumToString(err) + " was caused by call to: " + funcName);
 // };
 
 function createContext(state, pixelRatio) {
     const canvas = state.canvas;
     const aa = pixelRatio <= 1; // Disable AA on retina display
     const glOptions = {antialias: aa, premultipliedAlpha: false};
-    // let gl = webglDebug.makeDebugContext(canvas.getContext('webgl', glOptions), throwOnGLError);
     let gl = canvas.getContext('webgl', glOptions);
     if (gl === null) {
         gl = canvas.getContext('experimental-webgl', glOptions);
     }
     if (gl === null) { throw new Error('Could not initialize WebGL'); }
-
+    // gl = webglDebug.makeDebugContext(gl, throwOnGLError);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     return gl;

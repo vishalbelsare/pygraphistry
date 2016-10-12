@@ -38,6 +38,8 @@ function ContinuousParam(displayName, value, min, max) {
         return (val - min) / range * sliderRange;
     }
 
+    this.scale = 'log';
+
     Param.call(this, 'continuous', displayName, value, toSlider, fromSlider);
 }
 ContinuousParam.prototype = Object.create(Param.prototype);

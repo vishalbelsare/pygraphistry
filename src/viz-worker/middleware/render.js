@@ -92,6 +92,7 @@ function renderFullPage(data, falcor, workerID = '', html = '') {
 <!DOCTYPE html>
 <html lang='en-us'>
     <head>
+        <meta charset="utf-8"/>
         <meta name='robots' content='noindex, nofollow'/>
         <meta http-equiv='x-ua-compatible' content='ie=edge'/>
         <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'/>${
@@ -117,7 +118,8 @@ function renderFullPage(data, falcor, workerID = '', html = '') {
             })(window,document,'script','//google-analytics.com/analytics.js','ga');
         </script>
         <div id='root'>${html}</div>
-        <script>
+        <script id='initial-state' type='text/javascript'>
+            var __assetSuffix__ = '${assetSuffix}';
             var __INITIAL_STATE__ = ${stringify(data && data.toJSON() || {})};
             var __INITIAL_CACHE__ = ${stringify(falcor && falcor.getCache() || {})};
         </script>

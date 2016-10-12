@@ -13,7 +13,6 @@ export function timebar(workbookId, viewId) {
             name: 'Timebar',
             controls: [{
                 selected: false,
-                view: $ref(`${view}`),
                 id: 'toggle-timebar',
                 name: 'Timebar',
             }]

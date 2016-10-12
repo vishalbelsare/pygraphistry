@@ -16,7 +16,6 @@ export function exclusions(workbookId, viewId) {
             templates: $ref(`${view}.expressionTemplates`),
             controls: [{
                 selected: false,
-                view: $ref(`${view}`),
                 id: 'toggle-exclusions',
                 name: 'Exclusions'
             }]

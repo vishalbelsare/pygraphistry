@@ -15,7 +15,6 @@ export function histograms(workbookId, viewId) {
             templates: $ref(`${view}.expressions`),
             controls: [{
                 selected: false,
-                view: $ref(`${view}`),
                 id: 'toggle-histograms',
                 name: 'Histograms',
             }]

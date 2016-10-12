@@ -3,6 +3,7 @@ import styles from './styles.less';
 import classNames from 'classnames';
 import { PropTypes } from 'react';
 import { getContext } from 'recompose';
+import ExpressionEditor from './editor';
 import {
     Col, Row, Grid,
     Panel, Popover,
@@ -65,10 +66,7 @@ export function ExpressionTemplates({ name = 'Expressions', templates = [], addE
     );
 }
 
-export const ExpressionItem = getContext(
-    { ExpressionEditor: PropTypes.func }
-)(function ExpressionItem({
-    ExpressionEditor,
+export function ExpressionItem({
     id, input, level,
     dataType, expressionType,
     name, enabled, attribute, templates,
@@ -120,4 +118,4 @@ export const ExpressionItem = getContext(
         </Row>
         </Grid>
     );
-});
+}
