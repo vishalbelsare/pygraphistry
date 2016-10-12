@@ -21,8 +21,6 @@ export function renderMiddleware(getDataSource, modules) {
         const reqURL = url.parse(req.originalUrl);
 
         if (options.workbook === undefined) {
-            // `workerid` should only be assigned by nginx, and not used as part of the redirect
-            delete options.workerid;
             const redirectUrl = url.format({
                     ...reqURL,
                     search: undefined,
@@ -35,9 +33,11 @@ export function renderMiddleware(getDataSource, modules) {
             return res.redirect(redirectUrl);
         }
 
+        const paths = getProxyPaths(req);
+
         try {
             const renderedResults = !renderServerSide ?
-                Observable.of(renderFullPage(null, null, req, options.workerid)) :
+                Observable.of(renderFullPage(null, null, paths)) :
                 renderAppWithHotReloading(modules, getDataSource(req), options, req);
 
             renderedResults.take(1).subscribe({
@@ -61,7 +61,7 @@ export function renderMiddleware(getDataSource, modules) {
     }
 }
 
-function renderAppWithHotReloading(modules, dataSource, options, req) {
+function renderAppWithHotReloading(modules, dataSource, paths) {
     return modules
         .map(({ App }) => ({
             App, falcor: new Model({
@@ -76,31 +76,20 @@ function renderAppWithHotReloading(modules, dataSource, options, req) {
             }),
             ({ App, falcor }, { data }) => ({ App, falcor, data })
         )
-        .map(({ App, falcor, data }) =>
-            renderFullPage(
-                data, falcor, req, options.workerid
-                // , reactRenderToString(
-                //     <Provider store={configureStore(initialState, rootReducer, epics)}>
-                //         <App {...options} falcor={falcor} key='viz-client'/>
-                //     </Provider>
-                // )
-            )
-        );
+        .map(({ App, falcor, data }) => renderFullPage(data, falcor, paths));
 }
 
 
-function renderFullPage(data, falcor, req, workerid = '', html = '') {
-    const baseUrl = `//${req.headers['host']}/worker/${workerid}${req.originalUrl}`;
-    // const assetSuffix = workerid && `?workerid=${workerid}` || '';
+function renderFullPage(data, falcor, paths, html = '') {
     const { client, vendor } = webpackAssets;
     const { html: iconsHTML } = faviconStats;
     return `
 <!DOCTYPE html>
 <html lang='en-us'>
     <head>
-        ${workerid ? `<base href="${baseUrl}">` : ''}
+        ${paths ? `<base href="${paths.base}">` : ''}
         <script type="text/javascript">
-            window.graphistryPath = "${ workerid ? `/worker/${workerid}` : ''}";
+            window.graphistryPath = "${ paths ? paths.prefix : ''}";
         </script>
         <meta name='robots' content='noindex, nofollow'/>
         <meta http-equiv='x-ua-compatible' content='ie=edge'/>
@@ -243,3 +232,26 @@ function renderFullPage(data, falcor, req, workerid = '', html = '') {
 //         )}`
 //     );
 // }
+
+// When we're running behind the nginx reverse proxy, with multiple workers, subrequests needs to
+// be of the form `/worker/xxx/<request path>`. This function examines the `X-Original-Uri` and
+// `X-Resolved-Uri` headers added by our nginx config to get the base path and path prefix we should
+// be using for subrequests.
+function getProxyPaths(req) {
+    // If these headers aren't set, assumed we're not begind a proxy
+    if(!req.get('x-original-uri') || !req.get('x-resolved-uri')) {
+        return null;
+    }
+
+    const base = `${req.protocol}//${req.get('host')}${req.get('x-resolved-uri')}`;
+
+    const { pathname: originalPathname } = url.parse(req.get('x-original-uri'));
+    const { pathname: resolvedPathname } = url.parse(req.get('x-resolved-uri'));
+
+    if(!resolvedPathname.endsWith(originalPathname)) {
+        return { base: base, prefix: '' };
+    }
+
+    const prefix = resolvedPathname.substr(0, resolvedPathname.length - originalPathname.length);
+    return {base, prefix};
+}
