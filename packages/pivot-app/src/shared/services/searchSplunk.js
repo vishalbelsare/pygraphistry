@@ -2,8 +2,7 @@ import splunkjs from 'splunk-sdk';
 import stringHash from 'string-hash';
 import { Observable } from 'rxjs';
 
-
-export function searchSplunk(searchQuery) {
+export function searchSplunk({app, pivot}) {
 
     // TODO This can be moved out of function once template
     // is removed from client
@@ -21,6 +20,10 @@ export function searchSplunk(searchQuery) {
             throw err;
         }
     });
+    const searchQuery = pivot.searchQuery;
+
+    console.log('======= Search ======');
+    console.log(pivot.searchQuery);
 
     const searchJobId = `pivot-app::${stringHash(searchQuery)}`;
 
@@ -77,18 +80,21 @@ export function searchSplunk(searchQuery) {
             function({results, job}) {
                 const fields = results.fields;
                 const rows = results.rows;
-                const output = new Array(rows.length);
+                const events = new Array(rows.length);
                 var values;
                 for(var i = 0; i < rows.length; i++) {
-                    output[i] = {};
+                    events[i] = {};
                     values = rows[i];
                     for(var j = 0; j < values.length; j++) {
                         var field = fields[j];
                         var value = values[j];
-                        output[i][field] = value;
+                        events[i][field] = value;
                     }
                 }
-                return {output, resultCount: job.properties().resultCount, splunkSearchID: job.sid};
+                pivot.eventCount = job.properties().resultCount;
+                pivot.events = events;
+                pivot.splunkSearchID = job.sid;
+                return {app, pivot};
             }
         );
 }

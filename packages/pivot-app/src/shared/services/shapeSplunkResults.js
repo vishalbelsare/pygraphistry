@@ -2,6 +2,7 @@ import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
 var hash = require('object-hash');
 import _  from 'underscore';
+import { categoryToColorInt, intToHex } from '../services/support/palette.js';
 
 
 //Do not make these nodes in '*' mode
@@ -14,6 +15,25 @@ const SKIP = {
     'LabUnits': true
 };
 
+function summarizeOutput ({labels}) {
+    const hist = {};
+    for (var i = 0; i < labels.length; i++) {
+        hist[labels[i].type] = {count: 0, example: i, name: '', color: ''};
+    }
+    const summaries = _.values(hist);
+
+    for (var i = 0; i < labels.length; i++) {
+        hist[labels[i].type].count++;
+    }
+
+    _.each(summaries, (summary) => {
+        summary.name = labels[summary.example].type;
+        summary.color = intToHex(categoryToColorInt[labels[summary.example].pointColor]);
+    });
+
+    return {entities: summaries, resultCount: labels.length};
+}
+
 
 export function shapeSplunkResults(splunkResults, pivotDict, index, template) {
     const encodings = template.encodings;
@@ -21,11 +41,12 @@ export function shapeSplunkResults(splunkResults, pivotDict, index, template) {
     const connectionsArray = template.connections;
     const isStar = (connectionsArray === undefined) || (connectionsArray.indexOf('*') != -1);
 
-    function shapeHyperGraph( results ) {
+    function shapeHyperGraph({ app, pivot } ) {
+        const { events } = pivot;
         const edges = [];
         const nodeLabels = [];
-        for(let i = 0; i < results.length; i++) {
-            const row = results[i];
+        for(let i = 0; i < events.length; i++) {
+            const row = events[i];
             const eventID = row['EventID'] || simpleflake().toJSON();
 
             const fields =
@@ -69,13 +90,16 @@ export function shapeSplunkResults(splunkResults, pivotDict, index, template) {
 
         }
 
-        return {
+        pivot.results = {
             graph: edges,
             labels: nodeLabels,
         };
-    };
 
-    function encodeGraph({ labels, graph: edges }) {
+        return ({ app, pivot });
+    }
+
+    function encodeGraph({ app, pivot }) {
+        const { labels, graph: edges } = pivot.results;
         if (encodings && encodings.point) {
             //nodeLabels = encodings.point.encode(nodeLabels);
             labels.map((node) =>
@@ -92,16 +116,16 @@ export function shapeSplunkResults(splunkResults, pivotDict, index, template) {
                     }
                     ));
         }
-        return {
+        pivot.results =  {
             graph: edges,
             labels: labels
         };
+        pivot.resultSummary = summarizeOutput(pivot.results);
+        return ({ app, pivot });
     }
-
-
 
     return splunkResults
         .map( shapeHyperGraph )
-        .map( encodeGraph )
+        .map( encodeGraph );
 
 }

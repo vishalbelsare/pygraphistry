@@ -66,7 +66,7 @@ export function searchPivot({loadPivotsById, pivotIds}) {
             pivot.enabled = true;
             const template = PivotTemplates.get('all', pivot.pivotParameters.mode);
 
-            return template.splunk.search({app, pivot})
+            return template.splunk.searchAndShape({app, pivot})
                 .catch(e => {
                     console.error(e);
                     pivot.status = {

@@ -1,6 +1,7 @@
 import { expandTemplate, constructFieldString } from '../services/support/splunkMacros.js';
 import { searchSplunk } from '../services/searchSplunk.js';
 import { shapeSplunkResults} from '../services/shapeSplunkResults.js';
+import { categoryToColorInt, intToHex } from '../services/support/palette.js';
 import _ from 'underscore';
 
 const SPLUNK_INDICES = {
@@ -22,6 +23,10 @@ const PAN_NODE_SIZES = {
     'user': 5,
     'threat_name': 10
 }
+
+//TODO how to dynamically lookup?
+// {int -> [ { ... } ]
+var pivotCache = {};
 
 const PAN_ENCODINGS = {
     point: {
@@ -75,6 +80,24 @@ const PAN_SEARCH_TO_USER_DEST = {
     }
 };
 
+function searchAndShape({app, pivot}) {
+    pivot.searchQuery = this.toSplunk(pivot.pivotParameters, pivotCache);
+
+    const splunkResults = this.search({app, pivot})
+        .do(({pivot}) => {
+            pivotCache[pivot.id] = { results: pivot.results,
+                query:pivot.searchQuery,
+                splunkSearchID: pivot.splunkSearchID
+            };
+        })
+
+    return this.shapeEvents(splunkResults, pivot.pivotParameters, pivot.id, this)
+        .map(({app, pivot}) => {
+            pivot.status = { ok: true };
+            return { app, pivot }
+        });
+}
+
 const PAN_SEARCH_TO_USER_THREAT = {
     name: 'PAN - From search to user/threat',
     label: 'Query',
@@ -82,6 +105,12 @@ const PAN_SEARCH_TO_USER_THREAT = {
 
     transport: 'Splunk',
     splunk: {
+        searchAndShape: searchAndShape,
+
+        search: searchSplunk,
+
+        shapeEvents: shapeSplunkResults,
+
         toSplunk: function(pivotParameters, pivotCache) {
             return `search ${SPLUNK_INDICES.PAN} ${pivotParameters['input']}
                 ${constructFieldString(this)}
