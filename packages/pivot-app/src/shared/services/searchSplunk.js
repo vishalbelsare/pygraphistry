@@ -1,23 +1,26 @@
-var splunkjs = require('splunk-sdk');
-var stringHash = require('string-hash');
+import splunkjs from 'splunk-sdk';
+import stringHash from 'string-hash';
 import { Observable } from 'rxjs';
 
-var service = new splunkjs.Service({
-    host: process.env.SPLUNK_HOST || 'splunk.graphistry.com',
-    username: process.env.SPLUNK_USER || 'admin',
-    password: process.env.SPLUNK_PWD || 'graphtheplanet'
-});
-
-service.login((err, success) => {
-    if (success) {
-        console.log('Successful login to splunk');
-    }
-    if (err) {
-        throw err;
-    }
-});
 
 export function searchSplunk(searchQuery) {
+
+    // TODO This can be moved out of function once template
+    // is removed from client
+    const service = new splunkjs.Service({
+        host: process.env.SPLUNK_HOST || 'splunk.graphistry.com',
+        username: process.env.SPLUNK_USER || 'admin',
+        password: process.env.SPLUNK_PWD || 'graphtheplanet'
+    });
+
+    service.login((err, success) => {
+        if (success) {
+            console.log('Successful login to splunk');
+        }
+        if (err) {
+            throw err;
+        }
+    });
 
     const searchJobId = `pivot-app::${stringHash(searchQuery)}`;
 

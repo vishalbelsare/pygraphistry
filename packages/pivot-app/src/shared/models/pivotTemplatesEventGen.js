@@ -1,5 +1,7 @@
 import { expandTemplate, constructFieldString } from '../services/support/splunkMacros.js';
-var _ = require('underscore');
+import { searchSplunk } from '../services/searchSplunk.js';
+import { shapeSplunkResults} from '../services/shapeSplunkResults.js';
+import _ from 'underscore';
 
 const SPLUNK_INDICES = {
     //EVENT_GEN: 'index=event_gen | search source="eventGen100k.csv" | search sourcetype="csv" | search'

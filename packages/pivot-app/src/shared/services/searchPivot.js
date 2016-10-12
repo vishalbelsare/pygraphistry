@@ -1,14 +1,9 @@
 import { Observable } from 'rxjs';
-import { ref as $ref } from '@graphistry/falcor-json-graph';
-import { row as createRow } from '../models';
 import { searchSplunk } from './searchSplunk.js';
 import { shapeSplunkResults} from './shapeSplunkResults.js';
-import { uploadGraph} from './uploadGraph.js';
 import PivotTemplates from '../models/PivotTemplates';
 import { categoryToColorInt, intToHex } from './support/palette.js';
 var _ = require('underscore');
-var hash = require('object-hash');
-var jsonfile = require('jsonfile')
 
 
 
