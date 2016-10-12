@@ -1,5 +1,5 @@
 import { scene } from './scene';
-import { camera } from './scene/camera';
+import { camera } from './camera';
 import { legend } from './legend';
 import { toolbar } from './toolbar';
 import { labels } from './labels';

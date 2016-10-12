@@ -113,7 +113,8 @@ function renderFullPage(data, falcor, paths, html = '') {
             })(window,document,'script','//google-analytics.com/analytics.js','ga');
         </script>
         <div id='root'>${html}</div>
-        <script>
+        <script id='initial-state' type='text/javascript'>
+            var __assetSuffix__ = '${assetSuffix}';
             var __INITIAL_STATE__ = ${stringify(data && data.toJSON() || {})};
             var __INITIAL_CACHE__ = ${stringify(falcor && falcor.getCache() || {})};
         </script>

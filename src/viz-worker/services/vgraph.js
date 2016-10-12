@@ -51,6 +51,7 @@ function loadAndUnpackVGraph(config, s3Cache) {
 function loadVGraphJSON(nBody, { metadata: dataset, body: buffer }, config, s3Cache) {
     const json = JSON.parse(buffer.toString('utf8'));
     const datasource = json.datasources[0];
+    console.error('JSON-META: ' + JSON.stringify(json));
     nBody.dataset = {
         ...dataset,
         ...json, type: 'vgraph',
@@ -92,8 +93,8 @@ function assignHintsToScene(scene, dataframe) {
     const numEdges = dataframe.numEdges();
     const numPoints = dataframe.numPoints();
 
-    scene.edges.elements = Math.min(numEdges, MAX_SIZE_TO_ALLOCATE);
-    scene.points.elements = Math.min(numPoints, MAX_SIZE_TO_ALLOCATE);
+    scene.renderer.edges.elements = Math.min(numEdges, MAX_SIZE_TO_ALLOCATE);
+    scene.renderer.points.elements = Math.min(numPoints, MAX_SIZE_TO_ALLOCATE);
 
     return scene;
 }

@@ -28,6 +28,7 @@ function assignViewToWorkbook(workbook, view) {
     const { scene: sceneID = 'default' } = getCurrentDataset(workbook);
 
     scene.id = sceneID;
+    scene.renderer.id = sceneID;
 
     let background = dataset.bg;
 

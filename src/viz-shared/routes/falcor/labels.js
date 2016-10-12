@@ -32,7 +32,7 @@ export function labels(path, base) {
             ]`
         }, {
             get: getValues,
-            route: `${base}['labels']['edges', 'points'][{keys}]`
+            route: `${base}['labels']['edge', 'point'][{keys}]`
         }, {
             get: getValues,
             set: setColors,
@@ -58,14 +58,17 @@ export function labels(path, base) {
             route: `${base}['labels'].options[{keys}][{keys}]`
         }, {
             get: getLabelsByTypeAndRangeHandler,
-            route: `${base}['labelsByType']['edge', 'point'][{ranges}]`
-        }]
+            route: `${base}['labelsByType']['edge', 'point'][{ranges}][
+                'type', 'index', 'title', 'columns', 'formatted'
+            ]`
+        }];
 
         function getLabelsByTypeAndRangeHandler(path) {
 
             const { workbookIds, viewIds } = path;
-            const labelTypes = [].concat(path[path.length - 2]);
-            const labelRanges = [].concat(path[path.length - 1]);
+            const labelKeys = [].concat(path[path.length - 1]);
+            const labelTypes = [].concat(path[path.length - 3]);
+            const labelRanges = [].concat(path[path.length - 2]);
             const { request: { query: options = {}}} = this;
 
             const labelIndexes = labelRanges.reduce((indexes, { from: index, to }) => {
@@ -78,16 +81,19 @@ export function labels(path, base) {
             return loadLabelsByIndexAndType({
                 workbookIds, viewIds, labelTypes, labelIndexes, options
             })
-            .map(({ workbook, view, label }) => {
+            .mergeMap(({ workbook, view, label }) => {
                 const { labelsByType } = view.scene;
                 const { data, type, index } = label;
-                const labelByType = labelsByType[type] || (labelsByType[type] = []);
-                return $value(`
+                const labelByType = labelsByType[type] || (labelsByType[type] = {});
+                labelByType[index] = data;
+                return labelKeys.map((key) => $value(`
                         workbooksById['${workbook.id}']
                             .viewsById['${view.id}']
-                            .scene.labelsByType['${type}'][${index}]`,
-                    $atom(labelByType[index] = data)
-                );
+                            .scene.labelsByType
+                            ['${type}'][${index}]['${key}']`,
+                    key === 'type' ? type :
+                        key === 'index' ? index : data[key]
+                ));
             })
             .map(mapObjectsToAtoms)
             .catch(captureErrorStacks);

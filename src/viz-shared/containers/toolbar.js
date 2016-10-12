@@ -1,17 +1,17 @@
 import { PropTypes } from 'react';
 import { getContext, hoistStatics } from 'recompose';
 import { container } from '@graphistry/falcor-react-redux';
-import { selectToolbarItem } from 'viz-shared/actions/toolbar';
 import { ButtonList,
          ButtonListItem,
          ButtonListItems
 } from 'viz-shared/components/toolbar';
 
-let Toolbar = ({ toolbar = [], ...props } = {}) => {
+let Toolbar = ({ toolbar = [], selectToolbarItem, ...props } = {}) => {
     return (
         <ButtonList {...props}>
         {toolbar.map((items, index) => (
-            <ToolbarItems data={items} key={index}/>
+            <ToolbarItems data={items} key={index}
+                          selectToolbarItem={selectToolbarItem}/>
         ))}
         </ButtonList>
     );
@@ -30,12 +30,13 @@ Toolbar = container(
     })
 )(Toolbar);
 
-let ToolbarItems = ({ items = [], ...props } = {}) => {
+let ToolbarItems = ({ items = [], selectToolbarItem, ...props } = {}) => {
     return (
         <ButtonListItems {...props}>
         {items.map((item, index) => (
             <ToolbarItem data={item}
-                         key={`${index}: ${item.id}`}/>
+                         key={`${index}: ${item.id}`}
+                         selectToolbarItem={selectToolbarItem}/>
         ))}
         </ButtonListItems>
     );
@@ -53,11 +54,10 @@ ToolbarItems = container(
 )(ToolbarItems);
 
 let ToolbarItem = container(
-    // toolbar item fragment
-    () => `{ id, name, view, selected }`,
-    (x) => x,
-    // bind action creators
-    { onItemSelected: selectToolbarItem }
+    () => `{ id, name, selected }`,
+    (item, { selectToolbarItem }) => ({
+        ...item, onItemSelected: selectToolbarItem
+    })
 )(ButtonListItem);
 
 ToolbarItem = hoistStatics(

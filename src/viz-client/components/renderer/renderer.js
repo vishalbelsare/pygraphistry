@@ -1,10 +1,7 @@
-import $ from 'jquery';
 import Color from 'color';
-import { Gestures } from 'rxjs-gestures';
 import React, { PropTypes } from 'react';
 import {
-    Subject, Observable,
-    Subscription, ReplaySubject
+    Subscription, Observable, Scheduler
 } from 'rxjs';
 
 import {
@@ -27,60 +24,20 @@ import {
     shallowEqual
 } from 'recompose';
 
-import { scenes } from 'viz-shared/models/scene';
-import {
-    resizeCanvas,
-    init as initRenderer
-} from 'viz-client/streamGL/renderer';
-import {
-    RenderingScheduler
-} from 'viz-client/streamGL/graphVizApp/canvas';
-
-import {
-    setupRotate,
-    setupCenter,
-    setupScroll,
-    setupZoomButton
-} from 'viz-client/streamGL/graphVizApp/interaction';
-
 const arraySlice = Array.prototype.slice;
-const events = [
-    'touchEnd',
-    'mouseMove',
-    'touchMove',
-    'touchStart',
-    'touchCancel',
-];
 
 class Renderer extends React.Component {
     constructor(props, context) {
         super(props, context);
-        this.assignContainerRef = (x) => this.container = x;
-        events.forEach((eventName) => {
-            this[eventName] = (event) => {
-                const { renderState } = this.state;
-                const dispatch = this.props[eventName];
-                if (!dispatch || !renderState) {
-                    return;
-                }
-                const { simulating, selection = {} } = this.props;
-                dispatch({
-                    selectionType: selection.type,
-                    event, simulating, renderState
-                });
-            };
-        });
-
         this.arrowItems = {};
         this.renderFast = undefined;
-        this.renderPanZoom = null;
-        this.renderBGColor = null;
-        this.renderMouseOver = null;
-        this.state = {
-            hasVBOListeners: false,
-            hasDOMListeners: false,
-            renderSubscription: new Subscription()
-        };
+        this.resizeTimeout = undefined;
+        this.renderPanZoom = undefined;
+        this.renderBGColor = undefined;
+        this.renderMouseOver = undefined;
+        this.hasRenderedSelectionOnce = false;
+        this.cameraChangesSubscription = new Subscription();
+        this.assignContainerRef = (x) => this.container = x;
     }
     shouldComponentUpdate(nextProps) {
 
@@ -104,118 +61,98 @@ class Renderer extends React.Component {
         );
     }
     componentWillMount() {
-        const { props, state } = this;
-        const { sceneID } = props;
-        if (sceneID && (sceneID in scenes)) {
-            this.setupRenderStateAndScheduler(props, state);
-        }
-        this.updateRendererStateAndScheduler({}, props, state);
-    }
-    componentWillReceiveProps(nextProps) {
-        const currProps = this.props;
-        const { sceneID: currSceneID } = currProps;
-        const { sceneID: nextSceneID } = nextProps;
-        if (nextSceneID && currSceneID !== nextSceneID && (nextSceneID in scenes)) {
-            this.setupRenderStateAndScheduler(nextProps, this.state);
-        }
+        this.updateRendererStateAndScheduler({}, this.props, this.state);
     }
     componentWillUpdate(nextProps, nextState) {
         this.updateRendererStateAndScheduler(this.props, nextProps, nextState);
     }
-    componentDidUpdate() {
-        this.setupDOMAndSourceListeners(this.props, this.state);
-    }
     componentDidMount() {
-        const { props, state, container } = this;
-        const { simulation } = props;
-        const { renderState, hasDOMListeners } = state;
-        simulation.style.top = 0;
-        simulation.style.left = 0;
-        simulation.style.right = 0;
-        simulation.style.bottom = 0;
-        simulation.style.width = `100%`;
-        simulation.style.height =`100%`;
-        simulation.style.position =`absolute`;
-        container.appendChild(simulation);
-        renderState && resizeCanvas(renderState);
-        this.setupDOMAndSourceListeners(props, state);
+        this.container.appendChild(this.props.simulation);
+        this.cameraChangesSubscription = cameraChanges
+            .distinctUntilChanged(
+                shallowEqual,
+                ({ width, height, center = {} } = {}) => ({
+                    width, height, ...center
+                })
+            )
+            .auditTime(0, Scheduler.animationFrame)
+            .subscribe((camera) => {
+                this.renderPanZoom = true;
+                this.forceUpdate();
+            });
     }
     componentWillUnmount() {
-        const {
-            renderSubscription,
-            renderingScheduler
-        } = this.state;
-        renderSubscription.unsubscribe();
-        renderingScheduler.unsubscribe();
-        this.container = null;
-        this.arrowItems = null;
+        const { cameraChangesSubscription } = this;
+        cameraChangesSubscription.unsubscribe();
+        this.container = undefined;
+        this.arrowItems = undefined;
         this.renderFast = undefined;
-        this.renderPanZoom = null;
-        this.renderBGColor = null;
-        this.renderMouseOver = null;
-        this.assignContainerRef = null;
-        events.forEach((eventName) => this[eventName] = null)
+        this.renderPanZoom = undefined;
+        this.renderBGColor = undefined;
+        this.renderMouseOver = undefined;
+        this.assignContainerRef = undefined;
+        this.cameraChangesSubscription = undefined;
     }
     render() {
 
-        let { renderFast, renderPanZoom,
-              renderMouseOver, renderBGColor } = this;
+        const { props, container } = this;
+        const { renderState, renderingScheduler,
+                simulation, highlight, selection,
+                simBackgroundImage: backgroundImage = 'none' } = props;
 
-        const { renderState, renderingScheduler } = this.state;
-        const { highlight, selection,
-                simBackgroundImage: backgroundImage = 'none' } = this.props;
+        if (renderState && renderingScheduler && container && simulation) {
 
-        if (renderBGColor) {
-            renderBGColor = false;
-            renderingScheduler.renderScene('bgcolor', {
-                trigger: 'renderSceneFast'
-            });
-        }
+            let { renderFast, renderPanZoom, renderMouseOver, renderBGColor } = this;
 
-        if (renderPanZoom) {
-            renderPanZoom = false;
-            // console.log('renderPanZoom with trigger', renderFast ? 'renderSceneFast' : 'renderSceneFull');
-            renderingScheduler.renderScene('panzoom', {
-                trigger: renderFast ?
-                    'renderSceneFast' : 'renderSceneFull'
-            });
-            if (typeof renderFast !== 'number') {
-                renderFast = undefined;
+            if (renderBGColor) {
+                renderBGColor = false;
+                renderingScheduler.renderScene('bgcolor', {
+                    trigger: 'renderSceneFast'
+                });
             }
-        }
 
-        if (renderMouseOver) {
-            renderMouseOver = false;
-            renderingScheduler.renderScene('mouseOver', {
-                trigger: 'mouseOverEdgeHighlight',
-                data: {
-                    highlight: {
-                        nodeIndices: arraySlice.call(highlight.point || []),
-                        edgeIndices: arraySlice.call(highlight.edge || []),
-                    },
-                    selected: {
-                        nodeIndices: arraySlice.call(selection.point || []),
-                        edgeIndices: arraySlice.call(selection.edge || []),
-                    }
+            if (renderPanZoom) {
+                renderPanZoom = false;
+                // console.log('renderPanZoom with trigger', renderFast ? 'renderSceneFast' : 'renderSceneFull');
+                renderingScheduler.renderScene('panzoom', {
+                    trigger: renderFast ?
+                        'renderSceneFast' : 'renderSceneFull'
+                });
+                if (typeof renderFast !== 'number') {
+                    renderFast = undefined;
                 }
-            });
-        }
+            }
 
-        this.renderFast = renderFast;
-        this.renderPanZoom = renderPanZoom;
-        this.renderBGColor = renderBGColor;
-        this.renderMouseOver = renderMouseOver;
+            if (renderMouseOver) {
+                renderMouseOver = false;
+                this.hasRenderedSelectionOnce = true;
+                renderingScheduler.renderScene('mouseOver',
+                    // trick the rendering scheduler into believing
+                    // it _really_ wants to render this mouseover task
+                    renderingScheduler.lastMouseoverTask = {
+                        trigger: 'mouseOverEdgeHighlight',
+                        data: {
+                            highlight: {
+                                edgeIndices: arraySlice.call(highlight.edge || []),
+                                nodeIndices: arraySlice.call(highlight.point || []),
+                            },
+                            selected: {
+                                edgeIndices: arraySlice.call(selection.edge || []),
+                                nodeIndices: arraySlice.call(selection.point || []),
+                            }
+                        }
+                    }
+                );
+            }
+
+            this.renderFast = renderFast;
+            this.renderPanZoom = renderPanZoom;
+            this.renderBGColor = renderBGColor;
+            this.renderMouseOver = renderMouseOver;
+        }
 
         return (
-            <div id='simulation-container'
-                 ref={this.assignContainerRef}
-                 onMouseUp={this.touchEnd}
-                 onMouseMove={this.mouseMove}
-                 onMouseDown={this.touchStart}
-                 onTouchEnd={this.touchEnd}
-                 onTouchMove={this.touchMove}
-                 onTouchStart={this.touchStart}
-                 onTouchCancel={this.touchCancel}
+            <div ref={this.assignContainerRef}
                  style={{
                     width: `100%`,
                     height:`100%`,
@@ -227,193 +164,9 @@ class Renderer extends React.Component {
             />
         );
     }
-    setupRenderStateAndScheduler(props, state) {
-
-        let {
-            hasDOMListeners,
-            hasVBOListeners,
-            vboUpdatesSource,
-            vboVersionsSource,
-            hasSourceListeners,
-            renderingScheduler,
-        } = state;
-
-        hasSourceListeners = false;
-
-        const {
-            socket, simulation, simCameraBounds,
-            handleVboUpdates, sceneID, pixelRatio,
-        } = props;
-
-        const scene = scenes[sceneID]();
-        const uri = { href: `${window.graphistryPath}/graph/`, pathname: `${window.graphistryPath}` };
-        const rendererOptions = { pixelRatio, ...simCameraBounds };
-        const renderState = initRenderer(scene, simulation, rendererOptions);
-        const { hostBuffers: {
-            'curPoints': curPointsSource,
-            'pointSizes': pointSizesSource,
-            'selectedEdgeIndexes': selectedEdgeIndexesSource,
-            'selectedPointIndexes': selectedPointIndexesSource
-        }} = renderState;
-
-        if (hasVBOListeners === false) {
-
-            hasVBOListeners = true;
-
-            const vboSubjects = handleVboUpdates(socket, uri, renderState);
-            vboUpdatesSource = vboSubjects.vboUpdates;
-            vboVersionsSource = vboSubjects.vboVersions;
-
-            renderingScheduler = new RenderingScheduler(
-                renderState,
-                vboUpdates, vboVersions,
-                hitmapUpdates, isAnimating,
-                simulateOn, activeSelection,
-                { edge: undefined, point: undefined }
-            );
-        } else {
-            renderingScheduler.renderState = renderState;
-        }
-
-        this.setState({
-            renderState,
-            curPointsSource,
-            hasVBOListeners,
-            pointSizesSource,
-            vboUpdatesSource,
-            vboVersionsSource,
-            hasSourceListeners,
-            renderingScheduler,
-            selectedEdgeIndexesSource,
-            selectedPointIndexesSource
-        });
-    }
-    setupDOMAndSourceListeners(props = {}, state = {}) {
-
-        const { container } = this;
-        const { play, socket, simulation } = props;
-        let {
-            renderState,
-            curPointsSource,
-            hasDOMListeners,
-            pointSizesSource,
-            vboUpdatesSource,
-            vboVersionsSource,
-            hasSourceListeners,
-            renderSubscription,
-            renderingScheduler,
-            cameraChangesSource,
-            selectedEdgeIndexesSource,
-            selectedPointIndexesSource,
-        } = state;
-
-        if (!container || !simulation || !renderState || (
-            hasDOMListeners && hasSourceListeners)) {
-            return;
-        }
-
-        hasSourceListeners = true;
-
-        renderSubscription.unsubscribe();
-
-        if (hasDOMListeners === false) {
-
-            hasDOMListeners = true;
-
-            const { camera } = renderState;
-            const centerSource = setupCenter(toggleCenter, curPoints, camera);
-            const zoomInSource = setupZoomButton(toggleZoomIn, camera, 1 / 1.25);
-            const zoomOutSource = setupZoomButton(toggleZoomOut, camera, 1.25);
-
-            const rotateSource = setupRotate($(container), camera);
-            const scrollSource = setupScroll(
-                $(container), simulation,
-                camera, { marqueeOn, brushOn }
-            );
-
-            const panSource = Gestures
-                .pan(container)
-                .switchMap((pan) => {
-                    const { offsetWidth, offsetHeight } = container;
-                    // const forceRatio = 0.5 * (
-                    //     (camera.width / offsetWidth) +
-                    //     (camera.height / offsetHeight));
-                    // .decelerate(0.25, 9.8 / forceRatio)
-                    return pan.multicast(
-                        () => new Subject(),
-                        (pan) => Observable.merge(
-                            pan.filter(({ movementX, movementY }) => (
-                                movementX !== 0 || movementY !== 0
-                            ))
-                            .do(({ movementX, movementY }) => {
-                                camera.center.x -= movementX * camera.width / offsetWidth;
-                                camera.center.y -= movementY * camera.height / offsetHeight;
-                                this.renderFast = true;
-                            }),
-                            pan.takeLast(1).do(() => {
-                                this.renderFast = false;
-                            })
-                        ))
-                        .repeat()
-                })
-                .mapTo(camera);
-
-            cameraChangesSource = Observable.merge(
-                rotateSource, scrollSource, panSource,
-                centerSource, zoomInSource, zoomOutSource
-            )
-            .do((camera) => {
-                this.renderPanZoom = true;
-                this.forceUpdate();
-            });
-        }
-
-        renderSubscription = Observable.merge(
-            // Subscribe the global Subjects to their legacy sources.
-            // Eventually we need to refactor the render loop to work
-            // within the React component lifecycle, then delete this code.
-            curPointsSource.do(curPoints),
-            pointSizesSource.do(pointSizes),
-            vboUpdatesSource.do(vboUpdates),
-            vboVersionsSource.do(vboVersions),
-            cameraChangesSource.do(cameraChanges),
-            selectedEdgeIndexesSource.do(selectedEdgeIndexes),
-            selectedPointIndexesSource.do(selectedPointIndexes),
-
-            vboUpdates
-                .filter((update) => update === 'received')
-                .take(1)
-                .mergeMap(() => Observable
-                    .interval(40)
-                    .take(play || 50)
-                    .do(() => {
-                        socket.emit('interaction', { play: true, layout: true });
-                    })
-                    .takeWhile(() => this.props.simulating === true)
-                    .concat(Observable.timer(100).do(() => {
-                        // this.renderFast = false;
-                        this.renderPanZoom = true;
-                        this.forceUpdate();
-                    }))
-                    .do(() => {
-                        if (this.props.simulating === true) {
-                            toggleCenter.next();
-                        }
-                    })
-                )
-        )
-        .ignoreElements()
-        .subscribe();
-
-        this.setState({
-            hasDOMListeners,
-            hasSourceListeners,
-            renderSubscription,
-        });
-    }
     updateRendererStateAndScheduler(currProps = {}, nextProps = {}, nextState = {}) {
 
-        const { renderState, renderingScheduler } = nextState;
+        const { renderState, renderingScheduler } = nextProps;
 
         if (!renderState || !renderingScheduler) {
             return;
@@ -441,10 +194,11 @@ class Renderer extends React.Component {
             showArrows: nextShowArrows = currShowArrows,
         } = nextProps;
 
-        let renderFast = this.renderFast,
-            renderBGColor = this.renderBGColor,
-            renderPanZoom = this.renderPanZoom,
-            renderMouseOver = this.renderMouseOver;
+        let { renderFast,
+              renderBGColor,
+              renderPanZoom,
+              renderMouseOver,
+              hasRenderedSelectionOnce } = this;
 
         const updateArg = {
             currEdges, currPoints,
@@ -459,16 +213,24 @@ class Renderer extends React.Component {
         };
 
         renderBGColor = this.updateBackground(updateArg) || renderBGColor;
-        renderPanZoom = (this.updateNumElements(updateArg) && false) || renderPanZoom;
+        renderPanZoom = this.updateNumElements(updateArg) && false || renderPanZoom;
         renderPanZoom = this.updateEdgeScaling(updateArg) || renderPanZoom;
         renderPanZoom = this.updatePointScaling(updateArg) || renderPanZoom;
         renderPanZoom = this.updateEdgeOpacity(updateArg) || renderPanZoom;
         renderPanZoom = this.updatePointOpacity(updateArg) || renderPanZoom;
         renderPanZoom = this.updateShowArrows(updateArg) || renderPanZoom;
         renderPanZoom = this.updateCameraCenterAndZoom(updateArg) || renderPanZoom;
-        renderPanZoom = (this.updateSimulating(updateArg) || renderPanZoom) && !nextSimulating;
-        renderMouseOver = (this.updateSceneHighlight(updateArg) || renderMouseOver) && !nextSimulating;
-        renderMouseOver = (this.updateSceneSelection(updateArg) || renderMouseOver) && !nextSimulating;
+        renderPanZoom = this.updateSimulating(updateArg) || renderPanZoom && !nextSimulating;
+        renderMouseOver = this.updateSceneHighlight(updateArg) || renderMouseOver && !nextSimulating;
+
+        if (hasRenderedSelectionOnce === true) {
+            renderMouseOver = this.updateSceneSelection(updateArg) || renderMouseOver && !nextSimulating;
+        } else {
+            const { edge: nextEdge, point: nextPoint } = nextSelection;
+            renderMouseOver = (nextEdge && nextEdge.length) ||
+                              (nextPoint && nextPoint.length) ||
+                              (renderMouseOver);
+        }
 
         if (renderPanZoom || renderBGColor) {
             if (typeof renderFast === 'number') {
@@ -615,16 +377,16 @@ class Renderer extends React.Component {
         if (currCamera.$__version === nextCamera.$__version) {
             return false;
         }
-        const { center: currCenter } = currCamera;
-        const { center: nextCenter } = nextCamera;
+        const { center: currCenter = {} } = currCamera;
+        const { center: nextCenter = currCenter } = nextCamera;
         if (currCenter.$__version !== nextCenter.$__version) {
-            if (nextCamera.center.x === 0 &&
-                nextCamera.center.y === 0 &&
-                nextCamera.center.z === 0) {
+            if (nextCenter.x === 0 &&
+                nextCenter.y === 0 &&
+                nextCenter.z === 0) {
                 toggleCenter.next();
                 return true;
             }
-            return false;
+            return !shallowEqual(currCenter, nextCenter);
         } else if (nextCamera.zoom < currCamera.zoom) {
             toggleZoomIn.next();
             return true;
@@ -664,15 +426,11 @@ class Renderer extends React.Component {
     }
 }
 
-Renderer = compose(
-    getContext({
-        play: PropTypes.number,
-        socket: PropTypes.object,
-        pixelRatio: PropTypes.number,
-        simulation: PropTypes.object,
-        handleVboUpdates: PropTypes.func,
-        simBackgroundImage: PropTypes.string
-    })
-)(Renderer);
+Renderer = getContext({
+    simulation: PropTypes.object,
+    renderState: PropTypes.object,
+    renderingScheduler: PropTypes.object,
+    simBackgroundImage: PropTypes.string
+})(Renderer);
 
 export { Renderer };

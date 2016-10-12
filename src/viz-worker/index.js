@@ -142,7 +142,7 @@ export function vizWorker(app, server, sockets, caches) {
                 )
                 .mergeMap(({ nBody }) => sendUpdate(
                     `workbooks.open.views.current.expressionTemplates.length`,
-                    `workbooks.open.views.current.scene['edges', 'points'].elements`
+                    `workbooks.open.views.current.scene.renderer['edges', 'points'].elements`
                 ))
             ))
             .do(({ nBody }) => vizServer.ticksMulti.next(nBody));

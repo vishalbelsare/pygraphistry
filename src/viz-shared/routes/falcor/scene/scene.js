@@ -43,19 +43,26 @@ export function scene(path, base) {
             route: `${base}['scene'][{keys}]`
         }, {
             set: setValues,
-            route: `${base}['scene']['pruneOrphans', 'showArrows', 'simulating']`
+            route: `${base}['scene'].simulating`
         }, {
             get: getValues,
-            route: `${base}['scene']['edges', 'points'][{keys}]`,
+            route: `${base}['scene'].renderer[{keys}]`,
             returns: `Number`
         }, {
             set: setValues,
-            route: `${base}['scene']['edges', 'points']['scaling', 'opacity']`,
+            route: `${base}['scene'].renderer['pruneOrphans', 'showArrows']`
+        }, {
+            get: getValues,
+            route: `${base}['scene'].renderer['edges', 'points'][{keys}]`,
+            returns: `Number`
+        }, {
+            set: setValues,
+            route: `${base}['scene'].renderer['edges', 'points']['scaling', 'opacity']`,
             returns: `Number`
         }, {
             get: getValues,
             set: setColors,
-            route: `${base}['scene']['background', 'foreground'].color`,
+            route: `${base}['scene'].renderer['background', 'foreground'].color`,
             returns: `Color`
         }, {
             returns: `*`,

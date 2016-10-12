@@ -43,6 +43,14 @@ export function setupLegacyInterop(document, { App, options }) {
         simulation.style['mix-blend-mode'] = mixBlendMode;
     }
 
+    simulation.style.top = 0;
+    simulation.style.left = 0;
+    simulation.style.right = 0;
+    simulation.style.bottom = 0;
+    simulation.style.width = `100%`;
+    simulation.style.height =`100%`;
+    simulation.style.position =`absolute`;
+
     brushOn.next(false);
     marqueeOn.next(false);
     simulateOn.next(true);

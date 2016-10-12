@@ -1,5 +1,4 @@
 import React from 'react';
-import { findDOMNode } from 'react-dom'
 import styles from './styles.less';
 import classNames from 'classnames';
 
@@ -50,7 +49,7 @@ export function ButtonListItem({ onItemSelected, ...props }) {
     const { id, name, selected } = props;
 
     return (
-        <OverlayTrigger trigger='hover'
+        <OverlayTrigger trigger={['hover']}
                         placement='right'
                         overlay={ButtonListItemTooltip(name)}>
             <Button id={id} href='#'

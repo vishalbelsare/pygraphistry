@@ -12,7 +12,7 @@ export function labels(workbookId, viewId) {
         labels: {
             id: 'labels',
             name: 'Labels',
-            edges: [], points: [],
+            edge: [], point: [],
             opacity: 1, enabled: true,
             timeZone: '', poiEnabled: true,
             selection: $ref(`${view}.selection.label`),
@@ -23,7 +23,6 @@ export function labels(workbookId, viewId) {
             ],
             controls: [{
                 selected: false,
-                view: $ref(`${view}`),
                 id: 'toggle-label-settings',
                 name: 'Label settings',
             }],
