@@ -6,7 +6,7 @@ import { Subject, Observable } from 'rxjs';
 export function setupErrorHandlers(document, window, options) {
 
     const $document = $(document);
-    const reportURL = 'error';
+    const reportURL = '/error';
 
     // Report all unhandled JS errors
     const unhandledExceptions = Observable.fromEvent(window, 'error', (errorEvent) => {
@@ -28,7 +28,7 @@ export function setupErrorHandlers(document, window, options) {
     )()
     .filter(({ url }) => {
         // Don't report ajax errors caused by posting errors to `/error`
-        const errorURLPrefix = '/error';
+        const errorURLPrefix = `/error`;
         if (url.indexOf(errorURLPrefix, url.length - errorURLPrefix.length) !== -1) {
             return false;
         }
