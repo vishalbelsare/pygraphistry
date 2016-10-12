@@ -5,12 +5,9 @@ import PivotTemplates from '../models/PivotTemplates';
 import { categoryToColorInt, intToHex } from './support/palette.js';
 var _ = require('underscore');
 
-
-
 //TODO how to dynamically lookup?
 // {int -> [ { ... } ]
 var pivotCache = {};
-
 
 function summarizeOutput ({labels}) {
     const hist = {};
@@ -30,7 +27,6 @@ function summarizeOutput ({labels}) {
 
     return {entities: summaries, resultCount: labels.length};
 }
-
 
 function searchSplunkPivot({app, pivot}) {
     //TODO when constrained investigation pivotset templating, change 'all'-> investigation.templates
@@ -64,14 +60,15 @@ function searchSplunkPivot({app, pivot}) {
         .map((results) => ({app, pivot}));
 }
 
-
 export function searchPivot({loadPivotsById, pivotIds}) {
     return loadPivotsById({pivotIds: pivotIds})
         .mergeMap(({app, pivot}) => {
             pivot.enabled = true;
+            const template = PivotTemplates.get('all', pivot.pivotParameters.mode);
 
-            return searchSplunkPivot({app, pivot})
+            return template.splunk.search({app, pivot})
                 .catch(e => {
+                    console.error(e);
                     pivot.status = {
                         ok: false,
                         message: e.message || 'Unknown Error'
