@@ -16,7 +16,7 @@
 :local(.logo) {
     width: 90px;
     text-align: center;
-    border-bottom: 1px solid #5b8bde;
+    border-bottom: 1px solid #3f7ed9;
     padding-top: 10px;
     padding-bottom: 10px;
 
@@ -33,6 +33,46 @@
 
     }
 }
+
+
+
+@investigation-header-height: 40px;
+@investigation-header-padding-top: ~"calc( (@{investigation-header-height} - 1px - 34px)/2 )";
+@investigation-footer-height: 250px;
+
+:local(.investigation-all) {
+
+    height: 100%;
+    width: ~"calc(100% - 90px)"; //https://github.com/less/less.js/issues/974
+
+    & > *:nth-child(1) {
+
+    }
+
+    & > *:nth-child(2) {
+        height: ~"calc(100% - @{investigation-header-height} - @{investigation-footer-height})";
+        //height: ~"-webkit-calc(100% - ~'@{investigation-header-height}' - ~'@{investigation-footer-height}')";
+        width: 100%;
+        overflow: hidden;
+        min-height: 0px;
+    }
+
+    & > *:nth-child(3) {
+        height: @investigation-footer-height;
+        overflow: auto;
+    }
+
+}
+
+:local(.investigation-nav) {
+    min-height: @investigation-header-height;
+    height: @investigation-header-height;
+    background-color: #6580e1;
+    border: 0px;
+    border-radius: 0px;
+    border-bottom: 1px solid #8095e0;
+}
+
 
 
 :local(.welcome-bar) {
@@ -256,6 +296,7 @@ td, th {
 :local(.investigation-header) {
     text-align: right;
     white-space: nowrap;
+    height: 100%;
 
     & > div:first-child {
         float: left;
@@ -277,8 +318,8 @@ td, th {
 :local(.investigations-dropdownbutton) {
     & > * {
         width: 15em;
-        height: 61px;
-        padding-top: 12px;
+        height: @investigation-header-height;
+        padding-top: @investigation-header-padding-top;
         padding-right: 15px;
         border-right: 1px solid rgb(150, 168, 234);
     }
@@ -298,7 +339,12 @@ td, th {
     }
 
     & > *:not(.is-open) > div:nth-child(2) {
-        border-color: #96a8ea; //input border
+        //input border
+        border-color: transparent;
+    }
+
+    & > * > *:nth-child(2) > span:nth-child(2) > span {
+        border-color: #96a8ea transparent transparent; //arrow
     }
 }
 
@@ -310,7 +356,7 @@ td, th {
 
     & > button {
         margin: 0px !important;
-        height: 61px;
+        height: @investigation-header-height;
         border-radius: 0px !important;
         background-color: transparent !important;
         color: white !important;

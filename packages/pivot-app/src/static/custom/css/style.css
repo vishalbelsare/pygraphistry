@@ -241,13 +241,7 @@ td.pivot-search {
     border-width: 1px;
 }
 
-nav.navbar.navbar-default.navbar-fixed {
-    background-color: #6580e1;
-    border: 0px;
-    border-radius: 0px;
-    height: 61px;
-    border-bottom: 1px solid #8095e0;
-}
+
 
 #add-template.footer {
     border-top: 1px solid #DDD;
