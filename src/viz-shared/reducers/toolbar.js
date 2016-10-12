@@ -44,216 +44,235 @@ function selectToolbarItem(action$, store) {
         ));
 }
 
-function zoomIn({ view, falcor }) {
+function zoomIn({ falcor }) {
     return falcor
-        .getValue(`view.camera.zoom`)
+        .getValue(`camera.zoom`)
         .mergeMap((zoom) => falcor.set($value(
-            `view.camera.zoom`, zoom * (1 / 1.25)
+            `camera.zoom`, zoom * (1 / 1.25)
         )))
 }
 
-function zoomOut({ view, falcor }) {
+function zoomOut({ falcor }) {
     return falcor
-        .getValue(`view.camera.zoom`)
+        .getValue(`camera.zoom`)
         .mergeMap((zoom) => falcor.set($value(
-            `view.camera.zoom`, zoom * (1.25)
+            `camera.zoom`, zoom * (1.25)
         )))
 }
 
-function centerCamera({ view, falcor }) {
+function centerCamera({ falcor }) {
     return falcor.set(
-        $value(`view.camera.zoom`, 1),
-        $value(`view.camera.center['x', 'y', 'z']`, 0),
+        $value(`camera.zoom`, 1),
+        $value(`camera.center['x', 'y', 'z']`, 0),
     );
 }
 
-function toggleSimulating({ view, falcor, socket, selected }) {
+function toggleSimulating({ stop, center, falcor, socket, selected }) {
     if (selected) {
         return falcor.set(
-            $value(`selected`, false),
-            $value(`view.scene.simulating`, false)
+            $value(`scene.simulating`, false),
+            $value(`scene.controls[0].selected`, false),
         );
     } else {
         return Observable.merge(
             falcor.set(
-                $value(`selected`, true),
-                $value(`view.scene.simulating`, true)
+                $value(`scene.simulating`, true),
+                $value(`scene.controls[0].selected`, true),
             ),
             !socket &&
                 Observable.empty() ||
                 Observable.interval(40).do(() => {
                     socket.emit('interaction', { play: true, layout: true });
                 })
+                .let((source) => !center ?
+                    source :
+                    source.exhaustMap((x, index) => {
+                        if ((index % 2 && index <= 10) ||
+                            (index % 20 === 0 && index <= 100) ||
+                            (index % 100 === 0)) {
+                            return centerCamera({ falcor }).startWith(x);
+                        }
+                        return Observable.of(x);
+                    })
+                )
+                .let((source) => !stop ?
+                    source : source
+                        .takeUntil(stop)
+                        .concat(toggleSimulating({
+                            falcor, socket, selected: true
+                        }))
+                        .concat(centerCamera({ falcor }))
+                )
         );
     }
 }
 
-function toggleFilters({ view, falcor, selected }) {
+function toggleFilters({ falcor, selected }) {
     if (selected) {
         return falcor.set(
-            $value(`selected`, false),
-            $value(`view.panels.left`, undefined)
+            $value(`panels.left`, undefined),
+            $value(`filters.controls[0].selected`, false)
         );
     } else {
         return falcor.set(
-            $value(`selected`, true),
-            $value(`view.scene.controls[1].selected`, false),
-            $value(`view.labels.controls[0].selected`, false),
-            $value(`view.layout.controls[0].selected`, false),
-            $value(`view.exclusions.controls[0].selected`, false),
-            $value(`view.panels.left`, $ref(view.concat(`filters`)))
+            $value(`filters.controls[0].selected`, true),
+            $value(`scene.controls[1].selected`, false),
+            $value(`labels.controls[0].selected`, false),
+            $value(`layout.controls[0].selected`, false),
+            $value(`exclusions.controls[0].selected`, false),
+            $value(`panels.left`, $ref(falcor._path.concat(`filters`)))
         );
     }
 }
 
-function toggleExclusions({ view, falcor, selected }) {
+function toggleExclusions({ falcor, selected }) {
     if (selected) {
         return falcor.set(
-            $value(`selected`, false),
-            $value(`view.panels.left`, undefined)
+            $value(`panels.left`, undefined),
+            $value(`exclusions.controls[0].selected`, false)
         );
     } else {
         return falcor.set(
-            $value(`selected`, true),
-            $value(`view.scene.controls[1].selected`, false),
-            $value(`view.labels.controls[0].selected`, false),
-            $value(`view.layout.controls[0].selected`, false),
-            $value(`view.filters.controls[0].selected`, false),
-            $value(`view.panels.left`, $ref(view.concat(`exclusions`)))
+            $value(`exclusions.controls[0].selected`, true),
+            $value(`scene.controls[1].selected`, false),
+            $value(`labels.controls[0].selected`, false),
+            $value(`layout.controls[0].selected`, false),
+            $value(`filters.controls[0].selected`, false),
+            $value(`panels.left`, $ref(falcor._path.concat(`exclusions`)))
         );
     }
 }
 
-function toggleHistograms({ view, falcor, selected }) {
+function toggleHistograms({ falcor, selected }) {
     if (selected) {
         return falcor.set(
-            $value(`selected`, false),
-            $value(`view.panels.right`, undefined)
+            $value(`panels.right`, undefined),
+            $value(`histograms.controls[0].selected`, false)
         );
     } else {
         return falcor.set(
-            $value(`selected`, true),
-            $value(`view.panels.right`, $ref(view.concat(`histograms`)))
+            $value(`histograms.controls[0].selected`, true),
+            $value(`panels.right`, $ref(falcor._path.concat(`histograms`)))
         );
     }
 }
 
-function toggleTimebar({ view, falcor, selected }) {
+function toggleTimebar({ falcor, selected }) {
     if (selected) {
         return falcor.set(
-            $value(`selected`, false),
-            $value(`view.panels.bottom`, undefined)
+            $value(`panels.bottom`, undefined),
+            $value(`timebar.controls[0].selected`, false)
         );
     } else {
         return falcor.set(
-            $value(`selected`, true),
-            $value(`view.inspector.controls[0].selected`, false),
-            $value(`view.panels.bottom`, $ref(view.concat(`timebar`)))
+            $value(`timebar.controls[0].selected`, true),
+            $value(`inspector.controls[0].selected`, false),
+            $value(`panels.bottom`, $ref(falcor._path.concat(`timebar`)))
         );
     }
 }
 
-function toggleInspector({ view, falcor, selected }) {
+function toggleInspector({ falcor, selected }) {
     if (selected) {
         return falcor.set(
-            $value(`selected`, false),
-            $value(`view.panels.bottom`, undefined)
+            $value(`panels.bottom`, undefined),
+            $value(`inspector.controls[0].selected`, false),
         );
     } else {
         return falcor.set(
-            $value(`selected`, true),
-            $value(`view.timebar.controls[0].selected`, false),
-            $value(`view.panels.bottom`, $ref(view.concat(`inspector`)))
+            $value(`inspector.controls[0].selected`, true),
+            $value(`timebar.controls[0].selected`, false),
+            $value(`panels.bottom`, $ref(falcor._path.concat(`inspector`)))
         );
     }
 }
 
-function toggleLabelSettings({ view, falcor, selected }) {
+function toggleLabelSettings({ falcor, selected }) {
     if (selected) {
         return falcor.set(
-            $value(`selected`, false),
-            $value(`view.panels.left`, undefined)
+            $value(`panels.left`, undefined),
+            $value(`labels.controls[0].selected`, false)
         );
     } else {
         return falcor.set(
-            $value(`selected`, true),
-            $value(`view.scene.controls[1].selected`, false),
-            $value(`view.layout.controls[0].selected`, false),
-            $value(`view.filters.controls[0].selected`, false),
-            $value(`view.exclusions.controls[0].selected`, false),
-            $value(`view.panels.left`, $ref(view.concat(`labels`)))
+            $value(`labels.controls[0].selected`, true),
+            $value(`scene.controls[1].selected`, false),
+            $value(`layout.controls[0].selected`, false),
+            $value(`filters.controls[0].selected`, false),
+            $value(`exclusions.controls[0].selected`, false),
+            $value(`panels.left`, $ref(falcor._path.concat(`labels`)))
         );
     }
 }
 
-function toggleSceneSettings({ view, falcor, selected }) {
+function toggleSceneSettings({ falcor, selected }) {
     if (selected) {
         return falcor.set(
-            $value(`selected`, false),
-            $value(`view.panels.left`, undefined)
+            $value(`panels.left`, undefined),
+            $value(`scene.controls[1].selected`, false)
         );
     } else {
         return falcor.set(
-            $value(`selected`, true),
-            $value(`view.labels.controls[0].selected`, false),
-            $value(`view.layout.controls[0].selected`, false),
-            $value(`view.filters.controls[0].selected`, false),
-            $value(`view.exclusions.controls[0].selected`, false),
-            $value(`view.panels.left`, $ref(view.concat(`scene`)))
+            $value(`scene.controls[1].selected`, true),
+            $value(`labels.controls[0].selected`, false),
+            $value(`layout.controls[0].selected`, false),
+            $value(`filters.controls[0].selected`, false),
+            $value(`exclusions.controls[0].selected`, false),
+            $value(`panels.left`, $ref(falcor._path.concat(`scene`)))
         );
     }
 }
 
-function toggleLayoutSettings({ view, falcor, selected }) {
+function toggleLayoutSettings({ falcor, selected }) {
     if (selected) {
         return falcor.set(
-            $value(`selected`, false),
-            $value(`view.panels.left`, undefined)
+            $value(`panels.left`, undefined),
+            $value(`layout.controls[0].selected`, false)
         );
     } else {
         return falcor.set(
-            $value(`selected`, true),
-            $value(`view.scene.controls[1].selected`, false),
-            $value(`view.labels.controls[0].selected`, false),
-            $value(`view.filters.controls[0].selected`, false),
-            $value(`view.exclusions.controls[0].selected`, false),
-            $value(`view.panels.left`, $ref(view.concat(`layout`)))
+            $value(`layout.controls[0].selected`, true),
+            $value(`scene.controls[1].selected`, false),
+            $value(`labels.controls[0].selected`, false),
+            $value(`filters.controls[0].selected`, false),
+            $value(`exclusions.controls[0].selected`, false),
+            $value(`panels.left`, $ref(falcor._path.concat(`layout`)))
         );
     }
 }
 
-function toggleSelectNodes({ view, falcor, selected }) {
+function toggleSelectNodes({ falcor, selected }) {
     if (selected) {
         return falcor.set(
-            $value(`selected`, false),
-            $value(`view.selection.type`, null)
+            $value(`selection.type`, null),
+            $value(`selection.controls[0].selected`, false)
         );
     } else {
         return falcor.set(
-            $value(`selected`, true),
-            $value(`view.selection.type`, 'select'),
-            $value(`view.timebar.controls[0].selected`, false),
-            $value(`view.inspector.controls[0].selected`, true),
-            $value(`view.selection.controls[1].selected`, false),
-            $value(`view.panels.bottom`, $ref(view.concat(`inspector`))),
+            $value(`selection.type`, 'select'),
+            $value(`selection.controls[0].selected`, true),
+            $value(`timebar.controls[0].selected`, false),
+            $value(`inspector.controls[0].selected`, true),
+            $value(`selection.controls[1].selected`, false),
+            $value(`panels.bottom`, $ref(falcor._path.concat(`inspector`))),
         );
     }
 }
 
-function toggleWindowNodes({ view, falcor, selected }) {
+function toggleWindowNodes({ falcor, selected }) {
     if (selected) {
         return falcor.set(
-            $value(`selected`, false),
-            $value(`view.selection.type`, null)
+            $value(`selection.type`, null),
+            $value(`selection.controls[1].selected`, false)
         );
     } else {
         return falcor.set(
-            $value(`selected`, true),
-            $value(`view.selection.type`, 'window'),
-            $value(`view.timebar.controls[0].selected`, false),
-            $value(`view.inspector.controls[0].selected`, true),
-            $value(`view.selection.controls[0].selected`, false),
-            $value(`view.panels.bottom`, $ref(view.concat(`inspector`))),
+            $value(`selection.type`, 'window'),
+            $value(`selection.controls[1].selected`, true),
+            $value(`timebar.controls[0].selected`, false),
+            $value(`inspector.controls[0].selected`, true),
+            $value(`selection.controls[0].selected`, false),
+            $value(`panels.bottom`, $ref(falcor._path.concat(`inspector`))),
         );
     }
 }

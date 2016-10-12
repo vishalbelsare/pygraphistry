@@ -13,6 +13,8 @@ function defaultPropsResolver(routerInstance) {
 export function getHandler(lists, loader, getInitialProps = defaultPropsResolver) {
     return function handler(path) {
 
+        // console.log(`get: ${JSON.stringify(path)}`);
+
         const state = { ...getInitialProps(this) };
 
         let list, index = -1, count = lists.length;
@@ -26,7 +28,7 @@ export function getHandler(lists, loader, getInitialProps = defaultPropsResolver
 
         const suffix = slice.call(path, count * 2);
         const loaded = suffix.reduce((source, keys, index) => source.mergeMap(
-                ({ data, idxs }) => [].concat(keys),
+                ({ data, idxs }) => keysetToKeysList(keys),
                 ({ data, idxs }, key) => ({
                     data, idxs: {
                         ...idxs,
@@ -82,7 +84,6 @@ export function getHandler(lists, loader, getInitialProps = defaultPropsResolver
         return (values
             .map(mapObjectsToAtoms)
             // .do((pv) => {
-            //     console.log(`get: ${JSON.stringify(path)}`);
             //     if (pv.isMessage) {
             //         console.log(`additionalPath: ${JSON.stringify(pv.additionalPath)}`);
             //     } else {
@@ -92,4 +93,21 @@ export function getHandler(lists, loader, getInitialProps = defaultPropsResolver
             .catch(captureErrorStacks)
         );
     }
+}
+
+function keysetToKeysList(keys) {
+    if (!keys || 'object' !== typeof keys) {
+        return [keys];
+    } else if (Array.isArray(keys)) {
+        return keys;
+    }
+    let rangeEnd = keys.to;
+    let rangeStart = keys.from || 0;
+    if ('number' !== typeof rangeEnd) {
+        rangeEnd = rangeStart + (keys.length || 0) - 1;
+    }
+    return Array.from(
+        {length: rangeEnd - rangeStart },
+        (x, index) => index + rangeStart
+    );
 }

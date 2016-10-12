@@ -33,17 +33,24 @@ function componentForSideAndType(side, id) {
 let Panel = ({
         panel = {}, placement,
         positionTop, positionLeft,
-        id, side, name, style, ...props
+        id, side, isOpen, name, style, ...props
     } = {}) => {
-    const Content = componentForSideAndType(side, panel.id);
-    return (
-        <Content name={name}
-                 side={side}
-                 data={panel}
-                 style={style}
-                 className={panelStyles[`panel-${side}`]}
-                 {...props}/>
+    const Component = componentForSideAndType(side, panel.id);
+    const componentInstance = (
+        <Component name={name} side={side}
+                   data={panel} style={style}
+                   className={panelStyles[`panel-${side}`]}
+                   {...props}/>
     );
+    if (side === 'left') {
+        return (
+            <div style={leftPanelStyles(isOpen)}
+                 className={panelStyles[`panel-${side}`]}>
+                {componentInstance}
+            </div>
+        );
+    }
+    return componentInstance;
 };
 
 Panel = container(
@@ -78,4 +85,21 @@ function Histograms() {
     return (
         <h1>Histograms</h1>
     );
+}
+
+function leftPanelStyles(isOpen) {
+    return {
+        top: `0px`,
+        left: `44px`,
+        zIndex: 3700,
+        position: `absolute`,
+        opacity: Number(isOpen),
+        minWidth: isOpen ? undefined : `200px`,
+        minHeight: isOpen ? undefined : `200px`,
+        visibility: isOpen && 'visible' || 'hidden',
+        transform: `translate3d(${Number(!isOpen) * -10}%, 6px, 0)`,
+        transition: isOpen &&
+            `opacity 0.2s, transform 0.2s, visibility 0s` ||
+            `opacity 0.0s, transform 0.0s, visibility 0s linear 0.2s`
+    };
 }

@@ -44,9 +44,9 @@ export function setupErrorHandlers(document, window, options) {
             const originalFn = console[functionName];
             console[functionName] = function(message) {
                 // Don't report errors from React
-                if ((/react/i).test(message)) {
-                    return;
-                }
+                // if ((/react/i).test(message)) {
+                //     return;
+                // }
                 originalFn.apply(this, arguments);
                 notifier.next({
                     message: format.apply(this, arguments)

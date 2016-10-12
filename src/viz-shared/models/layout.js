@@ -15,7 +15,6 @@ export function layout(workbookId, viewId) {
             ],
             controls: [{
                 selected: false,
-                view: $ref(`${view}`),
                 id: 'toggle-layout-settings',
                 name: 'Layout settings',
             }],

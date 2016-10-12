@@ -59,13 +59,13 @@ function assignNBodyToView(workbook, nBody, view) {
         try {
             background = new Color(background);
         } catch (e) {
-            background = scene.background.color;
+            background = scene.renderer.background.color;
         }
     } else {
-        background = scene.background.color;
+        background = scene.renderer.background.color;
     }
 
-    scene.background.color = background;
+    scene.renderer.background.color = background;
 
     if (options.length === 0) {
         const optionsPath = `workbooksById['${workbook.id}']
@@ -103,11 +103,7 @@ function toControls(options, params) {
                 props[key] = control[key]) &&
                 props || props), {});
 
-        controls[index] = {
-            id, name, type, props, value,
-            // stateKey: 'value',
-            // state: $ref(`${options}[${index}]`)
-        };
+        controls[index] = { id, name, type, props, value };
 
         return controls;
     }, { length: params.length });

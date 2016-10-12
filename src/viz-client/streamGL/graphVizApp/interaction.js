@@ -2,7 +2,7 @@
 
 
 import $ from 'jquery'
-import { Observable, Subject } from 'rxjs';
+import { Observable, Scheduler, Subject } from 'rxjs';
 
 var $$       = window.Quo;
 var _        = require('underscore');
@@ -103,7 +103,7 @@ function setupMousemove($eventTarget) {
         .filter(function (v) {
             return ! $(v.target).parents('.graph-label.clicked').length;
         })
-        .auditTime(1)
+        // .auditTime(1)
         .map(function (evt) {
             evt.preventDefault();
             return {
@@ -157,7 +157,7 @@ function setupScroll($eventTarget, canvas, camera, appState) {
     var zoomBase = 1.1;
 
     return $eventTarget.onAsObservable('mousewheel')
-        .auditTime(1)
+        // .auditTime(1)
         .switchMap(util.observableFilter([appState.marqueeOn, appState.brushOn],
             function (val) {
                 return val !== 'done';
@@ -216,7 +216,7 @@ function zoom(camera, zoomFactor, zoomPoint) {
 
 function setupCenter(toggleCenter, curPoints, camera) {
     return toggleCenter
-        .auditTime(1)
+        .auditTime(0, Scheduler.animationFrame)
         .switchMap(function () {
             debug('click on center');
             return curPoints.take(1).map(function (curPoints) {

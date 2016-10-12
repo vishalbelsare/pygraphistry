@@ -11,12 +11,13 @@ export function configureStore(initialState, rootReducer, epics) {
             applyMiddleware(
                 createEpicMiddleware(
                     combineEpics(...epics)
+                )
+                // ,createLogger({
+                //     diff: true,
+                //     collapsed: true,
+                //     // stateTransformer: deepExtendState
+                // })
                 ),
-                createLogger({
-                    diff: true,
-                    collapsed: true,
-                    // stateTransformer: deepExtendState
-                })),
             DevTools.instrument()
         )
     );

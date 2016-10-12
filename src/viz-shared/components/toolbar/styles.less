@@ -3,6 +3,7 @@
 
 .button-list {
     position: absolute;
+    z-index: @menu-z;
     top: 3px;
     left: 5px;
 }
@@ -19,6 +20,21 @@
             color: #333 !important;
             border-color: #adadad !important;
             background-color: #e6e6e6 !important;
+            &:active {
+                color: #333 !important;
+                border-color: #8c8c8c !important;
+                background-color: #d4d4d4 !important;
+            }
+        }
+    }
+    &.selected {
+        color: #333 !important;
+        border-color: #adadad !important;
+        background-color: #e6e6e6 !important;
+        &:active {
+            color: #333 !important;
+            border-color: #8c8c8c !important;
+            background-color: #d4d4d4 !important;
         }
     }
 }

@@ -21,7 +21,6 @@ export function sets(workbookId, viewId, setIds = [ simpleflake().toJSON(),
             ],
             controls: [{
                 selected: false,
-                view: $ref(`${view}`),
                 id: 'toggle-sets',
                 name: 'Sets',
                 type: 'toggle',

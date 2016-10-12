@@ -19,12 +19,10 @@ export function selection(workbookId, viewId) {
             edge: [], point: [],
             controls: [{
                 selected: false,
-                view: $ref(`${view}`),
                 id: 'toggle-select-nodes',
                 name: 'Select nodes',
             }, {
                 selected: false,
-                view: $ref(`${view}`),
                 id: 'toggle-window-nodes',
                 name: 'Data brush',
             }]

@@ -103,10 +103,11 @@ function hitTest(maps, width, height, x, y, numRenderedSplits, hit = {idx: -1, d
  * @returns {VizSliceElement}
  */
 function hitTestCircumference(maps, width, height, x, y, r, numRenderedSplits, hit = {idx: -1, dim: 0}) {
-    for (var attempt = 0; attempt < r * 2 * Math.PI; attempt++) {
-        var attemptX = x + r * Math.round(Math.cos(attempt / r));
-        var attemptY = y + r * Math.round(Math.sin(attempt / r));
-        hit = hitTest(maps, width, height, attemptX, attemptY, numRenderedSplits, hit);
+    const circumference = r * 2 * Math.PI;
+    for (let point = 0; point < circumference; point++) {
+        let pointX = Math.round(x + r * Math.cos(point / r));
+        let pointY = Math.round(y + r * Math.sin(point / r));
+        hit = hitTest(maps, width, height, pointX, pointY, numRenderedSplits, hit);
         if (hit.idx > -1) {
             return hit;
         }

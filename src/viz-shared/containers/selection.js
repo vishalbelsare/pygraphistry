@@ -1,14 +1,16 @@
+import { toProps } from '@graphistry/falcor';
 import { container } from '@graphistry/falcor-react-redux';
+import SelectionComponent from 'viz-shared/components/selection';
 
-let Selection = ({ edge, point }) => {
+let Selection = ({ rect = {}, ...props }) => {
     return (
-        <h1>SELECTION</h1>
+        <SelectionComponent rect={toProps(rect)} {...props}/>
     )
 };
 
 Selection = container(
     ({ edge = [], point = [] } = {}) => `{
-        rect, type, label,
+        rect, type,
         edge: { length, [0...${edge.length || 0}] },
         point: { length, [0...${point.length || 0}] }
     }`

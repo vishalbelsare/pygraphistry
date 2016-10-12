@@ -1,21 +1,44 @@
-import { container } from '@graphistry/falcor-react-redux';
+import { toProps } from '@graphistry/falcor';
 import { Settings } from 'viz-shared/containers/settings';
+import { container } from '@graphistry/falcor-react-redux';
+import LabelsComponent from 'viz-shared/components/labels';
 
-let Labels = ({ edges, points }) => {
+let Labels = ({ edge = [], point = [], highlight = {}, selection = {}, ...props }) => {
     return (
-        <h1>LABELS</h1>
-    )
+        <LabelsComponent edge={toProps(edge)}
+                         point={toProps(point)}
+                         highlight={toProps(highlight)}
+                         selection={toProps(selection)}
+                         {...props}/>
+    );
 };
 
 Labels = container(
-    ({ edges = [], points = [], settings } = {}) => `{
-        id, name,
-        selection, timeZone,
+    ({ edge = [], point = [], settings } = {}) => `{
+        id, name, timeZone,
         opacity, enabled, poiEnabled,
         ['background', 'foreground']: { color },
-        edges: { length, [0...${edges.length || 0}]  },
-        points: { length, [0...${points.length || 0}] },
-        ...${ Settings.fragment({ settings }) }
+        ...${ Settings.fragment({ settings }) },
+        highlight: {
+            label: {
+                'type', 'index', 'title', 'columns', 'formatted'
+            }
+        },
+        selection: {
+            label: {
+                'type', 'index', 'title', 'columns', 'formatted'
+            }
+        },
+        edge: {
+            length, [0...${edge.length || 0}]: {
+                'type', 'index', 'title', 'columns', 'formatted'
+            }
+        },
+        point: {
+            length, [0...${point.length || 0}]: {
+                'type', 'index', 'title', 'columns', 'formatted'
+            }
+        }
     }`
 )(Labels);
 

@@ -24,7 +24,6 @@ export function filters(workbookId, viewId, defaultFilter = {}) {
             templates: $ref(`${view}.expressionTemplates`),
             controls: [{
                 selected: false,
-                view: $ref(`${view}`),
                 id: 'toggle-filters',
                 name: 'Filters',
             }]

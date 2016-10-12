@@ -39,7 +39,8 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
         return labelIndexes.map((labelIndex) => ({
             workbook, view, label: {
                 type: labelType, index: labelIndex, data: {
-                    formatted: dataframe.getCell(labelIndex, 'hostBuffer', labelBufferName)
+                    formatted: dataframe
+                        .getCell(labelIndex, 'hostBuffer', labelBufferName)
                 }
             }
         }));

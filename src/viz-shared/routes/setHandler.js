@@ -29,9 +29,9 @@ export function setHandler(lists, loader, mapValue, valueKeys = {},
             getInitialProps(this) || {}, [], lists, 0, json
         );
 
-        const loaded = suffix.reduce((source, json, index) => source.mergeMap(
-                ({ data, idxs }) => expandJSON(json, index, { data, idxs }, valueKeys)
-            ),
+        const loaded = suffix.reduce(
+            (source, json, index) => source.mergeMap(({ data, idxs }) =>
+                expandJSON(json, index, { data, idxs }, valueKeys)),
             Observable
                 .defer(() => loader(state))
                 .map((data) => ({ data, idxs: { length: 0 } }))

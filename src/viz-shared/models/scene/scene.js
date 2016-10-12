@@ -11,24 +11,32 @@ export function scene(workbookId, viewId, sceneID = 'default') {
         scene: {
             id: sceneID,
             name: 'Scene',
-            simulating: true,
-            showArrows: true,
-            pruneOrphans: false,
+            simulating: false,
+
             camera: $ref(`${view}.camera`),
+            labels: $ref(`${view}.labels`),
             highlight: $ref(`${view}.highlight`),
             selection: $ref(`${view}.selection`),
-            foreground: { color: new Color(`#ffffff`) },
-            background: { color: new Color(`#333339`) },
-            edges: { scaling: 1, opacity: 1, elements: undefined },
-            points: { scaling: 1, opacity: 1, elements: undefined },
+
+            renderer: {
+                id: sceneID,
+                showArrows: true,
+                pruneOrphans: false,
+                camera: $ref(`${view}.camera`),
+                highlight: $ref(`${view}.highlight`),
+                selection: $ref(`${view}.selection`),
+                foreground: { color: new Color(`#ffffff`) },
+                background: { color: new Color(`#333339`) },
+                edges: { scaling: 1, opacity: 1, elements: undefined },
+                points: { scaling: 1, opacity: 1, elements: undefined },
+            },
+
             controls: [{
-                selected: true,
-                view: $ref(`${view}`),
+                selected: false,
                 id: 'toggle-simulating',
                 name: 'Toggle visual clustering',
             }, {
                 selected: false,
-                view: $ref(`${view}`),
                 id: 'toggle-scene-settings',
                 name: 'Scene settings',
             }],
@@ -39,16 +47,12 @@ export function scene(workbookId, viewId, sceneID = 'default') {
                     id: 'point-colors',
                     type: 'color',
                     name: 'Point Colors',
-                    value: $ref(`${view}.scene.foreground.color`),
-                    // stateKey: 'color',
-                    // state: $ref(`${view}.scene.foreground`)
+                    value: $ref(`${view}.scene.renderer.foreground.color`),
                 }, {
                     id: 'background-color',
                     type: 'color',
                     name: 'Background Color',
-                    value: $ref(`${view}.scene.background.color`),
-                    // stateKey: 'color',
-                    // state: $ref(`${view}.scene.background`)
+                    value: $ref(`${view}.scene.renderer.background.color`),
                 }]
             }, {
                 id: 'appearance',
@@ -61,9 +65,7 @@ export function scene(workbookId, viewId, sceneID = 'default') {
                         min: 1, max: 100,
                         step: 1, scale: 'log'
                     },
-                    value: $ref(`${view}.scene.points.scaling`),
-                    // stateKey: 'scaling',
-                    // state: $ref(`${view}.scene.points`)
+                    value: $ref(`${view}.scene.renderer.points.scaling`),
                 // }, {
                 //     id: 'edge-size',
                 //     type: 'discrete',
@@ -72,8 +74,7 @@ export function scene(workbookId, viewId, sceneID = 'default') {
                 //         min: 1, max: 100,
                 //         step: 1, scale: 'log'
                 //     },
-                //     stateKey: 'scaling',
-                //     state: $ref(`${view}.scene.edges`)
+                //     value: $ref(`${view}.scene.renderer.edge.scaling`),
                 }, {
                     id: 'point-opacity',
                     type: 'discrete',
@@ -82,9 +83,7 @@ export function scene(workbookId, viewId, sceneID = 'default') {
                         min: 0, max: 100,
                         step: 1, scale: 'percent'
                     },
-                    value: $ref(`${view}.scene.points.opacity`),
-                    // stateKey: 'opacity',
-                    // state: $ref(`${view}.scene.points`)
+                    value: $ref(`${view}.scene.renderer.points.opacity`),
                 }, {
                     id: 'edge-opacity',
                     type: 'discrete',
@@ -93,23 +92,17 @@ export function scene(workbookId, viewId, sceneID = 'default') {
                         min: 0, max: 100,
                         step: 1, scale: 'percent'
                     },
-                    value: $ref(`${view}.scene.edges.opacity`),
-                    // stateKey: 'opacity',
-                    // state: $ref(`${view}.scene.edges`)
+                    value: $ref(`${view}.scene.renderer.edges.opacity`),
                 }, {
                     id: 'show-arrows',
                     type: 'bool',
                     name: 'Show Arrows',
-                    value: $ref(`${view}.scene.showArrows`),
-                    // stateKey: 'showArrows',
-                    // state: $ref(`${view}.scene`)
+                    value: $ref(`${view}.scene.renderer.showArrows`),
                 }, {
                     id: 'prune-orphans',
                     type: 'bool',
                     name: 'Prune Isolated Nodes',
-                    value: $ref(`${view}.scene.pruneOrphans`),
-                    // stateKey: 'pruneOrphans',
-                    // state: $ref(`${view}.scene`)
+                    value: $ref(`${view}.scene.renderer.pruneOrphans`),
                 }]
             }]
         }

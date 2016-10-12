@@ -1,0 +1,21 @@
+@import '../../../viz-shared/index.less';
+
+.selection-point {
+    top: 0;
+    left: 0;
+    position: absolute;
+    z-index: @highlighted-point-z;
+    border: 2px solid rgba(0, 0, 0, 0.8);
+    background-color: rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+    &.draggable {
+        cursor: -webkit-grab;
+        cursor: -moz-grab;
+        cursor: grab;
+        &.dragging {
+            cursor: -webkit-grabbing;
+            cursor: -moz-grabbing;
+            cursor: grabbing;
+        }
+    }
+}
