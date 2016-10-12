@@ -56,7 +56,7 @@ import { setupLegacyInterop } from './legacy';
 const debug = _debug('graphistry:viz-client');
 
 Observable
-    .fromEvent(window, 'load', () => window.location.search.substring(1))
+    .fromEvent(window, 'load', () => window.location.href)
     .map(partial(getURLParameters, debug))
     // Set the document title based on the URL params
     .map(partial(setupTitle, document))

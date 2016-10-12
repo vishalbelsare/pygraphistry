@@ -28,7 +28,8 @@ function initSocket(options, workbook) {
     const whiteListedQueryParams = [
         'bg', 'view', 'type', 'scene',
         'device', 'mapper', 'vendor', 'usertag',
-        'dataset', 'workbook', 'controls', 'viztoken'
+        'dataset', 'workbook', 'controls', 'viztoken',
+        'workerid', 'sessionid'
     ];
 
     const socketQuery = whiteListedQueryParams.reduce((params, key) => {
@@ -39,7 +40,7 @@ function initSocket(options, workbook) {
     }, {});
 
     const socket = SocketIO.Manager({
-        path: `/socket.io`, reconnection: false,
+        path: `${window.graphistryPath || ''}/socket.io`, reconnection: false,
         query: { ...socketQuery, workbook, falcorClient: true }
     }).socket('/');
 
