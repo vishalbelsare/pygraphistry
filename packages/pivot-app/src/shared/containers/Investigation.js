@@ -38,9 +38,9 @@ function renderInvestigation({status, pivots = [],
                             </ButtonGroup>
                         </th>
                         <td className={styles.pivotData0 + ' pivotTypeSelector'}>Step</td>
-                        <td colSpan="4" className={styles.pivotData1}>Parameters</td>
-                        <td colSpan="2" className={styles.pivotResultCount}>Hits</td>
-                        <td colSpan="2" className={styles.pivotResultCount}>Actions</td>
+                        <td className={styles.pivotData1}>Parameters</td>
+                        <td className={styles.pivotResultCount}>Hits</td>
+                        <td className={styles.pivotResultCount}>Actions</td>
                     </tr>
                 </thead>
                 <tbody>
