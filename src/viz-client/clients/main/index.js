@@ -40,7 +40,7 @@ function initSocket(options, workbook) {
     }, {});
 
     const socket = SocketIO.Manager({
-        path: `${window.graphistryPath}/socket.io`, reconnection: false,
+        path: `${window.graphistryPath || ''}/socket.io`, reconnection: false,
         query: { ...socketQuery, workbook, falcorClient: true }
     }).socket('/');
 

@@ -88,17 +88,10 @@ function renderFullPage(data, falcor, paths, html = '') {
 <html lang='en-us'>
     <head>
         ${paths ? `<base href="${paths.base}">` : ''}
-        <script type="text/javascript">
-            window.graphistryPath = "${ paths ? paths.prefix : ''}";
-        </script>
         <meta name='robots' content='noindex, nofollow'/>
         <meta http-equiv='x-ua-compatible' content='ie=edge'/>
         <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'/>${
-            iconsHTML.map((tag) =>
-                tag.replace(/href=\"(.*?)\"/g, (match, url) =>
-                    `href='${url}'`
-                )
-            ).join('\n')
+            iconsHTML.join('\n')
         }
         <!--link rel='stylesheet' type='text/css' href='https://maxcdn.bootstrapcdn.com/bootstrap/latest/css/bootstrap.min.css'-->${
             client && client.css ?
@@ -114,8 +107,8 @@ function renderFullPage(data, falcor, paths, html = '') {
         </script>
         <div id='root'>${html}</div>
         <script id='initial-state' type='text/javascript'>
-            var __assetSuffix__ = '${assetSuffix}';
-            var __INITIAL_STATE__ = ${stringify(data && data.toJSON() || {})};
+            var graphistryPath = "${ paths && paths.prefix || ''}";
+            var __INITIAL_STATE__ = ${stringify(false && data && data.toJSON() || {})};
             var __INITIAL_CACHE__ = ${stringify(falcor && falcor.getCache() || {})};
         </script>
         <script type="text/javascript" src="${`${vendor.js}`}"></script>

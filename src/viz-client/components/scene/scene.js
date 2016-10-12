@@ -172,7 +172,10 @@ class Scene extends React.Component {
         } = props;
 
         const scene = scenes[sceneID]();
-        const uri = { href: `${window.graphistryPath}/graph/`, pathname: `${window.graphistryPath}` };
+        const uri = {
+            pathname: `${window.graphistryPath || ''}`,
+            href: `${window.graphistryPath || ''}/graph/`,
+        };
         const rendererOptions = { pixelRatio, ...simCameraBounds };
         const renderState = initRenderer(scene, simulation, rendererOptions);
         const { hostBuffers: {
