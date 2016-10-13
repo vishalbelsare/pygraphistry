@@ -42,11 +42,11 @@ export function shapeSplunkResults(splunkResults, pivotDict, index, template, ro
     const isStar = (connectionsArray === undefined) || (connectionsArray.indexOf('*') != -1);
 
     function shapeHyperGraph({ app, pivot } ) {
-        const { events } = pivot;
+        const { results } = pivot;
         const edges = [];
         const nodeLabels = [];
-        for(let i = 0; i < events.length; i++) {
-            const row = events[i];
+        for(let i = 0; i < results.length; i++) {
+            const row = results[i];
             const eventID = row['EventID'] || simpleflake().toJSON();
 
             const fields =

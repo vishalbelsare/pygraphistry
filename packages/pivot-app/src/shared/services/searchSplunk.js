@@ -92,8 +92,8 @@ export function searchSplunk({app, pivot}) {
                         events[i][field] = value;
                     }
                 }
-                pivot.eventCount = job.properties().resultCount;
-                pivot.events = events;
+                pivot.resultCount = job.properties().resultCount;
+                pivot.results = events;
                 pivot.splunkSearchID = job.sid;
                 return {app, pivot};
             }
