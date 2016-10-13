@@ -37,7 +37,7 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
 
     apiKey.init(app);
 
-    app.all('/graph', handleWorkerRequest);
+    app.all('/graph/*', handleWorkerRequest);
     app.all('/etl', handleWorkerRequest);
     app.all('/etlvgraph', handleWorkerRequest);
 
@@ -89,7 +89,7 @@ function handleWorkerRequest(req, res) {
 // the worker.
 function redirectNginxReqest(requestUrl, res, worker) {
     const { path } = urlParse(requestUrl);
-    const redirectUrl = `/worker/${worker.port}/${path}`;
+    const redirectUrl = `/worker/${worker.port}${path}`;
 
     res.set(`X-Accel-Redirect`, redirectUrl);
     res.send('');
