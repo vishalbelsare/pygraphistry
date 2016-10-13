@@ -117,6 +117,31 @@ function getIPs() {
 }
 
 
+function getWorkers() {
+    // The absolute Date that defines the time threshild between fresh/stale pings
+    var freshDate = new Date(Date.now() - (config.GPU_PING_TIMEOUT * 1000));
+
+    return dbObs.flatMap(function(db) {
+        // Find all idle node processes
+        var nodeCollection = db.collection('node_monitor').find({
+            'active': false,
+            'updated': {'$gt': freshDate}
+        });
+
+        return Rx.Observable
+            .bindNodeCallback(nodeCollection.toArray.bind(nodeCollection))()
+            .map(function (results) {
+                if (!results.length) {
+                    logger.warn({workerQuery: results}, 'Found 0 records for inactive workers in the database');
+                    var msg = "Server at maximum capacity, and your request can't be serviced at this time. Please contact help@graphistry.com for private access. (Reason: query for registered, inactive workers returned no results.)";
+                    throw new Error(msg);
+                }
+                return results;
+            });
+    });
+}
+
+
 /**
  * Queries a worker's to see if it is available. If it's available, the query has the side effect of
  * reserving the worker for a short period of time, making it unavailable for assignment during this
@@ -187,20 +212,22 @@ function combineWorkerInfo (servers, workers) {
 
 export function pickWorker() {
     const ips = Observable.defer(() => {
-        if (config.ENVIRONMENT !== 'local') {
-            return getIPs().flatMap(({ servers, workers }) => {
-                return Observable.from(combineWorkerInfo(servers, workers));
-            });
+        if(config.PINGER_ENABLED) {
+            return getWorkers()
+                .flatMap((workers) => Observable.from(workers))
+                .map((worker) => {
+                    return { hostname: worker.ip, port: worker.port, timestamp: worker.updated };
+                });
+        } else {
+            var numWorkers = config.VIZ_LISTEN_PORTS.length;
+            var port = config.VIZ_LISTEN_PORTS[nextLocalWorker];
+
+            nextLocalWorker = (nextLocalWorker + 1) % numWorkers;
+
+            logger.debug('Using local hostname/port', VIZ_SERVER_HOST, port);
+
+            return Observable.of({ port, hostname: VIZ_SERVER_HOST });
         }
-
-        var numWorkers = config.VIZ_LISTEN_PORTS.length;
-        var port = config.VIZ_LISTEN_PORTS[nextLocalWorker];
-
-        nextLocalWorker = (nextLocalWorker + 1) % numWorkers;
-
-        logger.debug('Using local hostname/port', VIZ_SERVER_HOST, port);
-
-        return Observable.of({ port, hostname: VIZ_SERVER_HOST });
     });
 
     // `concatMap` ensures we subscribe to each successive handshakeIp
