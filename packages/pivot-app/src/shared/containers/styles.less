@@ -368,7 +368,7 @@ td, th {
 }
 
 :local(.pivots) {
-    thead td {
+    thead th {
         border: none;
         text-align: center;
         text-transform: uppercase;
@@ -384,18 +384,18 @@ td, th {
     tbody tr:nth-child(even) {
         background-color: #f4f4f4;
     }
+
+    tbody td {
+        vertical-align: middle !important;
+    }
 }
 
 :local(.row-toggled-on), :local(.row-toggled-off) {
-    height: 70px;
-    & > td {
-        height: 70px;
-    }
 }
 
 :local(.pivotToggle) {
     width: 90px;
-    span {
+    td& span {
         font-weight: bold;
         font-color: #777;
         margin-right: 1em;
@@ -512,8 +512,15 @@ td, th {
     display: none;
 }
 :local(.pivotResultCount) {
-    width: 40px;
-    text-align: center;
+    text-align: right;
+    span {
+        margin-top: @summaryPillHeight;
+    }
+}
+:local(.pivotResultSummaries) {
+    & > * {
+        vertical-align: middle;
+    }
 }
 :local(.result-count-on) { }
 :local(.result-count-off) {
