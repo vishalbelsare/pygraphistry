@@ -63,7 +63,7 @@ class SplunkPivot {
                 };
             })
 
-        return shapeSplunkResults(splunkResults, pivot.pivotParameters, pivot.id, this, rowId)
+        return shapeSplunkResults(splunkResults, pivot.pivotParameters, pivot.id, this, pivot.rowId)
             .map(({app, pivot}) => {
                 pivot.status = { ok: true };
                 return { app, pivot }

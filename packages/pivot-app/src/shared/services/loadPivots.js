@@ -37,11 +37,11 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
 
     // rowIds are needed to set 'Pivot #' Attribute (Demo)
     // Should probably remove.
-    function loadPivotsById({pivotIds, rowIds, test}) {
-        return service.loadByIds(pivotIds, rowIds)
+    function loadPivotsById({pivotIds, rowIds}) {
+        return service.loadByIds(pivotIds)
             .map(({app, pivot}, index) => {
                 pivot.rowId = rowIds ? rowIds[index] : undefined;
-                return ({app, pivot})
+                return ({app, pivot});
             })
     }
 

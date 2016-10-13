@@ -61,7 +61,7 @@ function searchPivot(action$, store) {
                 ({ stateKey, falcor, state, index, target }) => {
                     return Observable.from(falcor.set($value(`pivots['${index}']['enabled']`, true)))
                         // TODO Use pivot id instead of index
-                        .concat(falcor.call(['pivots', index, 'searchPivot']))
+                        .concat(falcor.call(['pivots', index, 'searchPivot'], [index]))
                         .concat(falcor.call(`play`))
                 }
             ))
