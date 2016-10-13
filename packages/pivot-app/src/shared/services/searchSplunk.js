@@ -32,8 +32,9 @@ export function searchSplunk({app, pivot}) {
     // Set the search parameters
     const searchParams = {
         id: searchJobId,
-        exec_mode: "blocking",
-        earliest_time: "1980-06-20T16:27:43.000-07:00"
+        timeout: '14400', // 4 hours
+        exec_mode: 'blocking',
+        earliest_time: '1980-06-20T16:27:43.000-07:00'
     };
 
     const getJobObservable = Observable.bindNodeCallback(service.getJob.bind(service));

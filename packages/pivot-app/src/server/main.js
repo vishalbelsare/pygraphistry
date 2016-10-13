@@ -5,7 +5,10 @@ import { reloadHot } from '../shared/reloadHot';
 import { renderMiddleware } from './middleware';
 import { getDataSourceFactory } from '../shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
-import { app as createApp } from '../shared/models';
+import {
+    createAppModel,
+    makeTestUser
+} from '../shared/models';
 import {
     loadApp,
     userStore,
@@ -20,29 +23,39 @@ const investigationPath = 'tests/appdata/investigations';
 const pivotPath = 'tests/appdata/pivots';
 
 listInvestigations(investigationPath)
+    .map(makeTestUser)
     .do(init)
     .subscribe(
         () => console.log('Initialized'),
         (e) => console.error(e)
     )
 
-function init(investigations) {
-    const app = createApp(investigations);
+function init(testUser) {
+    const app = createAppModel(testUser);
 
     const {loadUsersById} = userStore(loadApp(app));
-    const {loadInvestigationsById, saveInvestigationsById} = investigationStore(loadApp(app),
-                                                                                investigationPath);
-    const {loadPivotsById, savePivotsById} = pivotStore(loadApp(app), pivotPath);
+    const {
+        loadInvestigationsById,
+        saveInvestigationsById,
+        deleteInvestigationsById
+    } = investigationStore(loadApp(app), investigationPath);
+    const {
+        loadPivotsById,
+        savePivotsById,
+        deletePivotsById
+    } = pivotStore(loadApp(app), pivotPath);
 
     const routeServices = {
         loadApp: loadApp(app),
         loadUsersById,
         loadInvestigationsById,
         saveInvestigationsById,
+        deleteInvestigationsById,
         createInvestigation,
         cloneInvestigationsById,
-        loadPivotsById: loadPivotsById,
-        savePivotsById: savePivotsById,
+        loadPivotsById,
+        savePivotsById,
+        deletePivotsById,
         insertPivot, splicePivot, searchPivot,
         uploadGraph
     };

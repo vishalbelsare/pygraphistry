@@ -35,7 +35,7 @@ function summarizeOutput ({labels}) {
 }
 
 
-export function shapeSplunkResults(splunkResults, pivotDict, index, template) {
+export function shapeSplunkResults(splunkResults, pivotDict, index, template, rowId) {
     const encodings = template.encodings;
     const attributes = template.attributes;
     const connectionsArray = template.connections;
@@ -73,7 +73,7 @@ export function shapeSplunkResults(splunkResults, pivotDict, index, template) {
                             {'destination': destination,
                                 'source': eventID,
                                 'edgeType': 'EventID->Search',
-                                'pivot': index}));
+                                'pivot': rowId}));
                     nodeLabels.push({'node': destination, type:'Search'});
                     continue;
                 }
@@ -84,7 +84,7 @@ export function shapeSplunkResults(splunkResults, pivotDict, index, template) {
                         {'destination': row[field],
                             'source': eventID,
                             'edgeType': ('EventID->' + field),
-                            'pivot': index}));
+                            'pivot': rowId}));
                 }
             }
 

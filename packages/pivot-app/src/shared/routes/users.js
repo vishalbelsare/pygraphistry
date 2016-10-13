@@ -11,7 +11,7 @@ import {
     mapObjectsToAtoms
 } from './support';
 
-export function users({ loadApp, loadUsersById }) {
+export function users({ loadApp, loadUsersById, deleteInvestigationsById, deletePivotsById}) {
     const appGetRoute = getHandler([], loadApp);
 
     return [{
@@ -37,11 +37,11 @@ export function users({ loadApp, loadUsersById }) {
         returns: `$ref('investigationsById[{investigationId}]')`
     }, {
         route: `['usersById'][{keys}]['deleteInvestigations']`,
-        call: deleteInvestigationsCallRoute({loadUsersById})
+        call: deleteInvestigationsCallRoute({loadUsersById, deleteInvestigationsById, deletePivotsById})
     }];
 }
 
-function deleteInvestigationsCallRoute({loadUsersById}) {
+function deleteInvestigationsCallRoute({loadUsersById, deleteInvestigationsById, deletePivotsById}) {
     return function (path, args) {
         const userIds = path[1];
         const investigationIds = args[0];
@@ -57,15 +57,17 @@ function deleteInvestigationsCallRoute({loadUsersById}) {
                                                 app.selectedInvestigation.value[1] :
                                                 undefined;
                 if (investigationIds.includes(selectedInvestigationId)) {
-                    app.selectedInvestigation  = newInvestigations.length > 0 ? user.investigations[0]
-                                                                              : undefined;
+                    app.selectedInvestigation  = newInvestigations.length > 0 ?
+                                                 user.investigations[0] :
+                                                 undefined;
                 }
 
-                return [
-                    $pathValue(`['usersById'][${user.id}]['investigations']['length']`, newInvestigations.length),
-                    $invalidation(`['usersById'][${user.id}]['investigations'][${0}..${oldLength}]`),
-                    $invalidation(`['selectedInvestigation']`)
-                ];
+                return deleteInvestigationsById({investigationIds, deletePivotsById})
+                    .map(() => [
+                        $pathValue(`['usersById'][${user.id}]['investigations']['length']`, newInvestigations.length),
+                        $invalidation(`['usersById'][${user.id}]['investigations'][${0}..${oldLength}]`),
+                        $invalidation(`['selectedInvestigation']`)
+                    ]);
             })
             .catch(logErrorWithCode)
     };

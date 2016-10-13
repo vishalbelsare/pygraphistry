@@ -1,6 +1,7 @@
 import 'rc-switch/assets/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-bootstrap-table/dist/react-bootstrap-table.min.css';
+import 'react-select/dist/react-select.css';
 
 import ReactDOM from 'react-dom';
 import { decode } from 'querystring';
@@ -48,7 +49,7 @@ function getAppDOMNode(appDomNode) {
 function getAppModel() {
     return window.appModel = new Model({
         cache: getAppCache(),
-        JSONWithHashCodes: true,
+        recycleJSON: true,
         scheduler: Scheduler.asap,
         source: new DataSource('/model.json'),
         treatErrorsAsValues: true,

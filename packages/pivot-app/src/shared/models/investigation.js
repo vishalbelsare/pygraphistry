@@ -31,7 +31,7 @@ function initialSoftState(pivots) {
 
 export function createInvestigationModel(serializedInvestigation, index) {
     const normalizedInvestigation = {
-        ...defaults(index),
+        ...defaults(index || ''),
         ...serializedInvestigation
     };
     return {

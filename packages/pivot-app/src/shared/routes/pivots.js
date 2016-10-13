@@ -29,12 +29,12 @@ export function pivots({loadPivotsById, searchPivot}) {
         returns: `String`,
         get: getPivotsHandler,
         route: `pivotsById[{keys}]['id', 'total', 'resultCount', 'resultSummary',
-                                   'status', 'pivotParameters', 'pivotParameterKeys']`
+                                   'status', 'pivotParameterKeys']`
     }, {
         returns: `String | Number`,
         get: getPivotsHandler,
         set: setPivotsHandler,
-        route: `pivotsById[{keys}]['pivotParameters']['mode', 'input', 'search', 'time']`
+        route: `pivotsById[{keys}]['pivotParameters'][{keys}]`
     }, {
         route: `pivotsById[{keys}].searchPivot`,
         call: searchPivotCallRoute({loadPivotsById, searchPivot})
@@ -45,7 +45,11 @@ function searchPivotCallRoute({loadPivotsById, searchPivot}) {
     return function(path, args) {
         const pivotIds = path[1];
 
-        return Observable.defer(() => searchPivot({loadPivotsById, pivotIds}))
+        // Needed in order to set 'Pivot #' Attribute (Demo)
+        // Should probably remove.
+        const rowIds = args;
+
+        return Observable.defer(() => searchPivot({loadPivotsById, pivotIds, rowIds}))
             .mergeMap(({app, pivot}) => {
                 return [
                     $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),

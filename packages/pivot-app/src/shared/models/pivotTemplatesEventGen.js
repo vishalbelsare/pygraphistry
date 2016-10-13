@@ -51,7 +51,7 @@ class SplunkPivot {
         this.fields = fields;
     }
 
-    searchAndShape({app, pivot}) {
+    searchAndShape({app, pivot, rowId}) {
 
         pivot.searchQuery = this.toSplunk(pivot.pivotParameters, pivotCache);
 
@@ -63,7 +63,7 @@ class SplunkPivot {
                 };
             })
 
-        return shapeSplunkResults(splunkResults, pivot.pivotParameters, pivot.id, this)
+        return shapeSplunkResults(splunkResults, pivot.pivotParameters, pivot.id, this, rowId)
             .map(({app, pivot}) => {
                 pivot.status = { ok: true };
                 return { app, pivot }

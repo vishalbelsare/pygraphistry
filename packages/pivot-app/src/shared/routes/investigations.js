@@ -123,8 +123,7 @@ function saveCallRoute({ loadInvestigationsById, savePivotsById, saveInvestigati
     return function(path, args) {
         const investigationIds = path[1];
 
-        return Observable.defer(() => saveInvestigationsById({loadInvestigationsById, savePivotsById,
-                                                              investigationIds}))
+        return Observable.defer(() => saveInvestigationsById({savePivotsById, investigationIds}))
             .mergeMap(({app, investigation}) => [
                 $pathValue(`investigationsById['${investigationIds}'].modifiedOn`, investigation.modifiedOn)
             ])

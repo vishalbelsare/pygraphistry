@@ -24,6 +24,21 @@ export default class SimpleServiceWithCache {
         delete this.cache[reqId];
     }
 
+    unloadByIds(reqIds) {
+        const index = `${this.resultName}sById`;
+
+        return this.loadApp()
+            .mergeMap(
+                (app) =>
+                    Observable.from(reqIds)
+                        .do(reqId => {
+                            this.evictFromCache(reqId);
+                            delete app[index][reqId];
+                        }),
+                (app) => app
+            )
+    }
+
     loadByIds(reqIds) {
         const index = `${this.resultName}sById`
 

@@ -7,12 +7,14 @@ import {
     createPivotModel,
     serializePivotModel
 } from '../models/pivots.js';
+import util from 'util'
 
 
 export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
     const globAsObservable = Observable.bindNodeCallback(glob);
     const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
     const writeFileAsObservable = Observable.bindNodeCallback(fs.writeFile);
+    const renameAsObservable = Observable.bindNodeCallback(fs.rename);
 
     const pivots$ = globAsObservable(path.resolve(pathPrefix, '*.json'))
         .flatMap(x => x)
@@ -20,7 +22,7 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
             return readFileAsObservable(file).map(JSON.parse);
         })
 
-    function loadPivotById(pivotId) {
+    function loadPivotById(pivotId, rowIds) {
         return pivots$
             .filter(pivot => pivot.id === pivotId)
     }
@@ -33,8 +35,14 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
         cache: pivotsByIdCache
     });
 
-    function loadPivotsById({pivotIds: reqIds}) {
-        return service.loadByIds(reqIds)
+    // rowIds are needed to set 'Pivot #' Attribute (Demo)
+    // Should probably remove.
+    function loadPivotsById({pivotIds, rowIds, test}) {
+        return service.loadByIds(pivotIds, rowIds)
+            .map(({app, pivot}, index) => {
+                pivot.rowId = rowIds ? rowIds[index] : undefined;
+                return ({app, pivot})
+            })
     }
 
     function savePivotsById({pivotIds}) {
@@ -50,8 +58,24 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
             });
     }
 
+    function deletePivotsById({pivotIds}) {
+        return loadApp()
+            .mergeMap((app) =>
+                Observable.from(pivotIds)
+                    .switchMap(pivotId => {
+                        const filePath = path.resolve(pathPrefix, pivotId + '.json');
+                        return renameAsObservable(filePath, `${filePath}.deleted`)
+                            .catch(e => e.code === 'ENOENT' ? Observable.of(null)
+                                                            : Observable.throw(e))
+                            .switchMap(() => service.unloadByIds([pivotId]));
+                    })
+                    .map(() => {app})
+            );
+    }
+
     return {
         loadPivotsById,
-        savePivotsById
+        savePivotsById,
+        deletePivotsById
     };
 }

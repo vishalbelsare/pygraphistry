@@ -10,22 +10,36 @@ var _ = require('underscore');
 var pivotCache = {};
 
 function summarizeOutput ({labels}) {
-    const hist = {};
-    for (var i = 0; i < labels.length; i++) {
-        hist[labels[i].type] = {count: 0, example: i, name: '', color: ''};
-    }
-    const summaries = _.values(hist);
 
+    //{ typeName -> int }
+    const entityTypes = {};
     for (var i = 0; i < labels.length; i++) {
-        hist[labels[i].type].count++;
+        entityTypes[labels[i].type] = i;
     }
 
-    _.each(summaries, (summary) => {
-        summary.name = labels[summary.example].type;
-        summary.color = intToHex(categoryToColorInt[labels[summary.example].pointColor]);
+    //{ typeName -> {count, example, name, color} }
+    const entitySummaries = _.mapObject(entityTypes, (example, entityType) => {
+        return {
+            count: 0,
+            example: example,
+            name: entityType,
+            color: intToHex(categoryToColorInt[labels[example].pointColor])};
     });
 
-    return {entities: summaries, resultCount: labels.length};
+    //{ typeName -> {?valName} }
+    const valLookups = _.mapObject(entityTypes, () => { return {}; });
+
+    for (var i = 0; i < labels.length; i++) {
+        const summary = entitySummaries[labels[i].type];
+        const lookup = valLookups[labels[i].type];
+        const key = labels[i].node;
+        if (!_.has(lookup, key)) {
+            lookup[key] = 1;
+            summary.count++;
+        }
+    }
+
+    return {entities: _.values(entitySummaries), resultCount: labels.length};
 }
 
 function searchSplunkPivot({app, pivot}) {
@@ -51,7 +65,7 @@ function searchSplunkPivot({app, pivot}) {
         })
         .map(({output}) => output);
 
-    return shapeSplunkResults(splunkResults, pivot.pivotParameters, pivot.id, template.splunk)
+    return shapeSplunkResults(splunkResults, pivot.pivotParameters, pivot.id, template.splunk, pivot.rowId)
         .do((results) => {
             pivot.results = results;
             pivot.resultSummary = summarizeOutput(results);
@@ -60,8 +74,8 @@ function searchSplunkPivot({app, pivot}) {
         .map((results) => ({app, pivot}));
 }
 
-export function searchPivot({loadPivotsById, pivotIds}) {
-    return loadPivotsById({pivotIds: pivotIds})
+export function searchPivot({loadPivotsById, pivotIds, rowIds}) {
+    return loadPivotsById({pivotIds: pivotIds, rowIds: rowIds})
         .mergeMap(({app, pivot}) => {
             pivot.enabled = true;
             const template = PivotTemplates.get('all', pivot.pivotParameters.mode);
