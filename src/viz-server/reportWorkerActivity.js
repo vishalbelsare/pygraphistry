@@ -1,4 +1,3 @@
-import request from 'request';
 import { connectToMongo } from './connectToMongo';
 import { Scheduler, Observable } from 'rxjs';
 import { logger as commonLogger } from '@graphistry/common';
@@ -19,50 +18,31 @@ export function reportWorkerActivity({
     // Connect to the Mongo server
     return connectToMongo({ config })
         // If we successfully connect to the database, start the ping cycle.
-        // First, make a request to the server provided in the `url` argument.
-        // If the URL request succeeds, send the latest value from the
-        // `isWorkerActive` Observable to the MongoDB instance. This process is
-        // repeated on an interval determined by the `pingInterval` argument (3s
-        // by default).
+        // Send the latest value from the `isWorkerActive` Observable to the
+        // MongoDB instance. This process is repeated on an interval determined
+        // by the `pingInterval` argument (3s by default).
         //
-        // If either the request or DB update fails, the error is communicated
-        // to the parent process, then exits this process with exit code 1.
+        // If either the DB update fails, the error is communicated
+        // to the parent process, which exits this process with exit code 1.
         //
         .expand(runPingLoop);
 
     function runPingLoop(database) {
 
-        const pingRequest = Observable
-            .bindNodeCallback(request, (req, body) => {
-                if (req.statusCode === 200) {
-                    return body;
-                }
-                throw new Error('Error connecting to Mongo.');
-            })(url)
-            .catch(catchPingRequestError);
+        const updateMongo = isWorkerActive
+            .mergeMap((isActive) => updateNodeMonitor(database, isActive))
+            .mapTo(database)
 
-        const pingThenUpdate = pingRequest
-            .withLatestFrom(isWorkerActive, (body, isActive) =>
-                updateNodeMonitor(database, isActive, body))
-            .mergeAll()
-            .mapTo(database);
-
-        return pingThenUpdate
-            .subscribeOn(Scheduler.asap, pingInterval * 1000)
+        return updateMongo
+            .subscribeOn(Scheduler.async, pingInterval * 1000)
             .take(1);
     }
 
-    function catchPingRequestError(error) {
-        return Observable.throw({
-            error, shouldExit: true, exitCode: 1,
-            message: 'Error connecting to Mongo, exiting.'
-        });
-    }
-
-    function updateNodeMonitor(database, isActive, body) {
+    function updateNodeMonitor(database, isActive) {
 
         const query = {
-            'ip': body, 'pid': process.pid,
+            'pid': process.pid,
+            'ip': config['HOSTNAME'],
             'port': config.VIZ_LISTEN_PORT
         };
         const update = {
@@ -73,10 +53,12 @@ export function reportWorkerActivity({
         };
         const metadata = { 'upsert': true };
 
-        return Observable.from(database
-                .collection('node_monitor')
-                .update(query, update, metadata))
-            .catch(catchUpdateError);
+        const collection = database.collection('node_monitor');
+        const updateCollection = Observable.bindNodeCallback(
+            collection.update.bind(collection)
+        );
+
+        return updateCollection(query, update, metadata).catch(catchUpdateError);
     }
 
     function catchUpdateError(error) {
