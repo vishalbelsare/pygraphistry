@@ -16,22 +16,36 @@ const SKIP = {
 };
 
 function summarizeOutput ({labels}) {
-    const hist = {};
-    for (var i = 0; i < labels.length; i++) {
-        hist[labels[i].type] = {count: 0, example: i, name: '', color: ''};
-    }
-    const summaries = _.values(hist);
 
+    //{ typeName -> int }
+    const entityTypes = {};
     for (var i = 0; i < labels.length; i++) {
-        hist[labels[i].type].count++;
+        entityTypes[labels[i].type] = i;
     }
 
-    _.each(summaries, (summary) => {
-        summary.name = labels[summary.example].type;
-        summary.color = intToHex(categoryToColorInt[labels[summary.example].pointColor]);
+    //{ typeName -> {count, example, name, color} }
+    const entitySummaries = _.mapObject(entityTypes, (example, entityType) => {
+        return {
+            count: 0,
+            example: example,
+            name: entityType,
+            color: intToHex(categoryToColorInt[labels[example].pointColor])};
     });
 
-    return {entities: summaries, resultCount: labels.length};
+    //{ typeName -> {?valName} }
+    const valLookups = _.mapObject(entityTypes, () => { return {}; });
+
+    for (var i = 0; i < labels.length; i++) {
+        const summary = entitySummaries[labels[i].type];
+        const lookup = valLookups[labels[i].type];
+        const key = labels[i].node;
+        if (!_.has(lookup, key)) {
+            lookup[key] = 1;
+            summary.count++;
+        }
+    }
+
+    return {entities: _.values(entitySummaries), resultCount: labels.length};
 }
 
 
