@@ -376,6 +376,9 @@ td, th {
         padding-right: 1.5em;
         color: #777;
     }
+    thead th:not(:first-child) {
+        border-left: 1px solid #ddd !important;
+    }
 
     thead td:nth-child(2) {
         text-align: right;
@@ -450,24 +453,25 @@ td, th {
 
 }
 :local(.pivotEntitySummaries) {
+    display: inline-block;
     text-align: right;
     margin: 5px 10px 0px 0px;
-    overflow-x: scroll; //not on parent due to browser clipping the dropdown
 }
 :local(.pivotEntitySummary) {
     display: inline-block;
     overflow: hidden;
-    height: 20px;
-    margin: 0 0 0 7px;
-    padding: 0 5px 0 0px;
-    border-radius: 5px;
+    margin: 0 0 0 5px;
+    padding: 0 0 0 0;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
     border: 1px solid #777;
 }
+@summaryPillHeight: 7px;
 :local(.pivotEntityPill) {
-    display: inline-block;
-    height: 20px;
-    width: 10px;
-    border-right: 1px solid #777;
+    display: block;
+    height: @summaryPillHeight;
+    width: 100%;
+    border-bottom: 1px solid #777;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
 }
@@ -490,13 +494,11 @@ td, th {
     text-transform: uppercase;
     font-size: 12px;
     vertical-align: top;
-    display: inline-block;
-    margin-left: 2px;
+    display: block;
+    margin-left: 0px;
     color: #777;
-    //border-right: 1px solid #777; //use when also showing count
-    padding: 2px 3px 0px 3px;
+    padding: 2px 5px 0px 5px;
     height: 20px;
-
     max-width: 70px;
     text-overflow: ellipsis;
     overflow: hidden;
