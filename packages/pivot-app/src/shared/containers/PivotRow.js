@@ -35,14 +35,25 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
     return (
         <div>
         <ButtonGroup>
-            <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="play" /></Button>
-            <Button ><Glyphicon glyph="cog" /></Button>
+            <OverlayTrigger placement="top" overlay={
+                <Tooltip id={`tooltipActionPlay_${index}`}>Run step</Tooltip>
+            } key={`${index}: entityRowAction_${index}`}>
+                <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="play" /></Button>
+            </OverlayTrigger>
         </ButtonGroup>
         <ButtonGroup style={{marginLeft: '0.7em'}}>
-            <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
+            <OverlayTrigger placement="top" overlay={
+                <Tooltip id={`tooltipActionAdd_${index}`}>Insert new step after</Tooltip>
+            } key={`${index}: entityRowAction_${index}`}>
+                <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
+            </OverlayTrigger>
         </ButtonGroup>
         <ButtonGroup style={{marginLeft: '0.7em'}}>
-            <Button disabled={index === 0} onClick={(ev) => splicePivot({index})}><Glyphicon glyph="trash" /></Button>
+            <OverlayTrigger placement="top" overlay={
+                <Tooltip id={`tooltipActionDelete_${index}`}>Delete step</Tooltip>
+            } key={`${index}: entityRowAction_${index}`}>
+                <Button disabled={index === 0} onClick={(ev) => splicePivot({index})}><Glyphicon glyph="trash" /></Button>
+            </OverlayTrigger>
         </ButtonGroup>
         </div>
     );
@@ -207,7 +218,7 @@ function renderPivotRow({id, status, rowIndex, enabled, resultCount, resultSumma
             <td className={styles.pivotResultCount}>
                 <OverlayTrigger  placement="top" overlay={
                     <Tooltip id={`resultCountTip_${id}_${rowIndex}`}>Events</Tooltip>
-                } key={`${index}: entitySummary_${id}`}>
+                } key={`${rowIndex}: entitySummary_${id}`}>
                     <Badge> {resultCount} </Badge>
                 </OverlayTrigger>
             </td>
