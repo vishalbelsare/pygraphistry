@@ -368,13 +368,16 @@ td, th {
 }
 
 :local(.pivots) {
-    thead td {
+    thead th {
         border: none;
         text-align: center;
         text-transform: uppercase;
         font-weight: bold;
         padding-right: 1.5em;
         color: #777;
+    }
+    thead th:not(:first-child) {
+        border-left: 1px solid #ddd !important;
     }
 
     thead td:nth-child(2) {
@@ -384,18 +387,18 @@ td, th {
     tbody tr:nth-child(even) {
         background-color: #f4f4f4;
     }
+
+    tbody td {
+        vertical-align: middle !important;
+    }
 }
 
 :local(.row-toggled-on), :local(.row-toggled-off) {
-    height: 70px;
-    & > td {
-        height: 70px;
-    }
 }
 
 :local(.pivotToggle) {
     width: 90px;
-    span {
+    td& span {
         font-weight: bold;
         font-color: #777;
         margin-right: 1em;
@@ -418,6 +421,7 @@ td, th {
 :local(.pivotData1) {
     //https://github.com/less/less.js/issues/974
     width: ~"calc(100% - 570px)";
+    min-width: 25em;
 
     button {
         font-weight: bold;
@@ -450,24 +454,25 @@ td, th {
 
 }
 :local(.pivotEntitySummaries) {
+    display: inline-block;
     text-align: right;
     margin: 5px 10px 0px 0px;
-    overflow-x: scroll; //not on parent due to browser clipping the dropdown
 }
 :local(.pivotEntitySummary) {
     display: inline-block;
     overflow: hidden;
-    height: 20px;
-    margin: 0 0 0 7px;
-    padding: 0 5px 0 0px;
-    border-radius: 5px;
+    margin: 0 0 0 5px;
+    padding: 0 0 0 0;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
     border: 1px solid #777;
 }
+@summaryPillHeight: 7px;
 :local(.pivotEntityPill) {
-    display: inline-block;
-    height: 20px;
-    width: 10px;
-    border-right: 1px solid #777;
+    display: block;
+    height: @summaryPillHeight;
+    width: 100%;
+    border-bottom: 1px solid #777;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
 }
@@ -490,16 +495,15 @@ td, th {
     text-transform: uppercase;
     font-size: 12px;
     vertical-align: top;
-    display: inline-block;
-    margin-left: 2px;
+    display: block;
+    margin-left: 0px;
     color: #777;
-    //border-right: 1px solid #777; //use when also showing count
-    padding: 2px 3px 0px 3px;
+    padding: 2px 5px 0px 5px;
     height: 20px;
-
     max-width: 70px;
     text-overflow: ellipsis;
     overflow: hidden;
+    white-space: nowrap;
 }
 
 :local(.pivotData2) {
@@ -512,13 +516,31 @@ td, th {
     display: none;
 }
 :local(.pivotResultCount) {
-    width: 40px;
-    text-align: center;
+    text-align: right;
+    span {
+        margin-top: @summaryPillHeight;
+    }
+}
+:local(.pivotResultSummaries) {
+
+    max-width: 20em;
+
+    & > * {
+        vertical-align: middle;
+    }
+
+    &:not(:hover) > * {
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        max-width: 20em;
+    }
+
 }
 :local(.result-count-on) { }
 :local(.result-count-off) {
     opacity: 0.4;
 }
 :local(.pivotIcons) {
-    width: 230px;
+    white-space: nowrap;
 }
