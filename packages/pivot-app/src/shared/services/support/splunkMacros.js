@@ -1,6 +1,41 @@
 import PivotTemplates from '../../models/PivotTemplates';
+import { searchSplunk } from '../../services/searchSplunk.js';
+import { shapeSplunkResults} from '../../services/shapeSplunkResults.js';
 import _ from 'underscore';
 
+const pivotCache = {}
+export class SplunkPivot {
+    constructor( pivotDescription ) {
+        let { name, label, kind, toSplunk, connections, encodings, fields, attributes } = pivotDescription
+        this.name = name;
+        this.label = label;
+        this.kind = kind;
+        this.toSplunk = toSplunk;
+        this.connections = connections;
+        this.encodings = encodings;
+        this.attributes = attributes;
+    }
+
+    searchAndShape({app, pivot, rowId}) {
+
+        pivot.searchQuery = this.toSplunk(pivot.pivotParameters, pivotCache);
+
+        const splunkResults = searchSplunk({app, pivot})
+        // TODO figure out what to do with pivotCache)
+            .do(({pivot}) => {
+                pivotCache[pivot.id] = { results: pivot.results,
+                    query:pivot.searchQuery,
+                    splunkSearchID: pivot.splunkSearchID
+                };
+            })
+
+        return shapeSplunkResults(splunkResults, pivot.pivotParameters, pivot.id, this, pivot.rowId)
+            .map(({app, pivot}) => {
+                pivot.status = { ok: true };
+                return { app, pivot }
+        });
+    }
+}
 
 function buildLookup(text, pivotCache) {
 
@@ -55,6 +90,7 @@ function pivotToTemplate () {
 }
 
 export function constructFieldString(pivotTemplate) {
+    console.log('Template', pivotTemplate);
     const fields = (pivotTemplate.connections || [])
         .concat(pivotTemplate.attributes || []);
     return `| rename _cd as EventID
