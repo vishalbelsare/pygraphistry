@@ -55,6 +55,7 @@ function pivotToTemplate () {
 }
 
 export function constructFieldString(pivotTemplate) {
+    console.log('This / pivot template', pivotTemplate);
     const fields = (pivotTemplate.connections || [])
         .concat(pivotTemplate.attributes || []);
     return `| rename _cd as EventID
