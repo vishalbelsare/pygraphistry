@@ -421,6 +421,7 @@ td, th {
 :local(.pivotData1) {
     //https://github.com/less/less.js/issues/974
     width: ~"calc(100% - 570px)";
+    min-width: 25em;
 
     button {
         font-weight: bold;
@@ -502,6 +503,7 @@ td, th {
     max-width: 70px;
     text-overflow: ellipsis;
     overflow: hidden;
+    white-space: nowrap;
 }
 
 :local(.pivotData2) {
@@ -520,14 +522,24 @@ td, th {
     }
 }
 :local(.pivotResultSummaries) {
+
+    max-width: 20em;
+
     & > * {
         vertical-align: middle;
     }
+
+    &:not(:hover) > * {
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
 }
 :local(.result-count-on) { }
 :local(.result-count-off) {
     opacity: 0.4;
 }
 :local(.pivotIcons) {
-    width: 230px;
+    white-space: nowrap;
 }
