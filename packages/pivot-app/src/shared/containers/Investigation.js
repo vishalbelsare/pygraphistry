@@ -1,5 +1,5 @@
 import { container } from '@graphistry/falcor-react-redux';
-import { Table, Alert } from 'react-bootstrap';
+import { Table, Alert, OverlayTrigger, Tooltip} from 'react-bootstrap';
 import PivotRow from './PivotRow';
 import { table as tableClassName,
     tbody as tableBodyClassName,
@@ -31,16 +31,19 @@ function renderInvestigation({status, pivots = [],
                 <thead>
                     <tr>
                         <th className={styles.pivotToggle}>
-                            <ButtonGroup>
+
+                            <OverlayTrigger  placement="top" overlay={
+                                <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
+                            }>
                                 <Button onClick={(ev) => playInvestigation({length: pivots.length})}>
-                                    <Glyphicon glyph="sort-by-attributes-alt" />
+                                    <Glyphicon glyph="play" />
                                 </Button>
-                            </ButtonGroup>
+                            </OverlayTrigger>
                         </th>
-                        <td className={styles.pivotData0 + ' pivotTypeSelector'}>Step</td>
-                        <td colSpan="4" className={styles.pivotData1}>Parameters</td>
-                        <td colSpan="2" className={styles.pivotResultCount}>Hits</td>
-                        <td colSpan="2" className={styles.pivotResultCount}>Actions</td>
+                        <th className={styles.pivotData0 + ' pivotTypeSelector'}>Step</th>
+                        <th className={styles.pivotData1}>Parameters</th>
+                        <th colSpan="2" className={styles.pivotResultCount}>Hits</th>
+                        <th className={styles.pivotResultCount}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>

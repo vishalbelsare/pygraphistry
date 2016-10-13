@@ -7,6 +7,7 @@ import {
     createPivotModel,
     serializePivotModel
 } from '../models/pivots.js';
+import util from 'util'
 
 
 export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
@@ -21,7 +22,7 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
             return readFileAsObservable(file).map(JSON.parse);
         })
 
-    function loadPivotById(pivotId) {
+    function loadPivotById(pivotId, rowIds) {
         return pivots$
             .filter(pivot => pivot.id === pivotId)
     }
@@ -34,8 +35,14 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
         cache: pivotsByIdCache
     });
 
-    function loadPivotsById({pivotIds}) {
-        return service.loadByIds(pivotIds)
+    // rowIds are needed to set 'Pivot #' Attribute (Demo)
+    // Should probably remove.
+    function loadPivotsById({pivotIds, rowIds, test}) {
+        return service.loadByIds(pivotIds, rowIds)
+            .map(({app, pivot}, index) => {
+                pivot.rowId = rowIds ? rowIds[index] : undefined;
+                return ({app, pivot})
+            })
     }
 
     function savePivotsById({pivotIds}) {

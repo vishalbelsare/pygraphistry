@@ -75,7 +75,7 @@ function searchSplunkPivot({app, pivot}) {
         })
         .map(({output}) => output);
 
-    return shapeSplunkResults(splunkResults, pivot.pivotParameters, pivot.id, template.splunk)
+    return shapeSplunkResults(splunkResults, pivot.pivotParameters, pivot.id, template.splunk, pivot.rowId)
         .do((results) => {
             pivot.results = results;
             pivot.resultSummary = summarizeOutput(results);
@@ -85,8 +85,8 @@ function searchSplunkPivot({app, pivot}) {
 }
 
 
-export function searchPivot({loadPivotsById, pivotIds}) {
-    return loadPivotsById({pivotIds: pivotIds})
+export function searchPivot({loadPivotsById, pivotIds, rowIds}) {
+    return loadPivotsById({pivotIds: pivotIds, rowIds: rowIds})
         .mergeMap(({app, pivot}) => {
             pivot.enabled = true;
 

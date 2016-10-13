@@ -35,14 +35,25 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
     return (
         <div>
         <ButtonGroup>
-            <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="play" /></Button>
-            <Button ><Glyphicon glyph="cog" /></Button>
+            <OverlayTrigger placement="top" overlay={
+                <Tooltip id={`tooltipActionPlay_${index}`}>Run step</Tooltip>
+            } key={`${index}: entityRowAction_${index}`}>
+                <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="play" /></Button>
+            </OverlayTrigger>
         </ButtonGroup>
         <ButtonGroup style={{marginLeft: '0.7em'}}>
-            <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
+            <OverlayTrigger placement="top" overlay={
+                <Tooltip id={`tooltipActionAdd_${index}`}>Insert new step after</Tooltip>
+            } key={`${index}: entityRowAction_${index}`}>
+                <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
+            </OverlayTrigger>
         </ButtonGroup>
         <ButtonGroup style={{marginLeft: '0.7em'}}>
-            <Button disabled={index === 0} onClick={(ev) => splicePivot({index})}><Glyphicon glyph="trash" /></Button>
+            <OverlayTrigger placement="top" overlay={
+                <Tooltip id={`tooltipActionDelete_${index}`}>Delete step</Tooltip>
+            } key={`${index}: entityRowAction_${index}`}>
+                <Button disabled={index === 0} onClick={(ev) => splicePivot({index})}><Glyphicon glyph="trash" /></Button>
+            </OverlayTrigger>
         </ButtonGroup>
         </div>
     );
@@ -155,7 +166,6 @@ function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
                                 }
                             />
                         </div>
-                        { renderEntitySummaries(id, resultSummary) }
                     </td>);
                 case 'button':
                     const previousPivots = pivots.slice(0, rowIndex);
@@ -163,7 +173,6 @@ function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
                                 <div>
                                     <InputSelector fldValue={fldValue} setPivotParameters={setPivotParameters} label={template.label} previousPivots={previousPivots}/>
                                 </div>
-                                { renderEntitySummaries(id, resultSummary) }
                         </td>);
                 default:
                     throw new Error('Unkown template kind ' + template.kind);
@@ -206,8 +215,15 @@ function renderPivotRow({id, status, rowIndex, enabled, resultCount, resultSumma
                     )
                 )
             }
-            <td className={styles.pivotResultCount + ' ' + styles['result-count-' + (enabled ? 'on' : 'off')]}>
+            <td className={styles.pivotResultCount}>
+                <OverlayTrigger  placement="top" overlay={
+                    <Tooltip id={`resultCountTip_${id}_${rowIndex}`}>Events</Tooltip>
+                } key={`${rowIndex}: entitySummary_${id}`}>
                     <Badge> {resultCount} </Badge>
+                </OverlayTrigger>
+            </td>
+            <td className={styles.pivotResultSummaries + ' ' + styles['result-count-' + (enabled ? 'on' : 'off')]}>
+                    { renderEntitySummaries(id, resultSummary) }
             </td>
             <td className={styles.pivotIcons}>
                 <ResultCount index={rowIndex} resultCount={resultCount} searchPivot={searchPivot}
