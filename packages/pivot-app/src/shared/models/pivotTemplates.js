@@ -1,8 +1,10 @@
 import _ from 'underscore';
+import stringhash from 'string-hash';
 
 import ALERT_TEMPLATES from './pivotTemplatesAlert.js';
 import HEALTH_TEMPLATES from './pivotTemplatesHealth.js';
 import EVENT_GEN_TEMPLATES from './pivotTemplatesEventGen.js'
+
 
 
 const SEARCH_SPLUNK = {
@@ -14,6 +16,13 @@ const SEARCH_SPLUNK = {
     splunk: {
         toSplunk: function (pivotParameters, pivotCache) {
             return `search ${pivotParameters['input']} | fields - _* | head 500`
+        },
+        encodings: {
+            point: {
+                pointColor: (node) => {
+                    node.pointColor = stringhash(node.type) % 12;
+                }
+            }
         }
     }
 };
@@ -56,6 +65,9 @@ const SEARCH_SPLUNK_DATASET = {
             point: {
                 pointColor: function(node) {
                     node.pointColor = DATASET_ERROR_NODE_COLORS[node.type];
+                    if (node.pointColor === undefined) {
+                        node.pointColor = stringhash(node.type) % 12;
+                    }
                 }
             }
         },
