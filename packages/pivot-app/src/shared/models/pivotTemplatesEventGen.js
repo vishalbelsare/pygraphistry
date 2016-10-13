@@ -76,6 +76,29 @@ const PAN_SHAPES = {
         connections: [ 'user', 'threat_name'],
         attributes: ['vendor_action', 'category', 'time', 'url', 'severity',
                             'action']
+    },
+    userToDest: {
+        connections: [
+            'dest',
+            'user'
+        ],
+        attributes: [
+            'action',
+            'count',
+            'startTime',
+            'endTime',
+            'values(dest_port)'
+        ]
+    },
+    searchUserToDest: {
+        connections: [
+            'user',
+            'dest'
+        ],
+        attributes: [
+            'action',
+            'time'
+        ]
     }
 }
 
@@ -123,107 +146,86 @@ const PAN_SEARCH_TO_USER_DEST_GROUPED_DICT = {
     },
 };
 
-const PAN_DEST_TO_USER = {
+//const PAN_SEARCH_TO_USER_DEST_GROUPED = new SplunkPivot({...PAN_SEARCH_TO_USER_DEST_GROUPED_DICT, ...PAN_SHAPES.userToDestGrouped, encodings: PAN_ENCODINGS})
+const PAN_DEST_USER_DICT = {
     name: 'PAN - From dest to user',
-    label: 'Query',
-    kind: 'text',
+    label: 'Expand on ',
+    kind: 'button',
 
-    transport: 'Splunk',
-    splunk: {
-        toSplunk: function(pivotParamenters) {
-            const index = fields['input'];
-            const subsearch = `[| loadjob ${pivotCache[index].splunkSearchID} |  fields dest | dedup dest]`;
-            return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} ${constructFieldString(this)}`;
-        },
-        connections: [
-            'dest',
-            'user'
-        ],
-        attributes: [
-            'action',
-            'count',
-            'startTime',
-            'endTime',
-            'values(dest_port)'
-        ]
+    toSplunk: function(pivotParameters, pivotCache) {
+        const index = pivotParameters['input'];
+        const subsearch = `[| loadjob "${pivotCache[index].splunkSearchID}" |  fields dest | dedup dest]`;
+        return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} ${constructFieldString(this)}`;
     }
 }
 
-const PAN_DEST_TO_USER_GROUPED = {
-    name: 'PAN - From dest to user (grouped)',
-    label: 'Query',
-    kind: 'text',
-
-    transport: 'Splunk',
-    splunk: {
-        toSplunk: function(pivotParameters, pivotCache) {
-            const index = pivotParameters['Search'];
-            const subsearch = `[| loadjob ${pivotCache[index].splunkSearchID} |  fields dest | dedup dest]`;
-            return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} |  stats count, min(_time), max(_time) values(dest_port) by dest user |
-                 convert ctime(min(_time)) as startTime, ctime(max(_time)) as endTime | fields  - _*, min(_time), max(_time)`;
-        },
-        connections: [
-            'dest',
-            'user'
-        ],
-        attributes: [
-            'count',
-            'startTime',
-            'endTime',
-            'values(dest_port)'
-        ]
-    }
-};
-
-const PAN_DEST_TO_SRC_GROUPED = {
-    name: 'PAN - From dest to src (grouped)',
-    label: 'Query',
-    kind: 'text',
-
-    transport: 'Splunk',
-    splunk: {
-        toSplunk: function(pivotParameters, pivotCache) {
-            const index = fields['Search'];
-            const subsearch = `[| loadjob ${pivotCache[index].splunkSearchID} |  fields dest | dedup dest}]`;
-            return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} |  stats count, min(_time), max(_time) values(dest_port) by dest src |
-                 convert ctime(min(_time)) as startTime, ctime(max(_time)) as endTime | fields  - _*, min(_time), max(_time)`;
-        },
-        connections: [
-            'dest',
-            'user'
-        ],
-        attributes: [
-            'count',
-            'startTime',
-            'endTime',
-            'values(dest_port)'
-        ]
-    }
-};
-
-const PAN_SEARCH_TO_USER_DEST = {
+const PAN_SEARCH_USER_DEST_DICT = {
     name: 'PAN - From search to user/dest',
     label: 'Query',
     kind: 'text',
-
-    transport: 'Splunk',
-    splunk: {
-        toSplunk: function(pivotParameters, pivotCache) {
+    toSplunk: function(pivotParameters, pivotCache) {
             return `search ${SPLUNK_INDICES.PAN} ${pivotParameters['input']}
                 ${constructFieldString(this)}
                 | head 100`;
             //return `search ${SPLUNK_INDICES.EVENT_GEN} ${fields['Search']} | head 1000 | fields - _*`
-        },
-        connections: [
-            'user',
-            'dest'
-        ],
-        attributes: [
-            'action',
-            'time'
-        ]
     }
 };
+
+const PAN_SEARCH_USER_DEST= new SplunkPivot({...PAN_SEARCH_USER_DEST_DICT, ...PAN_SHAPES.userToDest, encodings: PAN_ENCODINGS});
+const PAN_DEST_USER = new SplunkPivot({...PAN_DEST_USER_DICT, ...PAN_SHAPES.userToDest, encodings: PAN_ENCODINGS});
+
+//const PAN_DEST_TO_USER_GROUPED = {
+    //name: 'PAN - From dest to user (grouped)',
+    //label: 'Query',
+    //kind: 'text',
+
+    //transport: 'Splunk',
+    //splunk: {
+        //toSplunk: function(pivotParameters, pivotCache) {
+            //const index = pivotParameters['Search'];
+            //const subsearch = `[| loadjob "${pivotCache[index].splunkSearchID}" |  fields dest | dedup dest]`;
+            //return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} |  stats count, min(_time), max(_time) values(dest_port) by dest user |
+                 //convert ctime(min(_time)) as startTime, ctime(max(_time)) as endTime | fields  - _*, min(_time), max(_time)`;
+        //},
+        //connections: [
+            //'dest',
+            //'user'
+        //],
+        //attributes: [
+            //'count',
+            //'startTime',
+            //'endTime',
+            //'values(dest_port)'
+        //]
+    //}
+//};
+
+//const PAN_DEST_TO_SRC_GROUPED = {
+    //name: 'PAN - From dest to src (grouped)',
+    //label: 'Query',
+    //kind: 'text',
+
+    //transport: 'Splunk',
+    //splunk: {
+        //toSplunk: function(pivotParameters, pivotCache) {
+            //const index = fields['Search'];
+            //const subsearch = `[| loadjob ${pivotCache[index].splunkSearchID} |  fields dest | dedup dest}]`;
+            //return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} |  stats count, min(_time), max(_time) values(dest_port) by dest src |
+                 //convert ctime(min(_time)) as startTime, ctime(max(_time)) as endTime | fields  - _*, min(_time), max(_time)`;
+        //},
+        //connections: [
+            //'dest',
+            //'user'
+        //],
+        //attributes: [
+            //'count',
+            //'startTime',
+            //'endTime',
+            //'values(dest_port)'
+        //]
+    //}
+//};
+
 
 export default [
     PAN_SEARCH_TO_USER_DEST, PAN_DEST_TO_USER, PAN_DEST_TO_USER_GROUPED,
