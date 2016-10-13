@@ -4,41 +4,9 @@ import { shapeSplunkResults} from '../services/shapeSplunkResults.js';
 import { categoryToColorInt, intToHex } from '../services/support/palette.js';
 import _ from 'underscore';
 
-const SPLUNK_INDICES = {
-    //EVENT_GEN: 'index=event_gen | search source="eventGen100k.csv" | search sourcetype="csv" | search'
-    EVENT_GEN: 'index=event_gen',
-    PAN: 'index=event_gen | search vendor="Palo Alto Networks"'
-}
-
-const PAN_NODE_COLORS = {
-    'EventID': 7,
-    'user': 1,
-    'dest': 3,
-    'threat_name': 5,
-}
-
-const PAN_NODE_SIZES = {
-    'EventID': 0.1,
-    'dest': 1.1,
-    'user': 5,
-    'threat_name': 10
-}
-
 //TODO how to dynamically lookup?
 // {int -> [ { ... } ]
 var pivotCache = {};
-
-const PAN_ENCODINGS = {
-    point: {
-        pointColor: function(node) {
-            node.pointColor = PAN_NODE_COLORS[node.type];
-        },
-        pointSizes: function(node) {
-            node.pointSize = PAN_NODE_SIZES[node.type];
-        }
-    }
-};
-
 class SplunkPivot {
     constructor( pivotDescription ) {
         let { name, label, kind, toSplunk, connections, encodings, fields } = pivotDescription
@@ -70,6 +38,36 @@ class SplunkPivot {
         });
     }
 }
+
+const SPLUNK_INDICES = {
+    EVENT_GEN: 'index=event_gen',
+    PAN: 'index=event_gen | search vendor="Palo Alto Networks"'
+}
+
+const PAN_NODE_COLORS = {
+    'EventID': 7,
+    'user': 1,
+    'dest': 3,
+    'threat_name': 5,
+}
+
+const PAN_NODE_SIZES = {
+    'EventID': 0.1,
+    'dest': 1.1,
+    'user': 5,
+    'threat_name': 10
+}
+
+const PAN_ENCODINGS = {
+    point: {
+        pointColor: function(node) {
+            node.pointColor = PAN_NODE_COLORS[node.type];
+        },
+        pointSizes: function(node) {
+            node.pointSize = PAN_NODE_SIZES[node.type];
+        }
+    }
+};
 
 const PAN_SHAPES = {
     userToThreat: {
@@ -133,20 +131,6 @@ const PAN_EXPAND_USER = {
     }
 }
 
-const PAN_SEARCH_TO_USER_THREAT = new SplunkPivot({...PAN_SEARCH, ...PAN_SHAPES.userToThreat, encodings: PAN_ENCODINGS});
-const PAN_USER_TO_THREAT = new SplunkPivot({...PAN_EXPAND_USER, ...PAN_SHAPES.userToThreat, encodings: PAN_ENCODINGS});
-//const PAN_USER_TO_THREAT = new ExpandPanUserToThreat( PAN_USER_TO_THREAT_DICT );
-
-const PAN_SEARCH_TO_USER_DEST_GROUPED_DICT = {
-    name: 'PAN - From search to user/dest (grouped)',
-    toSplunk: function(pivotParameters, pivotCache) {
-        const search = pivotParameters['input'];
-        return `search ${SPLUNK_INDICES.PAN} | search ${search} |  stats count, min(_time), max(_time) values(dest_port) values(action) by dest user |
-             convert ctime(min(_time)) as startTime, ctime(max(_time)) as endTime | rename _cd as EventID | fields  - _*, min(_time), max(_time) | HEAD 1000`;
-    },
-};
-
-//const PAN_SEARCH_TO_USER_DEST_GROUPED = new SplunkPivot({...PAN_SEARCH_TO_USER_DEST_GROUPED_DICT, ...PAN_SHAPES.userToDestGrouped, encodings: PAN_ENCODINGS})
 const PAN_DEST_USER_DICT = {
     name: 'PAN - From dest to user',
     label: 'Expand on ',
@@ -171,64 +155,13 @@ const PAN_SEARCH_USER_DEST_DICT = {
     }
 };
 
+const PAN_SEARCH_TO_USER_THREAT = new SplunkPivot({...PAN_SEARCH, ...PAN_SHAPES.userToThreat, encodings: PAN_ENCODINGS});
+const PAN_USER_TO_THREAT = new SplunkPivot({...PAN_EXPAND_USER, ...PAN_SHAPES.userToThreat, encodings: PAN_ENCODINGS});
 const PAN_SEARCH_USER_DEST= new SplunkPivot({...PAN_SEARCH_USER_DEST_DICT, ...PAN_SHAPES.userToDest, encodings: PAN_ENCODINGS});
 const PAN_DEST_USER = new SplunkPivot({...PAN_DEST_USER_DICT, ...PAN_SHAPES.userToDest, encodings: PAN_ENCODINGS});
 
-//const PAN_DEST_TO_USER_GROUPED = {
-    //name: 'PAN - From dest to user (grouped)',
-    //label: 'Query',
-    //kind: 'text',
-
-    //transport: 'Splunk',
-    //splunk: {
-        //toSplunk: function(pivotParameters, pivotCache) {
-            //const index = pivotParameters['Search'];
-            //const subsearch = `[| loadjob "${pivotCache[index].splunkSearchID}" |  fields dest | dedup dest]`;
-            //return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} |  stats count, min(_time), max(_time) values(dest_port) by dest user |
-                 //convert ctime(min(_time)) as startTime, ctime(max(_time)) as endTime | fields  - _*, min(_time), max(_time)`;
-        //},
-        //connections: [
-            //'dest',
-            //'user'
-        //],
-        //attributes: [
-            //'count',
-            //'startTime',
-            //'endTime',
-            //'values(dest_port)'
-        //]
-    //}
-//};
-
-//const PAN_DEST_TO_SRC_GROUPED = {
-    //name: 'PAN - From dest to src (grouped)',
-    //label: 'Query',
-    //kind: 'text',
-
-    //transport: 'Splunk',
-    //splunk: {
-        //toSplunk: function(pivotParameters, pivotCache) {
-            //const index = fields['Search'];
-            //const subsearch = `[| loadjob ${pivotCache[index].splunkSearchID} |  fields dest | dedup dest}]`;
-            //return `search ${SPLUNK_INDICES.PAN} | search ${subsearch} |  stats count, min(_time), max(_time) values(dest_port) by dest src |
-                 //convert ctime(min(_time)) as startTime, ctime(max(_time)) as endTime | fields  - _*, min(_time), max(_time)`;
-        //},
-        //connections: [
-            //'dest',
-            //'user'
-        //],
-        //attributes: [
-            //'count',
-            //'startTime',
-            //'endTime',
-            //'values(dest_port)'
-        //]
-    //}
-//};
-
-
 export default [
-    PAN_SEARCH_TO_USER_DEST, PAN_DEST_TO_USER, PAN_DEST_TO_USER_GROUPED,
-    PAN_DEST_TO_SRC_GROUPED, PAN_SEARCH_TO_USER_THREAT,
+    PAN_SEARCH_USER_DEST, PAN_DEST_USER,
+    PAN_SEARCH_TO_USER_THREAT,
     PAN_USER_TO_THREAT
 ]
