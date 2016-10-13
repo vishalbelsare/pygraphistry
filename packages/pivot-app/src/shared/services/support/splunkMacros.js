@@ -23,7 +23,7 @@ function buildLookup(text, pivotCache) {
             const vals = _.uniq(_.map(pivotCache[search].results, function (row) {
                 return row[field];
             }));
-            console.log('the vals:', vals, 'length', vals.length);
+            //console.log('the vals:', vals, 'length', vals.length);
             const fieldMatch = `"${ field }"="${ vals.join(`" OR "${ field }"="`) }"`;
             //const fieldMatch = `"${ field }"::"${ vals.join(`" OR "${ field }"::"`) }"`;
             match = match + (match ? ' OR ' : '') + fieldMatch;
