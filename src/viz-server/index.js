@@ -1,4 +1,6 @@
-process.chdir('www');
+import path from 'path';
+
+process.chdir(path.resolve('www'));
 
 import { tellParent } from './support';
 
