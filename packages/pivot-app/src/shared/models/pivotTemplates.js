@@ -1,22 +1,26 @@
-import _ from 'underscore';
-
 import ALERT_TEMPLATES from './pivotTemplatesAlert.js';
 import HEALTH_TEMPLATES from './pivotTemplatesHealth.js';
 import EVENT_GEN_TEMPLATES from './pivotTemplatesEventGen.js'
+import { constructFieldString, SplunkPivot } from '../services/support/splunkMacros.js';
 
+import _ from 'underscore';
+import stringhash from 'string-hash';
 
-const SEARCH_SPLUNK = {
+const SEARCH_SPLUNK = new SplunkPivot({
     name: 'Search Splunk',
     label: 'Query:',
     kind: 'text',
-
-    transport: 'Splunk',
-    splunk: {
-        toSplunk: function (pivotParameters, pivotCache) {
-            return `search ${pivotParameters['input']} | fields - _* | head 500`
+    toSplunk: function (pivotParameters, pivotCache) {
+        return `search ${pivotParameters['input']} ${constructFieldString(this)} | head 500`;
+    },
+    encodings: {
+        point: {
+            pointColor: (node) => {
+                node.pointColor = stringhash(node.type) % 12;
+            }
         }
     }
-};
+});
 
 const SEARCH_SPLUNK_MAP = {
     name: 'Splunk Map',
@@ -56,6 +60,9 @@ const SEARCH_SPLUNK_DATASET = {
             point: {
                 pointColor: function(node) {
                     node.pointColor = DATASET_ERROR_NODE_COLORS[node.type];
+                    if (node.pointColor === undefined) {
+                        node.pointColor = stringhash(node.type) % 12;
+                    }
                 }
             }
         },

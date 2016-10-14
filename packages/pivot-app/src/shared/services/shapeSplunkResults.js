@@ -1,8 +1,6 @@
-import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
-var hash = require('object-hash');
-import _  from 'underscore';
-
+import _ from 'underscore';
+import { categoryToColorInt, intToHex } from '../services/support/palette.js';
 
 //Do not make these nodes in '*' mode
 const SKIP = {
@@ -14,82 +12,126 @@ const SKIP = {
     'LabUnits': true
 };
 
+function summarizeOutput ({labels}) {
 
-export function shapeSplunkResults(splunkResults, pivotDict, index, template, rowId) {
-    const encodings = template.encodings;
-    const attributes = template.attributes;
-    const connectionsArray = template.connections;
-    const isStar = (connectionsArray === undefined) || (connectionsArray.indexOf('*') != -1);
+    //{ typeName -> int }
+    const entityTypes = {};
+    for (let i = 0; i < labels.length; i++) {
+        entityTypes[labels[i].type] = i;
+    }
 
-    return splunkResults
-        .map(function(rows) {
-            const edges = [];
-            const nodeLabels = [];
-            for(let i = 0; i < rows.length; i++) {
-                const row = rows[i];
-                const eventID = row['EventID'] || simpleflake().toJSON();
+    //{ typeName -> {count, example, name, color} }
+    const entitySummaries = _.mapObject(entityTypes, (example, entityType) => {
+        return {
+            count: 0,
+            example: example,
+            name: entityType,
+            color: intToHex(categoryToColorInt[labels[example].pointColor])};
+    });
 
-                const fields =
-                    isStar ?
-                        _.filter(Object.keys(row), function (field) {
-                            return !SKIP[field] && (field.toLowerCase() !== 'eventid');
-                        })
-                    : _.filter(connectionsArray, function (field) { return row[field]; });
-                const attribs = (attributes || []).concat(fields);
+    //{ typeName -> {?valName} }
+    const valLookups = _.mapObject(entityTypes, () => { return {}; });
 
-                nodeLabels.push(
-                    Object.assign({},
-                        _.pick(row, attribs),
-                        {'node': eventID, type:'EventID'}));
+    for (let i = 0; i < labels.length; i++) {
+        const summary = entitySummaries[labels[i].type];
+        const lookup = valLookups[labels[i].type];
+        const key = labels[i].node;
+        if (!_.has(lookup, key)) {
+            lookup[key] = 1;
+            summary.count++;
+        }
+    }
 
+    return {entities: _.values(entitySummaries), resultCount: labels.length};
+}
 
-                for (var j = 0; j < fields.length; j++) {
-                    const field = fields[j];
+function encodeGraph({ app, pivot }) {
 
-                    if (field === 'Search') {
-                        edges.push(
-                            Object.assign({},
-                                _.pick(row, attribs),
-                                {'destination': destination,
-                                 'source': eventID,
-                                 'edgeType': 'EventID->Search',
-                                 'pivot': rowId}));
-                        nodeLabels.push({'node': destination, type:'Search'});
-                        continue;
-                    }
+    const { encodings } = pivot.template;
+    const { labels, graph: edges } = pivot.results;
 
-                    if (row[field]) {
-                        nodeLabels.push({'node': row[field], type: field});
-                        edges.push(Object.assign({}, _.pick(row, attribs),
-                            {'destination': row[field],
-                             'source': eventID,
-                             'edgeType': ('EventID->' + field),
-                             'pivot': rowId}));
-                    }
-                }
-
-            }
-
-            // Encodings
-            if (encodings && encodings.point) {
-                nodeLabels.map((node) =>
-                    Object.keys(encodings.point).map((key) => {
+    if (encodings && encodings.point) {
+        //nodeLabels = encodings.point.encode(nodeLabels);
+        labels.map(
+            (node) => (
+                Object.keys(encodings.point).map(
+                    (key) => {
                         encodings.point[key](node);
                     }
-                ));
-            }
+                )
+            )
+        );
+    }
 
-            if (encodings && encodings.edge) {
-                edges.map((edge) =>
-                    Object.keys(encodings.edge).map((key) => {
+    if (encodings && encodings.edge) {
+        edges.map(
+            (edge) => (
+                Object.keys(encodings.edge).map(
+                    (key) => {
                         encodings.edge[key](edge);
                     }
-                ));
-            }
+                )
+            )
+        );
+    }
 
-            return {
-                graph: edges,
-                labels: nodeLabels,
-            };
-        });
+    pivot.results = {
+        graph: edges,
+        labels: labels
+    };
+    pivot.resultSummary = summarizeOutput(pivot.results);
+
+    return ({ app, pivot });
+}
+
+function shapeHyperGraph({ app, pivot } ) {
+    const { results, rowId, template } = pivot;
+    const { attributes, connections } = template;
+    const isStar = (connections === undefined) || (connections.indexOf('*') !== -1);
+
+    const edges = [];
+    const nodeLabels = [];
+    for(let i = 0; i < results.length; i++) {
+        const row = results[i];
+        const eventID = row['EventID'] || simpleflake().toJSON();
+
+        const fields =
+            isStar ?
+            _.filter(Object.keys(row), function (field) {
+                return !SKIP[field] && (field.toLowerCase() !== 'eventid');
+            })
+            : _.filter(connections, function (field) { return row[field]; });
+        const attribs = (attributes || []).concat(fields);
+
+        nodeLabels.push(
+            Object.assign({},
+                _.pick(row, attribs),
+                {'node': eventID, type:'EventID'}));
+
+
+        for (var j = 0; j < fields.length; j++) {
+            const field = fields[j];
+
+            if (row[field]) {
+                nodeLabels.push({'node': row[field], type: field});
+                edges.push(Object.assign({}, _.pick(row, attribs),
+                    {'destination': row[field],
+                        'source': eventID,
+                        'edgeType': ('EventID->' + field),
+                        'pivot': rowId}));
+            }
+        }
+
+    }
+
+    pivot.results = {
+        graph: edges,
+        labels: nodeLabels,
+    };
+
+    return ({ app, pivot });
+}
+
+export function shapeSplunkResults({ app, pivot }) {
+    return encodeGraph(shapeHyperGraph({ app, pivot }));
 }

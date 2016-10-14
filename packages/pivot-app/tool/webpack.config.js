@@ -58,7 +58,8 @@ function clientConfig(
     isFancyBuild = argv[1] === '--fancy'
 ) {
     var config = commonConfig(isDevBuild, isFancyBuild);
-    config.node = { fs: 'empty', global: false };
+    //// TODO Remove net and tls after pivot templates are removed from client
+    config.node = { fs: 'empty', net: 'empty', tls: 'empty', global: false };
     config.target = 'web';
     config.entry = {
         client: [

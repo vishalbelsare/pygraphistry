@@ -1,23 +1,29 @@
-var splunkjs = require('splunk-sdk');
-var stringHash = require('string-hash');
+import splunkjs from 'splunk-sdk';
+import stringHash from 'string-hash';
 import { Observable } from 'rxjs';
 
-var service = new splunkjs.Service({
-    host: process.env.SPLUNK_HOST || 'splunk.graphistry.com',
-    username: process.env.SPLUNK_USER || 'admin',
-    password: process.env.SPLUNK_PWD || 'graphtheplanet'
-});
+export function searchSplunk({app, pivot}) {
 
-service.login((err, success) => {
-    if (success) {
-        console.log('Successful login to splunk');
-    }
-    if (err) {
-        throw err;
-    }
-});
+    // TODO This can be moved out of function once template
+    // is removed from client
+    const service = new splunkjs.Service({
+        host: process.env.SPLUNK_HOST || 'splunk.graphistry.com',
+        username: process.env.SPLUNK_USER || 'admin',
+        password: process.env.SPLUNK_PWD || 'graphtheplanet'
+    });
 
-export function searchSplunk(searchQuery) {
+    service.login((err, success) => {
+        if (success) {
+            console.log('Successful login to splunk');
+        }
+        if (err) {
+            throw err;
+        }
+    });
+    const searchQuery = pivot.searchQuery;
+
+    console.log('======= Search ======');
+    console.log(pivot.searchQuery);
 
     const searchJobId = `pivot-app::${stringHash(searchQuery)}`;
 
@@ -75,18 +81,21 @@ export function searchSplunk(searchQuery) {
             function({results, job}) {
                 const fields = results.fields;
                 const rows = results.rows;
-                const output = new Array(rows.length);
+                const events = new Array(rows.length);
                 var values;
                 for(var i = 0; i < rows.length; i++) {
-                    output[i] = {};
+                    events[i] = {};
                     values = rows[i];
                     for(var j = 0; j < values.length; j++) {
                         var field = fields[j];
                         var value = values[j];
-                        output[i][field] = value;
+                        events[i][field] = value;
                     }
                 }
-                return {output, resultCount: job.properties().resultCount, splunkSearchID: job.sid};
+                pivot.resultCount = job.properties().resultCount;
+                pivot.results = events;
+                pivot.splunkSearchID = job.sid;
+                return {app, pivot};
             }
         );
 }

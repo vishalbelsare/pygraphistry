@@ -1,10 +1,11 @@
-import { expandTemplate, constructFieldString } from '../services/support/splunkMacros.js';
+import { expandTemplate, constructFieldString, SplunkPivot } from '../services/support/splunkMacros.js';
+import stringhash from 'string-hash';
 
 const SPLUNK_INDICES = {
-        HEALTH: 'index="health_demo"'
+    HEALTH: 'index="health_demo"'
 };
+
 const HEALTH_FIELDS = [
-    `PatientID`,
     `PrimaryDiagnosisCode`,
     `PrimaryDiagnosisDescription`,
     `AdmissionID`,
@@ -14,8 +15,9 @@ const HEALTH_FIELDS = [
     `PatientLanguage`,
     `PatientMaritalStatus`
 ];
-//TODO update shapeSplunkResults and searchSplunk to use these
+
 const HEALTH_ATTRIBUTES = [
+    `PatientID`,
     `LabDateTime`,
     `LabValue`,
     `LabUnits`,
@@ -37,82 +39,76 @@ const HEALTH_DEMO_NODE_COLORS = {
     'PatientMaritalStatus': 8,
     'EventID': 9
 };
+
 const HEALTH_DEMO_ENCODINGS = {
     point: {
         pointColor: function(node) {
             node.pointColor = HEALTH_DEMO_NODE_COLORS[node.type];
+            if (node.pointColor === undefined) {
+                node.pointColor = stringhash(node.type) % 12;
+            }
         }
     }
 };
 
-const SEARCH_SPLUNK_HEALTH = {
-    name: 'Search Splunk (health)',
+const SEARCH_SPLUNK_HEALTH = new SplunkPivot({
+    attributes: HEALTH_ATTRIBUTES,
+    connections: HEALTH_FIELDS,
+    encodings: HEALTH_DEMO_ENCODINGS,
+    kind: 'text',
     label: 'Query:',
-    kind: 'text',
+    name: 'Search Splunk (health)',
 
-    transport: 'Splunk',
-    splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search ${SPLUNK_INDICES.HEALTH} ${fields['Search']} ${constructFieldString(this)}`
-        },
-        fields: HEALTH_FIELDS,
-        encodings: HEALTH_DEMO_ENCODINGS,
-        attributes: HEALTH_ATTRIBUTES
+    toSplunk: function (pivotParameters, pivotCache) {
+        return `search ${SPLUNK_INDICES.HEALTH} ${pivotParameters['input']} ${constructFieldString(this)}`
     }
-};
+});
 
-
-const SEARCH_PATIENT = {
-    name: 'Search Patient',
+const SEARCH_PATIENT = new SplunkPivot({
+    attributes: HEALTH_ATTRIBUTES,
+    connections: HEALTH_FIELDS,
+    encodings: HEALTH_DEMO_ENCODINGS,
+    kind: 'text',
     label: 'PatientID:',
-    kind: 'text',
+    name: 'Search Patient',
 
-    transport: 'Splunk',
-    splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search PatientID=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
-        },
-        fields: HEALTH_FIELDS,
-        encodings: HEALTH_DEMO_ENCODINGS,
-        attributes: HEALTH_ATTRIBUTES
+    toSplunk: function (pivotParameters, pivotCache) {
+        return `search PatientID=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
     }
-};
 
-const SEARCH_LAB = {
-    name: 'Search Lab',
+});
+
+const SEARCH_LAB = new SplunkPivot({
+    attributes: HEALTH_ATTRIBUTES,
+    connections: HEALTH_FIELDS,
+    encodings: HEALTH_DEMO_ENCODINGS,
+    kind: 'text',
     label: 'LabName',
-    kind: 'text',
-
+    name: 'Search Lab',
     transport: 'Splunk',
-    splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search LabName=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
-        },
-        fields: HEALTH_FIELDS,
-        encodings: HEALTH_DEMO_ENCODINGS,
-        attributes: HEALTH_ATTRIBUTES
-    }
-};
 
-const PATIENT = {
-    name: 'Expand Patients',
-    label: 'Any Patient in:',
+    toSplunk: function (pivotParameters, pivotCache) {
+        return `search LabName=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
+    }
+
+});
+
+const PATIENT = new SplunkPivot({
+    attributes: HEALTH_ATTRIBUTES,
+    connection: HEALTH_FIELDS,
+    encodings: HEALTH_DEMO_ENCODINGS,
     kind: 'button',
+    label: 'Any Patient in:',
+    name: 'Expand Patients',
 
-    transport: 'Splunk',
-    splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
-            const attribs = 'PatientID';
-            const rawSearch =
-                `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.HEALTH}]`;
-            return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
-        },
-        fields: HEALTH_FIELDS,
-        encodings: HEALTH_DEMO_ENCODINGS,
-        attributes: HEALTH_ATTRIBUTES
-    }
-};
+    toSplunk: function (pivotParameters, pivotCache) {
+        const attribs = 'PatientID';
+        const rawSearch =
+            `[{{${pivotParameters['input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.HEALTH}]`;
+        return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
+    },
 
+});
 
 export default [
     SEARCH_SPLUNK_HEALTH, SEARCH_PATIENT, SEARCH_LAB, PATIENT
