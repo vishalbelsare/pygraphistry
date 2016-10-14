@@ -1,23 +1,18 @@
-import _ from 'underscore';
-import { constructFieldString } from '../services/support/splunkMacros.js';
-
+import { constructFieldString, SplunkPivot } from '../services/support/splunkMacros.js';
 import ALERT_TEMPLATES from './pivotTemplatesAlert.js';
 import HEALTH_TEMPLATES from './pivotTemplatesHealth.js';
 import EVENT_GEN_TEMPLATES from './pivotTemplatesEventGen.js'
 
+import _ from 'underscore';
 
-const SEARCH_SPLUNK = {
+const SEARCH_SPLUNK = new SplunkPivot({
     name: 'Search Splunk',
     label: 'Query:',
     kind: 'text',
-
-    transport: 'Splunk',
-    splunk: {
-        toSplunk: function (pivotParameters, pivotCache) {
-            return `search ${pivotParameters['input']} | fields - _* | head 500`
-        }
+    toSplunk: function (pivotParameters, pivotCache) {
+        return `search ${pivotParameters['input']} ${constructFieldString(this)} | head 500`;
     }
-};
+});
 
 const SEARCH_SPLUNK_MAP = {
     name: 'Splunk Map',
