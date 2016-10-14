@@ -1,0 +1,16 @@
+{
+    "id": "3dad5ad5a7816cad",
+    "enabled": true,
+    "pivotParameterKeys": [
+        "mode",
+        "input",
+        "search",
+        "time"
+    ],
+    "pivotParameters": {
+        "search": "Enter search query",
+        "mode": "Community Detection",
+        "input": "3 6",
+        "time": "09/21/2016"
+    }
+}
