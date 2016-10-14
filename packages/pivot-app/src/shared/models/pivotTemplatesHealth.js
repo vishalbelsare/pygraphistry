@@ -1,4 +1,5 @@
 import { expandTemplate, constructFieldString, SplunkPivot } from '../services/support/splunkMacros.js';
+import stringhash from 'string-hash';
 
 const SPLUNK_INDICES = {
     HEALTH: 'index="health_demo"'
@@ -43,6 +44,9 @@ const HEALTH_DEMO_ENCODINGS = {
     point: {
         pointColor: function(node) {
             node.pointColor = HEALTH_DEMO_NODE_COLORS[node.type];
+            if (node.pointColor === undefined) {
+                node.pointColor = stringhash(node.type) % 12;
+            }
         }
     }
 };

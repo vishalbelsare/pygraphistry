@@ -1,4 +1,5 @@
 import { expandTemplate, constructFieldString, SplunkPivot } from '../services/support/splunkMacros.js';
+import stringhash from 'string-hash';
 
 
 const SPLUNK_INDICES = {
@@ -50,6 +51,9 @@ const ALERT_DEMO_ENCODINGS = {
     point: {
         pointColor: function(node) {
             node.pointColor = ALERT_DEMO_NODE_COLORS[node.type];
+            if (node.pointColor === undefined) {
+                node.pointColor = stringhash(node.type) % 12;
+            }
         },
         pointSizes: function(node) {
             node.pointSize = ALERT_DEMO_NODE_SIZES[node.type];

@@ -1,6 +1,6 @@
 import { constructFieldString, SplunkPivot } from '../services/support/splunkMacros.js';
 import _ from 'underscore';
-
+import stringhash from 'string-hash';
 
 const SPLUNK_INDICES = {
     EVENT_GEN: 'index=event_gen',
@@ -15,6 +15,9 @@ const PAN_ENCODINGS = {
     point: {
         pointColor: function(node) {
             node.pointColor = PAN_NODE_COLORS[node.type];
+            if (node.pointColor === undefined) {
+                node.pointColor = stringhash(node.type) % 12;
+            }
         },
         pointSizes: function(node) {
             node.pointSize = PAN_NODE_SIZES[node.type];
