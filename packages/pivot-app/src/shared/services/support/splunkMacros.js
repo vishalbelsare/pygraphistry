@@ -19,21 +19,25 @@ export class SplunkPivot {
     searchAndShape({app, pivot, rowId}) {
 
         pivot.searchQuery = this.toSplunk(pivot.pivotParameters, pivotCache);
+        pivot.template = this;
 
-        const splunkResults = searchSplunk({app, pivot})
         // TODO figure out what to do with pivotCache)
+        const splunkResults = searchSplunk({app, pivot})
             .do(({pivot}) => {
                 pivotCache[pivot.id] = { results: pivot.results,
                     query:pivot.searchQuery,
                     splunkSearchID: pivot.splunkSearchID
                 };
-            })
+            });
 
-        return shapeSplunkResults(splunkResults, pivot.pivotParameters, pivot.id, this, pivot.rowId)
-            .map(({app, pivot}) => {
-                pivot.status = { ok: true };
-                return { app, pivot }
-        });
+        return splunkResults
+            .map(({app, pivot}) => shapeSplunkResults({app, pivot}))
+            .map(
+                ({app, pivot}) => {
+                    pivot.status = { ok: true };
+                    return { app, pivot }
+                }
+            );
     }
 }
 
@@ -90,7 +94,6 @@ function pivotToTemplate () {
 }
 
 export function constructFieldString(pivotTemplate) {
-    console.log('Template', pivotTemplate);
     const fields = (pivotTemplate.connections || [])
         .concat(pivotTemplate.attributes || []);
     return `| rename _cd as EventID
