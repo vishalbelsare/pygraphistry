@@ -69,8 +69,8 @@ const SEARCH_PATIENT = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search PatientID=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
+        toSplunk: function (pivotParameters, pivotCache) {
+            return `search PatientID=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
         },
         connections: HEALTH_FIELDS,
         encodings: HEALTH_DEMO_ENCODINGS,
@@ -85,8 +85,8 @@ const SEARCH_LAB = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search LabName=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
+        toSplunk: function (pivotParameters, pivotCache) {
+            return `search LabName=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
         },
         connections: HEALTH_FIELDS,
         encodings: HEALTH_DEMO_ENCODINGS,
@@ -101,10 +101,10 @@ const PATIENT = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
+        toSplunk: function (pivotParameters, pivotCache) {
             const attribs = 'PatientID';
             const rawSearch =
-                `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.HEALTH}]`;
+                `[{{${pivotParameters['input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.HEALTH}]`;
             return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
         connection: HEALTH_FIELDS,
