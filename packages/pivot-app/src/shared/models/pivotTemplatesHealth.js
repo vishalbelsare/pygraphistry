@@ -4,7 +4,6 @@ const SPLUNK_INDICES = {
         HEALTH: 'index="health_demo"'
 };
 const HEALTH_FIELDS = [
-    `PatientID`,
     `PrimaryDiagnosisCode`,
     `PrimaryDiagnosisDescription`,
     `AdmissionID`,
@@ -16,6 +15,7 @@ const HEALTH_FIELDS = [
 ];
 //TODO update shapeSplunkResults and searchSplunk to use these
 const HEALTH_ATTRIBUTES = [
+    `PatientID`,
     `LabDateTime`,
     `LabValue`,
     `LabUnits`,
@@ -52,10 +52,10 @@ const SEARCH_SPLUNK_HEALTH = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search ${SPLUNK_INDICES.HEALTH} ${fields['Search']} ${constructFieldString(this)}`
+        toSplunk: function (pivotParameters, pivotCache) {
+            return `search ${SPLUNK_INDICES.HEALTH} ${pivotParameters['input']} ${constructFieldString(this)}`
         },
-        fields: HEALTH_FIELDS,
+        connections: HEALTH_FIELDS,
         encodings: HEALTH_DEMO_ENCODINGS,
         attributes: HEALTH_ATTRIBUTES
     }
@@ -69,10 +69,10 @@ const SEARCH_PATIENT = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search PatientID=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
+        toSplunk: function (pivotParameters, pivotCache) {
+            return `search PatientID=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
         },
-        fields: HEALTH_FIELDS,
+        connections: HEALTH_FIELDS,
         encodings: HEALTH_DEMO_ENCODINGS,
         attributes: HEALTH_ATTRIBUTES
     }
@@ -85,10 +85,10 @@ const SEARCH_LAB = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
-            return `search LabName=${ fields['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
+        toSplunk: function (pivotParameters, pivotCache) {
+            return `search LabName=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
         },
-        fields: HEALTH_FIELDS,
+        connections: HEALTH_FIELDS,
         encodings: HEALTH_DEMO_ENCODINGS,
         attributes: HEALTH_ATTRIBUTES
     }
@@ -101,13 +101,13 @@ const PATIENT = {
 
     transport: 'Splunk',
     splunk: {
-        toSplunk: function (pivots, app, fields, pivotCache) {
+        toSplunk: function (pivotParameters, pivotCache) {
             const attribs = 'PatientID';
             const rawSearch =
-                `[{{${fields['Input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.HEALTH}]`;
+                `[{{${pivotParameters['input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.HEALTH}]`;
             return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
         },
-        fields: HEALTH_FIELDS,
+        connection: HEALTH_FIELDS,
         encodings: HEALTH_DEMO_ENCODINGS,
         attributes: HEALTH_ATTRIBUTES
     }

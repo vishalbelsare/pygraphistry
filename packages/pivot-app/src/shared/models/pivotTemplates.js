@@ -1,4 +1,5 @@
 import _ from 'underscore';
+import { constructFieldString } from '../services/support/splunkMacros.js';
 
 import ALERT_TEMPLATES from './pivotTemplatesAlert.js';
 import HEALTH_TEMPLATES from './pivotTemplatesHealth.js';
