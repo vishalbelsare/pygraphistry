@@ -42,8 +42,14 @@ function decrypt (ciphertext) {
 
 // Key (ciphertext) * String -> String
 function makeVizToken(key, datasetName) {
+    try {
+        var who = decrypt(key);
+    } catch (err) {
+        return undefined;
+    }
+
     var sha1 = crypto.createHash('sha1');
-    sha1.update(decrypt(key));
+    sha1.update(who);
     sha1.update(datasetName);
     return sha1.digest('hex');
 }
@@ -96,7 +102,7 @@ function init (app) {
                     };
                     res.json(checkOnly ? _.omit(payload, 'decrypted') : payload);
                 } catch (err) {
-                    logger.error(err, 'decrypter');
+                    logger.info('/api/(decrypt|check): Invalid key');
                     res.json({success: false, error: 'Invalid key'});
                 }
             },
