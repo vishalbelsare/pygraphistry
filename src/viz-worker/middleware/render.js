@@ -80,22 +80,23 @@ function renderAppWithHotReloading(modules, dataSource, paths) {
 }
 
 
-function renderFullPage(data, falcor, paths = {}, html = '') {
+function renderFullPage(data, falcor, paths, html = '') {
     const { client, vendor } = webpackAssets;
     const { html: iconsHTML } = faviconStats;
-    const { base = '', prefix = '' } = paths;
     return `
 <!DOCTYPE html>
 <html lang='en-us'>
     <head>
-        ${base && `<base href="${base}">` || ''}
+        ${paths ? `<base href="${paths.base}">` : ''}
         <meta name='robots' content='noindex, nofollow'/>
         <meta http-equiv='x-ua-compatible' content='ie=edge'/>
-        <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'/>
-        ${ iconsHTML.join('\n') }
-        <!--link rel='stylesheet' type='text/css' href='https://maxcdn.bootstrapcdn.com/bootstrap/latest/css/bootstrap.min.css'-->
-        ${ (client && client.css) ?
-            `<link rel='stylesheet' type='text/css' href='${`${client.css}`}'/>` : '' }
+        <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'/>${
+            iconsHTML.join('\n')
+        }
+        <!--link rel='stylesheet' type='text/css' href='https://maxcdn.bootstrapcdn.com/bootstrap/latest/css/bootstrap.min.css'-->${
+            client && client.css ?
+        `<link rel='stylesheet' type='text/css' href='${`${client.css}`}'/>`: ''
+        }
     </head>
     <body class='graphistry-body table-container'>
         <script type="text/javascript">
@@ -106,7 +107,7 @@ function renderFullPage(data, falcor, paths = {}, html = '') {
         </script>
         <div id='root'>${html}</div>
         <script id='initial-state' type='text/javascript'>
-            var graphistryPath = ${ stringify(prefix) };
+            var graphistryPath = "${ paths && paths.prefix || ''}";
             var __INITIAL_STATE__ = ${stringify(false && data && data.toJSON() || {})};
             var __INITIAL_CACHE__ = ${stringify(falcor && falcor.getCache() || {})};
         </script>
