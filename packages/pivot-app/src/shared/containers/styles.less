@@ -1,3 +1,9 @@
+@header-bg: #666;
+@header-seperator: #999;
+@header-highlight: #999;
+@header-highlight-medium: #999;
+
+
 :local(.left-nav) {
 
     width: 90px;
@@ -55,10 +61,10 @@
 :local(.investigation-nav) {
     min-height: @investigation-header-height;
     height: @investigation-header-height;
-    background-color: #6580e1;
+    background-color: @header-bg;
     border: 0px;
     border-radius: 0px;
-    border-bottom: 1px solid #8095e0;
+    border-bottom: 1px solid @header-seperator;
 }
 
 
@@ -347,12 +353,12 @@ td, th {
         height: @investigation-header-height;
         padding-top: @investigation-header-padding-top;
         padding-right: 15px;
-        border-right: 1px solid rgb(150, 168, 234);
+        border-right: 1px solid @header-highlight-medium;
     }
     & > * > *:nth-child(2) {
         border-radius: 10px;
         margin-right: 15px;
-        background-color: #6580e1;
+        background-color: @header-bg;
         border-color: white;
 
         span {
@@ -361,7 +367,7 @@ td, th {
     }
 
     & > * > *:nth-child(2) > span:nth-child(2) > span {
-        border-color: #96a8ea transparent transparent; //arrow
+        border-color: @header-highlight transparent transparent; //arrow
     }
 
     & > *:not(.is-open) > div:nth-child(2) {
@@ -370,7 +376,7 @@ td, th {
     }
 
     & > * > *:nth-child(2) > span:nth-child(2) > span {
-        border-color: #96a8ea transparent transparent; //arrow
+        border-color: @header-highlight transparent transparent; //arrow
     }
 }
 
@@ -378,7 +384,7 @@ td, th {
 
     float: right;
     margin-right: -15px;
-    border-left: 1px solid #8ca0e8;
+    border-left: 1px solid @header-highlight-medium;
 
     & > button {
         margin: 0px !important;
@@ -387,7 +393,7 @@ td, th {
         background-color: transparent !important;
         color: white !important;
         border: 0px;
-        border-right: 1px solid #96a8ea !important;
+        border-right: 1px solid @header-highlight-medium !important;
         padding: 0px !important;
         width: 90px;
     }
