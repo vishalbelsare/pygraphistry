@@ -116,10 +116,11 @@ export function requisitionWorker({
 
     function requisition(accept, reject) {
         return function requisition({ request, response }) {
-            if (workerIsLocked(request)) {
-                logger.info('GPU worker already claimed');
-                return reject({ request, response }).ignoreElements();
-            } else if (requestIsIndex({ request })) {
+            // if (workerIsLocked(request)) {
+            //     logger.info('GPU worker already claimed');
+            //     return reject({ request, response }).ignoreElements();
+            // } else
+            if (requestIsIndex({ request })) {
                 const { query = {} } = url.parse(request.url);
                 latestClientId = query.clientId || latestClientId || simpleflake().toJSON();
             } else {
@@ -133,10 +134,11 @@ export function requisitionWorker({
     function workerIsLocked(request) {
         if (canLockWorker && isLocked) {
             if (requestIsIndex({ request })) {
-                const { query = {} } = url.parse(request.url);
-                if (query.clientId === latestClientId) {
-                    return false;
-                }
+                // const { query = {} } = url.parse(request.url);
+                // if (query.clientId === latestClientId) {
+                //     return false;
+                // }
+                return false;
             }
             return true;
         }
@@ -230,7 +232,8 @@ export function requisitionWorker({
     function socketConnectionAsObservable(activeClientId, request) {
         return Observable.create((subscriber) => {
             const handler = (socket) => {
-                if (activeClientId === latestClientId) {
+                // if (activeClientId === latestClientId) {
+                if (true) {
                     const { handshake: { query }} = socket;
                     const { query: options = {} } = request;
                     socket.handshake.query = { ...options, ...query };
