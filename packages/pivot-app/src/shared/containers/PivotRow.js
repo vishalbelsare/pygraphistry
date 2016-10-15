@@ -30,6 +30,7 @@ import styles from './styles.less';
 import _ from 'underscore';
 import PivotTemplates from '../models/PivotTemplates';
 import React from 'react'
+import Select from 'react-select';
 
 function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot }) {
     return (
@@ -125,6 +126,27 @@ class InputSelector extends React.Component {
 
 }
 
+function PivotSelector (id, field, fldValue, pivotNames) {
+    return <span className={styles.pivotTypeSelectorContainer}>
+        <Select
+            id={"pivotTypeSelector" + id}
+            name={"pivotTypeSelector" + id}
+            value="one"
+            clearable={false}
+            backspaceRemoves={false}
+            value={{value: fldValue, label: fldValue}}
+            options={
+                pivotNames.map((name, index) => {
+                    return {value: name, label: name};
+                })
+            }
+            onChange={ ({value}) => setPivotParameters({'mode': value}) }
+        />
+    </span>;
+}
+
+
+
 function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
     id, rowIndex, resultSummary, pivots, searchPivot, togglePivot, setPivotParameters, splicePivot, insertPivot) {
 
@@ -133,22 +155,10 @@ function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
 
     switch (fldIndex) {
         case 0:
-            //return <td key={`${id}: ${fldIndex}`} className="pivotTypeSelector">Searcher</td>;
 
             const pivotNames = PivotTemplates.templatePivotNames('all');
-
             return (<td key={`${id}: ${fldIndex}`} className={styles.pivotData0 + ' pivotTypeSelector'}>
-                    <DropdownButton id={"pivotTypeSelector" + id} title={fldValue}
-                        onSelect={
-                            (mode, evt) => setPivotParameters({[field]: mode})
-                        }
-                    >
-                        {pivotNames.map((name, index) => {
-                            return (<MenuItem eventKey={name} key={`${index}: ${id}`}>
-                                {name}
-                            </MenuItem>)}
-                        )}
-                    </DropdownButton>
+                    { PivotSelector(id, field, fldValue, pivotNames) }
                 </td>);
 
         case 1:

@@ -441,17 +441,16 @@ td, th {
     }
 }
 :local(.pivotData0) {
-
     width: 200px;
     text-align: right;
-
-    button {
-        font-weight: bold;
-        text-decoration: underline;
-    }
-    button:not(:hover) {
-        border: 1px solid transparent;
-        background: transparent;
+}
+:local(.pivotTypeSelectorContainer) {
+    text-align: left;
+    font-weight: bold;
+    & > div > div:nth-child(2):not(:hover) {
+        border-width: 0;
+        background-color: transparent;
+        border-bottom: 1px dotted #aaaaaa;
     }
 }
 :local(.pivotData1) {
