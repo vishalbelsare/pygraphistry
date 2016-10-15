@@ -38,7 +38,7 @@ export function renderMiddleware(getDataSource, modules) {
         try {
             const renderedResults = !renderServerSide ?
                 Observable.of(renderFullPage(null, null, paths)) :
-                renderAppWithHotReloading(modules, getDataSource(req), options, req);
+                renderAppWithHotReloading(modules, getDataSource(req), paths);
 
             renderedResults.take(1).subscribe({
                 next(html) {
