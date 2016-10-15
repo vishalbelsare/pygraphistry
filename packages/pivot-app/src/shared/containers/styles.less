@@ -403,6 +403,29 @@ td, th {
     }
 }
 
+
+:local(.investigationTabs) {
+
+    ul {
+
+        background-color: @header-bg;
+
+        li a {
+            margin-right: 0;
+            padding-top: 6px;
+            padding-bottom: 6px;
+            color: #E0E0E0;
+            border-radius: 0;
+            border: 0 !important;
+            &:hover {
+                color: #E0E0E0;
+                background-color: @header-highlight;
+            }
+        }
+
+    }
+}
+
 :local(.pivots) {
     thead th {
         border: none;

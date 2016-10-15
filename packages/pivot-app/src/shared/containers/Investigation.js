@@ -124,7 +124,7 @@ function renderInvestigation({status, pivots = [], eventTable,
                 </Alert>
                 : null
             }
-            <Tabs defaultActiveKey={1} id="investigation-bottom-tabbar">
+            <Tabs defaultActiveKey={1} id="investigation-bottom-tabbar" className={styles.investigationTabs}>
                 <Tab eventKey={1} title="Pivots">
                     {
                         pivotTable({
