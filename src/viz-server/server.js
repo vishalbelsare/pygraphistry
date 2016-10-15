@@ -6,7 +6,7 @@ import RxRouter from 'rx-router';
 import SocketIOServer from 'socket.io';
 import RxHTTPServer from 'rx-http-server';
 import _config from '@graphistry/config';
-import { BehaviorSubject, Observable, Subscription } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 import { requisitionWorker } from './requisitionWorker';
 import { reportWorkerActivity } from './reportWorkerActivity';
@@ -19,12 +19,7 @@ import { nocache, allowCrossOrigin } from './middleware';
 export const config = _config();
 export const logger = commonLogger.createLogger('viz-server:server');
 
-export function start(options = {
-    pingURL: config.MONGO_SERVER
-}) {
-
-    const { pingURL } = options;
-
+export function start() {
     const app = express();
     const appRoute = Observable.bindCallback(app);
     const appHandler = ({ request, response }) => appRoute(request, response);
@@ -60,23 +55,21 @@ export function start(options = {
             config.VIZ_LISTEN_PORT,
             config.VIZ_LISTEN_ADDRESS
         )
-        .mergeMap((server) => requisitionWorker({
-                config, logger,
-                app, server, socketServer
-            })
-            .multicast(
-                () => new BehaviorSubject({ isActive: false }),
-                (worker) => Observable.merge(
-                    worker.filter(isRequestEvent),
-                    worker.filter(isActiveEvent)
-                        .pluck('isActive')
-                        .let((isWorkerActive) => reportWorkerActivity({
-                            url: pingURL, config, isWorkerActive
-                        }))
-                        .ignoreElements()
-                )
-            )
-        )
+        .mergeMap((listeningServer) => {
+            return requisitionWorker({ config, logger, app, server: listeningServer, socketServer })
+                .multicast(
+                    () => new BehaviorSubject({ isActive: false }),
+                    (worker) => Observable.merge(
+                        worker.filter(isRequestEvent),
+                        worker.filter(isActiveEvent)
+                            .pluck('isActive')
+                            .let((isWorkerActive) => reportWorkerActivity({
+                                config, isWorkerActive
+                            }))
+                            .ignoreElements()
+                    )
+                );
+        })
         .mergeMap(routes)
         .ignoreElements()
         .concat(Observable.never())
