@@ -126,7 +126,7 @@ class InputSelector extends React.Component {
 
 }
 
-function PivotSelector (id, field, fldValue, pivotNames) {
+function PivotSelector (id, field, fldValue, pivotNames, setPivotParameters) {
     return <span className={styles.pivotTypeSelectorContainer}>
         <Select
             id={"pivotTypeSelector" + id}
@@ -158,7 +158,7 @@ function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
 
             const pivotNames = PivotTemplates.templatePivotNames('all');
             return (<td key={`${id}: ${fldIndex}`} className={styles.pivotData0 + ' pivotTypeSelector'}>
-                    { PivotSelector(id, field, fldValue, pivotNames) }
+                    { PivotSelector(id, field, fldValue, pivotNames, setPivotParameters) }
                 </td>);
 
         case 1:
