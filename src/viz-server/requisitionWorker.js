@@ -22,8 +22,6 @@ export function requisitionWorker({
         )
         .share();
 
-    const centralPort = config.HTTP_LISTEN_PORT;
-    const centralAddr = config.HTTP_LISTEN_ADDRESS;
     const claimTimeout = config.WORKER_CONNECT_TIMEOUT;
     const canLockWorker = config.ENVIRONMENT !== 'local';
     // The names of these options imply that they mean the very same thing, and because danger is
@@ -58,7 +56,7 @@ export function requisitionWorker({
 
     const claimThenIndexRequests = claimRequests
         .mergeMap(
-            (claimId) => indexRequests,
+            () => indexRequests,
             (claimId, [indexId, indexType, request, response]) => [
                 claimId, indexId, indexType, request, response
             ]
@@ -75,9 +73,9 @@ export function requisitionWorker({
         .switchMap(loadWorker)
         .scan(trackVizWorkerCaches, { caches: {} })
         .switchMap(({ worker }) => worker.multicast(
-            () => new Subject(), (worker) => Observable.merge(
-                worker.filter(({ type }) => type !== 'connection'),
-                worker.filter(({ type }) => type === 'connection')
+            () => new Subject(), (multicastedWorker) => Observable.merge(
+                multicastedWorker.filter(({ type }) => type !== 'connection'),
+                multicastedWorker.filter(({ type }) => type === 'connection')
                     .pluck('socket')
                     .scan(disconnectPreviousSocket, null)
                     .distinctUntilChanged()
@@ -109,13 +107,13 @@ export function requisitionWorker({
 
 
     function requestIsPathname(pathname) {
-        return function requestIsPathname({ request }) {
+        return function checkRequestPathname({ request }) {
             return url.parse(request.url).pathname.endsWith(pathname);
-        }
+        };
     }
 
     function requisition(accept, reject) {
-        return function requisition({ request, response }) {
+        return function requisitionRequest({ request, response }) {
             // if (workerIsLocked(request)) {
             //     logger.info('GPU worker already claimed');
             //     return reject({ request, response }).ignoreElements();
@@ -128,22 +126,22 @@ export function requisitionWorker({
             }
             isLocked = true;
             return accept({ request, response }, latestClientId);
-        }
+        };
     }
 
-    function workerIsLocked(request) {
-        if (canLockWorker && isLocked) {
-            if (requestIsIndex({ request })) {
-                // const { query = {} } = url.parse(request.url);
-                // if (query.clientId === latestClientId) {
-                //     return false;
-                // }
-                return false;
-            }
-            return true;
-        }
-        return false;
-    }
+    // function workerIsLocked(request) {
+    //     if (canLockWorker && isLocked) {
+    //         if (requestIsIndex({ request })) {
+    //             // const { query = {} } = url.parse(request.url);
+    //             // if (query.clientId === latestClientId) {
+    //             //     return false;
+    //             // }
+    //             return false;
+    //         }
+    //         return true;
+    //     }
+    //     return false;
+    // }
 
     function etlAccepted({ request, response }, clientId, callback) {
         callback(null, [clientId, 'etl', request, response]);
@@ -182,10 +180,10 @@ export function requisitionWorker({
     function redirectIndex({ request, response }, callback) {
         logger.warn({req: request, res: response}, 'Rejecting request for a "./index.html" page');
 
-        const buffer = new Buffer("Error: unable to load page because you are not assigned to this visualization server process. " +
-            "This can happen if the process is already handling an existing request, or because " +
+        const buffer = new Buffer('Error: unable to load page because you are not assigned to this visualization server process. ' +
+            'This can happen if the process is already handling an existing request, or because ' +
             "your connection's ID doesn't match match the authorized ID for this process.\n\n" +
-            "This is most likely a transient problem. Please try reloading this page to try again.",
+            'This is most likely a transient problem. Please try reloading this page to try again.',
              'utf8');
         response.writeHead(502, {
             'Content-Type': 'application/json',
@@ -233,17 +231,16 @@ export function requisitionWorker({
         return Observable.create((subscriber) => {
             const handler = (socket) => {
                 // if (activeClientId === latestClientId) {
-                if (true) {
-                    const { handshake: { query }} = socket;
-                    const { query: options = {} } = request;
-                    socket.handshake.query = { ...options, ...query };
-                    subscriber.next(socket);
-                    subscriber.complete();
-                } else {
-                    logger.warn('Late claimant, notifying client of error');
-                    socket.disconnect();
-                    subscriber.complete();
-                }
+                const { handshake: { query }} = socket;
+                const { query: options = {} } = request;
+                socket.handshake.query = { ...options, ...query };
+                subscriber.next(socket);
+                subscriber.complete();
+                // } else {
+                //     logger.warn('Late claimant, notifying client of error');
+                //     socket.disconnect();
+                //     subscriber.complete();
+                // }
             };
             socketServer.on('connection', handler);
             return () => {
