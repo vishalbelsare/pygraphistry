@@ -15,7 +15,13 @@ export function requisitionWorker({
     let isLocked = false;
     let latestClientId = simpleflake().toJSON();
 
-    const { requests } = server;
+    const requests = server
+        .requests
+        .do(({request, response}) =>
+            logger.trace({req: request, res: response}, 'viz-app server received a new request')
+        )
+        .share();
+
     const centralPort = config.HTTP_LISTEN_PORT;
     const centralAddr = config.HTTP_LISTEN_ADDRESS;
     const claimTimeout = config.WORKER_CONNECT_TIMEOUT;
@@ -165,6 +171,7 @@ export function requisitionWorker({
     }
 
     function indexAccepted({ request, response }, clientId, callback) {
+        logger.debug({req: request, res: response}, 'Accepting index.html request');
         const path = url.parse(request.url).pathname;
         const clientType = path.substring(path.indexOf('/') + 1, path.lastIndexOf('/'));
         callback(null, [clientId, clientType, request, response]);
@@ -178,6 +185,10 @@ export function requisitionWorker({
     }
 
     function loadWorker([activeClientId, clientType, request, response]) {
+        logger.debug(
+            {req: request, res: response, activeClientId, clientType},
+            'Loading worker module'
+        );
         return loadWorkerModule(clientType).map((workerModule) => [
             activeClientId, workerModule, request, response
         ]);
