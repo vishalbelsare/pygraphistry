@@ -45,21 +45,9 @@
     height: 100%;
     width: ~"calc(100% - 90px)"; //https://github.com/less/less.js/issues/974
 
-    & > *:nth-child(1) {
-
-    }
-
     & > *:nth-child(2) {
-        height: ~"calc(100% - @{investigation-header-height} - @{investigation-footer-height})";
-        //height: ~"-webkit-calc(100% - ~'@{investigation-header-height}' - ~'@{investigation-footer-height}')";
+        height: ~"calc(100% - @{investigation-header-height})";
         width: 100%;
-        overflow: hidden;
-        min-height: 0px;
-    }
-
-    & > *:nth-child(3) {
-        height: @investigation-footer-height;
-        overflow: auto;
     }
 
 }
@@ -72,6 +60,44 @@
     border-radius: 0px;
     border-bottom: 1px solid #8095e0;
 }
+
+
+:local(.investigation-split) {
+    position: relative;
+
+    & > div > span {
+
+
+        //Resizer
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        background: #000;
+        opacity: .2;
+        z-index: 1;
+        -moz-background-clip: padding;
+        -webkit-background-clip: padding;
+        background-clip: padding-box;
+
+        //Horizontal
+        border-bottom: 5px solid #999;
+        cursor: row-resize;
+        width: 100%;
+
+        &:hover {
+            border-bottom: 5px solid #777;
+        }
+
+        background-color: red;
+        &:hover {
+            position: relative;
+            //iframe is capturing mouse, so extend hit zone
+            border-top: 50px solid transparent;
+            margin-top: -50px;
+        }
+    }
+}
+
 
 
 

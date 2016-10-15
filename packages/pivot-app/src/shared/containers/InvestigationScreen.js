@@ -8,22 +8,21 @@ import {
 import { container } from '@graphistry/falcor-react-redux';
 import styles from './styles.less';
 import { switchScreen } from '../actions/app.js';
+import SplitPane from 'react-split-pane';
 
 function renderInvestigationBody(selectedInvestigation) {
     return (
         <div className={`main-panel ${styles['investigation-all']}`}>
             <InvestigationHeader selectedInvestigation={selectedInvestigation} />
 
-            <div className="content" id="graphistry-canvas-wrapper">
-                <iframe allowFullScreen="true" scrolling="no" className={styles.iframe}
+            <div className={styles['investigation-split']}>
+                <SplitPane split="horizontal" defaultSize="80%" minSize={0}>
+                   <iframe allowFullScreen="true" scrolling="no" className={styles.iframe}
                         src={selectedInvestigation.url} />
+                   <Investigation data={selectedInvestigation}/>
+               </SplitPane>
             </div>
 
-            <footer className="footer">
-                <div className="container-fluid">
-                    <Investigation data={selectedInvestigation}/>
-                </div>
-            </footer>
         </div>
     );
 }
