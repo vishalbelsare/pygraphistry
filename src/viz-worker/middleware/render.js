@@ -134,7 +134,7 @@ function getProxyPaths(req) {
         return null;
     }
 
-    const base = `${req.protocol}//${req.get('host')}${req.get('x-resolved-uri')}`;
+    const base = `${req.protocol}://${req.get('host')}${req.get('X-Resolved-Uri')}`;
 
     const { pathname: originalPathname } = url.parse(req.get('X-Original-Uri'));
     const { pathname: resolvedPathname } = url.parse(req.get('X-Resolved-Uri'));
