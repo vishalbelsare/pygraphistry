@@ -178,8 +178,16 @@ export function requisitionWorker({
     }
 
     function redirectIndex({ request, response }, callback) {
-        response.writeHead(302, {
-            'Location': `http://${centralAddr}:${centralPort}${request.url}`
+        logger.warn({req: request, res: response}, 'Rejecting request for a "./index.html" page');
+
+        const buffer = new Buffer("Error: unable to load page because you are not assigned to this visualization server process. " +
+            "This can happen if the process is already handling an existing request, or because " +
+            "your connection's ID doesn't match match the authorized ID for this process.\n\n" +
+            "This is most likely a transient problem. Please try reloading this page to try again.",
+             'utf8');
+        response.writeHead(502, {
+            'Content-Type': 'application/json',
+            'Content-Length': buffer.length
         });
         response.end(callback);
     }
