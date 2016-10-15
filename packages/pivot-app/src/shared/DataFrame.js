@@ -35,7 +35,7 @@ function getData() {
     return data;
 }
 
-export {
+export default {
     addEdges, addNodes, removeEdges, removeNodes, getData
 }
 

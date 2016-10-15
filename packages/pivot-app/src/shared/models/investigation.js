@@ -23,6 +23,7 @@ function defaults(index) {
 function initialSoftState(pivots) {
     return {
         status: {ok: true},
+        eventTable: {},
         pivots: pivots.map((pivotId) =>
             $ref(`pivotsById['${pivotId}']`)
         )

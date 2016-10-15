@@ -8,8 +8,8 @@
         "time"
     ],
     "pivotParameters": {
-        "mode": "Search Splunk",
-        "input": "none",
+        "mode": "Expand From user to threat_name",
+        "input": "3d6ccf32fd53f941",
         "search": "Input Splunk Query",
         "time": "09/22/2016"
     }

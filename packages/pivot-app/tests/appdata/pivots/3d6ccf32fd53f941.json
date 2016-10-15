@@ -8,8 +8,8 @@
         "time"
     ],
     "pivotParameters": {
-        "mode": "Search Splunk",
-        "input": "none",
+        "mode": "PAN - Search to user, threat_name",
+        "input": "severity=\"critical\"",
         "search": "malware | fields dest_ip, misc",
         "time": "09/23/2016"
     }

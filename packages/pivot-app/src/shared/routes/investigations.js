@@ -24,7 +24,7 @@ export function investigations({ loadUsersById, loadInvestigationsById, saveInve
         returns: `String`,
         get: getInvestigationsHandler,
         set: setInvestigationsHandler,
-        route: `investigationsById[{keys}]['id','name', 'url', 'status', 'tags', 'description']`
+        route: `investigationsById[{keys}]['id','name', 'url', 'status', 'tags', 'description', 'eventTable']`
     }, {
         returns: `Number`,
         get: getInvestigationsHandler,
@@ -111,7 +111,8 @@ function playCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, 
             .mergeMap(({app, investigation}) => {
                 return [
                     $pathValue(`investigationsById['${investigationIds}'].url`, investigation.url),
-                    $pathValue(`investigationsById['${investigationIds}'].status`, investigation.status)
+                    $pathValue(`investigationsById['${investigationIds}'].status`, investigation.status),
+                    $pathValue(`investigationsById['${investigationIds}'].eventTable`, investigation.eventTable)
                 ];
             })
             .map(mapObjectsToAtoms)
