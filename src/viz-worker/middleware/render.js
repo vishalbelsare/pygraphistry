@@ -80,14 +80,15 @@ function renderAppWithHotReloading(modules, dataSource, paths) {
 }
 
 
-function renderFullPage(data, falcor, paths, html = '') {
+function renderFullPage(data, falcor, paths = {base: '', prefix: ''}, html = '') {
     const { client, vendor } = webpackAssets;
     const { html: iconsHTML } = faviconStats;
+    const { base, prefix } = paths;
     return `
 <!DOCTYPE html>
 <html lang='en-us'>
     <head>
-        ${paths ? `<base href="${paths.base}">` : ''}
+        ${base && `<base href="${base}">`}
         <meta name='robots' content='noindex, nofollow'/>
         <meta http-equiv='x-ua-compatible' content='ie=edge'/>
         <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'/>${
