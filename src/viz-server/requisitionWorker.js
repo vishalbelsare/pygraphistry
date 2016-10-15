@@ -147,7 +147,7 @@ export function requisitionWorker({
 
     function claimAccepted({ response }, clientId, callback) {
         const buffer = new Buffer(stringify({ success: true, clientId }, 'utf8'));
-        response.writeHead(302, {
+        response.writeHead(200, {
             'Content-Type': 'application/json',
             'Content-Length': buffer.length
         });
@@ -157,7 +157,7 @@ export function requisitionWorker({
     function claimRejected({ response }, callback) {
         const buffer = new Buffer(stringify({
             success: false, error: 'GPU worker already claimed' }), 'utf8');
-        response.writeHead(302, {
+        response.writeHead(502, {
             'Content-Type': 'application/json',
             'Content-Length': buffer.length
         });
