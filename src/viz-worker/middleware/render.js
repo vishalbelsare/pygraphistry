@@ -125,14 +125,14 @@ function renderFullPage(data, falcor, paths = {base: '', prefix: ''}, html = '')
 // be using for subrequests.
 function getProxyPaths(req) {
     // If these headers aren't set, assumed we're not begind a proxy
-    if(!req.get('x-original-uri') || !req.get('x-resolved-uri')) {
+    if(!req.get('X-Original-Uri') || !req.get('X-Resolved-Uri')) {
         return null;
     }
 
     const base = `${req.protocol}//${req.get('host')}${req.get('x-resolved-uri')}`;
 
-    const { pathname: originalPathname } = url.parse(req.get('x-original-uri'));
-    const { pathname: resolvedPathname } = url.parse(req.get('x-resolved-uri'));
+    const { pathname: originalPathname } = url.parse(req.get('X-Original-Uri'));
+    const { pathname: resolvedPathname } = url.parse(req.get('X-Resolved-Uri'));
 
     if(!resolvedPathname.endsWith(originalPathname)) {
         return { base: base, prefix: '' };
