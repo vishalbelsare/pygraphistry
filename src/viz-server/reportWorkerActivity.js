@@ -12,6 +12,7 @@ export function reportWorkerActivity({
     }) {
 
     if (!config.PINGER_ENABLED) {
+        logger.debug('Pinger is disabled in config, so returning a noop Observable');
         return Observable.of(0);
     }
 
@@ -45,6 +46,9 @@ export function reportWorkerActivity({
             'ip': config['HOSTNAME'],
             'port': config.VIZ_LISTEN_PORT
         };
+
+        logger.trace({query, isActive}, 'Pinging MongoDB with worker status');
+
         const update = {
             '$set': {
                 'active': isActive,
