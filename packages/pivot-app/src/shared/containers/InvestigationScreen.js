@@ -16,7 +16,7 @@ function renderInvestigationBody(selectedInvestigation) {
             <InvestigationHeader selectedInvestigation={selectedInvestigation} />
 
             <div className={styles['investigation-split']}>
-                <SplitPane split="horizontal" defaultSize="80%" minSize={0}>
+                <SplitPane split="horizontal" defaultSize="60%" minSize={0}>
                    <iframe allowFullScreen="true" scrolling="no" className={styles.iframe}
                         src={selectedInvestigation.url} />
                    <Investigation data={selectedInvestigation}/>

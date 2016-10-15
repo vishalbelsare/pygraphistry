@@ -424,6 +424,16 @@ td, th {
 
 :local(.pivotToggle) {
     width: 90px;
+    th& {
+        padding: 0 !important;
+        & button {
+            padding: 0;
+            border: transparent;
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+        }
+    }
     td& span {
         font-weight: bold;
         font-color: #777;
