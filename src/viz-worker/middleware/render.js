@@ -1,3 +1,5 @@
+import { createLogger } from '@graphistry/common/logger';
+const logger = createLogger('viz-app:viz-worker:renderer');
 import url from 'url';
 import { inspect } from 'util';
 import faviconStats from './favicon-assets.json';
@@ -124,8 +126,11 @@ function renderFullPage(data, falcor, paths = {base: '', prefix: ''}, html = '')
 // `X-Resolved-Uri` headers added by our nginx config to get the base path and path prefix we should
 // be using for subrequests.
 function getProxyPaths(req) {
+    logger.trace({req}, 'Finding proxy paths of request');
+
     // If these headers aren't set, assumed we're not begind a proxy
     if(!req.get('X-Original-Uri') || !req.get('X-Resolved-Uri')) {
+        logger.warn({req}, 'Could not find proxy URI headers; will not try to change URL paths');
         return null;
     }
 
@@ -135,9 +140,11 @@ function getProxyPaths(req) {
     const { pathname: resolvedPathname } = url.parse(req.get('X-Resolved-Uri'));
 
     if(!resolvedPathname.endsWith(originalPathname)) {
+        logger.warn({req, base}, 'Proxy paths: Resolved URI does not end with original URI, so not setting prefix');
         return { base: base, prefix: '' };
     }
 
     const prefix = resolvedPathname.substr(0, resolvedPathname.length - originalPathname.length);
+    logger.debug({req, base, prefix}, 'Resolved proxy paths');
     return {base, prefix};
 }
