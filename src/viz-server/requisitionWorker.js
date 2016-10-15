@@ -20,10 +20,11 @@ export function requisitionWorker({
     const centralAddr = config.HTTP_LISTEN_ADDRESS;
     const claimTimeout = config.WORKER_CONNECT_TIMEOUT;
     const canLockWorker = config.ENVIRONMENT !== 'local';
+    // The names of these options imply that they mean the very same thing, and because danger is
+    // our middle name, I don't know which one we actually use. So use both for good measure.
     const shouldExitOnDisconnect = (
-        config.ENVIRONMENT === 'production' ||
-        config.ENVIRONMENT === 'staging' ||
-        config.WORKER_RESTART
+        config.WORKER_RESTART ||
+        !config.ALLOW_MULTIPLE_VIZ_CONNECTIONS
     );
 
     const acceptETL = Observable.bindNodeCallback(etlAccepted);
