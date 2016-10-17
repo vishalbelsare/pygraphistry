@@ -12,6 +12,9 @@ import {
     DropdownButton, OverlayTrigger,
 } from 'react-bootstrap';
 
+import Select from 'react-select';
+
+
 const expressionTooltip = (
     <Tooltip id='expression-tooltip'>Expression</Tooltip>
 );
@@ -52,18 +55,30 @@ export function ExpressionsList({
 }
 
 export function ExpressionTemplates({ name = 'Expressions', templates = [], addExpression }) {
-    return (
-        <DropdownButton bsStyle='link' id='add-expression-dropdown' title={`Add ${name.slice(0, -1)}`}>
-        {templates.map(({ name, dataType, attribute, componentType }, index) => (
-            <MenuItem key={`${index}: ${name}`}
-                      onSelect={() => addExpression({
-                          name, dataType, attribute, componentType
-                      })}>
-                {`${attribute} (${dataType})`}
-            </MenuItem>
-        ))}
-        </DropdownButton>
-    );
+
+
+    const sortedTemplates = templates.slice(0);
+    sortedTemplates.sort((a,b) => {
+        const aLower = a.attribute.toLowerCase();
+        const bLower = b.attribute.toLowerCase();
+        return aLower === bLower ? 0
+            : aLower < bLower ? -1
+            : 1;
+    });
+
+    return  (<Select
+        id='add-expression-dropdown'
+        title={`Add ${name.slice(0, -1)}`}
+        placeholder="Select attribute to filter..."
+        onChange={ ({value}) => addExpression(sortedTemplates[value]) }
+        options={
+            sortedTemplates.map(({ name, dataType, attribute, componentType }, index) => {
+                return {
+                    value: index,
+                    label: `${attribute} (${dataType})`
+                };
+        }) }
+      />);
 }
 
 export function ExpressionItem({
