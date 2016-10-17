@@ -71,11 +71,24 @@ export function ExpressionTemplates({ name = 'Expressions', templates = [], addE
         title={`Add ${name.slice(0, -1)}`}
         placeholder="Select attribute to filter..."
         onChange={ ({value}) => addExpression(sortedTemplates[value]) }
+        optionRenderer={
+          ({componentType, name, dataType}) => (
+              <span>
+                  <span>{`${componentType}:`}</span>
+                  <label>{name}</label>
+                  <span style={{'fontStyle': 'italic', 'marginLeft': '5px' }}>{dataType}</span>
+              </span>
+            )
+        }
         options={
             sortedTemplates.map(({ name, dataType, attribute, componentType }, index) => {
                 return {
                     value: index,
-                    label: `${attribute} (${dataType})`
+                    label: `${attribute} (${dataType})`,
+                    dataType: dataType,
+                    attribute: attribute,
+                    name: name,
+                    componentType: componentType
                 };
         }) }
       />);
