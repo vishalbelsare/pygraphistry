@@ -10,6 +10,7 @@ COPY . $APPDIR
 RUN curl $(/sbin/ip route | awk '/default/ {print $3}'):17290/github/id_rsa > /root/.ssh/id_rsa && \
     curl $(/sbin/ip route | awk '/default/ {print $3}'):17290/github/id_rsa.pub > /root/.ssh/id_rsa.pub && \
     curl $(/sbin/ip route | awk '/default/ {print $3}'):17290/npm/rc > /root/.npmrc && \
+    mkdir /root/.ssh && \
     chmod 400 /root/.ssh/* && \
     md5sum /root/.ssh/* && \
     (ssh -o StrictHostKeyChecking=no -T git@github.com || true) && \
