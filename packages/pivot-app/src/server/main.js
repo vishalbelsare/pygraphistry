@@ -13,7 +13,7 @@ import {
     loadApp,
     userStore,
     listInvestigations, investigationStore,
-    createInvestigation, cloneInvestigationsById,
+    createInvestigation, cloneInvestigationsById, removeInvestigationsById,
     pivotStore, insertPivot, splicePivot, searchPivot,
     uploadGraph
 } from '../shared/services';
@@ -51,6 +51,7 @@ function init(testUser) {
         loadInvestigationsById,
         saveInvestigationsById,
         deleteInvestigationsById,
+        removeInvestigationsById,
         createInvestigation,
         cloneInvestigationsById,
         loadPivotsById,

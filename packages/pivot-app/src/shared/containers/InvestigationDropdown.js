@@ -5,14 +5,14 @@ import Select from 'react-select';
 import styles from './styles.less';
 
 
-function renderInvestigationDropdown({ investigations, selectedInvestigation, selectInvestigation }) {
+function renderInvestigationDropdown({ investigations, activeInvestigation, selectInvestigation }) {
     return (<span className={styles['investigations-dropdownbutton']}>
                 <Select
                 name="form-field-name"
                 value="one"
                 clearable={false}
                 backspaceRemoves={false}
-                value={{value: selectedInvestigation.id, label: selectedInvestigation.name}}
+                value={{value: activeInvestigation.id, label: activeInvestigation.name}}
                 options={
                     investigations.map(({id, name}, index) => {
                         return {value: id, label: name};

@@ -141,7 +141,7 @@ function cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById,
             .mergeMap(({app, user, clonedInvestigation, numInvestigations}) => {
                 return [
                     $pathValue(`['usersById'][${user.id}]['investigations'].length`, numInvestigations),
-                    $pathValue(`selectedInvestigation`, app.selectedInvestigation),
+                    $pathValue(`['usersById'][${user.id}].activeInvestigation`, user.activeInvestigation),
                     $invalidation(`['usersById'][${user.id}]['investigations']['${numInvestigations - 1}']`)
                 ];
             })

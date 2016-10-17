@@ -70,7 +70,7 @@ export function investigationStore(loadApp, pathPrefix, investigationsByIdCache 
                     .catch(e => e.code === 'ENOENT' ? Observable.of(null)
                                                     : Observable.throw(e))
                     .switchMap(() => service.unloadByIds([investigation.id]))
-                    .map(() => {app, investigation});
+                    .map(() => ({app, investigation}));
             });
     }
 
