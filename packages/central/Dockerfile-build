@@ -1,4 +1,4 @@
-FROM graphistry/baseapp:1.0
+FROM graphistry/baseapp:1.2
 
 # fetch secrets from our vault, do the npm installs, and delete the secrets.
 
