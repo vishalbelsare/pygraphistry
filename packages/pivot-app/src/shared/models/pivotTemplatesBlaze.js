@@ -21,8 +21,9 @@ class BlazePivot {
     searchAndShape({app, pivot, rowId}) {
 
         const get = Observable.bindNodeCallback(request.get.bind(request));
+        const url = this.toSplunk();
         pivot.template = this;
-        return get('https://s3-us-west-1.amazonaws.com/graphistry.data.public/blazegraph.json')
+        return get(url)
             .map(
                 ([response, body], index) => {
                     const { graph, labels } = JSON.parse(body)
@@ -39,13 +40,60 @@ class BlazePivot {
             })
     }
 }
-
 const COMMUNITY_DETECTION = new BlazePivot({
     name: 'Community Detection',
     label: 'Query:',
     kind: 'text',
     toSplunk: function (pivotParameters, pivotCache) {
-        return `search ${pivotParameters['input']} ${constructFieldString(this)} | head 500`;
+        return 'https://s3-us-west-1.amazonaws.com/graphistry.data.public/blazegraph.json'
+    },
+    encodings: {
+        point: {
+            pointColor: (node) => {
+                node.pointColor = stringhash(node.type) % 12;
+            }
+        }
+    }
+});
+
+const PAGE_RANK = new BlazePivot({
+    name: 'Extract Community',
+    label: 'Query:',
+    kind: 'text',
+    toSplunk: function (pivotParameters, pivotCache) {
+        return 'https://s3-us-west-1.amazonaws.com/graphistry.data.public/graph4imc.json'
+    },
+    encodings: {
+        point: {
+            pointColor: (node) => {
+                node.pointColor = stringhash(node.type) % 12;
+            }
+        }
+    }
+});
+
+const BLAZE_EXPAND = new BlazePivot({
+    name: 'Blaze Expand on ',
+    label: 'Query:',
+    kind: 'text',
+    toSplunk: function (pivotParameters, pivotCache) {
+        return 'https://s3-us-west-1.amazonaws.com/graphistry.data.public/darpa-1998-json-expand-one-194.027.251.021';
+    },
+    encodings: {
+        point: {
+            pointColor: (node) => {
+                node.pointColor = stringhash(node.type) % 12;
+            }
+        }
+    }
+});
+
+const BLAZE_EXPAND2 = new BlazePivot({
+    name: 'Blaze 2 Expand on ',
+    label: 'Query:',
+    kind: 'text',
+    toSplunk: function (pivotParameters, pivotCache) {
+        return 'https://s3-us-west-1.amazonaws.com/graphistry.data.public/darpa-1998-json-expand-two-194.027.251.021';
     },
     encodings: {
         point: {
@@ -57,6 +105,6 @@ const COMMUNITY_DETECTION = new BlazePivot({
 });
 
 export default [
-    COMMUNITY_DETECTION
+    BLAZE_EXPAND, COMMUNITY_DETECTION, PAGE_RANK, BLAZE_EXPAND2
 ]
 
