@@ -10,16 +10,16 @@ import styles from './styles.less';
 import { switchScreen } from '../actions/app.js';
 import SplitPane from 'react-split-pane';
 
-function renderInvestigationBody(selectedInvestigation) {
+function renderInvestigationBody(activeInvestigation) {
     return (
         <div className={`main-panel ${styles['investigation-all']}`}>
-            <InvestigationHeader selectedInvestigation={selectedInvestigation} />
+            <InvestigationHeader activeInvestigation={activeInvestigation} />
 
             <div className={styles['investigation-split']}>
                 <SplitPane split="horizontal" defaultSize="60%" minSize={0}>
                    <iframe allowFullScreen="true" scrolling="no" className={styles.iframe}
-                        src={selectedInvestigation.url} />
-                   <Investigation data={selectedInvestigation}/>
+                        src={activeInvestigation.url} />
+                   <Investigation data={activeInvestigation}/>
                </SplitPane>
             </div>
 
@@ -44,9 +44,9 @@ function renderInvestigationPlaceholder(switchScreen) {
     )
 }
 
-function renderInvestigationScreen({ selectedInvestigation, switchScreen }) {
-    const body = selectedInvestigation !== undefined ?
-                 renderInvestigationBody(selectedInvestigation) :
+function renderInvestigationScreen({ activeInvestigation, switchScreen }) {
+    const body = activeInvestigation !== undefined ?
+                 renderInvestigationBody(activeInvestigation) :
                  renderInvestigationPlaceholder(switchScreen);
 
     return (
@@ -57,11 +57,19 @@ function renderInvestigationScreen({ selectedInvestigation, switchScreen }) {
     );
 }
 
+function mapFragmentToProps({ currentUser = {}} = {}) {
+    return {
+        activeInvestigation: currentUser.activeInvestigation
+    };
+}
+
 export default container(
-    ({ selectedInvestigation } = {}) => `{
-        selectedInvestigation: ${Investigation.fragment(selectedInvestigation)}
+    ({ activeInvestigation } = {}) => `{
+        currentUser: {
+            activeInvestigation: ${Investigation.fragment(activeInvestigation)}
+        }
     }`,
-    (state) => state,
+    mapFragmentToProps,
     {
         switchScreen: switchScreen
     }
