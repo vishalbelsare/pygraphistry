@@ -17,9 +17,13 @@ export function histograms(path, base) {
         const getHistograms = getHandler(path.concat('histogram'), loadHistogramsById);
 
         return [{
+            returns: `Number`,
+            get: getValues,
+            route: `${base}['histograms'].length`,
+        }, {
             returns: `*`,
             get: getValues,
-            route: `${base}['histograms'][{keys}]`,
+            route: `${base}['histograms']['id', 'name', 'templates']`,
         }, {
             get: getValues,
             route: `${base}['histograms'].controls[{keys}]`

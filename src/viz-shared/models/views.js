@@ -4,8 +4,8 @@ import { legend } from './legend';
 import { toolbar } from './toolbar';
 import { labels } from './labels';
 import { layout } from './layout';
+import { inspector } from './panels';
 import { selection } from './selection';
-import { timebar, inspector } from './panels';
 import { expressions } from './expressions';
 import { simpleflake } from 'simpleflakes';
 import {
@@ -29,6 +29,7 @@ export function views(workbookId, viewId = simpleflake().toJSON()) {
 export function view(workbookId, sceneID = 'default', viewId = simpleflake().toJSON()) {
     const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
     return {
+        absolutePath: view,
         id: viewId, title: '',
         panels: {
             left: undefined,
@@ -36,14 +37,14 @@ export function view(workbookId, sceneID = 'default', viewId = simpleflake().toJ
             bottom: undefined
         },
         ...camera(view),
-        ...scene(workbookId, viewId, sceneID),
-        ...labels(workbookId, viewId),
-        ...layout(workbookId, viewId),
-        ...legend(workbookId, viewId),
-        ...timebar(workbookId, viewId),
+        ...scene(view, sceneID),
+        ...labels(view),
+        ...layout(view),
+        ...legend(view),
+        // ...timebar(view),
         ...toolbar(workbookId, viewId),
-        ...inspector(workbookId, viewId),
-        ...selection(workbookId, viewId),
-        ...expressions(workbookId, viewId)
+        ...inspector(view),
+        ...selection(view),
+        ...expressions(view)
     };
 }

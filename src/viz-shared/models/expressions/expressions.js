@@ -13,18 +13,17 @@ import { filters } from './filters';
 import { exclusions } from './exclusions';
 import { histograms } from './histograms';
 
-export function expressions(workbookId, viewId) {
+export function expressions(view) {
 
-    const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
     const defaultFilter = expression('LIMIT 800000', 'Point Limit');
     defaultFilter.expressionType = 'filter';
     defaultFilter.level = 'system';
 
     return {
         // ...sets(workbookId, viewId),
-        ...exclusions(workbookId, viewId),
-        ...histograms(workbookId, viewId),
-        ...filters(workbookId, viewId, defaultFilter),
+        ...exclusions(view),
+        ...histograms(view),
+        ...filters(view, defaultFilter),
         expressionTemplates: [],
         expressionsById: {
             [defaultFilter.id]: {

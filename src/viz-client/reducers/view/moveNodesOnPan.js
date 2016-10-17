@@ -1,5 +1,5 @@
 export function moveNodesOnPan(pans) {
-    return pans.repeat().mergeMap((pan) => pan
+    return pans.mergeMap((pan) => pan
             .filter(({ movementX, movementY }) => !!(movementX || movementY))
             .map((point) => {
 

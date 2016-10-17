@@ -4,8 +4,7 @@ import {
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 
-export function selection(workbookId, viewId) {
-    const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
+export function selection(view) {
     return {
         highlight: {
             label: null,

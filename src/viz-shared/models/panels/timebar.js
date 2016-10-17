@@ -4,8 +4,7 @@ import {
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 
-export function timebar(workbookId, viewId) {
-    const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
+export function timebar(view) {
     return {
         timebar: {
             open: false,

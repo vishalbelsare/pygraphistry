@@ -1,4 +1,4 @@
-export function legend(workbookId, viewId) {
+export function legend(view) {
     return {
         legend: {
             title: '', subtitle: '',

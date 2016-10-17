@@ -8,19 +8,22 @@ import { Settings } from 'viz-shared/containers/settings';
 import { selectToolbarItem } from 'viz-shared/actions/toolbar';
 
 import {
+    touchCancel,
     touchEnd, mouseMove,
     touchMove, touchStart,
-    touchCancel, onPointSelected
+    onSelectedPointTouchStart,
+    onSelectionRectTouchStart,
 } from 'viz-shared/actions/view';
 
 let View = ({
     touchCancel,
-    onPointSelected,
     selectToolbarItem,
     touchEnd, mouseMove,
     touchMove, touchStart,
     scene = {}, labels = {},
     panels = {}, toolbar = {},
+    onSelectedPointTouchStart,
+    onSelectionRectTouchStart,
     selection = {}
 } = {}) => {
     const { left = {}, right = {}, bottom = {} } = panels;
@@ -35,8 +38,9 @@ let View = ({
                    touchMove={touchMove}
                    touchStart={touchStart}
                    touchCancel={touchCancel}
-                   onPointSelected={onPointSelected}
-                   selectToolbarItem={selectToolbarItem}/>
+                   selectToolbarItem={selectToolbarItem}
+                   onSelectedPointTouchStart={onSelectedPointTouchStart}
+                   onSelectionRectTouchStart={onSelectionRectTouchStart}/>
             <Panel side='left' data={left} isOpen={isLeftPanelOpen}/>
             <Dock fluid
                   size={0.2}
@@ -72,10 +76,11 @@ View = container(
     }`,
     (x) => x,
     {
-        onPointSelected,
         touchEnd, mouseMove,
         touchMove, touchStart,
-        touchCancel, selectToolbarItem
+        onSelectedPointTouchStart,
+        onSelectionRectTouchStart,
+        touchCancel, selectToolbarItem,
     }
 )(View);
 

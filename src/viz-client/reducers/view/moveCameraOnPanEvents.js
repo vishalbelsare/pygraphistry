@@ -9,7 +9,7 @@ import { Subject } from 'rxjs';
 import { cameraChanges } from 'viz-client/legacy';
 
 export function moveCameraOnPanEvents(starts, pans) {
-    return pans.repeat().mergeMap(
+    return pans.mergeMap(
             (pan) => pan
                 .filter(({ movementX, movementY }) => !!(movementX || movementY))
                 .multicast(createSubject, (pan) => pan.merge(

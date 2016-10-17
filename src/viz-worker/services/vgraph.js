@@ -1,8 +1,16 @@
 import url from 'url';
 import { loadDataset } from './datasets';
-import { Observable } from 'rxjs';
+import { Observable, Scheduler } from 'rxjs';
+import Binning from 'viz-worker/simulator/Binning';
 import { cache as Cache } from '@graphistry/common';
 import { load as _loadVGraph } from '../simulator/libs/VGraphLoader';
+import { histogram as createHistogram } from 'viz-shared/models/expressions';
+import {
+    ref as $ref,
+    atom as $atom,
+    pathValue as $value,
+    pathInvalidation as $invalidate
+} from '@graphistry/falcor-json-graph';
 
 const unpackers = {
     'null': _loadVGraph,
@@ -73,19 +81,45 @@ function loadDataFrameAndUpdateBuffers({ view }) {
     dataframe.loadDegrees(outDegrees, inDegrees);
     dataframe.loadEdgeDestinations(unsortedEdges);
 
-    view.scene = assignHintsToScene(view.scene, dataframe);
-    view.expressionTemplates = createExpressionTemplates(dataframe);
-
     // Tell all layout algorithms to load buffers from dataframe, now that
     // we're about to enable ticking
     return Observable.merge(
-        ...layoutAlgorithms.map((algo) =>
-            Observable.from(algo.updateDataframeBuffers(simulator))
-        )
+        ...layoutAlgorithms.map((algo) => Observable.defer(() =>
+                algo.updateDataframeBuffers(simulator)
+            )
+        ),
+        Scheduler.async
     )
     .toArray()
-    .mapTo(view);
+    .map(() => {
+        view = createInitialHistograms(view, dataframe);
+        view.scene = assignHintsToScene(view.scene, dataframe);
+        view.expressionTemplates = createExpressionTemplates(dataframe);
+        return view;
+    });
 }
+
+function createInitialHistograms(view, dataframe) {
+
+/*
+    const { histograms, histogramsById } = view;
+    const binningInstance = new Binning(dataframe);
+    const initialHistograms = binningInstance
+        .selectInitialColumnsForBinning(5)
+        .map(({ type, attribute }) => createHistogram(type, attribute));
+
+    histograms.length = initialHistograms.length;
+
+    initialHistograms.forEach((histogram, index) => {
+        histogramsById[histogram.id] = histogram;
+        histograms[index] = $ref(`${view.absolutePath}
+            .histogramsById['${histogram.id}']`);
+    });
+*/
+
+    return view;
+}
+
 
 function assignHintsToScene(scene, dataframe) {
 

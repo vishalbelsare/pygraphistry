@@ -3,7 +3,8 @@ export const MOUSE_MOVE = 'mouse-move';
 export const TOUCH_MOVE = 'touch-move';
 export const TOUCH_START = 'touch-start';
 export const TOUCH_CANCEL = 'touch-cancel';
-export const POINT_SELECTED = 'point-selected';
+export const SELECTED_POINT_TOUCH_START = 'selected-point-touch-start';
+export const SELECTION_RECT_TOUCH_START = 'selection-rect-touch-start';
 
 export const touchEnd = ({ event, ...props }) => ({
     event, ...props, type: TOUCH_END
@@ -25,6 +26,10 @@ export const touchCancel = ({ event, ...props }) => ({
     event, ...props, type: TOUCH_CANCEL
 });
 
-export const onPointSelected = ({ event, ...props }) => ({
-    event, ...props, type: POINT_SELECTED
+export const onSelectedPointTouchStart = ({ event, ...props }) => ({
+    event, ...props, type: SELECTED_POINT_TOUCH_START
+});
+
+export const onSelectionRectTouchStart = ({ event, ...props }) => ({
+    event, ...props, type: SELECTION_RECT_TOUCH_START
 });

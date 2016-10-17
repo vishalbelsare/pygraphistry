@@ -6,9 +6,7 @@ import {
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 
-export function filters(workbookId, viewId, defaultFilter = {}) {
-
-    const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
+export function filters(view, defaultFilter = {}) {
 
     const { id: defaultFilterId } = defaultFilter;
     const defaultFilters = defaultFilterId === undefined ? [] : [
