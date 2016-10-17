@@ -82,15 +82,15 @@ function renderAppWithHotReloading(modules, dataSource, paths) {
 }
 
 
-function renderFullPage(data, falcor, paths = {base: '', prefix: ''}, html = '') {
+function renderFullPage(data, falcor, paths = {}, html = '') {
     const { client, vendor } = webpackAssets;
     const { html: iconsHTML } = faviconStats;
-    const { base, prefix } = paths;
+    const { base = '', prefix = '' } = paths;
     return `
 <!DOCTYPE html>
 <html lang='en-us'>
     <head>
-        ${base && `<base href="${base}">`}
+        ${base && `<base href="${base}">` || ''}
         <meta name='robots' content='noindex, nofollow'/>
         <meta http-equiv='x-ua-compatible' content='ie=edge'/>
         <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'/>${
@@ -110,7 +110,7 @@ function renderFullPage(data, falcor, paths = {base: '', prefix: ''}, html = '')
         </script>
         <div id='root'>${html}</div>
         <script id='initial-state' type='text/javascript'>
-            var graphistryPath = "${ paths && paths.prefix || ''}";
+            var graphistryPath = "${ prefix || ''}";
             var __INITIAL_STATE__ = ${stringify(false && data && data.toJSON() || {})};
             var __INITIAL_CACHE__ = ${stringify(falcor && falcor.getCache() || {})};
         </script>
@@ -131,7 +131,7 @@ function getProxyPaths(req) {
     // If these headers aren't set, assumed we're not begind a proxy
     if(!req.get('X-Original-Uri') || !req.get('X-Resolved-Uri')) {
         logger.warn({req}, 'Could not find proxy URI headers; will not try to change URL paths');
-        return null;
+        return undefined;
     }
 
     const base = `${req.protocol}://${req.get('host')}${req.get('X-Resolved-Uri')}`;
