@@ -2,7 +2,7 @@
   "name": "@graphistry/central",
   "main": "dist/server.js",
   "description": "central",
-  "version": "3.0.0.1",
+  "version": "3.0.1",
   "scripts": {
     "start": "node ./bin/central",
     "build": "npm run clean && babel lib -d dist --source-maps --presets node6 --plugins transform-runtime",
