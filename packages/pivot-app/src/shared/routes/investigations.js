@@ -35,7 +35,7 @@ export function investigations({ loadUsersById, loadInvestigationsById, saveInve
         get: getInvestigationsHandler,
         route: `investigationsById[{keys}]['pivots']['length']`
     }, {
-        returns: `pivots`,
+        returns: `$ref(pivotsById[{keys}])`,
         get: getInvestigationsHandler,
         route: `investigationsById[{keys}]['pivots'][{integers}]`
     }, {
