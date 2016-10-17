@@ -5,8 +5,7 @@ import {
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 
-export function scene(workbookId, viewId, sceneID = 'default') {
-    const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
+export function scene(view, sceneID = 'default') {
     return {
         scene: {
             id: sceneID,

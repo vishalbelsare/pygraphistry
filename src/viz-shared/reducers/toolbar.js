@@ -251,10 +251,7 @@ function toggleSelectNodes({ falcor, selected }) {
         return falcor.set(
             $value(`selection.type`, 'select'),
             $value(`selection.controls[0].selected`, true),
-            $value(`timebar.controls[0].selected`, false),
-            $value(`inspector.controls[0].selected`, true),
             $value(`selection.controls[1].selected`, false),
-            $value(`panels.bottom`, $ref(falcor._path.concat(`inspector`))),
         );
     }
 }
@@ -269,10 +266,9 @@ function toggleWindowNodes({ falcor, selected }) {
         return falcor.set(
             $value(`selection.type`, 'window'),
             $value(`selection.controls[1].selected`, true),
-            $value(`timebar.controls[0].selected`, false),
-            $value(`inspector.controls[0].selected`, true),
             $value(`selection.controls[0].selected`, false),
-            $value(`panels.bottom`, $ref(falcor._path.concat(`inspector`))),
+            $value(`histograms.controls[0].selected`, true),
+            $value(`panels.right`, $ref(falcor._path.concat(`histograms`)))
         );
     }
 }

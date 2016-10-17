@@ -27,6 +27,6 @@ class Version {
 
 }
 
-logger.info(Version.all);
+logger.info(Version.all, 'Running graph-viz @ the listed version');
 
 module.exports = Version;

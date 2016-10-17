@@ -141,6 +141,7 @@ export function vizWorker(app, server, sockets, caches) {
                     ({ view, nBody }) => ({ view, nBody })
                 )
                 .mergeMap(({ nBody }) => sendUpdate(
+                    `workbooks.open.views.current.histograms.length`,
                     `workbooks.open.views.current.expressionTemplates.length`,
                     `workbooks.open.views.current.scene.renderer['edges', 'points'].elements`
                 ))

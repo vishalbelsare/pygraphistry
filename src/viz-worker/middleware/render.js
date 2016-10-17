@@ -1,3 +1,5 @@
+import { createLogger } from '@graphistry/common/logger';
+const logger = createLogger('viz-app:viz-worker:renderer');
 import url from 'url';
 import { inspect } from 'util';
 import faviconStats from './favicon-assets.json';
@@ -38,7 +40,7 @@ export function renderMiddleware(getDataSource, modules) {
         try {
             const renderedResults = !renderServerSide ?
                 Observable.of(renderFullPage(null, null, paths)) :
-                renderAppWithHotReloading(modules, getDataSource(req), options, req);
+                renderAppWithHotReloading(modules, getDataSource(req), paths);
 
             renderedResults.take(1).subscribe({
                 next(html) {
@@ -80,14 +82,15 @@ function renderAppWithHotReloading(modules, dataSource, paths) {
 }
 
 
-function renderFullPage(data, falcor, paths, html = '') {
+function renderFullPage(data, falcor, paths = {}, html = '') {
     const { client, vendor } = webpackAssets;
     const { html: iconsHTML } = faviconStats;
+    const { base = '', prefix = '' } = paths;
     return `
 <!DOCTYPE html>
 <html lang='en-us'>
     <head>
-        ${paths ? `<base href="${paths.base}">` : ''}
+        ${base && `<base href="${base}">` || ''}
         <meta name='robots' content='noindex, nofollow'/>
         <meta http-equiv='x-ua-compatible' content='ie=edge'/>
         <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'/>${
@@ -107,7 +110,7 @@ function renderFullPage(data, falcor, paths, html = '') {
         </script>
         <div id='root'>${html}</div>
         <script id='initial-state' type='text/javascript'>
-            var graphistryPath = "${ paths && paths.prefix || ''}";
+            var graphistryPath = "${ prefix || ''}";
             var __INITIAL_STATE__ = ${stringify(false && data && data.toJSON() || {})};
             var __INITIAL_CACHE__ = ${stringify(falcor && falcor.getCache() || {})};
         </script>
@@ -123,20 +126,25 @@ function renderFullPage(data, falcor, paths, html = '') {
 // `X-Resolved-Uri` headers added by our nginx config to get the base path and path prefix we should
 // be using for subrequests.
 function getProxyPaths(req) {
+    logger.trace({req}, 'Finding proxy paths of request');
+
     // If these headers aren't set, assumed we're not begind a proxy
-    if(!req.get('x-original-uri') || !req.get('x-resolved-uri')) {
-        return null;
+    if(!req.get('X-Original-Uri') || !req.get('X-Resolved-Uri')) {
+        logger.warn({req}, 'Could not find proxy URI headers; will not try to change URL paths');
+        return undefined;
     }
 
-    const base = `${req.protocol}//${req.get('host')}${req.get('x-resolved-uri')}`;
+    const base = `${req.protocol}://${req.get('host')}${req.get('X-Resolved-Uri')}`;
 
-    const { pathname: originalPathname } = url.parse(req.get('x-original-uri'));
-    const { pathname: resolvedPathname } = url.parse(req.get('x-resolved-uri'));
+    const { pathname: originalPathname } = url.parse(req.get('X-Original-Uri'));
+    const { pathname: resolvedPathname } = url.parse(req.get('X-Resolved-Uri'));
 
     if(!resolvedPathname.endsWith(originalPathname)) {
+        logger.warn({req, base}, 'Proxy paths: Resolved URI does not end with original URI, so not setting prefix');
         return { base: base, prefix: '' };
     }
 
     const prefix = resolvedPathname.substr(0, resolvedPathname.length - originalPathname.length);
+    logger.debug({req, base, prefix}, 'Resolved proxy paths');
     return {base, prefix};
 }

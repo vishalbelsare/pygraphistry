@@ -15,15 +15,20 @@ export function requisitionWorker({
     let isLocked = false;
     let latestClientId = simpleflake().toJSON();
 
-    const { requests } = server;
-    const centralPort = config.HTTP_LISTEN_PORT;
-    const centralAddr = config.HTTP_LISTEN_ADDRESS;
+    const requests = server
+        .requests
+        .do(({request, response}) =>
+            logger.trace({req: request, res: response}, 'viz-app server received a new request')
+        )
+        .share();
+
     const claimTimeout = config.WORKER_CONNECT_TIMEOUT;
     const canLockWorker = config.ENVIRONMENT !== 'local';
+    // The names of these options imply that they mean the very same thing, and because danger is
+    // our middle name, I don't know which one we actually use. So use both for good measure.
     const shouldExitOnDisconnect = (
-        config.ENVIRONMENT === 'production' ||
-        config.ENVIRONMENT === 'staging' ||
-        config.WORKER_RESTART
+        config.WORKER_RESTART ||
+        !config.ALLOW_MULTIPLE_VIZ_CONNECTIONS
     );
 
     const acceptETL = Observable.bindNodeCallback(etlAccepted);
@@ -51,7 +56,7 @@ export function requisitionWorker({
 
     const claimThenIndexRequests = claimRequests
         .mergeMap(
-            (claimId) => indexRequests,
+            () => indexRequests,
             (claimId, [indexId, indexType, request, response]) => [
                 claimId, indexId, indexType, request, response
             ]
@@ -68,9 +73,9 @@ export function requisitionWorker({
         .switchMap(loadWorker)
         .scan(trackVizWorkerCaches, { caches: {} })
         .switchMap(({ worker }) => worker.multicast(
-            () => new Subject(), (worker) => Observable.merge(
-                worker.filter(({ type }) => type !== 'connection'),
-                worker.filter(({ type }) => type === 'connection')
+            () => new Subject(), (multicastedWorker) => Observable.merge(
+                multicastedWorker.filter(({ type }) => type !== 'connection'),
+                multicastedWorker.filter(({ type }) => type === 'connection')
                     .pluck('socket')
                     .scan(disconnectPreviousSocket, null)
                     .distinctUntilChanged()
@@ -102,17 +107,18 @@ export function requisitionWorker({
 
 
     function requestIsPathname(pathname) {
-        return function requestIsPathname({ request }) {
+        return function checkRequestPathname({ request }) {
             return url.parse(request.url).pathname.endsWith(pathname);
-        }
+        };
     }
 
     function requisition(accept, reject) {
-        return function requisition({ request, response }) {
-            if (workerIsLocked(request)) {
-                logger.info('GPU worker already claimed');
-                return reject({ request, response }).ignoreElements();
-            } else if (requestIsIndex({ request })) {
+        return function requisitionRequest({ request, response }) {
+            // if (workerIsLocked(request)) {
+            //     logger.info('GPU worker already claimed');
+            //     return reject({ request, response }).ignoreElements();
+            // } else
+            if (requestIsIndex({ request })) {
                 const { query = {} } = url.parse(request.url);
                 latestClientId = query.clientId || latestClientId || simpleflake().toJSON();
             } else {
@@ -120,21 +126,22 @@ export function requisitionWorker({
             }
             isLocked = true;
             return accept({ request, response }, latestClientId);
-        }
+        };
     }
 
-    function workerIsLocked(request) {
-        if (canLockWorker && isLocked) {
-            if (requestIsIndex({ request })) {
-                const { query = {} } = url.parse(request.url);
-                if (query.clientId === latestClientId) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
+    // function workerIsLocked(request) {
+    //     if (canLockWorker && isLocked) {
+    //         if (requestIsIndex({ request })) {
+    //             // const { query = {} } = url.parse(request.url);
+    //             // if (query.clientId === latestClientId) {
+    //             //     return false;
+    //             // }
+    //             return false;
+    //         }
+    //         return true;
+    //     }
+    //     return false;
+    // }
 
     function etlAccepted({ request, response }, clientId, callback) {
         callback(null, [clientId, 'etl', request, response]);
@@ -146,7 +153,7 @@ export function requisitionWorker({
 
     function claimAccepted({ response }, clientId, callback) {
         const buffer = new Buffer(stringify({ success: true, clientId }, 'utf8'));
-        response.writeHead(302, {
+        response.writeHead(200, {
             'Content-Type': 'application/json',
             'Content-Length': buffer.length
         });
@@ -156,7 +163,7 @@ export function requisitionWorker({
     function claimRejected({ response }, callback) {
         const buffer = new Buffer(stringify({
             success: false, error: 'GPU worker already claimed' }), 'utf8');
-        response.writeHead(302, {
+        response.writeHead(502, {
             'Content-Type': 'application/json',
             'Content-Length': buffer.length
         });
@@ -164,19 +171,32 @@ export function requisitionWorker({
     }
 
     function indexAccepted({ request, response }, clientId, callback) {
+        logger.debug({req: request, res: response}, 'Accepting index.html request');
         const path = url.parse(request.url).pathname;
         const clientType = path.substring(path.indexOf('/') + 1, path.lastIndexOf('/'));
         callback(null, [clientId, clientType, request, response]);
     }
 
     function redirectIndex({ request, response }, callback) {
-        response.writeHead(302, {
-            'Location': `http://${centralAddr}:${centralPort}${request.url}`
+        logger.warn({req: request, res: response}, 'Rejecting request for a "./index.html" page');
+
+        const buffer = new Buffer('Error: unable to load page because you are not assigned to this visualization server process. ' +
+            'This can happen if the process is already handling an existing request, or because ' +
+            "your connection's ID doesn't match match the authorized ID for this process.\n\n" +
+            'This is most likely a transient problem. Please try reloading this page to try again.',
+             'utf8');
+        response.writeHead(502, {
+            'Content-Type': 'application/json',
+            'Content-Length': buffer.length
         });
         response.end(callback);
     }
 
     function loadWorker([activeClientId, clientType, request, response]) {
+        logger.debug(
+            {req: request, res: response, activeClientId, clientType},
+            'Loading worker module'
+        );
         return loadWorkerModule(clientType).map((workerModule) => [
             activeClientId, workerModule, request, response
         ]);
@@ -210,17 +230,17 @@ export function requisitionWorker({
     function socketConnectionAsObservable(activeClientId, request) {
         return Observable.create((subscriber) => {
             const handler = (socket) => {
-                if (activeClientId === latestClientId) {
-                    const { handshake: { query }} = socket;
-                    const { query: options = {} } = request;
-                    socket.handshake.query = { ...options, ...query };
-                    subscriber.next(socket);
-                    subscriber.complete();
-                } else {
-                    logger.warn('Late claimant, notifying client of error');
-                    socket.disconnect();
-                    subscriber.complete();
-                }
+                // if (activeClientId === latestClientId) {
+                const { handshake: { query }} = socket;
+                const { query: options = {} } = request;
+                socket.handshake.query = { ...options, ...query };
+                subscriber.next(socket);
+                subscriber.complete();
+                // } else {
+                //     logger.warn('Late claimant, notifying client of error');
+                //     socket.disconnect();
+                //     subscriber.complete();
+                // }
             };
             socketServer.on('connection', handler);
             return () => {

@@ -5,8 +5,7 @@ import {
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 
-export function labels(workbookId, viewId) {
-    const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
+export function labels(view) {
     return {
         labelsByType: { edge: {}, point: {} },
         labels: {
@@ -33,16 +32,12 @@ export function labels(workbookId, viewId) {
                     id: 'text-color',
                     type: 'color',
                     name: 'Text Color',
-                    value: $ref(`${view}.labels.foreground.color`),
-                    // stateKey: 'color',
-                    // state: $ref(`${view}.labels.foreground`)
+                    value: $ref(`${view}.labels.foreground.color`)
                 }, {
                     id: 'background-color',
                     type: 'color',
                     name: 'Background Color',
-                    value: $ref(`${view}.labels.background.color`),
-                    // stateKey: 'color',
-                    // state: $ref(`${view}.labels.background`)
+                    value: $ref(`${view}.labels.background.color`)
                 }, {
                     id: 'transparency',
                     type: 'discrete',
@@ -51,23 +46,17 @@ export function labels(workbookId, viewId) {
                         min: 0, max: 100,
                         step: 1, scale: 'percent'
                     },
-                    value: $ref(`${view}.labels.opacity`),
-                    // stateKey: 'opacity',
-                    // state: $ref(`${view}.labels`)
+                    value: $ref(`${view}.labels.opacity`)
                 }, {
                     id: 'show-labels',
                     type: 'bool',
                     name: 'Show Labels',
-                    value: $ref(`${view}.labels.enabled`),
-                    // stateKey: 'enabled',
-                    // state: $ref(`${view}.labels`)
+                    value: $ref(`${view}.labels.enabled`)
                 }, {
                     id: 'show-points-of-interest',
                     type: 'bool',
                     name: 'Show Points of Interest',
-                    value: $ref(`${view}.labels.poiEnabled`),
-                    // stateKey: 'poiEnabled',
-                    // state: $ref(`${view}.labels`)
+                    value: $ref(`${view}.labels.poiEnabled`)
                 }]
             }
         }

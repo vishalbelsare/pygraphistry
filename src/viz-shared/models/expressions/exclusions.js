@@ -5,8 +5,7 @@ import {
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 
-export function exclusions(workbookId, viewId) {
-    const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
+export function exclusions(view) {
     return {
         exclusionsById: {},
         exclusions: {

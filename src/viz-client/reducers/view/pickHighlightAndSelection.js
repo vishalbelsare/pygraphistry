@@ -13,7 +13,7 @@ const hitTestNTextures = ['hitmap'];
 
 export function pickHighlightAndSelection(moves, taps) {
 
-    taps = taps.repeat().mergeAll();
+    taps = taps.mergeAll();
 
     const movePointsWithHitmapUpdate = Observable.combineLatest(
         moves, hitmapUpdates, (move) => move

@@ -7,7 +7,8 @@ import { Selection } from 'viz-shared/containers/selection';
 import SceneComponent from 'viz-shared/components/scene';
 
 let Scene = ({
-    onPointSelected,
+    onSelectedPointTouchStart,
+    onSelectionRectTouchStart,
     id, simulating, labels = {},
     renderer = {}, highlight = {},
     selection = {}, ...props } = {}) => {
@@ -22,7 +23,8 @@ let Scene = ({
                        data={selection}
                        highlight={highlight}
                        simulating={simulating}
-                       onPointSelected={onPointSelected}/>
+                       onSelectedPointTouchStart={onSelectedPointTouchStart}
+                       onSelectionRectTouchStart={onSelectionRectTouchStart}/>
             <Labels key='labels'
                     data={labels}
                     simulating={simulating}/>

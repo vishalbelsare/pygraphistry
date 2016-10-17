@@ -4,8 +4,7 @@ import {
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 
-export function layout(workbookId, viewId) {
-    const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
+export function layout(view) {
     return {
         layout: {
             id: 'layout',

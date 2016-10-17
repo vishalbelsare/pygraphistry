@@ -30,7 +30,7 @@ export function toolbar(workbookId, viewId) {
                     [
                         $ref(`${view}.histograms.controls[0]`),
                         $ref(`${view}.inspector.controls[0]`),
-                        $ref(`${view}.timebar.controls[0]`),
+                        // $ref(`${view}.timebar.controls[0]`),
                         $ref(`${view}.exclusions.controls[0]`),
                         $ref(`${view}.filters.controls[0]`),
                     ]
@@ -50,7 +50,7 @@ export function toolbar(workbookId, viewId) {
                     [
                         $ref(`${view}.histograms.controls[0]`),
                         $ref(`${view}.inspector.controls[0]`),
-                        $ref(`${view}.timebar.controls[0]`),
+                        // $ref(`${view}.timebar.controls[0]`),
                         $ref(`${view}.exclusions.controls[0]`),
                         $ref(`${view}.filters.controls[0]`),
                     ]
