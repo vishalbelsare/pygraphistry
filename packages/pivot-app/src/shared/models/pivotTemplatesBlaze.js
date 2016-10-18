@@ -54,6 +54,7 @@ const COMMUNITY_DETECTION = new BlazePivot({
             headers: {
                 'Accept': 'text/plain;charset=utf-8',
                 'Accept-Encoding': 'gzip, deflate, sdch',
+                'Connection': 'keep-alive'
             },
             qs: {
                 filename: 'darpa-1998-edges-with-ports.txt',
