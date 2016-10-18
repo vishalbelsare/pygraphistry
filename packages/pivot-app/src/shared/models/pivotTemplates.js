@@ -47,32 +47,24 @@ const DATASET_ERROR_NODE_COLORS = {
     'EventID': 7
 }
 
-const SEARCH_SPLUNK_DATASET = {
+const SEARCH_SPLUNK_DATASET = new SplunkPivot({
     name: 'Search Splunk (dataset)',
     label: 'Query:',
     kind: 'text',
-
-    transport: 'Splunk',
-    splunk: {
-        toSplunk: function (pivotParameters, pivotCache) {
-            return `search ${pivotParameters['input']} | spath output=dataset path="metadata.dataset" | search dataset="*"  | fields msg, dataset | fields - _* | head 10`
-        },
-        encodings: {
-            point: {
-                pointColor: function(node) {
-                    node.pointColor = DATASET_ERROR_NODE_COLORS[node.type];
-                    if (node.pointColor === undefined) {
-                        node.pointColor = stringhash(node.type) % 12;
-                    }
+    toSplunk: function (pivotParameters, pivotCache) {
+        return `search ${pivotParameters['input']} | spath output=dataset path="metadata.dataset" | search dataset="*"  | fields msg, dataset | fields - _* | head 100`
+    },
+    encodings: {
+        point: {
+            pointColor: function(node) {
+                node.pointColor = DATASET_ERROR_NODE_COLORS[node.type];
+                if (node.pointColor === undefined) {
+                    node.pointColor = stringhash(node.type) % 12;
                 }
             }
-        },
-        links: [
-            'msg',
-            'dataset'
-        ]
+        }
     }
-};
+});
 
 
 // Map template, pivot name to pivot template dict

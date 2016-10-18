@@ -370,6 +370,13 @@ td, th {
         }
     }
 
+    & > * > *:nth-child(3) {
+        word-wrap: break-word;
+        overflow-x: scroll;
+        width: 100%;
+        white-space: normal;
+    }
+
     & > * > *:nth-child(2) > span:nth-child(2) > span {
         border-color: @header-highlight transparent transparent; //arrow
     }
@@ -379,9 +386,6 @@ td, th {
         border-color: transparent;
     }
 
-    & > * > *:nth-child(2) > span:nth-child(2) > span {
-        border-color: @header-highlight transparent transparent; //arrow
-    }
 }
 
 :local(.investigation-header-buttons) {

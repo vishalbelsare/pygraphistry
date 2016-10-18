@@ -1,5 +1,4 @@
 import { Observable } from 'rxjs';
-import _ from 'underscore';
 import {
     pathValue as $pathValue,
     pathInvalidation as $invalidation
@@ -11,7 +10,8 @@ import {
     mapObjectsToAtoms
 } from './support';
 
-export function users({ loadApp, loadUsersById, deleteInvestigationsById, deletePivotsById}) {
+export function users({ loadApp, removeInvestigationsById, loadUsersById, deleteInvestigationsById,
+                        deletePivotsById}) {
     const appGetRoute = getHandler([], loadApp);
 
     return [{
@@ -23,6 +23,11 @@ export function users({ loadApp, loadUsersById, deleteInvestigationsById, delete
         get: getHandler(['user'], loadUsersById),
         set: setHandler(['user'], loadUsersById),
         returns: `String`,
+    }, {
+        route: `['usersById'][{keys}]['activeInvestigation']`,
+        get: getHandler(['user'], loadUsersById),
+        set: setHandler(['user'], loadUsersById),
+        returns: `$ref('investigationsById[{investigationId}]`,
     }, {
         returns: `String`,
         route: `['usersById'][{keys}]['name','id']`,
@@ -37,38 +42,26 @@ export function users({ loadApp, loadUsersById, deleteInvestigationsById, delete
         returns: `$ref('investigationsById[{investigationId}]')`
     }, {
         route: `['usersById'][{keys}]['deleteInvestigations']`,
-        call: deleteInvestigationsCallRoute({loadUsersById, deleteInvestigationsById, deletePivotsById})
+        call: deleteInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,
+                                             deleteInvestigationsById, deletePivotsById })
     }];
 }
 
-function deleteInvestigationsCallRoute({loadUsersById, deleteInvestigationsById, deletePivotsById}) {
+function deleteInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,
+                                         deleteInvestigationsById, deletePivotsById }) {
     return function (path, args) {
         const userIds = path[1];
         const investigationIds = args[0];
-        return Observable.defer(() => loadUsersById({userIds: userIds}))
-            .mergeMap(({user, app}) => {
-                const newInvestigations = _.reject(user.investigations, i =>
-                    investigationIds.includes(i.value[1])
-                );
-                const oldLength = user.investigations.length;
-                user.investigations = newInvestigations;
 
-                const selectedInvestigationId = app.selectedInvestigation !== undefined ?
-                                                app.selectedInvestigation.value[1] :
-                                                undefined;
-                if (investigationIds.includes(selectedInvestigationId)) {
-                    app.selectedInvestigation  = newInvestigations.length > 0 ?
-                                                 user.investigations[0] :
-                                                 undefined;
-                }
-
-                return deleteInvestigationsById({investigationIds, deletePivotsById})
-                    .map(() => [
-                        $pathValue(`['usersById'][${user.id}]['investigations']['length']`, newInvestigations.length),
-                        $invalidation(`['usersById'][${user.id}]['investigations'][${0}..${oldLength}]`),
-                        $invalidation(`['selectedInvestigation']`)
-                    ]);
-            })
-            .catch(logErrorWithCode)
-    };
+        return Observable.defer(() =>
+                removeInvestigationsById({ loadUsersById, deleteInvestigationsById, deletePivotsById,
+                                           investigationIds, userIds })
+            )
+            .map(({user, newLength, oldLength}) => [
+                $pathValue(`['usersById'][${user.id}]['investigations']['length']`, newLength),
+                $invalidation(`['usersById'][${user.id}]['investigations'][${0}..${oldLength}]`),
+                $invalidation(`['usersById'][${user.id}]['activeInvestigation']`)
+            ])
+            .catch(logErrorWithCode);
+    }
 }
