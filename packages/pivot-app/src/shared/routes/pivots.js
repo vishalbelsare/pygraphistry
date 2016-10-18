@@ -49,17 +49,19 @@ function searchPivotCallRoute({loadPivotsById, searchPivot}) {
         // Should probably remove.
         const rowIds = args;
 
-        return Observable.defer(() => searchPivot({loadPivotsById, pivotIds, rowIds}))
-            .mergeMap(({app, pivot}) => {
-                return [
-                    $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
-                    $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
-                    $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
-                    $pathValue(`pivotsById['${pivot.id}']['status']`, pivot.status)
-                ];
-            })
-            .map(mapObjectsToAtoms)
-            .catch(captureErrorAndNotifyClient(pivotIds))
+        Observable.defer(() => searchPivot({loadPivotsById, pivotIds, rowIds}))
+        .catch(captureErrorAndNotifyClient(pivotIds))
+        .subscribe(
+            ({app, pivot}) => {
+                console.log('Finished searching', pivot.id);
+                pivot.status = {
+                    ok: true,
+                    message: 'done'
+                };
+            },
+        );
+
+        return Observable.of([]);
     }
 }
 

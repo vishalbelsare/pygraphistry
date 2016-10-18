@@ -198,7 +198,7 @@ function renderPivotRow({id, status, rowIndex, enabled, resultCount, resultSumma
                          setPivotParameters, splicePivot, insertPivot, pivots}) {
 
     const statusIndicator =
-        status.ok ?
+        (!status || status.ok) ?
             (<div/>)
         :
             (<Alert bsStyle={'danger'} className={styles.alert}>
