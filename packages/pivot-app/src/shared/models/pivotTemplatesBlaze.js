@@ -21,7 +21,7 @@ class BlazePivot {
     searchAndShape({app, pivot, rowId}) {
 
         const get = Observable.bindNodeCallback(request.get.bind(request));
-        const query = this.toSplunk();
+        const query = this.toSplunk(pivot.pivotParameters);
         pivot.template = this;
 
         return get(query)
@@ -30,9 +30,11 @@ class BlazePivot {
                     const { graph, labels } = JSON.parse(response.body);
                     pivot.results = {
                         graph: graph.map(
-                            ({src, dst, ...rest}) => ({ source: src, destination: dst, ...rest })
+                            ({ src, dst, ...rest }) => ({ source: src, destination: dst, ...rest })
                         ),
-                        labels: labels
+                        labels: labels.map(
+                            ({ community, ...rest }) => ({ community: (community) ? `Community ${community}`: undefined, ...rest})
+                        )
                     }
                     return ({app, pivot})
                 }
@@ -45,70 +47,76 @@ class BlazePivot {
     }
 }
 const COMMUNITY_DETECTION = new BlazePivot({
-    name: 'Blaze - Community',
-    label: 'Query:',
+    name: 'Darpa/communityDetection',
+    label: 'Number of communities:',
+    kind: 'text',
+
+    toSplunk: function (pivotParameters, pivotCache) {
+        const queryOptions = {
+            url: 'http://108.48.53.144:21026/communities',
+            headers: {
+                'Accept': 'text/plain;charset=utf-8',
+                'Accept-Encoding': 'gzip, deflate',
+                'Connection': 'keep-alive'
+            },
+            qs: {
+                filename: 'darpa-1998-edges-with-ports-cr.txt',
+                levels: `${pivotParameters['input']}`,
+                tol:'0.0001f',
+                ipidx: 'darpa-1998-ips_with_index.txt'
+            }
+        };
+
+        return queryOptions;
+    },
+});
+
+const PAGE_RANK = new BlazePivot({
+    name: 'Darpa/pageRank',
+    label: 'level',
     kind: 'text',
     toSplunk: function (pivotParameters, pivotCache) {
         const queryOptions = {
             url: 'http://108.48.53.144:21026/communities',
-            agentOptions: {
-                keepAlive: true,
-                maxSockets: 1,
-                keepAliveMsecs: 30000
-            },
             headers: {
-                Accept: 'text/plain;charset=utf-8',
-                'Accept-Encoding': 'gzip, deflate'
+                'Accept': 'text/plain;charset=utf-8',
+                'Accept-Encoding': 'gzip, deflate',
+                'Connection': 'keep-alive'
             },
             qs: {
-                filename: 'darpa-1998-edges-with-ports.txt',
-                levels: '1',
-                tol:'0.0001',
+                filename: 'netflow140_unique_src_dest_pairs_port_pagerank_indexed.txt',
+                levels: `${pivotParameters['input']}`,
+                tol:'0.0001f',
+                ipidx: '140idx.txt'
+            }
+        }
+
+        return queryOptions;
+    },
+});
+
+const BLAZE_EXPAND = new BlazePivot({
+    name: 'Darpa/expandOn',
+    label: 'Query:',
+    kind: 'text',
+    toSplunk: function (pivotParameters, pivotCache) {
+        const queryOptions = {
+            url: 'http://108.48.53.144:21026/expand',
+            headers: {
+                'Accept': 'text/plain;charset=utf-8',
+                'Accept-Encoding': 'gzip, deflate',
+                'Connection': 'keep-alive'
+            },
+            qs: {
+                filename: 'darpa-1998-edges-with-ports-cr.txt',
+                maxlevels: `2`,
+                seed: `${pivotParameters['input']}`,
                 ipidx: 'darpa-1998-ips_with_index.txt'
             }
         }
 
         return queryOptions;
     },
-    encodings: {
-        point: {
-            pointColor: (node) => {
-                node.pointColor = stringhash(node.type) % 12;
-            }
-        }
-    }
-});
-
-const PAGE_RANK = new BlazePivot({
-    name: 'Blaze - Page Rank',
-    label: 'Query:',
-    kind: 'text',
-    toSplunk: function (pivotParameters, pivotCache) {
-        return 'https://s3-us-west-1.amazonaws.com/graphistry.data.public/graph4imc.json'
-    },
-    encodings: {
-        point: {
-            pointColor: (node) => {
-                node.pointColor = stringhash(node.type) % 12;
-            }
-        }
-    }
-});
-
-const BLAZE_EXPAND = new BlazePivot({
-    name: 'Blaze - Expand on ',
-    label: 'Query:',
-    kind: 'text',
-    toSplunk: function (pivotParameters, pivotCache) {
-        return 'https://s3-us-west-1.amazonaws.com/graphistry.data.public/darpa-1998-json-expand-one-194.027.251.021';
-    },
-    encodings: {
-        point: {
-            pointColor: (node) => {
-                node.pointColor = stringhash(node.type) % 12;
-            }
-        }
-    }
 });
 
 const BLAZE_EXPAND2 = new BlazePivot({
