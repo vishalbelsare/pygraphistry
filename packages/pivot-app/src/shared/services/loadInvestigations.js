@@ -85,7 +85,7 @@ export function listInvestigations(pathPrefix) {
     const globAsObservable = Observable.bindNodeCallback(glob);
     const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
 
-    return globAsObservable(path.resolve('tests/appdata/investigations', '*.json'))
+    return globAsObservable(path.resolve(pathPrefix, '*.json'))
         .flatMap(x => x)
         .flatMap(file => readFileAsObservable(file).map(JSON.parse))
         .toArray();
