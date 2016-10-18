@@ -68,15 +68,18 @@ class Scene extends React.Component {
         this.simulationHeight = 0;
         this.container = undefined;
         this.assignRef = (container) => {
-            this.container = container;
-            this.simulationWidth = container.offsetWidth;
-            this.simulationHeight = container.offsetHeight;
+            this.onResize(this.container = container);
         };
         this.onResize = () => {
             const { container } = this;
             if (container) {
                 this.simulationWidth = container.offsetWidth;
                 this.simulationHeight = container.offsetHeight;
+            }
+            const { renderState: { camera } = {} } = this.state;
+            if (camera) {
+                camera.simulationWidth = this.simulationWidth;
+                camera.simulationHeight = this.simulationHeight;
             }
         };
         events.forEach((eventName) => {

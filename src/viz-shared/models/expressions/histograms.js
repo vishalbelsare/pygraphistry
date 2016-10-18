@@ -24,8 +24,23 @@ export function histograms(view) {
 
 export function histogram(type, attribute = '', histogramId = simpleflake().toJSON()) {
     return {
+        id: histogramId,
         type, /* edge | point */
         attribute,
-        id: histogramId,
+
+        /*
+        min: number,
+        max: number,
+        length: number,
+        width: number,
+        dataType: string,
+
+        0: {
+            max: number,
+            min: number,
+            total: number,
+            isSingular: bool,
+            representative: number
+        }*/
     };
 }

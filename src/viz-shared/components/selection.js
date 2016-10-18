@@ -3,8 +3,11 @@ if (__CLIENT__) {
 } else {
     module.exports = function SelectionComponent() {
         return (
-            <div style={{ width: `100%`, height: `100%`, position: `absolute` }}>
-            </div>
+            <div style={{
+                 width: `100%`,
+                 height: `100%`,
+                 position: `absolute`
+             }}/>
         );
     };
 }

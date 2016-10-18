@@ -7,6 +7,7 @@ export function toolbar(workbookId, viewId) {
         toolbar: $ref(`${view}.toolbars['stable']`),
         toolbars: {
             static: {
+                id: 'static',
                 visible: true,
                 length: 2, ...[
                     $ref(`${view}.camera.controls`),
@@ -17,6 +18,7 @@ export function toolbar(workbookId, viewId) {
                 ]
             },
             stable: {
+                id: 'stable',
                 visible: true,
                 length: 4, ...[
                     $ref(`${view}.camera.controls`),
@@ -37,6 +39,7 @@ export function toolbar(workbookId, viewId) {
                 ]
             },
             beta: {
+                id: 'beta',
                 visible: true,
                 length: 4, ...[
                     $ref(`${view}.camera.controls`),
@@ -57,6 +60,7 @@ export function toolbar(workbookId, viewId) {
                 ]
             },
             iFrame: {
+                id: 'iFrame',
                 visible: true,
                 length: 1, ...[[
                     $ref(`${workbook}.controls[0]`),

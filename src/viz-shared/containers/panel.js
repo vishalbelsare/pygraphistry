@@ -7,7 +7,7 @@ import { container } from '@graphistry/falcor-react-redux';
 import { Settings } from './settings';
 import { Expressions } from './expressions';
 // import { Inspector } from './inspector';
-// import { Histograms } from './histograms';
+import { Histograms } from './histograms';
 
 const panelsById = {
     'filters': Expressions,
@@ -81,11 +81,11 @@ function Inspector() {
     );
 }
 
-function Histograms() {
-    return (
-        <h1>Histograms</h1>
-    );
-}
+// function Histograms() {
+//     return (
+//         <h1>Histograms</h1>
+//     );
+// }
 
 function leftPanelStyles(isOpen) {
     return {

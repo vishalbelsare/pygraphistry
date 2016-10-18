@@ -93,7 +93,7 @@ function selectionValuesAndInvalidations({ type: gesture,
     ];
     if (gesture === 'tap') {
         values.push(
-            $value(`selection['rect']`, null),
+            $value(`selection['mask']`, null),
             $value(`selection['${type}'][0]`, idx),
             $value(`selection['${type}'].length`, 1),
             $value(`selection['${
@@ -114,7 +114,7 @@ function deselectionValuesAndInvalidations({ type: gesture,
     if (gesture === 'tap') {
         invalidations.push(`selection['edge', 'point']`);
         values.push(
-            $value(`selection['rect', 'label']`, null),
+            $value(`selection['mask', 'label']`, null),
             $value(`selection['edge', 'point'].length`, 0)
         );
     }

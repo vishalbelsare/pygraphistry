@@ -154,8 +154,6 @@ function setupRotate($eventTarget, camera) {
 
 
 function setupScroll($eventTarget, canvas, camera, appState) {
-    var zoomBase = 1.1;
-
     return $eventTarget.onAsObservable('mousewheel')
         // .auditTime(1)
         .switchMap(util.observableFilter([appState.marqueeOn, appState.brushOn],
@@ -170,19 +168,21 @@ function setupScroll($eventTarget, canvas, camera, appState) {
         .do(function (wheelEvent) {
             wheelEvent.preventDefault();
         })
-        .map(function({ originalEvent }) {
-            var bounds = $eventTarget[0].getBoundingClientRect();
-            var zoomFactor = (originalEvent.deltaY > 0 ? zoomBase : 1.0 / zoomBase) || 1.0;
-
-            var canvasPos = {
-                x: (originalEvent.clientX - bounds.left),
-                y: (originalEvent.clientY - bounds.top)
-            };
-
-            var screenPos = camera.canvas2ScreenCoords(canvasPos.x, canvasPos.y, canvas);
+        .map(function({ originalEvent: event }) {
+            // Calculate the zoom factor as the log of the WheelEvent's deltaY
+            // in whichever direction was scrolled. This yields a nice smooth
+            // zoom acceleration gradient as the deltaY grows in size from 0.
+            const { deltaY } = event;
+            const zoomDirection = deltaY > 0 ? 1 : -1;
+            // log(1) is 0, so take the max of either abs(deltaY) or 1, then add 1
+            const zoomDelta = Math.max(Math.abs(deltaY), 1) + 1;
+            const zoomFactor = zoomDirection * (
+                Math.log(zoomDelta) /
+                (160 / camera.pixelRatio)
+            );
+            const screenPos = camera.canvas2ScreenCoords(event.clientX, event.clientY, canvas);
             debug('Mouse screen pos=(%f,%f)', screenPos.x, screenPos.y);
-
-            return zoom(camera, zoomFactor, screenPos);
+            return zoom(camera, 1 + zoomFactor, screenPos);
         });
 }
 

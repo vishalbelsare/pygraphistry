@@ -43,7 +43,6 @@ let View = ({
                    onSelectionRectTouchStart={onSelectionRectTouchStart}/>
             <Panel side='left' data={left} isOpen={isLeftPanelOpen}/>
             <Dock fluid
-                  size={0.2}
                   dimMode='none'
                   key='right'
                   position='right'

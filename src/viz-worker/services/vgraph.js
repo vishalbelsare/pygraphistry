@@ -101,8 +101,12 @@ function loadDataFrameAndUpdateBuffers({ view }) {
 
 function createInitialHistograms(view, dataframe) {
 
-/*
     const { histograms, histogramsById } = view;
+
+    if (histograms.length) {
+        return view;
+    }
+
     const binningInstance = new Binning(dataframe);
     const initialHistograms = binningInstance
         .selectInitialColumnsForBinning(5)
@@ -115,7 +119,6 @@ function createInitialHistograms(view, dataframe) {
         histograms[index] = $ref(`${view.absolutePath}
             .histogramsById['${histogram.id}']`);
     });
-*/
 
     return view;
 }

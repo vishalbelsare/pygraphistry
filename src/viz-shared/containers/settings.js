@@ -82,16 +82,6 @@ Options = container(
     (options) => ({ options, name: options.name })
 )(Options);
 
-// Control = container(
-//     ({ stateKey } = {}) => !stateKey ?
-//         `{ id, name, type, props, stateKey }` :
-//         `{ id, name, type, props, stateKey, state: { ${stateKey} } }`,
-//     ({ state, stateKey, ...control }) => ({
-//         state: state && stateKey && state[stateKey], stateKey, ...control
-//     }),
-//     { setValue: setControlValue }
-// )(Control);
-
 Control = container(
     () => `{ id, name, type, props, value: {${null}} }`,
     (x) => x,

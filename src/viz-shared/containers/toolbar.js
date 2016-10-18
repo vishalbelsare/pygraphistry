@@ -10,7 +10,8 @@ let Toolbar = ({ toolbar = [], selectToolbarItem, ...props } = {}) => {
     return (
         <ButtonList {...props}>
         {toolbar.map((items, index) => (
-            <ToolbarItems data={items} key={index}
+            <ToolbarItems data={items}
+                          key={`toolbar-items-${index}`}
                           selectToolbarItem={selectToolbarItem}/>
         ))}
         </ButtonList>
@@ -19,10 +20,15 @@ let Toolbar = ({ toolbar = [], selectToolbarItem, ...props } = {}) => {
 
 Toolbar = container(
     // toolbar fragment
-    ({ length = 0 } = {}) => `{
-        visible, length, [0...${length}]: ${
-            ToolbarItems.fragment()
-        }
+    (toolbar = []) => `{
+        visible, length ${Array
+            .from(toolbar, (xs, i) => xs)
+            .reduce((xs, items, index) => `
+                ${xs},
+                ${index}: ${
+                    ToolbarItems.fragment(items)
+                }`
+            , '')}
     }`,
     // map fragment to component props
     (toolbar = []) => ({

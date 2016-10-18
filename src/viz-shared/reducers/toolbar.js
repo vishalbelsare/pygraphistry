@@ -259,7 +259,7 @@ function toggleSelectNodes({ falcor, selected }) {
 function toggleWindowNodes({ falcor, selected }) {
     if (selected) {
         return falcor.set(
-            $value(`selection.type`, null),
+            $value(`selection['mask', 'type']`, null),
             $value(`selection.controls[1].selected`, false)
         );
     } else {

@@ -31,7 +31,6 @@ class Renderer extends React.Component {
         super(props, context);
         this.arrowItems = {};
         this.renderFast = undefined;
-        this.resizeTimeout = undefined;
         this.renderPanZoom = undefined;
         this.renderBGColor = undefined;
         this.renderMouseOver = undefined;

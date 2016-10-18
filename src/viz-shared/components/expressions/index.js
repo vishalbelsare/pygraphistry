@@ -1,8 +1,6 @@
 import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import classNames from 'classnames';
-import { PropTypes } from 'react';
-import { getContext } from 'recompose';
 import ExpressionEditor from './editor';
 import {
     Col, Row, Grid,

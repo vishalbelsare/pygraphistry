@@ -5,6 +5,7 @@ export * from './vgraph';
 export * from './datasets';
 export * from './workbooks';
 export * from './dataframe';
+export * from './histograms';
 export * from './expressions';
 export * from './sendFalcorUpdate';
 
@@ -16,6 +17,7 @@ import { loadWorkbooks } from './workbooks';
 import { maskDataframe } from './dataframe';
 import { sendFalcorUpdate } from './sendFalcorUpdate';
 import { loadNBody, setLayoutControl } from './nBody';
+import { loadHistograms, loadSelectionHistograms } from './histograms';
 import { addExpression, updateExpression, removeExpression } from './expressions';
 
 export function services({ config, s3Cache, nBodiesById, workbooksById }) {
@@ -25,8 +27,10 @@ export function services({ config, s3Cache, nBodiesById, workbooksById }) {
     const loadWorkbooksById = loadWorkbooks(workbooksById, config, s3Cache);
 
     const loadViewsById = loadViews(loadDatasetNBody, loadWorkbooksById);
+    const loadHistogramsById = loadHistograms(loadViewsById);
     const loadLabelsByIndexAndType = loadLabels(loadViewsById);
     const setLayoutControlById = setLayoutControl(loadViewsById);
+    const loadSelectionHistogramsById = loadSelectionHistograms(loadViewsById);
 
     const addExpressionImpl = addExpression(loadViewsById);
     const removeExpressionById = removeExpression(loadViewsById);
@@ -39,7 +43,9 @@ export function services({ config, s3Cache, nBodiesById, workbooksById }) {
         loadViewsById,
         sendFalcorUpdate,
         loadWorkbooksById,
+        loadHistogramsById,
         loadLabelsByIndexAndType,
+        loadSelectionHistogramsById,
 
         loadDatasetNBody,
         setLayoutControlById,

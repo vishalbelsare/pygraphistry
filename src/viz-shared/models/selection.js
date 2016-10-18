@@ -16,6 +16,7 @@ export function selection(view) {
             rect: null,
             label: null,
             edge: [], point: [],
+            histogramsById: {},
             controls: [{
                 selected: false,
                 id: 'toggle-select-nodes',
