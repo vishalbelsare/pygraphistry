@@ -6,7 +6,6 @@ import {
 } from '@graphistry/falcor-json-graph';
 import {
     getHandler,
-    setHandler,
     logErrorWithCode,
     rangesToListItems
 } from './support';
@@ -14,17 +13,11 @@ import {
 
 export function app({ loadApp, createInvestigation, loadUsersById }) {
     const appGetRoute = getHandler([], loadApp);
-    const appSetRoute = setHandler([], loadApp);
 
     return [{
         returns: `*`,
         get: appGetRoute,
         route: `['title']`
-    }, {
-        get: appGetRoute,
-        set: appSetRoute,
-        returns: `$ref('investigationsById[{investigationId}])`,
-        route: `selectedInvestigation`
     }, {
         route: `['pivots'][{ranges}]`,
         get: rangesToListItems({ loadApp }),
@@ -42,7 +35,7 @@ function createInvestigationCallRoute({loadApp, createInvestigation, loadUsersBy
             .mergeMap(({app, user, numInvestigations}) => {
                 return [
                     $pathValue(`['usersById'][${user.id}]['investigations'].length`, numInvestigations),
-                    $pathValue(`selectedInvestigation`, app.selectedInvestigation),
+                    $pathValue(`['usersById'][${user.id}].activeInvestigation`, user.activeInvestigation),
                     $invalidation(`['usersById'][${user.id}]['investigations']['${numInvestigations - 1}']`)
                 ];
             })

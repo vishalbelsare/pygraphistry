@@ -35,7 +35,7 @@ function selectInvestigation(action$, store) {
             .groupBy(({ id }) => id)
             .mergeMap((actionsById) => actionsById.switchMap(
                 ({ falcor, id }) => falcor.set(
-                    $value(`selectedInvestigation`, $ref(`investigationsById['${id}']`))
+                    $value(`currentUser.activeInvestigation`, $ref(`investigationsById['${id}']`))
                 )
                 .progressively()
             ))
@@ -46,7 +46,7 @@ function setInvestigationParams(action$, store) {
     return action$
         .ofType(SET_INVESTIGATION_PARAMS)
         .mergeMap(({falcor, params, id}) => {
-            const root = id ? ['investigationsById', id] : ['selectedInvestigation']
+            const root = id ? ['investigationsById', id] : ['currentUser', 'activeInvestigation']
             return Observable.from(
                 _.map(params, (value, key) =>
                     falcor.set($value(root.concat([key]), value))

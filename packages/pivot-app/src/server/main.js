@@ -1,5 +1,6 @@
 import expressApp from './app.js'
 import bodyParser from 'body-parser';
+import path from 'path';
 import { Observable } from 'rxjs';
 import { reloadHot } from '../shared/reloadHot';
 import { renderMiddleware } from './middleware';
@@ -13,14 +14,15 @@ import {
     loadApp,
     userStore,
     listInvestigations, investigationStore,
-    createInvestigation, cloneInvestigationsById,
+    createInvestigation, cloneInvestigationsById, removeInvestigationsById,
     pivotStore, insertPivot, splicePivot, searchPivot,
     uploadGraph
 } from '../shared/services';
 
 
-const investigationPath = 'tests/appdata/investigations';
-const pivotPath = 'tests/appdata/pivots';
+const pathPrefix = process.env.PIVOTAPP_DATADIR || 'tests/appdata';
+const investigationPath = path.resolve(pathPrefix, 'investigations');
+const pivotPath = path.resolve(pathPrefix, 'pivots');
 
 listInvestigations(investigationPath)
     .map(makeTestUser)
@@ -51,6 +53,7 @@ function init(testUser) {
         loadInvestigationsById,
         saveInvestigationsById,
         deleteInvestigationsById,
+        removeInvestigationsById,
         createInvestigation,
         cloneInvestigationsById,
         loadPivotsById,

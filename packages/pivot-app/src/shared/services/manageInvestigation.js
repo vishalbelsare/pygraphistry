@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import _ from 'underscore';
 import { ref as $ref } from '@graphistry/falcor-json-graph';
 import {
     createInvestigationModel,
@@ -7,11 +8,12 @@ import {
     clonePivotModel
 } from '../models';
 
+
 function insertAndSelectInvestigation(app, user, newInvestigation) {
     app.investigationsById[newInvestigation.id] = newInvestigation;
     const newRef = $ref(`investigationsById['${newInvestigation.id}']`);
     user.investigations.push(newRef);
-    app.selectedInvestigation = newRef;
+    user.activeInvestigation = newRef;
 
     return user.investigations.length;
 }
@@ -20,6 +22,11 @@ function insertPivots(app, pivots) {
     pivots.forEach(pivot => {
         app.pivotsById[pivot.id] = pivot;
     });
+}
+
+function getActiveInvestigationId(user) {
+    return user.activeInvestigation !== undefined ? user.activeInvestigation.value[1]
+                                                  : undefined;
 }
 
 export function createInvestigation({ loadApp, loadUsersById }) {
@@ -55,4 +62,29 @@ export function cloneInvestigationsById({ loadInvestigationsById, loadPivotsById
                 return ({app, user, clonedInvestigation, numInvestigations});
             })
         )
+}
+
+export function removeInvestigationsById({loadUsersById, deleteInvestigationsById, deletePivotsById,
+                                          investigationIds, userIds}) {
+    return loadUsersById({userIds: userIds})
+        .mergeMap(({user, app}) => {
+            const newInvestigations = _.reject(user.investigations, i =>
+                investigationIds.includes(i.value[1])
+            );
+            const oldLength = user.investigations.length;
+            user.investigations = newInvestigations;
+
+            const activeInvestigationId = getActiveInvestigationId(user);
+            if (investigationIds.includes(activeInvestigationId)) {
+                user.activeInvestigation  = newInvestigations.length > 0 ?
+                                            user.investigations[0] :
+                                            undefined;
+            }
+
+            return deleteInvestigationsById({investigationIds, deletePivotsById})
+                .map(({app,  investigation}) => ({
+                    app, user, investigation, oldLength,
+                    newLength: newInvestigations.legnth
+                }));
+        });
 }
