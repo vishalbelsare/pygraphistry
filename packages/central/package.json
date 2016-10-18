@@ -14,8 +14,8 @@
     "graphistry-central": "./bin/central"
   },
   "dependencies": {
-    "@graphistry/common": "2.0.0",
-    "@graphistry/config": "2.0.0",
+    "@graphistry/common": "2.1.0",
+    "@graphistry/config": "2.1.0",
     "body-parser": "~1.15.2",
     "express": "~4.12.3",
     "lodash": "~4.16.4",
