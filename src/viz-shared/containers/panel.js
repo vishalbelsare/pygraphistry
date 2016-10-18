@@ -9,6 +9,8 @@ import { Expressions } from './expressions';
 // import { Inspector } from './inspector';
 // import { Histograms } from './histograms';
 
+import ColumnPicker from './ColumnPicker';
+
 const panelsById = {
     'filters': Expressions,
     'timebar': Timebar,
@@ -77,8 +79,19 @@ function Timebar() {
 
 function Inspector() {
     return (
-        <h1>Inspector</h1>
-    );
+        <div>
+            <h1>Inspector</h1>
+            <ColumnPicker
+                id="InspectorColumnPicker"
+                placeholder="Pick columns"
+                options={[
+                    {attribute: "edge:src", componentType: "edge", name: "src", dataType: "number"},
+                    {attribute: "edge:dst", componentType: "edge", name: "dst", dataType: "number"},
+                    {attribute: "point:degree", componentType: "point", name: "degree", dataType: "string"}
+                ]}
+                onChange={ (values) => console.log('selected cols', values)}
+                />
+        </div>);
 }
 
 function Histograms() {
