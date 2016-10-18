@@ -1,12 +1,12 @@
 {
     "name": "Dataset Errors",
-    "url": "/custom/html/splash.html",
+    "url": "https://labs.graphistry.com/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&info=true&dataset=splunkUpload3db4d8d9ad2b987f",
     "id": "3d6cb21fbee9e850",
     "description": "Errors in Graphistry's public dataset upload APIs",
     "tags": [
         "Demo"
     ],
-    "modifiedOn": 1475874596471,
+    "modifiedOn": 1476739062722,
     "pivots": [
         "3d6ccf32fd3adc09"
     ]

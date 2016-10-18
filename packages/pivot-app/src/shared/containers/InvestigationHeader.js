@@ -13,7 +13,7 @@ import {
 import styles from './styles.less';
 
 
-function renderInvestigationHeader({investigations, selectedInvestigation, createInvestigation,
+function renderInvestigationHeader({investigations, activeInvestigation, createInvestigation,
                                     selectInvestigation, setInvestigationParams, copyInvestigation,
                                     saveInvestigation}) {
     return (
@@ -24,7 +24,7 @@ function renderInvestigationHeader({investigations, selectedInvestigation, creat
                         { investigations.length > 0 ?
                             <InvestigationDropdown data={investigations}
                                 selectInvestigation={selectInvestigation}
-                                selectedInvestigation={selectedInvestigation} />
+                                activeInvestigation={activeInvestigation} />
                             : null
                         }
                     </span>
@@ -47,7 +47,7 @@ function renderInvestigationHeader({investigations, selectedInvestigation, creat
                                     Make a copy
                                 </Tooltip>
                             }>
-                            <Button onClick={(e) => copyInvestigation(selectedInvestigation.id)}>
+                            <Button onClick={(e) => copyInvestigation(activeInvestigation.id)}>
                                 <Glyphicon glyph="duplicate" />
                             </Button>
                         </OverlayTrigger>
@@ -57,7 +57,7 @@ function renderInvestigationHeader({investigations, selectedInvestigation, creat
                                     Save changes
                                 </Tooltip>
                             }>
-                            <Button onClick={(e) => saveInvestigation(selectedInvestigation.id)}>
+                            <Button onClick={(e) => saveInvestigation(activeInvestigation.id)}>
                                 <Glyphicon glyph="floppy-disk" />
                             </Button>
                         </OverlayTrigger>

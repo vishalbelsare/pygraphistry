@@ -74,7 +74,7 @@ const previousGraph = {
 
 
 function createGraph(pivots) {
-    const name = ("splunkUpload" + simpleflake().toJSON())
+    const name = `PivotApp/${simpleflake().toJSON()}`;
     const type = "edgelist";
     const bindings = {
         "sourceField": "source",
