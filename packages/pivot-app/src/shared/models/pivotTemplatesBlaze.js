@@ -51,10 +51,14 @@ const COMMUNITY_DETECTION = new BlazePivot({
     toSplunk: function (pivotParameters, pivotCache) {
         const queryOptions = {
             url: 'http://108.48.53.144:21026/communities',
+            agentOptions: {
+                keepAlive: true,
+                maxSockets: 1,
+                keepAliveMsecs: 30000
+            },
             headers: {
-                'Accept': 'text/plain;charset=utf-8',
-                'Accept-Encoding': 'gzip, deflate, sdch',
-                'Connection': 'keep-alive'
+                Accept: 'text/plain;charset=utf-8',
+                'Accept-Encoding': 'gzip, deflate'
             },
             qs: {
                 filename: 'darpa-1998-edges-with-ports.txt',
