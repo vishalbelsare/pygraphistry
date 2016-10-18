@@ -50,47 +50,16 @@ export function view(action$, store) {
     const starts = action$.ofType(TOUCH_START);
     const touchMoves = action$.ofType(TOUCH_MOVE);
     const mouseMoves = action$.ofType(MOUSE_MOVE);
-    const rectStarts = action$.ofType(SELECTION_RECT_TOUCH_START);
     const pointStarts = action$.ofType(SELECTED_POINT_TOUCH_START);
+    const selectionMaskStarts = action$.ofType(SELECTION_RECT_TOUCH_START);
 
     const moveNodeStarts = mergeActionsAndPoints(pointStarts.filter(isSelectStart), 'start');
     const moveCameraStarts = mergeActionsAndPoints(starts.filter(isCameraPanStart), 'start');
-    const moveWindowStarts = mergeActionsAndPoints(rectStarts.filter(isWindowStart), 'start');
     const selectNodeStarts = mergeActionsAndPoints(starts.filter(isSelectStart), 'start');
-    const windowNodeStarts = mergeActionsAndPoints(starts.filter(isWindowStart), 'start');
+    const drawWindowNodeStarts = mergeActionsAndPoints(starts.filter(isDrawWindowStart), 'start');
     const selectionTapStarts = mergeActionsAndPoints(starts.filter(isTapSelectStart), 'start');
     const highlightMoveGesture = mergeActionsAndPoints(mouseMoves.filter(isHighlightMove), 'move');
-
-    const moveWindowPanGesture = Gestures.pan(moveWindowStarts, {
-        delay: pressDelay,
-        radius: tapWithinRadius
-    })
-    .repeat()
-    .mergeMap((pan) => pan
-        .stopPropagation()
-        .map((point) => (point.type = 'pan') && point)
-        .map((point) => {
-
-            const { mask, camera,
-                    movementXTotal = 0,
-                    movementYTotal = 0 } = point;
-            const { width, height,
-                    simulationWidth = 1,
-                    simulationHeight = 1 } = camera;
-            point.mask = {
-                tl: {
-                    x: mask.tl.x + (movementXTotal * width / simulationWidth),
-                    y: mask.tl.y - (movementYTotal * height / simulationHeight)
-                },
-                br: {
-                    x: mask.br.x + (movementXTotal * width / simulationWidth),
-                    y: mask.br.y - (movementYTotal * height / simulationHeight)
-                }
-            };
-            return point;
-        })
-        .let(toWindowSelection)
-    );
+    const moveOrCloseWindowStarts = mergeActionsAndPoints(selectionMaskStarts.filter(isMoveOrCloseWindowStart), 'start');
 
     const moveNodesPanGesture = Gestures.pan(moveNodeStarts, {
         delay: pressDelay, radius: tapWithinRadius
@@ -116,6 +85,7 @@ export function view(action$, store) {
     })
     .repeat()
     .mergeMap((pan) => pan
+        .stopPropagation()
         .map((point) => (point.type = 'pan') && point)
         .let(withSelectionRect)
         .multicast(() => new Subject(), (pan) => pan.merge(pan
@@ -125,11 +95,53 @@ export function view(action$, store) {
         .let(toNodeSelection)
     );
 
-    const windowNodesPanGesture = Gestures.pan(windowNodeStarts, {
+    const closeWindowTapGesture = Gestures.tap(moveOrCloseWindowStarts, {
+        timeout: tapTimeout, radius: tapWithinRadius
+    })
+    .repeat()
+    .mergeMap((tap) => tap
+        .stopPropagation()
+        .map((point) => (point.type = 'tap') && point)
+        .map((point) => (point.mask = null) || point)
+        .let(toWindowSelection)
+    );
+
+    const moveWindowPanGesture = Gestures.pan(moveOrCloseWindowStarts, {
         delay: pressDelay, radius: tapWithinRadius
     })
     .repeat()
     .mergeMap((pan) => pan
+        .stopPropagation(true)
+        .map((point) => (point.type = 'pan') && point)
+        .map((point) => {
+
+            const { mask, camera,
+                    movementXTotal = 0,
+                    movementYTotal = 0 } = point;
+            const { width, height,
+                    simulationWidth = 1,
+                    simulationHeight = 1 } = camera;
+            point.mask = {
+                tl: {
+                    x: mask.tl.x + (movementXTotal * width / simulationWidth),
+                    y: mask.tl.y - (movementYTotal * height / simulationHeight)
+                },
+                br: {
+                    x: mask.br.x + (movementXTotal * width / simulationWidth),
+                    y: mask.br.y - (movementYTotal * height / simulationHeight)
+                }
+            };
+            return point;
+        })
+        .let(toWindowSelection)
+    );
+
+    const windowNodesPanGesture = Gestures.pan(drawWindowNodeStarts, {
+        delay: pressDelay, radius: tapWithinRadius
+    })
+    .repeat()
+    .mergeMap((pan) => pan
+        .stopPropagation()
         .map((point) => (point.type = 'pan') && point)
         .let(withSelectionRect)
         .let(toWindowSelection)
@@ -145,6 +157,7 @@ export function view(action$, store) {
         moveNodesPanGesture,
         moveWindowPanGesture,
         selectNodesPanGesture,
+        closeWindowTapGesture,
         windowNodesPanGesture,
         moveCameraOnPanEvents(starts, moveCameraPanGesture),
         pickHighlightAndSelection(highlightMoveGesture, selectionTapGesture)
@@ -165,16 +178,21 @@ function isTapSelectStart({ simulating }) {
     return !simulating;
 }
 
-function isCameraPanStart({ selectionType }) {
-    return !selectionType;
+function isCameraPanStart({ selectionType, selectionMask }) {
+    return !selectionType || (
+        selectionType === 'window' && selectionMask);
 }
 
 function isSelectStart({ simulating, selectionType }) {
     return !simulating && selectionType === 'select';
 }
 
-function isWindowStart({ simulating, selectionType }) {
-    return !simulating && selectionType === 'window';
+function isDrawWindowStart({ simulating, selectionType, selectionMask }) {
+    return !simulating && selectionType === 'window' && !selectionMask;
+}
+
+function isMoveOrCloseWindowStart({ simulating, selectionType, selectionMask }) {
+    return !simulating && selectionType === 'window' && selectionMask;
 }
 
 function isHighlightMove({ event, simulating, selectionType }) {

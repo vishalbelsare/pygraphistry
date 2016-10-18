@@ -171,6 +171,7 @@ function onRectTouchStart(event) {
     dispatch({
         mask, event,
         renderingScheduler,
+        selectionMask: mask,
         selectionType: 'window',
         simulating, renderState,
         camera: renderState.camera

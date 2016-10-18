@@ -1,6 +1,6 @@
 import React from 'react';
-import styles from './styles.less';
 import classNames from 'classnames';
+import styles from 'viz-shared/components/histograms/styles.less';
 
 export class Sparkline extends React.Component {
     constructor(props, context) {

@@ -92,7 +92,9 @@ class Scene extends React.Component {
                 const { simulating, selection = {} } = props;
                 const { simulationWidth, simulationHeight } = this;
                 dispatch({
-                    event, selectionType: selection.type,
+                    event,
+                    selectionMask: selection.mask,
+                    selectionType: selection.type,
                     simulationWidth, simulationHeight,
                     camera, simulating, renderState,
                     renderingScheduler
