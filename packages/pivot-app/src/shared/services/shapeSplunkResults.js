@@ -85,7 +85,7 @@ function encodeGraph({ app, pivot }) {
 }
 
 function shapeHyperGraph({ app, pivot } ) {
-    const { results, rowId, template } = pivot;
+    const { results, template } = pivot;
     const { attributes, connections } = template;
     const isStar = (connections === undefined) || (connections.indexOf('*') !== -1);
 
@@ -114,11 +114,16 @@ function shapeHyperGraph({ app, pivot } ) {
 
             if (row[field]) {
                 nodeLabels.push({'node': row[field], type: field});
-                edges.push(Object.assign({}, _.pick(row, attribs),
-                    {'destination': row[field],
-                        'source': eventID,
-                        'edgeType': ('EventID->' + field),
-                        'pivot': rowId}));
+                edges.push(
+                    Object.assign({}, _.pick(row, attribs),
+                        {
+                            'destination': row[field],
+                            'source': eventID,
+                            'edgeType': ('EventID->' + field),
+                            '_pivotId': pivot.id
+                        }
+                    )
+                );
             }
         }
 

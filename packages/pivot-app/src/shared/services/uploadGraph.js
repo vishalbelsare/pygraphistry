@@ -89,7 +89,7 @@ function createGraph(pivots) {
     pivots.forEach((pivot, index) => {
         if (pivot.results && pivot.enabled) {
             // Set attribute for pivot number
-            const graph = pivot.results.graph.map((edge) => Object.assign({}, edge, {'Step Number': index}));
+            const graph = pivot.results.graph.map((edge) => Object.assign({}, edge, {'Pivot': index}));
             mergedPivots.graph = [...mergedPivots.graph, ...graph]
             mergedPivots.labels = [...mergedPivots.labels, ...pivot.results.labels];
         }
