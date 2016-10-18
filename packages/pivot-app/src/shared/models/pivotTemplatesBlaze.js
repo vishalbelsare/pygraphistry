@@ -21,14 +21,17 @@ class BlazePivot {
     searchAndShape({app, pivot, rowId}) {
 
         const get = Observable.bindNodeCallback(request.get.bind(request));
-        const url = this.toSplunk();
+        const query = this.toSplunk();
         pivot.template = this;
-        return get(url)
+
+        return get(query)
             .map(
                 ([response, body], index) => {
-                    const { graph, labels } = JSON.parse(body)
+                    const { graph, labels } = JSON.parse(response.body);
                     pivot.results = {
-                        graph: graph.map(({src, dst}) => ({ source: src, destination: dst })),
+                        graph: graph.map(
+                            ({src, dst, ...rest}) => ({ source: src, destination: dst, ...rest })
+                        ),
                         labels: labels
                     }
                     return ({app, pivot})
@@ -36,16 +39,31 @@ class BlazePivot {
             )
             .catch((e) => {
                 console.error(e);
+                if (e.stack) { console.error(e.stack); }
                 return Observable.throw('Failed to download dataset ' +  e )
             })
     }
 }
 const COMMUNITY_DETECTION = new BlazePivot({
-    name: 'Community Detection',
+    name: 'Blaze - Community',
     label: 'Query:',
     kind: 'text',
     toSplunk: function (pivotParameters, pivotCache) {
-        return 'https://s3-us-west-1.amazonaws.com/graphistry.data.public/blazegraph.json'
+        const queryOptions = {
+            url: 'http://108.48.53.144:21026/communities',
+            headers: {
+                'Accept': 'text/plain;charset=utf-8',
+                'Accept-Encoding': 'gzip, deflate, sdch',
+            },
+            qs: {
+                filename: 'darpa-1998-edges-with-ports.txt',
+                levels: '1',
+                tol:'0.0001',
+                ipidx: 'darpa-1998-ips_with_index.txt'
+            }
+        }
+
+        return queryOptions;
     },
     encodings: {
         point: {
@@ -57,7 +75,7 @@ const COMMUNITY_DETECTION = new BlazePivot({
 });
 
 const PAGE_RANK = new BlazePivot({
-    name: 'Extract Community',
+    name: 'Blaze - Page Rank',
     label: 'Query:',
     kind: 'text',
     toSplunk: function (pivotParameters, pivotCache) {
@@ -73,7 +91,7 @@ const PAGE_RANK = new BlazePivot({
 });
 
 const BLAZE_EXPAND = new BlazePivot({
-    name: 'Blaze Expand on ',
+    name: 'Blaze - Expand on ',
     label: 'Query:',
     kind: 'text',
     toSplunk: function (pivotParameters, pivotCache) {
@@ -89,7 +107,7 @@ const BLAZE_EXPAND = new BlazePivot({
 });
 
 const BLAZE_EXPAND2 = new BlazePivot({
-    name: 'Blaze 2 Expand on ',
+    name: 'Blaze - Expand on 2',
     label: 'Query:',
     kind: 'text',
     toSplunk: function (pivotParameters, pivotCache) {
