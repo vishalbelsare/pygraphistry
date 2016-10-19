@@ -16,7 +16,7 @@ export class SplunkPivot {
         this.attributes = attributes;
     }
 
-    searchAndShape({app, pivot, rowId}) {
+    searchAndShape({ app, pivot }) {
 
         pivot.searchQuery = this.toSplunk(pivot.pivotParameters, pivotCache);
         pivot.template = this;

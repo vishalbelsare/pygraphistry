@@ -18,7 +18,7 @@ class BlazePivot {
         this.attributes = attributes;
     }
 
-    searchAndShape({app, pivot, rowId}) {
+    searchAndShape({ app, pivot }) {
 
         const get = Observable.bindNodeCallback(request.get.bind(request));
         pivot.template = this;

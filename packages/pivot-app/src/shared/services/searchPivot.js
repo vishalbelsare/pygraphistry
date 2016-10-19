@@ -2,8 +2,8 @@ import { Observable } from 'rxjs';
 import PivotTemplates from '../models/PivotTemplates';
 import _ from 'underscore';
 
-export function searchPivot({loadPivotsById, pivotIds, rowIds}) {
-    return loadPivotsById({pivotIds: pivotIds, rowIds: rowIds})
+export function searchPivot({ loadPivotsById, pivotIds }) {
+    return loadPivotsById({ pivotIds: pivotIds })
         .mergeMap(({app, pivot}) => {
             pivot.enabled = true;
             const template = PivotTemplates.get('all', pivot.pivotParameters.mode);
