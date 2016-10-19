@@ -1,6 +1,40 @@
+@text-color: #646464;
+@left-padding: 10px;
+
+.histogram-item {
+    padding: 0;
+    margin: 0;
+}
+
 .histogram {
     height: 20em;
     overflow: auto;
     position: relative;
     p { margin: 1px 0; }
+}
+
+.histogram-title {
+    padding-left: @left-padding;
+    word-break: break-all;
+    color: @text-color;
+    font-weight: bold;
+    font-size: 11px;
+    overflow: auto;
+    span {
+        vertical-align: middle;
+    }
+}
+
+.histogram-close {
+    float: right;
+    visibility: hidden;
+    font-size: 15px !important;
+
+    border: transparent;
+    background: transparent;
+    color: @text-color;
+    .histogram-item:hover & {
+        visibility: visible;
+        background: transparent;
+    }
 }

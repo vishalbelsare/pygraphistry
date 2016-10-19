@@ -1,6 +1,8 @@
 import React from 'react';
+import { Button } from 'react-bootstrap';
 import classNames from 'classnames';
 import styles from 'viz-shared/components/histograms/styles.less';
+import stylesGlobal from 'viz-shared/index.less';
 
 export class Sparkline extends React.Component {
     constructor(props, context) {
@@ -28,7 +30,17 @@ export class Sparkline extends React.Component {
 
         return (
             <div className={styles['histogram']}>
-                <p>{type}:{attribute}</p>
+
+                <div className={styles['histogram-title']}>
+                    <Button href='javascript:void(0)'
+                        className={classNames({
+                            [stylesGlobal['fa']]: true,
+                            [stylesGlobal['fa-times']]: true,
+                            [styles['histogram-close']]: true
+                        })} />
+                    <span>{type}:{attribute}</span>
+                </div>
+
                 <pre style={{ float: `left`, width: `50%` }}>
                     global: {_global}
                 </pre>

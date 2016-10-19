@@ -1,14 +1,14 @@
 import { renderNothing } from 'recompose';
 import { ExpressionTemplates } from '../expressions';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
+import styles from './styles.less';
 
 export function HistogramsList({ id, name, templates, children = [] }) {
     return (
         <div>
             <ListGroup fill>
             {children.map((child) => (
-                <ListGroupItem key={child.key}
-                               style={{ paddingLeft: 0, paddingRight: 0 }}>
+                <ListGroupItem key={child.key} className={styles['histogram-item']}>
                     {child}
                 </ListGroupItem>
             ))}
