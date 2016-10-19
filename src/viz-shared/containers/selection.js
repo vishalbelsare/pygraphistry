@@ -10,9 +10,7 @@ let Selection = ({ mask = {}, ...props }) => {
 
 Selection = container(
     ({ edge = [], point = [] } = {}) => `{
-        mask, type,
-        edge: { length, [0...${edge.length || 0}] },
-        point: { length, [0...${point.length || 0}] }
+        mask, type, edge, point
     }`
 )(Selection);
 

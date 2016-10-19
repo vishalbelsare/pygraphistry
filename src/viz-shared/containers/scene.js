@@ -7,34 +7,33 @@ import { Selection } from 'viz-shared/containers/selection';
 import SceneComponent from 'viz-shared/components/scene';
 
 let Scene = ({
-    onSelectedPointTouchStart,
-    onSelectionRectTouchStart,
-    id, simulating, labels = {},
-    renderer = {}, highlight = {},
-    selection = {}, ...props } = {}) => {
-    return (
-        <SceneComponent selection={selection}
-                        simulating={simulating}
-                        sceneID={id} {...props}>
-            <Renderer key='renderer'
-                      data={renderer}
-                      simulating={simulating}/>
-            <Selection key='selection'
-                       data={selection}
-                       highlight={highlight}
-                       simulating={simulating}
-                       onSelectedPointTouchStart={onSelectedPointTouchStart}
-                       onSelectionRectTouchStart={onSelectionRectTouchStart}/>
-            <Labels key='labels'
-                    data={labels}
-                    simulating={simulating}/>
-        </SceneComponent>
-    );
-};
+        onSelectedPointTouchStart,
+        onSelectionMaskTouchStart,
+        id, simulating, labels = {},
+        release = {}, renderer = {},
+        selection = {}, highlight = {}, ...props
+    } = {}) => (
+    <SceneComponent selection={selection}
+                    simulating={simulating}
+                    edges={renderer.edges}
+                    points={renderer.points}
+                    sceneID={id} {...props}>
+        <Renderer key='renderer'
+                  data={renderer}
+                  simulating={simulating}/>
+        <Selection key='selection'
+                   data={selection}
+                   highlight={highlight}
+                   simulating={simulating}
+                   onSelectedPointTouchStart={onSelectedPointTouchStart}
+                   onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
+        <Labels key='labels' data={labels} simulating={simulating}/>
+    </SceneComponent>
+);
 
 Scene = container((scene = {}) => {
     return `{
-        id, simulating,
+        id, simulating, release: { date },
         ... ${ Settings.fragment(scene) },
         labels: ${ Labels.fragment(scene.labels) },
         renderer: ${ Renderer.fragment(scene.renderer) },

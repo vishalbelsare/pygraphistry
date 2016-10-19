@@ -385,9 +385,20 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
                 if (isRenderingToScreen && this.lastMouseoverTask && (
                     this.lastMouseoverTask.data.selected.nodeIndices.length +
                     this.lastMouseoverTask.data.selected.edgeIndices.length > 0)) {
+
                     renderer.copyCanvasToTexture(this.renderState, 'steadyStateTexture');
                     renderer.setupFullscreenBuffer(this.renderState);
+
+                    // Temporarily reset the highlighted node and edge indicies.
+                    // Without this, the highlights seem to be stuck in place.
+                    var tmpHighlightNodeIndices = this.lastMouseoverTask.data.highlight.nodeIndices;
+                    var tmpHighlightEdgeIndices = this.lastMouseoverTask.data.highlight.edgeIndices;
+                    this.lastMouseoverTask.data.highlight.nodeIndices = [];
+                    this.lastMouseoverTask.data.highlight.edgeIndices = [];
+
                     this.renderMouseoverEffects();
+                    this.lastMouseoverTask.data.highlight.nodeIndices = tmpHighlightNodeIndices;
+                    this.lastMouseoverTask.data.highlight.edgeIndices = tmpHighlightEdgeIndices;
                 }
 
             }

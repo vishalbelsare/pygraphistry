@@ -44,9 +44,9 @@ export function views(path, base) {
             .mergeMap(({ workbook, view }) => {
 
                 const { nBody, selection = {} } = view;
-                const { point: points = [] } = selection;
+                const { point: { value: points } = {} } = selection;
 
-                if (!nBody || points.length <= 0) {
+                if (!nBody || !points || points.length <= 0) {
                     return [];
                 }
 

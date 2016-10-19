@@ -5,6 +5,7 @@ import {
     Subject, Observable,
     Subscription, ReplaySubject
 } from 'rxjs';
+import styles from 'viz-shared/components/scene/styles.less';
 
 import {
     pointSizes,
@@ -42,11 +43,8 @@ import {
 } from 'viz-client/streamGL/graphVizApp/interaction';
 
 const events = [
-    'touchEnd',
     'mouseMove',
-    'touchMove',
     'touchStart',
-    'touchCancel',
 ];
 
 class Scene extends React.Component {
@@ -140,6 +138,7 @@ class Scene extends React.Component {
         events.forEach((eventName) => this[eventName] = undefined);
     }
     render() {
+        const { edges, points, release, children } = this.props;
         return (
             <div id='simulation-container'
                  ref={this.assignRef}
@@ -155,9 +154,55 @@ class Scene extends React.Component {
                      height: `100%`,
                      position: `absolute`
                  }}>
-                {this.props.children}
+                {children}
+                {(  (edges && edges.elements !== undefined) ||
+                    (points && points.elements !== undefined)) &&
+                    <table className={styles['meter']}
+                           onMouseOver={this.hideOnMouseOver}
+                           onMouseOut={this.showOnMouseOut}>
+                        <tr>
+                            <td className={styles['meter-label']}>
+                                nodes
+                            </td>
+                            <td className={styles['meter-value']}>{
+                                points && points.elements || 0
+                            }</td>
+                        </tr>
+                        <tr>
+                            <td className={styles['meter-label']}>
+                                edges
+                            </td>
+                            <td className={styles['meter-value']}>{
+                                edges && edges.elements || 0
+                            }</td>
+                        </tr>
+                    </table>
+                }
+                <div className={styles['logo-container']}
+                     onMouseOver={this.hideOnMouseOver}
+                     onMouseOut={this.showOnMouseOut}>
+                    <img draggable='false' src='img/logo_white_horiz.png'/>
+                    <div className={styles['logo-version']}
+                         onMouseDown={this.stopEventPropagation}
+                         onMouseOver={this.stopEventPropagation}
+                         onMouseOut={this.stopEventPropagation}>
+                        {`${new Date(release &&
+                                     release.date ||
+                                     Date.now())
+                            .toLocaleString()}`}
+                    </div>
+                </div>
             </div>
         );
+    }
+    hideOnMouseOver({ currentTarget }) {
+        // currentTarget.style.opacity = 0;
+    }
+    showOnMouseOut({ currentTarget }) {
+        // currentTarget.style.opacity = 1;
+    }
+    stopEventPropagation(e) {
+        e.stopPropagation();
     }
     setupRenderStateAndScheduler(props, state) {
 
