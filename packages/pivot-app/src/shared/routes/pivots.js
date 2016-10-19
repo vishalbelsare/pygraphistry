@@ -41,15 +41,11 @@ export function pivots({loadPivotsById, searchPivot}) {
     }];
 }
 
-function searchPivotCallRoute({loadPivotsById, searchPivot}) {
+function searchPivotCallRoute({ loadPivotsById, searchPivot }) {
     return function(path, args) {
         const pivotIds = path[1];
 
-        // Needed in order to set 'Pivot #' Attribute (Demo)
-        // Should probably remove.
-        const rowIds = args;
-
-        Observable.defer(() => searchPivot({loadPivotsById, pivotIds, rowIds}))
+        Observable.defer(() => searchPivot({ loadPivotsById, pivotIds }))
         .catch(captureErrorAndNotifyClient(pivotIds))
         .subscribe(
             ({app, pivot}) => {
@@ -58,11 +54,11 @@ function searchPivotCallRoute({loadPivotsById, searchPivot}) {
                     ok: true,
                     message: 'done'
                 };
-            },
+            }
         );
 
         return Observable.of([]);
-    }
+    };
 }
 
 function captureErrorAndNotifyClient(pivotIds) {

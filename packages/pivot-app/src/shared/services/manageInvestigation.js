@@ -84,7 +84,7 @@ export function removeInvestigationsById({loadUsersById, deleteInvestigationsByI
             return deleteInvestigationsById({investigationIds, deletePivotsById})
                 .map(({app,  investigation}) => ({
                     app, user, investigation, oldLength,
-                    newLength: newInvestigations.legnth
+                    newLength: newInvestigations.length
                 }));
         });
 }

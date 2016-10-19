@@ -86,9 +86,11 @@ function createGraph(pivots) {
         labels: []
     };
 
-    pivots.forEach(pivot => {
+    pivots.forEach((pivot, index) => {
         if (pivot.results && pivot.enabled) {
-            mergedPivots.graph = [...mergedPivots.graph, ...pivot.results.graph]
+            // Set attribute for pivot number
+            const graph = pivot.results.graph.map((edge) => Object.assign({}, edge, {'Pivot': index}));
+            mergedPivots.graph = [...mergedPivots.graph, ...graph]
             mergedPivots.labels = [...mergedPivots.labels, ...pivot.results.labels];
         }
     });
