@@ -23,6 +23,7 @@ export function makeTestUser(investigations) {
         activeScreen: 'home',
         activeInvestigation: investigationsRefs[0],
         investigations: investigationsRefs,
+        templates: [$ref(`templatesById['42']`)],
         apiKey: process.env.GRAPHISTRY_API_KEY || padenKey,
         vizService: `${process.env.GRAPHISTRY_VIEWER || 'https://labs.graphistry.com'}${suffix}`,
         etlService: `${process.env.GRAPHISTRY_ETL || 'https://labs.graphistry.com'}/etl`,
@@ -33,31 +34,30 @@ export function createAppModel(testUser, id = simpleflake().toJSON()) {
     return {
         id,
         title: 'Pivots',
-
-        /**
-         *  investigationsById: {
-         *    'investigations-id-1': {
-         *      ....
-         *    }, ...
-         *  }
-         */
         investigationsById: {},
-
-        /**
-         *  pivotsById: {
-         *    'pivot-id-1': {
-         *       id: 'pivot-id-1',
-         *       pivotParamters: ...,
-         *       ...
-         *    }
-         *  }
-         */
         pivotsById: {},
-
-        currentUser: $ref(`usersById['0']`),
-
+        templatesById: {
+            '42': {
+                id: '42',
+                name: 'Search GraphViz',
+                pivotParameterKeys: ['query'],
+                pivotParametersUI: {
+                    'query': {
+                        inputType: 'text',
+                        label: 'Query',
+                        defaultValue: 'keepCalmAndCarryOn'
+                    }
+                    /*,'search': {
+                        inputType: 'text',
+                        label: 'Query 2',
+                        defaultValue: 'keepCalmAndCaadasdasdrryOn'
+                    }*/
+                }
+            }
+        },
         usersById: {
             '0': testUser
-        }
+        },
+        currentUser: $ref(`usersById['0']`)
     };
 }

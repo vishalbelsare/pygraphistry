@@ -12,7 +12,7 @@ import {
 } from '../shared/models';
 import {
     loadApp,
-    userStore,
+    userStore, templateStore,
     listInvestigations, investigationStore,
     createInvestigation, cloneInvestigationsById, removeInvestigationsById,
     pivotStore, insertPivot, splicePivot, searchPivot,
@@ -20,7 +20,7 @@ import {
 } from '../shared/services';
 
 
-const pathPrefix = process.env.PIVOTAPP_DATADIR || 'tests/appdata';
+const pathPrefix = process.env.PIVOTAPP_DATADIR || 'tests2/appdata';
 const investigationPath = path.resolve(pathPrefix, 'investigations');
 const pivotPath = path.resolve(pathPrefix, 'pivots');
 
@@ -35,7 +35,8 @@ listInvestigations(investigationPath)
 function init(testUser) {
     const app = createAppModel(testUser);
 
-    const {loadUsersById} = userStore(loadApp(app));
+    const { loadUsersById } = userStore(loadApp(app));
+    const { loadTemplatesById } = templateStore(loadApp(app));
     const {
         loadInvestigationsById,
         saveInvestigationsById,
@@ -50,6 +51,7 @@ function init(testUser) {
     const routeServices = {
         loadApp: loadApp(app),
         loadUsersById,
+        loadTemplatesById,
         loadInvestigationsById,
         saveInvestigationsById,
         deleteInvestigationsById,

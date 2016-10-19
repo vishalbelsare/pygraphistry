@@ -1,3 +1,6 @@
+import {
+    ref as $ref,
+} from '@graphistry/falcor-json-graph';
 import { simpleflake } from 'simpleflakes';
 import PivotTemplates from '../models/PivotTemplates';
 import _ from 'underscore';
@@ -7,22 +10,20 @@ function defaults() {
     return {
         id: simpleflake().toJSON(),
         enabled: false,
-        pivotParameterKeys: [
-            'mode', 'input', 'search', 'time'
-        ],
         pivotParameters: {
-            search: 'Enter search query',
-            mode: PivotTemplates.get('all', 'Search Splunk').name,
-            input: '*',
-            time: '09/21/2016'
-        }
+            query: 'Enter search query',
+        },
+        pivotTemplate: "42"
     };
 }
 
-const initialSoftState = {
-    status: {ok: true},
-    resultCount: 0,
-    resultSummary: {entities: []},
+function initialSoftState(pivotTemplate) {
+    return {
+        pivotTemplate: $ref(`templatesById[${pivotTemplate}]`),
+        status: {ok: true},
+        resultCount: 0,
+        resultSummary: {entities: []}
+    };
 }
 
 export function createPivotModel(serializedPivot) {
@@ -30,14 +31,18 @@ export function createPivotModel(serializedPivot) {
         ...defaults(),
         ...serializedPivot
     };
+
+
     return {
         ...normalizedPivot,
-        ...initialSoftState
+        ...initialSoftState(normalizedPivot.pivotTemplate)
     };
 }
 
 export function serializePivotModel(pivot) {
-    return _.pick(pivot, _.keys(defaults()));
+    const hardState = _.pick(pivot, _.keys(defaults()));
+    hardState.pivotTemplate = hardState.pivotTemplate.value[1];
+    return hardState;
 }
 
 export function clonePivotModel(pivot) {
@@ -45,6 +50,6 @@ export function clonePivotModel(pivot) {
     return {
         ...deepCopy,
         id: simpleflake().toJSON(),
-        ...initialSoftState
+        ...initialSoftState(pivot.pivotTemplate)
     };
 }

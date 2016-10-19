@@ -28,8 +28,11 @@ export function pivots({loadPivotsById, searchPivot}) {
     }, {
         returns: `String`,
         get: getPivotsHandler,
-        route: `pivotsById[{keys}]['id', 'total', 'resultCount', 'resultSummary',
-                                   'status', 'pivotParameterKeys']`
+        route: `pivotsById[{keys}]['id', 'resultCount', 'resultSummary', 'status']`
+    }, {
+        route: `pivotsById[{keys}]['pivotTemplate']`,
+        returns: `$ref('templatesById[{templateId}]'`,
+        get: getPivotsHandler,
     }, {
         returns: `String | Number`,
         get: getPivotsHandler,

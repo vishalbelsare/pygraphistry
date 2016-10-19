@@ -1,4 +1,5 @@
 import { container } from '@graphistry/falcor-react-redux';
+import { ref as $ref } from '@graphistry/falcor-json-graph';
 import {
     tcell as tableCellClassName,
     splice as spliceIconClassName,
@@ -31,6 +32,7 @@ import _ from 'underscore';
 import PivotTemplates from '../models/PivotTemplates';
 import React from 'react'
 import Select from 'react-select';
+
 
 function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot }) {
     return (
@@ -126,27 +128,31 @@ class InputSelector extends React.Component {
 
 }
 
-function PivotSelector (id, field, fldValue, pivotNames, setPivotParameters) {
+function renderTemplateSelector (id, pivotTemplate, templates, setPivotParameters) {
     return <span className={styles.pivotTypeSelectorContainer}>
         <Select
-            id={"pivotTypeSelector" + id}
-            name={"pivotTypeSelector" + id}
+            id={"templateSelector" + id}
+            name={"templateSelector" + id}
             value="one"
             clearable={false}
             backspaceRemoves={false}
-            value={{value: fldValue, label: fldValue}}
+            value={{value: pivotTemplate.id, label: pivotTemplate.name}}
             options={
-                pivotNames.map((name, index) => {
-                    return {value: name, label: name};
+                templates.map(({name, id}) => {
+                    return {value: id, label: name};
                 })
             }
-            onChange={ ({value}) => setPivotParameters({'mode': value}) }
+            onChange={ ({value}) =>
+                setPivotParameters({
+                    'pivotTemplate': $ref(`templatesById['${value}']`)
+                })
+            }
         />
     </span>;
 }
 
 
-
+/*
 function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
     id, rowIndex, resultSummary, pivots, searchPivot, togglePivot, setPivotParameters, splicePivot, insertPivot) {
 
@@ -181,7 +187,9 @@ function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
                     const previousPivots = pivots.slice(0, rowIndex);
                     return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}>
                                 <div>
-                                    <InputSelector fldValue={fldValue} setPivotParameters={setPivotParameters} label={template.label} previousPivots={previousPivots}/>
+                                    <InputSelector fldValue={fldValue}
+                                                   setPivotParameters={setPivotParameters}
+                                                   label={template.label} previousPivots={previousPivots}/>
                                 </div>
                         </td>);
                 default:
@@ -191,20 +199,54 @@ function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
             return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}></td>);
     }
 };
+*/
 
+function renderTextCell(id, paramKey, paramValue, paramUI, handlers) {
+     return (
+            <td key={`pcell-${id}-${paramKey}`} className={styles['pivotData1']}>
+                <div className={tableCellClassName}>
+                    <label>{ paramUI.label }</label>
+                    <input
+                        type='th'
+                        defaultValue={paramValue}
+                        readOnly={false}
+                        disabled={false}
+                        onChange={ev =>
+                            ev.preventDefault() ||
+                                handlers.setPivotParameters({[paramKey]: ev.target.value})
+                        }
+                    />
+                </div>
+            </td>
+     );
+}
 
-function renderPivotRow({id, status, rowIndex, enabled, resultCount, resultSummary,
-                         pivotParameters, pivotParameterKeys, searchPivot, togglePivot,
-                         setPivotParameters, splicePivot, insertPivot, pivots}) {
+function renderPivotCell(id, paramKey, paramValue, paramUI, pivots, handlers) {
+    switch (paramUI.inputType) {
+        case 'text':
+            return renderTextCell(id, paramKey, paramValue, paramUI, handlers);
+        default:
+            throw new Error('Unknown pivot cell type:' + ui.inputType);
+    }
+}
 
-    const statusIndicator =
-        status.ok ?
-            (<div/>)
-        :
-            (<Alert bsStyle={'danger'} className={styles.alert}>
+function renderStatusIndicator(status) {
+    if (status.ok) {
+        return (<div/>);
+    } else {
+        return (
+            <Alert bsStyle={'danger'} className={styles.alert}>
                 <strong> {status.message} </strong>
-            </Alert>)
+            </Alert>
+        );
+    }
+}
 
+function renderPivotRow({
+    id, status, enabled, resultCount, resultSummary, pivotParameters, pivotTemplate, templates,
+    searchPivot, togglePivot, setPivotParameters, splicePivot, insertPivot, pivots, rowIndex })
+{
+    const handlers = {searchPivot, togglePivot, setPivotParameters, splicePivot, insertPivot}
     return (
         <tr id={"pivotRow" + id} className={styles['row-toggled-' + (enabled ? 'on' : 'off')]}>
             <td className={styles.pivotToggle}>
@@ -215,13 +257,17 @@ function renderPivotRow({id, status, rowIndex, enabled, resultCount, resultSumma
                           onChange={(ev) => {
                               togglePivot({ rowIndex, enabled: ev })}
                           }
-                  unCheckedChildren={'Off'}/>
+                          unCheckedChildren={'Off'}
+                />
+            </td>
+            <td key={`pcell-${id}-pivotselector`} className={styles.pivotData0 + ' pivotTypeSelector'}>
+                { renderTemplateSelector(id, pivotTemplate, templates, setPivotParameters) }
             </td>
             {
-                pivotParameters && pivotParameterKeys.map((key, index) =>
-                    renderPivotCellByIndex(
-                        key, index, pivotParameters[key], pivotParameters['mode'], id, rowIndex, resultSummary, pivots,
-                        searchPivot, togglePivot, setPivotParameters, splicePivot, insertPivot
+                pivotParameters && pivotTemplate.pivotParameterKeys.map(key =>
+                    renderPivotCell(
+                        id, key, pivotParameters[key], pivotTemplate.pivotParametersUI[key], pivots,
+                        handlers
                     )
                 )
             }
@@ -238,31 +284,53 @@ function renderPivotRow({id, status, rowIndex, enabled, resultCount, resultSumma
             <td className={styles.pivotIcons}>
                 <ResultCount index={rowIndex} resultCount={resultCount} searchPivot={searchPivot}
                     insertPivot={insertPivot} splicePivot={splicePivot}/>
-                {statusIndicator}
+                { renderStatusIndicator(status) }
             </td>
         </tr>
     );
 }
 
-function mapStateToFragment({pivotParameterKeys = [], pivotParameters = {}} = {}) {
+function mapStateToFragment({pivotTemplate = {pivotParameterKeys: []}} = {}) {
+    const baseFields = ['enabled', 'status', 'resultCount', 'resultSummary', 'id'];
+    const ppKeys = pivotTemplate.pivotParameterKeys;
+
+    if (ppKeys.length === 0 || _.keys(ppKeys).length <= 1) {
+        return `{
+            ${baseFields.join(',')},
+            pivotTemplate: {
+                pivotParameterKeys: {
+                    'length',
+                    [0...${ppKeys.length}]
+                }
+            }
+        }`;
+    }
+
     return `{
-        'enabled', 'status', 'resultCount', 'resultSummary', 'id',
-        pivotParameterKeys: {
-            'length', [0...${pivotParameterKeys.length}]
-        }
-        ${
-            pivotParameterKeys.length > 0 ?
-                `,pivotParameters: {
-                    ${pivotParameterKeys.join(',')}
-                }` :
-                ''
+        ${baseFields.join(',')},
+        pivotTemplate: {
+            'id', 'name',
+            pivotParameterKeys: {
+                'length',
+                [0...${ppKeys.length}]
+            },
+            pivotParametersUI: {
+                ${ppKeys.join(',')}
+            }
+        },
+        pivotParameters: {
+            ${ppKeys.join(',')}
         }
     }`;
 }
 
 function mapFragmentToProps(fragment) {
-    const props = ['id', 'status', 'enabled', 'resultCount', 'resultSummary',
-                   'pivotParameters', 'pivotParameterKeys'];
+    const props = [
+        'id', 'status', 'enabled', 'resultCount', 'resultSummary',
+        'pivotParameters', 'pivotTemplate'
+    ];
+
+    console.log('frag', fragment);
     return _.pick(fragment, props);
 }
 

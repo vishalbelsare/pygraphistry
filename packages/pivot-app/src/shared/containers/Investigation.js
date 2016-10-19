@@ -28,7 +28,7 @@ import { splicePivot,
 } from '../actions/investigation';
 
 
-function pivotTable({pivots, insertPivot, splicePivot, dismissAlert, searchPivot,
+function pivotTable({pivots, templates, insertPivot, splicePivot, dismissAlert, searchPivot,
                      playInvestigation, saveInvestigation}) {
     return (
         <Table>
@@ -51,13 +51,15 @@ function pivotTable({pivots, insertPivot, splicePivot, dismissAlert, searchPivot
             </thead>
             <tbody>
                 {pivots.map((pivot, index) => (
-                    <PivotRow data={pivot}
-                                pivots={pivots}
-                                rowIndex={index}
-                                key={`${index}: ${pivot.id}`}
-                                searchPivot={searchPivot}
-                                splicePivot={splicePivot}
-                                insertPivot={insertPivot}/>
+                    <PivotRow
+                        data={pivot}
+                        pivots={pivots}
+                        templates={templates}
+                        rowIndex={index}
+                        key={`${index}: ${pivot.id}`}
+                        searchPivot={searchPivot}
+                        splicePivot={splicePivot}
+                        insertPivot={insertPivot}/>
 
                 ))}
             </tbody>
@@ -113,7 +115,7 @@ function renderEventTable({fieldSummaries = {}, table = {}}) {
     );
 }
 
-function renderInvestigation({status, pivots = [], eventTable,
+function renderInvestigation({status, pivots = [], templates, eventTable,
                               searchPivot, insertPivot, splicePivot, dismissAlert,
                               playInvestigation, saveInvestigation }) {
     return (
@@ -128,8 +130,8 @@ function renderInvestigation({status, pivots = [], eventTable,
                 <Tab eventKey={1} title="Pivots">
                     {
                         pivotTable({
-                            pivots, insertPivot, splicePivot, dismissAlert, searchPivot,
-                            playInvestigation, saveInvestigation
+                            pivots, templates, insertPivot, splicePivot, dismissAlert,
+                            searchPivot, playInvestigation, saveInvestigation
                         })
                     }
                 </Tab>
