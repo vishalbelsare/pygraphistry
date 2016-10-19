@@ -1,13 +1,15 @@
 @text-color: #646464;
 @left-padding: 10px;
 
+@color-neutral: #6B6868;
+@color-highlight: rgb(15, 165, 197);
+
 .histogram-item {
     padding: 0;
     margin: 0;
 }
 
 .histogram {
-    height: 20em;
     overflow: auto;
     position: relative;
     p { margin: 1px 0; }
@@ -37,4 +39,42 @@
         visibility: visible;
         background: transparent;
     }
+}
+
+.histogram-info-top {
+    height: 20px;
+    overflow: hidden;
+}
+.histogram-info-bottom {
+    min-height: 20px;
+}
+
+.histogram-picture-container {
+    width: 100%;
+    text-align: center;
+}
+
+.histogram-picture {
+    position: relative;
+    display: inline-block;
+    text-align: left;
+}
+
+.histogram-column {
+    display: inline-block;
+    height: 100%;
+    position: absolute;
+    cursor: crosshair;
+}
+.bar-rect {
+    display: inline-block;
+    pointer-events: none; //let column-bg etc. catch
+    position: absolute;
+}
+.bar-masked {
+    background-color: @color-highlight;
+}
+.bar-global {
+    background-color: @color-neutral;
+    border: 1px solid rgba(255,255,255,0.1);
 }
