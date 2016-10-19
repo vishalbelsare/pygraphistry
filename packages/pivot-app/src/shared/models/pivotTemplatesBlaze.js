@@ -109,7 +109,7 @@ const BLAZE_EXPAND = new BlazePivot({
             },
             qs: {
                 filename: 'darpa-1998-edges-with-ports-cr.txt',
-                maxlevels: `2`,
+                maxlevels: `1`,
                 seed: `${pivotParameters['input']}`,
                 ipidx: 'darpa-1998-ips_with_index.txt'
             }
@@ -120,22 +120,54 @@ const BLAZE_EXPAND = new BlazePivot({
 });
 
 const BLAZE_EXPAND2 = new BlazePivot({
-    name: 'Blaze - Expand on 2',
+    name: 'Darpa/expandOn2',
     label: 'Query:',
     kind: 'text',
     toSplunk: function (pivotParameters, pivotCache) {
-        return 'https://s3-us-west-1.amazonaws.com/graphistry.data.public/darpa-1998-json-expand-two-194.027.251.021';
-    },
-    encodings: {
-        point: {
-            pointColor: (node) => {
-                node.pointColor = stringhash(node.type) % 12;
+        const queryOptions = {
+            url: 'http://108.48.53.144:21026/expand',
+            headers: {
+                'Accept': 'text/plain;charset=utf-8',
+                'Accept-Encoding': 'gzip, deflate',
+                'Connection': 'keep-alive'
+            },
+            qs: {
+                filename: 'darpa-1998-edges-with-ports-cr.txt',
+                maxlevels: `2`,
+                seed: `${pivotParameters['input']}`,
+                ipidx: 'darpa-1998-ips_with_index.txt'
             }
         }
-    }
+
+        return queryOptions;
+    },
+});
+
+const BLAZE_EXPAND3 = new BlazePivot({
+    name: 'Darpa/expandOn3',
+    label: 'Query:',
+    kind: 'text',
+    toSplunk: function (pivotParameters, pivotCache) {
+        const queryOptions = {
+            url: 'http://108.48.53.144:21026/expand',
+            headers: {
+                'Accept': 'text/plain;charset=utf-8',
+                'Accept-Encoding': 'gzip, deflate',
+                'Connection': 'keep-alive'
+            },
+            qs: {
+                filename: 'darpa-1998-edges-with-ports-cr.txt',
+                maxlevels: `3`,
+                seed: `${pivotParameters['input']}`,
+                ipidx: 'darpa-1998-ips_with_index.txt'
+            }
+        }
+
+        return queryOptions;
+    },
 });
 
 export default [
-    BLAZE_EXPAND, COMMUNITY_DETECTION, PAGE_RANK, BLAZE_EXPAND2
+    BLAZE_EXPAND, COMMUNITY_DETECTION, PAGE_RANK, BLAZE_EXPAND2, BLAZE_EXPAND3
 ]
 
