@@ -1,5 +1,5 @@
 import { simpleflake } from 'simpleflakes';
-import PivotTemplates from '../models/PivotTemplates';
+import PivotTemplates from '../models/pivotTemplates';
 import _ from 'underscore';
 
 
