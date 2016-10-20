@@ -322,6 +322,9 @@ export function createInteractionsLoop({
                 (x) => nBody.updateSettings(x),
                 (x) => x
             )
+            // Recreates old functionality of forcing a break in the event loop, so
+            // things like socket event handlers don't queue up
+            .delay(1)
             .mergeMap(
                 (x) => nBody.tick(x),
                 (x) => {
