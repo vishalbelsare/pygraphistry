@@ -26,6 +26,12 @@ function formRow(label, entry) {
         </div>);
 }
 
+function computeBinMax (rawBins, numBins) {
+    const bins = rawBins instanceof Array ?
+        rawBins
+        : Array.prototype.slice.call(_.extend({}, {length: numBins}, rawBins));
+    return Math.max.apply(null, bins);
+}
 
 function binToColumn(
     {numBins, binMax, binWidth, leftOffset, dataType},
@@ -125,8 +131,8 @@ export class Sparkline extends React.Component {
 
         let summary = {
             numBins: _global.numBins,
-            binMax: Math.max.apply(null, _global.bins),
-            binWidth: Math.min(WIDTH / (_global.numBins || 1), MAX_BIN_WIDTH),
+            binMax: computeBinMax(_global.bins, _global.numBins),
+            binWidth: Math.min(Math.round(WIDTH / (_global.numBins || 1)), MAX_BIN_WIDTH),
             dataType: _global.dataType,
             leftOffset: 0
         };
