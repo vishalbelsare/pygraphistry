@@ -19,7 +19,7 @@ export function users({ loadApp, removeInvestigationsById, loadUsersById, delete
     return [{
         route: `currentUser`,
         get: appGetRoute,
-        returns: `$ref('usersById[{userId}]'`
+        returns: `$ref('usersById[{userId}]')`
     }, {
         route: `['usersById'][{keys}]['activeScreen']`,
         get: getUserHandler,
@@ -29,7 +29,7 @@ export function users({ loadApp, removeInvestigationsById, loadUsersById, delete
         route: `['usersById'][{keys}]['activeInvestigation']`,
         get: getUserHandler,
         set: setUserHandler,
-        returns: `$ref('investigationsById[{investigationId}]`,
+        returns: `$ref('investigationsById[{investigationId}]')`,
     }, {
         returns: `String`,
         route: `['usersById'][{keys}]['name','id']`,
