@@ -1,4 +1,3 @@
-//import PivotTemplates from '../../models/PivotTemplates';
 import { searchSplunk } from '../../services/searchSplunk.js';
 import { shapeSplunkResults} from '../../services/shapeSplunkResults.js';
 import _ from 'underscore';
