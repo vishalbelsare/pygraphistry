@@ -8,22 +8,20 @@ import { Settings } from 'viz-shared/containers/settings';
 import { selectToolbarItem } from 'viz-shared/actions/toolbar';
 
 import {
-    touchCancel,
-    touchEnd, mouseMove,
-    touchMove, touchStart,
+    sceneMouseMove,
+    sceneTouchStart,
     onSelectedPointTouchStart,
-    onSelectionRectTouchStart,
-} from 'viz-shared/actions/view';
+    onSelectionMaskTouchStart,
+} from 'viz-shared/actions/scene';
 
 let View = ({
-    touchCancel,
+    sceneMouseMove,
+    sceneTouchStart,
     selectToolbarItem,
-    touchEnd, mouseMove,
-    touchMove, touchStart,
     scene = {}, labels = {},
     panels = {}, toolbar = {},
     onSelectedPointTouchStart,
-    onSelectionRectTouchStart,
+    onSelectionMaskTouchStart,
     selection = {}
 } = {}) => {
     const { left = {}, right = {}, bottom = {} } = panels;
@@ -33,14 +31,11 @@ let View = ({
     return (
         <div style={{ position: `absolute`, width: `100%`, height: `100%` }}>
             <Scene data={scene}
-                   touchEnd={touchEnd}
-                   mouseMove={mouseMove}
-                   touchMove={touchMove}
-                   touchStart={touchStart}
-                   touchCancel={touchCancel}
+                   mouseMove={sceneMouseMove}
+                   touchStart={sceneTouchStart}
                    selectToolbarItem={selectToolbarItem}
                    onSelectedPointTouchStart={onSelectedPointTouchStart}
-                   onSelectionRectTouchStart={onSelectionRectTouchStart}/>
+                   onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
             <Panel side='left' data={left} isOpen={isLeftPanelOpen}/>
             <Dock fluid={false}
                   size={300}
@@ -77,11 +72,11 @@ View = container(
     }`,
     (x) => x,
     {
-        touchEnd, mouseMove,
-        touchMove, touchStart,
+        sceneMouseMove,
+        sceneTouchStart,
+        selectToolbarItem,
         onSelectedPointTouchStart,
-        onSelectionRectTouchStart,
-        touchCancel, selectToolbarItem,
+        onSelectionMaskTouchStart,
     }
 )(View);
 

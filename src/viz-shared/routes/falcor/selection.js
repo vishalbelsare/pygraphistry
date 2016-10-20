@@ -18,11 +18,9 @@ export function selection(path, base) {
             route: `${base}['highlight', 'selection'][{keys}]`
         }, {
             set: setValues,
-            route: `${base}['highlight', 'selection']['type', 'mask', 'label']`
-        }, {
-            get: getValues,
-            set: setValues,
-            route: `${base}['highlight', 'selection']['edge', 'point'][{keys}]`
+            route: `${base}['highlight', 'selection'][
+                'type', 'edge', 'mask', 'label', 'point'
+            ]`
         }, {
             get: getValues,
             route: `${base}['selection'].controls[{keys}]`

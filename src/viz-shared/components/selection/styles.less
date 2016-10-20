@@ -12,14 +12,28 @@
 }
 
 .selection-point {
+
     top: 0;
     left: 0;
     cursor: pointer;
     position: absolute;
     z-index: @highlighted-point-z;
+    background-color: rgba(0, 0, 0, 0);
+    will-change: width, height, transform;
+
     &:hover {
-        border: 2px solid rgba(0, 0, 0, 0.8);
-        background-color: rgba(255, 255, 255, 0.25);
+        .selection-point-center {
+            border: 2px solid rgba(0, 0, 0, 0.8);
+            background-color: rgba(255, 255, 255, 0.25);
+        }
+    }
+
+    .selection-point-center {
+        top: 0;
+        left: 0;
+        position: absolute;
+        border: 1px solid rgba(0, 0, 0, 0.6);
+        will-change: width, height, border-radius;
     }
 }
 
@@ -31,5 +45,5 @@
     z-index: @marquee-z;
     background-color: white;
     border: 1px dashed black;
-    will-change: transform, width, height;
+    will-change: width, height, transform;
 }

@@ -1,4 +1,5 @@
 import Color from 'color';
+import classNames from 'classnames';
 import React, { PropTypes } from 'react';
 import {
     Subscription, Observable, Scheduler
@@ -124,24 +125,26 @@ class Renderer extends React.Component {
 
             if (renderMouseOver) {
                 renderMouseOver = false;
-                this.hasRenderedSelectionOnce = true;
-                renderingScheduler.renderScene('mouseOver',
-                    // trick the rendering scheduler into believing
-                    // it _really_ wants to render this mouseover task
-                    renderingScheduler.lastMouseoverTask = {
-                        trigger: 'mouseOverEdgeHighlight',
-                        data: {
-                            highlight: {
-                                edgeIndices: arraySlice.call(highlight.edge || []),
-                                nodeIndices: arraySlice.call(highlight.point || []),
-                            },
-                            selected: {
-                                edgeIndices: arraySlice.call(selection.edge || []),
-                                nodeIndices: arraySlice.call(selection.point || []),
-                            }
+                const mouseoverTask = {
+                    trigger: 'mouseOverEdgeHighlight',
+                    data: {
+                        highlight: {
+                            edgeIndices: highlight && highlight.edge || [],//arraySlice.call(highlight.edge || []),
+                            nodeIndices: highlight && highlight.point || [],//arraySlice.call(highlight.point || []),
+                        },
+                        selected: {
+                            edgeIndices: selection && selection.edge || [],//arraySlice.call(selection.edge || []),
+                            nodeIndices: selection && selection.point || [],//arraySlice.call(selection.point || []),
                         }
                     }
-                );
+                };
+                if (!this.hasRenderedSelectionOnce) {
+                    this.hasRenderedSelectionOnce = true;
+                    // trick the rendering scheduler into believing
+                    // it _really_ wants to render the first mouseover task
+                    renderingScheduler.lastMouseoverTask = mouseoverTask;
+                }
+                renderingScheduler.renderScene('mouseOver', mouseoverTask);
             }
 
             this.renderFast = renderFast;
@@ -159,8 +162,7 @@ class Renderer extends React.Component {
                     right: 0, bottom: 0,
                     position:`absolute`,
                     backgroundImage
-                }}
-            />
+                }}/>
         );
     }
     updateRendererStateAndScheduler(currProps = {}, nextProps = {}, nextState = {}) {
@@ -213,11 +215,11 @@ class Renderer extends React.Component {
 
         renderBGColor = this.updateBackground(updateArg) || renderBGColor;
         renderPanZoom = this.updateNumElements(updateArg) && false || renderPanZoom;
+        renderPanZoom = this.updateShowArrows(updateArg) || renderPanZoom;
         renderPanZoom = this.updateEdgeScaling(updateArg) || renderPanZoom;
         renderPanZoom = this.updatePointScaling(updateArg) || renderPanZoom;
         renderPanZoom = this.updateEdgeOpacity(updateArg) || renderPanZoom;
         renderPanZoom = this.updatePointOpacity(updateArg) || renderPanZoom;
-        renderPanZoom = this.updateShowArrows(updateArg) || renderPanZoom;
         renderPanZoom = this.updateCameraCenterAndZoom(updateArg) || renderPanZoom;
         renderPanZoom = this.updateSimulating(updateArg) || renderPanZoom && !nextSimulating;
         renderMouseOver = this.updateSceneHighlight(updateArg) || renderMouseOver && !nextSimulating;
@@ -404,10 +406,7 @@ class Renderer extends React.Component {
         if (!currEdge || !currPoint) {
             return !!(nextEdge || nextPoint);
         }
-        return (
-            currEdge.$__version !== nextEdge.$__version ||
-            currPoint.$__version !== nextPoint.$__version
-        );
+        return currHighlight.$__version !== nextHighlight.$__version;
     }
     updateSceneSelection({
         currSelection, nextSelection,
@@ -418,10 +417,7 @@ class Renderer extends React.Component {
         if (!currEdge || !currPoint) {
             return !!(nextEdge || nextPoint);
         }
-        return (
-            currEdge.$__version !== nextEdge.$__version ||
-            currPoint.$__version !== nextPoint.$__version
-        );
+        return currSelection.$__version !== nextSelection.$__version;
     }
 }
 

@@ -1,6 +1,6 @@
-import styles from './styles.less';
 import classNames from 'classnames';
 import React, { PropTypes } from 'react';
+import styles from 'viz-shared/components/selection/styles.less';
 import {
     Subject, Observable,
     Subscription, ReplaySubject
@@ -52,6 +52,7 @@ const HighlightPoint = ({ index, sizes, points, renderState, onPointSelected }) 
     }
 
     const camera = renderState.camera;
+    const isDraggable = !!onPointSelected;
     const scalingFactor = camera.semanticZoom(sizes.length);
     const { x, y } = camera.canvasCoords(points[2 * index],
                                          points[2 * index + 1],
@@ -62,20 +63,32 @@ const HighlightPoint = ({ index, sizes, points, renderState, onPointSelected }) 
     const size = Math.max(5, Math.min(
         scalingFactor * sizes[index], 50)) / camera.pixelRatio;
 
+    const hitArea = Math.max(50, size * 2);
+    const hitAreaRatio = size / hitArea;
+
     return (
         <div className={classNames({
-                [styles['draggable']]: !!onPointSelected,
+                [styles['draggable']]: isDraggable,
                 [styles['selection-point']]: true,
              })}
              onMouseDown={onPointSelected}
              onTouchStart={onPointSelected}
              style={{
-                 borderRadius: size * 0.5,
-                 width: size, height: size,
+                 width: `${hitArea}px`,
+                 height: `${hitArea}px`,
                  transform: `translate3d(${
-                    x - (size * 0.5)}px, ${
-                    y - (size * 0.5)}px, 0)`
-             }}/>
+                    (x - (hitArea * 0.5))}px, ${
+                    (y - (hitArea * 0.5))}px, 0)`
+             }}>
+             <div className={styles['selection-point-center']}
+                  style={{
+                      borderRadius: size * 0.5,
+                      width: size, height: size,
+                      transform: `translate3d(${
+                         ((hitArea - size) * 0.5)}px, ${
+                         ((hitArea - size) * 0.5)}px, 0)`
+                  }}/>
+        </div>
     );
 }
 
@@ -95,41 +108,37 @@ const Selection = compose(
         renderingScheduler: PropTypes.object,
     }),
     WithPointsAndSizes
-)(({ mask, type,
+)(({ mask,
      simulating,
      sizes, points,
      point: pointIndexes = [],
      onSelectedPointTouchStart,
-     onSelectionRectTouchStart,
+     onSelectionMaskTouchStart,
      renderState, renderingScheduler,
      highlight: { point: highlightPoints = [] } = {} }) => {
 
     if (simulating || !renderState || !renderingScheduler) {
         highlightPoints = [];
         renderState = undefined;
-        onSelectedPointTouchStart = undefined;
-        onSelectionRectTouchStart = undefined;
         renderingScheduler = undefined;
+        onSelectedPointTouchStart = undefined;
+        onSelectionMaskTouchStart = undefined;
     }
 
     const highlightedPoint = highlightPoints[0];
 
-    if (onSelectedPointTouchStart) {
-        onPointTouchStart.simulating = simulating;
-        onPointTouchStart.renderState = renderState;
-        onPointTouchStart.selectedPoints = pointIndexes;
-        onPointTouchStart.highlightedPoint = highlightedPoint;
-        onPointTouchStart.dispatch = onSelectedPointTouchStart;
-        onPointTouchStart.renderingScheduler = renderingScheduler;
-    }
+    onMaskTouchStart.mask = mask;
+    onMaskTouchStart.simulating = simulating;
+    onMaskTouchStart.renderState = renderState;
+    onMaskTouchStart.dispatch = onSelectionMaskTouchStart;
+    onMaskTouchStart.renderingScheduler = renderingScheduler;
 
-    if (onSelectionRectTouchStart) {
-        onRectTouchStart.mask = mask;
-        onRectTouchStart.simulating = simulating;
-        onRectTouchStart.renderState = renderState;
-        onRectTouchStart.dispatch = onSelectionRectTouchStart;
-        onRectTouchStart.renderingScheduler = renderingScheduler;
-    }
+    onPointTouchStart.simulating = simulating;
+    onPointTouchStart.renderState = renderState;
+    onPointTouchStart.selectedPoints = pointIndexes;
+    onPointTouchStart.highlightedPoint = highlightedPoint;
+    onPointTouchStart.dispatch = onSelectedPointTouchStart;
+    onPointTouchStart.renderingScheduler = renderingScheduler;
 
     return (
         <div style={{
@@ -145,21 +154,21 @@ const Selection = compose(
             <SelectionArea mask={mask}
                            key='selection-mask'
                            renderState={renderState}
-                           onMouseDown={onRectTouchStart}
-                           onTouchStart={onRectTouchStart}/>
+                           onMouseDown={onMaskTouchStart}
+                           onTouchStart={onMaskTouchStart}/>
         </div>
     );
 });
 
 export { Selection };
 
-function onRectTouchStart(event) {
+function onMaskTouchStart(event) {
 
     const { mask,
             dispatch,
             simulating,
             renderState,
-            renderingScheduler } = onRectTouchStart;
+            renderingScheduler } = onMaskTouchStart;
 
     if (simulating ||
         !dispatch ||
@@ -169,7 +178,7 @@ function onRectTouchStart(event) {
     }
 
     dispatch({
-        mask, event,
+        rect: mask, event,
         renderingScheduler,
         selectionMask: mask,
         selectionType: 'window',
