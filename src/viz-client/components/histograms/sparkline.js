@@ -62,7 +62,6 @@ function binToColumn(
     {attribute, binIdx, globalCount, maskCount, binValue}) {
 
     const trans = ({
-        'undefined': _.identity,
         'none': _.identity,
         'log': Math.log,
         'log2': Math.log2,

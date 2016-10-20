@@ -84,7 +84,7 @@ export default class EncodingPicker extends React.Component {
 
     handleSelectYAxisChange (yAxisValue) {
         if (this.props.onYAxisChange) {
-            this.props.onYAxisChange(yAxisValue);
+            this.props.onYAxisChange(yAxisValue || 'none');
         }
     }
 
