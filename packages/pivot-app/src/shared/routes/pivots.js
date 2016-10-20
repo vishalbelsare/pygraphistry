@@ -45,20 +45,22 @@ function searchPivotCallRoute({ loadPivotsById, searchPivot }) {
     return function(path, args) {
         const pivotIds = path[1];
 
-        Observable.defer(() => searchPivot({ loadPivotsById, pivotIds }))
-        .catch(captureErrorAndNotifyClient(pivotIds))
-        .subscribe(
-            ({app, pivot}) => {
-                console.log('Finished searching', pivot.id);
-                pivot.status = {
-                    ok: true,
-                    message: 'done'
-                };
-            }
-        );
+        // Needed in order to set 'Pivot #' Attribute (Demo)
+        // Should probably remove.
+        const rowIds = args;
 
-        return Observable.of([]);
-    };
+        return Observable.defer(() => searchPivot({loadPivotsById, pivotIds, rowIds}))
+            .mergeMap(({app, pivot}) => {
+                return [
+                    $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
+                    $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
+                    $pathValue(`pivotsById['${pivot.id}']['enabled']`, pivot.enabled),
+                    $pathValue(`pivotsById['${pivot.id}']['status']`, pivot.status)
+                ];
+            })
+            .map(mapObjectsToAtoms)
+            .catch(captureErrorAndNotifyClient(pivotIds))
+    }
 }
 
 function captureErrorAndNotifyClient(pivotIds) {

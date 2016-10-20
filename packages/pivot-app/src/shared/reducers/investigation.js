@@ -60,20 +60,8 @@ function searchPivot(action$, store) {
             .mergeMap((actionsById) => actionsById.switchMap(
                 ({ stateKey, falcor, state, index, target }) => {
                     return Observable.from(falcor.set($value(`pivots['${index}']['enabled']`, true)))
+                        // TODO Use pivot id instead of index
                         .concat(falcor.call(['pivots', index, 'searchPivot'], [index]))
-                        .concat(
-                            Observable.interval(1000)
-                            .concatMap(
-                                (i) => Observable.defer(
-                                    () => {
-                                        falcor.invalidate(['pivots', index, 'status']);
-                                        return falcor.get(['pivots', index, 'status', 'message']);
-                                    }
-                                )
-                            )
-                            .filter((val) => val.json.pivots[index].status.message === 'done')
-                            .take(1)
-                        )
                         .concat(falcor.call(`play`))
                 }
             ))
