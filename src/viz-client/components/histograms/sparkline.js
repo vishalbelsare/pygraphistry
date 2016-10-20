@@ -86,8 +86,8 @@ function binToColumn(
                     { formRow('COUNT', globalCount)}
                     { maskCount ?
                         formRow(
-                            <span style={{color: '#0fa5c5'}}>SELECTED</span>,
-                            <span style={{color: '#0fa5c5'}}>{maskCount}</span>)
+                            <span style={{color: '#ff6600'}}>SELECTED</span>,
+                            <span style={{color: '#ff6600'}}>{maskCount}</span>)
                         : undefined }
                     {
                         !binValue ? undefined
