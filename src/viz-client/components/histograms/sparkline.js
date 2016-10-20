@@ -16,6 +16,30 @@ const MAX_BIN_WIDTH = 60;
 const MIN_BIN_HEIGHT_NONEMPTY = 20;
 
 
+const propTypes = {
+    sizeValue: React.PropTypes.Array,
+    colorValue: React.PropTypes.Array,
+    showModal: React.PropTypes.bool,
+    yAxisValue: React.PropTypes.string,
+
+    onColorChange: React.PropTypes.func,
+    onSizeChange: React.PropTypes.func,
+    onModalChange: React.PropTypes.func.isRequired,
+    onYAxisChange: React.PropTypes.func,
+
+    global: React.PropTypes.object,
+    masked: React.PropTypes.object,
+    attribute: React.PropTypes.string.isRequired,
+    type: React.PropTypes.string.isRequired
+};
+
+const defaultProps = {
+    sizeValue: [],
+    colorValue: [],
+    showModal: false,
+    yAxisValue: 'none'
+};
+
 function formRow(label, entry) {
     return (
         <div style={{whiteSpace: 'nowrap'}}>
@@ -213,3 +237,7 @@ export class Sparkline extends React.Component {
         );
     }
 }
+
+Sparkline.propTypes = propTypes;
+Sparkline.defaultProps = defaultProps;
+
