@@ -1,6 +1,6 @@
 {
     "id": "3d71f91065dea000",
-    "enabled": false,
+    "enabled": true,
     "pivotParameterKeys": [
         "mode",
         "input",

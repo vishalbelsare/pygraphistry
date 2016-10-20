@@ -1,6 +1,6 @@
 {
-    "id": "3dad5ad5a7816cad",
-    "enabled": true,
+    "id": "3dbaa4d77592dadf",
+    "enabled": false,
     "pivotParameterKeys": [
         "mode",
         "input",
@@ -9,8 +9,8 @@
     ],
     "pivotParameters": {
         "search": "Enter search query",
-        "mode": "Community Detection",
-        "input": "3 6",
+        "mode": "Darpa/expandOn3",
+        "input": "194.007.248.153",
         "time": "09/21/2016"
     }
 }
