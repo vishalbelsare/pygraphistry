@@ -1,4 +1,4 @@
-FROM node:6.9
+FROM node:6.9-slim
 
 COPY . /pivot-app
 
