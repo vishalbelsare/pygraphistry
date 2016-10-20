@@ -32,7 +32,6 @@ import {
 import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import _ from 'underscore';
-//import PivotTemplates from '../models/PivotTemplates';
 import React from 'react'
 import Select from 'react-select';
 
@@ -136,108 +135,60 @@ class InputSelector extends React.Component {
 }
 
 function renderTemplateSelector (id, pivotTemplate, templates, setPivotAttributes) {
-    return <span className={styles.pivotTypeSelectorContainer}>
-        <Select
-            id={"templateSelector" + id}
-            name={"templateSelector" + id}
-            value="one"
-            clearable={false}
-            backspaceRemoves={false}
-            value={{value: pivotTemplate.id, label: pivotTemplate.name}}
-            options={
-                templates.map(({name, id}) => {
-                    return {value: id, label: name};
-                })
-            }
-            onChange={ ({value}) =>
-                setPivotAttributes({
-                    'pivotTemplate': $ref(`templatesById['${value}']`)
-                })
-            }
-        />
-    </span>;
+    return (
+        <span className={styles.pivotTypeSelectorContainer}>
+            <Select
+                id={"templateSelector" + id}
+                name={"templateSelector" + id}
+                value="one"
+                clearable={false}
+                backspaceRemoves={false}
+                value={{value: pivotTemplate.id, label: pivotTemplate.name}}
+                options={
+                    templates.map(({name, id}) => {
+                        return {value: id, label: name};
+                    })
+                }
+                onChange={ ({value}) =>
+                    setPivotAttributes({
+                        'pivotTemplate': $ref(`templatesById['${value}']`)
+                    })
+                }
+            />
+        </span>
+    );
 }
-
-
-/*
-function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
-    id, rowIndex, resultSummary, pivots, searchPivot, togglePivot, setPivotParameters, splicePivot, insertPivot) {
-
-    //TODO instead of 'all', use investigation's template's pivotset
-    const template = PivotTemplates.get('all', mode);
-
-    switch (fldIndex) {
-        case 0:
-
-            const pivotNames = PivotTemplates.templatePivotNames('all');
-            return (<td key={`${id}: ${fldIndex}`} className={styles.pivotData0 + ' pivotTypeSelector'}>
-                    { PivotSelector(id, field, fldValue, pivotNames, setPivotParameters) }
-                </td>);
-
-        case 1:
-            switch (template.kind) {
-                case 'text':
-                    return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}>
-                        <div className={tableCellClassName}>
-                            <label>{template.label}</label> <input
-                                type='th'
-                                defaultValue={fldValue}
-                                readOnly={false}
-                                disabled={false}
-                                onChange={
-                                    (ev) => (ev.preventDefault() || setPivotParameters({[field]: ev.target.value}))
-                                }
-                            />
-                        </div>
-                    </td>);
-                case 'button':
-                    const previousPivots = pivots.slice(0, rowIndex);
-                    return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}>
-                                <div>
-                                    <InputSelector fldValue={fldValue}
-                                                   setPivotParameters={setPivotParameters}
-                                                   label={template.label} previousPivots={previousPivots}/>
-                                </div>
-                        </td>);
-                default:
-                    throw new Error('Unkown template kind ' + template.kind);
-            }
-        default:
-            return (<td key={`${id}: ${fldIndex}`} className={styles['pivotData' + fldIndex]}></td>);
-    }
-};
-*/
 
 function renderTextCell(id, paramKey, paramValue, paramUI, handlers) {
      return (
-
-                <div className={tableCellClassName}>
-                    <label>{ paramUI.label }</label>
-                    <input
-                        type='th'
-                        defaultValue={paramValue}
-                        placeholder={paramUI.placeholder}
-                        readOnly={false}
-                        disabled={false}
-                        onChange={ev => ev.preventDefault() ||
-                            handlers.setPivotAttributes({
-                                [`pivotParameters.${paramKey}`]: ev.target.value
-                            })
-                        }
-                    />
-                </div>
+        <div className={tableCellClassName} key={`pcell-${id}-${paramKey}`}>
+            <label>{ paramUI.label }</label>
+            <input
+                type='th'
+                defaultValue={paramValue}
+                placeholder={paramUI.placeholder}
+                readOnly={false}
+                disabled={false}
+                onChange={ev => ev.preventDefault() ||
+                    handlers.setPivotAttributes({
+                        [`pivotParameters.${paramKey}`]: ev.target.value
+                    })
+                }
+            />
+        </div>
      );
 }
 
 function renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, handlers) {
     return (
-            <InputSelector
-                fldKey={paramKey}
-                fldValue={paramValue}
-                setPivotAttributes={handlers.setPivotAttributes}
-                label={paramUI.label}
-                previousPivots={previousPivots}
-            />
+        <InputSelector
+            key={`pcell-${id}-${paramKey}`}
+            fldKey={paramKey}
+            fldValue={paramValue}
+            setPivotAttributes={handlers.setPivotAttributes}
+            label={paramUI.label}
+            previousPivots={previousPivots}
+        />
     );
 }
 
@@ -245,7 +196,6 @@ function renderPivotCell(id, paramKey, paramValue, paramUI, previousPivots, hand
     switch (paramUI.inputType) {
         case 'text':
             return renderTextCell(id, paramKey, paramValue, paramUI, handlers);
-
         case 'pivotCombo':
             return renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, handlers);
         default:
@@ -321,7 +271,6 @@ function renderPivotRow({
 function mapStateToFragment({pivotTemplate = {pivotParameterKeys: []}} = {}) {
     const baseFields = ['enabled', 'status', 'resultCount', 'resultSummary', 'id'];
     const ppKeys = pivotTemplate.pivotParameterKeys || [];
-    console.log('ppkeys', ppKeys);
 
     if (ppKeys.length === 0
         || _.keys(ppKeys).length <= 1) {
@@ -360,7 +309,6 @@ function mapFragmentToProps(fragment) {
         'pivotParameters', 'pivotTemplate'
     ];
 
-    console.log('frag', fragment);
     return _.extend({pivotParameters:{}}, _.pick(fragment, props));
 }
 

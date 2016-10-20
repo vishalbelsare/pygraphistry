@@ -18,7 +18,7 @@ function defaults() {
 
 function initialSoftState(pivotTemplate) {
     return {
-        pivotTemplate: $ref(`templatesById[${pivotTemplate}]`),
+        pivotTemplate: $ref(`templatesById['${pivotTemplate}']`),
         status: {ok: true},
         resultCount: 0,
         resultSummary: {entities: []}

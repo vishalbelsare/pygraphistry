@@ -58,7 +58,6 @@ function renderInvestigationScreen({ activeInvestigation, templates, switchScree
 }
 
 function mapStateToFragment({ currentUser = {templates: []} } = {}) {
-    console.log('IS', currentUser);
     return `{
         currentUser: {
             activeInvestigation: ${Investigation.fragment()},

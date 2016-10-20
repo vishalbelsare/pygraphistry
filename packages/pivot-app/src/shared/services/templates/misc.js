@@ -1,15 +1,10 @@
-//import ALERT_TEMPLATES from './pivotTemplatesAlert.js';
-//import HEALTH_TEMPLATES from './pivotTemplatesHealth.js';
-//import EVENT_GEN_TEMPLATES from './pivotTemplatesEventGen.js'
-//import BLAZE_TEMPLATES from './pivotTemplatesBlaze.js'
 import { constructFieldString, SplunkPivot } from '../support/splunkMacros.js';
-
 import _ from 'underscore';
 import stringhash from 'string-hash';
 
 
 export const searchSplunk = new SplunkPivot({
-    id: '42',
+    id: 'search-splunk-plain',
     name: 'Search Splunk',
     pivotParameterKeys: ['query'],
     pivotParametersUI: {
@@ -31,7 +26,6 @@ export const searchSplunk = new SplunkPivot({
     }
 });
 
-
 export const searchSplunkMap = new SplunkPivot({
     id: 'search-splunk-source-dest',
     name: 'Search Splunk Map',
@@ -44,7 +38,7 @@ export const searchSplunkMap = new SplunkPivot({
         },
         'dst': {
             inputType: 'text',
-            label: 'Dest:',
+            label: 'Destination:',
             placeholder: 'msg'
         },
         'pivot': {
@@ -53,7 +47,6 @@ export const searchSplunkMap = new SplunkPivot({
         }
     },
     toSplunk: function(pivotParameters, pivotCache) {
-        console.log('PIVOTPARAMETERS', pivotParameters)
         const source = pivotParameters['src'];
         const dest = pivotParameters['dst'];
         const subsearch = `[
@@ -111,56 +104,3 @@ export const searchGraphviz = new SplunkPivot({
         }
     }
 });
-
-
-    /*
-// Map template, pivot name to pivot template dict
-//{string -> string -> {pivot}}
-const bindings = {};
-function memoizeTemplate (templateName, templatePivots) {
-    const template = _.object(templatePivots.map((x) => x.name), templatePivots);
-    var binding = {};
-    binding[templateName] = template;
-    _.extend(bindings, binding);
-    return template;
-}
-memoizeTemplate('splunk', [SEARCH_SPLUNK]);
-memoizeTemplate('alert_demo', [SEARCH_SPLUNK].concat(ALERT_TEMPLATES))
-memoizeTemplate('health_demo', [SEARCH_SPLUNK].concat(HEALTH_TEMPLATES));
-memoizeTemplate('event_gen', [SEARCH_SPLUNK].concat(EVENT_GEN_TEMPLATES));
-memoizeTemplate('blaze', [SEARCH_SPLUNK].concat(BLAZE_TEMPLATES));
-
-memoizeTemplate('all', [SEARCH_SPLUNK, SEARCH_SPLUNK_DATASET, SEARCH_SPLUNK_MAP]
-    .concat(ALERT_TEMPLATES)
-    .concat(HEALTH_TEMPLATES)
-    .concat(BLAZE_TEMPLATES)
-    .concat(EVENT_GEN_TEMPLATES));
-
-
-
-{
-    'templatePivotNames': string -> [string] U exn
-    'get': string * string ->  -> pivot U exn
-}
-
-export default {
-    templatePivotNames: (templateName) => {
-        if (!(templateName in bindings)) {
-            throw new Error('Unknown template ' + templateName);
-        }
-        return Object.keys(bindings[templateName]);
-    },
-    get: (templateName, pivotName) => {
-        if (!(templateName in bindings)) {
-            throw new Error('Unknown template ' + templateName);
-        }
-        if (!(pivotName in bindings[templateName])) {
-            throw new Error('Unknown pivot ' + pivotName);
-        }
-        return bindings[templateName][pivotName];
-    }
-};
-
-*/
-
-
