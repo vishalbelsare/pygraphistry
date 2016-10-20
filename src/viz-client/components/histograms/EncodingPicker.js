@@ -50,7 +50,7 @@ const defaultProps = {
         group: "color"},
         {value: "size", label: "size", group: "size"},
     ],
-    colorValue: ['color-continuous'],
+    colorValue: [],
     sizeValue: [],
     showModal: false
 };
@@ -104,7 +104,7 @@ export default class EncodingPicker extends React.Component {
                 <Button href='javascript:void(0)'
                     className={classNames({
                         [styles['fa']]: true,
-                        [styles['fa-cogs']]: true,
+                        [styles['fa-cog']]: true,
                         [localStyle['encoding-picker-button']]: true
                     })}
                     onClick={this.open} />

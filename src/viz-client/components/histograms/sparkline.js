@@ -13,7 +13,7 @@ import { defaultFormat, shortFormat } from './contentFormatter.js';
 const WIDTH = 298 - 20; //anything less than the panel width
 const HEIGHT = 50;
 const MAX_BIN_WIDTH = 60;
-const MIN_BIN_HEIGHT_NONEMPTY = 20;
+const MIN_BIN_HEIGHT_NONEMPTY = 5;
 
 
 const propTypes = {
@@ -160,7 +160,7 @@ export class Sparkline extends React.Component {
             dataType: _global.dataType,
             leftOffset: 0
         };
-        summary.leftOffset = (WIDTH - summary.binWidth * summary.numBins) / 2;
+        summary.leftOffset = Math.floor((WIDTH - summary.binWidth * summary.numBins) / 2);
         Object.freeze(summary);
 
         return (
