@@ -58,16 +58,23 @@ function computeBinMax (rawBins, numBins) {
 }
 
 function binToColumn(
-    {numBins, binMax, binWidth, leftOffset, dataType},
+    {numBins, binMax, binWidth, leftOffset, dataType, yAxisValue},
     {attribute, binIdx, globalCount, maskCount, binValue}) {
+
+    const trans = ({
+        'none': _.identity,
+        'log': Math.log,
+        'log2': Math.log2,
+        'log10': Math.log10
+    })[yAxisValue];
 
     const globalHeightCalc =
         globalCount ?
-            Math.max(HEIGHT * globalCount / (binMax || 1), MIN_BIN_HEIGHT_NONEMPTY)
+            Math.max(HEIGHT * trans(globalCount) / (trans(binMax) || 1), MIN_BIN_HEIGHT_NONEMPTY)
             : 0;
     const maskHeightCalc =
         maskCount ?
-            Math.max(HEIGHT * maskCount / (binMax || 1), MIN_BIN_HEIGHT_NONEMPTY)
+            Math.max(HEIGHT * trans(maskCount) / (trans(binMax) || 1), MIN_BIN_HEIGHT_NONEMPTY)
             : 0;
 
     return (
@@ -75,8 +82,12 @@ function binToColumn(
             placement='bottom'
             overlay={
                 <Popover id={`tooltip-histogram-${attribute}-col-${binIdx}`} style={{zIndex: 999999999}}>
-                    { formRow('TOTAL', globalCount)}
-                    { maskCount ? formRow('SELECTED', maskCount) : undefined }
+                    { formRow('COUNT', globalCount)}
+                    { maskCount ?
+                        formRow(
+                            <span style={{color: '#0fa5c5'}}>SELECTED</span>,
+                            <span style={{color: '#0fa5c5'}}>{maskCount}</span>)
+                        : undefined }
                     {
                         !binValue ? undefined
                         : binValue.isSingular ? formRow('VALUE', binValue.representative)
@@ -87,9 +98,10 @@ function binToColumn(
                 </Popover>
             }>
             <div className={styles['histogram-column']}
+                data-binmax={binMax}
                 style={{
-                    left: `${leftOffset + binIdx * WIDTH / (numBins || 1)}px`,
-                    width: `${WIDTH / (numBins || 1)}px`
+                    left: `${leftOffset + binIdx * binWidth}px`,
+                    width: `${binWidth}px`
                 }}>
                <div className={`${styles['bar-global']} ${styles['bar-rect']}`}
                 data-count={globalCount}
@@ -120,10 +132,12 @@ export class Sparkline extends React.Component {
         this.handleSizeChange = this.handleSizeChange.bind(this);
         this.handleColorChange = this.handleColorChange.bind(this);
         this.handleModalChange = this.handleModalChange.bind(this);
+        this.handleYAxisChange = this.handleYAxisChange.bind(this);
         this.state = {
             sizeValue: this.props.sizeValue,
             colorValue: this.props.colorValue,
-            showModal: this.props.showModal
+            showModal: this.props.showModal,
+            yAxisValue: this.props.yAxisValue
         }
     }
 
@@ -147,6 +161,13 @@ export class Sparkline extends React.Component {
         }
     }
 
+    handleYAxisChange (yAxisValue) {
+        this.setState({yAxisValue});
+        if (this.props.onYAxisChange) {
+            this.props.onYAxisChange(yAxisValue);
+        }
+    }
+
     render() {
 
         let { global: _global = {},
@@ -158,7 +179,8 @@ export class Sparkline extends React.Component {
             binMax: computeBinMax(_global.bins, _global.numBins),
             binWidth: Math.min(Math.round(WIDTH / (_global.numBins || 1)), MAX_BIN_WIDTH),
             dataType: _global.dataType,
-            leftOffset: 0
+            leftOffset: 0,
+            yAxisValue: this.state.yAxisValue
         };
         summary.leftOffset = Math.floor((WIDTH - summary.binWidth * summary.numBins) / 2);
         Object.freeze(summary);
@@ -182,6 +204,15 @@ export class Sparkline extends React.Component {
                                         </Button>
                                     </span>
                                 : null }
+                        { this.state.yAxisValue !== 'none'
+                                ?   <span class="label label-default">
+                                        <Button bsSize="small"
+                                            className={styles['histogram-legend-pill']}>
+                                            Y-Axis: {this.state.yAxisValue}
+                                        </Button>
+                                    </span>
+                                : null
+                        }
                         <EncodingPicker
                             id={`histogram-encodings-picker-${attribute}`}
                             attribute={attribute}
@@ -189,9 +220,11 @@ export class Sparkline extends React.Component {
                             sizeValue={this.state.sizeValue}
                             colorValue={this.state.colorValue}
                             showModal={this.state.showModal}
+                            yAxisValue={this.state.yAxisValue}
                             onSizeChange={ this.handleSizeChange }
                             onColorChange={ this.handleColorChange }
-                            onModalChange={ this.handleModalChange } />
+                            onModalChange={ this.handleModalChange }
+                            onYAxisChange={ this.handleYAxisChange} />
                         <Button href='javascript:void(0)'
                             className={classNames({
                                 [stylesGlobal['fa']]: true,

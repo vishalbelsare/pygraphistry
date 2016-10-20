@@ -16,10 +16,12 @@ const propTypes = {
     name: React.PropTypes.string,
     colorValue: React.PropTypes.Array,
     sizeValue: React.PropTypes.Array,
+    yAxisValue: React.PropTypes.string,
     showModal: React.PropTypes.bool,
     onColorChange: React.PropTypes.func,
     onSizeChange: React.PropTypes.func,
-    onModalChange: React.PropTypes.func.isRequired
+    onModalChange: React.PropTypes.func.isRequired,
+    onYAxisChange: React.PropTypes.func
 };
 
 
@@ -52,7 +54,8 @@ const defaultProps = {
     ],
     colorValue: [],
     sizeValue: [],
-    showModal: false
+    showModal: false,
+    yAxisValue: 'none'
 };
 
 // {<value> -> {value, label}}
@@ -66,6 +69,7 @@ export default class EncodingPicker extends React.Component {
         super(props);
         this.handleSelectSizeChange = this.handleSelectSizeChange.bind(this);
         this.handleSelectColorChange = this.handleSelectColorChange.bind(this);
+        this.handleSelectYAxisChange = this.handleSelectYAxisChange.bind(this);
         this.close = this.close.bind(this);
         this.open = this.open.bind(this);
     }
@@ -77,6 +81,13 @@ export default class EncodingPicker extends React.Component {
             this.props.onColorChange(colorValue);
         }
     }
+
+    handleSelectYAxisChange (yAxisValue) {
+        if (this.props.onYAxisChange) {
+            this.props.onYAxisChange(yAxisValue);
+        }
+    }
+
 
     handleSelectSizeChange (newEnabled) {
         const sizeValue = newEnabled ? ['size'] : [];
@@ -133,6 +144,20 @@ export default class EncodingPicker extends React.Component {
                         checkedChildren={'On'}
                         unCheckedChildren={'Off'}
                         onChange={ this.handleSelectSizeChange }/>
+                    <h5>Histogram Y-Axis Scaling</h5>
+                    <Select simpleValue
+                        disabled={false}
+                        value={ this.props.yAxisValue}
+                        resetValue={ defaultProps.yAxisValue }
+                        placeholder="Pick transform"
+                        options={
+                            [{value: 'none', label: 'none'},
+                             {value: 'log', label: 'log'},
+                             {value: 'log2', label: 'log2'},
+                             {value: 'log10', label: 'log10'}]
+                        }
+                        id={`${this.props.id}_yaxis`}
+                        onChange={this.handleSelectYAxisChange} />
                 </Modal.Body>
                 <Modal.Footer>
                     <Button onClick={this.close}>Close</Button>
