@@ -2,7 +2,9 @@
 @left-padding: 10px;
 
 @color-neutral: #6B6868;
+@color-neutral-hover: #333;
 @color-highlight: rgb(15, 165, 197);
+@color-highlight-hover: #ff6600;
 
 .histogram-item {
     padding: 0;
@@ -48,6 +50,7 @@
     padding-top: 0;
     padding-bottom: 0;
     pointer-events: none;
+    margin-left: 5px;
 }
 .histogram-size-encoding-icon {
     border: none;
@@ -76,11 +79,17 @@
     display: inline-block;
     pointer-events: none; //let column-bg etc. catch
     position: absolute;
+    border-left: 1px solid rgba(255,255,255,0.2);
 }
 .bar-masked {
     background-color: @color-highlight;
+    .histogram-column:hover & {
+        background-color: @color-highlight-hover;
+    }
 }
 .bar-global {
     background-color: @color-neutral;
-    border: 1px solid rgba(255,255,255,0.1);
+    .histogram-column:hover & {
+        background-color: @color-neutral-hover;
+    }
 }
