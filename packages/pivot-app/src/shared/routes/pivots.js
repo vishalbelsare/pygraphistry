@@ -33,6 +33,7 @@ export function pivots({loadPivotsById, searchPivot}) {
         route: `pivotsById[{keys}]['pivotTemplate']`,
         returns: `$ref('templatesById[{templateId}]'`,
         get: getPivotsHandler,
+        set: setPivotsHandler
     }, {
         returns: `String | Number`,
         get: getPivotsHandler,

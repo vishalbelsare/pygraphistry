@@ -1,5 +1,16 @@
-import { simpleflake } from 'simpleflakes';
+import _ from 'underscore';
 
-function createTemplateModel() {
-    //Hum
+
+const defaults  = {
+    name: 'Untitled pivot',
+    pivotParameterKeys: [],
+    pivotParametersUI: {}
+};
+
+export function createTemplateModel(pivot) {
+    const clientFields = ['id', 'name', 'pivotParameterKeys', 'pivotParametersUI'];
+    return {
+        ...defaults,
+        ..._.pick(pivot, clientFields),
+    };
 }

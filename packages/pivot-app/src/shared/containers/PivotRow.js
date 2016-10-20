@@ -1,5 +1,8 @@
 import { container } from '@graphistry/falcor-react-redux';
-import { ref as $ref } from '@graphistry/falcor-json-graph';
+import {
+    ref as $ref,
+    pathValue as $pathValue
+} from '@graphistry/falcor-json-graph';
 import {
     tcell as tableCellClassName,
     splice as spliceIconClassName,
@@ -8,7 +11,7 @@ import {
 } from './styles.less';
 import {
     togglePivot,
-    setPivotParameters
+    setPivotAttributes
 } from '../actions/PivotRow';
 import {
     Badge,
@@ -29,7 +32,7 @@ import {
 import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import _ from 'underscore';
-import PivotTemplates from '../models/PivotTemplates';
+//import PivotTemplates from '../models/PivotTemplates';
 import React from 'react'
 import Select from 'react-select';
 
@@ -85,18 +88,21 @@ class InputSelector extends React.Component {
     }
 
     componentWillMount() {
-        const setPivotParameters = this.props.setPivotParameters;
+        const setPivotAttributes = this.props.setPivotAttributes;
         const fldValue = this.props.fldValue;
         if (!fldValue) {
-            setPivotParameters({input: this.props.previousPivots.map((pivot) => pivot.id).join(' , ')});
+            setPivotAttributes({
+                'pivotParameters.input': this.props.previousPivots.map((pivot) => pivot.id).join(' , ')
+            });
         }
     }
 
     render() {
         const previousPivots = this.props.previousPivots;
         const label = this.props.label;
-        const setPivotParameters = this.props.setPivotParameters;
+        const setPivotAttributes = this.props.setPivotAttributes;
         const fldValue = this.props.fldValue;
+        const fldKey = this.props.fldKey;
         return (
             <Form inline>
                 <FormGroup controlId={'inputSelector'}>
@@ -106,7 +112,8 @@ class InputSelector extends React.Component {
                         placeholder="select"
                         value={fldValue}
                         onChange={
-                            (ev) => (ev.preventDefault() || setPivotParameters({input: ev.target.value}))
+                            (ev) => ev.preventDefault() ||
+                                setPivotAttributes({[`pivotParameters.${fldKey}`]: ev.target.value})
                         }>
                         <option
                             key={'*'}
@@ -128,7 +135,7 @@ class InputSelector extends React.Component {
 
 }
 
-function renderTemplateSelector (id, pivotTemplate, templates, setPivotParameters) {
+function renderTemplateSelector (id, pivotTemplate, templates, setPivotAttributes) {
     return <span className={styles.pivotTypeSelectorContainer}>
         <Select
             id={"templateSelector" + id}
@@ -143,7 +150,7 @@ function renderTemplateSelector (id, pivotTemplate, templates, setPivotParameter
                 })
             }
             onChange={ ({value}) =>
-                setPivotParameters({
+                setPivotAttributes({
                     'pivotTemplate': $ref(`templatesById['${value}']`)
                 })
             }
@@ -203,30 +210,46 @@ function renderPivotCellByIndex (field, fldIndex, fldValue, mode,
 
 function renderTextCell(id, paramKey, paramValue, paramUI, handlers) {
      return (
-            <td key={`pcell-${id}-${paramKey}`} className={styles['pivotData1']}>
+
                 <div className={tableCellClassName}>
                     <label>{ paramUI.label }</label>
                     <input
                         type='th'
                         defaultValue={paramValue}
+                        placeholder={paramUI.placeholder}
                         readOnly={false}
                         disabled={false}
-                        onChange={ev =>
-                            ev.preventDefault() ||
-                                handlers.setPivotParameters({[paramKey]: ev.target.value})
+                        onChange={ev => ev.preventDefault() ||
+                            handlers.setPivotAttributes({
+                                [`pivotParameters.${paramKey}`]: ev.target.value
+                            })
                         }
                     />
                 </div>
-            </td>
      );
 }
 
-function renderPivotCell(id, paramKey, paramValue, paramUI, pivots, handlers) {
+function renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, handlers) {
+    return (
+            <InputSelector
+                fldKey={paramKey}
+                fldValue={paramValue}
+                setPivotAttributes={handlers.setPivotAttributes}
+                label={paramUI.label}
+                previousPivots={previousPivots}
+            />
+    );
+}
+
+function renderPivotCell(id, paramKey, paramValue, paramUI, previousPivots, handlers) {
     switch (paramUI.inputType) {
         case 'text':
             return renderTextCell(id, paramKey, paramValue, paramUI, handlers);
+
+        case 'pivotCombo':
+            return renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, handlers);
         default:
-            throw new Error('Unknown pivot cell type:' + ui.inputType);
+            throw new Error('Unknown pivot cell type:' + paramUI.inputType);
     }
 }
 
@@ -244,9 +267,11 @@ function renderStatusIndicator(status) {
 
 function renderPivotRow({
     id, status, enabled, resultCount, resultSummary, pivotParameters, pivotTemplate, templates,
-    searchPivot, togglePivot, setPivotParameters, splicePivot, insertPivot, pivots, rowIndex })
+    searchPivot, togglePivot, setPivotAttributes, splicePivot, insertPivot, pivots, rowIndex })
 {
-    const handlers = {searchPivot, togglePivot, setPivotParameters, splicePivot, insertPivot}
+    const handlers = {searchPivot, togglePivot, setPivotAttributes, splicePivot, insertPivot}
+    const previousPivots = pivots.slice(0, rowIndex);
+
     return (
         <tr id={"pivotRow" + id} className={styles['row-toggled-' + (enabled ? 'on' : 'off')]}>
             <td className={styles.pivotToggle}>
@@ -261,16 +286,19 @@ function renderPivotRow({
                 />
             </td>
             <td key={`pcell-${id}-pivotselector`} className={styles.pivotData0 + ' pivotTypeSelector'}>
-                { renderTemplateSelector(id, pivotTemplate, templates, setPivotParameters) }
+                { renderTemplateSelector(id, pivotTemplate, templates, setPivotAttributes) }
             </td>
+
+            <td key={`pcell-${id}-pivotparam`} className={styles['pivotData1']}>
             {
-                pivotParameters && pivotTemplate.pivotParameterKeys.map(key =>
+                pivotTemplate.pivotParameterKeys && pivotTemplate.pivotParameterKeys.map(key =>
                     renderPivotCell(
-                        id, key, pivotParameters[key], pivotTemplate.pivotParametersUI[key], pivots,
-                        handlers
+                        id, key, pivotParameters[key], pivotTemplate.pivotParametersUI[key],
+                        previousPivots, handlers
                     )
                 )
             }
+            </td>
             <td className={styles.pivotResultCount}>
                 <OverlayTrigger  placement="top" overlay={
                     <Tooltip id={`resultCountTip_${id}_${rowIndex}`}>Events</Tooltip>
@@ -292,9 +320,11 @@ function renderPivotRow({
 
 function mapStateToFragment({pivotTemplate = {pivotParameterKeys: []}} = {}) {
     const baseFields = ['enabled', 'status', 'resultCount', 'resultSummary', 'id'];
-    const ppKeys = pivotTemplate.pivotParameterKeys;
+    const ppKeys = pivotTemplate.pivotParameterKeys || [];
+    console.log('ppkeys', ppKeys);
 
-    if (ppKeys.length === 0 || _.keys(ppKeys).length <= 1) {
+    if (ppKeys.length === 0
+        || _.keys(ppKeys).length <= 1) {
         return `{
             ${baseFields.join(',')},
             pivotTemplate: {
@@ -331,14 +361,14 @@ function mapFragmentToProps(fragment) {
     ];
 
     console.log('frag', fragment);
-    return _.pick(fragment, props);
+    return _.extend({pivotParameters:{}}, _.pick(fragment, props));
 }
 
 export default container(
     mapStateToFragment,
     mapFragmentToProps,
     {
-        setPivotParameters: setPivotParameters,
+        setPivotAttributes: setPivotAttributes,
         togglePivot: togglePivot
     }
 )(renderPivotRow);

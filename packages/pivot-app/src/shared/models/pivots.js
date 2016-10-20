@@ -2,7 +2,6 @@ import {
     ref as $ref,
 } from '@graphistry/falcor-json-graph';
 import { simpleflake } from 'simpleflakes';
-import PivotTemplates from '../models/PivotTemplates';
 import _ from 'underscore';
 
 

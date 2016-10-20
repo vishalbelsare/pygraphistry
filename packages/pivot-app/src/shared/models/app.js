@@ -9,13 +9,17 @@ import { simpleflake } from 'simpleflakes';
 import { createInvestigationModel } from '../models';
 import _ from 'underscore';
 
-export function makeTestUser(investigations) {
+export function makeTestUser(investigations, templates) {
     const suffix = '/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&info=true';
     const padenKey = 'd6a5bfd7b91465fa8dd121002dfc51b84148cd1f01d7a4c925685897ac26f40b';
 
-    const investigationsRefs = investigations.map((investigation, index) => (
+    const investigationsRefs = investigations.map(investigation =>
         $ref(`investigationsById['${investigation.id}']`)
-    ))
+    );
+
+    const templatesRefs = _.keys(templates).map(id =>
+        $ref(`templatesById['${id}']`)
+    );
 
     return {
         name: 'Administrator',
@@ -23,7 +27,7 @@ export function makeTestUser(investigations) {
         activeScreen: 'home',
         activeInvestigation: investigationsRefs[0],
         investigations: investigationsRefs,
-        templates: [$ref(`templatesById['42']`)],
+        templates: templatesRefs,
         apiKey: process.env.GRAPHISTRY_API_KEY || padenKey,
         vizService: `${process.env.GRAPHISTRY_VIEWER || 'https://labs.graphistry.com'}${suffix}`,
         etlService: `${process.env.GRAPHISTRY_ETL || 'https://labs.graphistry.com'}/etl`,
@@ -36,25 +40,7 @@ export function createAppModel(testUser, id = simpleflake().toJSON()) {
         title: 'Pivots',
         investigationsById: {},
         pivotsById: {},
-        templatesById: {
-            '42': {
-                id: '42',
-                name: 'Search GraphViz',
-                pivotParameterKeys: ['query'],
-                pivotParametersUI: {
-                    'query': {
-                        inputType: 'text',
-                        label: 'Query',
-                        defaultValue: 'keepCalmAndCarryOn'
-                    }
-                    /*,'search': {
-                        inputType: 'text',
-                        label: 'Query 2',
-                        defaultValue: 'keepCalmAndCaadasdasdrryOn'
-                    }*/
-                }
-            }
-        },
+        templatesById: {},
         usersById: {
             '0': testUser
         },
