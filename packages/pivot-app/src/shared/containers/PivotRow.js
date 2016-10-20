@@ -28,7 +28,7 @@ import {
 import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import _ from 'underscore';
-import pivotTemplates from '../models/pivotTemplates';
+import PivotTemplates from '../models/pivotTemplates';
 import React from 'react'
 import Select from 'react-select';
 
