@@ -8,7 +8,7 @@ import {
 import {
     togglePivot,
     setPivotParameters
-} from '../actions/PivotRow';
+} from '../actions/pivotRow';
 import {
     Badge,
     Button,
@@ -28,7 +28,7 @@ import {
 import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import _ from 'underscore';
-import PivotTemplates from '../models/PivotTemplates';
+import pivotTemplates from '../models/pivotTemplates';
 import React from 'react'
 import Select from 'react-select';
 

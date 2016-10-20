@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
-import DataFrame from '../Dataframe';
+import DataFrame from '../DataFrame';
 import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
