@@ -10,7 +10,7 @@ import { createInvestigationModel } from '../models';
 import _ from 'underscore';
 
 export function makeTestUser(investigations, templates) {
-    const suffix = '/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&info=true';
+    const suffix = '/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph';
     const padenKey = 'd6a5bfd7b91465fa8dd121002dfc51b84148cd1f01d7a4c925685897ac26f40b';
 
     const investigationsRefs = investigations.map(investigation =>
