@@ -20,7 +20,7 @@ import {
 } from '../shared/services';
 
 
-const pathPrefix = process.env.PIVOTAPP_DATADIR || 'tests2/appdata';
+const pathPrefix = process.env.PIVOTAPP_DATADIR || 'tests/appdata';
 const investigationPath = path.resolve(pathPrefix, 'investigations');
 const pivotPath = path.resolve(pathPrefix, 'pivots');
 
