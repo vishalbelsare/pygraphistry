@@ -121,9 +121,3 @@ const PAN_USER_TO_THREAT = new SplunkPivot(
         }
     )
 );
-
-export default [
-    PAN_SEARCH_USER_DEST, PAN_DEST_USER,
-    PAN_SEARCH_TO_USER_THREAT,
-    PAN_USER_TO_THREAT
-];

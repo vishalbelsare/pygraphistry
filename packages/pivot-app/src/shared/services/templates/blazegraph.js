@@ -1,17 +1,26 @@
-import { constructFieldString, SplunkPivot, encodeGraph } from '../services/support/splunkMacros.js';
+import {
+    constructFieldString,
+    encodeGraph
+} from '../support/splunkMacros.js';
 import { Observable } from 'rxjs'
-
 import _ from 'underscore';
 import fs from 'fs'
 import stringhash from 'string-hash';
 import request from 'request'
 
+
 class BlazePivot {
     constructor( pivotDescription ) {
-        let { name, label, kind, toSplunk, connections, encodings, fields, attributes } = pivotDescription
+        const {
+            id, name,
+            pivotParameterKeys, pivotParametersUI,
+            toSplunk, connections, encodings, attributes
+        } = pivotDescription;
+
+        this.id = id;
         this.name = name;
-        this.label = label;
-        this.kind = kind;
+        this.pivotParameterKeys = pivotParameterKeys;
+        this.pivotParametersUI = pivotParametersUI;
         this.toSplunk = toSplunk;
         this.connections = connections;
         this.encodings = encodings;
@@ -46,6 +55,8 @@ class BlazePivot {
             })
     }
 }
+
+/*
 const COMMUNITY_DETECTION = new BlazePivot({
     name: 'Darpa/communityDetection',
     label: 'Number of communities:',
@@ -166,8 +177,76 @@ const BLAZE_EXPAND3 = new BlazePivot({
         return queryOptions;
     },
 });
+*/
 
-export default [
-    BLAZE_EXPAND, COMMUNITY_DETECTION, PAGE_RANK, BLAZE_EXPAND2, BLAZE_EXPAND3
-]
+export const blazegraphCommunities = new BlazePivot({
+    id: 'blazegraph-demo-communities',
+    name: 'Blazegraph Community',
+    pivotParameterKeys:['levels', 'tol'],
+    pivotParametersUI: {
+        levels: {
+            inputType: 'text',
+            label: 'Levels',
+            placeholder: 'Number between 1 and 3',
+        },
+        tol: {
+            inputType: 'text',
+            label: 'Tolerance',
+            placeholder: 'String between "0.1f" and "0.00001f"'
+        }
+    },
+    toSplunk: function (pivotParameters, pivotCache) {
+        const queryOptions = {
+            url: 'http://108.48.53.144:21026/communities',
+            headers: {
+                'Accept': 'text/plain;charset=utf-8',
+                'Accept-Encoding': 'gzip, deflate',
+                'Connection': 'keep-alive'
+            },
+            qs: {
+                filename: 'darpa-1998-edges-with-ports-cr.txt',
+                levels: `${pivotParameters.levels}`,
+                tol: `${pivotParameters.tol}`,
+                ipidx: 'darpa-1998-ips_with_index.txt'
+            }
+        }
+        return queryOptions;
+    },
+});
+
+export const blazegraphExpand = new BlazePivot({
+    id: 'blazegraph-demo-expand',
+    name: 'Blazegraph Expand',
+    pivotParameterKeys:['seed', 'maxlevels'],
+    pivotParametersUI: {
+        maxlevels: {
+            inputType: 'text',
+            label: 'Search depth',
+            placeholder: 'Number between 1 and 3',
+        },
+        seed: {
+            inputType: 'text',
+            label: 'IP address:',
+            placeholder: '1.2.3.4'
+        }
+    },
+    toSplunk: function (pivotParameters, pivotCache) {
+        const queryOptions = {
+            url: 'http://108.48.53.144:21026/expand',
+            headers: {
+                'Accept': 'text/plain;charset=utf-8',
+                'Accept-Encoding': 'gzip, deflate',
+                'Connection': 'keep-alive'
+            },
+            qs: {
+                filename: 'darpa-1998-edges-with-ports-cr.txt',
+                maxlevels: `${pivotParameters.maxlevels}`,
+                seed: `${pivotParameters.seed}`,
+                ipidx: 'darpa-1998-ips_with_index.txt'
+            }
+        }
+        return queryOptions;
+    },
+});
+
 
