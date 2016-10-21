@@ -72,22 +72,30 @@ function BinColumn(
                     left: `${leftOffset + binIdx * binPixelWidth}px`,
                     width: `${binPixelWidth}px`
                 }}>
+                <div className={`${styles['bar-rect']} ${styles['bar-bg']} ${styles['bar-bg-bg']}`}
+                    style={{
+                        backgroundColor: colorLegend ? colorLegend[binIdx] : 'transparent'
+                    }} />
+                <div className={`${styles['bar-rect']} ${styles['bar-bg']} ${styles['bar-bg-fade']}`}
+                    style={{
+
+                    }} />
                <div className={`${styles['bar-global']} ${styles['bar-rect']}`}
-                data-count={globalCount}
-                style={{
-                    width: `${binPixelWidth}px`,
-                    height: `${globalHeightCalc}px`,
-                    top: `${height - globalHeightCalc}`,
-                    visibility: globalCount ? 'visible' : 'hidden'
-                }} />
+                    data-count={globalCount}
+                    style={{
+                        height: `${globalHeightCalc}px`,
+                        top: `${height - globalHeightCalc}`,
+                        backgroundColor: colorLegend ? colorLegend[binIdx] : '#BBB',
+                        visibility: globalCount ? 'visible' : 'hidden'
+                    }} />
                <div className={`${styles['bar-masked']} ${styles['bar-rect']}`}
-               data-count={maskCount}
-                style={{
-                    width: `${binPixelWidth}px`,
-                    height: `${maskHeightCalc}px`,
-                    top: `${height - maskHeightCalc}px`,
-                    visibility: maskCount ? 'visible' : 'hidden'
-                }} />
+                    data-count={maskCount}
+                    style={{
+                        height: `${maskHeightCalc}px`,
+                        top: `${height - maskHeightCalc}px`,
+                        backgroundColor: colorLegend ? colorLegend[binIdx] : 'rgb(15, 165, 197)',
+                        visibility: maskCount ? 'visible' : 'hidden'
+                    }} />
             </div>
         </OverlayTrigger>);
 }

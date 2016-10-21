@@ -1,8 +1,8 @@
 @text-color: #646464;
 @left-padding: 10px;
 
-@color-neutral: #6B6868;
-@color-neutral-hover: #333;
+@color-neutral: #BBB;
+@color-neutral-hover: #666;
 @color-highlight: rgb(15, 165, 197);
 @color-highlight-hover: #ff6600;
 
@@ -74,22 +74,58 @@
     height: 100%;
     position: absolute;
     cursor: crosshair;
+
+    .histogram-picture:hover &:not(:hover) {
+        opacity: 0.3;
+    }
+
+    &:hover {
+        //border-top: 2px solid #BBB;
+        //margin-top: -2px;
+    }
+
+    /*
+    &.filter-outside {
+        filter: grayscale(50%);
+    }
+    */
 }
 .bar-rect {
     display: inline-block;
     pointer-events: none; //let column-bg etc. catch
     position: absolute;
     border-left: 1px solid rgba(255,255,255,0.2);
+    width: 100%;
+}
+.bar-bg {
+    height: 100%;
+}
+.bar-bg-bg {
+    opacity: 0.15;
+    .is-masked-true & {
+        background: white !important;
+    }
+}
+.bar-bg-fade {
+    background: linear-gradient(to bottom, #fff 0, rgba(255,255,255,0) 50%, #fff 100%);
+    .histogram-column:hover & {
+        background: white;
+        border-left: 1px solid rgba(0,0,0,0.1);
+        border-right: 1px solid rgba(0,0,0,0.1);
+    }
+
 }
 .bar-masked {
-    background-color: @color-highlight;
     .histogram-column:hover & {
-        background-color: @color-highlight-hover;
+        background-color: @color-highlight-hover !important;
     }
 }
 .bar-global {
-    background-color: @color-neutral;
-    .histogram-column:hover & {
-        background-color: @color-neutral-hover;
+
+    .is-masked-false & {
+        background-color: @color-neutral;
+    }
+    .is-masked-true & {
+        background-color: @color-neutral !important;
     }
 }

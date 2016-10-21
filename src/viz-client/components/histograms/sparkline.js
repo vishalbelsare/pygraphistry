@@ -155,6 +155,10 @@ const propTypes = {
     type: React.PropTypes.string.isRequired
 };
 
+const rainbow = [ "rgb(166, 206, 227)", "rgb(31, 120, 180)", "rgb(178, 223, 138)", "rgb(51, 160, 44)", "rgb(251, 154, 153)", "rgb(227, 26, 28)", "rgb(253, 191, 111)", "rgb(255, 127, 0)", "rgb(202, 178, 214)", "rgb(106, 61, 154)", "rgb(255, 255, 153)", "rgb(177, 89, 40)" ];
+const colors1 = _.range(0, 30).map((i,idx,arr) => rainbow[i % rainbow.length]);
+const colors2 = _.range(0, 30).map((i,idx,arr)=>`rgb(${Math.round(i*255/arr.length)},${Math.round(i*255/arr.length)},255)`);
+
 const defaultProps = {
     sizeValue: [],
     colorValue: [],
@@ -178,6 +182,16 @@ export class Sparkline extends React.Component {
                 //encoding info
                 ['sizeValue', 'colorValue', 'showModal', 'yAxisValue']
                 .map( (k) => [k, this.props[k]] ));
+        this.state.colorLegend =
+            {
+                'degree': colors1,
+                'community_infomap': colors2,
+
+                'ip': colors1,
+                'bytes': colors2
+
+            }[props.attribute];
+
     }
 
     handleGenericChange (field, handler, value) {
