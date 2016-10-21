@@ -182,7 +182,7 @@ const BLAZE_EXPAND3 = new BlazePivot({
 export const blazegraphCommunities = new BlazePivot({
     id: 'blazegraph-demo-communities',
     name: 'Blazegraph Community',
-    pivotParameterKeys:['levels', 'tol'],
+    pivotParameterKeys:['levels', 'tol', 'seed'],
     pivotParametersUI: {
         levels: {
             inputType: 'text',
@@ -193,9 +193,15 @@ export const blazegraphCommunities = new BlazePivot({
             inputType: 'text',
             label: 'Tolerance',
             placeholder: 'String between "0.1f" and "0.00001f"'
+        },
+        seed: {
+            inputType: 'text',
+            label: 'Opt. seed IP:',
+            placeholder: '1.2.3.4'
         }
     },
     toSplunk: function (pivotParameters, pivotCache) {
+        const seed = pivotParameters.seed === undefined ? '' : pivotParameters.seed;
         const queryOptions = {
             url: 'http://108.48.53.144:21026/communities',
             headers: {
@@ -207,6 +213,7 @@ export const blazegraphCommunities = new BlazePivot({
                 filename: 'darpa-1998-edges-with-ports-cr.txt',
                 levels: `${pivotParameters.levels}`,
                 tol: `${pivotParameters.tol}`,
+                seed: `${seed.trim()}`,
                 ipidx: 'darpa-1998-ips_with_index.txt'
             }
         }
@@ -226,7 +233,7 @@ export const blazegraphExpand = new BlazePivot({
         },
         seed: {
             inputType: 'text',
-            label: 'IP address:',
+            label: 'Seed IP:',
             placeholder: '1.2.3.4'
         }
     },
