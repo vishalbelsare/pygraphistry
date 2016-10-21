@@ -99,61 +99,6 @@ function renderEntitySummaries (id, resultSummary) {
         </div>);
 }
 
-    /*
-class InputSelector extends React.Component {
-    constructor(props, context) {
-        super(props, context)
-    }
-
-    componentWillMount() {
-        const setPivotAttributes = this.props.setPivotAttributes;
-        const fldValue = this.props.fldValue;
-        if (!fldValue) {
-            setPivotAttributes({
-                'pivotParameters.input': this.props.previousPivots.map((pivot) => pivot.id).join(' , ')
-            });
-        }
-    }
-
-    render() {
-        const previousPivots = this.props.previousPivots;
-        const label = this.props.label;
-        const setPivotAttributes = this.props.setPivotAttributes;
-        const fldValue = this.props.fldValue;
-        const fldKey = this.props.fldKey;
-        return (
-            <Form inline>
-                <FormGroup controlId={'inputSelector'}>
-                    <ControlLabel>{ label }</ControlLabel>
-                    <FormControl
-                        componentClass="select"
-                        placeholder="select"
-                        value={fldValue}
-                        onChange={
-                            (ev) => ev.preventDefault() ||
-                                setPivotAttributes({[`pivotParameters.${fldKey}`]: ev.target.value})
-                        }>
-                        <option
-                            key={'*'}
-                            value={'*'}>  All Pivots
-                        </option>
-                        {
-                            previousPivots.map((pivot, index) => (
-                                <option
-                                    key={`${pivot.id} + ${index}`}
-                                    value={`${pivot.id}`}> { `Step ${index}` }
-                                </option>
-                            ))
-                        }
-                    </FormControl>
-                </FormGroup>
-            </Form>
-        )
-    }
-
-}*/
-
-
 class ComboSelector extends React.Component {
     constructor(props, context) {
         super(props, context)
