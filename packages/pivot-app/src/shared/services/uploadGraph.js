@@ -40,9 +40,9 @@ function upload0(etlService, apiKey, data, cb) {
         headers: headers,
         body: data,
         callback: function (err, resp, body) {
-            const json = JSON.parse(body);
             if (err) { return cb(err); }
             try {
+                const json = JSON.parse(body);
                 if (!json.success) {
                     console.log('body in succes?', body);
                     throw new Error(body);
