@@ -8,8 +8,8 @@ import { defaultFormat, shortFormat } from './contentFormatter.js';
 
 function formRow(label, entry) {
     return (
-        <div style={{whiteSpace: 'nowrap'}}>
-            <span style={{display: 'inline-block', width: '70px', textAlign: 'right'}}>
+        <div style={{whiteSpace: 'nowrap', fontSize: '11px'}}>
+            <span style={{display: 'inline-block', minWidth: '70px', textAlign: 'right'}}>
                 {label}
             </span>
             <label style={{marginLeft: '10px'}}>{entry}</label>
@@ -19,10 +19,10 @@ function formRow(label, entry) {
 function BinColumn(
     {   minBinHeightNoneEmpty, height,
         summary: {
-            numBins, binMax, binPixelWidth, binRangeWidth,
+            numBins, binMax, binType, minValue, binPixelWidth, binRangeWidth,
             leftOffset, dataType, yAxisValue, trans
         },
-        bin: {attribute, binIdx, globalCount, maskCount, binValue}}) {
+        bin: {attribute, binIdx, binKey, globalCount, maskCount, binValue}}) {
 
     const globalHeightCalc =
         globalCount ?
@@ -38,18 +38,30 @@ function BinColumn(
             placement='bottom'
             overlay={
                 <Popover id={`tooltip-histogram-${attribute}-col-${binIdx}`} style={{zIndex: 999999999}}>
-                    { formRow('COUNT', globalCount)}
-                    { maskCount ?
-                        formRow(
-                            <span style={{color: '#ff6600'}}>SELECTED</span>,
-                            <span style={{color: '#ff6600'}}>{maskCount}</span>)
-                        : undefined }
+                    {       binType === 'nodata' ? undefined
+                        :   binType === 'histogram' && binValue ?
+                                formRow(
+                                    'RANGE',
+                                    `${shortFormat(binValue.min, dataType)} : ${shortFormat(binValue.max, dataType)}`)
+                        :   binType === 'histogram' && !binValue ?
+                                formRow(
+                                    'RANGE',
+                                    `${shortFormat(minValue + binRangeWidth * binIdx, dataType)} : ${shortFormat(minValue + binRangeWidth * (binIdx + 1), dataType)}`)
+                        :   binType === 'countBy' ?
+                                formRow('CATEGORY', `${binKey}`)
+                        :   undefined
+                    }
+                    {   formRow('COUNT', globalCount)}
                     {
-                        !binValue ? undefined
-                        : binValue.isSingular ? formRow('VALUE', binValue.representative)
-                        : formRow(
-                            'RANGE',
-                            `${shortFormat(binValue.min, dataType)} : ${shortFormat(binValue.max, dataType)}`)
+                        //less jumping this way
+                        maskCount ?
+                            formRow(
+                                <span style={{color: '#ff6600'}}>SELECTED</span>,
+                                <span style={{color: '#ff6600'}}>{maskCount}</span>)
+                            : undefined }
+                    {   binValue && binValue.isSingular && binValue.representative != '_other'?
+                            formRow('ONE VALUE', binValue.representative)
+                            : undefined
                     }
                 </Popover>
             }>

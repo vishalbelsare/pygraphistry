@@ -109,16 +109,6 @@ function computeBinMax ({bins, binType}) {
 
 
 
-
-
-        //show always show range + helpful to point out if only 1 value
-        //   do not trust min/max for range (rounding bug), recompute based on binWidth
-        //turn null values into range based bin idx & binWidth (& shortFormat)
-
-
-
-
-
 /*
 const MIN_BIN_HEIGHT_NONEMPTY = ;
 */
@@ -189,6 +179,9 @@ export class Sparkline extends React.Component {
         let summary = {
             numBins: _global.numBins,
             binMax:  computeBinMax(_global),
+            binType: _global.binType,
+            minValue: _global.minValue, //for binType=='histogram'
+            maxValue: _global.maxValue, //for binType=='histogram'
             binPixelWidth: Math.min(Math.round(this.props.width / (_global.numBins || 1)), this.props.maxBinWidth),
             dataType: _global.dataType,
             binRangeWidth: _global.binWidth, //undefined when dataType==='string'
@@ -239,15 +232,22 @@ export class Sparkline extends React.Component {
                     <div className={styles['histogram-picture']}
                         style={{height: `${this.props.height}px`, width: `${this.props.width}px`}}>
                     {
-                        _.range(0, _global.numBins).map((binIdx) => {
+                        (_global.binType === 'histogram' ?
+                            _.range(0, _global.numBins)
+                            : _.keys(_global.bins).sort(function (a, b) {
+                                    if (a < b) return 1;
+                                    if (b < a) return -1;
+                                    return 0;
+                                }))
+                        .map((binKey, binIdx) => {
                             return <BinColumn
                                 height={this.props.height}
                                 minBinHeightNoneEmpty={this.props.minBinHeightNoneEmpty}
                                 summary={summary}
-                                bin={ {binIdx, attribute,
-                                     binValue: _global.binValues ? _global.binValues[binIdx] : undefined,
-                                     globalCount: _global.bins[binIdx],
-                                     maskCount: _masked.bins ? _masked.bins[binIdx] : 0} } />;
+                                bin={ {binKey, binIdx, attribute,
+                                     binValue: _global.binValues ? _global.binValues[binKey] : undefined,
+                                     globalCount: _global.bins[binKey],
+                                     maskCount: _masked.bins ? _masked.bins[binKey] : 0} } />;
                         })
                     }
                     </div>

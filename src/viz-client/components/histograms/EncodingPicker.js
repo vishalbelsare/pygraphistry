@@ -121,7 +121,7 @@ export default class EncodingPicker extends React.Component {
                     onClick={this.open} />
             </OverlayTrigger>
 
-            <Modal show={this.props.showModal} onHide={this.close}>
+            <Modal show={this.props.showModal} onHide={this.close} style={{zIndex: 999999999}}>
                 <Modal.Header closeButton>
                     <Modal.Title>Visualize <b>{this.props.type}:{this.props.attribute}</b></Modal.Title>
                 </Modal.Header>
@@ -152,9 +152,9 @@ export default class EncodingPicker extends React.Component {
                         placeholder="Pick transform"
                         options={
                             [{value: 'none', label: 'none'},
-                             {value: 'log', label: 'log'},
+                             {value: 'log', label: 'log'}/*,
                              {value: 'log2', label: 'log2'},
-                             {value: 'log10', label: 'log10'}]
+                             {value: 'log10', label: 'log10'}*/]
                         }
                         id={`${this.props.id}_yaxis`}
                         onChange={this.handleSelectYAxisChange} />
