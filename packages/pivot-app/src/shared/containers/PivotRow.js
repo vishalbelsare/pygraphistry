@@ -27,6 +27,7 @@ import {
     MenuItem,
     OverlayTrigger,
     Tooltip,
+    Popover,
     Alert
 } from 'react-bootstrap'
 import RcSwitch from 'rc-switch';
@@ -36,7 +37,7 @@ import React from 'react'
 import Select from 'react-select';
 
 
-function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot }) {
+function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot, status }) {
     return (
         <div>
         <ButtonGroup>
@@ -60,6 +61,23 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
                 <Button disabled={index === 0} onClick={(ev) => splicePivot({index})}><Glyphicon glyph="trash" /></Button>
             </OverlayTrigger>
         </ButtonGroup>
+        {
+            status.ok ? null
+                :
+                <ButtonGroup style={{marginLeft: '0.7em'}}>
+                    <OverlayTrigger placement="top" trigger="click" rootClose overlay={
+                        <Popover id={`tooltipActionError_${index}`} title="ERROR RUNNING PIVOT" className={styles['pivot-error-tooltip']}>
+                            <span style={{color: 'red'}}>{status.message}</span>
+                        </Popover>
+                    } key={`${index}: entityRowAction_${index}`}>
+                        <Button bsStyle="danger">
+                            <Glyphicon glyph="warning-sign" />
+                        </Button>
+                    </OverlayTrigger>
+                </ButtonGroup>
+
+
+        }
         </div>
     );
 }
@@ -203,18 +221,6 @@ function renderPivotCell(id, paramKey, paramValue, paramUI, previousPivots, hand
     }
 }
 
-function renderStatusIndicator(status) {
-    if (status.ok) {
-        return (<div/>);
-    } else {
-        return (
-            <Alert bsStyle={'danger'} className={styles.alert}>
-                <strong> {status.message} </strong>
-            </Alert>
-        );
-    }
-}
-
 function renderPivotRow({
     id, status, enabled, resultCount, resultSummary, pivotParameters, pivotTemplate, templates,
     searchPivot, togglePivot, setPivotAttributes, splicePivot, insertPivot, pivots, rowIndex })
@@ -261,8 +267,7 @@ function renderPivotRow({
             </td>
             <td className={styles.pivotIcons}>
                 <ResultCount index={rowIndex} resultCount={resultCount} searchPivot={searchPivot}
-                    insertPivot={insertPivot} splicePivot={splicePivot}/>
-                { renderStatusIndicator(status) }
+                    insertPivot={insertPivot} splicePivot={splicePivot} status={status}/>
             </td>
         </tr>
     );
