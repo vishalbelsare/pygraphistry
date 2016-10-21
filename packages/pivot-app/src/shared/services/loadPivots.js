@@ -6,7 +6,7 @@ import SimpleServiceWithCache from './support/simpleServiceWithCache.js';
 import {
     createPivotModel,
     serializePivotModel
-} from '../models/pivots.js';
+} from '../models';
 import util from 'util'
 
 

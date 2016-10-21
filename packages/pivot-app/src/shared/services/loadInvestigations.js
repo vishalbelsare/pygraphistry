@@ -9,8 +9,6 @@ import {
 } from '../models';
 
 
-
-
 export function investigationStore(loadApp, pathPrefix, investigationsByIdCache = {}) {
     const globAsObservable = Observable.bindNodeCallback(glob);
     const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);

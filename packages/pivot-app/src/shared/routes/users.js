@@ -13,33 +13,40 @@ import {
 export function users({ loadApp, removeInvestigationsById, loadUsersById, deleteInvestigationsById,
                         deletePivotsById}) {
     const appGetRoute = getHandler([], loadApp);
+    const getUserHandler = getHandler(['user'], loadUsersById);
+    const setUserHandler = setHandler(['user'], loadUsersById);
 
     return [{
         route: `currentUser`,
+        returns: `$ref('usersById[{userId}]')`,
         get: appGetRoute,
-        returns: `$ref('usersById[{userId}]'`
     }, {
         route: `['usersById'][{keys}]['activeScreen']`,
-        get: getHandler(['user'], loadUsersById),
-        set: setHandler(['user'], loadUsersById),
         returns: `String`,
+        get: getUserHandler,
+        set: setUserHandler,
+
     }, {
         route: `['usersById'][{keys}]['activeInvestigation']`,
-        get: getHandler(['user'], loadUsersById),
-        set: setHandler(['user'], loadUsersById),
-        returns: `$ref('investigationsById[{investigationId}]`,
+        returns: `$ref('investigationsById[{investigationId}]')`,
+        get: getUserHandler,
+        set: setUserHandler,
     }, {
-        returns: `String`,
         route: `['usersById'][{keys}]['name','id']`,
-        get: getHandler(['user'], loadUsersById)
+        returns: `String`,
+        get: getUserHandler,
     }, {
+        route: `['usersById'][{keys}]['investigations', 'templates'].length`,
         returns: `Number`,
-        route: `['usersById'][{keys}]['investigations'].length`,
-        get: getHandler(['user'], loadUsersById)
+        get: getUserHandler,
     }, {
         route: `['usersById'][{keys}]['investigations'][{keys}]`,
-        get: getHandler(['user'], loadUsersById),
-        returns: `$ref('investigationsById[{investigationId}]')`
+        returns: `$ref('investigationsById[{investigationId}]')`,
+        get: getUserHandler,
+    }, {
+        route: `['usersById'][{keys}]['templates'][{keys}]`,
+        returns: `$ref('templatesById[{templateId}]')`,
+        get: getUserHandler,
     }, {
         route: `['usersById'][{keys}]['deleteInvestigations']`,
         call: deleteInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,

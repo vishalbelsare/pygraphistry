@@ -12,7 +12,7 @@ import {
 } from '../shared/models';
 import {
     loadApp,
-    userStore,
+    userStore, templateStore, listTemplates,
     listInvestigations, investigationStore,
     createInvestigation, cloneInvestigationsById, removeInvestigationsById,
     pivotStore, insertPivot, splicePivot, searchPivot,
@@ -25,7 +25,7 @@ const investigationPath = path.resolve(pathPrefix, 'investigations');
 const pivotPath = path.resolve(pathPrefix, 'pivots');
 
 listInvestigations(investigationPath)
-    .map(makeTestUser)
+    .map(investigations => makeTestUser(investigations, listTemplates()))
     .do(init)
     .subscribe(
         () => console.log('Initialized'),
@@ -35,7 +35,8 @@ listInvestigations(investigationPath)
 function init(testUser) {
     const app = createAppModel(testUser);
 
-    const {loadUsersById} = userStore(loadApp(app));
+    const { loadUsersById } = userStore(loadApp(app));
+    const { loadTemplatesById } = templateStore(loadApp(app));
     const {
         loadInvestigationsById,
         saveInvestigationsById,
@@ -50,6 +51,7 @@ function init(testUser) {
     const routeServices = {
         loadApp: loadApp(app),
         loadUsersById,
+        loadTemplatesById,
         loadInvestigationsById,
         saveInvestigationsById,
         deleteInvestigationsById,

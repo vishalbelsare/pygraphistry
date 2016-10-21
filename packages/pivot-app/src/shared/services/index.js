@@ -1,5 +1,6 @@
 export * from './loadApp';
 export * from './loadUsers';
+export * from './loadTemplates';
 export * from './loadInvestigations';
 export * from './manageInvestigation';
 export * from './insertPivot';

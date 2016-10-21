@@ -17,24 +17,28 @@ export function pivots({loadPivotsById, searchPivot}) {
     const setPivotsHandler = setHandler(['pivot'], loadPivotsById);
 
     return [{
+        route: `pivotsById[{keys}].length`,
         returns: `Number`,
         get: getPivotsHandler,
-        route: `pivotsById[{keys}].length`
     }, {
+        route: `pivotsById[{keys}]['enabled']`,
         returns: `String`,
         get: getPivotsHandler,
         set: setPivotsHandler,
-        route: `pivotsById[{keys}]['enabled']`
     }, {
+        route: `pivotsById[{keys}]['id', 'resultCount', 'resultSummary', 'status']`,
         returns: `String`,
         get: getPivotsHandler,
-        route: `pivotsById[{keys}]['id', 'total', 'resultCount', 'resultSummary',
-                                   'status', 'pivotParameterKeys']`
     }, {
+        route: `pivotsById[{keys}]['pivotTemplate']`,
+        returns: `$ref('templatesById[{templateId}]'`,
+        get: getPivotsHandler,
+        set: setPivotsHandler
+    }, {
+        route: `pivotsById[{keys}]['pivotParameters'][{keys}]`,
         returns: `String | Number`,
         get: getPivotsHandler,
         set: setPivotsHandler,
-        route: `pivotsById[{keys}]['pivotParameters'][{keys}]`
     }, {
         route: `pivotsById[{keys}].searchPivot`,
         call: searchPivotCallRoute({loadPivotsById, searchPivot})

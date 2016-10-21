@@ -15,13 +15,10 @@ export function app({ loadApp, createInvestigation, loadUsersById }) {
     const appGetRoute = getHandler([], loadApp);
 
     return [{
-        returns: `*`,
+        route: `['title']`,
+        returns: `String`,
         get: appGetRoute,
-        route: `['title']`
-    }, {
-        route: `['pivots'][{ranges}]`,
-        get: rangesToListItems({ loadApp }),
-        returns: `$ref('pivotsById[{ pivotId }]')`
+
     }, {
         route: `createInvestigation`,
         call: createInvestigationCallRoute({ loadApp, loadUsersById, createInvestigation })

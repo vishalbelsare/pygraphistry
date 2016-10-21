@@ -1,4 +1,3 @@
-import PivotTemplates from '../../models/pivotTemplates';
 import { searchSplunk } from '../../services/searchSplunk.js';
 import { shapeSplunkResults} from '../../services/shapeSplunkResults.js';
 import _ from 'underscore';
@@ -6,10 +5,16 @@ import _ from 'underscore';
 const pivotCache = {}
 export class SplunkPivot {
     constructor( pivotDescription ) {
-        let { name, label, kind, toSplunk, connections, encodings, fields, attributes } = pivotDescription
+        let {
+            id, name,
+            pivotParameterKeys, pivotParametersUI,
+            toSplunk, connections, encodings, attributes
+        } = pivotDescription;
+
+        this.id = id;
         this.name = name;
-        this.label = label;
-        this.kind = kind;
+        this.pivotParameterKeys = pivotParameterKeys;
+        this.pivotParametersUI = pivotParametersUI;
         this.toSplunk = toSplunk;
         this.connections = connections;
         this.encodings = encodings;
@@ -78,20 +83,6 @@ export const expandTemplate = (text, pivotCache) => {
     return buildLookup(text, pivotCache);
 };
 
-
-function pivotIdToTemplate(id, {pivotsById}) {
-    const pivot = pivotsById[id];
-    for(var i = 0; i < pivot.length; i++) {
-        if (pivot[i].name === 'Mode') {
-            return PivotTemplates.get([pivot[i].value]);
-        }
-    }
-    throw new Error('could not find Mode in pivot id ', id);
-}
-
-function pivotToTemplate () {
-    return pivotIdToTemplate(pivot.value[1], {pivotsById});
-}
 
 export function constructFieldString(pivotTemplate) {
     const fields = (pivotTemplate.connections || [])

@@ -10,7 +10,7 @@ import styles from './styles.less';
 import { switchScreen } from '../actions/app.js';
 import SplitPane from 'react-split-pane';
 
-function renderInvestigationBody(activeInvestigation) {
+function renderInvestigationBody(activeInvestigation, templates) {
     return (
         <div className={`main-panel ${styles['investigation-all']}`}>
             <InvestigationHeader activeInvestigation={activeInvestigation} />
@@ -19,7 +19,7 @@ function renderInvestigationBody(activeInvestigation) {
                 <SplitPane split="horizontal" defaultSize="60%" minSize={0}>
                    <iframe allowFullScreen="true" scrolling="no" className={styles.iframe}
                         src={activeInvestigation.url} />
-                   <Investigation data={activeInvestigation}/>
+                   <Investigation data={activeInvestigation} templates={templates}/>
                </SplitPane>
             </div>
 
@@ -41,12 +41,12 @@ function renderInvestigationPlaceholder(switchScreen) {
                 </Alert>
             </Panel>
         </div>
-    )
+    );
 }
 
-function renderInvestigationScreen({ activeInvestigation, switchScreen }) {
+function renderInvestigationScreen({ activeInvestigation, templates, switchScreen }) {
     const body = activeInvestigation !== undefined ?
-                 renderInvestigationBody(activeInvestigation) :
+                 renderInvestigationBody(activeInvestigation, templates) :
                  renderInvestigationPlaceholder(switchScreen);
 
     return (
@@ -57,18 +57,28 @@ function renderInvestigationScreen({ activeInvestigation, switchScreen }) {
     );
 }
 
+function mapStateToFragment({ currentUser = {templates: []} } = {}) {
+    return `{
+        currentUser: {
+            activeInvestigation: ${Investigation.fragment()},
+            templates: {
+                length, [0...${currentUser.templates.length}]: {
+                    name, id
+                }
+            }
+        }
+    }`;
+}
+
 function mapFragmentToProps({ currentUser = {}} = {}) {
     return {
-        activeInvestigation: currentUser.activeInvestigation
+        activeInvestigation: currentUser.activeInvestigation,
+        templates: currentUser.templates
     };
 }
 
 export default container(
-    ({ activeInvestigation } = {}) => `{
-        currentUser: {
-            activeInvestigation: ${Investigation.fragment(activeInvestigation)}
-        }
-    }`,
+    mapStateToFragment,
     mapFragmentToProps,
     {
         switchScreen: switchScreen

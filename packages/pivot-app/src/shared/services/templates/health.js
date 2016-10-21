@@ -109,7 +109,3 @@ const PATIENT = new SplunkPivot({
     },
 
 });
-
-export default [
-    SEARCH_SPLUNK_HEALTH, SEARCH_PATIENT, SEARCH_LAB, PATIENT
-];
