@@ -21,23 +21,24 @@ export function investigations({ loadUsersById, loadInvestigationsById, saveInve
     const setInvestigationsHandler = setHandler(['investigation'], loadInvestigationsById);
 
     return [{
+        route: `investigationsById[{keys}]['id','name', 'url', 'status', 'tags', 'description', 'eventTable']`,
         returns: `String`,
         get: getInvestigationsHandler,
         set: setInvestigationsHandler,
-        route: `investigationsById[{keys}]['id','name', 'url', 'status', 'tags', 'description', 'eventTable']`
+
     }, {
+        route: `investigationsById[{keys}]['modifiedOn']`,
         returns: `Number`,
         get: getInvestigationsHandler,
         set: setInvestigationsHandler,
-        route: `investigationsById[{keys}]['modifiedOn']`
     }, {
+        route: `investigationsById[{keys}]['pivots']['length']`,
         returns: `Number`,
         get: getInvestigationsHandler,
-        route: `investigationsById[{keys}]['pivots']['length']`
     }, {
+        route: `investigationsById[{keys}]['pivots'][{integers}]`,
         returns: `$ref('pivotsById[{pivotId}]'`,
         get: getInvestigationsHandler,
-        route: `investigationsById[{keys}]['pivots'][{integers}]`
     }, {
         route: `investigationsById[{keys}].play`,
         call: playCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph })

@@ -18,34 +18,35 @@ export function users({ loadApp, removeInvestigationsById, loadUsersById, delete
 
     return [{
         route: `currentUser`,
+        returns: `$ref('usersById[{userId}]')`,
         get: appGetRoute,
-        returns: `$ref('usersById[{userId}]')`
     }, {
         route: `['usersById'][{keys}]['activeScreen']`,
+        returns: `String`,
         get: getUserHandler,
         set: setUserHandler,
-        returns: `String`,
+
     }, {
         route: `['usersById'][{keys}]['activeInvestigation']`,
+        returns: `$ref('investigationsById[{investigationId}]')`,
         get: getUserHandler,
         set: setUserHandler,
-        returns: `$ref('investigationsById[{investigationId}]')`,
     }, {
-        returns: `String`,
         route: `['usersById'][{keys}]['name','id']`,
+        returns: `String`,
         get: getUserHandler,
     }, {
-        returns: `Number`,
         route: `['usersById'][{keys}]['investigations', 'templates'].length`,
+        returns: `Number`,
         get: getUserHandler,
     }, {
         route: `['usersById'][{keys}]['investigations'][{keys}]`,
+        returns: `$ref('investigationsById[{investigationId}]')`,
         get: getUserHandler,
-        returns: `$ref('investigationsById[{investigationId}]')`
     }, {
         route: `['usersById'][{keys}]['templates'][{keys}]`,
+        returns: `$ref('templatesById[{templateId}]')`,
         get: getUserHandler,
-        returns: `$ref('templatesById[{templateId}]')`
     }, {
         route: `['usersById'][{keys}]['deleteInvestigations']`,
         call: deleteInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,

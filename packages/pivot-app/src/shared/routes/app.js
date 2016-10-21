@@ -15,9 +15,10 @@ export function app({ loadApp, createInvestigation, loadUsersById }) {
     const appGetRoute = getHandler([], loadApp);
 
     return [{
+        route: `['title']`,
         returns: `String`,
         get: appGetRoute,
-        route: `['title']`
+
     }, {
         route: `createInvestigation`,
         call: createInvestigationCallRoute({ loadApp, loadUsersById, createInvestigation })
