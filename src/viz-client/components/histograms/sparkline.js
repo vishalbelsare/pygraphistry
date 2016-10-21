@@ -10,6 +10,97 @@ import EncodingPicker from './EncodingPicker.js';
 import { defaultFormat, shortFormat } from './contentFormatter.js';
 
 
+/*
+The histograms data structure is an adventure:
+
+------
+For binType='histogram': //continuous values
+------
+_globals:
+    {
+        binType: 'histogram'
+        dataType: 'number'
+        bins:
+            [int, ...]
+        binValues:
+            //null when 0
+            //buggy min/max so better to use minValue + binWidth * binIndex
+            [ null U {min: float, max: float, representative: * , isSingular: bool}]
+        numBins: int,
+        numValues: int
+        minValue: number //of range
+        maxValue: number //of range
+        binWidth: number
+        type: 'point' or 'edge'
+        attribute: 'string'
+    }
+_masked:
+    {
+        binType: 'histogram'
+        dataType: 'number'
+
+        //as long as globals, null if no selection
+        ? bins: [int, ... ]
+
+        //as long as globals, , null if no selection
+        binValues: [ null U {min: float, max: float, representative: *, isSIngular: bool}]
+
+        numBins: int,
+        numValues: int
+        maxValue: number
+        binWidth: number
+        type: 'point' or 'edge'
+        attribute: 'string'
+    }
+
+------
+For binType='countBy': //categorical (string, small ints, ...)
+------
+_globals:  //no maxValue,
+    {
+        binType: 'countBy'
+        dataType: 'string' or 'number'
+        bins: {<string>: int, ...}
+        ? binValues: { '_other': {representative: '_other', numValues: int}}
+        numBins: int
+        numValues: int
+        type: 'point' or 'edge'
+        attribute: 'string'
+    }
+_masked:
+    {
+        type: 'point' or 'edge'
+        attribute: 'string' or 'number'
+        binType: 'point' or 'edge' or 'nodata' (if no data)
+
+        //null if 'nodata'
+        ?bins: {<string>: int }
+
+        //null if 'nodata' or type != 'string'
+        ?binValues:  {
+            '_other': {
+                representative: '_other',
+                numValues: int
+            }
+        }
+
+    }
+*/
+
+
+
+
+
+
+        //show always show range + helpful to point out if only 1 value
+        //   do not trust min/max for range (rounding bug), recompute based on binWidth
+        //turn null values into range based bin idx & binWidth (& shortFormat)
+
+
+
+
+
+
 const WIDTH = 298 - 20; //anything less than the panel width
 const HEIGHT = 50;
 const MAX_BIN_WIDTH = 60;
