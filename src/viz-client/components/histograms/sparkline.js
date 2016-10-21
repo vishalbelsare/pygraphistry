@@ -7,7 +7,8 @@ import styles from 'viz-shared/components/histograms/styles.less';
 import stylesGlobal from 'viz-shared/index.less';
 
 import EncodingPicker from './EncodingPicker.js';
-import { defaultFormat, shortFormat } from './contentFormatter.js';
+import { SizeLegendIndicator, YAxisLegendIndicator } from './SparklineComponents.js';
+import BinColumn from './BinColumn.js';
 
 
 /*
@@ -48,9 +49,9 @@ _masked:
         numBins: int,
         numValues: int
         maxValue: number
-        binWidth: number
         type: 'point' or 'edge'
         attribute: 'string'
+        binWidth: number
     }
 
 ------
@@ -66,6 +67,7 @@ _globals:  //no maxValue,
         numValues: int
         type: 'point' or 'edge'
         attribute: 'string'
+
     }
 _masked:
     {
@@ -87,6 +89,23 @@ _masked:
     }
 */
 
+const typeHelpers = {
+    nodata: {
+        computeBinMax: (() => 0)
+    },
+    histogram: {
+        computeBinMax: (({bins}) => Math.max.apply(null, bins))
+    },
+    countBy: {
+        computeBinMax: (({bins}) => Math.max.apply(null, _.values(bins)))
+    }
+}
+
+
+function computeBinMax ({bins, binType}) {
+    return typeHelpers[binType].computeBinMax({bins});
+}
+
 
 
 
@@ -100,14 +119,17 @@ _masked:
 
 
 
-
-const WIDTH = 298 - 20; //anything less than the panel width
-const HEIGHT = 50;
-const MAX_BIN_WIDTH = 60;
-const MIN_BIN_HEIGHT_NONEMPTY = 5;
-
+/*
+const MIN_BIN_HEIGHT_NONEMPTY = ;
+*/
 
 const propTypes = {
+
+    width: React.PropTypes.number,
+    height: React.PropTypes.number,
+    maxBinWidth: React.PropTypes.number,
+    minBinHeightNoneEmpty: React.PropTypes.number,
+
     sizeValue: React.PropTypes.Array,
     colorValue: React.PropTypes.Array,
     showModal: React.PropTypes.bool,
@@ -128,134 +150,33 @@ const defaultProps = {
     sizeValue: [],
     colorValue: [],
     showModal: false,
-    yAxisValue: 'none'
+    yAxisValue: 'none',
+
+    width: 298 - 20, //anything less than the panel width
+    height: 50,
+    maxBinWidth: 60,
+    minBinHeightNoneEmpty: 5
 };
-
-function formRow(label, entry) {
-    return (
-        <div style={{whiteSpace: 'nowrap'}}>
-            <span style={{display: 'inline-block', width: '70px', textAlign: 'right'}}>
-                {label}
-            </span>
-            <label style={{marginLeft: '10px'}}>{entry}</label>
-        </div>);
-}
-
-function computeBinMax (rawBins, numBins) {
-    const bins = rawBins instanceof Array ?
-        rawBins
-        : Array.prototype.slice.call(_.extend({}, {length: numBins}, rawBins));
-    return Math.max.apply(null, bins);
-}
-
-function binToColumn(
-    {numBins, binMax, binWidth, leftOffset, dataType, yAxisValue},
-    {attribute, binIdx, globalCount, maskCount, binValue}) {
-
-    const trans = ({
-        'none': _.identity,
-        'log': Math.log,
-        'log2': Math.log2,
-        'log10': Math.log10
-    })[yAxisValue];
-
-    const globalHeightCalc =
-        globalCount ?
-            Math.max(HEIGHT * trans(globalCount) / (trans(binMax) || 1), MIN_BIN_HEIGHT_NONEMPTY)
-            : 0;
-    const maskHeightCalc =
-        maskCount ?
-            Math.max(HEIGHT * trans(maskCount) / (trans(binMax) || 1), MIN_BIN_HEIGHT_NONEMPTY)
-            : 0;
-
-    return (
-        <OverlayTrigger trigger={['hover']}
-            placement='bottom'
-            overlay={
-                <Popover id={`tooltip-histogram-${attribute}-col-${binIdx}`} style={{zIndex: 999999999}}>
-                    { formRow('COUNT', globalCount)}
-                    { maskCount ?
-                        formRow(
-                            <span style={{color: '#ff6600'}}>SELECTED</span>,
-                            <span style={{color: '#ff6600'}}>{maskCount}</span>)
-                        : undefined }
-                    {
-                        !binValue ? undefined
-                        : binValue.isSingular ? formRow('VALUE', binValue.representative)
-                        : formRow(
-                            'RANGE',
-                            `${shortFormat(binValue.min, dataType)} : ${shortFormat(binValue.max, dataType)}`)
-                    }
-                </Popover>
-            }>
-            <div className={styles['histogram-column']}
-                data-binmax={binMax}
-                style={{
-                    left: `${leftOffset + binIdx * binWidth}px`,
-                    width: `${binWidth}px`
-                }}>
-               <div className={`${styles['bar-global']} ${styles['bar-rect']}`}
-                data-count={globalCount}
-                style={{
-                    width: `${binWidth}px`,
-                    height: `${globalHeightCalc}px`,
-                    top: `${HEIGHT - globalHeightCalc}`,
-                    visibility: globalCount ? 'visible' : 'hidden'
-                }} />
-               <div className={`${styles['bar-masked']} ${styles['bar-rect']}`}
-               data-count={maskCount}
-                style={{
-                    width: `${binWidth}px`,
-                    height: `${maskHeightCalc}px`,
-                    top: `${HEIGHT - maskHeightCalc}px`,
-                    visibility: maskCount ? 'visible' : 'hidden'
-                }} />
-            </div>
-        </OverlayTrigger>);
-
-}
 
 
 
 export class Sparkline extends React.Component {
     constructor(props, context) {
         super(props, context);
-        this.handleSizeChange = this.handleSizeChange.bind(this);
-        this.handleColorChange = this.handleColorChange.bind(this);
-        this.handleModalChange = this.handleModalChange.bind(this);
-        this.handleYAxisChange = this.handleYAxisChange.bind(this);
-        this.state = {
-            sizeValue: this.props.sizeValue,
-            colorValue: this.props.colorValue,
-            showModal: this.props.showModal,
-            yAxisValue: this.props.yAxisValue
-        }
+        this.handleGenericChange = this.handleGenericChange.bind(this);
+        this.state =
+            _.object(
+                //encoding info
+                ['sizeValue', 'colorValue', 'showModal', 'yAxisValue']
+                .map( (k) => [k, this.props[k]] ));
     }
 
-    handleSizeChange (sizeValue) {
-        this.setState({sizeValue});
-        if (this.props.onSizeChange) {
-            this.props.onSizeChange(sizeValue);
-        }
-    }
-    handleColorChange (colorValue) {
-        this.setState({colorValue});
-        if (this.props.onColorChange) {
-            this.props.onColorChange(colorValue);
-        }
-    }
-
-    handleModalChange (showModal) {
-        this.setState({showModal});
-        if (this.props.onModalChange) {
-            this.props.onModalChange(showModal);
-        }
-    }
-
-    handleYAxisChange (yAxisValue) {
-        this.setState({yAxisValue});
-        if (this.props.onYAxisChange) {
-            this.props.onYAxisChange(yAxisValue);
+    handleGenericChange (field, handler, value) {
+        var state = {};
+        state[field] = value;
+        this.setState(state);
+        if (this.props[handler]) {
+            this.props[handler](value);
         }
     }
 
@@ -267,14 +188,22 @@ export class Sparkline extends React.Component {
 
         let summary = {
             numBins: _global.numBins,
-            binMax: computeBinMax(_global.bins, _global.numBins),
-            binWidth: Math.min(Math.round(WIDTH / (_global.numBins || 1)), MAX_BIN_WIDTH),
+            binMax:  computeBinMax(_global),
+            binPixelWidth: Math.min(Math.round(this.props.width / (_global.numBins || 1)), this.props.maxBinWidth),
             dataType: _global.dataType,
+            binRangeWidth: _global.binWidth, //undefined when dataType==='string'
             leftOffset: 0,
-            yAxisValue: this.state.yAxisValue
-        };
-        summary.leftOffset = Math.floor((WIDTH - summary.binWidth * summary.numBins) / 2);
+            yAxisValue: this.state.yAxisValue, //'none', 'log2', ...
+            trans: ({
+                    'none': _.identity,
+                    'log': Math.log,
+                    'log2': Math.log2,
+                    'log10': Math.log10
+                })[this.state.yAxisValue]
+            };
+        summary.leftOffset = Math.floor((this.props.width - summary.binPixelWidth * summary.numBins) / 2);
         Object.freeze(summary);
+
 
         return (
             <div className={styles['histogram']}>
@@ -282,28 +211,8 @@ export class Sparkline extends React.Component {
                 <div className={styles['histogram-title']}>
 
                     <div className={styles['histogram-icons']}>
-                        { this.state.sizeValue && this.state.sizeValue.length
-                                ?  <span class="label label-default">
-                                        <Button bsSize="small"
-                                            className={styles['histogram-legend-pill']}>
-                                            <span className={classNames({
-                                                [stylesGlobal['fa']]: true,
-                                                [stylesGlobal['fa-dot-circle-o']]: true,
-                                                [styles['histogram-size-encoding-icon']]: true
-                                            })}/>
-                                            Size
-                                        </Button>
-                                    </span>
-                                : null }
-                        { this.state.yAxisValue !== 'none'
-                                ?   <span class="label label-default">
-                                        <Button bsSize="small"
-                                            className={styles['histogram-legend-pill']}>
-                                            Y-Axis: {this.state.yAxisValue}
-                                        </Button>
-                                    </span>
-                                : null
-                        }
+                        <SizeLegendIndicator sizeValue={this.state.sizeValue} />
+                        <YAxisLegendIndicator yAxisValue={this.state.yAxisValue} />
                         <EncodingPicker
                             id={`histogram-encodings-picker-${attribute}`}
                             attribute={attribute}
@@ -312,10 +221,11 @@ export class Sparkline extends React.Component {
                             colorValue={this.state.colorValue}
                             showModal={this.state.showModal}
                             yAxisValue={this.state.yAxisValue}
-                            onSizeChange={ this.handleSizeChange }
-                            onColorChange={ this.handleColorChange }
-                            onModalChange={ this.handleModalChange }
-                            onYAxisChange={ this.handleYAxisChange} />
+                            onSizeChange={ this.handleGenericChange.bind(this, 'sizeValue', 'onSizeChange') }
+                            onColorChange={ this.handleGenericChange.bind(this, 'colorValue', 'onColorChange') }
+                            onModalChange={ this.handleGenericChange.bind(this, 'showModal', 'onModalChange') }
+                            onYAxisChange={ this.handleGenericChange.bind(this, 'yAxisValue', 'onYAxisChange') }
+                        />
                         <Button href='javascript:void(0)'
                             className={classNames({
                                 [stylesGlobal['fa']]: true,
@@ -327,36 +237,31 @@ export class Sparkline extends React.Component {
                 </div>
                 <div className={styles['histogram-picture-container']}>
                     <div className={styles['histogram-picture']}
-                        style={{height: `${HEIGHT}px`, width: `${WIDTH}px`}}>
+                        style={{height: `${this.props.height}px`, width: `${this.props.width}px`}}>
                     {
                         _.range(0, _global.numBins).map((binIdx) => {
-                            return binToColumn(
-                                summary,
-                                {
-                                    binIdx, attribute,
-                                    binValue: _global.binValues ? _global.binValues[binIdx] : undefined,
-                                    globalCount: _global.bins[binIdx],
-                                    maskCount: _masked.bins ? _masked.bins[binIdx] : 0
-                            });
+                            return <BinColumn
+                                height={this.props.height}
+                                minBinHeightNoneEmpty={this.props.minBinHeightNoneEmpty}
+                                summary={summary}
+                                bin={ {binIdx, attribute,
+                                     binValue: _global.binValues ? _global.binValues[binIdx] : undefined,
+                                     globalCount: _global.bins[binIdx],
+                                     maskCount: _masked.bins ? _masked.bins[binIdx] : 0} } />;
                         })
                     }
                     </div>
                 </div>
-                <div style={{maxHeight: '200px', overflow: 'scroll'}}>{
-                    /*
-                        <div>
-                            <b>Global</b>
-                            <pre>{JSON.stringify(_global, null, 1)}</pre>
-                        </div>
-                    */
-                    }{
-                    /*
-                        <div>
-                            <b>Masked</b>
-                            <pre>{JSON.stringify(_masked, null, 1)}</pre>
-                        </div>
-                    */
-                }</div>
+                {<div style={{maxHeight: '200px', overflow: 'scroll'}}>
+                    <div>
+                        <b>Global</b>
+                        <pre>{JSON.stringify(_global, null, 1)}</pre>
+                    </div>
+                    <div>
+                        <b>Masked</b>
+                        <pre>{JSON.stringify(_masked, null, 1)}</pre>
+                    </div>
+                </div>}
             </div>
         );
     }
