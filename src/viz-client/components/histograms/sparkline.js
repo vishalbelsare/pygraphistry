@@ -252,7 +252,7 @@ export class Sparkline extends React.Component {
                     }
                     </div>
                 </div>
-                {<div style={{maxHeight: '200px', overflow: 'scroll'}}>
+                {/*<div style={{maxHeight: '200px', overflow: 'scroll'}}>
                     <div>
                         <b>Global</b>
                         <pre>{JSON.stringify(_global, null, 1)}</pre>
@@ -261,7 +261,7 @@ export class Sparkline extends React.Component {
                         <b>Masked</b>
                         <pre>{JSON.stringify(_masked, null, 1)}</pre>
                     </div>
-                </div>}
+                </div>*/}
             </div>
         );
     }
