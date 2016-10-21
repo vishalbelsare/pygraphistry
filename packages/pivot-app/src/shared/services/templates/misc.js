@@ -51,7 +51,7 @@ export const searchSplunkMap = new SplunkPivot({
         const dest = pivotParameters['dst'];
         const subsearch = `[
             | loadjob "${pivotCache[pivotParameters.pivot].splunkSearchID}"
-            |  fields ${source}
+            | fields ${source}
             | dedup ${source}
         ]`;
         return `search ${subsearch}

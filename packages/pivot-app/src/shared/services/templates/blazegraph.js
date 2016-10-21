@@ -1,12 +1,10 @@
+import _ from 'underscore';
+import request from 'request';
+import { Observable } from 'rxjs';
 import {
     constructFieldString,
     encodeGraph
 } from '../support/splunkMacros.js';
-import { Observable } from 'rxjs'
-import _ from 'underscore';
-import fs from 'fs'
-import stringhash from 'string-hash';
-import request from 'request'
 
 
 class BlazePivot {
@@ -133,5 +131,3 @@ export const blazegraphExpand = new BlazePivot({
         return queryOptions;
     },
 });
-
-
