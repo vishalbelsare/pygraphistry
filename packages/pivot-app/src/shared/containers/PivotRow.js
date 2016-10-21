@@ -99,6 +99,7 @@ function renderEntitySummaries (id, resultSummary) {
         </div>);
 }
 
+    /*
 class InputSelector extends React.Component {
     constructor(props, context) {
         super(props, context)
@@ -150,7 +151,67 @@ class InputSelector extends React.Component {
         )
     }
 
+}*/
+
+
+class ComboSelector extends React.Component {
+    constructor(props, context) {
+        super(props, context)
+    }
+
+    setParam(value) {
+        const {setPivotAttributes, fldKey} = this.props;
+        return this.props.setPivotAttributes({
+            [`pivotParameters.${fldKey}`]: value
+        });
+    }
+
+    componentWillMount() {
+        const {fldValue, options} = this.props;
+        if (!fldValue) {
+            this.setParam(options[0].value);
+        }
+    }
+
+    render() {
+        const {
+            pivotId,
+            setPivotAttributes,
+            fldKey,
+            fldValue,
+            options,
+            paramUI,
+        } = this.props;
+        return (
+            <Form inline>
+                <FormGroup controlId={'inputSelector'}>
+                    <ControlLabel>{ paramUI.label }</ControlLabel>
+                    <FormControl
+                        componentClass="select"
+                        placeholder="select"
+                        value={fldValue}
+                        onChange={(ev) =>
+                            ev.preventDefault() || this.setParam(ev.target.value)
+                        }
+                    >
+                        {
+                            options.map(({value, label}, index) => (
+                                <option
+                                    key={`comboselector-${pivotId}-${fldKey}-${index}`}
+                                    value={value}
+                                >
+                                    { label }
+                                </option>
+                            ))
+                        }
+                    </FormControl>
+                </FormGroup>
+            </Form>
+        )
+    }
+
 }
+
 
 function renderTemplateSelector (id, pivotTemplate, templates, setPivotAttributes) {
     return (
@@ -198,14 +259,36 @@ function renderTextCell(id, paramKey, paramValue, paramUI, handlers) {
 }
 
 function renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, handlers) {
+    const options =
+        [{value: '*', label: 'All pivots'}].concat(
+            previousPivots.map((pivot, index) =>
+                ({value: pivot.id, label: `Step ${index}`})
+            )
+        );
     return (
-        <InputSelector
+        <ComboSelector
             key={`pcell-${id}-${paramKey}`}
+            pivotId={id}
             fldKey={paramKey}
             fldValue={paramValue}
             setPivotAttributes={handlers.setPivotAttributes}
-            label={paramUI.label}
-            previousPivots={previousPivots}
+            paramUI={paramUI}
+            options={options}
+        />
+    );
+}
+
+
+function renderComboCell(id, paramKey, paramValue, paramUI, handlers) {
+    return (
+        <ComboSelector
+            key={`pcell-${id}-${paramKey}`}
+            pivotId={id}
+            fldKey={paramKey}
+            fldValue={paramValue}
+            setPivotAttributes={handlers.setPivotAttributes}
+            paramUI={paramUI}
+            options={paramUI.options}
         />
     );
 }
@@ -216,6 +299,8 @@ function renderPivotCell(id, paramKey, paramValue, paramUI, previousPivots, hand
             return renderTextCell(id, paramKey, paramValue, paramUI, handlers);
         case 'pivotCombo':
             return renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, handlers);
+        case 'combo':
+            return renderComboCell(id, paramKey, paramValue, paramUI, handlers);
         default:
             throw new Error('Unknown pivot cell type:' + paramUI.inputType);
     }

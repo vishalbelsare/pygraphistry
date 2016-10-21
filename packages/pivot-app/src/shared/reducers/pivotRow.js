@@ -32,12 +32,10 @@ function setPivotAttributes(action$, store) {
         .ofType(SET_PIVOT_ATTRIBUTES)
         .mergeMap(({falcor, params}) =>
             Observable.from(
-                _.map(params, (value, key) => {
-                        console.log('setting',  $pathValue(key.split('.'), value))
-                    return falcor.set(
+                _.map(params, (value, key) =>
+                    falcor.set(
                         $pathValue(key.split('.'), value)
                     )
-                }
                 )
             ).mergeAll()
         )
