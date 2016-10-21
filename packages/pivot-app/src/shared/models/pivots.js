@@ -12,7 +12,7 @@ function defaults() {
         pivotParameters: {
             query: 'Enter search query',
         },
-        pivotTemplate: "42"
+        pivotTemplate: 'search-splunk-plain'
     };
 }
 
@@ -30,7 +30,6 @@ export function createPivotModel(serializedPivot) {
         ...defaults(),
         ...serializedPivot
     };
-
 
     return {
         ...normalizedPivot,

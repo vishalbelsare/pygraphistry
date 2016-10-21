@@ -1,24 +1,17 @@
-import { expandTemplate, constructFieldString, SplunkPivot } from '../services/support/splunkMacros.js';
+import {
+    expandTemplate,
+    constructFieldString,
+    SplunkPivot
+} from '../support/splunkMacros.js';
 import stringhash from 'string-hash';
 
 
-const SPLUNK_INDICES = {
+const splunkIndices = {
     FIREEYE: '"Alert Category"="Fire Eye" index="alert_graph_demo"',
     BLUECOAT: '"Alert Category"="Blue Coat Proxy" index="alert_graph_demo"',
     FIREWALL: '"Alert Category"="Firewall" index="alert_graph_demo"',
     ALL: 'index=alert_graph_demo'
 };
-
-const SEARCH_SPLUNK_ALERT = new SplunkPivot({
-    name: 'Search Splunk (alerts)',
-    label: 'Query:',
-    kind: 'text',
-    splunk: {
-        toSplunk: function (pivotParameters, pivotCache) {
-            return `search ${SPLUNK_INDICES.ALL} ${pivotParameters.input}`
-        }
-    }
-});
 
 const ALERT_DEMO_NODE_COLORS = {
     'Host': 0,
@@ -47,7 +40,7 @@ const ALERT_DEMO_NODE_SIZES = {
     'Search': 1,
 };
 
-const ALERT_DEMO_ENCODINGS = {
+const alertDemoEncodings = {
     point: {
         pointColor: function(node) {
             node.pointColor = ALERT_DEMO_NODE_COLORS[node.type];
@@ -68,63 +61,98 @@ const FIREEYE_FIELDS = [
     `Message`,
 ]
 
-const SEARCH_FIREEYE = new SplunkPivot({
-    name: 'Search FireEye',
-    label: 'EventID:',
-    kind: 'text',
-    connections: FIREEYE_FIELDS,
-    encodings: ALERT_DEMO_ENCODINGS,
-
+export const searchAlertDemo = new SplunkPivot({
+    id: 'search-splunk-alert-botnet-demo',
+    name: 'Search Bootnet (all)',
+    pivotParameterKeys: ['query'],
+    pivotParametersUI: {
+        query: {
+            inputType: 'text',
+            label: 'Query:',
+            placeholder: 'Conficker'
+        }
+    },
     toSplunk: function (pivotParameters, pivotCache) {
-        return `search EventID=${ pivotParameters['input'] } ${SPLUNK_INDICES.FIREEYE} ${constructFieldString(this)}`;
+        return `search ${splunkIndices.ALL} ${pivotParameters.query}`
+    },
+    encodings: alertDemoEncodings
+});
+
+
+export const searchFireeyeDemo = new SplunkPivot({
+    id: 'search-splunk-fireeye-botnet-demo',
+    name: 'Search FireEye',
+    pivotParameterKeys: ['event'],
+    pivotParametersUI: {
+        event: {
+            inputType: 'text',
+            label: 'EventId:',
+            placeholder: 'BRO8ZA4A'
+        }
+    },
+    connections: FIREEYE_FIELDS,
+    encodings: alertDemoEncodings,
+    toSplunk: function (pivotParameters, pivotCache) {
+        return `search EventID=${pivotParameters.event} ${splunkIndices.FIREEYE} ${constructFieldString(this)}`;
     }
 });
 
-const FIREEYE = new SplunkPivot({
+export const expandFireeyeDemo = new SplunkPivot({
+    id: 'expand-fireeye-botnet-demo',
     name: 'Expand with Fire Eye',
-    label: 'Any field in:',
-    kind: 'button',
+    pivotParameterKeys: ['ref'],
+    pivotParametersUI: {
+        ref: {
+            inputType: 'pivotCombo',
+            label: 'Any field in:',
+        }
+    },
     connections: FIREEYE_FIELDS,
-    encodings: ALERT_DEMO_ENCODINGS,
-
+    encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
-        console.log('Pivot Cache', pivotCache);
         const attribs = 'EventID, Message, Fire Eye MD5, Fire Eye URL, Internal IPs, External IPs';
         const rawSearch =
-            `[{{${pivotParameters['input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.FIREEYE}]`;
+            `[{{${pivotParameters.ref}}}] -[${attribs}]-> [${splunkIndices.FIREEYE}]`;
         return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
     },
 });
 
-const BLUECOAT = new SplunkPivot({
+export const expandBlueCoatDemo = new SplunkPivot({
+    id: 'expand-bluecoat-botnet-demo',
     name: 'Expand with Blue Coat',
-    label: 'Any URL in:',
-    kind: 'button',
+    pivotParameterKeys: ['pivotRef'],
+    pivotParametersUI: {
+        pivotRef: {
+            inputType: 'pivotCombo',
+            label: 'Any URL in:',
+        }
+    },
     connections: [ 'Fire Eye URL', 'External IPs' ],
-    encodings: ALERT_DEMO_ENCODINGS,
-
+    encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
         const attribs = 'Fire Eye URL';
         const rawSearch =
-            `[{{${pivotParameters['input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.BLUECOAT}]`;
+            `[{{${pivotParameters.pivotRef}}}] -[${attribs}]-> [${splunkIndices.BLUECOAT}]`;
         return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
     }
 });
 
-const FIREWALL = new SplunkPivot({
+export const expandFirewallDemo = new SplunkPivot({
+    id: 'expand-firewall-botnet-demo',
     name: 'Expand with Firewall',
-    label: 'Any IP in:',
-    kind: 'button',
+    pivotParameterKeys: ['pRef'],
+    pivotParametersUI: {
+        pRef: {
+            inputType: 'pivotCombo',
+            label: 'Any IP in:',
+        }
+    },
     connections: [ 'External IPs', 'Internal IPs' ],
-    encodings: ALERT_DEMO_ENCODINGS,
+    encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
         const attribs = 'External IPs';
         const rawSearch =
-            `[{{${pivotParameters['input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.FIREWALL}]`;
+            `[{{${pivotParameters.pRef}}}] -[${attribs}]-> [${splunkIndices.FIREWALL}]`;
         return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
     }
 });
-
-export default [
-    SEARCH_SPLUNK_ALERT, SEARCH_FIREEYE, FIREEYE, BLUECOAT, FIREWALL
-];
