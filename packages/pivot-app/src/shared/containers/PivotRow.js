@@ -210,16 +210,13 @@ function renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, han
                 ({value: pivot.id, label: `Step ${index}`})
             )
         );
-    return (
-        <ComboSelector
-            key={`pcell-${id}-${paramKey}`}
-            pivotId={id}
-            fldKey={paramKey}
-            fldValue={paramValue}
-            setPivotAttributes={handlers.setPivotAttributes}
-            paramUI={paramUI}
-            options={options}
-        />
+
+    return renderComboCell(
+        id,
+        paramKey,
+        paramValue,
+        {options: options, ...paramUI},
+        handlers
     );
 }
 
