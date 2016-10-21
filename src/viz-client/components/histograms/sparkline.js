@@ -91,13 +91,26 @@ _masked:
 
 const typeHelpers = {
     nodata: {
-        computeBinMax: (() => 0)
+        computeBinMax: (() => 0),
+        isMasked: (() => false)
     },
     histogram: {
-        computeBinMax: (({bins}) => Math.max.apply(null, bins))
+        computeBinMax: (({bins}) => Math.max.apply(null, bins)),
+        isMasked: (({bins}) => {
+            for (var i = 0; i < bins.length; i++) {
+                if (bins[i] > 0) return true;
+            }
+            return false;
+        })
     },
     countBy: {
-        computeBinMax: (({bins}) => Math.max.apply(null, _.values(bins)))
+        computeBinMax: (({bins}) => Math.max.apply(null, _.values(bins))),
+        isMasked: (({bins})=> {
+            for (var i in bins) {
+                if (bins[i]) return true;
+            }
+            return false;
+        })
     }
 }
 
@@ -106,6 +119,11 @@ function computeBinMax ({bins, binType}) {
     return typeHelpers[binType].computeBinMax({bins});
 }
 
+
+function getIsMasked({bins, binValues, numBins, binType}={}) {
+    if (!binType) return false;
+    return typeHelpers[binType].isMasked({bins, binValues, numBins, binType});
+}
 
 
 
@@ -124,6 +142,7 @@ const propTypes = {
     colorValue: React.PropTypes.Array,
     showModal: React.PropTypes.bool,
     yAxisValue: React.PropTypes.string,
+    colorLegend: React.PropTypes.Array,
 
     onColorChange: React.PropTypes.func,
     onSizeChange: React.PropTypes.func,
@@ -192,7 +211,8 @@ export class Sparkline extends React.Component {
                     'log': Math.log,
                     'log2': Math.log2,
                     'log10': Math.log10
-                })[this.state.yAxisValue]
+                })[this.state.yAxisValue],
+            isMasked: getIsMasked(_masked)
             };
         summary.leftOffset = Math.floor((this.props.width - summary.binPixelWidth * summary.numBins) / 2);
         Object.freeze(summary);
@@ -241,6 +261,7 @@ export class Sparkline extends React.Component {
                                 }))
                         .map((binKey, binIdx) => {
                             return <BinColumn
+                                colorLegend={this.state.colorLegend}
                                 height={this.props.height}
                                 minBinHeightNoneEmpty={this.props.minBinHeightNoneEmpty}
                                 summary={summary}

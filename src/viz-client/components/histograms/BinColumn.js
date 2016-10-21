@@ -17,10 +17,10 @@ function formRow(label, entry) {
 }
 
 function BinColumn(
-    {   minBinHeightNoneEmpty, height,
+    {   minBinHeightNoneEmpty, height, colorLegend,
         summary: {
             numBins, binMax, binType, minValue, binPixelWidth, binRangeWidth,
-            leftOffset, dataType, yAxisValue, trans
+            leftOffset, dataType, yAxisValue, trans, isMasked
         },
         bin: {attribute, binIdx, binKey, globalCount, maskCount, binValue}}) {
 
@@ -32,6 +32,7 @@ function BinColumn(
         maskCount ?
             Math.max(height * trans(maskCount) / (trans(binMax) || 1), minBinHeightNoneEmpty)
             : 0;
+
 
     return (
         <OverlayTrigger trigger={['hover']}
@@ -65,7 +66,7 @@ function BinColumn(
                     }
                 </Popover>
             }>
-            <div className={styles['histogram-column']}
+            <div className={`${styles['histogram-column']} ${styles['is-masked-' + isMasked]} ${styles['is-encoded-' + !!colorLegend]}`}
                 data-binmax={binMax}
                 style={{
                     left: `${leftOffset + binIdx * binPixelWidth}px`,
@@ -94,7 +95,8 @@ BinColumn.propTypes = {
     summary: React.PropTypes.object,
     bin: React.PropTypes.object,
     height: React.PropTypes.number,
-    minBinHeightNoneEmpty: React.PropTypes.number
+    minBinHeightNoneEmpty: React.PropTypes.number,
+    colorLegend: React.PropTypes.Array
 };
 
 export default BinColumn;
