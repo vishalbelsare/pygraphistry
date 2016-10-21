@@ -17,8 +17,8 @@ export function makeTestUser(investigations, templates) {
         $ref(`investigationsById['${investigation.id}']`)
     );
 
-    const templatesRefs = _.keys(templates).map(id =>
-        $ref(`templatesById['${id}']`)
+    const templatesRefs = _.sortBy(templates, 'name').map(template =>
+        $ref(`templatesById['${template.id}']`)
     );
 
     return {
