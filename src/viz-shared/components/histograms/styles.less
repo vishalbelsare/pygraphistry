@@ -1,6 +1,95 @@
+@text-color: #646464;
+@left-padding: 10px;
+
+@color-neutral: #6B6868;
+@color-neutral-hover: #333;
+@color-highlight: rgb(15, 165, 197);
+@color-highlight-hover: #ff6600;
+
+.histogram-item {
+    padding: 0;
+    margin: 0;
+}
+
 .histogram {
-    height: 20em;
     overflow: auto;
     position: relative;
     p { margin: 1px 0; }
+}
+
+.histogram-title {
+    padding-left: @left-padding;
+    word-break: break-all;
+    color: @text-color;
+    font-weight: bold;
+    font-size: 11px;
+    overflow: auto;
+    span {
+        vertical-align: middle;
+    }
+}
+
+.histogram-icons {
+    float: right;
+    white-space: nowrap;
+}
+.histogram-close {
+    visibility: hidden;
+    font-size: 15px !important;
+
+    border: transparent;
+    background: transparent;
+    color: @text-color;
+    .histogram-item:hover & {
+        visibility: visible;
+        background: transparent;
+    }
+}
+.histogram-legend-pill {
+    border-radius: 15px;
+    padding-top: 0;
+    padding-bottom: 0;
+    pointer-events: none;
+    margin-left: 5px;
+}
+.histogram-size-encoding-icon {
+    border: none;
+    background-color: transparent;
+    color: red;
+    margin-right: 7px;
+}
+.histogram-picture-container {
+    width: 100%;
+    text-align: center;
+}
+
+.histogram-picture {
+    position: relative;
+    display: inline-block;
+    text-align: left;
+}
+
+.histogram-column {
+    display: inline-block;
+    height: 100%;
+    position: absolute;
+    cursor: crosshair;
+}
+.bar-rect {
+    display: inline-block;
+    pointer-events: none; //let column-bg etc. catch
+    position: absolute;
+    border-left: 1px solid rgba(255,255,255,0.2);
+}
+.bar-masked {
+    background-color: @color-highlight;
+    .histogram-column:hover & {
+        background-color: @color-highlight-hover;
+    }
+}
+.bar-global {
+    background-color: @color-neutral;
+    .histogram-column:hover & {
+        background-color: @color-neutral-hover;
+    }
 }
