@@ -1,8 +1,8 @@
 @text-color: #646464;
 @left-padding: 10px;
 
-@color-neutral: #6B6868;
-@color-neutral-hover: #333;
+@color-neutral: #BBB;
+@color-neutral-hover: #666;
 @color-highlight: rgb(15, 165, 197);
 @color-highlight-hover: #ff6600;
 
@@ -51,6 +51,7 @@
     padding-bottom: 0;
     pointer-events: none;
     margin-left: 5px;
+    margin-bottom: 5px; //avoid collision with filter
 }
 .histogram-size-encoding-icon {
     border: none;
@@ -74,22 +75,62 @@
     height: 100%;
     position: absolute;
     cursor: crosshair;
+
+    .has-filter &.is-filter-true {
+        filter: grayscale(100%);
+    }
+    .has-filter &.is-filter-false {
+        border-top: 1px dashed @color-neutral;
+        margin-top: -1px;
+        &.leftest {
+            border-left: 1px dashed @color-neutral;
+        }
+        &.rightest {
+            border-right: 1px dashed @color-neutral;
+        }
+
+    }
+    &:hover {
+        border: 1px solid @color-neutral !important;
+        margin-top: -1px;
+    }
+    .histogram.has-filter .histogram-picture:hover &.is-filter-true:not(:hover),
+    .histogram:not(.has-filter) .histogram-picture:hover &:not(:hover) {
+        opacity: 0.3;
+    }
 }
 .bar-rect {
     display: inline-block;
     pointer-events: none; //let column-bg etc. catch
     position: absolute;
-    border-left: 1px solid rgba(255,255,255,0.2);
+    width: 100%;
+}
+.bar-bg {
+    height: 100%;
+}
+.bar-bg-bg {
+    opacity: 0.15;
+    .is-masked-true & {
+        background: white !important;
+    }
+}
+.bar-bg-fade {
+    background: linear-gradient(to bottom, #fff 0, rgba(255,255,255,0) 50%, #fff 100%);
 }
 .bar-masked {
-    background-color: @color-highlight;
+    border: 1px solid rgba(0,0,0,0.4); //less transparent than global
+    margin-right: -1px;
     .histogram-column:hover & {
-        background-color: @color-highlight-hover;
+        background-color: @color-highlight-hover !important;
+    }
+    .histogram.has-filter .is-filter-true & {
+        background-color: @color-neutral-hover !important;
     }
 }
 .bar-global {
-    background-color: @color-neutral;
-    .histogram-column:hover & {
-        background-color: @color-neutral-hover;
+    border: 1px solid rgba(0,0,0,0.2);
+    margin-right: -1px;
+    .histogram.has-filter .is-filter-true &, .is-masked-true & {
+        background-color: @color-neutral !important;
     }
 }

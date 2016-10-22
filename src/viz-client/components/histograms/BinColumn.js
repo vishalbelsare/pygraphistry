@@ -17,10 +17,10 @@ function formRow(label, entry) {
 }
 
 function BinColumn(
-    {   minBinHeightNoneEmpty, height,
+    {   minBinHeightNoneEmpty, height, colorLegend, enabled, filterBounds,
         summary: {
             numBins, binMax, binType, minValue, binPixelWidth, binRangeWidth,
-            leftOffset, dataType, yAxisValue, trans
+            leftOffset, dataType, yAxisValue, trans, isMasked
         },
         bin: {attribute, binIdx, binKey, globalCount, maskCount, binValue}}) {
 
@@ -32,6 +32,7 @@ function BinColumn(
         maskCount ?
             Math.max(height * trans(maskCount) / (trans(binMax) || 1), minBinHeightNoneEmpty)
             : 0;
+
 
     return (
         <OverlayTrigger trigger={['hover']}
@@ -65,28 +66,40 @@ function BinColumn(
                     }
                 </Popover>
             }>
-            <div className={styles['histogram-column']}
+            <div className={`${styles['histogram-column']}
+                    ${styles['is-masked-' + isMasked]}
+                    ${styles['is-filter-' + !enabled]}
+                    ${ (filterBounds||{}).leftest ? styles.leftest : ''}
+                    ${ (filterBounds||{}).rightest ? styles.rightest : ''}`}
                 data-binmax={binMax}
                 style={{
                     left: `${leftOffset + binIdx * binPixelWidth}px`,
                     width: `${binPixelWidth}px`
                 }}>
+                <div className={`${styles['bar-rect']} ${styles['bar-bg']} ${styles['bar-bg-bg']}`}
+                    style={{
+                        backgroundColor: colorLegend ? colorLegend[binIdx] : 'transparent'
+                    }} />
+                <div className={`${styles['bar-rect']} ${styles['bar-bg']} ${styles['bar-bg-fade']}`}
+                    style={{
+
+                    }} />
                <div className={`${styles['bar-global']} ${styles['bar-rect']}`}
-                data-count={globalCount}
-                style={{
-                    width: `${binPixelWidth}px`,
-                    height: `${globalHeightCalc}px`,
-                    top: `${height - globalHeightCalc}`,
-                    visibility: globalCount ? 'visible' : 'hidden'
-                }} />
+                    data-count={globalCount}
+                    style={{
+                        height: `${globalHeightCalc}px`,
+                        top: `${height - globalHeightCalc}`,
+                        backgroundColor: colorLegend ? colorLegend[binIdx] : '#BBB',
+                        visibility: globalCount ? 'visible' : 'hidden'
+                    }} />
                <div className={`${styles['bar-masked']} ${styles['bar-rect']}`}
-               data-count={maskCount}
-                style={{
-                    width: `${binPixelWidth}px`,
-                    height: `${maskHeightCalc}px`,
-                    top: `${height - maskHeightCalc}px`,
-                    visibility: maskCount ? 'visible' : 'hidden'
-                }} />
+                    data-count={maskCount}
+                    style={{
+                        height: `${maskHeightCalc}px`,
+                        top: `${height - maskHeightCalc}px`,
+                        backgroundColor: colorLegend ? colorLegend[binIdx] : 'rgb(15, 165, 197)',
+                        visibility: maskCount ? 'visible' : 'hidden'
+                    }} />
             </div>
         </OverlayTrigger>);
 }
@@ -94,7 +107,9 @@ BinColumn.propTypes = {
     summary: React.PropTypes.object,
     bin: React.PropTypes.object,
     height: React.PropTypes.number,
-    minBinHeightNoneEmpty: React.PropTypes.number
+    minBinHeightNoneEmpty: React.PropTypes.number,
+    colorLegend: React.PropTypes.Array,
+    filterBounds: React.PropTypes.object
 };
 
 export default BinColumn;

@@ -91,13 +91,26 @@ _masked:
 
 const typeHelpers = {
     nodata: {
-        computeBinMax: (() => 0)
+        computeBinMax: (() => 0),
+        isMasked: (() => false)
     },
     histogram: {
-        computeBinMax: (({bins}) => Math.max.apply(null, bins))
+        computeBinMax: (({bins}) => Math.max.apply(null, bins)),
+        isMasked: (({bins}) => {
+            for (var i = 0; i < bins.length; i++) {
+                if (bins[i] > 0) return true;
+            }
+            return false;
+        })
     },
     countBy: {
-        computeBinMax: (({bins}) => Math.max.apply(null, _.values(bins)))
+        computeBinMax: (({bins}) => Math.max.apply(null, _.values(bins))),
+        isMasked: (({bins})=> {
+            for (var i in bins) {
+                if (bins[i]) return true;
+            }
+            return false;
+        })
     }
 }
 
@@ -106,6 +119,11 @@ function computeBinMax ({bins, binType}) {
     return typeHelpers[binType].computeBinMax({bins});
 }
 
+
+function getIsMasked({bins, binValues, numBins, binType}={}) {
+    if (!binType) return false;
+    return typeHelpers[binType].isMasked({bins, binValues, numBins, binType});
+}
 
 
 
@@ -124,6 +142,8 @@ const propTypes = {
     colorValue: React.PropTypes.Array,
     showModal: React.PropTypes.bool,
     yAxisValue: React.PropTypes.string,
+    colorLegend: React.PropTypes.Array,
+    filterValue: React.PropTypes.object,
 
     onColorChange: React.PropTypes.func,
     onSizeChange: React.PropTypes.func,
@@ -135,6 +155,10 @@ const propTypes = {
     attribute: React.PropTypes.string.isRequired,
     type: React.PropTypes.string.isRequired
 };
+
+const rainbow = [ "rgb(166, 206, 227)", "rgb(31, 120, 180)", "rgb(178, 223, 138)", "rgb(51, 160, 44)", "rgb(251, 154, 153)", "rgb(227, 26, 28)", "rgb(253, 191, 111)", "rgb(255, 127, 0)", "rgb(202, 178, 214)", "rgb(106, 61, 154)", "rgb(255, 255, 153)", "rgb(177, 89, 40)" ];
+const colors1 = _.range(0, 30).map((i,idx,arr) => rainbow[i % rainbow.length]);
+const colors2 = _.range(0, 10).map((i,idx,arr)=>`rgb(${Math.round(i*255/arr.length)},${Math.round(i*255/arr.length)},255)`);
 
 const defaultProps = {
     sizeValue: [],
@@ -159,6 +183,28 @@ export class Sparkline extends React.Component {
                 //encoding info
                 ['sizeValue', 'colorValue', 'showModal', 'yAxisValue']
                 .map( (k) => [k, this.props[k]] ));
+        this.state.colorLegend =
+            {
+                'degree': colors1,
+                'community_infomap': colors2,
+                'community_louvain': colors1,
+
+                'ip': colors1,
+                'bytes': colors2,
+                'port': colors1,
+                'time': colors2
+
+            }[props.attribute];
+        this.state.filterValue =
+            {
+                'degree': true,
+                //'community_infomap': true,
+                'betweenness': true,
+
+                'ip': true,
+                'bytes': true,
+
+            }[props.attribute] || false;
     }
 
     handleGenericChange (field, handler, value) {
@@ -192,14 +238,17 @@ export class Sparkline extends React.Component {
                     'log': Math.log,
                     'log2': Math.log2,
                     'log10': Math.log10
-                })[this.state.yAxisValue]
+                })[this.state.yAxisValue],
+            isMasked: getIsMasked(_masked)
             };
         summary.leftOffset = Math.floor((this.props.width - summary.binPixelWidth * summary.numBins) / 2);
         Object.freeze(summary);
 
-
         return (
-            <div className={styles['histogram']}>
+            <div className={`
+                ${styles['histogram']}
+                ${this.state.filterValue ? styles['has-filter']:''}
+                ${this.state.colorLegend ? styles['has-coloring'] : ''}`}>
 
                 <div className={styles['histogram-title']}>
 
@@ -241,6 +290,15 @@ export class Sparkline extends React.Component {
                                 }))
                         .map((binKey, binIdx) => {
                             return <BinColumn
+                                enabled={!this.state.filterValue || (binIdx > 2 && binIdx < 10)}
+                                filterBounds={
+                                    !this.state.filterValue ? undefined
+                                    : {
+                                        leftest: binIdx === 3,
+                                        rightest: binIdx === 9
+                                    }
+                                }
+                                colorLegend={this.state.colorLegend}
                                 height={this.props.height}
                                 minBinHeightNoneEmpty={this.props.minBinHeightNoneEmpty}
                                 summary={summary}
