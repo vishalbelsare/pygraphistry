@@ -150,6 +150,9 @@ const propTypes = {
     onModalChange: React.PropTypes.func.isRequired,
     onYAxisChange: React.PropTypes.func,
 
+    onBinMouseDown: React.PropTypes.func,
+    onBinMouseOver: React.PropTypes.func,
+
     global: React.PropTypes.object,
     masked: React.PropTypes.object,
     attribute: React.PropTypes.string.isRequired,
@@ -288,7 +291,7 @@ export class Sparkline extends React.Component {
                                     if (b < a) return -1;
                                     return 0;
                                 }))
-                        .map((binKey, binIdx) => {
+                        .map((binKey, binIdx, bins) => {
                             return <BinColumn
                                 enabled={!this.state.filterValue || (binIdx > 2 && binIdx < 10)}
                                 filterBounds={
@@ -296,6 +299,22 @@ export class Sparkline extends React.Component {
                                     : {
                                         leftest: binIdx === 3,
                                         rightest: binIdx === 9
+                                    }
+                                }
+                                onBinMouseDown={
+                                    (i, evt) => {
+                                        console.log('mouse down on bin', i)
+                                        if (this.props.onBinMouseDown) {
+                                            this.props.onBinMouseDown(bins, bins[i], i, evt);
+                                        }
+                                    }
+                                }
+                                onBinMouseOver={
+                                    (i, evt) => {
+                                        console.log('mouse over on bin', i)
+                                        if (this.props.onBinMouseOver) {
+                                            this.props.onBinMouseOver(bins, bins[i], i, evt);
+                                        }
                                     }
                                 }
                                 colorLegend={this.state.colorLegend}
