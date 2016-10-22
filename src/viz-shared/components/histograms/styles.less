@@ -51,6 +51,7 @@
     padding-bottom: 0;
     pointer-events: none;
     margin-left: 5px;
+    margin-bottom: 5px; //avoid collision with filter
 }
 .histogram-size-encoding-icon {
     border: none;
@@ -117,7 +118,8 @@
     background: linear-gradient(to bottom, #fff 0, rgba(255,255,255,0) 50%, #fff 100%);
 }
 .bar-masked {
-    border-left: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(0,0,0,0.4); //less transparent than global
+    margin-right: -1px;
     .histogram-column:hover & {
         background-color: @color-highlight-hover !important;
     }
@@ -126,7 +128,8 @@
     }
 }
 .bar-global {
-    border-left: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(0,0,0,0.2);
+    margin-right: -1px;
     .histogram.has-filter .is-filter-true &, .is-masked-true & {
         background-color: @color-neutral !important;
     }
