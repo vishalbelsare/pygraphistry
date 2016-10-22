@@ -75,26 +75,33 @@
     position: absolute;
     cursor: crosshair;
 
-    .histogram-picture:hover &:not(:hover) {
+    .has-filter &.is-filter-true {
+        filter: grayscale(100%);
+    }
+    .has-filter &.is-filter-false {
+        border-top: 1px dashed @color-neutral;
+        margin-top: -1px;
+        &.leftest {
+            border-left: 1px dashed @color-neutral;
+        }
+        &.rightest {
+            border-right: 1px dashed @color-neutral;
+        }
+
+    }
+    &:hover {
+        border: 1px solid @color-neutral !important;
+        margin-top: -1px;
+    }
+    .histogram.has-filter .histogram-picture:hover &.is-filter-true:not(:hover),
+    .histogram:not(.has-filter) .histogram-picture:hover &:not(:hover) {
         opacity: 0.3;
     }
-
-    &:hover {
-        //border-top: 2px solid #BBB;
-        //margin-top: -2px;
-    }
-
-    /*
-    &.filter-outside {
-        filter: grayscale(50%);
-    }
-    */
 }
 .bar-rect {
     display: inline-block;
     pointer-events: none; //let column-bg etc. catch
     position: absolute;
-    border-left: 1px solid rgba(255,255,255,0.2);
     width: 100%;
 }
 .bar-bg {
@@ -108,24 +115,19 @@
 }
 .bar-bg-fade {
     background: linear-gradient(to bottom, #fff 0, rgba(255,255,255,0) 50%, #fff 100%);
-    .histogram-column:hover & {
-        background: white;
-        border-left: 1px solid rgba(0,0,0,0.1);
-        border-right: 1px solid rgba(0,0,0,0.1);
-    }
-
 }
 .bar-masked {
+    border-left: 1px solid rgba(255,255,255,0.2);
     .histogram-column:hover & {
         background-color: @color-highlight-hover !important;
     }
+    .histogram.has-filter .is-filter-true & {
+        background-color: @color-neutral-hover !important;
+    }
 }
 .bar-global {
-
-    .is-masked-false & {
-        background-color: @color-neutral;
-    }
-    .is-masked-true & {
+    border-left: 1px solid rgba(255,255,255,0.2);
+    .histogram.has-filter .is-filter-true &, .is-masked-true & {
         background-color: @color-neutral !important;
     }
 }

@@ -143,6 +143,7 @@ const propTypes = {
     showModal: React.PropTypes.bool,
     yAxisValue: React.PropTypes.string,
     colorLegend: React.PropTypes.Array,
+    filterValue: React.PropTypes.object,
 
     onColorChange: React.PropTypes.func,
     onSizeChange: React.PropTypes.func,
@@ -186,12 +187,24 @@ export class Sparkline extends React.Component {
             {
                 'degree': colors1,
                 'community_infomap': colors2,
+                'community_louvain': colors1,
 
                 'ip': colors1,
-                'bytes': colors2
+                'bytes': colors2,
+                'port': colors1,
+                'time': colors2
 
             }[props.attribute];
+        this.state.filterValue =
+            {
+                'degree': true,
+                'community_infomap': true,
+                'betweenness': true,
 
+                'ip': true,
+                'bytes': true,
+
+            }[props.attribute] || false;
     }
 
     handleGenericChange (field, handler, value) {
@@ -231,9 +244,11 @@ export class Sparkline extends React.Component {
         summary.leftOffset = Math.floor((this.props.width - summary.binPixelWidth * summary.numBins) / 2);
         Object.freeze(summary);
 
-
         return (
-            <div className={styles['histogram']}>
+            <div className={`
+                ${styles['histogram']}
+                ${this.state.filterValue ? styles['has-filter']:''}
+                ${this.state.colorLegend ? styles['has-coloring'] : ''}`}>
 
                 <div className={styles['histogram-title']}>
 
@@ -275,6 +290,14 @@ export class Sparkline extends React.Component {
                                 }))
                         .map((binKey, binIdx) => {
                             return <BinColumn
+                                enabled={!this.state.filterValue || (binIdx > 2 && binIdx < 10)}
+                                filterBounds={
+                                    !this.state.filterValue ? undefined
+                                    : {
+                                        leftest: binIdx === 3,
+                                        rightest: binIdx === 9
+                                    }
+                                }
                                 colorLegend={this.state.colorLegend}
                                 height={this.props.height}
                                 minBinHeightNoneEmpty={this.props.minBinHeightNoneEmpty}

@@ -17,7 +17,7 @@ function formRow(label, entry) {
 }
 
 function BinColumn(
-    {   minBinHeightNoneEmpty, height, colorLegend,
+    {   minBinHeightNoneEmpty, height, colorLegend, enabled, filterBounds,
         summary: {
             numBins, binMax, binType, minValue, binPixelWidth, binRangeWidth,
             leftOffset, dataType, yAxisValue, trans, isMasked
@@ -66,7 +66,11 @@ function BinColumn(
                     }
                 </Popover>
             }>
-            <div className={`${styles['histogram-column']} ${styles['is-masked-' + isMasked]} ${styles['is-encoded-' + !!colorLegend]}`}
+            <div className={`${styles['histogram-column']}
+                    ${styles['is-masked-' + isMasked]}
+                    ${styles['is-filter-' + !enabled]}
+                    ${ (filterBounds||{}).leftest ? styles.leftest : ''}
+                    ${ (filterBounds||{}).rightest ? styles.rightest : ''}`}
                 data-binmax={binMax}
                 style={{
                     left: `${leftOffset + binIdx * binPixelWidth}px`,
@@ -104,7 +108,8 @@ BinColumn.propTypes = {
     bin: React.PropTypes.object,
     height: React.PropTypes.number,
     minBinHeightNoneEmpty: React.PropTypes.number,
-    colorLegend: React.PropTypes.Array
+    colorLegend: React.PropTypes.Array,
+    filterBounds: React.PropTypes.object
 };
 
 export default BinColumn;
