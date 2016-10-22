@@ -90,9 +90,8 @@ export default class EncodingPicker extends React.Component {
 
 
     handleSelectSizeChange (newEnabled) {
-        const sizeValue = newEnabled ? ['size'] : [];
         if (this.props.onSizeChange) {
-            this.props.onSizeChange(sizeValue);
+            this.props.onSizeChange(newEnabled ? ['size'] : []);
         }
     }
 
