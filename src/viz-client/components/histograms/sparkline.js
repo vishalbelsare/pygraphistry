@@ -10,6 +10,21 @@ import EncodingPicker from './EncodingPicker.js';
 import { SizeLegendIndicator, YAxisLegendIndicator } from './SparklineComponents.js';
 import BinColumn from './BinColumn.js';
 
+/***********
+
+INSTRUCTIONS:
+    -- Quinn: control/refactor:
+        * colors: colorLegend, colorValue, onColorChange
+        * sizes: sizeValue, onSizeChange
+    -- Paul: control/refactor:
+        * filters: filterValue, onBinMouseDown, onBinMouseOut
+    -- When done, change the module export to Sparkline (instead of SparklineTest)
+
+
+
+*************/
+
+
 
 /*
 The histograms data structure is an adventure:
@@ -150,21 +165,24 @@ const propTypes = {
     onModalChange: React.PropTypes.func.isRequired,
     onYAxisChange: React.PropTypes.func,
 
+    onBinMouseDown: React.PropTypes.func,
+    onBinMouseOver: React.PropTypes.func,
+
     global: React.PropTypes.object,
     masked: React.PropTypes.object,
     attribute: React.PropTypes.string.isRequired,
     type: React.PropTypes.string.isRequired
 };
 
-const rainbow = [ "rgb(166, 206, 227)", "rgb(31, 120, 180)", "rgb(178, 223, 138)", "rgb(51, 160, 44)", "rgb(251, 154, 153)", "rgb(227, 26, 28)", "rgb(253, 191, 111)", "rgb(255, 127, 0)", "rgb(202, 178, 214)", "rgb(106, 61, 154)", "rgb(255, 255, 153)", "rgb(177, 89, 40)" ];
-const colors1 = _.range(0, 30).map((i,idx,arr) => rainbow[i % rainbow.length]);
-const colors2 = _.range(0, 10).map((i,idx,arr)=>`rgb(${Math.round(i*255/arr.length)},${Math.round(i*255/arr.length)},255)`);
 
 const defaultProps = {
     sizeValue: [],
     colorValue: [],
     showModal: false,
     yAxisValue: 'none',
+
+    onBinMouseDown: _.identity,
+    onBinMouseOver: _.identity,
 
     width: 298 - 20, //anything less than the panel width
     height: 50,
@@ -174,37 +192,14 @@ const defaultProps = {
 
 
 
-export class Sparkline extends React.Component {
+class Sparkline extends React.Component {
     constructor(props, context) {
         super(props, context);
         this.handleGenericChange = this.handleGenericChange.bind(this);
         this.state =
             _.object(
-                //encoding info
-                ['sizeValue', 'colorValue', 'showModal', 'yAxisValue']
+                ['showModal', 'yAxisValue']
                 .map( (k) => [k, this.props[k]] ));
-        this.state.colorLegend =
-            {
-                'degree': colors1,
-                'community_infomap': colors2,
-                'community_louvain': colors1,
-
-                'ip': colors1,
-                'bytes': colors2,
-                'port': colors1,
-                'time': colors2
-
-            }[props.attribute];
-        this.state.filterValue =
-            {
-                'degree': true,
-                //'community_infomap': true,
-                'betweenness': true,
-
-                'ip': true,
-                'bytes': true,
-
-            }[props.attribute] || false;
     }
 
     handleGenericChange (field, handler, value) {
@@ -247,22 +242,22 @@ export class Sparkline extends React.Component {
         return (
             <div className={`
                 ${styles['histogram']}
-                ${this.state.filterValue ? styles['has-filter']:''}
-                ${this.state.colorLegend ? styles['has-coloring'] : ''}`}>
+                ${this.props.filterValue ? styles['has-filter']:''}
+                ${this.props.colorLegend ? styles['has-coloring'] : ''}`}>
 
                 <div className={styles['histogram-title']}>
 
                     <div className={styles['histogram-icons']}>
-                        <SizeLegendIndicator sizeValue={this.state.sizeValue} />
-                        <YAxisLegendIndicator yAxisValue={this.state.yAxisValue} />
+                        <SizeLegendIndicator sizeValue={this.props.sizeValue} />
+                        <YAxisLegendIndicator yAxisValue={this.props.yAxisValue} />
                         <EncodingPicker
                             id={`histogram-encodings-picker-${attribute}`}
                             attribute={attribute}
                             type={type}
-                            sizeValue={this.state.sizeValue}
-                            colorValue={this.state.colorValue}
                             showModal={this.state.showModal}
                             yAxisValue={this.state.yAxisValue}
+                            sizeValue={this.props.sizeValue}
+                            colorValue={this.props.colorValue}
                             onSizeChange={ this.handleGenericChange.bind(this, 'sizeValue', 'onSizeChange') }
                             onColorChange={ this.handleGenericChange.bind(this, 'colorValue', 'onColorChange') }
                             onModalChange={ this.handleGenericChange.bind(this, 'showModal', 'onModalChange') }
@@ -288,17 +283,28 @@ export class Sparkline extends React.Component {
                                     if (b < a) return -1;
                                     return 0;
                                 }))
-                        .map((binKey, binIdx) => {
+                        .map((binKey, binIdx, bins) => {
                             return <BinColumn
-                                enabled={!this.state.filterValue || (binIdx > 2 && binIdx < 10)}
+                                enabled={!this.props.filterValue || this.props.filterValue[binIdx]}
                                 filterBounds={
-                                    !this.state.filterValue ? undefined
+                                    !this.props.filterValue ? undefined
+                                    : !this.props.filterValue[binIdx] ? undefined
                                     : {
-                                        leftest: binIdx === 3,
-                                        rightest: binIdx === 9
+                                        leftest: binIdx === 0 || !this.props.filterValue[binIdx - 1],
+                                        rightest: binIdx === (bins.length - 1) || !this.props.filterValue[binIdx + 1]
                                     }
                                 }
-                                colorLegend={this.state.colorLegend}
+                                onBinMouseDown={
+                                    (i, evt) => {
+                                        this.props.onBinMouseDown(bins, bins[i], i, evt);
+                                    }
+                                }
+                                onBinMouseOver={
+                                    (i, evt) => {
+                                        this.props.onBinMouseOver(bins, bins[i], i, evt);
+                                    }
+                                }
+                                colorLegend={this.props.colorLegend}
                                 height={this.props.height}
                                 minBinHeightNoneEmpty={this.props.minBinHeightNoneEmpty}
                                 summary={summary}
@@ -327,4 +333,80 @@ export class Sparkline extends React.Component {
 
 Sparkline.propTypes = propTypes;
 Sparkline.defaultProps = defaultProps;
+
+
+
+//TODO only for testing/demoing; remove and directly export Sparkline
+function SparklineTest(props) {
+    const rainbow = [ "rgb(166, 206, 227)", "rgb(31, 120, 180)", "rgb(178, 223, 138)", "rgb(51, 160, 44)", "rgb(251, 154, 153)", "rgb(227, 26, 28)", "rgb(253, 191, 111)", "rgb(255, 127, 0)", "rgb(202, 178, 214)", "rgb(106, 61, 154)", "rgb(255, 255, 153)", "rgb(177, 89, 40)" ];
+    const colors1 = _.range(0, 30).map((i,idx,arr) => rainbow[i % rainbow.length]);
+    const colors2 = _.range(0, 10).map((i,idx,arr)=>`rgb(${Math.round(i*255/arr.length)},${Math.round(i*255/arr.length)},255)`);
+
+    return <Sparkline
+        { ...props }
+        onBinMouseOver={(bins, bin, binIdx, evt) => {
+            console.log('mouse over bin', i, bin.attribute);
+        }}
+        onBinMouseDown={(bins, bin, binIdx, evt) => {
+            console.log('mouse down bin', i, bin.attribute);
+        }}
+        filterValue={
+            props.filterValue ||
+            {
+                'degree': {3:true, 4:true, 5:true, 6:true},
+                //'community_infomap': true,
+                'betweenness': {3:true, 4:true, 5:true, 6:true},
+
+                'ip': {3:true, 4:true, 5:true, 6:true},
+                'bytes': {3:true, 4:true, 5:true, 6:true},
+
+            }[props.attribute]
+        }
+        colorLegend={
+            {
+                'degree': colors1,
+                'community_infomap': colors2,
+                'community_louvain': colors1,
+
+                'ip': colors1,
+                'bytes': colors2,
+                'port': colors1,
+                'time': colors2
+
+            }[props.attribute]
+        }
+
+        sizeValue={
+            {
+                'degree': ['size'],
+                'ip': ['size'],
+                'community_infomap': [],
+                'bytes': []
+            }[props.attribute]
+        }
+
+        colorValue={
+            {
+                'degree': {value: 'color-continuous'},
+                'community_infomap': {value: 'color-categorical'},
+                'community_louvain': {value: 'color-continuous'},
+
+                'ip': {value: 'color-continuous'},
+                'bytes': {value: 'color-categorical'},
+                'port': {value: 'color-continuous'},
+                'time': {value: 'color-categorical'}
+            }[props.attribute]
+        }
+
+
+    />;
+}
+
+
+///////
+
+export {
+    //Sparkline
+    SparklineTest as Sparkline
+}
 

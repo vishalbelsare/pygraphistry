@@ -18,6 +18,7 @@ function formRow(label, entry) {
 
 function BinColumn(
     {   minBinHeightNoneEmpty, height, colorLegend, enabled, filterBounds,
+        onBinMouseDown, onBinMouseOver,
         summary: {
             numBins, binMax, binType, minValue, binPixelWidth, binRangeWidth,
             leftOffset, dataType, yAxisValue, trans, isMasked
@@ -72,6 +73,8 @@ function BinColumn(
                     ${ (filterBounds||{}).leftest ? styles.leftest : ''}
                     ${ (filterBounds||{}).rightest ? styles.rightest : ''}`}
                 data-binmax={binMax}
+                onMouseDown={ onBinMouseDown.bind(this, binIdx) }
+                onMouseOver={ onBinMouseOver.bind(this, binIdx) }
                 style={{
                     left: `${leftOffset + binIdx * binPixelWidth}px`,
                     width: `${binPixelWidth}px`
@@ -109,7 +112,9 @@ BinColumn.propTypes = {
     height: React.PropTypes.number,
     minBinHeightNoneEmpty: React.PropTypes.number,
     colorLegend: React.PropTypes.Array,
-    filterBounds: React.PropTypes.object
+    filterBounds: React.PropTypes.object,
+    onBinMouseDown: React.PropTypes.func,
+    onBinMouseOver: React.PropTypes.func
 };
 
 export default BinColumn;
