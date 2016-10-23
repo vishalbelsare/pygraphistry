@@ -16,7 +16,7 @@ import styles from './style.less';
 
 
 
-const defaultProps = {
+const propTypes = {
     opacity: React.PropTypes.number,
     background: React.PropTypes.any,
     foreground: React.PropTypes.any,
@@ -34,7 +34,33 @@ const defaultProps = {
     labels: React.PropTypes.array
 };
 
+const defaultProps = {
+    opacity: 1,
+    poiEnabled: true,
+    enabled: true,
+    onClick: _.identity,
+    onFilter: _.identity,
+    onExclude: _.identity,
+    onPinChange: _.identity,
+    hideNull: true,
+    labels: [
+          {
+            type: 'point',
+            id: 'bullwinkle',
+            title: "the greatest moose",
 
+            showFull: true, // expanded when :hover or .on
+            pinned: true,
+
+            x: 100,
+            y: 200,
+
+            fields: {
+
+
+            }
+        }]
+}
 
 function LabelTitle (props) {
     return (
@@ -80,9 +106,14 @@ function LabelContents (props) {
         <div className={styles['graph-label-contents']}>
             <table>
                 <tbody>{
-                    _.pairs(props.label.fields).map( (key, value) => {
-                        return <LabelRow {...props} key={key} value={value}/>
-                    })
+                    _.pairs(props.label.fields)
+                        .sort(([kA], [kB]) =>
+                            kA.toLowerCase() < kB.toLowerCase() ? -1
+                            kA.toLowerCase() > kB.toLowerCase() ? 1
+                            : 0)
+                        .map( ([key, value]) => {
+                            return <LabelRow {...props} key={key} value={value}/>
+                        })
                 }</tbody>
             </table>
         </div>);
@@ -91,6 +122,11 @@ function LabelContents (props) {
 
 
 class DataLabel extends React.Component {
+
+    constructor(props) {
+        super(props);
+        console.log('label props', props);
+    }
 
     render () {
         return (<div className={`
@@ -112,11 +148,15 @@ class DataLabel extends React.Component {
 }
 
 class Labels extends React.Component {
+
+    constructor(props) {
+        super(props);
+        console.log('labels props', props);
+    }
+
     render() {
 
         if (!this.props.enabled) return <div className={styles['labels-container']} />;
-
-        console.log('labels props', this.props);
 
         return (
             <div className={styles['labels-container']}>
@@ -131,7 +171,8 @@ class Labels extends React.Component {
 
 
 
-Labels.propTypes = defaultProps;
+Labels.propTypes = propTypes;
+Labels.defaultProps = defaultProps;
 
 Labels = getContext({
     renderState: PropTypes.object,

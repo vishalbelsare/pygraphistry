@@ -32,50 +32,6 @@ let View = ({
     const isBottomPanelOpen = !!panels.bottom;
     return (
         <div style={{ position: `absolute`, width: `100%`, height: `100%` }}>
-            <Labels
-                opacity={0.9}
-                background="red"
-                foreground="blue"
-
-                poiEnabled={true} //our labels
-                enabled={true} //even if not ours, may want a stub for theirs
-
-                //ideally, icon states would also reflect whether there already is a filter/exclude/encode
-                onClick={ (id, type, obj) => console.log('label click', {id, type, obj}) }
-                onFilter={ (id, type, obj) => console.log('request to create filter', {id, type, obj})}
-                onExclude={ (id, type, obj) => console.log('request to create exclude', {id, type, obj})}
-                onPinChange={ (id, type, obj, status) => console.log('request to change whether pinned', {id, type, obj, status})}
-
-                hideNull={true}
-                selectedColumns={ //null => all
-                  {
-                    'field1': true,
-                    'field2': true,
-                    'field3': true,
-                    'field5': true,
-                    'field10': true
-                  }
-                }
-
-                labels={[
-                  {
-                    type: 'point',
-                    id: 'bullwinkle',
-                    title: "the greatest moose",
-
-                    showFull: true, // expanded when :hover or .on
-                    pinned: true,
-
-                    x: 100,
-                    y: 200,
-
-                    fields: {
-
-
-                    }
-                }
-
-              ]}/>
             <Scene data={scene}
                    mouseMove={sceneMouseMove}
                    touchStart={sceneTouchStart}
