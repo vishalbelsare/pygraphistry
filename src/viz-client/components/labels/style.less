@@ -1,0 +1,43 @@
+//TODO will this import twice?
+@import '~font-awesome/less/font-awesome.less';
+
+.labels-container {
+    z-index: 3300;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+}
+
+.graph-label {
+
+    .graph-label-container {
+
+        &.graph-label-point { }
+
+        &.graph-label-edge { }
+
+    }
+
+}
+
+
+.graph-label-title {
+
+}
+
+.pin {
+    .graph-label:not(.clicked) & {
+        display: none;
+    }
+}
+
+.graph-label-contents {
+
+}
+
+
+
