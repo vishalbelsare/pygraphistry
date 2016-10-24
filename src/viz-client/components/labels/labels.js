@@ -52,47 +52,75 @@ const defaultProps = {
             showFull: true, // expanded when :hover or .on
             pinned: true,
 
-            x: 100,
-            y: 200,
+            x: 200,
+            y: 30,
 
-            fields: {
-
-
-            }
+            fields: [
+                //{key, value, ?displayName, dataType: 'color' or ?}
+                {key: 'field01', value: 0},
+                {key: 'field02', value: 'hello'},
+                {key: 'field03', value: 'world'},
+                {key: 'field04', value: 2000},
+                {key: 'field05', value: '#f00', dataType: 'color'},
+                {key: 'field06', value: '#ff0000', dataType: 'color'},
+                {key: 'field07', value: undefined},
+                {key: 'field08', value: null},
+                {key: 'field09', value: 'another'},
+                {key: 'field10isareallylongnameok', value: 'and another'},
+                {key: 'field11 is also a really long one', value: 24},
+                {key: 'field12', value: 'field value is quite long and will likely overflow'},
+                {key: 'field13', value: 'fieldvalueisquitelongandwilllikelyoverflow'},
+                {key: 'field14', value: 'and another'},
+                {key: 'field15', value: 'and another'},
+                {key: 'field16', value: 'and another'},
+                {key: 'field17', value: 'and another'}
+            ]
         }]
 }
 
-function LabelTitle (props) {
+function LabelTitle ({onPinChange, label}) {
+    const title = label.title;
+    const type = label.type;
     return (
         <div className={styles['graph-label-title']}>
-            <i className={`
+            <a href="#" onClick={ onPinChange.bind(null, label) }><i className={`
                 ${styles['pin']}
                 ${styles['fa']}
                 ${styles['fa-lg']}
-                ${styles['fa-thumb-tack']}`} />
-            <span className={styles['title']}>{ props.label.title }</span>
+                ${styles['fa-thumb-tack']}`} /></a>
+            <span className={styles['graph-label-title-text']}>{ title }</span>
             <a className={styles['exclude-by-title']}>
                 <i className={`${styles['fa']} ${styles['fa-ban']}`} />
             </a>
-            <span className={styles['label-type']}>{ props.label.type }</span>
+            <span className={styles['label-type']}>{ type }</span>
         </div>);
 }
 
-function LabelRow (props) {
+function LabelRow ({field, value, displayName, dataType, label, onFilter, onExclude}) {
+    const displayString = displayName || defaultFormat(value, dataType);
+    if (displayString === null || displayString === undefined) {
+        return <tr style={{display: 'none'}}/>;
+    }
+
     return (
         <tr className={styles['graph-label-pair']}>
-            <td className={styles['graph-label-key']}>{props.key}</td>
+            <td className={styles['graph-label-key']}>
+                {field}
+            </td>
             <td className={styles['graph-label-value']}>
                 <div className={styles['graph-label-value-wrapper']}>
-                    {props.value}
+                    <span className={styles['graph-label-value-text']}>{displayString}</span>
+                    { dataType ==='color'
+                        ? <span className={styles['label-color-pill']}
+                            style={{backgroundColor: new Color(value).rgbString()}} />
+                        : null}
                     <div className={styles['graph-label-icons']}>
-                        <a className={`${styles['tag-by-key-value']} ${styles['beta']}`}>
-                            <i className={`${styles['fa']} ${styles['fa-tag']}`} />
-                        </a>
-                        <a className={styles['exclude-by-key-value']}>
+                        <a className={styles['exclude-by-key-value']}
+                            onClick={ onExclude.bind(null, label, field, value) }>
                             <i className={`${styles['fa']} ${styles['fa-ban']}`} />
                         </a>
-                        <a className={styles['filter-by-key-value']}>
+                        <a className={styles['filter-by-key-value']}
+                            onClick={ onFilter.bind(null, label, field, value) }>
                             <i className={`${styles['fa']} ${styles['fa-filter']}`} />
                         </a>
                     </div>
@@ -106,14 +134,16 @@ function LabelContents (props) {
         <div className={styles['graph-label-contents']}>
             <table>
                 <tbody>{
-                    _.pairs(props.label.fields)
-                        .sort(([kA], [kB]) =>
-                            kA.toLowerCase() < kB.toLowerCase() ? -1
-                            kA.toLowerCase() > kB.toLowerCase() ? 1
+                    props.label.fields
+                        .sort((a, b) =>
+                            a.key.toLowerCase() < b.key.toLowerCase() ? -1
+                            : a.key.toLowerCase() > b.key.toLowerCase() ? 1
                             : 0)
-                        .map( ([key, value]) => {
-                            return <LabelRow {...props} key={key} value={value}/>
-                        })
+                        .map( ({key,value,displayName,dataType}) =>
+                            <LabelRow
+                                field={key} value={value} displayName={displayName} dataType={dataType}
+                                {...props}
+                            />)
                 }</tbody>
             </table>
         </div>);
