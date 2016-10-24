@@ -38,10 +38,10 @@ const defaultProps = {
     opacity: 1,
     poiEnabled: true,
     enabled: true,
-    onClick: _.identity,
-    onFilter: _.identity,
-    onExclude: _.identity,
-    onPinChange: _.identity,
+    onClick: (() => console.log('clicked')),
+    onFilter: (() => console.log('click filter')),
+    onExclude: (() => console.log('click exclude')),
+    onPinChange: (() => console.log('click pin change')),
     hideNull: true,
     labels: [
           {
@@ -159,10 +159,12 @@ class DataLabel extends React.Component {
     }
 
     render () {
-        return (<div className={`
-            ${styles['graph-label']}
-            ${this.props.label.showFull ? styles['on'] : ''}
-            ${this.props.label.pinned ? styles['clicked'] : ''}`}>
+        return (<div
+            className={`
+                ${styles['graph-label']}
+                ${this.props.label.showFull ? styles['on'] : ''}
+                ${this.props.label.pinned ? styles['clicked'] : ''}`}
+            style={{ left: this.props.label.x, top: this.props.label.y }} >
             <div className={`
                 ${styles['graph-label-container']}
                 ${styles['graph-label-' + this.props.label.type]}`}>
@@ -189,7 +191,7 @@ class Labels extends React.Component {
         if (!this.props.enabled) return <div className={styles['labels-container']} />;
 
         return (
-            <div className={styles['labels-container']}>
+            <div className={styles['labels-container']} onClick={this.props.onClick.bind(null, this.props)}>
                 {
                     this.props.labels.map( (label) => (
                         <DataLabel {...this.props} label={label} /> ))
