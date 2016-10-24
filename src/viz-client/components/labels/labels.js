@@ -12,6 +12,9 @@ import {
 
 import _ from 'underscore';
 
+import Color from 'color';
+import {defaultFormat} from '../../streamGL/graphVizApp/contentFormatter.js';
+
 import styles from './style.less';
 
 
