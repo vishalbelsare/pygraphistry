@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import {
     ref as $ref,
     error as $error,
@@ -8,8 +9,7 @@ import { simpleflake } from 'simpleflakes';
 import { getHandler, setHandler, captureErrorStacks } from 'viz-shared/routes';
 
 export function workbooks(path, base) {
-    return function workbooks({ loadWorkbooksById }) {
-
+    return function workbooks({ loadWorkbooksById, saveWorkbook }) {
         const workbook = `${base}['workbooksById'][{keys}]`;
         const getValues = getHandler(path.concat('workbook'), loadWorkbooksById);
         const setValues = setHandler(path.concat('workbook'), loadWorkbooksById);
@@ -42,7 +42,7 @@ export function workbooks(path, base) {
             call: forkWorkbook,
             route: `${workbook}.fork`
         }, {
-            call: saveWorkbook,
+            call: saveWorkbookRoute,
             route: `${workbook}.save`
         }, {
             call: embedWorkbook,
@@ -83,8 +83,14 @@ export function workbooks(path, base) {
             return [];
         }
 
-        function saveWorkbook(path, args) {
-            return [];
+        function saveWorkbookRoute(path, args) {
+            const workbookIds = path[1];
+
+            return loadWorkbooksById({workbookIds})
+                .mergeMap(({ workbook }) => {
+                    return saveWorkbook({workbook})
+                })
+                .catch(captureErrorStacks);
         }
 
         function embedWorkbook(path, args) {

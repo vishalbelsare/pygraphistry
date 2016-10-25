@@ -51,3 +51,11 @@ function downloadWorkbook(workbookId, s3Cache, { S3, BUCKET }) {
             .map((response) => JSON.parse(response));
     });
 }
+
+export function saveWorkbookService(config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
+    return function saveWorkbook({ workbook }) {
+        console.log('SAVING', workbook);
+
+        return Observable.empty();
+    }
+}
