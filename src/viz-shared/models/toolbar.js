@@ -4,7 +4,6 @@ export function toolbar(workbookId, viewId) {
     const workbook = `workbooksById['${workbookId}']`;
     const view = `${workbook}.viewsById['${viewId}']`;
     return {
-        toolbar: $ref(`${view}.toolbars['stable']`),
         toolbars: {
             static: {
                 id: 'static',
@@ -20,7 +19,7 @@ export function toolbar(workbookId, viewId) {
             stable: {
                 id: 'stable',
                 visible: true,
-                length: 4, ...[
+                length: 5, ...[
                     $ref(`${view}.camera.controls`),
                     [
                         $ref(`${view}.scene.controls[0]`),
@@ -32,16 +31,17 @@ export function toolbar(workbookId, viewId) {
                     [
                         $ref(`${view}.histograms.controls[0]`),
                         $ref(`${view}.inspector.controls[0]`),
-                        // $ref(`${view}.timebar.controls[0]`),
                         $ref(`${view}.exclusions.controls[0]`),
                         $ref(`${view}.filters.controls[0]`),
+                    ],[
+                        $ref(`${workbook}.controls[3]`),
                     ]
                 ]
             },
             beta: {
                 id: 'beta',
                 visible: true,
-                length: 4, ...[
+                length: 5, ...[
                     $ref(`${view}.camera.controls`),
                     [
                         $ref(`${view}.scene.controls[0]`),
@@ -53,9 +53,15 @@ export function toolbar(workbookId, viewId) {
                     [
                         $ref(`${view}.histograms.controls[0]`),
                         $ref(`${view}.inspector.controls[0]`),
-                        // $ref(`${view}.timebar.controls[0]`),
+                        $ref(`${view}.timebar.controls[0]`),
                         $ref(`${view}.exclusions.controls[0]`),
                         $ref(`${view}.filters.controls[0]`),
+                    ],[
+                        $ref(`${workbook}.controls[0]`),
+                        $ref(`${workbook}.controls[1]`),
+                        $ref(`${workbook}.controls[2]`),
+                        $ref(`${workbook}.controls[3]`),
+                        $ref(`${workbook}.controls[4]`),
                     ]
                 ]
             },
