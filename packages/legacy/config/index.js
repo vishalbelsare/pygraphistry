@@ -95,6 +95,9 @@ function defaults() {
 
         LOCAL_CACHE: true,
         LOCAL_CACHE_DIR: '/tmp/graphistry/data_cache',
+        
+        LOCAL_WORKBOOK_CACHE: true,
+        LOCAL_WORKBOOK_CACHE: '/tmp/graphistry/workbook_cache',
 
         // Minimum level of log messages to output (can be an integer or string)
         LOG_LEVEL: 'debug',
