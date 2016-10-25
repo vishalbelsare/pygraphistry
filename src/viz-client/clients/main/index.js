@@ -4,6 +4,7 @@ import { Model, RemoteDataSource } from 'viz-client/falcor';
 import { handleVboUpdates } from 'viz-client/streamGL/client';
 
 export function initialize(options, debug) {
+    console.info(`Connecting to ${window.graphistryPath || 'local'}`);
 
     let workbook = options.workbook;
 
