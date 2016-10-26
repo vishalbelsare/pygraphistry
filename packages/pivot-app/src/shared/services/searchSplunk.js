@@ -34,7 +34,7 @@ export function searchSplunk({app, pivot}) {
         id: searchJobId,
         timeout: '14400', // 4 hours
         exec_mode: 'blocking',
-        earliest_time: '1980-06-20T16:27:43.000-07:00'
+        earliest: '-7d'
     };
 
     const getJobObservable = Observable.bindNodeCallback(service.getJob.bind(service));

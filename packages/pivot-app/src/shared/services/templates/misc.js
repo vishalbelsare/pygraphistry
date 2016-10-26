@@ -68,11 +68,11 @@ export const searchSplunkMap = new SplunkPivot({
     }
 });
 
-const DATASET_ERROR_NODE_COLORS = {
-    'dataset': 1,
+const DATASET_ERROR_NODE_COLORS = {}
+    /*    'dataset': 1,
     'msg': 5,
     'EventID': 7
-}
+}*/
 
 export const searchGraphviz = new SplunkPivot({
     id: 'search-graphviz-logs',
@@ -89,9 +89,12 @@ export const searchGraphviz = new SplunkPivot({
         return `search ${pivotParameters['query2']}
             | spath output=dataset path="metadata.dataset"
             | search dataset="*"
-            | fields msg, dataset
+            | fields level, msg, module, time, dataset
+            | sort -time
+            | dedup msg level dataset
+            | head 100
             | fields - _*
-            | head 100`
+        `;
     },
     encodings: {
         point: {
