@@ -26,13 +26,12 @@
 
 
 
-
-
 /******** CONTAINER ******/
 
 
+
 .labels-container {
-    z-index: 3300;
+    z-index: @graph-label-z;
 
     position: absolute;
     top: 0;
@@ -136,18 +135,13 @@
 .graph-label-title {
 
     width: 100%;
-    max-width: 10em;
     display: inline-block;
     overflow:hidden;
     vertical-align: middle;
     font-weight: bold;
 
-
     .graph-label.on & {
-        max-height: none;
-        max-width: 20em;
         word-wrap: break-word;
-        height: auto;
     }
 
 }
@@ -178,12 +172,23 @@
         font-size: 0.9em;
         color: @dark-grey;
         margin-left: 1em;
+        margin-right: 1em;
+        float: right;
 
     }
 
     .graph-label-title-text {
         margin-left: 0.5em;
         margin-right: 0.5em;
+        word-break: break-all;
+
+        .graph-label:not(.on):not(:hover):not(.clicked) & {
+            max-width: 18em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-block;
+            white-space: nowrap;
+        }
     }
 
 }
