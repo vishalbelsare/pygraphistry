@@ -7,6 +7,8 @@ import { Toolbar } from 'viz-shared/containers/toolbar';
 import { Settings } from 'viz-shared/containers/settings';
 import { selectToolbarItem } from 'viz-shared/actions/toolbar';
 
+import { Labels } from 'viz-client/components/labels'
+
 import {
     sceneMouseMove,
     sceneTouchStart,
