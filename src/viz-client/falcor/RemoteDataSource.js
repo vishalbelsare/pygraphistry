@@ -11,6 +11,35 @@ export class RemoteDataSource extends SocketDataSource {
     constructor(...args) {
         super(...args);
         this.socket.on('falcor-update', this.falcorUpdateHandler.bind(this));
+        if (window && window.postMessage) {
+            Observable
+                .fromEvent(window, 'message')
+                .mergeMap((message) => this.postMessageUpdateHandler(message))
+                .subscribe();
+        }
+    }
+    postMessageUpdateHandler(message = {}) {
+        const { data } = message;
+        if (typeof data !== 'object') {
+            return Observable.empty();
+        }
+        const { model } = this;
+        const { type, values } = data;
+        if (!model ||
+            type !== 'falcor-update' ||
+            !Array.isArray(values)) {
+            return Observable.empty();
+        }
+        var openViewPath = model._optimizePath(
+            ['workbooks', 'open', 'views', 'current']
+        );
+        return model.set(...values.map(({ path, value }) => {
+            path = openViewPath.concat(path);
+            if (value && value.$type === 'ref') {
+                value.value = openViewPath.concat(value.value);
+            }
+            return { path, value };
+        }));
     }
     falcorUpdateHandler({ paths, invalidated, jsonGraph }) {
         const { model } = this;

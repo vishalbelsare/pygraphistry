@@ -40,7 +40,7 @@ export function expression(input = '', name = '',
 
     const query = input ?
         parseUtil(parser, input, { startRule: 'start' }) :
-        getDefaultQueryForDataType(attribute, dataType);
+        getDefaultQueryForDataType(dataType, attribute);
 
     const attributeSplitIndex = attribute.lastIndexOf(':');
     const componentType = attributeSplitIndex === -1 ?
@@ -57,7 +57,7 @@ export function expression(input = '', name = '',
     };
 }
 
-export function getDefaultQueryForDataType(attribute = 'point:degree', dataType = 'number') {
+export function getDefaultQueryForDataType(dataType = 'number', attribute = 'point:degree') {
     const queryFactory = defaultQueriesMap[dataType] || defaultQueriesMap.literal;
     return {
         dataType, attribute,

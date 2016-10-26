@@ -56,28 +56,18 @@ let Control = ({ id, type, ...rest } = {}) => {
 Settings = container(
     ({ settings = [] } = {}) => `{
         id, name, settings: {
-            length ${Array
-            .from(settings, (xs, i) => xs)
-            .reduce((xs, options, index) => `
-                ${xs},
-                ${index}: ${
-                    Options.fragment(options)
-                }`
-            , '')}
+            length, ... ${
+                Options.fragments(settings)
+            }
         }
     }`
 )(Settings);
 
 Options = container(
     (options = []) => `{
-        name, length ${Array
-        .from(options, (xs, i) => xs)
-        .reduce((xs, control, index) => `
-            ${xs},
-            ${index}: ${
-                Control.fragment(control)
-            }
-        `, '')}
+        name, length, ...${
+            Control.fragments(options)
+        }
     }`,
     (options) => ({ options, name: options.name })
 )(Options);

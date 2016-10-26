@@ -76,8 +76,8 @@ export function maskDataframe({ view }) {
                 // if (server.viewConfig) {
                 //     server.viewConfig.next(view);
                 // }
-                if (server.updateVboSubject) {
-                    server.updateVboSubject.next(nBody);
+                if (server.ticksMulti) {
+                    server.ticksMulti.next(nBody);
                 }
             }
         }
