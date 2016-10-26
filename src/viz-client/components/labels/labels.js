@@ -120,7 +120,9 @@ function LabelTitle ({onPinChange, onExclude, label}) {
         </div>);
 }
 
-function LabelRow ({field, value, displayName, dataType, type, title, onFilter, onExclude}) {
+function LabelRow ({field, value, displayName, dataType, onFilter, onExclude, label}) {
+    const {type, title} = label;
+
     const displayString = displayName || defaultFormat(value, dataType);
     if (displayString === null || displayString === undefined) {
         return null;
