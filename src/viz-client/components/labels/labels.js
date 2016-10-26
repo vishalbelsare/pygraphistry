@@ -1,4 +1,5 @@
 import React, { PropTypes } from 'react';
+import { Tooltip, OverlayTrigger } from 'react-bootstrap';
 import {
     Subject, Observable,
     Subscription, ReplaySubject
@@ -86,16 +87,23 @@ function LabelTitle ({onPinChange, label}) {
     const type = label.type;
     return (
         <div className={styles['graph-label-title']}>
+
             <a href="#" onClick={ onPinChange.bind(null, label) }><i className={`
                 ${styles['pin']}
                 ${styles['fa']}
                 ${styles['fa-lg']}
                 ${styles['fa-thumb-tack']}`} /></a>
-            <span className={styles['graph-label-title-text']}>{ title }</span>
-            <a className={styles['exclude-by-title']}>
-                <i className={`${styles['fa']} ${styles['fa-ban']}`} />
-            </a>
             <span className={styles['label-type']}>{ type }</span>
+
+            <span className={styles['graph-label-title-text']}>{ title }</span>
+            <OverlayTrigger trigger={['hover']}
+                        placement='bottom'
+                        overlay={<Tooltip className={styles['label-tooltip']} id={`tooltip:title:${type}:${title}`}>Exclude if title: {title}</Tooltip>}>
+                <a className={styles['exclude-by-title']}>
+                    <i className={`${styles['fa']} ${styles['fa-ban']}`} />
+                </a>
+            </OverlayTrigger>
+
         </div>);
 }
 
@@ -118,14 +126,26 @@ function LabelRow ({field, value, displayName, dataType, label, onFilter, onExcl
                             style={{backgroundColor: new Color(value).rgbString()}} />
                         : null}
                     <div className={styles['graph-label-icons']}>
-                        <a className={styles['exclude-by-key-value']}
-                            onClick={ onExclude.bind(null, label, field, value) }>
-                            <i className={`${styles['fa']} ${styles['fa-ban']}`} />
-                        </a>
-                        <a className={styles['filter-by-key-value']}
-                            onClick={ onFilter.bind(null, label, field, value) }>
-                            <i className={`${styles['fa']} ${styles['fa-filter']}`} />
-                        </a>
+
+                        <OverlayTrigger trigger={['hover']}
+                            placement='bottom'
+                            overlay={<Tooltip className={styles['label-tooltip']} id={`tooltip:row:exclude${label.type}:${label.title}:${field}`}>Exclude if "{label.type}:{field} = {value}"</Tooltip>}>
+                            <a className={styles['exclude-by-key-value']}
+                                onClick={ onExclude.bind(null, label, field, value) }>
+                                <i className={`${styles['fa']} ${styles['fa-ban']}`} />
+                            </a>
+                        </OverlayTrigger>
+
+                        <OverlayTrigger trigger={['hover']}
+                            placement='bottom'
+                            overlay={<Tooltip className={styles['label-tooltip']} id={`tooltip:row:filter:${label.type}:${label.title}:${field}`}>Filter for "{label.type}:{field} = {value}"</Tooltip>}>
+
+                            <a className={styles['filter-by-key-value']}
+                                onClick={ onFilter.bind(null, label, field, value) }>
+                                <i className={`${styles['fa']} ${styles['fa-filter']}`} />
+                            </a>
+                        </OverlayTrigger>
+
                     </div>
                 </div>
             </td>
