@@ -183,7 +183,7 @@
         word-break: break-all;
 
         .graph-label:not(.on):not(:hover):not(.clicked) & {
-            max-width: 18em;
+            max-width: 12em;
             overflow: hidden;
             text-overflow: ellipsis;
             display: inline-block;
@@ -240,9 +240,6 @@
         max-width: 15em;
         min-width: 2.2em; //fit icons
         white-space: nowrap;
-        &.graph-label-key {
-            max-width: 10em;
-        }
     }
 
 
@@ -294,11 +291,16 @@
     vertical-align: top;
 }
 .graph-label-key {
+    max-width: 10em;
     font-weight: bold;
     text-align: right;
     padding-right: 0.5em;
     overflow: hidden;
     text-overflow: ellipsis;
+    .graph-label tr:hover & {
+        white-space: normal;
+        word-break: break-all;
+    }
 }
 .graph-label-key:after {
     content: ": "
