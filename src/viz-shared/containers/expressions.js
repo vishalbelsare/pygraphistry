@@ -27,15 +27,9 @@ let Expressions = ({ templates = [], expressions = [], removeExpression, ...prop
 };
 
 Expressions = container(
-    ({ length = 0, templates = [], ...expressions } = {}) => `{
-        id, name, length ${Array
-            .from({ length }, (xs, i) => expressions[i])
-            .reduce((xs, expression, index) => `
-                ${xs},
-                ${index}: ${
-                    Expression.fragment(expression)
-                }`
-            , '')
+    ({ templates = [], ...expressions } = {}) => `{
+        id, name, length, ...${
+            Expression.fragments(expressions)
         },
         templates: {
             length, [0...${templates.length || 0}]: {

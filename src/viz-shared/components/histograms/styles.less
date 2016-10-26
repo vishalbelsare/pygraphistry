@@ -134,3 +134,34 @@
         background-color: @color-neutral !important;
     }
 }
+
+.encoding-picker-button {
+
+    border: none;
+    background-color: transparent;
+
+    visibility: hidden;
+    :global(.list-group-item):hover & {
+        visibility: visible;
+    }
+
+}
+
+.encoding-icon-container {
+    display: inline-block;
+    border: 1px solid #777;
+    padding: 0;
+    margin: 0;
+    margin-right: 10px;
+    line-height: 10px;
+    height: 12px;
+
+    & > span {
+        height: 10px;
+        display: inline-block;
+    }
+
+    & > label {
+        margin-left: 0.5em;
+    }
+}

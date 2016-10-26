@@ -5,13 +5,12 @@ import {
     HistogramsList,
 } from 'viz-shared/components/histograms';
 
-// import {
-//     addHistogram,
-//     removeHistogram,
-//     updateHistogram,
-//     setHistogramEnabled,
-//     cancelUpdateHistogram
-// } from 'viz-shared/actions/histograms';
+import {
+    addHistogram,
+    removeHistogram,
+    updateHistogram,
+    highlightHistogram
+} from 'viz-shared/actions/histograms';
 
 let Histograms = ({ templates = [], histograms = [], removeHistogram, ...props }) => {
     return (
@@ -34,14 +33,8 @@ Histograms = container(
                 name, dataType, attribute, componentType
             }
         },
-        id, name, length ${Array
-            .from(histograms || [], (xs, i) => xs)
-            .reduce((xs, histogram = {}, index) =>
-               `${xs},
-                ${index}: ${
-                    Histogram.fragment(histogram)
-                }`
-            , '')
+        id, name, length, ...${
+            Histogram.fragments(histograms)
         }
     }`,
     (histograms) => ({
@@ -49,7 +42,8 @@ Histograms = container(
         id: histograms.id,
         name: histograms.name,
         templates: histograms.templates
-    })
+    }),
+    { addHistogram, removeHistogram }
 )(Histograms);
 
 let Histogram = container(
@@ -57,7 +51,10 @@ let Histogram = container(
         type, attribute,
         global: ${ HistogramFragment(global) } ${global ? `,
         masked: ${ HistogramFragment(masked) }`: ''}
-    }`
+    }`,
+    (histogram) => histogram,
+    { updateHistogram,
+      onBinMouseOver: highlightHistogram }
 )(Sparkline);
 
 function HistogramFragment() {

@@ -21,14 +21,9 @@ let Toolbar = ({ toolbar = [], selectToolbarItem, ...props } = {}) => {
 Toolbar = container(
     // toolbar fragment
     (toolbar = []) => `{
-        visible, length ${Array
-            .from(toolbar, (xs, i) => xs)
-            .reduce((xs, items, index) => `
-                ${xs},
-                ${index}: ${
-                    ToolbarItems.fragment(items)
-                }`
-            , '')}
+        visible, length, ...${
+            ToolbarItems.fragments(toolbar)
+        }
     }`,
     // map fragment to component props
     (toolbar = []) => ({
@@ -50,9 +45,9 @@ let ToolbarItems = ({ items = [], selectToolbarItem, ...props } = {}) => {
 
 ToolbarItems = container(
     // toolbar items fragment
-    ({ length = 0 } = {}) => `{
-        length, [0...${length}]: ${
-            ToolbarItem.fragment()
+    (toolbarItems = []) => `{
+        length, ...${
+            ToolbarItem.fragments(toolbarItems)
         }
     }`,
     // map fragment to component props

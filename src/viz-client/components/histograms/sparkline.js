@@ -195,11 +195,21 @@ const defaultProps = {
 class Sparkline extends React.Component {
     constructor(props, context) {
         super(props, context);
+        this.onBinMouseDown = this.onBinMouseDown.bind(this);
+        this.onBinMouseOver = this.onBinMouseOver.bind(this);
         this.handleGenericChange = this.handleGenericChange.bind(this);
         this.state =
             _.object(
                 ['showModal', 'yAxisValue']
                 .map( (k) => [k, this.props[k]] ));
+    }
+
+    onBinMouseDown(binColumn) {
+        this.props.onBinMouseDown(binColumn);
+    }
+
+    onBinMouseOver(binColumn) {
+        this.props.onBinMouseOver(binColumn);
     }
 
     handleGenericChange (field, handler, value) {
@@ -235,9 +245,44 @@ class Sparkline extends React.Component {
                     'log10': Math.log10
                 })[this.state.yAxisValue],
             isMasked: getIsMasked(_masked)
-            };
+        };
+
         summary.leftOffset = Math.floor((this.props.width - summary.binPixelWidth * summary.numBins) / 2);
+
         Object.freeze(summary);
+
+        const { binValues = [] } = _global;
+        const binColumns = (_global.binType === 'histogram' ?
+            _.range(0, _global.numBins) :
+            _.keys(_global.bins).sort(function (a, b) {
+                    if (a < b) return 1;
+                    if (b < a) return -1;
+                    return 0;
+                })
+        )
+        .map((binKey, binIdx, bins) => {
+            let min, max, equals;
+            const binValue = binValues[binKey];
+            if (binValue) {
+                if (binValue.isSingular) {
+                    equals = binValue.representative;
+                } else {
+                    min = binValue.min;
+                    max = binValue.max;
+                }
+            } else {
+                min = _global.minValue + (_global.binWidth * binIdx);
+                max = min + _global.binWidth;
+            }
+            return {
+                type, attribute,
+                min, max, equals,
+                binKey, binIdx, binValue,
+                dataType: _global.dataType,
+                globalCount: _global.bins[binKey],
+                maskCount: _masked.bins ? _masked.bins[binKey] : 0
+            };
+        });
 
         return (
             <div className={`
@@ -275,45 +320,26 @@ class Sparkline extends React.Component {
                 <div className={styles['histogram-picture-container']}>
                     <div className={styles['histogram-picture']}
                         style={{height: `${this.props.height}px`, width: `${this.props.width}px`}}>
-                    {
-                        (_global.binType === 'histogram' ?
-                            _.range(0, _global.numBins)
-                            : _.keys(_global.bins).sort(function (a, b) {
-                                    if (a < b) return 1;
-                                    if (b < a) return -1;
-                                    return 0;
-                                }))
-                        .map((binKey, binIdx, bins) => {
-                            return <BinColumn
-                                enabled={!this.props.filterValue || this.props.filterValue[binIdx]}
-                                filterBounds={
-                                    !this.props.filterValue ? undefined
-                                    : !this.props.filterValue[binIdx] ? undefined
-                                    : {
-                                        leftest: binIdx === 0 || !this.props.filterValue[binIdx - 1],
-                                        rightest: binIdx === (bins.length - 1) || !this.props.filterValue[binIdx + 1]
-                                    }
+                    {binColumns.map((binColumn, binIdx, bins) => (
+                        <BinColumn
+                            enabled={!this.props.filterValue || this.props.filterValue[binIdx]}
+                            filterBounds={
+                                !this.props.filterValue ? undefined
+                                : !this.props.filterValue[binIdx] ? undefined
+                                : {
+                                    leftest: binIdx === 0 || !this.props.filterValue[binIdx - 1],
+                                    rightest: binIdx === (bins.length - 1) || !this.props.filterValue[binIdx + 1]
                                 }
-                                onBinMouseDown={
-                                    (i, evt) => {
-                                        this.props.onBinMouseDown(bins, bins[i], i, evt);
-                                    }
-                                }
-                                onBinMouseOver={
-                                    (i, evt) => {
-                                        this.props.onBinMouseOver(bins, bins[i], i, evt);
-                                    }
-                                }
-                                colorLegend={this.props.colorLegend}
-                                height={this.props.height}
-                                minBinHeightNoneEmpty={this.props.minBinHeightNoneEmpty}
-                                summary={summary}
-                                bin={ {binKey, binIdx, attribute,
-                                     binValue: _global.binValues ? _global.binValues[binKey] : undefined,
-                                     globalCount: _global.bins[binKey],
-                                     maskCount: _masked.bins ? _masked.bins[binKey] : 0} } />;
-                        })
-                    }
+                            }
+                            onBinMouseDown={this.onBinMouseDown}
+                            onBinMouseOver={this.onBinMouseOver}
+                            colorLegend={this.props.colorLegend}
+                            height={this.props.height}
+                            minBinHeightNoneEmpty={this.props.minBinHeightNoneEmpty}
+                            summary={summary}
+                            bin={binColumn}
+                        />
+                    ))}
                     </div>
                 </div>
                 {/*<div style={{maxHeight: '200px', overflow: 'scroll'}}>
@@ -344,11 +370,11 @@ function SparklineTest(props) {
 
     return <Sparkline
         { ...props }
-        onBinMouseOver={(bins, bin, binIdx, evt) => {
-            console.log('mouse over bin', i, bin.attribute);
+        onBinMouseOver={(bin) => {
+            console.log('mouse over bin', bin);
         }}
-        onBinMouseDown={(bins, bin, binIdx, evt) => {
-            console.log('mouse down bin', i, bin.attribute);
+        onBinMouseDown={(bin) => {
+            console.log('mouse down bin', bin);
         }}
         filterValue={
             props.filterValue ||
@@ -406,7 +432,7 @@ function SparklineTest(props) {
 ///////
 
 export {
-    //Sparkline
+    // Sparkline
     SparklineTest as Sparkline
 }
 

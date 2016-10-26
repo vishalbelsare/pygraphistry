@@ -166,12 +166,12 @@ function createExpressionTemplates(dataframe) {
     for (const columnName in pointColumns) {
 
         const column = pointColumns[columnName];
-        const attribute = columnName.indexOf('point') === 0 ? columnName : `point:${columnName}`;
+        const attribute = columnName.indexOf('point:') === 0 ? columnName : `point:${columnName}`;
 
         if (edgeColumns.hasOwnProperty(columnName)) {
 
             const edgeColumn = edgeColumns[columnName];
-            const edgeAttribute = columnName.indexOf('edge') === 0 ? columnName : `edge:${columnName}`;
+            const edgeAttribute = columnName.indexOf('edge:') === 0 ? columnName : `edge:${columnName}`;
 
             templates[attribute] = {
                 attribute,
@@ -199,7 +199,7 @@ function createExpressionTemplates(dataframe) {
 
     for (const columnName in edgeColumns) {
         const column = edgeColumns[columnName];
-        const attribute = columnName.indexOf('edge') === 0 ? columnName : `edge:${columnName}`;
+        const attribute = columnName.indexOf('edge:') === 0 ? columnName : `edge:${columnName}`;
         if (!templates.hasOwnProperty(columnName)) {
             templates[attribute] = {
                 attribute,

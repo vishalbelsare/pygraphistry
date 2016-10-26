@@ -5,8 +5,8 @@ import { Modal, Button, OverlayTrigger, Tooltip, Popover } from 'react-bootstrap
 import classNames from 'classnames';
 import _ from 'underscore';
 
-import styles from 'viz-shared/index.less';
-import localStyle from './style.less';
+import globalStyles from 'viz-shared/index.less';
+import styles from 'viz-shared/components/histograms/styles.less';
 
 
 const propTypes = {
@@ -31,7 +31,7 @@ const defaultProps = {
         {value: "color-categorical",
         label:
             <div style={{whiteSpace: 'nowrap', display: 'inline-block'}}>
-            <span className={localStyle['encoding-icon-container']} >{
+            <span className={styles['encoding-icon-container']} >{
                 [
                     "rgb(166, 206, 227)", "rgb(31, 120, 180)", "rgb(178, 223, 138)", "rgb(51, 160, 44)", "rgb(251, 154, 153)", "rgb(227, 26, 28)", "rgb(253, 191, 111)", "rgb(255, 127, 0)", "rgb(202, 178, 214)", "rgb(106, 61, 154)", "rgb(255, 255, 153)", "rgb(177, 89, 40)"
                 ].map((color, idx, all) => <span style={{
@@ -43,7 +43,7 @@ const defaultProps = {
         {value: "color-continuous",
         label:
             <div style={{whiteSpace: 'nowrap', display: 'inline-block'}}>
-            <span className={localStyle['encoding-icon-container']} >{
+            <span className={styles['encoding-icon-container']} >{
                 _.range(0, 10).map((i, idx, all) => <span style={{
                     backgroundColor: `rgb(${Math.round(i * 255 / all.length)},${Math.round(i * 255 / all.length)},255)`,
                     width: `${WIDTH / all.length}px`
@@ -113,9 +113,9 @@ export default class EncodingPicker extends React.Component {
                 overlay={ <Tooltip id={`${this.props.id}_tooltip`}>Pick fields</Tooltip> }>
                 <Button href='javascript:void(0)'
                     className={classNames({
-                        [styles['fa']]: true,
-                        [styles['fa-cog']]: true,
-                        [localStyle['encoding-picker-button']]: true
+                        [globalStyles['fa']]: true,
+                        [globalStyles['fa-cog']]: true,
+                        [styles['encoding-picker-button']]: true
                     })}
                     onClick={this.open} />
             </OverlayTrigger>
