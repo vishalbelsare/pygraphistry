@@ -1,8 +1,38 @@
 <html>
     <head>
         <title>Graphistry Client API Demo</title>
+        <style>
+            body {
+                min-height: 600px;
+            }
+
+            #viz {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 300px;
+
+            }
+        </style>
+        <script src="graphistry.js"></script>
+        <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            GraphistryLoader(document.getElementById('viz'), function (err, g) {
+                console.log('adding filter');
+                g.addFilter('degree > 0');
+
+            });
+        });
+        </script>
     </head>
     <body>
+
+
+        <iframe id="viz" src="http://127.0.0.1:10000/graph/graph.html?dataset=Miserables" />
+
+
+
 
     </body>
 </html>

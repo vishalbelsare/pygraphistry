@@ -11,12 +11,25 @@ export class RemoteDataSource extends SocketDataSource {
     constructor(...args) {
         super(...args);
         this.socket.on('falcor-update', this.falcorUpdateHandler.bind(this));
+
+        var initResponse = function (event) {
+            if (event && event.data && event.data.graphistry === 'init') {
+                parent.postMessage({graphistry: 'init'},'*');
+                window.removeEventListener('message', initResponse, false);
+            }
+        };
+        window.addEventListener('message', initResponse, false);
+        parent.postMessage({graphistry: 'init'},'*');
+
+
         if (window && window.postMessage) {
             Observable
                 .fromEvent(window, 'message')
                 .mergeMap((message) => this.postMessageUpdateHandler(message))
                 .subscribe();
         }
+
+
     }
     postMessageUpdateHandler(message = {}) {
         const { data } = message;
