@@ -40,7 +40,7 @@ export function requisitionWorker({
 
     const requestIsETL = requestIsPathname('/etl');
     const requestIsClaim = requestIsPathname('/claim');
-    const requestIsIndex = requestIsPathname('/index.html');
+    const requestIsIndex = requestIsPathname('/graph.html');
 
     const eltRequests = requests
         .filter(requestIsETL)
@@ -171,14 +171,14 @@ export function requisitionWorker({
     }
 
     function indexAccepted({ request, response }, clientId, callback) {
-        logger.debug({req: request, res: response}, 'Accepting index.html request');
+        logger.debug({req: request, res: response}, 'Accepting graph.html request');
         const path = url.parse(request.url).pathname;
         const clientType = path.substring(path.indexOf('/') + 1, path.lastIndexOf('/'));
         callback(null, [clientId, clientType, request, response]);
     }
 
     function redirectIndex({ request, response }, callback) {
-        logger.warn({req: request, res: response}, 'Rejecting request for a "./index.html" page');
+        logger.warn({req: request, res: response}, 'Rejecting request for a "./graph.html" page');
 
         const buffer = new Buffer('Error: unable to load page because you are not assigned to this visualization server process. ' +
             'This can happen if the process is already handling an existing request, or because ' +

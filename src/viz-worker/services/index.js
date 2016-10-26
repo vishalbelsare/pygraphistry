@@ -13,7 +13,7 @@ import { Observable } from 'rxjs';
 import { loadViews } from './views';
 import { loadLabels } from './labels';
 import { loadVGraph } from './vgraph';
-import { loadWorkbooks } from './workbooks';
+import { loadWorkbooks, saveWorkbookService } from './workbooks';
 import { maskDataframe } from './dataframe';
 import { sendFalcorUpdate } from './sendFalcorUpdate';
 import { loadNBody, setLayoutControl } from './nBody';
@@ -25,6 +25,7 @@ export function services({ config, s3Cache, nBodiesById, workbooksById }) {
     const loadConfig = () => Observable.of(config);
     const loadDatasetNBody = loadNBody(nBodiesById, config, s3Cache);
     const loadWorkbooksById = loadWorkbooks(workbooksById, config, s3Cache);
+    const saveWorkbook = saveWorkbookService(config, s3Cache);
 
     const loadViewsById = loadViews(loadDatasetNBody, loadWorkbooksById);
     const loadHistogramsById = loadHistograms(loadViewsById);
@@ -37,12 +38,12 @@ export function services({ config, s3Cache, nBodiesById, workbooksById }) {
     const updateExpressionById = updateExpression(loadViewsById);
 
     return {
-
         loadConfig,
         loadVGraph,
         loadViewsById,
         sendFalcorUpdate,
         loadWorkbooksById,
+        saveWorkbook,
         loadHistogramsById,
         loadLabelsByIndexAndType,
         loadSelectionHistogramsById,

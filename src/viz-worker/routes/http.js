@@ -7,7 +7,7 @@ import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 export function httpRoutes(services, modules) {
     const getDataSource = getDataSourceFactory(services);
     return [{
-        route: `/graph/index.html`,
+        route: `/graph/graph.html`,
         use: renderMiddleware(getDataSource, modules)
     }, {
         route: `/graph/kernels/*`,
