@@ -110,7 +110,7 @@ function LabelTitle ({onPinChange, label}) {
 function LabelRow ({field, value, displayName, dataType, label, onFilter, onExclude}) {
     const displayString = displayName || defaultFormat(value, dataType);
     if (displayString === null || displayString === undefined) {
-        return <tr style={{display: 'none'}}/>;
+        return null;
     }
 
     return (
