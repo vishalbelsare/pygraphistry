@@ -70,6 +70,21 @@ Graphistry.prototype.updateZoom = function (level, cb) {
 };
 
 
+//========= Labels
+
+Graphistry.prototype.subscribeLabels = function (subscriptions, cb) {
+    var enter = subscriptions.onEnter || function (id, entityType, x, y) { };
+    var move = subscriptions.onMove || function (id, entityType, x, y) { };
+    var exit = subscriptions.onExit || function (id, entityType) { };
+    return this.__transmitActionStreamgl({type: 'subscribeLabels'});
+};
+Graphistry.prototype.unsubscribeLabels = function (cb) {
+    return this.__transmitActionStreamgl({type: 'unsubscribeLabels'});
+};
+
+
+//========= Loader
+
 function GraphistryLoader (iframe, cb) {
 
     cb = cb || function () {}

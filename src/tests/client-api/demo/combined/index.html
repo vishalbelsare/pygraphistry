@@ -32,6 +32,20 @@
                 document.getElementById('controls').style.opacity=1.0;
             });
         });
+
+        function overlay(on) {
+            if (on) {
+                window.g.updateSetting('show-points-of-interest', false);
+                window.g.subscribeLabels({
+                    enter: function (id, entityType, x, y) { },
+                    move: function (id, entityType, x, y) { },
+                    exit: function (id, entityType) { }
+                });
+            } else {
+                window.g.updateSetting('show-points-of-interest', true);
+                window.g.unsubscribeLabels();
+            }
+        }
         </script>
     </head>
     <body>
@@ -125,6 +139,15 @@
                     });
                     </script></td>
                 </tr>
+                <tr>
+                    <td>Labels</td>
+                    <td>
+                        <button onclick="window.g.updateSetting('show-labels', false)">Hide labels</button>
+                        <button onclick="window.g.updateSetting('show-labels', true)">Show labels</button>
+                        <br/>
+                        <button onclick="window.overlay(true)">Use label overlays</button>
+                        <button onclick="window.overlay(false)">Use default labels</button>
+                    </td>
             </table>
         </div>
         <iframe id="viz" src="http://127.0.0.1:10000/graph/graph.html?dataset=Miserables" />
