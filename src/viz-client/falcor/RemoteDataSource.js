@@ -38,7 +38,7 @@ export class RemoteDataSource extends SocketDataSource {
             Observable
                 .fromEvent(window, 'message')
                 .filter( (e) => e && e.data && e.data.mode === 'graphistry-action-streamgl')
-                .map((message) => this.postMessageStreamglHandler(message))
+                .map(this.postMessageStreamglHandler.bind(this))
                 .subscribe();
         }
     }
@@ -46,24 +46,29 @@ export class RemoteDataSource extends SocketDataSource {
 
     postMessageStreamglHandler(message = {}) {
 
+        console.log("Received StreamGL action", message.data);
+
         var hasClass = function (element, selector) {
             var className = " " + selector + " ";
             return ( (" " + element.className + " ").replace(/[\n\t]/g, " ").indexOf(className) > -1 )
         };
 
-        switch (message.type) {
+        switch (message.data.type) {
             case 'startClustering':
 
                 var toggle = document.getElementById('toggle-simulating');
+                console.log('my toggle', toggle);
                 if (!hasClass(toggle, 'active')) {
                     toggle.click();
                 }
 
                 setTimeout(function () {
+                    console.log('maybe stopping');
                     if (hasClass(toggle, 'active')) {
+                        console.log('really stopping');
                         toggle.click();
                     }
-                }, Math.min(2000, duration))
+                }, Math.min(2000, message.data.args.duration))
                 break;
 
             case 'stopClustering':
@@ -76,7 +81,7 @@ export class RemoteDataSource extends SocketDataSource {
     }
 
     postMessageActionHandler(message = {}) {
-        console.error(Error({message, text: 'now what??'}));
+        console.error('no postMessageActionHandler', new Error({message, text: 'now what??'}));
     }
 
     postMessageUpdateHandler(message = {}) {

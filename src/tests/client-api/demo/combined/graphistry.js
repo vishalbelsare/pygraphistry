@@ -2,24 +2,34 @@ function Graphistry (iframe) {
     this.iframe = iframe;
 }
 
+// ===================== Non-Falcor APIs
+Graphistry.prototype.__transmitActionStreamgl = function (msg) {
+    msg.mode = 'graphistry-action-streamgl';
+    console.log('parent posting', msg, this.iframe.contentWindow);
+    this.iframe.contentWindow.postMessage(msg, '*');
+    return this;
+}
+
+Graphistry.prototype.startClustering = function (milliseconds) {
+    return this.__transmitActionStreamgl({type: 'startClustering', args: {duration: milliseconds || 0}});
+}
+
+Graphistry.prototype.stopClustering = function () {
+    return this.__transmitActionStreamgl({type: 'stopClustering'});
+}
+
+
+// ===================== Falcor
 Graphistry.prototype.__transmitAction = function (msg) {
     msg.mode = 'graphistry-action';
     this.iframe.contentWindow.postMessage(msg, '*');
     return this;
 }
-
-Graphistry.prototype.__transmitActionStreamgl = function (msg) {
-    msg.mode = 'graphistry-action-streamgl';
-    this.iframe.contentWindow.postMessage(msg, '*');
-    return this;
-}
-
 Graphistry.prototype.addFilter = function (expr) {
     return this.__transmitAction({
         type: 'add-expression',
         args: ["degree", "number", "point:degree"]});
 };
-
 Graphistry.prototype.addExclusion = function (expr) {
     return this.__transmitAction({
         type: 'add-expression',
@@ -28,15 +38,6 @@ Graphistry.prototype.addExclusion = function (expr) {
 
 
 
-Graphistry.prototype.startClustering = function (duration) {
-    return this.__transmitActionStreamgl({
-        type: 'startClustering',
-        args: [duration]});
-}
-
-Graphistry.prototype.stopClustering = function () {
-    return this.__transmitActionStreamgl({type: 'stopClustering'});
-}
 
 /*
 ['text-color', 'background-color', 'transparency', 'show-labels', 'show-points-of-interest', 'tau',
