@@ -47,19 +47,57 @@
                 </tr>
                 <tr>
                     <td>Filter/Exclusions</td>
-                    <td><button onclick="window.g.addFilter('point:degree > 0');">filter</button></td>
+                    <td>
+                        <button onclick="window.g.addFilter('point:degree > 2')">filter: point:degree > 2</button>
+                        <button onclick="window.g.addExclusion('point:degree < 5')">exclude: point:degree < 5</button>
+                    </td>
                 </tr>
                 <tr>
                     <td>Highlights</td>
-                    <td></td>
+                    <td>Select some combination of nodes and edges..</td>
                 </tr>
                 <tr>
                     <td>Camera</td>
-                    <td></td>
+                    <td>
+                        <button onclick="window.g.autocenter()">autocenter</button>
+                        <button onclick="window.g.autocenter(0.95)">... on 95% entities</button>
+                    </td>
                 </tr>
                 <tr>
+                    <td>Save</td>
+                    <td>
+                        <button onclick="window.g.saveWorkbook()">save workbook</button>
+                        <button onclick="window.g.exportStatic('mytest', function (err, url) { alert('view at: ' + url); })">export static: "mytest"</button>
+                    </td>
+                <tr>
                     <td>Encodings</td>
-                    <td></td>
+                    <td>
+                        <script>
+                            [
+                                ['point', 'size', 'categorical', 'community_spinglass'],
+                                ['point', 'color', 'continuous', 'degree'],
+                                ['edge', 'weight', 'weight'],
+                                ['edge', 'color', 'continuous', 'weight']
+                            ].forEach(function (config) {
+                                document.write('<button onclick="window.g.updateEncoding('
+                                    + config.map(JSON.stringify).join(', ') + ')>'
+                                    + config.join(', ') + '</button>');
+                            });
+                        </script>
+                        <br/>
+                        <script>
+                            [
+                                ['point', 'size'],
+                                ['point', 'color'],
+                                ['edge', 'weight'],
+                                ['edge', 'color']
+                            ].forEach(function (config) {
+                                document.write('<button onclick="window.g.updateEncoding('
+                                    + config.map(JSON.stringify).join(', ') + ')>clear: '
+                                    + config.join(', ') + '</button>');
+                            });
+                        </script>
+                    </td>
                 </tr>
                 <tr>
                     <td>Settings</td>

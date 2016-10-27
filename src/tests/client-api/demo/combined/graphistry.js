@@ -5,23 +5,37 @@ function Graphistry (iframe) {
 // ===================== Non-Falcor APIs
 Graphistry.prototype.__transmitActionStreamgl = function (msg) {
     msg.mode = 'graphistry-action-streamgl';
+    msg.tag = '' + Math.random();
     console.log('parent posting', msg, this.iframe.contentWindow);
     this.iframe.contentWindow.postMessage(msg, '*');
     return this;
-}
+};
 
 Graphistry.prototype.startClustering = function (milliseconds) {
     return this.__transmitActionStreamgl({type: 'startClustering', args: {duration: milliseconds || 0}});
-}
+};
 
 Graphistry.prototype.stopClustering = function () {
     return this.__transmitActionStreamgl({type: 'stopClustering'});
-}
+};
+
+Graphistry.prototype.autocenter = function (percentile) {
+    return this.__transmitActionStreamgl({type: 'autocenter', args: {percentile: percentile || 0}});
+};
+
+Graphistry.prototype.saveWorkbook = function () {
+    return this.__transmitActionStreamgl({type: 'saveWorkbook'});
+};
+
+Graphistry.prototype.exportStatic = function (name) {
+    return this.__transmitActionStreamgl({type: 'exportStatic', args: {name: name}});
+};
 
 
 // ===================== Falcor
 Graphistry.prototype.__transmitAction = function (msg) {
     msg.mode = 'graphistry-action';
+    msg.tag = '' + Math.random();
     this.iframe.contentWindow.postMessage(msg, '*');
     return this;
 }
@@ -36,13 +50,14 @@ Graphistry.prototype.addExclusion = function (expr) {
         args: ["degree", "number", "point:degree"]});
 };
 
+Graphistry.prototype.updateEncoding = function (entityType, encodingAttribute, encodingMode, dataAttribute) {
+    console.warn('update-encoding is not a known encoding falcor action');
+    return this.__transmitAction({
+        type: 'update-encoding',
+        args: [entityType, encodingAttribute, encodingMode, dataAttribute]});
+}
 
 
-
-/*
-['text-color', 'background-color', 'transparency', 'show-labels', 'show-points-of-interest', 'tau',
-'gravity', 'scalingRatio', 'edgeInfluence', 'strongGravity', 'dissuadeHubs', ' linLog']
-*/
 Graphistry.prototype.updateSetting = function (name, val) {
     return this.__transmitAction({type: 'set-control-value', args: {id: name, value: val}})
 }

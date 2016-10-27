@@ -69,15 +69,24 @@ export class RemoteDataSource extends SocketDataSource {
                         toggle.click();
                     }
                 }, Math.min(2000, message.data.args.duration))
-                break;
+                return;
 
             case 'stopClustering':
                 var toggle = document.getElementById('toggle-simulating');
                 if (hasClass(toggle, 'active')) {
                     toggle.click();
                 }
-                break;
+                return;
+
+            case 'autocenter':
+                if (message.data.args.percentile) {
+                    console.warn('Centering does not yet support percentile');
+                }
+                document.getElementById('center-camera').click();
+                return;
         }
+
+        console.error('Unknown StreamGL action', message.data.type);
     }
 
     postMessageActionHandler(message = {}) {
