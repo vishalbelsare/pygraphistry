@@ -4,7 +4,7 @@ var _        = require('underscore');
 var Q        = require('q');
 var zlib     = require('zlib');
 
-var config      = require('config')();
+var config      = require('@graphistry/config')();
 var log         = require('./logger.js');
 var logger      = log.createLogger('graphistry:common:s3');
 

@@ -1,7 +1,7 @@
 'use strict';
 //Essentially, data here should be collected then piped into outside sources, such as boundary, and then have that service process/display the data
 
-var config = require('config')();
+var config = require('@graphistry/config')();
 var _ = require('underscore');
 var Log         = require('./logger.js');
 var logger      = Log.createLogger('perfStats');
