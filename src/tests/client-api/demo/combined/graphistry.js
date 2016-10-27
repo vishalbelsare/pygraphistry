@@ -11,23 +11,23 @@ Graphistry.prototype.__transmitActionStreamgl = function (msg) {
     return this;
 };
 
-Graphistry.prototype.startClustering = function (milliseconds) {
+Graphistry.prototype.startClustering = function (milliseconds, cb) {
     return this.__transmitActionStreamgl({type: 'startClustering', args: {duration: milliseconds || 0}});
 };
 
-Graphistry.prototype.stopClustering = function () {
+Graphistry.prototype.stopClustering = function (cb) {
     return this.__transmitActionStreamgl({type: 'stopClustering'});
 };
 
-Graphistry.prototype.autocenter = function (percentile) {
+Graphistry.prototype.autocenter = function (percentile, cb) {
     return this.__transmitActionStreamgl({type: 'autocenter', args: {percentile: percentile || 0}});
 };
 
-Graphistry.prototype.saveWorkbook = function () {
+Graphistry.prototype.saveWorkbook = function (cb) {
     return this.__transmitActionStreamgl({type: 'saveWorkbook'});
 };
 
-Graphistry.prototype.exportStatic = function (name) {
+Graphistry.prototype.exportStatic = function (name, cb) {
     return this.__transmitActionStreamgl({type: 'exportStatic', args: {name: name}});
 };
 
@@ -39,18 +39,18 @@ Graphistry.prototype.__transmitAction = function (msg) {
     this.iframe.contentWindow.postMessage(msg, '*');
     return this;
 }
-Graphistry.prototype.addFilter = function (expr) {
+Graphistry.prototype.addFilter = function (expr, cb) {
     return this.__transmitAction({
         type: 'add-expression',
         args: ["degree", "number", "point:degree"]});
 };
-Graphistry.prototype.addExclusion = function (expr) {
+Graphistry.prototype.addExclusion = function (expr, cb) {
     return this.__transmitAction({
         type: 'add-expression',
         args: ["degree", "number", "point:degree"]});
 };
 
-Graphistry.prototype.updateEncoding = function (entityType, encodingAttribute, encodingMode, dataAttribute) {
+Graphistry.prototype.updateEncoding = function (entityType, encodingAttribute, encodingMode, dataAttribute, cb) {
     console.warn('update-encoding is not a known encoding falcor action');
     return this.__transmitAction({
         type: 'update-encoding',
@@ -58,12 +58,12 @@ Graphistry.prototype.updateEncoding = function (entityType, encodingAttribute, e
 }
 
 
-Graphistry.prototype.updateSetting = function (name, val) {
+Graphistry.prototype.updateSetting = function (name, val, cb) {
     return this.__transmitAction({type: 'set-control-value', args: {id: name, value: val}})
 }
 
 
-Graphistry.prototype.updateZoom = function (level) {
+Graphistry.prototype.updateZoom = function (level, cb) {
     return this.__transmitAction({
         type: 'update-zoom',
         args: [level]});
