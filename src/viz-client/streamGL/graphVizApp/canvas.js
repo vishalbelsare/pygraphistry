@@ -314,8 +314,6 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
                 shouldUpdateRenderTime = true;
                 this.appSnapshot.fullScreenBufferDirty = true;
                 if (quietSignaled) {
-                    isAnimating.onNext(true);
-                    quietSignaled = false;
 
                     this.renderSlowEffects();
                     this.appSnapshot.vboUpdated = false;
