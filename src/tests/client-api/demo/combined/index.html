@@ -21,7 +21,7 @@
             GraphistryLoader(document.getElementById('viz'), function (err, g) {
                 console.log('adding filter');
                 g.addFilter('degree > 0');
-
+                g.updateSetting('background-color', '#FF0000');
             });
         });
         </script>

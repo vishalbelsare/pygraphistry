@@ -15,6 +15,7 @@ export class RemoteDataSource extends SocketDataSource {
         var initResponse = function (event) {
             if (event && event.data && event.data.graphistry === 'init') {
                 parent.postMessage({graphistry: 'init'},'*');
+                console.log('Connected to parent windoe', event.data);
                 window.removeEventListener('message', initResponse, false);
             }
         };
@@ -27,10 +28,21 @@ export class RemoteDataSource extends SocketDataSource {
                 .fromEvent(window, 'message')
                 .mergeMap((message) => this.postMessageUpdateHandler(message))
                 .subscribe();
+
+            Observable
+                .fromEvent(window, 'message')
+                .filter( (e) => e && e.data && e.data.mode === 'graphistry-action')
+                .mergeMap((message) => this.postMessageActionHandler(message))
+                .subscribe();
         }
 
 
     }
+
+    postMessageActionHandler(message = {}) {
+        console.error(Error({message, text: 'now what??'}));
+    }
+
     postMessageUpdateHandler(message = {}) {
         const { data } = message;
         if (typeof data !== 'object') {

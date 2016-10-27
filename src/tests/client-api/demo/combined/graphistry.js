@@ -1,18 +1,26 @@
 function Graphistry (iframe) {
     this.iframe = iframe;
 }
-Graphistry.prototype.addFilter = function (expression) {
 
-    this.iframe.contentWindow.postMessage({type: 'falcor-update', values: [
-        { path: ['filters', 'controls', 0, 'selected'], value: true },
-        { path: ['scene', 'controls', 1, 'selected'], value: false },
-        { path: ['labels', 'controls', 0, 'selected'], value: false },
-        { path: ['layout', 'controls', 0, 'selected'], value: false },
-        { path: ['exclusions', 'controls', 0, 'selected'], value: false },
-        { path: ['panels', 'left'], value: { $type: 'ref', value: ['filters'] } }
-    ]}, '*')
+Graphistry.prototype.__transmit = function (msg) {
+    msg.mode = 'graphistry-action';
+    this.iframe.contentWindow.postMessage(msg, '*');
+    return this;
+}
 
+
+
+//TODO really want to handle expr="point:degree < 5", not adding a filter
+Graphistry.prototype.addFilter = function (expr) {
+    return this.__transmit({
+        type: 'add-expression',
+        args: ["degree", "number", "point:degree"]});
 };
+//TODO really want something like
+Graphistry.prototype.updateSetting = function (name, val) {
+    return this.__transmit({type: 'set-control-value', args: {id: name, value: 10}})
+}
+
 
 function GraphistryLoader (iframe, cb) {
 
@@ -38,7 +46,12 @@ function GraphistryLoader (iframe, cb) {
         }, 3000);
 
         //trigger hello if missed initial one
-        iframe.contentWindow.postMessage({'graphistry': 'init'}, '*');
+        iframe.contentWindow.postMessage({
+                'graphistry': 'init',
+                'agent': 'graphistryjs',
+                'version': '0.0.0'
+            }, '*');
+
     } catch (e) {
         console.error('Graphistry Load Exception', e);
     }
