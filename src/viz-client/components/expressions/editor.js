@@ -145,12 +145,12 @@ class DataframeCompleter {
         /**
         [{
             name, componentType,
-            dataType, attribute
+            dataType, identifier
         }....]
          */
-        this.templates = Object.keys(templates.reduce((templates, { name, attribute }) => {
+        this.templates = Object.keys(templates.reduce((templates, { name, identifier }) => {
             templates[name] = true;
-            templates[attribute] = true;
+            templates[identifier] = true;
             return templates;
         }, {}));
     }

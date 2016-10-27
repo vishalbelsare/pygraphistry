@@ -104,7 +104,7 @@ function groupExpressionsByTypeWithLimitsAndErrors({ dataframe, expressionsById 
             continue;
         }
 
-        const { componentType, attribute, expressionType } = expression;
+        const { identifier, componentType, expressionType } = expression;
 
         if (expressionType === 'filter') {
 
@@ -118,7 +118,12 @@ function groupExpressionsByTypeWithLimitsAndErrors({ dataframe, expressionsById 
             }
         }
 
-        const expressionQuery = { ...query, attribute, type: componentType };
+        const expressionQuery = {
+            ...query,
+            type: componentType,
+            attribute: identifier
+        };
+
         const masks = dataframe.getMasksForQuery(expressionQuery, errors);
 
         if (masks !== undefined) {

@@ -51,10 +51,10 @@ export function start() {
     // This allows Express to expose the client's real IP and protocol, not the proxy's.
     app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
-    return serverListen(
+    return Observable.defer(() => serverListen(
             config.VIZ_LISTEN_PORT,
             config.VIZ_LISTEN_ADDRESS
-        )
+        ))
         .mergeMap((listeningServer) => {
             return requisitionWorker({ config, logger, app, server: listeningServer, socketServer })
                 .multicast(
@@ -79,10 +79,14 @@ export function start() {
             }
             const { error, message, exitCode, shouldExit } = e;
             if (error || message) {
-                logger.error(error, message);
+                logger.error({ err: error }, `viz-server exit reason: ${message}`);
             }
             if (shouldExit) {
-                process.exit(exitCode);
+                logger.info('Exiting viz-server process.');
+                // Allow pending log messages to finish before exiting
+                setTimeout(() => {
+                    process.exit(exitCode);
+                }, 1000);
             }
             return Observable.empty();
         });
