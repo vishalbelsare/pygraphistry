@@ -89,7 +89,10 @@ function handleWorkerRequest(req, res) {
 // the worker.
 function redirectNginxReqest(requestUrl, res, worker) {
     const { path } = urlParse(requestUrl);
-    const redirectUrl = `/worker/${worker.port}${path}`;
+    // Redirect to the named location (e.g. "@worker10001") for this worker. Redirection to a
+    // non-named location (e.g. "/worker/10001/...") causes nginx to force the request method to be
+    // "GET", which obviously causes problems if the original request was POST.
+    const redirectUrl = `@worker${worker.port}`;
 
     res.set(`X-Accel-Redirect`, redirectUrl);
     res.send('');
