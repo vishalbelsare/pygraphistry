@@ -2,23 +2,48 @@ function Graphistry (iframe) {
     this.iframe = iframe;
 }
 
-Graphistry.prototype.__transmit = function (msg) {
+Graphistry.prototype.__transmitAction = function (msg) {
     msg.mode = 'graphistry-action';
     this.iframe.contentWindow.postMessage(msg, '*');
     return this;
 }
 
+Graphistry.prototype.__transmitActionStreamgl = function (msg) {
+    msg.mode = 'graphistry-action-streamgl';
+    this.iframe.contentWindow.postMessage(msg, '*');
+    return this;
+}
 
-
-//TODO really want to handle expr="point:degree < 5", not adding a filter
 Graphistry.prototype.addFilter = function (expr) {
-    return this.__transmit({
+    return this.__transmitAction({
         type: 'add-expression',
         args: ["degree", "number", "point:degree"]});
 };
-//TODO really want something like
+
+Graphistry.prototype.addExclusion = function (expr) {
+    return this.__transmitAction({
+        type: 'add-expression',
+        args: ["degree", "number", "point:degree"]});
+};
+
+
+
+Graphistry.prototype.startClustering = function (duration) {
+    return this.__transmitActionStreamgl({
+        type: 'startClustering',
+        args: [duration]});
+}
+
+Graphistry.prototype.stopClustering = function () {
+    return this.__transmitActionStreamgl({type: 'stopClustering'});
+}
+
+/*
+['text-color', 'background-color', 'transparency', 'show-labels', 'show-points-of-interest', 'tau',
+'gravity', 'scalingRatio', 'edgeInfluence', 'strongGravity', 'dissuadeHubs', ' linLog']
+*/
 Graphistry.prototype.updateSetting = function (name, val) {
-    return this.__transmit({type: 'set-control-value', args: {id: name, value: 10}})
+    return this.__transmitAction({type: 'set-control-value', args: {id: name, value: val}})
 }
 
 
@@ -57,4 +82,3 @@ function GraphistryLoader (iframe, cb) {
     }
 
 }
-

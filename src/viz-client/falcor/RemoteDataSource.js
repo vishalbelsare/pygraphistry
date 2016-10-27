@@ -34,9 +34,45 @@ export class RemoteDataSource extends SocketDataSource {
                 .filter( (e) => e && e.data && e.data.mode === 'graphistry-action')
                 .mergeMap((message) => this.postMessageActionHandler(message))
                 .subscribe();
+
+            Observable
+                .fromEvent(window, 'message')
+                .filter( (e) => e && e.data && e.data.mode === 'graphistry-action-streamgl')
+                .map((message) => this.postMessageStreamglHandler(message))
+                .subscribe();
         }
+    }
 
 
+    postMessageStreamglHandler(message = {}) {
+
+        var hasClass = function (element, selector) {
+            var className = " " + selector + " ";
+            return ( (" " + element.className + " ").replace(/[\n\t]/g, " ").indexOf(className) > -1 )
+        };
+
+        switch (message.type) {
+            case 'startClustering':
+
+                var toggle = document.getElementById('toggle-simulating');
+                if (!hasClass(toggle, 'active')) {
+                    toggle.click();
+                }
+
+                setTimeout(function () {
+                    if (hasClass(toggle, 'active')) {
+                        toggle.click();
+                    }
+                }, Math.min(2000, duration))
+                break;
+
+            case 'stopClustering':
+                var toggle = document.getElementById('toggle-simulating');
+                if (hasClass(toggle, 'active')) {
+                    toggle.click();
+                }
+                break;
+        }
     }
 
     postMessageActionHandler(message = {}) {

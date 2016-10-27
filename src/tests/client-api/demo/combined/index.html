@@ -22,6 +22,12 @@
                 console.log('adding filter');
                 g.addFilter('degree > 0');
                 g.updateSetting('background-color', '#FF0000');
+
+                setTimeout(function () {
+                    console.log('starc');
+                    g.startClustering(3000);
+                    console.log('staredc');
+                }, 10000)
             });
         });
         </script>
