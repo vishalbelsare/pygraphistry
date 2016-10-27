@@ -139,6 +139,9 @@ class Scene extends React.Component {
     }
     render() {
         const { edges, points, release, children } = this.props;
+        const releaseString = release.buildNumber ? `${release.tag}, build #${release.buildNumber}`
+                                                  : `${release.tag}`;
+
         return (
             <div id='simulation-container'
                  ref={this.assignRef}
@@ -186,10 +189,7 @@ class Scene extends React.Component {
                          onMouseDown={this.stopEventPropagation}
                          onMouseOver={this.stopEventPropagation}
                          onMouseOut={this.stopEventPropagation}>
-                        {`${new Date(release &&
-                                     release.date ||
-                                     Date.now())
-                            .toLocaleString()}`}
+                        { releaseString }
                     </div>
                 </div>
             </div>

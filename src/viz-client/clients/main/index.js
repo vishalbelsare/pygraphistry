@@ -4,6 +4,10 @@ import { Model, RemoteDataSource } from 'viz-client/falcor';
 import { handleVboUpdates } from 'viz-client/streamGL/client';
 
 export function initialize(options, debug) {
+    const buildNum = __BUILDNUMBER__ === undefined ? 'Local build' : `Build #${__BUILDNUMBER__}`;
+    const buildDate = (new Date(__BUILDDATE__)).toLocaleString();
+    console.info(`${buildNum} of ${__GITBRANCH__}@${__GITCOMMIT__} (on ${buildDate})`)
+
     console.info(`Connecting to ${window.graphistryPath || 'local'}`);
 
     let workbook = options.workbook;
