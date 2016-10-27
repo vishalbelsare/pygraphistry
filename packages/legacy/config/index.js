@@ -90,12 +90,11 @@ function defaults() {
             latestVersion: '0.9.30'
         },
 
-        RELEASE: 'June 2016: R1',  // human-readable, shown under logo
-        ARTIFACT: 'unavailable', // override w/ a docker or jenkins tag
+        RELEASE: 'Nov 16 R1',  // human-readable, shown under logo
 
         LOCAL_CACHE: true,
         LOCAL_CACHE_DIR: '/tmp/graphistry/data_cache',
-        
+
         LOCAL_WORKBOOK_CACHE: true,
         LOCAL_WORKBOOK_CACHE: '/tmp/graphistry/workbook_cache',
 
