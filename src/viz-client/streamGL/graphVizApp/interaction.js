@@ -154,7 +154,7 @@ function setupRotate($eventTarget, camera) {
 
 
 function setupScroll($eventTarget, canvas, camera, appState) {
-    return $eventTarget.onAsObservable('mousewheel')
+    return $eventTarget.onAsObservable('wheel')
         // .auditTime(1)
         .switchMap(util.observableFilter([appState.marqueeOn, appState.brushOn],
             function (val) {
