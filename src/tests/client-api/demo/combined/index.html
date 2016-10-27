@@ -79,8 +79,8 @@
                                 ['edge', 'weight', 'weight'],
                                 ['edge', 'color', 'continuous', 'weight']
                             ].forEach(function (config) {
-                                document.write('<button onclick="window.g.updateEncoding('
-                                    + config.map(JSON.stringify).join(', ') + ')>'
+                                document.write('<button onclick=\'window.g.updateEncoding('
+                                    + config.map(JSON.stringify).join(', ') + ')\'>'
                                     + config.join(', ') + '</button>');
                             });
                         </script>
@@ -92,8 +92,8 @@
                                 ['edge', 'weight'],
                                 ['edge', 'color']
                             ].forEach(function (config) {
-                                document.write('<button onclick="window.g.updateEncoding('
-                                    + config.map(JSON.stringify).join(', ') + ')>clear: '
+                                document.write('<button onclick=\'window.g.updateEncoding('
+                                    + config.map(JSON.stringify).join(', ') + ')\'>clear: '
                                     + config.join(', ') + '</button>');
                             });
                         </script>
