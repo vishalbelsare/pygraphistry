@@ -1,11 +1,24 @@
 import { inspect } from 'util';
 import { Observable } from 'rxjs';
+import _ from 'underscore';
 import { falcor as routes } from '../routes';
 import Router from '@graphistry/falcor-router';
+import { mapObjectsToAtoms }  from '../routes/mapObjectsToAtoms.js'
+
+let logger;
+if (__CLIENT__) {
+
+} else {
+    const commonLogger = require('@graphistry/common/logger.js');
+    console.log('commonLogger', commonLogger);
+    logger = commonLogger.createLogger('viz-shared','viz-shared/middleware/falcor.js');
+}
 
 export function getDataSourceFactory(services) {
+    const rs = routes(services);
+    //console.log('WS', wrapRoutes(rs));
 
-    let AppRouter = createAppRouter(routes(services));
+    let AppRouter = createAppRouter(rs);
 
     if (module.hot) {
         // Enable Webpack hot module replacement for routes
@@ -20,6 +33,32 @@ export function getDataSourceFactory(services) {
             request, options: { ...request.query }
         });
     }
+}
+
+function wrapRoutes(routes) {
+    function wrap(route, handlerName) {
+        console.log('wrapping', handlerName, 'for', route.route)
+        const handler = route[handlerName];
+        return function(path, args) {
+            return Observable.defer(() => handler(path, args))
+                .map(mapObjectsToAtoms)
+                .catch(e => {
+                    logger && logger.error(e, `Failure in route ${route.route}.${handlerName} handler`);
+                    return Observable.throw(e);
+                })
+        }
+    }
+
+    return routes.map((route) => {
+        const newRoute = _.extend({}, route)
+        ['get', 'set', 'call'].forEach(handlerName => {
+            if (_.keys(newRoute).includes(handlerName)) {
+                newRoute[handlerName] = wrap(newRoute, handlerName);
+            }
+        })
+
+        return newRoute;
+    });
 }
 
 function createAppRouter(routes) {
@@ -48,6 +87,7 @@ function createAppRouter(routes) {
                     console.log(`args: ${inspect(args, { depth: null })}`);
                     console.log(`refPaths: ${inspect(refPaths, { depth: null })}`);
                     console.log(`thisPaths: ${inspect(thisPaths, { depth: null })}`);
+                    return Observable.empty();
                 }
             });
         }
