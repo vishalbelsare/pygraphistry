@@ -129,22 +129,14 @@ function getProxyPaths(req) {
     logger.trace({req}, 'Finding proxy paths of request');
 
     // If these headers aren't set, assumed we're not begind a proxy
-    if(!req.get('X-Original-Uri') || !req.get('X-Resolved-Uri')) {
+    if(!req.get('X-Graphistry-Prefix')) {
         logger.warn({req}, 'Could not find proxy URI headers; will not try to change URL paths');
-        return undefined;
+        return { base: null, prefix: '' };
     }
 
-    const base = `${req.protocol}://${req.get('host')}${req.get('X-Resolved-Uri')}`;
+    const prefix = `${req.get('X-Graphistry-Prefix')}`;
+    const base = `${prefix}${req.originalUrl}`;
 
-    const { pathname: originalPathname } = url.parse(req.get('X-Original-Uri'));
-    const { pathname: resolvedPathname } = url.parse(req.get('X-Resolved-Uri'));
-
-    if(!resolvedPathname.endsWith(originalPathname)) {
-        logger.warn({req, base}, 'Proxy paths: Resolved URI does not end with original URI, so not setting prefix');
-        return { base: base, prefix: '' };
-    }
-
-    const prefix = resolvedPathname.substr(0, resolvedPathname.length - originalPathname.length);
     logger.debug({req, base, prefix}, 'Resolved proxy paths');
     return {base, prefix};
 }
