@@ -63,6 +63,13 @@ Graphistry.prototype.updateSetting = function (name, val) {
 }
 
 
+Graphistry.prototype.updateZoom = function (level) {
+    return this.__transmitAction({
+        type: 'update-zoom',
+        args: [level]});
+};
+
+
 function GraphistryLoader (iframe, cb) {
 
     cb = cb || function () {}
