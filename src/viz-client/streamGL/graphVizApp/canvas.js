@@ -267,7 +267,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         var PAUSE_RENDERING_DELAY = 500;
 
         var lastRenderTime = 0;
-        var quietSignaled = true;
+        var quietSignaled = false;
 
         // Communication between render loops about whether to update lastRenderTime,
         // or to check the delta against it to see if we should render slow effects.
@@ -316,13 +316,14 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
                 if (quietSignaled) {
                     isAnimating.onNext(true);
                     quietSignaled = false;
+
+                    this.renderSlowEffects();
+                    this.appSnapshot.vboUpdated = false;
+                    _.each(tagsWithRenderFull, (tag) => {
+                        delete renderQueue[tag];
+                    });
                 }
 
-                this.renderSlowEffects();
-                this.appSnapshot.vboUpdated = false;
-                _.each(tagsWithRenderFull, (tag) => {
-                    delete renderQueue[tag];
-                });
             }
 
             // Move points overlay
