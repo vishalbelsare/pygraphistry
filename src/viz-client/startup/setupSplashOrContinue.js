@@ -2,6 +2,8 @@ import $ from 'jquery';
 import { bind } from 'lodash';
 import { Observable } from 'rxjs';
 
+import styles from './splashOrContinue.less';
+
 export function setupSplashOrContinue(document, options) {
 
     const { client = 'main', splashAfter } = options;
@@ -14,7 +16,7 @@ export function setupSplashOrContinue(document, options) {
     if (showSplash) {
 
         const $splash = $(`
-            <div class='splash'>
+            <div class=${styles.splash}>
                 <img src='img/logowhite.png'></img>
                 <span>
                     <a href='javascript:void(0)' id='go-load'>
