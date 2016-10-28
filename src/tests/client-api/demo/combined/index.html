@@ -25,6 +25,17 @@
                 vertical-align: top;
                 padding-top: 1em;
             }
+
+            #labels {
+                position: absolute;
+            }
+            .label {
+                position: absolute;
+                width: 20px;
+                height: 20px;
+                background-color: rgba(255,255,255,0.5);
+                border-radius: 15px;
+            }
         </style>
         <script src="graphistry.js"></script>
         <script>
@@ -35,15 +46,34 @@
             });
         });
 
+        var cache ={
+            point: {},
+            edge: {}
+        };
         function overlay(on) {
+            var labels = document.getElementById('labels');
             if (on) {
                 window.g.updateSetting('show-points-of-interest', false);
                 window.g.subscribeLabels({
-                    enter: function (id, entityType, x, y) { },
-                    move: function (id, entityType, x, y) { },
-                    exit: function (id, entityType) { }
+                    onChange: function (id, entityType, x, y) {
+                        var elt = cache[entityType][id];
+                        if (!elt) {
+                            elt = document.createElement('div');
+                            elt.className = 'label';
+                            labels.appendChild(elt);
+                            cache[entityType][id] = elt;
+                        }
+                        elt.style.left = x;
+                        elt.style.top = y;
+                    },
+                    onExit: function (id, entityType) {
+                        labels.removeChild(cache[entityType][id]);
+                        delete cache[entityType][id];
+                    }
                 });
             } else {
+                labels.innerHTML = '';
+                cache = {point: {}, edge: {}};
                 window.g.updateSetting('show-points-of-interest', true);
                 window.g.unsubscribeLabels();
             }
@@ -152,10 +182,7 @@
                     </td>
             </table>
         </div>
+        <div id="labels"></div>
         <iframe id="viz" src="http://127.0.0.1:10000/graph/graph.html?dataset=Miserables" />
-
-
-
-
     </body>
 </html>

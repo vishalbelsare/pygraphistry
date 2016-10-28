@@ -157,14 +157,16 @@ Graphistry.prototype.updateZoom = function (level, cb) {
 /**
  * Subscribe to label updates
  * @param {Object} subscriptions - list of subscriptions that will subscribe to label
- * updates
+ * updates: expects two fields, onChange(id,entityType,x,y) and onExit(id, entityType).
+ * onChange is notified of a label appearing or changing position, and onExit of it no longer being of interest.
  * @param {function} cb - callback to call once action has completed
  * @return {Graphistry} this
  */
 Graphistry.prototype.subscribeLabels = function (subscriptions, cb) {
-    var enter = subscriptions.onEnter || function (id, entityType, x, y) { };
-    var move = subscriptions.onMove || function (id, entityType, x, y) { };
+
+    var change = subscriptions.onChange || function (id, entityType, x, y) { };
     var exit = subscriptions.onExit || function (id, entityType) { };
+
     return this.__transmitActionStreamgl({type: 'subscribeLabels'});
 };
 
