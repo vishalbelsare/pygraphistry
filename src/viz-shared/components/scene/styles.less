@@ -35,6 +35,10 @@ html.nologo .logo-container {
 
 .meter {
 
+    :global(body.hide-chrome) & {
+        display: none;
+    }
+
     .noselect();
     .hideOnMouseOver();
 

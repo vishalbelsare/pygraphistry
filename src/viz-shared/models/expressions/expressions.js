@@ -15,7 +15,7 @@ import { histograms } from './histograms';
 
 export function expressions(view) {
 
-    const defaultFilter = expression('LIMIT 800000', 'Point Limit');
+    const defaultFilter = expression('LIMIT 800000');
     defaultFilter.expressionType = 'filter';
     defaultFilter.level = 'system';
 
@@ -33,35 +33,50 @@ export function expressions(view) {
     };
 }
 
-export function expression(input = '', name = '',
-                           dataType = 'number',
-                           attribute = 'point:degree',
+export function expression(inputOrProps = {
+                                name: 'degree',
+                                dataType: 'number',
+                                componentType: 'point'
+                           },
                            expressionId = simpleflake().toJSON()) {
 
-    const query = input ?
-        parseUtil(parser, input, { startRule: 'start' }) :
-        getDefaultQueryForDataType(dataType, attribute);
+    let name = '',
+        input = '',
+        query = '',
+        dataType = '',
+        identifier = '',
+        componentType = '';
 
-    const attributeSplitIndex = attribute.lastIndexOf(':');
-    const componentType = attributeSplitIndex === -1 ?
-        attribute : attribute.substr(0, attributeSplitIndex);
+    if (typeof inputOrProps === 'string') {
+        query = parseUtil(parser, inputOrProps, { startRule: 'start' });
+    } else if (inputOrProps && typeof inputOrProps === 'object') {
+        name = inputOrProps.name || 'degree';
+        dataType = inputOrProps.dataType || 'number';
+        componentType = inputOrProps.componentType || 'point';
+        identifier = `${componentType}:${name}`;
+        query = getDefaultQueryForDataType({
+            ...inputOrProps, name, dataType, identifier, componentType
+        });
+    }
 
     input = printExpression(query);
 
     return {
         id: expressionId,
-        enabled: true, level: undefined, /* <-- 'system' | undefined */
-        name, input, query, dataType, attribute,
-        componentType: componentType || 'point', /* 'edge' | 'point' */
+        enabled: true,
+        level: undefined, /* <-- 'system' | undefined */
+        name, input, query,
+        dataType, identifier, componentType, /* 'edge' | 'point' */
         expressionType: 'filter', /* <-- 'filter' | 'exclusion' */
     };
 }
 
-export function getDefaultQueryForDataType(dataType = 'number', attribute = 'point:degree') {
+export function getDefaultQueryForDataType(queryProperties = {}) {
+    const { dataType = 'number', identifier } = queryProperties;
     const queryFactory = defaultQueriesMap[dataType] || defaultQueriesMap.literal;
     return {
-        dataType, attribute,
-        ...queryFactory(attribute)
+        dataType, attribute: identifier,
+        ...queryFactory(queryProperties)
     };
 }
 
@@ -72,12 +87,12 @@ const defaultQueriesMap = {
     integer(...args) {
         return this.number(...args)
     },
-    number(attribute, start = 0) {
+    number({ identifier, start = 0 }) {
         return {
             start, ast: {
                 type: 'BinaryExpression',
                 operator: '>=',
-                left: { type: 'Identifier', name: attribute },
+                left: { type: 'Identifier', name: identifier },
                 right: { type: 'Literal', value: start }
             }
         };
@@ -85,22 +100,22 @@ const defaultQueriesMap = {
     categorical(...args) {
         return this.string(...args);
     },
-    string(attribute, equals = 'ABC') {
+    string({ identifier, equals = 'ABC' }) {
         return {
             equals, ast: {
                 type: 'BinaryExpression',
                 operator: '=',
-                left: { type: 'Identifier', name: attribute },
+                left: { type: 'Identifier', name: identifier },
                 right: { type: 'Literal', value: equals }
             }
         };
     },
-    boolean(attribute, equals = true) {
+    boolean({ identifier, equals = true }) {
         return {
             ast: {
                 type: 'BinaryPredicate',
                 operator: 'IS',
-                left: { type: 'Identifier', name: attribute },
+                left: { type: 'Identifier', name: identifier },
                 right: { type: 'Literal', value: equals }
             }
         }
@@ -108,17 +123,17 @@ const defaultQueriesMap = {
     datetime(...args) {
         return this.date(...args);
     },
-    date(attribute) {
+    date({ identifier }) {
         return {
             ast: {
                 type: 'BinaryExpression',
                 operator: '>=',
-                left: { type: 'Identifier', name: attribute },
+                left: { type: 'Identifier', name: identifier },
                 right: { type: 'Literal', value: 'now'}
             }
         };
     },
-    literal(attribute, value = true) {
+    literal({ identifier, value = true }) {
         return {
             ast: {
                 value, type: 'Literal',
