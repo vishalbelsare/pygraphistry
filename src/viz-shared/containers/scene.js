@@ -11,15 +11,15 @@ let Scene = ({
         onSelectionMaskTouchStart,
         id, simulating, labels = {},
         release = {}, renderer = {},
-        selection = {}, highlight = {}, ...props
-    } = {}) => (
+        selection = {}, highlight = {}, ...props } = {}) => (
     <div>
       <Labels key='labels' data={labels} simulating={simulating}/>
       <SceneComponent selection={selection}
                       simulating={simulating}
                       edges={renderer.edges}
                       points={renderer.points}
-                      sceneID={id} {...props}>
+                      sceneID={id} {...props}
+                      release={release}>
           <Renderer key='renderer'
                     data={renderer}
                     simulating={simulating}/>
@@ -35,7 +35,7 @@ let Scene = ({
 
 Scene = container((scene = {}) => {
     return `{
-        id, simulating, release: { date },
+        id, simulating, release: { tag, buildNumber },
         ... ${ Settings.fragment(scene) },
         labels: ${ Labels.fragment(scene.labels) },
         renderer: ${ Renderer.fragment(scene.renderer) },

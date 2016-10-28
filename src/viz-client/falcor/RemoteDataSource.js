@@ -38,45 +38,112 @@ export class RemoteDataSource extends SocketDataSource {
             Observable
                 .fromEvent(window, 'message')
                 .filter( (e) => e && e.data && e.data.mode === 'graphistry-action-streamgl')
-                .map((message) => this.postMessageStreamglHandler(message))
+                .map(this.postMessageStreamglHandler.bind(this))
                 .subscribe();
         }
     }
 
 
+    postMessageStreamglRunner(message, thunk) {
+        var that = this;
+        var fired = false;
+
+        var errorHandler = function (error)  {
+            if (!fired) {
+                fired = true;
+                parent.postMessage({tag: message.data.tag, error: error || 'error'}, '*');
+            }
+        };
+        var succeesHandler = function (success) {
+            if (!fired) {
+                fired = true;
+                parent.postMessage({tag: message.data.tag, success: success || 'success'}, '*');
+            }
+        };
+        var cb = function (error, success) {
+            if (error) {
+                errorHandler(error);
+            } else {
+                succeesHandler(success);
+            }
+        };
+
+        try {
+            thunk(cb);
+        } catch (exn) {
+            console.error('postMessageStreamglRunner', exn);
+            errorHandler('error');
+            return;
+        }
+        if (!fired) {
+            fired = true;
+            succeesHandler();
+        }
+    }
+
     postMessageStreamglHandler(message = {}) {
+
+        console.log("Received StreamGL action", message.data);
 
         var hasClass = function (element, selector) {
             var className = " " + selector + " ";
             return ( (" " + element.className + " ").replace(/[\n\t]/g, " ").indexOf(className) > -1 )
         };
 
-        switch (message.type) {
+        switch (message.data.type) {
             case 'startClustering':
 
-                var toggle = document.getElementById('toggle-simulating');
-                if (!hasClass(toggle, 'active')) {
-                    toggle.click();
-                }
+                return this.postMessageStreamglRunner(message, (cb) => {
+                    var toggle = document.getElementById('toggle-simulating');
+                    if (!hasClass(toggle, 'active')) {
+                        toggle.click();
+                    }
 
-                setTimeout(function () {
+                    setTimeout(function () {
+                        if (hasClass(toggle, 'active')) {
+                            toggle.click();
+                        }
+                    }, Math.min(2000, message.data.args.duration))
+                    cb();
+                });
+
+            case 'stopClustering':
+
+                return this.postMessageStreamglRunner(message, (cb) => {
+                    var toggle = document.getElementById('toggle-simulating');
                     if (hasClass(toggle, 'active')) {
                         toggle.click();
                     }
-                }, Math.min(2000, duration))
-                break;
+                    cb();
+                });
 
-            case 'stopClustering':
-                var toggle = document.getElementById('toggle-simulating');
-                if (hasClass(toggle, 'active')) {
-                    toggle.click();
-                }
-                break;
+            case 'autocenter':
+
+                return this.postMessageStreamglRunner(message, (cb) => {
+                    if (message.data.args.percentile) {
+                        console.warn('Centering does not yet support percentile');
+                    }
+                    document.getElementById('center-camera').click();
+                    cb();
+                });
+
+            case 'toggleChrome':
+
+                return this.postMessageStreamglRunner(message, (cb) => {
+                    if (message.data.args && message.data.args.toggle) {
+                        document.body.classList.remove('hide-chrome');
+                    } else {
+                        document.body.classList.add('hide-chrome');
+                    }
+                    cb();
+                });
         }
+
+        console.error('Unknown StreamGL action', message.data.type);
     }
 
     postMessageActionHandler(message = {}) {
-        console.error(Error({message, text: 'now what??'}));
+        console.error('no postMessageActionHandler', new Error({message, text: 'now what??'}));
     }
 
     postMessageUpdateHandler(message = {}) {
