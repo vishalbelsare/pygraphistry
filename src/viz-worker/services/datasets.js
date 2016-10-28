@@ -10,7 +10,7 @@ const downloaders = {
     'https:': downloadWWW.bind(undefined, require('https'))
 };
 
-export function loadDataset(dataset, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
+export function loadDataset(dataset, config, s3Cache) {
     const datasetURL = url.parse(dataset.url);
     const download = downloaders[datasetURL.protocol];
     return download(datasetURL, s3Cache, config)

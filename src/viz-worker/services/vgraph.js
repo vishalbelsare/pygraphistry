@@ -19,7 +19,7 @@ const unpackers = {
     'jsonMeta': loadVGraphJSON
 };
 
-export function loadVGraph(view, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
+export function loadVGraph(view, config, s3Cache) {
     return Observable
         .of({ view, loaded: false })
         .expand(loadAndUnpackVGraph(config, s3Cache))

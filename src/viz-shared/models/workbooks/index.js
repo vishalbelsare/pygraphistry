@@ -1,4 +1,5 @@
 import url from 'url';
+import _ from 'underscore';
 import { views } from '../views';
 import { scenes } from '../scene';
 import { simpleflake } from 'simpleflakes';
@@ -49,6 +50,15 @@ export function workbook(dataset, workbookId = simpleflake().toJSON()) {
             name: 'Share workbook',
         }]
     };
+}
+
+export function serializeWorkbook(workbook) {
+
+    // TODO: IMPLEMENT
+
+    console.log(require('util').inspect(workbook, null, 4));
+    return _.pick(workbook, ['id', 'title', 'contentName', 'arglebargle']);
+
 }
 
 export function dataset(options, datasetId = simpleflake().toJSON()) {
