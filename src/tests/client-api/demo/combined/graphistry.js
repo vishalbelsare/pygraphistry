@@ -71,6 +71,17 @@ Graphistry.prototype.exportStatic = function (name, cb) {
     return this.__transmitActionStreamgl({type: 'exportStatic', args: {name: name}});
 };
 
+
+/**
+ * Control whether to show Graphistry UI chrome
+ * @param {boolean} hide - true to hide, false to show
+ * @param {function} cb - callback to call once action has completed
+ * @return {Graphistry} this
+ */
+Graphistry.prototype.toggleChrome = function (show, cb) {
+    return this.__transmitActionStreamgl({type: 'toggleChrome', args: {toggle: show || false}});
+};
+
 // ===================== Falcor
 /**
  * Transmit regular action through falcor model

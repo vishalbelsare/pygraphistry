@@ -84,6 +84,14 @@ export class RemoteDataSource extends SocketDataSource {
                 }
                 document.getElementById('center-camera').click();
                 return;
+
+            case 'toggleChrome':
+                if (message.data.args && message.data.args.toggle) {
+                    document.body.classList.remove('hide-chrome');
+                } else {
+                    document.body.classList.add('hide-chrome');
+                }
+                return;
         }
 
         console.error('Unknown StreamGL action', message.data.type);
