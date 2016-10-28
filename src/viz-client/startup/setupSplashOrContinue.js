@@ -2,7 +2,9 @@ import $ from 'jquery';
 import { bind } from 'lodash';
 import { Observable } from 'rxjs';
 
-export function setupSplashOrContinue(body, options) {
+import styles from './splashOrContinue.less';
+
+export function setupSplashOrContinue(document, options) {
 
     const { client = 'main', splashAfter } = options;
     const showSplash = !(
@@ -14,7 +16,7 @@ export function setupSplashOrContinue(body, options) {
     if (showSplash) {
 
         const $splash = $(`
-            <div class='splash'>
+            <div class=${styles.splash}>
                 <img src='img/logowhite.png'></img>
                 <span>
                     <a href='javascript:void(0)' id='go-load'>
@@ -22,7 +24,7 @@ export function setupSplashOrContinue(body, options) {
                     </a>
                 </span>
             </div>`)
-            .prependTo(body);
+            .prependTo(document.body);
 
         const fadeOut = Observable.bindCallback(
             bind($splash.fadeOut, $splash),
