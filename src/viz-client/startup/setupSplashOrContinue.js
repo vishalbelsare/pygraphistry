@@ -2,7 +2,7 @@ import $ from 'jquery';
 import { bind } from 'lodash';
 import { Observable } from 'rxjs';
 
-export function setupSplashOrContinue(body, options) {
+export function setupSplashOrContinue(document, options) {
 
     const { client = 'main', splashAfter } = options;
     const showSplash = !(
@@ -22,7 +22,7 @@ export function setupSplashOrContinue(body, options) {
                     </a>
                 </span>
             </div>`)
-            .prependTo(body);
+            .prependTo(document.body);
 
         const fadeOut = Observable.bindCallback(
             bind($splash.fadeOut, $splash),
