@@ -30,16 +30,16 @@ function Cache(cacheDir, enabled) {
         var filePath = getCacheFile(url);
         Q.denodeify(fs.stat)(filePath).then(function (stats) {
             if (!stats.isFile()) {
-                res.reject('Error: Cached dataset is not a file!');
+                res.reject('Error: Cached object is not a file!');
             } else if (timestamp === undefined || stats.mtime.getTime() > timestamp.getTime()) {
-                logger.debug('Found up-to-date dataset in cache');
+                logger.debug('Found up-to-date file in cache', url.format());
                 res.resolve(fs.readFileSync(filePath));
             } else {
-                logger.debug('Found obsolete dataset in cache (%s), ignoring...', stats.mtime);
+                logger.debug('Found obsolete object in cache (%s), ignoring...', stats.mtime);
                 res.reject();
             }
         }).fail(function (err) {
-            logger.debug(err, 'No matching dataset found in cache');
+            logger.debug(err, 'No matching file found in cache', url.format());
             res.reject(err);
         });
 
