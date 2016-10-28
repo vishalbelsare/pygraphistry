@@ -16,11 +16,21 @@ function Graphistry (iframe) {
  * @param {string} msg - the message to post using postMessage
  * @return {Graphistry} this
  */
-Graphistry.prototype.__transmitActionStreamgl = function (msg) {
+Graphistry.prototype.__transmitActionStreamgl = function (msg, cb) {
+    cb = cb || function () {};
     msg.mode = 'graphistry-action-streamgl';
     msg.tag = '' + Math.random();
-    console.log('parent posting', msg, this.iframe.contentWindow);
+
+    var response = function (event) {
+        if (event.data && event.data.tag === msg.tag) {
+            window.removeEventListener('message', response, false);
+            cb(event.data.error, event.data.success);
+        }
+    };
+    window.addEventListener('message', response, false);
+
     this.iframe.contentWindow.postMessage(msg, '*');
+
     return this;
 };
 
@@ -31,7 +41,9 @@ Graphistry.prototype.__transmitActionStreamgl = function (msg) {
  * @return {Graphistry} this
  */
 Graphistry.prototype.startClustering = function (milliseconds, cb) {
-    return this.__transmitActionStreamgl({type: 'startClustering', args: {duration: milliseconds || 0}});
+    return this.__transmitActionStreamgl(
+        {type: 'startClustering', args: {duration: milliseconds || 0}},
+        cb);
 };
 
 /**
@@ -40,7 +52,7 @@ Graphistry.prototype.startClustering = function (milliseconds, cb) {
  * @return {Graphistry} this
  */
 Graphistry.prototype.stopClustering = function (cb) {
-    return this.__transmitActionStreamgl({type: 'stopClustering'});
+    return this.__transmitActionStreamgl({type: 'stopClustering'}, cb);
 };
 
 /**
@@ -49,7 +61,9 @@ Graphistry.prototype.stopClustering = function (cb) {
  * @return {Graphistry} this
  */
 Graphistry.prototype.autocenter = function (percentile, cb) {
-    return this.__transmitActionStreamgl({type: 'autocenter', args: {percentile: percentile || 0}});
+    return this.__transmitActionStreamgl(
+        {type: 'autocenter', args: {percentile: percentile || 0}},
+        cb);
 };
 
 /**
@@ -58,7 +72,7 @@ Graphistry.prototype.autocenter = function (percentile, cb) {
  * @return {Graphistry} this
  */
 Graphistry.prototype.saveWorkbook = function (cb) {
-    return this.__transmitActionStreamgl({type: 'saveWorkbook'});
+    return this.__transmitActionStreamgl({type: 'saveWorkbook'}, cb);
 };
 
 /**
@@ -68,7 +82,9 @@ Graphistry.prototype.saveWorkbook = function (cb) {
  * @return {Graphistry} this
  */
 Graphistry.prototype.exportStatic = function (name, cb) {
-    return this.__transmitActionStreamgl({type: 'exportStatic', args: {name: name}});
+    return this.__transmitActionStreamgl(
+        {type: 'exportStatic', args: {name: name}},
+        cb);
 };
 
 
@@ -79,7 +95,9 @@ Graphistry.prototype.exportStatic = function (name, cb) {
  * @return {Graphistry} this
  */
 Graphistry.prototype.toggleChrome = function (show, cb) {
-    return this.__transmitActionStreamgl({type: 'toggleChrome', args: {toggle: show || false}});
+    return this.__transmitActionStreamgl(
+        {type: 'toggleChrome', args: {toggle: show || false}},
+        cb);
 };
 
 // ===================== Falcor
@@ -178,7 +196,7 @@ Graphistry.prototype.subscribeLabels = function (subscriptions, cb) {
     var change = subscriptions.onChange || function (id, entityType, x, y) { };
     var exit = subscriptions.onExit || function (id, entityType) { };
 
-    return this.__transmitActionStreamgl({type: 'subscribeLabels'});
+    return this.__transmitActionStreamgl({type: 'subscribeLabels'}, cb);
 };
 
 /**
@@ -187,7 +205,7 @@ Graphistry.prototype.subscribeLabels = function (subscriptions, cb) {
  * @return {Graphistry} this
  */
 Graphistry.prototype.unsubscribeLabels = function (cb) {
-    return this.__transmitActionStreamgl({type: 'unsubscribeLabels'});
+    return this.__transmitActionStreamgl({type: 'unsubscribeLabels'}, cb);
 };
 
 //========= Loader
@@ -210,7 +228,7 @@ function GraphistryLoader (iframe, cb) {
             if (event.data && event.data.graphistry === 'init' && !responded) {
                 responded = true;
                 cb(null, new Graphistry(iframe));
-                iframe.removeEventListener('message', graphistryInit, false);
+                window.removeEventListener('message', graphistryInit, false);
             }
         };
         window.addEventListener('message', graphistryInit, false);
