@@ -1,7 +1,7 @@
 import SocketIO from 'socket.io-client';
 import { Observable, Scheduler } from 'rxjs';
-import { Model, RemoteDataSource } from 'viz-client/falcor';
 import { handleVboUpdates } from 'viz-client/streamGL/client';
+import { Model, LocalDataSink, RemoteDataSource } from 'viz-client/falcor';
 
 export function initialize(options, debug) {
     const buildNum = __BUILDNUMBER__ === undefined ? 'Local build' : `Build #${__BUILDNUMBER__}`;
@@ -64,15 +64,17 @@ function initSocket(options, workbook) {
 }
 
 function getAppModel(options, socket) {
-    const source = new RemoteDataSource(socket, 'falcor-request');
+    const source = new RemoteDataSource(socket);
     const model = new Model({
-        source, cache: getAppCache(),
+        source,
         recycleJSON: true,
+        cache: getAppCache(),
         scheduler: Scheduler.asap,
         treatErrorsAsValues: true,
         allowFromWhenceYouCame: true,
     });
     source.model = model;
+    model.sink = new LocalDataSink(model.asDataSource());
     return model;
 }
 

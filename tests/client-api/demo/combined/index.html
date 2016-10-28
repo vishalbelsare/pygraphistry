@@ -37,13 +37,34 @@
                 border-radius: 15px;
             }
         </style>
-        <script src="graphistry.js"></script>
+        <script src="../../../../www/graphistryJS.js"></script>
         <script>
         document.addEventListener("DOMContentLoaded", function () {
-            GraphistryLoader(document.getElementById('viz'), function (err, g) {
-                window.g = g;
-                document.getElementById('controls').style.opacity=1.0;
-            });
+
+            GraphistryJS(document.getElementById('viz'))
+                .flatMap(function (g) {
+                    window.g = g;
+                    document.getElementById('controls').style.opacity=1.0;
+                    console.log('opening filters');
+                    return g.openFilters();
+                })
+                .delay(5000)
+                .flatMap(function() {
+                    console.log('filters opened');
+                    console.log('closing filters');
+                    return g.closeFilters();
+                })
+                .subscribe(function () {
+                    console.log('filters closed');
+                });
+
+                // g.addFilter('degree > 0');
+                // g.updateSetting('background-color', '#FF0000');
+                // g.startClustering(3000);
+            // GraphistryLoader(document.getElementById('viz'), function (err, g) {
+            //     window.g = g;
+            //     document.getElementById('controls').style.opacity=1.0;
+            // });
         });
 
         var cache ={

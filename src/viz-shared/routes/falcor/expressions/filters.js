@@ -1,4 +1,11 @@
 import {
+    ref as $ref,
+    atom as $atom,
+    pathValue as $value,
+    pathInvalidation as $invalidate
+} from '@graphistry/falcor-json-graph';
+
+import {
     addExpressionHandler,
     removeExpressionHandler
 } from './expressions';
