@@ -516,6 +516,7 @@ ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe,
     if (columnDesc.computeAllValues) {
         dependencies.push(outputArr);
         dependencies.push(numGraphElements);
+        dependencies.push(dataframe.lastMasks);
         return columnDesc.computeAllValues.apply(this, dependencies) || outputArr;
 
     } else if (columnDesc.computeSingleValue) {
@@ -526,6 +527,7 @@ ComputedColumnManager.prototype.getDenseMaterializedArray = function (dataframe,
         const singleDependencies = _.map(dependencies, () => 0);
         singleDependencies.push(0);
         singleDependencies.push(numGraphElements);
+        singleDependencies.push(dataframe.lastMasks);
 
 
         for (let i = 0; i < numGraphElements; i++) {
