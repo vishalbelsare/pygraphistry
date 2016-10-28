@@ -196,7 +196,7 @@ Graphistry.prototype.subscribeLabels = function (subscriptions, cb) {
     var change = subscriptions.onChange || function (id, entityType, x, y) { };
     var exit = subscriptions.onExit || function (id, entityType) { };
 
-    return this.__transmitActionStreamgl({type: 'subscribeLabels'}, cb);
+    return this.__transmitAction({type: 'subscribeLabels'}, cb);
 };
 
 /**
@@ -205,7 +205,7 @@ Graphistry.prototype.subscribeLabels = function (subscriptions, cb) {
  * @return {Graphistry} this
  */
 Graphistry.prototype.unsubscribeLabels = function (cb) {
-    return this.__transmitActionStreamgl({type: 'unsubscribeLabels'}, cb);
+    return this.__transmitAction({type: 'unsubscribeLabels'}, cb);
 };
 
 //========= Loader
