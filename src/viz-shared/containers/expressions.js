@@ -33,7 +33,7 @@ Expressions = container(
         },
         templates: {
             length, [0...${templates.length || 0}]: {
-                name, dataType, attribute, componentType
+                name, dataType, identifier, componentType
             }
         }
     }`,
@@ -48,7 +48,7 @@ Expressions = container(
 let Expression = container(
     () => `{
         id, input, level,
-        name, enabled, attribute,
+        name, enabled, identifier,
         dataType, componentType, expressionType
     }`,
     (expression) => expression,

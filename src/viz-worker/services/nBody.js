@@ -4,7 +4,7 @@ import { cache as Cache } from '@graphistry/common';
 import { Observable, ReplaySubject } from 'rxjs';
 import { dataset as createDataset } from 'viz-shared/models/workbooks';
 
-export function loadNBody(nBodiesById, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
+export function loadNBody(nBodiesById) {
     return function loadDatasetNBody({ workbook, options = {} }) {
         const dataset = getCurrentDataset(workbook, options);
         return (dataset.id in nBodiesById) ?

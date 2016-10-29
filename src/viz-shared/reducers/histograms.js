@@ -24,8 +24,8 @@ function highlightHistogram(action$, store) {
         .groupBy(({ binKey }) => binKey)
         .mergeMap((actionsById) => actionsById
             .auditTime(0, Scheduler.animationFrame)
-            .switchMap(({ falcor, min, max, equals }) => falcor
-                .call('computeMask', [min, max, equals])
+            .switchMap(({ falcor, mask }) => falcor
+                .call('computeMask', [mask])
             )
             .takeUntil(action$
                 .ofType(CANCEL_HIGHLIGHT_HISTOGRAM)

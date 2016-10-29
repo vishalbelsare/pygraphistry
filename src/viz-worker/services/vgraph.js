@@ -19,7 +19,7 @@ const unpackers = {
     'jsonMeta': loadVGraphJSON
 };
 
-export function loadVGraph(view, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
+export function loadVGraph(view, config, s3Cache) {
     return Observable
         .of({ view, loaded: false })
         .expand(loadAndUnpackVGraph(config, s3Cache))
@@ -177,6 +177,7 @@ function createExpressionTemplates(dataframe) {
                 attribute,
                 name: columnName,
                 dataType: column.type,
+                identifier: attribute,
                 componentType: 'point'
             };
 
@@ -184,6 +185,7 @@ function createExpressionTemplates(dataframe) {
                 name: columnName,
                 attribute: edgeAttribute,
                 dataType: edgeColumn.type,
+                identifier: edgeAttribute,
                 componentType: 'edge'
             };
 
@@ -192,6 +194,7 @@ function createExpressionTemplates(dataframe) {
                 attribute,
                 name: columnName,
                 dataType: column.type,
+                identifier: attribute,
                 componentType: 'point'
             };
         }
@@ -205,6 +208,7 @@ function createExpressionTemplates(dataframe) {
                 attribute,
                 name: columnName,
                 dataType: column.type,
+                identifier: attribute,
                 componentType: 'edge'
             };
         }
@@ -212,5 +216,12 @@ function createExpressionTemplates(dataframe) {
 
     return Object
         .keys(templates)
-        .map((key) => templates[key]);
+        .map((key) => templates[key])
+        .sort((a,b) => {
+            const aLower = a.identifier.toLowerCase();
+            const bLower = b.identifier.toLowerCase();
+            return aLower === bLower ? 0
+                : aLower < bLower ? -1
+                : 1;
+        });
 }

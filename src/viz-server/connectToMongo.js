@@ -20,7 +20,7 @@ export function connectToMongo({
 
     function catchConnectionError(error) {
         return Observable.throw({
-            error, shouldExit: false,
+            error, shouldExit: true,
             message: 'Could not connect to Mongo.'
         });
     }
@@ -30,7 +30,7 @@ export function connectToMongo({
             return mongoServer.db(config.DATABASE);
         } catch (error) {
             throw {
-                error, shouldExit: false,
+                error, shouldExit: true,
                 message: 'Could not setup Mongo/pings.'
             };
         }

@@ -59,7 +59,7 @@ _masked:
         ? bins: [int, ... ]
 
         //as long as globals, , null if no selection
-        binValues: [ null U {min: float, max: float, representative: *, isSIngular: bool}]
+        binValues: [ null U {min: float, max: float, representative: *, isSingular: bool}]
 
         numBins: int,
         numValues: int
@@ -129,7 +129,6 @@ const typeHelpers = {
     }
 }
 
-
 function computeBinMax ({bins, binType}) {
     return typeHelpers[binType].computeBinMax({bins});
 }
@@ -139,8 +138,6 @@ function getIsMasked({bins, binValues, numBins, binType}={}) {
     if (!binType) return false;
     return typeHelpers[binType].isMasked({bins, binValues, numBins, binType});
 }
-
-
 
 /*
 const MIN_BIN_HEIGHT_NONEMPTY = ;
@@ -192,7 +189,6 @@ const defaultProps = {
     maxBinWidth: 60,
     minBinHeightNoneEmpty: 5
 };
-
 
 
 class Sparkline extends React.Component {

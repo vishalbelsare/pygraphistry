@@ -22,13 +22,13 @@ export function vizWorker(app, server, sockets, caches) {
 
     const { requests } = server;
     const vbos = caches.vbos || (caches.vbos = {});
-    const s3Cache = caches.s3Cache || (caches.s3Cache =
-        new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE));
+    const s3DatasetCache = caches.s3DatasetCache || (caches.s3DatasetCache = new Cache(config.LOCAL_DATASET_CACHE_DIR, config.LOCAL_DATASET_CACHE));
+    const s3WorkbookCache = caches.s3WorkbookCache || (caches.s3WorkbookCache = new Cache(config.LOCAL_WORKBOOK_CACHE_DIR, config.LOCAL_WORKBOOK_CACHE));
     const nBodiesById = caches.nBodiesById || (caches.nBodiesById = {});
     const workbooksById = caches.workbooksById || (caches.workbooksById = {});
 
     const routeServices = services({
-        vbos, config, s3Cache, nBodiesById, workbooksById
+        vbos, config, s3DatasetCache, s3WorkbookCache, nBodiesById, workbooksById
     });
 
     const getDataSource = getDataSourceFactory(routeServices);
@@ -106,7 +106,7 @@ export function vizWorker(app, server, sockets, caches) {
                 logger.trace('assigned socket and viz-server to nBody');
             })
             .mergeMap(
-                ({ workbook, view }) => loadVGraph(view, config, s3Cache),
+                ({ workbook, view }) => loadVGraph(view, config, s3DatasetCache),
                 ({ workbook},view) => ({ workbook, view })
             )
             .mergeMap(({ workbook, view }) => {
@@ -145,7 +145,7 @@ export function vizWorker(app, server, sockets, caches) {
                         `workbooks.open.views.current.histograms.length`,
                         `workbooks.open.views.current.expressionTemplates.length`,
                         `workbooks.open.views.current.scene.renderer['edges', 'points'].elements`
-                    ),
+                    ).concat(Observable.of(1)).takeLast(1),
                     ({ nBody }) => ({ nBody })
                 )
             ))

@@ -153,6 +153,25 @@ function computeHistogram({ view, masked, histogram, pointsMask }) {
 
     return binsForHistogram.map((binResult) => {
 
+    /*
+        {
+            type: string ('nodata' || 'countBy' || 'histogram'),
+            dataType: string,
+            numBins: number,
+            binWidth: number,
+            maxValue: number,
+            minValue: number,
+            numValues: number,
+            bins: Array<number>,
+            binValues: [{
+                min: number,
+                max: number,
+                isSingular: bool,
+                representative: number
+            } (,) ...],
+        } = binResult
+    */
+
         /*
         let { bins = [],
               numBins = 0, binWidth = 1,
@@ -209,21 +228,4 @@ function computeHistogram({ view, masked, histogram, pointsMask }) {
         };
     });
 }
-
-/*{
-    type: string ('countBy' || 'histogram'),
-    dataType: string,
-    numBins: number,
-    binWidth: number,
-    maxValue: number,
-    minValue: number,
-    numValues: number,
-    bins: Array<number>,
-    binValues: [{
-        min: number,
-        max: number,
-        isSingular: bool,
-        representative: number
-    } (,) ...],
-}*/
 

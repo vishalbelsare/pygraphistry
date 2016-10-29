@@ -1,5 +1,7 @@
 import { Model as FalcorModel } from '@graphistry/falcor';
-import { Subject, Observable, BehaviorSubject } from 'rxjs';
+import { Subject } from 'rxjs/Subject';
+import { Observable } from 'rxjs/Observable';
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { fromPath, fromPathsOrPathValues } from '@graphistry/falcor-path-syntax';
 
 export class Model extends FalcorModel {

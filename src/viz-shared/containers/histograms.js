@@ -35,7 +35,7 @@ Histograms = container(
     ({ templates = [], ...histograms }) => `{
         templates: {
             length, [0...${templates.length}]: {
-                name, dataType, attribute, componentType
+                name, dataType, identifier, componentType
             }
         },
         id, name, length, ...${

@@ -26,7 +26,7 @@ export function histogram(type, attribute = '', histogramId = simpleflake().toJS
     return {
         id: histogramId,
         type, /* edge | point */
-        attribute,
+        attribute
 
         /*
         min: number,

@@ -2,7 +2,6 @@ import { Observable } from 'rxjs';
 
 export function loadConfig() {
     return Observable.of({
-        RELEASE: __RELEASE__,
-        VERSION: __VERSION__
+        RELEASE: __RELEASE__
     });
 }

@@ -27,8 +27,8 @@ function addExpression(action$) {
     return action$
         .groupBy(({ id }) => id)
         .mergeMap((group) => group.exhaustMap(
-            ({ name, dataType, attribute, falcor }) =>
-                falcor.call('add', [name, dataType, attribute])
+            ({ name, dataType, componentType, falcor }) =>
+                falcor.call('add', [componentType, name, dataType])
         ));
 }
 

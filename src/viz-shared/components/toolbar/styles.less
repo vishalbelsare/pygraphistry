@@ -1,10 +1,15 @@
 @import '../../index.less';
 
+
 .button-list {
     position: absolute;
     z-index: @menu-z;
     top: 3px;
     left: 5px;
+
+    :global(body.hide-chrome) & {
+        display: none;
+    }
 }
 
 .button-list-item {
