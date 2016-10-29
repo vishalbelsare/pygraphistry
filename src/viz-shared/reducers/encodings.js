@@ -21,7 +21,7 @@ export function setEncoding (action$, store) {
         .mergeMap((idGroup) => idGroup.exhaustMap(
             ({falcor, ...args}) =>
                 // TODO PAUL: Make sure this hits the right path
-                // falcor.call('set', [args])
+                falcor.call('set', [args])
         ))
         .ignoreElements();
 }
@@ -36,7 +36,7 @@ export function resetEncoding (action$, store) {
         .mergeMap((idGroup) => idGroup.exhaustMap(
             ({falcor, ...args}) =>
                 // TODO PAUL: Make sure this hits the right path
-                // falcor.call('reset', [args])
+                falcor.call('reset', [args])
         ))
         .ignoreElements();
 }
