@@ -203,6 +203,17 @@ class DataLabel extends React.Component {
     }
 
     render () {
+
+        var styleOverrides = {};
+        if (!this.props.label.showFull) {
+            ['color', 'background', 'opacity']
+                .forEach((field) => {
+                    if (this.props.hasOwnProperty(field)) {
+                        styleOverrides[field] = this.props[field];
+                    }
+                });
+        }
+
         return (<div
             className={`
                 ${styles['graph-label']}
@@ -213,7 +224,8 @@ class DataLabel extends React.Component {
             >
             <div className={`
                 ${styles['graph-label-container']}
-                ${styles['graph-label-' + this.props.label.type]}`}>
+                ${styles['graph-label-' + this.props.label.type]}`}
+                style={ this.props.label.showFull ? {} : styleOverrides }>
 
                 <LabelTitle { ...this.props } />
 
