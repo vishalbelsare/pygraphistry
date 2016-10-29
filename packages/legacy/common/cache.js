@@ -24,18 +24,31 @@ function Cache(cacheDir, enabled) {
         return path.resolve(cacheDir, fileName);
     }
 
-    this.get = function(url, timestamp) {
+    function evict(filePath) {
+        logger.debug('Unlinking object', filePath);
+        fs.unlinkSync(filePath);
+    }
+
+    this.get = function(url, timestamp, discard = false) {
         var res = Q.defer();
 
         var filePath = getCacheFile(url);
         Q.denodeify(fs.stat)(filePath).then(function (stats) {
             if (!stats.isFile()) {
+                logger.debug('Error: Cached object is not a file');
                 res.reject('Error: Cached object is not a file!');
             } else if (timestamp === undefined || stats.mtime.getTime() > timestamp.getTime()) {
                 logger.debug('Found up-to-date file in cache', url.format());
-                res.resolve(fs.readFileSync(filePath));
+                const content = fs.readFileSync(filePath);
+                if (discard) {
+                    evict(filePath);
+                }
+                res.resolve(content);
             } else {
                 logger.debug('Found obsolete object in cache (%s), ignoring...', stats.mtime);
+                if (discard) {
+                    evict(filePath);
+                }
                 res.reject();
             }
         }).fail(function (err) {
