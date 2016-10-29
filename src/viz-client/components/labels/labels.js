@@ -31,7 +31,7 @@ function preventPropagation (f) {
 const propTypes = {
     opacity: React.PropTypes.number,
     background: React.PropTypes.any,
-    foreground: React.PropTypes.any,
+    color: React.PropTypes.any,
 
     poiEnabled: React.PropTypes.bool,
     enabled: React.PropTypes.bool,
@@ -48,6 +48,8 @@ const propTypes = {
 
 const defaultProps = {
     opacity: 1,
+    background: 'red',
+    color: 'white',
     poiEnabled: true,
     enabled: true,
     onClick: (({type, title}) => console.log('clicked', {type, title})),
