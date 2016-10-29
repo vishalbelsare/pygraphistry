@@ -14,6 +14,7 @@ const ExpressionPlan = require('./ExpressionPlan.js');
 const DataframeMask = require('./DataframeMask.js');
 const ColumnAggregation = require('./ColumnAggregation.js');
 const ComputedColumnManager = require('./ComputedColumnManager.js');
+const ComputedColumnSpec = require('./ComputedColumnSpec.js');
 
 const dataTypeUtil = require('./dataTypes.js');
 
@@ -929,6 +930,62 @@ Dataframe.prototype.registerNewComputedColumn = function (computedColumnManager,
     };
 
     attrs[columnType][columnName] = col;
+};
+
+// Add a column given via the client API.
+// Values is an arraylike of values, indexed the same way as the unfiltered dataset.
+Dataframe.prototype.addClientProvidedColumn = function (columnType, columnName, values, dataType='string') {
+
+    // TODO: Pull this out.
+    const acceptedDatatypes = ['number', 'string'];
+    const ccManager = this.computedColumnManager;
+
+    if (!_.contains(GraphComponentTypes, columnType)) {
+        logger.debug(`Attempted to add invalid column type: ${columnType}`);
+        return;
+    }
+
+    if (this.rawdata.attributes[columnType][columnName]) {
+        logger.debug(`Attempted to overwrite a column in the base dataset: ${columnType}:${columnName}`)
+        return;
+    }
+
+    if (!values) {
+        logger.debug(`Attempted to add a column without valid values.`);
+        return;
+    }
+
+    if (!_.contains(acceptedDatatypes, dataType)) {
+        logger.debug(`Attempted to add a column with invalid dataType: ${dataType}`);
+        return;
+    }
+
+
+    const numElements = this.rawdata.numElements[columnType];
+    if (values.length !== numElements) {
+        logger.debug(`Warning: Provided values for ${columnType}:${columnName} have different length than original dataset. ${values.length} vs ${numElements}.`);
+    }
+
+    if (ccManager.hasColumn(columnType, columnName)) {
+        logger.debug(`Call to add column ${columnType}:${columnName} under name that already exists, replacing old values.`);
+    }
+
+    let spec = new ComputedColumnSpec({
+        ArrayVariant: values.constructor,
+        type: dataType,
+        numberPerGraphComponent: 1,
+        graphComponentType: columnType,
+        version: 0,
+        dependencies: [],
+        computeAllValues: (outArr, numGraphElements, lastMasks) => {
+            lastMasks.forEachIndexByType(columnType, (idx, i) => {
+                outArr[i] = values[idx];
+            });
+            return outArr;
+        }
+    });
+
+    ccManager.addComputedColumn(this, columnType, columnName, spec);
 };
 
 
