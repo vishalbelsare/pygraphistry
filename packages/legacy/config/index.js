@@ -68,6 +68,7 @@ function defaults() {
         S3UPLOADS: true,
         BUCKET: 'graphistry.data',
         S3: getS3(),
+        READ_PROCESS_DISCARD: false,
 
         MONGO_USERNAME: undefined,
         MONGO_PASSWORD: undefined,
