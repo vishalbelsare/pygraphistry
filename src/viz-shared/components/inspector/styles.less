@@ -1,0 +1,101 @@
+@import '~viz-shared/vars.less';
+@import '~font-awesome/less/font-awesome.less';
+
+@header-bg: #666;
+@header-seperator: #999;
+@header-highlight: #999;
+@header-highlight-medium: #999;
+
+
+.inspector {
+
+    & > thead > th {
+        border: none;
+        text-align: center;
+        text-transform: uppercase;
+        font-weight: bold;
+        padding-right: 1.5em;
+        color: #777;
+    }
+    & > thead > th:not(:first-child) {
+        border-left: 1px solid #ddd !important;
+    }
+
+    & > thead >  td:nth-child(2) {
+        text-align: right;
+    }
+
+    & > tbody > tr:nth-child(even) {
+        background-color: #f4f4f4;
+    }
+
+    & > tbody > td {
+        vertical-align: middle !important;
+    }
+}
+
+.investigatorTabs {
+
+    ul {
+
+        background-color: @header-bg;
+
+        li a {
+            margin-right: 0;
+            padding-top: 6px;
+            padding-bottom: 6px;
+            color: #E0E0E0;
+            border-radius: 0;
+            border: 0 !important;
+            &:hover {
+                color: #E0E0E0;
+                background-color: @header-highlight;
+            }
+        }
+
+    }
+}
+
+.inspector-table-header {
+    margin-bottom: -1px;
+    :global(.input-group) {
+        float: left;
+        white-space: nowrap;
+        display: inline-block;
+        input {
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+
+            height: 34px;
+            margin-left: 0.5em;
+            margin-top: -1px;
+        }
+        button {
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+            height: 33px;
+        }
+    }
+    :global(.pagination) {
+        float: right;
+        margin-top: -1px;
+        margin-bottom: 0;
+    }
+}
+
+.inspector-table {
+    thead {
+        background-color: #eee;
+    }
+    th, td:first-child {
+        padding-left: 0.5em;
+    }
+    th:not(:first-child) {
+        border-left: 1px solid #ddd;
+    }
+}
+
+.sort-active {}
+.sort-inactive {
+    opacity: 0.5;
+}
