@@ -20,12 +20,12 @@ import { loadNBody, setLayoutControl } from './nBody';
 import { loadHistograms, loadSelectionHistograms } from './histograms';
 import { addExpression, updateExpression, removeExpression } from './expressions';
 
-export function services({ config, s3Cache, nBodiesById, workbooksById }) {
+export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }) {
 
     const loadConfig = () => Observable.of(config);
-    const loadDatasetNBody = loadNBody(nBodiesById, config, s3Cache);
-    const loadWorkbooksById = loadWorkbooks(workbooksById, config, s3Cache);
-    const saveWorkbook = saveWorkbookService(config, s3Cache);
+    const loadDatasetNBody = loadNBody(nBodiesById);
+    const loadWorkbooksById = loadWorkbooks(workbooksById, config, s3WorkbookCache);
+    const saveWorkbook = saveWorkbookService(config, s3WorkbookCache);
 
     const loadViewsById = loadViews(loadDatasetNBody, loadWorkbooksById);
     const loadHistogramsById = loadHistograms(loadViewsById);

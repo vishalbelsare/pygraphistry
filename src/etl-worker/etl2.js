@@ -14,7 +14,7 @@ var Log      = require('@graphistry/common').logger;
 var apiKey   = require('@graphistry/common').api;
 var Cache    = require('@graphistry/common').cache;
 var logger   = Log.createLogger('etlworker:etl2');
-var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
+var tmpCache = new Cache(config.LOCAL_DATASET_CACHE_DIR, config.LOCAL_DATASET_CACHE);
 
 var supportedAgents = ['pygraphistry'];
 

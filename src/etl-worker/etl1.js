@@ -15,7 +15,7 @@ var s3       = require('@graphistry/common').s3;
 var Log      = require('@graphistry/common').logger;
 var logger   = Log.createLogger('etlworker:etl1');
 
-var tmpCache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
+var tmpCache = new Cache(config.LOCAL_DATASET_CACHE_DIR, config.LOCAL_DATASET_CACHE);
 
 
 // Convert JSON edgelist to VGraph then upload VGraph to S3 and local /tmp
