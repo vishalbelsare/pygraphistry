@@ -48,30 +48,34 @@ function downloadWWW(transport, url, s3Cache, config) {
     return loadHeaders({
             ...url, ...{ method: 'HEAD' }
         })
-        .mergeMap(({ headers }) => Observable.from(s3Cache
-            .get(url, new Date(headers['last-modified'])))
+        .mergeMap(({ headers }) =>
+            Observable.from(
+                s3Cache.get(url, new Date(headers['last-modified']), config.READ_PROCESS_DISCARD)
+            )
             .catch(() => loadDocument(url.href)
                 .mergeAll()
                 .mergeMap(
-                    (buffer) => s3Cache.put(url, buffer),
+                    (buffer) => config.READ_PROCESS_DISCARD ? Observable.of(null)
+                                                            : s3Cache.put(url, buffer),
                     (buffer, x) => buffer
                 ))
         );
 }
 
-function downloadS3(url, s3Cache, { S3, BUCKET }) {
+function downloadS3(url, s3Cache, config) {
     const params = {
-        Bucket: url.host || BUCKET,  // Defaults to Graphistry's bucket
+        Bucket: url.host || config.BUCKET,  // Defaults to Graphistry's bucket
         Key: decodeURIComponent(url.pathname.replace(/^\//,'')) // Strip leading slash if there is one
     };
 
+    const S3 = config.S3;
     const loadHeaders = Observable.bindNodeCallback(S3.headObject.bind(S3));
     const loadDocument = Observable.bindNodeCallback(S3.getObject.bind(S3));
 
     return loadHeaders(params)
         .mergeMap(({ LastModified }) =>
             Observable.from(
-                s3Cache.get(url, new Date(LastModified))
+                s3Cache.get(url, new Date(LastModified), config.READ_PROCESS_DISCARD)
             )
             .catch(() => loadDocument(params)
                 .catch(e => {
@@ -79,7 +83,8 @@ function downloadS3(url, s3Cache, { S3, BUCKET }) {
                     return Observable.throw(e);
                 })
                 .mergeMap(
-                    ({ Body }) => s3Cache.put(url, Body),
+                    ({ Body }) => config.READ_PROCESS_DISCARD ? Observable.of(null)
+                                                              : s3Cache.put(url, Body),
                     ({ Body }) => Body
                 )
             )
@@ -87,7 +92,7 @@ function downloadS3(url, s3Cache, { S3, BUCKET }) {
         .catch(() => {
             log.debug('Cannot fetch headers from S3, falling back on cache');
             return Observable.from(
-                    s3Cache.get(url, new Date(0))
+                    s3Cache.get(url, new Date(0), config.READ_PROCESS_DISCARD)
                 )
                 .catch(e => {
                     log.error('Could not load dataset from cache (S3 already failed too). Giving up!');
