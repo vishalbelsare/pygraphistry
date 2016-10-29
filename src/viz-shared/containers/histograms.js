@@ -12,6 +12,11 @@ import {
     highlightHistogram
 } from 'viz-shared/actions/histograms';
 
+import {
+    setEncoding,
+    resetEncoding
+} from 'viz-shared/actions/encodings';
+
 let Histograms = ({ templates = [], histograms = [], removeHistogram, ...props }) => {
     return (
         <HistogramsList templates={templates} {...props}>
@@ -54,6 +59,8 @@ let Histogram = container(
     }`,
     (histogram) => histogram,
     { updateHistogram,
+      setEncoding,
+      resetEncoding,
       onBinMouseOver: highlightHistogram }
 )(Sparkline);
 

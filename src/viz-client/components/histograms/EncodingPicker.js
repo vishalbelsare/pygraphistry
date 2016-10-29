@@ -21,7 +21,10 @@ const propTypes = {
     onColorChange: React.PropTypes.func,
     onSizeChange: React.PropTypes.func,
     onModalChange: React.PropTypes.func.isRequired,
-    onYAxisChange: React.PropTypes.func
+    onYAxisChange: React.PropTypes.func,
+    setEncoding: React.PropTypes.func,
+    resetEncoding: React.PropTypes.func,
+    globalBinning: React.PropTypes.object
 };
 
 
@@ -77,6 +80,27 @@ export default class EncodingPicker extends React.Component {
 
 
     handleSelectColorChange (colorValue) {
+        const variation = (colorValue === 'color-categorical') ? 'categorical' : 'quantitative';
+        const reset = colorValue === null;
+        const id = this.props.type + 'Color';
+        const encodingType = 'color';
+        const binning = this.props.globalBinning;
+        const graphType = this.props.type;
+        const attribute = this.props.attribute;
+
+
+        if (reset && this.props.resetEncoding) {
+            this.props.resetEncoding({
+                id, encodingType, graphType, attribute
+            });
+        }
+
+        else if (this.props.setEncoding) {
+            this.props.setEncoding({
+                variation, id, encodingType, graphType, attribute, binning
+            });
+        }
+
         if (this.props.onColorChange) {
             this.props.onColorChange(colorValue);
         }
@@ -90,6 +114,27 @@ export default class EncodingPicker extends React.Component {
 
 
     handleSelectSizeChange (newEnabled) {
+
+        // No variation for sizes :/
+        const reset = !newEnabled;
+        const id = this.props.type + 'Size';
+        const encodingType = 'size';
+        const binning = this.props.globalBinning;
+        const graphType = this.props.type;
+        const attribute = this.props.attribute;
+
+        if (reset && this.props.resetEncoding) {
+            this.props.resetEncoding({
+                id, encodingType, graphType, attribute
+            });
+        }
+
+        if (this.props.setEncoding) {
+            this.props.setEncoding({
+                id, encodingType, graphType, attribute, binning
+            });
+        }
+
         if (this.props.onSizeChange) {
             this.props.onSizeChange(newEnabled ? ['size'] : []);
         }

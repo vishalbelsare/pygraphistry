@@ -168,6 +168,9 @@ const propTypes = {
     onBinMouseDown: React.PropTypes.func,
     onBinMouseOver: React.PropTypes.func,
 
+    setEncoding: React.PropTypes.func,
+    resetEncoding: React.PropTypes.func,
+
     global: React.PropTypes.object,
     masked: React.PropTypes.object,
     attribute: React.PropTypes.string.isRequired,
@@ -303,6 +306,9 @@ class Sparkline extends React.Component {
                             yAxisValue={this.state.yAxisValue}
                             sizeValue={this.props.sizeValue}
                             colorValue={this.props.colorValue}
+                            setEncoding={this.props.setEncoding}
+                            resetEncoding={this.props.resetEncoding}
+                            globalBinning={this.props.global}
                             onSizeChange={ this.handleGenericChange.bind(this, 'sizeValue', 'onSizeChange') }
                             onColorChange={ this.handleGenericChange.bind(this, 'colorValue', 'onColorChange') }
                             onModalChange={ this.handleGenericChange.bind(this, 'showModal', 'onModalChange') }

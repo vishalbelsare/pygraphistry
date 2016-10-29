@@ -42,8 +42,8 @@ function updateExpression(action$) {
                 json: { input }
             })
             .takeUntil(action$
-                .ofType(CANCEL_UPDATE_EXPRESSION)
-                .filter(({ id }) => group.key === id))
+                .ofType(CANCEL_UPDATE_EXPRESSION))
+                // .filter(({ id }) => group.key === id))
         ));
 }
 

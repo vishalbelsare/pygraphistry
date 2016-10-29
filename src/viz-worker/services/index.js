@@ -18,6 +18,7 @@ import { maskDataframe } from './dataframe';
 import { sendFalcorUpdate } from './sendFalcorUpdate';
 import { loadNBody, setLayoutControl } from './nBody';
 import { loadHistograms, loadSelectionHistograms } from './histograms';
+import { setEncoding, resetEncoding } from './encodings'
 import { addExpression, updateExpression, removeExpression } from './expressions';
 
 export function services({ config, s3Cache, nBodiesById, workbooksById }) {
@@ -33,6 +34,9 @@ export function services({ config, s3Cache, nBodiesById, workbooksById }) {
     const setLayoutControlById = setLayoutControl(loadViewsById);
     const loadSelectionHistogramsById = loadSelectionHistograms(loadViewsById);
 
+    const setEncodingById = setEncoding(loadViewsById);
+    const resetEncodingById = resetEncoding(loadViewsById);
+
     const addExpressionImpl = addExpression(loadViewsById);
     const removeExpressionById = removeExpression(loadViewsById);
     const updateExpressionById = updateExpression(loadViewsById);
@@ -47,6 +51,9 @@ export function services({ config, s3Cache, nBodiesById, workbooksById }) {
         loadHistogramsById,
         loadLabelsByIndexAndType,
         loadSelectionHistogramsById,
+
+        setEncodingById,
+        resetEncodingById,
 
         loadDatasetNBody,
         setLayoutControlById,
