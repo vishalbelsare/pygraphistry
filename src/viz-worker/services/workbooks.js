@@ -8,7 +8,7 @@ import { migrateWorkbook,
          serializeWorkbook,
          workbook as createWorkbook } from 'viz-shared/models/workbooks';
 
-const log = commonLogger.createLogger("viz-worker:services:workbook");
+const log = commonLogger.createLogger('viz-worker:services:workbooks');
 
 export function loadWorkbooks(workbooksById, config, s3Cache) {
     const loadWorkbookById = loadWorkbook(workbooksById, config, s3Cache);
@@ -24,17 +24,26 @@ export function loadWorkbooks(workbooksById, config, s3Cache) {
 
 function loadWorkbook(workbooksById, config, s3Cache) {
     return function loadWorkbookById({ workbookId, options = {} }) {
-        return (workbookId in workbooksById) ?
-            workbooksById[workbookId] : (
-            workbooksById[workbookId] = Observable
+        if (workbookId in workbooksById) {
+            return workbooksById[workbookId];
+        }
+
+        const $workbook = Observable
                 .from(downloadWorkbook(workbookId, s3Cache, config))
+                .catch(e => {
+                    log.debug(e, 'Could not load specified workbook, continuing with fresh workbook');
+                    return Observable.of(createWorkbook(createDataset(options), workbookId));
+                })
                 .map((workbook) => migrateWorkbook(workbook, options))
-                .catch(() => Observable
-                    .of(createWorkbook(createDataset(options), workbookId)))
+                .catch((e) => {
+                    log.error(e, 'Could not migrate saved workbook, continuing with fresh workbook');
+                    return Observable.of(createWorkbook(createDataset(options), workbookId));
+                })
                 .take(1)
                 .multicast(new ReplaySubject(1))
-                .refCount()
-            );
+                .refCount();
+
+        return workbooksById[workbookId] = $workbook;
     }
 }
 
@@ -46,11 +55,13 @@ function makeWorkbookURL(workbookId) {
 function downloadWorkbook(workbookId, s3Cache, { S3, BUCKET }) {
     const workbookURL = makeWorkbookURL(workbookId);
     return Observable.defer(() => {
-        return Observable
-            .from(s3Cache.get(workbookURL))
-        .do((something) => log.info("we have gotten something from the cache", new String(something)))
-            .catch((e) => Observable.from(s3
-                .download(S3, BUCKET, workbookURL, { expectCompressed: true }))
+        return Observable.from(s3Cache.get(workbookURL))
+            .do(() => log.debug('Got workbook from cache'))
+            .catch((e) =>
+                Observable.from(
+                    s3.download(S3, BUCKET, workbookURL.pathname, { expectCompressed: true })
+                )
+                .do(() => log.debug('Got workbook from S3'))
                 .mergeMap(
                     (response) => s3Cache.put(workbookURL, response),
                     (response, x) => response
@@ -64,16 +75,17 @@ export function saveWorkbookService(config, s3Cache) {
     return function saveWorkbook({ workbook }) {
         const serialized = JSON.stringify(serializeWorkbook(workbook));
         const workbookURL = makeWorkbookURL(workbook.id);
-        console.log('SAVING', serialized);
+
         return Observable.from(
                 s3Cache.put(workbookURL, serialized)
             ).catch((e) => {
-                log.error(e, "Workbook did not save locally")
+                log.error(e, 'Error saving workbook locally');
                 return Observable.of(null)
             }).switchMap(() =>
-                s3.upload(config.S3, config.BUCKET, {name: workbookURL.pathname}, new Buffer(serialized), {shouldCompress: true, ContentEncoding: 'gzip'})
+                s3.upload(config.S3, config.BUCKET, {name: workbookURL.pathname},
+                          new Buffer(serialized), {shouldCompress: true, ContentEncoding: 'gzip'})
             ).catch((e) => {
-                log.error(e, "Workbook did not upload to s3")
+                log.error(e, 'Error uploading workbook to s3');
                 return Observable.throw(e)
             });
     }

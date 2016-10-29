@@ -16,9 +16,11 @@ export * from './migrateWorkbook';
 export function workbook(dataset, workbookId = simpleflake().toJSON()) {
     const workbook = `workbooksById['${workbookId}']`;
     return {
-
-        id: workbookId, title: '',
-        contentName: '', fullscreen: false,
+        version: 1,
+        id: workbookId,
+        title: '',
+        contentName: '',
+        fullscreen: false,
         datasets: { 0: dataset, length: 1 },
 
         ...views(workbookId),
@@ -53,16 +55,17 @@ export function workbook(dataset, workbookId = simpleflake().toJSON()) {
 }
 
 export function serializeWorkbook(workbook) {
+    const wbFields = ['id', 'title', 'contentName', 'fullscreen', 'datasets', 'views', 'controls'];
+    const whiteListed = _.pick(workbook, wbFields);
 
-    // TODO: IMPLEMENT
+    whiteListed.viewsById = _.mapObject(workbook.viewsById, view => {
+        return _.omit(view, 'nBody');
+    });
 
-    console.log(require('util').inspect(workbook, null, 4));
-    return _.pick(workbook, ['id', 'title', 'contentName', 'arglebargle']);
-
+    return whiteListed;
 }
 
 export function dataset(options, datasetId = simpleflake().toJSON()) {
-
     options = {
         type: 'default', scene: 'default',
         mapper: 'default', device: 'default',
@@ -75,14 +78,7 @@ export function dataset(options, datasetId = simpleflake().toJSON()) {
     }
 
     options.name = options.name || options.dataset;
-
-    const datasetURLOrId = (options.dataset &&
-         decodeURIComponent(options.dataset)) ||
-         options.url || options.id;
-
-    if (datasetURLOrId) {
-        options.url = url.parse(datasetURLOrId);
-    }
+    options.url = options.dataset || options.url || options.id;
 
     return options;
 }
