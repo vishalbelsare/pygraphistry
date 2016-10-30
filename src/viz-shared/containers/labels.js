@@ -19,27 +19,24 @@ Labels = container(
         opacity, enabled, poiEnabled,
         ['background', 'foreground']: { color },
         ...${ Settings.fragment({ settings }) },
-        highlight: {
-            label: {
-                'type', 'index', 'title', 'columns', 'formatted'
-            }
-        },
-        selection: {
-            label: {
-                'type', 'index', 'title', 'columns', 'formatted'
-            }
+        ['highlight', 'selection']: ${
+            Label.fragment()
         },
         edge: {
-            length, [0...${edge.length || 0}]: {
-                'type', 'index', 'title', 'columns', 'formatted'
+            length, [0...${edge.length || 0}]: ${
+                Label.fragment()
             }
         },
         point: {
-            length, [0...${point.length || 0}]: {
-                'type', 'index', 'title', 'columns', 'formatted'
+            length, [0...${point.length || 0}]: ${
+                Label.fragment()
             }
         }
     }`
 )(Labels);
+
+let Label = container(() => `{
+    type, index, title, columns
+}`)(() => {});
 
 export { Labels }
