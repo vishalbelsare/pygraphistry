@@ -43,6 +43,18 @@ class DataTable extends React.Component {
             <div>
                 <div className={styles['inspector-table-header']}>
 
+                     <Pagination
+                        prev
+                        next
+                        first
+                        last
+                        ellipsis
+                        boundaryLinks
+                        items={this.props.numPages}
+                        maxButtons={5}
+                        activePage={this.props.activePage}
+                        onSelect={this.props.handlePageSelect} />
+
                     <InputGroup>
                          <FormControl
                             type="text"
@@ -57,17 +69,7 @@ class DataTable extends React.Component {
                         </Button>
                     </InputGroup>
 
-                     <Pagination
-                        prev
-                        next
-                        first
-                        last
-                        ellipsis
-                        boundaryLinks
-                        items={this.props.numPages}
-                        maxButtons={5}
-                        activePage={this.props.activePage}
-                        onSelect={this.props.handlePageSelect} />
+
                 </div>
                 <Table className={styles['inspector-table']}
                     striped={true} bordered={true} condensed={true} hover={true}>
@@ -147,7 +149,7 @@ class Inspector extends React.Component {
 
 
         return <div className={styles.inspector}>
-            <Tabs defaultActiveKey={1} className={styles.investigationTabs}>
+            <Tabs defaultActiveKey={1} className={styles.inspectorTabs}>
                 <Tab eventKey={1} title="Points">
                     <DataTable
                         results={fakeData.results}

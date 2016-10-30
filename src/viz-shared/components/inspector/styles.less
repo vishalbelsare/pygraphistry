@@ -34,52 +34,70 @@
     }
 }
 
-.investigatorTabs {
+.inspector :global(.nav-tabs) {
 
-    ul {
+    background-color: @header-bg;
 
-        background-color: @header-bg;
+    & > li > a {
+        margin-right: 0;
+        padding-top: 3px;
+        padding-bottom: 3px;
+        color: #E0E0E0;
+        border-radius: 0;
+        border: 0 !important;
 
-        li a {
-            margin-right: 0;
-            padding-top: 6px;
-            padding-bottom: 6px;
-            color: #E0E0E0;
-            border-radius: 0;
-            border: 0 !important;
-            &:hover {
-                color: #E0E0E0;
-                background-color: @header-highlight;
-            }
-        }
-
+        text-transform: uppercase;
+        font-weight: bold;
+        font-size: 12px;
     }
+
+    & > li:global(.active) > a, & > li:global(.active) > a:hover, & > li > a:hover {
+        color: #E0E0E0;
+        background-color: @header-highlight;
+    }
+
 }
 
 .inspector-table-header {
     margin-bottom: -1px;
+
+    height: 33px;
+
+    :global(.pagination) {
+        float: left;
+        margin-top: 0;
+        margin-bottom: 0;
+        & a {
+            border: none;
+            border-radius: 0 !important;
+            color: @medium-dark-grey;
+        }
+    }
+
     :global(.input-group) {
         float: left;
         white-space: nowrap;
         display: inline-block;
+        padding-top: 3px;
+        input, button {
+            height: 27px;
+        }
         input {
             border-top-left-radius: 10px;
             border-bottom-left-radius: 10px;
-
-            height: 34px;
             margin-left: 0.5em;
-            margin-top: -1px;
+            margin-right: -1px;
         }
         button {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
             border-top-right-radius: 10px;
             border-bottom-right-radius: 10px;
-            height: 33px;
+            padding-top: 3px;
+            &, & > * {
+                color: @medium-dark-grey;
+            }
         }
-    }
-    :global(.pagination) {
-        float: right;
-        margin-top: -1px;
-        margin-bottom: 0;
     }
 }
 
