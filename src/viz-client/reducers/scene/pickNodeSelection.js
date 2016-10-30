@@ -99,6 +99,7 @@ function selectionValuesAndInvalidations(gesture, { idx, type }) {
     const value = {
         highlight: {
             label: null,
+            darken: false,
             [type]: $atom([idx]),
             [inverseType]: $atom([])
         }
@@ -119,6 +120,7 @@ function deselectionValuesAndInvalidations(gesture, { idx, type }) {
     const value = {
         highlight: {
             label: null,
+            darken: false,
             edge: $atom([]),
             point: $atom([]),
         }

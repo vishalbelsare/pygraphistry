@@ -10,6 +10,7 @@ export function selection(view) {
             edge: [],
             point: [],
             label: null,
+            darken: false,
         },
         selection: {
             edge: [],
@@ -17,6 +18,7 @@ export function selection(view) {
             type: null,
             mask: null,
             label: null,
+            darken: true,
             histogramsById: {},
             controls: [{
                 selected: false,

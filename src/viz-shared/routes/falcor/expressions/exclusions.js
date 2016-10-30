@@ -14,10 +14,14 @@ export function exclusions(path, base) {
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
         const addExclusion = addExpressionHandler({
-            addExpression, expressionType: 'exclusion'
+            listName: 'exclusions',
+            addItem: addExpression,
+            expressionType: 'exclusion'
         });
         const removeExclusion = removeExpressionHandler({
-            removeExpressionById, expressionType: 'exclusion'
+            listName: 'exclusions',
+            expressionType: 'exclusion',
+            removeItem: removeExpressionById
         });
 
         return [{

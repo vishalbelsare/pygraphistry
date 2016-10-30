@@ -1,5 +1,6 @@
 export * from './toolbar';
 export * from './settings';
+export * from './histograms';
 export * from './expressions';
 
 export default function rootReducer(state, action) {

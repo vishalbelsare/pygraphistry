@@ -48,6 +48,7 @@ export function expression(inputOrProps = {
         componentType = '';
 
     if (typeof inputOrProps === 'string') {
+        input = inputOrProps;
         query = parseUtil(parser, inputOrProps, { startRule: 'start' });
     } else if (inputOrProps && typeof inputOrProps === 'object') {
         name = inputOrProps.name || 'degree';
@@ -57,9 +58,8 @@ export function expression(inputOrProps = {
         query = getDefaultQueryForDataType({
             ...inputOrProps, name, dataType, identifier, componentType
         });
+        input = printExpression(query);
     }
-
-    input = printExpression(query);
 
     return {
         id: expressionId,
@@ -72,11 +72,17 @@ export function expression(inputOrProps = {
 }
 
 export function getDefaultQueryForDataType(queryProperties = {}) {
-    const { dataType = 'number', identifier } = queryProperties;
-    const queryFactory = defaultQueriesMap[dataType] || defaultQueriesMap.literal;
+
+    const { identifier,
+            dataType = 'number',
+            queryType = dataType } = queryProperties;
+
+    const queryFactory = defaultQueriesMap[queryType] ||
+                         defaultQueriesMap[dataType] ||
+                         defaultQueriesMap.literal;
     return {
         dataType, attribute: identifier,
-        ...queryFactory(queryProperties)
+        ...queryFactory.call(defaultQueriesMap, queryProperties)
     };
 }
 
@@ -139,5 +145,33 @@ const defaultQueriesMap = {
                 value, type: 'Literal',
             }
         }
+    },
+    isOneOf({ identifer, values = [] }) {
+        return {
+            ast: {
+                type: 'BinaryPredicate',
+                operator: 'IN',
+                left: { type: 'Identifier', name: identifer },
+                right: {
+                    type: 'ListExpression',
+                    elements: values.map((value) => ({
+                        value, type: 'Literal'
+                    }))
+                }
+            }
+        }
+    },
+    isEqualTo({ identifier, value }) {
+        return this.string({ identifier, equals: value });
+    },
+    isBetween({ identifier, start, stop }) {
+        return {
+            ast: {
+                type: 'BetweenPredicate',
+                value: {type: 'Identifier', name: identifier },
+                start: {type: 'Literal', value: start },
+                stop: {type: 'Literal', value: stop }
+            }
+        };
     }
 };
