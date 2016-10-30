@@ -27,17 +27,28 @@ const deleteExpressionTooltip = (
 export function ExpressionsList({
     showDataTypes = true,
     id, templates = [], addExpression,
+    showHeader = true, header,
+    dropdownPlacement = 'bottom',
+    placeholder,
     style = {}, children, name, ...props
 }) {
+
+    const dropdown = <ExpressionTemplates name={name}
+        templates={templates}
+        placeholder={placeholder}
+        showDataTypes={showDataTypes}
+        addExpression={addExpression}/>;
+
+    const title = !showHeader ? undefined : (header ? header : name);
+    const top = dropdownPlacement === 'top'
+        ? <div>{title}{dropdown}</div>
+        : title;
+    const bottom = dropdownPlacement === 'bottom' ? dropdown : undefined;
+
     return (
-        <Panel header={name}
+        <Panel header={ top }
                style={{ ...style, display: `block`, margin: 0 }}
-               footer={(
-                   <ExpressionTemplates name={name}
-                                        templates={templates}
-                                        showDataTypes={showDataTypes}
-                                        addExpression={addExpression}/>
-               )}
+               footer={ bottom }
                {...props}>
             <ListGroup fill>
             {children.map((child) => (
@@ -52,14 +63,16 @@ export function ExpressionsList({
 }
 
 export function ExpressionTemplates({ name = 'Expressions', templates = [],
+                                      placeholder = "Select attribute for new entry...",
                                       showDataTypes = true, addExpression }) {
 
     templates = templates.slice(0);
 
     return  (<Select
+        className={styles['expression-select']}
         id='add-expression-dropdown'
         title={`Add ${name.slice(0, -1)}`}
-        placeholder="Select attribute to filter..."
+        placeholder={placeholder}
         onChange={ ({value}) => addExpression(templates[value]) }
         optionRenderer={
           ({componentType, name, dataType}) => (

@@ -4,7 +4,7 @@ import { Button, Glyphicon } from 'react-bootstrap';
 import globalStyles from 'viz-shared/index.less';
 import styles from 'viz-shared/components/histograms/styles.less';
 
-export const Sparkline = ({ id, width = `100%`, height = 50,
+export const Sparkline = ({ id, width = `calc(100% - 20px)`, height = 50,
                             filtered = false, colors = false,
                             name, yScale, children, componentType,
                             onClose, onYScaleChanged, onEncodingChanged }) => {

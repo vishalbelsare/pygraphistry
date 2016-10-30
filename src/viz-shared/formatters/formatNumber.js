@@ -14,6 +14,8 @@ export function formatNumber (value, short = false, precision = 4) {
         return maybePrecise(value / 1e6, precision) + 'M';
     } else if (abs > 1e3) {
         return maybePrecise(value / 1e3, precision) + 'K';
+    } else if (abs > Math.pow(10, -precision) && abs < 1) {
+        return value.toFixed(precision);
     } else {
         value = Math.round(value * 1e6) / 1e6; // Kill rounding errors
         return String(value);
