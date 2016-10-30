@@ -986,6 +986,8 @@ Dataframe.prototype.addClientProvidedColumn = function (columnType, columnName, 
     });
 
     ccManager.addComputedColumn(this, columnType, columnName, spec);
+
+    return this;
 };
 
 
