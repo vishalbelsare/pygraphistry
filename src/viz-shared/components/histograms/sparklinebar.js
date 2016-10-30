@@ -99,7 +99,7 @@ const SparklineBarInfo = ({ values, binType, dataType, globalCount, maskedCount 
             rows.push([
                 <p>RANGE</p>,
                 <p>{values
-                    .map((x) => shortFormat(x | 0, dataType))
+                    .map((x) => shortFormat(x, dataType))
                     .join(' : ')}</p>
             ]);
         }
