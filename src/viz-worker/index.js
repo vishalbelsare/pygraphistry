@@ -142,8 +142,8 @@ export function vizWorker(app, server, sockets, caches) {
                 )
                 .mergeMap(
                     ({ nBody }) => sendUpdate(
+                        `workbooks.open.views.current.columns.length`,
                         `workbooks.open.views.current.histograms.length`,
-                        `workbooks.open.views.current.expressionTemplates.length`,
                         `workbooks.open.views.current.scene.renderer['edges', 'points'].elements`
                     ).concat(Observable.of(1)).takeLast(1),
                     ({ nBody }) => ({ nBody })

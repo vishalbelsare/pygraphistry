@@ -19,7 +19,7 @@ export function filters(view, defaultFilter = {}) {
             name: 'Filters',
             ...defaultFilters,
             length: defaultFilters.length,
-            templates: $ref(`${view}.expressionTemplates`),
+            templates: $ref(`${view}.columns`),
             controls: [{
                 selected: false,
                 id: 'toggle-filters',

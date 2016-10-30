@@ -29,8 +29,9 @@ export function views(workbookId, viewId = simpleflake().toJSON()) {
 export function view(workbookId, sceneID = 'default', viewId = simpleflake().toJSON()) {
     const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
     return {
+        id: viewId,
         absolutePath: view,
-        id: viewId, title: '',
+        title: '', columns: [],
         panels: {
             left: undefined,
             right: undefined,

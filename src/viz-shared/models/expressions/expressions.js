@@ -24,7 +24,6 @@ export function expressions(view) {
         ...exclusions(view),
         ...histograms(view),
         ...filters(view, defaultFilter),
-        expressionTemplates: [],
         expressionsById: {
             [defaultFilter.id]: {
                 ...defaultFilter

@@ -1,4 +1,5 @@
 import Color from 'color';
+import { Observable } from 'rxjs/Observable';
 import { view as createView } from 'viz-shared/models/views';
 import { ref as $ref, atom as $atom } from '@graphistry/falcor-json-graph';
 import { toClient as fromLayoutAlgorithms } from '../simulator/layout.config';
@@ -21,6 +22,40 @@ export function loadViews(loadDatasetNBody, loadWorkbooksById) {
                 )))
             })
         );
+    }
+}
+
+export function moveSelectedNodes(loadViewsById) {
+    return function moveSelectedNodes({ workbookIds, viewIds, coords = { x: 0, y: 0 }}) {
+
+        const { x, y } = coords;
+
+        if (x === 0 && y === 0) {
+            return Observable.empty();
+        }
+
+        return loadViewsById({
+            workbookIds, viewIds
+        })
+        .mergeMap(({ workbook, view }) => {
+
+            const { nBody, selection = {} } = view;
+            const { point: { value: points } = {} } = selection;
+
+            if (!nBody || !points || points.length <= 0) {
+                return Observable.empty();
+            }
+
+            return Observable
+                .from(nBody.simulator.moveNodesByIds(points, { x, y }))
+                .do(() => {
+                    const { server } = nBody;
+                    if (server && server.updateVboSubject) {
+                        server.updateVboSubject.next(true);
+                    }
+                })
+                .ignoreElements()
+        });
     }
 }
 

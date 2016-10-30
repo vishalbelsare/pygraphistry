@@ -13,7 +13,7 @@ export function histograms(view) {
             length: 0,
             id: 'histograms',
             name: 'Histograms',
-            templates: $ref(`${view}.expressionTemplates`),
+            templates: $ref(`${view}.columns`),
             controls: [{
                 selected: false,
                 id: 'toggle-histograms',
