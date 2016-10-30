@@ -66,7 +66,7 @@ try {
             logger.warn({'memory_leak': info});
         });
         memoryWatcher.on('stats', (stats) => {
-            logger.info({'memory_stats': stats});
+            logger.trace({'memory_stats': stats});
         });
     }
 } catch (e) {

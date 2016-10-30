@@ -14,7 +14,7 @@ import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 import { loadViews, loadLabels, loadVGraph, loadWorkbooks } from '../viz-worker/services';
 
 const config = _config();
-const s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE);
+const s3Cache = new Cache(config.LOCAL_DATASET_CACHE_DIR, config.LOCAL_DATASET_CACHE);
 
 export function docWorker(app, server, sockets, caches) {
 
