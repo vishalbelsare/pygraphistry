@@ -31,7 +31,7 @@ function preventPropagation (f) {
 const propTypes = {
     opacity: React.PropTypes.number,
     background: React.PropTypes.any,
-    foreground: React.PropTypes.any,
+    color: React.PropTypes.any,
 
     poiEnabled: React.PropTypes.bool,
     enabled: React.PropTypes.bool,
@@ -48,6 +48,8 @@ const propTypes = {
 
 const defaultProps = {
     opacity: 1,
+    background: 'red',
+    color: 'white',
     poiEnabled: true,
     enabled: true,
     onClick: (({type, title}) => console.log('clicked', {type, title})),
@@ -55,39 +57,40 @@ const defaultProps = {
     onExclude: (({type, field, value}) => console.log('click exclude', {type, field, value})),
     onPinChange: (({type, title}) => console.log('click pin change', {type, title})),
     hideNull: true,
-    labels: []
-        //   {
-        //     type: 'point',
-        //     id: 'bullwinkle',
-        //     title: "the greatest moose",
+    labels: [
+          /*{
+            type: 'point',
+            id: 'bullwinkle',
+            title: "the greatest moose",
 
-        //     showFull: true, // expanded when :hover or .on
-        //     pinned: true,
+            showFull: false, // expanded when :hover or .on
+            pinned: true,
 
-        //     x: 200,
-        //     y: 30,
+            x: 200,
+            y: 30,
 
-        //     fields: [
-        //         //{key, value, ?displayName, dataType: 'color' or ?}
-        //         {key: 'field01', value: 0},
-        //         {key: 'field02', value: 'hello'},
-        //         {key: 'field03', value: 'world'},
-        //         {key: 'field04', value: 2000},
-        //         {key: 'field05', value: '#f00', dataType: 'color'},
-        //         {key: 'field06', value: '#ff0000', dataType: 'color'},
-        //         {key: 'field07', value: undefined},
-        //         {key: 'field08', value: null},
-        //         {key: 'field09', value: 'another'},
-        //         {key: 'field10isareallylongnameok', value: 'and another'},
-        //         {key: 'field11 is also a really long one', value: 24},
-        //         {key: 'field12', value: 'field value is quite long and will likely overflow'},
-        //         {key: 'field13', value: 'fieldvalueisquitelongandwilllikelyoverflow'},
-        //         {key: 'field14', value: 'and another'},
-        //         {key: 'field15', value: 'and another'},
-        //         {key: 'field16', value: 'and another'},
-        //         {key: 'field17', value: 'and another'}
-        //     ]
-        // }]
+            fields: [
+                //{key, value, ?displayName, dataType: 'color' or ?}
+                {key: 'field01', value: 0},
+                {key: 'field02', value: 'hello'},
+                {key: 'field03', value: 'world'},
+                {key: 'field04', value: 2000},
+                {key: 'field05', value: '#f00', dataType: 'color'},
+                {key: 'field06', value: '#ff0000', dataType: 'color'},
+                {key: 'field07', value: undefined},
+                {key: 'field08', value: null},
+                {key: 'field09', value: 'another'},
+                {key: 'field10isareallylongnameok', value: 'and another'},
+                {key: 'field11 is also a really long one', value: 24},
+                {key: 'field12', value: 'field value is quite long and will likely overflow'},
+                {key: 'field13', value: 'fieldvalueisquitelongandwilllikelyoverflow'},
+                {key: 'field14', value: 'and another'},
+                {key: 'field15', value: 'and another'},
+                {key: 'field16', value: 'and another'},
+                {key: 'field17', value: 'and another'}
+            ]
+        }*/
+    ]
 }
 
 function LabelTitle ({onPinChange, onExclude, label}) {
@@ -200,6 +203,17 @@ class DataLabel extends React.Component {
     }
 
     render () {
+
+        var styleOverrides = {};
+        if (!this.props.label.showFull) {
+            ['color', 'background', 'opacity']
+                .forEach((field) => {
+                    if (this.props.hasOwnProperty(field)) {
+                        styleOverrides[field] = this.props[field];
+                    }
+                });
+        }
+
         return (<div
             className={`
                 ${styles['graph-label']}
@@ -210,7 +224,8 @@ class DataLabel extends React.Component {
             >
             <div className={`
                 ${styles['graph-label-container']}
-                ${styles['graph-label-' + this.props.label.type]}`}>
+                ${styles['graph-label-' + this.props.label.type]}`}
+                style={ this.props.label.showFull ? {} : styleOverrides }>
 
                 <LabelTitle { ...this.props } />
 
