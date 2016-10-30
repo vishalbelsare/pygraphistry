@@ -76,15 +76,12 @@ export default class ColumnPicker extends React.Component {
 
         return (<div id={this.props.id} name={this.props.name || this.props.id}>
 
-            <OverlayTrigger placement='top'  trigger="hover"
-                overlay={ <Tooltip id={`${this.props.id}_tooltip`}>Pick fields</Tooltip> }>
-                <Button href='javascript:void(0)'
-                    className={classNames({
-                        [styles['fa']]: true,
-                        [styles['fa-cogs']]: true
-                    })}
-                    onClick={this.open} />
-            </OverlayTrigger>
+            <Button href='javascript:void(0)'
+                className={classNames({
+                    [styles['fa']]: true,
+                    [styles['fa-cogs']]: true
+                })}
+                onClick={this.open} />
 
             <Modal show={this.state.showModal} onHide={this.close}>
                 <Modal.Header closeButton>
