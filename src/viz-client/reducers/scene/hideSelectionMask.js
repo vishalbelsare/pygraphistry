@@ -17,8 +17,8 @@ export function hideSelectionMask(actions) {
         .startFromActions(actions
             .ofType(SCENE_TOUCH_START)
             .filter(({ selectionType, selectionMask }) => (
-                !selectionType || (
-                 selectionType === 'window' && selectionMask)
+                selectionMask && (
+                    !selectionType || selectionType === 'window')
             ))
         );
 
@@ -27,7 +27,11 @@ export function hideSelectionMask(actions) {
         .repeat()
         .mergeMap((tap) => tap
             // .stopPropagation(true)
-            .map((point) => (point.rect = null) || point)
+            .map((point) => {
+                point.rect = null;
+                point.refreshMask = true;
+                return point;
+            })
         );
 
     return hiddenMaskSelections.map(toValuesAndInvalidations);
