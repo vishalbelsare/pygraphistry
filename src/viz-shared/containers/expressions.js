@@ -27,13 +27,13 @@ let Expressions = ({ templates = [], expressions = [], removeExpression, ...prop
 };
 
 Expressions = container(
-    ({ length = 0, templates = [] }) => `{
-        id, name, length, [0...${length}]: ${
-            Expression.fragment()
+    ({ templates = [], ...expressions } = {}) => `{
+        id, name, length, ...${
+            Expression.fragments(expressions)
         },
         templates: {
-            length, [0...${templates.length}]: {
-                name, dataType, attribute, componentType
+            length, [0...${templates.length || 0}]: {
+                name, dataType, identifier, componentType
             }
         }
     }`,
@@ -48,7 +48,7 @@ Expressions = container(
 let Expression = container(
     () => `{
         id, input, level,
-        name, enabled, attribute,
+        name, enabled, identifier,
         dataType, componentType, expressionType
     }`,
     (expression) => expression,

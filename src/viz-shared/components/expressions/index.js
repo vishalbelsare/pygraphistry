@@ -1,8 +1,6 @@
 import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import classNames from 'classnames';
-import { PropTypes } from 'react';
-import { getContext } from 'recompose';
 import ExpressionEditor from './editor';
 import {
     Col, Row, Grid,
@@ -58,13 +56,13 @@ export function ExpressionTemplates({ name = 'Expressions', templates = [], addE
 
 
     const sortedTemplates = templates.slice(0);
-    sortedTemplates.sort((a,b) => {
-        const aLower = a.attribute.toLowerCase();
-        const bLower = b.attribute.toLowerCase();
-        return aLower === bLower ? 0
-            : aLower < bLower ? -1
-            : 1;
-    });
+    // sortedTemplates.sort((a,b) => {
+    //     const aLower = a.attribute.toLowerCase();
+    //     const bLower = b.attribute.toLowerCase();
+    //     return aLower === bLower ? 0
+    //         : aLower < bLower ? -1
+    //         : 1;
+    // });
 
     return  (<Select
         id='add-expression-dropdown'
@@ -74,19 +72,19 @@ export function ExpressionTemplates({ name = 'Expressions', templates = [], addE
         optionRenderer={
           ({componentType, name, dataType}) => (
               <span>
-                  <span>{`${componentType}:`}</span>
+                  <span>{componentType}:</span>
                   <label>{name}</label>
                   <span style={{'fontStyle': 'italic', 'marginLeft': '5px' }}>{dataType}</span>
               </span>
             )
         }
         options={
-            sortedTemplates.map(({ name, dataType, attribute, componentType }, index) => {
+            sortedTemplates.map(({ name, dataType, identifier, componentType }, index) => {
                 return {
                     value: index,
-                    label: `${attribute} (${dataType})`,
+                    label: `${identifier} (${dataType})`,
                     dataType: dataType,
-                    attribute: attribute,
+                    identifier: identifier,
                     name: name,
                     componentType: componentType
                 };

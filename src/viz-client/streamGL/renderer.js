@@ -1015,12 +1015,12 @@ function render(state, tag, renderListTrigger, renderListOverride, readPixelsOve
     const texturesToRead = [];
 
     sortedItems.forEach((item) => {
-        const numElementsForItem = state.numElements[item];
-        if (typeof numElementsForItem === 'undefined' || numElementsForItem === 0) {
-            debug('Not rendering item "%s" because it doesn\'t have a non-zero numElements',
-                item);
-            return;
-        }
+        // const numElementsForItem = state.numElements[item];
+        // if (typeof numElementsForItem === 'undefined' || numElementsForItem === 0) {
+        //     debug('Not rendering item "%s" because it doesn\'t have a non-zero numElements',
+        //         item);
+        //     return;
+        // }
         const texture = renderItem(state, config, camera, gl, options, ext,
                                  programs, buffers, clearedFBOs, item);
         if (texture) {
@@ -1098,6 +1098,7 @@ function renderItem(state, config, camera, gl, options, ext, programs, buffers, 
 
     debug('Rendering item "%s" (%d elements)', item, numElements);
 
+    const textureToRead = (renderTarget !== null && itemDef.readTarget) ? renderTarget : undefined;
 
     //change viewport in case of downsampled target
     const dims = getTextureDims(config, gl.canvas, camera, renderTarget);
@@ -1116,6 +1117,15 @@ function renderItem(state, config, camera, gl, options, ext, programs, buffers, 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         clearedFBOs[renderTarget] = true;
+    }
+
+    // This check is placed after clearing targets, but right before the program
+    // would be bound and drawn. This way we capture the side effects of attempting
+    // to render an item, while still skipping what we can.
+    if (typeof numElements === 'undefined' || numElements === 0) {
+        debug('Not rendering item "%s" because it doesn\'t have a non-zero numElements',
+            item);
+        return textureToRead;
     }
 
     setGlOptions(gl, _.omit(_.extend({}, state.options, itemDef.glOptions), 'clearColor', 'lineWidth'));
@@ -1139,11 +1149,13 @@ function renderItem(state, config, camera, gl, options, ext, programs, buffers, 
         gl.drawArrays(gl[itemDef.drawType], 0, numElements);
     }
 
-    if (renderTarget !== null && itemDef.readTarget) {
-        return renderTarget;
-    } else {
-        return undefined;
-    }
+    return textureToRead;
+
+    // if (renderTarget !== null && itemDef.readTarget) {
+    //     return renderTarget;
+    // } else {
+    //     return undefined;
+    // }
 }
 
 // Get names of buffers needed from server

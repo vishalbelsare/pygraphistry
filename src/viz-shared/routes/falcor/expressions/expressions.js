@@ -73,17 +73,17 @@ export function expressions(path, base) {
 
 export function addExpressionHandler({
     addExpression,
-    expressionType: type = 'filter'
+    expressionType = 'filter'
 }) {
-    return function addExpressionHandler(path, [name, dataType, attribute]) {
+    return function addExpressionHandler(path, [componentType, name, dataType]) {
         const workbookIds = [].concat(path[1]);
         const viewIds = [].concat(path[3]);
         return addExpression({
-            workbookIds, viewIds, name, dataType, attribute, type
+            workbookIds, viewIds, name, dataType, componentType, expressionType
         })
         .mergeMap(({ workbook, view, expression }) => {
 
-            const list = type + 's';
+            const list = expressionType + 's';
             const base = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
 
             const { [list]: exprs } = view;
@@ -106,7 +106,7 @@ export function addExpressionHandler({
             }
 
             const { workbook, view, errors } = err;
-            const list = type + 's';
+            const list = expressionType + 's';
             const base = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
 
             const { [list]: exprs } = view;
@@ -123,7 +123,7 @@ export function addExpressionHandler({
 
 export function removeExpressionHandler({
     removeExpressionById,
-    expressionType: type = 'filter'
+    expressionType = 'filter'
 }) {
     return function removeExpressionHandler(path, [expressionId]) {
         const workbookIds = [].concat(path[1]);
@@ -133,7 +133,7 @@ export function removeExpressionHandler({
         })
         .mergeMap(({ workbook, view }) => {
 
-            const list = type + 's';
+            const list = expressionType + 's';
             const base = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
 
             const { [list]: exprs } = view;

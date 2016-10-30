@@ -6,10 +6,8 @@ import { container } from '@graphistry/falcor-react-redux';
 // import { Timebar } from './timebar';
 import { Settings } from './settings';
 import { Expressions } from './expressions';
-// import { Inspector } from './inspector';
-// import { Histograms } from './histograms';
-
-import ColumnPicker from './ColumnPicker';
+import { Inspector } from '../components/inspector/inspector';
+import { Histograms } from './histograms';
 
 const panelsById = {
     'filters': Expressions,
@@ -77,28 +75,11 @@ function Timebar() {
     );
 }
 
-function Inspector() {
-    return (
-        <div>
-            <h1>Inspector</h1>
-            <ColumnPicker
-                id="InspectorColumnPicker"
-                placeholder="Pick columns"
-                options={[
-                    {attribute: "edge:src", componentType: "edge", name: "src", dataType: "number"},
-                    {attribute: "edge:dst", componentType: "edge", name: "dst", dataType: "number"},
-                    {attribute: "point:degree", componentType: "point", name: "degree", dataType: "string"}
-                ]}
-                onChange={ (values) => console.log('selected cols', values)}
-                />
-        </div>);
-}
-
-function Histograms() {
-    return (
-        <h1>Histograms</h1>
-    );
-}
+// function Histograms() {
+//     return (
+//         <h1>Histograms</h1>
+//     );
+// }
 
 function leftPanelStyles(isOpen) {
     return {

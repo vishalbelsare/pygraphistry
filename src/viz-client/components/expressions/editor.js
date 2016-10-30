@@ -2,8 +2,8 @@ import ace from 'brace';
 import React from 'react';
 import { Subject } from 'rxjs';
 import ReactAce from 'react-ace';
-import styles from './styles.less';
 import { expression } from 'viz-shared/models/expressions';
+import styles from 'viz-shared/components/expressions/styles.less';
 
 const { Range: AceRange } = ace.acequire('ace/range');
 const { Anchor: AceAnchor } = ace.acequire('ace/anchor');
@@ -145,12 +145,12 @@ class DataframeCompleter {
         /**
         [{
             name, componentType,
-            dataType, attribute
+            dataType, identifier
         }....]
          */
-        this.templates = Object.keys(templates.reduce((templates, { name, attribute }) => {
+        this.templates = Object.keys(templates.reduce((templates, { name, identifier }) => {
             templates[name] = true;
-            templates[attribute] = true;
+            templates[identifier] = true;
             return templates;
         }, {}));
     }

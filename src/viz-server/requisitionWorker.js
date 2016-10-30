@@ -40,7 +40,7 @@ export function requisitionWorker({
 
     const requestIsETL = requestIsPathname('/etl');
     const requestIsClaim = requestIsPathname('/claim');
-    const requestIsIndex = requestIsPathname('/index.html');
+    const requestIsIndex = requestIsPathname('/graph.html');
 
     const eltRequests = requests
         .filter(requestIsETL)
@@ -82,18 +82,24 @@ export function requisitionWorker({
                     .do(logSocketHandshake)
                     .switchMap(mapSocketActivity)
         )))
+        .catch((error) => {
+            isLocked = false;
+            latestClientId = simpleflake().toJSON();
+            return Observable.of({ ...error, isActive: false });
+        })
         .mergeMap((event) => {
-            const { isActive, ...restEventProps } = (event || {});
+            const { isActive } = (event || {});
             if (isActive !== undefined) {
                 isLocked = isActive;
                 if (isActive === false) {
                     if (shouldExitOnDisconnect) {
+                        logger.info('Exiting because isActive is false.');
                         return Observable.concat(
                             Observable.of({ isActive }),
                             Observable.throw({
+                                ...event,
                                 exitCode: 0,
-                                shouldExit: true,
-                                ...restEventProps
+                                shouldExit: true
                             })
                         );
                     } else {
@@ -171,14 +177,14 @@ export function requisitionWorker({
     }
 
     function indexAccepted({ request, response }, clientId, callback) {
-        logger.debug({req: request, res: response}, 'Accepting index.html request');
+        logger.debug({req: request, res: response}, 'Accepting graph.html request');
         const path = url.parse(request.url).pathname;
         const clientType = path.substring(path.indexOf('/') + 1, path.lastIndexOf('/'));
         callback(null, [clientId, clientType, request, response]);
     }
 
     function redirectIndex({ request, response }, callback) {
-        logger.warn({req: request, res: response}, 'Rejecting request for a "./index.html" page');
+        logger.warn({req: request, res: response}, 'Rejecting request for a "./graph.html" page');
 
         const buffer = new Buffer('Error: unable to load page because you are not assigned to this visualization server process. ' +
             'This can happen if the process is already handling an existing request, or because ' +
@@ -219,11 +225,12 @@ export function requisitionWorker({
         }
         return socketConnectionAsObservable(activeClientId, request)
             .timeout(claimTimeout * 1000)
-            .catch(() => {
-                isLocked = false;
-                latestClientId = simpleflake().toJSON();
-                logger.warn('Timeout to claim worker, setting self as unclaimed.');
-                return Observable.empty();
+            .catch((e) => {
+                logger.error({ err: e }, 'Timeout to claim worker.');
+                return Observable.throw({
+                    error: e,
+                    message: `Timeout to claim worker.`
+                });
             });
     }
 
@@ -281,14 +288,14 @@ export function requisitionWorker({
 
         const errorEvents = Observable
             .fromEvent(socket, 'error')
-            .do((error) => logger.error(error, 'socket error'))
+            .do((error) => logger.error({ err: error }, 'socket error'))
             // TODO: should we do anything with client socket errors besides log them?
             .ignoreElements();
 
         const disconnectEvents = Observable
             .fromEvent(socket, 'disconnect')
             .do(() => logger.info('a user successfully disconnected, exiting'))
-            .mapTo({ isActive: false });
+            .mapTo({ isActive: false, message: 'a user successfully disconnected, exiting' });
 
         return errorEvents
             .merge(disconnectEvents)

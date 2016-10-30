@@ -28,9 +28,9 @@ export function ButtonList({ children, visible, ...props }) {
     );
 }
 
-export function ButtonListItems({ children }) {
+export function ButtonListItems({ children, ...props }) {
     return (
-        <ButtonToolbar style={{ marginLeft: 0 }}>
+        <ButtonToolbar style={{ marginLeft: 0 }} {...props}>
             <ButtonGroup vertical>
                 {children}
             </ButtonGroup>

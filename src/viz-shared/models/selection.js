@@ -7,15 +7,17 @@ import {
 export function selection(view) {
     return {
         highlight: {
-            label: null,
             edge: [],
             point: [],
+            label: null,
         },
         selection: {
+            edge: [],
+            point: [],
             type: null,
-            rect: null,
+            mask: null,
             label: null,
-            edge: [], point: [],
+            histogramsById: {},
             controls: [{
                 selected: false,
                 id: 'toggle-select-nodes',

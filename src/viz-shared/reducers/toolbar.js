@@ -259,7 +259,7 @@ function toggleSelectNodes({ falcor, selected }) {
 function toggleWindowNodes({ falcor, selected }) {
     if (selected) {
         return falcor.set(
-            $value(`selection.type`, null),
+            $value(`selection['mask', 'type']`, null),
             $value(`selection.controls[1].selected`, false)
         );
     } else {
@@ -281,8 +281,9 @@ function forkWorkbook({ falcor, selected }) {
     return Observable.empty();
 }
 
-function saveWorkbook({ falcor, selected }) {
-    return Observable.empty();
+function saveWorkbook({ falcor }) {
+    const wbFalcor = falcor._clone({_path: falcor._path.slice(0, -2)});
+    return wbFalcor.call(['save']);
 }
 
 function embedWorkbook({ falcor, selected }) {

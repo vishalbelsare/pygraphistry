@@ -5,6 +5,7 @@ import {
     Subject, Observable,
     Subscription, ReplaySubject
 } from 'rxjs';
+import styles from 'viz-shared/components/scene/styles.less';
 
 import {
     pointSizes,
@@ -42,11 +43,8 @@ import {
 } from 'viz-client/streamGL/graphVizApp/interaction';
 
 const events = [
-    'touchEnd',
     'mouseMove',
-    'touchMove',
     'touchStart',
-    'touchCancel',
 ];
 
 class Scene extends React.Component {
@@ -68,15 +66,18 @@ class Scene extends React.Component {
         this.simulationHeight = 0;
         this.container = undefined;
         this.assignRef = (container) => {
-            this.container = container;
-            this.simulationWidth = container.offsetWidth;
-            this.simulationHeight = container.offsetHeight;
+            this.onResize(this.container = container);
         };
         this.onResize = () => {
             const { container } = this;
             if (container) {
                 this.simulationWidth = container.offsetWidth;
                 this.simulationHeight = container.offsetHeight;
+            }
+            const { renderState: { camera } = {} } = this.state;
+            if (camera) {
+                camera.simulationWidth = this.simulationWidth;
+                camera.simulationHeight = this.simulationHeight;
             }
         };
         events.forEach((eventName) => {
@@ -89,7 +90,9 @@ class Scene extends React.Component {
                 const { simulating, selection = {} } = props;
                 const { simulationWidth, simulationHeight } = this;
                 dispatch({
-                    event, selectionType: selection.type,
+                    event,
+                    selectionMask: selection.mask,
+                    selectionType: selection.type,
                     simulationWidth, simulationHeight,
                     camera, simulating, renderState,
                     renderingScheduler
@@ -135,6 +138,10 @@ class Scene extends React.Component {
         events.forEach((eventName) => this[eventName] = undefined);
     }
     render() {
+        const { edges, points, release, children } = this.props;
+        const releaseString = release.buildNumber ? `${release.tag}, build #${release.buildNumber}`
+                                                  : `${release.tag}`;
+
         return (
             <div id='simulation-container'
                  ref={this.assignRef}
@@ -150,9 +157,52 @@ class Scene extends React.Component {
                      height: `100%`,
                      position: `absolute`
                  }}>
-                {this.props.children}
+                {children}
+                {(  (edges && edges.elements !== undefined) ||
+                    (points && points.elements !== undefined)) &&
+                    <table className={styles['meter']}
+                           onMouseOver={this.hideOnMouseOver}
+                           onMouseOut={this.showOnMouseOut}>
+                        <tr>
+                            <td className={styles['meter-label']}>
+                                nodes
+                            </td>
+                            <td className={styles['meter-value']}>{
+                                points && points.elements || 0
+                            }</td>
+                        </tr>
+                        <tr>
+                            <td className={styles['meter-label']}>
+                                edges
+                            </td>
+                            <td className={styles['meter-value']}>{
+                                edges && edges.elements || 0
+                            }</td>
+                        </tr>
+                    </table>
+                }
+                <div className={styles['logo-container']}
+                     onMouseOver={this.hideOnMouseOver}
+                     onMouseOut={this.showOnMouseOut}>
+                    <img draggable='false' src='img/logo_white_horiz.png'/>
+                    <div className={styles['logo-version']}
+                         onMouseDown={this.stopEventPropagation}
+                         onMouseOver={this.stopEventPropagation}
+                         onMouseOut={this.stopEventPropagation}>
+                        { releaseString }
+                    </div>
+                </div>
             </div>
         );
+    }
+    hideOnMouseOver({ currentTarget }) {
+        // currentTarget.style.opacity = 0;
+    }
+    showOnMouseOut({ currentTarget }) {
+        // currentTarget.style.opacity = 1;
+    }
+    stopEventPropagation(e) {
+        e.stopPropagation();
     }
     setupRenderStateAndScheduler(props, state) {
 

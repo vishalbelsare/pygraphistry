@@ -1,11 +1,15 @@
 @import '../../index.less';
-// @import '~font-awesome/less/font-awesome.less';
+
 
 .button-list {
     position: absolute;
     z-index: @menu-z;
     top: 3px;
     left: 5px;
+
+    :global(body.hide-chrome) & {
+        display: none;
+    }
 }
 
 .button-list-item {
@@ -96,7 +100,7 @@
 .toggle-select-nodes {
     .fa();
     .fa-stack();
-    height: 3em;
+    height: 2.9em;
     padding-top: 4px;
     font-size: 75%;
     &:before {

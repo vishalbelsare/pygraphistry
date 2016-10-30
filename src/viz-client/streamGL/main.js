@@ -492,21 +492,4 @@ window.addEventListener('load', () => {
         streamClient = serverClient;
     }
 
-    if (urlParams.splashAfter === undefined || Date.now() / 1000 <= urlParams.splashAfter ||
-        urlParams.offline || urlParams.static) {
-
-        launch(streamClient, urlParams);
-    } else {
-        const clickHandler = function() {
-            $('.splash').fadeOut(100, () => {
-                $(this).empty();
-                launch(streamClient, urlParams);
-            });
-        };
-        const $logo = $('<img>').attr('src', 'img/logowhite.png').click(clickHandler);
-        const $golink = $('<a>').attr('href', '#').attr('id', 'go-load')
-                              .text('Launch Visualization').click(clickHandler);
-        const $span = $('<span>').append($golink);
-        $('<div>').attr('class', 'splash').append($logo).append($span).prependTo($('body'));
-    }
 });

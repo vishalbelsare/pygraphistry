@@ -1,0 +1,167 @@
+@text-color: #646464;
+@left-padding: 10px;
+
+@color-neutral: #BBB;
+@color-neutral-hover: #666;
+@color-highlight: rgb(15, 165, 197);
+@color-highlight-hover: #ff6600;
+
+.histogram-item {
+    padding: 0;
+    margin: 0;
+}
+
+.histogram {
+    overflow: auto;
+    position: relative;
+    p { margin: 1px 0; }
+}
+
+.histogram-title {
+    padding-left: @left-padding;
+    word-break: break-all;
+    color: @text-color;
+    font-weight: bold;
+    font-size: 11px;
+    overflow: auto;
+    span {
+        vertical-align: middle;
+    }
+}
+
+.histogram-icons {
+    float: right;
+    white-space: nowrap;
+}
+.histogram-close {
+    visibility: hidden;
+    font-size: 15px !important;
+
+    border: transparent;
+    background: transparent;
+    color: @text-color;
+    .histogram-item:hover & {
+        visibility: visible;
+        background: transparent;
+    }
+}
+.histogram-legend-pill {
+    border-radius: 15px;
+    padding-top: 0;
+    padding-bottom: 0;
+    pointer-events: none;
+    margin-left: 5px;
+    margin-bottom: 5px; //avoid collision with filter
+}
+.histogram-size-encoding-icon {
+    border: none;
+    background-color: transparent;
+    color: red;
+    margin-right: 7px;
+}
+.histogram-picture-container {
+    width: 100%;
+    text-align: center;
+}
+
+.histogram-picture {
+    position: relative;
+    display: inline-block;
+    text-align: left;
+}
+
+.histogram-column {
+    display: inline-block;
+    height: 100%;
+    position: absolute;
+    cursor: crosshair;
+
+    .has-filter &.is-filter-true {
+        filter: grayscale(100%);
+    }
+    .has-filter &.is-filter-false {
+        border-top: 1px dashed @color-neutral;
+        margin-top: -1px;
+        &.leftest {
+            border-left: 1px dashed @color-neutral;
+        }
+        &.rightest {
+            border-right: 1px dashed @color-neutral;
+        }
+
+    }
+    &:hover {
+        border: 1px solid @color-neutral !important;
+        margin-top: -1px;
+    }
+    .histogram.has-filter .histogram-picture:hover &.is-filter-true:not(:hover),
+    .histogram:not(.has-filter) .histogram-picture:hover &:not(:hover) {
+        opacity: 0.3;
+    }
+}
+.bar-rect {
+    display: inline-block;
+    pointer-events: none; //let column-bg etc. catch
+    position: absolute;
+    width: 100%;
+}
+.bar-bg {
+    height: 100%;
+}
+.bar-bg-bg {
+    opacity: 0.15;
+    .is-masked-true & {
+        background: white !important;
+    }
+}
+.bar-bg-fade {
+    background: linear-gradient(to bottom, #fff 0, rgba(255,255,255,0) 50%, #fff 100%);
+}
+.bar-masked {
+    border: 1px solid rgba(0,0,0,0.4); //less transparent than global
+    margin-right: -1px;
+    .histogram-column:hover & {
+        background-color: @color-highlight-hover !important;
+    }
+    .histogram.has-filter .is-filter-true & {
+        background-color: @color-neutral-hover !important;
+    }
+}
+.bar-global {
+    border: 1px solid rgba(0,0,0,0.2);
+    margin-right: -1px;
+    .histogram.has-filter .is-filter-true &, .is-masked-true & {
+        background-color: @color-neutral !important;
+    }
+}
+
+.encoding-picker-button {
+
+    border: none;
+    background-color: transparent;
+
+    visibility: hidden;
+    :global(.list-group-item):hover & {
+        visibility: visible;
+    }
+
+}
+
+.encoding-icon-container {
+    display: inline-block;
+    border: 1px solid #777;
+    padding: 0;
+    margin: 0;
+    margin-right: 10px;
+    line-height: 10px;
+    height: 12px;
+
+    & > span {
+        height: 10px;
+        display: inline-block;
+    }
+
+    & > label {
+        margin-left: 0.5em;
+    }
+}

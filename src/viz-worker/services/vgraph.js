@@ -19,7 +19,7 @@ const unpackers = {
     'jsonMeta': loadVGraphJSON
 };
 
-export function loadVGraph(view, config, s3Cache = new Cache(config.LOCAL_CACHE_DIR, config.LOCAL_CACHE)) {
+export function loadVGraph(view, config, s3Cache) {
     return Observable
         .of({ view, loaded: false })
         .expand(loadAndUnpackVGraph(config, s3Cache))
@@ -101,8 +101,12 @@ function loadDataFrameAndUpdateBuffers({ view }) {
 
 function createInitialHistograms(view, dataframe) {
 
-/*
     const { histograms, histogramsById } = view;
+
+    if (histograms.length) {
+        return view;
+    }
+
     const binningInstance = new Binning(dataframe);
     const initialHistograms = binningInstance
         .selectInitialColumnsForBinning(5)
@@ -115,7 +119,6 @@ function createInitialHistograms(view, dataframe) {
         histograms[index] = $ref(`${view.absolutePath}
             .histogramsById['${histogram.id}']`);
     });
-*/
 
     return view;
 }
@@ -163,17 +166,18 @@ function createExpressionTemplates(dataframe) {
     for (const columnName in pointColumns) {
 
         const column = pointColumns[columnName];
-        const attribute = columnName.indexOf('point') === 0 ? columnName : `point:${columnName}`;
+        const attribute = columnName.indexOf('point:') === 0 ? columnName : `point:${columnName}`;
 
         if (edgeColumns.hasOwnProperty(columnName)) {
 
             const edgeColumn = edgeColumns[columnName];
-            const edgeAttribute = columnName.indexOf('edge') === 0 ? columnName : `edge:${columnName}`;
+            const edgeAttribute = columnName.indexOf('edge:') === 0 ? columnName : `edge:${columnName}`;
 
             templates[attribute] = {
                 attribute,
                 name: columnName,
                 dataType: column.type,
+                identifier: attribute,
                 componentType: 'point'
             };
 
@@ -181,6 +185,7 @@ function createExpressionTemplates(dataframe) {
                 name: columnName,
                 attribute: edgeAttribute,
                 dataType: edgeColumn.type,
+                identifier: edgeAttribute,
                 componentType: 'edge'
             };
 
@@ -189,6 +194,7 @@ function createExpressionTemplates(dataframe) {
                 attribute,
                 name: columnName,
                 dataType: column.type,
+                identifier: attribute,
                 componentType: 'point'
             };
         }
@@ -196,12 +202,13 @@ function createExpressionTemplates(dataframe) {
 
     for (const columnName in edgeColumns) {
         const column = edgeColumns[columnName];
-        const attribute = columnName.indexOf('edge') === 0 ? columnName : `edge:${columnName}`;
+        const attribute = columnName.indexOf('edge:') === 0 ? columnName : `edge:${columnName}`;
         if (!templates.hasOwnProperty(columnName)) {
             templates[attribute] = {
                 attribute,
                 name: columnName,
                 dataType: column.type,
+                identifier: attribute,
                 componentType: 'edge'
             };
         }
@@ -209,5 +216,12 @@ function createExpressionTemplates(dataframe) {
 
     return Object
         .keys(templates)
-        .map((key) => templates[key]);
+        .map((key) => templates[key])
+        .sort((a,b) => {
+            const aLower = a.identifier.toLowerCase();
+            const bLower = b.identifier.toLowerCase();
+            return aLower === bLower ? 0
+                : aLower < bLower ? -1
+                : 1;
+        });
 }

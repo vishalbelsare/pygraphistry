@@ -17,7 +17,6 @@ export const App = hoistStatics(connect)(container(
         const { views = [] } = workbook;
         const { current: view = {} } = views;
         return `{
-            release: { current: { date }},
             workbooks: {
                 length, open: {
                     id, title, views: {
@@ -31,21 +30,13 @@ export const App = hoistStatics(connect)(container(
     }
 )(renderApp));
 
-function renderApp({ release = {}, workbooks = [], ...props } = {}) {
+function renderApp({ workbooks = [], ...props } = {}) {
     const { open: workbook = {} } = workbooks;
     const { views = [] } = workbook;
     const { current: view } = views;
-    const { current = {} } = release;
-    const { date = Date.now() } = current;
     return (
         <div className={styles['app']}>
-            <div className={styles['logo-container']}>
-                <img src='img/logo_white_horiz.png' />
-                <div className={styles['logo-version']}>
-                    {`${new Date(date).toLocaleString()}`}
-                </div>
-            </div>
-            {view ? <View key='view' data={view} /> : null}
+            <View key='view' data={view} />
             <DevTools key='dev-tools'/>
         </div>
     );
