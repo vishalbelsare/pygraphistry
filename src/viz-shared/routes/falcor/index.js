@@ -8,6 +8,8 @@ import { workbooks } from './workbooks';
 import { scene, camera } from './scene';
 import { inspector, timebar } from './panels';
 
+import { Observable } from 'rxjs/Observable';
+import { mapObjectsToAtoms, captureErrorStacks } from 'viz-shared/routes';
 import { filters, exclusions, histograms, expressions } from './expressions';
 
 export function routes(services) {
@@ -38,5 +40,28 @@ export function routes(services) {
         exclusions(['workbook', 'view'], `${view}`)(services),
         histograms(['workbook', 'view'], `${view}`)(services),
         expressions(['workbook', 'view'], `${view}`)(services),
-    ]));
+    ])).map(wrapRouteHandlers);
+}
+
+function wrapRouteHandlers(route) {
+    const wrapped = {};
+    if (typeof route.get === 'function') {
+        wrapped.get = wrapRouteHandler(route.get);
+    }
+    if (typeof route.set === 'function') {
+        wrapped.set = wrapRouteHandler(route.set);
+    }
+    if (typeof route.call === 'function') {
+        wrapped.call = wrapRouteHandler(route.call);
+    }
+    return { ...route, ...wrapped };
+}
+
+function wrapRouteHandler(handler) {
+    return function routeHandlerWrapper(...args) {
+        return Observable
+            .defer(() => handler.apply(this, args) || [])
+            .catch(captureErrorStacks)
+            .map(mapObjectsToAtoms);
+    }
 }
