@@ -26,18 +26,11 @@ export function reportWorkerActivity({
         // If either the DB update fails, the error is communicated
         // to the parent process, which exits this process with exit code 1.
         //
-        .expand(runPingLoop);
-
-    function runPingLoop(database) {
-
-        const updateMongo = isWorkerActive
+        .mergeMap((database) => Observable
+            .interval(pingInterval * 1000)
+            .combineLatest(isWorkerActive, (x, isActive) => isActive)
             .mergeMap((isActive) => updateNodeMonitor(database, isActive))
-            .mapTo(database)
-
-        return updateMongo
-            .subscribeOn(Scheduler.async, pingInterval * 1000)
-            .take(1);
-    }
+        );
 
     function updateNodeMonitor(database, isActive) {
 
@@ -62,7 +55,14 @@ export function reportWorkerActivity({
             collection.update.bind(collection)
         );
 
-        return updateCollection(query, update, metadata).catch(catchUpdateError);
+        return updateCollection(query, update, metadata)
+            .catch(catchUpdateError)
+            // If isActive is false, turn the update Observable into a
+            // Promise. It's possible the outer subscription is about to
+            // unsubscribe, which could cancel this last in-flight request.
+            // If we make the Observable a Promise, then the request *can't*
+            // be canceled.
+            .let((source) => isActive ? source : source.toPromise());
     }
 
     function catchUpdateError(error) {
