@@ -10,8 +10,7 @@ import {
     DropdownButton, OverlayTrigger,
 } from 'react-bootstrap';
 
-import Select from 'react-select';
-
+import Select from 'viz-shared/components/tethered-select';
 
 const expressionTooltip = (
     <Tooltip id='expression-tooltip'>Expression</Tooltip>
