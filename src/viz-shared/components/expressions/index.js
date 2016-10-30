@@ -53,21 +53,13 @@ export function ExpressionsList({
 
 export function ExpressionTemplates({ name = 'Expressions', templates = [], addExpression }) {
 
-
-    const sortedTemplates = templates.slice(0);
-    // sortedTemplates.sort((a,b) => {
-    //     const aLower = a.attribute.toLowerCase();
-    //     const bLower = b.attribute.toLowerCase();
-    //     return aLower === bLower ? 0
-    //         : aLower < bLower ? -1
-    //         : 1;
-    // });
+    templates = templates.slice(0);
 
     return  (<Select
         id='add-expression-dropdown'
         title={`Add ${name.slice(0, -1)}`}
         placeholder="Select attribute to filter..."
-        onChange={ ({value}) => addExpression(sortedTemplates[value]) }
+        onChange={ ({value}) => addExpression(templates[value]) }
         optionRenderer={
           ({componentType, name, dataType}) => (
               <span>
@@ -78,7 +70,7 @@ export function ExpressionTemplates({ name = 'Expressions', templates = [], addE
             )
         }
         options={
-            sortedTemplates.map(({ name, dataType, identifier, componentType }, index) => {
+            templates.map(({ name, dataType, identifier, componentType }, index) => {
                 return {
                     value: index,
                     label: `${identifier} (${dataType})`,

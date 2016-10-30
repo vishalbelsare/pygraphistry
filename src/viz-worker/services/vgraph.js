@@ -217,11 +217,11 @@ function createExpressionTemplates(dataframe) {
     return Object
         .keys(templates)
         .map((key) => templates[key])
-        .sort((a,b) => {
-            const aLower = a.identifier.toLowerCase();
-            const bLower = b.identifier.toLowerCase();
-            return aLower === bLower ? 0
-                : aLower < bLower ? -1
-                : 1;
+        .sort((a, b) => {
+            const aName = a.name.toLowerCase();
+            const bName = b.name.toLowerCase();
+            return aName === bName ? 0
+                : aName < bName ? -1
+                : -1;
         });
 }
