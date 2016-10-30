@@ -110,7 +110,9 @@ function createInitialHistograms(view, dataframe) {
     const binningInstance = new Binning(dataframe);
     const initialHistograms = binningInstance
         .selectInitialColumnsForBinning(5)
-        .map(({ type, attribute }) => createHistogram(type, attribute));
+        .map(({ type, dataType, attribute }) => createHistogram({
+            name: attribute, dataType, componentType: type
+        }));
 
     histograms.length = initialHistograms.length;
 

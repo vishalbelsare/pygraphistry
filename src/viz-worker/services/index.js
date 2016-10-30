@@ -17,7 +17,11 @@ import { loadWorkbooks, saveWorkbookService } from './workbooks';
 import { maskDataframe } from './dataframe';
 import { sendFalcorUpdate } from './sendFalcorUpdate';
 import { loadNBody, setLayoutControl } from './nBody';
-import { loadHistograms, loadSelectionHistograms } from './histograms';
+import {
+    addHistogram, removeHistogram,
+    loadHistograms, loadSelectionHistograms,
+    computeMaskForHistogramBin
+} from './histograms';
 import { addExpression, updateExpression, removeExpression } from './expressions';
 
 export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }) {
@@ -37,6 +41,9 @@ export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }
     const removeExpressionById = removeExpression(loadViewsById);
     const updateExpressionById = updateExpression(loadViewsById);
 
+    const addHistogramImpl = addHistogram(loadViewsById);
+    const removeHistogramById = removeHistogram(loadViewsById);
+
     return {
         loadConfig,
         loadVGraph,
@@ -55,5 +62,9 @@ export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }
         updateExpressionById,
         removeExpressionById,
         addExpression: addExpressionImpl,
+
+        removeHistogramById,
+        addHistogram: addHistogramImpl,
+        computeMaskForHistogramBin
     };
 }

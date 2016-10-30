@@ -82,10 +82,10 @@ Binning.prototype.binningForColumn = function (
     }
 
     // const qDataBuffer = this.dataframe.getBuffer(attribute, type);
-    const binStart = new Float32Array(numBins);
-    for (let i = 0; i < numBins; i++) {
-        binStart[i] = bottomVal + (binWidth * i);
-    }
+    // const binStart = new Float32Array(numBins);
+    // for (let i = 0; i < numBins; i++) {
+    //     binStart[i] = bottomVal + (binWidth * i);
+    // }
 
     // const dataSize = maskForType.length;
 
@@ -643,9 +643,10 @@ Binning.prototype.selectInitialColumnsForBinning = function (maxInitialItems = u
                 score += sysIndex;
             }
             scoredColumnNames.push({
-                attribute: attributeName,
                 type: type,
-                score: score
+                score: score,
+                dataType: column.type,
+                attribute: attributeName,
             });
         });
     });
