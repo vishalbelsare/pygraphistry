@@ -64,6 +64,7 @@ export function requisitionWorker({
                     message: `Timeout to claim worker.`
                 });
             })
+            .take(1)
         ),
         (claimId, [indexId, indexType, request, response]) => [
             claimId, indexId, indexType, request, response
