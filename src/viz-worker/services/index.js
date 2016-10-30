@@ -10,11 +10,11 @@ export * from './expressions';
 export * from './sendFalcorUpdate';
 
 import { Observable } from 'rxjs';
-import { loadViews } from './views';
 import { loadLabels } from './labels';
 import { loadVGraph } from './vgraph';
+import { appendColumn, maskDataframe } from './dataframe';
+import { loadViews, moveSelectedNodes } from './views';
 import { loadWorkbooks, saveWorkbookService } from './workbooks';
-import { maskDataframe } from './dataframe';
 import { sendFalcorUpdate } from './sendFalcorUpdate';
 import { loadNBody, setLayoutControl } from './nBody';
 import {
@@ -32,6 +32,7 @@ export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }
     const saveWorkbook = saveWorkbookService(config, s3WorkbookCache);
 
     const loadViewsById = loadViews(loadDatasetNBody, loadWorkbooksById);
+    const moveSelectedNodesImpl = moveSelectedNodes(loadViewsById);
     const loadHistogramsById = loadHistograms(loadViewsById);
     const loadLabelsByIndexAndType = loadLabels(loadViewsById);
     const setLayoutControlById = setLayoutControl(loadViewsById);
@@ -50,14 +51,18 @@ export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }
         loadViewsById,
         sendFalcorUpdate,
         loadWorkbooksById,
+
         saveWorkbook,
         loadHistogramsById,
         loadLabelsByIndexAndType,
         loadSelectionHistogramsById,
 
+        moveSelectedNodes: moveSelectedNodesImpl,
+
         loadDatasetNBody,
         setLayoutControlById,
 
+        appendColumn,
         maskDataframe,
         updateExpressionById,
         removeExpressionById,

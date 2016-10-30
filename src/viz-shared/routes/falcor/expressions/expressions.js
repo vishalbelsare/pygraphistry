@@ -73,14 +73,6 @@ export function expressions(path, base) {
         }
 
         return [{
-            returns: `*`,
-            get: getValues,
-            route: `${base}['expressionTemplates'][{keys}]`,
-        }, {
-            returns: `*`,
-            get: getValues,
-            route: `${base}['expressionTemplates'][{keys}][{keys}]`,
-        }, {
             get: getValues,
             route: `${base}['expressionsById'][{keys}]`
         }, {

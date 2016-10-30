@@ -14,7 +14,6 @@ import {
 
 import {
     compose,
-    toClass,
     getContext,
     shallowEqual,
     mapPropsStream

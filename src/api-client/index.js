@@ -2,7 +2,9 @@ import { Model } from 'viz-client/falcor';
 import $$observable from 'symbol-observable';
 import { Observable } from 'rxjs/Observable';
 import { AsyncSubject } from 'rxjs/AsyncSubject';
+import { asap as AsapScheduler } from 'rxjs/scheduler/asap';
 import { PostMessageDataSource } from '@graphistry/falcor-socket-datasource';
+import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
 import {
     ref as $ref,
     atom as $atom,
@@ -32,6 +34,26 @@ class Graphistry extends Observable {
         observable.operator = operator;
         return observable;
     }
+    static addColumns(...columns) {
+        const { view } = this;
+        return new this(this
+            .from(columns)
+            .concatMap((column) => view.call('columns.add', column))
+            .takeLast(1)
+            .mergeMap(() => fetchDataUntilSettled({
+                data: {}, falcor: view, fragment: ({ columns = [] } = {}) => `{
+                    columns: {
+                        length, [0...${columns.length || 0}]: {
+                            name, dataType, identifier, componentType
+                        }
+                    }
+                }`
+            }))
+            .takeLast(1)
+            .map(({ data }) => data.toJSON())
+            .toPromise()
+        );
+    }
     static openFilters() {
         const { view } = this;
         return new this(view.set(
@@ -41,14 +63,18 @@ class Graphistry extends Observable {
             $value(`layout.controls[0].selected`, false),
             $value(`exclusions.controls[0].selected`, false),
             $value(`panels.left`, $ref(view._path.concat(`filters`)))
-        ).toPromise());
+        )
+        .map(({ json }) => json.toJSON())
+        .toPromise());
     }
     static closeFilters() {
         const { view } = this;
         return new this(view.set(
             $value(`panels.left`, undefined),
             $value(`filters.controls[0].selected`, false)
-        ).toPromise());
+        )
+        .map(({ json }) => json.toJSON())
+        .toPromise());
     }
     static startClustering(milliseconds = 2000, cb) {
         const { view } = this;
@@ -57,7 +83,9 @@ class Graphistry extends Observable {
                 $value(`scene.simulating`, true),
                 $value(`scene.controls[0].selected`, true),
             )
-            .last().do((x) => cb && cb(null, x), cb)
+            .last()
+            .map(({ json }) => json.toJSON())
+            .do((x) => cb && cb(null, x), cb)
             .toPromise());
         }
         return new this(this
@@ -73,7 +101,9 @@ class Graphistry extends Observable {
             $value(`scene.simulating`, false),
             $value(`scene.controls[0].selected`, false),
         )
-        .last().do((x) => cb && cb(null, x), cb)
+        .last()
+        .map(({ json }) => json.toJSON())
+        .do((x) => cb && cb(null, x), cb)
         .toPromise());
     }
     static autocenter(percentile, cb) {
@@ -90,7 +120,9 @@ class Graphistry extends Observable {
         return new this(view.set(
             $value(`toolbar.visible`, !!show)
         )
-        .last().do((x) => cb && cb(null, x), cb)
+        .last()
+        .map(({ json }) => json.toJSON())
+        .do((x) => cb && cb(null, x), cb)
         .toPromise());
     }
     static addFilter(expr, cb) {
@@ -123,6 +155,10 @@ function GraphistryJS(iFrame) {
     }
 
     const model = new Model({
+        recycleJSON: true,
+        scheduler: AsapScheduler,
+        treatErrorsAsValues: true,
+        allowFromWhenceYouCame: true,
         source: new PostMessageDataSource(window, iFrame.contentWindow)
     });
 
@@ -193,6 +229,7 @@ import 'rxjs/add/operator/merge';
 import 'rxjs/add/operator/concat';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/mergeMap';
+import 'rxjs/add/operator/concatMap';
 import 'rxjs/add/operator/multicast';
 import 'rxjs/add/operator/toPromise';
 import 'rxjs/add/operator/takeUntil';
