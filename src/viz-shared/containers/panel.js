@@ -6,7 +6,7 @@ import { container } from '@graphistry/falcor-react-redux';
 // import { Timebar } from './timebar';
 import { Settings } from './settings';
 import { Expressions } from './expressions';
-// import { Inspector } from './inspector';
+import { Inspector } from '../components/inspector/inspector';
 import { Histograms } from './histograms';
 
 const panelsById = {
@@ -75,11 +75,6 @@ function Timebar() {
     );
 }
 
-function Inspector() {
-    return (
-        <h1>Inspector</h1>
-    );
-}
 
 // function Histograms() {
 //     return (
