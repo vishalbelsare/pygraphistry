@@ -39,18 +39,23 @@ let View = ({
                    onSelectedPointTouchStart={onSelectedPointTouchStart}
                    onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
             <Panel side='left' data={left} isOpen={isLeftPanelOpen}/>
-            <Dock fluid={false}
-                  size={300}
-                  defaultSize={300}
-                  dimMode='none'
+            <Dock fluid
                   key='right'
+                  dimMode='none'
+                  zIndex={3700}
                   position='right'
-                  isVisible={isRightPanelOpen}>
+                  defaultSize={0.2}
+                  isVisible={isRightPanelOpen}
+                  dockStyle={{
+                      background: `transparent`,
+                      'box-shadow': `none`
+                  }}>
                 <Panel side='right' data={right}/>
             </Dock>
             <Dock fluid
-                  dimMode='none'
                   key='bottom'
+                  zIndex={3700}
+                  dimMode='none'
                   position='bottom'
                   isVisible={isBottomPanelOpen}
                   size={1 - (1/Math.sqrt(2))}>

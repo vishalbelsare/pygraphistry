@@ -1,5 +1,4 @@
 import RcSwitch from 'rc-switch';
-import styles from './styles.less';
 import classNames from 'classnames';
 import ExpressionEditor from './editor';
 import {
@@ -11,6 +10,7 @@ import {
 } from 'react-bootstrap';
 
 import Select from 'viz-shared/components/tethered-select';
+import styles from 'viz-shared/components/expressions/styles.less';
 
 const expressionTooltip = (
     <Tooltip id='expression-tooltip'>Expression</Tooltip>
@@ -25,20 +25,20 @@ const deleteExpressionTooltip = (
 );
 
 export function ExpressionsList({
+    showDataTypes = true,
     id, templates = [], addExpression,
-    className = '', style = {}, children, name, ...props
+    style = {}, children, name, ...props
 }) {
     return (
-        <Panel header={name} style={{ ...style, display: `block`, margin: 0 }}
-               className={classNames({
-                   [className]: !!className,
-                   [styles['expressions-list']]: true,
-               })}
+        <Panel header={name}
+               style={{ ...style, display: `block`, margin: 0 }}
                footer={(
                    <ExpressionTemplates name={name}
                                         templates={templates}
+                                        showDataTypes={showDataTypes}
                                         addExpression={addExpression}/>
-               )}>
+               )}
+               {...props}>
             <ListGroup fill>
             {children.map((child) => (
                 <ListGroupItem key={child.key}
@@ -51,7 +51,8 @@ export function ExpressionsList({
     );
 }
 
-export function ExpressionTemplates({ name = 'Expressions', templates = [], addExpression }) {
+export function ExpressionTemplates({ name = 'Expressions', templates = [],
+                                      showDataTypes = true, addExpression }) {
 
     templates = templates.slice(0);
 
@@ -65,7 +66,8 @@ export function ExpressionTemplates({ name = 'Expressions', templates = [], addE
               <span>
                   <span>{componentType}:</span>
                   <label>{name}</label>
-                  <span style={{'fontStyle': 'italic', 'marginLeft': '5px' }}>{dataType}</span>
+                  {showDataTypes &&
+                  <span style={{'fontStyle': 'italic', 'marginLeft': '5px' }}>{dataType}</span> }
               </span>
             )
         }
@@ -99,7 +101,7 @@ export function ExpressionItem({
                 <OverlayTrigger
                     placement='top'
                     overlay={expressionTooltip}>
-                    <div style={{ border: `1px solid gray`, borderRadius: `3px` }}>
+                    <div style={{ border: `1px solid gray`, borderRadius: `3px`, minWidth: 250 }}>
                         <ExpressionEditor name={`expression-${id}`} width='100%'
                                           value={input} templates={templates} readOnly={isSystem}
                                           onChange={(input) => cancelUpdateExpression({ id })}

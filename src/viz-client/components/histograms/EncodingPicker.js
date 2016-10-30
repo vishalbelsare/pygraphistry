@@ -108,7 +108,8 @@ export default class EncodingPicker extends React.Component {
 
         return (<div id={this.props.id} name={this.props.name || this.props.id} style={{display: 'inline-block'}}>
 
-            <OverlayTrigger placement='top'  trigger="hover"
+            <OverlayTrigger placement='top'
+                trigger={['hover']} // <-- do this so react bootstrap doesn't complain about accessibility
                 style={{zIndex: 999999999}}
                 overlay={ <Tooltip id={`${this.props.id}_tooltip`}>Pick fields</Tooltip> }>
                 <Button href='javascript:void(0)'

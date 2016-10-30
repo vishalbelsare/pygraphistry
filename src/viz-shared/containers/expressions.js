@@ -1,5 +1,6 @@
 import React from 'react'
 import { container } from '@graphistry/falcor-react-redux';
+import styles from 'viz-shared/components/expressions/styles.less';
 import {
     ExpressionItem,
     ExpressionsList
@@ -13,9 +14,14 @@ import {
     cancelUpdateExpression
 } from 'viz-shared/actions/expressions';
 
-let Expressions = ({ templates = [], expressions = [], removeExpression, ...props }) => {
+let Expressions = ({ templates = [], expressions = [],
+                     addExpression, removeExpression,
+                     className = '', style = {}, ...props }) => {
     return (
-        <ExpressionsList templates={templates} {...props}>
+        <ExpressionsList templates={templates}
+                         addExpression={addExpression}
+                         className={className + ' ' + styles['expressions-list']}
+                         style={{ ...style, height: `100%` }} {...props}>
         {expressions.map((expression, index) => (
             <Expression data={expression}
                         templates={templates}
