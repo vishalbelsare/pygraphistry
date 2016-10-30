@@ -22,6 +22,9 @@ let Histograms = ({ templates = [], histograms = [],
     return (
         <ExpressionsList templates={templates}
                          showDataTypes={false}
+                         showHeader={false}
+                         dropdownPlacement="top"
+                         placeholder="Add histogram for..."
                          addExpression={addHistogram}
                          className={className + ' ' + styles['histograms-list']}
                          style={{ ...style, height: `100%` }} {...props}>
