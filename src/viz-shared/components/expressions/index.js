@@ -69,6 +69,7 @@ export function ExpressionTemplates({ name = 'Expressions', templates = [],
     templates = templates.slice(0);
 
     return  (<Select
+        className={styles['expression-select']}
         id='add-expression-dropdown'
         title={`Add ${name.slice(0, -1)}`}
         placeholder={placeholder}
