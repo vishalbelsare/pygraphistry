@@ -275,6 +275,7 @@ function toggleWindowNodes({ falcor, selected }) {
 }
 
 function openWorkbook({ falcor, selected }) {
+    window.open(window.location.origin + window.location.pathname) + window.search;
     return Observable.empty();
 }
 
@@ -292,5 +293,31 @@ function embedWorkbook({ falcor, selected }) {
 }
 
 function fullscreenWorkbook({ falcor, selected }) {
+
+    var isFullscreen = function () {
+        return !((document.fullScreenElement && document.fullScreenElement !== null) ||
+        (!document.mozFullScreen && !document.webkitIsFullScreen));
+    };
+
+    // http://stackoverflow.com/questions/3900701/onclick-go-full-screen
+    if (isFullscreen()) {
+        if (document.cancelFullScreen) {
+            document.cancelFullScreen();
+        } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        } else if (document.webkitCancelFullScreen) {
+            document.webkitCancelFullScreen();
+        }
+    } else {
+        const documentElement = document.documentElement;
+        if (documentElement.requestFullScreen) {
+            documentElement.requestFullScreen();
+        } else if (documentElement.mozRequestFullScreen) {
+            documentElement.mozRequestFullScreen();
+        } else if (documentElement.webkitRequestFullScreen) {
+            documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+        }
+    }
+
     return Observable.empty();
 }
