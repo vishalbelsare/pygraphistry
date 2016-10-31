@@ -275,8 +275,10 @@ function toggleWindowNodes({ falcor, selected }) {
 }
 
 function openWorkbook({ falcor, selected }) {
-    window.open(window.location.origin + window.location.pathname) + window.search;
-    return Observable.empty();
+    return Observable.defer( () => {
+        const url = window.location.origin + window.location.pathname + window.location.search;
+        window.open(url);
+    });
 }
 
 function forkWorkbook({ falcor, selected }) {
@@ -293,31 +295,31 @@ function embedWorkbook({ falcor, selected }) {
 }
 
 function fullscreenWorkbook({ falcor, selected }) {
+    return Observable.defer( () => {
 
-    var isFullscreen = function () {
-        return !((document.fullScreenElement && document.fullScreenElement !== null) ||
-        (!document.mozFullScreen && !document.webkitIsFullScreen));
-    };
+        const isFullscreen = function () {
+            return !((document.fullScreenElement && document.fullScreenElement !== null) ||
+            (!document.mozFullScreen && !document.webkitIsFullScreen));
+        };
 
-    // http://stackoverflow.com/questions/3900701/onclick-go-full-screen
-    if (isFullscreen()) {
-        if (document.cancelFullScreen) {
-            document.cancelFullScreen();
-        } else if (document.mozCancelFullScreen) {
-            document.mozCancelFullScreen();
-        } else if (document.webkitCancelFullScreen) {
-            document.webkitCancelFullScreen();
+        // http://stackoverflow.com/questions/3900701/onclick-go-full-screen
+        if (isFullscreen()) {
+            if (document.cancelFullScreen) {
+                document.cancelFullScreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.webkitCancelFullScreen) {
+                document.webkitCancelFullScreen();
+            }
+        } else {
+            const documentElement = document.documentElement;
+            if (documentElement.requestFullScreen) {
+                documentElement.requestFullScreen();
+            } else if (documentElement.mozRequestFullScreen) {
+                documentElement.mozRequestFullScreen();
+            } else if (documentElement.webkitRequestFullScreen) {
+                documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+            }
         }
-    } else {
-        const documentElement = document.documentElement;
-        if (documentElement.requestFullScreen) {
-            documentElement.requestFullScreen();
-        } else if (documentElement.mozRequestFullScreen) {
-            documentElement.mozRequestFullScreen();
-        } else if (documentElement.webkitRequestFullScreen) {
-            documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
-        }
-    }
-
-    return Observable.empty();
+    });
 }
