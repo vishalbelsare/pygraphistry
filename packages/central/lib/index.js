@@ -14,6 +14,7 @@ import { urlencoded as parseUrlEncoded } from 'body-parser';
 import { api as apiKey } from '@graphistry/common';
 import { pickWorker } from './worker-router.js';
 import { logClientError } from './logClientError.js';
+import { initWorkbookApi } from './rest-api';
 
 import { Server as httpServer } from 'http';
 import express from 'express';
@@ -36,6 +37,8 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
         (req, res) => logClientError(req, res, logger, (config.ENVIRONMENT === 'local')));
 
     apiKey.init(app);
+
+    initWorkbookApi(app, config);
 
     app.all('/graph/*', handleWorkerRequest);
     app.all('/etl', handleWorkerRequest);
