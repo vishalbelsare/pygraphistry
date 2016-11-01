@@ -12,6 +12,8 @@ import {
     pathInvalidation as $invalidate
 } from '@graphistry/falcor-json-graph';
 
+import Color from 'color';
+
 /**
  * @class Graphistry
  * @classdesc This object wraps a HTML IFrame of a Graphistry Visualization in order
@@ -23,6 +25,8 @@ class Graphistry extends Observable {
     static model = null;
     static workbook = null;
     static iFrame = null;
+
+    static Color = Color;
 
     /**
      * Create Graphistry Observable by extending observable's methods
@@ -268,14 +272,7 @@ class Graphistry extends Observable {
      *
      */
     static toggleChrome(show, cb) {
-        const { view } = this;
-        return new this(view.set(
-            $value(`toolbar.visible`, !!show)
-        )
-        .last()
-        .map(({ json }) => json.toJSON())
-        .do((x) => cb && cb(null, x), cb)
-        .toPromise());
+        return this.updateSetting('showChrome', !!show, cb);
     }
 
     /**
@@ -341,6 +338,40 @@ class Graphistry extends Observable {
      */
     static updateSetting(name, val, cb) {
 
+        const lookup = {
+
+            //models/toolbar.js
+            'showChrome': ['view', 'toolbar.visible'],
+
+            //models/scene/scene.js
+            'showArrows':   ['view', 'scene.renderer.showArrows'],
+            'pruneOrphans': ['view', 'scene.renderer.pruneOrphans'],
+            'background':   ['view', 'scene.renderer.background.color'],
+            'edgeOpacity':  ['view', 'scene.renderer.edges.opacity'],
+            'edgeSize':     ['view', 'scene.renderer.edges.scaling'],
+            'pointOpacity': ['view', 'scene.renderer.points.opacity'],
+            'pointSize':    ['view', 'scene.renderer.points.scaling'],
+
+            //models/camera.js
+            'zoom': ['view', 'scene.camera.zoom'],
+
+            //models/label.js
+            'labelOpacity': ['view', 'scene.labels.opacity'],
+            'labelEnabled': ['view', 'scene.labels.enabled'],
+            'labelPOI': ['view', 'scene.labels.poiEnabled'],
+            'labelColor': ['view', 'scene.labels.foreground.color'],
+            'labelBackground': ['view', 'scene.labels.background.color'],
+
+            //models/layout.js => viz-worker/simulator/layout.config.js:
+            'precisionVsSpeed': ['view', 'layout.options.tau']
+
+        };
+
+        const [model, path] = lookup[name];
+
+        return new this(this[model].set($value(path, val))
+            .map(({ json }) => json.toJSON())
+            .toPromise());
     }
 
     /**
@@ -353,7 +384,7 @@ class Graphistry extends Observable {
      * @return {Promise} The result of the callback
      */
     static updateZoom(level, cb) {
-
+        return this.updateSetting('zoom', level, cb);
     }
 
     /**
