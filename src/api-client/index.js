@@ -219,6 +219,27 @@ class Graphistry extends Observable {
 
     }
 
+
+    /**
+     * Center the view of the graph
+     * @method Graphistry.getCurrentWorkbook
+     * @static
+     * @param {function} [cb] - Callback function of type callback(error, result)
+     * @return {Promise} The result of the callback
+     * GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         return g.getCurrentWorkbook(function (err, obj){ alert('id: ' + obj.id); });
+     *     })
+     */
+    static getCurrentWorkbook(cb) {
+        const { workbook } = this;
+         return new this(workbook.get('id')
+            .map(({ json }) => json.toJSON())
+            .do((v) => cb ? cb(null, v) : undefined, cb)
+            .toPromise());
+    }
+
     /**
      * Save the current workbook. A saved workbook will persist the analytics state
      * of the visualization, including active filters and exclusions
@@ -234,6 +255,12 @@ class Graphistry extends Observable {
      */
     static saveWorkbook(cb) {
 
+        const { workbook } = this;
+
+        return new this(workbook.call('save')
+            .map(({ json }) => json.toJSON())
+            .do((v) => cb ? cb(null, v) : undefined, cb)
+            .toPromise());
     }
 
     /**
