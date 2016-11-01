@@ -1,6 +1,6 @@
 {
   "name": "@graphistry/common",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "main": "index.js",
   "description": "",
   "scripts": {
