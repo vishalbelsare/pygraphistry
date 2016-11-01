@@ -1,5 +1,5 @@
 // if (__DEV__) {
-    require('source-map-support').install();
+    // require('source-map-support').install();
 // }
 
 import '@graphistry/rc-slider/assets/index.css';
