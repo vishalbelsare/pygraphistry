@@ -19,7 +19,7 @@
   "dependencies": {
     "@graphistry/bunyan": "2.0.0",
     "chalk": "~1.0.0",
-    "@graphistry/config": "2.2.4",
+    "@graphistry/config": "2.2.5",
     "fs-tools": "~0.2.0",
     "q": "~1.1.0",
     "underscore": "~1.8.3",
