@@ -77,25 +77,29 @@ class Labels extends React.Component {
             }
 
             const { type, index } = label;
-            const { x, y } = (type === 'edge') ?
+            const worldCoords = (type === 'edge') ?
                 label === selection ?
                         getEdgeLabelPos(renderState, renderingScheduler, index)
                     :   camera.canvas2WorldCoords(mouseX, mouseY, canvas, matrix)
                 :   { x: points[2 * index], y: points[2 * index + 1] };
 
-            const { x: x2, y: y2 } = camera.canvasCoords(x, y, canvas, matrix);
+            if (!worldCoords) {
+                continue;
+            }
+
+            const { x, y } = camera.canvasCoords(worldCoords.x, worldCoords.y, canvas, matrix);
 
             updatesToSend.push({
                 type,
                 id: index,
-                pageX: x2,
-                pageY: y2,
+                pageX: x,
+                pageY: y,
             });
 
             childrenToRender.push(React.cloneElement(child, {
                 style: {
                     ...(child.props && child.props.style),
-                    transform: `translate3d(${x2}px, ${y2}px, 0px)`
+                    transform: `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0px)`
                 }
             }));
         }
@@ -142,11 +146,16 @@ export { Labels };
 //  TODO use camera if edge goes off-screen
 //RenderState * int -> {x: float,  y: float}
 function getEdgeLabelPos (renderState, renderingScheduler, edgeIndex) {
+
     var numRenderedSplits = renderState.config.numRenderedSplits;
     var split = Math.floor(numRenderedSplits/2);
 
     var appSnapshot = renderingScheduler.appSnapshot;
     var midSpringsPos = appSnapshot.buffers.midSpringsPos;
+
+    if (!midSpringsPos) {
+        return undefined;
+    }
 
     var midEdgesPerEdge = numRenderedSplits + 1;
     var midEdgeStride = 4 * midEdgesPerEdge;

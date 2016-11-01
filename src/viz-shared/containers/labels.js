@@ -54,12 +54,12 @@ let Labels = ({ enabled, poiEnabled, opacity,
                          selection={selection}
                          poiEnabled={poiEnabled}
                          {...props}>
-        {enabled && labels.map((label, index) =>
+        {enabled && labels.filter(Boolean).map((label, index) =>
             <Label data={label}
+                   key={`label-${index}`}
                    background={background}
                    pinned={label === selection}
                    color={color} opacity={opacity}
-                   key={`${label.type}-${label.index}-label`}
                    showFull={label === highlight || label === selection}/>
         ) || []}
         </LabelsContainer>
