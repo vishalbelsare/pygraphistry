@@ -1,7 +1,9 @@
+import { Subject } from 'rxjs/Subject';
 import { Model } from 'viz-client/falcor';
 import $$observable from 'symbol-observable';
 import { Observable } from 'rxjs/Observable';
 import { AsyncSubject } from 'rxjs/AsyncSubject';
+import { ReplaySubject } from 'rxjs/ReplaySubject';
 import { asap as AsapScheduler } from 'rxjs/scheduler/asap';
 import { PostMessageDataSource } from '@graphistry/falcor-socket-datasource';
 import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
@@ -386,9 +388,59 @@ class Graphistry extends Observable {
      * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
      */
-    static subscribeLabels(subscriptions, cb) {
-        console.warn('not implemented');
+    static subscribeLabels({ onChange, onExit }, cb) {
 
+        const labelsStream = this.labelsStream || (this.labelsStream = this
+            .fromEvent(window, 'message')
+            .filter(({ data }) => data && data.type === 'labels-update')
+            .map(({ data } = {}) => data.labels || [])
+            .scan((sources, labels) => {
+
+                const { labelsById, newSources } = labels.reduce((memo, label) => {
+
+                    const { id } = label;
+                    const { labelsById, newSources } = memo;
+
+                    const source = (id in sources) &&
+                        sources[id] || new ReplaySubject(1);
+
+                    if (id in sources) {
+                        delete sources[id];
+                    }
+
+                    labelsById[id] = label;
+                    newSources[id] = source;
+
+                    return memo;
+                },  { labelsById: {}, newSources: Object.create(null) });
+
+                for (const id in sources) {
+                    sources[id].complete();
+                }
+
+                for (const id in newSources) {
+                    newSources[id].next(labelsById[id]);
+                }
+
+                return newSources;
+            }, Object.create(null))
+            .multicast(() => new ReplaySubject(1))
+            .let((connectable) => {
+                connectable.connect();
+                return connectable.refCount();
+            })
+        );
+
+        return labelsStream.mergeMap(
+                (sources) => Object.keys(sources),
+                (sources, id) => sources[id]
+            )
+            .mergeMap((group) => group
+                .do(({ id, type, pageX, pageY }) => onChange && onChange(id, type, pageX, pageY))
+                .takeLast(1)
+                .do(({ id, type }) => onExit && onExit(id, type))
+            )
+            .subscribe();
     }
 
     /**
@@ -513,6 +565,7 @@ function GraphistryJS(iFrame) {
 }
 
 import 'rxjs/add/operator/do';
+import 'rxjs/add/operator/let';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/last';
 import 'rxjs/add/operator/take';
@@ -520,6 +573,7 @@ import 'rxjs/add/operator/delay';
 import 'rxjs/add/operator/merge';
 import 'rxjs/add/operator/concat';
 import 'rxjs/add/operator/filter';
+import 'rxjs/add/operator/finally';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/concatMap';
 import 'rxjs/add/operator/multicast';

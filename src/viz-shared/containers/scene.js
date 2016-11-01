@@ -13,7 +13,6 @@ let Scene = ({
         release = {}, renderer = {},
         selection = {}, highlight = {}, ...props } = {}) => (
     <div>
-      <Labels key='labels' data={labels} simulating={simulating}/>
       <SceneComponent selection={selection}
                       simulating={simulating}
                       edges={renderer.edges}
@@ -29,6 +28,7 @@ let Scene = ({
                      simulating={simulating}
                      onSelectedPointTouchStart={onSelectedPointTouchStart}
                      onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
+          <Labels data={labels} simulating={simulating}/>
       </SceneComponent>
     </div>
 );

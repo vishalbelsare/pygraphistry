@@ -32,6 +32,7 @@ export function labels(path, base) {
             ]`
         }, {
             get: getValues,
+            set: setValues,
             route: `${base}['labels']['edge', 'point'][{keys}]`
         }, {
             get: getValues,
@@ -59,13 +60,14 @@ export function labels(path, base) {
         }, {
             get: getLabelsByTypeAndRangeHandler,
             route: `${base}['labelsByType']['edge', 'point'][{ranges}][
-                'type', 'index', 'title', 'columns', 'formatted'
+                'type', 'index', 'title', 'columns'
             ]`
         }];
 
         function getLabelsByTypeAndRangeHandler(path) {
 
-            const { workbookIds, viewIds } = path;
+            const workbookIds = [].concat(path[1]);
+            const viewIds = [].concat(path[3]);
             const labelKeys = [].concat(path[path.length - 1]);
             const labelTypes = [].concat(path[path.length - 3]);
             const labelRanges = [].concat(path[path.length - 2]);
@@ -82,14 +84,14 @@ export function labels(path, base) {
                 workbookIds, viewIds, labelTypes, labelIndexes, options
             })
             .mergeMap(({ workbook, view, label }) => {
-                const { labelsByType } = view.scene;
+                const { labelsByType } = view;
                 const { data, type, index } = label;
                 const labelByType = labelsByType[type] || (labelsByType[type] = {});
                 labelByType[index] = data;
                 return labelKeys.map((key) => $value(`
                         workbooksById['${workbook.id}']
                             .viewsById['${view.id}']
-                            .scene.labelsByType
+                            .labelsByType
                             ['${type}'][${index}]['${key}']`,
                     key === 'type' ? type :
                         key === 'index' ? index : data[key]

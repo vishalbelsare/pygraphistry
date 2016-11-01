@@ -25,8 +25,6 @@ import {
     shallowEqual
 } from 'recompose';
 
-const arraySlice = Array.prototype.slice;
-
 class Renderer extends React.Component {
     constructor(props, context) {
         super(props, context);

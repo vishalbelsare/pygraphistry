@@ -1,7 +1,7 @@
 import { toProps } from '@graphistry/falcor';
 import { container } from '@graphistry/falcor-react-redux';
 import { Selection } from 'viz-shared/containers/selection';
-import RendererComponent from 'viz-shared/components/renderer';
+import { Renderer as RendererComponent } from 'viz-shared/components/renderer';
 
 let Renderer = ({
     highlight = {}, selection = {}, background = {},

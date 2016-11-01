@@ -79,10 +79,16 @@ export function columns(columnsByComponentType) {
         .keys(columns)
         .map((key) => columns[key])
         .sort((a, b) => {
-            const aName = a.name.toLowerCase();
-            const bName = b.name.toLowerCase();
-            return aName === bName ? 0
-                : aName < bName ? -1
-                : -1;
+            let { componentType: aType, name: aName } = a;
+            let { componentType: bType, name: bName } = b;
+            if (aType === bType) {
+                return (
+                    aName.toLowerCase() <
+                    bName.toLowerCase() ? -1 : 1);
+            }
+            return (
+                aType < bType ? 1 :
+                aName.toLowerCase() <
+                bName.toLowerCase() ? -1 : 0);
         });
 }

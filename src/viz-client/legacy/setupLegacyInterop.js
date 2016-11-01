@@ -68,6 +68,7 @@ export function setupLegacyInterop(document, { App, options }) {
               socket: PropTypes.object,
               pixelRatio: PropTypes.number,
               simulation: PropTypes.object,
+              onLabelsUpdated: PropTypes.func,
               simCameraBounds: PropTypes.object,
               handleVboUpdates:   PropTypes.func,
               simBackgroundImage: PropTypes.string }, () => (
@@ -75,6 +76,7 @@ export function setupLegacyInterop(document, { App, options }) {
               socket,
               pixelRatio,
               simulation,
+              onLabelsUpdated,
               simCameraBounds,
               handleVboUpdates,
               simBackgroundImage }
@@ -90,5 +92,9 @@ function getSimulationCanvas(document, simulation) {
             simulation)
         )
     );
+}
+
+function onLabelsUpdated(labels) {
+    parent.postMessage({ type: 'labels-update', labels }, '*');
 }
 
