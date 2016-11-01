@@ -25,6 +25,16 @@ import {
     shallowEqual
 } from 'recompose';
 
+// HACK TODO FIXME PAUL:
+// There appears to be a consistency issue in falcor, where when loading from a workbook,
+// this.props.background is logically the same as nextProps.background, but the background.color
+// object is not the same (===), so shallowEqual returns false. This is never committed to our state,
+// so we always attempt to render for the background despite there being no logical difference.
+function backgroundEqualityCheck (a, b) {
+    // Default to shallow equal, if not true, double check contents
+    return shallowEqual(a, b) || shallowEqual(a.color, b.color);
+}
+
 class Renderer extends React.Component {
     constructor(props, context) {
         super(props, context);
@@ -54,7 +64,7 @@ class Renderer extends React.Component {
         return (
             !shallowEqual(currEdges, nextEdges) ||
             !shallowEqual(currPoints, nextPoints) ||
-            !shallowEqual(currBackground, nextBackground) ||
+            !backgroundEqualityCheck(currBackground, nextBackground) ||
             !shallowEqual(restCurrProps, restNextProps)
         );
     }
@@ -367,7 +377,7 @@ class Renderer extends React.Component {
         currBackground, nextBackground,
         renderState, renderingScheduler
     }) {
-        if (!shallowEqual(currBackground, nextBackground)) {
+        if (!backgroundEqualityCheck(currBackground, nextBackground)) {
             renderState.options.clearColor = [
                 new Color(nextBackground.color).rgbaArray().map((x, i) =>
                     i === 3 ? x : x / 255
