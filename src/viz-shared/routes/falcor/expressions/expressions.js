@@ -16,7 +16,9 @@ export function expressions(path, base) {
     return function expressions({ loadViewsById, maskDataframe, updateExpressionById }) {
 
         const getValues = getHandler(path, loadViewsById);
-        const setValues = ({ viewId, workbookId, expressionId, path, values }) => (
+        const setValues = setHandler(path, loadViewsById);
+
+        const batchSetValues = ({ viewId, workbookId, expressionId, path, values }) => (
             Observable
                 .from(Object.keys(values))
                 .mergeMap(
@@ -30,6 +32,12 @@ export function expressions(path, base) {
                         view, workbook, expression
                     })
                 )
+                .reduce(
+                    ({ values }, { view, workbook, path, value }) => ({
+                        view, workbook, values: [...values, {path, value}]
+                    }),
+                    { values: [] }
+                )
         );
 
         function updateExpressionAndMaskDataframe(path, [values]) {
@@ -37,15 +45,9 @@ export function expressions(path, base) {
             const expressionId = path[path.length - 1];
             const workbookId = path[1];
             const viewId = path[3];
-            return setValues({
+            return batchSetValues({
                 path, values, viewId, workbookId, expressionId
             })
-            .reduce(
-                ({ values }, { view, workbook, path, value }) => ({
-                    view, workbook, values: [...values, {path, value}]
-                }),
-                { values: [] }
-            )
             .filter(({ values }) => values.length > 0)
             .mergeMap(
                 ({ view }) => maskDataframe({ view })
@@ -77,6 +79,7 @@ export function expressions(path, base) {
             route: `${base}['expressionsById'][{keys}]`
         }, {
             get: getValues,
+            set: setValues,
             route: `${base}['expressionsById'][{keys}][{keys}]`
         }, {
             call: updateExpressionAndMaskDataframe,

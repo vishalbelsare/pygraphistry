@@ -1,15 +1,68 @@
 import { toProps } from '@graphistry/falcor';
 import { Settings } from 'viz-shared/containers/settings';
 import { container } from '@graphistry/falcor-react-redux';
-import LabelsComponent from 'viz-shared/components/labels';
+import {
+    Label as LabelOverlay,
+    Labels as LabelsContainer
+} from 'viz-shared/components/labels';
 
-let Labels = ({ edge = [], point = [], highlight = {}, selection = {}, ...props }) => {
+let Label = container(() => `{
+    type, index, title, columns
+}`)(LabelOverlay);
+
+const onClick = ({ type, title }) => {
+   console.log('clicked', {type, title});
+};
+
+const onFilter = ({ type, field, value }) => {
+   console.log('click filter', {type, field, value});
+};
+
+const onExclude= ({ type, field, value }) => {
+   console.log('click exclude', {type, field, value});
+};
+
+const onPinChange = ({ type, title }) => {
+   console.log('click pin change', {type, title});
+};
+
+let Labels = ({ enabled, poiEnabled, opacity,
+                foreground: { color: color } = {},
+                background: { color: background } = {},
+                point = [], highlight, selection, ...props }) => {
+
+    let labels = [];
+
+    if (enabled) {
+        if (poiEnabled && point && point.length) {
+            labels = point.slice(0);
+            // console.log(`rendering point labels`, labels);
+        }
+        if (selection && highlight && (
+            selection.type === highlight.type) && (
+            selection.index === highlight.index)) {
+            highlight = undefined;
+        }
+        highlight && labels.push(highlight);
+        selection && labels.push(selection);
+    }
+
     return (
-        <LabelsComponent edge={toProps(edge)}
-                         point={toProps(point)}
-                         highlight={toProps(highlight)}
-                         selection={toProps(selection)}
-                         {...props}/>
+        <LabelsContainer labels={labels}
+                         enabled={enabled}
+                         highlight={highlight}
+                         selection={selection}
+                         poiEnabled={poiEnabled}
+                         {...props}>
+        {enabled && labels.map((label, index) =>
+            <Label data={label}
+                   background={background}
+                   pinned={label === selection}
+                   color={color} opacity={opacity}
+                   key={`${label.type}-${label.index}-label`}
+                   showFull={label === highlight || label === selection}/>
+        ) || []}
+        </LabelsContainer>
     );
 };
 
@@ -22,11 +75,6 @@ Labels = container(
         ['highlight', 'selection']: ${
             Label.fragment()
         },
-        edge: {
-            length, [0...${edge.length || 0}]: ${
-                Label.fragment()
-            }
-        },
         point: {
             length, [0...${point.length || 0}]: ${
                 Label.fragment()
@@ -35,8 +83,4 @@ Labels = container(
     }`
 )(Labels);
 
-let Label = container(() => `{
-    type, index, title, columns
-}`)(() => {});
-
-export { Labels }
+export { Labels, Label }

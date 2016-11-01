@@ -204,6 +204,7 @@ function zoom(camera, zoomFactor, zoomPoint) {
 
     camera.center.x += xoffset * (1.0 - zoomFactor);
     camera.center.y += yoffset * (1.0 - zoomFactor);
+    camera.zoom = camera.zoom * zoomFactor;
     camera.width = camera.width * zoomFactor;
     camera.height = camera.height * zoomFactor;
 
