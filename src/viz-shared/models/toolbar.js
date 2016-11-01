@@ -30,7 +30,8 @@ export function toolbar(workbookId, viewId) {
                     $ref(`${view}.selection.controls`),
                     [
                         $ref(`${view}.histograms.controls[0]`),
-                        $ref(`${view}.inspector.controls[0]`),
+                        // TODO FIXME HACK: Temporarily hiding this button until parity is achieved.
+                        // $ref(`${view}.inspector.controls[0]`),
                         $ref(`${view}.exclusions.controls[0]`),
                         $ref(`${view}.filters.controls[0]`),
                     ],[
