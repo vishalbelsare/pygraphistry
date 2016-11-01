@@ -11,6 +11,7 @@ import { getHandler,
 
 export function views(path, base) {
     return function views({ appendColumn,
+                            tickLayout,
                             loadViewsById,
                             moveSelectedNodes }) {
 
@@ -27,6 +28,9 @@ export function views(path, base) {
             route: `${base}['panels']['left', 'right', 'bottom']`,
             returns: `Reference`
         }, {
+            call: tickLayoutFn,
+            route: `${base}.tick`,
+        }, {
             call: addColumn,
             route: `${base}['columns'].add`,
         }, {
@@ -41,6 +45,21 @@ export function views(path, base) {
             call: movePointSelection,
             route: `${base}['moveSelectedNodes']`
         }];
+
+        function tickLayoutFn(path) {
+            const workbookIds = [].concat(path[1]);
+            const viewIds = [].concat(path[3]);
+
+            return loadViewsById({
+                workbookIds, viewIds
+            })
+            .mergeMap(({ workbook, view }) => {
+                const workbookId = workbook.id;
+                const viewId = view.id;
+                tickLayout({workbook, view});
+                return [];
+            });
+        }
 
         function addColumn(path, [componentType, name, values, dataType]) {
             const workbookIds = [].concat(path[1]);
