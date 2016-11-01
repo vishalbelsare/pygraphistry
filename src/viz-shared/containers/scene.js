@@ -12,25 +12,23 @@ let Scene = ({
         id, simulating, labels = {},
         release = {}, renderer = {},
         selection = {}, highlight = {}, ...props } = {}) => (
-    <div>
-      <SceneComponent selection={selection}
-                      simulating={simulating}
-                      edges={renderer.edges}
-                      points={renderer.points}
-                      sceneID={id} {...props}
-                      release={release}>
-          <Renderer key='renderer'
-                    data={renderer}
-                    simulating={simulating}/>
-          <Selection key='selection'
-                     data={selection}
-                     highlight={highlight}
-                     simulating={simulating}
-                     onSelectedPointTouchStart={onSelectedPointTouchStart}
-                     onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
-          <Labels data={labels} simulating={simulating}/>
-      </SceneComponent>
-    </div>
+    <SceneComponent selection={selection}
+                    simulating={simulating}
+                    edges={renderer.edges}
+                    points={renderer.points}
+                    sceneID={id} {...props}
+                    release={release}>
+        <Renderer key='renderer'
+                  data={renderer}
+                  simulating={simulating}/>
+        <Selection key='selection'
+                   data={selection}
+                   highlight={highlight}
+                   simulating={simulating}
+                   onSelectedPointTouchStart={onSelectedPointTouchStart}
+                   onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
+        <Labels data={labels} simulating={simulating}/>
+    </SceneComponent>
 );
 
 Scene = container((scene = {}) => {
