@@ -397,6 +397,7 @@ class Graphistry extends Observable {
      * @return {Promise} The result of the callback
      */
     static subscribeLabels(subscriptions, cb) {
+        console.warn('not implemented');
 
     }
 
@@ -410,7 +411,7 @@ class Graphistry extends Observable {
      * @return {Promise} The result of the callback
      */
     static unsubscribeLabels(cb) {
-
+        console.warn('not implemented');
     }
 }
 
