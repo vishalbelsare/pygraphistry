@@ -11,6 +11,13 @@ export function appendColumn({ view, componentType, name, values, dataType }) {
     ));
 }
 
+export function tickLayout({ view, workbook }) {
+    const { nBody } = view;
+    nBody.interactions.next({
+        play: true, layout: true
+    });
+}
+
 export function maskDataframe({ view }) {
 
     const { nBody, scene, expressionsById } = view;

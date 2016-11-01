@@ -12,7 +12,7 @@ export * from './sendFalcorUpdate';
 import { Observable } from 'rxjs';
 import { loadLabels } from './labels';
 import { loadVGraph } from './vgraph';
-import { appendColumn, maskDataframe } from './dataframe';
+import { appendColumn, maskDataframe, tickLayout } from './dataframe';
 import { loadViews, moveSelectedNodes } from './views';
 import { loadWorkbooks, saveWorkbookService } from './workbooks';
 import { sendFalcorUpdate } from './sendFalcorUpdate';
@@ -63,6 +63,7 @@ export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }
         setLayoutControlById,
 
         appendColumn,
+        tickLayout,
         maskDataframe,
         updateExpressionById,
         removeExpressionById,

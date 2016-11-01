@@ -141,10 +141,9 @@ class Graphistry extends Observable {
     }
 
     /**
-     * Run Graphistry's clustering algorithm
+     * Run one step of Graphistry's clustering algorithm
      * @method Graphistry.startClustering
      * @static
-     * @param {number} [milliseconds = 2000] - The number of seconds to run layout
      * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
      * @example
@@ -152,53 +151,17 @@ class Graphistry extends Observable {
      *     .flatMap(function (g) {
      *         window.g = g;
      *         console.log('starting to cluster');
-     *         return g.startClustering(3000);
+     *         return g.tickClustering();
      *     })
      */
-    static startClustering(milliseconds = 2000, cb) {
-        const { view } = this;
-        if (!milliseconds || milliseconds <= 0) {
-            return new this(view.set(
-                $value(`scene.simulating`, true),
-                $value(`scene.controls[0].selected`, true)
-            )
-            .last()
-            .map(({ json }) => json.toJSON())
-            .do((x) => cb && cb(null, x), cb)
-            .toPromise());
-        }
-        return new this(this
-            .startClustering(0)
-            .concat(this
-                .timer(milliseconds)
-                .mergeMap(() => this.stopClustering(cb)))
-            .toPromise());
-    }
+    static tickClustering(cb) {
 
-    /**
-     * Stop Graphistry's clustering algorithm
-     * @method Graphistry.stopClustering
-     * @static
-     * @param {function} [cb] - Callback function of type callback(error, result)
-     * @return {Promise} The result of the callback
-     * @example
-     * GraphistryJS(document.getElementById('viz'))
-     *     .flatMap(function (g) {
-     *         window.g = g;
-     *         console.log('stopping clustering');
-     *         return g.startClustering();
-     *     })
-     */
-    static stopClustering(cb) {
         const { view } = this;
-        return new this(view.set(
-            $value(`scene.simulating`, false),
-            $value(`scene.controls[0].selected`, false)
-        )
-        .last()
-        .map(({ json }) => json.toJSON())
-        .do((x) => cb && cb(null, x), cb)
-        .toPromise());
+
+        return new this(view.call('tick')
+            .map(({ json }) => json.toJSON())
+            .do((v) => cb ? cb(null, v) : undefined, cb)
+            .toPromise());
     }
 
     /**
