@@ -88,7 +88,7 @@ function defaults() {
 
         PYGRAPHISTRY: {
             minVersion: '0.9.0',
-            latestVersion: '0.9.34'
+            latestVersion: '0.9.37'
         },
 
         RELEASE: 'Nov 16 R1',  // human-readable, shown under logo
