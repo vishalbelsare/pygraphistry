@@ -32,6 +32,22 @@ export function expressions(view) {
     };
 }
 
+
+function getExprType (ast) {
+    if (ast.argument) {
+        return ast.argument;
+    } else if (ast.left) {
+        const left = getExprType(ast.left);
+        if (left) return left;
+        return getExprType(ast.right);
+    } else if (ast.type === 'Identifier') {
+        const parts = ast.name.split(':');
+        const componentType = parts[0];
+        const attribute = parts.slice(1).join(':');
+        return {componentType, attribute, dataType: 'number'};
+    }
+}
+
 export function expression(inputOrProps = {
                                 name: 'degree',
                                 dataType: 'number',
@@ -46,9 +62,17 @@ export function expression(inputOrProps = {
         identifier = '',
         componentType = '';
 
-    if (typeof inputOrProps === 'string') {
+    if (inputOrProps && typeof inputOrProps === 'string') {
         input = inputOrProps;
         query = parseUtil(parser, inputOrProps, { startRule: 'start' });
+        const parts = getExprType(query.ast);
+        if (parts) {
+            componentType = parts.componentType;
+            name = parts.attribute;
+            dataType = parts.dataType;
+            identifier = `${componentType}:${name}`;
+        }
+
     } else if (inputOrProps && typeof inputOrProps === 'object') {
         name = inputOrProps.name || 'degree';
         dataType = inputOrProps.dataType || 'number';

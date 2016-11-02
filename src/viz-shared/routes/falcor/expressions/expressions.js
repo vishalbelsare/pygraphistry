@@ -95,11 +95,16 @@ export function addExpressionHandler({
     itemName = 'expression',
     ...restProps
 }) {
-    return function addExpressionHandler(path, [componentType, name, dataType]) {
+    return function addExpressionHandler(path, inputOrProps) {
+
+        const [componentType, name, dataType] =
+            typeof inputOrProps === 'string' ? [] : inputOrProps;
+        const input = typeof inputOrProps === 'string' ? inputOrProps : undefined;
+
         const workbookIds = [].concat(path[1]);
         const viewIds = [].concat(path[3]);
         return addItem({
-            workbookIds, viewIds, name, dataType, componentType, ...restProps
+            workbookIds, viewIds, name, dataType, componentType, input, ...restProps
         })
         .mergeMap(({ workbook, view, [itemName]: value }) => {
 
