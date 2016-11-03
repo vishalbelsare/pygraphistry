@@ -19,8 +19,12 @@ export function toolbar(workbookId, viewId) {
             stable: {
                 id: 'stable',
                 visible: true,
-                length: 5, ...[
+                length: 6, ...[
                     $ref(`${view}.camera.controls`),
+                    [
+                        $ref(`${workbook}.controls[0]`),
+                        $ref(`${workbook}.controls[1]`),
+                    ],
                     [
                         $ref(`${view}.scene.controls[0]`),
                         $ref(`${view}.scene.controls[1]`),
@@ -30,7 +34,8 @@ export function toolbar(workbookId, viewId) {
                     $ref(`${view}.selection.controls`),
                     [
                         $ref(`${view}.histograms.controls[0]`),
-                        $ref(`${view}.inspector.controls[0]`),
+                        // TODO FIXME HACK: Temporarily hiding this button until parity is achieved.
+                        // $ref(`${view}.inspector.controls[0]`),
                         $ref(`${view}.exclusions.controls[0]`),
                         $ref(`${view}.filters.controls[0]`),
                     ],[

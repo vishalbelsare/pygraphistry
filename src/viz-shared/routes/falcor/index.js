@@ -40,7 +40,7 @@ export function routes(services) {
         exclusions(['workbook', 'view'], `${view}`)(services),
         histograms(['workbook', 'view'], `${view}`)(services),
         expressions(['workbook', 'view'], `${view}`)(services),
-    ])).map(wrapRouteHandlers);
+    ]))//.map(wrapRouteHandlers); FIXME: Breaks saving workbooks
 }
 
 function wrapRouteHandlers(route) {
