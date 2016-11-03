@@ -33,40 +33,49 @@ export function expressions(path, base) {
                     })
                 )
                 .reduce(
-                    ({ values }, { view, workbook, path, value }) => ({
-                        view, workbook, values: [...values, {path, value}]
+                    ({ values }, { view, workbook, expression, path, value }) => ({
+                        view, workbook, expression, values: [...values, {path, value}]
                     }),
                     { values: [] }
                 )
         );
 
-        function updateExpressionAndMaskDataframe(path, [values]) {
+        function updateExpressionAndMaskDataframe(path, [expressionProps]) {
             path = path.slice(0, -1);
             const expressionId = path[path.length - 1];
             const workbookId = path[1];
             const viewId = path[3];
             return batchSetValues({
-                path, values, viewId, workbookId, expressionId
+                path, values: expressionProps,
+                viewId, workbookId, expressionId
             })
             .filter(({ values }) => values.length > 0)
             .mergeMap(
                 ({ view }) => maskDataframe({ view })
                     // ignore dataframe errors
                     .catch((err) => Observable.of(0)),
-                ({ view, workbook, values }) => {
+                ({ view, workbook, expression, values }) => {
                     const { histograms = [] } = view;
                     const length = histograms.length;
-                    if (length > 0) {
+                    if (length > 0 && (
+                        expression.enabled === true ||
+                        ('enabled' in expressionProps))) {
                         // If the view has histograms, invalidate the
                         // relevant fields so they're recomputed if the
                         // histograms panel is open, or the next time the
                         // panel is opened.
-                        values = values.concat($invalidate(`
-                            workbooksById['${workbook.id}']
-                                .viewsById['${view.id}']
-                                .histograms[0...${length}]
-                                .masked['bins', 'isMasked']`
-                        ));
+                        values = values.concat(
+                            $invalidate(`
+                                workbooksById['${workbook.id}']
+                                    .viewsById['${view.id}']
+                                    .selection.histogramsById`
+                            ),
+                            $invalidate(`
+                                workbooksById['${workbook.id}']
+                                    .viewsById['${view.id}']
+                                    .labelsById`
+                            )
+                        );
                     }
                     return values;
                 }

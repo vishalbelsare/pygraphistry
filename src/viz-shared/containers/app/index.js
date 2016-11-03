@@ -11,8 +11,20 @@ if (__DEV__) {
     DevTools = require('viz-shared/components').DevTools;
 }
 
-export const App = hoistStatics(connect)(container(
-    ({ workbooks = [] } = {}) => {
+let App = ({ workbooks = [], ...props } = {}) => {
+    const { open: workbook = {} } = workbooks;
+    const { views = [] } = workbook;
+    const { current: view } = views;
+    return (
+        <div className={styles['app']}>
+            <View key='view' data={view} />
+            <DevTools key='dev-tools'/>
+        </div>
+    );
+}
+
+App = hoistStatics(connect)(container({
+    fragment: ({ workbooks = [] } = {}) => {
         const { open: workbook = {} } = workbooks;
         const { views = [] } = workbook;
         const { current: view = {} } = views;
@@ -28,16 +40,6 @@ export const App = hoistStatics(connect)(container(
             }
         }`;
     }
-)(renderApp));
+})(App));
 
-function renderApp({ workbooks = [], ...props } = {}) {
-    const { open: workbook = {} } = workbooks;
-    const { views = [] } = workbook;
-    const { current: view } = views;
-    return (
-        <div className={styles['app']}>
-            <View key='view' data={view} />
-            <DevTools key='dev-tools'/>
-        </div>
-    );
-}
+export { App };

@@ -71,8 +71,7 @@ export function workbooks(path, base) {
             })
             .map(({ workbook }) => $value(
                 `workbooks.open`, $ref(`workbooksById['${workbookId}']`)
-            ))
-            .catch(captureErrorStacks);
+            ));
         }
 
         function openWorkbook(path, args) {
@@ -87,10 +86,8 @@ export function workbooks(path, base) {
             const workbookIds = path[1];
 
             return loadWorkbooksById({workbookIds})
-                .mergeMap(({ workbook }) => {
-                    return saveWorkbook({workbook})
-                })
-                .catch(captureErrorStacks);
+                .mergeMap(saveWorkbook)
+                .mergeMapTo(Observable.empty());
         }
 
         function embedWorkbook(path, args) {

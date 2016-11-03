@@ -16,11 +16,13 @@ import {
     removeHistogram,
 } from 'viz-shared/actions/histograms';
 
-let Histograms = ({ templates = [], histograms = [],
-                    addHistogram, removeHistogram,
-                    className = '', style = {}, ...props }) => {
+let Histograms = ({ addHistogram, removeHistogram,
+                    templates = [], histograms = [],
+                    loading = false, className = '',
+                    style = {}, ...props }) => {
     return (
-        <ExpressionsList templates={templates}
+        <ExpressionsList loading={loading}
+                         templates={templates}
                          showDataTypes={false}
                          showHeader={false}
                          dropdownPlacement="top"
@@ -37,8 +39,8 @@ let Histograms = ({ templates = [], histograms = [],
     );
 };
 
-Histograms = container(
-    ({ templates = [], ...histograms }) => `{
+Histograms = container({
+    fragment: ({ templates = [], ...histograms }) => `{
         templates: {
             length, [0...${templates.length}]: {
                 name, dataType, identifier, componentType
@@ -48,16 +50,19 @@ Histograms = container(
             Histogram.fragments(histograms)
         }
     }`,
-    (histograms) => ({
+    mapFragment: (histograms) => ({
         histograms,
         id: histograms.id,
         name: histograms.name,
         templates: histograms.templates
     }),
-    { addHistogram, removeHistogram }
-)(Histograms);
+    dispatchers: {
+        addHistogram, removeHistogram
+    }
+})(Histograms);
 
-let Histogram = ({ dataType, componentType,
+let Histogram = ({ loading = false,
+                   dataType, componentType,
                    id, name, yScale = 'none',
                    global: _global = {}, masked = {},
                    binTouchMove, binTouchStart, binTouchCancel,
@@ -71,6 +76,7 @@ let Histogram = ({ dataType, componentType,
         <Sparkline id={id}
                    name={name}
                    yScale={yScale}
+                   loading={loading}
                    dataType={dataType}
                    onClose={removeHistogram}
                    componentType={componentType}
@@ -95,21 +101,21 @@ let Histogram = ({ dataType, componentType,
     );
 };
 
-Histogram = container(
-    ({ global, masked } = {}) => `{
+Histogram = container({
+    renderLoading: true,
+    fragment: ({ global, masked } = {}) => `{
         id, name, yScale, dataType, componentType,
         global: ${ HistogramBins.fragment(global) } ${global ? `,
         masked: ${ HistogramBins.fragment(masked) }`: ''}
     }`,
-    (histogram) => histogram,
-    {
+    dispatchers: {
         binTouchMove,
         binTouchStart,
         binTouchCancel,
         yScaleChanged,
         encodingChanged,
     }
-)(Histogram);
+})(Histogram);
 
 let HistogramBins = container(
     ({ bins } = {}) => `{

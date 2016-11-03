@@ -11,9 +11,8 @@ export function inspector(view) {
             length: 0,
             id: 'inspector',
             name: 'Data inspector',
-            scene: $ref(`${view}.scene`),
-            edges: $ref(`${view}.scene.selection.edges`),
-            points: $ref(`${view}.scene.selection.points`),
+            edges: $ref(`${view}.selection.edges`),
+            points: $ref(`${view}.selection.points`),
             controls: [{
                 selected: false,
                 id: 'toggle-inspector',

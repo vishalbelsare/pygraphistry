@@ -47,9 +47,20 @@ function updateExpression(action$) {
         .groupBy(({ id }) => id)
         .mergeMap((group) => group
             .debounceTime(350)
-            .switchMap(({ input, enabled, falcor }) => falcor
-                .call('update', [{ input, enabled }])
-                .takeUntil(action$.ofType(CANCEL_UPDATE_EXPRESSION))
-            )
+            .switchMap(({ input, enabled, falcor }) => {
+
+                const operations = [];
+
+                (input !== undefined) &&
+                    operations.push(falcor.set($value(`input`, input)));
+                (enabled !== undefined) &&
+                    operations.push(falcor.set($value(`enabled`, enabled)));
+
+                operations.push(falcor.call('update', [{ input, enabled }]));
+
+                return Observable
+                    .merge(...operations)
+                    .takeUntil(action$.ofType(CANCEL_UPDATE_EXPRESSION))
+            })
         );
 }
