@@ -8,6 +8,7 @@ var WebpackVisualizer = require('webpack-visualizer-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var WebpackNodeExternals = require('webpack-node-externals');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
+var child_process = require('child_process');
 
 var argv = process.argv.slice(2);
 while (argv.length < 2) {
@@ -18,6 +19,19 @@ module.exports = [
     clientConfig,
     serverConfig
 ];
+
+const commitId = child_process.execSync('git rev-parse --short HEAD').toString().trim();
+const revName = child_process.execSync('git name-rev --name-only HEAD').toString().trim();
+const buildNumber = process.env.BUILD_NUMBER;
+const buildDate = Date.now();
+
+const versionDefines = {
+    __RELEASE__: undefined,
+    __GITCOMMIT__: `"${commitId}"`,
+    __GITBRANCH__: `"${revName}"`,
+    __BUILDDATE__: `${buildDate}`,
+    __BUILDNUMBER__: buildNumber ? `"${buildNumber}"` : undefined,
+}
 
 function commonConfig(
     isDevBuild = process.env.NODE_ENV === 'development',
@@ -32,12 +46,6 @@ function commonConfig(
         postcss: postcss,
         resolve: {
             unsafeCache: true,
-            // alias: {
-            //     'viz-client': path.resolve('./src/viz-client'),
-            //     'viz-shared': path.resolve('./src/viz-shared'),
-            //     'viz-worker': path.resolve('./src/viz-worker'),
-            // },
-            // modules: ['node_modules', path.resolve('./src')],
         },
         module: {
             loaders: loaders(isDevBuild, isFancyBuild),
@@ -58,8 +66,7 @@ function clientConfig(
     isFancyBuild = argv[1] === '--fancy'
 ) {
     var config = commonConfig(isDevBuild, isFancyBuild);
-    //// TODO Remove net and tls after pivot templates are removed from client
-    config.node = { fs: 'empty', net: 'empty', tls: 'empty', global: false };
+    config.node = { fs: 'empty', global: false };
     config.target = 'web';
     config.entry = {
         client: [
@@ -91,16 +98,20 @@ function clientConfig(
             })
     });
     config.plugins.push(new AssetsPlugin({ path: path.resolve('./build') }));
-    config.plugins.push(new webpack.DefinePlugin({
-        global: 'window',
-        DEBUG: isDevBuild,
-        __DEV__: isDevBuild,
-        __CLIENT__: true,
-        __SERVER__: false,
-        __VERSION__: JSON.stringify(vizAppPackage.version),
-        // __RELEASE__: JSON.stringify(graphistryConfig.RELEASE),
-        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
-    }));
+    config.plugins.push(new webpack.DefinePlugin(
+        Object.assign(
+            {},
+            {
+                global: 'window',
+                DEBUG: isDevBuild,
+                __DEV__: isDevBuild,
+                __CLIENT__: true,
+                __SERVER__: false,
+                'process.env.NODE_ENV': '"production"',
+            },
+            versionDefines
+        )
+    ));
     return config;
 }
 
@@ -144,15 +155,20 @@ function serverConfig(
         entryOnly: true,
         banner: `require('source-map-support').install();`
     }));
-    config.plugins.push(new webpack.DefinePlugin({
-        window: 'global',
-        DEBUG: isDevBuild,
-        __DEV__: isDevBuild,
-        __CLIENT__: false,
-        __SERVER__: true,
-        __VERSION__: JSON.stringify(vizAppPackage.version),
-        // __RELEASE__: JSON.stringify(graphistryConfig.RELEASE)
-    }));
+    config.plugins.push(new webpack.DefinePlugin(
+        Object.assign(
+            {},
+            {
+                global: 'window',
+                DEBUG: isDevBuild,
+                __DEV__: isDevBuild,
+                __CLIENT__: false,
+                __SERVER__: true,
+                'process.env.NODE_ENV': '"production"',
+            },
+            versionDefines
+        )
+    ));
     return config;
 }
 
@@ -243,7 +259,6 @@ function plugins(isDevBuild, isFancyBuild) {
         plugins.push(new webpack.optimize.AggressiveMergingPlugin());
         plugins.push(new webpack.optimize.UglifyJsPlugin({
             compress: { warnings: false },
-            // output: { comments: false },
             mangle: false,
             comments: false,
             sourceMap: false,
