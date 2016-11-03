@@ -20,15 +20,31 @@ module.exports = [
     serverConfig
 ];
 
-const commitId = child_process.execSync('git rev-parse --short HEAD').toString().trim();
-const revName = child_process.execSync('git name-rev --name-only HEAD').toString().trim();
+function getCommitId() {
+    const commitId = process.env.COMMIT_ID;
+    if (commitId) {
+        return commitId;
+    } else {
+        return child_process.execSync('git rev-parse --short HEAD').toString().trim();
+    }
+}
+
+function getRevName() {
+    const revName = process.env.REV_NAME;
+    if (revName) {
+        return revName;
+    } else {
+        return child_process.execSync('git name-rev --name-only HEAD').toString().trim();
+    }
+}
+
 const buildNumber = process.env.BUILD_NUMBER;
 const buildDate = Date.now();
 
 const versionDefines = {
     __RELEASE__: undefined,
-    __GITCOMMIT__: `"${commitId}"`,
-    __GITBRANCH__: `"${revName}"`,
+    __GITCOMMIT__: `"${getCommitId()}"`,
+    __GITBRANCH__: `"${getRevName()}"`,
     __BUILDDATE__: `${buildDate}`,
     __BUILDNUMBER__: buildNumber ? `"${buildNumber}"` : undefined,
 }
