@@ -66,8 +66,8 @@ let View = ({
     );
 };
 
-View = container(
-    ({ scene, layout, toolbar } = {}) => `{
+View = container({
+    fragment: ({ scene, layout, toolbar } = {}) => `{
         scene: ${ Scene.fragment(scene) },
         panels: {
             left: { id, name },
@@ -77,14 +77,13 @@ View = container(
         layout: ${ Settings.fragment(layout) },
         toolbar: ${ Toolbar.fragment(toolbar) }
     }`,
-    (x) => x,
-    {
+    dispatchers: {
         sceneMouseMove,
         sceneTouchStart,
         selectToolbarItem,
         onSelectedPointTouchStart,
         onSelectionMaskTouchStart,
     }
-)(View);
+})(View);
 
 export { View };

@@ -32,7 +32,8 @@ export function labels(action$) {
             isAnimating, hitmapUpdates.map(() => Scheduler.now()),
             (props, animating, hitMapUpdateTime) => ({
                 ...props, hitMapUpdateTime, forceResample: !animating
-            }))
+            })
+        )
         .filter(({ enabled, poiEnabled }) => enabled && poiEnabled)
         .distinctUntilChanged((prev, { zoom, vboUpdate, forceResample, hitMapUpdateTime }) => (
             zoom === prev.zoom && (

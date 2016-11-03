@@ -95,6 +95,7 @@ function toValuesAndInvalidations({ type, falcor, element }) {
 }
 
 function selectionValuesAndInvalidations(gesture, { idx, type }, path) {
+    const invalidations = [];
     const inverseType = type === 'point' ? 'edge' : 'point';
     const value = {
         highlight: {
@@ -104,8 +105,9 @@ function selectionValuesAndInvalidations(gesture, { idx, type }, path) {
         }
     };
     if (gesture === 'tap') {
+        invalidations.push(`labelsByType`);
         value.labels = {
-            selection: $ref(path.concat(['labelsByType', type, idx]))
+            selection: $ref(path.concat('labelsByType', type, idx))
         };
         value.selection = {
             mask: null,
@@ -113,11 +115,12 @@ function selectionValuesAndInvalidations(gesture, { idx, type }, path) {
             [inverseType]: $atom([])
         };
     } else {
+        invalidations.push(`labelsByType`);
         value.labels = {
-            highlight: $ref(path.concat(['labelsByType', type, idx]))
+            highlight: $ref(path.concat('labelsByType', type, idx))
         };
     }
-    return { values: [{ json: value }] };
+    return { invalidations, values: [{ json: value }] };
 }
 
 function deselectionValuesAndInvalidations(gesture, { idx, type }) {
@@ -131,20 +134,10 @@ function deselectionValuesAndInvalidations(gesture, { idx, type }) {
     };
     if (gesture === 'tap') {
         invalidations.push(`selection['edge', 'point']`);
-        value.labels = {
-            selection: $atom(undefined)
-        };
-        value.selection = {
-            edge: $atom([]),
-            point: $atom([]),
-        };
+        value.labels = { selection: $atom(undefined) };
+        value.selection = { edge: $atom([]), point: $atom([]), };
     } else {
-        value.labels = {
-            highlight: $atom(undefined)
-        };
+        value.labels = { highlight: $atom(undefined) };
     }
-    return {
-        invalidations,
-        values: [{ json: value }]
-    };
+    return { invalidations, values: [{ json: value }] };
 }

@@ -84,7 +84,7 @@ class Graphistry extends Observable {
             .concatMap((column) => view.call('columns.add', column))
             .takeLast(1)
             .mergeMap(() => fetchDataUntilSettled({
-                data: {}, falcor: view, fragment: ({ columns = [] } = {}) => `{
+                falcor: view, fragment: ({ columns = [] } = {}) => `{
                     columns: {
                         length, [0...${columns.length || 0}]: {
                             name, dataType, identifier, componentType

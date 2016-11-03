@@ -74,7 +74,7 @@ function renderAppWithHotReloading(modules, dataSource, paths) {
         }))
         .switchMap(
             ({ App, falcor }) => fetchDataUntilSettled({
-                data: {}, falcor, fragment: App.fragment
+                falcor, fragment: App.fragment
             }).takeLast(1),
             ({ App, falcor }, { data }) => ({ App, falcor, data })
         )

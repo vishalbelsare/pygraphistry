@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 
 import {
     ref as $ref,
+    atom as $atom,
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 
@@ -87,14 +88,17 @@ export function labels(path, base) {
                 const { labelsByType } = view;
                 const { data, type, index } = label;
                 const labelByType = labelsByType[type] || (labelsByType[type] = {});
+
                 labelByType[index] = data;
+
                 return labelKeys.map((key) => $value(`
                         workbooksById['${workbook.id}']
                             .viewsById['${view.id}']
                             .labelsByType
                             ['${type}'][${index}]['${key}']`,
-                    key === 'type' ? type :
-                        key === 'index' ? index : data[key]
+                    key === 'type' ?
+                        type : key === 'index' ?
+                        index : data[key]
                 ));
             })
             .map(mapObjectsToAtoms)

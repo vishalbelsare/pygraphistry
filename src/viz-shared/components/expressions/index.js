@@ -25,7 +25,7 @@ const deleteExpressionTooltip = (
 );
 
 export function ExpressionsList({
-    showDataTypes = true,
+    loading = false, showDataTypes = true,
     id, templates = [], addExpression,
     showHeader = true, header,
     dropdownPlacement = 'bottom',
@@ -34,6 +34,7 @@ export function ExpressionsList({
 }) {
 
     const dropdown = <ExpressionTemplates name={name}
+        loading={loading}
         templates={templates}
         placeholder={placeholder}
         showDataTypes={showDataTypes}
@@ -64,7 +65,7 @@ export function ExpressionsList({
 
 export function ExpressionTemplates({ name = 'Expressions', templates = [],
                                       placeholder = "Select attribute for new entry...",
-                                      showDataTypes = true, addExpression }) {
+                                      loading = false, showDataTypes = true, addExpression }) {
 
     templates = templates.slice(0);
 

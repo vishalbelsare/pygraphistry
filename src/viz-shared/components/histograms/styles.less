@@ -1,3 +1,6 @@
+@import '~viz-shared/vars.less';
+@import '~viz-shared/index.less';
+
 @text-color: #646464;
 @left-padding: 10px;
 
@@ -41,6 +44,7 @@
     float: right;
     white-space: nowrap;
 }
+
 .histogram-close {
     visibility: hidden;
     font-size: 15px !important;
@@ -48,7 +52,8 @@
     border: transparent;
     background: transparent;
     color: @text-color;
-    .histogram :hover & {
+
+    &.histogram-loading, .histogram :hover & {
         visibility: visible;
         background: transparent;
     }

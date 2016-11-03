@@ -4,11 +4,10 @@ import { Button, Glyphicon } from 'react-bootstrap';
 import globalStyles from 'viz-shared/index.less';
 import styles from 'viz-shared/components/histograms/styles.less';
 
-export const Sparkline = ({ id, width = `calc(100% - 20px)`, height = 50,
-                            filtered = false, colors = false,
-                            name, yScale, children, componentType,
+export const Sparkline = ({ name, yScale, children, componentType,
+                            id, width = `calc(100% - 20px)`, height = 50,
+                            loading = false, filtered = false, colors = false,
                             onClose, onYScaleChanged, onEncodingChanged }) => {
-
     return (
         <div className={classNames({
                 [styles['histogram']]: true,
@@ -36,10 +35,14 @@ export const Sparkline = ({ id, width = `calc(100% - 20px)`, height = 50,
                     <Button href='javascript:void(0)'
                         onClick={() => onClose({ id })}
                         className={classNames({
-                            [globalStyles['fa']]: true,
-                            [globalStyles['fa-times']]: true,
-                            [styles['histogram-close']]: true
-                        })}/>
+                            [styles['fa']]: true,
+                            [styles['fa-spin']]: loading,
+                            [styles['fa-times']]: !loading,
+                            [styles['fa-spinner']]: loading,
+                            [styles['histogram-close']]: true,
+                            [styles['histogram-loading']]: loading
+                        })}>
+                    </Button>
                 </div>
                 <span>{componentType}:&#8203;{name}</span>
             </div>

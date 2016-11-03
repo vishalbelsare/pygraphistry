@@ -15,12 +15,12 @@ import { addExpressRoutes, removeExpressRoutes,
 
 import { getDataSourceFactory } from 'viz-shared/middleware';
 
-const config = _config();
-const logger = commonLogger.createLogger('viz-worker:index.js');
-
 export function vizWorker(app, server, sockets, caches) {
 
+    const config = _config();
     const { requests } = server;
+    const logger = commonLogger.createLogger('viz-worker:index.js');
+
     const vbos = caches.vbos || (caches.vbos = {});
     const s3DatasetCache = caches.s3DatasetCache || (caches.s3DatasetCache = new Cache(config.LOCAL_DATASET_CACHE_DIR, config.LOCAL_DATASET_CACHE));
     const s3WorkbookCache = caches.s3WorkbookCache || (caches.s3WorkbookCache = new Cache(config.LOCAL_WORKBOOK_CACHE_DIR, config.LOCAL_WORKBOOK_CACHE));
