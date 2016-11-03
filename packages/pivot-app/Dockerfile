@@ -1,8 +1,11 @@
-FROM node:6.9-slim
+FROM node:boron-slim
 
 COPY . /pivot-app
 
 WORKDIR /pivot-app
 
-RUN npm install
+ARG BUILD_NUMBER
+
+RUN npm install && npm run build
+
 CMD npm start
