@@ -280,6 +280,12 @@ class Graphistry extends Observable {
      */
     static addFilter(expr, cb) {
 
+        const { view } = this;
+
+        return new this(view.call('filters.add', expr)
+            .map(({ json }) => json.toJSON())
+            .do((v) => cb ? cb(null, v) : undefined, cb)
+            .toPromise());
     }
 
     /**
@@ -294,6 +300,12 @@ class Graphistry extends Observable {
      * graphistry.addExclusion('degree > 0');
      */
     static addExclusion(expr, cb) {
+        const { view } = this;
+
+        return new this(view.call('exclusions.add', expr)
+            .map(({ json }) => json.toJSON())
+            .do((v) => cb ? cb(null, v) : undefined, cb)
+            .toPromise());
 
     }
 

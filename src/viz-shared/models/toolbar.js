@@ -19,8 +19,12 @@ export function toolbar(workbookId, viewId) {
             stable: {
                 id: 'stable',
                 visible: true,
-                length: 5, ...[
+                length: 6, ...[
                     $ref(`${view}.camera.controls`),
+                    [
+                        $ref(`${workbook}.controls[0]`),
+                        $ref(`${workbook}.controls[1]`),
+                    ],
                     [
                         $ref(`${view}.scene.controls[0]`),
                         $ref(`${view}.scene.controls[1]`),

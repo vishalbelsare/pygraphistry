@@ -29,12 +29,12 @@ export function workbook(dataset, workbookId = simpleflake().toJSON()) {
             selected: false,
             workbook: $ref(`${workbook}`),
             id: 'open-workbook',
-            name: 'Open workbook',
+            name: 'Open in new window',
         }, {
             selected: false,
             workbook: $ref(`${workbook}`),
             id: 'fullscreen-workbook',
-            name: 'Full screen',
+            name: 'Toggle fullscreen',
         }, {
             selected: false,
             workbook: $ref(`${workbook}`),
