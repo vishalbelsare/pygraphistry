@@ -21,7 +21,6 @@ module.exports = [
 ];
 
 function getCommitId() {
-    console.log(process.env);
     const commitId = process.env.COMMIT_ID;
     if (commitId) {
         return commitId;
