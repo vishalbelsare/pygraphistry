@@ -1,11 +1,15 @@
 import { Observable } from 'rxjs';
 import { mapObjectsToAtoms } from './support/mapObjectsToAtoms.js';
+import { logErrorWithCode } from './support/logErrorWithCode.js';
 import { app } from './app';
 import { pivots } from './pivots';
 import { investigations } from './investigations';
 import { users } from './users';
 import { templates } from './templates';
-
+import {
+    pathValue as $pathValue,
+    error as $error
+} from '@graphistry/falcor-json-graph';
 
 export function routes(services) {
     return ([]
@@ -37,7 +41,16 @@ function wrapRouteHandler(route, handler) {
             .defer(() => originalHandler.apply(this, args) || [])
             .map(mapObjectsToAtoms)
             .catch(e => {
-               console.error(route.route, e);
+                const code = logErrorWithCode(e);
+                return Observable.from([
+                    $pathValue('serverStatus',
+                        $error({
+                            ok: false,
+                            title: 'Ooops!',
+                            message: `Unexpected server error (code: ${code}).`
+                        })
+                    )
+                ])
             });
     }
 }

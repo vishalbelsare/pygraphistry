@@ -45,6 +45,7 @@ export function createAppModel(testUser, id = simpleflake().toJSON()) {
         usersById: {
             '0': testUser
         },
-        currentUser: $ref(`usersById['0']`)
+        currentUser: $ref(`usersById['0']`),
+        serverStatus: {ok: true}
     };
 }

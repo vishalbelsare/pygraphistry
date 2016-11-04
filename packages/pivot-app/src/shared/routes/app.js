@@ -18,7 +18,10 @@ export function app({ loadApp, createInvestigation, loadUsersById }) {
         route: `['title']`,
         returns: `String`,
         get: appGetRoute,
-
+    }, {
+        route: `['serverStatus']`,
+        returns: `Object`,
+        get: appGetRoute,
     }, {
         route: `createInvestigation`,
         call: createInvestigationCallRoute({ loadApp, loadUsersById, createInvestigation })
