@@ -8,8 +8,7 @@ import {
 import {
     getHandler,
     setHandler,
-    logErrorWithCode,
-    mapObjectsToAtoms
+    logErrorWithCode
 } from './support';
 
 export function pivots({loadPivotsById, searchPivot}) {
@@ -53,7 +52,7 @@ function searchPivotCallRoute({ loadPivotsById, searchPivot }) {
         // Should probably remove.
         const rowIds = args;
 
-        return Observable.defer(() => searchPivot({loadPivotsById, pivotIds, rowIds}))
+        return searchPivot({loadPivotsById, pivotIds, rowIds})
             .mergeMap(({app, pivot}) => {
                 return [
                     $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
@@ -62,7 +61,6 @@ function searchPivotCallRoute({ loadPivotsById, searchPivot }) {
                     $pathValue(`pivotsById['${pivot.id}']['status']`, pivot.status)
                 ];
             })
-            .map(mapObjectsToAtoms)
             .catch(captureErrorAndNotifyClient(pivotIds))
     }
 }
@@ -73,7 +71,7 @@ function captureErrorAndNotifyClient(pivotIds) {
         const status = {
             ok: false,
             code: errorCode,
-            message: `Server Error (code: ${errorCode})`
+            message: `Search error (code: ${errorCode})`
         }
 
         return Observable.from([

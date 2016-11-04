@@ -7,7 +7,6 @@ import {
     getHandler,
     setHandler,
     logErrorWithCode,
-    mapObjectsToAtoms
 } from './support';
 
 export function users({ loadApp, removeInvestigationsById, loadUsersById, deleteInvestigationsById,
@@ -60,15 +59,12 @@ function deleteInvestigationsCallRoute({ removeInvestigationsById, loadUsersById
         const userIds = path[1];
         const investigationIds = args[0];
 
-        return Observable.defer(() =>
-                removeInvestigationsById({ loadUsersById, deleteInvestigationsById, deletePivotsById,
-                                           investigationIds, userIds })
-            )
+        return removeInvestigationsById({ loadUsersById, deleteInvestigationsById, deletePivotsById,
+                                          investigationIds, userIds })
             .map(({user, newLength, oldLength}) => [
                 $pathValue(`['usersById'][${user.id}]['investigations']['length']`, newLength),
                 $invalidation(`['usersById'][${user.id}]['investigations'][${0}..${oldLength}]`),
                 $invalidation(`['usersById'][${user.id}]['activeInvestigation']`)
-            ])
-            .catch(logErrorWithCode);
+            ]);
     }
 }

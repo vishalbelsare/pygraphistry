@@ -1,13 +1,6 @@
 import { Observable } from 'rxjs';
-import {
-    pathValue as $pathValue,
-    pathInvalidation as $invalidation
-} from '@graphistry/falcor-json-graph';
-import {
-    getHandler,
-    logErrorWithCode,
-    mapObjectsToAtoms
-} from './support';
+import { getHandler } from './support';
+
 
 export function templates({ loadTemplatesById }) {
     const getTemplateHandler = getHandler(['template'], loadTemplatesById);

@@ -6,7 +6,6 @@ import {
 } from '@graphistry/falcor-json-graph';
 import {
     getHandler,
-    logErrorWithCode,
     rangesToListItems
 } from './support';
 
@@ -31,14 +30,13 @@ export function app({ loadApp, createInvestigation, loadUsersById }) {
 
 function createInvestigationCallRoute({loadApp, createInvestigation, loadUsersById}) {
     return function(path, args) {
-        return Observable.defer(() => createInvestigation({loadApp, loadUsersById}))
+        return createInvestigation({loadApp, loadUsersById})
             .mergeMap(({app, user, numInvestigations}) => {
                 return [
                     $pathValue(`['usersById'][${user.id}]['investigations'].length`, numInvestigations),
                     $pathValue(`['usersById'][${user.id}].activeInvestigation`, user.activeInvestigation),
                     $invalidation(`['usersById'][${user.id}]['investigations']['${numInvestigations - 1}']`)
                 ];
-            })
-            .catch(logErrorWithCode);
+            });
     };
 }

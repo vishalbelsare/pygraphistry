@@ -4,14 +4,13 @@ import {
     error as $error
 } from '@graphistry/falcor-json-graph';
 import { Observable } from 'rxjs';
-
 import {
     getHandler,
     setHandler,
-    mapObjectsToAtoms,
     captureErrorStacks,
     logErrorWithCode
 } from './support';
+
 
 export function investigations({ loadUsersById, loadInvestigationsById, saveInvestigationsById,
                                  loadPivotsById, savePivotsById, cloneInvestigationsById,
@@ -62,15 +61,18 @@ function splicePivotCallRoute({ loadInvestigationsById, splicePivot }) {
         const investigationIds = path[1];
         const pivotIndex = args[0];
 
-        return Observable.defer(() => splicePivot({loadInvestigationsById, investigationIds,
-                                                   pivotIndex, deleteCount: 1}))
+        return splicePivot({loadInvestigationsById, investigationIds, pivotIndex, deleteCount: 1})
             .mergeMap(({app, investigation}) => {
                 return [
-                    $pathValue(`investigationsById['${investigationIds}']['pivots'].length`, investigation.pivots.length),
-                    $invalidation(`investigationsById['${investigationIds}']['pivots'][${0}..${investigation.pivots.length}]`)
+                    $pathValue(
+                        `investigationsById['${investigationIds}']['pivots'].length`,
+                        investigation.pivots.length
+                    ),
+                    $invalidation(
+                        `investigationsById['${investigationIds}']['pivots'][${0}..${investigation.pivots.length}]`
+                    )
                 ];
             })
-            .map(mapObjectsToAtoms)
             .catch(captureErrorAndNotifyClient(investigationIds));
     };
 }
@@ -80,14 +82,17 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
         const investigationIds = path[1];
         const pivotIndex = args[0];
 
-        return Observable.defer(() => insertPivot({loadInvestigationsById, investigationIds, pivotIndex}))
+        return insertPivot({loadInvestigationsById, investigationIds, pivotIndex})
             .mergeMap(({investigation, insertedIndex}) => {
                 const pivots = investigation.pivots
                 const length = pivots.length;
 
                 const values = [
                     $pathValue(`investigationsById['${investigation.id}']['pivots'].length`, length),
-                    $pathValue(`investigationsById['${investigation.id}']['pivots'][${insertedIndex}]`, pivots[insertedIndex]),
+                    $pathValue(
+                        `investigationsById['${investigation.id}']['pivots'][${insertedIndex}]`,
+                        pivots[insertedIndex]
+                    ),
                 ];
 
                 if (insertedIndex < length - 1) { // Inserted pivot is not the last one in the list
@@ -98,7 +103,6 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
 
                 return values;
             })
-            .map(mapObjectsToAtoms)
             .catch(captureErrorAndNotifyClient(investigationIds));
     }
 }
@@ -107,8 +111,7 @@ function playCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, 
     return function(path, args) {
         const investigationIds = path[1];
 
-        return Observable.defer(() => uploadGraph({loadInvestigationsById, loadPivotsById,
-                                                   loadUsersById, investigationIds}))
+        return uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersById, investigationIds})
             .mergeMap(({app, investigation}) => {
                 return [
                     $pathValue(`investigationsById['${investigationIds}'].url`, investigation.url),
@@ -116,7 +119,6 @@ function playCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, 
                     $pathValue(`investigationsById['${investigationIds}'].eventTable`, investigation.eventTable)
                 ];
             })
-            .map(mapObjectsToAtoms)
             .catch(captureErrorAndNotifyClient(investigationIds));
     }
 }
@@ -125,11 +127,10 @@ function saveCallRoute({ loadInvestigationsById, savePivotsById, saveInvestigati
     return function(path, args) {
         const investigationIds = path[1];
 
-        return Observable.defer(() => saveInvestigationsById({savePivotsById, investigationIds}))
+        return saveInvestigationsById({savePivotsById, investigationIds})
             .mergeMap(({app, investigation}) => [
                 $pathValue(`investigationsById['${investigationIds}'].modifiedOn`, investigation.modifiedOn)
             ])
-            .map(mapObjectsToAtoms)
             .catch(captureErrorAndNotifyClient(investigationIds));
     }
 }
@@ -137,8 +138,8 @@ function saveCallRoute({ loadInvestigationsById, savePivotsById, saveInvestigati
 function cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, cloneInvestigationsById }) {
     return function(path, args) {
         const investigationIds = path[1];
-        return Observable.defer(() => cloneInvestigationsById({loadInvestigationsById, loadPivotsById,
-                                                               loadUsersById, investigationIds}))
+        return cloneInvestigationsById({loadInvestigationsById, loadPivotsById,
+                                        loadUsersById, investigationIds})
             .mergeMap(({app, user, clonedInvestigation, numInvestigations}) => {
                 return [
                     $pathValue(`['usersById'][${user.id}]['investigations'].length`, numInvestigations),
@@ -146,7 +147,6 @@ function cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById,
                     $invalidation(`['usersById'][${user.id}]['investigations']['${numInvestigations - 1}']`)
                 ];
             })
-            .map(mapObjectsToAtoms)
             .catch(captureErrorAndNotifyClient(investigationIds));
     }
 }
@@ -157,7 +157,7 @@ function captureErrorAndNotifyClient(investigationIds) {
         const status = {
             ok: false,
             code: errorCode,
-            message: `Server Error (code: ${errorCode})`
+            message: `Server error (code: ${errorCode})`
         }
 
         return Observable.from([
