@@ -120,7 +120,7 @@ function renderInvestigation({status, pivots = [], templates, eventTable,
                               playInvestigation, saveInvestigation }) {
     return (
         <div className={styles.pivots}>
-            { !status.ok ?
+            { status && !status.ok ?
                 <Alert bsStyle={'danger'} className={styles.alert} onDismiss={dismissAlert}>
                     <strong> {status.message} </strong>
                 </Alert>
@@ -137,7 +137,7 @@ function renderInvestigation({status, pivots = [], templates, eventTable,
                 </Tab>
                 <Tab eventKey={2} title="Events">
                     {
-                        renderEventTable(eventTable)
+                        eventTable && renderEventTable(eventTable)
                     }
                 </Tab>
             </Tabs>

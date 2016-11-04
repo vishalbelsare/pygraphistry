@@ -16,8 +16,8 @@ export function investigationStore(loadApp, pathPrefix, investigationsByIdCache 
     const renameAsObservable = Observable.bindNodeCallback(fs.rename);
 
     const investigations$ = globAsObservable(path.resolve(pathPrefix, '*.json'))
-        .flatMap(x => x)
-        .flatMap(file => {
+        .mergeMap(x => x)
+        .mergeMap(file => {
             return readFileAsObservable(file).map(JSON.parse);
         })
 
@@ -84,7 +84,7 @@ export function listInvestigations(pathPrefix) {
     const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
 
     return globAsObservable(path.resolve(pathPrefix, '*.json'))
-        .flatMap(x => x)
-        .flatMap(file => readFileAsObservable(file).map(JSON.parse))
+        .mergeMap(x => x)
+        .mergeMap(file => readFileAsObservable(file).map(JSON.parse))
         .toArray();
 }

@@ -17,8 +17,8 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
     const renameAsObservable = Observable.bindNodeCallback(fs.rename);
 
     const pivots$ = globAsObservable(path.resolve(pathPrefix, '*.json'))
-        .flatMap(x => x)
-        .flatMap(file => {
+        .mergeMap(x => x)
+        .mergeMap(file => {
             return readFileAsObservable(file).map(JSON.parse);
         })
 

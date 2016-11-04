@@ -15,12 +15,10 @@ function upload(etlService, apiKey, data) {
     }
 
     const gzipped = gzipObservable(new Buffer(JSON.stringify(data), { level : 1}));
-    return gzipped.flatMap(
-        function(buffer) {
-            return upload0Wrapped(etlService, apiKey, buffer)
-                .map(() =>  data.name)
-        }
-    )
+    return gzipped.switchMap(buffer =>
+        upload0Wrapped(etlService, apiKey, buffer)
+            .map(() =>  data.name);
+    );
 }
 
 //jsonGraph * (err? -> ())? -> ()

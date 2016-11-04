@@ -48,17 +48,14 @@ export function searchSplunk({app, pivot}) {
                     searchQuery,
                     searchParams
                 );
-                return serviceResult.flatMap(
-                    function(job) {
-                        var fetchJob = Observable.bindNodeCallback(job.fetch.bind(job));
-                        var jobObservable = fetchJob();
-                        return jobObservable;
-                    }
-                );
+                return serviceResult.switchMap(job => {
+                    const fetchJob = Observable.bindNodeCallback(job.fetch.bind(job));
+                    const jobObservable = fetchJob();
+                    return jobObservable;
+                });
             }
         )
-        .flatMap(
-            function(job) {
+        .switchMap(job => {
                 console.log('Search job properties\n---------------------');
                 console.log('Search job ID:         ' + job.sid);
                 console.log('The number of events:  ' + job.properties().eventCount);
@@ -76,8 +73,7 @@ export function searchSplunk({app, pivot}) {
                     }
                 );
                 return jobResults;
-            }
-        ).map(
+        }).map(
             function({results, job}) {
                 const fields = results.fields;
                 const rows = results.rows;
