@@ -111,10 +111,11 @@ class Inspector extends React.Component {
 
     constructor(props) {
         super(props);
-        console.log('inspector props', props);
     }
 
     render() {
+
+        const {openTab, open, onSelect} = this.props;
 
 
         const fakeData = {
@@ -149,8 +150,8 @@ class Inspector extends React.Component {
 
 
         return <div className={styles.inspector}>
-            <Tabs defaultActiveKey={1} className={styles.inspectorTabs}>
-                <Tab eventKey={1} title="Points">
+            <Tabs defaultActiveKey={openTab} className={styles.inspectorTabs} onSelect={onSelect}>
+                <Tab eventKey={'points'} title="Points">
                     <DataTable
                         results={fakeData.results}
                         columns={fakeData.cols}
@@ -159,7 +160,7 @@ class Inspector extends React.Component {
                         numPages={fakeData.numPages}
                         entityType={"Node"}/>
                 </Tab>
-                <Tab eventKey={2} title="Edges">
+                <Tab eventKey={'edges'} title="Edges">
                     <DataTable
                         results={fakeData.results}
                         columns={fakeData.cols.slice(0,3)}
@@ -173,13 +174,6 @@ class Inspector extends React.Component {
 
     }
 }
-
-
-Inspector = getContext({
-    renderState: PropTypes.object,
-    renderingScheduler: PropTypes.object,
-})(Inspector);
-
 
 export { Inspector };
 

@@ -11,6 +11,7 @@ export function inspector(view) {
             length: 0,
             id: 'inspector',
             name: 'Data inspector',
+            openTab: 'points', // 'edges', 'events', ...
             edges: $ref(`${view}.selection.edges`),
             points: $ref(`${view}.selection.points`),
             controls: [{
