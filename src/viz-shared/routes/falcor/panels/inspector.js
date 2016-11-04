@@ -18,6 +18,7 @@ export function inspector(path, base) {
         return [{
             returns: `*`,
             get: getValues,
+            set: setValues,
             route: `${base}['inspector'][{keys}]`,
         }, {
             get: getValues,
