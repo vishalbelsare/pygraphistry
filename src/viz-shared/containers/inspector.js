@@ -5,19 +5,17 @@ import { selectInspectorTab } from 'viz-shared/actions/inspector';
 
 
 let Inspector = ({ selectInspectorTab, openTab = 'points', open = false, ...props} = {}) => {
-    console.log('MAKING INSPECTOR CONTAINER', {selectInspectorTab, openTab, open});
-    return <InspectorComponent openTab={openTab} open={open} onSelect={selectInspectorTab} />;
+
+
+    console.log('got', {openTab, open});
+    const wat = (a, b, c) => { console.log('click', {a,b,c}); return selectInspectorTab(a,b,c); };
+
+    return <InspectorComponent openTab={openTab} open={open} onSelect={wat} />;
 };
 
 
 Inspector = container({
-    fragment:  () => `{ openTab, open }`,
-    mapFragment: (inspector) => ({
-        inspector,
-        id: inspector.id,
-        open: inspector.open,
-        openTab: inspector.openTab
-    }),
+    fragment:  () => `{ id, name, openTab, open }`,
     dispatchers: { selectInspectorTab }
 })(Inspector);
 
