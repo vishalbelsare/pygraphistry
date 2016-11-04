@@ -105,7 +105,8 @@ function selectionValuesAndInvalidations(gesture, { idx, type }, path) {
         }
     };
     if (gesture === 'tap') {
-        invalidations.push(`labelsByType`);
+        // invalidations.push(`labelsByType['${type}'][${idx}]`);
+        invalidations.push(`labels.selection`);
         value.labels = {
             selection: $ref(path.concat('labelsByType', type, idx))
         };
@@ -115,7 +116,8 @@ function selectionValuesAndInvalidations(gesture, { idx, type }, path) {
             [inverseType]: $atom([])
         };
     } else {
-        invalidations.push(`labelsByType`);
+        // invalidations.push(`labelsByType['${type}'][${idx}]`);
+        invalidations.push(`labels.highlight`);
         value.labels = {
             highlight: $ref(path.concat('labelsByType', type, idx))
         };
