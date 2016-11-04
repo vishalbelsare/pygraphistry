@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/graphistry/common",
   "dependencies": {
-    "@graphistry/bunyan": "2.0.0",
+    "@graphistry/bunyan": "1.8.4",
     "chalk": "~1.0.0",
     "@graphistry/config": "2.2.2",
     "fs-tools": "~0.2.0",
