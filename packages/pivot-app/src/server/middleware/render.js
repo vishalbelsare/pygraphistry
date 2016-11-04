@@ -50,7 +50,7 @@ function renderAppWithHotReloading(modules, dataSource, options = {}) {
         .switchMap(
             ({ App, falcor }) => fetchDataUntilSettled({
                 data: {}, falcor, fragment: App.fragment
-            }),
+            }).takeLast(1),
             ({ App, falcor }, { data }) => ({ App, falcor, data })
         )
         .map(({ App, falcor, data }) => renderFullPage(falcor));

@@ -274,12 +274,13 @@ function renderPivotRow({
 
             <td key={`pcell-${id}-pivotparam`} className={styles['pivotData1']}>
             {
-                pivotTemplate.pivotParameterKeys && pivotTemplate.pivotParameterKeys.map(key =>
-                    renderPivotCell(
-                        id, key, pivotParameters[key], pivotTemplate.pivotParametersUI[key],
-                        previousPivots, handlers
+                pivotTemplate.pivotParameterKeys && pivotTemplate.pivotParametersUI &&
+                pivotTemplate.pivotParameterKeys.map(key =>
+                        renderPivotCell(
+                            id, key, pivotParameters[key], pivotTemplate.pivotParametersUI[key],
+                            previousPivots, handlers
+                        )
                     )
-                )
             }
             </td>
             <td className={styles.pivotResultCount}>
@@ -344,11 +345,12 @@ function mapFragmentToProps(fragment) {
     return _.extend({pivotParameters:{}}, _.pick(fragment, props));
 }
 
-export default container(
-    mapStateToFragment,
-    mapFragmentToProps,
-    {
+export default container({
+    renderLoading: true,
+    fragment: mapStateToFragment,
+    mapFragment: mapFragmentToProps,
+    dispatchers: {
         setPivotAttributes: setPivotAttributes,
         togglePivot: togglePivot
     }
-)(renderPivotRow);
+})(renderPivotRow);
