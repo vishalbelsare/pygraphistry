@@ -1,0 +1,14 @@
+{
+    "name": "PAN - User network activity",
+    "url": "https://labs.graphistry.com/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&info=true&dataset=splunkUpload3dad5de0f91c24b1",
+    "id": "3dad5e054e3ae828",
+    "description": "Track users through their network accesses",
+    "tags": [
+        "Demo"
+    ],
+    "modifiedOn": 1476488325524,
+    "pivots": [
+        "3dad5e054e26287d",
+        "3dad5e054e5a9974"
+    ]
+}

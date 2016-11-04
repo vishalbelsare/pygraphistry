@@ -1,0 +1,16 @@
+{
+    "id": "3d71f912353ad8ab",
+    "enabled": false,
+    "pivotParameterKeys": [
+        "mode",
+        "input",
+        "search",
+        "time"
+    ],
+    "pivotParameters": {
+        "mode": "Expand with Firewall",
+        "input": "3d71f91439c3fb52",
+        "search": "",
+        "time": "09/21/2016"
+    }
+}

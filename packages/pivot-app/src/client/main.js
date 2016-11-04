@@ -1,6 +1,7 @@
 import 'rc-switch/assets/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-bootstrap-table/dist/react-bootstrap-table.min.css';
+import 'react-select/dist/react-select.css';
 
 import ReactDOM from 'react-dom';
 import { decode } from 'querystring';
@@ -16,7 +17,10 @@ const useLocalStorage = __DEV__;
 const localStorageToken = 'pivots-app-cache';
 
 Observable
-    .fromEvent(window, 'load', () => decode(window.location.search.substring(1)))
+    .fromEvent(window, 'load', () => {
+        printBuildInfo();
+        return decode(window.location.search.substring(1));
+    })
     .switchMap((params) => reloadHot(module))
     .switchMap(({ App }) => {
         const renderAsObservable = Observable.bindCallback(ReactDOM.render);
@@ -33,6 +37,12 @@ Observable
             console.error(e);
         }
     });
+
+function printBuildInfo() {
+    const buildNum = __BUILDNUMBER__ === undefined ? 'Local build' : `Build #${__BUILDNUMBER__}`;
+    const buildDate = (new Date(__BUILDDATE__)).toLocaleString();
+    console.info(`${buildNum} of ${__GITBRANCH__}@${__GITCOMMIT__} (on ${buildDate})`)
+}
 
 function getAppDOMNode(appDomNode) {
     return appDomNode = (

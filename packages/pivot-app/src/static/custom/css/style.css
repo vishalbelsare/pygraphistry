@@ -73,9 +73,6 @@
     margin-left: 0.2em;
 }
 
-#pivot-nav .sidebar-wrapper > .card > .content {
-    padding-top: 0;
-}
 #pivot-nav .table-full-width {
     margin-bottom: 0;
 }
@@ -217,21 +214,6 @@ td.pivot-search {
 }
 
 
-#pivot-nav .footer {
-    padding: 1em;
-    background-color: #fff;
-    margin-left: -15px;
-    margin-right: -15px;
-    padding-top: 1em;
-    text-align: center;
-    padding-top: 1em;
-}
-
-#pivot-nav .footer button i {
-    font-size: 22px;
-    vertical-align: middle;
-}
-
 .btn-action {
     font-size: 12px;
     text-transform: uppercase;
@@ -241,23 +223,6 @@ td.pivot-search {
     border-width: 1px;
 }
 
-nav.navbar.navbar-default.navbar-fixed {
-    background-color: #6580e1;
-    border: 0px;
-    border-radius: 0px;
-    height: 61px;
-    border-bottom: 1px solid #8095e0;
-}
-
-#add-template.footer {
-    border-top: 1px solid #DDD;
-    bottom: 0px;
-    padding: 1em;
-    position: absolute;
-    width: 100%;
-    text-align: center;
-    margin-left: 0;
-}
 
 .main-panel .navbar-header .navbar-brand {
     position: relative;
@@ -281,9 +246,4 @@ nav.navbar.navbar-default.navbar-fixed {
 .main-panel .navbar-header .navbar-brand:hover {
     color: white !important;
     text-decoration: underline;
-}
-
-
-#graphistry-canvas-wrapper {
-    padding: 0;
 }

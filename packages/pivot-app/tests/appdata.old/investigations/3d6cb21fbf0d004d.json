@@ -1,0 +1,14 @@
+{
+    "name": "Malware",
+    "url": "/custom/html/splash.html",
+    "id": "3d6cb21fbf0d004d",
+    "description": "Malware infection detected by PAN",
+    "tags": [
+        "Demo"
+    ],
+    "modifiedOn": 1476486712206,
+    "pivots": [
+        "3d6ccf32fd53f941",
+        "3d6ccf32fd7c5805"
+    ]
+}

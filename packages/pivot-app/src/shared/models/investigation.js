@@ -1,8 +1,5 @@
 import {
     ref as $ref,
-    atom as $atom,
-    pathValue as $pathValue,
-    pathInvalidation as $invalidation
 } from '@graphistry/falcor-json-graph';
 import _ from 'underscore';
 import { simpleflake } from 'simpleflakes';
@@ -23,6 +20,7 @@ function defaults(index) {
 function initialSoftState(pivots) {
     return {
         status: {ok: true},
+        eventTable: {},
         pivots: pivots.map((pivotId) =>
             $ref(`pivotsById['${pivotId}']`)
         )
@@ -31,7 +29,7 @@ function initialSoftState(pivots) {
 
 export function createInvestigationModel(serializedInvestigation, index) {
     const normalizedInvestigation = {
-        ...defaults(index),
+        ...defaults(index || ''),
         ...serializedInvestigation
     };
     return {

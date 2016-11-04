@@ -1,5 +1,5 @@
 export const TOGGLE_PIVOT = 'toggle-pivot';
-export const SET_PIVOT_PARAMETERS = 'set-pivot-parameters';
+export const SET_PIVOT_ATTRIBUTES = 'set-pivot-attributes';
 
 export const togglePivot = ({ index, enabled }) => {
     return ({
@@ -7,9 +7,9 @@ export const togglePivot = ({ index, enabled }) => {
     });
 };
 
-export function setPivotParameters(params) {
+export function setPivotAttributes(params) {
     return {
         params: params,
-        type: SET_PIVOT_PARAMETERS
+        type: SET_PIVOT_ATTRIBUTES
     };
 }

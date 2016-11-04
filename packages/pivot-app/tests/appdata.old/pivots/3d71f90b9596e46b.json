@@ -1,0 +1,16 @@
+{
+    "id": "3d71f90b9596e46b",
+    "enabled": true,
+    "pivotParameterKeys": [
+        "mode",
+        "input",
+        "search",
+        "time"
+    ],
+    "pivotParameters": {
+        "mode": "Search FireEye",
+        "input": "BRO8ZA4A",
+        "search": "BRO8ZA4A",
+        "time": "09/21/2016"
+    }
+}

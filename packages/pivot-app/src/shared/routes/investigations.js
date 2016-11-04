@@ -21,23 +21,24 @@ export function investigations({ loadUsersById, loadInvestigationsById, saveInve
     const setInvestigationsHandler = setHandler(['investigation'], loadInvestigationsById);
 
     return [{
+        route: `investigationsById[{keys}]['id','name', 'url', 'status', 'tags', 'description', 'eventTable']`,
         returns: `String`,
         get: getInvestigationsHandler,
         set: setInvestigationsHandler,
-        route: `investigationsById[{keys}]['id','name', 'url', 'status', 'tags', 'description']`
+
     }, {
+        route: `investigationsById[{keys}]['modifiedOn']`,
         returns: `Number`,
         get: getInvestigationsHandler,
         set: setInvestigationsHandler,
-        route: `investigationsById[{keys}]['modifiedOn']`
     }, {
+        route: `investigationsById[{keys}]['pivots']['length']`,
         returns: `Number`,
         get: getInvestigationsHandler,
-        route: `investigationsById[{keys}]['pivots']['length']`
     }, {
-        returns: `pivots`,
+        route: `investigationsById[{keys}]['pivots'][{integers}]`,
+        returns: `$ref('pivotsById[{pivotId}]'`,
         get: getInvestigationsHandler,
-        route: `investigationsById[{keys}]['pivots'][{integers}]`
     }, {
         route: `investigationsById[{keys}].play`,
         call: playCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph })
@@ -111,7 +112,8 @@ function playCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, 
             .mergeMap(({app, investigation}) => {
                 return [
                     $pathValue(`investigationsById['${investigationIds}'].url`, investigation.url),
-                    $pathValue(`investigationsById['${investigationIds}'].status`, investigation.status)
+                    $pathValue(`investigationsById['${investigationIds}'].status`, investigation.status),
+                    $pathValue(`investigationsById['${investigationIds}'].eventTable`, investigation.eventTable)
                 ];
             })
             .map(mapObjectsToAtoms)
@@ -123,8 +125,7 @@ function saveCallRoute({ loadInvestigationsById, savePivotsById, saveInvestigati
     return function(path, args) {
         const investigationIds = path[1];
 
-        return Observable.defer(() => saveInvestigationsById({loadInvestigationsById, savePivotsById,
-                                                              investigationIds}))
+        return Observable.defer(() => saveInvestigationsById({savePivotsById, investigationIds}))
             .mergeMap(({app, investigation}) => [
                 $pathValue(`investigationsById['${investigationIds}'].modifiedOn`, investigation.modifiedOn)
             ])
@@ -141,7 +142,7 @@ function cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById,
             .mergeMap(({app, user, clonedInvestigation, numInvestigations}) => {
                 return [
                     $pathValue(`['usersById'][${user.id}]['investigations'].length`, numInvestigations),
-                    $pathValue(`selectedInvestigation`, app.selectedInvestigation),
+                    $pathValue(`['usersById'][${user.id}].activeInvestigation`, user.activeInvestigation),
                     $invalidation(`['usersById'][${user.id}]['investigations']['${numInvestigations - 1}']`)
                 ];
             })

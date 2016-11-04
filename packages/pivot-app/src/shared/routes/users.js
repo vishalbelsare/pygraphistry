@@ -1,5 +1,4 @@
 import { Observable } from 'rxjs';
-import _ from 'underscore';
 import {
     pathValue as $pathValue,
     pathInvalidation as $invalidation
@@ -11,53 +10,65 @@ import {
     mapObjectsToAtoms
 } from './support';
 
-export function users({ loadApp, loadUsersById }) {
+export function users({ loadApp, removeInvestigationsById, loadUsersById, deleteInvestigationsById,
+                        deletePivotsById}) {
     const appGetRoute = getHandler([], loadApp);
+    const getUserHandler = getHandler(['user'], loadUsersById);
+    const setUserHandler = setHandler(['user'], loadUsersById);
 
     return [{
         route: `currentUser`,
+        returns: `$ref('usersById[{userId}]')`,
         get: appGetRoute,
-        returns: `$ref('usersById[{userId}]'`
     }, {
         route: `['usersById'][{keys}]['activeScreen']`,
-        get: getHandler(['user'], loadUsersById),
-        set: setHandler(['user'], loadUsersById),
         returns: `String`,
+        get: getUserHandler,
+        set: setUserHandler,
+
     }, {
-        returns: `String`,
+        route: `['usersById'][{keys}]['activeInvestigation']`,
+        returns: `$ref('investigationsById[{investigationId}]')`,
+        get: getUserHandler,
+        set: setUserHandler,
+    }, {
         route: `['usersById'][{keys}]['name','id']`,
-        get: getHandler(['user'], loadUsersById)
+        returns: `String`,
+        get: getUserHandler,
     }, {
+        route: `['usersById'][{keys}]['investigations', 'templates'].length`,
         returns: `Number`,
-        route: `['usersById'][{keys}]['investigations'].length`,
-        get: getHandler(['user'], loadUsersById)
+        get: getUserHandler,
     }, {
         route: `['usersById'][{keys}]['investigations'][{keys}]`,
-        get: getHandler(['user'], loadUsersById),
-        returns: `$ref('investigationsById[{investigationId}]')`
+        returns: `$ref('investigationsById[{investigationId}]')`,
+        get: getUserHandler,
+    }, {
+        route: `['usersById'][{keys}]['templates'][{keys}]`,
+        returns: `$ref('templatesById[{templateId}]')`,
+        get: getUserHandler,
     }, {
         route: `['usersById'][{keys}]['deleteInvestigations']`,
-        call: deleteInvestigationsCallRoute({loadUsersById})
+        call: deleteInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,
+                                             deleteInvestigationsById, deletePivotsById })
     }];
 }
 
-function deleteInvestigationsCallRoute({loadUsersById}) {
+function deleteInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,
+                                         deleteInvestigationsById, deletePivotsById }) {
     return function (path, args) {
         const userIds = path[1];
         const investigationIds = args[0];
-        return Observable.defer(() => loadUsersById({userIds: userIds}))
-            .mergeMap(({user, app}) => {
-                const newInvestigations = _.reject(user.investigations, i =>
-                    investigationIds.includes(i.value[1])
-                );
-                const oldLength = user.investigations.length;
 
-                user.investigations = newInvestigations;
-                return [
-                    $pathValue(`['usersById'][${user.id}]['investigations']['length']`, newInvestigations.length),
-                    $invalidation(`['usersById'][${user.id}]['investigations'][${0}..${oldLength}]`)
-                ];
-            })
-            .catch(logErrorWithCode)
-    };
+        return Observable.defer(() =>
+                removeInvestigationsById({ loadUsersById, deleteInvestigationsById, deletePivotsById,
+                                           investigationIds, userIds })
+            )
+            .map(({user, newLength, oldLength}) => [
+                $pathValue(`['usersById'][${user.id}]['investigations']['length']`, newLength),
+                $invalidation(`['usersById'][${user.id}]['investigations'][${0}..${oldLength}]`),
+                $invalidation(`['usersById'][${user.id}]['activeInvestigation']`)
+            ])
+            .catch(logErrorWithCode);
+    }
 }

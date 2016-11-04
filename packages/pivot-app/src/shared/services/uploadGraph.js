@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
-var DataFrame =  require('../Dataframe');
-var _ = require('underscore');
-var zlib = require('zlib');
+import DataFrame from '../DataFrame';
+import _ from 'underscore';
+import zlib from 'zlib';
+import request from 'request';
 
-var request = require('request');
 
 function upload(etlService, apiKey, data) {
     const gzipObservable = Observable.bindNodeCallback(zlib.gzip.bind(zlib));
@@ -40,9 +40,9 @@ function upload0(etlService, apiKey, data, cb) {
         headers: headers,
         body: data,
         callback: function (err, resp, body) {
-            const json = JSON.parse(body);
             if (err) { return cb(err); }
             try {
+                const json = JSON.parse(body);
                 if (!json.success) {
                     console.log('body in succes?', body);
                     throw new Error(body);
@@ -74,7 +74,7 @@ const previousGraph = {
 
 
 function createGraph(pivots) {
-    const name = ("splunkUpload" + simpleflake().toJSON())
+    const name = `PivotApp/${simpleflake().toJSON()}`;
     const type = "edgelist";
     const bindings = {
         "sourceField": "source",
@@ -86,9 +86,11 @@ function createGraph(pivots) {
         labels: []
     };
 
-    pivots.forEach(pivot => {
+    pivots.forEach((pivot, index) => {
         if (pivot.results && pivot.enabled) {
-            mergedPivots.graph = [...mergedPivots.graph, ...pivot.results.graph]
+            // Set attribute for pivot number
+            const graph = pivot.results.graph.map((edge) => Object.assign({}, edge, {'Pivot': index}));
+            mergedPivots.graph = [...mergedPivots.graph, ...graph]
             mergedPivots.labels = [...mergedPivots.labels, ...pivot.results.labels];
         }
     });
@@ -103,6 +105,10 @@ function createGraph(pivots) {
         return isFiltered;
     })
     mergedPivots.graph = dedupEdges;
+    mergedPivots.labels = _.map(
+            _.groupBy(mergedPivots.labels, label => label.node),
+            group => group[0]
+    );
 
     const newEdges = _.difference(mergedPivots.graph, previousGraph.graph);
     const removedEdges = _.difference(previousGraph.graph, mergedPivots.graph);
@@ -126,6 +132,41 @@ function createGraph(pivots) {
     return uploadData;
 }
 
+function makeEventTable(data) {
+    function fieldSummary(events, field) {
+        const distinct =  _.uniq(_.pluck(events, field));
+
+        var res = {
+            numDistinct: distinct.length
+        };
+
+        if (res.numDistinct <= 12) {
+            res.values = distinct;
+        }
+
+        return res;
+    }
+
+
+    const blackListedFields = ['pointColor', 'pointSize', 'type'];
+    const events = data.labels.filter(x => x.type === 'EventID')
+
+    const fields = _.difference(
+        _.uniq(_.flatten(events.map(e => _.keys(e)))),
+        blackListedFields
+    );
+
+
+    var fieldSummaries = {};
+    fields.forEach(field =>
+        fieldSummaries[field] = fieldSummary(events, field)
+    )
+
+    return {
+        fieldSummaries: fieldSummaries,
+        table: _.map(events, e => _.omit(e, blackListedFields))
+    };
+}
 
 export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersById,
                              investigationIds}) {
@@ -142,9 +183,10 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                 )
                 .switchMap(({user, data}) =>
                     upload(user.etlService, user.apiKey, data)
-                        .map(dataset => ({user, dataset}))
+                        .map(dataset => ({user, dataset, data}))
                 )
-                .do(({user, dataset}) => {
+                .do(({user, dataset, data}) => {
+                    investigation.eventTable = makeEventTable(data);
                     investigation.url = `${user.vizService}&dataset=${dataset}`;
                     console.log('  URL: ', investigation.url);
                 })

@@ -1,0 +1,16 @@
+{
+    "id": "3dad5e054e26287d",
+    "enabled": true,
+    "pivotParameterKeys": [
+        "mode",
+        "input",
+        "search",
+        "time"
+    ],
+    "pivotParameters": {
+        "search": "Enter search query",
+        "mode": "PAN - Search to user, dest",
+        "input": "*",
+        "time": "09/21/2016"
+    }
+}

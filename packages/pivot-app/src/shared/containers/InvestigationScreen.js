@@ -1,43 +1,86 @@
 import Investigation from './Investigation.js';
 import InvestigationHeader from './InvestigationHeader.js';
 import Sidebar from './Sidebar.js';
-
+import {
+    Panel,
+    Alert
+} from 'react-bootstrap';
 import { container } from '@graphistry/falcor-react-redux';
 import styles from './styles.less';
+import { switchScreen } from '../actions/app.js';
+import SplitPane from 'react-split-pane';
 
-
-function renderInvestigationScreen({ selectedInvestigation }) {
-    if (selectedInvestigation === undefined) {
-        return null;
-    }
-
+function renderInvestigationBody(activeInvestigation, templates) {
     return (
-        <div className="wrapper">
-            <Sidebar activeScreen='investigation'/>
+        <div className={`main-panel ${styles['investigation-all']}`}>
+            <InvestigationHeader activeInvestigation={activeInvestigation} />
 
-            <div className="main-panel" style={{width: 'calc(100% - 90px)', height: '100%'}}>
-                <InvestigationHeader selectedInvestigation={selectedInvestigation} />
-
-                <div className="content" id="graphistry-canvas-wrapper"
-                    style={{height: '-webkit-calc(100% - 60px - 250px)', width: '100%', overflow: 'hidden', minHeight: '0px'}}>
-                    <iframe allowFullScreen="true" scrolling="no" className={styles.iframe}
-                            src={selectedInvestigation.url} />
-                </div>
-
-                <footer className="footer" style={{height: '250px', overflow: 'auto'}}>
-                    <div className="container-fluid">
-                        <Investigation data={selectedInvestigation}/>
-                    </div>
-                </footer>
+            <div className={styles['investigation-split']}>
+                <SplitPane split="horizontal" defaultSize="60%" minSize={0}>
+                   <iframe allowFullScreen="true" scrolling="no" className={styles.iframe}
+                        src={activeInvestigation.url} />
+                   <Investigation data={activeInvestigation} templates={templates}/>
+               </SplitPane>
             </div>
+
         </div>
     );
 }
 
+function renderInvestigationPlaceholder(switchScreen) {
+    return (
+        <div className="main-panel" style={{width: 'calc(100% - 90px)', height: '100%'}}>
+            <Panel>
+                <Alert bsStyle="danger">
+                    <h4>No Investigation to Open!</h4>
+                    <p>
+                        Please&nbsp;
+                            <a href='#' onClick={() => switchScreen('home')}>create an investigation</a>
+                        &nbsp;first.
+                    </p>
+                </Alert>
+            </Panel>
+        </div>
+    );
+}
+
+function renderInvestigationScreen({ activeInvestigation, templates, switchScreen }) {
+    const body = activeInvestigation !== undefined ?
+                 renderInvestigationBody(activeInvestigation, templates) :
+                 renderInvestigationPlaceholder(switchScreen);
+
+    return (
+        <div className="wrapper">
+            <Sidebar activeScreen='investigation'/>
+            { body }
+        </div>
+    );
+}
+
+function mapStateToFragment({ currentUser = {templates: []} } = {}) {
+    return `{
+        currentUser: {
+            activeInvestigation: ${Investigation.fragment()},
+            templates: {
+                length, [0...${currentUser.templates.length}]: {
+                    name, id
+                }
+            }
+        }
+    }`;
+}
+
+function mapFragmentToProps({ currentUser = {}} = {}) {
+    return {
+        activeInvestigation: currentUser.activeInvestigation,
+        templates: currentUser.templates
+    };
+}
+
 export default container(
-    ({ selectedInvestigation } = {}) => `{
-        selectedInvestigation: ${Investigation.fragment(selectedInvestigation)}
-    }`,
-    (state) => state,
-    {}
+    mapStateToFragment,
+    mapFragmentToProps,
+    {
+        switchScreen: switchScreen
+    }
 )(renderInvestigationScreen);

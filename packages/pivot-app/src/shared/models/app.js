@@ -9,71 +9,41 @@ import { simpleflake } from 'simpleflakes';
 import { createInvestigationModel } from '../models';
 import _ from 'underscore';
 
-
-function makeTestUser(investigations){
-    const suffix = '/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&info=true';
+export function makeTestUser(investigations, templates) {
+    const suffix = '/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph';
     const padenKey = 'd6a5bfd7b91465fa8dd121002dfc51b84148cd1f01d7a4c925685897ac26f40b';
+
+    const investigationsRefs = investigations.map(investigation =>
+        $ref(`investigationsById['${investigation.id}']`)
+    );
+
+    const templatesRefs = _.sortBy(templates, 'name').map(template =>
+        $ref(`templatesById['${template.id}']`)
+    );
 
     return {
         name: 'Administrator',
         id: '0',
         activeScreen: 'home',
-        investigations: investigations.map((investigation, index) => (
-            $ref(`investigationsById['${investigation.id}']`)
-        )),
+        activeInvestigation: investigationsRefs[0],
+        investigations: investigationsRefs,
+        templates: templatesRefs,
         apiKey: process.env.GRAPHISTRY_API_KEY || padenKey,
         vizService: `${process.env.GRAPHISTRY_VIEWER || 'https://labs.graphistry.com'}${suffix}`,
         etlService: `${process.env.GRAPHISTRY_ETL || 'https://labs.graphistry.com'}/etl`,
     };
 }
 
-export function app(_investigations = [], id = simpleflake().toJSON()) {
-
-    const investigations = _investigations.map((inv, idx) =>
-        createInvestigationModel(inv, idx)
-    );
-
+export function createAppModel(testUser, id = simpleflake().toJSON()) {
     return {
         id,
         title: 'Pivots',
-
-        /**
-         *  investigationsById: {
-         *    'investigations-id-1': {
-         *      ....
-         *    }, ...
-         *  }
-         */
-        investigationsById : investigations.reduce((investigations, investigation) => ({
-            ...investigations, [investigation.id]: investigation
-        }), {}),
-
-        /**
-         *  investigations: [
-         *     $ref(`investigationsById['investigation-id-1']`) , ...
-         *  ]
-         */
-        /*investigations: investigations.map((investigation, index) => (
-            $ref(`investigationsById['${investigation.id}']`)
-        )),*/
-
-        selectedInvestigation: $ref(`investigationsById['${investigations[0].id}']`),
-
-        /**
-         *  pivotsById: {
-         *    'pivot-id-1': {
-         *       id: 'pivot-id-1',
-         *       pivotParamters: ...,
-         *       ...
-         *    }
-         *  }
-         */
+        investigationsById: {},
         pivotsById: {},
-
-        currentUser: $ref(`usersById['0']`),
-
+        templatesById: {},
         usersById: {
-            '0': makeTestUser(investigations)
-        }
+            '0': testUser
+        },
+        currentUser: $ref(`usersById['0']`)
     };
 }

@@ -1,22 +1,25 @@
 import { container } from '@graphistry/falcor-react-redux';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
+import Select from 'react-select';
+
 import styles from './styles.less';
 
 
-function renderInvestigationDropdown({ investigations, selectedInvestigation, selectInvestigation }) {
-    return (
-        <div className={styles.dropdownbutton}>
-            <DropdownButton id='investigations-list-dropdown'
-                            title={selectedInvestigation.name || 'Investigations'}
-                            onSelect={(id, event) => selectInvestigation(id)}>
-            {investigations.map(({ id, name }, index) => (
-                <MenuItem eventKey={id} key={`${index}: ${id}`}>
-                    {name}
-                </MenuItem>
-            ))}
-            </DropdownButton>
-        </div>
-    );
+function renderInvestigationDropdown({ investigations, activeInvestigation, selectInvestigation }) {
+    return (<span className={styles['investigations-dropdownbutton']}>
+                <Select
+                name="form-field-name"
+                value="one"
+                clearable={false}
+                backspaceRemoves={false}
+                value={{value: activeInvestigation.id, label: activeInvestigation.name}}
+                options={
+                    investigations.map(({id, name}, index) => {
+                        return {value: id, label: name};
+                    })
+                }
+                onChange={ ({value}) => { selectInvestigation(value); } }
+            /></span>);
 }
 
 function mapStateToFragment(investigations = []) {
