@@ -20,14 +20,12 @@ function renderApp({ currentUser }) {
     );
 }
 
-const App = container(
-    () => `{
+const App = container({
+    fragment: () => `{
         currentUser: {
-            'activeScreen'
+            activeScreen
         }
-    }`,
-    state => state,
-    {}
-)(renderApp);
+    }`
+})(renderApp);
 
 export default hoistStatics(connect)(App);

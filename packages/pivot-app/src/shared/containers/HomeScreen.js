@@ -72,7 +72,7 @@ function welcomeBar(user, investigations) {
     );
 }
 
-function investigationTable({user, investigations, switchScreen, selectInvestigation, copyInvestigation,
+function investigationTable({user, investigations = [], switchScreen, selectInvestigation, copyInvestigation,
                              setInvestigationParams, selectHandler}) {
     function tagsFormatter(tags, row) {
         return (
@@ -136,7 +136,7 @@ function investigationTable({user, investigations, switchScreen, selectInvestiga
 
     return (
         <div className={styles['investigation-table']}>
-            <BootstrapTable data={investigations}
+            <BootstrapTable data={investigations.filter(Boolean)}
                             selectRow={selectRowProp}
                             cellEdit={cellEditProp}
                             striped={false}
