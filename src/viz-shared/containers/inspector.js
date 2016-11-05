@@ -3,48 +3,57 @@ import { container } from '@graphistry/falcor-react-redux';
 import { Inspector as InspectorComponent } from '../components/inspector/inspector';
 import { selectInspectorTab } from 'viz-shared/actions/inspector';
 
+import _ from 'underscore';
 
-let Inspector = ({ selectInspectorTab, open = false, allColumns, query = {}, rows, ...props} = {}) => {
 
-    const {openTab = 'points'} = query;
+let Inspector = (a,b,c) => {
 
-    console.log('Inspector', JSON.stringify({openTab, open, rows, allColumns, query}));
+
+    console.log('Inspector', JSON.stringify({a,b,c}));
+    const {
+        id, name, open,
+        query: { openTab },
+        selectInspectorTab } = a;
 
     return <InspectorComponent openTab={openTab} open={open} onSelect={selectInspectorTab} />;
 };
 
 
 Inspector = container({
-    fragment:  ({ allColumns = [], query = {} }) => {
+    fragment:  (a, b, c, d) => {
 
+
+        const { query = {}, ...props } = a;
         const {openTab='points', sortKey, sortOrder, rowsPerPage=0, page=0, columns=[]}
             = query;
 
+        if (!rowsPerPage) {
+            return `{
+                id, name, open,
+                query: { openTab, sortKey, sortOrder, rowsPerPage, page }
+            }`;
+        }
+
         const start = rowsPerPage * page;
-        const stop = start + rowsPerPage - 1;
+        const stop = start + rowsPerPage;
 
+        console.log('fragment input', JSON.stringify({a,b, c, d}));
         console.log("frag q input", {rowsPerPage, page});
-        console.log("fragment", allColumns, query);
 
-        //rows[${openTab}][${sortKey || 'any'}][${sortOrder}][${start}..${stop}][${columns}]
-        /*
-          query: { openTab, sortKey, sortOrder, rowsPerPage, page, columns },
+        const frag = `{
+            id, name, open,
+            query: { openTab, sortKey, sortOrder, rowsPerPage, page },
             rows: {
                 ${openTab}: {
-                    length
+                    [${start}..${stop}]: {id}
                 }
-            }*/
-        return `{
-            id, name, open,
-            allColumns: {
-                length, [0...${allColumns.length}]: {
-                    name, dataType, identifier, componentType
-                }
-            },
-            rows: {
-                ${openTab}[${start}..${stop}]
             }
         }`;
+
+        console.log('OPEN TAB', openTab);
+        console.log("THE QUERY", frag);
+
+        return frag;
     },
     dispatchers: { selectInspectorTab }
 })(Inspector);

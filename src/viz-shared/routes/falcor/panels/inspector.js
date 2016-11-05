@@ -24,7 +24,7 @@ export function inspector(path, base) {
             returns: `*`,
             get: getValues,
             set: setValues,
-            route: `${base}['inspector'][{keys}]`,
+            route: `${base}['inspector']['open', 'length', 'id', 'name']`,
         }, {
             returns: `*`,
             get: getValues,
@@ -38,25 +38,34 @@ export function inspector(path, base) {
             set: setValues,
             route: `${base}['inspector'].controls[{keys}][{keys}]`
         }, {
+            returns: `*`,
             get: function (path) {
-                console.console.log("path", JSON.stringify(path), path);
-                const basePath = path.slice(0, path.length - 3);
-                const openTabs = [].concat(path[path.length - 2]);
-                const ranges = [].concat(path[path.length - 1]);
-                return openTabs.reduce(
-                    (values, openTab) => (
+                try {
+                const basePath = path.slice(0, path.length - 4);
+                const openTabs = [].concat(path[path.length - 3]);
+                const ranges = [].concat(path[path.length - 2]);
+                const fields = [].concat(path[path.length - 1]);
+                const out = openTabs.reduce(
+                    (values, openTab) =>
                         ranges.reduce(
                             (values, {from,to}) =>
-                                values.concat(
-                                    _.range(from, to + 1).map(
-                                        (row) =>
-                                            $value(
-                                                basePath.concat([openTab,row]),
-                                                $atom({value: 'row'+row, openTab})))),
+                                _.range(from, to).reduce(
+                                    (values, row) =>
+                                        fields.reduce(
+                                            (values, field) =>
+                                                values.concat([$value(
+                                                    basePath.concat([openTab,row,field]),
+                                                    $atom({value: Math.random()}))]),
+                                            values),
+                                    values),
                             values),
-                    []));
+                    []);
+                    return out;
+                } catch (e) {
+                    console.error('error', e);
+                }
             },
-            route: `${base}['inspector'].rows[{keys:openTab}][{range}]`
+            route: `${base}['inspector'].rows[{keys}][{ranges}][{keys}]`
         }];
     }
 }

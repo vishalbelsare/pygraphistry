@@ -11,22 +11,51 @@ export function inspector(view) {
             length: 0,
             id: 'inspector',
             name: 'Data inspector',
-            allColumns: $ref(`${view}.columns`),
             query: {
                 openTab: 'points', // 'edges', 'events', ...
-                sortKey: null, //or string column name
+                sortKey: 0, //int or string column reference
                 sortOrder: 'asc', // or 'desc'
                 rowsPerPage: 10,
-                page: 0,
-                columns: []
+                page: 0
             },
-            //rows[${openTab}][${sortKey || 'any'}][${sortOrder}][${start}..${stop}][${columns}]
             rows: {
-                points: [],
-                edges: []
+                points: [
+                    {
+                        "id": 0,
+                        "name": "Mayer Leonard",
+                        "city": "Kapowsin",
+                        "state": "Hawaii",
+                        "country": "United Kingdom",
+                        "company": "Ovolo",
+                        "favoriteNumber": 7
+                    }, {
+                        "id": 10,
+                        "name": "Bullwinkle",
+                        "city": "Moscow",
+                        "stata": null,
+                        "country": "USSR",
+                        "company": "ACME",
+                        "favoriteNumber": 10
+                    }
+                ],
+                edges: [
+                    {
+                        "id": 0,
+                        "name": "Mayer Leonard",
+                        "city": "Kapowsin",
+                        "state": "Hawaii",
+                        "country": "United Kingdom",
+                        "company": "Ovolo"
+                    }, {
+                        "id": 10,
+                        "name": "Bullwinkle",
+                        "city": "Moscow",
+                        "stata": null,
+                        "country": "USSR",
+                        "company": "ACME"
+                    }
+                ]
             },
-            edges: $ref(`${view}.selection.edges`),
-            points: $ref(`${view}.selection.points`),
             controls: [{
                 selected: false,
                 id: 'toggle-inspector',
