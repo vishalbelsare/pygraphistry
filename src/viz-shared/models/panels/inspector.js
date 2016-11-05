@@ -11,7 +11,16 @@ export function inspector(view) {
             length: 0,
             id: 'inspector',
             name: 'Data inspector',
-            openTab: 'points', // 'edges', 'events', ...
+            query: {
+                openTab: 'points', // 'edges', 'events', ...
+                sort: 'none', //{'attribute': 'x', isAscending: 'y'}
+                rowsPerPage: 10,
+                columns: []
+            },
+            rows: {
+                length: 0
+                //0: {cells: {column: x, value: y}}
+            },
             edges: $ref(`${view}.selection.edges`),
             points: $ref(`${view}.selection.points`),
             controls: [{

@@ -4,8 +4,9 @@ import { Inspector as InspectorComponent } from '../components/inspector/inspect
 import { selectInspectorTab } from 'viz-shared/actions/inspector';
 
 
-let Inspector = ({ selectInspectorTab, openTab = 'points', open = false, ...props} = {}) => {
+let Inspector = ({ selectInspectorTab, open = false, query = {}, ...props} = {}) => {
 
+    const {openTab = 'points'} = query;
 
     console.log('got', {openTab, open});
     const wat = (a, b, c) => { console.log('click', {a,b,c}); return selectInspectorTab(a,b,c); };
@@ -15,7 +16,7 @@ let Inspector = ({ selectInspectorTab, openTab = 'points', open = false, ...prop
 
 
 Inspector = container({
-    fragment:  () => `{ id, name, openTab, open }`,
+    fragment:  () => `{ id, name, query: { openTab }, open }`,
     dispatchers: { selectInspectorTab }
 })(Inspector);
 

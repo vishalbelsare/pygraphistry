@@ -21,6 +21,11 @@ export function inspector(path, base) {
             set: setValues,
             route: `${base}['inspector'][{keys}]`,
         }, {
+            returns: `*`,
+            get: getValues,
+            set: setValues,
+            route: `${base}['inspector'].query[{keys}]`,
+        }, {
             get: getValues,
             route: `${base}['inspector'].controls[{keys}]`
         }, {
