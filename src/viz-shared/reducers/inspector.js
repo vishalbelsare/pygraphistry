@@ -15,6 +15,6 @@ function selectInspectorTab(action$, store) {
     return action$
         .ofType(SELECT_INSPECTOR_TAB)
         .mergeMap(({falcor, openTab}) => (
-            falcor.set($value(`openTab`, openTab))
-        );
+            falcor.set($value(`query.openTab`, openTab))
+        ));
 }

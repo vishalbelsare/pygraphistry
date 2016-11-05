@@ -8,15 +8,23 @@ let Inspector = ({ selectInspectorTab, open = false, query = {}, ...props} = {})
 
     const {openTab = 'points'} = query;
 
-    console.log('got', {openTab, open});
-    const wat = (a, b, c) => { console.log('click', {a,b,c}); return selectInspectorTab(a,b,c); };
-
-    return <InspectorComponent openTab={openTab} open={open} onSelect={wat} />;
+    return <InspectorComponent openTab={openTab} open={open} onSelect={selectInspectorTab} />;
 };
 
 
 Inspector = container({
-    fragment:  () => `{ id, name, query: { openTab }, open }`,
+    fragment:  (inspector) => {
+
+        const {openTab='points', sortKey, sortOrder,
+            rowsPerPage=0, page=0, columns=[]} = inspector.query || {};
+
+        const start = rowsPerPage * page;
+        const stop = start + rowsPerPage - 1;
+        return `{
+            id, name, open,
+            query: { openTab, sortKey, sortOrder, rowsPerPage, page, columns }
+        }`;
+    },
     dispatchers: { selectInspectorTab }
 })(Inspector);
 

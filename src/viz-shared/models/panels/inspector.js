@@ -13,8 +13,10 @@ export function inspector(view) {
             name: 'Data inspector',
             query: {
                 openTab: 'points', // 'edges', 'events', ...
-                sort: 'none', //{'attribute': 'x', isAscending: 'y'}
+                sortKey: null, //or string column name
+                sortOrder: 'asc', // or 'desc'
                 rowsPerPage: 10,
+                page: 0,
                 columns: []
             },
             rows: {
