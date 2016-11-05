@@ -36,7 +36,7 @@ let ToolbarItems = ({ items = [], selectToolbarItem, ...props } = {}) => {
         <ButtonListItems {...props}>
         {items.map((item, index) => (
             <ToolbarItem data={item}
-                         key={`${index}: ${item.id}`}
+                         key={`${index}: toolbar-item-${item.id}`}
                          selectToolbarItem={selectToolbarItem}/>
         ))}
         </ButtonListItems>

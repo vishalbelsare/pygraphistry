@@ -95,7 +95,6 @@ function toValuesAndInvalidations({ type, falcor, element }) {
 }
 
 function selectionValuesAndInvalidations(gesture, { idx, type }, path) {
-    const invalidations = [];
     const inverseType = type === 'point' ? 'edge' : 'point';
     const value = {
         highlight: {
@@ -105,7 +104,6 @@ function selectionValuesAndInvalidations(gesture, { idx, type }, path) {
         }
     };
     if (gesture === 'tap') {
-        invalidations.push(`labelsByType`);
         value.labels = {
             selection: $ref(path.concat('labelsByType', type, idx))
         };
@@ -115,12 +113,11 @@ function selectionValuesAndInvalidations(gesture, { idx, type }, path) {
             [inverseType]: $atom([])
         };
     } else {
-        invalidations.push(`labelsByType`);
         value.labels = {
             highlight: $ref(path.concat('labelsByType', type, idx))
         };
     }
-    return { invalidations, values: [{ json: value }] };
+    return { values: [{ json: value }] };
 }
 
 function deselectionValuesAndInvalidations(gesture, { idx, type }) {

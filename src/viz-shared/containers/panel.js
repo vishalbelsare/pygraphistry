@@ -62,7 +62,9 @@ Panel = container(
         if (!Content.fragment) {
             return `{ id, name }`;
         }
-        return Content.fragment({ id, name, ...rest });
+        return `{ id, name, ... ${
+            Content.fragment({ id, name, ...rest })}
+        }`;
     },
     (panel) => ({ panel })
 )(Panel);
