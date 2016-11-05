@@ -40,12 +40,11 @@ export function inspector(path, base) {
         }, {
             returns: `*`,
             get: function (path) {
-                try {
                 const basePath = path.slice(0, path.length - 4);
                 const openTabs = [].concat(path[path.length - 3]);
                 const ranges = [].concat(path[path.length - 2]);
                 const fields = [].concat(path[path.length - 1]);
-                const out = openTabs.reduce(
+                return openTabs.reduce(
                     (values, openTab) =>
                         ranges.reduce(
                             (values, {from,to}) =>
@@ -54,16 +53,12 @@ export function inspector(path, base) {
                                         fields.reduce(
                                             (values, field) =>
                                                 values.concat([$value(
-                                                    basePath.concat([openTab,row,field]),
-                                                    $atom({value: Math.random()}))]),
+                                                    basePath.concat(['rows', openTab,row,field]),
+                                                    Math.random())]),
                                             values),
                                     values),
                             values),
                     []);
-                    return out;
-                } catch (e) {
-                    console.error('error', e);
-                }
             },
             route: `${base}['inspector'].rows[{keys}][{ranges}][{keys}]`
         }];
