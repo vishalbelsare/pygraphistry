@@ -150,7 +150,7 @@ class Inspector extends React.Component {
 
 
         return <div className={styles.inspector}>
-            <Tabs defaultActiveKey={openTab} className={styles.inspectorTabs} onSelect={onSelect}>
+            <Tabs activeKey={openTab} className={styles.inspectorTabs} onSelect={onSelect}>
                 <Tab eventKey={'points'} title="Points">
                     <DataTable
                         results={fakeData.results}
