@@ -8,6 +8,7 @@ export * from './dataframe';
 export * from './histograms';
 export * from './expressions';
 export * from './sendFalcorUpdate';
+export * from './inspector';
 
 import { Observable } from 'rxjs';
 import { loadLabels } from './labels';

@@ -11,6 +11,7 @@ export function inspector(view) {
             length: 0,
             id: 'inspector',
             name: 'Data inspector',
+            allColumns: $ref(`${view}.columns`),
             query: {
                 openTab: 'points', // 'edges', 'events', ...
                 sortKey: null, //or string column name
@@ -19,9 +20,10 @@ export function inspector(view) {
                 page: 0,
                 columns: []
             },
+            //rows[${openTab}][${sortKey || 'any'}][${sortOrder}][${start}..${stop}][${columns}]
             rows: {
-                length: 0
-                //0: {cells: {column: x, value: y}}
+                points: [],
+                edges: []
             },
             edges: $ref(`${view}.selection.edges`),
             points: $ref(`${view}.selection.points`),
