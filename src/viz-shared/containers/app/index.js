@@ -7,9 +7,9 @@ import { View } from 'viz-shared/containers/view';
 
 let DevTools = renderNothing();
 
-if (__DEV__) {
-    DevTools = require('viz-shared/components').DevTools;
-}
+// if (__DEV__) {
+//     DevTools = require('viz-shared/components').DevTools;
+// }
 
 let App = ({ workbooks = [], ...props } = {}) => {
     const { open: workbook = {} } = workbooks;

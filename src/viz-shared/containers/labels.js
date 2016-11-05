@@ -1,4 +1,3 @@
-import { toProps } from '@graphistry/falcor';
 import { Settings } from 'viz-shared/containers/settings';
 import { container } from '@graphistry/falcor-react-redux';
 import {
@@ -6,9 +5,22 @@ import {
     Labels as LabelsContainer
 } from 'viz-shared/components/labels';
 
-let Label = container(() => `{
-    type, index, title, columns
-}`)(LabelOverlay);
+import {
+    labelMouseMove,
+    labelTouchStart,
+    updateLabelSettings
+} from 'viz-shared/actions/labels';
+
+let Label = container({
+    fragment: () => `{
+        type, index, title, columns
+    }`,
+    dispatchers: {
+        onMouseMove: labelMouseMove,
+        onTouchStart: labelTouchStart,
+        updateLabelSettings
+    }
+})(LabelOverlay);
 
 const onClick = ({ type, title }) => {
    console.log('clicked', {type, title});
@@ -66,8 +78,8 @@ let Labels = ({ enabled, poiEnabled, opacity,
     );
 };
 
-Labels = container(
-    ({ edge = [], point = [], settings } = {}) => `{
+Labels = container({
+    fragment: ({ edge = [], point = [], settings } = {}) => `{
         id, name, timeZone,
         opacity, enabled, poiEnabled,
         ['background', 'foreground']: { color },
@@ -80,7 +92,7 @@ Labels = container(
                 Label.fragment()
             }
         }
-    }`
-)(Labels);
+    }`,
+})(Labels);
 
 export { Labels, Label }
