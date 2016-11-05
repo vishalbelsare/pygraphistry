@@ -32,13 +32,14 @@ let View = ({
     const isBottomPanelOpen = !!panels.bottom;
     return (
         <div style={{ position: `absolute`, width: `100%`, height: `100%` }}>
-            <Scene data={scene}
+            <Scene key='scene'
+                   data={scene}
                    mouseMove={sceneMouseMove}
                    touchStart={sceneTouchStart}
                    selectToolbarItem={selectToolbarItem}
                    onSelectedPointTouchStart={onSelectedPointTouchStart}
                    onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
-            <Panel side='left' data={left} isOpen={isLeftPanelOpen}/>
+            <Panel key='left-panel' side='left' data={left} isOpen={isLeftPanelOpen}/>
             <Dock fluid
                   key='right'
                   dimMode='none'
@@ -50,7 +51,7 @@ let View = ({
                       background: `transparent`,
                       'box-shadow': `none`
                   }}>
-                <Panel side='right' data={right}/>
+                <Panel side='right' data={right} key='right-panel'/>
             </Dock>
             <Dock fluid
                   key='bottom'
@@ -59,9 +60,9 @@ let View = ({
                   position='bottom'
                   isVisible={isBottomPanelOpen}
                   size={1 - (1/Math.sqrt(2))}>
-                <Panel side='bottom' data={bottom}/>
+                <Panel side='bottom' data={bottom} key='bottom-panel'/>
             </Dock>
-            <Toolbar data={toolbar} selectToolbarItem={selectToolbarItem}/>
+            <Toolbar key='toolbar' data={toolbar} selectToolbarItem={selectToolbarItem}/>
         </div>
     );
 };

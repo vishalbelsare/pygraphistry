@@ -1,4 +1,3 @@
-import { toProps } from '@graphistry/falcor';
 import { Settings } from 'viz-shared/containers/settings';
 import { container } from '@graphistry/falcor-react-redux';
 import {
@@ -63,8 +62,8 @@ let Labels = ({ enabled, poiEnabled, opacity,
     return (
         <LabelsContainer labels={labels}
                          enabled={enabled}
-                         highlight={toProps(highlight)}
-                         selection={toProps(selection)}
+                         highlight={highlight}
+                         selection={selection}
                          poiEnabled={poiEnabled}
                          {...props}>
         {enabled && labels.filter(Boolean).map((label, index) =>

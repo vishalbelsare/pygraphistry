@@ -27,7 +27,7 @@ let Scene = ({
                    simulating={simulating}
                    onSelectedPointTouchStart={onSelectedPointTouchStart}
                    onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
-        <Labels data={labels} simulating={simulating}/>
+        <Labels key='labels' data={labels} simulating={simulating}/>
     </SceneComponent>
 );
 

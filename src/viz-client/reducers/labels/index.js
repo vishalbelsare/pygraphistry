@@ -29,51 +29,49 @@ export function labels(action$) {
         }))
         .debounceTime(350)
         .combineLatest(
-            isAnimating, hitmapUpdates.map(() => Scheduler.now()),
+            isAnimating,
+            hitmapUpdates.map(() => Scheduler.now()),
             (props, animating, hitMapUpdateTime) => ({
-                ...props, hitMapUpdateTime, forceResample: !animating
+                ...props, hitMapUpdateTime, canResample: !animating
             })
         )
         .filter(({ enabled, poiEnabled }) => enabled && poiEnabled)
-        .distinctUntilChanged((prev, { zoom, vboUpdate, forceResample, hitMapUpdateTime }) => (
+        .distinctUntilChanged((prev, { zoom, vboUpdate, canResample, hitMapUpdateTime }) => (
             zoom === prev.zoom && (
             hitMapUpdateTime === prev.hitMapUpdateTime) && (
             vboUpdate === prev.vboUpdate || vboUpdate !== 'received') && (
-            forceResample === prev.forceResample || forceResample === false)
+            canResample === prev.canResample || canResample === false)
         ))
         .scan(scanResampleLabelHits, {})
         .distinctUntilChanged(({ hits }, { hits: newHits, didResample }) =>
-            !didResample && shallowEqual(hits, newHits)
+            !didResample && (!newHits || shallowEqual(hits, newHits))
         )
         .switchMap(setLabelHitReferences)
         .ignoreElements();
 }
 
-function scanResampleLabelHits(
-    { lastResampleTime = 0, hits, ...memo },
-    { renderState, forceResample, ...props }) {
+function scanResampleLabelHits(memo, props) {
 
-    const t = Scheduler.now();
     let didResample = false;
+    const t = Scheduler.now();
+    const { falcor, renderState, canResample } = props;
+    let { hits, lastResampleTime = Scheduler.now() } = memo;
 
-    if (!hits || forceResample || (t - lastResampleTime > TIME_BETWEEN_SAMPLES)) {
-        didResample = true;
-        lastResampleTime = t;
-        hits = sortHits(markHits(
-                renderState['pixelreads']
-                    ['pointHitmapDownsampled']));
-        // console.log(`hit resample time ${(Scheduler.now() - t)|0}ms`);
-        // console.log(`resampled label hits: ${JSON.stringify(hits)}`);
+    if (canResample && (!hits || (t - lastResampleTime > TIME_BETWEEN_SAMPLES))) {
+        const { pixelreads = {} } = renderState;
+        const { pointHitmapDownsampled } = pixelreads;
+        if (pointHitmapDownsampled) {
+            // console.log(`time since last resample ${(t - lastResampleTime)|0}ms`);
+            didResample = true;
+            lastResampleTime = t;
+            hits = sortHits(markHits(pointHitmapDownsampled));
+            // console.log(`hit resample time ${(Scheduler.now() - t)|0}ms`);
+            // console.log(``);
+            // console.log(`resampled label hits: ${JSON.stringify(hits)}`);
+        }
     }
 
-    return {
-        ...memo,
-        ...props,
-        didResample,
-        forceResample,
-        lastResampleTime,
-        hits, renderState,
-    };
+    return { ...memo, hits, falcor, didResample, lastResampleTime };
 }
 
 function setLabelHitReferences({ falcor, hits }) {
@@ -104,12 +102,9 @@ function setLabelHitReferences({ falcor, hits }) {
 }
 
 function sortHits (hits) {
-    const indicies = _.keys(hits)
+    return _.keys(hits)
         .sort((a, b) => hits[b] - hits[a])
-        .map((x) => parseInt(x));
-    return indicies.slice(0, Math.min(
-        indicies.length, MAX_LABELS
-    ));
+        .slice(0, MAX_LABELS);
 }
 
 function markHits ({ buffer }) {
