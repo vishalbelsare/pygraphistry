@@ -24,13 +24,13 @@ Inspector = container({
 
 
         const { query = {}, ...props } = a;
-        const {openTab='points', sortKey, sortOrder, rowsPerPage=0, page=0, columns=[]}
+        const {openTab='points', searchTerm, sortKey, sortOrder, rowsPerPage=0, page=0, columns=[]}
             = query;
 
         if (!rowsPerPage) {
             return `{
                 id, name, open,
-                query: { openTab, sortKey, sortOrder, rowsPerPage, page }
+                query: { openTab, searchTerm, sortKey, sortOrder, rowsPerPage, page }
             }`;
         }
 
@@ -45,7 +45,15 @@ Inspector = container({
             query: { openTab, sortKey, sortOrder, rowsPerPage, page },
             rows: {
                 ${openTab}: {
-                    [${start}..${stop}]: {id}
+                    'search-${searchTerm}': {
+                        ${sortKey}: {
+                            ${sortOrder}: {
+                                [${start}..${stop}]: {
+                                    id
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }`;

@@ -40,27 +40,41 @@ export function inspector(path, base) {
         }, {
             returns: `*`,
             get: function (path) {
-                const basePath = path.slice(0, path.length - 4);
-                const openTabs = [].concat(path[path.length - 3]);
+                const basePath = path.slice(0, path.length - 6);
+                console.log('===== BASE PATH');
+                console.log(basePath);
+
+                const openTabs = [].concat(path[path.length - 6]);
+                const searchTerms = [].concat(path[path.length - 5]);
+                const sortKeys = [].concat(path[path.length - 4]);
+                const sortOrders = [].concat(path[path.length - 3]);
                 const ranges = [].concat(path[path.length - 2]);
                 const fields = [].concat(path[path.length - 1]);
-                return openTabs.reduce(
-                    (values, openTab) =>
-                        ranges.reduce(
-                            (values, {from,to}) =>
-                                _.range(from, to).reduce(
-                                    (values, row) =>
-                                        fields.reduce(
-                                            (values, field) =>
-                                                values.concat([$value(
-                                                    basePath.concat(['rows', openTab,row,field]),
-                                                    Math.random())]),
-                                            values),
-                                    values),
+
+                const out =
+                        openTabs.reduce((values, openTab) =>
+                        searchTerms.reduce((values, searchTerm) =>
+                        sortKeys.reduce((values, sortKey) =>
+                        sortOrders.reduce((values, sortOrder) =>
+                        ranges.reduce((values, {from,to}) =>
+                        _.range(from, to).reduce((values, row) =>
+                        fields.reduce((values, field) =>
+                            values.concat([
+                                $value(
+                                    basePath.concat([openTab, searchTerm, sortKey, sortOrder, row, field]),
+                                    Math.random())
+                            ]),
                             values),
-                    []);
+                            values),
+                            values),
+                            values),
+                            values),
+                            values),
+                        []);
+                console.log('emitting', (out||['mt'])[0]);
+                return out;
             },
-            route: `${base}['inspector'].rows[{keys}][{ranges}][{keys}]`
+            route: `${base}['inspector'].rows[{keys:openTab}][{keys:searchTerm}][{keys:sortKey}][{keys:sortOrder}][{ranges:rows}][{keys:fields}]`
         }];
     }
 }
