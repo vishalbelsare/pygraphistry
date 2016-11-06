@@ -24,7 +24,7 @@ export function inspector(path, base) {
             returns: `*`,
             get: getValues,
             set: setValues,
-            route: `${base}['inspector']['open', 'length', 'id', 'name']`,
+            route: `${base}['inspector']['open', 'length', 'id', 'name', 'templates']`,
         }, {
             returns: `*`,
             get: getValues,

@@ -15,15 +15,16 @@ export function inspector(view) {
             query: {
                 openTab: 'points', // 'edges', 'events', ...
                 searchTerm: '',
-                sortKey: 'id', //int or string column reference
+                sortKey: 'community_infomap', //int or string column reference
                 sortOrder: 'asc', // or 'desc'
-                rowsPerPage: 10,
+                rowsPerPage: 6, //fix CSS if we want to do more
                 page: 0
             },
+            templates: $ref(`${view}.columns`),
             rows: {
                 points: { //table
                     'search-': {  //search term -- "search:asdf xya"
-                        'id': { //sort column
+                        'community_infomap': { //sort column
                             'asc': [
                                 {
                                     "community_infomap": 0,

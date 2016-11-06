@@ -9,6 +9,7 @@ import {
 
 import { Tab, Tabs, Table, Pagination, FormControl, InputGroup, Button } from 'react-bootstrap';
 
+import _ from 'underscore';
 
 
 
@@ -16,10 +17,13 @@ import { Tab, Tabs, Table, Pagination, FormControl, InputGroup, Button } from 'r
 const datatablePropTypes = {
     columns: React.PropTypes.array,
     results: React.PropTypes.array,
-    sort: React.PropTypes.object,
+    sortKey: React.PropTypes.string,
+    sortOrder: React.PropTypes.string,
+    searchTerm: React.PropTypes.string,
     toggleColumnSort: React.PropTypes.func,
     numPages: React.PropTypes.number,
-    activePage: React.PropTypes.number,
+    page: React.PropTypes.number,
+    rowsPerPage: React.PropTypes.number,
     handlePageSelect: React.PropTypes.func
 };
 
@@ -39,6 +43,17 @@ class DataTable extends React.Component {
     }
 
     render () {
+
+        const start = this.props.rowsPerPage * this.props.page;
+        const stop = start + this.props.rowsPerPage;
+
+        const columns =
+            _.range(0,this.props.templates.length)
+                .map((idx) => this.props.templates[idx])
+                .filter(({componentType}) =>
+                    (this.props.openTab === 'points' && componentType === 'point')
+                    || (this.props.openTab === 'edges' && componentType === 'edge'));
+
         return (
             <div>
                 <div className={styles['inspector-table-header']}>
@@ -52,13 +67,13 @@ class DataTable extends React.Component {
                         boundaryLinks
                         items={this.props.numPages}
                         maxButtons={5}
-                        activePage={this.props.activePage}
+                        activePage={this.props.page}
                         onSelect={this.props.handlePageSelect} />
 
                     <InputGroup>
                          <FormControl
                             type="text"
-                            value={this.props.searchText}
+                            value={this.props.searchTerm}
                             placeholder="Search"
                           />
                         <Button>
@@ -74,14 +89,16 @@ class DataTable extends React.Component {
                 <Table className={styles['inspector-table']}
                     striped={true} bordered={true} condensed={true} hover={true}>
                 <thead>
-                    {this.props.columns.map((field) => <th onClick={ () => this.props.toggleColumnSort(field) }>
-                        {field}
-                        { this.props.sort && this.props.sort.column === field
+                    {columns.map(({name}) => <th onClick={ () => this.props.toggleColumnSort({
+                        clickedField: name, currentField: this.props.sortKey, currentOrder: this.props.sortOrder
+                    })}>
+                        {name}
+                        { this.props.sortKey === name
                             ? <i className={`
                                 ${styles['sort-active']}
                                 ${styles['fa']}
                                 ${styles['fa-fw']}
-                                ${styles['fa-sort-' + (this.props.sort.ascending ? 'asc' : 'desc')]}`}></i>
+                                ${styles['fa-sort-' + this.props.sortOrder]}`}></i>
                             : <i className={`
                                 ${styles['sort-inactive']}
                                 ${styles['fa']}
@@ -90,13 +107,14 @@ class DataTable extends React.Component {
                         }
                     </th>)}
                 </thead>
-                <tbody>
-                    {this.props.results.map((item) => {
-                        return (<tr>{
-                            this.props.columns.map((field) => <td>{item[field]}</td>)
-                        }</tr>);
-                    })}
-                </tbody>
+                <tbody>{
+                    _.range(start, stop)
+                        .map((row) => (<tr>{
+                            columns.map(({name}) => (<td>{
+                                this.props.rows ? this.props.rows[row][name] : `placeholder:${row}:${name}`
+                            }</td>)
+                        )}</tr>))
+                }</tbody>
             </Table>
         </div>);
     }
@@ -115,8 +133,13 @@ class Inspector extends React.Component {
 
     render() {
 
-        const {openTab, open, onSelect} = this.props;
+        const { open, templates,
+                onSelect,
+                openTab, searchTerm, sortKey, sortOrder, rowsPerPage, page }
+            = this.props;
 
+        const start = rowsPerPage * page;
+        const stop = start + rowsPerPage;
 
         const fakeData = {
             sort: {
@@ -124,7 +147,7 @@ class Inspector extends React.Component {
                 ascending: true
             },
             numPages: 1,
-            activePage: 0,
+            page: 0,
             results: [
                     {
                         "id": 0,
@@ -153,19 +176,17 @@ class Inspector extends React.Component {
             <Tabs activeKey={openTab} className={styles.inspectorTabs} onSelect={onSelect}>
                 <Tab eventKey={'points'} title="Points">
                     <DataTable
+                        {...this.props}
                         results={fakeData.results}
                         columns={fakeData.cols}
-                        sort={fakeData.sort}
-                        activePage={fakeData.activePage}
                         numPages={fakeData.numPages}
                         entityType={"Node"}/>
                 </Tab>
                 <Tab eventKey={'edges'} title="Edges">
                     <DataTable
+                        {...this.props}
                         results={fakeData.results}
                         columns={fakeData.cols.slice(0,3)}
-                        sort={fakeData.sort}
-                        activePage={fakeData.activePage}
                         numPages={fakeData.numPages}
                         entityType={"Edge"}/>
                 </Tab>

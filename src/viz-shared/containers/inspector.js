@@ -12,10 +12,48 @@ let Inspector = (a,b,c) => {
     console.log('Inspector', JSON.stringify({a,b,c}));
     const {
         id, name, open,
-        query: { openTab },
-        selectInspectorTab } = a;
+        query,
+        selectInspectorTab,
+        templates } = a;
+    const { openTab, searchTerm, sortKey, sortOrder, rowsPerPage, page } = query;
 
-    return <InspectorComponent openTab={openTab} open={open} onSelect={selectInspectorTab} />;
+
+    const fakeCell = {
+        "community_infomap": 0,
+        "pagerank": "Mayer Leonard",
+        "_title": "Kapowsin",
+        "state": "Hawaii",
+        "country": "United Kingdom",
+        "company": "Ovolo",
+        "favoriteNumber": 7
+    };
+
+    const fakeRows = {
+        'points': {
+            'search-': {
+                'community_infomap': {
+                    'asc': {
+                        0: fakeCell,
+                        1: fakeCell,
+                        2: fakeCell,
+                        3: fakeCell,
+                        4: fakeCell,
+                        5: fakeCell,
+                        6: fakeCell,
+                        7: fakeCell,
+                        8: fakeCell,
+                        9: fakeCell,
+                        10: fakeCell
+                    }
+                }
+            }
+        }
+    };
+
+    return <InspectorComponent
+        {...query}
+        open={open} templates={templates} onSelect={selectInspectorTab}
+        results={fakeRows} />;
 };
 
 
@@ -38,9 +76,7 @@ Inspector = container({
         const start = rowsPerPage * page;
         const stop = start + rowsPerPage;
 
-        const frag = `{
-            id, name, open,
-            query: { openTab, sortKey, sortOrder, rowsPerPage, page },
+        /* removed while debugging
             rows: {
                 ${openTab}: {
                     'search-${searchTerm||''}': {
@@ -52,6 +88,16 @@ Inspector = container({
                             }
                         }
                     }
+                }
+            }
+        */
+
+        const frag = `{
+            id, name, open,
+            query: { openTab, searchTerm, sortKey, sortOrder, rowsPerPage, page },
+            templates: {
+                length, [0...${templates.length}]: {
+                    name, dataType, identifier, componentType
                 }
             }
         }`;
