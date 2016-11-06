@@ -95,25 +95,35 @@ function search ({loadViewsById, readSelection}, path) {
                 page.values.map((v,idx)=> range.from + idx),
                 page.values.map((o) => _.pick(o, fields)));
 
-        console.log('====fragment', fragment);
-
-        /* Try making fragment include basePath
-        const resolved = {workbooksById: {
-                [basePath[1]]: {
-                    viewsById: {
-                        [basePath[3]]: fragment
+        const midFragment ={
+            rows: {
+                [`search-${searchTerm||''}`]: {
+                    [`sort-${sortKey||''}`]: {
+                        [sortOrder]: fragment
                     }
                 }
             }
         };
-        */
+
+
+        console.log('====fragment', fragment);
+
+        const resolved = {workbooksById: {
+                [basePath[1]]: {
+                    viewsById: {
+                        [basePath[3]]: {inpector: midFragment }
+                    }
+                }
+            }
+        };
+
 
         /* Try flattening basePath
         const flatBasePath = basePath.map((o) => typeof(o) === 'object' ? o[0] : 0);
         */
 
         return {
-            jsonGraph: fragment,
+            jsonGraph: midFragment,
             paths:
                 [
                     basePath
@@ -122,7 +132,7 @@ function search ({loadViewsById, readSelection}, path) {
                             [`search-${searchTerm||''}`],
                             [`sort-${sortKey||''}`],
                             [sortOrder],
-                            [range],//_.range(range.from, range.to+1),
+                            range,//_.range(range.from, range.to+1),
                             fields])
                 ]
         };
