@@ -52,11 +52,6 @@ function search ({loadViewsById, readSelection}, path) {
 
     const basePath = path.slice(0, path.length - 6);
 
-    console.log('======= ORIGINAL BASE PATH',
-        JSON.stringify(basePath));
-    console.log('------- ORIGINAL PATH',
-        JSON.stringify(path));
-
     const workbookIds = [].concat(path[1]);
     const viewIds = [].concat(path[3]);
     const openTabs = [].concat(path[path.length - 6]);
@@ -90,52 +85,36 @@ function search ({loadViewsById, readSelection}, path) {
             {workbook, view, openTab, searchTerm, sortKey, sortOrder, range, fields},
             page) {
 
+        //{...range: { ...fields} }
         const fragment =
             _.object(
                 page.values.map((v,idx)=> range.from + idx),
                 page.values.map((o) => _.pick(o, fields)));
 
-        const midFragment ={
-            rows: {
+        //[openTab, `search-`, `sort-`, sortOrder]
+        const midFragment = {
+            [openTab]: {
                 [`search-${searchTerm||''}`]: {
                     [`sort-${sortKey||''}`]: {
-                        [sortOrder]: fragment
-                    }
-                }
-            }
-        };
+                        [sortOrder]: fragment } } } };
 
-
-        console.log('====fragment', fragment);
-
-        const resolved = {workbooksById: {
-                [basePath[1]]: {
+        //basePath
+        const fullFragment = {
+            workbooksById: {
+                [basePath[1][0]]: {
                     viewsById: {
-                        [basePath[3]]: {inpector: midFragment }
-                    }
-                }
-            }
-        };
+                        [basePath[3][0]]: {
+                            inspector: {
+                                rows: midFragment } } } } } };
 
+        const prefix =
+            ['workbooksById', [basePath[1][0]], 'viewsById', [basePath[3][0]],
+            'inspector', 'rows',
+            [openTab], [`search-${searchTerm||''}`], [`sort-${sortKey||''}`], [sortOrder]];
 
-        /* Try flattening basePath
-        const flatBasePath = basePath.map((o) => typeof(o) === 'object' ? o[0] : 0);
-        */
+        const paths = [ prefix.concat([ [range], fields]) ];
 
-        return {
-            jsonGraph: midFragment,
-            paths:
-                [
-                    basePath
-                        .concat([
-                            [openTab],
-                            [`search-${searchTerm||''}`],
-                            [`sort-${sortKey||''}`],
-                            [sortOrder],
-                            range,//_.range(range.from, range.to+1),
-                            fields])
-                ]
-        };
+        return {paths, jsonGraph: fullFragment };
     };
 
     //======= ETL
@@ -163,16 +142,12 @@ function search ({loadViewsById, readSelection}, path) {
             values),
         []);
 
-        console.log('query0', _.omit(queries[0], 'workbook', 'view'));
-
         const searches =
             queries.map((query) =>
                 queryPage(query)
-                    .do((page) => console.log('page', page))
                     .map(pageToValue.bind(null, query)));
 
-        return Observable.merge(...searches)
-            .do((e) => console.log('search hit',
-                e.paths[0], e.jsonGraph));
+        return Observable.merge(...searches);
+
     });
 };

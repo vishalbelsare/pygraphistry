@@ -19,31 +19,17 @@ function coerceSortKey(templates, openTab, sortKey) {
 }
 
 
-let Inspector = (a,b,c) => {
+let Inspector = ({
+        openTab = 'points', currentQuery = {}, selectInspectorTab,
+        templates = {length: 0}, rows }) => {
 
-
-    console.log('Inspector', JSON.stringify({a,b,c}));
-    const {
-            openTab = 'points',
-            currentQuery = {},
-            selectInspectorTab,
-            templates = {length: 0},
-            rows
-        } = a;
     const { searchTerm = '', sortKey, sortOrder, rowsPerPage=6, page=1 } = currentQuery;
 
-    console.log('ROWS', rows);
-    var currentRows = undefined;
-    try {
-        currentRows = row[openTab][`search-${searchTerm||''}`][`sort-${sortKey||''}`][sortOrder];
-    } catch (e) { }
-
     const sortBy = coerceSortKey(templates, openTab, sortKey);
-    console.log('SORTYBY', {
-        sortKey,
-        availTemplates: getTemplates(templates, openTab).length,
-        picked: getTemplates(templates, openTab).concat([''])[0],
-        sortBy});
+
+    var currentRows = undefined;
+    try { currentRows = rows[openTab][`search-${searchTerm||''}`][`sort-${sortBy||''}`][sortOrder];
+    } catch (e) { }
 
     return <InspectorComponent
         {...{ searchTerm, sortKey: sortBy, sortOrder, rowsPerPage, page } }
@@ -54,11 +40,8 @@ let Inspector = (a,b,c) => {
 
 
 Inspector = container({
-    fragment:  (a, b, c, d) => {
+    fragment:  ({ currentQuery = {}, templates = [], openTab, ...props }) => {
 
-        console.log('fragment input', {a,b,c,d});
-
-        const { currentQuery = {}, templates = [], openTab, ...props } = a;
         const { searchTerm, sortKey, sortOrder, rowsPerPage=0, page=1}
             = currentQuery;
 
@@ -72,10 +55,6 @@ Inspector = container({
             || (templates.length === _.keys(templates).length - 1);
 
         if (!rowsPerPage || !hasAllQueryProps || !hasAllTemplateNames) {
-
-            console.log('==== Insufficient rows data');
-            console.log({rowsPerPage, hasAllQueryProps, hasAllTemplateNames}, _.keys(currentQuery));
-
             return `{
                 id, name, open, openTab,
                 currentQuery: { searchTerm, sortKey, sortOrder, rowsPerPage, page },
@@ -91,7 +70,7 @@ Inspector = container({
         const start = rowsPerPage * (page - 1);
         const stop = start + rowsPerPage;
 
-        const frag = `{
+        return `{
             id, name, open, openTab,
             currentQuery: { searchTerm, sortKey, sortOrder, rowsPerPage, page },
             templates: {
@@ -114,10 +93,6 @@ Inspector = container({
             }
         }`;
 
-        console.log('OPEN TAB', openTab);
-        console.log("THE QUERY", frag);
-
-        return frag;
     },
     dispatchers: { selectInspectorTab }
 })(Inspector);

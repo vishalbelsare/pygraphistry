@@ -178,7 +178,7 @@ class Inspector extends React.Component {
                 <Tab eventKey={'points'} title="Points">
                     <DataTable
                         {...this.props}
-                        results={fakeData.results}
+                        results={this.props.rows || fakeData.results}
                         columns={fakeData.cols}
                         numPages={fakeData.numPages}
                         entityType={"Node"}/>
@@ -186,7 +186,7 @@ class Inspector extends React.Component {
                 <Tab eventKey={'edges'} title="Edges">
                     <DataTable
                         {...this.props}
-                        results={fakeData.results}
+                        results={this.props.rows || fakeData.results}
                         columns={fakeData.cols.slice(0,3)}
                         numPages={fakeData.numPages}
                         entityType={"Edge"}/>
