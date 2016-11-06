@@ -12,15 +12,25 @@ export function inspector(view) {
             length: 0,
             id: 'inspector',
             name: 'Data inspector',
-            query: {
-                openTab: 'points', // 'edges', 'events', ...
-                searchTerm: '',
-                sortKey: 'community_infomap', //int or string column reference
-                sortOrder: 'asc', // or 'desc'
-                rowsPerPage: 6, //fix CSS if we want to do more
-                page: 0
-            },
+            openTab: 'points', // 'edges', 'events', ...
             templates: $ref(`${view}.columns`),
+            currentQuery: $ref(`${view}.inspector.queries.points`),
+            queries: {
+                points: { //table
+                    searchTerm: '',
+                    sortKey: '', //int or string column reference
+                    sortOrder: 'asc', // or 'desc'
+                    rowsPerPage: 6, //fix CSS if we want to do more
+                    page: 1
+                },
+                edges: { //table
+                    searchTerm: '',
+                    sortKey: '', //int or string column reference
+                    sortOrder: 'asc', // or 'desc'
+                    rowsPerPage: 6, //fix CSS if we want to do more
+                    page: 1
+                }
+            },
             rows: {
                 points: { //table
                     'search-': {  //search term -- "search:asdf xya"

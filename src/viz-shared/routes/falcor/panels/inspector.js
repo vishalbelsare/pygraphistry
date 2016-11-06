@@ -24,12 +24,12 @@ export function inspector(path, base) {
             returns: `*`,
             get: getValues,
             set: setValues,
-            route: `${base}['inspector']['open', 'length', 'id', 'name', 'templates']`,
+            route: `${base}['inspector']['open', 'openTab', 'length', 'id', 'name', 'templates', 'currentQuery']`,
         }, {
             returns: `*`,
             get: getValues,
             set: setValues,
-            route: `${base}['inspector'].query[{keys}]`,
+            route: `${base}['inspector'].queries[{keys}][{keys}]`,
         }, {
             get: getValues,
             route: `${base}['inspector'].controls[{keys}]`

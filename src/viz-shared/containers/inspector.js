@@ -11,49 +11,16 @@ let Inspector = (a,b,c) => {
 
     console.log('Inspector', JSON.stringify({a,b,c}));
     const {
-        id, name, open,
-        query,
-        selectInspectorTab,
-        templates } = a;
-    const { openTab, searchTerm, sortKey, sortOrder, rowsPerPage, page } = query;
-
-
-    const fakeCell = {
-        "community_infomap": 0,
-        "pagerank": "Mayer Leonard",
-        "_title": "Kapowsin",
-        "state": "Hawaii",
-        "country": "United Kingdom",
-        "company": "Ovolo",
-        "favoriteNumber": 7
-    };
-
-    const fakeRows = {
-        'points': {
-            'search-': {
-                'community_infomap': {
-                    'asc': {
-                        0: fakeCell,
-                        1: fakeCell,
-                        2: fakeCell,
-                        3: fakeCell,
-                        4: fakeCell,
-                        5: fakeCell,
-                        6: fakeCell,
-                        7: fakeCell,
-                        8: fakeCell,
-                        9: fakeCell,
-                        10: fakeCell
-                    }
-                }
-            }
-        }
-    };
+            openTab = 'points',
+            currentQuery = {},
+            selectInspectorTab,
+            templates = {length: 0}
+        } = a;
+    const { searchTerm = '', sortKey, sortOrder, rowsPerPage=6, page=1 } = currentQuery;
 
     return <InspectorComponent
-        {...query}
-        open={open} templates={templates} onSelect={selectInspectorTab}
-        results={fakeRows} />;
+        {...{ searchTerm, sortKey, sortOrder, rowsPerPage, page } }
+        open={open} openTab={openTab} templates={templates} onSelect={selectInspectorTab}  />;
 };
 
 
@@ -62,21 +29,32 @@ Inspector = container({
 
         console.log('fragment input', {a,b,c,d});
 
-        const { query = {}, templates = [], ...props } = a;
-        const {openTab='points', searchTerm, sortKey, sortOrder, rowsPerPage=0, page=0, columns=[]}
+        const { queries = {}, templates = [], openTab, ...props } = a;
+        const query = queries[openTab] || {};
+        const { searchTerm, sortKey, sortOrder, rowsPerPage=0, page=0, columns=[]}
             = query;
 
         if (!rowsPerPage) {
             return `{
-                id, name, open,
-                query: { openTab, searchTerm, sortKey, sortOrder, rowsPerPage, page }
+                id, name, open, openTab,
+                currentQuery: { searchTerm, sortKey, sortOrder, rowsPerPage, page },
+                templates: {
+                    length, [0...${templates.length}]: {
+                        name, dataType, identifier, componentType
+                    }
+                }
             }`;
         }
 
-        const start = rowsPerPage * page;
-        const stop = start + rowsPerPage;
 
         /* removed while debugging
+
+            //change into currentRows (a ref)?
+            //still need to do dynamically to get the cols...
+
+            const start = rowsPerPage * page;
+            const stop = start + rowsPerPage;
+
             rows: {
                 ${openTab}: {
                     'search-${searchTerm||''}': {
@@ -90,11 +68,22 @@ Inspector = container({
                     }
                 }
             }
+
+            //dynamically list known column names
+            ${
+                templates
+                    .filter(({componentType}) =>
+                        (openTab === 'points' && componentType === 'point')
+                        || (openTab === 'edges' && componentType === 'edge'))
+                    .map(({name}) => name)
+                    .join(', ')
+            }
+
         */
 
         const frag = `{
-            id, name, open,
-            query: { openTab, searchTerm, sortKey, sortOrder, rowsPerPage, page },
+            id, name, open, openTab,
+            currentQuery: { searchTerm, sortKey, sortOrder, rowsPerPage, page },
             templates: {
                 length, [0...${templates.length}]: {
                     name, dataType, identifier, componentType

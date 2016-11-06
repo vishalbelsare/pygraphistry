@@ -50,6 +50,7 @@ class DataTable extends React.Component {
         const columns =
             _.range(0,this.props.templates.length)
                 .map((idx) => this.props.templates[idx])
+                .filter(_.identity)
                 .filter(({componentType}) =>
                     (this.props.openTab === 'points' && componentType === 'point')
                     || (this.props.openTab === 'edges' && componentType === 'edge'));

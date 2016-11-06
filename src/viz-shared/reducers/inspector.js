@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { pathValue as $value } from '@graphistry/falcor-json-graph';
+import { pathValue as $value, ref as $ref } from '@graphistry/falcor-json-graph';
 
 import { SELECT_INSPECTOR_TAB } from 'viz-shared/actions/inspector';
 
@@ -15,6 +15,9 @@ function selectInspectorTab(action$, store) {
     return action$
         .ofType(SELECT_INSPECTOR_TAB)
         .mergeMap(({falcor, openTab}) => (
-            falcor.set($value(`query.openTab`, openTab))
-        ));
+            Observable.merge(
+                falcor.set($value(`openTab`, openTab)),
+                falcor.set($value(
+                    `currentQuery`,
+                    $ref(falcor._path.concat([`queries`, `${openTab}`])))))));
 }
