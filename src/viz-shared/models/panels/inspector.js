@@ -23,20 +23,20 @@ export function inspector(view) {
             rows: {
                 points: { //table
                     'search-': {  //search term -- "search:asdf xya"
-                        id: { //sort column
+                        'id': { //sort column
                             'asc': [
                                 {
-                                    "id": 0,
-                                    "name": "Mayer Leonard",
-                                    "city": "Kapowsin",
+                                    "community_infomap": 0,
+                                    "pagerank": "Mayer Leonard",
+                                    "_title": "Kapowsin",
                                     "state": "Hawaii",
                                     "country": "United Kingdom",
                                     "company": "Ovolo",
                                     "favoriteNumber": 7
                                 }, {
-                                    "id": 10,
-                                    "name": "Bullwinkle",
-                                    "city": "Moscow",
+                                    "community_infomap": 10,
+                                    "pagerank": "Bullwinkle",
+                                    "_title": "Moscow",
                                     "stata": null,
                                     "country": "USSR",
                                     "company": "ACME",

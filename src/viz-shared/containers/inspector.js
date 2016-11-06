@@ -22,8 +22,9 @@ let Inspector = (a,b,c) => {
 Inspector = container({
     fragment:  (a, b, c, d) => {
 
+        console.log('fragment input', {a,b,c,d});
 
-        const { query = {}, ...props } = a;
+        const { query = {}, templates = [], ...props } = a;
         const {openTab='points', searchTerm, sortKey, sortOrder, rowsPerPage=0, page=0, columns=[]}
             = query;
 
@@ -37,19 +38,16 @@ Inspector = container({
         const start = rowsPerPage * page;
         const stop = start + rowsPerPage;
 
-        console.log('fragment input', JSON.stringify({a,b, c, d}));
-        console.log("frag q input", {rowsPerPage, page});
-
         const frag = `{
             id, name, open,
             query: { openTab, sortKey, sortOrder, rowsPerPage, page },
             rows: {
                 ${openTab}: {
-                    'search-${searchTerm}': {
+                    'search-${searchTerm||''}': {
                         ${sortKey}: {
                             ${sortOrder}: {
                                 [${start}..${stop}]: {
-                                    id
+                                    community_infomap, pagerank, _title
                                 }
                             }
                         }
