@@ -1687,6 +1687,7 @@ Dataframe.prototype.getColumnValues = function (columnName, type, global = false
 
     // This lets us know if we need to reindex the values,
     // e.g., go from unsorted to sorted.
+    console.log('columnName', columnName, type);
     const indexType = column.index;
 
 

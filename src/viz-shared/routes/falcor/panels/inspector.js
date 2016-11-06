@@ -28,7 +28,7 @@ export function inspector(path, base) {
         }, {
             returns: `*`,
             get: getValues,
-            set: setValues,
+            set: setValues, //should update rows..
             route: `${base}['inspector'].queries[{keys}][{keys}]`,
         }, {
             get: getValues,
@@ -54,6 +54,8 @@ function search ({loadViewsById, readSelection}, path) {
 
     console.log('======= ORIGINAL BASE PATH',
         JSON.stringify(basePath));
+    console.log('------- ORIGINAL PATH',
+        JSON.stringify(path));
 
     const workbookIds = [].concat(path[1]);
     const viewIds = [].concat(path[3]);
@@ -67,8 +69,9 @@ function search ({loadViewsById, readSelection}, path) {
 
     //======= HELPERS
 
-    var queryPage = function ({view, openTab, range}) {
+    var queryPage = function ({view, openTab, range, searchTerm, sortKey, sortOrder}) {
         const {from, to} = range;
+
         return readSelection({
             view,
             type: openTab === 'points' ? 'point' : 'edge',
@@ -76,9 +79,9 @@ function search ({loadViewsById, readSelection}, path) {
                 sel: {all: true},
                 page: 1,
                 per_page: to - from + 1,
-                sort_by: openTab === 'points' ? 'community_infomap' : 'label',
-                order: 'asc',
-                search: null
+                sort_by: !sortKey ? null : sortKey,
+                order: sortOrder,
+                search: searchTerm
             }
         })
     };
@@ -90,7 +93,9 @@ function search ({loadViewsById, readSelection}, path) {
         const fragment =
             _.object(
                 page.values.map((v,idx)=> range.from + idx),
-                page.values.map((o) => _.pick(o, ...fields)));
+                page.values.map((o) => _.pick(o, fields)));
+
+        console.log('====fragment', fragment);
 
         /* Try making fragment include basePath
         const resolved = {workbooksById: {
@@ -113,8 +118,11 @@ function search ({loadViewsById, readSelection}, path) {
                 [
                     basePath
                         .concat([
-                            openTab, searchTerm, sortKey, sortOrder,
-                            range,//_.range(range.from, range.to+1),
+                            [openTab],
+                            [`search-${searchTerm||''}`],
+                            [`sort-${sortKey||''}`],
+                            [sortOrder],
+                            [range],//_.range(range.from, range.to+1),
                             fields])
                 ]
         };
@@ -135,7 +143,10 @@ function search ({loadViewsById, readSelection}, path) {
                         ranges.reduce((values, range) =>
                             values.concat(
                                 [{workbook, view,
-                                 openTab, searchTerm, sortKey, sortOrder, range, fields}]),
+                                 openTab,
+                                 searchTerm: searchTerm.slice('search-'.length),
+                                 sortKey: sortKey.slice('sort-'.length),
+                                 sortOrder, range, fields}]),
                         values),
                     values),
                 values),
@@ -147,6 +158,7 @@ function search ({loadViewsById, readSelection}, path) {
         const searches =
             queries.map((query) =>
                 queryPage(query)
+                    .do((page) => console.log('page', page))
                     .map(pageToValue.bind(null, query)));
 
         return Observable.merge(...searches)

@@ -15,26 +15,29 @@ export function inspector(view) {
             openTab: 'points', // 'edges', 'events', ...
             templates: $ref(`${view}.columns`),
             currentQuery: $ref(`${view}.inspector.queries.points`),
+            currentRows: $ref(`${view}.inspector.rows.points.search-.community_infomap.asc`),
             queries: {
                 points: { //table
                     searchTerm: '',
                     sortKey: '', //int or string column reference
                     sortOrder: 'asc', // or 'desc'
                     rowsPerPage: 6, //fix CSS if we want to do more
-                    page: 1
+                    page: 1,
+                    //rows: $ref(`${view}.inspector.rows.points.search-.community_infomap.asc`)
                 },
                 edges: { //table
                     searchTerm: '',
                     sortKey: '', //int or string column reference
                     sortOrder: 'asc', // or 'desc'
                     rowsPerPage: 6, //fix CSS if we want to do more
-                    page: 1
+                    page: 1,
+                    //rows: $ref(`${view}.inspector.rows.edges.search-._title.asc`),
                 }
             },
             rows: {
                 points: { //table
                     'search-': {  //search term -- "search:asdf xya"
-                        'community_infomap': { //sort column
+                        'sort-': { //sort column
                             'asc': [
                                 {
                                     "community_infomap": 0,

@@ -17,7 +17,10 @@ function selectInspectorTab(action$, store) {
         .mergeMap(({falcor, openTab}) => (
             Observable.merge(
                 falcor.set($value(`openTab`, openTab)),
+                //falcor.set($value(
+                //    `currentRows`,
+                //    $ref(falcor._path.concat([`queries`, openTab, 'rows'])))),
                 falcor.set($value(
                     `currentQuery`,
-                    $ref(falcor._path.concat([`queries`, `${openTab}`])))))));
+                    $ref(falcor._path.concat([`queries`, openTab])))))));
 }

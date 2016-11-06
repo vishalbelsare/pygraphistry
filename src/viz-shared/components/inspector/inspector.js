@@ -44,7 +44,7 @@ class DataTable extends React.Component {
 
     render () {
 
-        const start = this.props.rowsPerPage * this.props.page;
+        const start = this.props.rowsPerPage * (this.props.page - 1);
         const stop = start + this.props.rowsPerPage;
 
         const columns =
@@ -134,12 +134,12 @@ class Inspector extends React.Component {
 
     render() {
 
-        const { open, templates,
+        const { open, templates, rows,
                 onSelect,
                 openTab, searchTerm, sortKey, sortOrder, rowsPerPage, page }
             = this.props;
 
-        const start = rowsPerPage * page;
+        const start = rowsPerPage * (page-1);
         const stop = start + rowsPerPage;
 
         const fakeData = {
