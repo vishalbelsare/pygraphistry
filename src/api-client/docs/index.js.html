@@ -26,10 +26,12 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>import { Model } from 'viz-client/falcor';
+            <pre class="prettyprint source linenums"><code>import { Subject } from 'rxjs/Subject';
+import { Model } from 'viz-client/falcor';
 import $$observable from 'symbol-observable';
 import { Observable } from 'rxjs/Observable';
 import { AsyncSubject } from 'rxjs/AsyncSubject';
+import { ReplaySubject } from 'rxjs/ReplaySubject';
 import { asap as AsapScheduler } from 'rxjs/scheduler/asap';
 import { PostMessageDataSource } from '@graphistry/falcor-socket-datasource';
 import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
@@ -39,6 +41,8 @@ import {
     pathValue as $value,
     pathInvalidation as $invalidate
 } from '@graphistry/falcor-json-graph';
+
+import Color from 'color';
 
 /**
  * @class Graphistry
@@ -51,6 +55,8 @@ class Graphistry extends Observable {
     static model = null;
     static workbook = null;
     static iFrame = null;
+
+    static Color = Color;
 
     /**
      * Create Graphistry Observable by extending observable's methods
@@ -151,6 +157,7 @@ class Graphistry extends Observable {
      * Close the filters panel
      * @method Graphistry.closeFilters
      * @return {Promise} The result of the callback
+     * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
      *         window.g = g;
@@ -169,10 +176,9 @@ class Graphistry extends Observable {
     }
 
     /**
-     * Run Graphistry's clustering algorithm
-     * @method Graphistry.startClustering
+     * Run one step of Graphistry's clustering algorithm
+     * @method Graphistry.tickClustering
      * @static
-     * @param {number} [milliseconds = 2000] - The number of seconds to run layout
      * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
      * @example
@@ -180,53 +186,17 @@ class Graphistry extends Observable {
      *     .flatMap(function (g) {
      *         window.g = g;
      *         console.log('starting to cluster');
-     *         return g.startClustering(3000);
+     *         return g.tickClustering();
      *     })
      */
-    static startClustering(milliseconds = 2000, cb) {
-        const { view } = this;
-        if (!milliseconds || milliseconds &lt;= 0) {
-            return new this(view.set(
-                $value(`scene.simulating`, true),
-                $value(`scene.controls[0].selected`, true)
-            )
-            .last()
-            .map(({ json }) => json.toJSON())
-            .do((x) => cb &amp;&amp; cb(null, x), cb)
-            .toPromise());
-        }
-        return new this(this
-            .startClustering(0)
-            .concat(this
-                .timer(milliseconds)
-                .mergeMap(() => this.stopClustering(cb)))
-            .toPromise());
-    }
+    static tickClustering(cb) {
 
-    /**
-     * Stop Graphistry's clustering algorithm
-     * @method Graphistry.stopClustering
-     * @static
-     * @param {function} [cb] - Callback function of type callback(error, result)
-     * @return {Promise} The result of the callback
-     * @example
-     * GraphistryJS(document.getElementById('viz'))
-     *     .flatMap(function (g) {
-     *         window.g = g;
-     *         console.log('stopping clustering');
-     *         return g.startClustering();
-     *     })
-     */
-    static stopClustering(cb) {
         const { view } = this;
-        return new this(view.set(
-            $value(`scene.simulating`, false),
-            $value(`scene.controls[0].selected`, false)
-        )
-        .last()
-        .map(({ json }) => json.toJSON())
-        .do((x) => cb &amp;&amp; cb(null, x), cb)
-        .toPromise());
+
+        return new this(view.call('tick')
+            .map(({ json }) => json.toJSON())
+            .do((v) => cb ? cb(null, v) : undefined, cb)
+            .toPromise());
     }
 
     /**
@@ -236,6 +206,7 @@ class Graphistry extends Observable {
      * @param {number} percentile - Controls sensitivity to outliers
      * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
+     * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
      *         window.g = g;
@@ -247,21 +218,50 @@ class Graphistry extends Observable {
 
     }
 
+
     /**
-     * Save the current workbook. A saved workbook will persist the analytics state
-     * of the visualization, including active filters and exclusions
-     * @method Graphistry.autocenter
+     * Center the view of the graph
+     * @method Graphistry.getCurrentWorkbook
      * @static
      * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
+     * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
      *         window.g = g;
-     *         return g.saveWorkbook(.90);
+     *         return g.getCurrentWorkbook(function (err, obj){ alert('id: ' + obj.id); });
+     *     })
+     */
+    static getCurrentWorkbook(cb) {
+        const { workbook } = this;
+         return new this(workbook.get('id')
+            .map(({ json }) => json.toJSON())
+            .do((v) => cb ? cb(null, v) : undefined, cb)
+            .toPromise());
+    }
+
+    /**
+     * Save the current workbook. A saved workbook will persist the analytics state
+     * of the visualization, including active filters and exclusions
+     * @method Graphistry.saveWorkbook
+     * @static
+     * @param {function} [cb] - Callback function of type callback(error, result)
+     * @return {Promise} The result of the callback
+     * @example
+     * GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         return g.saveWorkbook();
      *     })
      */
     static saveWorkbook(cb) {
 
+        const { workbook } = this;
+
+        return new this(workbook.call('save')
+            .map(({ json }) => json.toJSON())
+            .do((v) => cb ? cb(null, v) : undefined, cb)
+            .toPromise());
     }
 
     /**
@@ -296,14 +296,7 @@ class Graphistry extends Observable {
      *
      */
     static toggleChrome(show, cb) {
-        const { view } = this;
-        return new this(view.set(
-            $value(`toolbar.visible`, !!show)
-        )
-        .last()
-        .map(({ json }) => json.toJSON())
-        .do((x) => cb &amp;&amp; cb(null, x), cb)
-        .toPromise());
+        return this.updateSetting('showChrome', !!show, cb);
     }
 
     /**
@@ -319,6 +312,12 @@ class Graphistry extends Observable {
      */
     static addFilter(expr, cb) {
 
+        const { view } = this;
+
+        return new this(view.call('filters.add', expr)
+            .map(({ json }) => json.toJSON())
+            .do((v) => cb ? cb(null, v) : undefined, cb)
+            .toPromise());
     }
 
     /**
@@ -333,6 +332,12 @@ class Graphistry extends Observable {
      * graphistry.addExclusion('degree > 0');
      */
     static addExclusion(expr, cb) {
+        const { view } = this;
+
+        return new this(view.call('exclusions.add', expr)
+            .map(({ json }) => json.toJSON())
+            .do((v) => cb ? cb(null, v) : undefined, cb)
+            .toPromise());
 
     }
 
@@ -369,6 +374,40 @@ class Graphistry extends Observable {
      */
     static updateSetting(name, val, cb) {
 
+        const lookup = {
+
+            //models/toolbar.js
+            'showChrome': ['view', 'toolbar.visible'],
+
+            //models/scene/scene.js
+            'showArrows':   ['view', 'scene.renderer.showArrows'],
+            'pruneOrphans': ['view', 'scene.renderer.pruneOrphans'],
+            'background':   ['view', 'scene.renderer.background.color'],
+            'edgeOpacity':  ['view', 'scene.renderer.edges.opacity'],
+            'edgeSize':     ['view', 'scene.renderer.edges.scaling'],
+            'pointOpacity': ['view', 'scene.renderer.points.opacity'],
+            'pointSize':    ['view', 'scene.renderer.points.scaling'],
+
+            //models/camera.js
+            'zoom': ['view', 'scene.camera.zoom'],
+
+            //models/label.js
+            'labelOpacity': ['view', 'scene.labels.opacity'],
+            'labelEnabled': ['view', 'scene.labels.enabled'],
+            'labelPOI': ['view', 'scene.labels.poiEnabled'],
+            'labelColor': ['view', 'scene.labels.foreground.color'],
+            'labelBackground': ['view', 'scene.labels.background.color'],
+
+            //models/layout.js => viz-worker/simulator/layout.config.js:
+            'precisionVsSpeed': ['view', 'layout.options.tau']
+
+        };
+
+        const [model, path] = lookup[name];
+
+        return new this(this[model].set($value(path, val))
+            .map(({ json }) => json.toJSON())
+            .toPromise());
     }
 
     /**
@@ -381,7 +420,7 @@ class Graphistry extends Observable {
      * @return {Promise} The result of the callback
      */
     static updateZoom(level, cb) {
-
+        return this.updateSetting('zoom', level, cb);
     }
 
     /**
@@ -393,8 +432,59 @@ class Graphistry extends Observable {
      * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
      */
-    static subscribeLabels(subscriptions, cb) {
+    static subscribeLabels({ onChange, onExit }, cb) {
 
+        const labelsStream = this.labelsStream || (this.labelsStream = this
+            .fromEvent(window, 'message')
+            .filter(({ data }) => data &amp;&amp; data.type === 'labels-update')
+            .map(({ data } = {}) => data.labels || [])
+            .scan((sources, labels) => {
+
+                const { labelsById, newSources } = labels.reduce((memo, label) => {
+
+                    const { id } = label;
+                    const { labelsById, newSources } = memo;
+
+                    const source = (id in sources) &amp;&amp;
+                        sources[id] || new ReplaySubject(1);
+
+                    if (id in sources) {
+                        delete sources[id];
+                    }
+
+                    labelsById[id] = label;
+                    newSources[id] = source;
+
+                    return memo;
+                },  { labelsById: {}, newSources: Object.create(null) });
+
+                for (const id in sources) {
+                    sources[id].complete();
+                }
+
+                for (const id in newSources) {
+                    newSources[id].next(labelsById[id]);
+                }
+
+                return newSources;
+            }, Object.create(null))
+            .multicast(() => new ReplaySubject(1))
+            .let((connectable) => {
+                connectable.connect();
+                return connectable.refCount();
+            })
+        );
+
+        return labelsStream.mergeMap(
+                (sources) => Object.keys(sources),
+                (sources, id) => sources[id]
+            )
+            .mergeMap((group) => group
+                .do(({ id, type, pageX, pageY }) => onChange &amp;&amp; onChange(id, type, pageX, pageY))
+                .takeLast(1)
+                .do(({ id, type }) => onExit &amp;&amp; onExit(id, type))
+            )
+            .subscribe();
     }
 
     /**
@@ -407,7 +497,7 @@ class Graphistry extends Observable {
      * @return {Promise} The result of the callback
      */
     static unsubscribeLabels(cb) {
-
+        console.warn('not implemented');
     }
 }
 
@@ -519,6 +609,7 @@ function GraphistryJS(iFrame) {
 }
 
 import 'rxjs/add/operator/do';
+import 'rxjs/add/operator/let';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/last';
 import 'rxjs/add/operator/take';
@@ -526,6 +617,7 @@ import 'rxjs/add/operator/delay';
 import 'rxjs/add/operator/merge';
 import 'rxjs/add/operator/concat';
 import 'rxjs/add/operator/filter';
+import 'rxjs/add/operator/finally';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/concatMap';
 import 'rxjs/add/operator/multicast';
@@ -574,7 +666,7 @@ function wrapStaticObservableMethods(Observable, Graphistry) {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.2</a> on Sun Oct 30 2016 18:26:14 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.2</a> on Mon Nov 07 2016 14:03:26 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>

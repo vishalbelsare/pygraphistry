@@ -214,6 +214,7 @@ class Graphistry extends Observable {
      * Close the filters panel
      * @method Graphistry.closeFilters
      * @return {Promise} The result of the callback
+     * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
      *         window.g = g;
@@ -233,7 +234,7 @@ class Graphistry extends Observable {
 
     /**
      * Run one step of Graphistry's clustering algorithm
-     * @method Graphistry.startClustering
+     * @method Graphistry.tickClustering
      * @static
      * @return {Promise} The result of the callback
      * @example
@@ -253,6 +254,24 @@ class Graphistry extends Observable {
             .toPromise());
     }
 
+    /**
+     * Center the view of the graph
+     * @method Graphistry.autocenter
+     * @static
+     * @param {number} percentile - Controls sensitivity to outliers
+     * @param {function} [cb] - Callback function of type callback(error, result)
+     * @return {Promise} The result of the callback
+     * @example
+     * GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         console.log('centering');
+     *         return g.autocenter(.90);
+     *     })
+     */
+    static autocenter(percentile, cb) {
+
+    }
 
     /**
      * Center the view of the graph
@@ -260,6 +279,7 @@ class Graphistry extends Observable {
      * @static
      * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
+     * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
      *         window.g = g;
@@ -276,13 +296,14 @@ class Graphistry extends Observable {
     /**
      * Save the current workbook. A saved workbook will persist the analytics state
      * of the visualization, including active filters and exclusions
-     * @method Graphistry.autocenter
+     * @method Graphistry.saveWorkbook
      * @static
      * @return {Promise} The result of the callback
+     * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
      *         window.g = g;
-     *         return g.saveWorkbook(.90);
+     *         return g.saveWorkbook();
      *     })
      */
     static saveWorkbook() {
