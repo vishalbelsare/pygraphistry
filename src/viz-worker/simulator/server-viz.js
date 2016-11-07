@@ -265,33 +265,51 @@ VizServer.prototype.resetState = function (dataset, socket) {
 };
 
 
-function maskFromPointsByConnectingEdges (pointMask, graph) {
-    return new DataframeMask(graph.dataframe,
+function maskFromPointsByConnectingEdges (pointMask, {dataframe, simulator}) {
+    return new DataframeMask(dataframe,
         pointMask,
-        pointMask === undefined ? undefined : graph.simulator.connectedEdges(pointMask)
+        pointMask === undefined ? undefined : simulator.connectedEdges(pointMask)
     );
 }
 
 
+
+
+export function readSelectionCore ({dataframe, simulator}, type, query, cb) {
+
+    const { sel, page, per_page, sort_by, order, search } = query;
+
+    return simulator.selectNodesInRect(sel)
+    .then(
+        (pointMask) => maskFromPointsByConnectingEdges(pointMask, {dataframe, simulator})
+    )
+    .then((lastSelectionMask) => {
+        const start = (page - 1) * per_page;
+        const end = start + per_page;
+        const data = sliceSelection(dataframe, type, lastSelectionMask, start, end,
+                                    sort_by, order === 'asc', search);
+        _.extend(data, {
+            page: page
+        });
+
+        if (cb) cb(null, data);
+        return data;
+    }).fail(function (err) {
+        console.log('======= fail whale');
+        if (cb) cb(err);
+        log.makeQErrorHandler(logger, 'readSelectionCore qLastSelectionIndices')(err);
+    });
+};
+
 VizServer.prototype.readSelection = function (type, query, res) {
+    const { send } = res;
+    query.page = parseInt(query.page);
+    query.per_page = parseInt(query.per_page);
+
     this.graph.take(1).do((graph) => {
-        const {dataframe} = graph;
-        graph.simulator.selectNodesInRect(query.sel).then(
-            (pointMask) => maskFromPointsByConnectingEdges(pointMask, graph)
-        ).then((lastSelectionMask) => {
-            const page = parseInt(query.page);
-            const pageSize = parseInt(query.per_page);
-            const start = (page - 1) * pageSize;
-            const end = start + pageSize;
-            const data = sliceSelection(dataframe, type, lastSelectionMask, start, end,
-                                        query.sort_by, query.order === 'asc', query.search);
-            _.extend(data, {
-                page: page
-            });
-
-            res.send(data);
-        }).fail(log.makeQErrorHandler(logger, 'read_selection qLastSelectionIndices'));
-
+        return readSelectionCore(graph, type, query, function (err, data) {
+            if (!err) return send(data); //caller handles logging
+        });
     }).subscribe(
         _.identity,
         (err) => {
@@ -299,6 +317,7 @@ VizServer.prototype.readSelection = function (type, query, res) {
         }
     );
 };
+
 
 VizServer.prototype.tickGraph = function (cb) {
     this.graph.take(1).do((graphContent) => {
@@ -2053,4 +2072,4 @@ VizServer.clHealthCheck = function () {
     }
 };
 
-module.exports = VizServer;
+export default VizServer;
