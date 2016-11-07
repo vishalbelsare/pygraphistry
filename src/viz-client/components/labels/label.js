@@ -82,10 +82,6 @@ function LabelTitle ({ type, title, onExclude, onPinChange }) {
                         }>
                 <a className={styles['exclude-by-title']}
                     onClick={ preventPropagation(() => onExclude && onExclude({ type, field: '_title', value: title })) }>
-                    <i className={classNames({
-                        [styles['fa']]: true,
-                        [styles['fa-ban']]: true
-                    })}/>
                 </a>
             </OverlayTrigger>
         </div>
@@ -129,7 +125,7 @@ function LabelRow ({ type, title,
                     <span className={styles['label-color-pill']}
                           style={{ backgroundColor: new Color(value).rgbString() }} />}
 
-                    <div className={styles['graph-label-icons']}>
+                    <div className={styles['graph-label-icons']} style={{display:"none"}}>
                         <OverlayTrigger trigger={['hover']}
                                         placement='bottom'
                                         overlay={
