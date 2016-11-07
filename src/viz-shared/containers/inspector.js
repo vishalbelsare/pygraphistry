@@ -102,7 +102,7 @@ Inspector = container({
 
 
         const start = rowsPerPage * (page - 1);
-        const stop = start + rowsPerPage;
+        const stop = start + Math.max(rowsPerPage, 1) - 1;
 
         return `{
             id, name, open, openTab,
