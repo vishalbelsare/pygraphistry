@@ -145,6 +145,70 @@ class Graphistry extends Observable {
         }
     }
 
+    /**
+     * Toggle inspector panel
+     * @method Graphistry.toggleInspector
+     * @param {boolean} [turnOn] - Whether to make panel visible
+     * @return {Promise} The result of the callback
+     * @example
+     *  GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         console.log('opening inspector panel');
+     *         return g.toggleInspector(true);
+     *     })
+     */
+    static toggleInspector(turnOn) {
+        const { view } = this;
+        if (!turnOn) {
+            return new this(view.set(
+                $value(`panels.bottom`, undefined),
+                $value(`inspector.controls[0].selected`, false),
+            )
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+        } else {
+            return new this(view.set(
+                $value(`inspector.controls[0].selected`, true),
+                $value(`timebar.controls[0].selected`, false),
+                $value(`panels.bottom`, $ref(view._path.concat(`inspector`)))
+            )
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+        }
+    }
+
+    /**
+     * Toggle histogram panel
+     * @method Graphistry.toggleHistograms
+     * @param {boolean} [turnOn] - Whether to make panel visible
+     * @return {Promise} The result of the callback
+     * @example
+     *  GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         console.log('opening histogram panel');
+     *         return g.toggleHistograms(true);
+     *     })
+     */
+    static toggleHistograms(turnOn) {
+        const { view } = this;
+        if (!turnOn) {
+            return new this(view.set(
+                $value(`panels.right`, undefined),
+                $value(`histograms.controls[0].selected`, false)
+            )
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+        } else {
+            return new this(view.set(
+                $value(`histograms.controls[0].selected`, true),
+                $value(`panels.right`, $ref(view._path.concat(`histograms`)))
+            )
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+        }
+    }
 
     /**
      * Close the filters panel
