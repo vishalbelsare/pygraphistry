@@ -19,6 +19,8 @@ export function initWorkbookApi(app, config) {
         (req, res) => uploadWorkbookRequestHandler(req, res, localCache, config)
     );
 
+    app.get('/workbook/:workbook',
+        (req, res) => downloadWorkbookRequestHandler(req, res, localCache, config)
     );
 }
 
@@ -105,24 +107,72 @@ function saveWorkbook({ workbook, config, localCache }) {
 }
 
 
-// /**
-//  *  Fetches a saved workbook, trying local disk cache first, then S3.
-//  */
-// function fetchWorkbook(workbookId, s3Cache, { S3, BUCKET }) {
-//     const workbookURL = makeWorkbookURL(workbookId);
-//     return Observable.defer(() => {
-//         return Observable.from(s3Cache.get(workbookURL))
-//             .do(() => logger.debug('Got workbook from cache'))
-//             .catch((e) =>
-//                 Observable.from(
-//                     s3.download(S3, BUCKET, workbookURL.pathname, { expectCompressed: true })
-//                 )
-//                 .do(() => logger.debug('Got workbook from S3'))
-//                 .mergeMap(
-//                     (response) => s3Cache.put(workbookURL, response),
-//                     (response, x) => response
-//                 )
-//             )
-//             .map((response) => JSON.parse(response));
-//     });
-// }
+
+
+function downloadWorkbookRequestHandler(req, res, localCache, config) {
+    logger.info({req, res}, `Workbook download request received`);
+
+    if(!req.params.workbook) {
+        logger.warn({req, res}, `Error: workbook download request did not specify a workbook ID to download`);
+
+        res.status(404).json({
+            success: false,
+            error: `No workbook ID specified to download`
+        });
+
+        return;
+    }
+
+    const workbookId = req.params.workbook;
+    const S3 = config.S3;
+    const BUCKET = config.BUCKET;
+
+    return fetchWorkbook({workbookId, localCache, S3, BUCKET})
+        .subscribe(
+            (workbook) => {
+                logger.info({req, res, workbook: workbookId}, `Fetched workbook successfully. Responding to download request with its contents.`);
+                res.status(200).json(workbook);
+            },
+            (err) => {
+                logger.warn({req, res, err, workbook: workbookId}, `Error fetching requested workbook for download request. Sending 404 to client.`);
+                res.status(404).json({
+                    success: false,
+                    error: `Workbook with ID "${workbookId}" could not be found, or there was an error retrieving it.`
+                });
+            }
+        );
+}
+
+
+/**
+ *  Fetches a saved workbook, trying local disk cache first, then S3.
+ */
+function fetchWorkbook({workbookId, localCache, S3, BUCKET }) {
+    const workbookURL = makeWorkbookURL(workbookId);
+
+    return Observable.from(localCache.get(workbookURL))
+        .do(() => logger.debug({workbook: workbookId}, `Workbook found in local storage cache. Will fetch local copy and skip S3.`))
+        .map((workbookFileBuffer) => workbookFileBuffer.toString())
+        .catch( (err) => {
+            logger.debug({err, workbook: workbookId}, `Could not fetch workbook from local storage cache. Will try to fetch from S3 bucket ${BUCKET}.`);
+
+            // Download workbook from S3, and cache it locally
+            return Observable
+                .from(s3.download(S3, BUCKET, workbookURL.pathname, {expectCompressed: true}))
+                .mergeMap((s3WorkbookContent) => {
+                    logger.debug({workbook: workbookId}, `Fetched workbook from S3. Will cache workbook locally for future use.`);
+
+                    // Flat map the 's3 download complete' item to an Observable that merges that
+                    // item with an Observable which saves the workbook to local cache (ignoring
+                    // errrors and emitted items from the latter).
+                    return Observable.from(localCache.put(workbookURL, s3WorkbookContent))
+                        .catch((cacheErr) => {
+                            logger.warn({err: cacheErr, workbook: workbookId}, `Error trying to cache workbook from S3 locally.`);
+                            return Observable.empty();
+                        })
+                        .ignoreElements()
+                        .merge(Observable.of(s3WorkbookContent));
+                });
+        })
+        .map((s3WorkbookContent) => JSON.parse(s3WorkbookContent));
+}
