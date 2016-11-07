@@ -53,18 +53,22 @@ export function inspector(path, base) {
 function queryPage ({readSelection}, {view, openTab, range, searchTerm, sortKey, sortOrder}) {
     const {from, to} = range;
 
-    return readSelection({
-        view,
-        type: openTab === 'points' ? 'point' : 'edge',
-        query: {
-            sel: {all: true},
-            page: 1,
-            per_page: to - from + 1,
-            sort_by: !sortKey ? null : sortKey,
-            order: sortOrder,
-            search: searchTerm
-        }
-    })
+    const perPage = to - from + 1;
+    const page = 1 + Math.floor(to / perPage);
+
+    const query =
+        {
+            type: openTab === 'points' ? 'point' : 'edge',
+            query: {
+                sel: {all: true},
+                page: page,
+                per_page: to - from + 1,
+                sort_by: !sortKey ? null : sortKey,
+                order: sortOrder,
+                search: searchTerm
+            }
+        };
+    return readSelection({view, ...query });
 }
 
 function generateQueries(

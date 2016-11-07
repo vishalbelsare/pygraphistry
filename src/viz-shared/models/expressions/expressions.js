@@ -65,6 +65,11 @@ export function expression(inputOrProps = {
     if (inputOrProps && typeof inputOrProps === 'string') {
         input = inputOrProps;
         query = parseUtil(parser, inputOrProps, { startRule: 'start' });
+        if (query.error) {
+            return {query};
+        } else if (!query.ast) {
+            return {query: {error: 'no ast'}};
+        }
         const parts = getExprType(query.ast);
         if (parts) {
             componentType = parts.componentType;
