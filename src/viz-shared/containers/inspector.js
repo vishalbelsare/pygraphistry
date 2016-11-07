@@ -1,9 +1,13 @@
+import {
+    atom as $atom,
+} from '@graphistry/falcor-json-graph';
+
 import { container } from '@graphistry/falcor-react-redux';
 
 import { Inspector as InspectorComponent } from '../components/inspector/inspector';
 import {
     selectInspectorTab, setInspectorPage, setInspectorSortKey,
-    setInspectorSortOrder, setInspectorSearchTerm
+    setInspectorSortOrder, setInspectorSearchTerm, setInspectorColumns
 } from 'viz-shared/actions/inspector';
 
 import _ from 'underscore';
@@ -31,11 +35,11 @@ let Inspector = ({
         openTab = 'points', currentQuery = {},
 
         selectInspectorTab, setInspectorPage, setInspectorSortKey,
-        setInspectorSortOrder, setInspectorSearchTerm,
+        setInspectorSortOrder, setInspectorSearchTerm, setInspectorColumns,
 
         templates = {length: 0}, rows }) => {
 
-    const { searchTerm = '', sortKey, sortOrder, rowsPerPage=6, page=1 } = currentQuery;
+    const { searchTerm = '', sortKey, sortOrder, rowsPerPage=6, page=1, columns=[] } = currentQuery;
 
     const sortBy = coerceSortKey(templates, openTab, sortKey);
 
@@ -49,13 +53,14 @@ let Inspector = ({
     }
 
     return <InspectorComponent
-        {...{ searchTerm, sortKey: sortBy, sortOrder, rowsPerPage } }
-        page={ page }
+        {...{ searchTerm, sortKey: sortBy, sortOrder, rowsPerPage, page } }
+        columns={ columns.columns? columns.columns : columns }
         numPages={Math.ceil(count / rowsPerPage)}
         open={open} openTab={openTab} templates={getTemplates(templates, openTab)}
         rows={currentRows}
         onPageSelect={setInspectorPage}
         onSelect={selectInspectorTab}
+        onColumnsSelect={setInspectorColumns}
         toggleColumnSort={ ({name}) => {
             if (name === sortBy) {
                 setInspectorSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -86,7 +91,7 @@ Inspector = container({
         if (!rowsPerPage || !hasAllQueryProps || !hasAllTemplateNames) {
             return `{
                 id, name, open, openTab,
-                currentQuery: { searchTerm, sortKey, sortOrder, rowsPerPage, page },
+                currentQuery: { searchTerm, sortKey, sortOrder, rowsPerPage, page, columns },
                 templates: {
                     length, [0...${templates.length}]: {
                         name, dataType, identifier, componentType
@@ -101,7 +106,7 @@ Inspector = container({
 
         return `{
             id, name, open, openTab,
-            currentQuery: { searchTerm, sortKey, sortOrder, rowsPerPage, page },
+            currentQuery: { searchTerm, sortKey, sortOrder, rowsPerPage, page, columns },
             templates: {
                 length, [0...${templates.length}]: {
                     name, dataType, identifier, componentType
@@ -127,7 +132,7 @@ Inspector = container({
     },
     dispatchers: {
         selectInspectorTab, setInspectorPage, setInspectorSortKey,
-        setInspectorSortOrder, setInspectorSearchTerm
+        setInspectorSortOrder, setInspectorSearchTerm, setInspectorColumns
     }
 })(Inspector);
 

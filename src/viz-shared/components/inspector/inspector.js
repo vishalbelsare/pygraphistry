@@ -9,10 +9,13 @@ import {
 
 import { Tab, Tabs, Table, Pagination, FormControl, InputGroup, Button } from 'react-bootstrap';
 
+import ColumnPicker from '../../containers/ColumnPicker';
+
 import _ from 'underscore';
 
 const propTypes = {
-    templates: React.PropTypes.array,
+    templates: React.PropTypes.array, //possible
+    columns: React.PropTypes.array, //render
     rows: React.PropTypes.array,
     openTab: React.PropTypes.string,
     searchTerm: React.PropTypes.string,
@@ -23,7 +26,8 @@ const propTypes = {
     page: React.PropTypes.number,
     rowsPerPage: React.PropTypes.number,
     onSelect: React.PropTypes.func,
-    onPageSelect: React.PropTypes.func
+    onPageSelect: React.PropTypes.func,
+    onColumnsSelect: React.PropTypes.func
 };
 
 const datatablePropTypes =
@@ -42,7 +46,11 @@ class DataTable extends React.Component {
 
         const firstRow = this.props.rowsPerPage * (this.props.page - 1);
 
-        const { templates, entityType } = this.props;
+        const { templates, columns = [], entityType } = this.props;
+
+        const renderColumns = columns.length ? columns : templates;
+        const templatesArray = _.range(0, templates.length).map((i) => templates[i]);
+
 
         return (
             <div>
@@ -74,13 +82,24 @@ class DataTable extends React.Component {
                         </Button>
                     </InputGroup>*/}
 
+                    <span style={{float: 'right'}}>
+                        <ColumnPicker
+                            id="InspectorColumnPicker"
+                            placeholder="Pick columns"
+                            value={columns}
+                            options={templatesArray}
+                            onChange={ (columns) => {
+                                return this.props.onColumnsSelect({columns})
+                            } }
+                        />
+                    </span>
 
                 </div>
                 <div className={styles['inspector-table-container']}>
                 <Table className={styles['inspector-table']}
                     striped={true} bordered={true} condensed={true} hover={true}>
                 <thead>
-                    {templates.map(({name}) => (
+                    {renderColumns.map(({name}) => (
                         <th  className={ this.props.sortKey === name ? styles['isSorting'] : null }
                                 onClick={ () => this.props.toggleColumnSort({name}) }>
                             {name === '_title' ? entityType : name}
@@ -101,7 +120,7 @@ class DataTable extends React.Component {
                 <tbody>{
                     _.range(firstRow, firstRow + this.props.rowsPerPage)
                         .map((row) => (<tr>{
-                            templates.map(({name}) => (<td>{
+                            renderColumns.map(({name}) => (<td>{
                                 this.props.rows && this.props.rows[row]
                                     ? this.props.rows[row][name]
                                     : '\u00a0' // nbsp forces height sizing

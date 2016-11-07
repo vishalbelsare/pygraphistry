@@ -77,7 +77,6 @@ function Timebar() {
     );
 }
 
-
 // function Histograms() {
 //     return (
 //         <h1>Histograms</h1>

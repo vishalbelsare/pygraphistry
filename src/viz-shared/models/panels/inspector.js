@@ -23,6 +23,7 @@ export function inspector(view) {
                     sortOrder: 'asc', // or 'desc'
                     rowsPerPage: 6, //fix CSS if we want to do more
                     page: 1,
+                    columns: $atom([])
                     //rows: $ref(`${view}.inspector.rows.points.search-.community_infomap.asc`)
                 },
                 edges: { //table
@@ -31,6 +32,7 @@ export function inspector(view) {
                     sortOrder: 'asc', // or 'desc'
                     rowsPerPage: 6, //fix CSS if we want to do more
                     page: 1,
+                    columns: $atom([])
                     //rows: $ref(`${view}.inspector.rows.edges.search-._title.asc`),
                 }
             },
