@@ -5,14 +5,18 @@ var _ = require('underscore');
 var config = require('@graphistry/config')();
 
 
+function inBrowser() {
+    return typeof (window) !== 'undefined' && window.window === window;
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Error serializer
 //
 // A custom Bunyan serializer for `err` fields. Acts exactly like the regular Bunyan err serializer,
 // except that the stack trace of the error is made an array by splitting the string on newlines.
 ////////////////////////////////////////////////////////////////////////////////
-
-
 
 var _stackRegExp = /at (?:(.+)\s+)?(?:\()?(?:(.+?):(\d+):(\d+)|([^)]+))(?:\))?/;
 
@@ -56,13 +60,53 @@ function errSerializer(e) {
 }
 
 
+function BrowserConsoleStream() {
+    this.levelToConsole = {
+        'trace': 'debug',
+        'debug': 'debug',
+        'info': 'info',
+        'warn': 'warn',
+        'error': 'error',
+        'fatal': 'error',
+    }
+
+    this.fieldsToOmit = [
+        'v',
+        'name',
+        'fileName',
+        'pid',
+        'hostname',
+        'level',
+        'module',
+        'time',
+        'msg'
+    ];
+}
+
+
+BrowserConsoleStream.prototype.write = function (rec) {
+    const levelName = bunyan.nameFromLevel[rec.level];
+    const method = this.levelToConsole[levelName];
+    const prunedRec = _.omit(rec, this.fieldsToOmit);
+
+    if (_.isEmpty(prunedRec)) {
+        console[method](rec.msg);
+    } else if ('err' in prunedRec){
+        console[method](rec.err, rec.msg);
+    } else {
+        console[method](prunedRec, rec.msg);
+    }
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Parent logger
 //
 // A global singleton logger that all module-level loggers are children of.
 ////////////////////////////////////////////////////////////////////////////////
 
-function createParentLogger() {
+function createServerLogger() {
     var serializers = _.extend({}, bunyan.stdSerializers, {
         err: errSerializer
     });
@@ -79,7 +123,7 @@ function createParentLogger() {
         ];
     }
 
-    return bunyan.createLogger({
+    const logger = bunyan.createLogger({
         src: config.LOG_SOURCE,
         name: 'graphistry',
         metadata: {
@@ -88,23 +132,36 @@ function createParentLogger() {
         serializers: serializers,
         streams: streams
     });
+
+    //add any additional logging methods here
+    logger.die = function(err, msg) {
+        logger.fatal(err, msg);
+        logger.fatal('Exiting process with return code of 60 due to previous fatal error');
+        process.exit(60);
+    };
+
+    process.on('SIGUSR2', function () {
+        logger.reopenFileStreams();
+    });
+
+    return logger;
 }
 
+function createClientLogger() {
+    return bunyan.createLogger({
+        name: 'graphistry',
+        streams: [
+            {
+                level: 'info',
+                stream: new BrowserConsoleStream(),
+                type: 'raw'
+            }
+        ]
+    });
+}
 
-var parentLogger = createParentLogger();
+const parentLogger = inBrowser() ? createClientLogger() : createServerLogger();
 
-
-//add any additional logging methods here
-
-parentLogger.die = function(err, msg) {
-    parentLogger.fatal(err, msg);
-    parentLogger.fatal('Exiting process with return code of 60 due to previous fatal error');
-    process.exit(60);
-};
-
-process.on('SIGUSR2', function () {
-    parentLogger.reopenFileStreams();
-});
 
 
 ////////////////////////////////////////////////////////////////////////////////
