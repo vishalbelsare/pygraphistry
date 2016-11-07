@@ -11,6 +11,10 @@ import {
     error as $error
 } from '@graphistry/falcor-json-graph';
 
+import logger from '@graphistry/common/logger.js';
+const log = logger.createLogger('pivot-app', __filename);
+
+
 export function routes(services) {
     return ([]
         .concat(app(services))
@@ -37,11 +41,13 @@ function wrapRouteHandler(route, handler) {
     const originalHandler = route[handler];
 
     return function routeHandlerWrapper(...args) {
+        log.trace(args, `Falcor ${handler}`);
         return Observable
             .defer(() => originalHandler.apply(this, args) || [])
             .map(mapObjectsToAtoms)
+            .do(res => log.trace(res, 'Faclor reply'))
             .catch(e => {
-                const code = logErrorWithCode(e);
+                const code = logErrorWithCode(log, e);
                 return Observable.from([
                     $pathValue('serverStatus',
                         $error({

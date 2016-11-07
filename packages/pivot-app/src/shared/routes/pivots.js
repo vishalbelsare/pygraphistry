@@ -10,6 +10,9 @@ import {
     setHandler,
     logErrorWithCode
 } from './support';
+import logger from '@graphistry/common/logger.js';
+const log = logger.createLogger('pivot-app', __filename);
+
 
 export function pivots({loadPivotsById, searchPivot}) {
     const getPivotsHandler = getHandler(['pivot'], loadPivotsById);
@@ -46,6 +49,7 @@ export function pivots({loadPivotsById, searchPivot}) {
 
 function searchPivotCallRoute({ loadPivotsById, searchPivot }) {
     return function(path, args) {
+        null.caca
         const pivotIds = path[1];
 
         // Needed in order to set 'Pivot #' Attribute (Demo)
@@ -67,7 +71,7 @@ function searchPivotCallRoute({ loadPivotsById, searchPivot }) {
 
 function captureErrorAndNotifyClient(pivotIds) {
     return function(e) {
-        const errorCode = logErrorWithCode(e);
+        const errorCode = logErrorWithCode(log, e);
         const status = {
             ok: false,
             code: errorCode,

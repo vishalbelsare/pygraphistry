@@ -5,6 +5,7 @@ import { hoistStatics } from 'recompose';
 import { connect, container } from '@graphistry/falcor-react-redux';
 import { Alert, Button } from 'react-bootstrap';
 
+
 function renderErrorBanner(serverStatus) {
     const title = serverStatus.title ? (<h4><b>{ serverStatus.title }</b></h4>) : null
 
@@ -32,7 +33,7 @@ function renderApp({ currentUser, serverStatus }) {
     return (
         <div>
             { serverStatus && !serverStatus.ok && renderErrorBanner(serverStatus) }
-            { screens[currentUser.activeScreen] }
+            { currentUser && screens[currentUser.activeScreen] }
             <DevTools/>
         </div>
     );

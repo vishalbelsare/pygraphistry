@@ -2,7 +2,9 @@ import { inspect } from 'util';
 const  { slice } = Array.prototype;
 import { Observable } from 'rxjs';
 import { mapObjectsToAtoms } from './mapObjectsToAtoms';
-import { captureErrorStacks } from './captureErrorStacks';
+import logger from '@graphistry/common/logger.js';
+const log = logger.createLogger('pivot-app', __filename);
+
 
 export function getHandler(lists, loader, props = {}) {
     return function handler(path) {
@@ -46,7 +48,6 @@ export function getHandler(lists, loader, props = {}) {
                 path[++pathId] = `${key}sById`;
                 path[++pathId] = data[key].id;
             }
-
             index = 0;
             count = idxs.length;
 
@@ -73,22 +74,11 @@ export function getHandler(lists, loader, props = {}) {
             return vals;
         });
 
-        return (values
-            .map(mapObjectsToAtoms)
-            /*.do((pv) => {
-                console.log(`get: ${JSON.stringify(path)}`);
-                if (pv.isMessage) {
-                    console.log(`additionalPath: ${JSON.stringify(pv.additionalPath)}`);
-                } else {
-                    console.log(`res: ${JSON.stringify(pv.path)}`, JSON.stringify(pv.value));
-                }
-            })*/
+        return values
             .do((pv) => {
                 if (!pv.isMessage && pv.value === undefined) {
-                    console.warn(`Get handler is returning undefined for ${JSON.stringify(path)}`)
+                    log.warn(`Get handler is returning undefined for ${JSON.stringify(path)}`)
                 }
-            })
-            .catch(captureErrorStacks)
-        );
+            });
     }
 }
