@@ -38,8 +38,9 @@ export function inspector(view) {
                 points: { //table
                     'search-': {  //search term -- "search:asdf xya"
                         'sort-': { //sort column
-                            'asc': [
-                                {
+                            'asc': {
+                                count: 100, //independent of cached range
+                                0: {
                                     "community_infomap": 0,
                                     "pagerank": "Mayer Leonard",
                                     "_title": "Kapowsin",
@@ -47,7 +48,8 @@ export function inspector(view) {
                                     "country": "United Kingdom",
                                     "company": "Ovolo",
                                     "favoriteNumber": 7
-                                }, {
+                                },
+                                1: {
                                     "community_infomap": 10,
                                     "pagerank": "Bullwinkle",
                                     "_title": "Moscow",
@@ -56,7 +58,7 @@ export function inspector(view) {
                                     "company": "ACME",
                                     "favoriteNumber": 10
                                 }
-                            ]
+                            }
                         }
                     }
                 }

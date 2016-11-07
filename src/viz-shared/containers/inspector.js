@@ -27,8 +27,10 @@ let Inspector = ({
 
     const sortBy = coerceSortKey(templates, openTab, sortKey);
 
+    var count = 0;
     var currentRows = undefined;
     try {
+        count = rows[openTab][`search-${searchTerm||''}`][`sort-${sortBy||''}`][sortOrder].count;
         currentRows = rows[openTab][`search-${searchTerm||''}`][`sort-${sortBy||''}`][sortOrder];
     } catch (e) {
         console.warn('Maybe exn', e);
@@ -86,6 +88,7 @@ Inspector = container({
                     'search-${searchTerm||''}': {
                         'sort-${sortBy||''}': {
                             ${sortOrder}: {
+                                count,
                                 [${start}..${stop}]: {
                                     ${ getTemplates(templates, openTab)
                                         .map(({name}) => name).join(', ') }
