@@ -15,11 +15,11 @@ export function inspector(view) {
             openTab: 'points', // 'edges', 'events', ...
             templates: $ref(`${view}.columns`),
             currentQuery: $ref(`${view}.inspector.queries.points`),
-            currentRows: $ref(`${view}.inspector.rows.points.search-.community_infomap.asc`),
+            currentRows: $ref(`${view}.inspector.rows.points.search-.sort-_title.asc`),
             queries: {
                 points: { //table
                     searchTerm: '',
-                    sortKey: '', //int or string column reference
+                    sortKey: '_title', //int or string column reference
                     sortOrder: 'asc', // or 'desc'
                     rowsPerPage: 6, //fix CSS if we want to do more
                     page: 1,
@@ -27,7 +27,7 @@ export function inspector(view) {
                 },
                 edges: { //table
                     searchTerm: '',
-                    sortKey: '', //int or string column reference
+                    sortKey: '_title', //int or string column reference
                     sortOrder: 'asc', // or 'desc'
                     rowsPerPage: 6, //fix CSS if we want to do more
                     page: 1,
@@ -39,25 +39,10 @@ export function inspector(view) {
                     'search-': {  //search term -- "search:asdf xya"
                         'sort-': { //sort column
                             'asc': {
-                                count: 100, //independent of cached range
-                                0: {
-                                    "community_infomap": 0,
-                                    "pagerank": "Mayer Leonard",
-                                    "_title": "Kapowsin",
-                                    "state": "Hawaii",
-                                    "country": "United Kingdom",
-                                    "company": "Ovolo",
-                                    "favoriteNumber": 7
-                                },
-                                1: {
-                                    "community_infomap": 10,
-                                    "pagerank": "Bullwinkle",
-                                    "_title": "Moscow",
-                                    "stata": null,
-                                    "country": "USSR",
-                                    "company": "ACME",
-                                    "favoriteNumber": 10
-                                }
+                                count: 0 //# search hits; independent of visible page
+                                //0: { field1, ... },
+                                //1: { field1, ... }
+                                //...
                             }
                         }
                     }

@@ -1,14 +1,22 @@
 import { container } from '@graphistry/falcor-react-redux';
 
 import { Inspector as InspectorComponent } from '../components/inspector/inspector';
-import { selectInspectorTab, setInspectorPage } from 'viz-shared/actions/inspector';
+import {
+    selectInspectorTab, setInspectorPage, setInspectorSortKey,
+    setInspectorSortOrder, setInspectorSearchTerm
+} from 'viz-shared/actions/inspector';
 
 import _ from 'underscore';
 
 
 function getTemplates(templates, openTab) {
     const componentToTab = {'point': 'points', 'edge': 'edges'};
+    const blacklist = {
+        '__defaultPointSize': true,
+        '__pointCommunity': true
+    };
     return templates
+        .filter(({name}) => !blacklist[name])
         .filter(({componentType}) => componentToTab[componentType] === openTab);
 }
 
@@ -21,7 +29,10 @@ function coerceSortKey(templates, openTab, sortKey) {
 
 let Inspector = ({
         openTab = 'points', currentQuery = {},
-        selectInspectorTab, setInspectorPage,
+
+        selectInspectorTab, setInspectorPage, setInspectorSortKey,
+        setInspectorSortOrder, setInspectorSearchTerm,
+
         templates = {length: 0}, rows }) => {
 
     const { searchTerm = '', sortKey, sortOrder, rowsPerPage=6, page=1 } = currentQuery;
@@ -37,6 +48,8 @@ let Inspector = ({
         console.warn('Maybe exn', e);
     }
 
+    console.log({currentQuery});
+
     return <InspectorComponent
         {...{ searchTerm, sortKey: sortBy, sortOrder, rowsPerPage } }
         page={ page }
@@ -44,7 +57,16 @@ let Inspector = ({
         open={open} openTab={openTab} templates={getTemplates(templates, openTab)}
         rows={currentRows}
         onPageSelect={setInspectorPage}
-        onSelect={selectInspectorTab}  />;
+        onSelect={selectInspectorTab}
+        toggleColumnSort={ ({name}) => {
+            if (name === sortBy) {
+                setInspectorSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+            } else {
+                setInspectorSortKey(name);
+                setInspectorSortOrder('asc');
+            }
+        }}
+        />;
 };
 
 
@@ -105,7 +127,10 @@ Inspector = container({
         }`;
 
     },
-    dispatchers: { selectInspectorTab, setInspectorPage }
+    dispatchers: {
+        selectInspectorTab, setInspectorPage, setInspectorSortKey,
+        setInspectorSortOrder, setInspectorSearchTerm
+    }
 })(Inspector);
 
 

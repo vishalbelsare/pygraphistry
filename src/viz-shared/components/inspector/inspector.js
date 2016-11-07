@@ -33,15 +33,6 @@ const datatablePropTypes =
 
 
 
-const datatableDefaultProps = {
-    toggleColumnSort: (field) => {
-        console.log('toggle column sort on', field);
-    },
-    handlePageSelect: (pageNumber) => {
-        console.log('handle page select of page', pageNumber);
-    }
-};
-
 class DataTable extends React.Component {
     constructor(props) {
         super(props);
@@ -51,7 +42,7 @@ class DataTable extends React.Component {
 
         const firstRow = this.props.rowsPerPage * (this.props.page - 1);
 
-        const { templates } = this.props;
+        const { templates, entityType } = this.props;
 
         console.log('PRINTING ROWS', {firstRow, rowsPerPage: this.props.rowsPerPage, page: this.props.page});
 
@@ -86,26 +77,27 @@ class DataTable extends React.Component {
 
 
                 </div>
+                <div className={styles['inspector-table-container']}>
                 <Table className={styles['inspector-table']}
                     striped={true} bordered={true} condensed={true} hover={true}>
                 <thead>
-                    {templates.map(({name}) => <th onClick={ () => this.props.toggleColumnSort({
-                        clickedField: name, currentField: this.props.sortKey, currentOrder: this.props.sortOrder
-                    })}>
-                        {name}
-                        { this.props.sortKey === name
-                            ? <i className={`
-                                ${styles['sort-active']}
-                                ${styles['fa']}
-                                ${styles['fa-fw']}
-                                ${styles['fa-sort-' + this.props.sortOrder]}`}></i>
-                            : <i className={`
-                                ${styles['sort-inactive']}
-                                ${styles['fa']}
-                                ${styles['fa-fw']}
-                                ${styles['fa-sort']}`}></i>
-                        }
-                    </th>)}
+                    {templates.map(({name}) => (
+                        <th  className={ this.props.sortKey === name ? styles['isSorting'] : null }
+                                onClick={ () => this.props.toggleColumnSort({name}) }>
+                            {name === '_title' ? entityType : name}
+                            { this.props.sortKey === name
+                                ? <i className={`
+                                    ${styles['sort-active']}
+                                    ${styles['fa']}
+                                    ${styles['fa-fw']}
+                                    ${styles['fa-sort-' + this.props.sortOrder]}`}></i>
+                                : <i className={`
+                                    ${styles['sort-inactive']}
+                                    ${styles['fa']}
+                                    ${styles['fa-fw']}
+                                    ${styles['fa-sort']}`}></i>
+                            }
+                        </th>))}
                 </thead>
                 <tbody>{
                     _.range(firstRow, firstRow + this.props.rowsPerPage)
@@ -113,17 +105,17 @@ class DataTable extends React.Component {
                             templates.map(({name}) => (<td>{
                                 this.props.rows && this.props.rows[row]
                                     ? this.props.rows[row][name]
-                                    : ''
+                                    : '\u00a0' // nbsp forces height sizing
                             }</td>))
                         }</tr>))
                 }</tbody>
             </Table>
+            </div>
         </div>);
     }
 }
 
 DataTable.propTypes = datatablePropTypes;
-DataTable.defaultProps = datatableDefaultProps;
 
 
 
