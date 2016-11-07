@@ -57,7 +57,9 @@ export function setupErrorHandlers(document, window, options) {
 
     return unhandledExceptions
         .merge(ajaxExceptions, ...consoleExceptions)
-        .mergeMap((json) => Observable.ajax.post(reportURL, json));
+        .mergeMap((json) => Observable.ajax.post(reportURL, json, {
+            'Content-Type': 'application/json'
+        }));
 
     function errorToJSON(type) {
         return function mapError(err) {

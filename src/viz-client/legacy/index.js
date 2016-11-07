@@ -13,6 +13,7 @@ export const cameraChanges = new ReplaySubject(1);
 export const viewConfigChanges = new ReplaySubject(1);
 export const isAnimating = new ReplaySubject(1);
 export const labelHover = new ReplaySubject(1);
+export const labelSettings = new ReplaySubject(1);
 export const labelRequests = new ReplaySubject(1);
 export const marqueeOn = new ReplaySubject(1);
 export const marqueeActive = new ReplaySubject(1);

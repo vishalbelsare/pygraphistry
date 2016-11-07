@@ -69,9 +69,9 @@ function getAppModel(options, socket) {
         source,
         recycleJSON: true,
         cache: getAppCache(),
-        scheduler: Scheduler.asap,
         treatErrorsAsValues: true,
-        allowFromWhenceYouCame: true,
+        scheduler: Scheduler.async,
+        allowFromWhenceYouCame: true
     });
     source.model = model;
     model.sink = new LocalDataSink(model.asDataSource());

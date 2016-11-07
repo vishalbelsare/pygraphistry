@@ -9,27 +9,54 @@ import { Observable, Scheduler } from 'rxjs';
 import {
     ADD_HISTOGRAM,
     REMOVE_HISTOGRAM,
-    UPDATE_HISTOGRAM,
-    HIGHLIGHT_HISTOGRAM,
-    CANCEL_HIGHLIGHT_HISTOGRAM
+
+    BIN_TOUCH_MOVE,
+    BIN_TOUCH_START,
+    BIN_TOUCH_CANCEL,
+
+    BIN_YSCALE_CHANGED,
+    BIN_ENCODING_CHANGED,
 } from 'viz-shared/actions/histograms';
 
 export function histograms(action$, store) {
-    return highlightHistogram(action$, store);
+    return Observable.merge(
+        addHistogram(action$, store),
+        updateHistogram(action$, store),
+        removeHistogram(action$, store),
+        highlightHistogramBin(action$, store)
+    ).ignoreElements();
 }
 
-function highlightHistogram(action$, store) {
+function addHistogram(action$) {
     return action$
-        .ofType(HIGHLIGHT_HISTOGRAM)
-        .groupBy(({ binKey }) => binKey)
-        .mergeMap((actionsById) => actionsById
-            .auditTime(0, Scheduler.animationFrame)
-            .switchMap(({ falcor, mask }) => falcor
-                .call('computeMask', [mask])
-            )
-            .takeUntil(action$
-                .ofType(CANCEL_HIGHLIGHT_HISTOGRAM)
-                .filter(({ binKey }) => group.key === binKey))
-        )
-        .ignoreElements();
+        .ofType(ADD_HISTOGRAM)
+        .mergeMap(({ name, dataType, componentType, falcor }) => (
+            falcor.call('add', [componentType, name, dataType])
+        ));
+}
+
+function updateHistogram(action$) {
+    return action$
+        .ofType(BIN_YSCALE_CHANGED, BIN_ENCODING_CHANGED)
+        .switchMap(({ falcor, key, value }) => (
+            falcor.set($value(key, value))
+        ));
+}
+
+function removeHistogram(action$) {
+    return action$
+        .ofType(REMOVE_HISTOGRAM)
+        .mergeMap(({ id, falcor }) => (
+            falcor.call('remove', [id])
+        ));
+}
+
+function highlightHistogramBin(action$) {
+    return action$
+        .ofType(BIN_TOUCH_MOVE)
+        .filter(({ event }) => event.buttons === 0)
+        .distinctUntilChanged(null, ({ index }) => index)
+        .switchMap(({ index, falcor }) => (
+            falcor.call('highlightBin', [index])
+        ))
 }

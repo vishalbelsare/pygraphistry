@@ -1,37 +1,176 @@
+import _ from 'underscore';
 import React, { PropTypes } from 'react';
-import { Tooltip, OverlayTrigger } from 'react-bootstrap';
-import {
-    Subject, Observable,
-    Subscription, ReplaySubject
-} from 'rxjs';
+import { Gestures } from 'rxjs-gestures';
+import { Observable } from 'rxjs/Observable';
+import styles from 'viz-shared/components/labels/style.less';
+import { curPoints, vboUpdates, cameraChanges, labelSettings } from 'viz-client/legacy';
+import { animationFrame as AnimationFrameScheduler } from 'rxjs/scheduler/animationFrame';
 
 import {
     compose,
     getContext,
-    shallowEqual
+    shallowEqual,
+    mapPropsStream
 } from 'recompose';
 
-import _ from 'underscore';
+import { Label } from './label';
 
-import Color from 'color';
-import {defaultFormat} from '../../streamGL/graphVizApp/contentFormatter.js';
+const WithPointsAndMousePosition = mapPropsStream((props) => props
+    .combineLatest(
+        Gestures.move().startWith({})
+            .distinctUntilChanged((a, b) => (
+                a.clientX === b.clientX &&
+                a.clientY === b.clientY
+            )),
+        cameraChanges.startWith({}),
+        Observable.fromEvent(window, 'resize')
+            .debounceTime(100).delay(50).startWith(null),
+        (props, { clientX = 0, clientY = 0 }) => ({
+            ...props, mouseX: clientX, mouseY: clientY,
+        })
+    )
+    .auditTime(0, AnimationFrameScheduler)
+    .withLatestFrom(curPoints
+        .map(({ buffer }) => new Float32Array(buffer)),
+        (props, points) => ({ ...props, points })
+    )
+);
 
-import styles from './style.less';
+class Labels extends React.Component {
+    componentWillMount() {
+        this.updateLabelSettings({}, this.props);
+    }
+    componentWillUpdate(nextProps, nextState) {
+        this.updateLabelSettings(this.props, nextProps);
+    }
+    render() {
 
+        let camera, canvas, matrix;
+        let { mouseX, mouseY, onLabelsUpdated,
+              highlight = null, selection = null,
+              labels = [], points = [], children = [],
+              renderState = null, renderingScheduler = null
+        } = this.props;
 
-function preventPropagation (f) {
-    return function (e) {
-        e.stopPropagation();
-        return f();
+        if (!renderState || !renderingScheduler || !(
+            camera = renderState.camera) || !(
+            canvas = renderState.canvas) || !(
+            matrix = camera.getMatrix())) {
+            children = [];
+        }
+
+        let childIndex = -1;
+        const updatesToSend = [];
+        const childrenToRender = [];
+        const childLen = children.length;
+
+        while (++childIndex < childLen) {
+
+            const label = labels[childIndex];
+            const child = children[childIndex];
+
+            if (!child || !label || (
+                label.type === undefined) || (
+                label.index === undefined || (
+                label.title === undefined))) {
+                continue;
+            }
+
+            const { type, index } = label;
+            const worldCoords = (type === 'edge') ?
+                label === selection ?
+                        getEdgeLabelPos(renderState, renderingScheduler, index)
+                    :   camera.canvas2WorldCoords(mouseX, mouseY, canvas, matrix)
+                :   { x: points[2 * index], y: points[2 * index + 1] };
+
+            if (!worldCoords) {
+                continue;
+            }
+
+            const { x, y } = camera.canvasCoords(worldCoords.x, worldCoords.y, canvas, matrix);
+
+            updatesToSend.push({
+                type,
+                id: index,
+                pageX: x,
+                pageY: y,
+            });
+
+            childrenToRender.push(React.cloneElement(child, {
+                style: {
+                    ...(child.props && child.props.style),
+                    transform: `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0px)`
+                }
+            }));
+        }
+
+        onLabelsUpdated &&
+            (updatesToSend.length) &&
+            onLabelsUpdated(updatesToSend);
+
+        return (
+            <div className={styles['labels-container']}>
+                {childrenToRender}
+            </div>
+        );
+    }
+    updateLabelSettings(currProps, nextProps) {
+        const { falcor, enabled, poiEnabled,
+                renderState, renderingScheduler } = nextProps;
+        if (!falcor || !renderState || !renderingScheduler || (
+            currProps.enabled === enabled &&
+            currProps.poiEnabled === poiEnabled)) {
+            return;
+        }
+        labelSettings.next({ falcor, enabled, poiEnabled,
+                             renderState, renderingScheduler });
     }
 }
 
+Labels = compose(
+    getContext({
+        falcor: PropTypes.object,
+        renderState: PropTypes.object,
+        onLabelsUpdated: PropTypes.func,
+        renderingScheduler: PropTypes.object,
+    }),
+    WithPointsAndMousePosition
+)(Labels);
 
+export { Labels };
+
+//Find label position (unadjusted and in model space)
+//  Currently just picks a midEdge vertex near the ~middle
+//  (In contrast, mouseover effects should use the ~Voronoi position)
+//  To convert to canvas coords, use Camera (ex: see labels::renderCursor)
+//  TODO use camera if edge goes off-screen
+//RenderState * int -> {x: float,  y: float}
+function getEdgeLabelPos (renderState, renderingScheduler, edgeIndex) {
+
+    var numRenderedSplits = renderState.config.numRenderedSplits;
+    var split = Math.floor(numRenderedSplits/2);
+
+    var appSnapshot = renderingScheduler.appSnapshot;
+    var midSpringsPos = appSnapshot.buffers.midSpringsPos;
+
+    if (!midSpringsPos) {
+        return undefined;
+    }
+
+    var midEdgesPerEdge = numRenderedSplits + 1;
+    var midEdgeStride = 4 * midEdgesPerEdge;
+    var idx = midEdgeStride * edgeIndex + 4 * split;
+
+    return {x: midSpringsPos[idx], y: midSpringsPos[idx + 1]};
+}
+
+
+/*{
 
 const propTypes = {
     opacity: React.PropTypes.number,
     background: React.PropTypes.any,
-    foreground: React.PropTypes.any,
+    color: React.PropTypes.any,
 
     poiEnabled: React.PropTypes.bool,
     enabled: React.PropTypes.bool,
@@ -48,6 +187,8 @@ const propTypes = {
 
 const defaultProps = {
     opacity: 1,
+    background: 'red',
+    color: 'white',
     poiEnabled: true,
     enabled: true,
     onClick: (({type, title}) => console.log('clicked', {type, title})),
@@ -55,171 +196,38 @@ const defaultProps = {
     onExclude: (({type, field, value}) => console.log('click exclude', {type, field, value})),
     onPinChange: (({type, title}) => console.log('click pin change', {type, title})),
     hideNull: true,
-    labels: []
-        //   {
-        //     type: 'point',
-        //     id: 'bullwinkle',
-        //     title: "the greatest moose",
+    labels: [
+            type: 'point',
+            id: 'bullwinkle',
+            title: "the greatest moose",
 
-        //     showFull: true, // expanded when :hover or .on
-        //     pinned: true,
+            showFull: false, // expanded when :hover or .on
+            pinned: true,
 
-        //     x: 200,
-        //     y: 30,
+            x: 200,
+            y: 30,
 
-        //     fields: [
-        //         //{key, value, ?displayName, dataType: 'color' or ?}
-        //         {key: 'field01', value: 0},
-        //         {key: 'field02', value: 'hello'},
-        //         {key: 'field03', value: 'world'},
-        //         {key: 'field04', value: 2000},
-        //         {key: 'field05', value: '#f00', dataType: 'color'},
-        //         {key: 'field06', value: '#ff0000', dataType: 'color'},
-        //         {key: 'field07', value: undefined},
-        //         {key: 'field08', value: null},
-        //         {key: 'field09', value: 'another'},
-        //         {key: 'field10isareallylongnameok', value: 'and another'},
-        //         {key: 'field11 is also a really long one', value: 24},
-        //         {key: 'field12', value: 'field value is quite long and will likely overflow'},
-        //         {key: 'field13', value: 'fieldvalueisquitelongandwilllikelyoverflow'},
-        //         {key: 'field14', value: 'and another'},
-        //         {key: 'field15', value: 'and another'},
-        //         {key: 'field16', value: 'and another'},
-        //         {key: 'field17', value: 'and another'}
-        //     ]
-        // }]
-}
-
-function LabelTitle ({onPinChange, onExclude, label}) {
-    const {type, title} = label;
-    return (
-        <div className={styles['graph-label-title']}>
-
-            <a href="#"
-                onClick={ preventPropagation( () => onPinChange({type, title})) }>
-                <i className={`
-                    ${styles['pin']}
-                    ${styles['fa']}
-                    ${styles['fa-lg']}
-                    ${styles['fa-thumb-tack']}`} /></a>
-            <span className={styles['label-type']}>{ type }</span>
-
-            <span className={styles['graph-label-title-text']}>{ title }</span>
-            <OverlayTrigger trigger={['hover']}
-                        placement='bottom'
-                        overlay={<Tooltip className={styles['label-tooltip']}
-                        id={`tooltip:title:${type}:${title}`}>
-                            Exclude if title: {title}</Tooltip>}>
-                <a className={styles['exclude-by-title']}
-                    onClick={ preventPropagation( () => onExclude({type, field: '_title', value: title})) }
-                >
-                    <i className={`${styles['fa']} ${styles['fa-ban']}`} />
-                </a>
-            </OverlayTrigger>
-
-        </div>);
-}
-
-function LabelRow ({field, value, displayName, dataType, onFilter, onExclude, label}) {
-    const {type, title} = label;
-
-    const displayString = displayName || defaultFormat(value, dataType);
-    if (displayString === null || displayString === undefined) {
-        return null;
-    }
-
-    return (
-        <tr className={styles['graph-label-pair']}>
-            <td className={styles['graph-label-key']}>
-                {field}
-            </td>
-            <td className={styles['graph-label-value']}>
-                <div className={styles['graph-label-value-wrapper']}>
-                    <span className={styles['graph-label-value-text']}>{displayString}</span>
-                    { dataType ==='color'
-                        ? <span className={styles['label-color-pill']}
-                            style={{backgroundColor: new Color(value).rgbString()}} />
-                        : null}
-                    <div className={styles['graph-label-icons']}>
-
-                        <OverlayTrigger trigger={['hover']}
-                            placement='bottom'
-                            overlay={<Tooltip className={styles['label-tooltip']}
-                                id={`tooltip:row:exclude${type}:${title}:${field}`}>
-                                    Exclude if "{type}:{field} = {value}"</Tooltip>}>
-                            <a className={styles['exclude-by-key-value']}
-                                onClick={ preventPropagation(() => onExclude({type, field, value}))}>
-                                <i className={`${styles['fa']} ${styles['fa-ban']}`} />
-                            </a>
-                        </OverlayTrigger>
-
-                        <OverlayTrigger trigger={['hover']}
-                            placement='bottom'
-                            overlay={<Tooltip className={styles['label-tooltip']}
-                                id={`tooltip:row:filter:${type}:${title}:${field}`}>
-                                    Filter for "{type}:{field} = {value}"</Tooltip>}>
-                            <a className={styles['filter-by-key-value']}
-                                onClick={ preventPropagation(() => onFilter({type, field, value}))}>
-                                <i className={`${styles['fa']} ${styles['fa-filter']}`} />
-                            </a>
-                        </OverlayTrigger>
-
-                    </div>
-                </div>
-            </td>
-        </tr>);
-}
-
-function LabelContents (props) {
-    return (
-        <div className={styles['graph-label-contents']}>
-            <table>
-                <tbody>{
-                    props.label.fields
-                        .sort((a, b) =>
-                            a.key.toLowerCase() < b.key.toLowerCase() ? -1
-                            : a.key.toLowerCase() > b.key.toLowerCase() ? 1
-                            : 0)
-                        .map( ({key,value,displayName,dataType}) =>
-                            <LabelRow
-                                field={key} value={value} displayName={displayName} dataType={dataType}
-                                {...props}
-                            />)
-                }</tbody>
-            </table>
-        </div>);
-}
-
-
-
-class DataLabel extends React.Component {
-
-    constructor(props) {
-        super(props);
-        console.log('label props', props);
-    }
-
-    render () {
-        return (<div
-            className={`
-                ${styles['graph-label']}
-                ${this.props.label.showFull ? styles['on'] : ''}
-                ${this.props.label.pinned ? styles['clicked'] : ''}`}
-            style={{ left: this.props.label.x, top: this.props.label.y }}
-            onClick={this.props.onClick.bind(null, {type: this.props.label.type, title: this.props.label.title})}
-            >
-            <div className={`
-                ${styles['graph-label-container']}
-                ${styles['graph-label-' + this.props.label.type]}`}>
-
-                <LabelTitle { ...this.props } />
-
-                <LabelContents { ...this.props } />
-
-            </div>
-        </div>)
-    }
-
+            fields: [
+                //{key, value, ?displayName, dataType: 'color' or ?}
+                {key: 'field01', value: 0},
+                {key: 'field02', value: 'hello'},
+                {key: 'field03', value: 'world'},
+                {key: 'field04', value: 2000},
+                {key: 'field05', value: '#f00', dataType: 'color'},
+                {key: 'field06', value: '#ff0000', dataType: 'color'},
+                {key: 'field07', value: undefined},
+                {key: 'field08', value: null},
+                {key: 'field09', value: 'another'},
+                {key: 'field10isareallylongnameok', value: 'and another'},
+                {key: 'field11 is also a really long one', value: 24},
+                {key: 'field12', value: 'field value is quite long and will likely overflow'},
+                {key: 'field13', value: 'fieldvalueisquitelongandwilllikelyoverflow'},
+                {key: 'field14', value: 'and another'},
+                {key: 'field15', value: 'and another'},
+                {key: 'field16', value: 'and another'},
+                {key: 'field17', value: 'and another'}
+            ]
+    ]
 }
 
 class Labels extends React.Component {
@@ -244,8 +252,6 @@ class Labels extends React.Component {
     }
 }
 
-
-
 Labels.propTypes = propTypes;
 Labels.defaultProps = defaultProps;
 
@@ -256,3 +262,5 @@ Labels = getContext({
 
 
 export { Labels };
+
+}*/

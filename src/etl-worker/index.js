@@ -54,7 +54,7 @@ const formParser = multer({
     })
     .fields(Array
         .from({ length: 16 })
-        .map((n) => ({ name: `data${n}`, maxCount: 1 }))
+        .map((n, k) => ({ name: `data${k}`, maxCount: 1 }))
         .concat(     { name: 'metadata', maxCount: 1 })
     );
 

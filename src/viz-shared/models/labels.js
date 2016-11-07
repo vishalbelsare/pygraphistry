@@ -14,7 +14,6 @@ export function labels(view) {
             edge: [], point: [],
             opacity: 1, enabled: true,
             timeZone: '', poiEnabled: true,
-            selection: $ref(`${view}.selection.label`),
             foreground: { color: new Color('#1f1f33') },
             background: { color: new Color('#ffffff').alpha(0.9) },
             settings: [

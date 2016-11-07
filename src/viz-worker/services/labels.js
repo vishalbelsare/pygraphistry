@@ -67,7 +67,7 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
             colorMappedByColumnName: {}
         });
 
-    return rows.map((row, labelIndex) => {
+    return rows.map((row, index) => {
 
         const title = row[titleColumnName];
         const names = columnNames.length && columnNames || Object.keys(row);
@@ -88,11 +88,16 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
             }
 
             return columns;
-        }, []);
+        }, [])
+        .sort((a, b) => (
+              a.key.toLowerCase() < b.key.toLowerCase() ? -1
+            : a.key.toLowerCase() > b.key.toLowerCase() ? 1
+            : 0
+        ));
 
         return {
             workbook, view, label: {
-                type: labelType, index: labelIndex, data: {
+                type: labelType, index: labelIndexes[index], data: {
                     title, columns
                 }
             }

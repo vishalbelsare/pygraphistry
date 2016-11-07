@@ -8,16 +8,22 @@ export * from './dataframe';
 export * from './histograms';
 export * from './expressions';
 export * from './sendFalcorUpdate';
+export * from './inspector';
 
 import { Observable } from 'rxjs';
-import { loadViews } from './views';
 import { loadLabels } from './labels';
 import { loadVGraph } from './vgraph';
+import { appendColumn, maskDataframe, tickLayout } from './dataframe';
+import { readSelection } from './inspector';
+import { loadViews, moveSelectedNodes } from './views';
 import { loadWorkbooks, saveWorkbookService } from './workbooks';
-import { maskDataframe } from './dataframe';
 import { sendFalcorUpdate } from './sendFalcorUpdate';
 import { loadNBody, setLayoutControl } from './nBody';
-import { loadHistograms, loadSelectionHistograms } from './histograms';
+import {
+    addHistogram, removeHistogram,
+    loadHistograms, loadSelectionHistograms,
+    computeMaskForHistogramBin
+} from './histograms';
 import { addExpression, updateExpression, removeExpression } from './expressions';
 
 export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }) {
@@ -28,6 +34,7 @@ export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }
     const saveWorkbook = saveWorkbookService(config, s3WorkbookCache);
 
     const loadViewsById = loadViews(loadDatasetNBody, loadWorkbooksById);
+    const moveSelectedNodesImpl = moveSelectedNodes(loadViewsById);
     const loadHistogramsById = loadHistograms(loadViewsById);
     const loadLabelsByIndexAndType = loadLabels(loadViewsById);
     const setLayoutControlById = setLayoutControl(loadViewsById);
@@ -37,23 +44,37 @@ export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }
     const removeExpressionById = removeExpression(loadViewsById);
     const updateExpressionById = updateExpression(loadViewsById);
 
+    const addHistogramImpl = addHistogram(loadViewsById);
+    const removeHistogramById = removeHistogram(loadViewsById);
+
     return {
         loadConfig,
         loadVGraph,
         loadViewsById,
         sendFalcorUpdate,
         loadWorkbooksById,
+
         saveWorkbook,
         loadHistogramsById,
         loadLabelsByIndexAndType,
         loadSelectionHistogramsById,
 
+        moveSelectedNodes: moveSelectedNodesImpl,
+
         loadDatasetNBody,
         setLayoutControlById,
 
+        appendColumn,
+        tickLayout,
         maskDataframe,
         updateExpressionById,
         removeExpressionById,
         addExpression: addExpressionImpl,
+
+        readSelection,
+
+        removeHistogramById,
+        addHistogram: addHistogramImpl,
+        computeMaskForHistogramBin
     };
 }

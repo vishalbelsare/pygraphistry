@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<h1 id="graphistry.js">graphistry.js</h1>
+<p>Graphistry's client-side interactions API. This library is a convenience libary that makes it easy for developers to interact with embedded graph visualization. ## Instructions</p>
+<ol style="list-style-type: decimal">
+<li>Create a wrapped IFrame object by calling GraphistryLoader with an IFrame containing a Graphistry Visualization</li>
+<li>To interact with the visualization, use any of the convenience methods defined in graphistry.js</li>
+</ol>
+<p>Example</p>
+<pre><code>&lt;html&gt;
+    &lt;head&gt;
+        &lt;title&gt;Graphistry Client API Demo&lt;/title&gt;
+        &lt;style&gt;
+            body {
+                height: 100%;
+                min-height: 600px;
+                padding: 0;
+                margin: 0;
+                overflow: hidden;
+            }
+
+            #controls {
+                height: calc(100% - 300px);
+                width: 100%;
+                overflow-y: scroll;
+            }
+
+            #viz {
+                width: 100%;
+                height: 300px;
+            }
+
+            td {
+                vertical-align: top;
+                padding-top: 1em;
+            }
+        &lt;/style&gt;
+        &lt;script src=&quot;graphistry.js&quot;&gt;&lt;/script&gt;
+        &lt;script&gt;
+        document.addEventListener(&quot;DOMContentLoaded&quot;, function () {
+            GraphistryLoader(document.getElementById(&#39;viz&#39;), function (err, g) {
+                window.g = g;
+                document.getElementById(&#39;controls&#39;).style.opacity=1.0;
+            });
+        });
+
+        function overlay(on) {
+            if (on) {
+                window.g.updateSetting(&#39;show-points-of-interest&#39;, false);
+                window.g.subscribeLabels({
+                    enter: function (id, entityType, x, y) { },
+                    move: function (id, entityType, x, y) { },
+                    exit: function (id, entityType) { }
+                });
+            } else {
+                window.g.updateSetting(&#39;show-points-of-interest&#39;, true);
+                window.g.unsubscribeLabels();
+            }
+        }
+        &lt;/script&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;div id=&quot;controls&quot; style=&quot;opacity: 0.5&quot;&gt;
+            &lt;h1&gt;Client API&lt;/h1&gt;
+            &lt;table&gt;
+                &lt;tr&gt;
+                    &lt;td&gt;Clustering&lt;/td&gt;
+                    &lt;td&gt;
+                        &lt;button onclick=&quot;window.g.startClustering(2000)&quot;&gt;start&lt;/button&gt;
+                        &lt;button onclick=&quot;window.g.stopClustering()&quot;&gt;stop&lt;/button&gt;
+                    &lt;/td&gt;
+                &lt;/tr&gt;
+                &lt;tr&gt;
+                    &lt;td&gt;Filter/Exclusions&lt;/td&gt;
+                    &lt;td&gt;
+                        &lt;button onclick=&quot;window.g.addFilter(&#39;point:degree &gt; 2&#39;)&quot;&gt;filter: point:degree &gt; 2&lt;/button&gt;
+                        &lt;button onclick=&quot;window.g.addExclusion(&#39;point:degree &lt; 5&#39;)&quot;&gt;exclude: point:degree &lt; 5&lt;/button&gt;
+                    &lt;/td&gt;
+                &lt;/tr&gt;
+                &lt;tr&gt;
+                    &lt;td&gt;Highlights&lt;/td&gt;
+                    &lt;td&gt;Select some combination of nodes and edges..&lt;/td&gt;
+                &lt;/tr&gt;
+                &lt;tr&gt;
+                    &lt;td&gt;Camera&lt;/td&gt;
+                    &lt;td&gt;
+                        &lt;button onclick=&quot;window.g.autocenter()&quot;&gt;autocenter&lt;/button&gt;
+                        &lt;button onclick=&quot;window.g.autocenter(0.95)&quot;&gt;... on 95% entities&lt;/button&gt;
+                        &lt;button onclick=&quot;window.g.updateZoom(1.5)&quot;&gt;zoom out&lt;/button&gt;
+                        &lt;button onclick=&quot;window.g.updateZoom(0.5)&quot;&gt;zoom in&lt;/button&gt;
+                        &lt;button onclick=&quot;window.g.updateZoom(1)&quot;&gt;zoom regular (bounding box)&lt;/button&gt;
+                    &lt;/td&gt;
+                &lt;/tr&gt;
+                &lt;tr&gt;
+                    &lt;td&gt;Save&lt;/td&gt;
+                    &lt;td&gt;
+                        &lt;button onclick=&quot;window.g.saveWorkbook()&quot;&gt;save workbook&lt;/button&gt;
+                        &lt;button onclick=&quot;window.g.exportStatic(&#39;mytest&#39;, function (err, url) { alert(&#39;view at: &#39; + url); })&quot;&gt;export static: &quot;mytest&quot;&lt;/button&gt;
+                    &lt;/td&gt;
+                &lt;tr&gt;
+                    &lt;td&gt;Encodings&lt;/td&gt;
+                    &lt;td&gt;
+                        &lt;script&gt;
+                            [
+                                [&#39;point&#39;, &#39;size&#39;, &#39;categorical&#39;, &#39;community_spinglass&#39;],
+                                [&#39;point&#39;, &#39;color&#39;, &#39;continuous&#39;, &#39;degree&#39;],
+                                [&#39;edge&#39;, &#39;weight&#39;, &#39;weight&#39;],
+                                [&#39;edge&#39;, &#39;color&#39;, &#39;continuous&#39;, &#39;weight&#39;]
+                            ].forEach(function (config) {
+                                document.write(&#39;&lt;button onclick=\&#39;window.g.updateEncoding(&#39;
+                                    + config.map(JSON.stringify).join(&#39;, &#39;) + &#39;)\&#39;&gt;&#39;
+                                    + config.join(&#39;, &#39;) + &#39;&lt;/button&gt;&#39;);
+                            });
+                        &lt;/script&gt;
+                        &lt;br/&gt;
+                        &lt;script&gt;
+                            [
+                                [&#39;point&#39;, &#39;size&#39;],
+                                [&#39;point&#39;, &#39;color&#39;],
+                                [&#39;edge&#39;, &#39;weight&#39;],
+                                [&#39;edge&#39;, &#39;color&#39;]
+                            ].forEach(function (config) {
+                                document.write(&#39;&lt;button onclick=\&#39;window.g.updateEncoding(&#39;
+                                    + config.map(JSON.stringify).join(&#39;, &#39;) + &#39;)\&#39;&gt;clear: &#39;
+                                    + config.join(&#39;, &#39;) + &#39;&lt;/button&gt;&#39;);
+                            });
+                        &lt;/script&gt;
+                    &lt;/td&gt;
+                &lt;/tr&gt;
+                &lt;tr&gt;
+                    &lt;td&gt;Settings&lt;/td&gt;
+                    &lt;td&gt;&lt;script&gt;
+                    [
+                        [&#39;text-color&#39;, &#39;#FF0000&#39;],
+                        [&#39;background-color&#39;, &#39;#EEEEEE&#39;],
+                        [&#39;transparency&#39;, 0.5], [&#39;transparency&#39;, 1.0],
+                        [&#39;show-labels&#39;, false], [&#39;show-labels&#39;, true],
+                        [&#39;show-points-of-interest&#39;, true], [&#39;show-points-of-interest&#39;, false],
+                        [&#39;tau&#39;, 0.5],
+                        [&#39;gravity&#39;, 1.0],
+                        [&#39;scalingRatio&#39;, 1.0],
+                        [&#39;edgeInfluence&#39;, 1.0],
+                        [&#39;strongGravity&#39;, 1.0],
+                        [&#39;dissuadeHubs&#39;, true], [&#39;dissuadeHubs&#39;, false],
+                        [&#39;linLog&#39;, true], [&#39;linLog&#39;, false]
+                    ].forEach(function (pair) {
+                        document.write(&#39;&lt;button onclick=\&#39;window.g.updateSetting(&quot;&#39; + pair[0]
+                            + &#39;&quot;, &#39; + JSON.stringify(pair[1]) + &quot;)&#39;&gt;&quot;
+                            + pair[0] + &quot;: &quot; + JSON.stringify(pair[1]) + &quot;&lt;/button&gt;&quot;);
+                    });
+                    &lt;/script&gt;&lt;/td&gt;
+                &lt;/tr&gt;
+                &lt;tr&gt;
+                    &lt;td&gt;Labels&lt;/td&gt;
+                    &lt;td&gt;
+                        &lt;button onclick=&quot;window.g.updateSetting(&#39;show-labels&#39;, false)&quot;&gt;Hide labels&lt;/button&gt;
+                        &lt;button onclick=&quot;window.g.updateSetting(&#39;show-labels&#39;, true)&quot;&gt;Show labels&lt;/button&gt;
+                        &lt;br/&gt;
+                        &lt;button onclick=&quot;window.overlay(true)&quot;&gt;Use label overlays&lt;/button&gt;
+                        &lt;button onclick=&quot;window.overlay(false)&quot;&gt;Use default labels&lt;/button&gt;
+                    &lt;/td&gt;
+            &lt;/table&gt;
+        &lt;/div&gt;
+        &lt;iframe id=&quot;viz&quot; src=&quot;http://127.0.0.1:10000/graph/graph.html?dataset=Miserables&quot; /&gt;
+
+
+
+
+    &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+</body>
+</html>

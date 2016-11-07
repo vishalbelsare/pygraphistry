@@ -12,7 +12,7 @@ export function exclusions(view) {
             length: 0,
             id: 'exclusions',
             name: 'Exclusions',
-            templates: $ref(`${view}.expressionTemplates`),
+            templates: $ref(`${view}.columns`),
             controls: [{
                 selected: false,
                 id: 'toggle-exclusions',

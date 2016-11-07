@@ -9,6 +9,9 @@
 
 .inspector {
 
+    height: 100%;
+    overflow-y: hidden;
+
     & > thead > th {
         border: none;
         text-align: center;
@@ -67,11 +70,19 @@
         float: left;
         margin-top: 0;
         margin-bottom: 0;
+
         & a {
             border: none;
             border-radius: 0 !important;
             color: @medium-dark-grey;
         }
+        & :global(.active) a {
+            background-color: #eeeeee;
+        }
+        & a:hover {
+            color: black;
+        }
+
     }
 
     :global(.input-group) {
@@ -111,6 +122,11 @@
     }
 }
 
+.inspector-table-container {
+    width: 100%;
+    overflow-x: scroll;
+}
+
 .inspector-table {
     thead {
         background-color: #eee;
@@ -118,10 +134,18 @@
     th, td:first-child {
         padding-left: 0.5em;
     }
-    th:not(:first-child) {
-        border-left: 1px solid #ddd;
+    th {
+        &:not(:first-child) {
+            border-left: 1px solid #ddd;
+        }
+        font-size: 12px;
+        white-space: nowrap;
+        cursor: pointer;
+        &.isSorting {
+            background-color: #666666;
+            color: #eeeeee;
+        }
     }
-
     td {
         font-size: 12px;
         padding-top: 3px !important;
@@ -131,5 +155,5 @@
 
 .sort-active {}
 .sort-inactive {
-    opacity: 0.5;
+    opacity: 0.3;
 }

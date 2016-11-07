@@ -258,6 +258,7 @@ function toggleSelectNodes({ falcor, selected }) {
 
 function toggleWindowNodes({ falcor, selected }) {
     if (selected) {
+        falcor.invalidate(`selection.histogramsById`);
         return falcor.set(
             $value(`selection['mask', 'type']`, null),
             $value(`selection.controls[1].selected`, false)
@@ -274,7 +275,10 @@ function toggleWindowNodes({ falcor, selected }) {
 }
 
 function openWorkbook({ falcor, selected }) {
-    return Observable.empty();
+    return Observable.defer( () => {
+        const url = window.location.origin + window.location.pathname + window.location.search;
+        window.open(url);
+    });
 }
 
 function forkWorkbook({ falcor, selected }) {
@@ -291,5 +295,31 @@ function embedWorkbook({ falcor, selected }) {
 }
 
 function fullscreenWorkbook({ falcor, selected }) {
-    return Observable.empty();
+    return Observable.defer( () => {
+
+        const isFullscreen = function () {
+            return !((document.fullScreenElement && document.fullScreenElement !== null) ||
+            (!document.mozFullScreen && !document.webkitIsFullScreen));
+        };
+
+        // http://stackoverflow.com/questions/3900701/onclick-go-full-screen
+        if (isFullscreen()) {
+            if (document.cancelFullScreen) {
+                document.cancelFullScreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.webkitCancelFullScreen) {
+                document.webkitCancelFullScreen();
+            }
+        } else {
+            const documentElement = document.documentElement;
+            if (documentElement.requestFullScreen) {
+                documentElement.requestFullScreen();
+            } else if (documentElement.mozRequestFullScreen) {
+                documentElement.mozRequestFullScreen();
+            } else if (documentElement.webkitRequestFullScreen) {
+                documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+            }
+        }
+    });
 }

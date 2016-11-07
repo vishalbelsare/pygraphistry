@@ -6,7 +6,7 @@ import { container } from '@graphistry/falcor-react-redux';
 // import { Timebar } from './timebar';
 import { Settings } from './settings';
 import { Expressions } from './expressions';
-import { Inspector } from '../components/inspector/inspector';
+import { Inspector } from './inspector';
 import { Histograms } from './histograms';
 
 const panelsById = {
@@ -32,20 +32,20 @@ function componentForSideAndType(side, id) {
 
 let Panel = ({
         panel = {}, placement,
-        positionTop, positionLeft,
+        className = '', positionTop, positionLeft,
         id, side, isOpen, name, style, ...props
     } = {}) => {
     const Component = componentForSideAndType(side, panel.id);
     const componentInstance = (
         <Component name={name} side={side}
                    data={panel} style={style}
-                   className={panelStyles[`panel-${side}`]}
+                   className={className + ' ' + panelStyles[`panel-${side}`]}
                    {...props}/>
     );
     if (side === 'left') {
         return (
             <div style={leftPanelStyles(isOpen)}
-                 className={panelStyles[`panel-${side}`]}>
+                 className={className + ' ' + panelStyles[`panel-${side}`]}>
                 {componentInstance}
             </div>
         );
@@ -62,7 +62,9 @@ Panel = container(
         if (!Content.fragment) {
             return `{ id, name }`;
         }
-        return Content.fragment({ id, name, ...rest });
+        return `{ id, name, ... ${
+            Content.fragment({ id, name, ...rest })}
+        }`;
     },
     (panel) => ({ panel })
 )(Panel);
@@ -88,7 +90,8 @@ function leftPanelStyles(isOpen) {
         zIndex: 3700,
         position: `absolute`,
         opacity: Number(isOpen),
-        minWidth: isOpen ? undefined : `200px`,
+        // minWidth: isOpen ? undefined : `200px`,
+        minWidth: `200px`,
         minHeight: isOpen ? undefined : `200px`,
         visibility: isOpen && 'visible' || 'hidden',
         transform: `translate3d(${Number(!isOpen) * -10}%, 6px, 0)`,

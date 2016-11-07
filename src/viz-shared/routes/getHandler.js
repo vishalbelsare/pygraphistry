@@ -83,13 +83,6 @@ export function getHandler(lists, loader, getInitialProps = defaultPropsResolver
 
         return (values
             .map(mapObjectsToAtoms)
-            // .do((pv) => {
-            //     if (pv.isMessage) {
-            //         console.log(`additionalPath: ${JSON.stringify(pv.additionalPath)}`);
-            //     } else {
-            //         console.log(`res: ${JSON.stringify(pv.path)}`);
-            //     }
-            // })
             .catch(captureErrorStacks)
         );
     }

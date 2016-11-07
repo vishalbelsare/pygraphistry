@@ -16,86 +16,119 @@ export function expressions(path, base) {
     return function expressions({ loadViewsById, maskDataframe, updateExpressionById }) {
 
         const getValues = getHandler(path, loadViewsById);
-        const setExpressionValues = setHandler(path, loadViewsById,
-            (expression, key, value, path, { workbook, view }) => {
-                const expressionId = path[path.length - 2];
-                return updateExpressionById({
-                    workbookId: workbook.id,
-                    viewId: view.id,
-                    expressionId,
-                    value,
-                    key
-                })
-                .map(({ view, expression }) => ({
-                    view, expression, path, value: expression[key]
-                }))
-            }
-        );
+        const setValues = setHandler(path, loadViewsById);
 
-        function batchSetExpressionValuesAndMaskDataframe(json) {
-            return setExpressionValues
-                .call(this, json)
+        const batchSetValues = ({ viewId, workbookId, expressionId, path, values }) => (
+            Observable
+                .from(Object.keys(values))
+                .mergeMap(
+                    (key) => updateExpressionById({
+                        key, value: values[key],
+                        viewId, workbookId, expressionId,
+                    }),
+                    (key, { view, workbook, expression }) => ({
+                        path: path.concat(key),
+                        value: expression[key],
+                        view, workbook, expression
+                    })
+                )
                 .reduce(
-                    ({ values }, { view, path, value }) => {
-                        values.push({ path, value });
-                        return { view, values };
-                    },
+                    ({ values }, { view, workbook, expression, path, value }) => ({
+                        view, workbook, expression, values: [...values, {path, value}]
+                    }),
                     { values: [] }
                 )
-                .mergeMap(({ view, values }) =>
-                    maskDataframe({ view })
-                        .mergeMapTo(values)
-                        // ignore errors
-                        .catch((err) => Observable.from(values))
-                )
-                .catch(captureErrorStacks)
-                .map(mapObjectsToAtoms);
+        );
+
+        function updateExpressionAndMaskDataframe(path, [expressionProps]) {
+            path = path.slice(0, -1);
+            const expressionId = path[path.length - 1];
+            const workbookId = path[1];
+            const viewId = path[3];
+            return batchSetValues({
+                path, values: expressionProps,
+                viewId, workbookId, expressionId
+            })
+            .filter(({ values }) => values.length > 0)
+            .mergeMap(
+                ({ view }) => maskDataframe({ view })
+                    // ignore dataframe errors
+                    .catch((err) => Observable.of(0)),
+                ({ view, workbook, expression, values }) => {
+                    const { histograms = [] } = view;
+                    const length = histograms.length;
+                    if (length > 0 && (
+                        expression.enabled === true ||
+                        ('enabled' in expressionProps))) {
+                        // If the view has histograms, invalidate the
+                        // relevant fields so they're recomputed if the
+                        // histograms panel is open, or the next time the
+                        // panel is opened.
+                        values = values.concat(
+                            $invalidate(`
+                                workbooksById['${workbook.id}']
+                                    .viewsById['${view.id}']
+                                    .selection.histogramsById`
+                            ),
+                            $invalidate(`
+                                workbooksById['${workbook.id}']
+                                    .viewsById['${view.id}']
+                                    .labelsById`
+                            )
+                        );
+                    }
+                    return values;
+                }
+            )
+            .mergeMap((values) => values);
         }
 
         return [{
-            returns: `*`,
-            get: getValues,
-            route: `${base}['expressionTemplates'][{keys}]`,
-        }, {
-            returns: `*`,
-            get: getValues,
-            route: `${base}['expressionTemplates'][{keys}][{keys}]`,
-        }, {
             get: getValues,
             route: `${base}['expressionsById'][{keys}]`
         }, {
             get: getValues,
-            set: batchSetExpressionValuesAndMaskDataframe,
+            set: setValues,
             route: `${base}['expressionsById'][{keys}][{keys}]`
+        }, {
+            call: updateExpressionAndMaskDataframe,
+            route: `${base}['expressionsById'][{keys}]['update']`
         }];
     }
 }
 
 export function addExpressionHandler({
-    addExpression,
-    expressionType = 'filter'
+    addItem,
+    mapName = 'expressionsById',
+    listName = 'expressions',
+    itemName = 'expression',
+    ...restProps
 }) {
-    return function addExpressionHandler(path, [componentType, name, dataType]) {
+    return function addExpressionHandler(path, inputOrProps) {
+
+        const [componentType, name, dataType] =
+            typeof inputOrProps === 'string' ? [] : inputOrProps;
+        const input = typeof inputOrProps === 'string' ? inputOrProps : undefined;
+
         const workbookIds = [].concat(path[1]);
         const viewIds = [].concat(path[3]);
-        return addExpression({
-            workbookIds, viewIds, name, dataType, componentType, expressionType
+        return addItem({
+            workbookIds, viewIds, name, dataType, componentType, input, ...restProps
         })
-        .mergeMap(({ workbook, view, expression }) => {
+        .mergeMap(({ workbook, view, [itemName]: value }) => {
 
-            const list = expressionType + 's';
             const base = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
 
-            const { [list]: exprs } = view;
-            const newLengthPath = `${base}['${list}'].length`;
-            const newFilterPath = `${base}['${list}'][${exprs.length}]`;
-            const expressionRef = $ref(`${base}['expressionsById']['${expression.id}']`);
+            const { [listName]: list } = view;
+            const newLengthPath = `${base}['${listName}'].length`;
+            const newItemPath = `${base}['${listName}'][${list.length}]`;
+            const newItemRef = $ref(`${base}['${mapName}']['${value.id}']`);
 
-            exprs[exprs.length++] = expressionRef;
+            list[list.length++] = newItemRef;
 
             return [
-                $value(newLengthPath, exprs.length),
-                $value(newFilterPath, expressionRef),
+                $value(newItemPath, newItemRef),
+                $value(newLengthPath, list.length),
             ];
         })
         .catch(captureErrorStacks)
@@ -106,15 +139,14 @@ export function addExpressionHandler({
             }
 
             const { workbook, view, errors } = err;
-            const list = expressionType + 's';
             const base = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
 
-            const { [list]: exprs } = view;
-            const newLengthPath = `${base}['${list}'].length`;
-            const newFilterPath = `${base}['${list}'][${exprs.length}]`;
+            const { [listName]: list } = view;
+            const newLengthPath = `${base}['${listName}'].length`;
+            const newItemPath = `${base}['${listName}'][${list.length}]`;
             return [
-                $value(newLengthPath, exprs.length++),
-                $value(newFilterPath, $error(errors)),
+                $value(newItemPath, $error(errors)),
+                $value(newLengthPath, list.length++),
             ];
         })
         .map(mapObjectsToAtoms);
@@ -122,47 +154,48 @@ export function addExpressionHandler({
 }
 
 export function removeExpressionHandler({
-    removeExpressionById,
-    expressionType = 'filter'
+    removeItem,
+    listName = 'expressions',
+    itemIDName = 'expressionId',
+    ...restProps
 }) {
-    return function removeExpressionHandler(path, [expressionId]) {
+    return function removeExpressionHandler(path, [itemId]) {
         const workbookIds = [].concat(path[1]);
         const viewIds = [].concat(path[3]);
-        return removeExpressionById({
-            workbookIds, viewIds, expressionId
+        return removeItem({
+            workbookIds, viewIds, [itemIDName]: itemId, ...restProps
         })
         .mergeMap(({ workbook, view }) => {
 
-            const list = expressionType + 's';
+            const { [listName]: list } = view;
             const base = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
 
-            const { [list]: exprs } = view;
-
-            const exprRefVals = [];
-            let exprsLen = exprs.length;
+            const listRefVals = [];
+            let listLen = list.length;
             let index = -1, found = false;
 
-            while (++index < exprsLen) {
+            while (++index < listLen) {
                 if (found) {
-                    exprRefVals.push($value(
-                        `${base}['${list}'][${index - 1}]`,
-                        exprs[index - 1] = exprs[index]
+                    listRefVals.push($value(
+                        `${base}['${listName}'][${index - 1}]`,
+                        list[index - 1] = list[index]
                     ));
                     continue;
                 }
-                const exprRef = exprs[index].value;
-                const exprRefId = exprRef[exprRef.length - 1];
-                if (exprRefId === expressionId) {
-                    found = true;
+                let itemRef = list[index], itemRefPath;
+                if (itemRef && (itemRefPath = itemRef.value)) {
+                    const itemRefId = itemRefPath[itemRefPath.length - 1];
+                    if (itemRefId === itemId) {
+                        found = true;
+                    }
                 }
             }
 
-            const newLengthPath = `${base}['${list}'].length`;
+            const newLengthPath = `${base}['${listName}'].length`;
 
-            return [
-                ...exprRefVals,
-                $value(newLengthPath, exprs.length -= Number(found))
-            ];
+            return listRefVals.concat(
+                $value(newLengthPath, list.length -= Number(found))
+            );
         })
         .catch(captureErrorStacks)
         .map(mapObjectsToAtoms);

@@ -7,7 +7,7 @@ import RcColorPicker from 'rc-color-picker';
 import RcSlider from '@graphistry/rc-slider';
 import { Panel } from 'react-bootstrap';
 import { FormControl } from 'react-bootstrap';
-import { Grid, Row, Col, ControlLabel } from 'react-bootstrap';
+import { Grid, Row, Col } from 'react-bootstrap';
 
 const scales = {
     log: d3.scale.log().domain([.1, 10]).range([1, 100]),

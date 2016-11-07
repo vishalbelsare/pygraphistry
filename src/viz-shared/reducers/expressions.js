@@ -16,15 +16,15 @@ import {
 
 export function expressions(action$, store) {
     return Observable.merge(
-        addExpression(action$.ofType(ADD_EXPRESSION), store),
+        addExpression(action$, store),
+        removeExpression(action$, store),
         updateExpression(action$, store),
-        removeExpression(action$.ofType(REMOVE_EXPRESSION), store),
-        setExpressionEnabled(action$.ofType(SET_EXPRESSION_ENABLED), store)
     ).ignoreElements();
 }
 
 function addExpression(action$) {
     return action$
+        .ofType(ADD_EXPRESSION)
         .groupBy(({ id }) => id)
         .mergeMap((group) => group.exhaustMap(
             ({ name, dataType, componentType, falcor }) =>
@@ -32,35 +32,35 @@ function addExpression(action$) {
         ));
 }
 
-function updateExpression(action$) {
-    return action$
-        .ofType(UPDATE_EXPRESSION)
-        .groupBy(({ id }) => id)
-        .mergeMap((group) => group
-            .debounceTime(350)
-            .switchMap(({ input, falcor }) => falcor.set({
-                json: { input }
-            })
-            .takeUntil(action$
-                .ofType(CANCEL_UPDATE_EXPRESSION)
-                .filter(({ id }) => group.key === id))
-        ));
-}
-
 function removeExpression(action$) {
     return action$
+        .ofType(REMOVE_EXPRESSION)
         .groupBy(({ id }) => id)
         .mergeMap((group) => group.exhaustMap(
             ({ id, falcor }) => falcor.call('remove', [id])
         ));
 }
 
-function setExpressionEnabled(action$) {
+function updateExpression(action$) {
     return action$
+        .ofType(UPDATE_EXPRESSION, SET_EXPRESSION_ENABLED)
         .groupBy(({ id }) => id)
-        .mergeMap((group) => group.switchMap(
-            ({ enabled, falcor }) => falcor.set({
-                json: { enabled }
+        .mergeMap((group) => group
+            .debounceTime(350)
+            .switchMap(({ input, enabled, falcor }) => {
+
+                const operations = [];
+
+                (input !== undefined) &&
+                    operations.push(falcor.set($value(`input`, input)));
+                (enabled !== undefined) &&
+                    operations.push(falcor.set($value(`enabled`, enabled)));
+
+                operations.push(falcor.call('update', [{ input, enabled }]));
+
+                return Observable
+                    .merge(...operations)
+                    .takeUntil(action$.ofType(CANCEL_UPDATE_EXPRESSION))
             })
-        ));
+        );
 }

@@ -25,7 +25,17 @@ import {
     shallowEqual
 } from 'recompose';
 
-const arraySlice = Array.prototype.slice;
+function checkEqualityIfFalcorVersionAvailable (a, b, defaultValue = false) {
+    if (a.$__version !== undefined && b.$__version !== undefined) {
+        return a.$__version === b.$__version;
+    }
+    return defaultValue;
+}
+
+function shallowEqualOrFalcorEqual (a, b) {
+    // Default to shallow equal, if not true, check falcor version number
+    return shallowEqual(a, b) || checkEqualityIfFalcorVersionAvailable(a, b);
+}
 
 class Renderer extends React.Component {
     constructor(props, context) {
@@ -56,7 +66,7 @@ class Renderer extends React.Component {
         return (
             !shallowEqual(currEdges, nextEdges) ||
             !shallowEqual(currPoints, nextPoints) ||
-            !shallowEqual(currBackground, nextBackground) ||
+            !shallowEqualOrFalcorEqual(currBackground, nextBackground) ||
             !shallowEqual(restCurrProps, restNextProps)
         );
     }
@@ -125,16 +135,24 @@ class Renderer extends React.Component {
 
             if (renderMouseOver) {
                 renderMouseOver = false;
+                let { edge: selectionEdges, point: selectionPoints } = selection;
+                const { edge: highlightEdges, point: highlightPoints, darken = false } = highlight;
+                if (darken && !(
+                    selectionEdges && selectionEdges.length) && !(
+                    selectionPoints && selectionPoints.length)) {
+                    selectionEdges = highlightEdges;
+                    selectionPoints = highlightPoints;
+                }
                 const mouseoverTask = {
                     trigger: 'mouseOverEdgeHighlight',
                     data: {
                         highlight: {
-                            edgeIndices: highlight && highlight.edge || [],//arraySlice.call(highlight.edge || []),
-                            nodeIndices: highlight && highlight.point || [],//arraySlice.call(highlight.point || []),
+                            edgeIndices: highlightEdges || [],
+                            nodeIndices: highlightPoints || [],
                         },
                         selected: {
-                            edgeIndices: selection && selection.edge || [],//arraySlice.call(selection.edge || []),
-                            nodeIndices: selection && selection.point || [],//arraySlice.call(selection.point || []),
+                            edgeIndices: selectionEdges || [],
+                            nodeIndices: selectionPoints || [],
                         }
                     }
                 };
@@ -361,7 +379,7 @@ class Renderer extends React.Component {
         currBackground, nextBackground,
         renderState, renderingScheduler
     }) {
-        if (!shallowEqual(currBackground, nextBackground)) {
+        if (!shallowEqualOrFalcorEqual(currBackground, nextBackground)) {
             renderState.options.clearColor = [
                 new Color(nextBackground.color).rgbaArray().map((x, i) =>
                     i === 3 ? x : x / 255

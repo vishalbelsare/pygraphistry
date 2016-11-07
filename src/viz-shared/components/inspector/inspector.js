@@ -11,35 +11,41 @@ import { Tab, Tabs, Table, Pagination, FormControl, InputGroup, Button } from 'r
 
 import ColumnPicker from '../../containers/ColumnPicker';
 
+import _ from 'underscore';
 
-
-
-const datatablePropTypes = {
-    columns: React.PropTypes.array,
-    results: React.PropTypes.array,
-    sort: React.PropTypes.object,
+const propTypes = {
+    templates: React.PropTypes.array,
+    rows: React.PropTypes.array,
+    openTab: React.PropTypes.string,
+    searchTerm: React.PropTypes.string,
+    sortKey: React.PropTypes.string,
+    sortOrder: React.PropTypes.string,
     toggleColumnSort: React.PropTypes.func,
     numPages: React.PropTypes.number,
-    activePage: React.PropTypes.number,
-    handlePageSelect: React.PropTypes.func
+    page: React.PropTypes.number,
+    rowsPerPage: React.PropTypes.number,
+    onSelect: React.PropTypes.func,
+    onPageSelect: React.PropTypes.func
 };
 
-const datatableDefaultProps = {
-    toggleColumnSort: (field) => {
-        console.log('toggle column sort on', field);
-    },
-    handlePageSelect: (pageNumber) => {
-        console.log('handle page select of page', pageNumber);
-    }
-};
+const datatablePropTypes =
+    _.extend(
+        {entityType: React.PropTypes.string},
+        propTypes);
+
+
 
 class DataTable extends React.Component {
     constructor(props) {
         super(props);
-        console.log('DataTable props', props);
     }
 
     render () {
+
+        const firstRow = this.props.rowsPerPage * (this.props.page - 1);
+
+        const { templates, entityType } = this.props;
+
         return (
             <div>
                 <div className={styles['inspector-table-header']}>
@@ -53,13 +59,13 @@ class DataTable extends React.Component {
                         boundaryLinks
                         items={this.props.numPages}
                         maxButtons={5}
-                        activePage={this.props.activePage}
-                        onSelect={this.props.handlePageSelect} />
+                        activePage={this.props.page}
+                        onSelect={this.props.onPageSelect} />
 
-                    <InputGroup>
+                    {/*<InputGroup>
                          <FormControl
                             type="text"
-                            value={this.props.searchText}
+                            value={this.props.searchTerm}
                             placeholder="Search"
                           />
                         <Button>
@@ -68,7 +74,7 @@ class DataTable extends React.Component {
                                 ${styles['fa-fw']}
                                 ${styles['fa-search']}`}></i>
                         </Button>
-                    </InputGroup>
+                    </InputGroup>*/}
 
                     <span style={{float: 'right'}}>
                         <ColumnPicker
@@ -84,115 +90,68 @@ class DataTable extends React.Component {
                     </span>
 
                 </div>
+                <div className={styles['inspector-table-container']}>
                 <Table className={styles['inspector-table']}
                     striped={true} bordered={true} condensed={true} hover={true}>
                 <thead>
-                    {this.props.columns.map((field) => <th onClick={ () => this.props.toggleColumnSort(field) }>
-                        {field}
-                        { this.props.sort && this.props.sort.column === field
-                            ? <i className={`
-                                ${styles['sort-active']}
-                                ${styles['fa']}
-                                ${styles['fa-fw']}
-                                ${styles['fa-sort-' + (this.props.sort.ascending ? 'asc' : 'desc')]}`}></i>
-                            : <i className={`
-                                ${styles['sort-inactive']}
-                                ${styles['fa']}
-                                ${styles['fa-fw']}
-                                ${styles['fa-sort']}`}></i>
-                        }
-                    </th>)}
+                    {templates.map(({name}) => (
+                        <th  className={ this.props.sortKey === name ? styles['isSorting'] : null }
+                                onClick={ () => this.props.toggleColumnSort({name}) }>
+                            {name === '_title' ? entityType : name}
+                            { this.props.sortKey === name
+                                ? <i className={`
+                                    ${styles['sort-active']}
+                                    ${styles['fa']}
+                                    ${styles['fa-fw']}
+                                    ${styles['fa-sort-' + this.props.sortOrder]}`}></i>
+                                : <i className={`
+                                    ${styles['sort-inactive']}
+                                    ${styles['fa']}
+                                    ${styles['fa-fw']}
+                                    ${styles['fa-sort']}`}></i>
+                            }
+                        </th>))}
                 </thead>
-                <tbody>
-                    {this.props.results.map((item) => {
-                        return (<tr>{
-                            this.props.columns.map((field) => <td>{item[field]}</td>)
-                        }</tr>);
-                    })}
-                </tbody>
+                <tbody>{
+                    _.range(firstRow, firstRow + this.props.rowsPerPage)
+                        .map((row) => (<tr>{
+                            templates.map(({name}) => (<td>{
+                                this.props.rows && this.props.rows[row]
+                                    ? this.props.rows[row][name]
+                                    : '\u00a0' // nbsp forces height sizing
+                            }</td>))
+                        }</tr>))
+                }</tbody>
             </Table>
+            </div>
         </div>);
     }
 }
 
 DataTable.propTypes = datatablePropTypes;
-DataTable.defaultProps = datatableDefaultProps;
 
 
 
 class Inspector extends React.Component {
 
-    constructor(props) {
-        super(props);
-        console.log('inspector props', props);
-    }
+    constructor(props) { super(props); }
 
     render() {
-
-
-        const fakeData = {
-            sort: {
-                column: 'name',
-                ascending: true
-            },
-            numPages: 1,
-            activePage: 0,
-            results: [
-                    {
-                        "id": 0,
-                        "name": "Mayer Leonard",
-                        "city": "Kapowsin",
-                        "state": "Hawaii",
-                        "country": "United Kingdom",
-                        "company": "Ovolo",
-                        "favoriteNumber": 7
-                    },
-                     {
-                        "id": 10,
-                        "name": "Bullwinkle",
-                        "city": "Moscow",
-                        "stata": null,
-                        "country": "USSR",
-                        "company": "ACME",
-                        "favoriteNumber": 10
-                    },
-                ],
-            cols: ['id', 'name', 'city', 'company', 'favoriteNumber']
-        };
-
-
         return <div className={styles.inspector}>
-            <Tabs defaultActiveKey={1} className={styles.inspectorTabs}>
-                <Tab eventKey={1} title="Points">
-                    <DataTable
-                        results={fakeData.results}
-                        columns={fakeData.cols}
-                        sort={fakeData.sort}
-                        activePage={fakeData.activePage}
-                        numPages={fakeData.numPages}
-                        entityType={"Node"}/>
+            <Tabs className={styles.inspectorTabs}
+                    activeKey={this.props.openTab}  onSelect={this.props.onSelect}>
+                <Tab eventKey={'points'} title="Points">
+                    <DataTable {...this.props} entityType={"Node"}/>
                 </Tab>
-                <Tab eventKey={2} title="Edges">
-                    <DataTable
-                        results={fakeData.results}
-                        columns={fakeData.cols.slice(0,3)}
-                        sort={fakeData.sort}
-                        activePage={fakeData.activePage}
-                        numPages={fakeData.numPages}
-                        entityType={"Edge"}/>
+                <Tab eventKey={'edges'} title="Edges">
+                    <DataTable {...this.props} entityType={"Edge"}/>
                 </Tab>
             </Tabs>
         </div>;
-
     }
+
 }
-
-
-Inspector = getContext({
-    renderState: PropTypes.object,
-    renderingScheduler: PropTypes.object,
-})(Inspector);
-
+Inspector.propTypes = propTypes;
 
 export { Inspector };
 

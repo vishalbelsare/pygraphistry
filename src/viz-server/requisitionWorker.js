@@ -40,7 +40,7 @@ export function requisitionWorker({
 
     const requestIsETL = requestIsPathname('/etl');
     const requestIsClaim = requestIsPathname('/claim');
-    const requestIsIndex = requestIsPathname('/graph.html');
+    const requestIsGraph = requestIsPathname('/graph.html');
 
     const eltRequests = requests
         .filter(requestIsETL)
@@ -50,24 +50,33 @@ export function requisitionWorker({
         .filter(requestIsClaim)
         .mergeMap(requisition(acceptClaim, rejectClaim));
 
-    const indexRequests = requests
-        .filter(requestIsIndex)
+    const graphIndexRequests = requests
+        .filter(requestIsGraph)
         .mergeMap(requisition(acceptIndex, rejectIndex));
 
-    const claimThenIndexRequests = claimRequests
-        .mergeMap(
-            () => indexRequests,
-            (claimId, [indexId, indexType, request, response]) => [
-                claimId, indexId, indexType, request, response
-            ]
-        )
-        .filter(([claimId, indexId]) => claimId === indexId)
-        .map((arr) => arr.slice(1));
+    const claimThenIndexRequests = claimRequests.mergeMap(() => (
+        graphIndexRequests
+            .timeout(claimTimeout * 1000)
+            .catch((e) => {
+                logger.error({ err: e }, 'Timeout to claim worker.');
+                return Observable.throw({
+                    error: e,
+                    message: `Timeout to claim worker.`
+                });
+            })
+            .take(1)
+        ),
+        (claimId, [indexId, indexType, request, response]) => [
+            claimId, indexId, indexType, request, response
+        ]
+    )
+    .filter(([claimId, indexId]) => claimId === indexId)
+    .map((arr) => arr.slice(1));
 
     return Observable
         .merge(
             eltRequests,
-            indexRequests,
+            graphIndexRequests,
             claimThenIndexRequests
         )
         .switchMap(loadWorker)
@@ -84,7 +93,11 @@ export function requisitionWorker({
         )))
         .catch((error) => {
             isLocked = false;
-            latestClientId = simpleflake().toJSON();
+            // latestClientId = simpleflake().toJSON();
+            logger.error(
+                { err: error },
+                'requisitionWorker intercepted an error. Notifying viz-server that isActive == false.'
+            );
             return Observable.of({ ...error, isActive: false });
         })
         .mergeMap((event) => {
@@ -92,20 +105,14 @@ export function requisitionWorker({
             if (isActive !== undefined) {
                 isLocked = isActive;
                 if (isActive === false) {
-                    if (shouldExitOnDisconnect) {
-                        logger.info('Exiting because isActive is false.');
-                        return Observable.concat(
-                            Observable.of({ isActive }),
-                            Observable.throw({
-                                ...event,
-                                exitCode: 0,
-                                shouldExit: true
-                            })
-                        );
-                    } else {
-                        // latestClientId = simpleflake().toJSON();
-                        logger.info('Running locally, so not actually killing; setting setServing to false.');
-                    }
+                    logger.info('Exiting requisitionWorker because isActive is false.');
+                    return Observable.concat(
+                        Observable.of({ isActive }),
+                        Observable.throw({
+                            ...event, exitCode: 0,
+                            shouldExit: shouldExitOnDisconnect
+                        })
+                    );
                 }
             }
             return Observable.of(event);
@@ -124,12 +131,12 @@ export function requisitionWorker({
             //     logger.info('GPU worker already claimed');
             //     return reject({ request, response }).ignoreElements();
             // } else
-            if (requestIsIndex({ request })) {
-                const { query = {} } = url.parse(request.url);
-                latestClientId = query.clientId || latestClientId || simpleflake().toJSON();
-            } else {
-                latestClientId = simpleflake().toJSON();
-            }
+            // if (requestIsIndex({ request })) {
+            //     const { query = {} } = url.parse(request.url);
+            //     latestClientId = query.clientId || latestClientId || simpleflake().toJSON();
+            // } else {
+            //     latestClientId = simpleflake().toJSON();
+            // }
             isLocked = true;
             return accept({ request, response }, latestClientId);
         };
@@ -210,28 +217,13 @@ export function requisitionWorker({
 
     function trackVizWorkerCaches({ caches }, [activeClientId, workerModule, request, response]) {
 
-        const sockets = awaitSocketConnection(activeClientId, request);
+        const sockets = socketConnectionAsObservable(activeClientId, request);
 
         const worker = workerModule(app, {
             ...server, requests: server.requests.startWith({ request, response })
         }, sockets, caches);
 
         return { caches, worker };
-    }
-
-    function awaitSocketConnection(activeClientId, request) {
-        if (claimTimeout === -1) {
-            return socketConnectionAsObservable(activeClientId, request);
-        }
-        return socketConnectionAsObservable(activeClientId, request)
-            .timeout(claimTimeout * 1000)
-            .catch((e) => {
-                logger.error({ err: e }, 'Timeout to claim worker.');
-                return Observable.throw({
-                    error: e,
-                    message: `Timeout to claim worker.`
-                });
-            });
     }
 
     function socketConnectionAsObservable(activeClientId, request) {
