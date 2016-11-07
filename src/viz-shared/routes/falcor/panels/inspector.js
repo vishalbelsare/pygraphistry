@@ -166,12 +166,42 @@ function searchRows ({loadViewsById, readSelection}, path) {
 //////////// COUNT QUERY
 
 
+function pageToCount (
+        basePath,
+        {workbook, view,
+         openTab, searchTerm, sortKey, sortOrder, range, fields },
+         page) {
+
+    const prefix = genPathPrefix(basePath, {openTab, searchTerm, sortKey, sortOrder});
+    const paths = prefix.concat(['count']);
+
+    return $value(paths, page.count);
+}
+
+
 function searchCount ({loadViewsById, readSelection}, path) {
+
+    const basePath = path.slice(0, path.length - 6);
+    const workbookIds = [].concat(path[1]);
+    const viewIds = [].concat(path[3]);
+
+    const {openTabs, searchTerms, sortKeys, sortOrders} = path;
+    const rows = [ {from: 0, to: 1} ];
+    const fields = [];
+
+    return loadViewsById({
+        workbookIds, viewIds
+    })
+    .mergeMap(({ workbook, view }) => {
+
+        const queries = generateQueries(
+            {workbook, view},
+            {openTabs, searchTerms, sortKeys, sortOrders, rows, fields});
 
         const searches =
             queries.map((query) =>
-                queryPage(query)
-                    .map(pageToValue.bind(null, query)));
+                queryPage({readSelection}, query)
+                    .map(pageToCount.bind(null, basePath, query)));
 
         return Observable.merge(...searches);
 
