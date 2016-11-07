@@ -61,7 +61,8 @@ class DataTable extends React.Component {
                         maxButtons={5}
                         activePage={this.props.page}
                         onSelect={this.props.onPageSelect} />
-                    <InputGroup>
+
+                    {/*<InputGroup>
                          <FormControl
                             type="text"
                             value={this.props.searchTerm}
@@ -73,7 +74,7 @@ class DataTable extends React.Component {
                                 ${styles['fa-fw']}
                                 ${styles['fa-search']}`}></i>
                         </Button>
-                    </InputGroup>
+                    </InputGroup>*/}
 
 
                 </div>
