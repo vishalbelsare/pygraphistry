@@ -44,8 +44,6 @@ class DataTable extends React.Component {
 
         const { templates, entityType } = this.props;
 
-        console.log('PRINTING ROWS', {firstRow, rowsPerPage: this.props.rowsPerPage, page: this.props.page});
-
         return (
             <div>
                 <div className={styles['inspector-table-header']}>

@@ -48,8 +48,6 @@ let Inspector = ({
         console.warn('Maybe exn', e);
     }
 
-    console.log({currentQuery});
-
     return <InspectorComponent
         {...{ searchTerm, sortKey: sortBy, sortOrder, rowsPerPage } }
         page={ page }
