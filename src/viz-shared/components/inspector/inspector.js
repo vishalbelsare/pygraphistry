@@ -11,15 +11,12 @@ import { Tab, Tabs, Table, Pagination, FormControl, InputGroup, Button } from 'r
 
 import _ from 'underscore';
 
-
-
-
 const datatablePropTypes = {
-    columns: React.PropTypes.array,
-    results: React.PropTypes.array,
+    templates: React.PropTypes.array,
+    rows: React.PropTypes.array,
+    searchTerm: React.PropTypes.string,
     sortKey: React.PropTypes.string,
     sortOrder: React.PropTypes.string,
-    searchTerm: React.PropTypes.string,
     toggleColumnSort: React.PropTypes.func,
     numPages: React.PropTypes.number,
     page: React.PropTypes.number,
@@ -47,13 +44,7 @@ class DataTable extends React.Component {
         const start = this.props.rowsPerPage * (this.props.page - 1);
         const stop = start + this.props.rowsPerPage;
 
-        const columns =
-            _.range(0,this.props.templates.length)
-                .map((idx) => this.props.templates[idx])
-                .filter(_.identity)
-                .filter(({componentType}) =>
-                    (this.props.openTab === 'points' && componentType === 'point')
-                    || (this.props.openTab === 'edges' && componentType === 'edge'));
+        const { templates } = this.props;
 
         return (
             <div>
@@ -90,7 +81,7 @@ class DataTable extends React.Component {
                 <Table className={styles['inspector-table']}
                     striped={true} bordered={true} condensed={true} hover={true}>
                 <thead>
-                    {columns.map(({name}) => <th onClick={ () => this.props.toggleColumnSort({
+                    {templates.map(({name}) => <th onClick={ () => this.props.toggleColumnSort({
                         clickedField: name, currentField: this.props.sortKey, currentOrder: this.props.sortOrder
                     })}>
                         {name}
@@ -111,10 +102,14 @@ class DataTable extends React.Component {
                 <tbody>{
                     _.range(start, stop)
                         .map((row) => (<tr>{
-                            columns.map(({name}) => (<td>{
+                            templates.map(({name}) => (<td>{
                                 this.props.rows ? this.props.rows[row][name] : `placeholder:${row}:${name}`
                             }</td>)
                         )}</tr>))
+                }{
+                    _.range(0, (stop - start) - this.props.rowsPerPage)
+                        .map(() =>
+                            (<tr>{ templates.map(() => <td></td>) }</tr>))
                 }</tbody>
             </Table>
         </div>);
@@ -142,53 +137,18 @@ class Inspector extends React.Component {
         const start = rowsPerPage * (page-1);
         const stop = start + rowsPerPage;
 
-        const fakeData = {
-            sort: {
-                column: 'name',
-                ascending: true
-            },
-            numPages: 1,
-            page: 0,
-            results: [
-                    {
-                        "id": 0,
-                        "name": "Mayer Leonard",
-                        "city": "Kapowsin",
-                        "state": "Hawaii",
-                        "country": "United Kingdom",
-                        "company": "Ovolo",
-                        "favoriteNumber": 7
-                    },
-                     {
-                        "id": 10,
-                        "name": "Bullwinkle",
-                        "city": "Moscow",
-                        "stata": null,
-                        "country": "USSR",
-                        "company": "ACME",
-                        "favoriteNumber": 10
-                    },
-                ],
-            cols: ['id', 'name', 'city', 'company', 'favoriteNumber']
-        };
-
-
         return <div className={styles.inspector}>
             <Tabs activeKey={openTab} className={styles.inspectorTabs} onSelect={onSelect}>
                 <Tab eventKey={'points'} title="Points">
                     <DataTable
                         {...this.props}
-                        results={this.props.rows || fakeData.results}
-                        columns={fakeData.cols}
-                        numPages={fakeData.numPages}
+                        numPages={5}
                         entityType={"Node"}/>
                 </Tab>
                 <Tab eventKey={'edges'} title="Edges">
                     <DataTable
                         {...this.props}
-                        results={this.props.rows || fakeData.results}
-                        columns={fakeData.cols.slice(0,3)}
-                        numPages={fakeData.numPages}
+                        numPages={5}
                         entityType={"Edge"}/>
                 </Tab>
             </Tabs>

@@ -7,15 +7,15 @@ import _ from 'underscore';
 
 
 function getTemplates(templates, openTab) {
+    const componentToTab = {'point': 'points', 'edge': 'edges'};
     return templates
-        .filter(({componentType}) =>
-            (openTab === 'points' && componentType === 'point')
-            || (openTab === 'edges' && componentType === 'edge'))
-        .map(({name}) => name);
+        .filter(({componentType}) => componentToTab[componentType] === openTab);
 }
 
 function coerceSortKey(templates, openTab, sortKey) {
-    return !sortKey ? getTemplates(templates, openTab).concat([''])[0] : sortKey;
+    return !sortKey
+        ? getTemplates(templates, openTab).concat([{name:''}])[0].name
+        : sortKey;
 }
 
 
@@ -28,12 +28,15 @@ let Inspector = ({
     const sortBy = coerceSortKey(templates, openTab, sortKey);
 
     var currentRows = undefined;
-    try { currentRows = rows[openTab][`search-${searchTerm||''}`][`sort-${sortBy||''}`][sortOrder];
-    } catch (e) { }
+    try {
+        currentRows = rows[openTab][`search-${searchTerm||''}`][`sort-${sortBy||''}`][sortOrder];
+    } catch (e) {
+        console.warn('Maybe exn', e);
+    }
 
     return <InspectorComponent
         {...{ searchTerm, sortKey: sortBy, sortOrder, rowsPerPage, page } }
-        open={open} openTab={openTab} templates={templates}
+        open={open} openTab={openTab} templates={getTemplates(templates, openTab)}
         rows={currentRows}
         onSelect={selectInspectorTab}  />;
 };
@@ -84,7 +87,8 @@ Inspector = container({
                         'sort-${sortBy||''}': {
                             ${sortOrder}: {
                                 [${start}..${stop}]: {
-                                    ${ getTemplates(templates, openTab).join(', ') }
+                                    ${ getTemplates(templates, openTab)
+                                        .map(({name}) => name).join(', ') }
                                 }
                             }
                         }
