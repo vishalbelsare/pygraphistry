@@ -98,32 +98,53 @@ class Graphistry extends Observable {
         );
     }
 
-    /**
-     * Open the filters panel
-     * @method Graphistry.openFilters
+
+     /**
+     * Toggle a leftside panel
+     * @method Graphistry.toggleLeftPanel
+     * @param {string} [panel] - Name of panel: filters, exclusions, scene, labels, layout
+     * @param {boolean} [turnOn] - Whether to make panel visible, or turn all off
      * @return {Promise} The result of the callback
      * @example
      *  GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
      *         window.g = g;
-     *         document.getElementById('controls').style.opacity=1.0;
      *         console.log('opening filters');
-     *         return g.openFilters();
+     *         return g.toggleLeftPanel('filters', true);
      *     })
      */
-    static openFilters() {
+    static toggleLeftPanel(panel, turnOn) {
         const { view } = this;
-        return new this(view.set(
-            $value(`filters.controls[0].selected`, true),
-            $value(`scene.controls[1].selected`, false),
-            $value(`labels.controls[0].selected`, false),
-            $value(`layout.controls[0].selected`, false),
-            $value(`exclusions.controls[0].selected`, false),
-            $value(`panels.left`, $ref(view._path.concat(`filters`)))
-        )
-        .map(({ json }) => json.toJSON())
-        .toPromise());
+        if (turnOn) {
+            return new this(view.set(
+                $value(`filters.controls[0].selected`, panel === 'filters'),
+                $value(`scene.controls[1].selected`, panel === 'scene'),
+                $value(`labels.controls[0].selected`, panel === 'labels'),
+                $value(`layout.controls[0].selected`, panel === 'layout'),
+                $value(`exclusions.controls[0].selected`, panel === 'exclusions'),
+                $value(`panels.left`,
+                    panel === 'filters' ? $ref(view._path.concat(`filters`))
+                    : panel === 'scene' ? $ref(view._path.concat(`scene`))
+                    : panel === 'labels' ? $ref(view._path.concat(`labels`))
+                    : panel === 'layout' ? $ref(view._path.concat(`layout`))
+                    : $ref(view._path.concat(`exclusions`)))
+            )
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+        } else {
+            return new this(view.set(
+                $value(`panels.left`, undefined),
+                $value(`filters.controls[0].selected`, false),
+                $value(`scene.controls[1].selected`, false),
+                $value(`labels.controls[0].selected`, false),
+                $value(`layout.controls[0].selected`, false),
+                $value(`exclusions.controls[0].selected`, false)
+            )
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+        }
     }
+
 
     /**
      * Close the filters panel
@@ -251,20 +272,20 @@ class Graphistry extends Observable {
     }
 
     /**
-     * Hide or Show Chrome UI
-     * @method Graphistry.toogleChrome
+     * Hide or Show Toolbar UI
+     * @method Graphistry.toogleToolbar
      * @static
-     * @param {boolean} show - Set to true to show chrome, and false to hide chrome.
+     * @param {boolean} show - Set to true to show toolbar, and false to hide toolbar.
      * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
      * @example
      *
-     * <button onclick="window.graphistry.toggleChrome(false)">Hide chrome</button>
-     * <button onclick="window.graphistry.toggleChrome(true)">Show chrome</button>
+     * <button onclick="window.graphistry.toggleToolbar(false)">Hide toolbar</button>
+     * <button onclick="window.graphistry.toggleToolbar(true)">Show toolbar</button>
      *
      */
-    static toggleChrome(show, cb) {
-        return this.updateSetting('showChrome', !!show, cb);
+    static toggleToolbar(show, cb) {
+        return this.updateSetting('showToolbar', !!show, cb);
     }
 
     /**
@@ -331,8 +352,12 @@ class Graphistry extends Observable {
 
     }
 
+
+
     /**
      * Add an to the visualization with the given expression
+     * Key settings: showArrows, pruneOrphans, edgeOpacity, edgeSize, pointOpacity,
+     * pointSize, labelOpacity, labelEnabled, labelPOI, zoom
      * @method Graphistry.updateSetting
      * @static
      * @param {string} name - the name of the setting to change
@@ -345,7 +370,7 @@ class Graphistry extends Observable {
         const lookup = {
 
             //models/toolbar.js
-            'showChrome': ['view', 'toolbar.visible'],
+            'showToolbar': ['view', 'toolbar.visible'],
 
             //models/scene/scene.js
             'showArrows':   ['view', 'scene.renderer.showArrows'],
