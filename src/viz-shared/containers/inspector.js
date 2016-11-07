@@ -1,7 +1,7 @@
 import { container } from '@graphistry/falcor-react-redux';
 
 import { Inspector as InspectorComponent } from '../components/inspector/inspector';
-import { selectInspectorTab } from 'viz-shared/actions/inspector';
+import { selectInspectorTab, setInspectorPage } from 'viz-shared/actions/inspector';
 
 import _ from 'underscore';
 
@@ -20,7 +20,8 @@ function coerceSortKey(templates, openTab, sortKey) {
 
 
 let Inspector = ({
-        openTab = 'points', currentQuery = {}, selectInspectorTab,
+        openTab = 'points', currentQuery = {},
+        selectInspectorTab, setInspectorPage,
         templates = {length: 0}, rows }) => {
 
     const { searchTerm = '', sortKey, sortOrder, rowsPerPage=6, page=1 } = currentQuery;
@@ -37,9 +38,12 @@ let Inspector = ({
     }
 
     return <InspectorComponent
-        {...{ searchTerm, sortKey: sortBy, sortOrder, rowsPerPage, page } }
+        {...{ searchTerm, sortKey: sortBy, sortOrder, rowsPerPage } }
+        page={ page }
+        numPages={Math.ceil(count / rowsPerPage)}
         open={open} openTab={openTab} templates={getTemplates(templates, openTab)}
         rows={currentRows}
+        onPageSelect={setInspectorPage}
         onSelect={selectInspectorTab}  />;
 };
 
@@ -101,7 +105,7 @@ Inspector = container({
         }`;
 
     },
-    dispatchers: { selectInspectorTab }
+    dispatchers: { selectInspectorTab, setInspectorPage }
 })(Inspector);
 
 

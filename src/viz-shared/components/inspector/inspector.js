@@ -11,9 +11,10 @@ import { Tab, Tabs, Table, Pagination, FormControl, InputGroup, Button } from 'r
 
 import _ from 'underscore';
 
-const datatablePropTypes = {
+const propTypes = {
     templates: React.PropTypes.array,
     rows: React.PropTypes.array,
+    openTab: React.PropTypes.string,
     searchTerm: React.PropTypes.string,
     sortKey: React.PropTypes.string,
     sortOrder: React.PropTypes.string,
@@ -21,8 +22,16 @@ const datatablePropTypes = {
     numPages: React.PropTypes.number,
     page: React.PropTypes.number,
     rowsPerPage: React.PropTypes.number,
-    handlePageSelect: React.PropTypes.func
+    onSelect: React.PropTypes.func,
+    onPageSelect: React.PropTypes.func
 };
+
+const datatablePropTypes =
+    _.extend(
+        {entityType: React.PropTypes.string},
+        propTypes);
+
+
 
 const datatableDefaultProps = {
     toggleColumnSort: (field) => {
@@ -36,15 +45,15 @@ const datatableDefaultProps = {
 class DataTable extends React.Component {
     constructor(props) {
         super(props);
-        console.log('DataTable props', props);
     }
 
     render () {
 
-        const start = this.props.rowsPerPage * (this.props.page - 1);
-        const stop = start + this.props.rowsPerPage;
+        const firstRow = this.props.rowsPerPage * (this.props.page - 1);
 
         const { templates } = this.props;
+
+        console.log('PRINTING ROWS', {firstRow, rowsPerPage: this.props.rowsPerPage, page: this.props.page});
 
         return (
             <div>
@@ -60,8 +69,7 @@ class DataTable extends React.Component {
                         items={this.props.numPages}
                         maxButtons={5}
                         activePage={this.props.page}
-                        onSelect={this.props.handlePageSelect} />
-
+                        onSelect={this.props.onPageSelect} />
                     <InputGroup>
                          <FormControl
                             type="text"
@@ -100,16 +108,14 @@ class DataTable extends React.Component {
                     </th>)}
                 </thead>
                 <tbody>{
-                    _.range(start, stop)
+                    _.range(firstRow, firstRow + this.props.rowsPerPage)
                         .map((row) => (<tr>{
                             templates.map(({name}) => (<td>{
-                                this.props.rows ? this.props.rows[row][name] : `placeholder:${row}:${name}`
-                            }</td>)
-                        )}</tr>))
-                }{
-                    _.range(0, (stop - start) - this.props.rowsPerPage)
-                        .map(() =>
-                            (<tr>{ templates.map(() => <td></td>) }</tr>))
+                                this.props.rows && this.props.rows[row]
+                                    ? this.props.rows[row][name]
+                                    : ''
+                            }</td>))
+                        }</tr>))
                 }</tbody>
             </Table>
         </div>);
@@ -123,39 +129,24 @@ DataTable.defaultProps = datatableDefaultProps;
 
 class Inspector extends React.Component {
 
-    constructor(props) {
-        super(props);
-    }
+    constructor(props) { super(props); }
 
     render() {
-
-        const { open, templates, rows,
-                onSelect,
-                openTab, searchTerm, sortKey, sortOrder, rowsPerPage, page }
-            = this.props;
-
-        const start = rowsPerPage * (page-1);
-        const stop = start + rowsPerPage;
-
         return <div className={styles.inspector}>
-            <Tabs activeKey={openTab} className={styles.inspectorTabs} onSelect={onSelect}>
+            <Tabs className={styles.inspectorTabs}
+                    activeKey={this.props.openTab}  onSelect={this.props.onSelect}>
                 <Tab eventKey={'points'} title="Points">
-                    <DataTable
-                        {...this.props}
-                        numPages={5}
-                        entityType={"Node"}/>
+                    <DataTable {...this.props} entityType={"Node"}/>
                 </Tab>
                 <Tab eventKey={'edges'} title="Edges">
-                    <DataTable
-                        {...this.props}
-                        numPages={5}
-                        entityType={"Edge"}/>
+                    <DataTable {...this.props} entityType={"Edge"}/>
                 </Tab>
             </Tabs>
         </div>;
-
     }
+
 }
+Inspector.propTypes = propTypes;
 
 export { Inspector };
 

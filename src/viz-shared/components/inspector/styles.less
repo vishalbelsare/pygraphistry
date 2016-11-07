@@ -72,11 +72,19 @@
         float: left;
         margin-top: 0;
         margin-bottom: 0;
+
         & a {
             border: none;
             border-radius: 0 !important;
             color: @medium-dark-grey;
         }
+        & :global(.active) a {
+            background-color: #eeeeee;
+        }
+        & a:hover {
+            color: black;
+        }
+
     }
 
     :global(.input-group) {
