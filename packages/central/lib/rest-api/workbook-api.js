@@ -12,51 +12,13 @@ const logger = log.createLogger('central:rest-api:workbook');
 
 
 export function initWorkbookApi(app, config) {
-    const s3WorkbookCache = new Cache(config.LOCAL_WORKBOOK_CACHE_DIR, config.LOCAL_WORKBOOK_CACHE);
+    const localCache = new Cache(config.LOCAL_WORKBOOK_CACHE_DIR, config.LOCAL_WORKBOOK_CACHE);
 
     app.post('/workbook',
         bodyParser.json({ limit: '10MB' }),
-        (req, res) => {
-            logger.info({ req, res }, 'Workbook upload request received.');
+        (req, res) => uploadWorkbookRequestHandler(req, res, localCache, config)
+    );
 
-            if(!req.body) {
-                logger.error({req, res}, `No request body provided for workbook upload`);
-                res.status(400).json({
-                    success: false,
-                    error: `No request body provided for workbook upload`
-                });
-
-                return;
-            }
-
-            const workbook = req.body;
-            workbook.id = workbook.id || simpleflake.toJSON();
-
-            return saveWorkbook({ workbook, config, s3WorkbookCache })
-                .take(1)
-                .subscribe(
-                    () => {
-                        const workbookUri = path.join('/workbook', workbook.id);
-                        const workbookViewUri = (url.parse(`/graph/graph.html?workbook=${workbook.id}`)).path;
-
-                        logger.info({req, res, workbook: workbook.id}, `Uploaded workbook saved to S3 and/or local disk cache`);
-                        res.status(201)
-                            .location(workbookUri)
-                            .json({
-                                success: true,
-                                workbook: workbook.id,
-                                view: workbookViewUri
-                            });
-                    },
-                    (err) => {
-                        logger.error({req, res, err}, `Error saving workbook`);
-                        res.status(500).json({
-                            success: false,
-                            error: `Error saving workbook: ${err.message}`
-                        })
-                    }
-                )
-        }
     );
 }
 
@@ -69,26 +31,76 @@ function makeWorkbookURL(workbookId) {
 }
 
 
+function uploadWorkbookRequestHandler(req, res, localCache, config) {
+    logger.info({ req, res }, 'Workbook upload request received.');
+
+    if(!req.body) {
+        logger.error({req, res}, `No request body provided for workbook upload`);
+        res.status(400).json({
+            success: false,
+            error: `No request body provided for workbook upload`
+        });
+
+        return;
+    }
+
+    const workbook = req.body;
+    workbook.id = workbook.id || simpleflake().toJSON();
+
+    return saveWorkbook({ workbook, config, localCache })
+        .take(1)
+        .subscribe(
+            () => {
+                const workbookUri = path.join('/workbook', workbook.id);
+                const workbookViewUri = (url.parse(`/graph/graph.html?workbook=${workbook.id}`)).path;
+
+                logger.info({req, res, workbook: workbook.id}, `Uploaded workbook saved to S3 and/or local disk cache`);
+                res.status(201)
+                    .location(workbookUri)
+                    .json({
+                        success: true,
+                        workbook: workbook.id,
+                        view: workbookViewUri
+                    });
+            },
+            (err) => {
+                logger.error({req, res, err}, `Error saving workbook`);
+                res.status(500).json({
+                    success: false,
+                    error: `Error saving workbook: ${err.message}`
+                });
+            }
+        );
+}
+
+
 /**
  *  Saves a workbook object to both the local disk cache and S3 (if S3 is enabled)
  */
-function saveWorkbook({ workbook, config, s3WorkbookCache }) {
+function saveWorkbook({ workbook, config, localCache }) {
     const serialized = JSON.stringify(workbook);
     const workbookURL = makeWorkbookURL(workbook.id);
 
-    return Observable.from(
-            s3WorkbookCache.put(workbookURL, serialized)
-        ).catch((err) => {
+    return Observable.from(localCache.put(workbookURL, serialized))
+        .catch( (err) => {
             log.error({err}, 'Error saving workbook locally');
-            return Observable.of(null)
-        }).switchMap((localWorkbookPath) => {
+            return Observable.of(null);
+        })
+        .switchMap( (localWorkbookPath) => {
             logger.info({workbook: workbook.id}, `Saved workbook to disk at path ${localWorkbookPath}`);
             logger.info({workbook: workbook.id}, `Uploading workbook to S3 in bucket "${config.BUCKET}" and name "${workbookURL.pathname}"`);
-            return s3.upload(config.S3, config.BUCKET, {name: workbookURL.pathname},
-                      new Buffer(serialized), {shouldCompress: true, ContentEncoding: 'gzip'})
-        }).catch((err) => {
+
+            return s3.upload(
+                config.S3,
+                config.BUCKET,
+                {name: workbookURL.pathname},
+                new Buffer(serialized),
+                {shouldCompress: true, ContentEncoding: 'gzip'}
+            );
+        })
+        .catch( (err) => {
             logger.error({ err }, 'Error uploading workbook to s3.');
-            return Observable.throw(e)
+            return Observable.throw(err);
         });
 }
 
