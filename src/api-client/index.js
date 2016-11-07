@@ -98,31 +98,116 @@ class Graphistry extends Observable {
         );
     }
 
-    /**
-     * Open the filters panel
-     * @method Graphistry.openFilters
+
+     /**
+     * Toggle a leftside panel
+     * @method Graphistry.toggleLeftPanel
+     * @param {string} [panel] - Name of panel: filters, exclusions, scene, labels, layout
+     * @param {boolean} [turnOn] - Whether to make panel visible, or turn all off
      * @return {Promise} The result of the callback
      * @example
      *  GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
      *         window.g = g;
-     *         document.getElementById('controls').style.opacity=1.0;
      *         console.log('opening filters');
-     *         return g.openFilters();
+     *         return g.toggleLeftPanel('filters', true);
      *     })
      */
-    static openFilters() {
+    static toggleLeftPanel(panel, turnOn) {
         const { view } = this;
-        return new this(view.set(
-            $value(`filters.controls[0].selected`, true),
-            $value(`scene.controls[1].selected`, false),
-            $value(`labels.controls[0].selected`, false),
-            $value(`layout.controls[0].selected`, false),
-            $value(`exclusions.controls[0].selected`, false),
-            $value(`panels.left`, $ref(view._path.concat(`filters`)))
-        )
-        .map(({ json }) => json.toJSON())
-        .toPromise());
+        if (turnOn) {
+            return new this(view.set(
+                $value(`filters.controls[0].selected`, panel === 'filters'),
+                $value(`scene.controls[1].selected`, panel === 'scene'),
+                $value(`labels.controls[0].selected`, panel === 'labels'),
+                $value(`layout.controls[0].selected`, panel === 'layout'),
+                $value(`exclusions.controls[0].selected`, panel === 'exclusions'),
+                $value(`panels.left`,
+                    panel === 'filters' ? $ref(view._path.concat(`filters`))
+                    : panel === 'scene' ? $ref(view._path.concat(`scene`))
+                    : panel === 'labels' ? $ref(view._path.concat(`labels`))
+                    : panel === 'layout' ? $ref(view._path.concat(`layout`))
+                    : $ref(view._path.concat(`exclusions`)))
+            )
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+        } else {
+            return new this(view.set(
+                $value(`panels.left`, undefined),
+                $value(`filters.controls[0].selected`, false),
+                $value(`scene.controls[1].selected`, false),
+                $value(`labels.controls[0].selected`, false),
+                $value(`layout.controls[0].selected`, false),
+                $value(`exclusions.controls[0].selected`, false)
+            )
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+        }
+    }
+
+    /**
+     * Toggle inspector panel
+     * @method Graphistry.toggleInspector
+     * @param {boolean} [turnOn] - Whether to make panel visible
+     * @return {Promise} The result of the callback
+     * @example
+     *  GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         console.log('opening inspector panel');
+     *         return g.toggleInspector(true);
+     *     })
+     */
+    static toggleInspector(turnOn) {
+        const { view } = this;
+        if (!turnOn) {
+            return new this(view.set(
+                $value(`panels.bottom`, undefined),
+                $value(`inspector.controls[0].selected`, false),
+            )
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+        } else {
+            return new this(view.set(
+                $value(`inspector.controls[0].selected`, true),
+                $value(`timebar.controls[0].selected`, false),
+                $value(`panels.bottom`, $ref(view._path.concat(`inspector`)))
+            )
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+        }
+    }
+
+    /**
+     * Toggle histogram panel
+     * @method Graphistry.toggleHistograms
+     * @param {boolean} [turnOn] - Whether to make panel visible
+     * @return {Promise} The result of the callback
+     * @example
+     *  GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         console.log('opening histogram panel');
+     *         return g.toggleHistograms(true);
+     *     })
+     */
+    static toggleHistograms(turnOn) {
+        const { view } = this;
+        if (!turnOn) {
+            return new this(view.set(
+                $value(`panels.right`, undefined),
+                $value(`histograms.controls[0].selected`, false)
+            )
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+        } else {
+            return new this(view.set(
+                $value(`histograms.controls[0].selected`, true),
+                $value(`panels.right`, $ref(view._path.concat(`histograms`)))
+            )
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+        }
     }
 
     /**
@@ -150,7 +235,6 @@ class Graphistry extends Observable {
      * Run one step of Graphistry's clustering algorithm
      * @method Graphistry.startClustering
      * @static
-     * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
      * @example
      * GraphistryJS(document.getElementById('viz'))
@@ -160,32 +244,13 @@ class Graphistry extends Observable {
      *         return g.tickClustering();
      *     })
      */
-    static tickClustering(cb) {
+    static tickClustering() {
 
         const { view } = this;
 
         return new this(view.call('tick')
             .map(({ json }) => json.toJSON())
-            .do((v) => cb ? cb(null, v) : undefined, cb)
             .toPromise());
-    }
-
-    /**
-     * Center the view of the graph
-     * @method Graphistry.autocenter
-     * @static
-     * @param {number} percentile - Controls sensitivity to outliers
-     * @param {function} [cb] - Callback function of type callback(error, result)
-     * @return {Promise} The result of the callback
-     * GraphistryJS(document.getElementById('viz'))
-     *     .flatMap(function (g) {
-     *         window.g = g;
-     *         console.log('centering');
-     *         return g.autocenter(.90);
-     *     })
-     */
-    static autocenter(percentile, cb) {
-
     }
 
 
@@ -201,11 +266,10 @@ class Graphistry extends Observable {
      *         return g.getCurrentWorkbook(function (err, obj){ alert('id: ' + obj.id); });
      *     })
      */
-    static getCurrentWorkbook(cb) {
+    static getCurrentWorkbook() {
         const { workbook } = this;
          return new this(workbook.get('id')
             .map(({ json }) => json.toJSON())
-            .do((v) => cb ? cb(null, v) : undefined, cb)
             .toPromise());
     }
 
@@ -214,7 +278,6 @@ class Graphistry extends Observable {
      * of the visualization, including active filters and exclusions
      * @method Graphistry.autocenter
      * @static
-     * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -222,49 +285,30 @@ class Graphistry extends Observable {
      *         return g.saveWorkbook(.90);
      *     })
      */
-    static saveWorkbook(cb) {
+    static saveWorkbook() {
 
         const { workbook } = this;
 
         return new this(workbook.call('save')
             .map(({ json }) => json.toJSON())
-            .do((v) => cb ? cb(null, v) : undefined, cb)
             .toPromise());
     }
 
-    /**
-     * Export a static visualization so that it can be shared publicly;
-     * @method Graphistry.exportStatic
-     * @static
-     * @param {string} name - The name of the static vizualization
-     * @param {function} [cb] - Callback function of type callback(error, result)
-     * @return {Promise} The result of the callback
-     * @example
-     * GraphistryJS(document.getElementById('viz'))
-     *     .flatMap(function (g) {
-     *         window.g = g;
-     *         return g.exportStatic('MyExportedLink');
-     *     })
-     */
-    static exportStatic(name, cb) {
-
-    }
 
     /**
-     * Hide or Show Chrome UI
-     * @method Graphistry.toogleChrome
+     * Hide or Show Toolbar UI
+     * @method Graphistry.toogleToolbar
      * @static
-     * @param {boolean} show - Set to true to show chrome, and false to hide chrome.
-     * @param {function} [cb] - Callback function of type callback(error, result)
+     * @param {boolean} show - Set to true to show toolbar, and false to hide toolbar.
      * @return {Promise} The result of the callback
      * @example
      *
-     * <button onclick="window.graphistry.toggleChrome(false)">Hide chrome</button>
-     * <button onclick="window.graphistry.toggleChrome(true)">Show chrome</button>
+     * <button onclick="window.graphistry.toggleToolbar(false)">Hide toolbar</button>
+     * <button onclick="window.graphistry.toggleToolbar(true)">Show toolbar</button>
      *
      */
-    static toggleChrome(show, cb) {
-        return this.updateSetting('showChrome', !!show, cb);
+    static toggleToolbar(show) {
+        return this.updateSetting('showToolbar', !!show);
     }
 
     /**
@@ -273,18 +317,16 @@ class Graphistry extends Observable {
      * @static
      * @param {string} expr - An expression using the same language as our in-tool
      * exclusion and filter panel
-     * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
      * @example
      * graphistry.addFilter('degree > 0');
      */
-    static addFilter(expr, cb) {
+    static addFilter(expr) {
 
         const { view } = this;
 
         return new this(view.call('filters.add', expr)
             .map(({ json }) => json.toJSON())
-            .do((v) => cb ? cb(null, v) : undefined, cb)
             .toPromise());
     }
 
@@ -294,58 +336,38 @@ class Graphistry extends Observable {
      * @static
      * @param {string} expr - An expression using the same language as our in-tool
      * exclusion and filter panel
-     * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
      * @example
      * graphistry.addExclusion('degree > 0');
      */
-    static addExclusion(expr, cb) {
+    static addExclusion(expr) {
         const { view } = this;
 
         return new this(view.call('exclusions.add', expr)
             .map(({ json }) => json.toJSON())
-            .do((v) => cb ? cb(null, v) : undefined, cb)
             .toPromise());
 
     }
 
-    /**
-     * Add an to the visualization with the given expression
-     * @method Graphistry.updateEncoding
-     * @static
-     * @param {string} entityType - An expression using the same language as our in-tool
-     * exclusion and filter panel
-     * @param {string} entityAttribute - The visual attribute you would like to encode
-     * @param {string} encodingMode - The type of encoding
-     * @param {string} dataAttribute - The attribute of the entity, that will
-     * define it encoding
-     * @param {function} [cb] - Callback function of type callback(error, result)
-     * @return {Promise} The result of the callback
-     * @example
-     * // Encode point sizes by the attribute community_spinglass using
-     * // categorical encodings
-     * encoding = ['point', 'size', 'categorical', 'community_spinglass'];
-     * graphistry.updateEncoding(encoding);
-     */
-    static updateEncoding(entityType, encodingAttribute, encodingMode, dataAttribute, cb) {
 
-    }
+
 
     /**
      * Add an to the visualization with the given expression
+     * Key settings: showArrows, pruneOrphans, edgeOpacity, edgeSize, pointOpacity,
+     * pointSize, labelOpacity, labelEnabled, labelPOI, zoom
      * @method Graphistry.updateSetting
      * @static
      * @param {string} name - the name of the setting to change
      * @param {string} val - the value to set the setting to.
-     * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
      */
-    static updateSetting(name, val, cb) {
+    static updateSetting(name, val) {
 
         const lookup = {
 
             //models/toolbar.js
-            'showChrome': ['view', 'toolbar.visible'],
+            'showToolbar': ['view', 'toolbar.visible'],
 
             //models/scene/scene.js
             'showArrows':   ['view', 'scene.renderer.showArrows'],
@@ -384,11 +406,10 @@ class Graphistry extends Observable {
      * @static
      * @param {string} level - Controls how far to zoom in or out.
      * @param {string} val - the value to set the setting to.
-     * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
      */
-    static updateZoom(level, cb) {
-        return this.updateSetting('zoom', level, cb);
+    static updateZoom(level) {
+        return this.updateSetting('zoom', level);
     }
 
     /**
@@ -397,10 +418,9 @@ class Graphistry extends Observable {
      * @static
      * @param {subscriptions} subscriptions - A list of subscriptions that
      * will subscribe to any label updates
-     * @param {function} [cb] - Callback function of type callback(error, result)
      * @return {Promise} The result of the callback
      */
-    static subscribeLabels({ onChange, onExit }, cb) {
+    static subscribeLabels({ onChange, onExit }) {
 
         const labelsStream = this.labelsStream || (this.labelsStream = this
             .fromEvent(window, 'message')
@@ -455,18 +475,7 @@ class Graphistry extends Observable {
             .subscribe();
     }
 
-    /**
-     * Unsubscribe from label events
-     * @method Graphistry.unsubscribeLabels
-     * @static
-     * @param {subscriptions} subscriptions - A list of subscriptions that
-     * will subscribe to any label updates
-     * @param {function} [cb] - Callback function of type callback(error, result)
-     * @return {Promise} The result of the callback
-     */
-    static unsubscribeLabels(cb) {
-        console.warn('not implemented');
-    }
+
 }
 
 /**
