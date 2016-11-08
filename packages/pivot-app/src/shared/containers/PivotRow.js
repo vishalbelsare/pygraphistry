@@ -269,12 +269,15 @@ function renderPivotRow({
                 />
             </td>
             <td key={`pcell-${id}-pivotselector`} className={styles.pivotData0 + ' pivotTypeSelector'}>
-                { renderTemplateSelector(id, pivotTemplate, templates, setPivotAttributes) }
+                {
+                    pivotTemplate &&
+                    renderTemplateSelector(id, pivotTemplate, templates, setPivotAttributes)
+                }
             </td>
 
             <td key={`pcell-${id}-pivotparam`} className={styles['pivotData1']}>
             {
-                pivotTemplate.pivotParameterKeys && pivotTemplate.pivotParametersUI &&
+                pivotTemplate && pivotTemplate.pivotParameterKeys && pivotTemplate.pivotParametersUI &&
                 pivotTemplate.pivotParameterKeys.map(key =>
                         renderPivotCell(
                             id, key, pivotParameters[key], pivotTemplate.pivotParametersUI[key],
