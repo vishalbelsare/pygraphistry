@@ -41,7 +41,7 @@ function wrapRouteHandler(route, handler) {
     const originalHandler = route[handler];
 
     return function routeHandlerWrapper(...args) {
-        log.debug({
+        log.trace({
             falcorReqPath: args[0],
             falcorArgs: args[1],
             falcorOp: handler,
