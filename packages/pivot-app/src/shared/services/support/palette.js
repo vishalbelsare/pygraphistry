@@ -86,7 +86,6 @@ palettes.forEach((palette) => {
     dims.forEach((dim) => {
 
         //use to create palette.out
-        //console.log('palette', palette, encounteredPalettes * 1000, brewer[palette][dim].length, brewer[palette][dim].join(','))
 
         const paletteOffset = encounteredPalettes * 1000;
         palettesToColorInts[palette][dim] = brewer[palette][dim].map(hexToABGR);

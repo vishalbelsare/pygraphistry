@@ -20,16 +20,16 @@ export function getDataSourceFactory(services) {
             }
             this.routeUnhandledPathsTo({
                 get(paths) {
-                    log.error({falcorPath: path}, 'Unhandled get');
+                    log.error({falcorReqPath: path}, 'Unhandled get');
                     return Observable.empty();
                 },
                 set(jsonGraphEnv) {
-                    log.error({falcorPath: jsonGraphEnv}, 'Unhandled set');
+                    log.error({falcorReqPath: jsonGraphEnv}, 'Unhandled set');
                     return Observable.of(jsonGraphEnv);
                 },
                 call(callPath, args, refPaths, thisPaths) {
                     log.error({
-                        falcorPath: callPath,
+                        falcorReqPath: callPath,
                         falcorArgs: args,
                         refPaths: refPaths,
                         thisPaths: thisPaths

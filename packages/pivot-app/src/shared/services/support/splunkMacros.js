@@ -1,6 +1,9 @@
 import { searchSplunk } from '../../services/searchSplunk.js';
 import { shapeSplunkResults} from '../../services/shapeSplunkResults.js';
 import _ from 'underscore';
+import logger from '@graphistry/common/logger2.js';
+const log = logger.createLogger('pivot-app', __filename);
+
 
 const pivotCache = {}
 export class SplunkPivot {
@@ -54,16 +57,14 @@ function buildLookup(text, pivotCache) {
             .map(s => s[0] === '"' ? s.slice(1,-1).trim() : s);
         var source = hit[3];
 
-        console.log('looking at: ', {search, fields, source});
+        log.trace({search, fields, source}, 'Looking at');
         var match = '';
         for (var i = 0; i < fields.length; i++) {
             const field = fields[i];
             const vals = _.uniq(_.map(pivotCache[search].results, function (row) {
                 return row[field];
             }));
-            //console.log('the vals:', vals, 'length', vals.length);
             const fieldMatch = `"${ field }"="${ vals.join(`" OR "${ field }"="`) }"`;
-            //const fieldMatch = `"${ field }"::"${ vals.join(`" OR "${ field }"::"`) }"`;
             match = match + (match ? ' OR ' : '') + fieldMatch;
         }
         return `${ source } ${ match } | head 10000 `;
@@ -73,7 +74,7 @@ function buildLookup(text, pivotCache) {
 
 //Assumes previous pivots have populated pivotCache
 export const expandTemplate = (text, pivotCache) => {
-    console.log('expanding: ', text);
+    log.debug({toExpand: text}, 'Expanding');
     return buildLookup(text, pivotCache);
 };
 

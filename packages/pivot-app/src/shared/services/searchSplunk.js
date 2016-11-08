@@ -1,6 +1,9 @@
 import splunkjs from 'splunk-sdk';
 import stringHash from 'string-hash';
 import { Observable } from 'rxjs';
+import logger from '@graphistry/common/logger2.js';
+const log = logger.createLogger('pivot-app', __filename);
+
 
 export function searchSplunk({app, pivot}) {
 
@@ -14,7 +17,7 @@ export function searchSplunk({app, pivot}) {
 
     service.login((err, success) => {
         if (success) {
-            console.log('Successful login to splunk');
+            log.debug('Successful login to splunk');
         }
         if (err) {
             throw err;
@@ -22,12 +25,11 @@ export function searchSplunk({app, pivot}) {
     });
     const searchQuery = pivot.searchQuery;
 
-    console.log('======= Search ======');
-    console.log(pivot.searchQuery);
+    log.debug({splunkQuery: pivot.searchQuery}, 'Search query');
 
     const searchJobId = `pivot-app::${stringHash(searchQuery)}`;
 
-    console.log('Search job id', searchJobId);
+    log.debug('Search job id: '+searchJobId);
 
     // Set the search parameters
     const searchParams = {
@@ -43,7 +45,7 @@ export function searchSplunk({app, pivot}) {
     return getJobObservable(searchJobId)
         .catch(
             () => {
-                console.log('No job was found, creating new search job');
+                log.debug('No job was found, creating new search job');
                 const serviceResult = serviceObservable(
                     searchQuery,
                     searchParams
@@ -56,12 +58,15 @@ export function searchSplunk({app, pivot}) {
             }
         )
         .switchMap(job => {
-                console.log('Search job properties\n---------------------');
-                console.log('Search job ID:         ' + job.sid);
-                console.log('The number of events:  ' + job.properties().eventCount);
-                console.log('The number of results: ' + job.properties().resultCount);
-                console.log('Search duration:       ' + job.properties().runDuration + ' seconds');
-                console.log('This job expires in:   ' + job.properties().ttl + ' seconds');
+                const props = job.properties();
+                log.debug({
+                    sid: job.sid,
+                    eventCount: props.eventCount,
+                    resultCount: props.resultCount,
+                    runDuration: props.runDuration,
+                    ttl: props.ttl
+                }, 'Search job properties');
+
                 const getResults = Observable.bindNodeCallback(job.results.bind(job),
                     function(results) {
                         return ({results, job});
