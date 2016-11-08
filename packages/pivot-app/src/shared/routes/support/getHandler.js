@@ -1,7 +1,6 @@
 import { inspect } from 'util';
 const  { slice } = Array.prototype;
 import { Observable } from 'rxjs';
-import { mapObjectsToAtoms } from './mapObjectsToAtoms';
 import logger from '@graphistry/common/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
