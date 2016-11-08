@@ -48,7 +48,7 @@ class DataTable extends React.Component {
 
         const { templates, columns = [], entityType } = this.props;
 
-        const renderColumns = columns.length ? columns : templates;
+        const renderColumns = columns.length && columns[0] ? columns : templates;
         const templatesArray = _.range(0, templates.length).map((i) => templates[i]);
 
 

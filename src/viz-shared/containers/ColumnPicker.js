@@ -99,8 +99,9 @@ export default class ColumnPicker extends React.Component {
                         onChange={
                             (values) => {
                                 return this.props.onChange(
-                                            (''+values).split(',')
-                                                .map((idx) => options[idx]))
+                                    !values ? []
+                                    : (''+values).split(',')
+                                                .map((idx) => options[idx]));
                             }
                         } />
                 </Modal.Body>
