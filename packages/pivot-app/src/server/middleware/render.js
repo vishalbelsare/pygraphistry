@@ -4,6 +4,9 @@ import { Model } from '@graphistry/falcor';
 import assets from '../webpack-assets.json'
 import { renderToString as reactRenderToString } from 'react-dom/server';
 import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
+import logger from '@graphistry/common/logger2.js';
+const log = logger.createLogger('pivot-app', __filename);
+
 
 // const renderServerSide = false;
 const renderServerSide = true;
@@ -21,17 +24,18 @@ export function renderMiddleware(getDataSource, modules) {
                     res.type('html').send(html);
                 },
                 error(e, error = e && e.stack || inspect(e, { depth: null })) {
-                    console.error(error);
-                    if (e.boundPath) {
-                        console.error(stringify(e.boundPath));
-                        console.error(stringify(e.shortedPath));
-                    }
+                    log.error({
+                        err: e,
+                        boundPath: JSON.stringify(e.boundPath),
+                        shortedPath: JSON.stringify(e.shortedPath)
+                    });
+
                     res.status(500).send(reactRenderToString(<pre>{error}</pre>));
                 }
             });
         } catch (e) {
             const error = e && e.stack || inspect(e, { depth: null });
-            console.error(error);
+            log.error(e);
             res.status(500).send(reactRenderToString(<pre>{error}</pre>));
         }
     }

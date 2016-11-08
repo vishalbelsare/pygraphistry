@@ -36,13 +36,7 @@ export class SplunkPivot {
             });
 
         return splunkResults
-            .map(({app, pivot}) => shapeSplunkResults({app, pivot}))
-            .map(
-                ({app, pivot}) => {
-                    pivot.status = { ok: true };
-                    return { app, pivot }
-                }
-            );
+            .map(({app, pivot}) => shapeSplunkResults({app, pivot}));
     }
 }
 

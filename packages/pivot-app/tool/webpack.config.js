@@ -82,7 +82,7 @@ function clientConfig(
     isFancyBuild = argv[1] === '--fancy'
 ) {
     var config = commonConfig(isDevBuild, isFancyBuild);
-    config.node = { fs: 'empty', global: false };
+    config.node = { fs: 'empty', '@graphistry/config': 'empty',  global: false };
     config.target = 'web';
     config.entry = {
         client: [
@@ -139,7 +139,8 @@ function serverConfig(
     config.node = {
         console: true,
         __filename: true,
-        __dirname: true
+        __dirname: true,
+        '@graphistry/config': 'empty'
     };
     config.target = 'node';
     config.entry = {

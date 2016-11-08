@@ -9,7 +9,7 @@ import {
     setHandler,
     logErrorWithCode
 } from './support';
-import logger from '@graphistry/common/logger.js';
+import logger from '@graphistry/common/logger2.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 
