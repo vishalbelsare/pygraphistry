@@ -53,29 +53,35 @@ let Control = ({ id, type, ...rest } = {}) => {
    );
 };
 
-Settings = container(
-    ({ settings = [] } = {}) => `{
+Settings = container({
+    renderLoading: false,
+    fragment: ({ settings = [] } = {}) => `{
         id, name, settings: {
             length, ... ${
                 Options.fragments(settings)
             }
         }
     }`
-)(Settings);
+})(Settings);
 
-Options = container(
-    (options = []) => `{
+Options = container({
+    renderLoading: false,
+    fragment: (options = []) => `{
         name, length, ...${
             Control.fragments(options)
         }
     }`,
-    (options) => ({ options, name: options.name })
-)(Options);
+    mapFragment: (options) => ({
+        options, name: options.name
+    })
+})(Options);
 
-Control = container(
-    () => `{ id, name, type, props, value: {${null}} }`,
-    (x) => x,
-    { setValue: setControlValue }
-)(Control);
+Control = container({
+    renderLoading: false,
+    fragment: () => `{ id, name, type, props, value: {${null}} }`,
+    dispatchers: {
+        setValue: setControlValue
+    }
+})(Control);
 
 export { Settings, Options, Control };

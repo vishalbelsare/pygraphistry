@@ -12,10 +12,15 @@ function preventPropagation (f) {
     }
 }
 
+function stopPropagation(e) {
+    // e.nativeEvent.stopImmediatePropagation();
+    e.stopPropagation();
+}
+
 export const Label = ({ showFull, pinned,
-                        onFilter, onExclude,
-                        onClick, onPinChange,
                         color, opacity, background,
+                        onMouseWheel, onTouchStart,
+                        onFilter, onExclude, onPinChange,
                         type, index, title, columns, ...props }) => {
 
     let styleOverrides;
@@ -25,15 +30,8 @@ export const Label = ({ showFull, pinned,
     }
 
     return (
-        <div onClick={(e) => {
-                 e.stopPropagation();
-                 e.nativeEvent.stopImmediatePropagation();
-                 onClick && onClick(e);
-             }}
-             onWheel={(e) => {
-                e.stopPropagation();
-                e.nativeEvent.stopImmediatePropagation();
-             }}
+        <div onMouseDown={onTouchStart}
+             onTouchStart={onTouchStart}
              className={classNames({
                  [styles['on']]: showFull,
                  [styles['clicked']]: pinned,
@@ -93,8 +91,10 @@ function LabelContents ({ columns = [], ...props }) {
         <div className={styles['graph-label-contents']}>
             <table>
                 <tbody>
-                {columns.map(({ key, ...column}) => (
-                    <LabelRow field={key} {...props} {...column}/>
+                {columns.map(({ key, title, ...column }, index) => (
+                    <LabelRow key={`${index}-${title}`}
+                              field={key} title={title}
+                              {...props} {...column}/>
                 ))}
                 </tbody>
             </table>

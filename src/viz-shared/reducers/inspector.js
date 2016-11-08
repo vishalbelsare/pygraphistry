@@ -31,7 +31,7 @@ export function inspector(action$, store) {
 function selectInspectorTab(action$, store) {
     return action$
         .ofType(SELECT_INSPECTOR_TAB)
-        .mergeMap(({falcor, openTab}) => (
+        .switchMap(({falcor, openTab}) => (
             Observable.merge(
                 falcor.set($value(`openTab`, openTab)),
                 falcor.set($value(
@@ -42,7 +42,7 @@ function selectInspectorTab(action$, store) {
 function setInspectorColumns(action$, store) {
     return action$
         .ofType(SET_INSPECTOR_COLUMNS)
-        .mergeMap(({falcor, columns}) => (
+        .switchMap(({falcor, columns}) => (
             falcor.set($value('currentQuery.columns', $atom(columns)))));
 }
 
@@ -50,7 +50,7 @@ function genericSetter(token, path, prop) {
     return function (action$, store) {
         return action$
             .ofType(token)
-            .mergeMap(({falcor, ...rest}) => (
+            .switchMap(({falcor, ...rest}) => (
                 falcor.set($value(path, rest[prop]))));
     };
 }

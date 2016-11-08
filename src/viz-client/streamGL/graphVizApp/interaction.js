@@ -3,6 +3,7 @@
 
 import $ from 'jquery'
 import { Observable, Scheduler, Subject } from 'rxjs';
+import labelStyles from 'viz-shared/components/labels/style.less';
 
 var $$       = window.Quo;
 var _        = require('underscore');
@@ -163,7 +164,9 @@ function setupScroll($eventTarget, canvas, camera, appState) {
             util.AND
         ))
         .filter(function (evt) {
-            return ! $(evt.target).parents('.graph-label-contents').length;
+            return !$(evt.target).parents(
+                `.${labelStyles['graph-label-contents']}`
+            ).length;
         })
         .do(function (wheelEvent) {
             wheelEvent.preventDefault();

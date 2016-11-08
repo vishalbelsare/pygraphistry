@@ -105,7 +105,7 @@ class Labels extends React.Component {
         }
 
         onLabelsUpdated &&
-            (updatesToSend.length) &&
+            updatesToSend.length &&
             onLabelsUpdated(updatesToSend);
 
         return (

@@ -1,14 +1,16 @@
 import { Settings } from 'viz-shared/containers/settings';
 import { container } from '@graphistry/falcor-react-redux';
 import {
-    Label as LabelOverlay,
-    Labels as LabelsContainer
+    Label as LabelComponent,
+    Labels as LabelsComponent
 } from 'viz-shared/components/labels';
 
 import {
-    labelMouseMove,
+    addFilter,
+    selectLabel,
+    addExclusion,
+    labelMouseWheel,
     labelTouchStart,
-    updateLabelSettings
 } from 'viz-shared/actions/labels';
 
 let Label = container({
@@ -16,11 +18,13 @@ let Label = container({
         type, index, title, columns
     }`,
     dispatchers: {
-        onMouseMove: labelMouseMove,
+        onFilter: addFilter,
+        onExclude: selectLabel,
+        onPinChange: addExclusion,
+        onMouseWheel: labelMouseWheel,
         onTouchStart: labelTouchStart,
-        updateLabelSettings
     }
-})(LabelOverlay);
+})(LabelComponent);
 
 const onClick = ({ type, title }) => {
    console.log('clicked', {type, title});
@@ -30,7 +34,7 @@ const onFilter = ({ type, field, value }) => {
    console.log('click filter', {type, field, value});
 };
 
-const onExclude= ({ type, field, value }) => {
+const onExclude = ({ type, field, value }) => {
    console.log('click exclude', {type, field, value});
 };
 
@@ -60,7 +64,7 @@ let Labels = ({ enabled, poiEnabled, opacity,
     }
 
     return (
-        <LabelsContainer labels={labels}
+        <LabelsComponent labels={labels}
                          enabled={enabled}
                          highlight={highlight}
                          selection={selection}
@@ -74,7 +78,7 @@ let Labels = ({ enabled, poiEnabled, opacity,
                    color={color} opacity={opacity}
                    showFull={label === highlight || label === selection}/>
         ) || []}
-        </LabelsContainer>
+        </LabelsComponent>
     );
 };
 

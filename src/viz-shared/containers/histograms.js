@@ -40,6 +40,7 @@ let Histograms = ({ addHistogram, removeHistogram,
 };
 
 Histograms = container({
+    renderLoading: true,
     fragment: ({ templates = [], ...histograms }) => `{
         templates: {
             length, [0...${templates.length}]: {
@@ -117,8 +118,9 @@ Histogram = container({
     }
 })(Histogram);
 
-let HistogramBins = container(
-    ({ bins } = {}) => `{
+let HistogramBins = container({
+    renderLoading: true,
+    fragment: ({ bins } = {}) => `{
         id, name, yScale,
         numElements, maxElements,
         binType, binWidth, numBins,
@@ -129,12 +131,13 @@ let HistogramBins = container(
             }
         }
     }`
-)(() => {});
+})(() => {});
 
-let HistogramBin = container(
-    (bins = []) => `{
+let HistogramBin = container({
+    renderLoading: true,
+    fragment: (bins = []) => `{
         count, values, exclude
     }`
-)(() => {});
+})(() => {});
 
 export { Histograms, Histogram };
