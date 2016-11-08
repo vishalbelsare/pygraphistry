@@ -1,13 +1,19 @@
-import React from 'react'
-import { createDevTools } from 'redux-devtools';
-import LogMonitor from 'redux-devtools-log-monitor';
-import DockMonitor from 'redux-devtools-dock-monitor';
-import Inspector from 'redux-devtools-inspector';
+let DevTools0 = () => null;
 
-export const DevTools = createDevTools(
-    <DockMonitor defaultIsVisible={false}
-                 toggleVisibilityKey="ctrl-h"
-                 changePositionKey="ctrl-w">
-        <Inspector/>
-    </DockMonitor>
-);
+if (__DEV__) {
+    const createDevTools = require('redux-devtools').createDevTools;
+    const LogMonitor = require('redux-devtools-log-monitor').default;
+    const DockMonitor = require('redux-devtools-dock-monitor').default;
+    const Inspector = require('redux-devtools-inspector').default;
+
+    DevTools0 = createDevTools(
+        <DockMonitor defaultIsVisible={false}
+                    toggleVisibilityKey="ctrl-h"
+                    changePositionKey="ctrl-w">
+            <Inspector/>
+        </DockMonitor>
+    );
+
+}
+
+export const DevTools = DevTools0;

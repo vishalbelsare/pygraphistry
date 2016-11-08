@@ -1,4 +1,3 @@
-import createLogger from 'redux-logger';
 import rootReducer from '../reducers/';
 import { DevTools } from '../containers';
 import { compose, createStore, applyMiddleware } from 'redux';
@@ -11,11 +10,20 @@ import { createEpicMiddleware, combineEpics } from 'redux-observable';
 
 
 export function configureStore(initialState = {}) {
-     return createStore(rootReducer, initialState, compose(
-        applyMiddleware(createEpicMiddleware(
-            combineEpics(app, investigationScreen, investigation, pivot)
-        ), createLogger()),
-        DevTools.instrument()
-	    )
+    const epicsMiddleware = createEpicMiddleware(
+        combineEpics(app, investigationScreen, investigation, pivot)
+    );
+
+    const enhancer = __DEV__ ?
+        compose(
+            applyMiddleware(epicsMiddleware, require('redux-logger')()),
+            DevTools.instrument()
+        ) :
+        applyMiddleware(epicsMiddleware);
+
+    return createStore(
+        rootReducer,
+        initialState,
+        enhancer,
 	)
 }
