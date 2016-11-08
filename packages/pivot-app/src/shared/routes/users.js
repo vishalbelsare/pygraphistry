@@ -6,7 +6,6 @@ import {
 import {
     getHandler,
     setHandler,
-    logErrorWithCode,
 } from './support';
 
 export function users({ loadApp, removeInvestigationsById, loadUsersById, deleteInvestigationsById,

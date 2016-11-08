@@ -2,6 +2,9 @@ import { inspect } from 'util';
 import { Observable } from 'rxjs';
 import { routes } from '../routes';
 import Router from '@graphistry/falcor-router';
+import logger from '@graphistry/common/logger2.js';
+const log = logger.createLogger('pivot-app', __filename);
+
 
 export function getDataSourceFactory(services) {
 
@@ -17,21 +20,20 @@ export function getDataSourceFactory(services) {
             }
             this.routeUnhandledPathsTo({
                 get(paths) {
-                    console.log('============unhandled get:');
-                    console.log(`paths: ${inspect(paths, { depth: null })}`);
+                    log.error({falcorReqPath: path}, 'Unhandled get');
                     return Observable.empty();
                 },
                 set(jsonGraphEnv) {
-                    console.log('============unhandled set:');
-                    console.log(`jsonGraphEnv: ${inspect(jsonGraphEnv, { depth: null })}`);
+                    log.error({falcorReqPath: jsonGraphEnv}, 'Unhandled set');
                     return Observable.of(jsonGraphEnv);
                 },
                 call(callPath, args, refPaths, thisPaths) {
-                    console.log('============unhandled call:');
-                    console.log(`callPath: ${inspect(callPath, { depth: null })}`);
-                    console.log(`args: ${inspect(args, { depth: null })}`);
-                    console.log(`refPaths: ${inspect(refPaths, { depth: null })}`);
-                    console.log(`thisPaths: ${inspect(thisPaths, { depth: null })}`);
+                    log.error({
+                        falcorReqPath: callPath,
+                        falcorArgs: args,
+                        refPaths: refPaths,
+                        thisPaths: thisPaths
+                    }, 'Unhandled call');
                     return Observable.empty();
                 }
             });

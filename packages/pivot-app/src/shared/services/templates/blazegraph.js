@@ -5,6 +5,8 @@ import {
     constructFieldString,
     encodeGraph
 } from '../support/splunkMacros.js';
+import logger from '@graphistry/common/logger2.js';
+const log = logger.createLogger('pivot-app', __filename);
 
 
 class BlazePivot {
@@ -47,9 +49,8 @@ class BlazePivot {
                 }
             )
             .catch((e) => {
-                console.error(e);
-                if (e.stack) { console.error(e.stack); }
-                return Observable.throw('Failed to download dataset ' +  e )
+                log.error(e);
+                return Observable.throw('Failed to download dataset: ' +  e);
             })
     }
 }

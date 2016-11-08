@@ -1,7 +1,7 @@
 import { simpleflake } from 'simpleflakes';
 
-export function logErrorWithCode(e) {
+export function logErrorWithCode(log, e) {
     const errorCode = simpleflake().toJSON();
-    console.error(` (ErrorCode: ${errorCode})\n`, e && e.stack || e);
+    log.error({err: e, errorCode: errorCode});
     return errorCode;
 }

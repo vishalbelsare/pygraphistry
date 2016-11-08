@@ -18,6 +18,8 @@ import {
     pivotStore, insertPivot, splicePivot, searchPivot,
     uploadGraph
 } from '../shared/services';
+import logger from '@graphistry/common/logger2.js';
+const log = logger.createLogger('pivot-app', __filename);
 
 
 const pathPrefix = process.env.PIVOTAPP_DATADIR || 'tests/appdata';
@@ -28,8 +30,8 @@ listInvestigations(investigationPath)
     .map(investigations => makeTestUser(investigations, listTemplates()))
     .do(init)
     .subscribe(
-        () => console.log('Initialized'),
-        (e) => console.error(e)
+        () => log.info('Pivot-App initialized'),
+        (e) => log.error(e)
     )
 
 function init(testUser) {

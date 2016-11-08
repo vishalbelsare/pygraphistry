@@ -7,9 +7,10 @@ import { Observable } from 'rxjs';
 import {
     getHandler,
     setHandler,
-    captureErrorStacks,
     logErrorWithCode
 } from './support';
+import logger from '@graphistry/common/logger2.js';
+const log = logger.createLogger('pivot-app', __filename);
 
 
 export function investigations({ loadUsersById, loadInvestigationsById, saveInvestigationsById,
@@ -24,7 +25,6 @@ export function investigations({ loadUsersById, loadInvestigationsById, saveInve
         returns: `String`,
         get: getInvestigationsHandler,
         set: setInvestigationsHandler,
-
     }, {
         route: `investigationsById[{keys}]['modifiedOn']`,
         returns: `Number`,
@@ -153,7 +153,7 @@ function cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById,
 
 function captureErrorAndNotifyClient(investigationIds) {
     return function(e) {
-        const errorCode = logErrorWithCode(e);
+        const errorCode = logErrorWithCode(log, e);
         const status = {
             ok: false,
             code: errorCode,

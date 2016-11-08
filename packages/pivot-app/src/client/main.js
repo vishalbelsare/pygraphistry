@@ -13,6 +13,9 @@ import DataSource from 'falcor-http-datasource';
 import { Provider } from 'react-redux';
 import { configureStore } from '../shared/store/configureStore';
 
+import logger from '@graphistry/common/logger2.js';
+const log = logger.createLogger('pivot-app', __filename);
+
 const useLocalStorage = __DEV__;
 const localStorageToken = 'pivots-app-cache';
 
@@ -34,14 +37,14 @@ Observable
         next() {},
         error(e) {
             debugger;
-            console.error(e);
+            log.error(e);
         }
     });
 
 function printBuildInfo() {
     const buildNum = __BUILDNUMBER__ === undefined ? 'Local build' : `Build #${__BUILDNUMBER__}`;
     const buildDate = (new Date(__BUILDDATE__)).toLocaleString();
-    console.info(`${buildNum} of ${__GITBRANCH__}@${__GITCOMMIT__} (on ${buildDate})`)
+    log.info(`${buildNum} of ${__GITBRANCH__}@${__GITCOMMIT__} (on ${buildDate})`)
 }
 
 function getAppDOMNode(appDomNode) {

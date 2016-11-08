@@ -28,7 +28,10 @@ import {
 } from '../actions/investigationScreen.js';
 import { container } from '@graphistry/falcor-react-redux';
 import Sidebar from './Sidebar.js';
-import styles from "./styles.less"
+import styles from './styles.less';
+import logger from '@graphistry/common/logger2.js';
+const log = logger.createLogger('pivot-app', __filename);
+
 
 function welcomeBar(user, investigations) {
     return (
@@ -113,7 +116,7 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
         if (['name', 'description'].includes(column)) {
             setInvestigationParams({[column]: row[column]}, row.id);
         } else {
-            console.error('Cannot edit', column);
+            log.error('Cannot edit column' + column);
         }
     }
 

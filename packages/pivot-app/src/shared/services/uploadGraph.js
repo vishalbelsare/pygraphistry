@@ -5,6 +5,9 @@ import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
 
+import logger from '@graphistry/common/logger2.js';
+const log = logger.createLogger('pivot-app', __filename);
+
 
 function upload(etlService, apiKey, data) {
     const gzipObservable = Observable.bindNodeCallback(zlib.gzip.bind(zlib));
@@ -23,11 +26,11 @@ function upload(etlService, apiKey, data) {
 
 //jsonGraph * (err? -> ())? -> ()
 function upload0(etlService, apiKey, data, cb) {
-    cb = cb || function (err, resp) {
+    cb = cb || function (err, res) {
         if (err) {
-            return console.error('exn', err);
+            return log.error(err, 'ETL upload error');
         } else {
-            return console.log('success', resp);
+            return log.debug(res, 'ETL success');
         }
     };
 
@@ -37,15 +40,15 @@ function upload0(etlService, apiKey, data, cb) {
         qs: getQuery(apiKey),
         headers: headers,
         body: data,
-        callback: function (err, resp, body) {
+        callback: function (err, res, body) {
             if (err) { return cb(err); }
             try {
                 const json = JSON.parse(body);
                 if (!json.success) {
-                    console.log('body in succes?', body);
+                    log.trace(body, 'body in success?');
                     throw new Error(body);
                 }
-                console.log('  -> Uploaded', body);
+                log.debug('  -> Uploaded' + body);
                 return cb(undefined, body);
             } catch (e) {
                 return cb(e);
@@ -186,10 +189,11 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                 .do(({user, dataset, data}) => {
                     investigation.eventTable = makeEventTable(data);
                     investigation.url = `${user.vizService}&dataset=${dataset}`;
-                    console.log('  URL: ', investigation.url);
+                    investigation.status = {ok: true};
+                    log.debug('  URL: ' + investigation.url);
                 })
                 .catch(e => {
-                    console.error(e);
+                    log.error(e);
                     investigation.status = {
                         ok: false,
                         message: e.message || 'Unknown Error'

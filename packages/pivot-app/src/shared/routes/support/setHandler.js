@@ -1,7 +1,6 @@
 import { inspect } from 'util';
 const  { slice } = Array.prototype;
-import { mapObjectsToAtoms } from './mapObjectsToAtoms';
-import { captureErrorStacks } from './captureErrorStacks';
+
 
 export function setHandler(lists, loader, mapValue, { valueKey, ...props } = {}) {
     return function handler(json) {
@@ -53,14 +52,7 @@ export function setHandler(lists, loader, mapValue, { valueKey, ...props } = {})
             return value;
         });
 
-        return (values
-            .map(mapObjectsToAtoms)
-            /*.do((pv) => {
-                console.log(`set: ${JSON.stringify(json)}`);
-                console.log(`res: ${JSON.stringify(pv.path)}`);
-            })*/
-            .catch(captureErrorStacks)
-        );
+        return values;
     }
 }
 

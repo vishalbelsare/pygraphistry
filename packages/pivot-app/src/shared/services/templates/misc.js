@@ -1,6 +1,7 @@
 import { constructFieldString, SplunkPivot } from '../support/splunkMacros.js';
 import _ from 'underscore';
 import stringhash from 'string-hash';
+import { Observable} from 'rxjs';
 
 
 export const searchSplunk = new SplunkPivot({
