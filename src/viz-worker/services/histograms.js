@@ -163,6 +163,11 @@ function computeHistogram({ view, masked, histogram, pointsMask, refresh = true 
         dataframe, pointsMask, pointsMask === undefined ?
             undefined : simulator.connectedEdges(pointsMask)
     );
+
+    // Unbase mask from local filtered coordinate system to global coordinate system
+    // TODO: We really shouldn't have to track this kind of nonsense.
+    const unbasedMask = new DataframeMask(dataframe, mask.point, mask.edge, dataframe.lastMasks);
+
     const dataType = dataframe.getDataType(name, componentType);
     const aggregations = dataframe.getColumnAggregations(name, componentType, true);
     const countDistinct = aggregations.getAggregationByType('countDistinct');
@@ -171,11 +176,11 @@ function computeHistogram({ view, masked, histogram, pointsMask, refresh = true 
     const binsForHistogram = Observable.defer(() =>
         (isCountBy || dataType === 'string') ?
             binningInstance.binningForColumnByDistinctValue(
-                { attribute: name, type: componentType }, mask, dataType
+                { attribute: name, type: componentType }, unbasedMask, dataType
             ) :
             binningInstance.binningForColumn(
                 { attribute: name, type: componentType },
-                binningHint, goalNumberOfBins, mask, dataType
+                binningHint, goalNumberOfBins, unbasedMask, dataType
             )
     );
 
