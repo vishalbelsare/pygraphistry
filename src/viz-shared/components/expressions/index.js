@@ -29,6 +29,7 @@ export function ExpressionsList({
     id, templates = [], addExpression,
     showHeader = true, header,
     dropdownPlacement = 'bottom',
+    side='left',
     placeholder,
     style = {}, children, name, ...props
 }) {
@@ -51,7 +52,7 @@ export function ExpressionsList({
                style={{ ...style, display: `block`, margin: 0 }}
                footer={ bottom }
                {...props}>
-            <ListGroup fill>
+            <ListGroup fill style={side==='left' ? {maxHeight: '300px', 'overflowY': 'scroll'} : {}}>
             {children.map((child) => (
                 <ListGroupItem key={child.key}
                                style={{ paddingLeft: 0, paddingRight: 0 }}>
@@ -115,7 +116,7 @@ export function ExpressionItem({
                 <OverlayTrigger
                     placement='top'
                     overlay={expressionTooltip}>
-                    <div style={{ border: `1px solid gray`, borderRadius: `3px`, minWidth: 250 }}>
+                    <div style={{ border: `1px solid #cccccc`, borderRadius: `3px`, minWidth: 250 }}>
                         <ExpressionEditor name={`expression-${id}`} width='100%'
                                           value={input} templates={templates} readOnly={isSystem}
                                           onChange={(input) => cancelUpdateExpression({ id })}
@@ -124,7 +125,7 @@ export function ExpressionItem({
                 </OverlayTrigger>
             </Col>
             {!isSystem &&
-            <Col xs={4} md={4} lg={4} className={styles['expression-row']} style={{ paddingLeft: 0 }}>
+            <Col xs={4} md={4} lg={4} className={styles['expression-row']} style={{ paddingLeft: 0, transform: 'scale(0.9)' }}>
                 <Col xs={6} md={6} lg={6} style={{ paddingRight: 0 }}>
                     <OverlayTrigger placement='top'
                                     overlay={expressionEnabledTooltip}>
