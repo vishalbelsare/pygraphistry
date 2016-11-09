@@ -75,7 +75,7 @@ function captureErrorAndNotifyClient(pivotIds) {
         const status = {
             ok: false,
             code: errorCode,
-            message: `Pivot error: ${e.message} (code: ${errorCode})`
+            message: `${e.message} (code: ${errorCode})`
         }
 
         return Observable.from([
