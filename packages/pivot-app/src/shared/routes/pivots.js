@@ -10,6 +10,7 @@ import {
     setHandler,
     logErrorWithCode
 } from './support';
+import VError from 'verror';
 import logger from '@graphistry/common/logger2.js';
 const log = logger.createLogger('pivot-app', __filename);
 
@@ -74,7 +75,7 @@ function captureErrorAndNotifyClient(pivotIds) {
         const status = {
             ok: false,
             code: errorCode,
-            message: `Search error (code: ${errorCode})`
+            message: `Pivot error: ${e.message} (code: ${errorCode})`
         }
 
         return Observable.from([
