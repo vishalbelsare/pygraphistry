@@ -15,14 +15,5 @@ export function searchPivot({ loadPivotsById, pivotIds }) {
                 .do(({pivot}) => {
                     pivot.status = {ok: true};
                 })
-                .map(() => ({app, pivot}))
-                .catch(e => {
-                    log.error(e, 'searchPivot error');
-                    pivot.status = {
-                        ok: false,
-                        message: e.message || 'Unknown Error'
-                    };
-                    return Observable.of({app, pivot});
-                });
         });
 }

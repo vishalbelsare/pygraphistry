@@ -2,61 +2,82 @@ import splunkjs from 'splunk-sdk';
 import stringHash from 'string-hash';
 import { Observable } from 'rxjs';
 import logger from '@graphistry/common/logger2.js';
-const log = logger.createLogger('pivot-app', __filename);
+import VError from 'verror';
 
+const SPLUNK_HOST = process.env.SPLUNK_HOST;
+const SPLUNK_USER = process.env.SPLUNK_USER || 'admin';
+const SPLUNK_PWD = process.env.SPLUNK_PWD || 'graphtheplanet'
+
+const service = new splunkjs.Service({
+    host: SPLUNK_HOST,
+    username: SPLUNK_USER,
+    password: SPLUNK_PWD
+});
+
+const log = logger.createLogger('pivot-app', __filename)
+                .child({splunkHostName: SPLUNK_HOST, splunkUser: SPLUNK_USER})
 
 export function searchSplunk({app, pivot}) {
 
-    // TODO This can be moved out of function once template
-    // is removed from client
-    const service = new splunkjs.Service({
-        host: process.env.SPLUNK_HOST || 'splunk.graphistry.com',
-        username: process.env.SPLUNK_USER || 'admin',
-        password: process.env.SPLUNK_PWD || 'graphtheplanet'
-    });
-
-    service.login((err, success) => {
-        if (success) {
-            log.debug('Successful login to splunk');
-        }
-        if (err) {
-            throw err;
-        }
-    });
-    const searchQuery = pivot.searchQuery;
-
-    log.debug({splunkQuery: pivot.searchQuery}, 'Search query');
-
-    const searchJobId = `pivot-app::${stringHash(searchQuery)}`;
-
-    log.debug('Search job id: '+searchJobId);
+    const splunkQuery = pivot.searchQuery;
+    const splunkJobId = `pivot-app::${stringHash(splunkQuery)}`;
 
     // Set the search parameters
     const searchParams = {
-        id: searchJobId,
+        id: splunkJobId,
         timeout: '14400', // 4 hours
         exec_mode: 'blocking',
         earliest: '-7d'
     };
 
-    const getJobObservable = Observable.bindNodeCallback(service.getJob.bind(service));
-    const serviceObservable = Observable.bindNodeCallback(service.search.bind(service));
+    const searchInfo = { splunkQuery, searchParams };
 
-    return getJobObservable(searchJobId)
-        .catch(
-            () => {
-                log.debug('No job was found, creating new search job');
-                const serviceResult = serviceObservable(
-                    searchQuery,
-                    searchParams
+    log.info( searchInfo,'Fetching results for splunk job: "%s"', splunkJobId);
+
+    const splunkLogin = Observable.bindNodeCallback(service.login.bind(service));
+    const splunkGetJob = Observable.bindNodeCallback(service.getJob.bind(service));
+    const splunkSearch = Observable.bindNodeCallback(service.search.bind(service));
+
+    return splunkLogin()
+        .catch(({error, status}) => {
+            if (error) {
+                return Observable.throw(
+                    new VError({
+                        name: 'ConnectionError',
+                        cause: error,
+                        info: {
+                            splunkAddress: error.address,
+                            splunkPort: error.port,
+                            code: error.code,
+                            ...searchInfo
+                        }
+                    }, 'Failed to connect to splunk instance at "%s:%d"', error.address, error.port)
                 );
-                return serviceResult.switchMap(job => {
-                    const fetchJob = Observable.bindNodeCallback(job.fetch.bind(job));
-                    const jobObservable = fetchJob();
-                    return jobObservable;
-                });
+            } else if (status === 401) {
+                return Observable.throw(
+                    new VError({
+                        name: 'UnauthorizedSplunkLogin',
+                        info: searchInfo
+                    }, 'Unsucessful logon from user "%s"', SPLUNK_USER)
+                )
             }
-        )
+        })
+        .switchMap(succesfulLogin => {
+            log.debug('Succesful logon from user "%a"', SPLUNK_USER);
+            return getJob(searchJobId)
+                .catch(() => {
+                    log.debug('No job was found, creating new search job');
+                    const results = splunkSearch(
+                        searchQuery,
+                        searchParams
+                    );
+                    return results.switchMap(job => {
+                        const splunkFetchJob = Observable.bindNodeCallback(job.fetch.bind(job));
+                        return splunkFetchJob();
+                    });
+                }
+            )
+        })
         .switchMap(job => {
                 const props = job.properties();
                 log.debug({
