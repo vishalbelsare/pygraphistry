@@ -32,8 +32,9 @@ let Expressions = ({ templates = [], expressions = [],
     );
 };
 
-Expressions = container(
-    ({ templates = [], ...expressions } = {}) => `{
+Expressions = container({
+    renderLoading: false,
+    fragment: ({ templates = [], ...expressions } = {}) => `{
         id, name, length, ...${
             Expression.fragments(expressions)
         },
@@ -43,24 +44,29 @@ Expressions = container(
             }
         }
     }`,
-    (expressions) => ({
+    mapFragment: (expressions) => ({
         expressions,
         name: expressions.name,
         templates: expressions.templates
     }),
-    { addExpression, removeExpression }
-)(Expressions);
+    dispatchers: {
+        addExpression,
+        removeExpression
+    }
+})(Expressions);
 
-let Expression = container(
-    () => `{
+let Expression = container({
+    renderLoading: false,
+    fragment: () => `{
         id, input, level,
         name, enabled, identifier,
         dataType, componentType, expressionType
     }`,
-    (expression) => expression,
-    { updateExpression,
-      setExpressionEnabled,
-      cancelUpdateExpression }
-)(ExpressionItem);
+    dispatchers: {
+        updateExpression,
+        setExpressionEnabled,
+        cancelUpdateExpression
+    }
+})(ExpressionItem);
 
 export { Expressions, Expression };

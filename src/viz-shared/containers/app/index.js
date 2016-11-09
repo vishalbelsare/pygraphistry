@@ -24,6 +24,7 @@ let App = ({ workbooks = [], ...props } = {}) => {
 }
 
 App = hoistStatics(connect)(container({
+    renderLoading: true,
     fragment: ({ workbooks = [] } = {}) => {
         const { open: workbook = {} } = workbooks;
         const { views = [] } = workbook;

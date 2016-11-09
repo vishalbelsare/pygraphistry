@@ -37,7 +37,7 @@ let Inspector = ({
         selectInspectorTab, setInspectorPage, setInspectorSortKey,
         setInspectorSortOrder, setInspectorSearchTerm, setInspectorColumns,
 
-        templates = {length: 0}, rows }) => {
+        templates = [], rows }) => {
 
     const { searchTerm = '', sortKey, sortOrder, rowsPerPage=6, page=1, columns=[] } = currentQuery;
 

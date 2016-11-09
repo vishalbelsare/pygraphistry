@@ -53,8 +53,9 @@ let Panel = ({
     return componentInstance;
 };
 
-Panel = container(
-    ({ id, name, ...rest } = {}, { side }) => {
+Panel = container({
+    renderLoading: true,
+    fragment: ({ id, name, ...rest } = {}, { side }) => {
         if (!id && !name) {
             return `{ panels: { ${side} } }`;
         }
@@ -66,8 +67,8 @@ Panel = container(
             Content.fragment({ id, name, ...rest })}
         }`;
     },
-    (panel) => ({ panel })
-)(Panel);
+    mapFragment: (panel) => ({ panel })
+})(Panel);
 
 export { Panel };
 
@@ -76,12 +77,6 @@ function Timebar() {
         <h1>Timebar</h1>
     );
 }
-
-// function Histograms() {
-//     return (
-//         <h1>Histograms</h1>
-//     );
-// }
 
 function leftPanelStyles(isOpen) {
     return {

@@ -48,8 +48,8 @@ let View = ({
                   defaultSize={0.2}
                   isVisible={isRightPanelOpen}
                   dockStyle={{
-                      background: `transparent`,
-                      'box-shadow': `none`
+                      boxShadow: `none`,
+                      background: `transparent`
                   }}>
                 <Panel side='right' data={right} key='right-panel'/>
             </Dock>
@@ -59,7 +59,7 @@ let View = ({
                   dimMode='none'
                   position='bottom'
                   isVisible={isBottomPanelOpen}
-                  size={1 - (1/Math.sqrt(2))}>
+                  defaultSize={1 - (1/Math.sqrt(2))}>
                 <Panel side='bottom' data={bottom} key='bottom-panel'/>
             </Dock>
             <Toolbar key='toolbar' data={toolbar} selectToolbarItem={selectToolbarItem}/>
@@ -68,6 +68,7 @@ let View = ({
 };
 
 View = container({
+    renderLoading: true,
     fragment: ({ scene, layout, toolbar } = {}) => `{
         scene: ${ Scene.fragment(scene) },
         panels: {

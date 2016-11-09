@@ -1,6 +1,6 @@
 import deepExtend from 'deep-extend';
 import createLogger from 'redux-logger';
-import { DevTools } from '../components';
+// import { DevTools } from '../components';
 import { compose, createStore, applyMiddleware } from 'redux';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
 
@@ -18,7 +18,7 @@ export function configureStore(initialState, rootReducer, epics) {
                 //     // stateTransformer: deepExtendState
                 // })
                 ),
-            DevTools.instrument()
+            // DevTools.instrument()
         )
     );
 

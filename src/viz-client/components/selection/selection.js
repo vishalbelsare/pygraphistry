@@ -119,21 +119,19 @@ const Selection = compose(
 )(({ mask,
      simulating,
      sizes, points,
+     highlightedPoint,
      point: pointIndexes = [],
      onSelectedPointTouchStart,
      onSelectionMaskTouchStart,
-     renderState, renderingScheduler,
-     highlight: { point: highlightPoints = [] } = {} }) => {
+     renderState, renderingScheduler }) => {
 
     if (simulating || !renderState || !renderingScheduler) {
-        highlightPoints = [];
         renderState = undefined;
+        highlightedPoint = undefined;
         renderingScheduler = undefined;
         onSelectedPointTouchStart = undefined;
         onSelectionMaskTouchStart = undefined;
     }
-
-    const highlightedPoint = highlightPoints[0];
 
     onMaskTouchStart.mask = mask;
     onMaskTouchStart.simulating = simulating;
