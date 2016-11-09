@@ -26,15 +26,10 @@ docker run --rm graphistry/pivot-app:build sh -c "tar --create ${ARTIFACTS}" > a
 # Create runner script #
 ########################
 
-cat << EOF > run.sh
-#!/bin/sh
+RUNCMD=`docker run --rm graphistry/pivot-app:build sh -c "cat package.json" | jq -r .scripts.start`
 
-EOF
-
-chmod u+x run.sh
-
-docker run --rm graphistry/pivot-app:build sh -c "cat package.json" | jq -r .scripts.start >> run.sh
-
+echo -e "\nCMD ${RUNCMD}" >> Dockerfile
+cat Dockerfile
 
 #######################################
 # Create + publish artifact container #
