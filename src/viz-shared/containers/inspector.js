@@ -33,7 +33,7 @@ function coerceSortKey(templates, openTab, sortKey) {
 
 let Inspector = ({
         openTab = 'points', currentQuery = {},
-
+        loading,
         selectInspectorTab, setInspectorPage, setInspectorSortKey,
         setInspectorSortOrder, setInspectorSearchTerm, setInspectorColumns,
 
@@ -49,7 +49,7 @@ let Inspector = ({
         count = rows[openTab][`search-${searchTerm||''}`][`sort-${sortBy||''}`][sortOrder].count;
         currentRows = rows[openTab][`search-${searchTerm||''}`][`sort-${sortBy||''}`][sortOrder];
     } catch (e) {
-        console.warn('Maybe exn', e);
+        if (!loading) console.warn('Maybe exn', e);
     }
 
     return <InspectorComponent
@@ -74,6 +74,7 @@ let Inspector = ({
 
 
 Inspector = container({
+    renderLoading: true,
     fragment:  ({ currentQuery = {}, templates = [], openTab, ...props }) => {
 
         const { searchTerm, sortKey, sortOrder, rowsPerPage=0, page=1}
