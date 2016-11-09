@@ -12,7 +12,7 @@ docker build -f Dockerfile-build \
        -t graphistry/pivot-app:build \
        .
 
-docker run --rm graphistry/pivot-app sh -c 'tar --create build node_modules tests package.json' > artifact.tar
+docker run --rm graphistry/pivot-app:build sh -c 'tar --create build node_modules tests package.json' > artifact.tar
 
 docker build -f Dockerfile -t graphistry/pivot-app:$VERSION .
 
