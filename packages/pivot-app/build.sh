@@ -5,6 +5,13 @@ VERSION=${MAJORMINOR}.${BUILD_NUMBER}
 COMMIT_ID=`git rev-parse --short HEAD`
 REV_NAME=`git name-rev --name-only HEAD`
 
+ARTIFACTS="build node_modules tests"
+
+
+################################
+# Create & run build container #
+################################
+
 docker build -f Dockerfile-build \
        --build-arg BUILD_NUMBER=$BUILD_NUMBER \
        --build-arg COMMIT_ID=$COMMIT_ID \
@@ -12,7 +19,26 @@ docker build -f Dockerfile-build \
        -t graphistry/pivot-app:build \
        .
 
-docker run --rm graphistry/pivot-app:build sh -c 'tar --create build node_modules tests package.json' > artifact.tar
+docker run --rm graphistry/pivot-app:build sh -c "tar --create ${ARTIFACTS}" > artifact.tar
+
+
+########################
+# Create runner script #
+########################
+
+cat << EOF > run.sh
+#!/bin/sh
+
+EOF
+
+chmod u+x run.sh
+
+docker run --rm graphistry/pivot-app:build sh -c "cat package.json" | jq -r .scripts.start >> run.sh
+
+
+#######################################
+# Create + publish artifact container #
+#######################################
 
 docker build -f Dockerfile -t graphistry/pivot-app:$VERSION .
 
