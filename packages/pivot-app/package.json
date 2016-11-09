@@ -16,7 +16,11 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "Proprietary",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/graphistry/pivot-app.git"
+  },
   "dependencies": {
     "@graphistry/common": "2.1.16",
     "@graphistry/falcor": "2.3.3",
