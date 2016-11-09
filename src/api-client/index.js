@@ -249,7 +249,7 @@ class Graphistry extends Observable {
 
         const { view } = this;
 
-        return new this(view.call('tick')
+        return new this(view.call('tick', [])
             .map(({ json }) => json.toJSON())
             .toPromise());
     }
