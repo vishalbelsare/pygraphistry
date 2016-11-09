@@ -191,14 +191,6 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                     investigation.url = `${user.vizService}&dataset=${dataset}`;
                     investigation.status = {ok: true};
                     log.debug('  URL: ' + investigation.url);
-                })
-                .catch(e => {
-                    log.error(e);
-                    investigation.status = {
-                        ok: false,
-                        message: e.message || 'Unknown Error'
-                    };
-                    return Observable.of({});
                 }),
             ({app, investigation}) => ({app, investigation})
         )
