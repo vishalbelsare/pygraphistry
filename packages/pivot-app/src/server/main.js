@@ -1,6 +1,7 @@
 import expressApp from './app.js'
 import bodyParser from 'body-parser';
 import path from 'path';
+import mkdirp from 'mkdirp';
 import { Observable } from 'rxjs';
 import { reloadHot } from '../shared/reloadHot';
 import { renderMiddleware } from './middleware';
@@ -25,6 +26,9 @@ const log = logger.createLogger('pivot-app', __filename);
 const pathPrefix = process.env.PIVOTAPP_DATADIR || 'tests/appdata';
 const investigationPath = path.resolve(pathPrefix, 'investigations');
 const pivotPath = path.resolve(pathPrefix, 'pivots');
+mkdirp.sync(investigationPath);
+mkdirp.sync(pivotPath);
+
 
 listInvestigations(investigationPath)
     .map(investigations => makeTestUser(investigations, listTemplates()))
