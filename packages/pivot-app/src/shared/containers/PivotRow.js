@@ -12,7 +12,7 @@ import {
 import {
     togglePivot,
     setPivotAttributes
-} from '../actions/PivotRow';
+} from '../actions/pivotRow';
 import {
     Badge,
     Button,
