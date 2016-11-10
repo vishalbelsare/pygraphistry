@@ -197,9 +197,15 @@ function computeHistogram({ view, masked, histogram, pointsMask, refresh = true 
             castKeyToNumber = dataType === 'number',
             isMasked = masked && binType !== 'nodata';
 
-        const binKeys = binType === 'countBy' &&
-            bins && Object.keys(bins) || Array
-                .from({ length: numBins }, (x, i) => i);
+        let binKeys;
+
+        if (binType === 'countBy' && isMasked === true) {
+            binKeys = histogram.bins.map(({ values }) => values[0]);
+        } else {
+            binKeys = binType === 'countBy' &&
+                bins && Object.keys(bins) || Array
+                    .from({ length: numBins }, (x, i) => i);
+        }
 
         /* Normalizes the bins, binKeys, binValues, etc. */
         /* into simpler { count, values, exclude } sets. */
