@@ -11,7 +11,7 @@ import {
     error as $error
 } from '@graphistry/falcor-json-graph';
 
-import logger from '@graphistry/common/logger2.js';
+import logger from '../logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 

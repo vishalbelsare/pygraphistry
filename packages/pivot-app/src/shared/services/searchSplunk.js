@@ -1,15 +1,16 @@
 import splunkjs from 'splunk-sdk';
 import stringHash from 'string-hash';
 import { Observable } from 'rxjs';
-import logger from '@graphistry/common/logger2.js';
+import logger from '../logger.js';
+import conf from '../config.js';
 import VError from 'verror';
 
-const log = logger.createLogger('pivot-app', __filename)
-                .child({splunkHostName: SPLUNK_HOST, splunkUser: SPLUNK_USER})
+const SPLUNK_HOST = conf.get('splunk.host');
+const SPLUNK_USER = conf.get('splunk.user');
+const SPLUNK_PWD = conf.get('splunk.key');
 
-const SPLUNK_HOST = process.env.SPLUNK_HOST || 'splunk.graphistry.com';
-const SPLUNK_USER = process.env.SPLUNK_USER || 'admin';
-const SPLUNK_PWD = process.env.SPLUNK_PWD || 'graphtheplanet'
+const metadata = { splunkHostName: SPLUNK_HOST, splunkUser: SPLUNK_USER }
+const log = logger.createLogger('pivot-app', __filename).child(metadata);
 
 const service = new splunkjs.Service({
     host: SPLUNK_HOST,
@@ -38,7 +39,7 @@ export function searchSplunk({app, pivot}) {
 
     // Used to indentifity logs
     const searchInfo = { query, searchParams };
-    log.info( searchInfo,'Fetching results for splunk job: "%s"', jobId);
+    log.trace( searchInfo,'Fetching results for splunk job: "%s"', jobId );
 
     // TODO Add this as part of splunk connector
     return splunkLogin()

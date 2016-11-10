@@ -5,7 +5,7 @@ import {
     constructFieldString,
     encodeGraph
 } from '../support/splunkMacros.js';
-import logger from '@graphistry/common/logger2.js';
+import logger from '../../../shared/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 

@@ -11,7 +11,7 @@ import {
     logErrorWithCode
 } from './support';
 import VError from 'verror';
-import logger from '@graphistry/common/logger2.js';
+import logger from '../logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 

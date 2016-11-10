@@ -1,6 +1,7 @@
 import express from 'express';
 import compression from 'compression';
-import logger from '@graphistry/common/logger2.js';
+import logger from '../shared/logger.js';
+import conf from '../shared/config.js'
 const log = logger.createLogger('pivot-app', __filename);
 
 
@@ -19,10 +20,10 @@ app.use((req, res, next) => {
 })
 */
 
-app.listen(process.env.PORT || 3000, process.env.HOST || 'localhost', function () {
+app.listen(conf.get('port'), conf.get('host'), function () {
     log.info(`Express app listening at http://${this.address().address}:${this.address().port}`);
     log.info({
-        NODE_ENV: process.env.NODE_ENV,
+        NODE_ENV: conf.get('env'),
         'process.pid:': process.pid,
         '__dirname': __dirname,
         'root': require('path').resolve()

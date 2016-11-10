@@ -18,12 +18,13 @@ import {
     pivotStore, insertPivot, splicePivot, searchPivot,
     uploadGraph
 } from '../shared/services';
-import logger from '@graphistry/common/logger2.js';
+import logger from '../shared/logger.js';
+import conf from '../shared/config.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 Error.stackTraceLimit = 3;
 
-const pathPrefix = process.env.PIVOTAPP_DATADIR || 'tests/appdata';
+const pathPrefix = conf.get('pivotApp.dataDir');
 const investigationPath = path.resolve(pathPrefix, 'investigations');
 const pivotPath = path.resolve(pathPrefix, 'pivots');
 
