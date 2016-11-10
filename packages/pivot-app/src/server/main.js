@@ -21,6 +21,7 @@ import {
 import logger from '@graphistry/common/logger2.js';
 const log = logger.createLogger('pivot-app', __filename);
 
+Error.stackTraceLimit = 3;
 
 const pathPrefix = process.env.PIVOTAPP_DATADIR || 'tests/appdata';
 const investigationPath = path.resolve(pathPrefix, 'investigations');

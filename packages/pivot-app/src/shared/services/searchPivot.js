@@ -2,6 +2,8 @@ import { Observable } from 'rxjs';
 import { listTemplates } from '.';
 import _ from 'underscore';
 import logger from '@graphistry/common/logger2.js';
+import VError from 'verror';
+
 const log = logger.createLogger('pivot-app', __filename);
 
 const templatesMap = listTemplates();
@@ -15,5 +17,13 @@ export function searchPivot({ loadPivotsById, pivotIds }) {
                 .do(({pivot}) => {
                     pivot.status = {ok: true};
                 })
+                .catch((e) =>
+                    Observable.throw(
+                        new VError.WError({
+                            name:'Failed search',
+                            cause:e,
+                        }, 'Search failed for pivot: "%s"', pivot.id)
+                    )
+                );
         });
 }

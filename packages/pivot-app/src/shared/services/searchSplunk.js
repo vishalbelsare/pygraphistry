@@ -4,7 +4,10 @@ import { Observable } from 'rxjs';
 import logger from '@graphistry/common/logger2.js';
 import VError from 'verror';
 
-const SPLUNK_HOST = process.env.SPLUNK_HOST;
+const log = logger.createLogger('pivot-app', __filename)
+                .child({splunkHostName: SPLUNK_HOST, splunkUser: SPLUNK_USER})
+
+const SPLUNK_HOST = process.env.SPLUNK_HOST || 'splunk.graphistry.com';
 const SPLUNK_USER = process.env.SPLUNK_USER || 'admin';
 const SPLUNK_PWD = process.env.SPLUNK_PWD || 'graphtheplanet'
 
@@ -14,30 +17,30 @@ const service = new splunkjs.Service({
     password: SPLUNK_PWD
 });
 
-const log = logger.createLogger('pivot-app', __filename)
-                .child({splunkHostName: SPLUNK_HOST, splunkUser: SPLUNK_USER})
+const splunkLogin = Observable.bindNodeCallback(service.login.bind(service));
+const splunkGetJob = Observable.bindNodeCallback(service.getJob.bind(service));
+const splunkSearch = Observable.bindNodeCallback(service.search.bind(service));
 
 export function searchSplunk({app, pivot}) {
 
-    const splunkQuery = pivot.searchQuery;
-    const splunkJobId = `pivot-app::${stringHash(splunkQuery)}`;
+    const query = pivot.searchQuery;
 
-    // Set the search parameters
+    // Generate a hash for the query so we can look it up in splunk
+    const jobId = `pivot-app::${stringHash(query)}`;
+
+    // Set the splunk search parameters
     const searchParams = {
-        id: splunkJobId,
+        id: jobId,
         timeout: '14400', // 4 hours
         exec_mode: 'blocking',
         earliest: '-7d'
     };
 
-    const searchInfo = { splunkQuery, searchParams };
+    // Used to indentifity logs
+    const searchInfo = { query, searchParams };
+    log.info( searchInfo,'Fetching results for splunk job: "%s"', jobId);
 
-    log.info( searchInfo,'Fetching results for splunk job: "%s"', splunkJobId);
-
-    const splunkLogin = Observable.bindNodeCallback(service.login.bind(service));
-    const splunkGetJob = Observable.bindNodeCallback(service.getJob.bind(service));
-    const splunkSearch = Observable.bindNodeCallback(service.search.bind(service));
-
+    // TODO Add this as part of splunk connector
     return splunkLogin()
         .catch(({error, status}) => {
             if (error) {
@@ -58,25 +61,32 @@ export function searchSplunk({app, pivot}) {
                     new VError({
                         name: 'UnauthorizedSplunkLogin',
                         info: searchInfo
-                    }, 'Unsucessful logon from user "%s"', SPLUNK_USER)
+                    }, 'Splunk Credentials are invalid')
+                )
+            } else {
+                return Observable.throw(
+                    new VError({
+                        name: 'UnhandledStatus',
+                        info: searchInfo
+                    }, 'Uknown response')
                 )
             }
         })
-        .switchMap(succesfulLogin => {
+        .switchMap(() => {
             log.debug('Succesful logon from user "%a"', SPLUNK_USER);
-            return getJob(searchJobId)
+            return splunkGetJob(jobId)
                 .catch(() => {
                     log.debug('No job was found, creating new search job');
-                    const results = splunkSearch(
-                        searchQuery,
-                        searchParams
-                    );
+                    const results = splunkSearch( query, searchParams );
                     return results.switchMap(job => {
                         const splunkFetchJob = Observable.bindNodeCallback(job.fetch.bind(job));
                         return splunkFetchJob();
                     });
-                }
-            )
+                })
+                .catch(({data}) => Observable.throw(new VError({
+                    name: 'SplunkParseError',
+                    info: searchInfo
+                }, data.messages[0].text)));
         })
         .switchMap(job => {
                 const props = job.properties();
