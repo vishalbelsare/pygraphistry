@@ -1,5 +1,6 @@
 import React, { PropTypes } from 'react';
 import styles from './styles.less';
+import classNames from 'classnames';
 
 import {
     compose,
@@ -46,7 +47,7 @@ class DataTable extends React.Component {
 
         const firstRow = this.props.rowsPerPage * (this.props.page - 1);
 
-        const { templates, columns = [], entityType } = this.props;
+        const { templates, columns = [], entityType, dataLoading } = this.props;
 
         const renderColumns = columns.length && columns[0] ? columns : templates;
         const templatesArray = _.range(0, templates.length).map((i) => templates[i]);
@@ -83,15 +84,24 @@ class DataTable extends React.Component {
                     </InputGroup>*/}
 
                     <span style={{float: 'right'}}>
-                        <ColumnPicker
-                            id="InspectorColumnPicker"
-                            placeholder="Pick columns"
-                            value={columns}
-                            options={templatesArray}
-                            onChange={ (columns) => {
-                                return this.props.onColumnsSelect({columns})
-                            } }
-                        />
+                    {
+                        dataLoading
+                            ? ( <Button>
+                                <i className={classNames({
+                                    [styles['fa']]: true,
+                                    [styles['fa-spin']]: true,
+                                    [styles['fa-spinner']]: true})} />
+                                </Button>)
+                            : <ColumnPicker
+                                id="InspectorColumnPicker"
+                                placeholder="Pick columns"
+                                value={columns}
+                                options={templatesArray}
+                                onChange={ (columns) => {
+                                    return this.props.onColumnsSelect({columns})
+                                } }
+                            />
+                    }
                     </span>
 
                 </div>

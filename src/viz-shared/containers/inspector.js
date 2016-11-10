@@ -54,6 +54,7 @@ let Inspector = ({
 
     return <InspectorComponent
         {...{ searchTerm, sortKey: sortBy, sortOrder, rowsPerPage, page } }
+        dataLoading={loading}
         columns={ columns.columns? columns.columns : columns }
         numPages={Math.ceil(count / rowsPerPage)}
         open={open} openTab={openTab} templates={getTemplates(templates, openTab)}
