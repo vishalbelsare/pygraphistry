@@ -82,7 +82,7 @@
     "redux": "~3.5.2",
     "redux-observable": "~0.9.1",
     "rimraf": "2.5.3",
-    "rxjs": "5.0.0-rc.1",
+    "rxjs": "5.0.0-rc.2",
     "simpleflakes": "1.2.2",
     "source-map-support": "0.4.2",
     "splunk-sdk": "~1.8.0",
