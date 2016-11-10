@@ -1,5 +1,6 @@
 import React, { PropTypes } from 'react';
 import styles from './styles.less';
+import classNames from 'classnames';
 
 import {
     compose,
@@ -7,7 +8,7 @@ import {
     shallowEqual
 } from 'recompose';
 
-import { Tab, Tabs, Table, Pagination, FormControl, InputGroup, Button } from 'react-bootstrap';
+import { Tab, Tabs, Table, Pagination, FormGroup, FormControl, InputGroup, Button } from 'react-bootstrap';
 
 import ColumnPicker from '../../containers/ColumnPicker';
 
@@ -27,7 +28,8 @@ const propTypes = {
     rowsPerPage: React.PropTypes.number,
     onSelect: React.PropTypes.func,
     onPageSelect: React.PropTypes.func,
-    onColumnsSelect: React.PropTypes.func
+    onColumnsSelect: React.PropTypes.func,
+    onSearch: React.PropTypes.func
 };
 
 const datatablePropTypes =
@@ -46,15 +48,26 @@ class DataTable extends React.Component {
 
         const firstRow = this.props.rowsPerPage * (this.props.page - 1);
 
-        const { templates, columns = [], entityType } = this.props;
+        const { templates, columns = [], entityType, dataLoading, searchTerm } = this.props;
 
         const renderColumns = columns.length && columns[0] ? columns : templates;
         const templatesArray = _.range(0, templates.length).map((i) => templates[i]);
 
 
+
+
         return (
             <div>
                 <div className={styles['inspector-table-header']}>
+
+                    {
+                        <InputGroup style={{marginRight: '1em'}}>
+                            <FormControl type="text"
+                                value={this.props.searchTerm || ''} placeholder="Search"
+                                onChange={(e) => this.props.onSearch(e.target.value) }
+                                />
+                        </InputGroup>
+                    }
 
                      <Pagination
                         prev
@@ -68,30 +81,25 @@ class DataTable extends React.Component {
                         activePage={this.props.page}
                         onSelect={this.props.onPageSelect} />
 
-                    {/*<InputGroup>
-                         <FormControl
-                            type="text"
-                            value={this.props.searchTerm}
-                            placeholder="Search"
-                          />
-                        <Button>
-                            <i className={`
-                                ${styles['fa']}
-                                ${styles['fa-fw']}
-                                ${styles['fa-search']}`}></i>
-                        </Button>
-                    </InputGroup>*/}
-
                     <span style={{float: 'right'}}>
-                        <ColumnPicker
-                            id="InspectorColumnPicker"
-                            placeholder="Pick columns"
-                            value={columns}
-                            options={templatesArray}
-                            onChange={ (columns) => {
-                                return this.props.onColumnsSelect({columns})
-                            } }
-                        />
+                    {
+                        dataLoading
+                            ? ( <Button>
+                                <i className={classNames({
+                                    [styles['fa']]: true,
+                                    [styles['fa-spin']]: true,
+                                    [styles['fa-spinner']]: true})} />
+                                </Button>)
+                            : <ColumnPicker
+                                id="InspectorColumnPicker"
+                                placeholder="Pick columns"
+                                value={columns}
+                                options={templatesArray}
+                                onChange={ (columns) => {
+                                    return this.props.onColumnsSelect({columns})
+                                } }
+                            />
+                    }
                     </span>
 
                 </div>
