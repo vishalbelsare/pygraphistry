@@ -62,6 +62,7 @@ let Inspector = ({
         onPageSelect={setInspectorPage}
         onSelect={selectInspectorTab}
         onColumnsSelect={setInspectorColumns}
+        onSearch={setInspectorSearchTerm}
         toggleColumnSort={ ({name}) => {
             if (name === sortBy) {
                 setInspectorSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
