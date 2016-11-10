@@ -2,61 +2,92 @@ import splunkjs from 'splunk-sdk';
 import stringHash from 'string-hash';
 import { Observable } from 'rxjs';
 import logger from '@graphistry/common/logger2.js';
-const log = logger.createLogger('pivot-app', __filename);
+import VError from 'verror';
 
+const log = logger.createLogger('pivot-app', __filename)
+                .child({splunkHostName: SPLUNK_HOST, splunkUser: SPLUNK_USER})
+
+const SPLUNK_HOST = process.env.SPLUNK_HOST || 'splunk.graphistry.com';
+const SPLUNK_USER = process.env.SPLUNK_USER || 'admin';
+const SPLUNK_PWD = process.env.SPLUNK_PWD || 'graphtheplanet'
+
+const service = new splunkjs.Service({
+    host: SPLUNK_HOST,
+    username: SPLUNK_USER,
+    password: SPLUNK_PWD
+});
+
+const splunkLogin = Observable.bindNodeCallback(service.login.bind(service));
+const splunkGetJob = Observable.bindNodeCallback(service.getJob.bind(service));
+const splunkSearch = Observable.bindNodeCallback(service.search.bind(service));
 
 export function searchSplunk({app, pivot}) {
 
-    // TODO This can be moved out of function once template
-    // is removed from client
-    const service = new splunkjs.Service({
-        host: process.env.SPLUNK_HOST || 'splunk.graphistry.com',
-        username: process.env.SPLUNK_USER || 'admin',
-        password: process.env.SPLUNK_PWD || 'graphtheplanet'
-    });
+    const query = pivot.searchQuery;
 
-    service.login((err, success) => {
-        if (success) {
-            log.debug('Successful login to splunk');
-        }
-        if (err) {
-            throw err;
-        }
-    });
-    const searchQuery = pivot.searchQuery;
+    // Generate a hash for the query so we can look it up in splunk
+    const jobId = `pivot-app::${stringHash(query)}`;
 
-    log.debug({splunkQuery: pivot.searchQuery}, 'Search query');
-
-    const searchJobId = `pivot-app::${stringHash(searchQuery)}`;
-
-    log.debug('Search job id: '+searchJobId);
-
-    // Set the search parameters
+    // Set the splunk search parameters
     const searchParams = {
-        id: searchJobId,
+        id: jobId,
         timeout: '14400', // 4 hours
         exec_mode: 'blocking',
         earliest: '-7d'
     };
 
-    const getJobObservable = Observable.bindNodeCallback(service.getJob.bind(service));
-    const serviceObservable = Observable.bindNodeCallback(service.search.bind(service));
+    // Used to indentifity logs
+    const searchInfo = { query, searchParams };
+    log.info( searchInfo,'Fetching results for splunk job: "%s"', jobId);
 
-    return getJobObservable(searchJobId)
-        .catch(
-            () => {
-                log.debug('No job was found, creating new search job');
-                const serviceResult = serviceObservable(
-                    searchQuery,
-                    searchParams
+    // TODO Add this as part of splunk connector
+    return splunkLogin()
+        .catch(({error, status}) => {
+            if (error) {
+                return Observable.throw(
+                    new VError({
+                        name: 'ConnectionError',
+                        cause: error,
+                        info: {
+                            splunkAddress: error.address,
+                            splunkPort: error.port,
+                            code: error.code,
+                            ...searchInfo
+                        }
+                    }, 'Failed to connect to splunk instance at "%s:%d"', error.address, error.port)
                 );
-                return serviceResult.switchMap(job => {
-                    const fetchJob = Observable.bindNodeCallback(job.fetch.bind(job));
-                    const jobObservable = fetchJob();
-                    return jobObservable;
-                });
+            } else if (status === 401) {
+                return Observable.throw(
+                    new VError({
+                        name: 'UnauthorizedSplunkLogin',
+                        info: searchInfo
+                    }, 'Splunk Credentials are invalid')
+                )
+            } else {
+                return Observable.throw(
+                    new VError({
+                        name: 'UnhandledStatus',
+                        info: searchInfo
+                    }, 'Uknown response')
+                )
             }
-        )
+        })
+        .switchMap(() => {
+            log.debug('Succesful logon from user "%a"', SPLUNK_USER);
+            return splunkGetJob(jobId)
+                .catch(() => {
+                    log.debug('No job was found, creating new search job');
+                    const results = splunkSearch( query, searchParams );
+                    return results.switchMap(job => {
+                        const splunkFetchJob = Observable.bindNodeCallback(job.fetch.bind(job));
+                        return splunkFetchJob();
+                    });
+                })
+                .catch(({data}) => Observable.throw(new VError({
+                    name: 'SplunkParseError',
+                    info: searchInfo
+                }, data.messages[0].text)));
+        })
         .switchMap(job => {
                 const props = job.properties();
                 log.debug({

@@ -10,6 +10,7 @@ import {
     setHandler,
     logErrorWithCode
 } from './support';
+import VError from 'verror';
 import logger from '@graphistry/common/logger2.js';
 const log = logger.createLogger('pivot-app', __filename);
 
@@ -71,11 +72,12 @@ function searchPivotCallRoute({ loadPivotsById, searchPivot }) {
 function captureErrorAndNotifyClient(pivotIds) {
     return function(e) {
         const errorCode = logErrorWithCode(log, e);
+        const cause = VError.cause(e);
         const status = {
             ok: false,
             code: errorCode,
-            message: `Search error (code: ${errorCode})`
-        }
+            message: `${cause.message} (code: ${errorCode})`
+        };
 
         return Observable.from([
             $pathValue(`pivotsById['${pivotIds}']['status']`, $error(status))
