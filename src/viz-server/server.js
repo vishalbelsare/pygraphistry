@@ -2,7 +2,6 @@ import path from 'path';
 import express from 'express';
 import compression from 'compression';
 import bodyParser from 'body-parser';
-import RxRouter from 'rx-router';
 import SocketIOServer from 'socket.io';
 import RxHTTPServer from 'rx-http-server';
 import _config from '@graphistry/config';

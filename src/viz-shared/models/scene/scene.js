@@ -66,15 +66,15 @@ export function scene(view, sceneID = 'default') {
                         step: 1, scale: 'log'
                     },
                     value: $ref(`${view}.scene.renderer.points.scaling`),
-                // }, {
-                //     id: 'edge-size',
-                //     type: 'discrete',
-                //     name: 'Edge Size',
-                //     props: {
-                //         min: 1, max: 100,
-                //         step: 1, scale: 'log'
-                //     },
-                //     value: $ref(`${view}.scene.renderer.edge.scaling`),
+                }, {
+                    id: 'edge-size',
+                    type: 'discrete',
+                    name: 'Edge Size',
+                    props: {
+                        min: 1, max: 100,
+                        step: 1, scale: 'log'
+                    },
+                    value: $ref(`${view}.scene.renderer.edges.scaling`),
                 }, {
                     id: 'point-opacity',
                     type: 'discrete',
