@@ -1,15 +1,29 @@
 var _ = require('underscore');
 var bunyan = require('bunyan');
-var conf = require('./config.js');
-
-const LOG_FILE = conf.get('log.file');
-const LOG_LEVEL = conf.get('log.level');
-const LOG_SOURCE = conf.get('log.logSource');
 
 function inBrowser() {
     return typeof (window) !== 'undefined' && window.window === window;
 }
 
+var LOG_LEVEL;
+var LOG_FILE;
+var LOG_SOURCE;
+var parentLogger;
+
+if (!inBrowser()) {
+    const conf = require('./config.js');
+    LOG_FILE = conf.get('log.file');
+    LOG_LEVEL = conf.get('log.level');
+    LOG_SOURCE = conf.get('log.logSource');
+    parentLogger = createServerLogger();
+} else {
+    if (window.localStorage.debugLevel) {
+        LOG_LEVEL = localStorage.debugLevel;
+    } else {
+        LOG_LEVEL = 'info';
+    }
+    parentLogger = createClientLogger();
+}
 
 function BrowserConsoleStream() {
     this.levelToConsole = {
@@ -49,8 +63,6 @@ BrowserConsoleStream.prototype.write = function (rec) {
     }
 }
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // Parent logger
 //
@@ -58,10 +70,8 @@ BrowserConsoleStream.prototype.write = function (rec) {
 ////////////////////////////////////////////////////////////////////////////////
 
 function createServerLogger() {
-    //var serializers = _.extend({}, bunyan.stdSerializers, {
-        //err: errSerializer
-    //});
-    var serializers = bunyan.stdSerializers;
+
+    const serializers = bunyan.stdSerializers;
 
     // Always starts with a stream that writes fatal errors to STDERR
     var streams = [];
@@ -101,17 +111,13 @@ function createClientLogger() {
         name: 'graphistry',
         streams: [
             {
-                level: 'info',
+                level: LOG_LEVEL,
                 stream: new BrowserConsoleStream(),
                 type: 'raw'
             }
         ]
     });
 }
-
-const parentLogger = inBrowser() ? createClientLogger() : createServerLogger();
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Exports
