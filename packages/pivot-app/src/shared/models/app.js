@@ -4,15 +4,12 @@ import {
     pathValue as $pathValue,
     pathInvalidation as $invalidation
 } from '@graphistry/falcor-json-graph';
-
 import { simpleflake } from 'simpleflakes';
 import { createInvestigationModel } from '../models';
-import conf from '../../shared/config.js';
 import _ from 'underscore';
 
-export function makeTestUser(investigations, templates) {
-    const apiKey = conf.get('graphistry.key');
-    const graphistryHost = conf.get('graphistry.host');
+
+export function makeTestUser(investigations, templates, apiKey, graphistryHost) {
     const suffix = '/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph';
 
     const investigationsRefs = investigations.map(investigation =>

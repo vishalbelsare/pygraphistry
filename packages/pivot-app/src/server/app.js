@@ -1,7 +1,7 @@
 import express from 'express';
 import compression from 'compression';
+import conf from './config.js';
 import logger from '../shared/logger.js';
-import conf from '../shared/config.js'
 const log = logger.createLogger('pivot-app', __filename);
 
 

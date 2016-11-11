@@ -94,21 +94,16 @@ var conf = convict({
     }
 });
 
-function inBrowser() {
-    return typeof (window) !== 'undefined' && window.window === window;
-}
 
 // Load environment dependent configuration
-if (!inBrowser()) {
-    var env = conf.get('env');
-    conf.loadFile(__dirname + '/config/' + env + '.json');
-    const localConfig = __dirname + '/config/local.json';
-    fs.access(localConfig, fs.constants.R_OK, function(err) {
-        if (!err) {
-            conf.loadFile(localConfig);
-        }
-    });
-}
+var env = conf.get('env');
+conf.loadFile(__dirname + '/config/' + env + '.json');
+const localConfig = __dirname + '/config/local.json';
+fs.access(localConfig, fs.constants.R_OK, function(err) {
+    if (!err) {
+        conf.loadFile(localConfig);
+    }
+});
 
 // Perform validation
 conf.validate({strict: true});

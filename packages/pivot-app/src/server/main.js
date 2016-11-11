@@ -20,8 +20,9 @@ import {
     pivotStore, insertPivot, splicePivot, searchPivot,
     uploadGraph
 } from '../shared/services';
+
+import conf from './config.js';
 import logger from '../shared/logger.js';
-import conf from '../shared/config.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 Error.stackTraceLimit = 3;
@@ -34,7 +35,10 @@ mkdirp.sync(pivotPath);
 
 
 listInvestigations(investigationPath)
-    .map(investigations => makeTestUser(investigations, listTemplates()))
+    .map(investigations =>
+        makeTestUser(investigations, listTemplates(), conf.get('graphistry.key'),
+                     conf.get('graphistry.host'))
+    )
     .do(init)
     .subscribe(
         () => log.info('Pivot-App initialized'),

@@ -2,7 +2,7 @@ import splunkjs from 'splunk-sdk';
 import stringHash from 'string-hash';
 import { Observable } from 'rxjs';
 import logger from '../logger.js';
-import conf from '../config.js';
+import conf from '../../server/config.js';
 import VError from 'verror';
 
 const SPLUNK_HOST = conf.get('splunk.host');
