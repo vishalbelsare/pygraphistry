@@ -12,6 +12,7 @@ import {
     makeTestUser
 } from '../shared/models';
 import {
+    wrapServices,
     loadApp,
     userStore, templateStore, listTemplates,
     listInvestigations, investigationStore,
@@ -56,7 +57,7 @@ function init(testUser) {
         deletePivotsById
     } = pivotStore(loadApp(app), pivotPath);
 
-    const routeServices = {
+    const routeServices = wrapServices({
         loadApp: loadApp(app),
         loadUsersById,
         loadTemplatesById,
@@ -71,7 +72,7 @@ function init(testUser) {
         deletePivotsById,
         insertPivot, splicePivot, searchPivot,
         uploadGraph
-    };
+    });
 
     const modules = reloadHot(module);
     const getDataSource = getDataSourceFactory(routeServices);
