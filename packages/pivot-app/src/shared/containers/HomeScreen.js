@@ -29,7 +29,7 @@ import {
 import { container } from '@graphistry/falcor-react-redux';
 import Sidebar from './Sidebar.js';
 import styles from './styles.less';
-import logger from '@graphistry/common/logger2.js';
+import logger from '../logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 

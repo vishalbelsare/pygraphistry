@@ -1,7 +1,7 @@
 import { searchSplunk } from '../../services/searchSplunk.js';
 import { shapeSplunkResults} from '../../services/shapeSplunkResults.js';
 import _ from 'underscore';
-import logger from '@graphistry/common/logger2.js';
+import logger from '../../../shared/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 

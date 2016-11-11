@@ -277,7 +277,7 @@ function plugins(isDevBuild, isFancyBuild) {
             compress: { warnings: false },
             mangle: false,
             comments: false,
-            sourceMap: false,
+            sourceMap: true,
             'screw-ie8': true,
         }));
     }
