@@ -262,13 +262,13 @@ class HomeScreen extends React.Component {
     }
 }
 
-function mapStateToFragment({currentUser = {investigations: []}}) {
+function mapStateToFragment({currentUser: {investigations = []} = {} }) {
     return `{
         currentUser: {
             'name', 'id',
             investigations: {
                 'length',
-                [0...${(currentUser.investigations).length}]: {
+                [0...${investigations.length}]: {
                     'id', 'name', 'description' ,'tags', 'modifiedOn'
                 }
             }
@@ -283,10 +283,11 @@ function mapFragmentToProps({currentUser} = {}) {
     };
 }
 
-export default container(
-    mapStateToFragment,
-    mapFragmentToProps,
-    {
+export default container({
+    renderLoading: false,
+    fragment: mapStateToFragment,
+    mapFragment: mapFragmentToProps,
+    dispatchers: {
         switchScreen: switchScreen,
         selectInvestigation: selectInvestigation,
         copyInvestigation: copyInvestigation,
@@ -294,4 +295,4 @@ export default container(
         setInvestigationParams: setInvestigationParams,
         deleteInvestigations: deleteInvestigations
     }
-)(HomeScreen);
+})(HomeScreen);

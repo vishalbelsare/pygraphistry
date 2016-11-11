@@ -22,11 +22,11 @@ function renderErrorBanner(serverStatus) {
     );
 }
 
-function renderApp({ currentUser, serverStatus }) {
+function renderApp({ currentUser, serverStatus, app }) {
     const screens = {
-        'undefined': (<HomeScreen/>),
-        'home': (<HomeScreen/>),
-        'investigation': (<InvestigationScreen/>)
+        'undefined': (<HomeScreen data={app}/>),
+        'home': (<HomeScreen data={app}/>),
+        'investigation': (<InvestigationScreen data={app}/>)
     }
 
     const errorBanner = serverStatus && !serverStatus.ok
@@ -42,13 +42,15 @@ function renderApp({ currentUser, serverStatus }) {
 
 
 const App = container({
+    renderLoading: false,
     fragment: () =>
     `{
         currentUser: {
             activeScreen
         },
         serverStatus
-    }`
+    }`,
+    mapFragment: app => ({app: app, ...app})
 })(renderApp);
 
 export default hoistStatics(connect)(App);

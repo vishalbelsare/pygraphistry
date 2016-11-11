@@ -349,7 +349,7 @@ function mapFragmentToProps(fragment) {
 }
 
 export default container({
-    renderLoading: true,
+    renderLoading: false,
     fragment: mapStateToFragment,
     mapFragment: mapFragmentToProps,
     dispatchers: {

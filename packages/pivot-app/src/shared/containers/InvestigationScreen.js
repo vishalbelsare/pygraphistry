@@ -10,10 +10,10 @@ import styles from './styles.less';
 import { switchScreen } from '../actions/app.js';
 import SplitPane from 'react-split-pane';
 
-function renderInvestigationBody(activeInvestigation, templates) {
+function renderInvestigationBody(app, activeInvestigation, templates) {
     return (
         <div className={`main-panel ${styles['investigation-all']}`}>
-            <InvestigationHeader activeInvestigation={activeInvestigation} />
+            <InvestigationHeader data={app} activeInvestigation={activeInvestigation} />
 
             <div className={styles['investigation-split']}>
                 <SplitPane split="horizontal" defaultSize="60%" minSize={0}>
@@ -44,9 +44,9 @@ function renderInvestigationPlaceholder(switchScreen) {
     );
 }
 
-function renderInvestigationScreen({ activeInvestigation, templates, switchScreen }) {
+function renderInvestigationScreen({ app, activeInvestigation, templates, switchScreen }) {
     const body = activeInvestigation !== undefined ?
-                 renderInvestigationBody(activeInvestigation, templates) :
+                 renderInvestigationBody(app, activeInvestigation, templates) :
                  renderInvestigationPlaceholder(switchScreen);
 
     return (
@@ -57,12 +57,12 @@ function renderInvestigationScreen({ activeInvestigation, templates, switchScree
     );
 }
 
-function mapStateToFragment({ currentUser = {templates: []} } = {}) {
+function mapStateToFragment({ currentUser: {templates = []} } = {}) {
     return `{
         currentUser: {
             activeInvestigation: ${Investigation.fragment()},
             templates: {
-                length, [0...${currentUser.templates.length}]: {
+                length, [0...${templates.length}]: {
                     name, id
                 }
             }
@@ -70,10 +70,13 @@ function mapStateToFragment({ currentUser = {templates: []} } = {}) {
     }`;
 }
 
-function mapFragmentToProps({ currentUser = {}} = {}) {
+function mapFragmentToProps(app = {}) {
+    const currentUser = app.currentUser || {}
+
     return {
+        app: app,
         activeInvestigation: currentUser.activeInvestigation,
-        templates: currentUser.templates
+        templates: currentUser.templates,
     };
 }
 
