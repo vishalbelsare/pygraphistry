@@ -102,7 +102,7 @@ function inBrowser() {
 if (!inBrowser()) {
     var env = conf.get('env');
     conf.loadFile(__dirname + '/config/' + env + '.json');
-    const localConfig = './config/local.json';
+    const localConfig = __dirname + '/config/local.json';
     fs.access(localConfig, fs.constants.R_OK, function(err) {
         if (!err) {
             conf.loadFile(localConfig);
