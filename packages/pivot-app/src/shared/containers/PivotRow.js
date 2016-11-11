@@ -270,7 +270,7 @@ function renderPivotRow({
             </td>
             <td key={`pcell-${id}-pivotselector`} className={styles.pivotData0 + ' pivotTypeSelector'}>
                 {
-                    pivotTemplate &&
+                    pivotTemplate && templates &&
                     renderTemplateSelector(id, pivotTemplate, templates, setPivotAttributes)
                 }
             </td>
