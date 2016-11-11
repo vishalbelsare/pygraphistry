@@ -83,21 +83,21 @@ compile.multicast(function() { return new Subject(); }, function(shared) {
 
         if (!shouldWatch) {
             return buildStatuses.do({
-                next: function({ name }) {
-                    console.log('%s ✅  Successfully built %s', chalk.blue('[WEBPACK]'), name);
+                next: function({ name, time, hash }) {
+                    console.log(`${chalk.blue('[WEBPACK]')} Successfully built ${chalk.yellow(name)} in ${chalk.red(time)} seconds`);
                 }
             });
         }
 
         return Observable.merge(
             initialBuilds.do({
-                next: function({ name }) {
-                    console.log('%s ✅  Successfully built %s', chalk.blue('[WEBPACK]'), name);
+                next: function({ name, time, hash }) {
+                    console.log(`${chalk.blue('[WEBPACK]')} Successfully built ${chalk.yellow(name)} in ${chalk.red(time)} seconds`);
                 }
             }),
             buildStatuses.skipUntil(initialBuilds).do({
-                next: function({ name }) {
-                    console.log('%s ✅  Successfully rebuilt %s', chalk.blue('[WEBPACK]'), name);
+                next: function({ name, time, hash }) {
+                    console.log(`${chalk.blue('[WEBPACK]')} Successfully rebuilt ${chalk.yellow(name)} in ${chalk.red(time)} seconds`);
                 }
             }),
             shared.take(1).mergeMap(createClientServer),
@@ -156,8 +156,7 @@ compile.multicast(function() { return new Subject(); }, function(shared) {
     })
     .subscribe({
         error(err) {
-            console.error('%s ❌  Failed while building', chalk.red('[WEBPACK]'));
-            console.error(err.error);
+            console.error(`${chalk.red('[WEBPACK]')}❌  ${err.error}`);
             console.error(err.stats);
         }
     });

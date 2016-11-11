@@ -48,6 +48,7 @@ if (require.main === module) {
 
 function buildResource(webpackConfig, isDevBuild, shouldWatch, cb) {
 
+
     console.log('%s Started %s %s', chalk.blue('[WEBPACK]'),
                  shouldWatch ? 'watching' : 'building',
                  chalk.yellow(getAppName(webpackConfig)));
@@ -57,33 +58,55 @@ function buildResource(webpackConfig, isDevBuild, shouldWatch, cb) {
         compiler.run.bind(compiler) :
         compiler.watch.bind(compiler, {});
 
-    return compileMethod(function(err, stats) {
-        if (err || stats.hasErrors()) {
+    function handleFatalError(err) {
+        cb(err)
+    }
 
-            var message = chalk.red('[WEBPACK]') + ' Errors building ' + chalk.yellow(getAppName(webpackConfig)) + "\n"
-                + stats.compilation.errors.map(function(error) {
-                    return error.message;
-                }).join("\n");
-
-            console.error('%s fatal error occured', chalk.red('[WEBPACK]'));
-            console.error(err);
-            if (shouldWatch) {
-                console.log(message);
-            } else {
-                return cb({
-                    type: 'error',
-                    error: message,
-                    body: JSON.stringify({
-                        name: getAppName(webpackConfig),
-                        stats: stats.toString(webpackConfig.stats || {})
-                    })
-                });
-            }
+    function handleSoftErrors(stats) {
+        const selectedStats = stats.toString(webpackConfig.stats || {chunks: false, colors: true, errorDetails: false});
+        const appName = getAppName(webpackConfig);
+        if (shouldWatch) {
+            console.error(`${chalk.red('[WEBPACK]')}❌  Failed to build ${appName}`);
+            console.error(selectedStats);
+            console.warn(`${chalk.yellow('[WEBPACK]')} Still watching...`);
+        } else {
+            return cb({
+                type: 'error',
+                error: `Failed to build: ${appName}`,
+                stats: selectedStats
+            });
         }
-        cb(null, { type: 'next', body: JSON.stringify({
-            name: getAppName(webpackConfig),
-            stats: stats.toJson(webpackConfig.stats || { entrypoints: true })
-        })});
+    }
+
+    function handleWarnings(warnings) {
+        warnings.map((error) => console.warn('Build warning', warning));
+    }
+
+    function successfullyCompiled(stats) {
+        const { time, hash } = stats.toJson({timings: true, chunks: false, colors: false, errorDetails: false});
+        cb(null, {
+            type: 'next',
+            body: JSON.stringify({
+                name: getAppName(webpackConfig),
+                time: time,
+                hash: hash
+            })
+        });
+    }
+
+    return compileMethod(function(err, stats) {
+        if(err) {
+            return handleFatalError(err);
+        }
+        if(stats.hasErrors()) {
+            return handleSoftErrors(stats);
+        }
+        if(stats.hasWarnings()) {
+            handleWarnings(stats);
+        }
+
+        successfullyCompiled(stats);
+
     });
 
     function getAppName(webpackConfig) {
