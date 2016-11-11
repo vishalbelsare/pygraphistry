@@ -48,14 +48,6 @@
 
     width: 30em;
     color: @graphistry-darkblue;
-    &.clicked, &:hover {
-        margin-top: -2px;
-        margin-left: -2px;
-        .graph-label-container {
-            border-width: 2px;
-        }
-    }
-
 
 
     pointer-events: none;
@@ -75,9 +67,11 @@
     &.on:not(.clicked) {
         z-index: @graph-label-hover-z;
     }
+    /*
     &.clicked:hover {
         z-index: @graph-label-hover-clicked-z;
     }
+    */
 
     &::-webkit-scrollbar,
     & .graph-label-container::-webkit-scrollbar,
@@ -102,6 +96,7 @@
     width: auto;
 }
 
+
 .graph-label-container {
 
     //TODO change to relative?
@@ -112,11 +107,25 @@
     height: auto;
     pointer-events: auto;
 
-    margin-top: 2.5em;
-    margin-left: 1.5em;
     padding: 0.5em 0.5em 0.4em 0.5em;
-    border: 1px solid transparent;
     border-radius: 10px;
+
+    margin-top: 25px;
+    margin-left: 15px;
+    border: 1px solid transparent;
+
+    .graph-label.on:not(.clicked) &
+    //, .graph-label:not(.clicked) &:hover
+    {
+        margin-top: 24px;
+        margin-left: 15px;
+    }
+    .graph-label.clicked & {
+        margin-top: 23px;
+        margin-left: 14px;
+        border-width: 2px;
+    }
+
 
     background-color: white;
     font-size: 0.75em;
@@ -131,6 +140,8 @@
 
     }
 }
+
+
 
 
 
@@ -149,7 +160,9 @@
     vertical-align: middle;
     font-weight: bold;
 
-    .graph-label.on & {
+    .graph-label.on:not(.clicked) &,
+    //.graph-label-container:hover &,
+    .graph-label.clicked & {
         word-wrap: break-word;
     }
 
@@ -159,14 +172,20 @@
 
     .fa-thumb-tack, .exclude-by-title, .label-type {
         display: none;
-        .graph-label.clicked & {
+        .graph-label.on & {
             display: inline-block;
         }
     }
-    .graph-label.clicked & {
-        .fa-thumb-tack {
-            color: @graphistry-darkblue;
+
+    .fa-thumb-tack {
+        color: @graphistry-darkblue;
+        .graph-label:not(.clicked) & {
+            display: none;
         }
+
+    }
+
+    .graph-label.clicked & {
         .exclude-by-title {
             color: @dark-grey;
             &:hover {
@@ -191,7 +210,9 @@
         margin-right: 0.5em;
         word-break: break-all;
 
-        .graph-label:not(.on):not(:hover):not(.clicked) & {
+        .graph-label:not(.on):not(.clicked)
+        //.graph-label-container:not(:hover)
+        & {
             max-width: 12em;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -231,7 +252,10 @@
     overflow-y: auto;
     overflow-x: hidden;
 
-    .graph-label.on & {
+
+    .graph-label.on:not(.clicked) &,
+    //.graph-label-container:hover &,
+    .graph-label.clicked & {
         display: block;
     }
 
