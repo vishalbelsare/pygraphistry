@@ -78,8 +78,10 @@ function buildResource(webpackConfig, isDevBuild, shouldWatch, cb) {
         }
     }
 
-    function handleWarnings(warnings) {
-        warnings.map((error) => console.warn('Build warning', warning));
+    function handleWarnings(stats) {
+        const selectedStats = stats.toString(webpackConfig.stats || {chunks: false, colors: true, errorDetails: false});
+        const appName = getAppName(webpackConfig);
+        console.warn('Stats:', selectedStats);
     }
 
     function successfullyCompiled(stats) {
