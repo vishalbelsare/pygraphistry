@@ -22,7 +22,6 @@
     "url": "git+https://github.com/graphistry/pivot-app.git"
   },
   "dependencies": {
-    "@graphistry/common": "2.1.16",
     "@graphistry/falcor": "2.4.0",
     "@graphistry/falcor-json-graph": "2.0.4",
     "@graphistry/falcor-path-syntax": "2.0.4",
