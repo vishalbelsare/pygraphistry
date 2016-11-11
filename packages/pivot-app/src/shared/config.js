@@ -73,14 +73,14 @@ var conf = convict({
         key: {
             doc: 'Splunk password',
             format: String,
-            default: 'graphtheplanet',
+            default: 'null',
             arg:'splunk-key',
             env: 'SPLUNK_KEY'
         },
         user: {
             doc: 'Splunk user name',
             format: String,
-            default: 'admin',
+            default: 'null',
             arg:'splunk-user',
             env: 'SPLUNK_USER'
         },
