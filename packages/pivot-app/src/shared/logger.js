@@ -122,25 +122,6 @@ const parentLogger = inBrowser() ? createClientLogger() : createServerLogger();
 
 module.exports = {
     createLogger: function(module, fileName) {
-        return (function () {
-            var childLogger = parentLogger.child({module: module, fileName:fileName}, true);
-
-            //add any additional logging methods here
-
-            childLogger.die = function childLoggerDie(err, msg) {
-                childLogger.fatal(err, msg);
-                process.exit(1);
-            };
-
-            childLogger.makeQErrorHandler = function childLoggerMakeQErrorHandler(msg) {
-                return module.exports.makeQErrorHandler(childLogger, msg);
-            };
-
-            childLogger.makeRxErrorHandler = function childLoggerMakeRxErrorHandler(msg) {
-                return module.exports.makeRxErrorHandler(childLogger, msg);
-            };
-
-            return childLogger;
-        })();
+        return parentLogger.child({module, fileName});
     },
 };
