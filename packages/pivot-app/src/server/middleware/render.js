@@ -4,7 +4,7 @@ import { Model } from '@graphistry/falcor';
 import assets from '../webpack-assets.json'
 import { renderToString as reactRenderToString } from 'react-dom/server';
 import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
-import logger from '@graphistry/common/logger2.js';
+import logger from '../../shared/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 

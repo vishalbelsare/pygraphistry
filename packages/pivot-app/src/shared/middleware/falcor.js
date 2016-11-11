@@ -2,7 +2,7 @@ import { inspect } from 'util';
 import { Observable } from 'rxjs';
 import { routes } from '../routes';
 import Router from '@graphistry/falcor-router';
-import logger from '@graphistry/common/logger2.js';
+import logger from '../../shared/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 

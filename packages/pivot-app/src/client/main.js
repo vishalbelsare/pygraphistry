@@ -13,7 +13,7 @@ import DataSource from 'falcor-http-datasource';
 import { Provider } from 'react-redux';
 import { configureStore } from '../shared/store/configureStore';
 
-import logger from '@graphistry/common/logger2.js';
+import logger from '../shared/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 const useLocalStorage = __DEV__;

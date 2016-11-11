@@ -1,7 +1,7 @@
 import { inspect } from 'util';
 const  { slice } = Array.prototype;
 import { Observable } from 'rxjs';
-import logger from '@graphistry/common/logger2.js';
+import logger from '../../../shared/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 

@@ -5,7 +5,7 @@ import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
 
-import logger from '@graphistry/common/logger2.js';
+import logger from '../../shared/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 
