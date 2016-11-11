@@ -44,7 +44,8 @@ export function createInvestigation({ loadApp, loadUsersById }) {
         });
 }
 
-export function cloneInvestigationsById({ loadInvestigationsById, loadPivotsById, loadUsersById, investigationIds }) {
+export function cloneInvestigationsById({ loadInvestigationsById, loadPivotsById, loadUsersById,
+                                          investigationIds }) {
     return loadInvestigationsById({investigationIds})
         .mergeMap(({app, investigation}) =>
             Observable.combineLatest(

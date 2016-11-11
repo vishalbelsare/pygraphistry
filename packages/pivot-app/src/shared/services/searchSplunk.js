@@ -39,7 +39,7 @@ export function searchSplunk({app, pivot}) {
 
     // Used to indentifity logs
     const searchInfo = { query, searchParams };
-    log.trace( searchInfo,'Fetching results for splunk job: "%s"', jobId );
+    log.debug( searchInfo,'Fetching results for splunk job: "%s"', jobId);
 
     // TODO Add this as part of splunk connector
     return splunkLogin()

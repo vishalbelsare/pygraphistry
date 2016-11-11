@@ -22,13 +22,14 @@ docker build -f Dockerfile-build \
 docker run --rm graphistry/pivot-app:build sh -c "tar --create ${ARTIFACTS}" > artifact.tar
 
 
-########################
-# Create runner script #
-########################
+####################################
+# Create run CMD from package.json #
+####################################
 
 RUNCMD=`docker run --rm graphistry/pivot-app:build sh -c "cat package.json" | jq -r .scripts.start`
 
 echo -e "\nCMD ${RUNCMD}" >> Dockerfile
+
 cat Dockerfile
 
 #######################################
