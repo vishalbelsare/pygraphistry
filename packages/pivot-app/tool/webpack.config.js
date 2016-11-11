@@ -8,6 +8,7 @@ var WebpackVisualizer = require('webpack-visualizer-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var WebpackNodeExternals = require('webpack-node-externals');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
+var ProgressBarPlugin = require('progress-bar-webpack-plugin');
 var child_process = require('child_process');
 
 var argv = process.argv.slice(2);
@@ -71,6 +72,10 @@ function commonConfig(
         },
         plugins: plugins(isDevBuild, isFancyBuild),
         stats: {
+            // See https://webpack.github.io/docs/node.js-api.html
+            errorDetails: false,
+            // Display chunks
+            chunks: false,
             // Nice colored output
             colors: true
         }
@@ -263,8 +268,9 @@ function plugins(isDevBuild, isFancyBuild) {
         if (isFancyBuild) {
             plugins.push(new WebpackDashboard());
         } else {
-            // Report progress for non-fancy dev builds
-            plugins.push(new webpack.ProgressPlugin());
+            plugins.push(new ProgressBarPlugin({
+                clear:true,
+            }));
         }
     } else {
         // Report progress for prod builds
