@@ -10,6 +10,6 @@ ARG REV_NAME
 
 COPY ./wholly-innocuous/files/npm/rc /root/.npmrc
 
-RUN npm install && npm run build
+RUN npm install && npm run build && npm prune --production
 
 CMD npm start
