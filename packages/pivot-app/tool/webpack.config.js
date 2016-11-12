@@ -197,7 +197,6 @@ function loaders(isDevBuild) {
     return [
         babel(),
         { test: /\.json$/, loader: 'json' },
-        { test: /\.glsl$/, loader: 'webpack-glsl' },
         { test: /\.proto$/, loader: 'proto-loader' },
         { test: /\.pegjs$/, loader: 'pegjs-loader?cache=true&optimize=size' },
         { test: /\.(hbs|handlebars)$/, loader: 'handlebars-loader' },
@@ -208,9 +207,9 @@ function loaders(isDevBuild) {
         { test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, loader: "url?&name=[name]_[hash:6].[ext]&limit=10000&mimetype=application/octet-stream" },
         // match everything except [
         //   hb, js, jsx, json, css, scss, less,
-        //   html, glsl, pegjs, proto, handlebars
+        //   html, pegjs, proto, handlebars
         // ] You can add more.
-        { test: /\.(?!(hb|jsx?|json|s?css|less|html?|glsl|woff|woff2|ttf|eot|svg|pegjs|proto|handlebars)$)([^.]+$)/, loader: 'url?limit=10000&name=[name]_[hash:6].[ext]' },
+        { test: /\.(?!(hb|jsx?|json|s?css|less|html?|woff|woff2|ttf|eot|svg|pegjs|proto|handlebars)$)([^.]+$)/, loader: 'url?limit=10000&name=[name]_[hash:6].[ext]' },
         { test: /PEGUtil.js$/,
             include: /node_modules\/pegjs-util/,
             loader: StringReplacePlugin.replace({ // from the 'string-replace-webpack-plugin'
