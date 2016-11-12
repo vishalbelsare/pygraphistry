@@ -1,5 +1,7 @@
-var convict = require('convict');
-var fs = require('fs');
+import convict from 'convict';
+import path from 'path';
+import glob from 'glob';
+
 
 // Define a schema
 var conf = convict({
@@ -12,21 +14,21 @@ var conf = convict({
     host: {
         doc: 'Pivot-app host name/IP',
         format: 'ipaddress',
-        default: '127.0.0.1',
-        env: 'IP_ADDRESS',
+        default: '0.0.0.0',
+        env: 'HOST',
     },
     port: {
         doc: 'Pivot-app port number',
         format: 'port',
-        default: 3000,
+        default: 80,
         arg:'port',
         env: 'PORT'
     },
     pivotApp: {
         dataDir: {
-            doc: 'Directory to stores investigation files',
+            doc: 'Directory to store investigation files',
             form: String,
-            default: 'tests/appdata',
+            default: 'data',
             arg: 'pivot-data-dir'
         }
     },
@@ -34,7 +36,7 @@ var conf = convict({
         level: {
             doc: `Log levels - ['trace', 'debug', 'info', 'warn', 'error', 'fatal']`,
             format: ['trace', 'debug', 'info', 'warn', 'error', 'fatal'],
-            default: 'debug',
+            default: 'info',
             arg:'log-level',
             env:'LOG_LEVEL'
         },
@@ -57,14 +59,14 @@ var conf = convict({
         key: {
             doc: `Graphistry's api key`,
             format: String,
-            default: '4a04279f3df44f880b3bb960fc1133efc7eefdf77d9459fc45cf9b474a3530e5e1ca9d6a06cf8304c6e16fa6fedc0d9c',
+            default: null,
             arg:'graphistry-key',
             env: 'GRAPHISTRY_KEY'
         },
         host: {
             doc: `The location of Graphistry's Server`,
             format: String,
-            default: 'https://staging.graphistry.com',
+            default: 'https://labs.graphistry.com',
             arg:'graphistry-host',
             env:'GRAPHISTRY_HOST'
         }
@@ -73,21 +75,21 @@ var conf = convict({
         key: {
             doc: 'Splunk password',
             format: String,
-            default: 'null',
+            default: null,
             arg:'splunk-key',
             env: 'SPLUNK_KEY'
         },
         user: {
             doc: 'Splunk user name',
             format: String,
-            default: 'null',
+            default: null,
             arg:'splunk-user',
             env: 'SPLUNK_USER'
         },
         host: {
             doc: 'The hostname of the Splunk Server',
             format: String,
-            default: 'splunk.graphistry.com',
+            default: null,
             arg:'splunk-host',
             env: 'SPLUNK_HOST'
         }
@@ -95,15 +97,17 @@ var conf = convict({
 });
 
 
-// Load environment dependent configuration
-var env = conf.get('env');
-conf.loadFile(__dirname + '/config/' + env + '.json');
-const localConfig = __dirname + '/config/local.json';
-fs.access(localConfig, fs.constants.R_OK, function(err) {
-    if (!err) {
-        conf.loadFile(localConfig);
-    }
-});
+let configFiles = [];
+
+if (process.env.CONFIG_FILES) {
+    configFiles = process.env.CONFIG_FILES.split(',');
+} else {
+    const defaultConfigPath = path.resolve('.', 'config', '*.json');
+    configFiles = glob.sync(defaultConfigPath);
+}
+
+console.log(`Loading configuration from ${configFiles.join(", ")}`);
+conf.loadFile(configFiles);
 
 // Perform validation
 conf.validate({strict: true});
