@@ -977,7 +977,7 @@ function selectNodesInRect (simulator, selection) {
     logger.debug('selectNodesInRect', selection);
 
     if (selection.all) {
-        return Q(undefined);
+        return Q(simulator.dataframe.lastMasks.point);
     }
 
     return simulator.otherKernels.selectNodesInRect.run(simulator, selection)
@@ -990,7 +990,7 @@ function selectNodesInCircle (simulator, selection) {
     logger.debug('selectNodesInCircle', selection);
 
     if (selection.all) {
-        return Q(undefined);
+        return Q(simulator.dataframe.lastMasks.point);
     }
 
     return simulator.otherKernels.selectNodesInCircle.run(simulator, selection)

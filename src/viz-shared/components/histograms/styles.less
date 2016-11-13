@@ -1,3 +1,6 @@
+@import '~viz-shared/vars.less';
+@import '~viz-shared/index.less';
+
 @text-color: #646464;
 @left-padding: 10px;
 
@@ -5,6 +8,14 @@
 @color-neutral-hover: #666;
 @color-highlight: rgb(15, 165, 197);
 @color-highlight-hover: #ff6600;
+
+.histograms-list {
+    :global(.list-group-item) {
+        margin: 0;
+        padding: 0;
+        border-top: none;
+    }
+}
 
 .histogram-item {
     padding: 0;
@@ -33,6 +44,7 @@
     float: right;
     white-space: nowrap;
 }
+
 .histogram-close {
     visibility: hidden;
     font-size: 15px !important;
@@ -40,7 +52,8 @@
     border: transparent;
     background: transparent;
     color: @text-color;
-    .histogram-item:hover & {
+
+    &.histogram-loading, .histogram :hover & {
         visibility: visible;
         background: transparent;
     }
@@ -68,13 +81,31 @@
     position: relative;
     display: inline-block;
     text-align: left;
+    margin-left: 10px;
+}
+
+.histogram-info {
+    display: flex;
+    font-size: 11px;
+    align-items: center;
+    white-space: nowrap;
+    p { margin: 1px 0; }
 }
 
 .histogram-column {
-    display: inline-block;
     height: 100%;
-    position: absolute;
+    display: inline-block;
     cursor: crosshair;
+
+    &, &:before, &:after {
+        position: relative;
+        box-sizing: border-box;
+    }
+
+    &:before, &:after {
+        content: '';
+        display: block;
+    }
 
     .has-filter &.is-filter-true {
         filter: grayscale(100%);
@@ -110,7 +141,7 @@
 }
 .bar-bg-bg {
     opacity: 0.15;
-    .is-masked-true & {
+    .is-masked & {
         background: white !important;
     }
 }
@@ -130,7 +161,7 @@
 .bar-global {
     border: 1px solid rgba(0,0,0,0.2);
     margin-right: -1px;
-    .histogram.has-filter .is-filter-true &, .is-masked-true & {
+    .histogram.has-filter .is-filter-true &, .is-masked & {
         background-color: @color-neutral !important;
     }
 }

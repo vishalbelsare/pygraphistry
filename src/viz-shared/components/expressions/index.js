@@ -1,5 +1,4 @@
 import RcSwitch from 'rc-switch';
-import styles from './styles.less';
 import classNames from 'classnames';
 import ExpressionEditor from './editor';
 import {
@@ -10,8 +9,8 @@ import {
     DropdownButton, OverlayTrigger,
 } from 'react-bootstrap';
 
-import Select from 'react-select';
-
+import Select from 'viz-shared/components/tethered-select';
+import styles from 'viz-shared/components/expressions/styles.less';
 
 const expressionTooltip = (
     <Tooltip id='expression-tooltip'>Expression</Tooltip>
@@ -26,21 +25,34 @@ const deleteExpressionTooltip = (
 );
 
 export function ExpressionsList({
+    loading = false, showDataTypes = true,
     id, templates = [], addExpression,
-    className = '', style = {}, children, name, ...props
+    showHeader = true, header,
+    dropdownPlacement = 'bottom',
+    side='left',
+    placeholder,
+    style = {}, children, name, ...props
 }) {
+
+    const dropdown = <ExpressionTemplates name={name}
+        loading={loading}
+        templates={templates}
+        placeholder={placeholder}
+        showDataTypes={showDataTypes}
+        addExpression={addExpression}/>;
+
+    const title = !showHeader ? undefined : (header ? header : name);
+    const top = dropdownPlacement === 'top'
+        ? <div>{title}{dropdown}</div>
+        : title;
+    const bottom = dropdownPlacement === 'bottom' ? dropdown : undefined;
+
     return (
-        <Panel header={name} style={{ ...style, display: `block`, margin: 0 }}
-               className={classNames({
-                   [className]: !!className,
-                   [styles['expressions-list']]: true,
-               })}
-               footer={(
-                   <ExpressionTemplates name={name}
-                                        templates={templates}
-                                        addExpression={addExpression}/>
-               )}>
-            <ListGroup fill>
+        <Panel header={ top }
+               style={{ ...style, display: `block`, margin: 0 }}
+               footer={ bottom }
+               {...props}>
+            <ListGroup fill style={side==='left' ? {maxHeight: '300px', 'overflowY': 'scroll'} : {}}>
             {children.map((child) => (
                 <ListGroupItem key={child.key}
                                style={{ paddingLeft: 0, paddingRight: 0 }}>
@@ -52,34 +64,30 @@ export function ExpressionsList({
     );
 }
 
-export function ExpressionTemplates({ name = 'Expressions', templates = [], addExpression }) {
+export function ExpressionTemplates({ name = 'Expressions', templates = [],
+                                      placeholder = "Select attribute for new entry...",
+                                      loading = false, showDataTypes = true, addExpression }) {
 
-
-    const sortedTemplates = templates.slice(0);
-    // sortedTemplates.sort((a,b) => {
-    //     const aLower = a.attribute.toLowerCase();
-    //     const bLower = b.attribute.toLowerCase();
-    //     return aLower === bLower ? 0
-    //         : aLower < bLower ? -1
-    //         : 1;
-    // });
+    templates = templates.slice(0);
 
     return  (<Select
+        className={styles['expression-select']}
         id='add-expression-dropdown'
         title={`Add ${name.slice(0, -1)}`}
-        placeholder="Select attribute to filter..."
-        onChange={ ({value}) => addExpression(sortedTemplates[value]) }
+        placeholder={placeholder}
+        onChange={ ({value}) => addExpression(templates[value]) }
         optionRenderer={
           ({componentType, name, dataType}) => (
               <span>
                   <span>{componentType}:</span>
                   <label>{name}</label>
-                  <span style={{'fontStyle': 'italic', 'marginLeft': '5px' }}>{dataType}</span>
+                  {showDataTypes &&
+                  <span style={{'fontStyle': 'italic', 'marginLeft': '5px' }}>{dataType}</span> }
               </span>
             )
         }
         options={
-            sortedTemplates.map(({ name, dataType, identifier, componentType }, index) => {
+            templates.map(({ name, dataType, identifier, componentType }, index) => {
                 return {
                     value: index,
                     label: `${identifier} (${dataType})`,
@@ -108,7 +116,7 @@ export function ExpressionItem({
                 <OverlayTrigger
                     placement='top'
                     overlay={expressionTooltip}>
-                    <div style={{ border: `1px solid gray`, borderRadius: `3px` }}>
+                    <div style={{ border: `1px solid #cccccc`, borderRadius: `3px`, minWidth: 250 }}>
                         <ExpressionEditor name={`expression-${id}`} width='100%'
                                           value={input} templates={templates} readOnly={isSystem}
                                           onChange={(input) => cancelUpdateExpression({ id })}
@@ -117,7 +125,7 @@ export function ExpressionItem({
                 </OverlayTrigger>
             </Col>
             {!isSystem &&
-            <Col xs={4} md={4} lg={4} className={styles['expression-row']} style={{ paddingLeft: 0 }}>
+            <Col xs={4} md={4} lg={4} className={styles['expression-row']} style={{ paddingLeft: 0, transform: 'scale(0.9)' }}>
                 <Col xs={6} md={6} lg={6} style={{ paddingRight: 0 }}>
                     <OverlayTrigger placement='top'
                                     overlay={expressionEnabledTooltip}>

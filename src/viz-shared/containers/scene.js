@@ -12,36 +12,36 @@ let Scene = ({
         id, simulating, labels = {},
         release = {}, renderer = {},
         selection = {}, highlight = {}, ...props } = {}) => (
-    <div>
-      <Labels key='labels' data={labels} simulating={simulating}/>
-      <SceneComponent selection={selection}
-                      simulating={simulating}
-                      edges={renderer.edges}
-                      points={renderer.points}
-                      sceneID={id} {...props}
-                      release={release}>
-          <Renderer key='renderer'
-                    data={renderer}
-                    simulating={simulating}/>
-          <Selection key='selection'
-                     data={selection}
-                     highlight={highlight}
-                     simulating={simulating}
-                     onSelectedPointTouchStart={onSelectedPointTouchStart}
-                     onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
-      </SceneComponent>
-    </div>
+    <SceneComponent selection={selection}
+                    simulating={simulating}
+                    edges={renderer.edges}
+                    points={renderer.points}
+                    sceneID={id} {...props}
+                    release={release}>
+        <Renderer key='renderer'
+                  data={renderer}
+                  simulating={simulating}/>
+        <Selection key='selection'
+                   data={selection}
+                   simulating={simulating}
+                   onSelectedPointTouchStart={onSelectedPointTouchStart}
+                   onSelectionMaskTouchStart={onSelectionMaskTouchStart}
+                   highlightedPoint={highlight && highlight.point && highlight.point[0]}/>
+        <Labels key='labels' data={labels} simulating={simulating}/>
+    </SceneComponent>
 );
 
-Scene = container((scene = {}) => {
-    return `{
-        id, simulating, release: { tag, buildNumber },
+Scene = container({
+    renderLoading: false,
+    fragment: (scene = {}) => `{
+        id, simulating,
+        release: { tag, buildNumber },
         ... ${ Settings.fragment(scene) },
         labels: ${ Labels.fragment(scene.labels) },
         renderer: ${ Renderer.fragment(scene.renderer) },
         highlight: ${ Selection.fragment(scene.highlight) },
         selection: ${ Selection.fragment(scene.selection) }
-    }`;
+    }`
 })(Scene);
 
 export { Scene };

@@ -6,7 +6,7 @@ import { container } from '@graphistry/falcor-react-redux';
 // import { Timebar } from './timebar';
 import { Settings } from './settings';
 import { Expressions } from './expressions';
-// import { Inspector } from './inspector';
+import { Inspector } from './inspector';
 import { Histograms } from './histograms';
 
 const panelsById = {
@@ -32,20 +32,20 @@ function componentForSideAndType(side, id) {
 
 let Panel = ({
         panel = {}, placement,
-        positionTop, positionLeft,
+        className = '', positionTop, positionLeft,
         id, side, isOpen, name, style, ...props
     } = {}) => {
     const Component = componentForSideAndType(side, panel.id);
     const componentInstance = (
         <Component name={name} side={side}
                    data={panel} style={style}
-                   className={panelStyles[`panel-${side}`]}
+                   className={className + ' ' + panelStyles[`panel-${side}`]}
                    {...props}/>
     );
     if (side === 'left') {
         return (
             <div style={leftPanelStyles(isOpen)}
-                 className={panelStyles[`panel-${side}`]}>
+                 className={className + ' ' + panelStyles[`panel-${side}`]}>
                 {componentInstance}
             </div>
         );
@@ -53,8 +53,9 @@ let Panel = ({
     return componentInstance;
 };
 
-Panel = container(
-    ({ id, name, ...rest } = {}, { side }) => {
+Panel = container({
+    renderLoading: true,
+    fragment: ({ id, name, ...rest } = {}, { side }) => {
         if (!id && !name) {
             return `{ panels: { ${side} } }`;
         }
@@ -62,10 +63,12 @@ Panel = container(
         if (!Content.fragment) {
             return `{ id, name }`;
         }
-        return Content.fragment({ id, name, ...rest });
+        return `{ id, name, ... ${
+            Content.fragment({ id, name, ...rest })}
+        }`;
     },
-    (panel) => ({ panel })
-)(Panel);
+    mapFragment: (panel) => ({ panel })
+})(Panel);
 
 export { Panel };
 
@@ -75,18 +78,6 @@ function Timebar() {
     );
 }
 
-function Inspector() {
-    return (
-        <h1>Inspector</h1>
-    );
-}
-
-// function Histograms() {
-//     return (
-//         <h1>Histograms</h1>
-//     );
-// }
-
 function leftPanelStyles(isOpen) {
     return {
         top: `0px`,
@@ -94,7 +85,8 @@ function leftPanelStyles(isOpen) {
         zIndex: 3700,
         position: `absolute`,
         opacity: Number(isOpen),
-        minWidth: isOpen ? undefined : `200px`,
+        // minWidth: isOpen ? undefined : `200px`,
+        minWidth: `200px`,
         minHeight: isOpen ? undefined : `200px`,
         visibility: isOpen && 'visible' || 'hidden',
         transform: `translate3d(${Number(!isOpen) * -10}%, 6px, 0)`,

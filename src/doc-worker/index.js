@@ -27,7 +27,7 @@ export function docWorker(app, server, sockets, caches) {
         return new Subscription(function disposeDocWorker() {
             removeExpressRoute(app, '/doc');
             removeExpressRoute(app, '/doc/model.json');
-            removeExpressRoute(app, '/doc/index.html');
+            removeExpressRoute(app, '/doc/graph.html');
         });
     }
 
@@ -49,7 +49,7 @@ export function docWorker(app, server, sockets, caches) {
 
         app.use('/doc', express.static(path.resolve(), { fallthrough: true }));
         app.use('/doc/model.json', falcorMiddleware(getDataSource));
-        app.use('/doc/index.html', function (req, res) {
+        app.use('/doc/graph.html', function (req, res) {
 
             try {
 

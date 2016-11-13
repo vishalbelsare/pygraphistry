@@ -21,10 +21,14 @@ export function filters(path, base) {
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
         const addFilter = addExpressionHandler({
-            addExpression, expressionType: 'filter'
+            listName: 'filters',
+            addItem: addExpression,
+            expressionType: 'filter'
         });
         const removeFilter = removeExpressionHandler({
-            removeExpressionById, expressionType: 'filter'
+            listName: 'filters',
+            expressionType: 'filter',
+            removeItem: removeExpressionById
         });
 
         return [{

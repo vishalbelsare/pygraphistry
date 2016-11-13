@@ -1,5 +1,6 @@
 import React from 'react'
 import { container } from '@graphistry/falcor-react-redux';
+import styles from 'viz-shared/components/expressions/styles.less';
 import {
     ExpressionItem,
     ExpressionsList
@@ -13,9 +14,14 @@ import {
     cancelUpdateExpression
 } from 'viz-shared/actions/expressions';
 
-let Expressions = ({ templates = [], expressions = [], removeExpression, ...props }) => {
+let Expressions = ({ templates = [], expressions = [],
+                     addExpression, removeExpression,
+                     className = '', style = {}, ...props }) => {
     return (
-        <ExpressionsList templates={templates} {...props}>
+        <ExpressionsList templates={templates}
+                         addExpression={addExpression}
+                         className={className + ' ' + styles['expressions-list']}
+                         style={{ ...style, height: `100%` }} {...props}>
         {expressions.map((expression, index) => (
             <Expression data={expression}
                         templates={templates}
@@ -26,8 +32,9 @@ let Expressions = ({ templates = [], expressions = [], removeExpression, ...prop
     );
 };
 
-Expressions = container(
-    ({ templates = [], ...expressions } = {}) => `{
+Expressions = container({
+    renderLoading: false,
+    fragment: ({ templates = [], ...expressions } = {}) => `{
         id, name, length, ...${
             Expression.fragments(expressions)
         },
@@ -37,24 +44,29 @@ Expressions = container(
             }
         }
     }`,
-    (expressions) => ({
+    mapFragment: (expressions) => ({
         expressions,
         name: expressions.name,
         templates: expressions.templates
     }),
-    { addExpression, removeExpression }
-)(Expressions);
+    dispatchers: {
+        addExpression,
+        removeExpression
+    }
+})(Expressions);
 
-let Expression = container(
-    () => `{
+let Expression = container({
+    renderLoading: false,
+    fragment: () => `{
         id, input, level,
         name, enabled, identifier,
         dataType, componentType, expressionType
     }`,
-    (expression) => expression,
-    { updateExpression,
-      setExpressionEnabled,
-      cancelUpdateExpression }
-)(ExpressionItem);
+    dispatchers: {
+        updateExpression,
+        setExpressionEnabled,
+        cancelUpdateExpression
+    }
+})(ExpressionItem);
 
 export { Expressions, Expression };

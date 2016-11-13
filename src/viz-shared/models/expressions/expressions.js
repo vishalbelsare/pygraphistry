@@ -24,13 +24,28 @@ export function expressions(view) {
         ...exclusions(view),
         ...histograms(view),
         ...filters(view, defaultFilter),
-        expressionTemplates: [],
         expressionsById: {
             [defaultFilter.id]: {
                 ...defaultFilter
             }
         }
     };
+}
+
+
+function getExprType (ast) {
+    if (ast.argument) {
+        return ast.argument;
+    } else if (ast.left) {
+        const left = getExprType(ast.left);
+        if (left) return left;
+        return getExprType(ast.right);
+    } else if (ast.type === 'Identifier') {
+        const parts = ast.name.split(':');
+        const componentType = parts[0];
+        const attribute = parts.slice(1).join(':');
+        return {componentType, attribute, dataType: 'number'};
+    }
 }
 
 export function expression(inputOrProps = {
@@ -47,8 +62,22 @@ export function expression(inputOrProps = {
         identifier = '',
         componentType = '';
 
-    if (typeof inputOrProps === 'string') {
+    if (inputOrProps && typeof inputOrProps === 'string') {
+        input = inputOrProps;
         query = parseUtil(parser, inputOrProps, { startRule: 'start' });
+        if (query.error) {
+            return {query};
+        } else if (!query.ast) {
+            return {query: {error: 'no ast'}};
+        }
+        const parts = getExprType(query.ast);
+        if (parts) {
+            componentType = parts.componentType;
+            name = parts.attribute;
+            dataType = parts.dataType;
+            identifier = `${componentType}:${name}`;
+        }
+
     } else if (inputOrProps && typeof inputOrProps === 'object') {
         name = inputOrProps.name || 'degree';
         dataType = inputOrProps.dataType || 'number';
@@ -57,9 +86,8 @@ export function expression(inputOrProps = {
         query = getDefaultQueryForDataType({
             ...inputOrProps, name, dataType, identifier, componentType
         });
+        input = printExpression(query);
     }
-
-    input = printExpression(query);
 
     return {
         id: expressionId,
@@ -72,11 +100,17 @@ export function expression(inputOrProps = {
 }
 
 export function getDefaultQueryForDataType(queryProperties = {}) {
-    const { dataType = 'number', identifier } = queryProperties;
-    const queryFactory = defaultQueriesMap[dataType] || defaultQueriesMap.literal;
+
+    const { identifier,
+            dataType = 'number',
+            queryType = dataType } = queryProperties;
+
+    const queryFactory = defaultQueriesMap[queryType] ||
+                         defaultQueriesMap[dataType] ||
+                         defaultQueriesMap.literal;
     return {
         dataType, attribute: identifier,
-        ...queryFactory(queryProperties)
+        ...queryFactory.call(defaultQueriesMap, queryProperties)
     };
 }
 
@@ -139,5 +173,33 @@ const defaultQueriesMap = {
                 value, type: 'Literal',
             }
         }
+    },
+    isOneOf({ identifer, values = [] }) {
+        return {
+            ast: {
+                type: 'BinaryPredicate',
+                operator: 'IN',
+                left: { type: 'Identifier', name: identifer },
+                right: {
+                    type: 'ListExpression',
+                    elements: values.map((value) => ({
+                        value, type: 'Literal'
+                    }))
+                }
+            }
+        }
+    },
+    isEqualTo({ identifier, value }) {
+        return this.string({ identifier, equals: value });
+    },
+    isBetween({ identifier, start, stop }) {
+        return {
+            ast: {
+                type: 'BetweenPredicate',
+                value: {type: 'Identifier', name: identifier },
+                start: {type: 'Literal', value: start },
+                stop: {type: 'Literal', value: stop }
+            }
+        };
     }
 };

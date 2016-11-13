@@ -38,6 +38,8 @@
     left: 0;
     width: 0;
     height: 0;
+
+    pointer-events: none;
 }
 
 .graph-label {
@@ -46,15 +48,6 @@
 
     width: 30em;
     color: @graphistry-darkblue;
-    &.clicked, &:hover {
-        margin-top: -2px;
-        margin-left: -2px;
-        .graph-label-container {
-            background-color: white;
-            border-width: 2px;
-        }
-    }
-
 
 
     pointer-events: none;
@@ -74,9 +67,11 @@
     &.on:not(.clicked) {
         z-index: @graph-label-hover-z;
     }
+    /*
     &.clicked:hover {
         z-index: @graph-label-hover-clicked-z;
     }
+    */
 
     &::-webkit-scrollbar,
     & .graph-label-container::-webkit-scrollbar,
@@ -93,6 +88,15 @@
     }
 }
 
+.graph-label-edge {
+    width: auto;
+}
+
+.graph-label-point {
+    width: auto;
+}
+
+
 .graph-label-container {
 
     //TODO change to relative?
@@ -103,25 +107,41 @@
     height: auto;
     pointer-events: auto;
 
-    margin-top: 2.5em;
-    margin-left: 1.5em;
     padding: 0.5em 0.5em 0.4em 0.5em;
-    border: 1px solid transparent;
     border-radius: 10px;
 
-    background-color: rgba(255, 255, 255, 0.9);
+    margin-top: 25px;
+    margin-left: 15px;
+    border: 1px solid transparent;
+
+    .graph-label.on:not(.clicked) &
+    //, .graph-label:not(.clicked) &:hover
+    {
+        margin-top: 24px;
+        margin-left: 15px;
+    }
+    .graph-label.clicked & {
+        margin-top: 23px;
+        margin-left: 14px;
+        border-width: 2px;
+    }
+
+
+    background-color: white;
     font-size: 0.75em;
     opacity: 0.8;
 
     text-align: left;
 
     .graph-label.on & {
-        box-shadow: 0 0 10px rgba(235,235,245,0.75);
+        box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
         opacity: 1.0;
         border-color: rgba(51, 51, 102, 1);
 
     }
 }
+
+
 
 
 
@@ -140,7 +160,9 @@
     vertical-align: middle;
     font-weight: bold;
 
-    .graph-label.on & {
+    .graph-label.on:not(.clicked) &,
+    //.graph-label-container:hover &,
+    .graph-label.clicked & {
         word-wrap: break-word;
     }
 
@@ -150,14 +172,20 @@
 
     .fa-thumb-tack, .exclude-by-title, .label-type {
         display: none;
-        .graph-label.clicked & {
+        .graph-label.on & {
             display: inline-block;
         }
     }
-    .graph-label.clicked & {
-        .fa-thumb-tack {
-            color: @graphistry-darkblue;
+
+    .fa-thumb-tack {
+        color: @graphistry-darkblue;
+        .graph-label:not(.clicked) & {
+            display: none;
         }
+
+    }
+
+    .graph-label.clicked & {
         .exclude-by-title {
             color: @dark-grey;
             &:hover {
@@ -182,7 +210,9 @@
         margin-right: 0.5em;
         word-break: break-all;
 
-        .graph-label:not(.on):not(:hover):not(.clicked) & {
+        .graph-label:not(.on):not(.clicked)
+        //.graph-label-container:not(:hover)
+        & {
             max-width: 12em;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -213,17 +243,19 @@
     display: none;
 
     cursor: auto;
-    background-color: #eee;
 
     max-height: 20em;
-    max-width: 50em;
+    max-width: 25em;
     height: auto;
     margin-top: 0.5em;
     border-top: 1px solid rgb(51,51,102);
     overflow-y: auto;
     overflow-x: hidden;
 
-    .graph-label.on & {
+
+    .graph-label.on:not(.clicked) &,
+    //.graph-label-container:hover &,
+    .graph-label.clicked & {
         display: block;
     }
 
@@ -236,8 +268,16 @@
     width: 100%;
 
 
-    td, .graph-label-value-wrapper, .graph-label-value-text {
+    td.graph-label-key {
+        max-width: 10em;
+    }
+    td.graph-label-value,
+    td.graph-label-value .graph-label-value-wrapper,
+    td.graph-label-value .graph-label-value-text {
         max-width: 15em;
+    }
+
+    td, .graph-label-value-wrapper, .graph-label-value-text {
         min-width: 2.2em; //fit icons
         white-space: nowrap;
     }
@@ -271,16 +311,14 @@
 .graph-label-pair {
     font-size: 1.1em;
 
-
-    &:nth-child(odd) {
+    &:nth-child(odd) > td {
         background-color: rgba(51,51,102,0.1);
-    }
-    &:nth-child(even) {
-        background-color: #fff;
     }
 
     border-bottom: 1px solid transparent;
-    &:hover, &:hover:nth-child(odd), &:hover:nth-child(even) {
+    &:hover > td,
+    &:hover:nth-child(odd)  > td,
+    &:hover:nth-child(even) > td {
         border-bottom: 1px solid @graphistry-darkblue;
         background-color: @graphistry-darkblue;
         color: white;

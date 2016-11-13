@@ -89,6 +89,7 @@
 
     // num * num * num * num *num * num * ({'2d', '3d'} = '2d') => Camera
     function Camera2d(left, right, top, bottom, nearPlane, farPlane /*, mode*/) {
+        this.zoom = 1;
         this.width = right - left;
         this.height = bottom - top;
         this.center = {

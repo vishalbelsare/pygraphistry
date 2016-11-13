@@ -32,37 +32,44 @@ let View = ({
     const isBottomPanelOpen = !!panels.bottom;
     return (
         <div style={{ position: `absolute`, width: `100%`, height: `100%` }}>
-            <Scene data={scene}
+            <Scene key='scene'
+                   data={scene}
                    mouseMove={sceneMouseMove}
                    touchStart={sceneTouchStart}
                    selectToolbarItem={selectToolbarItem}
                    onSelectedPointTouchStart={onSelectedPointTouchStart}
                    onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
-            <Panel side='left' data={left} isOpen={isLeftPanelOpen}/>
-            <Dock fluid={false}
-                  size={300}
-                  defaultSize={300}
-                  dimMode='none'
+            <Panel key='left-panel' side='left' data={left} isOpen={isLeftPanelOpen}/>
+            <Dock fluid
                   key='right'
+                  dimMode='none'
+                  zIndex={3700}
                   position='right'
-                  isVisible={isRightPanelOpen}>
-                <Panel side='right' data={right}/>
+                  defaultSize={0.2}
+                  isVisible={isRightPanelOpen}
+                  dockStyle={{
+                      boxShadow: `none`,
+                      background: `transparent`
+                  }}>
+                <Panel side='right' data={right} key='right-panel'/>
             </Dock>
             <Dock fluid
-                  dimMode='none'
                   key='bottom'
+                  zIndex={3700}
+                  dimMode='none'
                   position='bottom'
                   isVisible={isBottomPanelOpen}
-                  size={1 - (1/Math.sqrt(2))}>
-                <Panel side='bottom' data={bottom}/>
+                  defaultSize={1 - (1/Math.sqrt(2))}>
+                <Panel side='bottom' data={bottom} key='bottom-panel'/>
             </Dock>
-            <Toolbar data={toolbar} selectToolbarItem={selectToolbarItem}/>
+            <Toolbar key='toolbar' data={toolbar} selectToolbarItem={selectToolbarItem}/>
         </div>
     );
 };
 
-View = container(
-    ({ scene, layout, toolbar } = {}) => `{
+View = container({
+    renderLoading: true,
+    fragment: ({ scene, layout, toolbar } = {}) => `{
         scene: ${ Scene.fragment(scene) },
         panels: {
             left: { id, name },
@@ -72,14 +79,13 @@ View = container(
         layout: ${ Settings.fragment(layout) },
         toolbar: ${ Toolbar.fragment(toolbar) }
     }`,
-    (x) => x,
-    {
+    dispatchers: {
         sceneMouseMove,
         sceneTouchStart,
         selectToolbarItem,
         onSelectedPointTouchStart,
         onSelectionMaskTouchStart,
     }
-)(View);
+})(View);
 
 export { View };

@@ -2,7 +2,6 @@ import path from 'path';
 import express from 'express';
 import compression from 'compression';
 import bodyParser from 'body-parser';
-import RxRouter from 'rx-router';
 import SocketIOServer from 'socket.io';
 import RxHTTPServer from 'rx-http-server';
 import _config from '@graphistry/config';
@@ -20,12 +19,12 @@ export const config = _config();
 export const logger = commonLogger.createLogger('viz-server:server');
 
 export function start() {
+
     const app = express();
     const appRoute = Observable.bindCallback(app);
-    const appHandler = ({ request, response }) => appRoute(request, response);
+    const appRouteHandler = ({ request, response }) => appRoute(request, response);
 
     const server = new RxHTTPServer();
-    const routes = RxRouter(appHandler, {});
     const socketServer = new SocketIOServer(server, { serveClient: false });
     const serverListen = Observable.bindNodeCallback(server.listen.bind(server), function () {
         console.log('************************************************************');
@@ -55,22 +54,25 @@ export function start() {
             config.VIZ_LISTEN_PORT,
             config.VIZ_LISTEN_ADDRESS
         ))
-        .mergeMap((listeningServer) => {
-            return requisitionWorker({ config, logger, app, server: listeningServer, socketServer })
-                .multicast(
-                    () => new BehaviorSubject({ isActive: false }),
-                    (worker) => Observable.merge(
-                        worker.filter(isRequestEvent),
-                        worker.filter(isActiveEvent)
-                            .pluck('isActive')
-                            .let((isWorkerActive) => reportWorkerActivity({
-                                config, isWorkerActive
-                            }))
-                            .ignoreElements()
-                    )
-                );
-        })
-        .mergeMap(routes)
+        .mergeMap((httpServer) => requisitionWorker({
+            config, logger, app, server: httpServer, socketServer
+        }))
+        .multicast(
+            () => new BehaviorSubject({ isActive: false }),
+            (workerRequestsAndEvents) => Observable.merge(
+
+                workerRequestsAndEvents
+                    .filter(isRequestEvent)
+                    .mergeMap(appRouteHandler),
+
+                workerRequestsAndEvents
+                    .filter(isActiveEvent)
+                    .pluck('isActive')
+                    .let((isWorkerActive) => reportWorkerActivity({
+                        config, isWorkerActive
+                    }))
+            )
+        )
         .ignoreElements()
         .concat(Observable.never())
         .catch((e) => {

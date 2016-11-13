@@ -14,14 +14,16 @@ export function toolbar(path, base) {
     return function toolbar({ loadViewsById }) {
 
         const getValues = getHandler(path, loadViewsById);
+        const setValues = setHandler(path, loadViewsById);
 
         return [{
             returns: 'Reference',
             get: getToolbar(base),
             route: `${base}['toolbar']`
         }, {
-            returns: 'Boolean',
             get: getValues,
+            set: setValues,
+            returns: 'Boolean',
             route: `${base}['toolbars'][{keys}].visible`
         }, {
             returns: '*',

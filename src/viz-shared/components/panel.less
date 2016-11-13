@@ -1,7 +1,18 @@
 @import '../index.less';
 
 .panel-left {
-    margin: 0;
     z-index: @menus-z;
 }
 
+.panel-right {
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 0px;
+    :global(.panel-heading) {
+        border-top-right-radius: 0px;
+        border-bottom-right-radius: 0px;
+    }
+}
+
+.panel-left, .panel-right, .panel-bottom {
+    margin: 0;
+}

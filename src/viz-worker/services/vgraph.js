@@ -4,6 +4,7 @@ import { Observable, Scheduler } from 'rxjs';
 import Binning from 'viz-worker/simulator/Binning';
 import { cache as Cache } from '@graphistry/common';
 import { load as _loadVGraph } from '../simulator/libs/VGraphLoader';
+import { columns as createColumns } from 'viz-shared/models/columns';
 import { histogram as createHistogram } from 'viz-shared/models/expressions';
 import {
     ref as $ref,
@@ -94,7 +95,7 @@ function loadDataFrameAndUpdateBuffers({ view }) {
     .map(() => {
         view = createInitialHistograms(view, dataframe);
         view.scene = assignHintsToScene(view.scene, dataframe);
-        view.expressionTemplates = createExpressionTemplates(dataframe);
+        view.columns = createColumns(dataframe.getColumnsByType(true));
         return view;
     });
 }
@@ -110,7 +111,9 @@ function createInitialHistograms(view, dataframe) {
     const binningInstance = new Binning(dataframe);
     const initialHistograms = binningInstance
         .selectInitialColumnsForBinning(5)
-        .map(({ type, attribute }) => createHistogram(type, attribute));
+        .map(({ type, dataType, attribute }) => createHistogram({
+            name: attribute, dataType, componentType: type
+        }));
 
     histograms.length = initialHistograms.length;
 
@@ -136,92 +139,3 @@ function assignHintsToScene(scene, dataframe) {
     return scene;
 }
 
-function createExpressionTemplates(dataframe) {
-
-    const templates = {}, allColumnsByType = {};
-    const columnsByComponentType = dataframe.getColumnsByType(true);
-
-    /*        { point, edge } */
-    for (const componentType in columnsByComponentType) {
-
-        const columnsByName = columnsByComponentType[componentType];
-        const columnsForComponent = allColumnsByType[componentType] || (
-            allColumnsByType[componentType] = {});
-
-        for (const columnName in columnsByName) {
-
-            const column = columnsByName[columnName];
-            columnsForComponent[columnName] = column;
-
-            // If column.name is different than the columnName key,
-            // insert the column with the name as well.
-            if (column.name !== columnName && !columnsForComponent[column.name]) {
-                columnsForComponent[column.name] = column;
-            }
-        }
-    }
-
-    const { point: pointColumns, edge: edgeColumns } = allColumnsByType;
-
-    for (const columnName in pointColumns) {
-
-        const column = pointColumns[columnName];
-        const attribute = columnName.indexOf('point:') === 0 ? columnName : `point:${columnName}`;
-
-        if (edgeColumns.hasOwnProperty(columnName)) {
-
-            const edgeColumn = edgeColumns[columnName];
-            const edgeAttribute = columnName.indexOf('edge:') === 0 ? columnName : `edge:${columnName}`;
-
-            templates[attribute] = {
-                attribute,
-                name: columnName,
-                dataType: column.type,
-                identifier: attribute,
-                componentType: 'point'
-            };
-
-            templates[edgeAttribute] = {
-                name: columnName,
-                attribute: edgeAttribute,
-                dataType: edgeColumn.type,
-                identifier: edgeAttribute,
-                componentType: 'edge'
-            };
-
-        } else if (!templates.hasOwnProperty(columnName)) {
-            templates[attribute] = {
-                attribute,
-                name: columnName,
-                dataType: column.type,
-                identifier: attribute,
-                componentType: 'point'
-            };
-        }
-    }
-
-    for (const columnName in edgeColumns) {
-        const column = edgeColumns[columnName];
-        const attribute = columnName.indexOf('edge:') === 0 ? columnName : `edge:${columnName}`;
-        if (!templates.hasOwnProperty(columnName)) {
-            templates[attribute] = {
-                attribute,
-                name: columnName,
-                dataType: column.type,
-                identifier: attribute,
-                componentType: 'edge'
-            };
-        }
-    }
-
-    return Object
-        .keys(templates)
-        .map((key) => templates[key])
-        .sort((a,b) => {
-            const aLower = a.identifier.toLowerCase();
-            const bLower = b.identifier.toLowerCase();
-            return aLower === bLower ? 0
-                : aLower < bLower ? -1
-                : 1;
-        });
-}

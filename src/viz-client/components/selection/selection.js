@@ -1,10 +1,10 @@
 import classNames from 'classnames';
 import React, { PropTypes } from 'react';
+import { Observable } from 'rxjs/Observable';
 import styles from 'viz-shared/components/selection/styles.less';
 import {
-    Subject, Observable,
-    Subscription, ReplaySubject
-} from 'rxjs';
+    animationFrame as AnimationFrameScheduler
+} from 'rxjs/scheduler/animationFrame';
 
 import {
     curPoints,
@@ -14,7 +14,6 @@ import {
 
 import {
     compose,
-    toClass,
     getContext,
     shallowEqual,
     mapPropsStream
@@ -92,15 +91,24 @@ const HighlightPoint = ({ index, sizes, points, renderState, onPointSelected }) 
     );
 }
 
-const WithPointsAndSizes = mapPropsStream((props) => props.combineLatest(
-    pointSizes.map(({ buffer }) => new Uint8Array(buffer)),
-    curPoints.map(({ buffer }) => new Float32Array(buffer)),
-    cameraChanges.startWith({}),
-    Observable.fromEvent(window, 'resize')
-              .debounceTime(100)
-              .delay(50).startWith(null),
-    (props, sizes, points) => ({ ...props, sizes, points })
-));
+const WithPointsAndSizes = mapPropsStream((props) => props
+    .combineLatest(
+        // pointSizes.map(({ buffer }) => new Uint8Array(buffer)),
+        // curPoints.map(({ buffer }) => new Float32Array(buffer)),
+        cameraChanges
+            .auditTime(0, AnimationFrameScheduler)
+            .startWith({}),
+        Observable.fromEvent(window, 'resize')
+                  .debounceTime(100)
+                  .delay(50).startWith(null),
+        (props) => props
+    )
+    .withLatestFrom(
+        pointSizes.map(({ buffer }) => new Uint8Array(buffer)),
+        curPoints.map(({ buffer }) => new Float32Array(buffer)),
+        (props, sizes, points) => ({ ...props, sizes, points })
+    )
+);
 
 const Selection = compose(
     getContext({
@@ -111,21 +119,19 @@ const Selection = compose(
 )(({ mask,
      simulating,
      sizes, points,
+     highlightedPoint,
      point: pointIndexes = [],
      onSelectedPointTouchStart,
      onSelectionMaskTouchStart,
-     renderState, renderingScheduler,
-     highlight: { point: highlightPoints = [] } = {} }) => {
+     renderState, renderingScheduler }) => {
 
     if (simulating || !renderState || !renderingScheduler) {
-        highlightPoints = [];
         renderState = undefined;
+        highlightedPoint = undefined;
         renderingScheduler = undefined;
         onSelectedPointTouchStart = undefined;
         onSelectionMaskTouchStart = undefined;
     }
-
-    const highlightedPoint = highlightPoints[0];
 
     onMaskTouchStart.mask = mask;
     onMaskTouchStart.simulating = simulating;

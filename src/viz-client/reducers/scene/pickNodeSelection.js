@@ -1,9 +1,9 @@
-import { tapDelay, SceneGestures, hitTestNTextures } from './support';
 import { Subject, Observable, Scheduler } from 'rxjs';
 import { hitTestN } from 'viz-client/streamGL/picking';
 import { isAnimating, hitmapUpdates } from 'viz-client/legacy';
+import { tapDelay, SceneGestures, hitTestNTextures } from './support';
 import { SCENE_MOUSE_MOVE, SCENE_TOUCH_START } from 'viz-shared/actions/scene';
-import { atom as $atom, pathValue as $value } from '@graphistry/falcor-json-graph';
+import { ref as $ref, atom as $atom, pathValue as $value } from '@graphistry/falcor-json-graph';
 
 export function pickNodeSelection(actions) {
 
@@ -89,26 +89,32 @@ function filterDistinctPointsAndElements(pointA, pointB) {
 function toValuesAndInvalidations({ type, falcor, element }) {
     return {
         falcor, ...(element.type !== 'none' ?
-            selectionValuesAndInvalidations(type, element) :
+            selectionValuesAndInvalidations(type, element, falcor._path) :
             deselectionValuesAndInvalidations(type, element))
     };
 }
 
-function selectionValuesAndInvalidations(gesture, { idx, type }) {
+function selectionValuesAndInvalidations(gesture, { idx, type }, path) {
     const inverseType = type === 'point' ? 'edge' : 'point';
     const value = {
         highlight: {
-            label: null,
+            darken: false,
             [type]: $atom([idx]),
             [inverseType]: $atom([])
         }
     };
     if (gesture === 'tap') {
+        value.labels = {
+            selection: $ref(path.concat('labelsByType', type, idx))
+        };
         value.selection = {
             mask: null,
-            label: null,
             [type]: $atom([idx]),
             [inverseType]: $atom([])
+        };
+    } else {
+        value.labels = {
+            highlight: $ref(path.concat('labelsByType', type, idx))
         };
     }
     return { values: [{ json: value }] };
@@ -118,21 +124,17 @@ function deselectionValuesAndInvalidations(gesture, { idx, type }) {
     const invalidations = [`highlight['edge', 'point']`];
     const value = {
         highlight: {
-            label: null,
+            darken: false,
             edge: $atom([]),
             point: $atom([]),
         }
     };
     if (gesture === 'tap') {
         invalidations.push(`selection['edge', 'point']`);
-        value.selection = {
-            label: null,
-            edge: $atom([]),
-            point: $atom([]),
-        };
+        value.labels = { selection: $atom(undefined) };
+        value.selection = { edge: $atom([]), point: $atom([]), };
+    } else {
+        value.labels = { highlight: $atom(undefined) };
     }
-    return {
-        invalidations,
-        values: [{ json: value }]
-    };
+    return { invalidations, values: [{ json: value }] };
 }

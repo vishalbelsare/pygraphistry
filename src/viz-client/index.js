@@ -1,6 +1,6 @@
-if (!__DEV__) {
-    require('source-map-support').install();
-}
+// if (__DEV__) {
+    // require('source-map-support').install();
+// }
 
 import '@graphistry/rc-slider/assets/index.css';
 import 'rc-switch/assets/index.css';
@@ -12,6 +12,10 @@ import {
     Observable, Subscriber, Subscription,
     Subject, AsyncSubject, BehaviorSubject, ReplaySubject
 } from 'rxjs';
+
+import setObservableConfig from 'recompose/setObservableConfig';
+import rxjsObservableConfig from 'recompose/rxjsObservableConfig';
+setObservableConfig(rxjsObservableConfig);
 
 Observable.return = function (value) {
     return Observable.of(value);

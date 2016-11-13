@@ -130,6 +130,7 @@ module.exports = function weaklycc (numPoints, edges, depth) {
     perf.startTiming('graph-viz:weaklycc:dfs');
     var lastSize = degrees[roots[0]];
     var threshold = Math.min(lastSize * 0.1, 1000);
+    var start = Date.now();
     for (var i = 0; i < numPoints; i++) {
         var root = roots[i];
         if (!done[root]) {
@@ -146,6 +147,10 @@ module.exports = function weaklycc (numPoints, edges, depth) {
                 // The alternative is a crash due to memory/heap exhaustion.
                 var label = components.length, componentSize = 0;
                 try {
+                    if (Date.now() - start > 2000) {
+                        logger.warn('weaklycc timeout');
+                        throw new Error('too long');
+                    }
                     componentSize = traverse(edgeList, root, label, depth, done, nodeToComponent);
                     components.push({root: root, component: label, size: componentSize});
                     lastSize = componentSize;

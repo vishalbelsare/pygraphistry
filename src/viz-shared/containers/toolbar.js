@@ -18,48 +18,49 @@ let Toolbar = ({ toolbar = [], selectToolbarItem, ...props } = {}) => {
     );
 };
 
-Toolbar = container(
-    // toolbar fragment
-    (toolbar = []) => `{
+Toolbar = container({
+    renderLoading: false,
+    fragment: (toolbar = []) => `{
         visible, length, ...${
             ToolbarItems.fragments(toolbar)
         }
     }`,
     // map fragment to component props
-    (toolbar = []) => ({
+    mapFragment: (toolbar = []) => ({
         toolbar, visible: toolbar.visible
     })
-)(Toolbar);
+})(Toolbar);
 
 let ToolbarItems = ({ items = [], selectToolbarItem, ...props } = {}) => {
     return (
         <ButtonListItems {...props}>
         {items.map((item, index) => (
             <ToolbarItem data={item}
-                         key={`${index}: ${item.id}`}
+                         key={`${index}: toolbar-item-${item.id}`}
                          selectToolbarItem={selectToolbarItem}/>
         ))}
         </ButtonListItems>
     );
 }
 
-ToolbarItems = container(
-    // toolbar items fragment
-    (toolbarItems = []) => `{
+ToolbarItems = container({
+    renderLoading: false,
+    fragment: (toolbarItems = []) => `{
         length, ...${
             ToolbarItem.fragments(toolbarItems)
         }
     }`,
     // map fragment to component props
-    (items) => ({ items })
-)(ToolbarItems);
+    mapFragment: (items) => ({ items })
+})(ToolbarItems);
 
-let ToolbarItem = container(
-    () => `{ id, name, selected }`,
-    (item, { selectToolbarItem }) => ({
+let ToolbarItem = container({
+    renderLoading: false,
+    fragment: () => `{ id, name, selected }`,
+    mapFragment: (item, { selectToolbarItem }) => ({
         ...item, onItemSelected: selectToolbarItem
     })
-)(ButtonListItem);
+})(ButtonListItem);
 
 ToolbarItem = hoistStatics(
     getContext({
