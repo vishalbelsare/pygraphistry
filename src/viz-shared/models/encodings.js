@@ -9,13 +9,23 @@ import { simpleflake } from 'simpleflakes';
 // Is this necessary?
 export function encodings (view) {
     return {
-        encodingsById: {},
         encodings: {
-            length: 0,
             id: 'encodings',
-            name: 'Encodings'
+            name: 'Encodings',
+
+            //current
+            points: {
+                //'color', 'size' -> Encoding
+            },
+            edges: {
+                //'color', 'size' -> Encoding
+            }
+
+            //in case we want a fancier encodings panel w/ presets
+            encodingsById: {},
+            length: 0,
         }
-    };
+    }
 }
 
 // Variation can be 'quantitative' or 'categorical'

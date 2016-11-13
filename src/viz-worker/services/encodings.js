@@ -6,7 +6,7 @@ import dataTypeUtil from 'viz-worker/simulator/dataTypes';
 
 import {
     encoding as createEncoding
-} from 'viz-shared/models/expressions';
+} from 'viz-shared/models/encodings';
 
 import {
     ref as $ref,
