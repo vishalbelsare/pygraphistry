@@ -43,18 +43,6 @@ export default class EncodingManager {
 
     }
 
-    loadDefaults () {
-
-        const { columnManager } = this;
-
-        // copy in defaults. Copy so we can recover defaults when encodings change
-        _.each(defaultColumns, (cols, colType) =>
-            _.each(cols, (colDesc, name) =>
-                columnManager.loadComputedColumnSpecInternally(colType, name, colDesc)));
-
-        _.each(defaultEncodingColumns, (cols, colType) =>
-            _.each(cols, (colDesc, name) =>
-                columnManager.loadComputedColumnSpecInternally(colType, name, colDesc)));
 
     }
 

@@ -16,6 +16,7 @@ const ColumnAggregation = require('./ColumnAggregation.js');
 const ComputedColumnManager = require('./ComputedColumnManager.js');
 import EncodingManager from './EncodingManager.js';
 const ComputedColumnSpec = require('./ComputedColumnSpec.js');
+import {defaultColumns, defaultEncodingColumns} from './DefaultColumns.js';
 
 const dataTypeUtil = require('./dataTypes.js');
 
@@ -872,8 +873,15 @@ const SystemAttributeNames = [
 
 Dataframe.prototype.loadComputedColumns = function (computedColumnManager, encodingsManager) {
 
+    // copy in defaults. Copy so we can recover defaults when encodings change
+    _.each(defaultColumns, (cols, colType) =>
+        _.each(cols, (colDesc, name) =>
+            computedColumnManager.loadComputedColumnSpecInternally(colType, name, colDesc)));
 
-    encodingsManager.loadDefaults();
+    _.each(defaultEncodingColumns, (cols, colType) =>
+        _.each(cols, (colDesc, name) =>
+            computedColumnManager.loadComputedColumnSpecInternally(colType, name, colDesc)));
+
 
     const attrs = this.data.attributes;
     const activeColumns = computedColumnManager.getActiveColumns();
