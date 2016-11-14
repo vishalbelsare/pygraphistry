@@ -57,7 +57,6 @@ const defaultProps = {
     ],
     colorValue: [],
     sizeValue: [],
-    showModal: false,
     yAxisValue: 'none'
 };
 
@@ -75,6 +74,11 @@ export default class EncodingPicker extends React.Component {
         this.handleSelectYAxisChange = this.handleSelectYAxisChange.bind(this);
         this.close = this.close.bind(this);
         this.open = this.open.bind(this);
+
+        this.state = {
+            showModal: false
+        };
+
     }
 
 
@@ -141,11 +145,11 @@ export default class EncodingPicker extends React.Component {
     }
 
     close() {
-        this.props.onModalChange(false);
+        this.setState({showModal: false});
     }
 
     open() {
-        this.props.onModalChange(true);
+        this.setState({showModal: true});
     }
 
 
@@ -166,7 +170,7 @@ export default class EncodingPicker extends React.Component {
                     onClick={this.open} />
             </OverlayTrigger>
 
-            <Modal show={this.props.showModal} onHide={this.close} style={{zIndex: 999999999}}>
+            <Modal show={this.state.showModal} onHide={this.close} style={{zIndex: 999999999}}>
                 <Modal.Header closeButton>
                     <Modal.Title>Visualize <b>{this.props.type}:{this.props.attribute}</b></Modal.Title>
                 </Modal.Header>
