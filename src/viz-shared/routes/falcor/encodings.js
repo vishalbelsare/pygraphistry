@@ -63,8 +63,8 @@ export function encodings(path, base) {
                         returns.map((option, i) =>
                             [$value(
                                 path.slice(0, path.length - 2).concat([ graphTypes[i], 'color']),
-                                'hello')]);
-                                //$atom(option))]);
+                                //'hello')]);
+                                $atom(option))]);
 
                     formatted.map((arr) =>
                         console.log({msg: 'PATH====', path: arr[0].path, val: arr[0].value}));
