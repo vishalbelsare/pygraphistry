@@ -292,42 +292,7 @@ function legendForBins (aggregations, scaling, binning) {
     return legend;
 }
 
-/**
- * @param {Dataframe} dataframe
- * @param {String} columnName
- * @param {String} type
- * @param {String} encodingType
- * @returns {EncodingSpec}
- */
-function getEncodingSpecFor (dataframe, columnName, type, encodingType) {
-    const column = dataframe.getColumn(columnName, type);
-    if (column === undefined) { return undefined; }
-    const encodingPreferences = column.encodingPreferences;
-    if (encodingPreferences === undefined) { return undefined; }
-    if (encodingType === undefined) {
-        return undefined;
-    } else if (encodingPreferences.hasOwnProperty(encodingType)) {
-        return encodingPreferences[encodingType];
-    } else {
-        return undefined;
-    }
-}
 
-
-/**
- * @param {Dataframe} dataframe
- * @param {String} columnName
- * @param {GraphComponentTypes} type
- * @param {String} encodingType
- * @param {EncodingSpec} encodingSpec
- */
-function saveEncodingSpec (dataframe, columnName, type, encodingType, encodingSpec) {
-    const column = dataframe.getColumn(columnName, type);
-    if (column === undefined) { return; }
-    if (column.encodingPreferences === undefined) { column.encodingPreferences = {}; }
-    const encodingPreferences = column.encodingPreferences;
-    encodingPreferences[encodingType] = encodingSpec;
-}
 
 
 /**
@@ -341,8 +306,7 @@ function saveEncodingSpec (dataframe, columnName, type, encodingType, encodingSp
  */
 function inferEncoding (dataframe, type, attributeName, encodingType, variation, binning) {
     const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
-    let encodingSpec = getEncodingSpecFor(dataframe, attributeName, type, encodingType);
-    encodingSpec = inferEncodingSpec(encodingSpec, aggregations, attributeName, encodingType, variation, binning);
+    let encodingSpec = inferEncodingSpec(undefined, aggregations, attributeName, encodingType, variation, binning);
     const scaling = scalingFromSpec(encodingSpec);
     const legend = legendForBins(aggregations, scaling, binning);
     return {
@@ -565,13 +529,11 @@ export {
     inferEncoding,
     scalingFromSpec,
     inferEncodingSpec,
-    getEncodingSpecFor,
-    saveEncodingSpec,
     legendForBins,
     bufferNameForEncodingType,
     inferTimeBoundEncoding,
 
-    resetEncodingOnNBody, applyEncodingOnNBody, getEncodingMetadata
+    resetEncodingOnNBody, applyEncodingOnNBody
 };
 
 
