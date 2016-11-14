@@ -1,11 +1,11 @@
+//TODO workbook loading should fill this out (dataframe.encodingManager)
+
+
 import { Observable } from 'rxjs';
 const _       = require('underscore');
 
-import {defaultColumns, defaultEncodingColumns} from './DefaultColumns.js';
-
-
 //TODO make these cleaner
-export {resetEncodingOnNBody, applyEncodingOnNBody, getEncodingMetadata} from './encodings.js';
+export {resetEncodingOnNBody, applyEncodingOnNBody} from './encodings.js';
 
 
 //Encoding manager works at two levels:

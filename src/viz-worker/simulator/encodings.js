@@ -369,7 +369,14 @@ function resetEncodingOnNBody ({ view, encoding }) {
 
     let {id, encodingType, graphType: unnormalizedType, attribute: unnormalizedAttribute} = encoding;
     const ccManager = dataframe.computedColumnManager;
-    const encodingMetadata = getEncodingMetadata(dataframe, encodingType, unnormalizedType, unnormalizedAttribute);
+
+    let encodingMetadata = undefined;
+    try {
+        encodingMetadata = getEncodingMetadata(dataframe, encodingType, unnormalizedType, unnormalizedAttribute);
+    } catch (e) {
+        return Observable.throw(e);
+    }
+
     let {bufferName} = encodingMetadata;
 
     if (ccManager.resetLocalBuffer(bufferName, dataframe)) {
@@ -392,12 +399,17 @@ function applyEncodingOnNBody ({ view, encoding }) {
     const { nBody: { dataframe, simulator } = {}} = view;
 
     if (!dataframe || !simulator || !encoding) {
-        return Observable.throw('applyEncodingOnNBody missing params');
+        return Observable.throw(new Error('applyEncodingOnNBody missing params'));
     }
 
     let {id, encodingType, graphType: unnormalizedType, attribute: unnormalizedAttribute, variation, binning, timeBounds, reset} = encoding;
     const ccManager = dataframe.computedColumnManager;
-    const encodingMetadata = getEncodingMetadata(dataframe, encodingType, unnormalizedType, unnormalizedAttribute);
+    let encodingMetadata = undefined;
+    try {
+        encodingMetadata = getEncodingMetadata(dataframe, encodingType, unnormalizedType, unnormalizedAttribute);
+    } catch (e) {
+        return Observable.throw(e);
+    }
     let {normalization, bufferName} = encodingMetadata;
     const {attribute: attributeName, type} = normalization;
     encodingType = encodingMetadata.encodingType || encodingType;
@@ -415,7 +427,7 @@ function applyEncodingOnNBody ({ view, encoding }) {
 
     if (encodingWrapper === undefined || encodingWrapper.scaling === undefined) {
         return Observable.throw(
-            'No scaling inferred for: ' + encodingType + ' on ' + attributeName);
+            new Error('No scaling inferred for: ' + encodingType + ' on ' + attributeName));
     }
 
     let wrappedScaling = encodingWrapper.scaling;
@@ -438,7 +450,7 @@ function applyEncodingOnNBody ({ view, encoding }) {
     const oldDesc = ccManager.getComputedColumnSpec('localBuffer', bufferName);
     if (oldDesc === undefined) {
         return Observable.throw(
-            'Unable to derive from a base calculation when encoding');
+            new Error('Unable to derive from a base calculation when encoding'));
     }
 
     // If this is the first encoding for a buffer type, store the original
@@ -487,9 +499,7 @@ function getEncodingMetadata (dataframe, encodingType, unnormalizedType, unnorma
     const normalization = dataframe.normalizeAttributeName(unnormalizedAttribute, unnormalizedType);
 
     if (normalization === undefined) {
-        // TODO: Pass along error
-        console.error('======= PASS ERROR 2');
-        return {};
+        throw new Error('getEncodingMetadata normalization undefined');
     }
 
     const {attribute: attributeName, type} = normalization;
@@ -499,9 +509,7 @@ function getEncodingMetadata (dataframe, encodingType, unnormalizedType, unnorma
             encodingType = type + encodingType.charAt(0).toLocaleUpperCase() + encodingType.slice(1);
         }
         if (encodingType.indexOf(type) !== 0) {
-            // TODO: Pass along error
-            console.error('======= PASS ERROR 3');
-            return {};
+            throw new Error('getEncodingMetadata encodingType unexpected: ' + encodingType + ', ' + type);
         }
     }
 
