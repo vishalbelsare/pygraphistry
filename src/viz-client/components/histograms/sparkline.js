@@ -7,7 +7,8 @@ import styles from 'viz-shared/components/histograms/styles.less';
 import stylesGlobal from 'viz-shared/index.less';
 
 import EncodingPicker from './EncodingPicker.js';
-import { SizeLegendIndicator, YAxisLegendIndicator } from './sparklineComponents.js';
+import { SizeLegendIndicator, YAxisLegendIndicator } from 'viz-shared/components/histograms/sparklineComponents.js';
+
 import BinColumn from './BinColumn.js';
 
 /***********

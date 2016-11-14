@@ -13,6 +13,9 @@ export function encodings(path, base) {
     return function encodings({ loadViewsById, getEncodingOptions }) {
 
 
+        //TODO set to server
+        //TODO convenience route of encodings.attribute['point']['color'][{keys}]...
+
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
 
@@ -26,6 +29,17 @@ export function encodings(path, base) {
             get: getEncodings.bind(null, {loadViewsById, getEncodingOptions}),
             set: setValues,
             route: `${base}.encodings.options[{keys:graphTypes}].color`
+        },
+        /* TODO: create, delete encoding */
+        {
+            get: getValues,
+            set: setValues,
+            route: `${base}.encodings['point','edge']['size','color','weight'][{keys}]`
+        },
+        {
+            get: getValues,
+            set: setValues,
+            route: `${base}.encodings['point','edge']['size','color','weight'].legend[{keys}]`
         }];
 
         function getEncodings ({loadViewsById, getEncodingOptions}, path) {

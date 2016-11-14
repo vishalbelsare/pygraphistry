@@ -14,17 +14,14 @@ const propTypes = {
     attribute: React.PropTypes.string.isRequired,
     type: React.PropTypes.string.isRequired,
     name: React.PropTypes.string,
-    colorValue: React.PropTypes.Array,
     sizeValue: React.PropTypes.Array,
     yAxisValue: React.PropTypes.string,
     showModal: React.PropTypes.bool,
-    onColorChange: React.PropTypes.func,
-    onSizeChange: React.PropTypes.func,
-    onModalChange: React.PropTypes.func.isRequired,
     onYAxisChange: React.PropTypes.func,
     setEncoding: React.PropTypes.func,
     resetEncoding: React.PropTypes.func,
-    globalBinning: React.PropTypes.object
+    globalBinning: React.PropTypes.object,
+    encodings: React.PropTypes.object.isRequired
 };
 
 
@@ -55,7 +52,6 @@ const defaultProps = {
         group: "color"},
         {value: "size", label: "size", group: "size"},
     ],
-    colorValue: [],
     sizeValue: [],
     yAxisValue: 'none'
 };
@@ -92,22 +88,22 @@ export default class EncodingPicker extends React.Component {
         const graphType = this.props.type;
         const attribute = this.props.attribute;
 
+        console.log('HANDLE SELECT COLOR',
+            {colorValue, variation, reset, id, encodingType, binning, graphType, attribute});
+
 
         if (reset && this.props.resetEncoding) {
+            console.log('RESET');
             this.props.resetEncoding({
                 id, encodingType, graphType, attribute
             });
-        }
-
-        else if (this.props.setEncoding) {
+        } else if (this.props.setEncoding) {
+            console.log('SET');
             this.props.setEncoding({
                 variation, id, encodingType, graphType, attribute, binning
             });
         }
 
-        if (this.props.onColorChange) {
-            this.props.onColorChange(colorValue);
-        }
     }
 
     handleSelectYAxisChange (yAxisValue) {
@@ -139,9 +135,6 @@ export default class EncodingPicker extends React.Component {
             });
         }
 
-        if (this.props.onSizeChange) {
-            this.props.onSizeChange(newEnabled ? ['size'] : []);
-        }
     }
 
     close() {
@@ -178,7 +171,11 @@ export default class EncodingPicker extends React.Component {
                     <h5>Show using color</h5>
                     <Select simpleValue
                         disabled={false}
-                        value={ this.props.colorValue }
+                        value={
+                            this.props.encodings ?
+                                [ this.props.encodings[this.props.type].color ]
+                                : []
+                        }
                         placeholder="Pick how to visualize"
                         options={
                             _.filter(defaultProps.options, (o) => o.group === 'color')
@@ -201,9 +198,7 @@ export default class EncodingPicker extends React.Component {
                         placeholder="Pick transform"
                         options={
                             [{value: 'none', label: 'none'},
-                             {value: 'log', label: 'log'}/*,
-                             {value: 'log2', label: 'log2'},
-                             {value: 'log10', label: 'log10'}*/]
+                             {value: 'log', label: 'log'}]
                         }
                         id={`${this.props.id}_yaxis`}
                         onChange={this.handleSelectYAxisChange} />

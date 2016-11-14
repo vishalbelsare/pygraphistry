@@ -1,12 +1,18 @@
 import React from 'react';
 import classNames from 'classnames';
 import { Button, Glyphicon } from 'react-bootstrap';
+
+
+import { SizeLegendIndicator, YAxisLegendIndicator } from './sparklineComponents.js';
+import EncodingPicker from './EncodingPicker.js';
 import globalStyles from 'viz-shared/index.less';
 import styles from 'viz-shared/components/histograms/styles.less';
 
 export const Sparkline = ({ name, yScale, children, componentType,
                             id, width = `calc(100% - 20px)`, height = 50,
                             loading = false, filtered = false, colors = false,
+                            setEncoding, resetEncoding,
+                            encodings,
                             onClose, onYScaleChanged, onEncodingChanged }) => {
     return (
         <div className={classNames({
@@ -16,9 +22,8 @@ export const Sparkline = ({ name, yScale, children, componentType,
             })}>
             <div className={styles['histogram-title']}>
                 <div className={styles['histogram-icons']}>
-                    {/*
-                    <SizeLegendIndicator sizeValue={[]} />
-                    <YAxisLegendIndicator yAxisValue={yScale} />
+                    <SizeLegendIndicator sizeValue={[]} encodings={encodings}/>
+                    <YAxisLegendIndicator yAxisValue={yScale} encodings={encodings}/>
                     <EncodingPicker
                         id={`histogram-encodings-picker-${name}`}
                         attribute={name}
@@ -28,10 +33,10 @@ export const Sparkline = ({ name, yScale, children, componentType,
                         sizeValue={[]}
                         colorValue={[]}
                         onYAxisChange={onYScaleChanged}
-                        onSizeChange={onEncodingChanged}
-                        onColorChange={onEncodingChanged}
+                        setEncoding={setEncoding}
+                        encodings={encodings}
+                        resetEncoding={resetEncoding}
                     />
-                    */}
                     <Button href='javascript:void(0)'
                         onClick={() => onClose({ id })}
                         className={classNames({
