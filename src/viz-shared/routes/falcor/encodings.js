@@ -43,33 +43,24 @@ export function encodings(path, base) {
         }];
 
         function getEncodings ({loadViewsById, getEncodingOptions}, path) {
+
             const { graphTypes } = path;
             const workbookIds = [].concat(path[1]);
             const viewIds = [].concat(path[3]);
+
             return loadViewsById({
                     workbookIds, viewIds
                 })
                 .mergeMap(({ workbook, view }) => {
-
-                    const returns =
-                        graphTypes.map((graphType) =>
-                                getEncodingOptions(
-                                    {view, encoding: {graphType, encodingType: 'color'}}));
-
-                    returns.map( (returns) =>
-                        console.log({msg: 'RETURNS ========', returns}));
-
-                    const formatted =
-                        returns.map((option, i) =>
-                            [$value(
-                                path.slice(0, path.length - 2).concat([ graphTypes[i], 'color']),
-                                //'hello')]);
-                                $atom(option))]);
-
-                    formatted.map((arr) =>
-                        console.log({msg: 'PATH====', path: arr[0].path, val: arr[0].value}));
-
-                    return Observable.from(formatted);
+                    const basePath = path.slice(0, path.length - 2);
+                    return graphTypes
+                        .map((graphType) => getEncodingOptions({
+                            view, encoding: {graphType, encodingType: 'color'}
+                        }))
+                        .map((option, i) => $value(
+                            basePath.concat(graphTypes[i], 'color'),
+                            $atom(option)
+                        ));
                 });
         }
     }

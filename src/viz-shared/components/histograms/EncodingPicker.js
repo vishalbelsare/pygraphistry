@@ -173,7 +173,7 @@ export default class EncodingPicker extends React.Component {
                         disabled={false}
                         value={
                             this.props.encodings ?
-                                [ this.props.encodings[this.props.type].color ]
+                                [ this.props.encodings.options[this.props.type].color ]
                                 : []
                         }
                         placeholder="Pick how to visualize"
