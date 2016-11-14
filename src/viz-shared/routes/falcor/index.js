@@ -11,6 +11,7 @@ import { inspector, timebar } from './panels';
 import { Observable } from 'rxjs/Observable';
 import { mapObjectsToAtoms, captureErrorStacks } from 'viz-shared/routes';
 import { filters, exclusions, histograms, expressions } from './expressions';
+import { encodings } from './encodings';
 
 export function routes(services) {
 
@@ -40,6 +41,8 @@ export function routes(services) {
         exclusions(['workbook', 'view'], `${view}`)(services),
         histograms(['workbook', 'view'], `${view}`)(services),
         expressions(['workbook', 'view'], `${view}`)(services),
+
+        encodings(['workbook', 'view'], `${view}`)(services),
     ])).map(wrapRouteHandlers);
 }
 

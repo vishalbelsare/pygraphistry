@@ -18,7 +18,8 @@ export function histograms(view) {
                 selected: false,
                 id: 'toggle-histograms',
                 name: 'Histograms',
-            }]
+            }],
+            encodings: $ref(`${view}.encodings`),
         }
     };
 }

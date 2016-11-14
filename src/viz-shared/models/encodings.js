@@ -5,36 +5,40 @@ import {
 } from '@graphistry/falcor-json-graph';
 import { simpleflake } from 'simpleflakes';
 
-// TODO PAUL: How is this used vs the singular encoding model?
-// Is this necessary?
-export function encodings (view) {
+
+
+function makeDefaultEncodings (
+        view,
+        { defaults = {}, point = {}, edge = {}, encodingsById = {} }) {
+}
+
+export function encodings (view, preexistingEncodings = {}) {
     return {
         encodings: {
             id: 'encodings',
             name: 'Encodings',
-
-            //current
-            points: {
-                //'color', 'size' -> Encoding
-            },
-            edges: {
-                //'color', 'size' -> Encoding
+            options: {
+                point: {
+                    //color: array $atom([{variant, legend: [color]}])
+                },
+                edge: {
+                    //color: array $atom([{variant, legend: [color]}])
+                }
             }
-
-            //in case we want a fancier encodings panel w/ presets
-            encodingsById: {},
-            length: 0,
         }
-    }
+    };
 }
 
-// Variation can be 'quantitative' or 'categorical'
-export function encoding ({graphType, attribute = '', id = '', variation, binning, timeBounds, encodingType, legend}) {
+export function encoding ({
+        id = simpleflake.toJSON(),
+        isDefault = false, isBound = true,
+        graphType, attribute = '', variation, binning, timeBounds, encodingType, legend}) {
     return {
         id,
-        graphType,
-        attribute,
-        variation,
+        isDefault,      // meaning not from server; deprecate handling when server is cleaner
+        graphType,      // 'point' or 'edge'
+        attribute,      // str col name (with or without graphType?)
+        variation,      // 'quantitative' or 'categorical'
         binning,
         timeBounds,
         encodingType,
