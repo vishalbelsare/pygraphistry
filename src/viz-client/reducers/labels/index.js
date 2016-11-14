@@ -1,6 +1,4 @@
-import { Gestures } from 'rxjs-gestures';
 import { Observable } from 'rxjs/Observable';
-import { LABEL_MOUSE_WHEEL } from 'viz-shared/actions/labels';
 import { pickPointsOfInterest } from './pickPointsOfInterest';
 
 export function labels(action$) {

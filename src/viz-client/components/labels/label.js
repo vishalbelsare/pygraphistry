@@ -17,45 +17,108 @@ function stopPropagation(e) {
     e.stopPropagation();
 }
 
-export const Label = ({ showFull, pinned,
-                        color, opacity, background,
-                        onMouseWheel, onTouchStart,
-                        onFilter, onExclude, onPinChange,
-                        type, index, title, columns, ...props }) => {
-
-    let styleOverrides;
-
-    if (!showFull) {
-        styleOverrides = { color, opacity, background };
+export class Label extends React.Component {
+    constructor(props, context) {
+        super(props, context);
+        this._onTouchStart = (event) => {
+            const { props = {} } = this;
+            const { onTouchStart } = props;
+            if (!onTouchStart) {
+                return;
+            }
+            event.stopPropagation();
+            const { simulating,
+                    type, index,
+                    pinned, showFull,
+                    sceneSelectionType } = props;
+            onTouchStart({
+                event,
+                simulating,
+                isOpen: showFull,
+                labelIndex: index,
+                isSelected: pinned,
+                isLabelEvent: true,
+                componentType: type,
+                selectionType: sceneSelectionType
+            });
+        };
     }
+    render() {
 
-    return (
-        <div onMouseDown={onTouchStart}
-             onTouchStart={onTouchStart}
-             className={classNames({
-                 [styles['on']]: showFull,
-                 [styles['clicked']]: pinned,
-                 [styles['graph-label']]: true,
-             })}
-             {...props}>
-            <div className={classNames({
-                    [styles[`graph-label-${type}`]]: true,
-                    [styles['graph-label-container']]: true,
+        const { showFull, pinned,
+                color, opacity, background,
+                onFilter, onExclude, onPinChange,
+                type, index, title, columns, ...props } = this.props;
+
+        const arrowStyle = !showFull && { 'border-bottom-color': background } || undefined;
+        const contentStyle = !showFull && { color, opacity, background } || undefined;
+
+        return (
+            <div onMouseDown={this._onTouchStart}
+                 onTouchStart={this._onTouchStart}
+                 className={classNames({
+                     [styles['on']]: showFull,
+                     [styles['clicked']]: pinned,
+                     [styles['graph-label']]: true,
                  })}
-                 style={{ ...styleOverrides }}>
-                <LabelTitle type={type}
-                            title={title}
-                            onExclude={onExclude}
-                            onPinChange={onPinChange}/>
-                <LabelContents type={type}
-                               title={title}
-                               columns={columns}
-                               onFilter={onFilter}
-                               onExclude={onExclude}/>
+                 {...props}>
+                <div className={classNames({
+                          'in': true,
+                          'bottom': true,
+                          'tooltip': true,
+                     })}
+                     style={{ position: `relative`, left: `-50%` }}>
+                    <div className='tooltip-arrow' style={arrowStyle}/>
+                    <div className={classNames({
+                            'tooltip-inner': true,
+                            [styles[`graph-label-${type}`]]: true,
+                            [styles['graph-label-container']]: true,
+                         })}
+                         style={contentStyle}>
+                        <LabelTitle type={type}
+                                    title={title}
+                                    onExclude={onExclude}
+                                    onPinChange={onPinChange}/>
+                        <LabelContents type={type}
+                                       title={title}
+                                       columns={columns}
+                                       onFilter={onFilter}
+                                       onExclude={onExclude}/>
+                    </div>
+                </div>
             </div>
-        </div>
-    );
-};
+        );
+        /*
+        return (
+            <div onMouseDown={this._onTouchStart}
+                 onTouchStart={this._onTouchStart}
+                 className={classNames({
+                     [styles['on']]: showFull,
+                     [styles['clicked']]: pinned,
+                     [styles['graph-label']]: true,
+                 })}
+                 {...props}>
+                <Tooltip id={`${type}-${index}-label`}
+                         className='in'
+                         placement='bottom'
+                         style={{ position: `relative`, left: `-50%` }}>
+                {!showFull && !pinned &&
+                    <div style={styleOverrides}>{title}</div> ||
+                    <div style={styleOverrides}>
+                        <span>{type} {title}</span>
+                        <LabelContents type={type}
+                                       title={title}
+                                       columns={columns}
+                                       onFilter={onFilter}
+                                       onExclude={onExclude}/>
+                    </div>
+                }
+                </Tooltip>
+            </div>
+        );
+        */
+    }
+}
 
 function LabelTitle ({ type, title, onExclude, onPinChange }) {
     return (

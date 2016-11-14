@@ -80,7 +80,7 @@ function setLabelHitReferences({ falcor, hits }) {
     length = Math.min(length, MAX_LABELS);
 
     const vals = { point: { length }};
-    const path = falcor._path.slice(0, 4);
+    const path = falcor.getPath().slice(0, 4);
     const invs = length < MAX_LABELS && { point: {} } || undefined;
 
     while (index < length) {

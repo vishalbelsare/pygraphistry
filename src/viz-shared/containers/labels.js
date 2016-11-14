@@ -9,8 +9,6 @@ import {
     addFilter,
     selectLabel,
     addExclusion,
-    labelMouseWheel,
-    labelTouchStart,
 } from 'viz-shared/actions/labels';
 
 let Label = container({
@@ -21,8 +19,6 @@ let Label = container({
         onFilter: addFilter,
         onExclude: selectLabel,
         onPinChange: addExclusion,
-        onMouseWheel: labelMouseWheel,
-        onTouchStart: labelTouchStart,
     }
 })(LabelComponent);
 
@@ -42,7 +38,11 @@ const onPinChange = ({ type, title }) => {
    console.log('click pin change', {type, title});
 };
 
-let Labels = ({ enabled, poiEnabled, opacity,
+let Labels = ({ simulating,
+                labelMouseMove,
+                labelTouchStart,
+                sceneSelectionType,
+                enabled, poiEnabled, opacity,
                 foreground: { color: color } = {},
                 background: { color: background } = {},
                 point = [], highlight, selection, ...props }) => {
@@ -72,10 +72,15 @@ let Labels = ({ enabled, poiEnabled, opacity,
                          {...props}>
         {enabled && labels.filter(Boolean).map((label, index) =>
             <Label data={label}
+                   color={color}
+                   opacity={opacity}
                    key={`label-${index}`}
+                   simulating={simulating}
                    background={background}
                    pinned={label === selection}
-                   color={color} opacity={opacity}
+                   onMouseMove={labelMouseMove}
+                   onTouchStart={labelTouchStart}
+                   sceneSelectionType={sceneSelectionType}
                    showFull={label === highlight || label === selection}/>
         ) || []}
         </LabelsComponent>

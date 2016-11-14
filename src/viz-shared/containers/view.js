@@ -16,8 +16,15 @@ import {
     onSelectionMaskTouchStart,
 } from 'viz-shared/actions/scene';
 
+import {
+    labelMouseMove,
+    labelTouchStart,
+} from 'viz-shared/actions/labels';
+
 let View = ({
+    labelMouseMove,
     sceneMouseMove,
+    labelTouchStart,
     sceneTouchStart,
     selectToolbarItem,
     scene = {}, labels = {},
@@ -34,8 +41,10 @@ let View = ({
         <div style={{ position: `absolute`, width: `100%`, height: `100%` }}>
             <Scene key='scene'
                    data={scene}
-                   mouseMove={sceneMouseMove}
-                   touchStart={sceneTouchStart}
+                   sceneMouseMove={sceneMouseMove}
+                   sceneTouchStart={sceneTouchStart}
+                   labelMouseMove={labelMouseMove}
+                   labelTouchStart={labelTouchStart}
                    selectToolbarItem={selectToolbarItem}
                    onSelectedPointTouchStart={onSelectedPointTouchStart}
                    onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
@@ -80,7 +89,9 @@ View = container({
         toolbar: ${ Toolbar.fragment(toolbar) }
     }`,
     dispatchers: {
+        labelMouseMove,
         sceneMouseMove,
+        labelTouchStart,
         sceneTouchStart,
         selectToolbarItem,
         onSelectedPointTouchStart,

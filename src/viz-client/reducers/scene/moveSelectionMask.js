@@ -1,4 +1,4 @@
-import { createSubject, SceneGestures } from './support';
+import { createSubject, SceneGestures } from 'viz-client/reducers/support';
 import { toValuesAndInvalidations } from './drawSelectionMask';
 import { SELECTION_MASK_TOUCH_START } from 'viz-shared/actions/scene';
 import { atom as $atom, pathValue as $value } from '@graphistry/falcor-json-graph';

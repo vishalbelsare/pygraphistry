@@ -1,5 +1,5 @@
-import { tapDelay, SceneGestures } from './support';
 import { toValuesAndInvalidations } from './drawSelectionMask';
+import { tapDelay, SceneGestures } from 'viz-client/reducers/support';
 import { atom as $atom, pathValue as $value } from '@graphistry/falcor-json-graph';
 import { SCENE_TOUCH_START, SELECTION_MASK_TOUCH_START } from 'viz-shared/actions/scene';
 

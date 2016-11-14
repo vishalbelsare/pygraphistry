@@ -63,7 +63,6 @@ const HighlightPoint = ({ index, sizes, points, renderState, onPointSelected }) 
         scalingFactor * sizes[index], 50)) / camera.pixelRatio;
 
     const hitArea = Math.max(50, size * 2);
-    const hitAreaRatio = size / hitArea;
 
     return (
         <div className={classNames({
