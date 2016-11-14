@@ -87,52 +87,66 @@ function clientConfig(
     isFancyBuild = argv[1] === '--fancy'
 ) {
     var config = commonConfig(isDevBuild, isFancyBuild);
+
     config.node = { fs: 'empty', global: false };
     config.target = 'web';
+
     config.entry = {
-        client: [
-          './src/client/entry.js'
-          // 'font-awesome-webpack!./src/shared/font-awesome.config.js',
-        ].concat(true || !isDevBuild ? [] : [
-            'webpack-hot-middleware/client' +
-            '?path=http://localhost:8090/__webpack_hmr' +
-            '&overlay=false' + '&reload=true' + '&noInfo=true' + '&quiet=true'
-        ])
+        client: './src/client/entry.js'
     };
+
     config.output = {
         path: path.resolve('./build/public'),
         publicPath: '/',
+        pathinfo: isDevBuild,
         filename: 'clientBundle.js'
     };
-    config.module.loaders.push({
-        test: /\.css$/,
-        loader: isDevBuild ? 'style!css!postcss' : ExtractTextPlugin.extract({
-            loader: 'css!postcss'
-        })
-    });
-    config.module.loaders.push({
-        test: /\.less$/,
-        loader: isDevBuild ?
-            'style!css?module&-minimize&localIdentName=[local]_[hash:6]!postcss!less' :
-            ExtractTextPlugin.extract({
-                loader: 'css?module&minimize&localIdentName=[local]_[hash:6]!postcss!less'
+
+    config.module.loaders = [
+        ...config.module.loaders,
+        {
+            test: /\.css$/,
+            loader: isDevBuild ? 'style!css!postcss' : ExtractTextPlugin.extract({
+                loader: 'css!postcss'
             })
-    });
-    config.plugins.push(new AssetsPlugin({ path: path.resolve('./build') }));
-    config.plugins.push(new webpack.DefinePlugin(
-        Object.assign(
-            {},
-            {
-                global: 'window',
-                DEBUG: isDevBuild,
-                __DEV__: isDevBuild,
-                __CLIENT__: true,
-                __SERVER__: false,
-                'process.env.NODE_ENV': '"production"',
-            },
-            versionDefines
-        )
-    ));
+        },
+        {
+            test: /\.less$/,
+            loader: isDevBuild ?
+                'style!css?module&-minimize&localIdentName=[local]_[hash:6]!postcss!less' :
+                ExtractTextPlugin.extract({
+                    loader: 'css?module&minimize&localIdentName=[local]_[hash:6]!postcss!less'
+                })
+        }
+    ];
+
+    config.plugins = [
+        ...config.plugins,
+        /*new webpack.optimize.CommonsChunkPlugin({
+            name: 'vendor',
+            minChunks: Infinity,
+            filename: 'vendor.bundle.js'
+        }),*/
+        new AssetsPlugin({ path: path.resolve('./build') }),
+        new webpack.DefinePlugin(
+            Object.assign(
+                {},
+                {
+                    global: 'window',
+                    DEBUG: isDevBuild,
+                    __DEV__: isDevBuild,
+                    __CLIENT__: true,
+                    __SERVER__: false,
+                    'process.env.NODE_ENV': '"production"',
+                },
+                versionDefines
+            )
+        ),
+        new WebpackVisualizer({
+            filename: `${config.output.filename}.stats.html`
+        })
+    ];
+
     return config;
 }
 
