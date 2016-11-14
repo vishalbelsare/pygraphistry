@@ -14,6 +14,7 @@ const ExpressionPlan = require('./ExpressionPlan.js');
 const DataframeMask = require('./DataframeMask.js');
 const ColumnAggregation = require('./ColumnAggregation.js');
 const ComputedColumnManager = require('./ComputedColumnManager.js');
+import EncodingManager from './EncodingManager.js';
 const ComputedColumnSpec = require('./ComputedColumnSpec.js');
 
 const dataTypeUtil = require('./dataTypes.js');
@@ -60,7 +61,6 @@ function Dataframe () {
     this.typedArrayCache = {};
     this.clBufferCache = {};
     this.lastPointPositions = null;
-    this.computedColumnManager = null;
     /** The last mask applied as a result of in-place filtering. Full by default. */
     this.lastMasks = new DataframeMask(
         this,
@@ -78,10 +78,9 @@ function Dataframe () {
     this.metadata = {};
 
     // TODO: Move this out of data frame constructor.
-    const computedColumnManager = new ComputedColumnManager();
-    computedColumnManager.loadDefaultColumns();
-    computedColumnManager.loadEncodingColumns();
-    this.loadComputedColumnManager(computedColumnManager);
+    this.computedColumnManager = new ComputedColumnManager();
+    this.encodingsManager = new EncodingManager(this.computedColumnManager);
+    this.loadComputedColumns(this.computedColumnManager, this.encodingsManager);
 
 }
 
@@ -871,8 +870,10 @@ const SystemAttributeNames = [
     'degree'
 ];
 
-Dataframe.prototype.loadComputedColumnManager = function (computedColumnManager) {
-    this.computedColumnManager = computedColumnManager;
+Dataframe.prototype.loadComputedColumns = function (computedColumnManager, encodingsManager) {
+
+
+    encodingsManager.loadDefaults();
 
     const attrs = this.data.attributes;
     const activeColumns = computedColumnManager.getActiveColumns();
@@ -1380,7 +1381,7 @@ Dataframe.prototype.getLocalBuffer = function (name, unfiltered) {
     const res = this.hasLocalBuffer(name) && this.getColumnValues(name, 'localBuffer');
 
     if (!res) {
-        throw new Error('Invalid Local Buffer: ' + name);
+        throw new Error('Invalid Local Buffer: ' + name + ', has: ' + this.hasLocalBuffer(name));
     }
 
     return res;

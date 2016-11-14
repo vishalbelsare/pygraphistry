@@ -40,7 +40,6 @@ const persist     = require('./persist.js');
 const Version     = require('./Version.js');
 const workbook    = require('./workbook.js');
 const labeler     = require('./labeler.js');
-const encodings   = require('./encodings.js');
 const palettes    = require('./palettes.js');
 const dataTypeUtil = require('./dataTypes.js');
 const DataframeMask = require('./DataframeMask.js');
@@ -54,6 +53,8 @@ const ExpressionCodeGenerator = require('./expressionCodeGenerator');
 const RenderNull  = require('./RenderNull.js');
 const NBody = require('./NBody.js');
 const ComputedColumnSpec = require('./ComputedColumnSpec.js');
+
+import { applyEncodingOnNBody, resetEncodingOnNBody } from './EncodingManager.js';
 
 const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/viz-server.js');
@@ -1188,144 +1189,33 @@ function VizServer (app, socket, cachedVBOs, loggerMetadata) {
     });
 
     this.socket.on('encode_by_column', (encodingRequest, cb) => {
-        this.graph.take(1).do((currentGraph) => {
-            const dataframe = currentGraph.dataframe;
-            const normalization = dataframe.normalizeAttributeName(encodingRequest.attribute, encodingRequest.type);
+        this.graph.take(1).switchMap((currentGraph) => {
 
-            if (normalization === undefined) {
-                failWithMessage(cb, 'No attribute found for: ' + JSON.stringify(encodingRequest));
-                return;
-            }
-
-            const {attribute: attributeName, type} = normalization;
-            let {encodingType, variation, binning, timeBounds} = encodingRequest;
-            if (encodingType) {
-                if (encodingType === 'color' || encodingType === 'size' || encodingType === 'opacity') {
-                    encodingType = type + encodingType.charAt(0).toLocaleUpperCase() + encodingType.slice(1);
+            const { encodingType,
+                    type,
+                    attribute, variation, binning, timeBounds, reset
                 }
-                if (encodingType.indexOf(type) !== 0) {
-                    failWithMessage(cb, 'Attribute type does not match encoding type requested.');
-                    return;
-                }
-            }
+                = encodingRequest;
 
-            let encoding, bufferName;
-            const ccManager = dataframe.computedColumnManager;
+            const encoding = {
+                encodingType,
+                graphType: type,
+                attribute, variation, binning, timeBounds, reset
+            };
 
-            try {
-                if (!encodingType) {
-                    encodingType = encodings.inferEncodingType(dataframe, type, attributeName);
-                }
-                bufferName = encodings.bufferNameForEncodingType(encodingType);
-                if (encodingRequest.reset) {
-                    if (ccManager.resetLocalBuffer(bufferName, dataframe)) {
-                        this.tickGraph(cb);
-                    }
-                    cb({
-                        success: true,
-                        enabled: false,
-                        encodingType: encodingType,
-                        bufferName: bufferName
-                    });
-                    return;
-                }
+            const fn = reset ? resetEncodingOnNBody : applyEncodingOnNBody;
 
-                // TODO FIXME: Have a more robust encoding spec, instead of multiple paths through here
-                if (timeBounds) {
-                    encoding = encodings.inferTimeBoundEncoding(
-                        dataframe, type, attributeName, encodingType, timeBounds);
-                } else {
-                    encoding = encodings.inferEncoding(
-                        dataframe, type, attributeName, encodingType, variation, binning);
-                }
-
-            } catch (e) {
-                failWithMessage(cb, e.message);
-                return;
-            }
-
-            if (encoding === undefined || encoding.scaling === undefined) {
-                failWithMessage(cb, 'No scaling inferred for: ' + encodingType + ' on ' + attributeName);
-                return;
-            }
-
-            let wrappedScaling = encoding.scaling;
-            if (encodingType.match(/Color$/)) {
-                // Auto-detect when a buffer is filled with our ETL-defined color space and map that directly:
-                // TODO don't have ETL magically encode the color space; it doesn't save space, time, code, or style.
-                if (dataframe.doesColumnRepresentColorPaletteMap(type, attributeName)) {
-                    wrappedScaling = (x) => palettes.bindings[x];
-                    encoding.legend = _.map(encoding.legend,
-                        (sourceValue) => palettes.intToHex(palettes.bindings[sourceValue]));
-                } else {
-                    wrappedScaling = (x) => palettes.hexToABGR(encoding.scaling(x));
-                }
-            }
-
-
-
-            // Now that we have an encoding function, store it as a computed column;
-            const oldDesc = ccManager.getComputedColumnSpec('localBuffer', bufferName);
-            if (oldDesc === undefined) {
-                cb({
-                    success: false,
-                    enabled: false,
-                    error: 'Unable to derive from a base calculation when encoding',
-                    encodingType: encodingType,
-                    legend: encoding.legend
-                });
-                return;
-            }
-
-            // If this is the first encoding for a buffer type, store the original
-            // spec so we can recover it.
-            if (!ccManager.overlayBufferSpecs[bufferName]) {
-                ccManager.overlayBufferSpecs[bufferName] = oldDesc;
-            }
-
-            const desc = oldDesc.clone();
-            desc.setDependencies([[attributeName, type]]);
-            if (bufferName === 'edgeColors') {
-                desc.setComputeAllValues((values, outArr, numGraphElements) => {
-                    for (let i = 0; i < numGraphElements; i++) {
-                        const val = values[i];
-                        if (!dataTypeUtil.valueSignifiesUndefined(val)) {
-                            const scaledValue = wrappedScaling(val);
-                            outArr[i*2] = scaledValue;
-                            outArr[i*2 + 1] = scaledValue;
-                        }
-                    }
-                    return outArr;
-                });
-            } else {
-                desc.setComputeAllValues((values, outArr, numGraphElements) => {
-                    for (let i = 0; i < numGraphElements; i++) {
-                        const val = values[i];
-                        if (!dataTypeUtil.valueSignifiesUndefined(val)) {
-                            outArr[i] = wrappedScaling(val);
-                        }
-                    }
-                    return outArr;
-                });
-            }
-
-            ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName, desc);
-
-            this.tickGraph(cb);
-            cb({
-                success: true,
-                enabled: true,
-                encodingType: encodingType,
-                bufferName: bufferName,
-                legend: encoding.legend
-            });
-
-        }).subscribe(
-            _.identity,
+            return fn({view: {nBody: currentGraph},
+                       encoding})
+                .take(1);
+        })
+        .subscribe(
+            (v) => cb({success: true, ...v}),
             (err) => {
-                log.makeRxErrorHandler(logger, 'encode by column handler')(err);
-            }
-        );
+                log.makeRxErrorHandler(
+                    logger, 'encode by column handler')(err);
+                cb({success: false, error: err});
+            });
     });
 
     this.setupBinningRequestHandling();
