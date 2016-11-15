@@ -93,7 +93,20 @@ function clientConfig(
     config.target = 'web';
 
     config.entry = {
-        client: './src/client/entry.js'
+        client: './src/client/entry.js',
+        vendor: [
+            'react', 'rxjs', 'convict', 'react-bootstrap', 'react-bootstrap-table',
+            'lodash', 'react-select', 'react-overlays', 'recompose', 'underscore',
+            'bunyan', 'redux', 'redux-observable', 'react-redux',
+            '@graphistry/falcor',
+            '@graphistry/falcor-json-graph',
+            '@graphistry/falcor-path-syntax',
+            '@graphistry/falcor-path-utils',
+            '@graphistry/falcor-query-syntax',
+            '@graphistry/falcor-react-redux',
+            '@graphistry/falcor-router',
+            '@graphistry/falcor-socket-datasource'
+        ]
     };
 
     config.output = {
@@ -123,11 +136,11 @@ function clientConfig(
 
     config.plugins = [
         ...config.plugins,
-        /*new webpack.optimize.CommonsChunkPlugin({
+        new webpack.optimize.CommonsChunkPlugin({
             name: 'vendor',
             minChunks: Infinity,
             filename: 'vendor.bundle.js'
-        }),*/
+        }),
         new AssetsPlugin({ path: path.resolve('./build') }),
         new webpack.DefinePlugin(
             Object.assign(

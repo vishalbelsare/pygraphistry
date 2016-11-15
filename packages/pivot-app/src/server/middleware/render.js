@@ -86,6 +86,7 @@ function renderFullPage(model, html = '') {
             <script type='text/javascript'>
                 window.appCache = ${JSON.stringify(model && model.getCache() || {})};
             </script>
+            <script src='${vendor.js}'></script>
             <script src='${client.js}'></script>
         </body>
     </html>`
