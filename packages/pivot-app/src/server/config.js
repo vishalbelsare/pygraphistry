@@ -59,7 +59,7 @@ var conf = convict({
         key: {
             doc: `Graphistry's api key`,
             format: String,
-            default: null,
+            default: undefined,
             arg:'graphistry-key',
             env: 'GRAPHISTRY_KEY'
         },
@@ -75,21 +75,21 @@ var conf = convict({
         key: {
             doc: 'Splunk password',
             format: String,
-            default: null,
+            default: undefined,
             arg:'splunk-key',
             env: 'SPLUNK_KEY'
         },
         user: {
             doc: 'Splunk user name',
             format: String,
-            default: null,
+            default: undefined,
             arg:'splunk-user',
             env: 'SPLUNK_USER'
         },
         host: {
             doc: 'The hostname of the Splunk Server',
             format: String,
-            default: null,
+            default: undefined,
             arg:'splunk-host',
             env: 'SPLUNK_HOST'
         }
