@@ -39,6 +39,12 @@ export function createAppModel(testUser, id = simpleflake().toJSON()) {
         title: 'Pivots',
         investigationsById: {},
         pivotsById: {},
+        connectorsById: {
+            '0' : {
+                id: '0',
+                name: 'Splunk'
+            }
+        },
         templatesById: {},
         usersById: {
             '0': testUser
