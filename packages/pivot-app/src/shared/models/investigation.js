@@ -8,7 +8,7 @@ import { clonePivotModel } from './pivots';
 function defaults(index) {
     return {
         name: `Untitled Investigation ${index}`,
-        url: '/custom/html/splash.html',
+        url: '/html/splash.html',
         id: simpleflake().toJSON(),
         description: '',
         tags: ['Demo'],
