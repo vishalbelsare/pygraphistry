@@ -20,12 +20,8 @@ import {
 } from 'react-bootstrap';
 import { switchScreen } from '../actions/app';
 import {
-    selectInvestigation,
-    copyInvestigation,
-    createInvestigation,
-    setInvestigationParams,
-    deleteInvestigations
-} from '../actions/investigationScreen.js';
+    checkStatus
+} from '../actions/connectorScreen.js';
 import { container } from '@graphistry/falcor-react-redux';
 import Sidebar from './Sidebar.js';
 import styles from './styles.less';
@@ -76,7 +72,7 @@ function welcomeBar(user, connectors) {
 }
 
 function investigationTable({user, investigations = [], connectors = [], switchScreen, selectInvestigation, copyInvestigation,
-                             setInvestigationParams, selectHandler}) {
+                             setInvestigationParams, selectHandler, checkStatus}) {
     function tagsFormatter(tags, row) {
         return (
             <p> {
@@ -101,7 +97,7 @@ function investigationTable({user, investigations = [], connectors = [], switchS
     function idFormatter(id, row) {
         return (
             <div>
-                <Button bsStyle={row.status} onClick={() => copyInvestigation(id)}>
+                <Button bsStyle={row.status} onClick={() => checkStatus(id)}>
                     Status
                 </Button>
             </div>
@@ -173,7 +169,7 @@ function investigationTable({user, investigations = [], connectors = [], switchS
 
 }
 
-function renderConnectorScreen({user, investigations, connectors, switchScreen, selectInvestigation, copyInvestigation,
+function renderConnectorScreen({user, investigations, connectors, switchScreen, checkStatus,
                            createInvestigation, setInvestigationParams},
                           {selection}, selectHandler, deleteHandler) {
     if (user === undefined) {
@@ -216,8 +212,7 @@ function renderConnectorScreen({user, investigations, connectors, switchScreen, 
                         </div>
                         {
                             investigationTable({
-                                user, investigations, connectors, switchScreen, selectInvestigation,
-                                copyInvestigation, setInvestigationParams, selectHandler
+                                user, investigations, connectors, switchScreen, checkStatus
                             })
                         }
                     </Panel>
@@ -275,6 +270,7 @@ function mapStateToFragment({currentUser: {investigations = [], connectors = []}
             connectors: {
                 'length',
                 [0...${connectors.length}]: {
+                    'id',
                     'name',
                     'lastUpdated',
                     'status'
@@ -298,10 +294,6 @@ export default container({
     mapFragment: mapFragmentToProps,
     dispatchers: {
         switchScreen: switchScreen,
-        selectInvestigation: selectInvestigation,
-        copyInvestigation: copyInvestigation,
-        createInvestigation: createInvestigation,
-        setInvestigationParams: setInvestigationParams,
-        deleteInvestigations: deleteInvestigations
+        checkStatus: checkStatus
     }
 })(ConnectorScreen);

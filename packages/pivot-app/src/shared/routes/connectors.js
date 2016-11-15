@@ -20,7 +20,7 @@ export function connectors({ loadConnectorsById }) {
     const setConnectorsHandler = setHandler(['connector'], loadConnectorsById);
 
     return [{
-        route: `connectorsById[{keys}]['name', 'status', 'lastUpdated']`,
+        route: `connectorsById[{keys}]['name', 'status', 'lastUpdated', 'id']`,
         returns: `String`,
         get: getConnectorsHandler,
         set: setConnectorsHandler,
