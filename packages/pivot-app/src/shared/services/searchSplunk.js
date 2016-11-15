@@ -42,74 +42,40 @@ export function searchSplunk({app, pivot}) {
     log.debug( searchInfo,'Fetching results for splunk job: "%s"', jobId);
 
     // TODO Add this as part of splunk connector
-    return splunkLogin()
-        .catch(({error, status}) => {
-            if (error) {
-                return Observable.throw(
-                    new VError({
-                        name: 'ConnectionError',
-                        cause: error,
-                        info: {
-                            splunkAddress: error.address,
-                            splunkPort: error.port,
-                            code: error.code,
-                            ...searchInfo
-                        }
-                    }, 'Failed to connect to splunk instance at "%s:%d"', error.address, error.port)
-                );
-            } else if (status === 401) {
-                return Observable.throw(
-                    new VError({
-                        name: 'UnauthorizedSplunkLogin',
-                        info: searchInfo
-                    }, 'Splunk Credentials are invalid')
-                )
-            } else {
-                return Observable.throw(
-                    new VError({
-                        name: 'UnhandledStatus',
-                        info: searchInfo
-                    }, 'Uknown response')
-                )
-            }
+    return splunkGetJob(jobId)
+        .catch(() => {
+            log.debug('No job was found, creating new search job');
+            const results = splunkSearch( query, searchParams );
+            return results.switchMap(job => {
+                const splunkFetchJob = Observable.bindNodeCallback(job.fetch.bind(job));
+                return splunkFetchJob();
+            });
         })
-        .switchMap(() => {
-            log.debug('Succesful logon from user "%a"', SPLUNK_USER);
-            return splunkGetJob(jobId)
-                .catch(() => {
-                    log.debug('No job was found, creating new search job');
-                    const results = splunkSearch( query, searchParams );
-                    return results.switchMap(job => {
-                        const splunkFetchJob = Observable.bindNodeCallback(job.fetch.bind(job));
-                        return splunkFetchJob();
-                    });
-                })
-                .catch(({data}) => Observable.throw(new VError({
-                    name: 'SplunkParseError',
-                    info: searchInfo
-                }, data.messages[0].text)));
-        })
+        .catch(({data}) => Observable.throw(new VError({
+            name: 'SplunkParseError',
+            info: searchInfo
+        }, data.messages[0].text)))
         .switchMap(job => {
-                const props = job.properties();
-                log.debug({
-                    sid: job.sid,
-                    eventCount: props.eventCount,
-                    resultCount: props.resultCount,
-                    runDuration: props.runDuration,
-                    ttl: props.ttl
-                }, 'Search job properties');
+            const props = job.properties();
+            log.debug({
+                sid: job.sid,
+                eventCount: props.eventCount,
+                resultCount: props.resultCount,
+                runDuration: props.runDuration,
+                ttl: props.ttl
+            }, 'Search job properties');
 
-                const getResults = Observable.bindNodeCallback(job.results.bind(job),
-                    function(results) {
-                        return ({results, job});
-                    });
-                const jobResults = getResults({count: job.properties().resultCount}).catch(
-                    (e) => {
-                        return Observable.throw(new Error(
-                            `${e.data.messages[0].text} ========>  Splunk Query: ${searchQuery}`));
+            const getResults = Observable.bindNodeCallback(job.results.bind(job),
+                function(results) {
+                    return ({results, job});
+                });
+            const jobResults = getResults({count: job.properties().resultCount}).catch(
+                (e) => {
+                    return Observable.throw(new Error(
+                        `${e.data.messages[0].text} ========>  Splunk Query: ${searchQuery}`));
                     }
-                );
-                return jobResults;
+            );
+            return jobResults;
         }).map(
             function({results, job}) {
                 const fields = results.fields;

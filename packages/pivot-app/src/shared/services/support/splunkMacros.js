@@ -1,11 +1,30 @@
 import { searchSplunk } from '../../services/searchSplunk.js';
 import { shapeSplunkResults} from '../../services/shapeSplunkResults.js';
-import _ from 'underscore';
 import logger from '../../../shared/logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+import conf from '../../../server/config.js';
 
+import _ from 'underscore';
+import { Observable } from 'rxjs';
+import splunkjs from 'splunk-sdk';
+import VError from 'verror';
 
 const pivotCache = {}
+
+const SPLUNK_HOST = conf.get('splunk.host');
+const SPLUNK_USER = conf.get('splunk.user');
+const SPLUNK_PWD = conf.get('splunk.key');
+
+const metadata = { splunkHostName: SPLUNK_HOST, splunkUser: SPLUNK_USER }
+const log = logger.createLogger('pivot-app', __filename).child(metadata);
+
+const service = new splunkjs.Service({
+    host: SPLUNK_HOST,
+    username: SPLUNK_USER,
+    password: SPLUNK_PWD
+});
+
+const splunkLogin = Observable.bindNodeCallback(service.login.bind(service));
+
 export class SplunkPivot {
     constructor( pivotDescription ) {
         let {
@@ -29,18 +48,49 @@ export class SplunkPivot {
         pivot.searchQuery = this.toSplunk(pivot.pivotParameters, pivotCache);
         pivot.template = this;
 
-        // TODO figure out what to do with pivotCache)
-        const splunkResults = searchSplunk({app, pivot})
+        return this.login()
+            .switchMap(() => searchSplunk({app, pivot}))
             .do(({pivot}) => {
                 pivotCache[pivot.id] = { results: pivot.results,
                     query:pivot.searchQuery,
                     splunkSearchID: pivot.splunkSearchID
                 };
-            });
-
-        return splunkResults
+            })
             .map(({app, pivot}) => shapeSplunkResults({app, pivot}));
     }
+
+    login() {
+        return splunkLogin()
+            .do(log.info('Successful splunk login'))
+            .catch(({error, status}) => {
+                if (error) {
+                    return Observable.throw(
+                        new VError({
+                            name: 'ConnectionError',
+                            cause: error,
+                            info: {
+                                splunkAddress: error.address,
+                                splunkPort: error.port,
+                                code: error.code,
+                            }
+                        }, 'Failed to connect to splunk instance at "%s:%d"', error.address, error.port)
+                    );
+                } else if (status === 401) {
+                    return Observable.throw(
+                        new VError({
+                            name: 'UnauthorizedSplunkLogin',
+                        }, 'Splunk Credentials are invalid')
+                    );
+                } else {
+                    return Observable.throw(
+                        new VError({
+                            name: 'UnhandledStatus',
+                        }, 'Uknown response')
+                    );
+                }
+            });
+    }
+
 }
 
 function buildLookup(text, pivotCache) {
