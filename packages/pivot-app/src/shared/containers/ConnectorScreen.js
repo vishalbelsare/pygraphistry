@@ -55,15 +55,15 @@ function welcomeBar(user, connectors) {
                 <Panel>
                     <h2 className="text-center">{connectors.length}</h2>
                     <div className="text-center">
-                        Ongoing Investigations
+                         Number of Connectors
                     </div>
                 </Panel>
             </Col>
             <Col md={4}>
                 <Panel>
-                    <h2 className="text-center">0</h2>
+                    <h2 className="text-center">1/2</h2>
                     <div className="text-center">
-                        Templates
+                        Active Connectors
                     </div>
                 </Panel>
             </Col>
@@ -71,8 +71,7 @@ function welcomeBar(user, connectors) {
     );
 }
 
-function investigationTable({user, investigations = [], connectors = [], switchScreen, selectInvestigation, copyInvestigation,
-                             setInvestigationParams, selectHandler, checkStatus}) {
+function connectorTable({user, connectors = [], switchScreen, selectHandler, checkStatus}) {
     function tagsFormatter(tags, row) {
         return (
             <p> {
@@ -84,11 +83,9 @@ function investigationTable({user, investigations = [], connectors = [], switchS
     }
 
     function nameFormatter(name, row) {
-        return (<a href="#"
-                    onClick={
-                        () => {selectInvestigation(row.id); switchScreen('investigation')} }>
+        return (<a href="#">
                     { name }
-                </a>)
+                </a>);
     }
     //function descriptionFormatter(description, row) {
     //    return nameFormatter(description, row);
@@ -108,14 +105,6 @@ function investigationTable({user, investigations = [], connectors = [], switchS
         return (new Date(epoch)).toLocaleString()
     }
 
-    function onAfterSaveCell(row, column) {
-        if (['name', 'description'].includes(column)) {
-            setInvestigationParams({[column]: row[column]}, row.id);
-        } else {
-            log.error('Cannot edit column' + column);
-        }
-    }
-
     function selectAllHandler(selected, rows) {
         selectHandler(rows, selected);
     }
@@ -127,17 +116,11 @@ function investigationTable({user, investigations = [], connectors = [], switchS
         onSelectAll: selectAllHandler,
         bgColor: '#fee'
     };
-    const cellEditProp = {
-        mode: 'click',
-        blurToSave: true,
-        afterSaveCell: onAfterSaveCell
-    };
 
     return (
         <div className={styles['investigation-table']}>
             <BootstrapTable data={connectors.filter(Boolean)}
                             selectRow={selectRowProp}
-                            cellEdit={cellEditProp}
                             striped={false}
                             hover={true}
                             pagination={true}
@@ -169,9 +152,8 @@ function investigationTable({user, investigations = [], connectors = [], switchS
 
 }
 
-function renderConnectorScreen({user, investigations, connectors, switchScreen, checkStatus,
-                           createInvestigation, setInvestigationParams},
-                          {selection}, selectHandler, deleteHandler) {
+function renderConnectorScreen({ user, connectors, switchScreen, checkStatus },
+                          { selection }, selectHandler ) {
     if (user === undefined) {
         return null;
     }
@@ -185,34 +167,23 @@ function renderConnectorScreen({user, investigations, connectors, switchScreen, 
                     {
                         welcomeBar(user, connectors)
                     }
-                    <Panel header="Open Investigations" className={styles['panel']}>
+                    <Panel header="Available Connectors" className={styles['panel']}>
                         <div className={styles['investigations-buttons']}>
                             <OverlayTrigger placement="top"
                                             overlay={
-                                                <Tooltip id="AddNewInvestigationTooltip">
-                                                    Add New Investigation
+                                                <Tooltip id="AddNewConnectorTooltip">
+                                                    Add New Connector
                                                 </Tooltip>
                                             }>
-                                <Button onClick={() => createInvestigation()}
+                                <Button onClick={() => createConnector()}
                                         className={`btn-primary ${styles['add-new-investigation']}`}>
                                     <Glyphicon glyph="plus"/>
                                 </Button>
                             </OverlayTrigger>
-                            <OverlayTrigger placement="top"
-                                            overlay={
-                                                <Tooltip id="DeleteInvestigationsTooltip">
-                                                    Delete Selected Investigations
-                                                </Tooltip>
-                                            }>
-                                <Button onClick={() => deleteHandler()}
-                                        className={`btn-danger ${styles['delete-investigations']}`}>
-                                    <Glyphicon glyph="trash"/>
-                                </Button>
-                            </OverlayTrigger>
                         </div>
                         {
-                            investigationTable({
-                                user, investigations, connectors, switchScreen, checkStatus
+                            connectorTable({
+                                user, connectors, switchScreen, checkStatus
                             })
                         }
                     </Panel>
@@ -235,7 +206,6 @@ class ConnectorScreen extends React.Component {
             this.props,
             this.state,
             this.selectHandler.bind(this),
-            this.deleteHandler.bind(this)
         );
     }
 
@@ -248,25 +218,12 @@ class ConnectorScreen extends React.Component {
             selection: newSelection
         });
     }
-
-    deleteHandler() {
-        this.props.deleteInvestigations(this.props.user.id, this.state.selection);
-        this.setState({
-            selection: []
-        });
-    }
 }
 
-function mapStateToFragment({currentUser: {investigations = [], connectors = []} = {} }) {
+function mapStateToFragment({currentUser: { connectors = [] } = {} }) {
     return `{
         currentUser: {
             'name', 'id',
-            investigations: {
-                'length',
-                [0...${investigations.length}]: {
-                    'id', 'name', 'description' ,'tags', 'modifiedOn'
-                }
-            },
             connectors: {
                 'length',
                 [0...${connectors.length}]: {
@@ -283,7 +240,6 @@ function mapStateToFragment({currentUser: {investigations = [], connectors = []}
 function mapFragmentToProps({ currentUser } = {}) {
     return {
         user: currentUser,
-        investigations: (currentUser || {}).investigations || [],
         connectors: (currentUser || {}).connectors || []
     };
 }
