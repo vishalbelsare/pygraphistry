@@ -1,7 +1,8 @@
 import { inspect } from 'util';
 import { Observable } from 'rxjs';
 import { Model } from '@graphistry/falcor';
-import assets from '../webpack-assets.json'
+import webpackAssets from '../webpack-assets.json';
+import faviconStats from './favicon-assets.json';
 import { renderToString as reactRenderToString } from 'react-dom/server';
 import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
 import logger from '../../shared/logger.js';
@@ -61,49 +62,32 @@ function renderAppWithHotReloading(modules, dataSource, options = {}) {
 }
 
 function renderFullPage(model, html = '') {
+    const { client, vendor } = webpackAssets;
+    const { html: iconsHTML } = faviconStats;
+
     return (
     `<!DOCTYPE html>
     <html lang='en-us'>
         <head>
-
             <meta charset="utf-8" />
-            <link rel="icon" type="image/png" href="assets/img/favicon.ico" />
+            <meta name="robots" content="noindex, nofollow"/>
             <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 
+            <link rel="icon" type="image/png" href="assets/img/favicon.ico" />
             <title>Graphistry Visual Playbook Environment</title>
 
             <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
-            <meta name="viewport" content="width=device-width" />
+            ${ iconsHTML.join('\n') }
 
-
-            <link href="/themes/x_lbd_free_v1.3/assets/css/bootstrap.min.css" rel="stylesheet" />
-
-            <link href="/themes/x_lbd_free_v1.3/assets/css/animate.min.css" rel="stylesheet"/>
-
-            <link href="/themes/x_lbd_free_v1.3/assets/css/light-bootstrap-dashboard.css" rel="stylesheet"/>
-
-            <link href="/themes/x_lbd_free_v1.3/assets/css/font-awesome.min.css" rel="stylesheet" />
-            <link href='/themes/x_lbd_free_v1.3/assets/css/roboto.css' rel='stylesheet' type='text/css' />
-            <link href="/themes/x_lbd_free_v1.3/assets/css/pe-icon-7-stroke.css" rel="stylesheet" />
-
-            <link href="/custom/css/style.css" rel="stylesheet" />
-
-            <link rel='stylesheet' type='text/css' href='${assets.client.css || ''}'/>
+            <link rel='stylesheet' type='text/css' href='${client.css || ''}'/>
         </head>
         <body>
-        <div id='app'>${html}</div>
-        <script type='text/javascript'>
-            window.appCache = ${JSON.stringify(model && model.getCache() || {})};
-        </script>
-        <script src='${assets.client.js}'></script>
-        <script src="/themes/x_lbd_free_v1.3/assets/js/jquery-1.10.2.js" type="text/javascript"></script>
-        <script src="/themes/x_lbd_free_v1.3/assets/js/bootstrap.min.js" type="text/javascript"></script>
-        <script src="/themes/x_lbd_free_v1.3/assets/js/bootstrap-checkbox-radio-switch.js"></script>
-        <script src="/themes/x_lbd_free_v1.3/assets/js/chartist.min.js"></script>
-        <script src="/themes/x_lbd_free_v1.3/assets/js/bootstrap-notify.js"></script>
-        <script src="/themes/x_lbd_free_v1.3/assets/js/light-bootstrap-dashboard.js"></script>
-        <script src="/themes/x_lbd_free_v1.3/assets/js/demo.js"></script>
-        <script src="/custom/js/demo.js"></script>
+            <div id='app'>${html}</div>
+            <script type='text/javascript'>
+                window.appCache = ${JSON.stringify(model && model.getCache() || {})};
+            </script>
+            <script src='${vendor.js}'></script>
+            <script src='${client.js}'></script>
         </body>
     </html>`
     );

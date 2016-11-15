@@ -8,6 +8,7 @@ var WebpackVisualizer = require('webpack-visualizer-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var WebpackNodeExternals = require('webpack-node-externals');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
+var FaviconsWebpackPlugin = require('favicons-webpack-plugin');
 var ProgressBarPlugin = require('progress-bar-webpack-plugin');
 var child_process = require('child_process');
 
@@ -73,9 +74,9 @@ function commonConfig(
         plugins: plugins(isDevBuild, isFancyBuild),
         stats: {
             // See https://webpack.github.io/docs/node.js-api.html
-            errorDetails: false,
+            errorDetails: true,
             // Display chunks
-            chunks: false,
+            chunks: true,
             // Nice colored output
             colors: true
         }
@@ -87,52 +88,79 @@ function clientConfig(
     isFancyBuild = argv[1] === '--fancy'
 ) {
     var config = commonConfig(isDevBuild, isFancyBuild);
+
     config.node = { fs: 'empty', global: false };
     config.target = 'web';
+
     config.entry = {
-        client: [
-          './src/client/entry.js'
-          // 'font-awesome-webpack!./src/shared/font-awesome.config.js',
-        ].concat(true || !isDevBuild ? [] : [
-            'webpack-hot-middleware/client' +
-            '?path=http://localhost:8090/__webpack_hmr' +
-            '&overlay=false' + '&reload=true' + '&noInfo=true' + '&quiet=true'
-        ])
+        client: './src/client/entry.js',
+        vendor: [
+            'react', 'rxjs', 'convict', 'react-bootstrap', 'react-bootstrap-table',
+            'lodash', 'react-select', 'react-overlays', 'recompose', 'underscore',
+            'bunyan', 'redux', 'redux-observable', 'react-redux',
+            '@graphistry/falcor',
+            '@graphistry/falcor-json-graph',
+            '@graphistry/falcor-path-syntax',
+            '@graphistry/falcor-path-utils',
+            '@graphistry/falcor-query-syntax',
+            '@graphistry/falcor-react-redux',
+            '@graphistry/falcor-router',
+            '@graphistry/falcor-socket-datasource'
+        ]
     };
+
     config.output = {
         path: path.resolve('./build/public'),
         publicPath: '/',
+        pathinfo: isDevBuild,
         filename: 'clientBundle.js'
     };
-    config.module.loaders.push({
-        test: /\.css$/,
-        loader: isDevBuild ? 'style!css!postcss' : ExtractTextPlugin.extract({
-            loader: 'css!postcss'
-        })
-    });
-    config.module.loaders.push({
-        test: /\.less$/,
-        loader: isDevBuild ?
-            'style!css?module&-minimize&localIdentName=[local]_[hash:6]!postcss!less' :
-            ExtractTextPlugin.extract({
-                loader: 'css?module&minimize&localIdentName=[local]_[hash:6]!postcss!less'
+
+    config.module.loaders = [
+        ...config.module.loaders,
+        {
+            test: /\.css$/,
+            loader: isDevBuild ? 'style!css!postcss' : ExtractTextPlugin.extract({
+                loader: 'css!postcss'
             })
-    });
-    config.plugins.push(new AssetsPlugin({ path: path.resolve('./build') }));
-    config.plugins.push(new webpack.DefinePlugin(
-        Object.assign(
-            {},
-            {
-                global: 'window',
-                DEBUG: isDevBuild,
-                __DEV__: isDevBuild,
-                __CLIENT__: true,
-                __SERVER__: false,
-                'process.env.NODE_ENV': '"production"',
-            },
-            versionDefines
-        )
-    ));
+        },
+        {
+            test: /\.less$/,
+            loader: isDevBuild ?
+                'style!css?module&-minimize&localIdentName=[local]_[hash:6]!postcss!less' :
+                ExtractTextPlugin.extract({
+                    loader: 'css?module&minimize&localIdentName=[local]_[hash:6]!postcss!less'
+                })
+        }
+    ];
+
+    config.plugins = [
+        ...config.plugins,
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'vendor',
+            minChunks: Infinity,
+            filename: 'vendor.bundle.js'
+        }),
+        new AssetsPlugin({ path: path.resolve('./build') }),
+        new webpack.DefinePlugin(
+            Object.assign(
+                {},
+                {
+                    global: 'window',
+                    DEBUG: isDevBuild,
+                    __DEV__: isDevBuild,
+                    __CLIENT__: true,
+                    __SERVER__: false,
+                    'process.env.NODE_ENV': '"production"',
+                },
+                versionDefines
+            )
+        ),
+        new WebpackVisualizer({
+            filename: `${config.output.filename}.stats.html`
+        })
+    ];
+
     return config;
 }
 
@@ -141,55 +169,82 @@ function serverConfig(
     isFancyBuild = argv[1] === '--fancy'
 ) {
     var config = commonConfig(isDevBuild, isFancyBuild);
+
     config.node = {
         console: true,
         __filename: true,
         __dirname: true
     };
+
     config.target = 'node';
-    config.entry = {
-        server: [
-            './src/server/entry.js'
-        ].concat(!isDevBuild ? [] : [
-            __dirname + '/hmr/signal.js?hmr'
-        ])
-    };
+
+    config.entry = { server: './src/server/entry.js' };
+
     config.output = {
         path: path.resolve('./build/server'),
         filename: 'serverBundle.js',
         libraryTarget: 'commonjs2'
     };
+
     config.externals = [
         // native modules will be excluded, e.g require('react/server')
         WebpackNodeExternals(),
         // these assets produced by assets-webpack-plugin
         /^.+assets\.json$/i,
     ];
-    config.module.loaders.push({
-        test: /\.less$/,
-        loader: 'css/locals' +
-        // loader: require.resolve('css-loader/locals') +
-            '?module&localIdentName=[local]_[hash:6]!postcss!less'
-    });
-    config.plugins.push(new webpack.BannerPlugin({
-        raw: true,
-        entryOnly: true,
-        banner: `require('source-map-support').install();`
-    }));
-    config.plugins.push(new webpack.DefinePlugin(
-        Object.assign(
-            {},
-            {
-                global: 'window',
-                DEBUG: isDevBuild,
-                __DEV__: isDevBuild,
-                __CLIENT__: false,
-                __SERVER__: true,
-                'process.env.NODE_ENV': '"production"',
-            },
-            versionDefines
-        )
-    ));
+
+    config.module.loaders = [
+        ...config.module.loaders,
+        {
+            test: /\.less$/,
+            loader: `css/locals?module&localIdentName=[local]_[hash:6]!postcss!less`
+        }
+    ];
+
+
+    config.plugins = [
+        ...config.plugins,
+        new FaviconsWebpackPlugin({
+            logo: './src/static/img/logo_g.png',
+            emitStats: true,
+            statsFilename: 'favicon-assets.json',
+            icons: {
+                android: false,
+                appleIcon: false,
+                appleStartup: false,
+                coast: false,
+                favicons: true,
+                firefox: false,
+                opengraph: false,
+                twitter: false,
+                yandex: false,
+                windows: false
+            }
+        }),
+        new webpack.BannerPlugin({
+            raw: true,
+            entryOnly: true,
+            banner: `require('source-map-support').install({ environment: 'node' });`
+        }),
+        new webpack.DefinePlugin(
+            Object.assign(
+                {},
+                {
+                    window: 'global',
+                    DEBUG: isDevBuild,
+                    __DEV__: isDevBuild,
+                    __CLIENT__: false,
+                    __SERVER__: true,
+                    'process.env.NODE_ENV': '"production"',
+                },
+                versionDefines
+            )
+        ),
+        new WebpackVisualizer({
+            filename: `${config.output.filename}.stats.html`
+        }),
+    ];
+
     return config;
 }
 
@@ -198,7 +253,6 @@ function loaders(isDevBuild) {
         babel(),
         { test: /\.json$/, loader: 'json' },
         { test: /\.proto$/, loader: 'proto-loader' },
-        { test: /\.pegjs$/, loader: 'pegjs-loader?cache=true&optimize=size' },
         { test: /\.(hbs|handlebars)$/, loader: 'handlebars-loader' },
         { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: "url?&name=[name]_[hash:6].[ext]" },
         { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: "url?&name=[name]_[hash:6].[ext]&limit=10000&mimetype=image/svg+xml" },
@@ -254,7 +308,8 @@ function plugins(isDevBuild, isFancyBuild) {
         new webpack.ProvidePlugin({ React: 'react' }),
         new webpack.LoaderOptionsPlugin({
             debug: isDevBuild,
-            minimize: !isDevBuild
+            minimize: !isDevBuild,
+            quiet: false
         }),
         // use this for universal server client rendering
         new ExtractTextPlugin({ allChunks: true, filename: 'styles.css' }),
