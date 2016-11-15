@@ -17,7 +17,6 @@ import {
 
 import {
     setEncoding,
-    resetEncoding
 } from 'viz-shared/actions/encodings';
 
 let Histograms = ({ addHistogram, removeHistogram, encodings,
@@ -94,8 +93,8 @@ let Histogram = ({ loading = false,
                    id, name, yScale = 'none',
                    global: _global = {}, masked = {},
                    binTouchMove, binTouchStart, binTouchCancel,
-                   setEncoding, resetEncoding,
                    encodings,
+                   setEncoding,
                    removeHistogram, yScaleChanged }) => {
 
     const trans = Math[yScale] || ((x) => x);
@@ -113,7 +112,6 @@ let Histogram = ({ loading = false,
                    componentType={componentType}
                    onYScaleChanged={yScaleChanged}
                    setEncoding={setEncoding}
-                   resetEncoding={resetEncoding}>
         {globalBins.map((
             { values, count: globalCount }, index, bins,
             { count: maskedCount = 0 } = maskedBins[index] || {}) => (
@@ -146,8 +144,6 @@ Histogram = container({
         binTouchCancel,
         yScaleChanged,
         setEncoding,
-        resetEncoding,
-
     }
 })(Histogram);
 

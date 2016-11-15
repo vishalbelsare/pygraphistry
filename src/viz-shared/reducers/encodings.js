@@ -8,7 +8,6 @@ import {
 import { Observable, Scheduler } from 'rxjs';
 import {
     SET_ENCODING,
-    RESET_ENCODING
 } from 'viz-shared/actions/encodings';
 
 export function setEncoding (action$, store) {
@@ -22,21 +21,6 @@ export function setEncoding (action$, store) {
             ({falcor, ...args}) =>
                 // TODO PAUL: Make sure this hits the right path
                 falcor.call('set', [args])
-        ))
-        .ignoreElements();
-}
-
-export function resetEncoding (action$, store) {
-    return action$
-        .ofType(RESET_ENCODING)
-        .groupBy(({id}) => id)
-        .do((...args) => {
-            console.log('Got reset encoding reducer, args: ', args);
-        })
-        .mergeMap((idGroup) => idGroup.exhaustMap(
-            ({falcor, ...args}) =>
-                // TODO PAUL: Make sure this hits the right path
-                falcor.call('reset', [args])
         ))
         .ignoreElements();
 }

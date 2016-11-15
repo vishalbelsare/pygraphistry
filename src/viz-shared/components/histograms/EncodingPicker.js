@@ -19,9 +19,8 @@ const propTypes = {
     showModal: React.PropTypes.bool,
     onYAxisChange: React.PropTypes.func,
     setEncoding: React.PropTypes.func,
-    resetEncoding: React.PropTypes.func,
     globalBinning: React.PropTypes.object,
-    encodings: React.PropTypes.object.isRequired
+    options: React.PropTypes.object.isRequired
 };
 
 
@@ -89,18 +88,12 @@ export default class EncodingPicker extends React.Component {
         const attribute = this.props.attribute;
 
         console.log('HANDLE SELECT COLOR',
-            {colorValue, variation, reset, id, encodingType, binning, graphType, attribute});
+            {variation, reset, id, encodingType, binning, graphType, attribute});
 
-
-        if (reset && this.props.resetEncoding) {
-            console.log('RESET');
-            this.props.resetEncoding({
-                id, encodingType, graphType, attribute
-            });
-        } else if (this.props.setEncoding) {
+        if (this.props.setEncoding) {
             console.log('SET');
             this.props.setEncoding({
-                variation, id, encodingType, graphType, attribute, binning
+                variation, reset, id, encodingType, binning, graphType, attribute
             });
         }
 
@@ -123,15 +116,9 @@ export default class EncodingPicker extends React.Component {
         const graphType = this.props.type;
         const attribute = this.props.attribute;
 
-        if (reset && this.props.resetEncoding) {
-            this.props.resetEncoding({
-                id, encodingType, graphType, attribute
-            });
-        }
-
         if (this.props.setEncoding) {
             this.props.setEncoding({
-                id, encodingType, graphType, attribute, binning
+                id, encodingType, graphType, attribute, binning, reset
             });
         }
 
