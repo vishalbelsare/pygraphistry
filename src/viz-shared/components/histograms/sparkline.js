@@ -11,8 +11,8 @@ import styles from 'viz-shared/components/histograms/styles.less';
 export const Sparkline = ({ name, yScale, children, componentType,
                             id, width = `calc(100% - 20px)`, height = 50,
                             loading = false, filtered = false, colors = false,
-                            encodings,
                             setEncoding,
+                            options, encoding,
                             onClose, onYScaleChanged, onEncodingChanged }) => {
     return (
         <div className={classNames({
@@ -22,8 +22,8 @@ export const Sparkline = ({ name, yScale, children, componentType,
             })}>
             <div className={styles['histogram-title']}>
                 <div className={styles['histogram-icons']}>
-                    <SizeLegendIndicator sizeValue={[]} encodings={encodings}/>
-                    <YAxisLegendIndicator yAxisValue={yScale} encodings={encodings}/>
+                    <SizeLegendIndicator sizeValue={[]}/>
+                    <YAxisLegendIndicator yAxisValue={yScale}/>
                     <EncodingPicker
                         id={`histogram-encodings-picker-${name}`}
                         attribute={name}
@@ -34,7 +34,7 @@ export const Sparkline = ({ name, yScale, children, componentType,
                         colorValue={[]}
                         onYAxisChange={onYScaleChanged}
                         setEncoding={setEncoding}
-                        encodings={encodings}
+                        options={options}
                     />
                     <Button href='javascript:void(0)'
                         onClick={() => onClose({ id })}

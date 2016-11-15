@@ -58,20 +58,32 @@ export default class EncodingManager {
         console.log({cmd: 'setEncoding', encoding});
         const { tables } = this;
         const {graphType, encodingType, reset} = encoding;
+        console.log({msg: 'PRE...'});
         return Observable.of()
-            .switchMap(() => {
+            .mergeMap(() => {
+                console.log({msg: 'START...'});
                 if (reset) {
                     const currentEncoding = getEncoding({view, encoding});
+                    console.log({msg: 'HERE A...'});
                     return resetEncodingOnNBody(
-                        {view, encoding: wrapEncodingType({...currentEncoding, reset: true})});
+                        {view, encoding: wrapEncodingType({...currentEncoding, reset: true})})
+                        .do(function (o) { console.log({msg: '===SAW', o}); })
                 } else {
-                    return applyEncodingOnNBody({view, encoding: wrapEncodingType(encoding)});
+                    console.log({msg: 'HERE B...'});
+                    return applyEncodingOnNBody({view, encoding: wrapEncodingType(encoding)})
+                        .do(function (o) { console.log({msg: '===SAW', o}); })
                 }
+
             })
-            .do((encodingSpec) => //only on success
-                tables.current[graphType][encodingType] =
-                    reset ? null
-                    : {encoding, encodingSpec})
+            .catch( (e) => {
+                console.log({msg: '=== WAT', e: e});
+                return Observable.throw(e);
+            })
+            .do((encodingSpec) => { //only on success
+                const out = reset ? null : {encoding, encodingSpec};
+                console.log({msg: '===SET OUT', out});
+                tables.current[graphType][encodingType] = out;
+            });
     }
 
     //view: {dataframe, simulator}
@@ -92,10 +104,12 @@ export default class EncodingManager {
             point: {
                 color: [
                     {variant: 'categorical',
+                     label: 'Categorical',
                      legend: [
                         "rgb(166, 206, 227)", "rgb(31, 120, 180)", "rgb(178, 223, 138)", "rgb(51, 160, 44)", "rgb(251, 154, 153)", "rgb(227, 26, 28)", "rgb(253, 191, 111)", "rgb(255, 127, 0)", "rgb(202, 178, 214)", "rgb(106, 61, 154)", "rgb(255, 255, 153)", "rgb(177, 89, 40)"
                     ]},
                     {variant: 'continuous',
+                     label: 'Gradient',
                      legend:
                         _.range(0, 10).map((i, idx, all) =>
                             `rgb(${Math.round(i * 255 / all.length)},${Math.round(i * 255 / all.length)},255)`)
@@ -105,10 +119,12 @@ export default class EncodingManager {
             edge: {
                 color: [
                     {variant: 'categorical',
+                     label: 'Categorical',
                      legend: [
                         "rgb(166, 206, 227)", "rgb(31, 120, 180)", "rgb(178, 223, 138)", "rgb(51, 160, 44)", "rgb(251, 154, 153)", "rgb(227, 26, 28)", "rgb(253, 191, 111)", "rgb(255, 127, 0)", "rgb(202, 178, 214)", "rgb(106, 61, 154)", "rgb(255, 255, 153)", "rgb(177, 89, 40)"
                     ]},
                     {variant: 'continuous',
+                     label: 'Gradient',
                      legend:
                         _.range(0, 10).map((i, idx, all) =>
                             `rgb(${Math.round(i * 255 / all.length)},${Math.round(i * 255 / all.length)},255)`)

@@ -24,41 +24,46 @@ const propTypes = {
 };
 
 
-const WIDTH = 50;
-const defaultProps = {
-    options: [
-        {value: "color-categorical",
-        label:
-            <div style={{whiteSpace: 'nowrap', display: 'inline-block'}}>
-            <span className={styles['encoding-icon-container']} >{
-                [
-                    "rgb(166, 206, 227)", "rgb(31, 120, 180)", "rgb(178, 223, 138)", "rgb(51, 160, 44)", "rgb(251, 154, 153)", "rgb(227, 26, 28)", "rgb(253, 191, 111)", "rgb(255, 127, 0)", "rgb(202, 178, 214)", "rgb(106, 61, 154)", "rgb(255, 255, 153)", "rgb(177, 89, 40)"
-                ].map((color, idx, all) => <span style={{
-                    backgroundColor: color,
-                    width: `${WIDTH / all.length}px`
-                }}/>)
-            }</span><label>Categorical</label></div>,
-        group: "color"},
-        {value: "color-continuous",
-        label:
-            <div style={{whiteSpace: 'nowrap', display: 'inline-block'}}>
-            <span className={styles['encoding-icon-container']} >{
-                _.range(0, 10).map((i, idx, all) => <span style={{
-                    backgroundColor: `rgb(${Math.round(i * 255 / all.length)},${Math.round(i * 255 / all.length)},255)`,
-                    width: `${WIDTH / all.length}px`
-                }}/>)
-            }</span><label>Gradient</label></div>,
-        group: "color"},
-        {value: "size", label: "size", group: "size"},
-    ],
-    sizeValue: [],
-    yAxisValue: 'none'
-};
+function makeOptionLists(options) {
 
-// {<value> -> {value, label}}
-const namedOptions = _.object(
-        _.pluck(defaultProps.options, 'value'),
-        defaultProps.options);
+    const WIDTH = 50;
+    return {
+        point: {
+            color: options.point.color.map((option) => ({
+                value: option.variant,
+                label:
+                    <div style={{whiteSpace: 'nowrap', display: 'inline-block'}}>
+                    <span className={styles['encoding-icon-container']} >{
+                        option.legend.map((color, idx, all) => <span style={{
+                            backgroundColor: color,
+                            width: `${WIDTH / all.length}px`
+                        }}/>)
+                    }</span><label>{option.label}</label></div>,
+            }))
+        },
+        edge: {
+            color: options.edge.color.map((option) => ({
+                value: option.variant,
+                label:
+                    <div style={{whiteSpace: 'nowrap', display: 'inline-block'}}>
+                    <span className={styles['encoding-icon-container']} >{
+                        option.legend.map((color, idx, all) => <span style={{
+                            backgroundColor: color,
+                            width: `${WIDTH / all.length}px`
+                        }}/>)
+                    }</span><label>{option.label}</label></div>,
+            }))
+        },
+        sizeValue: [],
+        yAxisValue: 'none'
+    };
+
+
+}
+
+
+
+
 
 export default class EncodingPicker extends React.Component {
 
@@ -74,13 +79,14 @@ export default class EncodingPicker extends React.Component {
             showModal: false
         };
 
+        this.options = makeOptionLists(props.options);
+
     }
 
 
 
-    handleSelectColorChange (colorValue) {
-        const variation = (colorValue === 'color-categorical') ? 'categorical' : 'quantitative';
-        const reset = colorValue === null;
+    handleSelectColorChange (variation) {
+        const reset = variation === null;
         const id = this.props.type + 'Color';
         const encodingType = 'color';
         const binning = this.props.globalBinning;
@@ -135,6 +141,8 @@ export default class EncodingPicker extends React.Component {
 
     render(){
 
+        const { options } = this;
+
         return (<div id={this.props.id} name={this.props.name || this.props.id} style={{display: 'inline-block'}}>
 
             <OverlayTrigger placement='top'
@@ -159,14 +167,14 @@ export default class EncodingPicker extends React.Component {
                     <Select simpleValue
                         disabled={false}
                         value={
-                            this.props.encodings ?
-                                [ this.props.encodings.options[this.props.type].color ]
+                            this.props.encodings
+                                    && this.props.encodings[this.props.type]
+                                    && this.props.encodings[this.props.type].color?
+                                [ this.props.encodings[this.props.type].color ]
                                 : []
                         }
                         placeholder="Pick how to visualize"
-                        options={
-                            _.filter(defaultProps.options, (o) => o.group === 'color')
-                        }
+                        options={ options[this.props.type].color }
                         id={`${this.props.id}_select`}
                         name={`${this.props.name || this.props.id}_select`}
                         optionRenderer={({value, label}) => label}
@@ -181,7 +189,7 @@ export default class EncodingPicker extends React.Component {
                     <Select simpleValue
                         disabled={false}
                         value={ this.props.yAxisValue}
-                        resetValue={ defaultProps.yAxisValue }
+                        resetValue={ options.yAxisValue }
                         placeholder="Pick transform"
                         options={
                             [{value: 'none', label: 'none'},
@@ -199,4 +207,3 @@ export default class EncodingPicker extends React.Component {
 }
 
 EncodingPicker.propTypes = propTypes
-EncodingPicker.defaultProps = defaultProps;

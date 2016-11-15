@@ -18,9 +18,9 @@ export function setEncoding (action$, store) {
             console.log('Got set encoding reducer, args: ', args);
         })
         .mergeMap((idGroup) => idGroup.exhaustMap(
-            ({falcor, ...args}) =>
-                // TODO PAUL: Make sure this hits the right path
-                falcor.call('set', [args])
-        ))
+            ({falcor, graphType, encodingType, ...args}) =>
+                falcor.set($value(
+                    `encodings.${graphType}.${encodingType}`,
+                    $atom({graphType, encodingType, ...args})))))
         .ignoreElements();
 }

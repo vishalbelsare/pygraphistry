@@ -19,12 +19,14 @@ import {
     setEncoding,
 } from 'viz-shared/actions/encodings';
 
-let Histograms = ({ addHistogram, removeHistogram, encodings,
+let Histograms = ({ addHistogram, removeHistogram, setEncoding, encodings = {},
                     templates = [], histograms = [],
                     loading = false, className = '',
                     style = {}, ...props }) => {
 
-    console.log('got encodings:', encodings);
+    console.log('encodings', encodings);
+
+    const { options, point, edge } = encodings;
 
     return (
         <ExpressionsList loading={loading}
@@ -39,7 +41,9 @@ let Histograms = ({ addHistogram, removeHistogram, encodings,
         {histograms.map((histogram, index) => (
             <Histogram data={histogram}
                        key={`${index}: ${histogram.id}`}
-                       encodings={encodings}
+                       options={options}
+                       encodings={ {point,edge} }
+                       setEncoding={ setEncoding }
                        removeHistogram={removeHistogram}/>
         ))}
         </ExpressionsList>
@@ -52,10 +56,18 @@ Histograms = container({
 
         if (!encodings) {
             return `{
+                templates: {
+                    length
+                },
+                id, name, length, ...${
+                    Histogram.fragments(histograms)
+                },
                 encodings: {
                     options: {
                         ['point', 'edge']: { color }
-                    }
+                    },
+                    point: { color },
+                    edge: { color }
                 }
             }`;
         }
@@ -72,7 +84,9 @@ Histograms = container({
             encodings: {
                 options: {
                     ['point', 'edge']: { color }
-                }
+                },
+                point: { color },
+                edge: { color }
             }
         }`;
     },
@@ -84,7 +98,7 @@ Histograms = container({
         encodings: histograms.encodings
     }),
     dispatchers: {
-        addHistogram, removeHistogram
+        addHistogram, removeHistogram, setEncoding
     }
 })(Histograms);
 
@@ -93,8 +107,8 @@ let Histogram = ({ loading = false,
                    id, name, yScale = 'none',
                    global: _global = {}, masked = {},
                    binTouchMove, binTouchStart, binTouchCancel,
-                   encodings,
                    setEncoding,
+                   options, encoding,
                    removeHistogram, yScaleChanged }) => {
 
     const trans = Math[yScale] || ((x) => x);
@@ -108,10 +122,11 @@ let Histogram = ({ loading = false,
                    loading={loading}
                    dataType={dataType}
                    onClose={removeHistogram}
-                   encodings={encodings}
+                   options={options}
                    componentType={componentType}
                    onYScaleChanged={yScaleChanged}
                    setEncoding={setEncoding}
+                   encoding={encoding}>
         {globalBins.map((
             { values, count: globalCount }, index, bins,
             { count: maskedCount = 0 } = maskedBins[index] || {}) => (
@@ -142,8 +157,7 @@ Histogram = container({
         binTouchMove,
         binTouchStart,
         binTouchCancel,
-        yScaleChanged,
-        setEncoding,
+        yScaleChanged
     }
 })(Histogram);
 
