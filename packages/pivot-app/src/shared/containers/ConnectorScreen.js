@@ -33,7 +33,7 @@ import logger from '../logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 
-function welcomeBar(user, investigations) {
+function welcomeBar(user, connectors) {
     return (
         <Grid><Row className={styles['welcome-bar']}>
             <Col md={4}>
@@ -57,7 +57,7 @@ function welcomeBar(user, investigations) {
              </Col>
             <Col md={4}>
                 <Panel>
-                    <h2 className="text-center">{investigations.length}</h2>
+                    <h2 className="text-center">{connectors.length}</h2>
                     <div className="text-center">
                         Ongoing Investigations
                     </div>
@@ -75,7 +75,7 @@ function welcomeBar(user, investigations) {
     );
 }
 
-function investigationTable({user, investigations = [], switchScreen, selectInvestigation, copyInvestigation,
+function investigationTable({user, investigations = [], connectors = [], switchScreen, selectInvestigation, copyInvestigation,
                              setInvestigationParams, selectHandler}) {
     function tagsFormatter(tags, row) {
         return (
@@ -101,8 +101,8 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
     function idFormatter(id, row) {
         return (
             <div>
-                <Button onClick={() => copyInvestigation(id)}>
-                    Copy
+                <Button bsStyle={row.status} onClick={() => copyInvestigation(id)}>
+                    Status
                 </Button>
             </div>
         );
@@ -139,13 +139,13 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
 
     return (
         <div className={styles['investigation-table']}>
-            <BootstrapTable data={investigations.filter(Boolean)}
+            <BootstrapTable data={connectors.filter(Boolean)}
                             selectRow={selectRowProp}
                             cellEdit={cellEditProp}
                             striped={false}
                             hover={true}
                             pagination={true}
-                            options={{defaultSortName: 'modifiedOn', defaultSortOrder: 'desc'}}>
+                            options={{defaultSortName: 'name', defaultSortOrder: 'desc'}}>
                 <TableHeaderColumn dataField="id" isKey={true} hidden={true} editable={false}/>
                 <TableHeaderColumn dataField="name" dataSort={true} width="200px" dataFormat={nameFormatter}>
                     Name
@@ -153,9 +153,9 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
                 <TableHeaderColumn dataField="description">
                     Description
                 </TableHeaderColumn>
-                <TableHeaderColumn dataField="modifiedOn" dataSort={true} editable={false}
+                <TableHeaderColumn dataField="lastUpdated" dataSort={true} editable={false}
                                    dataFormat={dateFormatter} width="180px" dataAlign="center">
-                    Last Modified
+                    Updated
                 </TableHeaderColumn>
 
                 {/*
@@ -173,7 +173,7 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
 
 }
 
-function renderConnectorScreen({user, investigations, switchScreen, selectInvestigation, copyInvestigation,
+function renderConnectorScreen({user, investigations, connectors, switchScreen, selectInvestigation, copyInvestigation,
                            createInvestigation, setInvestigationParams},
                           {selection}, selectHandler, deleteHandler) {
     if (user === undefined) {
@@ -187,7 +187,7 @@ function renderConnectorScreen({user, investigations, switchScreen, selectInvest
                  style={{width: 'calc(100% - 90px)', height: '100%'}}>
                 <Panel className={styles['main-panel-panel']}>
                     {
-                        welcomeBar(user, investigations)
+                        welcomeBar(user, connectors)
                     }
                     <Panel header="Open Investigations" className={styles['panel']}>
                         <div className={styles['investigations-buttons']}>
@@ -216,7 +216,7 @@ function renderConnectorScreen({user, investigations, switchScreen, selectInvest
                         </div>
                         {
                             investigationTable({
-                                user, investigations, switchScreen, selectInvestigation,
+                                user, investigations, connectors, switchScreen, selectInvestigation,
                                 copyInvestigation, setInvestigationParams, selectHandler
                             })
                         }
@@ -275,7 +275,9 @@ function mapStateToFragment({currentUser: {investigations = [], connectors = []}
             connectors: {
                 'length',
                 [0...${connectors.length}]: {
-                    'name'
+                    'name',
+                    'lastUpdated',
+                    'status'
                 }
             }
         }
@@ -283,7 +285,6 @@ function mapStateToFragment({currentUser: {investigations = [], connectors = []}
 }
 
 function mapFragmentToProps({ currentUser } = {}) {
-    log.warn('Connectors', currentUser.connectors);
     return {
         user: currentUser,
         investigations: (currentUser || {}).investigations || [],
