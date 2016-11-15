@@ -41,7 +41,7 @@ function welcomeBar(user, investigations) {
                     <Media.Left align="middle">
                         <Image width={84}
                             height={84}
-                            src="/custom/img/abstract-user-flat-3.svg"
+                            src="/img/abstract-user-flat-3.svg"
                             className={styles['user-icon']}
                             circle/>
                     </Media.Left>

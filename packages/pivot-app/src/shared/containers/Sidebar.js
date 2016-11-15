@@ -12,7 +12,7 @@ function renderSidebar({activeScreen, switchScreen}) {
             <div className="sidebar-wrapper">
                 <div className={styles.logo}>
                     <div>
-                        <img src="/custom/img/logo.png"/>
+                        <img src="/img/logo.png"/>
                     </div>
                 </div>
                 <ul className="nav">
