@@ -14,6 +14,7 @@ import {
 import {
     wrapServices,
     loadApp,
+    connectorStore,
     userStore, templateStore, listTemplates,
     listInvestigations, investigationStore,
     createInvestigation, cloneInvestigationsById, removeInvestigationsById,
@@ -61,10 +62,14 @@ function init(testUser) {
         deletePivotsById
     } = pivotStore(loadApp(app), pivotPath);
 
+
+    const { loadConnectorsById } = connectorStore(loadApp(app));
+
     const routeServices = wrapServices({
         loadApp: loadApp(app),
         loadUsersById,
         loadTemplatesById,
+        loadConnectorsById,
         loadInvestigationsById,
         saveInvestigationsById,
         deleteInvestigationsById,

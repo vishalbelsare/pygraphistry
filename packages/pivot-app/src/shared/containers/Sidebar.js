@@ -46,8 +46,8 @@ function renderSidebar({activeScreen, switchScreen}) {
                             <p>&nbsp;</p>
                         </a>
                     </li>
-                    <li>
-                        <a href="#">
+                    <li className={active('connectors')}>
+                        <a href="#" onClick={() => switchScreen('connectors')}>
                             <i className="pe-7s-plugin"></i>
                             <p>&nbsp;</p>
                         </a>

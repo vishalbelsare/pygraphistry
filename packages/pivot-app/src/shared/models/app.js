@@ -26,6 +26,7 @@ export function makeTestUser(investigations, templates, apiKey, graphistryHost) 
         activeScreen: 'home',
         activeInvestigation: investigationsRefs[0],
         investigations: investigationsRefs,
+        connectors: [$ref(`connectorsById['0']`), $ref(`connectorsById['1']`)],
         templates: templatesRefs,
         apiKey: apiKey,
         vizService: `${graphistryHost}${suffix}`,
@@ -43,6 +44,10 @@ export function createAppModel(testUser, id = simpleflake().toJSON()) {
             '0' : {
                 id: '0',
                 name: 'Splunk'
+            },
+            '1' : {
+                id: '1',
+                name: 'WHOIS'
             }
         },
         templatesById: {},

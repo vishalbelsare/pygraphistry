@@ -15,15 +15,11 @@ import logger from '../logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 
-export function connectors({loadconnectorsById, searchPivot}) {
-    const getConnectorsHandler = getHandler(['connector'], loadconnectorsById);
-    const setConnectorsHandler = setHandler(['connector'], loadconnectorsById);
+export function connectors({ loadConnectorsById }) {
+    const getConnectorsHandler = getHandler(['connector'], loadConnectorsById);
+    const setConnectorsHandler = setHandler(['connector'], loadConnectorsById);
 
     return [{
-        route: `connectorsById[{keys}].length`,
-        returns: `Number`,
-        get: getConnectorsHandler,
-    }, {
         route: `connectorsById[{keys}]['name']`,
         returns: `String`,
         get: getConnectorsHandler,
