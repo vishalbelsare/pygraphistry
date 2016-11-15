@@ -62,7 +62,7 @@ function renderAppWithHotReloading(modules, dataSource, options = {}) {
 }
 
 function renderFullPage(model, html = '') {
-    const { client } = webpackAssets;
+    const { client, vendor } = webpackAssets;
     const { html: iconsHTML } = faviconStats;
 
     return (
