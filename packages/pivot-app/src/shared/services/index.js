@@ -11,6 +11,7 @@ export * from './insertPivot';
 export * from './loadPivots';
 export * from './loadConnectors';
 export * from './splicePivot';
+export * from './checkConnector';
 export * from './searchPivot';
 export * from './uploadGraph';
 

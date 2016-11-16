@@ -17,7 +17,7 @@ const log = logger.createLogger('pivot-app', __filename);
 
 const connectorList = listConnectors();
 
-export function connectors({ loadConnectorsById }) {
+export function connectors({ loadConnectorsById, checkConnector }) {
     const getConnectorsHandler = getHandler(['connector'], loadConnectorsById);
     const setConnectorsHandler = setHandler(['connector'], loadConnectorsById);
 
@@ -29,22 +29,23 @@ export function connectors({ loadConnectorsById }) {
     },{
         route: `connectorsById[{keys}].checkStatus`,
         returns: `String`,
-        call: checkStatusCallRoute({ loadConnectorsById })
+        call: checkStatusCallRoute({ loadConnectorsById, checkConnector })
     }];
 }
 
-function checkStatusCallRoute({ loadConnectorsById }) {
+function checkStatusCallRoute({ loadConnectorsById, checkConnector }) {
     return function(path, args) {
-        const connectorIds = path[ 1 ];
+        const connectorIds = path[1];
 
-        return loadConnectorsById({ connectorIds })
+        return checkConnector({ loadConnectorsById, connectorIds })
             .mergeMap(({app, connector}) => (
-               [$pathValue(`connectorsById['${connector.id}'].status`, 'warning')]
-            ));
+               [ $pathValue(`connectorsById['${connector.id}'].status`, connector.status) ]
+            ))
+            .catch(captureErrorAndNotifyClient(connectorIds));
     };
 }
 
-function captureErrorAndNotifyClient(pivotIds) {
+function captureErrorAndNotifyClient(connectorIds) {
     return function(e) {
         const errorCode = logErrorWithCode(log, e);
         const cause = VError.cause(e);
@@ -55,7 +56,7 @@ function captureErrorAndNotifyClient(pivotIds) {
         };
 
         return Observable.from([
-            $pathValue(`connectorsById['${pivotIds}']['status']`, $error(status))
+            $pathValue(`connectorsById['${connectorIds}']['status']`, 'danger')
         ]);
     }
 }

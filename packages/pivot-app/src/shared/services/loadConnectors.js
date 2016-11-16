@@ -23,7 +23,7 @@ export function listConnectors() {
     const connectorMap  = _.mapObject(
         _.groupBy(
             _.values(connectors),
-            t => t.getId()
+            t => t.id
         ),
         group => group[0]
     );

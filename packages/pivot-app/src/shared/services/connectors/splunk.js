@@ -59,7 +59,7 @@ export class SplunkPivot {
             .map(({app, pivot}) => shapeSplunkResults({app, pivot}));
     }
 
-    login() {
+    static login() {
         return splunkLogin()
             .do(log.info('Successful splunk login'))
             .catch(({error, status}) => {
@@ -91,7 +91,7 @@ export class SplunkPivot {
             });
     }
 
-    static getId() {
+    static get id() {
         return 'splunk-connector';
     }
 
