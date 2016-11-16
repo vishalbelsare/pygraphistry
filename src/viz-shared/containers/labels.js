@@ -7,8 +7,8 @@ import {
 
 import {
     addFilter,
-    selectLabel,
     addExclusion,
+    labelMouseMove,
 } from 'viz-shared/actions/labels';
 
 let Label = container({
@@ -17,8 +17,7 @@ let Label = container({
     }`,
     dispatchers: {
         onFilter: addFilter,
-        onExclude: selectLabel,
-        onPinChange: addExclusion,
+        onExclude: addExclusion,
     }
 })(LabelComponent);
 
@@ -39,8 +38,8 @@ const onPinChange = ({ type, title }) => {
 };
 
 let Labels = ({ simulating,
+                selectLabel,
                 labelMouseMove,
-                labelTouchStart,
                 sceneSelectionType,
                 enabled, poiEnabled, opacity,
                 foreground: { color: color } = {},
@@ -59,8 +58,16 @@ let Labels = ({ simulating,
             selection.index === highlight.index)) {
             highlight = undefined;
         }
-        highlight && labels.push(highlight);
-        selection && labels.push(selection);
+        if (selection) {
+            labels = labels.filter(({ index }) => (
+                index !== selection.index
+            )).concat(selection);
+        }
+        if (highlight) {
+            labels = labels.filter(({ index }) => (
+                index !== highlight.index
+            )).concat(highlight);
+        }
     }
 
     return (
@@ -78,8 +85,9 @@ let Labels = ({ simulating,
                    simulating={simulating}
                    background={background}
                    pinned={label === selection}
-                   onMouseMove={labelMouseMove}
-                   onTouchStart={labelTouchStart}
+                   onLabelSelected={selectLabel}
+                   onLabelMouseMove={labelMouseMove}
+                   hasHighlightedLabel={!!highlight}
                    sceneSelectionType={sceneSelectionType}
                    showFull={label === highlight || label === selection}/>
         ) || []}
@@ -102,6 +110,9 @@ Labels = container({
             }
         }
     }`,
+    dispatchers: {
+        labelMouseMove,
+    }
 })(Labels);
 
 export { Labels, Label }

@@ -14,7 +14,7 @@ export function labels(view) {
             edge: [], point: [],
             opacity: 1, enabled: true,
             timeZone: '', poiEnabled: true,
-            foreground: { color: new Color('#1f1f33') },
+            foreground: { color: new Color('#000000') },
             background: { color: new Color('#ffffff').alpha(0.9) },
             settings: [
                 $ref(`${view}.labels.options`),
@@ -27,7 +27,7 @@ export function labels(view) {
             options: {
                 id: 'label-options',
                 name: '',
-                length: 5, ...[{
+                length: 4, ...[{
                     id: 'text-color',
                     type: 'color',
                     name: 'Text Color',
@@ -37,15 +37,15 @@ export function labels(view) {
                     type: 'color',
                     name: 'Background Color',
                     value: $ref(`${view}.labels.background.color`)
-                }, {
-                    id: 'transparency',
-                    type: 'discrete',
-                    name: 'Transparency',
-                    props: {
-                        min: 0, max: 100,
-                        step: 1, scale: 'percent'
-                    },
-                    value: $ref(`${view}.labels.opacity`)
+                // }, {
+                //     id: 'transparency',
+                //     type: 'discrete',
+                //     name: 'Transparency',
+                //     props: {
+                //         min: 0, max: 100,
+                //         step: 1, scale: 'percent'
+                //     },
+                //     value: $ref(`${view}.labels.opacity`)
                 }, {
                     id: 'show-labels',
                     type: 'bool',

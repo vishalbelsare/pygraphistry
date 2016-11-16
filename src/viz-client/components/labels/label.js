@@ -2,13 +2,13 @@ import Color from 'color';
 import classNames from 'classnames';
 import React, { PropTypes } from 'react';
 import { defaultFormat } from 'viz-shared/formatters';
-import { Tooltip, OverlayTrigger } from 'react-bootstrap';
+import { Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import styles from 'viz-shared/components/labels/style.less';
 
 function preventPropagation (f) {
     return function (e) {
         e.stopPropagation();
-        return f();
+        return f(e);
     }
 }
 
@@ -17,141 +17,168 @@ function stopPropagation(e) {
     e.stopPropagation();
 }
 
+const events = [
+    'onLabelSelected',
+    'onLabelMouseMove',
+];
+
 export class Label extends React.Component {
     constructor(props, context) {
         super(props, context);
-        this._onTouchStart = (event) => {
-            const { props = {} } = this;
-            const { onTouchStart } = props;
-            if (!onTouchStart) {
-                return;
-            }
-            event.stopPropagation();
-            const { simulating,
-                    type, index,
-                    pinned, showFull,
-                    sceneSelectionType } = props;
-            onTouchStart({
-                event,
-                simulating,
-                isOpen: showFull,
-                labelIndex: index,
-                isSelected: pinned,
-                isLabelEvent: true,
-                componentType: type,
-                selectionType: sceneSelectionType
-            });
-        };
+        events.forEach((eventName) => {
+            this[eventName] = (event) => {
+                const { props = {} } = this;
+                const { [eventName]: dispatch } = props;
+                if (!dispatch) {
+                    return;
+                }
+                const { simulating,
+                        type, index,
+                        renderState,
+                        pinned, showFull,
+                        sceneSelectionType,
+                        hasHighlightedLabel,
+                        renderingScheduler } = props;
+                const { camera } = renderState;
+                dispatch({
+                    event, simulating,
+                    hasHighlightedLabel,
+                    isOpen: showFull,
+                    labelIndex: index,
+                    isSelected: pinned,
+                    isLabelEvent: true,
+                    componentType: type,
+                    renderState,
+                    renderingScheduler,
+                    camera: renderState.camera,
+                    selectionType: sceneSelectionType,
+                });
+            };
+        });
+        this.onLabelSelected = preventPropagation(this.onLabelSelected);
+    }
+    componentWillUnmount() {
+        events.forEach((eventName) => this[eventName] = undefined);
     }
     render() {
 
-        const { showFull, pinned,
-                color, opacity, background,
-                onFilter, onExclude, onPinChange,
-                type, index, title, columns, ...props } = this.props;
+        let { showFull, pinned,
+              color, background,
+              onFilter, onExclude,
+              type, index, title, columns, ...props } = this.props;
 
-        const arrowStyle = !showFull && { 'border-bottom-color': background } || undefined;
-        const contentStyle = !showFull && { color, opacity, background } || undefined;
+        background = showFull || pinned ? new Color(background).alpha(1).rgbaString() : background;
+
+        const arrowStyle = { 'border-bottom-color': background };
+        const contentStyle = { color, background, maxWidth: `none` };
 
         return (
-            <div onMouseDown={this._onTouchStart}
-                 onTouchStart={this._onTouchStart}
-                 className={classNames({
+            <div className={classNames({
+                     [styles['label']]: true,
                      [styles['on']]: showFull,
                      [styles['clicked']]: pinned,
-                     [styles['graph-label']]: true,
                  })}
                  {...props}>
-                <div className={classNames({
+                <div onMouseMove={this.onLabelMouseMove}
+                     onMouseDown={!pinned && this.onLabelSelected || undefined}
+                     onTouchStart={!pinned && this.onLabelSelected || undefined}
+                     style={{
+                         left: `-50%`,
+                         opacity: 1,
+                         marginTop: 1,
+                         position: `relative`,
+                     }}
+                     className={classNames({
                           'in': true,
-                          'bottom': true,
-                          'tooltip': true,
-                     })}
-                     style={{ position: `relative`, left: `-50%` }}>
-                    <div className='tooltip-arrow' style={arrowStyle}/>
-                    <div className={classNames({
-                            'tooltip-inner': true,
-                            [styles[`graph-label-${type}`]]: true,
-                            [styles['graph-label-container']]: true,
-                         })}
-                         style={contentStyle}>
+                          'bottom': true, 'tooltip': true,
+                          [styles['label-tooltip']]: true
+                     })}>
+                    <div style={arrowStyle} className='tooltip-arrow'/>
+                    <div style={contentStyle} className='tooltip-inner'>
                         <LabelTitle type={type}
+                                    color={color}
                                     title={title}
+                                    pinned={pinned}
+                                    showFull={showFull}
                                     onExclude={onExclude}
-                                    onPinChange={onPinChange}/>
+                                    onMouseDown={this.onLabelSelected}
+                                    onTouchStart={this.onLabelSelected}/>
+                        {(showFull || pinned) &&
                         <LabelContents type={type}
+                                       color={color}
                                        title={title}
                                        columns={columns}
                                        onFilter={onFilter}
                                        onExclude={onExclude}/>
+                        || undefined
+                        }
                     </div>
                 </div>
             </div>
         );
-        /*
-        return (
-            <div onMouseDown={this._onTouchStart}
-                 onTouchStart={this._onTouchStart}
-                 className={classNames({
-                     [styles['on']]: showFull,
-                     [styles['clicked']]: pinned,
-                     [styles['graph-label']]: true,
-                 })}
-                 {...props}>
-                <Tooltip id={`${type}-${index}-label`}
-                         className='in'
-                         placement='bottom'
-                         style={{ position: `relative`, left: `-50%` }}>
-                {!showFull && !pinned &&
-                    <div style={styleOverrides}>{title}</div> ||
-                    <div style={styleOverrides}>
-                        <span>{type} {title}</span>
-                        <LabelContents type={type}
-                                       title={title}
-                                       columns={columns}
-                                       onFilter={onFilter}
-                                       onExclude={onExclude}/>
-                    </div>
-                }
-                </Tooltip>
-            </div>
-        );
-        */
     }
 }
 
-function LabelTitle ({ type, title, onExclude, onPinChange }) {
+function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseDown, onTouchStart }) {
+
+    if (!showFull) {
+        return (
+            <div className={styles['label-title']}
+                 onMouseDown={onMouseDown}
+                 onTouchStart={onTouchStart}>
+                <span className={styles['label-title-text']}>{ title }</span>
+            </div>
+        );
+    }
+
     return (
-        <div className={styles['graph-label-title']}>
-            <a href="#" onClick={ preventPropagation(() => onPinChange && onPinChange({ type, title })) }>
+        <div onMouseDown={onMouseDown}
+             onTouchStart={onTouchStart}
+             style={{ margin: `0.25em 0` }}
+             className={styles['label-title']}>
+            <a href='javascript:void(0)'
+               style={{ color, float: `left`, fontSize: `.8em` }}
+               className={classNames({
+                   [styles['pinned']]: pinned,
+                   [styles['label-title-icon']]: true,
+               })}>
                 <i className={classNames({
                     [styles['fa']]: true,
-                    [styles['pin']]: true,
-                    [styles['fa-lg']]: true,
-                    [styles['fa-thumb-tack']]: true,
+                    [styles['fa-times']]: true,
                 })}/>
             </a>
             <span className={styles['label-type']}>{ type }</span>
-            <span className={styles['graph-label-title-text']}>{ title }</span>
             <OverlayTrigger trigger={['hover']}
-                        placement='bottom'
-                        overlay={
-                            <Tooltip className={styles['label-tooltip']}
-                                     id={`tooltip:title:${type}:${title}`}>
-                                Exclude if title: {title}
-                            </Tooltip>
-                        }>
-                <a className={styles['exclude-by-title']}
-                    onClick={ preventPropagation(() => onExclude && onExclude({ type, field: '_title', value: title })) }>
+                            placement='bottom'
+                            overlay={
+                                <Tooltip className={styles['label-tooltip']}
+                                         id={`tooltip:title:${type}:${title}`}>
+                                    Exclude if "title = {title}"
+                                </Tooltip>
+                            }>
+                <a href='javascript:void(0)'
+                   style={{ color, float: `right`, fontSize: `.9em` }}
+                   className={classNames({
+                       [styles['pinned']]: pinned,
+                       [styles['label-title-icon']]: true,
+                   })}
+                   onMouseDown={stopPropagation}
+                   onClick={ preventPropagation(() => onExclude && onExclude({ type, field: '_title', value: title })) }>
+                    <i className={classNames({
+                        [styles['fa']]: true,
+                        [styles['fa-ban']]: true
+                    })}/>
                 </a>
             </OverlayTrigger>
+            <span className={styles['label-title-text']}>{ title }</span>
         </div>
     );
 }
 
 function LabelContents ({ columns = [], ...props }) {
     return (
-        <div className={styles['graph-label-contents']}>
+        <div onMouseDown={stopPropagation}
+             className={styles['label-contents']}>
             <table>
                 <tbody>
                 {columns.map(({ key, title, ...column }, index) => (
@@ -165,7 +192,8 @@ function LabelContents ({ columns = [], ...props }) {
     );
 }
 
-function LabelRow ({ type, title,
+function LabelRow ({ color,
+                     title, type,
                      field, value,
                      onFilter, onExclude,
                      dataType, displayName }) {
@@ -177,27 +205,28 @@ function LabelRow ({ type, title,
     }
 
     return (
-        <tr className={styles['graph-label-pair']}>
-            <td className={styles['graph-label-key']}>{field}</td>
-            <td className={styles['graph-label-value']}>
-                <div className={styles['graph-label-value-wrapper']}>
+        <tr className={styles['label-pair']}>
+            <td className={styles['label-key']}>{field}</td>
+            <td className={styles['label-value']}>
+                <div className={styles['label-value-wrapper']}>
 
-                    <span className={styles['graph-label-value-text']}>{displayString}</span>
+                    <span className={styles['label-value-text']}>{displayString}</span>
 
                     { dataType ==='color' &&
                     <span className={styles['label-color-pill']}
                           style={{ backgroundColor: new Color(value).rgbString() }} />}
 
-                    <div className={styles['graph-label-icons']} style={{display:"none"}}>
+                    <div className={styles['label-icons']}>
                         <OverlayTrigger trigger={['hover']}
                                         placement='bottom'
                                         overlay={
                                             <Tooltip className={styles['label-tooltip']}
                                                      id={`tooltip:row:exclude${type}:${title}:${field}`}>
-                                                Exclude if "{type}:{field} = {value}"
+                                                Exclude if "{field} = {value}"
                                             </Tooltip>
                                         }>
                             <a className={styles['exclude-by-key-value']}
+                               onMouseDown={stopPropagation}
                                onClick={ preventPropagation(() => onExclude && onExclude({ type, field, value }))}>
                                 <i className={classNames({
                                     [styles['fa']]: true,
@@ -211,10 +240,11 @@ function LabelRow ({ type, title,
                                         overlay={
                                             <Tooltip className={styles['label-tooltip']}
                                                      id={`tooltip:row:filter:${type}:${title}:${field}`}>
-                                                Filter for "{type}:{field} = {value}"
+                                                Filter for "{field} = {value}"
                                             </Tooltip>
                                         }>
                             <a className={styles['filter-by-key-value']}
+                               onMouseDown={stopPropagation}
                                onClick={ preventPropagation(() => onFilter && onFilter({ type, field, value }))}>
                                 <i className={classNames({
                                     [styles['fa']]: true,

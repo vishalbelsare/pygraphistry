@@ -94,8 +94,6 @@ class Labels extends React.Component {
                     :   camera.canvas2WorldCoords(mouseX, mouseY, canvas, matrix)
                 :   { x: points[2 * index], y: points[2 * index + 1] };
 
-
-
             if (!worldCoords) {
                 continue;
             }
@@ -110,6 +108,8 @@ class Labels extends React.Component {
             });
 
             childrenToRender.push(React.cloneElement(child, {
+                renderState,
+                renderingScheduler,
                 style: {
                     ...(child.props && child.props.style),
                     transform: `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0px)`,

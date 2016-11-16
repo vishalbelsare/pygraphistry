@@ -1,9 +1,11 @@
 import { Observable } from 'rxjs/Observable';
 import { pickPointsOfInterest } from './pickPointsOfInterest';
+import { resetHighlightedLabel } from './resetHighlightedLabel';
 
 export function labels(action$) {
     return Observable.merge(
         pickPointsOfInterest(action$),
+        resetHighlightedLabel(action$),
     )
     .switchMap(({ falcor, values, invalidations }) => {
         if (falcor) {

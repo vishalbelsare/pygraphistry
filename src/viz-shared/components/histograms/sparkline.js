@@ -1,6 +1,6 @@
 import React from 'react';
 import classNames from 'classnames';
-import { Button, Glyphicon } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 import globalStyles from 'viz-shared/index.less';
 import styles from 'viz-shared/components/histograms/styles.less';
 

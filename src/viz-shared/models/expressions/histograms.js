@@ -61,7 +61,7 @@ export function histogram({ name = 'degree',
 
 export function histogramBinQuery(histogram, bin) {
 
-    const { identifier, componentType } = histogram;
+    const { bins, identifier, componentType } = histogram;
     const queryProperties = { identifier };
     const { count, values, exclude } = bin;
 

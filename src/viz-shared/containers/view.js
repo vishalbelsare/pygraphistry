@@ -7,8 +7,6 @@ import { Toolbar } from 'viz-shared/containers/toolbar';
 import { Settings } from 'viz-shared/containers/settings';
 import { selectToolbarItem } from 'viz-shared/actions/toolbar';
 
-import { Labels } from 'viz-client/components/labels'
-
 import {
     sceneMouseMove,
     sceneTouchStart,
@@ -17,14 +15,12 @@ import {
 } from 'viz-shared/actions/scene';
 
 import {
-    labelMouseMove,
-    labelTouchStart,
+    selectLabel,
 } from 'viz-shared/actions/labels';
 
 let View = ({
-    labelMouseMove,
+    selectLabel,
     sceneMouseMove,
-    labelTouchStart,
     sceneTouchStart,
     selectToolbarItem,
     scene = {}, labels = {},
@@ -41,10 +37,9 @@ let View = ({
         <div style={{ position: `absolute`, width: `100%`, height: `100%` }}>
             <Scene key='scene'
                    data={scene}
+                   selectLabel={selectLabel}
                    sceneMouseMove={sceneMouseMove}
                    sceneTouchStart={sceneTouchStart}
-                   labelMouseMove={labelMouseMove}
-                   labelTouchStart={labelTouchStart}
                    selectToolbarItem={selectToolbarItem}
                    onSelectedPointTouchStart={onSelectedPointTouchStart}
                    onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
@@ -89,9 +84,8 @@ View = container({
         toolbar: ${ Toolbar.fragment(toolbar) }
     }`,
     dispatchers: {
-        labelMouseMove,
+        selectLabel,
         sceneMouseMove,
-        labelTouchStart,
         sceneTouchStart,
         selectToolbarItem,
         onSelectedPointTouchStart,

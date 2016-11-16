@@ -147,8 +147,8 @@ const Selection = compose(
 
     return (
         <div style={{
-            width: `100%`,
-            height: `100%`,
+            top: 0, left: 0,
+            width: 0, height: 0,
             position: `absolute`,
             background: `transparent` }}>
             <HighlightPoint key='highlight-point'

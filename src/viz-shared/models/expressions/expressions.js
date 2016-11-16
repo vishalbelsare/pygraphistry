@@ -174,12 +174,12 @@ const defaultQueriesMap = {
             }
         }
     },
-    isOneOf({ identifer, values = [] }) {
+    isOneOf({ identifier, values = [] }) {
         return {
             ast: {
                 type: 'BinaryPredicate',
                 operator: 'IN',
-                left: { type: 'Identifier', name: identifer },
+                left: { type: 'Identifier', name: identifier },
                 right: {
                     type: 'ListExpression',
                     elements: values.map((value) => ({

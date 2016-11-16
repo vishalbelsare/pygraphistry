@@ -7,8 +7,7 @@ import { Selection } from 'viz-shared/containers/selection';
 import SceneComponent from 'viz-shared/components/scene';
 
 let Scene = ({
-        labelMouseMove,
-        labelTouchStart,
+        selectLabel,
         sceneMouseMove,
         sceneTouchStart,
         onSelectedPointTouchStart,
@@ -37,8 +36,7 @@ let Scene = ({
         <Labels key='labels'
                 data={labels}
                 simulating={simulating}
-                labelMouseMove={labelMouseMove}
-                labelTouchStart={labelTouchStart}
+                selectLabel={selectLabel}
                 sceneSelectionType={selection.type}/>
     </SceneComponent>
 );

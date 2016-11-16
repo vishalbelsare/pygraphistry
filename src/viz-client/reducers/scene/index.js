@@ -10,6 +10,7 @@ import { assignSelectedLabel } from './assignSelectedLabel';
 
 export function scene(action$, store) {
     return Observable.merge(
+        assignSelectedLabel(action$),
         drawNodeSelection(action$),
         drawSelectionMask(action$),
         moveNodeSelection(action$),
@@ -17,7 +18,6 @@ export function scene(action$, store) {
         pickNodeSelection(action$),
         hideSelectionMask(action$),
         moveCamera(action$),
-        assignSelectedLabel(action$),
     )
     .switchMap(commitReducerResults)
     .ignoreElements();
