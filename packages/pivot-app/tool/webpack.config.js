@@ -12,15 +12,9 @@ var FaviconsWebpackPlugin = require('favicons-webpack-plugin');
 var ProgressBarPlugin = require('progress-bar-webpack-plugin');
 var child_process = require('child_process');
 
-var argv = process.argv.slice(2);
-while (argv.length < 2) {
-    argv.push(0);
-}
 
-module.exports = [
-    clientConfig,
-    serverConfig
-];
+const buildNumber = process.env.BUILD_NUMBER;
+const buildDate = Date.now();
 
 function getCommitId() {
     const commitId = process.env.COMMIT_ID;
@@ -40,9 +34,6 @@ function getRevName() {
     }
 }
 
-const buildNumber = process.env.BUILD_NUMBER;
-const buildDate = Date.now();
-
 const versionDefines = {
     __RELEASE__: undefined,
     __GITCOMMIT__: `"${getCommitId()}"`,
@@ -51,14 +42,19 @@ const versionDefines = {
     __BUILDNUMBER__: buildNumber ? `"${buildNumber}"` : undefined,
 }
 
-function commonConfig(
-    isDevBuild = process.env.NODE_ENV === 'development',
-    isFancyBuild = argv[1] === '--fancy'
-) {
+function postcss(webpack) {
+    return [
+        require('postcss-font-awesome'),
+        require('autoprefixer')
+    ];
+}
+
+
+function commonConfig(buildOpts) {
     return {
         amd: false,
-        quiet: isDevBuild,
-        progress: !isDevBuild,
+        quiet: buildOpts.isDev,
+        progress: !buildOpts.isDev,
         // Create Sourcemaps for the bundle
         devtool: 'source-map',
         postcss: postcss,
@@ -66,12 +62,12 @@ function commonConfig(
             unsafeCache: true,
         },
         module: {
-            loaders: loaders(isDevBuild, isFancyBuild),
+            loaders: loaders(buildOpts),
             noParse: [
                 /reaxtor-falcor-syntax-pathmap\/lib\/parser\.js$/
             ]
         },
-        plugins: plugins(isDevBuild, isFancyBuild),
+        plugins: plugins(buildOpts),
         stats: {
             // See https://webpack.github.io/docs/node.js-api.html
             errorDetails: true,
@@ -83,11 +79,9 @@ function commonConfig(
     };
 }
 
-function clientConfig(
-    isDevBuild = process.env.NODE_ENV === 'development',
-    isFancyBuild = argv[1] === '--fancy'
-) {
-    var config = commonConfig(isDevBuild, isFancyBuild);
+
+function clientConfig(buildOpts = {}) {
+    var config = commonConfig(buildOpts);
 
     config.node = { fs: 'empty', global: false };
     config.target = 'web';
@@ -112,7 +106,7 @@ function clientConfig(
     config.output = {
         path: path.resolve('./build/public'),
         publicPath: '/',
-        pathinfo: isDevBuild,
+        pathinfo: buildOpts.isDev,
         filename: 'clientBundle.js'
     };
 
@@ -120,13 +114,13 @@ function clientConfig(
         ...config.module.loaders,
         {
             test: /\.css$/,
-            loader: isDevBuild ? 'style!css!postcss' : ExtractTextPlugin.extract({
+            loader: buildOpts.isDev ? 'style!css!postcss' : ExtractTextPlugin.extract({
                 loader: 'css!postcss'
             })
         },
         {
             test: /\.less$/,
-            loader: isDevBuild ?
+            loader: buildOpts.isDev ?
                 'style!css?module&-minimize&localIdentName=[local]_[hash:6]!postcss!less' :
                 ExtractTextPlugin.extract({
                     loader: 'css?module&minimize&localIdentName=[local]_[hash:6]!postcss!less'
@@ -147,8 +141,8 @@ function clientConfig(
                 {},
                 {
                     global: 'window',
-                    DEBUG: isDevBuild,
-                    __DEV__: isDevBuild,
+                    DEBUG: buildOpts.isDev,
+                    __DEV__: buildOpts.isDev,
                     __CLIENT__: true,
                     __SERVER__: false,
                     'process.env.NODE_ENV': '"production"',
@@ -156,19 +150,22 @@ function clientConfig(
                 versionDefines
             )
         ),
-        new WebpackVisualizer({
-            filename: `${config.output.filename}.stats.html`
-        })
     ];
+
+    if (buildOpts.genStats) {
+        config.plugins.push(
+            new WebpackVisualizer({
+                filename: `${config.output.filename}.stats.html`
+            })
+        )
+    }
 
     return config;
 }
 
-function serverConfig(
-    isDevBuild = process.env.NODE_ENV === 'development',
-    isFancyBuild = argv[1] === '--fancy'
-) {
-    var config = commonConfig(isDevBuild, isFancyBuild);
+
+function serverConfig(buildOpts = {}) {
+    var config = commonConfig(buildOpts);
 
     config.node = {
         console: true,
@@ -204,23 +201,6 @@ function serverConfig(
 
     config.plugins = [
         ...config.plugins,
-        new FaviconsWebpackPlugin({
-            logo: './src/static/img/logo_g.png',
-            emitStats: true,
-            statsFilename: 'favicon-assets.json',
-            icons: {
-                android: false,
-                appleIcon: false,
-                appleStartup: false,
-                coast: false,
-                favicons: true,
-                firefox: false,
-                opengraph: false,
-                twitter: false,
-                yandex: false,
-                windows: false
-            }
-        }),
         new webpack.BannerPlugin({
             raw: true,
             entryOnly: true,
@@ -231,8 +211,8 @@ function serverConfig(
                 {},
                 {
                     window: 'global',
-                    DEBUG: isDevBuild,
-                    __DEV__: isDevBuild,
+                    DEBUG: buildOpts.isDev,
+                    __DEV__: buildOpts.isDev,
                     __CLIENT__: false,
                     __SERVER__: true,
                     'process.env.NODE_ENV': '"production"',
@@ -240,15 +220,43 @@ function serverConfig(
                 versionDefines
             )
         ),
-        new WebpackVisualizer({
-            filename: `${config.output.filename}.stats.html`
-        }),
     ];
+
+    if (!buildOpts.isDev) {
+        config.plugins.push(
+            new FaviconsWebpackPlugin({
+                logo: './src/static/img/logo_g.png',
+                emitStats: true,
+                statsFilename: 'favicon-assets.json',
+                icons: {
+                    android: false,
+                    appleIcon: false,
+                    appleStartup: false,
+                    coast: false,
+                    favicons: true,
+                    firefox: false,
+                    opengraph: false,
+                    twitter: false,
+                    yandex: false,
+                    windows: false
+                }
+            })
+        )
+    }
+
+    if (buildOpts.genStats) {
+        config.plugins.push(
+            new WebpackVisualizer({
+                filename: `${config.output.filename}.stats.html`
+            })
+        )
+    }
 
     return config;
 }
 
-function loaders(isDevBuild) {
+
+function loaders(buildOpts) {
     return [
         babel(),
         { test: /\.json$/, loader: 'json' },
@@ -298,8 +306,8 @@ function loaders(isDevBuild) {
     }
 }
 
-function plugins(isDevBuild, isFancyBuild) {
 
+function plugins(buildOpts) {
     var plugins = [
         new StringReplacePlugin(),
         // new webpack.NamedModulesPlugin(),
@@ -307,19 +315,19 @@ function plugins(isDevBuild, isFancyBuild) {
         new webpack.NoErrorsPlugin(),
         new webpack.ProvidePlugin({ React: 'react' }),
         new webpack.LoaderOptionsPlugin({
-            debug: isDevBuild,
-            minimize: !isDevBuild,
+            debug: buildOpts.isDev,
+            minimize: !buildOpts.isDev,
             quiet: false
         }),
         // use this for universal server client rendering
         new ExtractTextPlugin({ allChunks: true, filename: 'styles.css' }),
     ];
 
-    if (isDevBuild) {
+    if (buildOpts.isDev) {
         // plugins.push(new NPMInstallPlugin());
         // plugins.push(new WebpackVisualizer());
         plugins.push(new webpack.HotModuleReplacementPlugin());
-        if (isFancyBuild) {
+        if (buildOpts.isFancy) {
             plugins.push(new WebpackDashboard());
         } else {
             plugins.push(new ProgressBarPlugin({
@@ -345,10 +353,8 @@ function plugins(isDevBuild, isFancyBuild) {
     return plugins;
 }
 
-function postcss(webpack) {
-    return [
-        require('postcss-font-awesome'),
-        require('autoprefixer')
-    ];
-}
 
+module.exports = [
+    clientConfig,
+    serverConfig
+];

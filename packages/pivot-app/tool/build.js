@@ -6,23 +6,19 @@ var Observable = require('rxjs').Observable;
 var Subscription = require('rxjs').Subscription;
 var ReplaySubject = require('rxjs').ReplaySubject;
 var childProcess = require('child_process');
-var buildResource = require('./build-resource');
+var buildResourceHelper = require('./build-resource');
 var webpackConfigs = require('./webpack.config.js');
+var HMRMiddleware = require('webpack-hot-middleware');
+
 
 var pid = process.pid;
-var argv = process.argv.slice(2);
-while (argv.length < 2) {
-    argv.push(0);
-}
+process.on('exit', function() {
+    require('tree-kill')(pid, 'SIGKILL');
+});
 
-var HMRPort = 8090;
-var HMRMiddleware = require('webpack-hot-middleware');
-var shouldWatch = argv[0] === '--watch';
-var isFancyBuild = argv[1] === '--fancy';
-var isDevBuild = process.env.NODE_ENV === 'development';
-
-var clientConfig = webpackConfigs[0](isDevBuild, isFancyBuild);
-var serverConfig = webpackConfigs[1](isDevBuild, isFancyBuild);
+var buildOpts = buildResourceHelper.parseBuildOpts(process.argv)
+var clientConfig = webpackConfigs[0](buildOpts);
+var serverConfig = webpackConfigs[1](buildOpts);
 
 // copy static assets
 var shelljs = require('shelljs');
@@ -33,15 +29,15 @@ var compile, compileClient, compileServer;
 
 // Dev builds can run in parallel because we don't extract the client-side
 // CSS into a styles.css file (which allows us to hot-reload CSS in dev mode).
-if (isDevBuild) {
+if (buildOpts.isDev) {
 
     compileClient = processToObservable(childProcess
-        .fork(require.resolve('./build-resource'), argv.concat(0), {
+        .fork(require.resolve('./build-resource'), process.argv.slice(2).concat(0), {
             env: process.env, cwd: process.cwd()
         }));
 
     compileServer = processToObservable(childProcess
-        .fork(require.resolve('./build-resource'), argv.concat(1), {
+        .fork(require.resolve('./build-resource'), process.argv.slice(2).concat(1), {
             env: process.env, cwd: process.cwd()
         }));
 
@@ -52,11 +48,11 @@ if (isDevBuild) {
 else {
 
     compileClient = buildResourceToObservable(
-        clientConfig, isDevBuild, shouldWatch
+        clientConfig, buildOpts
     ).multicast(() => new Subject()).refCount();
 
     compileServer = buildResourceToObservable(
-        serverConfig, isDevBuild, shouldWatch
+        serverConfig, buildOpts
     ).multicast(() => new Subject()).refCount();
 
     compile = compileClient.mergeMap(
@@ -64,7 +60,7 @@ else {
             (client, server) => [client, server]
         )
         .take(1)
-        .mergeMap((results) => !shouldWatch ?
+        .mergeMap((results) => !buildOpts.watch ?
             Observable.of(results) :
             Observable.combineLatest(
                 compileClient.startWith(results[0]),
@@ -81,10 +77,11 @@ compile.multicast(function() { return new Subject(); }, function(shared) {
         const buildStatuses = client.merge(server);
         const initialBuilds = client.take(1).merge(server.take(1));
 
-        if (!shouldWatch) {
+        if (!buildOpts.watch) {
             return buildStatuses.do({
                 next: function({ name, time, hash }) {
-                    console.log(`${chalk.blue('[WEBPACK]')} Successfully built ${chalk.yellow(name)} in ${chalk.red(time)} seconds`);
+                    var stime = time / 1000.0;
+                    console.log(`${chalk.blue('[WEBPACK]')} Successfully built ${chalk.yellow(name)} in ${chalk.red(stime)} seconds`, time / 1000.0);
                 }
             });
         }
@@ -92,12 +89,14 @@ compile.multicast(function() { return new Subject(); }, function(shared) {
         return Observable.merge(
             initialBuilds.do({
                 next: function({ name, time, hash }) {
-                    console.log(`${chalk.blue('[WEBPACK]')} Successfully built ${chalk.yellow(name)} in ${chalk.red(time)} seconds`);
+                    var stime = time / 1000.0;
+                    console.log(`${chalk.blue('[WEBPACK]')} Successfully built ${chalk.yellow(name)} in ${chalk.red(stime)} seconds`);
                 }
             }),
             buildStatuses.skipUntil(initialBuilds).do({
                 next: function({ name, time, hash }) {
-                    console.log(`${chalk.blue('[WEBPACK]')} Successfully rebuilt ${chalk.yellow(name)} in ${chalk.red(time)} seconds`);
+                    var stime = time / 1000.0;
+                    console.log(`${chalk.blue('[WEBPACK]')} Successfully rebuilt ${chalk.yellow(name)} in ${chalk.red(stime)} seconds`);
                 }
             }),
             shared.take(1).mergeMap(createClientServer),
@@ -125,7 +124,7 @@ compile.multicast(function() { return new Subject(); }, function(shared) {
                 console.log('************************************************************');
                 return clientHMRServer;
             })
-            return listenAsObs(HMRPort);
+            return listenAsObs(buildOpts.HMRPort);
         }
 
         function startOrUpdateServer(child, stats) {
@@ -161,14 +160,10 @@ compile.multicast(function() { return new Subject(); }, function(shared) {
         }
     });
 
-process.on('exit', function() {
-    require('tree-kill')(pid, 'SIGKILL');
-});
-
-function buildResourceToObservable(webpackConfig, isDevBuild, shouldWatch) {
+function buildResourceToObservable(webpackConfig, buildOpts) {
     var subject = new ReplaySubject(1);
     return Observable.using(function() {
-        var watcher = buildResource(webpackConfig, isDevBuild, shouldWatch, function(err, data) {
+        var watcher = buildResourceHelper.buildResource(webpackConfig, buildOpts, function(err, data) {
             if (err) {
                 return subject.error({
                     error: err.error,
@@ -176,7 +171,7 @@ function buildResourceToObservable(webpackConfig, isDevBuild, shouldWatch) {
                 });
             }
             subject.next(JSON.parse(data.body));
-            if (!shouldWatch) {
+            if (!buildOpts.watch) {
                 subject.complete();
             }
         });
