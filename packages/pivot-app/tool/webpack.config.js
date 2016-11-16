@@ -152,6 +152,28 @@ function clientConfig(buildOpts = {}) {
         ),
     ];
 
+    if (!buildOpts.isDev) {
+        config.plugins.push(
+            new FaviconsWebpackPlugin({
+                logo: './src/static/img/logo_g.png',
+                emitStats: true,
+                statsFilename: '../server/favicon-assets.json',
+                icons: {
+                    android: false,
+                    appleIcon: false,
+                    appleStartup: false,
+                    coast: false,
+                    favicons: true,
+                    firefox: false,
+                    opengraph: false,
+                    twitter: false,
+                    yandex: false,
+                    windows: false
+                }
+            })
+        )
+    }
+
     if (buildOpts.genStats) {
         config.plugins.push(
             new WebpackVisualizer({
@@ -221,28 +243,6 @@ function serverConfig(buildOpts = {}) {
             )
         ),
     ];
-
-    if (!buildOpts.isDev) {
-        config.plugins.push(
-            new FaviconsWebpackPlugin({
-                logo: './src/static/img/logo_g.png',
-                emitStats: true,
-                statsFilename: 'favicon-assets.json',
-                icons: {
-                    android: false,
-                    appleIcon: false,
-                    appleStartup: false,
-                    coast: false,
-                    favicons: true,
-                    firefox: false,
-                    opengraph: false,
-                    twitter: false,
-                    yandex: false,
-                    windows: false
-                }
-            })
-        )
-    }
 
     if (buildOpts.genStats) {
         config.plugins.push(

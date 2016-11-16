@@ -11,7 +11,9 @@ var faviconStats = { html:[] };
 try {
     faviconStats =  require('./favicon-assets.json');
 }
-catch (e) {}
+catch (e) {
+    log.debug('Skipping favicons');
+}
 
 
 // const renderServerSide = false;
@@ -78,7 +80,6 @@ function renderFullPage(model, html = '') {
             <meta name="robots" content="noindex, nofollow"/>
             <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 
-            <link rel="icon" type="image/png" href="assets/img/favicon.ico" />
             <title>Graphistry Visual Playbook Environment</title>
 
             <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
