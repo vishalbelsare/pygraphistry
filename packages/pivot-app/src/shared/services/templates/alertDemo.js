@@ -2,7 +2,7 @@ import {
     expandTemplate,
     constructFieldString,
     SplunkPivot
-} from '../support/splunkMacros.js';
+} from '../connectors/splunk.js';
 import stringhash from 'string-hash';
 
 
