@@ -20,10 +20,9 @@ function checkStatus(action$, store) {
         return action$
             .ofType(CHECK_STATUS)
             .groupBy(({ id }) => id)
-            .do((val) => console.log(val))
             .mergeMap((actionsById) => actionsById.switchMap(
-                ({ falcor, id }) => falcor.set(
-                    $value(`currentUser.connectors[${id}].status`, 'warning')
+                ({ falcor, id }) => falcor.call(
+                    ['connectorsById', [id], 'checkStatus']
                 )
                 .progressively()
             ))

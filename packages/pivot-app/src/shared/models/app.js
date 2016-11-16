@@ -45,7 +45,7 @@ export function createAppModel(testUser, id = simpleflake().toJSON()) {
                 id: '0',
                 name: 'Splunk',
                 lastUpdated: new Date().toLocaleString(),
-                status: 'warning'
+                status: 'info'
             },
             '1' : {
                 id: '1',

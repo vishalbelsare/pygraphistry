@@ -5,8 +5,8 @@ export function connectorStore(loadApp) {
                 (app) => connectorIds.filter((connectorId) => (
                     connectorId in app.connectorsById
                 )),
-                (app, userId) => ({
-                    app, connector: app.connectorsById[userId]
+                (app, connectorId) => ({
+                    app, connector: app.connectorsById[connectorId]
                 })
             );
     }

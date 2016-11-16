@@ -24,7 +24,22 @@ export function connectors({ loadConnectorsById }) {
         returns: `String`,
         get: getConnectorsHandler,
         set: setConnectorsHandler,
+    },{
+        route: `connectorsById[{keys}].checkStatus`,
+        returns: `String`,
+        call: checkStatusCallRoute({ loadConnectorsById })
     }];
+}
+
+function checkStatusCallRoute({ loadConnectorsById }) {
+    return function(path, args) {
+        const connectorIds = path[ 1 ];
+
+        return loadConnectorsById({ connectorIds })
+            .mergeMap(({app, connector}) => (
+               [$pathValue(`connectorsById['${connector.id}'].status`, 'warning')]
+            ));
+    };
 }
 
 function captureErrorAndNotifyClient(pivotIds) {
