@@ -81,7 +81,7 @@ compile.multicast(function() { return new Subject(); }, function(shared) {
             return buildStatuses.do({
                 next: function({ name, time, hash }) {
                     var stime = time / 1000.0;
-                    console.log(`${chalk.blue('[WEBPACK]')} Successfully built ${chalk.yellow(name)} in ${chalk.red(stime)} seconds`, time / 1000.0);
+                    console.log(`${chalk.blue('[WEBPACK]')} Successfully built ${chalk.yellow(name)} in ${chalk.red(stime)} seconds`);
                 }
             });
         }
