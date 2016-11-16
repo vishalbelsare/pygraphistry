@@ -89,7 +89,7 @@ function clientConfig(buildOpts = {}) {
     config.entry = {
         client: './src/client/entry.js',
         vendor: [
-            'react', 'rxjs', 'convict', 'react-bootstrap', 'react-bootstrap-table',
+            'react', 'rxjs', 'react-bootstrap', 'react-bootstrap-table',
             'lodash', 'react-select', 'react-overlays', 'recompose', 'underscore',
             'bunyan', 'redux', 'redux-observable', 'react-redux',
             '@graphistry/falcor',
