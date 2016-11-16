@@ -155,7 +155,7 @@ function clientConfig(buildOpts = {}) {
     if (!buildOpts.isDev) {
         config.plugins.push(
             new FaviconsWebpackPlugin({
-                logo: './src/static/img/logo_g.png',
+                logo: './src/client/favicon.png',
                 emitStats: true,
                 statsFilename: '../server/favicon-assets.json',
                 icons: {
