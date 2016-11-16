@@ -50,13 +50,13 @@ function captureErrorAndNotifyClient(connectorIds) {
         const errorCode = logErrorWithCode(log, e);
         const cause = VError.cause(e);
         const status = {
-            ok: false,
+            level: 'danger',
             code: errorCode,
             message: `${cause.message} (code: ${errorCode})`
         };
 
         return Observable.from([
-            $pathValue(`connectorsById['${connectorIds}']['status']`, 'danger')
+            $pathValue(`connectorsById['${connectorIds}']['status']`, status)
         ]);
     }
 }

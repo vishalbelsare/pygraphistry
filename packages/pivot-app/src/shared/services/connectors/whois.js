@@ -6,7 +6,7 @@ export class WhoisPivot {
         return Observable.throw(
             new VError({
                 name: 'ConnectorError'
-            }, 'WHOIS Connector')
+            }, 'WHOIS Connector not configured')
         );
     }
     static get id() {

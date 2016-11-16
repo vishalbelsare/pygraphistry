@@ -14,7 +14,12 @@ export function checkConnector({ loadConnectorsById, connectorIds }) {
 
             return connectorClass.login()
                 .do(() => {
-                    connector.status = 'success';
+                    const lastUpdated = new Date().toLocaleString();
+                    connector.status = {
+                        level: 'success',
+                        message: 'Health checks passed',
+                        lastUpdated: lastUpdated
+                    };
                 })
                 .map(() => ({app, connector}))
                 .catch((e) =>

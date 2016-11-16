@@ -87,14 +87,17 @@ function connectorTable({user, connectors = [], switchScreen, selectHandler, che
                     { name }
                 </a>);
     }
-    //function descriptionFormatter(description, row) {
-    //    return nameFormatter(description, row);
-    //}
+
+    function descriptionFormatter(description, row) {
+        return (<a href="#">
+                    { row.status.message }
+                </a>);
+    }
 
     function idFormatter(id, row) {
         return (
             <div>
-                <Button bsStyle={row.status} onClick={() => checkStatus(id)}>
+                <Button bsStyle={row.status.level} onClick={() => checkStatus(id)}>
                     Status
                 </Button>
             </div>
@@ -129,8 +132,8 @@ function connectorTable({user, connectors = [], switchScreen, selectHandler, che
                 <TableHeaderColumn dataField="name" dataSort={true} width="200px" dataFormat={nameFormatter}>
                     Name
                 </TableHeaderColumn>
-                <TableHeaderColumn dataField="description">
-                    Description
+                <TableHeaderColumn dataField="message" dataFormat={descriptionFormatter}>
+                    Message
                 </TableHeaderColumn>
                 <TableHeaderColumn dataField="lastUpdated" dataSort={true} editable={false}
                                    dataFormat={dateFormatter} width="180px" dataAlign="center">

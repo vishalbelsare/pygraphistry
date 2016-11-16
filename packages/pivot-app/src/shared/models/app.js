@@ -49,13 +49,19 @@ export function createAppModel(testUser, id = simpleflake().toJSON()) {
                 id: 'splunk-connector',
                 name: 'Splunk',
                 lastUpdated: new Date().toLocaleString(),
-                status: 'info'
+                status: {
+                    level: 'info',
+                    message: null
+                }
             },
             'whois-connector' : {
                 id: 'whois-connector',
                 name: 'WHOIS',
                 lastUpdated: new Date().toLocaleString(),
-                status: 'info'
+                status: {
+                    level: 'info',
+                    message: null
+                }
             }
         },
         templatesById: {},
