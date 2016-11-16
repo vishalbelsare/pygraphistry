@@ -14,7 +14,7 @@ import {
 import {
     wrapServices,
     loadApp,
-    connectorStore,
+    connectorStore, listConnectors,
     userStore, templateStore, listTemplates,
     listInvestigations, investigationStore,
     createInvestigation, cloneInvestigationsById, removeInvestigationsById,

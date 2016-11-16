@@ -1,3 +1,4 @@
+import { listConnectors } from '../services';
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
 import {
@@ -14,6 +15,7 @@ import VError from 'verror';
 import logger from '../logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
+const connectorList = listConnectors();
 
 export function connectors({ loadConnectorsById }) {
     const getConnectorsHandler = getHandler(['connector'], loadConnectorsById);

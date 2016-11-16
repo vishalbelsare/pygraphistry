@@ -1,3 +1,6 @@
+import _ from 'underscore';
+import * as connectors from './connectors';
+
 export function connectorStore(loadApp) {
     function loadConnectorsById({ connectorIds }) {
         return loadApp()
@@ -14,5 +17,16 @@ export function connectorStore(loadApp) {
     return {
         loadConnectorsById: loadConnectorsById
     };
+}
+
+export function listConnectors() {
+    const connectorMap  = _.mapObject(
+        _.groupBy(
+            _.values(connectors),
+            t => t.getId()
+        ),
+        group => group[0]
+    );
+    return connectorMap;
 }
 

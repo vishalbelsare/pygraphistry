@@ -91,6 +91,10 @@ export class SplunkPivot {
             });
     }
 
+    static getId() {
+        return 'splunk-connector';
+    }
+
 }
 
 function buildLookup(text, pivotCache) {
