@@ -79,7 +79,7 @@ function deleteInvestigations(action$, store) {
         .ofType(DELETE_INVESTIGATIONS)
         .mergeMap(({falcor, userId, investigationIds}) =>
             Observable.from(
-                falcor.call(['usersById', userId, 'deleteInvestigations'], [investigationIds])
+                falcor.call(['usersById', userId, 'removeInvestigations'], [investigationIds])
             )
         )
         .ignoreElements();

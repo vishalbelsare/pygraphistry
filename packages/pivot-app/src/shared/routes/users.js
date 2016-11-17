@@ -8,6 +8,9 @@ import {
     setHandler,
 } from './support';
 
+import logger from '../logger.js';
+const log = logger.createLogger('pivot-app', __filename);
+
 export function users({ loadApp, removeInvestigationsById, loadUsersById, deleteInvestigationsById,
                         deletePivotsById}) {
     const appGetRoute = getHandler([], loadApp);
@@ -46,13 +49,13 @@ export function users({ loadApp, removeInvestigationsById, loadUsersById, delete
         returns: `$ref('templatesById[{templateId}]')`,
         get: getUserHandler,
     }, {
-        route: `['usersById'][{keys}]['deleteInvestigations']`,
-        call: deleteInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,
+        route: `['usersById'][{keys}]['removeInvestigations']`,
+        call: removeInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,
                                              deleteInvestigationsById, deletePivotsById })
     }];
 }
 
-function deleteInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,
+function removeInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,
                                          deleteInvestigationsById, deletePivotsById }) {
     return function (path, args) {
         const userIds = path[1];
@@ -60,7 +63,7 @@ function deleteInvestigationsCallRoute({ removeInvestigationsById, loadUsersById
 
         return removeInvestigationsById({ loadUsersById, deleteInvestigationsById, deletePivotsById,
                                           investigationIds, userIds })
-            .map(({user, newLength, oldLength}) => [
+            .mergeMap(({user, newLength, oldLength}) => [
                 $pathValue(`['usersById'][${user.id}]['investigations']['length']`, newLength),
                 $invalidation(`['usersById'][${user.id}]['investigations'][${0}..${oldLength}]`),
                 $invalidation(`['usersById'][${user.id}]['activeInvestigation']`)

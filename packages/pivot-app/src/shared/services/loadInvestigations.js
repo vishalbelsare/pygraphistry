@@ -54,7 +54,7 @@ export function investigationStore(loadApp, pathPrefix, investigationsByIdCache 
                     .switchMap(() => writeFileAsObservable(getPath(investigation), content))
                     .do(() => service.evictFromCache(investigation.id))
                     .map(() => ({app, investigation}));
-            });
+            })
     }
 
     function deleteInvestigationsById({deletePivotsById, investigationIds}) {
@@ -66,7 +66,8 @@ export function investigationStore(loadApp, pathPrefix, investigationsByIdCache 
                 return deletePivotsById({pivotIds})
                     .switchMap(() => renameAsObservable(filePath, `${filePath}.deleted`))
                     .catch(e => e.code === 'ENOENT' ? Observable.of(null)
-                                                    : Observable.throw(e))
+                                                    : Observable.throw(e)
+                    )
                     .switchMap(() => service.unloadByIds([investigation.id]))
                     .map(() => ({app, investigation}));
             });
