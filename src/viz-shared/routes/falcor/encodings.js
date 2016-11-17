@@ -97,16 +97,16 @@ export function encodings(path, base) {
                 [].concat(...workbookIds.map( (workbookId) =>
                         Object.keys(jsonGraphArg.workbooksById[workbookId].viewsById)));
 
-            if (workbookIds.length > 1 || viewIds.length > 1) {
-                return Observable.throw('setEncodingRoute does not support workbook batching');
-            }
 
             return loadViewsById({
                     workbookIds, viewIds
                 })
                 .mergeMap(({ workbook, view }) => {
 
-                    const top = jsonGraphArg.workbooksById[workbookIds[0]].viewsById[viewIds[0]];
+                    const { id: workbookId } = workbook;
+                    const { id: viewId } = view;
+                    const top = jsonGraphArg.workbooksById[workbookId].viewsById[viewId];
+
                     const nestedConfigs =
                         Object.keys(top.encodings)
                             .map((graphType) =>
@@ -116,12 +116,13 @@ export function encodings(path, base) {
 
                     const encodingSpecs =
                         configs.map( ({graphType, encodingType}) => {
-                            const encoding = top.encodings[graphType][encodingType];
+                            const encoding = top.encodings[graphType][encodingType].value;
                             return setEncoding({
                                     view, encoding: {graphType, encodingType, ...encoding}
                                 })
                                 .map((encodingSpec) => $value(
-                                    path.slice(0, path.length - 2).concat(graphType, encodingType),
+                                    ['workbooksById', workbookId, 'viewsById', viewId, 'encodings']
+                                        .concat(graphType, encodingType),
                                     $atom(encodingSpec)));
                         });
                     return Observable.merge(...encodingSpecs);

@@ -6,7 +6,7 @@ const _       = require('underscore');
 
 //TODO make these cleaner
 export {resetEncodingOnNBody, applyEncodingOnNBody} from './encodings.js';
-
+import {resetEncodingOnNBody, applyEncodingOnNBody} from './encodings.js';
 
 //Encoding manager works at two levels:
 // 1. Initializes underlying ColumnManager for graph and encoding buffers
@@ -59,31 +59,32 @@ export default class EncodingManager {
         const { tables } = this;
         const {graphType, encodingType, reset} = encoding;
         console.log({msg: 'PRE...'});
-        return Observable.of()
-            .mergeMap(() => {
-                console.log({msg: 'START...'});
+        try {
+
+                let action;
                 if (reset) {
                     const currentEncoding = getEncoding({view, encoding});
                     console.log({msg: 'HERE A...'});
-                    return resetEncodingOnNBody(
+                    action = resetEncodingOnNBody(
                         {view, encoding: wrapEncodingType({...currentEncoding, reset: true})})
                         .do(function (o) { console.log({msg: '===SAW', o}); })
+
                 } else {
                     console.log({msg: 'HERE B...'});
-                    return applyEncodingOnNBody({view, encoding: wrapEncodingType(encoding)})
+                    action = applyEncodingOnNBody({view, encoding: wrapEncodingType(encoding)})
                         .do(function (o) { console.log({msg: '===SAW', o}); })
                 }
+                return action.do( (encodingSpec) => {
+                    const out = reset ? null : {encoding, encodingSpec};
+                    tables.current[graphType][encodingType] = out;
 
-            })
-            .catch( (e) => {
-                console.log({msg: '=== WAT', e: e});
-                return Observable.throw(e);
-            })
-            .do((encodingSpec) => { //only on success
-                const out = reset ? null : {encoding, encodingSpec};
-                console.log({msg: '===SET OUT', out});
-                tables.current[graphType][encodingType] = out;
-            });
+                });
+
+
+        } catch (e) {
+            console.error({msg: '===== NO!!!!', e});
+            return Observable.throw(e);
+        }
     }
 
     //view: {dataframe, simulator}

@@ -3,6 +3,8 @@
 
 'use strict';
 
+import { Observable } from 'rxjs';
+
 const _             = require('underscore');
 const d3Scale       = require('d3-scale');
 const d3Interpolate = require('d3-interpolate');
@@ -418,10 +420,10 @@ function applyEncodingOnNBody ({ view, encoding }) {
 
     // TODO FIXME: Have a more robust encoding spec, instead of multiple paths through here
     if (timeBounds) {
-        encodingWrapper = encodings.inferTimeBoundEncoding(
+        encodingWrapper = inferTimeBoundEncoding(
             dataframe, type, attributeName, encodingType, timeBounds);
     } else {
-        encodingWrapper = encodings.inferEncoding(
+        encodingWrapper = inferEncoding(
             dataframe, type, attributeName, encodingType, variation, binning);
     }
 
@@ -516,9 +518,9 @@ function getEncodingMetadata (dataframe, encodingType, unnormalizedType, unnorma
     let bufferName;
 
     if (!encodingType) {
-        encodingType = encodings.inferEncodingType(dataframe, type, attributeName);
+        encodingType = inferEncodingType(dataframe, type, attributeName);
     }
-    bufferName = encodings.bufferNameForEncodingType(encodingType);
+    bufferName = bufferNameForEncodingType(encodingType);
 
     return {bufferName, encodingType, normalization};
 }
