@@ -123,7 +123,8 @@ Inspector = container({
                                 count,
                                 [${start}..${stop}]: {
                                     ${ getTemplates(templates, openTab)
-                                        .map(({name}) => name).join(', ') }
+                                        .map(({name}) => `"${name}"`)
+                                        .map(name => name).join(', ') }
                                 }
                             }
                         }
