@@ -133,6 +133,11 @@ function loadPointsMask({ view, masked, histogram }) {
     );
 }
 
+export function getHistogramForAttribute({ view, graphType, attribute, dataType = 'number' }) {
+    const histogram = createHistogram({ name: attribute, dataType, componentType: graphType });
+    return computeHistogram({ view, histogram, refresh: true })
+}
+
 function computeHistogram({ view, masked, histogram, pointsMask, refresh = true }) {
 
     const { nBody: { dataframe, simulator } = {}} = view;
