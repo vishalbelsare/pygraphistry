@@ -10,6 +10,7 @@ var WebpackNodeExternals = require('webpack-node-externals');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
 var FaviconsWebpackPlugin = require('favicons-webpack-plugin');
 var ProgressBarPlugin = require('progress-bar-webpack-plugin');
+var StatsPlugin = require('stats-webpack-plugin');
 var child_process = require('child_process');
 
 
@@ -58,6 +59,7 @@ function commonConfig(buildOpts) {
         // Create Sourcemaps for the bundle
         devtool: 'source-map',
         postcss: postcss,
+        profile: buildOpts.genStats,
         resolve: {
             unsafeCache: true,
         },
@@ -171,7 +173,7 @@ function clientConfig(buildOpts = {}) {
                     windows: false
                 }
             })
-        )
+        );
     }
 
     if (buildOpts.genStats) {
@@ -179,7 +181,15 @@ function clientConfig(buildOpts = {}) {
             new WebpackVisualizer({
                 filename: `${config.output.filename}.stats.html`
             })
-        )
+        );
+        // See http://webpack.github.io/analyse/
+        config.plugins.push(
+            new StatsPlugin(`${config.output.filename}.stats.json`, {
+                chuckModules: true,
+                chucks: true,
+                timings: true
+            })
+        );
     }
 
     return config;
@@ -249,7 +259,11 @@ function serverConfig(buildOpts = {}) {
             new WebpackVisualizer({
                 filename: `${config.output.filename}.stats.html`
             })
-        )
+        );
+        // See http://webpack.github.io/analyse/
+        config.plugins.push(
+            new StatsPlugin(`${config.output.filename}.stats.json`)
+		);
     }
 
     return config;
