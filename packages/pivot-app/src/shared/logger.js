@@ -45,13 +45,9 @@ BrowserConsoleStream.prototype.write = function (rec) {
 // A global singleton logger that all module-level loggers are children of.
 ////////////////////////////////////////////////////////////////////////////////
 
-function inBrowser() {
-    return typeof (window) !== 'undefined' && window.window === window;
-}
-
 var parentLogger;
 
-if (!inBrowser()) {
+if (__SERVER__) {
     const conf = require('../server/config.js');
     parentLogger = createServerLogger({
         LOG_FILE: conf.get('log.file'),
