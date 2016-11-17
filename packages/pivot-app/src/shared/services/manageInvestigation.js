@@ -31,11 +31,8 @@ function getActiveInvestigationId(user) {
                                                   : undefined;
 }
 
-export function createInvestigation({ loadApp, loadUsersById }) {
-    return loadApp()
-        .switchMap(app =>
-            loadUsersById({userIds: [app.currentUser.value[1]]})
-        )
+export function createInvestigation({ loadUsersById, userIds }) {
+    return loadUsersById({userIds})
         .map(({app, user}) => {
             const pivot0 = createPivotModel({});
             const newInvestigation = createInvestigationModel({pivots: [pivot0.id]}, user.investigations.length);

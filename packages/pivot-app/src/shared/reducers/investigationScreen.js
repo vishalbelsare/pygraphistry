@@ -25,7 +25,7 @@ export const investigationScreen = combineEpics(
 function createInvestigation(action$, store) {
     return action$
         .ofType(CREATE_INVESTIGATION)
-        .mergeMap(({falcor}) => falcor.call('createInvestigation'))
+        .mergeMap(({falcor, userId}) => falcor.call(['usersById', userId, 'createInvestigation']))
         .ignoreElements();
 }
 
