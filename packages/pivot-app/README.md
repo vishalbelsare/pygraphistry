@@ -33,3 +33,9 @@ docker run --network host \
 -i -t graphistry/pivot-app:X.Y.Z
 ```
 4. Load [http:/staging.graphistry.com:4000](http:/staging.graphistry.com:4000)
+
+## Localhost
+
+1. Run a stock splunk instance; mirror our splunk datasets & username/pwd
+2. Run standard vizapp
+3. In pivot-app, run "./run.pivot.sh"

@@ -1,3 +1,2 @@
-BLANK_PAGE="/custom/html/splash.html" GRAPHISTRY_ETL="http://localhost:3002" GRAPHISTRY_VIEWER="http://localhost:3001" PORT=4000 SPLUNK_HOST='localhost' npm run watch 
-
+SPLUNK_HOST='localhost' GRAPHISTRY_HOST="http://localhost:10000" npm run start | bunyan -o short
 

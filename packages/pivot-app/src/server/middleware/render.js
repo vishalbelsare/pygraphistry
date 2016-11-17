@@ -1,12 +1,19 @@
 import { inspect } from 'util';
 import { Observable } from 'rxjs';
 import { Model } from '@graphistry/falcor';
-import webpackAssets from '../webpack-assets.json';
-import faviconStats from './favicon-assets.json';
 import { renderToString as reactRenderToString } from 'react-dom/server';
 import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
 import logger from '../../shared/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
+
+import webpackAssets from '../webpack-assets.json';
+var faviconStats = { html:[] };
+try {
+    faviconStats =  require('./favicon-assets.json');
+}
+catch (e) {
+    log.debug('Skipping favicons');
+}
 
 
 // const renderServerSide = false;
@@ -73,7 +80,6 @@ function renderFullPage(model, html = '') {
             <meta name="robots" content="noindex, nofollow"/>
             <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 
-            <link rel="icon" type="image/png" href="assets/img/favicon.ico" />
             <title>Graphistry Visual Playbook Environment</title>
 
             <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />

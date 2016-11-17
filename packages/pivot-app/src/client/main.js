@@ -68,13 +68,7 @@ function getAppModel() {
         recycleJSON: true,
         scheduler: Scheduler.asap,
         source: new DataSource('/model.json'),
-        treatErrorsAsValues: true,
-        // onChangesCompleted: function () {
-        //     useLocalStorage &&
-        //     localStorage && localStorage.setItem && localStorage.setItem(
-        //         localStorageToken, JSON.stringify(this.getCache())
-        //     );
-        // }
+        treatErrorsAsValues: true
     });
 }
 
