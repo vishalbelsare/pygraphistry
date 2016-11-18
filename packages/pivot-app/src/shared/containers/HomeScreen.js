@@ -202,7 +202,7 @@ function renderHomeScreen(
                                                     Add New Investigation
                                                 </Tooltip>
                                             }>
-                                <Button onClick={() => createInvestigation(user.id)}
+                                <Button onClick={() => createInvestigation(user.id) }
                                         className={`btn-primary ${styles['add-new-investigation']}`}>
                                     <Glyphicon glyph="plus"/>
                                 </Button>

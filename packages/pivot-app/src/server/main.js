@@ -1,5 +1,6 @@
 import expressApp from './app.js'
 import bodyParser from 'body-parser';
+import bunyan from 'bunyan';
 import path from 'path';
 import mkdirp from 'mkdirp';
 import { Observable } from 'rxjs';
@@ -82,8 +83,16 @@ function init(testUser) {
     const getDataSource = getDataSourceFactory(routeServices);
 
     expressApp.use('/index.html', renderMiddleware(getDataSource, modules));
-    expressApp.use(bodyParser.urlencoded({ extended: false }));
-    expressApp.use('/model.json', falcorMiddleware(getDataSource));
 
+    expressApp.post('/error', bodyParser.json({limit: '512kb'}), function (req, res) {
+        const record = req.body;
+        log[bunyan.nameFromLevel[record.level]](record, record.msg);
+        res.status(204).send();
+    });
+
+    expressApp.use(['/', '/model.json'], bodyParser.urlencoded({ extended: false }));
+    expressApp.use('/model.json', falcorMiddleware(getDataSource));
     expressApp.use('/', renderMiddleware(getDataSource, modules));
+
+
 }
