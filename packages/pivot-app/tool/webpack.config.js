@@ -112,7 +112,7 @@ function clientConfig(buildOpts = {}) {
             'core-js',
             'dom-helpers',
             'falcor-http-datasource',
-            'fbjs',
+            //'fbjs', fbjs does not handle being in the vendor bundle.
             'inline-style-prefixer',
             'lodash',
             'minimatch',
