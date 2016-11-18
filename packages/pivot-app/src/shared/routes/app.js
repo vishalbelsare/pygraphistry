@@ -21,22 +21,5 @@ export function app({ loadApp, createInvestigation, loadUsersById }) {
         route: `['serverStatus']`,
         returns: `Object`,
         get: appGetRoute,
-    }, {
-        route: `createInvestigation`,
-        call: createInvestigationCallRoute({ loadApp, loadUsersById, createInvestigation })
     }];
-}
-
-
-function createInvestigationCallRoute({loadApp, createInvestigation, loadUsersById}) {
-    return function(path, args) {
-        return createInvestigation({loadApp, loadUsersById})
-            .mergeMap(({app, user, numInvestigations}) => {
-                return [
-                    $pathValue(`['usersById'][${user.id}]['investigations'].length`, numInvestigations),
-                    $pathValue(`['usersById'][${user.id}].activeInvestigation`, user.activeInvestigation),
-                    $invalidation(`['usersById'][${user.id}]['investigations']['${numInvestigations - 1}']`)
-                ];
-            });
-    };
 }

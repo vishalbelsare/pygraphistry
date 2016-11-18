@@ -7,6 +7,8 @@ import {
     cloneInvestigationModel,
     clonePivotModel
 } from '../models';
+import logger from '../logger.js';
+const log = logger.createLogger('pivot-app', __filename);
 
 
 function insertAndSelectInvestigation(app, user, newInvestigation) {
@@ -29,11 +31,8 @@ function getActiveInvestigationId(user) {
                                                   : undefined;
 }
 
-export function createInvestigation({ loadApp, loadUsersById }) {
-    return loadApp()
-        .switchMap(app =>
-            loadUsersById({userIds: [app.currentUser.value[1]]})
-        )
+export function createInvestigation({ loadUsersById, userIds }) {
+    return loadUsersById({userIds})
         .map(({app, user}) => {
             const pivot0 = createPivotModel({});
             const newInvestigation = createInvestigationModel({pivots: [pivot0.id]}, user.investigations.length);
@@ -41,7 +40,10 @@ export function createInvestigation({ loadApp, loadUsersById }) {
             const numInvestigations = insertAndSelectInvestigation(app, user, newInvestigation);
 
             return ({app, user, newInvestigation, numInvestigations});
-        });
+        })
+        .do(({newInvestigation}) =>
+            log.debug(`Successfully created new investigation ${newInvestigation.id}`)
+        );
 }
 
 export function cloneInvestigationsById({ loadInvestigationsById, loadPivotsById, loadUsersById,
@@ -62,6 +64,9 @@ export function cloneInvestigationsById({ loadInvestigationsById, loadPivotsById
 
                 return ({app, user, clonedInvestigation, numInvestigations});
             })
+            .do(() =>
+                log.debug(`Successfully cloned investigation ${investigation.id}`)
+            )
         )
 }
 
@@ -86,6 +91,9 @@ export function removeInvestigationsById({loadUsersById, deleteInvestigationsByI
                 .map(({app,  investigation}) => ({
                     app, user, investigation, oldLength,
                     newLength: newInvestigations.length
-                }));
+                }))
+                .do(() =>
+                    log.debug(`Successfully removed investigations ${investigationIds}`)
+                );
         });
 }

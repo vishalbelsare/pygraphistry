@@ -25,7 +25,7 @@ export const investigationScreen = combineEpics(
 function createInvestigation(action$, store) {
     return action$
         .ofType(CREATE_INVESTIGATION)
-        .mergeMap(({falcor}) => falcor.call('createInvestigation'))
+        .mergeMap(({falcor, userId}) => falcor.call(['usersById', userId, 'createInvestigation']))
         .ignoreElements();
 }
 
@@ -79,7 +79,7 @@ function deleteInvestigations(action$, store) {
         .ofType(DELETE_INVESTIGATIONS)
         .mergeMap(({falcor, userId, investigationIds}) =>
             Observable.from(
-                falcor.call(['usersById', userId, 'deleteInvestigations'], [investigationIds])
+                falcor.call(['usersById', userId, 'removeInvestigations'], [investigationIds])
             )
         )
         .ignoreElements();

@@ -12,8 +12,11 @@ export function selectInvestigation(id) {
     };
 }
 
-export function createInvestigation() {
-    return {type: CREATE_INVESTIGATION};
+export function createInvestigation(userId) {
+    return {
+        type: CREATE_INVESTIGATION,
+        userId: userId
+    };
 }
 
 export function setInvestigationParams(params, id) {

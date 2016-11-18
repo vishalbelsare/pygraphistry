@@ -33,7 +33,7 @@ import logger from '../logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 
-function welcomeBar(user, investigations) {
+function welcomeBar(user, investigations, numTemplates) {
     return (
         <Grid><Row className={styles['welcome-bar']}>
             <Col md={4}>
@@ -65,7 +65,9 @@ function welcomeBar(user, investigations) {
             </Col>
             <Col md={4}>
                 <Panel>
-                    <h2 className="text-center">0</h2>
+                    <h2 className="text-center">
+                        { numTemplates }
+                    </h2>
                     <div className="text-center">
                         Templates
                     </div>
@@ -94,9 +96,6 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
                     { name }
                 </a>)
     }
-    //function descriptionFormatter(description, row) {
-    //    return nameFormatter(description, row);
-    //}
 
     function idFormatter(id, row) {
         return (
@@ -173,9 +172,15 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
 
 }
 
-function renderHomeScreen({user, investigations, switchScreen, selectInvestigation, copyInvestigation,
-                           createInvestigation, setInvestigationParams},
-                          {selection}, selectHandler, deleteHandler) {
+function renderHomeScreen(
+    {
+        user, investigations, numTemplates, switchScreen, selectInvestigation,
+        copyInvestigation, createInvestigation, setInvestigationParams
+    },
+    {selection},
+    selectHandler,
+    deleteHandler
+) {
     if (user === undefined) {
         return null;
     }
@@ -187,7 +192,7 @@ function renderHomeScreen({user, investigations, switchScreen, selectInvestigati
                  style={{width: 'calc(100% - 90px)', height: '100%'}}>
                 <Panel className={styles['main-panel-panel']}>
                     {
-                        welcomeBar(user, investigations)
+                        welcomeBar(user, investigations, numTemplates)
                     }
                     <Panel header="Open Investigations" className={styles['panel']}>
                         <div className={styles['investigations-buttons']}>
@@ -197,7 +202,7 @@ function renderHomeScreen({user, investigations, switchScreen, selectInvestigati
                                                     Add New Investigation
                                                 </Tooltip>
                                             }>
-                                <Button onClick={() => createInvestigation()}
+                                <Button onClick={() => createInvestigation(user.id) }
                                         className={`btn-primary ${styles['add-new-investigation']}`}>
                                     <Glyphicon glyph="plus"/>
                                 </Button>
@@ -271,15 +276,21 @@ function mapStateToFragment({currentUser: {investigations = []} = {} }) {
                 [0...${investigations.length}]: {
                     'id', 'name', 'description' ,'tags', 'modifiedOn'
                 }
+            },
+            templates: {
+                'length'
             }
         }
     }`
 }
 
-function mapFragmentToProps({currentUser} = {}) {
+function mapFragmentToProps({ currentUser } = {}) {
+    const {investigations = [], templates: {length = 0} = {}} = currentUser;
+
     return {
         user: currentUser,
-        investigations: (currentUser || {}).investigations || []
+        investigations: investigations,
+        numTemplates: length
     };
 }
 

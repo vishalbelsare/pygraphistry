@@ -66,7 +66,8 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
                         const filePath = path.resolve(pathPrefix, pivotId + '.json');
                         return renameAsObservable(filePath, `${filePath}.deleted`)
                             .catch(e => e.code === 'ENOENT' ? Observable.of(null)
-                                                            : Observable.throw(e))
+                                                            : Observable.throw(e)
+                            )
                             .switchMap(() => service.unloadByIds([pivotId]));
                     })
                     .map(() => {app})

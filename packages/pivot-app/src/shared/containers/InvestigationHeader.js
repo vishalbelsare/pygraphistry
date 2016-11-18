@@ -13,7 +13,7 @@ import {
 import styles from './styles.less';
 
 
-function renderInvestigationHeader({investigations, activeInvestigation, createInvestigation,
+function renderInvestigationHeader({user, investigations, activeInvestigation, createInvestigation,
                                     selectInvestigation, setInvestigationParams, copyInvestigation,
                                     saveInvestigation}) {
     return (
@@ -37,7 +37,7 @@ function renderInvestigationHeader({investigations, activeInvestigation, createI
                                     Create new investigation
                                 </Tooltip>
                             }>
-                            <Button onClick={createInvestigation}>
+                            <Button onClick={() => createInvestigation(user.id)}>
                                 <Glyphicon glyph="plus" />
                             </Button>
                         </OverlayTrigger>
@@ -71,6 +71,7 @@ function renderInvestigationHeader({investigations, activeInvestigation, createI
 function mapStateToFragment() {
     return `{
         currentUser: {
+            id,
             investigations: ${
                 InvestigationDropdown.fragment()
             }
@@ -78,9 +79,12 @@ function mapStateToFragment() {
     }`;
 }
 
-function mapFragmentToProps({ currentUser = {} } = {}) {
+function mapFragmentToProps({ currentUser = {} }) {
+    const {investigations = []} = currentUser;
+
     return {
-        investigations: currentUser.investigations || []
+        investigations: investigations,
+        user: currentUser
     };
 }
 

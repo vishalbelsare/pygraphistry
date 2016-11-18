@@ -1,11 +1,21 @@
-import Color from 'color';
+const { isArray } = Array;
 import { atom as $atom } from '@graphistry/falcor-json-graph';
 
-export function mapObjectsToAtoms({ path, value }) {
-    if (value && typeof value === 'object' && !value.$type) {
-        value = $atom(value instanceof Color ?
-            value.hsv() : value
-        );
+export function mapObjectsToAtoms(incoming = {}) {
+    if (incoming.isMessage) {
+        return incoming;
     }
-    return { path, value };
+    let { value } = incoming;
+    if (value !== null) {
+        if (value === undefined) {
+            value = $atom(value);
+        } else if (typeof value === 'object') {
+            if (isArray(value)) {
+                value = $atom(value);
+            } else if (value.$type === undefined) {
+                value = $atom(value);
+            }
+        }
+    }
+    return { ...incoming, value };
 }

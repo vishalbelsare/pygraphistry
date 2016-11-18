@@ -18,21 +18,22 @@
 7. Run with `npm run watch`
 8. Open browser on [localhost:3000](http://localhost:3000)
 
-## Testing on Staging
+## Testing
 
 Jenkins should build the pivot-app artifact automatically. You can find the list of builds and artifacts on [Jenkins](http://deploy.graphistry.com/view/Build/job/Build%20pivot-app/) and [DockerHub](https://hub.docker.com/r/graphistry/pivot-app/tags/).
 
 1. `ssh staging.graphistry.com`
 2. `docker login`
-3. Pull and run image *pivot-app:X.Y.Z*
+3. Pull and run image *pivot-app:X.Y.Z*, storing data *./mydata* and reading config from *./myconfig*
 
     ```bash
-docker run --network host \
--v `pwd`/pivot-data:/pivot-app/data \
---env PIVOTAPP_DATADIR=data --env PORT=4000 --env HOST=0.0.0.0 \
--i -t graphistry/pivot-app:X.Y.Z
+docker run -i -t --network host \
+      -v `pwd`/mydata:/pivot-app/data \
+      -v `pwd`/myconfig:/pivot-app/config \
+	   --env PIVOTAPP_DATADIR=data --env PORT=4000 \
+	   graphistry/pivot-app:X.Y.Z
 ```
-4. Load [http:/staging.graphistry.com:4000](http:/staging.graphistry.com:4000)
+4. Load [http://localhost:4000](http://localhost:4000)
 
 ## Localhost
 
