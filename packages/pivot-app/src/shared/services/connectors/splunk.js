@@ -1,20 +1,16 @@
-import { searchSplunk } from '../../services/searchSplunk.js';
-import { shapeSplunkResults} from '../../services/shapeSplunkResults.js';
 import logger from '../../../shared/logger.js';
 import conf from '../../../server/config.js';
 
-import _ from 'underscore';
 import { Observable } from 'rxjs';
 import splunkjs from 'splunk-sdk';
+import stringHash from 'string-hash';
 import VError from 'verror';
-
-const pivotCache = {}
 
 const SPLUNK_HOST = conf.get('splunk.host');
 const SPLUNK_USER = conf.get('splunk.user');
 const SPLUNK_PWD = conf.get('splunk.key');
 
-const metadata = { splunkHostName: SPLUNK_HOST, splunkUser: SPLUNK_USER }
+const metadata = { splunkHostName: SPLUNK_HOST, splunkUser: SPLUNK_USER };
 const log = logger.createLogger('pivot-app', __filename).child(metadata);
 
 const service = new splunkjs.Service({
@@ -24,39 +20,81 @@ const service = new splunkjs.Service({
 });
 
 const splunkLogin = Observable.bindNodeCallback(service.login.bind(service));
+const splunkGetJob = Observable.bindNodeCallback(service.getJob.bind(service));
+const splunkSearch = Observable.bindNodeCallback(service.search.bind(service));
 
-export class SplunkPivot {
-    constructor( pivotDescription ) {
-        let {
-            id, name,
-            pivotParameterKeys, pivotParametersUI,
-            toSplunk, connections, encodings, attributes
-        } = pivotDescription;
+export class SplunkConnector {
 
-        this.id = id;
-        this.name = name;
-        this.pivotParameterKeys = pivotParameterKeys;
-        this.pivotParametersUI = pivotParametersUI;
-        this.toSplunk = toSplunk;
-        this.connections = connections;
-        this.encodings = encodings;
-        this.attributes = attributes;
-    }
+    static search(query) {
+        // Generate a hash for the query so we can look it up in splunk
+        const jobId = `pivot-app::${stringHash(query)}`;
 
-    searchAndShape({ app, pivot }) {
+        // Set the splunk search parameters
+        const searchParams = {
+            id: jobId,
+            timeout: '14400', // 4 hours
+            exec_mode: 'blocking',
+            earliest: '-7d'
+        };
 
-        pivot.searchQuery = this.toSplunk(pivot.pivotParameters, pivotCache);
-        pivot.template = this;
+        // Used to indentifity logs
+        const searchInfo = { query, searchParams };
+        log.debug( searchInfo,'Fetching results for splunk job: "%s"', jobId);
 
-        return this.login()
-            .switchMap(() => searchSplunk({app, pivot}))
-            .do(({pivot}) => {
-                pivotCache[pivot.id] = { results: pivot.results,
-                    query:pivot.searchQuery,
-                    splunkSearchID: pivot.splunkSearchID
-                };
+        // TODO Add this as part of splunk connector
+        return splunkGetJob(jobId)
+            .catch(() => {
+                log.debug('No job was found, creating new search job');
+                const results = splunkSearch( query, searchParams );
+                return results.switchMap(job => {
+                    const splunkFetchJob = Observable.bindNodeCallback(job.fetch.bind(job));
+                    return splunkFetchJob();
+                });
             })
-            .map(({app, pivot}) => shapeSplunkResults({app, pivot}));
+            .catch(({data}) => Observable.throw(new VError({
+                name: 'SplunkParseError',
+                info: searchInfo
+            }, data.messages[0].text)))
+            .switchMap(job => {
+                const props = job.properties();
+                log.debug({
+                    sid: job.sid,
+                    eventCount: props.eventCount,
+                    resultCount: props.resultCount,
+                    runDuration: props.runDuration,
+                    ttl: props.ttl
+                }, 'Search job properties');
+
+                const getResults = Observable.bindNodeCallback(job.results.bind(job),
+                    function(results) {
+                        return ({results, job});
+                    });
+                const jobResults = getResults({count: job.properties().resultCount}).catch(
+                    (e) => {
+                        return Observable.throw(new Error(
+                            `${e.data.messages[0].text} ========>  Splunk Query: ${searchQuery}`));
+                        }
+                );
+                return jobResults;
+            }).map(
+                function({results, job}) {
+                    const fields = results.fields;
+                    const rows = results.rows;
+                    const resultCount = job.properties().resultCount;
+                    const events = new Array(rows.length);
+                    var values;
+                    for(var i = 0; i < rows.length; i++) {
+                        events[i] = {};
+                        values = rows[i];
+                        for(var j = 0; j < values.length; j++) {
+                            var field = fields[j];
+                            var value = values[j];
+                            events[i][field] = value;
+                        }
+                    }
+                    return { resultCount, events, searchId:job.sid };
+                }
+            );
     }
 
     static login() {
@@ -90,60 +128,7 @@ export class SplunkPivot {
                 }
             });
     }
-
     static get id() {
         return 'splunk-connector';
     }
-
-}
-
-function buildLookup(text, pivotCache) {
-
-    //Special casing of [search] -[field]-> [source]
-    //   search can be "{{pivot###}}""
-    //   field can be  "field1, field2,field3, ..."
-    //   source is any search
-    var hit = text.match(/\[{{(.*)}}\] *-\[(.*)\]-> *\[(.*)\]/);
-    if (hit) {
-        var search = hit[1];
-        var fields = hit[2].split(',')
-            .map(s => s.trim())
-            .map(s => s[0] === '"' ? s.slice(1,-1).trim() : s);
-        var source = hit[3];
-
-        log.trace({search, fields, source}, 'Looking at');
-        var match = '';
-        for (var i = 0; i < fields.length; i++) {
-            const field = fields[i];
-            const vals = _.uniq(_.map(pivotCache[search].results, function (row) {
-                return row[field];
-            }));
-            const fieldMatch = `"${ field }"="${ vals.join(`" OR "${ field }"="`) }"`;
-            match = match + (match ? ' OR ' : '') + fieldMatch;
-        }
-        return `${ source } ${ match } | head 10000 `;
-    }
-}
-
-
-//Assumes previous pivots have populated pivotCache
-export const expandTemplate = (text, pivotCache) => {
-    log.debug({toExpand: text}, 'Expanding');
-    return buildLookup(text, pivotCache);
-};
-
-
-export function constructFieldString(pivotTemplate) {
-    const fields = (pivotTemplate.connections || [])
-        .concat(pivotTemplate.attributes || []);
-    if (fields.length > 0) {
-        return `| rename _cd as EventID
-                | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
-                | fields "c_time" as time, "EventID", "${fields.join('","')}" | fields - _*`;
-    } else { // If there are no fields, load all
-        return `| rename _cd as EventID
-                | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
-                | rename "c_time" as time | fields * | fields - _*`;
-    }
-
 }

@@ -1,4 +1,4 @@
-import { constructFieldString, SplunkPivot } from '../connectors/splunk.js';
+import { constructFieldString, SplunkPivot } from './SplunkPivot';
 import _ from 'underscore';
 import stringhash from 'string-hash';
 import { Observable} from 'rxjs';

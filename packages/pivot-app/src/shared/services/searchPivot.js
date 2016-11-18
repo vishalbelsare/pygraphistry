@@ -7,13 +7,14 @@ import VError from 'verror';
 const log = logger.createLogger('pivot-app', __filename);
 
 const templatesMap = listTemplates();
+const pivotCache = {};
 
 export function searchPivot({ loadPivotsById, pivotIds }) {
     return loadPivotsById({ pivotIds: pivotIds })
         .mergeMap(({app, pivot}) => {
             const template = templatesMap[pivot.pivotTemplate.value[1]];
 
-            return template.searchAndShape({app, pivot})
+            return template.searchAndShape({app, pivot, pivotCache})
                 .do(({pivot}) => {
                     pivot.status = {ok: true};
                 })

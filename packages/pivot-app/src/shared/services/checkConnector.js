@@ -12,6 +12,7 @@ export function checkConnector({ loadConnectorsById, connectorIds }) {
         .mergeMap(({app, connector}) => {
             const connectorClass = connectorMap[connector.id];
 
+            log.info({connector: connector}, `Checking connector:${connector.id}`);
             return connectorClass.login()
                 .do(() => {
                     const lastUpdated = new Date().toLocaleString();
