@@ -1,17 +1,30 @@
-import _ from 'underscore';
 import * as connectors from './connectors';
+import SimpleServiceWithCache from './support/simpleServiceWithCache.js';
+import logger from '../logger.js';
+
+import _ from 'underscore';
+import { Observable } from 'rxjs';
+const log = logger.createLogger('connectorStore', __filename);
 
 export function connectorStore(loadApp) {
+    const connectorsMap = listConnectors();
+
+    function loadConnectorById(connectorId) {
+        return Observable.of(
+            connectorsMap[connectorId]
+        );
+    }
+
+    const service = new SimpleServiceWithCache({
+        loadApp: loadApp,
+        resultName: 'connector',
+        loadById: loadConnectorById,
+        createModel: (obj) => (obj),
+        cache: {}
+    });
+
     function loadConnectorsById({ connectorIds }) {
-        return loadApp()
-            .mergeMap(
-                (app) => connectorIds.filter((connectorId) => (
-                    connectorId in app.connectorsById
-                )),
-                (app, connectorId) => ({
-                    app, connector: app.connectorsById[connectorId]
-                })
-            );
+        return service.loadByIds(connectorIds);
     }
 
     return {
@@ -20,13 +33,10 @@ export function connectorStore(loadApp) {
 }
 
 export function listConnectors() {
-    const connectorMap  = _.mapObject(
-        _.groupBy(
-            _.values(connectors),
-            t => t.id
-        ),
-        group => group[0]
-    );
-    return connectorMap;
+    return Object.values(connectors)
+        .reduce(function(connectorsById, connector) {
+            connectorsById[connector.id] = connector;
+            return connectorsById;
+        }, {});
 }
 

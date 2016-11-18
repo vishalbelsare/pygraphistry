@@ -1,2 +1,2 @@
-export { SplunkConnector } from './splunk.js';
-export { WhoisPivot } from './whois.js';
+export * from './splunk.js';
+export * from './whois.js';

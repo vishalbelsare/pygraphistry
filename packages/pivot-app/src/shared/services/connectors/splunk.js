@@ -23,9 +23,16 @@ const splunkLogin = Observable.bindNodeCallback(service.login.bind(service));
 const splunkGetJob = Observable.bindNodeCallback(service.getJob.bind(service));
 const splunkSearch = Observable.bindNodeCallback(service.search.bind(service));
 
-export class SplunkConnector {
+export const SplunkConnector = {
+    id:'splunk-connector',
+    name : 'Splunk',
+    lastUpdated : new Date().toLocaleString(),
+    status: {
+        level: 'info',
+        message: null
+    },
 
-    static search(query) {
+    search : function search(query) {
         // Generate a hash for the query so we can look it up in splunk
         const jobId = `pivot-app::${stringHash(query)}`;
 
@@ -95,11 +102,12 @@ export class SplunkConnector {
                     return { resultCount, events, searchId:job.sid };
                 }
             );
-    }
+    },
 
-    static login() {
+    login: function login() {
         return splunkLogin()
-            .do(log.info('Successful splunk login'))
+            .do(log.info('Health checks passed for splunk connnector'))
+            .map(() => 'Health checks passed')
             .catch(({error, status}) => {
                 if (error) {
                     return Observable.throw(
@@ -127,8 +135,6 @@ export class SplunkConnector {
                     );
                 }
             });
-    }
-    static get id() {
-        return 'splunk-connector';
-    }
+    },
+
 }

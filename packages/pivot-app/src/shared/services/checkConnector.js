@@ -12,13 +12,13 @@ export function checkConnector({ loadConnectorsById, connectorIds }) {
         .mergeMap(({app, connector}) => {
             const connectorClass = connectorMap[connector.id];
 
-            log.info({connector: connector}, `Checking connector:${connector.id}`);
+            log.debug({connector: connector}, `Checking connector:${connector.id}`);
             return connectorClass.login()
-                .do(() => {
+                .do((response) => {
                     const lastUpdated = new Date().toLocaleString();
                     connector.status = {
                         level: 'success',
-                        message: 'Health checks passed',
+                        message: response,
                         lastUpdated: lastUpdated
                     };
                 })
