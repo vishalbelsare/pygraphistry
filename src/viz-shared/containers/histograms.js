@@ -108,7 +108,7 @@ let Histogram = ({ loading = false,
                    global: _global = {}, masked = {},
                    binTouchMove, binTouchStart, binTouchCancel,
                    setEncoding,
-                   options, encoding,
+                   options, encodings,
                    removeHistogram, yScaleChanged }) => {
 
     const trans = Math[yScale] || ((x) => x);
@@ -126,11 +126,13 @@ let Histogram = ({ loading = false,
                    componentType={componentType}
                    onYScaleChanged={yScaleChanged}
                    setEncoding={setEncoding}
-                   encoding={encoding}>
+                   encodings={encodings}>
         {globalBins.map((
             { values, count: globalCount }, index, bins,
             { count: maskedCount = 0 } = maskedBins[index] || {}) => (
             <SparklineBar key={`${id}-bar-${index}`}
+                          encodings={encodings}
+                          index={index}
                           binWidth={`${100 * (1/(numBins||1))}%`}
                           filterBounds={{ leftest: false, rightest: false }}
                           globalCount={globalCount} maskedCount={maskedCount}

@@ -12,11 +12,12 @@ import styles from 'viz-shared/components/histograms/styles.less';
 const propTypes = {
     id: React.PropTypes.string.isRequired,
     attribute: React.PropTypes.string.isRequired,
-    type: React.PropTypes.string.isRequired,
+    componentType: React.PropTypes.string.isRequired,
     name: React.PropTypes.string,
     sizeValue: React.PropTypes.Array,
     yAxisValue: React.PropTypes.string,
     showModal: React.PropTypes.bool,
+    encodings: React.PropTypes.object,
     onYAxisChange: React.PropTypes.func,
     setEncoding: React.PropTypes.func,
     globalBinning: React.PropTypes.object,
@@ -87,10 +88,10 @@ export default class EncodingPicker extends React.Component {
 
     handleSelectColorChange (variation) {
         const reset = variation === null;
-        const id = this.props.type + 'Color';
+        const id = this.props.componentType + 'Color';
         const encodingType = 'color';
         const binning = this.props.globalBinning;
-        const graphType = this.props.type;
+        const graphType = this.props.componentType;
         const attribute = this.props.attribute;
 
         console.log('HANDLE SELECT COLOR',
@@ -116,10 +117,10 @@ export default class EncodingPicker extends React.Component {
 
         // No variation for sizes :/
         const reset = !newEnabled;
-        const id = this.props.type + 'Size';
+        const id = this.props.componentType + 'Size';
         const encodingType = 'size';
         const binning = this.props.globalBinning;
-        const graphType = this.props.type;
+        const graphType = this.props.componentType;
         const attribute = this.props.attribute;
 
         if (this.props.setEncoding) {
@@ -160,7 +161,7 @@ export default class EncodingPicker extends React.Component {
 
             <Modal show={this.state.showModal} onHide={this.close} style={{zIndex: 999999999}}>
                 <Modal.Header closeButton>
-                    <Modal.Title>Visualize <b>{this.props.type}:{this.props.attribute}</b></Modal.Title>
+                    <Modal.Title>Visualize <b>{this.props.componentType}:{this.props.attribute}</b></Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <h5>Show using color</h5>
@@ -168,13 +169,15 @@ export default class EncodingPicker extends React.Component {
                         disabled={false}
                         value={
                             this.props.encodings
-                                    && this.props.encodings[this.props.type]
-                                    && this.props.encodings[this.props.type].color?
-                                [ this.props.encodings[this.props.type].color ]
+                                    && this.props.encodings[this.props.componentType]
+                                    && this.props.encodings[this.props.componentType].color?
+                                options[this.props.componentType].color
+                                    .filter( ({value}) =>
+                                            value === this.props.encodings[this.props.componentType].color.variation )[0]
                                 : []
                         }
                         placeholder="Pick how to visualize"
-                        options={ options[this.props.type].color }
+                        options={ options[this.props.componentType].color }
                         id={`${this.props.id}_select`}
                         name={`${this.props.name || this.props.id}_select`}
                         optionRenderer={({value, label}) => label}

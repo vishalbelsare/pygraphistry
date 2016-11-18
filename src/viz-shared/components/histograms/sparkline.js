@@ -12,7 +12,7 @@ export const Sparkline = ({ name, yScale, children, componentType,
                             id, width = `calc(100% - 20px)`, height = 50,
                             loading = false, filtered = false, colors = false,
                             setEncoding,
-                            options, encoding,
+                            options, encodings,
                             onClose, onYScaleChanged, onEncodingChanged }) => {
     return (
         <div className={classNames({
@@ -27,8 +27,9 @@ export const Sparkline = ({ name, yScale, children, componentType,
                     <EncodingPicker
                         id={`histogram-encodings-picker-${name}`}
                         attribute={name}
-                        type={componentType}
+                        componentType={componentType}
                         showModal={false}
+                        encodings={encodings}
                         yAxisValue={yScale}
                         sizeValue={[]}
                         colorValue={[]}
