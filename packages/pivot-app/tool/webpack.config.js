@@ -85,7 +85,11 @@ function commonConfig(buildOpts) {
 function clientConfig(buildOpts = {}) {
     var config = commonConfig(buildOpts);
 
-    config.node = { fs: 'empty', global: false };
+    config.node = {
+        fs: 'empty',
+        global: false,
+        __filename: true
+    };
     config.target = 'web';
 
     config.entry = {
