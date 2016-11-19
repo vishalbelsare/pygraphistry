@@ -10,11 +10,14 @@ const d3Scale       = require('d3-scale');
 const d3Interpolate = require('d3-interpolate');
 const Color         = require('color');
 
+import dataTypeUtil from './dataTypes.js';
+import palettes from '../simulator/palettes';
+
 const defaults = {
     color: {
         isQuantitative: {
             sequential: {
-                range: ['white', 'blue']
+                range: ['blue', 'white']
             },
             diverging: {
                 range: ['blue', 'white', 'red']
@@ -52,6 +55,7 @@ function inferLoadedEncodingsFor(dataframe) {
 
 
 /**
+ * @param {EncodingSpec} encodingSpec
  * @param {Aggregations} summary
  * @param {String} variation
  * @param {Array} defaultDomain
@@ -59,8 +63,23 @@ function inferLoadedEncodingsFor(dataframe) {
  * @param {BinningResult} binning
  * @returns {EncodingSpec}
  */
-function inferColorScalingSpecFor (summary, variation, defaultDomain, distinctValues, binning) {
+function inferColorScalingSpecFor (encodingSpec, summary, variation, defaultDomain, distinctValues, binning) {
     let scalingType, domain, range;
+
+    if (variation === 'categorical') {
+        return {
+            scalingType: binning.bins.length <= 10 ? 'category10' : 'category20',
+            domain: [0, binning.numBins - 1]
+        };
+    } else if (variation === 'continuous') {
+        return {
+            scalingType: 'linear',
+            domain: [0, (binning.bins.length||1) - 1],
+            range: defaults.color.isQuantitative.sequential.range
+        };
+    } else {
+        throw new Error('unexpected encoding variant: ' + variation);
+    }
     const defaultSequentialRange = defaults.color.isQuantitative.sequential.range;
     if (summary.isCategorical) {
         if (variation === 'quantitative' && summary.isOrdered) {
@@ -71,7 +90,7 @@ function inferColorScalingSpecFor (summary, variation, defaultDomain, distinctVa
                 range = defaultSequentialRange;
             } else if (binning.bins && _.size(binning.bins) > 0) {
                 // A linear ordering has to trust bin order to make visual sense.
-                if (binning.type === 'countBy') {
+                if (binning.binType === 'countBy') {
                     domain = _.sortBy(_.keys(binning.bins), (key) => {
                         return binning.bins[key];
                     });
@@ -101,7 +120,7 @@ function inferColorScalingSpecFor (summary, variation, defaultDomain, distinctVa
             range = defaults.color.isQuantitative.diverging.range;
         } else {
             scalingType = 'linear';
-            domain = defaultDomain;
+            domain = [0, (binning.bins.length||1) - 1];
             range = defaultSequentialRange;
         }
     }
@@ -227,7 +246,7 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
                 domain = distinctValues;
                 range = distinctValues;
             } else {
-                return inferColorScalingSpecFor(summary, variation, defaultDomain, distinctValues, binning);
+                return inferColorScalingSpecFor(encodingSpec, summary, variation, defaultDomain, distinctValues, binning);
             }
             break;
         case 'title':
@@ -252,8 +271,18 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
 /** A legend per the binning; assigns a range member per bin.
  * @returns <Array>
  */
-function legendForBins (aggregations, scaling, binning) {
+function legendForBins (encodingSpec, aggregations, scaling, binning) {
+    const { variation, scalingType } = encodingSpec;
     let legend;
+    if (scalingType === 'identity') {
+        throw new Error('Identity not supported by legendForBins');
+    } else if (scalingType === 'linear') {
+        return _.range(0, binning.numBins).map(scaling);
+    } else if (scalingType === 'category10') {
+        return _.range(0, binning.numBins).map(scaling);
+    } else if (scalingType === 'category20') {
+        return _.range(0, binning.numBins).map(scaling);
+    }
     const summary = aggregations.getSummary();
     if (scaling !== undefined && binning !== undefined) {
         // All this just handles many shapes of binning metadata, kind of messy.
@@ -262,7 +291,7 @@ function legendForBins (aggregations, scaling, binning) {
             binValues = binning.binValues;
         // NOTE: Use the scaling to get hex string / number, not machine integer, for D3 color/size.
         if (binning.bins && _.size(binning.bins) > 0) {
-            if (binning.type === 'countBy') {
+            if (binning.binType === 'countBy') {
                 if (_.isArray(binning.bins)) {
                     if (_.isArray(binning.binValues)) {
                         legend = _.map(binning.binValues, (binValue) => scaling(binValue && binValue.representative));
@@ -306,11 +335,11 @@ function legendForBins (aggregations, scaling, binning) {
  * @param {Binning} binning
  * @returns {{legend: Array, scaling: d3.scale}}
  */
-function inferEncoding (dataframe, type, attributeName, encodingType, variation, binning) {
+function inferEncoding (encoding, dataframe, type, attributeName, encodingType, variation, binning) {
     const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
-    let encodingSpec = inferEncodingSpec(undefined, aggregations, attributeName, encodingType, variation, binning);
+    let encodingSpec = inferEncodingSpec(encoding, aggregations, attributeName, encodingType, variation, binning);
     const scaling = scalingFromSpec(encodingSpec);
-    const legend = legendForBins(aggregations, scaling, binning);
+    const legend = legendForBins(encodingSpec, aggregations, scaling, binning);
     return {
         legend: legend,
         scaling: scaling
@@ -424,7 +453,7 @@ function applyEncodingOnNBody ({ view, encoding }) {
             dataframe, type, attributeName, encodingType, timeBounds);
     } else {
         encodingWrapper = inferEncoding(
-            dataframe, type, attributeName, encodingType, variation, binning);
+            encoding, dataframe, type, attributeName, encodingType, variation, binning);
     }
 
     if (encodingWrapper === undefined || encodingWrapper.scaling === undefined) {

@@ -77,6 +77,12 @@ export default class EncodingManager {
                     const out = reset ? null : {encoding, encodingSpec};
                     tables.current[graphType][encodingType] = out;
 
+                }).do(function () {
+                    const { nBody, selection = {} } = view;
+                    const { server } = nBody;
+                    if (server && server.updateVboSubject) {
+                        server.updateVboSubject.next(true);
+                    }
                 });
 
 
