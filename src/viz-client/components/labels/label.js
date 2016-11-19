@@ -4,6 +4,8 @@ import React, { PropTypes } from 'react';
 import { defaultFormat } from 'viz-shared/formatters';
 import { Tooltip, OverlayTrigger } from 'react-bootstrap';
 import styles from 'viz-shared/components/labels/style.less';
+import { ColorPill } from 'viz-shared/components/color-pill/colorPill';
+
 
 function preventPropagation (f) {
     return function (e) {
@@ -121,9 +123,7 @@ function LabelRow ({ type, title,
 
                     <span className={styles['graph-label-value-text']}>{displayString}</span>
 
-                    { dataType ==='color' &&
-                    <span className={styles['label-color-pill']}
-                          style={{ backgroundColor: new Color(value).rgbString() }} />}
+                    { dataType ==='color' && <ColorPill color={value} /> }
 
                     <div className={styles['graph-label-icons']} style={{display:"none"}}>
                         <OverlayTrigger trigger={['hover']}

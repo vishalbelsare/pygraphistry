@@ -1,6 +1,7 @@
 import classNames from 'classnames';
 import { shortFormat, defaultFormat } from 'viz-shared/formatters';
 import { Popover, OverlayTrigger } from 'react-bootstrap';
+import { ColorPill } from 'viz-shared/components/color-pill/colorPill.js'
 import styles from 'viz-shared/components/histograms/styles.less';
 
 export const SparklineBar = ({ index, name, binType, dataType,
@@ -28,6 +29,7 @@ export const SparklineBar = ({ index, name, binType, dataType,
                     <SparklineBarInfo values={values}
                                       binType={binType}
                                       dataType={dataType}
+                                      color={color}
                                       globalCount={globalCount}
                                       maskedCount={maskedCount}/>
                 </Popover>
@@ -82,7 +84,7 @@ export const SparklineBar = ({ index, name, binType, dataType,
     );
 };
 
-const SparklineBarInfo = ({ values, binType, dataType, globalCount, maskedCount }) => {
+const SparklineBarInfo = ({ values, color, binType, dataType, globalCount, maskedCount }) => {
 
     const rows = [];
 
@@ -118,6 +120,13 @@ const SparklineBarInfo = ({ values, binType, dataType, globalCount, maskedCount 
             <p style={{ color: '#ff6600' }}>{maskedCount}</p>
         ]);
     }
+
+    if (color) {
+        rows.push([
+            <p>Color</p>,
+            <p>{ color }<ColorPill color={color}/></p>]);
+    }
+
 
     return (
         <div className={styles['histogram-info']}>
