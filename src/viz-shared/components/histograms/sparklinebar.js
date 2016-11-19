@@ -3,15 +3,22 @@ import { shortFormat, defaultFormat } from 'viz-shared/formatters';
 import { Popover, OverlayTrigger } from 'react-bootstrap';
 import styles from 'viz-shared/components/histograms/styles.less';
 
-export const SparklineBar = ({ name, binType, dataType,
+export const SparklineBar = ({ index, name, binType, dataType,
                                values = [], isMasked = false,
+                               encodings, componentType,
                                maskedCount = 0, maskedHeight = `50%`,
                                globalCount = 0, globalHeight = `100%`,
                                onBinTouchMove, onBinTouchStart, onBinTouchCancel,
-                               binWidth = `20px`, color = null, enabled = false,
+                               binWidth = `20px`, enabled = false,
                                filterBounds = { leftest: false, rightest: false } }) => {
 
     const { leftest, rightest } = filterBounds;
+
+    let color = false;
+    try {
+        color = encodings[componentType].color.attribute === name ?
+            encodings[componentType].color.legend[index] : false;
+    } catch (e) {}
 
     return (
         <OverlayTrigger trigger={['hover']}

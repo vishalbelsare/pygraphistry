@@ -8,10 +8,16 @@ import { getHistogramForAttribute } from './histograms.js';
 export function setEncoding ({view, encoding}) {
     const { nBody: { dataframe, simulator } = {}} = view;
 
-    return getHistogramForAttribute({ view, ...encoding})
-        .do( (histogram) => console.log({msg: '=== GOT HIST!!', histogram}))
-        .mergeMap( (binning) =>
-            dataframe.encodingsManager.setEncoding({view, encoding: {...encoding, binning}}));
+    const { reset } = encoding;
+
+    if (reset) {
+        return dataframe.encodingsManager.setEncoding({view, encoding});
+    } else {
+        return getHistogramForAttribute({ view, ...encoding})
+            .do( (histogram) => console.log({msg: '=== GOT HIST!!', histogram}))
+            .mergeMap( (binning) =>
+                dataframe.encodingsManager.setEncoding({view, encoding: {...encoding, binning}}));
+    }
 }
 
 //view: {nbody: {dataframe, simulator}}    //view: {dataframe, simulator}

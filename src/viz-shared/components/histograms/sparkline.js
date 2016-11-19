@@ -32,7 +32,6 @@ export const Sparkline = ({ name, yScale, children, componentType,
                         encodings={encodings}
                         yAxisValue={yScale}
                         sizeValue={[]}
-                        colorValue={[]}
                         onYAxisChange={onYScaleChanged}
                         setEncoding={setEncoding}
                         options={options}

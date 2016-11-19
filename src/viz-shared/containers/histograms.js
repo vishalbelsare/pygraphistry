@@ -131,12 +131,13 @@ let Histogram = ({ loading = false,
             { values, count: globalCount }, index, bins,
             { count: maskedCount = 0 } = maskedBins[index] || {}) => (
             <SparklineBar key={`${id}-bar-${index}`}
+                          componentType={componentType}
                           encodings={encodings}
                           index={index}
                           binWidth={`${100 * (1/(numBins||1))}%`}
                           filterBounds={{ leftest: false, rightest: false }}
                           globalCount={globalCount} maskedCount={maskedCount}
-                          name={name} color={null} values={values} enabled={false}
+                          name={name} values={values} enabled={false}
                           binType={binType} dataType={dataType} isMasked={isMasked}
                           onBinTouchMove={(event) => binTouchMove({ event, index })}
                           onBinTouchStart={(event) => binTouchStart({ event, index })}

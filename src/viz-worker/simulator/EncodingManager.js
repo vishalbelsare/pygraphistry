@@ -63,10 +63,9 @@ export default class EncodingManager {
 
                 let action;
                 if (reset) {
-                    const currentEncoding = getEncoding({view, encoding});
                     console.log({msg: 'HERE A...'});
                     action = resetEncodingOnNBody(
-                        {view, encoding: wrapEncodingType({...currentEncoding, reset: true})})
+                        {view, encoding: wrapEncodingType({...encoding, reset: true})})
                         .do(function (o) { console.log({msg: '===SAW', o}); })
 
                 } else {

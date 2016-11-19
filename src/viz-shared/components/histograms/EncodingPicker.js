@@ -87,7 +87,7 @@ export default class EncodingPicker extends React.Component {
 
 
     handleSelectColorChange (variation) {
-        const reset = variation === null;
+        const reset = !variation;
         const id = this.props.componentType + 'Color';
         const encodingType = 'color';
         const binning = this.props.globalBinning;
