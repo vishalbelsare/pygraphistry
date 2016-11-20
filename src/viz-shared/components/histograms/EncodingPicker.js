@@ -179,12 +179,18 @@ export default class EncodingPicker extends React.Component {
                         name={`${this.props.name || this.props.id}_select`}
                         optionRenderer={({value, label}) => label}
                         onChange={this.handleSelectColorChange} />
-                    <h5>Show using size</h5>
-                    <RcSwitch
-                        checked={ this.props.sizeValue.length > 0 }
-                        checkedChildren={'On'}
-                        unCheckedChildren={'Off'}
-                        onChange={ this.handleSelectSizeChange }/>
+                    {
+                        this.props.componentType === 'point'
+                            ?   <div>
+                                    <h5>Show using size</h5>
+                                    <RcSwitch
+                                        checked={ this.props.sizeValue.length > 0 }
+                                        checkedChildren={'On'}
+                                        unCheckedChildren={'Off'}
+                                        onChange={ this.handleSelectSizeChange }/>
+                                </div>
+                            : null
+                    }
                     <h5>Histogram Y-Axis Scaling</h5>
                     <Select simpleValue
                         disabled={false}
