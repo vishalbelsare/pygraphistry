@@ -24,8 +24,6 @@ let Histograms = ({ addHistogram, removeHistogram, setEncoding, encodings = {},
                     loading = false, className = '',
                     style = {}, ...props }) => {
 
-    console.log('encodings', encodings);
-
     const { options, point, edge } = encodings;
 
     return (

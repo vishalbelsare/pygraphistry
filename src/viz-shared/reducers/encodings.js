@@ -14,9 +14,6 @@ export function setEncoding (action$, store) {
     return action$
         .ofType(SET_ENCODING)
         .groupBy(({id}) => id)
-        .do((...args) => {
-            console.log('Got set encoding reducer, args: ', args);
-        })
         .mergeMap((idGroup) => idGroup.exhaustMap(
             ({falcor, graphType, encodingType, ...args}) =>
                 falcor.set($value(

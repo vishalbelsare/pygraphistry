@@ -94,11 +94,7 @@ export default class EncodingPicker extends React.Component {
         const graphType = this.props.componentType;
         const attribute = this.props.attribute;
 
-        console.log('HANDLE SELECT COLOR',
-            {variation, reset, id, encodingType, binning, graphType, attribute});
-
         if (this.props.setEncoding) {
-            console.log('SET');
             this.props.setEncoding({
                 variation, reset, id, encodingType, binning, graphType, attribute
             });

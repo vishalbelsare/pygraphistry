@@ -55,48 +55,34 @@ export default class EncodingManager {
     // -> Observable {encoding, encodingSpec} or null
     //  (do not need current encoding if clearing, just graphType & encodingType)
     setEncoding ({view, encoding}) {
-        console.log({cmd: 'setEncoding', encoding});
         const { tables } = this;
         const {graphType, encodingType, reset} = encoding;
-        console.log({msg: 'PRE...'});
-        try {
 
-                let action;
-                if (reset) {
-                    console.log({msg: 'HERE A...'});
-                    action = resetEncodingOnNBody(
-                        {view, encoding: wrapEncodingType({...encoding, reset: true})})
-                        .do(function (o) { console.log({msg: '===SAW', o}); })
+        let action;
+        if (reset) {
+            action = resetEncodingOnNBody(
+                {view, encoding: wrapEncodingType({...encoding, reset: true})});
 
-                } else {
-                    console.log({msg: 'HERE B...'});
-                    action = applyEncodingOnNBody({view, encoding: wrapEncodingType(encoding)})
-                        .do(function (o) { console.log({msg: '===SAW', o}); })
-                }
-                return action.do( (encodingSpec) => {
-                    const out = reset ? null : {encoding, encodingSpec};
-                    tables.current[graphType][encodingType] = out;
-
-                }).do(function () {
-                    const { nBody, selection = {} } = view;
-                    const { server } = nBody;
-                    if (server && server.updateVboSubject) {
-                        server.updateVboSubject.next(true);
-                    }
-                });
-
-
-        } catch (e) {
-            console.error({msg: '===== NO!!!!', e});
-            return Observable.throw(e);
+        } else {
+            action = applyEncodingOnNBody({view, encoding: wrapEncodingType(encoding)});
         }
+        return action.do( (encodingSpec) => {
+            const out = reset ? null : {encoding, encodingSpec};
+            tables.current[graphType][encodingType] = out;
+
+        }).do(function () {
+            const { nBody, selection = {} } = view;
+            const { server } = nBody;
+            if (server && server.updateVboSubject) {
+                server.updateVboSubject.next(true);
+            }
+        });
     }
 
     //view: {dataframe, simulator}
     //encoding: {graphType, encodingType}
     // -> {encoding, encodingSpec} or null
     getEncoding ({view, encoding: {graphType, encodingType}}) {
-        console.log({cmd: 'getEncoding', graphType, encodingType});
         return this.tables.current[graphType][encodingType];
     }
 
@@ -105,7 +91,6 @@ export default class EncodingManager {
     //encoding: {graphType, encodingType}
     // -> partial encodingSpec
     getEncodingOptions({view, encoding: {graphType, encodingType}}) {
-        console.log({'msg': 'CHECKING======', graphType, encodingType});
         return {
             point: {
                 color: [

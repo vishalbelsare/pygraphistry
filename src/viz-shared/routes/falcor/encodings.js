@@ -57,8 +57,7 @@ export function encodings(path, base) {
                         .map(({graphType, encodingType}) =>
                             $value(
                                 basePath.concat(graphType, encodingType),
-                                $atom(getEncodingOptions({view, encoding: {graphType, encodingType}})))))
-                .do(function (o) { console.log({msg: '===GET_ENCODINGS', o})});
+                                $atom(getEncodingOptions({view, encoding: {graphType, encodingType}})))));
         }
 
         function getEncodingRoute ({loadViewsById, getEncoding}, path) {
@@ -83,14 +82,11 @@ export function encodings(path, base) {
                             $atom((getEncoding({
                                     view, encoding: {graphType, encodingType}
                                 })||{})
-                                .encodingSpec))))
-                .do(function (o) { console.log({msg: '===GET_ENCODING', o})});
+                                .encodingSpec))));
         }
 
         //{variant, attribute} -> ()
         function setEncodingRoute({loadViewsById, setEncoding}, jsonGraphArg) {
-
-            console.log({msg: '=====setEncodingRoute', jsonGraphArg});
 
             const workbookIds = Object.keys(jsonGraphArg.workbooksById);
             const viewIds =
@@ -126,8 +122,7 @@ export function encodings(path, base) {
                                     $atom(encodingSpec)));
                         });
                     return Observable.merge(...encodingSpecs);
-                })
-                .do(function (o) { console.log({msg: '===SET_ENCODING', o})});
+                });
 
         }
     }
