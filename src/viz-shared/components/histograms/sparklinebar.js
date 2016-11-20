@@ -39,6 +39,7 @@ export const SparklineBar = ({ index, name, binType, dataType,
                     [styles['leftest']]: leftest,
                     [styles['rightest']]: rightest,
                     [styles['is-masked']]: isMasked,
+                    [styles['is-empty-global']]: !globalCount,
                     [styles['is-filter-true']]: enabled,
                     [styles['is-filter-false']]: !enabled,
                     [styles['histogram-column']]: true
@@ -121,7 +122,7 @@ const SparklineBarInfo = ({ values, color, binType, dataType, globalCount, maske
         ]);
     }
 
-    if (color) {
+    if (globalCount && color) {
         rows.push([
             <p>Color</p>,
             <p>{ color }<ColorPill color={color}/></p>]);
