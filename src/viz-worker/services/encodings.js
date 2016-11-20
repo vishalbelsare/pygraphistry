@@ -1,5 +1,10 @@
 import { getHistogramForAttribute } from './histograms.js';
 
+function encodingWithoutBinValues (encoding) {
+    if (!encoding) return encoding || null;
+    const {binning: { valueToBin, ...restBinning}, ...restEncoding} = encoding;
+    return {binning: restBinning, ...restEncoding};
+}
 
 //view: {nbody: {dataframe, simulator}}
 //encoding: {graphType, encodingType, attribute, variant, ?reset, ...}}
@@ -14,9 +19,9 @@ export function setEncoding ({view, encoding}) {
         return dataframe.encodingsManager.setEncoding({view, encoding});
     } else {
         return getHistogramForAttribute({ view, ...encoding})
-            .do( (histogram) => console.log({msg: '=== GOT HIST!!', histogram}))
             .mergeMap( (binning) =>
-                dataframe.encodingsManager.setEncoding({view, encoding: {...encoding, binning}}));
+                dataframe.encodingsManager.setEncoding({view, encoding: {...encoding, binning}}))
+            .map(encodingWithoutBinValues);
     }
 }
 
@@ -25,7 +30,13 @@ export function setEncoding ({view, encoding}) {
 // -> {encoding, encodingSpec} or null
 export function getEncoding ({view, encoding}) {
     const { nBody: { dataframe, simulator } = {}} = view;
-    return dataframe.encodingsManager.getEncoding({view, encoding});
+    const out = dataframe.encodingsManager.getEncoding({view, encoding})
+    return !out
+        ? null
+        : {
+            encoding: encodingWithoutBinValues(out.encoding),
+            encodingSpec: encodingWithoutBinValues(out.encodingSpec)
+        };
 }
 
 //view: {dataframe, simulator}
