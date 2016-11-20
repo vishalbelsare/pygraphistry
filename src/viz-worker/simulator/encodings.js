@@ -25,7 +25,7 @@ const defaults = {
         }
     },
     pointSize: {
-        range: [0, 30] // Range of diameters supported, per VGraphLoader
+        range: [3, 20] // Range of diameters supported, per VGraphLoader
     },
     pointOpacity: {
         range: [0, 1]
@@ -113,26 +113,25 @@ function inferEncodingType (dataframe, type, attributeName) {
  * @param {EncodingSpec} scalingSpec
  * @returns {d3.scale}
  */
-function scalingFromSpec (scalingSpec) {
-    const scalingType = scalingSpec.scalingType;
-    let scaling;
-    if (d3Scale[scalingType] !== undefined) {
-        scaling = d3Scale[scalingType]();
-    } else if (scalingType === 'identity') {
-        scaling = _.identity;
+function scalingFromSpec ({scalingType, domain, range, clamp}) {
+
+    let scaling =
+        d3Scale[scalingType] !== undefined ? d3Scale[scalingType]()
+        : scalingType === 'identity' ? _.identity
+        : d3Scale.linear();
+
+    if (domain !== undefined) {
+        scaling = scaling.domain(domain);
     }
-    if (scaling === undefined) {
-        scaling = d3Scale.linear();
+
+    if (range !== undefined) {
+        scaling = scaling.range(range);
     }
-    if (scalingSpec.domain !== undefined) {
-        scaling.domain(scalingSpec.domain);
+
+    if (clamp !== undefined) {
+        scaling = scaling.clamp(clamp);
     }
-    if (scalingSpec.range !== undefined) {
-        scaling.range(scalingSpec.range);
-    }
-    if (scalingSpec.clamp !== undefined) {
-        scaling.clamp(scalingSpec.clamp);
-    }
+
     return scaling;
 }
 
@@ -157,14 +156,11 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
     switch (encodingType) {
         case 'size':
         case 'pointSize':
-            // Has to have a magnitude, not negative:
-            if (domainIsPositive(aggregations)) {
-                // Square root because point size/radius yields a point area:
-                scalingType = 'sqrt';
-                domain = defaultDomain;
-                range = defaults.pointSize.range;
-                clamp = true;
-            }
+            // Square root because point size/radius yields a point area:
+            scalingType = 'scaleSqrt';
+            domain = [0, (binning.bins.length||1) - 1];
+            range = defaults.pointSize.range;
+            clamp = true;
             break;
         case 'edgeSize':
             // TODO ensure sizes are binned/scaled so that they may be visually distinguished.
@@ -220,6 +216,7 @@ function legendForBins ({encodingSpec, scaling, binning}) {
         case 'linear':
         case 'category10':
         case 'category20':
+        case 'scaleSqrt':
             return _.range(0, binning.numBins).map(scaling);
         default:
             throw new Error('Unhandled scalingType: ' + scalingType);
