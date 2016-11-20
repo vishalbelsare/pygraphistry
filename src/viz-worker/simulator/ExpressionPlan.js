@@ -152,6 +152,14 @@ PlanNode.prototype = {
             return resultValues;
         } else if (this.canRunOnOneColumn()) {
             const columnName = _.find(this.attributeData);
+            const columnNames = this.identifierNodes();
+            if (_.keys(columnNames).length != 1) {
+                throw new Error({msg: 'PlanNode.execute() expected exactly one attribute', columnNames});
+            }
+            const identifier = _.keys(columnNames)[0];
+            const { attribute } = dataframe.normalizeAttributeName(identifier);
+            const attributeDataInstance = columnNames[identifier][0];
+            const columnName = attributeDataInstance.attributeData[attribute];
             if (valuesRequired && returnType === ReturnTypes.Positions) {
                 returnType = ReturnTypes.Values;
             }
@@ -364,6 +372,7 @@ ExpressionPlan.prototype = {
                     const attributeData = {};
                     const attributeName = dataframe.normalizeAttributeName(ast.name);
                     if (attributeName !== undefined) {
+                    if (attributeName !== undefined && attributeName !== null) {
                         attributeData[attributeName.attribute] = attributeName;
                     }
                     return new PlanNode(ast, undefined, attributeData, guardNulls);
