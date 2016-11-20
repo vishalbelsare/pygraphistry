@@ -151,7 +151,6 @@ PlanNode.prototype = {
             }
             return resultValues;
         } else if (this.canRunOnOneColumn()) {
-            const columnName = _.find(this.attributeData);
             const columnNames = this.identifierNodes();
             if (_.keys(columnNames).length != 1) {
                 throw new Error({msg: 'PlanNode.execute() expected exactly one attribute', columnNames});
@@ -375,7 +374,6 @@ ExpressionPlan.prototype = {
                 case 'Identifier': {
                     const attributeData = {};
                     const attributeName = dataframe.normalizeAttributeName(ast.name);
-                    if (attributeName !== undefined) {
                     if (attributeName !== undefined && attributeName !== null) {
                         attributeData[attributeName.attribute] = attributeName;
                     } else {
@@ -389,15 +387,16 @@ ExpressionPlan.prototype = {
                 default:
                     throw new Error('Unhandled input to plan: ' + ast.type);
             }
+        } else {
+            const inputResults = _.mapObject(_.pick(ast, inputProperties), (inputAST) => {
+                if (_.isArray(inputAST)) {
+                    return _.map(inputAST, (eachAST) => this.planFromAST(eachAST, dataframe, guardNulls));
+                } else {
+                    return this.planFromAST(inputAST, dataframe, guardNulls);
+                }
+            });
+            return new PlanNode(ast, inputResults, undefined, guardNulls);
         }
-        const inputResults = _.mapObject(_.pick(ast, inputProperties), (inputAST) => {
-            if (_.isArray(inputAST)) {
-                return _.map(inputAST, (eachAST) => this.planFromAST(eachAST, dataframe, guardNulls));
-            } else {
-                return this.planFromAST(inputAST, dataframe, guardNulls);
-            }
-        });
-        return new PlanNode(ast, inputResults, undefined, guardNulls);
     }
 };
 

@@ -1,3 +1,4 @@
+import util from 'util';
 import { Observable } from 'rxjs';
 import Binning from 'viz-worker/simulator/Binning';
 import DataframeMask from 'viz-worker/simulator/DataframeMask';
