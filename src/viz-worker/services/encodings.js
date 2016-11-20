@@ -3,7 +3,7 @@ import { getHistogramForAttribute } from './histograms.js';
 
 //view: {nbody: {dataframe, simulator}}
 //encoding: {graphType, encodingType, attribute, variant, ?reset, ...}}
-// -> Observable {encoding, encodingSpec} or null
+// -> Observable encoding or null
 //  (do not need current encoding if clearing, just graphType & encodingType)
 export function setEncoding ({view, encoding}) {
     const { nBody: { dataframe, simulator } = {}} = view;
