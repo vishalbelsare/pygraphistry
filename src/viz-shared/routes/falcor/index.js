@@ -11,6 +11,7 @@ import { inspector, timebar } from './panels';
 import { Observable } from 'rxjs/Observable';
 import { mapObjectsToAtoms, captureErrorStacks } from 'viz-shared/routes';
 import { filters, exclusions, histograms, expressions } from './expressions';
+import { encodings } from './encodings';
 
 export function routes(services) {
 
@@ -40,6 +41,8 @@ export function routes(services) {
         exclusions(['workbook', 'view'], `${view}`)(services),
         histograms(['workbook', 'view'], `${view}`)(services),
         expressions(['workbook', 'view'], `${view}`)(services),
+
+        encodings(['workbook', 'view'], `${view}`)(services),
     ])).map(wrapRouteHandlers);
 }
 
@@ -62,7 +65,7 @@ function wrapRouteHandler(handler) {
         return Observable
             .defer(() => handler.apply(this, args) || [])
             .catch((e) => {
-                console.error('========== BAD ROUTE', e);
+                console.error('========== BAD ROUTE', e, (e||{}).stack, handler.name || handler.slice(0,20));
                 throw new Error(e);
             })
             .catch(captureErrorStacks)

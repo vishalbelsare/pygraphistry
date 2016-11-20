@@ -8,6 +8,7 @@ import { inspector } from './panels';
 import { selection } from './selection';
 import { expressions } from './expressions';
 import { simpleflake } from 'simpleflakes';
+import { encodings } from './encodings'
 import {
     ref as $ref,
     atom as $atom,
@@ -46,6 +47,7 @@ export function view(workbookId, sceneID = 'default', viewId = simpleflake().toJ
         ...toolbar(workbookId, viewId),
         ...inspector(view),
         ...selection(view),
-        ...expressions(view)
+        ...expressions(view),
+        ...encodings(view)
     };
 }

@@ -18,7 +18,8 @@ export function histograms(view) {
                 selected: false,
                 id: 'toggle-histograms',
                 name: 'Histograms',
-            }]
+            }],
+            encodings: $ref(`${view}.encodings`),
         }
     };
 }
@@ -61,13 +62,13 @@ export function histogram({ name = 'degree',
 
 export function histogramBinQuery(histogram, bin) {
 
-    const { identifier, componentType } = histogram;
+    const { identifier, componentType, bins } = histogram;
     const queryProperties = { identifier };
     const { count, values, exclude } = bin;
 
     if (exclude) {
         queryProperties.queryType = 'isOneOf';
-        queryProperties.values = bins.map(({ values }) => values[0]);
+        queryProperties.values = [].concat(...bins.map(({ values }) => values));
     } else if (values.length === 1) {
         queryProperties.value = values[0];
         queryProperties.queryType = 'isEqualTo';
@@ -96,6 +97,10 @@ export function histogramBinQuery(histogram, bin) {
 
 export function histogramBinHighlightQuery(histogram, bin) {
     const { identifier } = histogram;
+    if (!identifier) {
+        console.error({msg: 'histogramBinHighlightQuery without identifier', histogram, bin, exn: new Error()});
+        throw new Error('histogramBinHighlightQuery: Making histogram without identifier')
+    }
     const query = histogramBinQuery(histogram, bin);
     query.ast = {
         type: 'BinaryPredicate',
