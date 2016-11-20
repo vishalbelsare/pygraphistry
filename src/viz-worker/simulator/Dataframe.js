@@ -81,7 +81,7 @@ function Dataframe () {
 
     // TODO: Move this out of data frame constructor.
     this.computedColumnManager = new ComputedColumnManager();
-    this.encodingsManager = new EncodingManager(this.computedColumnManager);
+    this.encodingsManager = new EncodingManager();
     this.loadComputedColumns(this.computedColumnManager, this.encodingsManager);
 
 }

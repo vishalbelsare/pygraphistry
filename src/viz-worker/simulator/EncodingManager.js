@@ -9,17 +9,13 @@ export {resetEncodingOnNBody, applyEncodingOnNBody} from './encodings.js';
 import {resetEncodingOnNBody, applyEncodingOnNBody} from './encodings.js';
 
 //Encoding manager works at two levels:
-// 1. Initializes underlying ColumnManager for graph and encoding buffers
-// 2. Takes & gives declarative encoding state
-// 3. Passes down to ColumnManager as needed
+// 1. Takes & gives declarative encoding state
+// 2. Passes down to ColumnManager as needed
 // The result is ColumnManager focuses more on buffers & perf,
 //    while EncodingManager on interface & defaults
 export default class EncodingManager {
 
-    //dataframe will immedately setup some default columns/buffers after as well
-    constructor (columnManager) {
-
-        this.columnManager = columnManager;
+    constructor () {
 
         //lazily filled out by set
         this.tables = {
