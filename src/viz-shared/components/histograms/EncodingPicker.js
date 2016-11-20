@@ -63,6 +63,13 @@ function makeOptionLists(options) {
 }
 
 
+export function isEncoded(encodings, column, encodingType) {
+    return encodings
+        && encodings[column.componentType]
+        && encodings[column.componentType][encodingType]
+        && encodings[column.componentType][encodingType].attribute === column.attribute;
+}
+
 
 
 
@@ -164,10 +171,7 @@ export default class EncodingPicker extends React.Component {
                     <Select simpleValue
                         disabled={false}
                         value={
-                            this.props.encodings
-                                    && this.props.encodings[this.props.componentType]
-                                    && this.props.encodings[this.props.componentType].color
-                                    && this.props.encodings[this.props.componentType].color.attribute === this.props.attribute
+                            isEncoded(this.props.encodings, this.props, 'color')
                                 ? options[this.props.componentType].color
                                     .filter( ({value}) =>
                                             value === this.props.encodings[this.props.componentType].color.variation )[0]
@@ -184,7 +188,7 @@ export default class EncodingPicker extends React.Component {
                             ?   <div>
                                     <h5>Show using size</h5>
                                     <RcSwitch
-                                        checked={ this.props.sizeValue.length > 0 }
+                                        checked={ isEncoded(this.props.encodings, this.props, 'size') }
                                         checkedChildren={'On'}
                                         unCheckedChildren={'Off'}
                                         onChange={ this.handleSelectSizeChange }/>
