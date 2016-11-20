@@ -96,11 +96,12 @@ export function computeMaskForHistogramBin({ view, histogram, bin }) {
     const { dataframe } = nBody;
 
     const errors = [];
-    const masks = dataframe.getMasksForQuery(
-        histogramBinHighlightQuery(histogram, bin), errors, false
-    );
+    const query = histogramBinHighlightQuery(histogram, bin);
+    const masks = dataframe.getMasksForQuery(query, errors, false);
 
     if (errors.length) {
+        console.error({msg: '====BAD computeMaskForHistogramBin', errors, stack: new Error().stack});
+        console.error({msg: '-------', query: util.inspect(query, false, null)});
         return Observable.throw(errors[0]);
     }
 

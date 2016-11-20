@@ -150,7 +150,11 @@ export function histograms(path, base) {
                             .highlight.darken`,
                         darken
                 ));
-            });
+            })
+            .catch((e) => {
+                console.error({msg: '==== RUH ROH', e, path, index});
+                return Observable.throw(e);
+            })
         }
 
         function getHistogramTypeReference(path) {

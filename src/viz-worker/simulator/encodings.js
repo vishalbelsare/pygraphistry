@@ -274,8 +274,8 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
 function legendForBins (encodingSpec, aggregations, scaling, binning) {
     const { variation, scalingType } = encodingSpec;
     let legend;
-    if (scalingType === 'identity') {
-        throw new Error('Identity not supported by legendForBins');
+    if (scalingType === 'identity')  {
+        throw new Error('Identity not supported by legendForBins when no examplars');
     } else if (scalingType === 'linear') {
         return _.range(0, binning.numBins).map(scaling);
     } else if (scalingType === 'category10') {

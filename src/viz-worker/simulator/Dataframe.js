@@ -1,5 +1,6 @@
 'use strict';
 
+const util = require('util');
 const _ = require('underscore');
 const Q = require('q');
 const fs = require('fs');
@@ -389,6 +390,8 @@ Dataframe.prototype.getMasksForQuery = function (query, errors, guardNulls = tru
             return masks;
         }
     } catch (e) {
+        console.error({msg: '=== BAD getMasksForQuery', e, query, attribute, type});
+        console.error(util.inspect(query, false, null, true));
         errors.push(e.message);
         return this.newEmptyMask();
     }

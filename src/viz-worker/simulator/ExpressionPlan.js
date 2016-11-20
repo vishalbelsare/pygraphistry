@@ -266,6 +266,10 @@ PlanNode.prototype = {
     identifierNodes: function (result = {}) {
         if (this.ast.type === 'Identifier') {
             const identifierName = this.ast.name;
+            if (identifierName === null || identifierName === undefined) {
+                console.error({msg: '== PlanNode.identifierNodes expected valid identifier node', ast: this.ast});
+                throw new Error({msg: '== PlanNode.identifierNodes expected valid identifier node', ast: this.ast});
+            }
             if (result[identifierName] === undefined) { result[identifierName] = []; }
             result[identifierName].push(this);
         }
@@ -374,6 +378,9 @@ ExpressionPlan.prototype = {
                     if (attributeName !== undefined) {
                     if (attributeName !== undefined && attributeName !== null) {
                         attributeData[attributeName.attribute] = attributeName;
+                    } else {
+                        console.error({exn: new Error(), msg: 'planFromAST expected valid identifier', ast: ast});
+                        throw new Error({msg: 'planFromAST expected valid identifier', ast: ast});
                     }
                     return new PlanNode(ast, undefined, attributeData, guardNulls);
                 }

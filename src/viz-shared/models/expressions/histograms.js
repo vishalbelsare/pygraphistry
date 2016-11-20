@@ -97,6 +97,10 @@ export function histogramBinQuery(histogram, bin) {
 
 export function histogramBinHighlightQuery(histogram, bin) {
     const { identifier } = histogram;
+    if (!identifier) {
+        console.error({msg: 'histogramBinHighlightQuery without identifier', histogram, bin, exn: new Error()});
+        throw new Error('histogramBinHighlightQuery: Making histogram without identifier')
+    }
     const query = histogramBinQuery(histogram, bin);
     query.ast = {
         type: 'BinaryPredicate',
