@@ -122,7 +122,7 @@ let Histogram = ({ loading = false,
                    onClose={removeHistogram}
                    options={options}
                    componentType={componentType}
-                   onYScaleChanged={yScaleChanged}
+                   onYScaleChanged={ (value) => yScaleChanged({key: 'yScale', value}) }
                    setEncoding={setEncoding}
                    encodings={encodings}>
         {globalBins.map((
