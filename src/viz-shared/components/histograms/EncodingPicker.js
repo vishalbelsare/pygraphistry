@@ -170,8 +170,9 @@ export default class EncodingPicker extends React.Component {
                         value={
                             this.props.encodings
                                     && this.props.encodings[this.props.componentType]
-                                    && this.props.encodings[this.props.componentType].color?
-                                options[this.props.componentType].color
+                                    && this.props.encodings[this.props.componentType].color
+                                    && this.props.encodings[this.props.componentType].color.attribute === this.props.attribute
+                                ? options[this.props.componentType].color
                                     .filter( ({value}) =>
                                             value === this.props.encodings[this.props.componentType].color.variation )[0]
                                 : []
