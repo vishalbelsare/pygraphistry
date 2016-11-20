@@ -63,13 +63,11 @@ function inferLoadedEncodingsFor(dataframe) {
  * @param {BinningResult} binning
  * @returns {EncodingSpec}
  */
-function inferColorScalingSpecFor (encodingSpec, summary, variation, defaultDomain, distinctValues, binning) {
-    let scalingType, domain, range;
-
+function inferColorScalingSpecFor ({variation, binning}) {
     if (variation === 'categorical') {
         return {
             scalingType: binning.bins.length <= 10 ? 'category10' : 'category20',
-            domain: [0, binning.numBins - 1]
+            domain: [0, (binning.bins.length||1) - 1],
         };
     } else if (variation === 'continuous') {
         return {
@@ -80,55 +78,6 @@ function inferColorScalingSpecFor (encodingSpec, summary, variation, defaultDoma
     } else {
         throw new Error('unexpected encoding variant: ' + variation);
     }
-    const defaultSequentialRange = defaults.color.isQuantitative.sequential.range;
-    if (summary.isCategorical) {
-        if (variation === 'quantitative' && summary.isOrdered) {
-            // User can request a quantitative interpretation of ordered categorical domains.
-            if (summary.isNumeric) {
-                scalingType = 'linear';
-                domain = defaultDomain;
-                range = defaultSequentialRange;
-            } else if (binning.bins && _.size(binning.bins) > 0) {
-                // A linear ordering has to trust bin order to make visual sense.
-                if (binning.binType === 'countBy') {
-                    domain = _.sortBy(_.keys(binning.bins), (key) => {
-                        return binning.bins[key];
-                    });
-                } else {
-                    domain = distinctValues;
-                }
-            } else {
-                domain = distinctValues;
-            }
-            if (range === undefined) {
-                const interpolation = d3Interpolate.interpolate(defaultSequentialRange[0], defaultSequentialRange[1]),
-                    numValues = domain.length;
-                range = _.map(_.range(numValues), (idx) => Color(interpolation(idx / numValues)).hexString());
-                scalingType = 'ordinal';
-            }
-        } else if (summary.countDistinct < 10) {
-            scalingType = 'category10';
-            domain = distinctValues;
-        } else { // if (summary.countDistinct < 20) {
-            scalingType = 'category20';
-            domain = distinctValues;
-        }
-    } else if (summary.isOrdered) {
-        if (summary.isDiverging) {
-            scalingType = 'linear';
-            domain = defaultDomain;
-            range = defaults.color.isQuantitative.diverging.range;
-        } else {
-            scalingType = 'linear';
-            domain = [0, (binning.bins.length||1) - 1];
-            range = defaultSequentialRange;
-        }
-    }
-    return {
-        scalingType: scalingType,
-        domain: domain,
-        range: range
-    };
 }
 
 
@@ -239,16 +188,9 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
         case 'color':
         case 'pointColor':
         case 'edgeColor':
-            // Minimally support using columns with color in the name as their own palettes.
-            // Assumes direct RGBA int32 values for now.
-            if (attributeName.match(/color/i)) {
-                scalingType = 'identity';
-                domain = distinctValues;
-                range = distinctValues;
-            } else {
-                return inferColorScalingSpecFor(encodingSpec, summary, variation, defaultDomain, distinctValues, binning);
-            }
-            break;
+
+            return inferColorScalingSpecFor({variation, binning});
+
         case 'title':
         case 'pointTitle':
         case 'edgeTitle':
@@ -271,56 +213,17 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
 /** A legend per the binning; assigns a range member per bin.
  * @returns <Array>
  */
-function legendForBins (encodingSpec, aggregations, scaling, binning) {
-    const { variation, scalingType } = encodingSpec;
-    let legend;
-    if (scalingType === 'identity')  {
-        throw new Error('Identity not supported by legendForBins when no examplars');
-    } else if (scalingType === 'linear') {
-        return _.range(0, binning.numBins).map(scaling);
-    } else if (scalingType === 'category10') {
-        return _.range(0, binning.numBins).map(scaling);
-    } else if (scalingType === 'category20') {
-        return _.range(0, binning.numBins).map(scaling);
+function legendForBins ({encodingSpec, scaling, binning}) {
+    const { scalingType } = encodingSpec;
+    switch (scalingType) {
+        case 'identity': throw new Error('Identity not supported by legendForBins');
+        case 'linear':
+        case 'category10':
+        case 'category20':
+            return _.range(0, binning.numBins).map(scaling);
+        default:
+            throw new Error('Unhandled scalingType: ' + scalingType);
     }
-    const summary = aggregations.getSummary();
-    if (scaling !== undefined && binning !== undefined) {
-        // All this just handles many shapes of binning metadata, kind of messy.
-        const minValue = summary.minValue,
-            step = binning.binWidth || 0,
-            binValues = binning.binValues;
-        // NOTE: Use the scaling to get hex string / number, not machine integer, for D3 color/size.
-        if (binning.bins && _.size(binning.bins) > 0) {
-            if (binning.binType === 'countBy') {
-                if (_.isArray(binning.bins)) {
-                    if (_.isArray(binning.binValues)) {
-                        legend = _.map(binning.binValues, (binValue) => scaling(binValue && binValue.representative));
-                    } else {
-                        legend = _.map(binning.bins, (itemCount, index) => scaling(index));
-                    }
-                } else {
-                    // _other always shows last
-                    const sortedBinKeys = _.sortBy(_.keys(binning.bins),
-                        (key) => (key === '_other' ? Infinity : -binning.bins[key]));
-                    legend = _.map(sortedBinKeys,
-                        (key) => (key === '_other' ? undefined : scaling(key)));
-                }
-            } else if (summary.isNumeric) {
-                legend = _.map(binning.bins, (itemCount, index) => scaling(minValue + step * index));
-            } else {
-                legend = _.map(binning.bins, (itemCount, index) => {
-                    const value = binValues !== undefined && binValues[index] ? binValues[index] : index;
-                    return scaling(value);
-                });
-            }
-        } else {
-            legend = new Array(binning.numBins);
-            for (let i = 0; i < binning.numBins; i++) {
-                legend[i] = scaling(minValue + step * i);
-            }
-        }
-    }
-    return legend;
 }
 
 
@@ -339,7 +242,7 @@ function inferEncoding (encoding, dataframe, type, attributeName, encodingType, 
     const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
     let encodingSpec = inferEncodingSpec(encoding, aggregations, attributeName, encodingType, variation, binning);
     const scaling = scalingFromSpec(encodingSpec);
-    const legend = legendForBins(encodingSpec, aggregations, scaling, binning);
+    const legend = legendForBins({encodingSpec, scaling, binning});
     return {
         legend: legend,
         scaling: scaling
@@ -420,6 +323,7 @@ function resetEncodingOnNBody ({ view, encoding }) {
 }
 
 
+
 // -> Observable {
 //      enabled: bool,
 //      encodingType,
@@ -493,27 +397,57 @@ function applyEncodingOnNBody ({ view, encoding }) {
     const desc = oldDesc.clone();
     desc.setDependencies([[attributeName, type]]);
     if (bufferName === 'edgeColors') {
-        desc.setComputeAllValues((values, outArr, numGraphElements) => {
-            for (let i = 0; i < numGraphElements; i++) {
-                const val = values[i];
-                if (!dataTypeUtil.valueSignifiesUndefined(val)) {
-                    const scaledValue = wrappedScaling(val);
-                    outArr[i*2] = scaledValue;
-                    outArr[i*2 + 1] = scaledValue;
+        if (binning.binType === 'countBy') {
+            desc.setComputeAllValues((values, outArr, numGraphElements) => {
+                for (let i = 0; i < numGraphElements; i++) {
+                    const val = values[i];
+                    if (!dataTypeUtil.valueSignifiesUndefined(val)) {
+                        const bin = binning.valueToBin[val];
+                        const scaledValue = wrappedScaling(bin !== undefined ? bin : binning.numBins);
+                        outArr[i*2] = scaledValue;
+                        outArr[i*2 + 1] = scaledValue;
+                    }
                 }
-            }
-            return outArr;
-        });
+                return outArr;
+            });
+        } else {
+             desc.setComputeAllValues((values, outArr, numGraphElements) => {
+                for (let i = 0; i < numGraphElements; i++) {
+                    const val = values[i];
+                    if (!dataTypeUtil.valueSignifiesUndefined(val)) {
+                        const bin = Math.floor((val - binning.minValue) / binning.binWidth);
+                        const scaledValue = wrappedScaling(bin);
+                        outArr[i*2] = scaledValue;
+                        outArr[i*2 + 1] = scaledValue;
+                    }
+                }
+                return outArr;
+            });
+        }
     } else {
-        desc.setComputeAllValues((values, outArr, numGraphElements) => {
-            for (let i = 0; i < numGraphElements; i++) {
-                const val = values[i];
-                if (!dataTypeUtil.valueSignifiesUndefined(val)) {
-                    outArr[i] = wrappedScaling(val);
+        if (binning.binType === 'countBy') {
+            desc.setComputeAllValues((values, outArr, numGraphElements) => {
+                for (let i = 0; i < numGraphElements; i++) {
+                    const val = values[i];
+                    if (!dataTypeUtil.valueSignifiesUndefined(val)) {
+                        const bin = binning.valueToBin[val];
+                        outArr[i] = wrappedScaling(bin !== undefined ? bin : binning.numBins);
+                    }
                 }
-            }
-            return outArr;
-        });
+                return outArr;
+            });
+        } else {
+             desc.setComputeAllValues((values, outArr, numGraphElements) => {
+                for (let i = 0; i < numGraphElements; i++) {
+                    const val = values[i];
+                    if (!dataTypeUtil.valueSignifiesUndefined(val)) {
+                        const bin = Math.floor((val - binning.minValue) / binning.binWidth);
+                        outArr[i] = wrappedScaling(bin);
+                    }
+                }
+                return outArr;
+            });
+        }
     }
 
     ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName, desc);

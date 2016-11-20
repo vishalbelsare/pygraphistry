@@ -1881,25 +1881,8 @@ Dataframe.prototype.getColumnAggregations = function (columnName, type, global =
  * @returns {Boolean}
  */
 Dataframe.prototype.doesColumnRepresentColorPaletteMap = function (type, columnName) {
-    const aggregations = this.getColumnAggregations(columnName, type, true);
-    const aggType = 'fitsColorPaletteMap';
-    if (!aggregations.hasAggregationByType(aggType)) {
-        let fits = false;
-        if (this.getDataType(columnName, type) === 'color' &&
-            aggregations.getAggregationByType('dataType') === 'integer') {
-            let distinctValues = _.map(aggregations.getAggregationByType('distinctValues'), (x) => x.distinctValue);
-            if (_.isEmpty(distinctValues)) {
-                distinctValues = [aggregations.getAggregationByType('minValue'),
-                    aggregations.getAggregationByType('maxValue')];
-            }
-            if (palettes.valuesFitOnePaletteCategory(distinctValues)) {
-                fits = true;
-            }
-        }
-        aggregations.updateAggregationTo(aggType, fits);
-        return fits;
-    }
-    return aggregations.getAggregationByType(aggType);
+    return (type === 'edge' && columnName === 'edgeColor')
+        || (type === 'point' && columnName === 'pointColor');
 };
 
 Dataframe.prototype.getAttributeKeys = function (type) {
