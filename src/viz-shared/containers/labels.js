@@ -21,22 +21,6 @@ let Label = container({
     }
 })(LabelComponent);
 
-const onClick = ({ type, title }) => {
-   console.log('clicked', {type, title});
-};
-
-const onFilter = ({ type, field, value }) => {
-   console.log('click filter', {type, field, value});
-};
-
-const onExclude = ({ type, field, value }) => {
-   console.log('click exclude', {type, field, value});
-};
-
-const onPinChange = ({ type, title }) => {
-   console.log('click pin change', {type, title});
-};
-
 let Labels = ({ simulating,
                 selectLabel,
                 labelMouseMove,
@@ -51,7 +35,6 @@ let Labels = ({ simulating,
     if (enabled) {
         if (poiEnabled && point && point.length) {
             labels = point.slice(0);
-            // console.log(`rendering point labels`, labels);
         }
         if (selection && highlight && (
             selection.type === highlight.type) && (

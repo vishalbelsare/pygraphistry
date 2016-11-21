@@ -74,6 +74,7 @@ let View = ({
 View = container({
     renderLoading: true,
     fragment: ({ scene, layout, toolbar } = {}) => `{
+        pruneOrphans,
         scene: ${ Scene.fragment(scene) },
         panels: {
             left: { id, name },

@@ -21,7 +21,6 @@ export function scene(view, sceneID = 'default') {
             renderer: {
                 id: sceneID,
                 showArrows: true,
-                pruneOrphans: false,
                 camera: $ref(`${view}.camera`),
                 highlight: $ref(`${view}.highlight`),
                 selection: $ref(`${view}.selection`),
@@ -57,7 +56,7 @@ export function scene(view, sceneID = 'default') {
             }, {
                 id: 'appearance',
                 name: 'Appearance',
-                length: 5, ...[{
+                length: 6, ...[{
                     id: 'point-size',
                     type: 'discrete',
                     name: 'Point Size',
@@ -102,7 +101,7 @@ export function scene(view, sceneID = 'default') {
                     id: 'prune-orphans',
                     type: 'bool',
                     name: 'Prune Isolated Nodes',
-                    value: $ref(`${view}.scene.renderer.pruneOrphans`),
+                    value: $ref(`${view}.pruneOrphans`),
                 }]
             }]
         }

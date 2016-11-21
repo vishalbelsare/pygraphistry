@@ -4,22 +4,22 @@ export const UPDATE_EXPRESSION = 'update-expression';
 export const SET_EXPRESSION_ENABLED = 'set-expression-enabled';
 export const CANCEL_UPDATE_EXPRESSION = `cancel-${UPDATE_EXPRESSION}`;
 
-export const addExpression = ({ ...props }) => ({
+export const addExpression = (props) => ({
     ...props, type: ADD_EXPRESSION
 });
 
-export const removeExpression = ({ ...props }) => ({
+export const removeExpression = (props) => ({
     ...props, type: REMOVE_EXPRESSION
 });
 
-export const updateExpression = ({ ...props }) => ({
+export const updateExpression = (props) => ({
     ...props, type: UPDATE_EXPRESSION
 });
 
-export const setExpressionEnabled = ({ ...props }) => ({
+export const setExpressionEnabled = (props) => ({
     ...props, type: SET_EXPRESSION_ENABLED
 });
 
-export const cancelUpdateExpression = ({ ...props }) => ({
+export const cancelUpdateExpression = (props) => ({
     ...props, type: CANCEL_UPDATE_EXPRESSION
 });

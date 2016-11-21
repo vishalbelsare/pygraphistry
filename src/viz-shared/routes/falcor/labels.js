@@ -59,27 +59,31 @@ export function labels(path, base) {
             set: setValues,
             route: `${base}['labels'].options[{keys}][{keys}]`
         }, {
-            get: getLabelsByTypeAndRangeHandler,
-            route: `${base}['labelsByType']['edge', 'point'][{ranges}][
+            get: getLabelsByTypeAndIndexHandler,
+            route: `${base}['labelsByType']['edge', 'point'][{integers}][
                 'type', 'index', 'title', 'columns'
             ]`
+        }, {
+            route: `${base}['labelsByType']['edge', 'point'][{integers}]['filters', 'exclusions']`,
+            get: (path) => {
+                const thisPath = path.slice(0, -1);
+                const basePath = path.slice(0, -4);
+                const lists = [].concat(path[path.length - 1]);
+                return lists.map((listType) => $value(
+                    thisPath.concat(listType),
+                    $ref(basePath.concat(listType))
+                ));
+            }
         }];
 
-        function getLabelsByTypeAndRangeHandler(path) {
+        function getLabelsByTypeAndIndexHandler(path) {
 
             const workbookIds = [].concat(path[1]);
             const viewIds = [].concat(path[3]);
             const labelKeys = [].concat(path[path.length - 1]);
             const labelTypes = [].concat(path[path.length - 3]);
-            const labelRanges = [].concat(path[path.length - 2]);
+            const labelIndexes = [].concat(path[path.length - 2]);
             const { request: { query: options = {}}} = this;
-
-            const labelIndexes = labelRanges.reduce((indexes, { from: index, to }) => {
-                while (index <= to) {
-                    indexes[indexes.length] = index++;
-                }
-                return indexes;
-            }, []);
 
             return loadLabelsByIndexAndType({
                 workbookIds, viewIds, labelTypes, labelIndexes, options

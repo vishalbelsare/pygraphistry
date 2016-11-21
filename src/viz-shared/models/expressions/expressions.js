@@ -121,49 +121,49 @@ const defaultQueriesMap = {
     integer(...args) {
         return this.number(...args)
     },
-    number({ identifier, start = 0 }) {
+    number({ identifier, value = 0 }) {
         return {
-            start, ast: {
+            start: value, ast: {
                 type: 'BinaryExpression',
                 operator: '>=',
                 left: { type: 'Identifier', name: identifier },
-                right: { type: 'Literal', value: start }
+                right: { type: 'Literal', value: value }
             }
         };
     },
     categorical(...args) {
         return this.string(...args);
     },
-    string({ identifier, equals = 'ABC' }) {
+    string({ identifier, value = 'ABC' }) {
         return {
-            equals, ast: {
+            equals: value, ast: {
                 type: 'BinaryExpression',
                 operator: '=',
                 left: { type: 'Identifier', name: identifier },
-                right: { type: 'Literal', value: equals }
+                right: { type: 'Literal', value: value }
             }
         };
     },
-    boolean({ identifier, equals = true }) {
+    boolean({ identifier, value = true }) {
         return {
-            ast: {
+            equals: value, ast: {
                 type: 'BinaryPredicate',
                 operator: 'IS',
                 left: { type: 'Identifier', name: identifier },
-                right: { type: 'Literal', value: equals }
+                right: { type: 'Literal', value: value }
             }
         }
     },
     datetime(...args) {
         return this.date(...args);
     },
-    date({ identifier }) {
+    date({ identifier, value = 'now' }) {
         return {
             ast: {
                 type: 'BinaryExpression',
                 operator: '>=',
                 left: { type: 'Identifier', name: identifier },
-                right: { type: 'Literal', value: 'now'}
+                right: { type: 'Literal', value: value }
             }
         };
     },
@@ -190,7 +190,7 @@ const defaultQueriesMap = {
         }
     },
     isEqualTo({ identifier, value }) {
-        return this.string({ identifier, equals: value });
+        return this.string({ identifier, value });
     },
     isBetween({ identifier, start, stop }) {
         return {

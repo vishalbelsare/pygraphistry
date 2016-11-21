@@ -391,8 +391,8 @@ class Graphistry extends Observable {
             'showToolbar': ['view', 'toolbar.visible'],
 
             //models/scene/scene.js
+            'pruneOrphans': ['view', 'scene.pruneOrphans'],
             'showArrows':   ['view', 'scene.renderer.showArrows'],
-            'pruneOrphans': ['view', 'scene.renderer.pruneOrphans'],
             'background':   ['view', 'scene.renderer.background.color'],
             'edgeOpacity':  ['view', 'scene.renderer.edges.opacity'],
             'edgeSize':     ['view', 'scene.renderer.edges.scaling'],

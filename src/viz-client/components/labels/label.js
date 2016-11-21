@@ -2,8 +2,9 @@ import Color from 'color';
 import classNames from 'classnames';
 import React, { PropTypes } from 'react';
 import { defaultFormat } from 'viz-shared/formatters';
-import { Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import styles from 'viz-shared/components/labels/style.less';
+import { Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
+import { getDefaultQueryForDataType } from 'viz-shared/models/expressions';
 
 function preventPropagation (f) {
     return function (e) {
@@ -13,7 +14,6 @@ function preventPropagation (f) {
 }
 
 function stopPropagation(e) {
-    // e.nativeEvent.stopImmediatePropagation();
     e.stopPropagation();
 }
 
@@ -163,7 +163,9 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
                        [styles['label-title-icon']]: true,
                    })}
                    onMouseDown={stopPropagation}
-                   onClick={ preventPropagation(() => onExclude && onExclude({ type, field: '_title', value: title })) }>
+                   onClick={ preventPropagation(() => onExclude && onExclude({
+                            componentType: type, dataType: 'string', name: '_title', value: title
+                        }))}>
                     <i className={classNames({
                         [styles['fa']]: true,
                         [styles['fa-ban']]: true
@@ -192,12 +194,23 @@ function LabelContents ({ columns = [], ...props }) {
     );
 }
 
+const operatorForColumn = function(operators) {
+    return (queryType, dataType) => {
+        return operators[queryType + '_' + dataType] || (
+            operators[queryType + '_' + dataType] = getDefaultQueryForDataType({
+                queryType, dataType
+            }).ast.operator || '=');
+    }
+}({});
+
 function LabelRow ({ color,
                      title, type,
                      field, value,
                      onFilter, onExclude,
                      dataType, displayName }) {
 
+    const filterOp = operatorForColumn('filter', dataType);
+    const excludeOp = operatorForColumn('exclusion', dataType);
     const displayString = displayName || defaultFormat(value, dataType);
 
     if (displayString === null || displayString === undefined) {
@@ -222,12 +235,14 @@ function LabelRow ({ color,
                                         overlay={
                                             <Tooltip className={styles['label-tooltip']}
                                                      id={`tooltip:row:exclude${type}:${title}:${field}`}>
-                                                Exclude if "{field} = {value}"
+                                                Exclude if "{field} {filterOp} {value}"
                                             </Tooltip>
                                         }>
                             <a className={styles['exclude-by-key-value']}
                                onMouseDown={stopPropagation}
-                               onClick={ preventPropagation(() => onExclude && onExclude({ type, field, value }))}>
+                               onClick={ preventPropagation(() => onExclude && onExclude({
+                                        componentType: type, name: field, dataType, value
+                                    }))}>
                                 <i className={classNames({
                                     [styles['fa']]: true,
                                     [styles['fa-ban']]: true
@@ -240,12 +255,14 @@ function LabelRow ({ color,
                                         overlay={
                                             <Tooltip className={styles['label-tooltip']}
                                                      id={`tooltip:row:filter:${type}:${title}:${field}`}>
-                                                Filter for "{field} = {value}"
+                                                Filter for "{field} {excludeOp} {value}"
                                             </Tooltip>
                                         }>
                             <a className={styles['filter-by-key-value']}
                                onMouseDown={stopPropagation}
-                               onClick={ preventPropagation(() => onFilter && onFilter({ type, field, value }))}>
+                               onClick={ preventPropagation(() => onFilter && onFilter({
+                                        componentType: type, name: field, dataType, value
+                                    }))}>
                                 <i className={classNames({
                                     [styles['fa']]: true,
                                     [styles['fa-filter']]: true

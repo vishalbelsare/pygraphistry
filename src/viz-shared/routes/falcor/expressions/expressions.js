@@ -73,7 +73,7 @@ export function expressions(path, base) {
                             $invalidate(`
                                 workbooksById['${workbook.id}']
                                     .viewsById['${view.id}']
-                                    .labelsById`
+                                    .labelsByType`
                             )
                         );
                     }
@@ -106,14 +106,14 @@ export function addExpressionHandler({
 }) {
     return function addExpressionHandler(path, inputOrProps) {
 
-        const [componentType, name, dataType] =
+        const [componentType, name, dataType, value] =
             typeof inputOrProps === 'string' ? [] : inputOrProps;
         const input = typeof inputOrProps === 'string' ? inputOrProps : undefined;
 
         const workbookIds = [].concat(path[1]);
         const viewIds = [].concat(path[3]);
         return addItem({
-            workbookIds, viewIds, name, dataType, componentType, input, ...restProps
+            workbookIds, viewIds, name, dataType, componentType, input, value, ...restProps
         })
         .mergeMap(({ workbook, view, [itemName]: value }) => {
 
@@ -127,8 +127,16 @@ export function addExpressionHandler({
             list[list.length++] = newItemRef;
 
             return [
+                $invalidate(`${base}.labelsByType`),
                 $value(newItemPath, newItemRef),
                 $value(newLengthPath, list.length),
+                $value(`${base}.scene.controls[1].selected`, false),
+                $value(`${base}.labels.controls[0].selected`, false),
+                $value(`${base}.layout.controls[0].selected`, false),
+                $value(`${base}.filters.controls[0].selected`, false),
+                $value(`${base}.exclusions.controls[0].selected`, false),
+                $value(`${base}['${listName}'].controls[0].selected`, true),
+                $value(`${base}.panels.left`, $ref(`${base}['${listName}']`)),
             ];
         })
         .catch(captureErrorStacks)
@@ -194,6 +202,7 @@ export function removeExpressionHandler({
             const newLengthPath = `${base}['${listName}'].length`;
 
             return listRefVals.concat(
+                found ? [$invalidate(`${base}.labelsByType`)] : [],
                 $value(newLengthPath, list.length -= Number(found))
             );
         })

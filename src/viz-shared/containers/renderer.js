@@ -21,7 +21,7 @@ let Renderer = ({
 
 Renderer = container(({ highlight = {}, selection = {} } = {}) => {
     return `{
-        showArrows, pruneOrphans,
+        showArrows,
         camera: { zoom, center: { x, y, z } },
         edges: { scaling, opacity, elements },
         points: { scaling, opacity, elements },

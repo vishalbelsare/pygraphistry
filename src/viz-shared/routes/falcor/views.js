@@ -10,18 +10,42 @@ import { getHandler,
          captureErrorStacks } from 'viz-shared/routes';
 
 export function views(path, base) {
-    return function views({ appendColumn,
-                            tickLayout,
+    return function views({ tickLayout,
+                            appendColumn,
+                            maskDataframe,
                             loadViewsById,
                             moveSelectedNodes }) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
+        const setPruneOrphansAndMaskDataframe = setHandler(path, loadViewsById,
+            (node, key, value, path, { workbook, view }) => Observable.defer(() => {
+
+                view[key] = value;
+
+                let obs = Observable.of(0);
+                const { filters, exclusions } = view;
+
+                if ((filters && filters.length) || (exclusions && exclusions.length)) {
+                                                  // ignore dataframe errors
+                    obs = maskDataframe({ view }).catch((err) => Observable.of(0));
+                }
+
+                return obs
+                    .mapTo({ path, value })
+                    .concat(Observable.of($invalidate(
+                        path.slice(0, -1).concat('labelsByType')
+                    )));
+            }));
 
         return [{
             get: getValues,
             route: `${base}['id', 'title']`,
             returns: `String`
+        }, {
+            get: getValues,
+            set: setPruneOrphansAndMaskDataframe,
+            route: `${base}.pruneOrphans`
         }, {
             get: getValues,
             set: setValues,

@@ -31,6 +31,7 @@ export function view(workbookId, sceneID = 'default', viewId = simpleflake().toJ
     return {
         id: viewId,
         absolutePath: view,
+        pruneOrphans: false,
         title: '', columns: [],
         panels: {
             left: undefined,
