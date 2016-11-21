@@ -36,6 +36,9 @@ export function toValuesAndInvalidations({ rect, falcor, refreshMask }) {
         values: [
             $value(`selection.mask`, $atom(rect))
         ],
-        invalidations: refreshMask && [`selection.histogramsById`] || undefined
+        invalidations: !refreshMask ? undefined : [
+            `inspector.rows`,
+            `selection.histogramsById`
+        ]
     };
 }

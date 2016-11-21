@@ -5,11 +5,8 @@ import {
     Labels as LabelsComponent
 } from 'viz-shared/components/labels';
 
-import {
-    addFilter,
-    addExclusion,
-    labelMouseMove,
-} from 'viz-shared/actions/labels';
+import { labelMouseMove } from 'viz-shared/actions/labels';
+import { addFilter, addExclusion } from 'viz-shared/actions/expressions';
 
 let Label = container({
     fragment: () => `{

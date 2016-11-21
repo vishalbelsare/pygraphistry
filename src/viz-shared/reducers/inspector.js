@@ -3,6 +3,7 @@ import { pathValue as $value, ref as $ref, atom as $atom } from '@graphistry/fal
 
 import {
     SELECT_INSPECTOR_TAB,
+    SELECT_INSPECTOR_ROW,
     SET_INSPECTOR_PAGE,
     SET_INSPECTOR_SORT_KEY,
     SET_INSPECTOR_SORT_ORDER,
@@ -20,6 +21,7 @@ import {
 export function inspector(action$, store) {
     return Observable.merge(
         selectInspectorTab(action$, store),
+        selectInspectorRow(action$, store),
         setInspectorColumns(action$, store),
         genericSetter(SET_INSPECTOR_PAGE, 'currentQuery.page', 'page')(action$, store),
         genericSetter(SET_INSPECTOR_SORT_KEY, 'currentQuery.sortKey', 'key')(action$, store),
@@ -37,6 +39,33 @@ function selectInspectorTab(action$, store) {
                 falcor.set($value(
                     `currentQuery`,
                     $ref(falcor._path.concat([`queries`, openTab])))))));
+}
+
+function selectInspectorRow(action$, store) {
+    return action$
+        .ofType(SELECT_INSPECTOR_ROW)
+        .switchMap(({ falcor, componentType, index }) => {
+            const inverseType = componentType === 'point' ? 'edge' : 'point';
+            return falcor.set({
+                json: {
+                    highlight: {
+                        darken: true,
+                        [inverseType]: $atom([]),
+                        [componentType]: $atom([index]),
+                    },
+                    selection: {
+                        [inverseType]: $atom([]),
+                        [componentType]: $atom([index]),
+                    },
+                    labels: {
+                        highlight: $atom(undefined),
+                        selection: $ref(falcor.getPath()
+                            .concat('labelsByType', componentType, index)
+                        )
+                    }
+                }
+            });
+        });
 }
 
 function setInspectorColumns(action$, store) {

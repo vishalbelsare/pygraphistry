@@ -34,6 +34,7 @@ function coerceSortKey(templates, openTab, sortKey) {
 let Inspector = ({
         openTab = 'points', currentQuery = {},
         loading,
+        selectInspectorRow,
         selectInspectorTab, setInspectorPage, setInspectorSortKey,
         setInspectorSortOrder, setInspectorSearchTerm, setInspectorColumns,
 
@@ -59,6 +60,7 @@ let Inspector = ({
         numPages={Math.ceil(count / rowsPerPage)}
         open={open} openTab={openTab} templates={getTemplates(templates, openTab)}
         rows={currentRows}
+        onRowSelect={selectInspectorRow}
         onPageSelect={setInspectorPage}
         onSelect={selectInspectorTab}
         onColumnsSelect={setInspectorColumns}
@@ -124,7 +126,9 @@ Inspector = container({
                                 [${start}..${stop}]: {
                                     ${ getTemplates(templates, openTab)
                                         .map(({name}) => `"${name}"`)
-                                        .map(name => name).join(', ') }
+                                        .map(name => name)
+                                        .concat('_index')
+                                        .join(', ') }
                                 }
                             }
                         }

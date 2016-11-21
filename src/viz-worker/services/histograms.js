@@ -2,8 +2,8 @@ import util from 'util';
 import { Observable } from 'rxjs';
 import Binning from 'viz-worker/simulator/Binning';
 import DataframeMask from 'viz-worker/simulator/DataframeMask';
-import { histogramBinHighlightQuery } from 'viz-shared/models/expressions/histograms.js';
-import { histogram as createHistogram } from 'viz-shared/models/expressions/histograms.js';
+import { histogramBinHighlightQuery } from 'viz-shared/models/expressions/histograms';
+import { histogram as createHistogram } from 'viz-shared/models/expressions/histograms';
 import {
     ref as $ref,
     atom as $atom,

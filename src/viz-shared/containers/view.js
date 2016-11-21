@@ -14,15 +14,15 @@ import {
     onSelectionMaskTouchStart,
 } from 'viz-shared/actions/scene';
 
-import {
-    selectLabel,
-} from 'viz-shared/actions/labels';
+import { selectLabel } from 'viz-shared/actions/labels';
+import { selectInspectorRow } from 'viz-shared/actions/inspector';
 
 let View = ({
     selectLabel,
     sceneMouseMove,
     sceneTouchStart,
     selectToolbarItem,
+    selectInspectorRow,
     scene = {}, labels = {},
     panels = {}, toolbar = {},
     onSelectedPointTouchStart,
@@ -64,7 +64,7 @@ let View = ({
                   position='bottom'
                   isVisible={isBottomPanelOpen}
                   defaultSize={1 - (1/Math.sqrt(2))}>
-                <Panel side='bottom' data={bottom} key='bottom-panel'/>
+                <Panel side='bottom' data={bottom} key='bottom-panel' selectInspectorRow={selectInspectorRow}/>
             </Dock>
             <Toolbar key='toolbar' data={toolbar} selectToolbarItem={selectToolbarItem}/>
         </div>
@@ -89,6 +89,7 @@ View = container({
         sceneMouseMove,
         sceneTouchStart,
         selectToolbarItem,
+        selectInspectorRow,
         onSelectedPointTouchStart,
         onSelectionMaskTouchStart,
     }

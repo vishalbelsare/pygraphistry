@@ -127,9 +127,11 @@
     tr:not(:hover) {
         & td, & .label-value-wrapper {
             .label-value-text {
+                width: 10em;
+                display: block;
                 max-height: 5em;
-                text-overflow: ellipsis;
                 overflow: hidden;
+                text-overflow: ellipsis;
             }
         }
     }
@@ -137,6 +139,7 @@
     tr:hover {
         & td, & .label-value-wrapper {
             .label-value-text {
+                display: block;
                 max-height: none;
                 text-overflow: initial;
             }
@@ -147,12 +150,18 @@
 .label-pair {
 
     font-size: 1.1em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 
     &:nth-child(odd) > td {
         background-color: rgba(51,51,102,0.1);
     }
 
     border-bottom: 1px solid transparent;
+
+    &:hover {
+        white-space: normal;
+    }
 
     &:hover > td,
     &:hover:nth-child(odd)  > td,
@@ -169,7 +178,7 @@
     overflow: hidden;
     font-weight: bold;
     text-align: right;
-    white-space: nowrap;
+    // white-space: nowrap;
     padding-left: 7px;
     padding-right: 0.5em;
     text-overflow: ellipsis;
@@ -177,17 +186,19 @@
     &:after {
         content: ": "
     }
+}
 
-    .label tr:hover & {
+.label tr:hover {
+    .label-key, .label-value {
         white-space: normal;
         word-wrap: break-word;
     }
 }
 
 .label-value {
-    position: relative; //anchoring so icons can be placed above
     max-width: 15em;
     padding-right: 7px;
+    position: relative; //anchoring so icons can be placed above
 }
 
 

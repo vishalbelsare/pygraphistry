@@ -178,13 +178,13 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
     );
 }
 
-function LabelContents ({ columns = [], ...props }) {
+function LabelContents ({ columns = [], title = '', ...props }) {
     return (
         <div onMouseDown={stopPropagation}
              className={styles['label-contents']}>
             <table>
                 <tbody>
-                {columns.map(({ key, title, ...column }, index) => (
+                {columns.map(({ key, ...column }, index) => (
                     <LabelRow key={`${index}-${title}`}
                               field={key} title={title}
                               {...props} {...column}/>
