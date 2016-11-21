@@ -281,14 +281,7 @@ function resetEncodingOnNBody ({ view, encoding }) {
     let {id, encodingType, graphType: unnormalizedType, attribute: unnormalizedAttribute} = encoding;
     const ccManager = dataframe.computedColumnManager;
 
-    let encodingMetadata = undefined;
-    try {
-        encodingMetadata = getEncodingMetadata(dataframe, encodingType, unnormalizedType, unnormalizedAttribute);
-    } catch (e) {
-        return Observable.throw(e);
-    }
-
-    let {bufferName} = encodingMetadata;
+    const bufferName = bufferNameForEncodingType(encodingType);
 
     if (ccManager.resetLocalBuffer(bufferName, dataframe)) {
         console.error('======= TODO FORCE VBO UPDATE');
