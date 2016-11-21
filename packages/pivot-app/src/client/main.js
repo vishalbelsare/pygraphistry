@@ -23,6 +23,11 @@ const log = logger.createLogger('pivot-app', __filename);
 const useLocalStorage = __DEV__;
 const localStorageToken = 'pivots-app-cache';
 
+
+window.onerror = function(message, file, line, col, error) {
+    log.error(error, message);
+}
+
 Observable
     .fromEvent(window, 'load', () => {
         printBuildInfo();
@@ -40,8 +45,8 @@ Observable
     .subscribe({
         next() {},
         error(e) {
-            debugger;
             log.error(e);
+            debugger;
         }
     });
 
