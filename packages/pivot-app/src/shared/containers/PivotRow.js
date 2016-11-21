@@ -204,12 +204,21 @@ function renderTextCell(id, paramKey, paramValue, paramUI, handlers) {
 }
 
 function renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, handlers) {
-    const options =
-        [{value: '*', label: 'All pivots'}].concat(
+    var options =
+        [
+            {
+                value: [previousPivots.map(({ id }) => ( id ))],
+                label: 'All pivots'
+            }
+        ];
+
+    if (previousPivots.length > 1) {
+        options = options.concat(
             previousPivots.map((pivot, index) =>
-                ({value: pivot.id, label: `Step ${index}`})
+                ({value: [ pivot.id ], label: `Step ${index}`})
             )
         );
+    }
 
     return renderComboCell(
         id,

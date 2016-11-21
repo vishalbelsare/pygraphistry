@@ -35,7 +35,7 @@ const PAN_SHAPES = {
     },
     userToDest: {
         connections: [ 'dest', 'user' ],
-        attributes: [ 'action', 'time']
+        attributes: [ 'action', 'time', 'severity']
     },
 };
 
@@ -46,16 +46,15 @@ export const PAN_SEARCH = new SplunkPivot({
     pivotParametersUI: {
         query: {
             inputType: 'text',
-            label: 'Search',
+            label: 'Search:',
             placeholder: 'severity="critical"'
         },
         nodes: {
             inputType: 'text',
-            label: 'Nodes',
+            label: 'Nodes:',
             placeholder: 'user, dest'
         }
     },
-    connections: ['user', 'dest'],
     attributes: PAN_SHAPES.userToDest.attributes,
     encodings: PAN_ENCODINGS,
     toSplunk: function(pivotParameters) {
@@ -75,21 +74,21 @@ export const PAN_EXPAND = new SplunkPivot({
     pivotParametersUI: {
         source: {
             inputType: 'pivotCombo',
-            label: 'Expand on',
+            label: 'Select events:',
         },
         sourceAttribute: {
             inputType: 'text',
-            label: 'Expand on',
+            label: 'Expand on:',
             placeholder: 'user'
         },
         query: {
             inputType: 'text',
-            label: 'Subsearch',
+            label: 'Subsearch:',
             placeholder: contextFilter
         },
         nodes: {
             inputType: 'text',
-            label: 'Nodes',
+            label: 'Nodes:',
             placeholder: 'user, dest'
         }
     },
@@ -99,18 +98,14 @@ export const PAN_EXPAND = new SplunkPivot({
         this.connections = pivotParameters.nodes.split(',').map((field) => field.trim());
         const sourceAttribute = pivotParameters.sourceAttribute;
         const filter = pivotParameters.query;
-        const subSearchId = pivotParameters.source;
-        const isGlobalSearch = (subSearchId === '*');
+        const sourcePivots = pivotParameters.source.value;
         var subsearch = '';
-        if (isGlobalSearch) {
-            const list  = _.map(
-                Object.keys(pivotCache), (pivotId) =>
-                    (`[| loadjob "${pivotCache[pivotId].splunkSearchId}"
-                          | fields ${sourceAttribute} | dedup ${source}]`));
-            subsearch = list.join(' | append ');
-        } else {
-            subsearch = `[| loadjob "${pivotCache[subSearchId].splunkSearchId}" |  fields ${sourceAttribute} | dedup ${sourceAttribute}]`;
-        }
+        const list  = sourcePivots.map(
+            (pivotId) =>
+                (`[| loadjob "${pivotCache[pivotId].splunkSearchId}"
+                   | fields ${sourceAttribute} | dedup ${sourceAttribute}]`)
+        );
+        subsearch = list.join(' | append ');
 
         return `search ${SPLUNK_INDICES.PAN}
                     | search ${filter} ${subsearch} ${constructFieldString(this)}`;
