@@ -14,16 +14,6 @@ import dataTypeUtil from './dataTypes.js';
 import palettes from '../simulator/palettes';
 
 const defaults = {
-    color: {
-        isQuantitative: {
-            sequential: {
-                range: ['blue', 'white']
-            },
-            diverging: {
-                range: ['blue', 'white', 'red']
-            }
-        }
-    },
     pointSize: {
         range: [3, 20] // Range of diameters supported, per VGraphLoader
     },
@@ -63,17 +53,22 @@ function inferLoadedEncodingsFor(dataframe) {
  * @param {BinningResult} binning
  * @returns {EncodingSpec}
  */
-function inferColorScalingSpecFor ({variation, binning}) {
+function inferColorScalingSpecFor ({variation, binning, colors}) {
     if (variation === 'categorical') {
         return {
-            scalingType: binning.bins.length <= 10 ? 'category10' : 'category20',
-            domain: [0, (binning.bins.length||1) - 1],
+            scalingType: 'ordinal',
+            domain: [0, binning.numBins||1],
+            range: colors
         };
     } else if (variation === 'continuous') {
         return {
             scalingType: 'linear',
-            domain: [0, (binning.bins.length||1) - 1],
-            range: defaults.color.isQuantitative.sequential.range
+            domain:
+                colors.length > binning.numBins
+                    ? colors.slice(0, binning.numBins||1).map( (c, i) => i )
+                    : colors.map( (c,i) =>
+                            d3Scale.linear().domain([0, colors.length]).range([0, binning.numBins])(i)),
+            range: colors
         };
     } else {
         throw new Error('unexpected encoding variant: ' + variation);
@@ -146,9 +141,10 @@ function domainIsPositive (aggregations) {
  * @param {String} encodingType
  * @param {String} variation
  * @param {Binning} binning
+ * @param {Array} colors
  * @returns {EncodingSpec}
  */
-function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingType, variation, binning) {
+function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingType, variation, binning, colors) {
     const summary = aggregations.getSummary();
     let scalingType, domain, range, clamp;
     const defaultDomain = [summary.minValue, summary.maxValue];
@@ -158,7 +154,7 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
         case 'pointSize':
             // Square root because point size/radius yields a point area:
             scalingType = 'scaleSqrt';
-            domain = [0, (binning.bins.length||1) - 1];
+            domain = [0, (binning.numBins||1) - 1];
             range = defaults.pointSize.range;
             clamp = true;
             break;
@@ -185,7 +181,7 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
         case 'pointColor':
         case 'edgeColor':
 
-            return inferColorScalingSpecFor({variation, binning});
+            return inferColorScalingSpecFor({variation, binning, colors});
 
         case 'title':
         case 'pointTitle':
@@ -206,24 +202,6 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
     });
 }
 
-/** A legend per the binning; assigns a range member per bin.
- * @returns <Array>
- */
-function legendForBins ({encodingSpec, scaling, binning}) {
-    const { scalingType } = encodingSpec;
-    switch (scalingType) {
-        case 'identity': throw new Error('Identity not supported by legendForBins');
-        case 'linear':
-        case 'category10':
-        case 'category20':
-        case 'scaleSqrt':
-            return _.range(0, binning.numBins).map(scaling);
-        default:
-            throw new Error('Unhandled scalingType: ' + scalingType);
-    }
-}
-
-
 
 
 /**
@@ -233,13 +211,15 @@ function legendForBins ({encodingSpec, scaling, binning}) {
  * @param {String} encodingType
  * @param {String} variation
  * @param {Binning} binning
+ * @param {Array} colors
  * @returns {{legend: Array, scaling: d3.scale}}
  */
-function inferEncoding (encoding, dataframe, type, attributeName, encodingType, variation, binning) {
+function inferEncoding (encoding, dataframe, type, attributeName, encodingType, variation, binning, colors) {
     const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
-    let encodingSpec = inferEncodingSpec(encoding, aggregations, attributeName, encodingType, variation, binning);
+    let encodingSpec = inferEncodingSpec(encoding, aggregations, attributeName, encodingType, variation, binning, colors);
     const scaling = scalingFromSpec(encodingSpec);
-    const legend = legendForBins({encodingSpec, scaling, binning});
+    const legend = _.range(0, binning.numBins).map(scaling);
+
     return {
         legend: legend,
         scaling: scaling
@@ -334,7 +314,8 @@ function applyEncodingOnNBody ({ view, encoding }) {
         return Observable.throw(new Error('applyEncodingOnNBody missing params'));
     }
 
-    let {id, encodingType, graphType: unnormalizedType, attribute: unnormalizedAttribute, variation, binning, timeBounds, reset} = encoding;
+    let {name, encodingType, graphType: unnormalizedType, attribute: unnormalizedAttribute,
+        variation, binning, colors, timeBounds, reset} = encoding;
     const ccManager = dataframe.computedColumnManager;
     let encodingMetadata = undefined;
     try {
@@ -354,7 +335,7 @@ function applyEncodingOnNBody ({ view, encoding }) {
             dataframe, type, attributeName, encodingType, timeBounds);
     } else {
         encodingWrapper = inferEncoding(
-            encoding, dataframe, type, attributeName, encodingType, variation, binning);
+            encoding, dataframe, type, attributeName, encodingType, variation, binning, colors);
     }
 
     if (encodingWrapper === undefined || encodingWrapper.scaling === undefined) {
@@ -499,7 +480,6 @@ export {
     inferEncoding,
     scalingFromSpec,
     inferEncodingSpec,
-    legendForBins,
     bufferNameForEncodingType,
     inferTimeBoundEncoding,
 

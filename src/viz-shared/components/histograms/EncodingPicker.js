@@ -30,29 +30,29 @@ function makeOptionLists(options) {
     const WIDTH = 50;
     return {
         point: {
-            color: options.point.color.map((option) => ({
-                value: option.variant,
+            color: options.point.color.map(({name, variant, colors, label}) => ({
+                value: name,
                 label:
                     <div style={{whiteSpace: 'nowrap', display: 'inline-block'}}>
                     <span className={styles['encoding-icon-container']} >{
-                        option.legend.map((color, idx, all) => <span style={{
+                        colors.map((color, idx, all) => <span style={{
                             backgroundColor: color,
                             width: `${WIDTH / all.length}px`
                         }}/>)
-                    }</span><label>{option.label}</label></div>,
+                    }</span><label>{label}</label></div>,
             }))
         },
         edge: {
-            color: options.edge.color.map((option) => ({
-                value: option.variant,
+            color: options.edge.color.map(({name, variant, colors, label}) => ({
+                value: name,
                 label:
                     <div style={{whiteSpace: 'nowrap', display: 'inline-block'}}>
                     <span className={styles['encoding-icon-container']} >{
-                        option.legend.map((color, idx, all) => <span style={{
+                        colors.map((color, idx, all) => <span style={{
                             backgroundColor: color,
                             width: `${WIDTH / all.length}px`
                         }}/>)
-                    }</span><label>{option.label}</label></div>,
+                    }</span><label>{label}</label></div>,
             }))
         },
         sizeValue: [],
@@ -93,18 +93,30 @@ export default class EncodingPicker extends React.Component {
 
 
 
-    handleSelectColorChange (variation) {
-        const reset = !variation;
-        const id = this.props.componentType + 'Color';
+    handleSelectColorChange (name) {
+
+        if (!this.props.setEncoding) return;
+
         const encodingType = 'color';
-        const binning = this.props.globalBinning;
         const graphType = this.props.componentType;
         const attribute = this.props.attribute;
 
-        if (this.props.setEncoding) {
-            this.props.setEncoding({
-                variation, reset, id, encodingType, binning, graphType, attribute
+        if (!name) {
+
+            return this.props.setEncoding({
+                reset: true, name, encodingType, graphType, attribute
             });
+
+        } else {
+
+            const {variant: variation, colors, label} =
+                this.props.options[this.props.componentType].color
+                    .filter( ({name: optName}) => name === optName )[0];
+
+            this.props.setEncoding({
+                reset: false, variation, name, encodingType, colors, graphType, attribute
+            });
+
         }
 
     }
@@ -174,7 +186,7 @@ export default class EncodingPicker extends React.Component {
                             isEncoded(this.props.encodings, this.props, 'color')
                                 ? options[this.props.componentType].color
                                     .filter( ({value}) =>
-                                            value === this.props.encodings[this.props.componentType].color.variation )[0]
+                                            value === this.props.encodings[this.props.componentType].color.name )[0]
                                 : []
                         }
                         placeholder="Pick how to visualize"
