@@ -2,6 +2,8 @@ import { SplunkConnector } from '../connectors';
 import { shapeSplunkResults } from '../shapeSplunkResults.js';
 import logger from '../../../shared/logger.js';
 
+import _ from 'underscore';
+
 const log = logger.createLogger('SplunkPivot', __filename);
 
 export class SplunkPivot {
