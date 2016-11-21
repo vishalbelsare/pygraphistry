@@ -1,0 +1,8 @@
+{
+    "id": "3e0eabc5a48bbbbc",
+    "enabled": true,
+    "pivotParameters": {
+        "query": "severity=\"critical\""
+    },
+    "pivotTemplate": "pan-search-to-user-threat_name"
+}

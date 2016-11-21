@@ -79,7 +79,7 @@ export const SplunkConnector = {
                 const jobResults = getResults({count: job.properties().resultCount}).catch(
                     (e) => {
                         return Observable.throw(new Error(
-                            `${e.data.messages[0].text} ========>  Splunk Query: ${searchQuery}`));
+                            `${e.data.messages[0].text} ========>  Splunk Query: ${query}`));
                         }
                 );
                 return jobResults;
