@@ -32,7 +32,7 @@ const log = logger.createLogger('pivot-app', __filename);
 function welcomeBar(user, connectors) {
     return (
         <Grid><Row className={styles['welcome-bar']}>
-            <Col md={4}>
+            <Col md={6}>
                 <Panel>
                     <Media.Left align="middle">
                         <Image width={84}
@@ -45,25 +45,17 @@ function welcomeBar(user, connectors) {
                         <Media.Heading className={styles['user-greeting-heading']}>
                             Connectors!
                         </Media.Heading>
-                        <span className={styles['user-greeting-message']}>
-                            Welcome, {user.name}!
+                        <span>
+                            Manage your data connections
                         </span>
                     </Media.Body>
                 </Panel>
              </Col>
-            <Col md={4}>
+            <Col md={6}>
                 <Panel>
                     <h2 className="text-center">{connectors.length}</h2>
                     <div className="text-center">
                          Number of Connectors
-                    </div>
-                </Panel>
-            </Col>
-            <Col md={4}>
-                <Panel>
-                    <h2 className="text-center">1/2</h2>
-                    <div className="text-center">
-                        Active Connectors
                     </div>
                 </Panel>
             </Col>
@@ -72,15 +64,6 @@ function welcomeBar(user, connectors) {
 }
 
 function connectorTable({user, connectors = [], switchScreen, selectHandler, checkStatus}) {
-    function tagsFormatter(tags, row) {
-        return (
-            <p> {
-                tags.map(tag => (
-                    <Label key={`ilisttags-${row.id}-${tag}`}> { tag } </Label>
-                ))
-            } </p>
-        );
-    }
 
     function nameFormatter(name, row) {
         return (<a href="#">
@@ -139,13 +122,6 @@ function connectorTable({user, connectors = [], switchScreen, selectHandler, che
                                    dataFormat={dateFormatter} width="180px" dataAlign="center">
                     Updated
                 </TableHeaderColumn>
-
-                {/*
-                <TableHeaderColumn dataField="tags" dataFormat={tagsFormatter} editable={false}>
-                    Tags
-                </TableHeaderColumn>
-                */}
-
                 <TableHeaderColumn dataField="id" dataFormat={idFormatter} width='172px' editable={false}>
                     Actions
                 </TableHeaderColumn>
@@ -163,7 +139,7 @@ function renderConnectorScreen({ user, connectors, switchScreen, checkStatus },
 
     return (
         <div className="wrapper">
-            <Sidebar activeScreen='home'/>
+            <Sidebar activeScreen='connectors'/>
             <div className={`main-panel ${styles['main-panel']}`}
                  style={{width: 'calc(100% - 90px)', height: '100%'}}>
                 <Panel className={styles['main-panel-panel']}>
