@@ -142,6 +142,8 @@ if (require.main === module) {
 }
 
 
+delete brewer.PairedRepeat;
+
 //////////////
 
 module.exports = {
