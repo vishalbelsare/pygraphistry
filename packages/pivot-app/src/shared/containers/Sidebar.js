@@ -22,7 +22,7 @@ function renderSidebar({activeScreen, switchScreen}) {
                             <p>&nbsp;</p>
                         </a>
                     </li>
-                    <li>
+                    {/*<li>
                         <a href="#">
                             <i className="pe-7s-users"></i>
                             <p>&nbsp;</p>
@@ -33,31 +33,31 @@ function renderSidebar({activeScreen, switchScreen}) {
                             <i className="pe-7s-note2"></i>
                             <p>&nbsp;</p>
                         </a>
-                    </li>
+                    </li>*/}
                     <li className={active('investigation')}>
                         <a href="#" onClick={() => switchScreen('investigation')}>
                             <i className="pe-7s-graph1"></i>
                             <p>&nbsp;</p>
                         </a>
                     </li>
-                    <li>
+                    {/*}<li>
                         <a href="#">
                             <i className="pe-7s-network"></i>
                             <p>&nbsp;</p>
                         </a>
-                    </li>
+                    </li> */}
                     <li className={active('connectors')}>
                         <a href="#" onClick={() => switchScreen('connectors')}>
                             <i className="pe-7s-plugin"></i>
                             <p>&nbsp;</p>
                         </a>
                     </li>
-                    <li>
+                    {/*}<li>
                         <a href="#" className="new-investigation">
                             <i className="pe-7s-plus"></i>
                             <p>&nbsp;</p>
                         </a>
-                    </li>
+                    </li> */}
 
                 </ul>
             </div>
