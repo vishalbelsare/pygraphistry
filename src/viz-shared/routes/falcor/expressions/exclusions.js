@@ -14,9 +14,11 @@ export function exclusions(path, base) {
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
         const addExclusion = addExpressionHandler({
+            openPanel: true,
+            panelSide: 'left',
             listName: 'exclusions',
             addItem: addExpression,
-            expressionType: 'exclusion'
+            expressionType: 'exclusion',
         });
         const removeExclusion = removeExpressionHandler({
             listName: 'exclusions',

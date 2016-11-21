@@ -19,6 +19,7 @@ import { loadViews, moveSelectedNodes } from './views';
 import { loadWorkbooks, saveWorkbookService } from './workbooks';
 import { sendFalcorUpdate } from './sendFalcorUpdate';
 import { loadNBody, setLayoutControl } from './nBody';
+import { setEncoding, getEncoding, getEncodingOptions } from './encodings'
 import {
     addHistogram, removeHistogram,
     loadHistograms, loadSelectionHistograms,
@@ -58,6 +59,10 @@ export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }
         loadHistogramsById,
         loadLabelsByIndexAndType,
         loadSelectionHistogramsById,
+
+        setEncoding,
+        getEncoding,
+        getEncodingOptions,
 
         moveSelectedNodes: moveSelectedNodesImpl,
 

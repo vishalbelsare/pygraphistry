@@ -102,6 +102,8 @@ export function addExpressionHandler({
     mapName = 'expressionsById',
     listName = 'expressions',
     itemName = 'expression',
+    panelSide = 'left',
+    openPanel = false,
     ...restProps
 }) {
     return function addExpressionHandler(path, inputOrProps) {
@@ -126,18 +128,26 @@ export function addExpressionHandler({
 
             list[list.length++] = newItemRef;
 
-            return [
+            const pathValues = [
                 $invalidate(`${base}.labelsByType`),
                 $value(newItemPath, newItemRef),
-                $value(newLengthPath, list.length),
-                $value(`${base}.scene.controls[1].selected`, false),
-                $value(`${base}.labels.controls[0].selected`, false),
-                $value(`${base}.layout.controls[0].selected`, false),
-                $value(`${base}.filters.controls[0].selected`, false),
-                $value(`${base}.exclusions.controls[0].selected`, false),
-                $value(`${base}['${listName}'].controls[0].selected`, true),
-                $value(`${base}.panels.left`, $ref(`${base}['${listName}']`)),
+                $value(newLengthPath, list.length)
             ];
+
+            if (openPanel) {
+                pathValues.push(
+                    $value(`${base}.scene.controls[1].selected`, false),
+                    $value(`${base}.labels.controls[0].selected`, false),
+                    $value(`${base}.layout.controls[0].selected`, false),
+                    $value(`${base}.filters.controls[0].selected`, false),
+                    $value(`${base}.exclusions.controls[0].selected`, false),
+                    $value(`${base}.histograms.controls[0].selected`, false),
+                    $value(`${base}['${listName}'].controls[0].selected`, true),
+                    $value(`${base}.panels['${panelSide}']`, $ref(`${base}['${listName}']`))
+                );
+            }
+
+            return pathValues;
         })
         .catch(captureErrorStacks)
         .catch((err) => {

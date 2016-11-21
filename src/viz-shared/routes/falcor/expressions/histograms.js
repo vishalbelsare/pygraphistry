@@ -30,6 +30,8 @@ export function histograms(path, base) {
         const setHistograms = setHandler(path.concat('histogram'), loadHistogramsById);
 
         const addHistogramHandler = addExpressionHandler({
+            openPanel: false,
+            panelSide: 'right',
             addItem: addHistogram,
             itemName: 'histogram',
             listName: 'histograms',
@@ -150,7 +152,11 @@ export function histograms(path, base) {
                             .highlight.darken`,
                         darken
                 ));
-            });
+            })
+            .catch((e) => {
+                console.error({msg: '==== RUH ROH', e, path, index});
+                return Observable.throw(e);
+            })
         }
 
         function getHistogramTypeReference(path) {

@@ -1,8 +1,9 @@
+import util from 'util';
 import { Observable } from 'rxjs';
 import Binning from 'viz-worker/simulator/Binning';
 import DataframeMask from 'viz-worker/simulator/DataframeMask';
-import { histogramBinHighlightQuery } from 'viz-shared/models/expressions';
-import { histogram as createHistogram } from 'viz-shared/models/expressions';
+import { histogramBinHighlightQuery } from 'viz-shared/models/expressions/histograms.js';
+import { histogram as createHistogram } from 'viz-shared/models/expressions/histograms.js';
 import {
     ref as $ref,
     atom as $atom,
@@ -96,11 +97,12 @@ export function computeMaskForHistogramBin({ view, histogram, bin }) {
     const { dataframe } = nBody;
 
     const errors = [];
-    const masks = dataframe.getMasksForQuery(
-        histogramBinHighlightQuery(histogram, bin), errors, false
-    );
+    const query = histogramBinHighlightQuery(histogram, bin);
+    const masks = dataframe.getMasksForQuery(query, errors, false);
 
     if (errors.length) {
+        console.error({msg: '====BAD computeMaskForHistogramBin', errors, stack: new Error().stack});
+        console.error({msg: '-------', query: util.inspect(query, false, null)});
         return Observable.throw(errors[0]);
     }
 
@@ -131,6 +133,11 @@ function loadPointsMask({ view, masked, histogram }) {
     return Observable.defer(() =>
         nBody.simulator.selectNodesInRect({ ...mask })
     );
+}
+
+export function getHistogramForAttribute({ view, graphType, attribute, dataType = 'number' }) {
+    const histogram = createHistogram({ name: attribute, dataType, componentType: graphType });
+    return computeHistogram({ view, histogram, refresh: true })
 }
 
 function computeHistogram({ view, masked, histogram, pointsMask, refresh = true }) {
@@ -191,7 +198,7 @@ function computeHistogram({ view, masked, histogram, pointsMask, refresh = true 
 
         const { type: binType,
                 numBins, binWidth, minValue, maxValue,
-                bins, binValues, numValues: numElements } = binResult;
+                bins, binValues, numValues: numElements, valueToBin = null } = binResult;
 
         let maxElements = 0,
             castKeyToNumber = dataType === 'number',
@@ -264,7 +271,8 @@ function computeHistogram({ view, masked, histogram, pointsMask, refresh = true 
             minValue, maxValue,
             numElements, maxElements,
             binType, binWidth, numBins,
-            isMasked, bins: binsNormalized
+            isMasked, bins: binsNormalized,
+            valueToBin
         };
     });
 }

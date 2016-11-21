@@ -1,17 +1,25 @@
 import classNames from 'classnames';
 import { shortFormat, defaultFormat } from 'viz-shared/formatters';
 import { Popover, OverlayTrigger } from 'react-bootstrap';
+import { ColorPill } from 'viz-shared/components/color-pill/colorPill.js'
 import styles from 'viz-shared/components/histograms/styles.less';
 
-export const SparklineBar = ({ name, binType, dataType,
+export const SparklineBar = ({ index, name, binType, dataType,
                                values = [], isMasked = false,
+                               encodings, componentType,
                                maskedCount = 0, maskedHeight = `50%`,
                                globalCount = 0, globalHeight = `100%`,
                                onBinTouchMove, onBinTouchStart, onBinTouchCancel,
-                               binWidth = `20px`, color = null, enabled = false,
+                               binWidth = `20px`, enabled = false,
                                filterBounds = { leftest: false, rightest: false } }) => {
 
     const { leftest, rightest } = filterBounds;
+
+    let color = false;
+    try {
+        color = encodings[componentType].color.attribute === name ?
+            encodings[componentType].color.legend[index] : false;
+    } catch (e) {}
 
     return (
         <OverlayTrigger trigger={['hover']}
@@ -21,6 +29,7 @@ export const SparklineBar = ({ name, binType, dataType,
                     <SparklineBarInfo values={values}
                                       binType={binType}
                                       dataType={dataType}
+                                      color={color}
                                       globalCount={globalCount}
                                       maskedCount={maskedCount}/>
                 </Popover>
@@ -30,6 +39,7 @@ export const SparklineBar = ({ name, binType, dataType,
                     [styles['leftest']]: leftest,
                     [styles['rightest']]: rightest,
                     [styles['is-masked']]: isMasked,
+                    [styles['is-empty-global']]: !globalCount,
                     [styles['is-filter-true']]: enabled,
                     [styles['is-filter-false']]: !enabled,
                     [styles['histogram-column']]: true
@@ -75,7 +85,7 @@ export const SparklineBar = ({ name, binType, dataType,
     );
 };
 
-const SparklineBarInfo = ({ values, binType, dataType, globalCount, maskedCount }) => {
+const SparklineBarInfo = ({ values, color, binType, dataType, globalCount, maskedCount }) => {
 
     const rows = [];
 
@@ -111,6 +121,13 @@ const SparklineBarInfo = ({ values, binType, dataType, globalCount, maskedCount 
             <p style={{ color: '#ff6600' }}>{maskedCount}</p>
         ]);
     }
+
+    if (globalCount && color) {
+        rows.push([
+            <p>Color</p>,
+            <p>{ color }<ColorPill color={color}/></p>]);
+    }
+
 
     return (
         <div className={styles['histogram-info']}>

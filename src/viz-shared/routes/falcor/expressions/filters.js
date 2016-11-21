@@ -21,9 +21,11 @@ export function filters(path, base) {
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
         const addFilter = addExpressionHandler({
+            openPanel: true,
+            panelSide: 'left',
             listName: 'filters',
             addItem: addExpression,
-            expressionType: 'filter'
+            expressionType: 'filter',
         });
         const removeFilter = removeExpressionHandler({
             listName: 'filters',

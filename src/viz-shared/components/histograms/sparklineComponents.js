@@ -7,7 +7,7 @@ import stylesGlobal from 'viz-shared/index.less';
 
 
 function SizeLegendIndicator (props) {
-    return props.sizeValue && props.sizeValue.length
+    return props.sizeValue
         ?  <span class="label label-default">
                 <Button bsSize="small"
                     className={styles['histogram-legend-pill']}>

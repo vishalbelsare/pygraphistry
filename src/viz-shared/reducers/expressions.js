@@ -32,6 +32,7 @@ function addExpression(action$) {
         ));
 }
 
+
 function removeExpression(action$) {
     return action$
         .ofType(REMOVE_EXPRESSION)

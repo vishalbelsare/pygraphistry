@@ -10,16 +10,22 @@ import {
     binTouchStart,
     binTouchCancel,
     yScaleChanged,
-    encodingChanged,
 
     addHistogram,
     removeHistogram,
 } from 'viz-shared/actions/histograms';
 
-let Histograms = ({ addHistogram, removeHistogram,
+import {
+    setEncoding,
+} from 'viz-shared/actions/encodings';
+
+let Histograms = ({ addHistogram, removeHistogram, setEncoding, encodings = {},
                     templates = [], histograms = [],
                     loading = false, className = '',
                     style = {}, ...props }) => {
+
+    const { options, point, edge } = encodings;
+
     return (
         <ExpressionsList loading={loading}
                          templates={templates}
@@ -33,6 +39,9 @@ let Histograms = ({ addHistogram, removeHistogram,
         {histograms.map((histogram, index) => (
             <Histogram data={histogram}
                        key={`${index}: ${histogram.id}`}
+                       options={options}
+                       encodings={ {point,edge} }
+                       setEncoding={ setEncoding }
                        removeHistogram={removeHistogram}/>
         ))}
         </ExpressionsList>
@@ -41,24 +50,53 @@ let Histograms = ({ addHistogram, removeHistogram,
 
 Histograms = container({
     renderLoading: true,
-    fragment: ({ templates = [], ...histograms }) => `{
-        templates: {
-            length, [0...${templates.length}]: {
-                name, dataType, identifier, componentType
-            }
-        },
-        id, name, length, ...${
-            Histogram.fragments(histograms)
+    fragment: ({ templates = [], encodings, ...histograms }) => {
+
+        if (!encodings) {
+            return `{
+                templates: {
+                    length
+                },
+                id, name, length, ...${
+                    Histogram.fragments(histograms)
+                },
+                encodings: {
+                    options: {
+                        ['point', 'edge']: { color }
+                    },
+                    point: { color, size },
+                    edge: { color }
+                }
+            }`;
         }
-    }`,
+
+        return `{
+            templates: {
+                length, [0...${templates.length}]: {
+                    name, dataType, identifier, componentType
+                }
+            },
+            id, name, length, ...${
+                Histogram.fragments(histograms)
+            },
+            encodings: {
+                options: {
+                    ['point', 'edge']: { color }
+                },
+                point: { color, size },
+                edge: { color }
+            }
+        }`;
+    },
     mapFragment: (histograms) => ({
         histograms,
         id: histograms.id,
         name: histograms.name,
-        templates: histograms.templates
+        templates: histograms.templates,
+        encodings: histograms.encodings
     }),
     dispatchers: {
-        addHistogram, removeHistogram
+        addHistogram, removeHistogram, setEncoding
     }
 })(Histograms);
 
@@ -67,7 +105,9 @@ let Histogram = ({ loading = false,
                    id, name, yScale = 'none',
                    global: _global = {}, masked = {},
                    binTouchMove, binTouchStart, binTouchCancel,
-                   removeHistogram, yScaleChanged, encodingChanged }) => {
+                   setEncoding,
+                   options, encodings,
+                   removeHistogram, yScaleChanged }) => {
 
     const trans = Math[yScale] || ((x) => x);
     const { bins: maskedBins = [], isMasked } = masked;
@@ -80,17 +120,22 @@ let Histogram = ({ loading = false,
                    loading={loading}
                    dataType={dataType}
                    onClose={removeHistogram}
+                   options={options}
                    componentType={componentType}
-                   onYScaleChanged={yScaleChanged}
-                   onEncodingChanged={encodingChanged}>
+                   onYScaleChanged={ (value) => yScaleChanged({key: 'yScale', value}) }
+                   setEncoding={setEncoding}
+                   encodings={encodings}>
         {globalBins.map((
             { values, count: globalCount }, index, bins,
             { count: maskedCount = 0 } = maskedBins[index] || {}) => (
             <SparklineBar key={`${id}-bar-${index}`}
+                          componentType={componentType}
+                          encodings={encodings}
+                          index={index}
                           binWidth={`${100 * (1/(numBins||1))}%`}
                           filterBounds={{ leftest: false, rightest: false }}
                           globalCount={globalCount} maskedCount={maskedCount}
-                          name={name} color={null} values={values} enabled={false}
+                          name={name} values={values} enabled={false}
                           binType={binType} dataType={dataType} isMasked={isMasked}
                           onBinTouchMove={(event) => binTouchMove({ event, index })}
                           onBinTouchStart={(event) => binTouchStart({ event, index })}
@@ -113,8 +158,7 @@ Histogram = container({
         binTouchMove,
         binTouchStart,
         binTouchCancel,
-        yScaleChanged,
-        encodingChanged,
+        yScaleChanged
     }
 })(Histogram);
 

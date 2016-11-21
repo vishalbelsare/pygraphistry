@@ -4,6 +4,7 @@ import React, { PropTypes } from 'react';
 import { defaultFormat } from 'viz-shared/formatters';
 import styles from 'viz-shared/components/labels/style.less';
 import { Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
+import { ColorPill } from 'viz-shared/components/color-pill/colorPill';
 import { getDefaultQueryForDataType } from 'viz-shared/models/expressions';
 
 function preventPropagation (f) {
@@ -225,9 +226,7 @@ function LabelRow ({ color,
 
                     <span className={styles['label-value-text']}>{displayString}</span>
 
-                    { dataType ==='color' &&
-                    <span className={styles['label-color-pill']}
-                          style={{ backgroundColor: new Color(value).rgbString() }} />}
+                    { dataType ==='color' && <ColorPill color={value} /> }
 
                     <div className={styles['label-icons']}>
                         <OverlayTrigger trigger={['hover']}
@@ -235,7 +234,7 @@ function LabelRow ({ color,
                                         overlay={
                                             <Tooltip className={styles['label-tooltip']}
                                                      id={`tooltip:row:exclude${type}:${title}:${field}`}>
-                                                Exclude if "{field} {filterOp} {value}"
+                                                Exclude if "{type}:{field} {filterOp} {value}"
                                             </Tooltip>
                                         }>
                             <a className={styles['exclude-by-key-value']}
@@ -255,7 +254,7 @@ function LabelRow ({ color,
                                         overlay={
                                             <Tooltip className={styles['label-tooltip']}
                                                      id={`tooltip:row:filter:${type}:${title}:${field}`}>
-                                                Filter for "{field} {excludeOp} {value}"
+                                                Filter for "{type}:{field} {excludeOp} {value}"
                                             </Tooltip>
                                         }>
                             <a className={styles['filter-by-key-value']}

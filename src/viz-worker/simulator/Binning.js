@@ -200,7 +200,10 @@ Binning.prototype.binningForColumnByDistinctValue = function (columnName, mask, 
     const numBins = Math.min(_.keys(countsByValue).length, maxNumBins);
     const numBinsWithoutOther = numBins - 1;
     const keys = _.keys(countsByValue);
-    const sortedKeys = keys.sort((a, b) => countsByValue[b] - countsByValue[a]);
+    const sortedKeys =
+        dataType === 'number'
+        ? keys.sort((a, b) => a - b)
+        : keys.sort((a, b) => countsByValue[b] - countsByValue[a]);
 
     // Copy over numBinsWithoutOther from countsByValue to bins directly.
     // Take the rest and bucket them into '_other'
@@ -229,7 +232,8 @@ Binning.prototype.binningForColumnByDistinctValue = function (columnName, mask, 
         numValues: numValues,
         numBins: _.keys(bins).length,
         bins: bins,
-        binValues: binValues
+        binValues: binValues,
+        valueToBin: _.object(sortedKeys.map((key, i) => [key, i]))
     });
 };
 

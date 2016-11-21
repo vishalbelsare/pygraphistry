@@ -175,6 +175,9 @@ const defaultQueriesMap = {
         }
     },
     isOneOf({ identifier, values = [] }) {
+        if (!identifier) {
+            throw new Error('isOneOf expected identifier: ' + identifier);
+        }
         return {
             ast: {
                 type: 'BinaryPredicate',
