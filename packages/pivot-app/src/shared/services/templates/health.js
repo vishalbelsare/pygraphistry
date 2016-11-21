@@ -1,4 +1,4 @@
-import { expandTemplate, constructFieldString, SplunkPivot } from '../services/support/splunkMacros.js';
+import { expandTemplate, constructFieldString, SplunkPivot } from '../connectors/splunk.js';
 import stringhash from 'string-hash';
 
 const SPLUNK_INDICES = {

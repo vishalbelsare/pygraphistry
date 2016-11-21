@@ -4,6 +4,7 @@ import { logErrorWithCode } from './support/logErrorWithCode.js';
 import { app } from './app';
 import { pivots } from './pivots';
 import { investigations } from './investigations';
+import { connectors } from './connectors';
 import { users } from './users';
 import { templates } from './templates';
 import {
@@ -20,6 +21,7 @@ export function routes(services) {
         .concat(app(services))
         .concat(pivots(services))
         .concat(investigations(services))
+        .concat(connectors(services))
         .concat(users(services))
         .concat(templates(services))
     ).map(wrapRouteHandlers);

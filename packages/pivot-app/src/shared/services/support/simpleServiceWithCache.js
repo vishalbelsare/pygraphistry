@@ -47,7 +47,7 @@ export default class SimpleServiceWithCache {
                 return Observable.from(reqIds)
                     .flatMap((id) => {
                         if (id in app[index]) {
-                            return Observable.from([app[index][id]])
+                            return Observable.from([app[index][id]]);
                         } else {
                             return this.lookupId(id)
                                 .map(this.createModel)

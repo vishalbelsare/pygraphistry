@@ -1,4 +1,5 @@
 import InvestigationScreen from './InvestigationScreen.js';
+import ConnectorScreen from './ConnectorScreen.js'
 import HomeScreen from './HomeScreen.js';
 import { DevTools } from './DevTools';
 import { hoistStatics } from 'recompose';
@@ -26,7 +27,8 @@ function renderApp({ currentUser, serverStatus, app }) {
     const screens = {
         'undefined': (<HomeScreen data={app}/>),
         'home': (<HomeScreen data={app}/>),
-        'investigation': (<InvestigationScreen data={app}/>)
+        'investigation': (<InvestigationScreen data={app}/>),
+        'connectors': (<ConnectorScreen data={app}/>)
     }
 
     const errorBanner = serverStatus && !serverStatus.ok

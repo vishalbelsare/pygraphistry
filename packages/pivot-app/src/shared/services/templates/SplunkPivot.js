@@ -1,11 +1,9 @@
-import { searchSplunk } from '../../services/searchSplunk.js';
-import { shapeSplunkResults} from '../../services/shapeSplunkResults.js';
-import _ from 'underscore';
+import { SplunkConnector } from '../connectors';
+import { shapeSplunkResults } from '../shapeSplunkResults.js';
 import logger from '../../../shared/logger.js';
-const log = logger.createLogger('pivot-app', __filename);
 
+const log = logger.createLogger('SplunkPivot', __filename);
 
-const pivotCache = {}
 export class SplunkPivot {
     constructor( pivotDescription ) {
         let {
@@ -13,7 +11,6 @@ export class SplunkPivot {
             pivotParameterKeys, pivotParametersUI,
             toSplunk, connections, encodings, attributes
         } = pivotDescription;
-
         this.id = id;
         this.name = name;
         this.pivotParameterKeys = pivotParameterKeys;
@@ -22,25 +19,28 @@ export class SplunkPivot {
         this.connections = connections;
         this.encodings = encodings;
         this.attributes = attributes;
+        this.connector = SplunkConnector;
     }
 
-    searchAndShape({ app, pivot }) {
+    searchAndShape({ app, pivot, pivotCache }) {
 
         pivot.searchQuery = this.toSplunk(pivot.pivotParameters, pivotCache);
         pivot.template = this;
 
-        // TODO figure out what to do with pivotCache)
-        const splunkResults = searchSplunk({app, pivot})
-            .do(({pivot}) => {
+        return this.connector.search(pivot.searchQuery)
+            .do(({ resultCount, events, searchId }) => {
+                pivot.resultCount = resultCount;
+                pivot.results = events;
+                pivot.splunkSearchId = searchId;
                 pivotCache[pivot.id] = { results: pivot.results,
                     query:pivot.searchQuery,
                     splunkSearchID: pivot.splunkSearchID
                 };
-            });
-
-        return splunkResults
-            .map(({app, pivot}) => shapeSplunkResults({app, pivot}));
+            })
+            .map(() => shapeSplunkResults({app, pivot}));
     }
+
+
 }
 
 function buildLookup(text, pivotCache) {

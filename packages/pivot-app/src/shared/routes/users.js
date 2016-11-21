@@ -37,7 +37,7 @@ export function users({ loadApp, createInvestigation, removeInvestigationsById,
         returns: `String`,
         get: getUserHandler,
     }, {
-        route: `['usersById'][{keys}]['investigations', 'templates'].length`,
+        route: `['usersById'][{keys}]['investigations', 'templates', 'connectors'].length`,
         returns: `Number`,
         get: getUserHandler,
     }, {
@@ -49,6 +49,11 @@ export function users({ loadApp, createInvestigation, removeInvestigationsById,
         returns: `$ref('templatesById[{templateId}]')`,
         get: getUserHandler,
     }, {
+        route: `['usersById'][{keys}]['connectors'][{keys}]`,
+        returns: `$ref('connectorsById[{connectorId}]')`,
+        get: getUserHandler
+    }, {
+        get: getUserHandler,
         route: `['usersById'][{keys}].createInvestigation`,
         call: createInvestigationCallRoute({ loadUsersById, createInvestigation })
     }, {

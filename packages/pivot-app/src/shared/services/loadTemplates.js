@@ -23,7 +23,7 @@ export function templateStore(loadApp) {
     });
 
     function loadTemplatesById({templateIds}) {
-        return service.loadByIds(templateIds)
+        return service.loadByIds(templateIds);
     }
 
     return {
@@ -32,11 +32,9 @@ export function templateStore(loadApp) {
 }
 
 export function listTemplates() {
-    return _.mapObject(
-        _.groupBy(
-            _.values(templates),
-            t => t.id
-        ),
-        group => group[0]
-    );
+    return Object.values(templates)
+        .reduce(function(templatesById, template) {
+            templatesById[template.id] = template;
+            return templatesById;
+        }, {});
 }

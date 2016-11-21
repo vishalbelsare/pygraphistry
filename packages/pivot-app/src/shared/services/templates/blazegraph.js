@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import {
     constructFieldString,
     encodeGraph
-} from '../support/splunkMacros.js';
+} from '../connectors/splunk.js';
 import logger from '../../../shared/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 

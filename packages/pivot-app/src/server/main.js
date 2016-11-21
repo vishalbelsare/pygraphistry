@@ -1,9 +1,8 @@
-import expressApp from './app.js'
+import expressApp from './app.js';
 import bodyParser from 'body-parser';
 import bunyan from 'bunyan';
 import path from 'path';
 import mkdirp from 'mkdirp';
-import { Observable } from 'rxjs';
 import { reloadHot } from '../shared/reloadHot';
 import { renderMiddleware } from './middleware';
 import { getDataSourceFactory } from '../shared/middleware';
@@ -15,6 +14,7 @@ import {
 import {
     wrapServices,
     loadApp,
+    connectorStore, listConnectors, checkConnector,
     userStore, templateStore, listTemplates,
     listInvestigations, investigationStore,
     createInvestigation, cloneInvestigationsById, removeInvestigationsById,
@@ -37,14 +37,14 @@ mkdirp.sync(pivotPath);
 
 listInvestigations(investigationPath)
     .map(investigations =>
-        makeTestUser(investigations, listTemplates(), conf.get('graphistry.key'),
+        makeTestUser(investigations, listTemplates(), listConnectors(), conf.get('graphistry.key'),
                      conf.get('graphistry.host'))
     )
     .do(init)
     .subscribe(
         () => log.info('Pivot-App initialized'),
         (e) => log.error(e)
-    )
+    );
 
 function init(testUser) {
     const app = createAppModel(testUser);
@@ -62,10 +62,14 @@ function init(testUser) {
         deletePivotsById
     } = pivotStore(loadApp(app), pivotPath);
 
+
+    const { loadConnectorsById } = connectorStore(loadApp(app));
+
     const routeServices = wrapServices({
         loadApp: loadApp(app),
         loadUsersById,
         loadTemplatesById,
+        loadConnectorsById,
         loadInvestigationsById,
         saveInvestigationsById,
         deleteInvestigationsById,
@@ -76,6 +80,7 @@ function init(testUser) {
         savePivotsById,
         deletePivotsById,
         insertPivot, splicePivot, searchPivot,
+        checkConnector,
         uploadGraph
     });
 
