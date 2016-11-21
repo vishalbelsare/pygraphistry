@@ -130,19 +130,19 @@ export default class EncodingPicker extends React.Component {
 
     handleSelectSizeChange (newEnabled) {
 
+        if (!this.props.setEncoding) return;
+
         // No variation for sizes :/
         const reset = !newEnabled;
-        const id = this.props.componentType + 'Size';
+        const name = this.props.componentType + 'Size';
         const encodingType = 'size';
         const binning = this.props.globalBinning;
         const graphType = this.props.componentType;
         const attribute = this.props.attribute;
 
-        if (this.props.setEncoding) {
-            this.props.setEncoding({
-                id, encodingType, graphType, attribute, binning, reset
-            });
-        }
+        this.props.setEncoding({
+            name, encodingType, graphType, attribute, binning, reset
+        });
 
     }
 
