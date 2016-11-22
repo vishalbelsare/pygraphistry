@@ -81,7 +81,7 @@ class Graphistry extends Observable {
         const { view } = this;
         return new this(this
             .from(columns)
-            .concatMap((column) => view.call('columns.add', column))
+            .concatMap((column) => view.call('columns.add', [column]))
             .takeLast(1)
             .mergeMap(() => fetchDataUntilSettled({
                 falcor: view, fragment: ({ columns = [] } = {}) => `{
@@ -406,7 +406,7 @@ class Graphistry extends Observable {
 
         const { workbook } = this;
 
-        return new this(workbook.call('save')
+        return new this(workbook.call('save', [])
             .map(({ json }) => json.toJSON())
             .toPromise());
     }
@@ -442,7 +442,7 @@ class Graphistry extends Observable {
 
         const { view } = this;
 
-        return new this(view.call('filters.add', expr)
+        return new this(view.call('filters.add', [expr])
             .map(({ json }) => json.toJSON())
             .toPromise());
     }
@@ -460,7 +460,7 @@ class Graphistry extends Observable {
     static addExclusion(expr) {
         const { view } = this;
 
-        return new this(view.call('exclusions.add', expr)
+        return new this(view.call('exclusions.add', [expr])
             .map(({ json }) => json.toJSON())
             .toPromise());
 
