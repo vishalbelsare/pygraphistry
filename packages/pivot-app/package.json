@@ -49,7 +49,7 @@
     "rc-switch": "~1.4.2",
     "react": "~15.3.1",
     "react-bootstrap": "~0.30.3",
-    "react-bootstrap-table": "~2.5.5",
+    "react-bootstrap-table": "2.5.8",
     "react-dom": "~15.3.1",
     "react-redux": "~4.4.5",
     "react-select": "~1.0.0-rc.2",
