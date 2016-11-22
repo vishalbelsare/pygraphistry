@@ -1,0 +1,14 @@
+{
+    "name": "Palo Alto Network",
+    "url": "https://staging.graphistry.com/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&dataset=PivotApp/3e0f42142ecf0b0f",
+    "id": "3e0eabc5a56912aa",
+    "description": "Correlating user activity in Palo Alto Network Logs",
+    "tags": [
+        "Demo"
+    ],
+    "modifiedOn": 1479772730242,
+    "pivots": [
+        "3e0eabc5a48bbbbc",
+        "3e0f404be47ef90c"
+    ]
+}

@@ -36,8 +36,7 @@ export class SplunkPivot {
                 pivot.splunkSearchId = searchId;
                 pivotCache[pivot.id] = { results: pivot.results,
                     query:pivot.searchQuery,
-                    splunkSearchID: pivot.splunkSearchID
-                };
+                    splunkSearchId: pivot.splunkSearchId };
             })
             .map(() => shapeSplunkResults({app, pivot}));
     }

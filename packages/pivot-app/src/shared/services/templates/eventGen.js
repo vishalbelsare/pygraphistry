@@ -1,6 +1,9 @@
-import { constructFieldString, SplunkPivot } from '../connectors/splunk.js';
+import { constructFieldString, SplunkPivot } from './SplunkPivot.js';
+import logger from '../../logger.js';
 import _ from 'underscore';
 import stringhash from 'string-hash';
+
+const log = logger.createLogger('pivot-app', __filename);
 
 const SPLUNK_INDICES = {
     EVENT_GEN: 'index=event_gen',
@@ -32,92 +35,80 @@ const PAN_SHAPES = {
     },
     userToDest: {
         connections: [ 'dest', 'user' ],
-        attributes: [ 'action', 'time']
+        attributes: [ 'action', 'time', 'severity']
     },
 };
 
-function expandOnEntityAndShape({source, target, filter = '', attributes}) {
-    return {
-        name: `Expand From ${source} to ${target}`,
-        label: 'Expand on ',
-        kind: 'button',
-        toSplunk: function(pivotParameters, pivotCache) {
-            const subSearchId = pivotParameters['input'];
-            const isGlobalSearch = (subSearchId === '*');
-            var subsearch = '';
-            if (isGlobalSearch) {
-                const list  = _.map(
-                    Object.keys(pivotCache), (pivotId) =>
-                        (`[| loadjob "${pivotCache[pivotId].splunkSearchID}"
-                          | fields ${source} | dedup ${source}]`));
-                subsearch = list.join(' | append ');
-            } else {
-                subsearch = `[| loadjob "${pivotCache[subSearchId].splunkSearchID}" |  fields ${source} | dedup ${source}]`;
-            }
-
-            return `search ${SPLUNK_INDICES.PAN}
-                    | search ${filter} ${subsearch} ${constructFieldString(this)}`;
-
+export const PAN_SEARCH = new SplunkPivot({
+    name: 'PAN - Search',
+    id: 'pan-search',
+    pivotParameterKeys: ['query', 'nodes'],
+    pivotParametersUI: {
+        query: {
+            inputType: 'text',
+            label: 'Search:',
+            placeholder: 'severity="critical"'
         },
-        connections: [source, target],
-        attributes: attributes,
-        encodings: PAN_ENCODINGS
-    };
-}
-
-function searchAndShape({connections, attributes}) {
-    return {
-        name: `PAN - Search to ${connections.join(', ')}`,
-        label: 'Query',
-        kind: 'text',
-        connections,
-        attributes,
-        encodings: PAN_ENCODINGS,
-        toSplunk: function(pivotParameters) {
-            return `search ${SPLUNK_INDICES.PAN} ${pivotParameters['input']}
+        nodes: {
+            inputType: 'text',
+            label: 'Nodes:',
+            placeholder: 'user, dest'
+        }
+    },
+    attributes: PAN_SHAPES.userToDest.attributes,
+    encodings: PAN_ENCODINGS,
+    toSplunk: function(pivotParameters) {
+        this.connections = pivotParameters.nodes.split(',').map((field) => field.trim());
+        return `search ${SPLUNK_INDICES.PAN} ${pivotParameters.query}
                 ${constructFieldString(this)}
                 | head 100`;
-        }
-    };
-}
-
-const PAN_SEARCH_USER_DEST= new SplunkPivot(
-    searchAndShape(
-        {
-            connections: ['user', 'dest'],
-            attributes: PAN_SHAPES.userToDest.attributes
-        }
-    )
-);
-
-const PAN_DEST_USER = new SplunkPivot(
-    expandOnEntityAndShape(
-        {
-            source: 'dest',
-            target: 'user',
-            attributes: PAN_SHAPES.userToDest.attributes
-        }
-    )
-);
-
-const PAN_SEARCH_TO_USER_THREAT = new SplunkPivot(
-    searchAndShape(
-        {
-            connections: ['user', 'threat_name'],
-            attributes: PAN_SHAPES.userToThreat.attributes
-        }
-    )
-);
+    }
+});
 
 const contextFilter = '(severity="critical" OR severity="medium" OR severity="low")';
 
-const PAN_USER_TO_THREAT = new SplunkPivot(
-    expandOnEntityAndShape(
-        {
-            source: 'user',
-            target:'threat_name',
-            attributes: PAN_SHAPES.userToThreat.attributes,
-            filter: contextFilter
+export const PAN_EXPAND = new SplunkPivot({
+    name: 'PAN - Expand',
+    id: 'pan-expand',
+    pivotParameterKeys: ['source', 'sourceAttribute', 'query', 'nodes'],
+    pivotParametersUI: {
+        source: {
+            inputType: 'pivotCombo',
+            label: 'Select events:',
+        },
+        sourceAttribute: {
+            inputType: 'text',
+            label: 'Expand on:',
+            placeholder: 'user'
+        },
+        query: {
+            inputType: 'text',
+            label: 'Subsearch:',
+            placeholder: contextFilter
+        },
+        nodes: {
+            inputType: 'text',
+            label: 'Nodes:',
+            placeholder: 'user, dest'
         }
-    )
-);
+    },
+    attributes: PAN_SHAPES.userToDest.attributes,
+    encodings: PAN_ENCODINGS,
+    toSplunk: function(pivotParameters, pivotCache) {
+        this.connections = pivotParameters.nodes.split(',').map((field) => field.trim());
+        const sourceAttribute = pivotParameters.sourceAttribute;
+        const filter = pivotParameters.query;
+        const sourcePivots = pivotParameters.source.value;
+        var subsearch = '';
+        const list  = sourcePivots.map(
+            (pivotId) =>
+                (`[| loadjob "${pivotCache[pivotId].splunkSearchId}"
+                   | fields ${sourceAttribute} | dedup ${sourceAttribute}]`)
+        );
+        subsearch = list.join(' | append ');
+
+        return `search ${SPLUNK_INDICES.PAN}
+                    | search ${filter} ${subsearch} ${constructFieldString(this)}`;
+
+    },
+});
