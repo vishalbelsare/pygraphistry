@@ -29,18 +29,18 @@ export const searchSplunk = new SplunkPivot({
 
 export const searchSplunkMap = new SplunkPivot({
     id: 'search-splunk-source-dest',
-    name: 'Search Splunk Map',
+    name: 'Graphviz Expand',
     pivotParameterKeys: ['src', 'dst', 'pivot'],
     pivotParametersUI: {
         'src': {
             inputType: 'text',
-            label: 'Source:',
-            placeholder: 'dataset'
+            label: 'Source entity:',
+            placeholder: '"metadata.dataset"'
         },
         'dst': {
             inputType: 'text',
             label: 'Destination:',
-            placeholder: 'msg'
+            placeholder: '"err.stackArray{0}.file"'
         },
         'pivot': {
             inputType: 'pivotCombo',
@@ -51,13 +51,11 @@ export const searchSplunkMap = new SplunkPivot({
         const source = pivotParameters['src'];
         const dest = pivotParameters['dst'];
         const subsearch = `[
-            | loadjob "${pivotCache[pivotParameters.pivot].splunkSearchID}"
-            | fields ${source}
+            | loadjob "${pivotCache[pivotParameters.pivot].splunkSearchId}"
             | dedup ${source}
         ]`;
         return `search ${subsearch}
             | fields ${source}, ${dest}
-            | dedup 10 ${source} ${dest}
             | fields  - _*`;
     },
     encodings: {
@@ -77,25 +75,33 @@ const DATASET_ERROR_NODE_COLORS = {}
 
 export const searchGraphviz = new SplunkPivot({
     id: 'search-graphviz-logs',
-    name: 'Search Graphviz Logs',
-    pivotParameterKeys: ['query2'],
+    name: 'Graphviz Search',
+    pivotParameterKeys: ['query2', 'level'],
     pivotParametersUI: {
         'query2': {
             inputType: 'text',
             label: 'Query:',
-            placeholder: 'miserables'
+            placeholder: 'twitter'
+        },
+        'level': {
+            label: 'Severity >=',
+            inputType: 'combo',
+            options: [
+                {value: 30, label: 'info'},
+                {value: 40, label: 'warn'},
+                {value: 50, label: 'error'},
+            ]
         }
     },
     toSplunk: function (pivotParameters, pivotCache) {
-        return `search ${pivotParameters['query2']}
-            | spath output=dataset path="metadata.dataset"
-            | search dataset="*"
-            | fields level, msg, module, time, dataset
-            | sort -time
-            | dedup msg level dataset
-            | head 100
-            | fields - _*
-        `;
+        const q = pivotParameters['query2'];
+        const l = pivotParameters['level'];
+        return `search (host=staging* OR host=labs*) source="/var/log/graphistry-json/*.log" ${q} level >= ${l}
+            | head 1000
+            | spath output=File0 path="err.stackArray{0}.file"
+            | spath output=File1 path="err.stackArray{1}.file"
+            | eval File00=File0 | eval file=if(File00="null", File1, File0)
+            ${constructFieldString(this)}`
     },
     encodings: {
         point: {
@@ -106,5 +112,7 @@ export const searchGraphviz = new SplunkPivot({
                 }
             }
         }
-    }
+    },
+    connections: ['level', 'msg', 'err.message', 'file', 'module', 'metadata.dataset'],
+    attributes: ['time']
 });

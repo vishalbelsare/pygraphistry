@@ -33,6 +33,7 @@ export function searchSplunk({app, pivot}) {
     const searchParams = {
         id: jobId,
         timeout: '14400', // 4 hours
+        search_mode: 'normal',
         exec_mode: 'blocking',
         earliest: '-7d'
     };
