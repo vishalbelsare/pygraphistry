@@ -1,0 +1,19 @@
+{
+    "id": "3e11b75b795a7aa9",
+    "enabled": true,
+    "pivotParameters": {
+        "query": "Enter search query",
+        "pivot": {
+            "$type": "atom",
+            "value": [
+                [
+                    "3e11aaf23d0602dc"
+                ]
+            ],
+            "$size": 51
+        },
+        "src": "\"err.message\"",
+        "dst": "\"err.stackArray{}.file\""
+    },
+    "pivotTemplate": "search-splunk-source-dest"
+}

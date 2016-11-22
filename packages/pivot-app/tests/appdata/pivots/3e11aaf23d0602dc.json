@@ -1,0 +1,10 @@
+{
+    "id": "3e11aaf23d0602dc",
+    "enabled": true,
+    "pivotParameters": {
+        "query": "Enter search query",
+        "query2": "\"metadata.dataset\"=Facebook",
+        "level": "50"
+    },
+    "pivotTemplate": "search-graphviz-logs"
+}

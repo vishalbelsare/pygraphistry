@@ -1,0 +1,14 @@
+{
+    "name": "Graphviz Stacktrace",
+    "url": "https://staging.graphistry.com/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&dataset=PivotApp/3e11bd0897055e9e",
+    "id": "3e11aaf23e9cef77",
+    "description": "Enrich errors for given dataset with stack traces",
+    "tags": [
+        "Demo"
+    ],
+    "modifiedOn": 1479856130641,
+    "pivots": [
+        "3e11aaf23d0602dc",
+        "3e11b75b795a7aa9"
+    ]
+}
