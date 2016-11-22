@@ -60,21 +60,19 @@ export function expressions(path, base) {
                     if (length > 0 && (
                         expression.enabled === true ||
                         ('enabled' in expressionProps))) {
+
                         // If the view has histograms, invalidate the
                         // relevant fields so they're recomputed if the
                         // histograms panel is open, or the next time the
                         // panel is opened.
-                        values = values.concat(
-                            $invalidate(`
+                        const viewPath = `
                                 workbooksById['${workbook.id}']
-                                    .viewsById['${view.id}']
-                                    .selection.histogramsById`
-                            ),
-                            $invalidate(`
-                                workbooksById['${workbook.id}']
-                                    .viewsById['${view.id}']
-                                    .labelsByType`
-                            )
+                                    .viewsById['${view.id}']`;
+
+                        values.push(
+                            $invalidate(`${viewPath}.labelsByType`),
+                            $invalidate(`${viewPath}.inspector.rows`),
+                            $invalidate(`${viewPath}.selection.histogramsById`)
                         );
                     }
                     return values;
@@ -106,16 +104,13 @@ export function addExpressionHandler({
     openPanel = false,
     ...restProps
 }) {
-    return function addExpressionHandler(path, inputOrProps) {
+    return function addExpressionHandler(path, [item]) {
 
-        const [componentType, name, dataType, value] =
-            typeof inputOrProps === 'string' ? [] : inputOrProps;
-        const input = typeof inputOrProps === 'string' ? inputOrProps : undefined;
-
-        const workbookIds = [].concat(path[1]);
         const viewIds = [].concat(path[3]);
+        const workbookIds = [].concat(path[1]);
+
         return addItem({
-            workbookIds, viewIds, name, dataType, componentType, input, value, ...restProps
+            workbookIds, viewIds, [itemName]: item, ...restProps
         })
         .mergeMap(({ workbook, view, [itemName]: value }) => {
 
@@ -129,9 +124,11 @@ export function addExpressionHandler({
             list[list.length++] = newItemRef;
 
             const pathValues = [
-                $invalidate(`${base}.labelsByType`),
                 $value(newItemPath, newItemRef),
-                $value(newLengthPath, list.length)
+                $value(newLengthPath, list.length),
+                $invalidate(`${base}.labelsByType`),
+                $invalidate(`${base}.inspector.rows`),
+                $invalidate(`${base}.selection.histogramsById`),
             ];
 
             if (openPanel) {
@@ -166,13 +163,13 @@ export function addExpressionHandler({
                 $value(newItemPath, $error(errors)),
                 $value(newLengthPath, list.length++),
             ];
-        })
-        .map(mapObjectsToAtoms);
+        });
     }
 }
 
 export function removeExpressionHandler({
     removeItem,
+    mapName = 'expressionsById',
     listName = 'expressions',
     itemIDName = 'expressionId',
     ...restProps
@@ -209,14 +206,17 @@ export function removeExpressionHandler({
                 }
             }
 
-            const newLengthPath = `${base}['${listName}'].length`;
+            if (found) {
+                listRefVals.push(
+                    $invalidate(`${base}.labelsByType`),
+                    $invalidate(`${base}.inspector.rows`),
+                    $invalidate(`${base}.selection.histogramsById`),
+                    $invalidate(`${base}['${mapName}']['${itemId}']`),
+                    $value(`${base}['${listName}'].length`, list.length -= 1)
+                );
+            }
 
-            return listRefVals.concat(
-                found ? [$invalidate(`${base}.labelsByType`)] : [],
-                $value(newLengthPath, list.length -= Number(found))
-            );
-        })
-        .catch(captureErrorStacks)
-        .map(mapObjectsToAtoms);
+            return listRefVals;
+        });
     }
 }

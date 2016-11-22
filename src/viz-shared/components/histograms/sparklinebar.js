@@ -4,45 +4,39 @@ import { Popover, OverlayTrigger } from 'react-bootstrap';
 import { ColorPill } from 'viz-shared/components/color-pill/colorPill.js'
 import styles from 'viz-shared/components/histograms/styles.less';
 
-export const SparklineBar = ({ index, name, binType, dataType,
-                               values = [], isMasked = false,
+export const SparklineBar = ({ color = false,
                                encodings, componentType,
+                               index, name, binType, dataType,
+                               values = [], binWidth = `20px`,
+                               isMasked = false, filtered = false,
                                maskedCount = 0, maskedHeight = `50%`,
                                globalCount = 0, globalHeight = `100%`,
                                onBinTouchMove, onBinTouchStart, onBinTouchCancel,
-                               binWidth = `20px`, enabled = false,
                                filterBounds = { leftest: false, rightest: false } }) => {
 
     const { leftest, rightest } = filterBounds;
-
-    let color = false;
-    try {
-        color = encodings[componentType].color.attribute === name ?
-            encodings[componentType].color.legend[index] : false;
-    } catch (e) {}
 
     return (
         <OverlayTrigger trigger={['hover']}
                         placement='bottom'
                         overlay={
                 <Popover id={`histogram-${name}-tooltip`} style={{ zIndex: 999999999 }}>
-                    <SparklineBarInfo values={values}
+                    <SparklineBarInfo color={color}
+                                      values={values}
                                       binType={binType}
                                       dataType={dataType}
-                                      color={color}
                                       globalCount={globalCount}
                                       maskedCount={maskedCount}/>
                 </Popover>
             }>
             <div style={{ width: binWidth }}
                  className={classNames({
+                    [styles['column']]: true,
                     [styles['leftest']]: leftest,
                     [styles['rightest']]: rightest,
                     [styles['is-masked']]: isMasked,
-                    [styles['is-empty-global']]: !globalCount,
-                    [styles['is-filter-true']]: enabled,
-                    [styles['is-filter-false']]: !enabled,
-                    [styles['histogram-column']]: true
+                    [styles['is-filtered']]: filtered,
+                    [styles['is-empty-global']]: !globalCount
                  })}
                  onTouchMove={onBinTouchMove}
                  onMouseMove={onBinTouchMove}
@@ -80,6 +74,11 @@ export const SparklineBar = ({ index, name, binType, dataType,
                          visibility: maskedCount ? 'visible' : 'hidden',
                          backgroundColor: color || 'rgb(15, 165, 197)',
                      }}/>
+                <div className={classNames({
+                         [styles['bar-bg']]: true,
+                         [styles['bar-rect']]: true,
+                         [styles['bar-bg-border']]: true
+                     })}/>
             </div>
         </OverlayTrigger>
     );

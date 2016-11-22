@@ -16,6 +16,10 @@
 
 .label {
 
+    :global(.tooltip-inner) {
+        padding: 3px 8px 0 8px;
+    }
+
     cursor: pointer;
     position: absolute;
     z-index: @graph-label-z;
@@ -58,8 +62,9 @@
     width: 100%;
 
     .label-title-icon {
-        margin: 0 2px;
         opacity: 0.65;
+        line-height: 180%;
+        margin-left: 0.35em;
         // color: @dark-grey;
         visibility: hidden;
         &.pinned {
@@ -76,7 +81,7 @@
         float: right;
         opacity: 0.65;
         font-size: 0.8em;
-        line-height: 160%;
+        line-height: 200%;
         // color: @dark-grey;
         margin-left: 0.35em;
         text-transform: uppercase;
@@ -84,14 +89,17 @@
 
     .label-title-text {
         display: block;
+        font-weight: bold;
         text-align: center;
-        word-wrap: break-word;
+        word-break: break-all;
+        padding-bottom: 3px;
 
         .label:not(.on):not(.clicked) & {
             max-width: 12em;
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
+            padding-bottom: 5px;
         }
     }
 }
@@ -127,8 +135,9 @@
     tr:not(:hover) {
         & td, & .label-value-wrapper {
             .label-value-text {
-                width: 10em;
+                // width: 10em;
                 display: block;
+                text-align: left;
                 max-height: 5em;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -140,6 +149,7 @@
         & td, & .label-value-wrapper {
             .label-value-text {
                 display: block;
+                text-align: left;
                 max-height: none;
                 text-overflow: initial;
             }

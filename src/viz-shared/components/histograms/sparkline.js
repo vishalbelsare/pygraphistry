@@ -9,14 +9,14 @@ import { SizeLegendIndicator, YAxisLegendIndicator } from './sparklineComponents
 export const Sparkline = ({ name, yScale, children, componentType,
                             id, width = `calc(100% - 20px)`, height = 50,
                             loading = false, filtered = false, colors = false,
-                            setEncoding,
-                            options, encodings,
+                            isFilterEnabled = true, setEncoding, options, encodings,
                             onClose, onYScaleChanged, onEncodingChanged }) => {
     return (
         <div className={classNames({
                 [styles['histogram']]: true,
                 [styles['has-filter']]: filtered,
                 [styles['has-coloring']]: colors,
+                [styles['filter-is-enabled']]: isFilterEnabled
             })}>
             <div className={styles['histogram-title']}>
                 <div className={styles['histogram-icons']}>

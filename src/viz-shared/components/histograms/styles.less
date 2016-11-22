@@ -4,8 +4,9 @@
 @text-color: #646464;
 @left-padding: 10px;
 
-@color-neutral: #BBB;
+@color-neutral: #999;
 @color-neutral-hover: #666;
+@color-neutral-light: fade(@color-neutral, 50);
 @color-highlight: rgb(15, 165, 197);
 @color-highlight-hover: #ff6600;
 
@@ -23,9 +24,58 @@
 }
 
 .histogram {
+
     overflow: auto;
     position: relative;
+
     p { margin: 1px 0; }
+
+    & .histogram-picture:hover .column:not(:hover) {
+        opacity: 0.3;
+    }
+
+    &.has-filter:not(.filter-is-enabled) {
+        & .column.is-filtered {
+            .bar-bg-border {
+                border-top-color: @color-neutral-light !important;
+            }
+            &.leftest .bar-bg-border {
+                border-left-color: @color-neutral-light !important;
+            }
+            &.rightest .bar-bg-border {
+                border-right-color: @color-neutral-light !important;
+            }
+        }
+    }
+
+    &.has-filter.filter-is-enabled {
+
+        & .column:not(.is-filtered) {
+            opacity: 0.3;
+            &:hover {
+                opacity: 1;
+            }
+        }
+
+        & .histogram-picture:hover .column.is-filtered {
+            opacity: 1;
+            &:hover {
+                .bar-masked {
+                    background-color: @color-neutral-light !important;
+                }
+                .bar-bg-border {
+                    border: 1px solid @color-neutral-light;
+                    border-top: 1px dashed @color-neutral !important;
+                }
+                &.leftest .bar-bg-border {
+                    border-left: 1px dashed @color-neutral !important;
+                }
+                &.rightest .bar-bg-border {
+                    border-right: 1px dashed @color-neutral !important;
+                }
+            }
+        }
+    }
 }
 
 .histogram-title {
@@ -92,10 +142,12 @@
     p { margin: 1px 0; }
 }
 
-.histogram-column {
+.column {
+
+    border: none;
     height: 100%;
-    display: inline-block;
     cursor: crosshair;
+    display: inline-block;
 
     &, &:before, &:after {
         position: relative;
@@ -107,61 +159,73 @@
         display: block;
     }
 
-    .has-filter &.is-filter-true {
-        filter: grayscale(100%);
-    }
-    .has-filter &.is-filter-false {
-        border-top: 1px dashed @color-neutral;
-        margin-top: -1px;
-        &.leftest {
-            border-left: 1px dashed @color-neutral;
-        }
-        &.rightest {
-            border-right: 1px dashed @color-neutral;
-        }
-
-    }
     &:hover {
-        border: 1px solid @color-neutral !important;
         margin-top: -1px;
     }
-    .histogram.has-filter .histogram-picture:hover &.is-filter-true:not(:hover),
-    .histogram:not(.has-filter) .histogram-picture:hover &:not(:hover) {
-        opacity: 0.3;
+
+    &.is-filtered {
+        opacity: 1;
+        margin-top: -1px;
+        cursor: pointer;
     }
 }
+
 .bar-rect {
     display: inline-block;
     pointer-events: none; //let column-bg etc. catch
     position: absolute;
     width: 100%;
 }
+
 .bar-bg {
     height: 100%;
 }
+
 .bar-bg-bg {
     opacity: 0.15;
     .is-masked &, .is-empty-global & {
         background: white !important;
     }
 }
+
 .bar-bg-fade {
     background: linear-gradient(to bottom, #fff 0, rgba(255,255,255,0) 50%, #fff 100%);
 }
-.bar-masked {
-    border: 1px solid rgba(0,0,0,0.4); //less transparent than global
-    margin-right: -1px;
-    .histogram-column:hover & {
-        background-color: @color-highlight-hover !important;
+
+.bar-bg-border {
+    border: 1px solid transparent;
+    .column:hover & {
+        border-color: @color-neutral;
     }
-    .histogram.has-filter .is-filter-true & {
-        background-color: @color-neutral-hover !important;
+    .column.is-filtered & {
+        border-top: 1px dashed @color-neutral;
+    }
+    .column.is-filtered.leftest & {
+        border-left: 1px dashed @color-neutral;
+    }
+    .column.is-filtered.rightest & {
+        border-right: 1px dashed @color-neutral;
     }
 }
+
 .bar-global {
-    border: 1px solid rgba(0,0,0,0.2);
     margin-right: -1px;
-    .histogram.has-filter .is-filter-true &, .is-masked & {
+    border: 1px solid fade(@color-neutral, 40);
+    .column:hover & {
+        border-color: fade(@color-neutral-hover, 60);
+    }
+}
+
+.bar-masked {
+    margin-right: -1px;
+    border: 1px solid fade(@color-neutral-hover, 60); // darker than global
+    .column:hover & {
+        border-color: fade(@color-neutral-hover, 80) !important; //darker than global
+    }
+    .column.is-filtered & {
+        background-color: @color-neutral-light !important;
+    }
+    .column.is-filtered:hover & {
         background-color: @color-neutral !important;
     }
 }
@@ -175,7 +239,6 @@
     :global(.list-group-item):hover & {
         visibility: visible;
     }
-
 }
 
 .encoding-icon-container {

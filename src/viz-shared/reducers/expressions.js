@@ -30,7 +30,16 @@ function addFilter(action$) {
     return action$
         .ofType(ADD_FILTER)
         .exhaustMap(({ name, value, dataType, componentType, falcor }) => {
-            return falcor.call('filters.add', [componentType, name, dataType, value]);
+            const viewModel = falcor._clone({
+                _path: falcor.getPath().slice(0, -3)
+            });
+            return Observable.merge(
+                falcor.call('filters.add', [componentType, name, dataType, value]),
+                viewModel.set({ json: {
+                    highlight: { darken: false },
+                    labels: { highlight: $atom(undefined), }
+                }})
+            );
         });
 }
 

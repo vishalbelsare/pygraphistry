@@ -24,9 +24,14 @@ class AceEditor extends ReactAce {
 export class Editor extends React.Component {
     constructor(props, context) {
         super(props, context);
+        this.onLoad = this.onLoad.bind(this);
         this.onChange = this.onChange.bind(this);
         this.onChangeSubject = new Subject();
         this.state = { value: props.value, annotations: [] };
+    }
+    onLoad(editor) {
+        editor.getSession().setUseSoftTabs(true);
+        editor.completers.push(new DataframeCompleter(this.props.templates));
     }
     onChange(editor, event) {
         const value = editor.getValue();
@@ -95,25 +100,28 @@ export class Editor extends React.Component {
     }
     render() {
         const { annotations = [] } = this.state;
-        const { templates, onChange, value, ...props } = this.props;
+        const { templates, onChange, readOnly, value, ...props } = this.props;
         return (
             <AceEditor
                 theme='chrome'
                 mode='graphistry'
-                minLines={1} maxLines={4}
+                minLines={1}
+                maxLines={4}
                 showGutter={false}
+                readOnly={readOnly}
                 enableSnippets={true}
+                annotations={annotations}
                 enableLiveAutocompletion={true}
                 enableBasicAutocompletion={true}
-                annotations={annotations}
                 setOptions={{
                     wrap: true,
                     useSoftTabs: true,
-                    behavioursEnabled: true,
+                    cursorStyle: 'slim',
+                    behavioursEnabled: !readOnly,
                     highlightActiveLine: false,
-                    highlightSelectedWord: true,
+                    highlightSelectedWord: !readOnly,
                     wrapBehavioursEnabled: true,
-                    autoScrollEditorIntoView: true,
+                    autoScrollEditorIntoView: !readOnly,
                 }}
                 editorProps={{
                     $blockScrolling: Infinity,
@@ -122,12 +130,9 @@ export class Editor extends React.Component {
                     // highlightActiveLine: false,
                     // highlightSelectedWord: true
                 }}
-                onLoad={(editor) => {
-                    editor.getSession().setUseSoftTabs(true);
-                    editor.completers.push(new DataframeCompleter(templates));
-                }}
                 value={this.state.value}
-                onChange={this.onChange}
+                onLoad={!readOnly && this.onLoad || undefined}
+                onChange={!readOnly && this.onChange || undefined}
                 {...props}/>
         );
     }

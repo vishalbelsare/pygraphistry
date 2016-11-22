@@ -18,6 +18,13 @@ function stopPropagation(e) {
     e.stopPropagation();
 }
 
+function stopPropagationIfAnchor(e) {
+    const { target } = e;
+    if (target && target.tagName && target.tagName.toLowerCase() === 'a') {
+        e.stopPropagation();
+    }
+}
+
 const events = [
     'onLabelSelected',
     'onLabelMouseMove',
@@ -127,7 +134,9 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
             <div className={styles['label-title']}
                  onMouseDown={onMouseDown}
                  onTouchStart={onTouchStart}>
-                <span className={styles['label-title-text']}>{ title }</span>
+                <span onMouseDown={stopPropagationIfAnchor}
+                      className={styles['label-title-text']}
+                      dangerouslySetInnerHTML={{ __html: title }}/>
             </div>
         );
     }
@@ -135,7 +144,6 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
     return (
         <div onMouseDown={onMouseDown}
              onTouchStart={onTouchStart}
-             style={{ margin: `0.25em 0` }}
              className={styles['label-title']}>
             <a href='javascript:void(0)'
                style={{ color, float: `left`, fontSize: `.8em` }}
@@ -154,7 +162,9 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
                             overlay={
                                 <Tooltip className={styles['label-tooltip']}
                                          id={`tooltip:title:${type}:${title}`}>
-                                    Exclude if "title = {title}"
+                                    Exclude if "title = {
+                                      <span dangerouslySetInnerHTML={{ __html: title }}/>
+                                    }"
                                 </Tooltip>
                             }>
                 <a href='javascript:void(0)'
@@ -173,7 +183,9 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
                     })}/>
                 </a>
             </OverlayTrigger>
-            <span className={styles['label-title-text']}>{ title }</span>
+            <span onMouseDown={stopPropagationIfAnchor}
+                  className={styles['label-title-text']}
+                  dangerouslySetInnerHTML={{ __html: title }}/>
         </div>
     );
 }
@@ -224,9 +236,11 @@ function LabelRow ({ color,
             <td className={styles['label-value']}>
                 <div className={styles['label-value-wrapper']}>
 
-                    <span className={styles['label-value-text']}>{displayString}</span>
-
-                    { dataType ==='color' && <ColorPill color={value} /> }
+                    <span onMouseDown={stopPropagationIfAnchor}
+                          className={styles['label-value-text']}>
+                          <span dangerouslySetInnerHTML={{ __html: displayString }}/>
+                          { dataType ==='color' && <ColorPill color={value} /> }
+                    </span>
 
                     <div className={styles['label-icons']}>
                         <OverlayTrigger trigger={['hover']}
@@ -234,7 +248,9 @@ function LabelRow ({ color,
                                         overlay={
                                             <Tooltip className={styles['label-tooltip']}
                                                      id={`tooltip:row:exclude${type}:${title}:${field}`}>
-                                                Exclude if "{type}:{field} {filterOp} {value}"
+                                                Exclude if "{type}:{field} {filterOp} {
+                                                    <span dangerouslySetInnerHTML={{ __html: value }}/>
+                                                }"
                                             </Tooltip>
                                         }>
                             <a className={styles['exclude-by-key-value']}
@@ -254,7 +270,9 @@ function LabelRow ({ color,
                                         overlay={
                                             <Tooltip className={styles['label-tooltip']}
                                                      id={`tooltip:row:filter:${type}:${title}:${field}`}>
-                                                Filter for "{type}:{field} {excludeOp} {value}"
+                                                Filter for "{type}:{field} {excludeOp} {
+                                                    <span dangerouslySetInnerHTML={{ __html: value }}/>
+                                                }"
                                             </Tooltip>
                                         }>
                             <a className={styles['filter-by-key-value']}

@@ -60,11 +60,76 @@ export function histogram({ name = 'degree',
     };
 }
 
+export function histogramFilterQuery(histogram, binIndexes = []) {
+
+    const { bins, binType,
+            minValue, binWidth,
+            identifier, componentType } = histogram;
+
+    if (binType === 'nodata' || binIndexes.length <= 0) {
+        return null;
+    }
+    // In the base case, return a query for a single bin index
+    else if (binIndexes.length === 1) {
+        return histogramBinQuery(histogram, bins[binIndexes[0]]);
+    }
+    // If there's more than one bin index and the histogram supports ranges
+    // (binType === 'histogram'), return a query between the min and max bin values
+    else if (binType === 'histogram') {
+        const binA = bins[binIndexes[0]];
+        const binB = bins[binIndexes[binIndexes.length - 1]];
+        const betweenVals = [...binA.values, ...binB.values];
+        return histogramBinQuery(histogram, {
+            exclude: false, values: [
+                betweenVals[0],
+                betweenVals[betweenVals.length - 1]
+            ]
+        });
+    }
+
+    // The complex case is creating a query for 'countBy' bin values,
+    // and possibly exclude the `_other` bin's value.
+
+    const { exclude, values } = binIndexes.reduce(
+        ({ exclude, values }, i, x, xs, bin = bins[i]) => ({
+            exclude: exclude || bin.exclude,
+            values: bin.exclude ? values :
+                [...values, ...bin.values]
+        }),
+        { exclude: false, values: [] }
+    );
+
+    const query = getDefaultQueryForDataType({
+        queryType: 'isOneOf', identifier, values
+    });
+
+    if (exclude) {
+        // Regenerate the AST because it's mutated elsewhere >:(
+        query.ast = {
+            type: 'BinaryPredicate', operator: 'OR',
+            left: { operator: 'NOT',
+                    type: 'NotExpression',
+                    value: getDefaultQueryForDataType({
+                        queryType: 'isOneOf', identifier, values
+                    }).ast },
+            right: getDefaultQueryForDataType({
+                queryType: 'isOneOf', identifier, values
+            }).ast
+        };
+    }
+
+    return {
+        ...query,
+        type: componentType,
+        attribute: identifier,
+    };
+}
+
 export function histogramBinQuery(histogram, bin) {
 
+    const { values, exclude } = bin;
     const { identifier, componentType, bins } = histogram;
     const queryProperties = { identifier };
-    const { count, values, exclude } = bin;
 
     if (exclude) {
         queryProperties.queryType = 'isOneOf';

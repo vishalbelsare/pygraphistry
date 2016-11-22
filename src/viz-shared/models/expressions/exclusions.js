@@ -22,9 +22,9 @@ export function exclusions(view) {
     }
 }
 
-export function exclusion(name, query) {
+export function exclusion(query) {
     return {
-        ...expression(name, query),
+        ...expression(query),
         expressionType: 'exclusion'
     };
 }

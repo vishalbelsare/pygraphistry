@@ -4,12 +4,11 @@ import { Gestures } from 'rxjs-gestures';
 import { Observable } from 'rxjs/Observable';
 import styles from 'viz-shared/components/labels/style.less';
 import {
-    curPoints,
-    pointSizes,
-    vboUpdates,
-    cameraChanges,
-    labelSettings
+    curPoints, pointSizes,
+    vboUpdates, cameraChanges,
+    labelSettings, hitmapUpdates
 } from 'viz-client/legacy';
+
 import { animationFrame as AnimationFrameScheduler } from 'rxjs/scheduler/animationFrame';
 
 import {
@@ -28,6 +27,7 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
                 a.clientX === b.clientX &&
                 a.clientY === b.clientY
             )),
+        hitmapUpdates,
         cameraChanges.startWith({}),
         Observable.fromEvent(window, 'resize')
             .debounceTime(100).delay(50).startWith(null),

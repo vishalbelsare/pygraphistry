@@ -12,13 +12,12 @@ import {
 } from '@graphistry/falcor-json-graph';
 
 export function addHistogram(loadViewsById) {
-    return function addHistogram({ workbookIds, viewIds, name, dataType, componentType }) {
+    return function addHistogram({ workbookIds, viewIds, histogram }) {
         return loadViewsById({
             workbookIds, viewIds
         })
         .map(({ workbook, view }) => {
             const { histogramsById } = view;
-            const histogram = createHistogram({ name, dataType, componentType });
             histogramsById[histogram.id] = histogram;
             return { workbook, view, histogram };
         });
@@ -91,14 +90,16 @@ export function loadSelectionHistograms(loadViewsById) {
     }
 }
 
-export function computeMaskForHistogramBin({ view, histogram, bin }) {
+export function computeMaskForHistogramBin({ view, histogram, bin, basedOnCurrentDataframe }) {
 
     const { nBody } = view;
     const { dataframe } = nBody;
 
     const errors = [];
     const query = histogramBinHighlightQuery(histogram, bin);
-    const masks = dataframe.getMasksForQuery(query, errors, false);
+    const masks = dataframe.getMasksForQuery({
+        ...query, basedOnCurrentDataframe
+    }, errors, false);
 
     if (errors.length) {
         console.error({msg: '====BAD computeMaskForHistogramBin', errors, stack: new Error().stack});
@@ -201,8 +202,10 @@ function computeHistogram({ view, masked, histogram, pointsMask, refresh = true 
                 bins, binValues, numValues: numElements, valueToBin = null } = binResult;
 
         let maxElements = 0,
-            castKeyToNumber = dataType === 'number',
-            isMasked = masked && binType !== 'nodata';
+            isMasked = masked && binType !== 'nodata',
+            castKeyToNumber = dataType === 'number' || (
+                typeof minValue === 'number' &&
+                typeof maxValue === 'number');
 
         let binKeys;
 
@@ -274,7 +277,11 @@ function computeHistogram({ view, masked, histogram, pointsMask, refresh = true 
             isMasked, bins: binsNormalized,
             valueToBin
         };
-    });
+    })
+    .catch((e) => !masked ?
+        Observable.throw(e) :
+        Observable.of(undefined)
+    );
 }
 
 

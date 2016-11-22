@@ -119,7 +119,7 @@ export function encodings(path, base) {
                                 .map((encodingSpec) => $value(
                                     ['workbooksById', workbookId, 'viewsById', viewId, 'encodings']
                                         .concat(graphType, encodingType),
-                                    $atom(encodingSpec && !encodingSpec.reset ? encodingSpec : null)));
+                                    $atom(encodingSpec && !encodingSpec.reset ? encodingSpec : undefined)));
                         });
                     return Observable.merge(...encodingSpecs);
                 });

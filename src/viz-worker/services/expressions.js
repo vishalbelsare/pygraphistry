@@ -7,15 +7,12 @@ import {
 } from 'viz-shared/models/expressions';
 
 export function addExpression(loadViewsById) {
-    return function addExpression({ workbookIds, viewIds, name, value, input, dataType, componentType, expressionType = 'filter' }) {
+    return function addExpression({ workbookIds, viewIds, expression }) {
         return loadViewsById({
             workbookIds, viewIds
         })
         .mergeMap(({ workbook, view }) => {
             const { expressionsById } = view;
-            const expression = expressionType === 'filter' ?
-                createFilter(input ? input : { name, value, dataType, componentType }) :
-                createExclusion(input ? input : { name, value, dataType, componentType });
             expressionsById[expression.id] = expression;
             return maskDataframe({ view })
                 .catch((errors) => Observable.throw({ workbook, view, errors }))
