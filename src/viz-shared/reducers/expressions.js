@@ -7,6 +7,8 @@ import {
 
 import { Observable } from 'rxjs';
 import {
+    ADD_FILTER,
+    ADD_EXCLUSION,
     ADD_EXPRESSION,
     REMOVE_EXPRESSION,
     UPDATE_EXPRESSION,
@@ -16,10 +18,57 @@ import {
 
 export function expressions(action$, store) {
     return Observable.merge(
+        addFilter(action$),
+        addExclusion(action$),
         addExpression(action$, store),
         removeExpression(action$, store),
         updateExpression(action$, store),
     ).ignoreElements();
+}
+
+function addFilter(action$) {
+    return action$
+        .ofType(ADD_FILTER)
+        .exhaustMap(({ name, value, dataType, componentType, falcor }) => {
+            const viewModel = falcor._clone({
+                _path: falcor.getPath().slice(0, -3)
+            });
+            return Observable.merge(
+                falcor.call('filters.add', [componentType, name, dataType, value]),
+                viewModel.set({ json: {
+                    highlight: { darken: false },
+                    labels: { highlight: $atom(undefined), }
+                }})
+            );
+        });
+}
+
+function addExclusion(action$) {
+    return action$
+        .ofType(ADD_EXCLUSION)
+        .exhaustMap(({ name, value, dataType, componentType, falcor }) => {
+            const viewModel = falcor._clone({
+                _path: falcor.getPath().slice(0, -3)
+            });
+            return Observable.merge(
+                falcor.call('exclusions.add', [componentType, name, dataType, value]),
+                viewModel.set({ json: {
+                    highlight: {
+                        darken: false,
+                        edge: $atom([]),
+                        point: $atom([]),
+                    },
+                    selection: {
+                        edge: $atom([]),
+                        point: $atom([]),
+                    },
+                    labels: {
+                        highlight: $atom(undefined),
+                        selection: $atom(undefined),
+                    }
+                }})
+            );
+        });
 }
 
 function addExpression(action$) {

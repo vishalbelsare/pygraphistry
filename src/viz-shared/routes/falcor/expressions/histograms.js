@@ -1,26 +1,26 @@
 import {
     ref as $ref,
     atom as $atom,
-    pathValue as $value
+    pathValue as $value,
+    pathInvalidation as $invalidate
 } from '@graphistry/falcor-json-graph';
 
 import { Observable } from 'rxjs';
-
-import {
-    addExpressionHandler,
-    removeExpressionHandler
-} from './expressions';
-
-import { getHandler,
-         setHandler,
-         mapObjectsToAtoms,
-         captureErrorStacks } from 'viz-shared/routes';
+import { getHandler, setHandler } from 'viz-shared/routes';
+import { printExpression } from 'viz-shared/models/expressions';
+import { addExpressionHandler, removeExpressionHandler } from './expressions';
+import { histogramFilterQuery } from 'viz-shared/models/expressions/histograms';
+import { filter as createFilter }  from 'viz-shared/models/expressions/filters';
+import { histogram as createHistogram } from 'viz-shared/models/expressions/histograms';
 
 export function histograms(path, base) {
     return function histograms({ addHistogram,
+                                 addExpression,
                                  loadViewsById,
+                                 maskDataframe,
                                  loadHistogramsById,
                                  removeHistogramById,
+                                 removeExpressionById,
                                  computeMaskForHistogramBin,
                                  loadSelectionHistogramsById }) {
 
@@ -29,16 +29,51 @@ export function histograms(path, base) {
         const getHistograms = getHandler(path.concat('histogram'), loadHistogramsById);
         const setHistograms = setHandler(path.concat('histogram'), loadHistogramsById);
 
-        const addHistogramHandler = addExpressionHandler({
+        const addFilterHandler = addExpressionHandler({
+            openPanel: true,
+            panelSide: 'left',
+            listName: 'filters',
+            addItem: addExpression,
+            expressionType: 'filter',
+        });
+
+        const addFilter = function(addExpr) {
+            return function(path, [expression]) {
+                return addExpr.call(this, path, [expression]);
+            }
+        }(addExpressionHandler({
+            openPanel: true,
+            panelSide: 'left',
+            listName: 'filters',
+            addItem: addExpression,
+            expressionType: 'filter',
+        }));
+
+        const addHistogramHandler = function(addExpr) {
+            return function(path, callArgs) {
+                const [componentType, name, dataType] = callArgs;
+                const histogram = createHistogram({ name, dataType, componentType });
+                return addExpr.call(this, path, [histogram]);
+            }
+        }(addExpressionHandler({
+            openPanel: false,
+            panelSide: 'right',
             addItem: addHistogram,
             itemName: 'histogram',
             listName: 'histograms',
             mapName : 'histogramsById',
+        }));
+
+        const removeFilter = removeExpressionHandler({
+            listName: 'filters',
+            expressionType: 'filter',
+            removeItem: removeExpressionById
         });
 
         const removeHistogramHandler = removeExpressionHandler({
             listName: 'histograms',
             itemIDName: 'histogramId',
+            mapName : 'histogramsById',
             removeItem: removeHistogramById,
         });
 
@@ -71,9 +106,13 @@ export function histograms(path, base) {
             route: `${base}['histogramsById'][{keys}]['global', 'masked']`
         }, {
             returns: `*`,
+            call: updateHistogramFilterHandler,
+            route: `${base}['histogramsById'][{keys}].filter`
+        }, {
+            returns: `*`,
             get: getHistograms,
             route: `${base}['histogramsById'][{keys}][
-                'id', 'name', 'yScale',
+                'id', 'name', 'filter', 'yScale',
                 'numElements', 'maxElements',
                 'binType', 'binWidth', 'numBins',
                 'isMasked', 'dataType', 'componentType'
@@ -92,7 +131,7 @@ export function histograms(path, base) {
             returns: `*`,
             get: getSelectionHistograms,
             route: `${base}['selection']['histogramsById'][{keys}][
-                'id', 'name', 'yScale',
+                'id', 'name', 'filter', 'yScale',
                 'numElements', 'maxElements',
                 'binType', 'binWidth', 'numBins',
                 'isMasked', 'dataType', 'componentType'
@@ -109,6 +148,162 @@ export function histograms(path, base) {
             ]`
         }];
 
+        function getHistogramTypeReference(path) {
+
+            const basePath = path.slice(0, path.length - 3);
+            const histogramIds = [].concat(path[path.length - 2]);
+            const histogramTypes = [].concat(path[path.length - 1]);
+
+            return histogramIds.reduce((values, histogramId) => {
+                return histogramTypes.reduce((values, histogramType) => {
+                    const refPath = histogramType === 'global' ?
+                        basePath.concat('histogramsById') :
+                        basePath.concat('selection', 'histogramsById');
+                    refPath.push(histogramId);
+                    values.push($value(
+                        basePath.concat(
+                            'histogramsById', histogramId, histogramType
+                        ),
+                        $ref(refPath)
+                    ));
+                    return values;
+                }, values);
+            }, []);
+        }
+
+        function getSelectionHistograms(path) {
+
+            const restPath = path.slice(7);
+            const workbookIds = [].concat(path[1]);
+            const viewIds = [].concat(path[3]);
+            const histogramIds = [].concat(path[6]);
+
+            return loadSelectionHistogramsById({
+                workbookIds, viewIds, histogramIds, masked: true
+            })
+            .mergeMap(
+                ({ workbook, view, histogram }) => getHandler([], () =>
+                    Observable.of(histogram)
+                ).call(this, restPath),
+                ({ workbook, view, histogram }, { path, value }) => $value([
+                    'workbooksById', workbook.id,
+                        'viewsById', view.id, 'selection',
+                        'histogramsById', histogram.id, ...path
+                    ], value
+                )
+            );
+        }
+
+        function updateHistogramFilterHandler(path, binIndexes = []) {
+
+            const workbookIds = [].concat(path[1]);
+            const viewIds = [].concat(path[3]);
+            const histogramIds = [].concat(path[5]);
+
+            return loadHistogramsById({
+                workbookIds, viewIds, histogramIds, refresh: false
+            })
+            .mergeMap(({ workbook, view, histogram }) => {
+
+                if (!histogram) {
+                    return Observable.empty();
+                }
+
+                // Todo: move most of this into a service so we can run this route on the client.
+
+                const { expressionsById = {} } = view;
+
+                const viewPath = `
+                        workbooksById['${workbook.id}']
+                            .viewsById['${view.id}']`;
+
+                var histogramPath = `${viewPath}
+                    .histogramsById['${histogram.id}']`;
+
+                let { bins = [], filter: filterRef } = histogram;
+                let filter, query = histogramFilterQuery(histogram, binIndexes);
+
+                if (filterRef) {
+                    filter = expressionsById[
+                        filterRef.value[filterRef.value.length - 1]];
+                }
+
+                // Filter arguments that are out of bounds.
+                binIndexes = binIndexes.filter((index) =>
+                    index >= 0 && index < bins.length && bins[index]);
+
+                // If no bin indexes, or no bins in this histogram,
+                // remove the current filter.
+                if (!query || !binIndexes.length || !bins.length) {
+                    histogram.filter = undefined;
+                    if (!filterRef || !filter) {
+                        // If no filter for this histogram, just return an invalidation
+                        return Observable.of(
+                            $value(`${histogramPath}.filter.range`, []),
+                            $value(`${histogramPath}.filter.enabled`, true)
+                        );
+                    }
+                    return removeFilter
+                        .call(this, path, [filter.id])
+                        .startWith(
+                            $value(`${histogramPath}.filter.range`, []),
+                            $value(`${histogramPath}.filter.enabled`, true)
+                        );
+                } else if (!filter) {
+
+                    filter = createFilter({
+                        query,
+                        name: histogram.name,
+                        dataType: histogram.dataType,
+                        componentType: histogram.componentType
+                    });
+
+                    return addFilter
+                        .call(this, path, [{
+                            ...filter,
+                            readOnly: true,
+                            range: binIndexes,
+                        }])
+                        .startWith($value(`${
+                            histogramPath}.filter`,
+                                 histogram.filter = $ref(`${viewPath}
+                                    .expressionsById['${filter.id}']`)
+                        ));
+                }
+
+                histogram.filter = $ref(`${viewPath}
+                    .expressionsById['${filter.id}']`);
+
+                expressionsById[filter.id] = filter = {
+                    ...filter,
+                    query,
+                    enabled: true,
+                    range: binIndexes,
+                    input: printExpression(query)
+                };
+
+                return maskDataframe({ view }).mergeMap(() => {
+
+                    var filterPath = `${viewPath}
+                        .expressionsById['${filter.id}']`;
+
+                    // If the view has histograms, invalidate the
+                    // relevant fields so they're recomputed if the
+                    // histograms panel is open, or the next time the
+                    // panel is opened.
+                    return [
+                        $invalidate(`${viewPath}.labelsByType`),
+                        $invalidate(`${viewPath}.inspector.rows`),
+                        $invalidate(`${viewPath}.selection.histogramsById`),
+                        $value(`${filterPath}.range`, filter.range),
+                        $value(`${filterPath}.input`, filter.input),
+                        $value(`${filterPath}.enabled`, filter.enabled),
+                        $value(`${histogramPath}.filter`, histogram.filter)
+                    ];
+                });
+            });
+        }
+
         function highlightBin(path, [index]) {
 
             const workbookIds = [].concat(path[1]);
@@ -124,7 +319,10 @@ export function histograms(path, base) {
                     if (index >= bins.length) {
                         return Observable.of({});
                     }
-                    return computeMaskForHistogramBin({ view, histogram, bin: bins[index] });
+                    return computeMaskForHistogramBin({
+                        basedOnCurrentDataframe: true,
+                        view, histogram, bin: bins[index]
+                    });
                 },
                 ({ workbook, view, histogram }, maskedComponents) => ({
                     workbook, view, histogram, maskedComponents
@@ -155,50 +353,6 @@ export function histograms(path, base) {
                 console.error({msg: '==== RUH ROH', e, path, index});
                 return Observable.throw(e);
             })
-        }
-
-        function getHistogramTypeReference(path) {
-
-            const basePath = path.slice(0, path.length - 3);
-            const histogramIds = [].concat(path[path.length - 2]);
-            const histogramTypes = [].concat(path[path.length - 1]);
-
-            return histogramIds.reduce((values, histogramId) => {
-                return histogramTypes.reduce((values, histogramType) => {
-                    const refPath = histogramType === 'global' ?
-                        basePath.concat('histogramsById') :
-                        basePath.concat('selection', 'histogramsById');
-                    refPath.push(histogramId);
-                    values.push($value(
-                        basePath.concat(
-                            'histogramsById', histogramId, histogramType
-                        ),
-                        $ref(refPath)
-                    ));
-                    return values;
-                }, values);
-            }, []);
-        }
-
-        function getSelectionHistograms(path) {
-            const restPath = path.slice(7);
-            const workbookIds = [].concat(path[1]);
-            const viewIds = [].concat(path[3]);
-            const histogramIds = [].concat(path[6]);
-            return loadSelectionHistogramsById({
-                workbookIds, viewIds, histogramIds, masked: true
-            })
-            .mergeMap(
-                ({ workbook, view, histogram }) => getHandler([], () =>
-                    Observable.of(histogram)
-                ).call(this, restPath),
-                ({ workbook, view, histogram }, { path, value }) => $value([
-                    'workbooksById', workbook.id,
-                        'viewsById', view.id, 'selection',
-                        'histogramsById', histogram.id, ...path
-                    ], value
-                )
-            );
         }
     }
 }

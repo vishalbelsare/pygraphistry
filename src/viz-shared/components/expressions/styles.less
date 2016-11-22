@@ -1,6 +1,12 @@
 @import '~viz-shared/vars.less';
 @import '~viz-shared/index.less';
 
+.read-only {
+    :global(.ace-chrome) {
+        background-color: #eee !important;
+    }
+}
+
 .expressions-list {
      min-width: 300px;
 }
@@ -25,7 +31,6 @@
     background-color: #F4B9B7;
     opacity: 0.5;
 }
-
 
 .expression-select {
     font-size: 12px;

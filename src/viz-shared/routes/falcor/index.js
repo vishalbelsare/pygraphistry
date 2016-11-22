@@ -64,9 +64,8 @@ function wrapRouteHandler(handler) {
     return function routeHandlerWrapper(...args) {
         return Observable
             .defer(() => handler.apply(this, args) || [])
-            .catch((e) => {
-                console.error('========== BAD ROUTE', e, (e||{}).stack, handler.name || handler.slice(0,20));
-                throw new Error(e);
+            .do(null, (e) => {
+                console.error('========== BAD ROUTE', e, (e||{}).stack, handler.name || handler.toString().slice(0,20));
             })
             .catch(captureErrorStacks)
             .map(mapObjectsToAtoms);

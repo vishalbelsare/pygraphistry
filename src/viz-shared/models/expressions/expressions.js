@@ -17,6 +17,7 @@ export function expressions(view) {
 
     const defaultFilter = expression('LIMIT 800000');
     defaultFilter.expressionType = 'filter';
+    defaultFilter.readOnly = true;
     defaultFilter.level = 'system';
 
     return {
@@ -32,6 +33,7 @@ export function expressions(view) {
     };
 }
 
+export { printExpression };
 
 function getExprType (ast) {
     if (ast.argument) {
@@ -83,16 +85,18 @@ export function expression(inputOrProps = {
         dataType = inputOrProps.dataType || 'number';
         componentType = inputOrProps.componentType || 'point';
         identifier = `${componentType}:${name}`;
-        query = getDefaultQueryForDataType({
+        query = inputOrProps.query || getDefaultQueryForDataType({
             ...inputOrProps, name, dataType, identifier, componentType
         });
         input = printExpression(query);
     }
 
     return {
+        range: [],
         id: expressionId,
         enabled: true,
         level: undefined, /* <-- 'system' | undefined */
+        readOnly: false,
         name, input, query,
         dataType, identifier, componentType, /* 'edge' | 'point' */
         expressionType: 'filter', /* <-- 'filter' | 'exclusion' */
@@ -121,49 +125,59 @@ const defaultQueriesMap = {
     integer(...args) {
         return this.number(...args)
     },
-    number({ identifier, start = 0 }) {
+    number({ identifier, value = 0 }) {
         return {
-            start, ast: {
+            start: value, ast: {
                 type: 'BinaryExpression',
                 operator: '>=',
                 left: { type: 'Identifier', name: identifier },
-                right: { type: 'Literal', value: start }
+                right: { type: 'Literal', value: value }
             }
         };
     },
     categorical(...args) {
         return this.string(...args);
     },
-    string({ identifier, equals = 'ABC' }) {
+    string({ identifier, value = 'ABC' }) {
         return {
-            equals, ast: {
+            equals: value, ast: {
                 type: 'BinaryExpression',
                 operator: '=',
                 left: { type: 'Identifier', name: identifier },
-                right: { type: 'Literal', value: equals }
+                right: { type: 'Literal', value: value }
             }
         };
     },
-    boolean({ identifier, equals = true }) {
+    equals({ identifier, value = true }) {
         return {
-            ast: {
+            equals: value, ast: {
+                type: 'BinaryPredicate',
+                operator: '=',
+                left: { type: 'Identifier', name: identifier },
+                right: { type: 'Literal', value: value }
+            }
+        };
+    },
+    boolean({ identifier, value = true }) {
+        return {
+            equals: value, ast: {
                 type: 'BinaryPredicate',
                 operator: 'IS',
                 left: { type: 'Identifier', name: identifier },
-                right: { type: 'Literal', value: equals }
+                right: { type: 'Literal', value: value }
             }
         }
     },
     datetime(...args) {
         return this.date(...args);
     },
-    date({ identifier }) {
+    date({ identifier, value = 'now' }) {
         return {
             ast: {
                 type: 'BinaryExpression',
                 operator: '>=',
                 left: { type: 'Identifier', name: identifier },
-                right: { type: 'Literal', value: 'now'}
+                right: { type: 'Literal', value: value }
             }
         };
     },
@@ -179,7 +193,7 @@ const defaultQueriesMap = {
             throw new Error('isOneOf expected identifier: ' + identifier);
         }
         return {
-            ast: {
+            equals: values, ast: {
                 type: 'BinaryPredicate',
                 operator: 'IN',
                 left: { type: 'Identifier', name: identifier },
@@ -193,7 +207,7 @@ const defaultQueriesMap = {
         }
     },
     isEqualTo({ identifier, value }) {
-        return this.string({ identifier, equals: value });
+        return this.equals({ identifier, value });
     },
     isBetween({ identifier, start, stop }) {
         return {

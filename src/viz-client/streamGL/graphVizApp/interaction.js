@@ -165,7 +165,7 @@ function setupScroll($eventTarget, canvas, camera, appState) {
         ))
         .filter(function (evt) {
             return !$(evt.target).parents(
-                `.${labelStyles['graph-label-contents']}`
+                `.${labelStyles['label-contents']}`
             ).length;
         })
         .do(function (wheelEvent) {

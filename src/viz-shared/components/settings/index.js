@@ -128,6 +128,7 @@ export function ColorPicker({
                 <RcColorPicker key={`${id}-colors`}
                                animation='slide-up'
                                color={value.hexString()}
+                               alpha={value.alpha() * 100}
                                onChange={({ color, alpha }) => setValue({
                                    id, type, ...rest,
                                    value: (value = new Color(color)

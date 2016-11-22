@@ -1,6 +1,7 @@
 import RcSwitch from 'rc-switch';
 import classNames from 'classnames';
 import ExpressionEditor from './editor';
+import { renderNothing } from 'recompose';
 import {
     Col, Row, Grid,
     Panel, Popover,
@@ -102,7 +103,7 @@ export function ExpressionTemplates({ name = 'Expressions', templates = [],
 
 export function ExpressionItem({
     id, input, level,
-    dataType, expressionType,
+    readOnly, dataType, expressionType,
     name, enabled, attribute, templates,
     removeExpression, updateExpression,
     setExpressionEnabled, cancelUpdateExpression
@@ -112,23 +113,24 @@ export function ExpressionItem({
         <Grid fluid style={{ padding: 0 }}>
         <Row className={styles['expression-row']}>
             <Col xs={12} md={12} lg={12}
-                 style={ isSystem ? {} : { paddingRight: 0 }}>
-                <OverlayTrigger
-                    placement='top'
-                    overlay={expressionTooltip}>
-                    <div style={{ border: `1px solid #cccccc`, borderRadius: `3px`, minWidth: 250 }}>
-                        <ExpressionEditor name={`expression-${id}`} width='100%'
-                                          value={input} templates={templates} readOnly={isSystem}
+                 style={!isSystem && { paddingRight: 0 } || undefined}>
+                <OverlayTrigger placement='top' overlay={!readOnly && expressionTooltip || <renderNothing id='nothing'/>}>
+                    <div className={classNames({ [styles['read-only']]: readOnly })}
+                         style={{ border: `1px solid #cccccc`, borderRadius: `3px`, minWidth: 250 }}>
+                        <ExpressionEditor width='100%'
+                                          value={input}
+                                          templates={templates}
+                                          name={`expression-${id}`}
+                                          readOnly={readOnly || isSystem}
                                           onChange={(input) => cancelUpdateExpression({ id })}
                                           onUpdate={(input) => updateExpression({ id, input })}/>
                     </div>
                 </OverlayTrigger>
             </Col>
-            {!isSystem &&
-            <Col xs={4} md={4} lg={4} className={styles['expression-row']} style={{ paddingLeft: 0, transform: 'scale(0.9)' }}>
-                <Col xs={6} md={6} lg={6} style={{ paddingRight: 0 }}>
-                    <OverlayTrigger placement='top'
-                                    overlay={expressionEnabledTooltip}>
+        {!isSystem &&
+            <Col xs={4} md={4} lg={4} className={styles['expression-row']} style={{ padding: 0, transform: 'scale(0.9)' }}>
+                <Col xs={6} md={6} lg={6}>
+                    <OverlayTrigger placement='top' overlay={expressionEnabledTooltip}>
                         <RcSwitch checked={enabled}
                                   checkedChildren={'On'}
                                   unCheckedChildren={'Off'}
@@ -138,8 +140,7 @@ export function ExpressionItem({
                     </OverlayTrigger>
                 </Col>
                 <Col xs={6} md={6} lg={6} style={{ paddingRight: 0 }}>
-                    <OverlayTrigger placement='right'
-                                    overlay={deleteExpressionTooltip}>
+                    <OverlayTrigger placement='right' overlay={deleteExpressionTooltip}>
                         <Button href='javascript:void(0)'
                                 className={classNames({
                                     [styles['fa']]: true,
@@ -148,7 +149,8 @@ export function ExpressionItem({
                                 onClick={() => removeExpression({ id })}/>
                     </OverlayTrigger>
                 </Col>
-            </Col>}
+            </Col>
+        }
         </Row>
         </Grid>
     );

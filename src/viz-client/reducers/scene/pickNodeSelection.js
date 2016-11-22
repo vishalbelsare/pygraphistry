@@ -1,7 +1,7 @@
 import { Subject, Observable, Scheduler } from 'rxjs';
 import { hitTestN } from 'viz-client/streamGL/picking';
 import { isAnimating, hitmapUpdates } from 'viz-client/legacy';
-import { tapDelay, SceneGestures, hitTestNTextures } from './support';
+import { tapDelay, SceneGestures, hitTestNTextures } from 'viz-client/reducers/support';
 import { SCENE_MOUSE_MOVE, SCENE_TOUCH_START } from 'viz-shared/actions/scene';
 import { ref as $ref, atom as $atom, pathValue as $value } from '@graphistry/falcor-json-graph';
 
@@ -89,7 +89,7 @@ function filterDistinctPointsAndElements(pointA, pointB) {
 function toValuesAndInvalidations({ type, falcor, element }) {
     return {
         falcor, ...(element.type !== 'none' ?
-            selectionValuesAndInvalidations(type, element, falcor._path) :
+            selectionValuesAndInvalidations(type, element, falcor.getPath()) :
             deselectionValuesAndInvalidations(type, element))
     };
 }

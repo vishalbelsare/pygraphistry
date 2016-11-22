@@ -1,4 +1,4 @@
-import { SceneGestures } from './support';
+import { SceneGestures } from 'viz-client/reducers/support';
 import { SELECTED_POINT_TOUCH_START } from 'viz-shared/actions/scene';
 import { atom as $atom, pathValue as $value } from '@graphistry/falcor-json-graph';
 

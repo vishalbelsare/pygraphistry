@@ -1,30 +1,28 @@
-import {
-    ref as $ref,
-    atom as $atom,
-    pathValue as $value,
-    pathInvalidation as $invalidate
-} from '@graphistry/falcor-json-graph';
-
-import {
-    addExpressionHandler,
-    removeExpressionHandler
-} from './expressions';
-
-import { getHandler,
-         setHandler,
-         mapObjectsToAtoms,
-         captureErrorStacks } from 'viz-shared/routes';
+import { getHandler, setHandler } from 'viz-shared/routes';
+import { filter as createFilter } from 'viz-shared/models/expressions';
+import { addExpressionHandler, removeExpressionHandler } from './expressions';
 
 export function filters(path, base) {
     return function filters({ loadViewsById, addExpression, removeExpressionById }) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
-        const addFilter = addExpressionHandler({
+        const addFilter = function(addExpr) {
+            return function(path, callArgs) {
+                const [componentType, name, dataType, value] = callArgs;
+                const input = callArgs.length === 1 && callArgs[0] || undefined;
+                return addExpr.call(this, path, [createFilter(input ? input : {
+                    name, value, dataType, componentType
+                })]);
+            }
+        }(addExpressionHandler({
+            openPanel: true,
+            panelSide: 'left',
             listName: 'filters',
             addItem: addExpression,
-            expressionType: 'filter'
-        });
+            expressionType: 'filter',
+        }));
+
         const removeFilter = removeExpressionHandler({
             listName: 'filters',
             expressionType: 'filter',

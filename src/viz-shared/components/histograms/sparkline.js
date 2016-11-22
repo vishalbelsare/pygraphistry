@@ -1,25 +1,22 @@
 import React from 'react';
 import classNames from 'classnames';
 import { Button, Glyphicon } from 'react-bootstrap';
-
-
-import { SizeLegendIndicator, YAxisLegendIndicator } from './sparklineComponents.js';
-import { isEncoded } from 'viz-shared/components/histograms/EncodingPicker.js';
-import EncodingPicker from './EncodingPicker.js';
-import globalStyles from 'viz-shared/index.less';
 import styles from 'viz-shared/components/histograms/styles.less';
+import EncodingPicker from './EncodingPicker.js';
+import { isEncoded } from 'viz-shared/components/histograms/EncodingPicker.js';
+import { SizeLegendIndicator, YAxisLegendIndicator } from './sparklineComponents.js';
 
 export const Sparkline = ({ name, yScale, children, componentType,
                             id, width = `calc(100% - 20px)`, height = 50,
                             loading = false, filtered = false, colors = false,
-                            setEncoding,
-                            options, encodings,
+                            isFilterEnabled = true, setEncoding, options, encodings,
                             onClose, onYScaleChanged, onEncodingChanged }) => {
     return (
         <div className={classNames({
                 [styles['histogram']]: true,
                 [styles['has-filter']]: filtered,
                 [styles['has-coloring']]: colors,
+                [styles['filter-is-enabled']]: isFilterEnabled
             })}>
             <div className={styles['histogram-title']}>
                 <div className={styles['histogram-icons']}>

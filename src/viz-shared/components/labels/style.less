@@ -1,35 +1,6 @@
-//TODO will this import twice?
-@import '~font-awesome/less/font-awesome.less';
-@import '../../../viz-shared/vars.less';
-
-
-
-
-/******** HELPERS ******/
-.noselect {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-
-.selecttext {
-    -webkit-user-select: text;
-    -khtml-user-select: text;
-    -moz-user-select: text;
-    -o-user-select: text;
-    user-select: text;
-}
-/******** /HELPERS ******/
-
-
+@import '../../../viz-shared/index.less';
 
 /******** CONTAINER ******/
-
-
-
 .labels-container {
     z-index: @graph-label-z;
 
@@ -41,195 +12,97 @@
 
     pointer-events: none;
 }
+/******** /CONTAINER ******/
 
-.graph-label {
+.label {
 
-    position:absolute;
+    :global(.tooltip-inner) {
+        padding: 3px 8px 0 8px;
+    }
 
-    width: 30em;
-    color: @graphistry-darkblue;
-
-
-    pointer-events: none;
     cursor: pointer;
+    position: absolute;
+    z-index: @graph-label-z;
+    pointer-events: none;
+
     &, & * {
         .noselect();
     }
     &.clicked, &.clicked * {
+        opacity: 1;
         .selecttext();
     }
 
-
-    z-index: @graph-label-z;
     &.clicked {
         z-index: @graph-label-clicked-z;
     }
     &.on:not(.clicked) {
         z-index: @graph-label-hover-z;
     }
-    /*
-    &.clicked:hover {
-        z-index: @graph-label-hover-clicked-z;
-    }
-    */
 
     &::-webkit-scrollbar,
-    & .graph-label-container::-webkit-scrollbar,
-    & .graph-label-contents::-webkit-scrollbar   {
+    & .label-tooltip::-webkit-scrollbar,
+    & .label-contents::-webkit-scrollbar   {
         -webkit-appearance: none;
         width: 7px;
     }
     &::-webkit-scrollbar-thumb,
-    & .graph-label-container::-webkit-scrollbar-thumb,
-    & .graph-label-contents::-webkit-scrollbar-thumb {
+    & .label-tooltip::-webkit-scrollbar-thumb,
+    & .label-contents::-webkit-scrollbar-thumb {
         border-radius: 4px;
         background-color: rgba(0,0,0,.5);
         -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
     }
 }
 
-.graph-label-edge {
-    width: auto;
-}
-
-.graph-label-point {
-    width: auto;
-}
-
-
-.graph-label-container {
-
-    //TODO change to relative?
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: auto;
-    height: auto;
-    pointer-events: auto;
-
-    padding: 0.5em 0.5em 0.4em 0.5em;
-    border-radius: 10px;
-
-    margin-top: 25px;
-    margin-left: 15px;
-    border: 1px solid transparent;
-
-    .graph-label.on:not(.clicked) &
-    //, .graph-label:not(.clicked) &:hover
-    {
-        margin-top: 24px;
-        margin-left: 15px;
-    }
-    .graph-label.clicked & {
-        margin-top: 23px;
-        margin-left: 14px;
-        border-width: 2px;
-    }
-
-
-    background-color: white;
-    font-size: 0.75em;
-    opacity: 0.8;
-
-    text-align: left;
-
-    .graph-label.on & {
-        box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
-        opacity: 1.0;
-        border-color: rgba(51, 51, 102, 1);
-
-    }
-}
-
-
-
-
-
-/******** / CONTAINER ******/
-
-
-
 /******** HEADER ******/
 
-
-.graph-label-title {
+.label-title {
 
     width: 100%;
-    display: inline-block;
-    overflow:hidden;
-    vertical-align: middle;
-    font-weight: bold;
 
-    .graph-label.on:not(.clicked) &,
-    //.graph-label-container:hover &,
-    .graph-label.clicked & {
-        word-wrap: break-word;
-    }
-
-}
-
-.graph-label-title {
-
-    .fa-thumb-tack, .exclude-by-title, .label-type {
-        display: none;
-        .graph-label.on & {
-            display: inline-block;
+    .label-title-icon {
+        opacity: 0.65;
+        line-height: 180%;
+        margin-left: 0.35em;
+        // color: @dark-grey;
+        visibility: hidden;
+        &.pinned {
+            visibility: visible;
         }
-    }
-
-    .fa-thumb-tack {
-        color: @graphistry-darkblue;
-        .graph-label:not(.clicked) & {
-            display: none;
-        }
-
-    }
-
-    .graph-label.clicked & {
-        .exclude-by-title {
-            color: @dark-grey;
-            &:hover {
-                color: @graphistry-lightblue;
-                cursor: pointer;
-            }
+        &:hover {
+            opacity: 0.45;
+            // color: @graphistry-lightblue;
+            cursor: pointer;
         }
     }
 
     .label-type {
-        text-transform: uppercase;
-        font-size: 0.9em;
-        color: @dark-grey;
-        margin-left: 1em;
-        margin-right: 1em;
         float: right;
-
+        opacity: 0.65;
+        font-size: 0.8em;
+        line-height: 200%;
+        // color: @dark-grey;
+        margin-left: 0.35em;
+        text-transform: uppercase;
     }
 
-    .graph-label-title-text {
-        margin-left: 0.5em;
-        margin-right: 0.5em;
+    .label-title-text {
+        display: block;
+        font-weight: bold;
+        text-align: center;
         word-break: break-all;
+        padding-bottom: 3px;
 
-        .graph-label:not(.on):not(.clicked)
-        //.graph-label-container:not(:hover)
-        & {
+        .label:not(.on):not(.clicked) & {
             max-width: 12em;
             overflow: hidden;
-            text-overflow: ellipsis;
-            display: inline-block;
             white-space: nowrap;
+            text-overflow: ellipsis;
+            padding-bottom: 5px;
         }
     }
-
 }
-
-
-.pin {
-    .graph-label:not(.clicked) & {
-        display: none;
-    }
-}
-
 
 
 /******** / HEADER ******/
@@ -238,113 +111,103 @@
 
 /******** BODY ******/
 
-.graph-label-contents {
-
-    display: none;
+.label-contents {
 
     cursor: auto;
 
     max-height: 20em;
-    max-width: 25em;
     height: auto;
-    margin-top: 0.5em;
-    border-top: 1px solid rgb(51,51,102);
+    margin: 0 -7px;
+    // padding: 0 7px;
+    border-top: 1px solid black;//rgb(51,51,102);
     overflow-y: auto;
     overflow-x: hidden;
-
-
-    .graph-label.on:not(.clicked) &,
-    //.graph-label-container:hover &,
-    .graph-label.clicked & {
-        display: block;
-    }
-
 }
 
-.graph-label table {
-    color: @graphistry-darkblue;
+.label table {
 
-    font-size: 1.1em;
+    // color: black;
     width: 100%;
-
-
-    td.graph-label-key {
-        max-width: 10em;
-    }
-    td.graph-label-value,
-    td.graph-label-value .graph-label-value-wrapper,
-    td.graph-label-value .graph-label-value-text {
-        max-width: 15em;
-    }
-
-    td, .graph-label-value-wrapper, .graph-label-value-text {
+    td, .label-value-wrapper, .label-value-text {
         min-width: 2.2em; //fit icons
-        white-space: nowrap;
     }
-
 
     tr:not(:hover) {
-        & td, & .graph-label-value-wrapper {
-            .graph-label-value-text {
-                display: inline-block;
+        & td, & .label-value-wrapper {
+            .label-value-text {
+                // width: 10em;
+                display: block;
+                text-align: left;
                 max-height: 5em;
-                text-overflow: ellipsis;
                 overflow: hidden;
+                text-overflow: ellipsis;
             }
         }
     }
+
     tr:hover {
-
-        & td, & .graph-label-value-wrapper {
-            .graph-label-value-text {
-                text-overflow: initial;
-                white-space: normal;
-                word-wrap: break-word;
+        & td, & .label-value-wrapper {
+            .label-value-text {
+                display: block;
+                text-align: left;
                 max-height: none;
+                text-overflow: initial;
             }
         }
-
     }
-
 }
 
-.graph-label-pair {
+.label-pair {
+
     font-size: 1.1em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 
     &:nth-child(odd) > td {
         background-color: rgba(51,51,102,0.1);
     }
 
     border-bottom: 1px solid transparent;
+
+    &:hover {
+        white-space: normal;
+    }
+
     &:hover > td,
     &:hover:nth-child(odd)  > td,
     &:hover:nth-child(even) > td {
-        border-bottom: 1px solid @graphistry-darkblue;
-        background-color: @graphistry-darkblue;
+        border-bottom: 1px solid black;//@graphistry-darkblue;
+        background-color: black;//@graphistry-darkblue;
         color: white;
     }
 }
 
-.graph-label-key, .graph-label-value {
-    vertical-align: top;
-}
-.graph-label-key {
+.label-key {
+
     max-width: 10em;
+    overflow: hidden;
     font-weight: bold;
     text-align: right;
+    // white-space: nowrap;
+    padding-left: 7px;
     padding-right: 0.5em;
-    overflow: hidden;
     text-overflow: ellipsis;
-    .graph-label tr:hover & {
-        white-space: normal;
-        word-break: break-all;
+
+    &:after {
+        content: ": "
     }
 }
-.graph-label-key:after {
-    content: ": "
+
+.label tr:hover {
+    .label-key, .label-value {
+        white-space: normal;
+        word-wrap: break-word;
+    }
 }
 
-.graph-label-value {
+.label-value {
+    max-width: 15em;
+    padding-right: 7px;
     position: relative; //anchoring so icons can be placed above
 }
 
@@ -353,71 +216,64 @@
 
 
 .label-tooltip {
+    pointer-events: auto;
     z-index: @graph-label-modal-z;
 }
 
-.graph-label-icons {
+.label-icons {
 
-    position: absolute; //relative to graph-label-value-wrapper
     display: none;
-
+    position: absolute; //relative to label-value-wrapper
     max-width: none;
-    white-space: nowrap;
-
     margin-left: -2em;
     border-radius: 4px;
     padding: 0.3em;
-    background-color: @graphistry-darkblue;
+    background-color: black;//@graphistry-darkblue;
 
     font-size: 0.75em; //fit on next row
 
-    .graph-label-pair:hover &  {
+    .label-pair:hover &  {
         display: block;
         z-index: @graph-label-modal-z;
     }
 
-    .graph-label-pair:first-child:last-child & {
+    .label-pair:first-child:last-child & {
         top: 0;
         bottom: auto;
     }
-    .graph-label-pair:not(:last-child) & {
+
+    .label-pair:not(:last-child) & {
         border-top-left-radius: 0;
         border-top-right-radius: 0;
         bottom: -1.9em;
     }
-    .graph-label-pair:last-child & {
+
+    .label-pair:last-child & {
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
-        top: -2.1em;
+        top: -2em;
     }
-
 
     // may be a tooltip
     & > * + a {
         margin-left: 0.3em;
     }
-
 }
 
-.graph-label-icons > a {
+.label-icons > a {
     padding-top: 5px;
     font-size: 0.8em;
-    color: @graphistry-darkblue;
+    color: black;//@graphistry-darkblue;
     background-color: #fff;
     border-radius: 5px;
     padding: 3px;
     padding-left: 5px;
     padding-right: 5px;
     &:hover {
-        color: @graphistry-lightblue;
         cursor: pointer;
+        color: @dark-grey;
     }
 }
-
-
-//singleton
-
-
 
 /********* / ICONS **********/
 

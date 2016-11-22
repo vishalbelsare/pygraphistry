@@ -5,13 +5,8 @@ import {
     Labels as LabelsComponent
 } from 'viz-shared/components/labels';
 
-import {
-    addFilter,
-    selectLabel,
-    addExclusion,
-    labelMouseWheel,
-    labelTouchStart,
-} from 'viz-shared/actions/labels';
+import { labelMouseMove } from 'viz-shared/actions/labels';
+import { addFilter, addExclusion } from 'viz-shared/actions/expressions';
 
 let Label = container({
     fragment: () => `{
@@ -19,30 +14,15 @@ let Label = container({
     }`,
     dispatchers: {
         onFilter: addFilter,
-        onExclude: selectLabel,
-        onPinChange: addExclusion,
-        onMouseWheel: labelMouseWheel,
-        onTouchStart: labelTouchStart,
+        onExclude: addExclusion,
     }
 })(LabelComponent);
 
-const onClick = ({ type, title }) => {
-   console.log('clicked', {type, title});
-};
-
-const onFilter = ({ type, field, value }) => {
-   console.log('click filter', {type, field, value});
-};
-
-const onExclude = ({ type, field, value }) => {
-   console.log('click exclude', {type, field, value});
-};
-
-const onPinChange = ({ type, title }) => {
-   console.log('click pin change', {type, title});
-};
-
-let Labels = ({ enabled, poiEnabled, opacity,
+let Labels = ({ simulating,
+                selectLabel,
+                labelMouseMove,
+                sceneSelectionType,
+                enabled, poiEnabled, opacity,
                 foreground: { color: color } = {},
                 background: { color: background } = {},
                 point = [], highlight, selection, ...props }) => {
@@ -52,15 +32,22 @@ let Labels = ({ enabled, poiEnabled, opacity,
     if (enabled) {
         if (poiEnabled && point && point.length) {
             labels = point.slice(0);
-            // console.log(`rendering point labels`, labels);
         }
         if (selection && highlight && (
             selection.type === highlight.type) && (
             selection.index === highlight.index)) {
             highlight = undefined;
         }
-        highlight && labels.push(highlight);
-        selection && labels.push(selection);
+        if (selection) {
+            labels = labels.filter(({ index }) => (
+                index !== selection.index
+            )).concat(selection);
+        }
+        if (highlight) {
+            labels = labels.filter(({ index }) => (
+                index !== highlight.index
+            )).concat(highlight);
+        }
     }
 
     return (
@@ -72,10 +59,16 @@ let Labels = ({ enabled, poiEnabled, opacity,
                          {...props}>
         {enabled && labels.filter(Boolean).map((label, index) =>
             <Label data={label}
+                   color={color}
+                   opacity={opacity}
                    key={`label-${index}`}
+                   simulating={simulating}
                    background={background}
                    pinned={label === selection}
-                   color={color} opacity={opacity}
+                   onLabelSelected={selectLabel}
+                   onLabelMouseMove={labelMouseMove}
+                   hasHighlightedLabel={!!highlight}
+                   sceneSelectionType={sceneSelectionType}
                    showFull={label === highlight || label === selection}/>
         ) || []}
         </LabelsComponent>
@@ -97,6 +90,9 @@ Labels = container({
             }
         }
     }`,
+    dispatchers: {
+        labelMouseMove,
+    }
 })(Labels);
 
 export { Labels, Label }

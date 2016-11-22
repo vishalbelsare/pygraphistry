@@ -27,6 +27,7 @@ const propTypes = {
     page: React.PropTypes.number,
     rowsPerPage: React.PropTypes.number,
     onSelect: React.PropTypes.func,
+    onRowSelect: React.PropTypes.func,
     onPageSelect: React.PropTypes.func,
     onColumnsSelect: React.PropTypes.func,
     onSearch: React.PropTypes.func
@@ -46,15 +47,15 @@ class DataTable extends React.Component {
 
     render () {
 
+        const onRowSelect = this.props.onRowSelect;
+        const { rows: visibleRows = [] } = this.props;
+        const componentType = this.props.openTab === 'points' ? 'point' : 'edge';
+
         const firstRow = this.props.rowsPerPage * (this.props.page - 1);
 
         const { templates, columns = [], entityType, dataLoading, searchTerm } = this.props;
-
         const renderColumns = columns.length && columns[0] ? columns : templates;
         const templatesArray = _.range(0, templates.length).map((i) => templates[i]);
-
-
-
 
         return (
             <div>
@@ -81,7 +82,7 @@ class DataTable extends React.Component {
                         activePage={this.props.page}
                         onSelect={this.props.onPageSelect} />
 
-                    <span style={{float: 'right'}}>
+                    <span style={{ float: 'right' }}>
                     {
                         dataLoading
                             ? ( <Button>
@@ -126,15 +127,20 @@ class DataTable extends React.Component {
                         </th>))}
                 </thead>
                 <tbody>{
-                    _.range(firstRow, firstRow + this.props.rowsPerPage)
-                        .map((row) => (<tr>{
-                            renderColumns.map(({name}) => (<td>{
-                                this.props.rows && this.props.rows[row]
-                                    ? this.props.rows[row][name]
-                                    : '\u00a0' // nbsp forces height sizing
-                            }</td>))
-                        }</tr>))
-                }</tbody>
+                   _.range(firstRow, firstRow + this.props.rowsPerPage)
+                    .map((visibleRowIndex, x, y, row = visibleRows[visibleRowIndex]) => (
+                        <tr onClick={!row ? undefined : onRowSelect.bind(null, {
+                                index: row._index,
+                                componentType: componentType
+                        })}>{
+                            renderColumns.map(({name}) => (
+                                <td>
+                                    {row && row[name] || '\u00a0' /* nbsp forces height sizing*/}
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
             </Table>
             </div>
         </div>);

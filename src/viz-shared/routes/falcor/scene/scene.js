@@ -50,7 +50,7 @@ export function scene(path, base) {
             returns: `Number`
         }, {
             set: setValues,
-            route: `${base}['scene'].renderer['pruneOrphans', 'showArrows']`
+            route: `${base}['scene'].renderer['showArrows']`
         }, {
             get: getValues,
             route: `${base}['scene'].renderer['edges', 'points'][{keys}]`,

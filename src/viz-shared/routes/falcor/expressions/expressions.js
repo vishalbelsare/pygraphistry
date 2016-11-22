@@ -60,21 +60,19 @@ export function expressions(path, base) {
                     if (length > 0 && (
                         expression.enabled === true ||
                         ('enabled' in expressionProps))) {
+
                         // If the view has histograms, invalidate the
                         // relevant fields so they're recomputed if the
                         // histograms panel is open, or the next time the
                         // panel is opened.
-                        values = values.concat(
-                            $invalidate(`
+                        const viewPath = `
                                 workbooksById['${workbook.id}']
-                                    .viewsById['${view.id}']
-                                    .selection.histogramsById`
-                            ),
-                            $invalidate(`
-                                workbooksById['${workbook.id}']
-                                    .viewsById['${view.id}']
-                                    .labelsById`
-                            )
+                                    .viewsById['${view.id}']`;
+
+                        values.push(
+                            $invalidate(`${viewPath}.labelsByType`),
+                            $invalidate(`${viewPath}.inspector.rows`),
+                            $invalidate(`${viewPath}.selection.histogramsById`)
                         );
                     }
                     return values;
@@ -102,18 +100,17 @@ export function addExpressionHandler({
     mapName = 'expressionsById',
     listName = 'expressions',
     itemName = 'expression',
+    panelSide = 'left',
+    openPanel = false,
     ...restProps
 }) {
-    return function addExpressionHandler(path, inputOrProps) {
+    return function addExpressionHandler(path, [item]) {
 
-        const [componentType, name, dataType] =
-            typeof inputOrProps === 'string' ? [] : inputOrProps;
-        const input = typeof inputOrProps === 'string' ? inputOrProps : undefined;
-
-        const workbookIds = [].concat(path[1]);
         const viewIds = [].concat(path[3]);
+        const workbookIds = [].concat(path[1]);
+
         return addItem({
-            workbookIds, viewIds, name, dataType, componentType, input, ...restProps
+            workbookIds, viewIds, [itemName]: item, ...restProps
         })
         .mergeMap(({ workbook, view, [itemName]: value }) => {
 
@@ -126,10 +123,28 @@ export function addExpressionHandler({
 
             list[list.length++] = newItemRef;
 
-            return [
+            const pathValues = [
                 $value(newItemPath, newItemRef),
                 $value(newLengthPath, list.length),
+                $invalidate(`${base}.labelsByType`),
+                $invalidate(`${base}.inspector.rows`),
+                $invalidate(`${base}.selection.histogramsById`),
             ];
+
+            if (openPanel) {
+                pathValues.push(
+                    $value(`${base}.scene.controls[1].selected`, false),
+                    $value(`${base}.labels.controls[0].selected`, false),
+                    $value(`${base}.layout.controls[0].selected`, false),
+                    $value(`${base}.filters.controls[0].selected`, false),
+                    $value(`${base}.exclusions.controls[0].selected`, false),
+                    $value(`${base}.histograms.controls[0].selected`, false),
+                    $value(`${base}['${listName}'].controls[0].selected`, true),
+                    $value(`${base}.panels['${panelSide}']`, $ref(`${base}['${listName}']`))
+                );
+            }
+
+            return pathValues;
         })
         .catch(captureErrorStacks)
         .catch((err) => {
@@ -148,13 +163,13 @@ export function addExpressionHandler({
                 $value(newItemPath, $error(errors)),
                 $value(newLengthPath, list.length++),
             ];
-        })
-        .map(mapObjectsToAtoms);
+        });
     }
 }
 
 export function removeExpressionHandler({
     removeItem,
+    mapName = 'expressionsById',
     listName = 'expressions',
     itemIDName = 'expressionId',
     ...restProps
@@ -191,13 +206,17 @@ export function removeExpressionHandler({
                 }
             }
 
-            const newLengthPath = `${base}['${listName}'].length`;
+            if (found) {
+                listRefVals.push(
+                    $invalidate(`${base}.labelsByType`),
+                    $invalidate(`${base}.inspector.rows`),
+                    $invalidate(`${base}.selection.histogramsById`),
+                    $invalidate(`${base}['${mapName}']['${itemId}']`),
+                    $value(`${base}['${listName}'].length`, list.length -= 1)
+                );
+            }
 
-            return listRefVals.concat(
-                $value(newLengthPath, list.length -= Number(found))
-            );
-        })
-        .catch(captureErrorStacks)
-        .map(mapObjectsToAtoms);
+            return listRefVals;
+        });
     }
 }

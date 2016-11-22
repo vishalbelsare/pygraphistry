@@ -1,4 +1,4 @@
-import { createSubject, SceneGestures } from './support';
+import { createSubject, SceneGestures } from 'viz-client/reducers/support';
 import { SCENE_TOUCH_START } from 'viz-shared/actions/scene';
 import { atom as $atom, pathValue as $value } from '@graphistry/falcor-json-graph';
 
@@ -36,6 +36,9 @@ export function toValuesAndInvalidations({ rect, falcor, refreshMask }) {
         values: [
             $value(`selection.mask`, $atom(rect))
         ],
-        invalidations: refreshMask && [`selection.histogramsById`] || undefined
+        invalidations: !refreshMask ? undefined : [
+            `inspector.rows`,
+            `selection.histogramsById`
+        ]
     };
 }

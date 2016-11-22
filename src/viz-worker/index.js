@@ -24,7 +24,7 @@ export function vizWorker(app, server, sockets, caches) {
     const vbos = caches.vbos || (caches.vbos = {});
     const s3DatasetCache = caches.s3DatasetCache || (caches.s3DatasetCache = new Cache(config.LOCAL_DATASET_CACHE_DIR, config.LOCAL_DATASET_CACHE));
     const s3WorkbookCache = caches.s3WorkbookCache || (caches.s3WorkbookCache = new Cache(config.LOCAL_WORKBOOK_CACHE_DIR, config.LOCAL_WORKBOOK_CACHE));
-    const nBodiesById = caches.nBodiesById || (caches.nBodiesById = {});
+    const nBodiesById = caches.nBodiesById = {};
     const workbooksById = caches.workbooksById || (caches.workbooksById = {});
 
     const routeServices = services({

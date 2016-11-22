@@ -147,6 +147,7 @@ function toggleHistograms({ falcor, selected }) {
     if (selected) {
         return falcor.set(
             $value(`panels.right`, undefined),
+            $value(`highlight.darken`, false),
             $value(`histograms.controls[0].selected`, false)
         );
     } else {

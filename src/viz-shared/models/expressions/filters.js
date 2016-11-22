@@ -29,9 +29,9 @@ export function filters(view, defaultFilter = {}) {
     };
 }
 
-export function filter(name, query) {
+export function filter(query) {
     return {
-        ...expression(name, query),
+        ...expression(query),
         expressionType: 'filter'
     };
 }

@@ -55,8 +55,8 @@ function highlightHistogramBin(action$) {
     return action$
         .ofType(BIN_TOUCH_MOVE)
         .filter(({ event }) => event.buttons === 0)
-        .distinctUntilChanged(null, ({ index }) => index)
-        .switchMap(({ index, falcor }) => (
-            falcor.call('highlightBin', [index])
+        .distinctUntilChanged(null, ({ binID }) => binID)
+        .switchMap(({ binID, falcor }) => (
+            falcor.call('highlightBin', [binID])
         ))
 }

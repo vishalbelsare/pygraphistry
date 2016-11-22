@@ -59,7 +59,7 @@ let Expression = container({
     renderLoading: false,
     fragment: () => `{
         id, input, level,
-        name, enabled, identifier,
+        readOnly, name, enabled, identifier,
         dataType, componentType, expressionType
     }`,
     dispatchers: {

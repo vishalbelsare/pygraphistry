@@ -3,7 +3,12 @@ import React, { PropTypes } from 'react';
 import { Gestures } from 'rxjs-gestures';
 import { Observable } from 'rxjs/Observable';
 import styles from 'viz-shared/components/labels/style.less';
-import { curPoints, vboUpdates, cameraChanges, labelSettings } from 'viz-client/legacy';
+import {
+    curPoints, pointSizes,
+    vboUpdates, cameraChanges,
+    labelSettings, hitmapUpdates
+} from 'viz-client/legacy';
+
 import { animationFrame as AnimationFrameScheduler } from 'rxjs/scheduler/animationFrame';
 
 import {
@@ -22,6 +27,7 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
                 a.clientX === b.clientX &&
                 a.clientY === b.clientY
             )),
+        hitmapUpdates,
         cameraChanges.startWith({}),
         Observable.fromEvent(window, 'resize')
             .debounceTime(100).delay(50).startWith(null),
@@ -30,9 +36,10 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
         })
     )
     .auditTime(0, AnimationFrameScheduler)
-    .withLatestFrom(curPoints
-        .map(({ buffer }) => new Float32Array(buffer)),
-        (props, points) => ({ ...props, points })
+    .withLatestFrom(
+        pointSizes.map(({ buffer }) => new Uint8Array(buffer)),
+        curPoints.map(({ buffer }) => new Float32Array(buffer)),
+        (props, sizes, points) => ({ ...props, sizes, points })
     )
 );
 
@@ -45,11 +52,12 @@ class Labels extends React.Component {
     }
     render() {
 
-        let camera, canvas, matrix;
+        let camera, canvas, matrix,
+            pointSize, pixelRatio, scalingFactor;
         let { mouseX, mouseY, onLabelsUpdated,
               highlight = null, selection = null,
-              labels = [], points = [], children = [],
-              renderState = null, renderingScheduler = null
+              renderState = null, renderingScheduler = null,
+              labels = [], sizes = [], points = [], children = []
         } = this.props;
 
         if (!renderState || !renderingScheduler || !(
@@ -57,6 +65,9 @@ class Labels extends React.Component {
             canvas = renderState.canvas) || !(
             matrix = camera.getMatrix())) {
             children = [];
+        } else {
+            pixelRatio = camera.pixelRatio;
+            scalingFactor = camera.semanticZoom(sizes.length);
         }
 
         let childIndex = -1;
@@ -97,9 +108,14 @@ class Labels extends React.Component {
             });
 
             childrenToRender.push(React.cloneElement(child, {
+                renderState,
+                renderingScheduler,
                 style: {
                     ...(child.props && child.props.style),
-                    transform: `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0px)`
+                    transform: `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0px)`,
+                    // Clamp like in pointculled shader
+                    paddingTop: type === 'edge' ? 0 : `${0.5 *
+                        Math.max(5, Math.min(scalingFactor * sizes[index], 50)) / pixelRatio}px`,
                 }
             }));
         }
@@ -163,104 +179,3 @@ function getEdgeLabelPos (renderState, renderingScheduler, edgeIndex) {
 
     return {x: midSpringsPos[idx], y: midSpringsPos[idx + 1]};
 }
-
-
-/*{
-
-const propTypes = {
-    opacity: React.PropTypes.number,
-    background: React.PropTypes.any,
-    color: React.PropTypes.any,
-
-    poiEnabled: React.PropTypes.bool,
-    enabled: React.PropTypes.bool,
-
-    onClick: React.PropTypes.func,
-    onFilter: React.PropTypes.func,
-    onExclude: React.PropTypes.func,
-    onPinChange: React.PropTypes.func,
-
-    hideNull: React.PropTypes.bool,
-    selectedColumns: React.PropTypes.object,
-    labels: React.PropTypes.array
-};
-
-const defaultProps = {
-    opacity: 1,
-    background: 'red',
-    color: 'white',
-    poiEnabled: true,
-    enabled: true,
-    onClick: (({type, title}) => console.log('clicked', {type, title})),
-    onFilter: (({type, field, value}) => console.log('click filter', {type, field, value})),
-    onExclude: (({type, field, value}) => console.log('click exclude', {type, field, value})),
-    onPinChange: (({type, title}) => console.log('click pin change', {type, title})),
-    hideNull: true,
-    labels: [
-            type: 'point',
-            id: 'bullwinkle',
-            title: "the greatest moose",
-
-            showFull: false, // expanded when :hover or .on
-            pinned: true,
-
-            x: 200,
-            y: 30,
-
-            fields: [
-                //{key, value, ?displayName, dataType: 'color' or ?}
-                {key: 'field01', value: 0},
-                {key: 'field02', value: 'hello'},
-                {key: 'field03', value: 'world'},
-                {key: 'field04', value: 2000},
-                {key: 'field05', value: '#f00', dataType: 'color'},
-                {key: 'field06', value: '#ff0000', dataType: 'color'},
-                {key: 'field07', value: undefined},
-                {key: 'field08', value: null},
-                {key: 'field09', value: 'another'},
-                {key: 'field10isareallylongnameok', value: 'and another'},
-                {key: 'field11 is also a really long one', value: 24},
-                {key: 'field12', value: 'field value is quite long and will likely overflow'},
-                {key: 'field13', value: 'fieldvalueisquitelongandwilllikelyoverflow'},
-                {key: 'field14', value: 'and another'},
-                {key: 'field15', value: 'and another'},
-                {key: 'field16', value: 'and another'},
-                {key: 'field17', value: 'and another'}
-            ]
-    ]
-}
-
-class Labels extends React.Component {
-
-    constructor(props) {
-        super(props);
-        console.log('labels props', props);
-    }
-
-    render() {
-
-        if (!this.props.enabled) return <div className={styles['labels-container']} />;
-
-        return (
-            <div className={styles['labels-container']}>
-                {
-                    this.props.labels.map( (label) => (
-                        <DataLabel {...this.props} label={label} /> ))
-                }
-            </div>
-        );
-    }
-}
-
-Labels.propTypes = propTypes;
-Labels.defaultProps = defaultProps;
-
-Labels = getContext({
-    renderState: PropTypes.object,
-    renderingScheduler: PropTypes.object,
-})(Labels);
-
-
-export { Labels };
-
-}*/

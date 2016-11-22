@@ -20,7 +20,7 @@ export function tickLayout({ view, workbook }) {
 
 export function maskDataframe({ view }) {
 
-    const { nBody, scene, expressionsById } = view;
+    const { nBody, expressionsById } = view;
     const { dataframe, simulator } = nBody;
 
     const { selectionMasks, exclusionMasks, limits, errors } =
@@ -36,7 +36,7 @@ export function maskDataframe({ view }) {
         const updatedBuffersFromApplyingPrunedMasks = dataframe
             .applyDataframeMaskToFilterInPlace(prunedMasks, simulator);
 
-        if (!scene.pruneOrphans) {
+        if (!view.pruneOrphans) {
             return updatedBuffersFromApplyingPrunedMasks;
         }
 

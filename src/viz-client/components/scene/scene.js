@@ -145,13 +145,9 @@ class Scene extends React.Component {
         return (
             <div id='simulation-container'
                  ref={this.assignRef}
-                 onMouseUp={this.touchEnd}
                  onMouseMove={this.mouseMove}
                  onMouseDown={this.touchStart}
-                 onTouchEnd={this.touchEnd}
-                 onTouchMove={this.touchMove}
                  onTouchStart={this.touchStart}
-                 onTouchCancel={this.touchCancel}
                  style={{
                      width: `100%`,
                      height: `100%`,

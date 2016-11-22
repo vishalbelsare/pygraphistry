@@ -7,8 +7,6 @@ import { Toolbar } from 'viz-shared/containers/toolbar';
 import { Settings } from 'viz-shared/containers/settings';
 import { selectToolbarItem } from 'viz-shared/actions/toolbar';
 
-import { Labels } from 'viz-client/components/labels'
-
 import {
     sceneMouseMove,
     sceneTouchStart,
@@ -16,10 +14,15 @@ import {
     onSelectionMaskTouchStart,
 } from 'viz-shared/actions/scene';
 
+import { selectLabel } from 'viz-shared/actions/labels';
+import { selectInspectorRow } from 'viz-shared/actions/inspector';
+
 let View = ({
+    selectLabel,
     sceneMouseMove,
     sceneTouchStart,
     selectToolbarItem,
+    selectInspectorRow,
     scene = {}, labels = {},
     panels = {}, toolbar = {},
     onSelectedPointTouchStart,
@@ -34,8 +37,9 @@ let View = ({
         <div style={{ position: `absolute`, width: `100%`, height: `100%` }}>
             <Scene key='scene'
                    data={scene}
-                   mouseMove={sceneMouseMove}
-                   touchStart={sceneTouchStart}
+                   selectLabel={selectLabel}
+                   sceneMouseMove={sceneMouseMove}
+                   sceneTouchStart={sceneTouchStart}
                    selectToolbarItem={selectToolbarItem}
                    onSelectedPointTouchStart={onSelectedPointTouchStart}
                    onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
@@ -60,7 +64,7 @@ let View = ({
                   position='bottom'
                   isVisible={isBottomPanelOpen}
                   defaultSize={1 - (1/Math.sqrt(2))}>
-                <Panel side='bottom' data={bottom} key='bottom-panel'/>
+                <Panel side='bottom' data={bottom} key='bottom-panel' selectInspectorRow={selectInspectorRow}/>
             </Dock>
             <Toolbar key='toolbar' data={toolbar} selectToolbarItem={selectToolbarItem}/>
         </div>
@@ -70,6 +74,7 @@ let View = ({
 View = container({
     renderLoading: true,
     fragment: ({ scene, layout, toolbar } = {}) => `{
+        pruneOrphans,
         scene: ${ Scene.fragment(scene) },
         panels: {
             left: { id, name },
@@ -80,9 +85,11 @@ View = container({
         toolbar: ${ Toolbar.fragment(toolbar) }
     }`,
     dispatchers: {
+        selectLabel,
         sceneMouseMove,
         sceneTouchStart,
         selectToolbarItem,
+        selectInspectorRow,
         onSelectedPointTouchStart,
         onSelectionMaskTouchStart,
     }

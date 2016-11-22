@@ -1,4 +1,5 @@
 export const SELECT_INSPECTOR_TAB = 'select-inspector-tab';
+export const SELECT_INSPECTOR_ROW = 'select-inspector-row';
 export const SET_INSPECTOR_PAGE = 'set-inspector-page';
 export const SET_INSPECTOR_SORT_KEY = 'set-inspector-sort-key';
 export const SET_INSPECTOR_SORT_ORDER = 'set-inspector-sort-order';
@@ -7,6 +8,10 @@ export const SET_INSPECTOR_COLUMNS = 'set-inspector-columns';
 
 export const selectInspectorTab = (openTab) => {
     return {openTab, type: SELECT_INSPECTOR_TAB};
+};
+
+export const selectInspectorRow = (props) => {
+    return {...props, type: SELECT_INSPECTOR_ROW};
 };
 
 export const setInspectorPage = (page) => {

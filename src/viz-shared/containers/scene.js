@@ -7,17 +7,23 @@ import { Selection } from 'viz-shared/containers/selection';
 import SceneComponent from 'viz-shared/components/scene';
 
 let Scene = ({
+        selectLabel,
+        sceneMouseMove,
+        sceneTouchStart,
         onSelectedPointTouchStart,
         onSelectionMaskTouchStart,
         id, simulating, labels = {},
         release = {}, renderer = {},
         selection = {}, highlight = {}, ...props } = {}) => (
-    <SceneComponent selection={selection}
-                    simulating={simulating}
+    <SceneComponent sceneID={id}
+                    release={release}
+                    selection={selection}
                     edges={renderer.edges}
+                    simulating={simulating}
                     points={renderer.points}
-                    sceneID={id} {...props}
-                    release={release}>
+                    mouseMove={sceneMouseMove}
+                    touchStart={sceneTouchStart}
+                    {...props}>
         <Renderer key='renderer'
                   data={renderer}
                   simulating={simulating}/>
@@ -27,7 +33,11 @@ let Scene = ({
                    onSelectedPointTouchStart={onSelectedPointTouchStart}
                    onSelectionMaskTouchStart={onSelectionMaskTouchStart}
                    highlightedPoint={highlight && highlight.point && highlight.point[0]}/>
-        <Labels key='labels' data={labels} simulating={simulating}/>
+        <Labels key='labels'
+                data={labels}
+                simulating={simulating}
+                selectLabel={selectLabel}
+                sceneSelectionType={selection.type}/>
     </SceneComponent>
 );
 

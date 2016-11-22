@@ -44,6 +44,8 @@ export function getHandler(lists, loader, getInitialProps = defaultPropsResolver
 
         const values = loaded.mergeMap(({ data, idxs }) => {
 
+            data = data || {};
+
             const vals = [], path = [];
             let index = -1, count = lists.length,
                 key, type, pathId = -1, valsId = -1,
