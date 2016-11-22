@@ -100,6 +100,102 @@ class Graphistry extends Observable {
 
 
      /**
+     * Change colors based on an attribute
+     * @method Graphistry.encodeColor
+     * @param {GraphType} [graphType] - 'point' or 'edge'
+     * @param {Attribute} [attribute] - name of data column, e.g., 'degree'
+     * @param {Variant} [variation] - If there are more bins than colors, use 'categorical' to repeat colors and 'continuous' to interpolate
+     * @param {Array} [colors] - array of color name or hex codes
+     * @return {Promise} The result of the callback
+     * @example
+     *  GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         return g.encodeColor('point', 'degree', 'categorical', ['black', 'white'])
+     *     })
+     */
+    static encodeColor(graphType, attribute, variation, colors) {
+        const { view } = this;
+        return new this(view.set(
+            $value(`histograms.encodings.${graphType}.color`,
+                {   reset: false, variation, name: 'user_' + Math.random(),
+                    encodingType: 'color', colors, graphType, attribute }))
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+    }
+
+     /**
+     * Reset color to value at page load
+     * @method Graphistry.resetColor
+     * @param {GraphType} [graphType] - 'point' or 'edge'
+     * @return {Promise} The result of the callback
+     * @example
+     *  GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         return g.encodeColor('point', 'degree', 'categorical', ['black', 'white'])
+     *         return g.resetColor('point')
+     *     })
+     */
+    static resetColor(graphType) {
+        const { view } = this;
+        return new this(view.set(
+            $value(`histograms.encodings.${graphType}.color`,
+                {   reset: true, encodingType: 'color' }))
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+    }
+
+
+    /**
+     * Change size based on an attribute
+     * @method Graphistry.encodeSize
+     * @param {GraphType} [graphType] - 'point'
+     * @param {Attribute} [attribute] - name of data column, e.g., 'degree'
+     * @return {Promise} The result of the callback
+     * @example
+     *  GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         return g.encodeSize('point', 'community_infomap')
+     *     })
+     */
+    static encodeSize(graphType, attribute) {
+        const { view } = this;
+        return new this(view.set(
+            $value(`histograms.encodings.${graphType}.size`,
+                {   reset: false, name: 'user_' + Math.random(),
+                    encodingType: 'size', graphType, attribute }))
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+    }
+
+
+    /**
+     * Reset size to value at page load
+     * @method Graphistry.resetSize
+     * @param {GraphType} [graphType] - 'point'
+     * @return {Promise} The result of the callback
+     * @example
+     *  GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         return g.encodeSize('point', 'community_infomap')
+     *         return g.resetSize('point')
+     *     })
+     */
+    static resetSize(graphType) {
+        const { view } = this;
+        return new this(view.set(
+            $value(`histograms.encodings.${graphType}.size`,
+                {   reset: true, encodingType: 'size' }))
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+    }
+
+
+
+     /**
      * Toggle a leftside panel
      * @method Graphistry.toggleLeftPanel
      * @param {string} [panel] - Name of panel: filters, exclusions, scene, labels, layout
