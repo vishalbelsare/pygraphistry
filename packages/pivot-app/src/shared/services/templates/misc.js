@@ -35,12 +35,12 @@ export const searchSplunkMap = new SplunkPivot({
         'src': {
             inputType: 'text',
             label: 'Source entity:',
-            placeholder: '"metadata.dataset"'
+            placeholder: '"err.message"'
         },
         'dst': {
             inputType: 'text',
             label: 'Destination:',
-            placeholder: '"err.stackArray{0}.file"'
+            placeholder: '"err.stackArray{}.file"'
         },
         'pivot': {
             inputType: 'pivotCombo',
@@ -50,10 +50,13 @@ export const searchSplunkMap = new SplunkPivot({
     toSplunk: function(pivotParameters, pivotCache) {
         const source = pivotParameters['src'];
         const dest = pivotParameters['dst'];
-        const subsearch = `[
-            | loadjob "${pivotCache[pivotParameters.pivot].splunkSearchId}"
-            | dedup ${source}
-        ]`;
+        const sourcePivots = pivotParameters.pivot.value;
+
+        const subsearch = sourcePivots.map(pivotId =>
+                `[| loadjob "${pivotCache[pivotId].splunkSearchId}"
+                    | fields ${source} | dedup ${source}
+                ]`
+            ).join(' | append ');
         return `search ${subsearch}
             | fields ${source}, ${dest}
             | fields  - _*`;
