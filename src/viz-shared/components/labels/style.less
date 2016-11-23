@@ -17,7 +17,15 @@
 .label {
 
     :global(.tooltip-inner) {
-        padding: 3px 8px 0 8px;
+        padding-top: 3px;
+        padding-left: 8px;
+        padding-right: 8px;
+        padding-bottom: 0px;
+    }
+
+    &.on  :global(.tooltip-inner),
+    &.clicked :global(.tooltip-inner) {
+        padding-bottom: 3px;
     }
 
     cursor: pointer;

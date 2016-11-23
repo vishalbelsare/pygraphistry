@@ -114,33 +114,37 @@ export function addExpressionHandler({
         })
         .mergeMap(({ workbook, view, [itemName]: value }) => {
 
-            const base = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+            const viewPath = `
+                workbooksById['${workbook.id}']
+                    .viewsById['${view.id}']`;
 
             const { [listName]: list } = view;
-            const newLengthPath = `${base}['${listName}'].length`;
-            const newItemPath = `${base}['${listName}'][${list.length}]`;
-            const newItemRef = $ref(`${base}['${mapName}']['${value.id}']`);
+            const newLengthPath = `${viewPath}['${listName}'].length`;
+            const newItemPath = `${viewPath}['${listName}'][${list.length}]`;
+            const newItemRef = $ref(`${viewPath}['${mapName}']['${value.id}']`);
 
             list[list.length++] = newItemRef;
 
             const pathValues = [
+                $invalidate(`${viewPath}.labelsByType`),
+                $invalidate(`${viewPath}.inspector.rows`),
+                $invalidate(`${viewPath}.selection.histogramsById`),
+
                 $value(newItemPath, newItemRef),
                 $value(newLengthPath, list.length),
-                $invalidate(`${base}.labelsByType`),
-                $invalidate(`${base}.inspector.rows`),
-                $invalidate(`${base}.selection.histogramsById`),
+                $value(`${viewPath}.highlight.darken`, false),
             ];
 
             if (openPanel) {
                 pathValues.push(
-                    $value(`${base}.scene.controls[1].selected`, false),
-                    $value(`${base}.labels.controls[0].selected`, false),
-                    $value(`${base}.layout.controls[0].selected`, false),
-                    $value(`${base}.filters.controls[0].selected`, false),
-                    $value(`${base}.exclusions.controls[0].selected`, false),
-                    $value(`${base}.histograms.controls[0].selected`, false),
-                    $value(`${base}['${listName}'].controls[0].selected`, true),
-                    $value(`${base}.panels['${panelSide}']`, $ref(`${base}['${listName}']`))
+                    $value(`${viewPath}.scene.controls[1].selected`, false),
+                    $value(`${viewPath}.labels.controls[0].selected`, false),
+                    $value(`${viewPath}.layout.controls[0].selected`, false),
+                    $value(`${viewPath}.filters.controls[0].selected`, false),
+                    $value(`${viewPath}.exclusions.controls[0].selected`, false),
+                    $value(`${viewPath}.histograms.controls[0].selected`, false),
+                    $value(`${viewPath}['${listName}'].controls[0].selected`, true),
+                    $value(`${viewPath}.panels['${panelSide}']`, $ref(`${viewPath}['${listName}']`))
                 );
             }
 
@@ -154,11 +158,11 @@ export function addExpressionHandler({
             }
 
             const { workbook, view, errors } = err;
-            const base = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+            const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
 
             const { [listName]: list } = view;
-            const newLengthPath = `${base}['${listName}'].length`;
-            const newItemPath = `${base}['${listName}'][${list.length}]`;
+            const newLengthPath = `${viewPath}['${listName}'].length`;
+            const newItemPath = `${viewPath}['${listName}'][${list.length}]`;
             return [
                 $value(newItemPath, $error(errors)),
                 $value(newLengthPath, list.length++),
@@ -183,7 +187,9 @@ export function removeExpressionHandler({
         .mergeMap(({ workbook, view }) => {
 
             const { [listName]: list } = view;
-            const base = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+            const viewPath = `
+                workbooksById['${workbook.id}']
+                    .viewsById['${view.id}']`;
 
             const listRefVals = [];
             let listLen = list.length;
@@ -192,7 +198,7 @@ export function removeExpressionHandler({
             while (++index < listLen) {
                 if (found) {
                     listRefVals.push($value(
-                        `${base}['${listName}'][${index - 1}]`,
+                        `${viewPath}['${listName}'][${index - 1}]`,
                         list[index - 1] = list[index]
                     ));
                     continue;
@@ -208,11 +214,14 @@ export function removeExpressionHandler({
 
             if (found) {
                 listRefVals.push(
-                    $invalidate(`${base}.labelsByType`),
-                    $invalidate(`${base}.inspector.rows`),
-                    $invalidate(`${base}.selection.histogramsById`),
-                    $invalidate(`${base}['${mapName}']['${itemId}']`),
-                    $value(`${base}['${listName}'].length`, list.length -= 1)
+
+                    $invalidate(`${viewPath}.labelsByType`),
+                    $invalidate(`${viewPath}.inspector.rows`),
+                    $invalidate(`${viewPath}.selection.histogramsById`),
+                    $invalidate(`${viewPath}['${mapName}']['${itemId}']`),
+
+                    $value(`${viewPath}.highlight.darken`, false),
+                    $value(`${viewPath}['${listName}'].length`, list.length -= 1)
                 );
             }
 

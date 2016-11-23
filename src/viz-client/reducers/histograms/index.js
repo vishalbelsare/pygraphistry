@@ -7,96 +7,96 @@ import {
 
 import _ from 'lodash';
 import { Observable } from 'rxjs/Observable';
+import { createSubject, SceneGestures } from 'viz-client/reducers/support';
 import { BIN_TOUCH_START, BIN_TOUCH_MOVE } from 'viz-shared/actions/histograms';
-import { tapDelay, tapRadius, createSubject, SceneGestures } from 'viz-client/reducers/support';
+import { animationFrame as AnimationFrameScheduler } from 'rxjs/scheduler/animationFrame';
 
 export function filterHistograms(actions, state) {
-
-    return Observable.merge(
-        filterBinOnTap(actions),
-        filterBinsOnDrag(actions)
-    )
-    .switch()
-    .ignoreElements();
-}
-
-function filterBinOnTap(actions) {
-
-    const histogramBinStarts = SceneGestures
-        .startFromActions(actions
-            .ofType(BIN_TOUCH_START)
-        );
-
-    const histogramBinTaps = SceneGestures
-        .tap(histogramBinStarts, { delay: tapDelay })
-        .repeat()
-        .mergeAll();
-
-    return histogramBinTaps.map(({
-        falcor, binID, binIsFiltered,
-        range = binIsFiltered ? [] : [binID]
-    }) => Observable.merge(
-        falcor.call('filter', range),
-        falcor.withoutDataSource().set(
-            $value('filter.range', range),
-            $value('filter.enabled', true)
-        )
-    ));
+    return filterBinsOnDrag(actions).ignoreElements();
 }
 
 function filterBinsOnDrag(actions) {
 
-    const filterBinsStarts = SceneGestures
-        .startFromActions(actions
-            .ofType(BIN_TOUCH_START)
-        );
+    const filterBinsEnds = SceneGestures.end();
+    const filterBinsCancels = SceneGestures.cancel();
 
     const filterBinsMoves = SceneGestures
-        .startFromActions(actions
-            .ofType(BIN_TOUCH_MOVE)
+        .moveFromActions(actions
+            .ofType(BIN_TOUCH_MOVE));
+
+    const filterBinsStartsById = SceneGestures
+        .startsByIdFromActions(
+            actions.ofType(BIN_TOUCH_START));
+
+    const brushPans = filterBinsStartsById
+        .take(1)
+        .mergeMap((starts) => SceneGestures
+            .pan(starts,
+                 undefined,
+                 filterBinsMoves,
+                 filterBinsEnds,
+                 filterBinsCancels)
+            .distinctUntilChanged(null, selectBinID)
+            .map(selectBinIDAndAnchor)
+            .scan(scanBinIDsAndAnchor)
+            .multicast(createSubject, multicastBrushPans)
         );
 
-    const brushFilterBins = SceneGestures
-        .pan(filterBinsStarts,
-            { delay: tapDelay, radius: tapRadius },
-            filterBinsMoves,
-            SceneGestures.end(),
-            SceneGestures.cancel()
-        )
-        .distinctUntilChanged(null, ({ binID }) => binID)
-        .map(({ falcor, binID }) => [binID, binID, falcor])
-        .scan(([anchor, cursor], [binID, x, falcor]) => [
-            binID > cursor ? anchor :
-            binID < cursor ? anchor :
-            cursor, binID, falcor
-        ]);
+    return brushPans.repeat().switch();
 
-    return brushFilterBins.multicast(
-        createSubject,
-        (drags) => Observable.merge(
+    function selectBinID({ binID }) { return binID; }
+    function selectBinIDAndAnchor({ binID, range, falcor, binIsFiltered }) {
+        return [binID, binID, falcor, range, binIsFiltered];
+    }
 
-            drags
-                .auditTime(10)
-                .map(([anchor, cursor, falcor, range = _.range(
-                    Math.min(anchor, cursor), Math.max(anchor, cursor) + 1
-                )]) => (
-                falcor.withoutDataSource().set(
-                    $value('filter.range', range),
-                    $value('filter.enabled', true)
-                )
-            )),
+    function scanBinIDsAndAnchor(memo, [binID, x, falcor, range, binIsFiltered]) {
+        const [anchor, cursor] = memo;
+        memo[1] = binID;
+        memo[0] = binID > cursor ? anchor :
+                  binID < cursor ? anchor :
+                  cursor;
+        return memo;
+    }
 
-            drags
+    function multicastBrushPans(drags) {
+        return drags
+            .auditTime(0, AnimationFrameScheduler)
+            .map(toLocalFilterValues)
+            .merge(drags
                 .takeLast(1)
-                .map(([anchor, cursor, falcor, range = anchor === cursor ? [] : _.range(
-                    Math.min(anchor, cursor), Math.max(anchor, cursor) + 1
-                )]) => Observable.merge(
-                    falcor.call('filter', range),
-                    falcor.withoutDataSource().set(
-                        $value('filter.range', range),
-                        $value('filter.enabled', true)
-                    )
-                ))
-        ))
-        .repeat();
+                .map(toRemoteFilterCall))
+    }
+
+    function toLocalFilterValues([
+        anchor, cursor, falcor, range, binIsFiltered, _range = _.range(
+            Math.min(anchor, cursor), Math.max(anchor, cursor) + 1)]) {
+        return falcor.withoutDataSource().set(
+            $value('range', _range),
+            $value('filter.enabled', true)
+        );
+    }
+
+    function toRemoteFilterCall([
+        anchor, cursor, falcor, range, binIsFiltered]) {
+
+        let _range = [];
+
+        if (anchor === cursor) {
+            if (!binIsFiltered) {
+                _range = [anchor];
+            }
+        } else {
+            _range = _.range(
+                Math.min(anchor, cursor),
+                Math.max(anchor, cursor) + 1);
+        }
+
+        return Observable.merge(
+            falcor.call('filter', _range),
+            falcor.withoutDataSource().set(
+                $value('range', _range),
+                $value('filter.enabled', true)
+            )
+        );
+    }
 }
