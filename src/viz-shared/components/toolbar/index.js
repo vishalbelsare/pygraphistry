@@ -57,8 +57,8 @@ export function ButtonListItem({ onItemSelected, ...props }) {
                     onClick={(e) => e.preventDefault() || onItemSelected(props)}
                     className={classNames({
                          [styles[id]]: true,
-                         [styles['fa']]: true,
-                         [styles['fa-fw']]: true,
+                         fa: true,
+                         'fa-fw': true,
                          [styles['selected']]: selected,
                          [styles['button-list-item']]: true
                     })}

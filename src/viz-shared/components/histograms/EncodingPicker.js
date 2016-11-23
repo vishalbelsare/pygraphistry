@@ -167,8 +167,8 @@ export default class EncodingPicker extends React.Component {
                 overlay={ <Tooltip id={`${this.props.id}_tooltip`}>Pick fields</Tooltip> }>
                 <Button href='javascript:void(0)'
                     className={classNames({
-                        [globalStyles['fa']]: true,
-                        [globalStyles['fa-cog']]: true,
+                        'fa': true,
+                        'fa-cog': true,
                         [styles['encoding-picker-button']]: true
                     })}
                     onClick={this.open} />

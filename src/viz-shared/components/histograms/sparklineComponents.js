@@ -12,8 +12,8 @@ function SizeLegendIndicator (props) {
                 <Button bsSize="small"
                     className={styles['histogram-legend-pill']}>
                     <span className={classNames({
-                        [stylesGlobal['fa']]: true,
-                        [stylesGlobal['fa-dot-circle-o']]: true,
+                        'fa': true,
+                        'fa-dot-circle-o': true,
                         [styles['histogram-size-encoding-icon']]: true
                     })}/>
                     Size
