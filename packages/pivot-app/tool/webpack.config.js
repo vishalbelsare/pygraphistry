@@ -393,11 +393,13 @@ function plugins(buildOpts) {
         // plugins.push(new webpack.optimize.DedupePlugin());
         plugins.push(new webpack.optimize.AggressiveMergingPlugin());
         plugins.push(new webpack.optimize.UglifyJsPlugin({
-            compress: { warnings: false },
+            compress: {
+                warnings: false,
+                screw_ie8: true,
+            },
             mangle: false,
             comments: false,
             sourceMap: true,
-            'screw-ie8': true,
         }));
     }
 
