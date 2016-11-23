@@ -1,9 +1,18 @@
 import { Gestures } from 'rxjs-gestures';
 import { curPoints } from 'viz-client/legacy';
 import { createSubject } from './createSubject';
+import { ReplaySubject } from 'rxjs/ReplaySubject';
 import { pointIndexesInRect } from './pointIndexesInRect';
 
+function getReplaySubject1() { return new ReplaySubject(1); }
+function getIdentifier({ identifier = 'mouse' }){ return identifier; }
+
 export class SceneGestures extends Gestures {
+    static startsByIdFromActions(actions) {
+        return this
+            .startFromActions(actions)
+            .groupBy(getIdentifier, null, null, getReplaySubject1);
+    }
     static startFromActions(actions) {
         return SceneGestures.to(
             SceneGestures.start.bind(SceneGestures), actions);

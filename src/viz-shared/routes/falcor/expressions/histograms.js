@@ -112,7 +112,8 @@ export function histograms(path, base) {
             returns: `*`,
             get: getHistograms,
             route: `${base}['histogramsById'][{keys}][
-                'id', 'name', 'filter', 'yScale',
+                'id', 'name',
+                'range', 'filter', 'yScale',
                 'numElements', 'maxElements',
                 'binType', 'binWidth', 'numBins',
                 'isMasked', 'dataType', 'componentType'
@@ -131,7 +132,8 @@ export function histograms(path, base) {
             returns: `*`,
             get: getSelectionHistograms,
             route: `${base}['selection']['histogramsById'][{keys}][
-                'id', 'name', 'filter', 'yScale',
+                'id', 'name',
+                'range', 'filter', 'yScale',
                 'numElements', 'maxElements',
                 'binType', 'binWidth', 'numBins',
                 'isMasked', 'dataType', 'componentType'
@@ -235,18 +237,19 @@ export function histograms(path, base) {
                 // If no bin indexes, or no bins in this histogram,
                 // remove the current filter.
                 if (!query || !binIndexes.length || !bins.length) {
+                    histogram.range = [];
                     histogram.filter = undefined;
                     if (!filterRef || !filter) {
                         // If no filter for this histogram, just return an invalidation
                         return Observable.of(
-                            $value(`${histogramPath}.filter.range`, []),
+                            $value(`${histogramPath}.range`, []),
                             $value(`${histogramPath}.filter.enabled`, true)
                         );
                     }
                     return removeFilter
                         .call(this, path, [filter.id])
                         .startWith(
-                            $value(`${histogramPath}.filter.range`, []),
+                            $value(`${histogramPath}.range`, []),
                             $value(`${histogramPath}.filter.enabled`, true)
                         );
                 } else if (!filter) {
@@ -258,17 +261,17 @@ export function histograms(path, base) {
                         componentType: histogram.componentType
                     });
 
-                    return addFilter
-                        .call(this, path, [{
-                            ...filter,
-                            readOnly: true,
-                            range: binIndexes,
-                        }])
-                        .startWith($value(`${
-                            histogramPath}.filter`,
-                                 histogram.filter = $ref(`${viewPath}
-                                    .expressionsById['${filter.id}']`)
-                        ));
+                    return Observable.of(
+                            $value(`${histogramPath}.range`,
+                                           histogram.range = binIndexes),
+                            $value(`${
+                                histogramPath}.filter`,
+                                     histogram.filter = $ref(`${viewPath}
+                                        .expressionsById['${filter.id}']`))
+                        )
+                        .concat(addFilter.call(this, path, [{
+                            ...filter, readOnly: true
+                        }]));
                 }
 
                 histogram.filter = $ref(`${viewPath}
@@ -276,9 +279,7 @@ export function histograms(path, base) {
 
                 expressionsById[filter.id] = filter = {
                     ...filter,
-                    query,
-                    enabled: true,
-                    range: binIndexes,
+                    query, enabled: true,
                     input: printExpression(query)
                 };
 
@@ -292,12 +293,15 @@ export function histograms(path, base) {
                     // histograms panel is open, or the next time the
                     // panel is opened.
                     return [
+
                         $invalidate(`${viewPath}.labelsByType`),
                         $invalidate(`${viewPath}.inspector.rows`),
                         $invalidate(`${viewPath}.selection.histogramsById`),
-                        $value(`${filterPath}.range`, filter.range),
+
+                        $value(`${viewPath}.highlight.darken`, false),
                         $value(`${filterPath}.input`, filter.input),
                         $value(`${filterPath}.enabled`, filter.enabled),
+                        $value(`${histogramPath}.range`, binIndexes),
                         $value(`${histogramPath}.filter`, histogram.filter)
                     ];
                 });

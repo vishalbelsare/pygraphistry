@@ -51,6 +51,7 @@ export function histogram({ name = 'degree',
                             componentType = 'point' } = {},
                             histogramId = simpleflake().toJSON()) {
     return {
+        range: [],
         id: histogramId,
         name, /* degree */
         yScale, /* none, log, log2 log10 */
@@ -62,6 +63,7 @@ export function histogram({ name = 'degree',
 
 export function histogramFilterQuery(histogram, binIndexes = []) {
 
+    let query;
     const { bins, binType,
             minValue, binWidth,
             identifier, componentType } = histogram;
@@ -69,9 +71,9 @@ export function histogramFilterQuery(histogram, binIndexes = []) {
     if (binType === 'nodata' || binIndexes.length <= 0) {
         return null;
     }
-    // In the base case, return a query for a single bin index
+    // In the base case, return a query for a single bin
     else if (binIndexes.length === 1) {
-        return histogramBinQuery(histogram, bins[binIndexes[0]]);
+        return histogramBinQuery(histogram, bins[binIndexes[0]], true);
     }
     // If there's more than one bin index and the histogram supports ranges
     // (binType === 'histogram'), return a query between the min and max bin values
@@ -99,22 +101,29 @@ export function histogramFilterQuery(histogram, binIndexes = []) {
         { exclude: false, values: [] }
     );
 
-    const query = getDefaultQueryForDataType({
+    query = getDefaultQueryForDataType({
         queryType: 'isOneOf', identifier, values
     });
 
     if (exclude) {
-        // Regenerate the AST because it's mutated elsewhere >:(
         query.ast = {
-            type: 'BinaryPredicate', operator: 'OR',
-            left: { operator: 'NOT',
-                    type: 'NotExpression',
-                    value: getDefaultQueryForDataType({
-                        queryType: 'isOneOf', identifier, values
-                    }).ast },
-            right: getDefaultQueryForDataType({
-                queryType: 'isOneOf', identifier, values
-            }).ast
+            operator: 'OR',
+            type: 'BinaryPredicate',
+            left: {
+                operator: 'NOT',
+                type: 'NotExpression',
+                value: getDefaultQueryForDataType({
+                    identifier,
+                    queryType: 'isOneOf',
+                    values: bins.reduce((vals, { exclude, values } = {}) => {
+                        if (!exclude && values && values.length) {
+                            vals.push.apply(vals, values);
+                        }
+                        return vals;
+                    }, [])
+                }).ast
+            },
+            right: query.ast
         };
     }
 
@@ -125,32 +134,38 @@ export function histogramFilterQuery(histogram, binIndexes = []) {
     };
 }
 
-export function histogramBinQuery(histogram, bin) {
+export function histogramBinQuery(histogram, bin, shouldCoerceTypeToBinaryPredicate = false) {
 
-    const { values, exclude } = bin;
-    const { identifier, componentType, bins } = histogram;
-    const queryProperties = { identifier };
+    const { values = [], exclude = false } = bin;
+    const { bins = [], binType, identifier, componentType } = histogram;
 
-    if (exclude) {
-        queryProperties.queryType = 'isOneOf';
-        queryProperties.values = [].concat(...bins.map(({ values }) => values));
-    } else if (values.length === 1) {
-        queryProperties.value = values[0];
-        queryProperties.queryType = 'isEqualTo';
-    } else if (values.length === 2) {
-        queryProperties.stop = values[1];
-        queryProperties.start = values[0];
-        queryProperties.queryType = 'isBetween';
-    }
+    const queryProperties = {
+        identifier,
+        stop: values[1], start: values[0], value: values[0],
+        queryType: exclude ? 'isOneOf' : values.length === 1 ? 'isEqualTo' : 'isBetween',
+        values: !exclude ? undefined : bins.reduce((vals, { exclude, values } = {}) => {
+            if (!exclude && values && values.length) {
+                vals.push.apply(vals, values);
+            }
+            return vals;
+        }, [])
+    };
 
     const query = getDefaultQueryForDataType(queryProperties);
+
+    // TODO: this is here because the old StreamGL histogramPanel
+    // did it this way, but A. what's the difference between type
+    // `BinaryExpression` and `BinaryPredicate`, and B. is it still necessary?
+    // if (shouldCoerceTypeToBinaryPredicate && binType === 'countBy') {
+    //     query.ast.type = 'BinaryPredicate';
+    // }
 
     if (exclude) {
         query.ast = {
             type: 'NotExpression',
             operator: 'NOT',
             value: query.ast
-        }
+        };
     }
 
     return {

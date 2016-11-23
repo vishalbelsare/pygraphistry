@@ -81,12 +81,13 @@ Histograms = container({
     }
 })(Histograms);
 
-let Histogram = ({ loading = false,
+let Histogram = ({ range = [],
+                   loading = false,
                    options, encodings = {},
                    dataType, componentType,
                    id, name, yScale = 'none',
+                   filter: { enabled = true } = {},
                    global: _global = {}, masked = {},
-                   filter: { range = [], enabled = true } = {},
                    binTouchMove, binTouchStart, binTouchCancel,
                    removeHistogram, yScaleChanged, setEncoding }) => {
 
@@ -136,9 +137,9 @@ let Histogram = ({ loading = false,
                           }}
                           globalCount={globalCount} maskedCount={maskedCount}
                           binType={binType} dataType={dataType} isMasked={isMasked}
-                          onBinTouchMove={(event) => binTouchMove({ event, binID, binIsFiltered })}
-                          onBinTouchStart={(event) => binTouchStart({ event, binID, binIsFiltered })}
-                          onBinTouchCancel={(event) => binTouchCancel({ event, binID, binIsFiltered })}
+                          onBinTouchMove={(event) => binTouchMove({ event, binID, range, binIsFiltered })}
+                          onBinTouchStart={(event) => binTouchStart({ event, binID, range, binIsFiltered })}
+                          onBinTouchCancel={(event) => binTouchCancel({ event, binID, range, binIsFiltered })}
                           maskedHeight={`${100 * (trans(maskedCount || 0) / (trans(maxElements) || 1))}%`}
                           globalHeight={`${100 * (trans(globalCount || 0) / (trans(maxElements) || 1))}%`}/>
         ))}
@@ -149,8 +150,8 @@ let Histogram = ({ loading = false,
 Histogram = container({
     renderLoading: true,
     fragment: ({ global, masked } = {}) => `{
-        filter: { range, enabled },
-        id, name, yScale, dataType, componentType,
+        filter: { enabled },
+        id, name, range, yScale, dataType, componentType,
         global: ${ HistogramBins.fragment(global) } ${ global ? `,
         masked: ${ HistogramBins.fragment(masked) }` :         ''}
     }`,

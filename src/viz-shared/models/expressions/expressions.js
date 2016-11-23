@@ -92,7 +92,6 @@ export function expression(inputOrProps = {
     }
 
     return {
-        range: [],
         id: expressionId,
         enabled: true,
         level: undefined, /* <-- 'system' | undefined */
@@ -207,7 +206,7 @@ const defaultQueriesMap = {
         }
     },
     isEqualTo({ identifier, value }) {
-        return this.equals({ identifier, value });
+        return this.string({ identifier, value });
     },
     isBetween({ identifier, start, stop }) {
         return {
