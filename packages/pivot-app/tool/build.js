@@ -157,6 +157,7 @@ compile.multicast(function() { return new Subject(); }, function(shared) {
         error(err) {
             console.error(`${chalk.red('[WEBPACK]')}❌  ${err.error}`);
             console.error(err.stats);
+            process.exit(1);
         }
     });
 
