@@ -87,9 +87,9 @@ class DataTable extends React.Component {
                         dataLoading
                             ? ( <Button>
                                 <i className={classNames({
-                                    [styles['fa']]: true,
-                                    [styles['fa-spin']]: true,
-                                    [styles['fa-spinner']]: true})} />
+                                    'fa': true,
+                                    'fa-spin': true,
+                                    'fa-spinner': true})} />
                                 </Button>)
                             : <ColumnPicker
                                 id="InspectorColumnPicker"
@@ -115,14 +115,11 @@ class DataTable extends React.Component {
                             { this.props.sortKey === name
                                 ? <i className={`
                                     ${styles['sort-active']}
-                                    ${styles['fa']}
-                                    ${styles['fa-fw']}
-                                    ${styles['fa-sort-' + this.props.sortOrder]}`}></i>
+                                    fa fa-fw
+                                    ${'fa-sort-' + this.props.sortOrder}`}></i>
                                 : <i className={`
                                     ${styles['sort-inactive']}
-                                    ${styles['fa']}
-                                    ${styles['fa-fw']}
-                                    ${styles['fa-sort']}`}></i>
+                                    fa fa-fw fa-sort`}></i>
                             }
                         </th>))}
                 </thead>

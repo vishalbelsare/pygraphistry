@@ -143,8 +143,8 @@ export function ExpressionItem({
                     <OverlayTrigger placement='right' overlay={deleteExpressionTooltip}>
                         <Button href='javascript:void(0)'
                                 className={classNames({
-                                    [styles['fa']]: true,
-                                    [styles['fa-close']]: true
+                                    'fa': true,
+                                    'fa-close': true
                                 })}
                                 onClick={() => removeExpression({ id })}/>
                     </OverlayTrigger>

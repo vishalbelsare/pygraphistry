@@ -69,8 +69,8 @@ export default class ColumnPicker extends React.Component {
 
             <Button href='javascript:void(0)'
                 className={classNames({
-                    [styles['fa']]: true,
-                    [styles['fa-cogs']]: true
+                    fa: true,
+                    'fa-cogs': true
                 })}
                 onClick={this.open} />
 

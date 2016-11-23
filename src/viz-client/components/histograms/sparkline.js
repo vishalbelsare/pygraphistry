@@ -313,8 +313,8 @@ class Sparkline extends React.Component {
                         />
                         <Button href='javascript:void(0)'
                             className={classNames({
-                                [stylesGlobal['fa']]: true,
-                                [stylesGlobal['fa-times']]: true,
+                                'fa': true,
+                                'fa-times': true,
                                 [styles['histogram-close']]: true
                             })} />
                     </div>

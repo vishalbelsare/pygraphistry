@@ -152,8 +152,8 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
                    [styles['label-title-icon']]: true,
                })}>
                 <i className={classNames({
-                    [styles['fa']]: true,
-                    [styles['fa-times']]: true,
+                    'fa': true,
+                    'fa-times': true,
                 })}/>
             </a>
             <span className={styles['label-type']}>{ type }</span>
@@ -178,8 +178,8 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
                             componentType: type, dataType: 'string', name: '_title', value: title
                         }))}>
                     <i className={classNames({
-                        [styles['fa']]: true,
-                        [styles['fa-ban']]: true
+                        'fa': true,
+                        'fa-ban': true
                     })}/>
                 </a>
             </OverlayTrigger>
@@ -259,8 +259,8 @@ function LabelRow ({ color,
                                         componentType: type, name: field, dataType, value
                                     }))}>
                                 <i className={classNames({
-                                    [styles['fa']]: true,
-                                    [styles['fa-ban']]: true
+                                    'fa': true,
+                                    'fa-ban': true
                                 })}/>
                             </a>
                         </OverlayTrigger>
@@ -281,8 +281,8 @@ function LabelRow ({ color,
                                         componentType: type, name: field, dataType, value
                                     }))}>
                                 <i className={classNames({
-                                    [styles['fa']]: true,
-                                    [styles['fa-filter']]: true
+                                    'fa': true,
+                                    'fa-filter': true
                                 })}/>
                             </a>
                         </OverlayTrigger>
