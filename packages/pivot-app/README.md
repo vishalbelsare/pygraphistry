@@ -39,6 +39,14 @@ docker run --rm -i -t --network host \
 ```
 5. Load [http://staging.graphistry.com:4000](http://staging.graphistry.com:4000)
 
+### Reading Logs
+
+Staging does not have bunyan installed locally. To parse and print logs, you can use the container's bunyan:
+
+```bash
+docker exec -it <CONTAINERID> /usr/local/bin/node node_modules/bunyan/bin/bunyan --no-pager -o short <LOGFILE>
+```
+
 ## Localhost
 
 1. Run a stock splunk instance; mirror our splunk datasets & username/pwd
