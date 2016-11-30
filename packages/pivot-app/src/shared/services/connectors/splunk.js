@@ -41,7 +41,7 @@ export const SplunkConnector = {
             id: jobId,
             timeout: '14400', // 4 hours
             exec_mode: 'blocking',
-            earliest: '-7d'
+            earliest_time: '-7d'
         };
 
         // Used to indentifity logs
