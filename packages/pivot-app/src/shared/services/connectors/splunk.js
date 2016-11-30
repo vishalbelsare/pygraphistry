@@ -1,5 +1,6 @@
 import logger from '../../../shared/logger.js';
 import conf from '../../../server/config.js';
+import { DataFrame, Row } from 'dataframe-js';
 
 import { Observable } from 'rxjs';
 import splunkjs from 'splunk-sdk';
@@ -85,21 +86,14 @@ export const SplunkConnector = {
                 return jobResults;
             }).map(
                 function({results, job}) {
-                    const fields = results.fields;
-                    const cols = results.columns;
+                    const columns = {};
+                    results.fields.map((field, i) => {
+                        columns[field] = results.columns[i];
+                    });
+                    const df = new DataFrame(columns, results.feilds);
+                    const events = df.toCollection();
                     const resultCount = job.properties().resultCount;
-                    const events = new Array(resultCount);
-                    for(let k = 0; k < resultCount; k++) {
-                        events[k] = {};
-                    }
-                    for(let i = 0; i < fields.length; i++) {
-                        const field = fields[i];
-                        const column = cols[i];
-                        for(let j = 0; j < column.length; j++) {
-                            events[j][field] = column[j];
-                        }
-                    }
-                    return { resultCount, events, event_cols:results, searchId:job.sid };
+                    return { resultCount, events, df, searchId:job.sid };
                 }
             );
     },
