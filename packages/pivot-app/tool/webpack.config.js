@@ -164,7 +164,16 @@ function clientConfig(buildOpts = {}) {
                 ExtractTextPlugin.extract({
                     loader: 'css?module&minimize&localIdentName=[local]_[hash:6]!postcss!less'
                 })
+        },
+        {
+            test: /\.scss$/,
+            loader: buildOpts.isDev ?
+                'style!css?module&-minimize&localIdentName=[local]_[hash:6]!postcss!sass' :
+                ExtractTextPlugin.extract({
+                    loader: 'css?module&minimize&localIdentName=[local]_[hash:6]!postcss!sass'
+                })
         }
+
     ];
 
     config.plugins = [
@@ -264,6 +273,10 @@ function serverConfig(buildOpts = {}) {
         {
             test: /\.less$/,
             loader: `css/locals?module&localIdentName=[local]_[hash:6]!postcss!less`
+        },
+        {
+            test: /\.scss$/,
+            loader: `css/locals?module&localIdentName=[local]_[hash:6]!postcss!sass`
         }
     ];
 

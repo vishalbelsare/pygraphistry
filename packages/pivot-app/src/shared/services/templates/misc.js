@@ -2,6 +2,7 @@ import { constructFieldString, SplunkPivot } from './SplunkPivot';
 import _ from 'underscore';
 import stringhash from 'string-hash';
 import { Observable} from 'rxjs';
+import moment from 'moment';
 
 
 export const searchSplunk = new SplunkPivot({
@@ -79,7 +80,7 @@ const DATASET_ERROR_NODE_COLORS = {}
 export const searchGraphviz = new SplunkPivot({
     id: 'search-graphviz-logs',
     name: 'Graphviz Search',
-    pivotParameterKeys: ['query2', 'level'],
+    pivotParameterKeys: ['query2', 'level', 'time'],
     pivotParametersUI: {
         'query2': {
             inputType: 'text',
@@ -94,6 +95,11 @@ export const searchGraphviz = new SplunkPivot({
                 {value: 40, label: 'warn'},
                 {value: 50, label: 'error'},
             ]
+        },
+        'time': {
+            inputType: 'daterange',
+            label: 'Time range:',
+            default: moment.duration(2, 'day').toJSON()
         }
     },
     toSplunk: function (pivotParameters, pivotCache) {

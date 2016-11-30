@@ -4,7 +4,11 @@
     "pivotParameters": {
         "query": "Enter search query",
         "query2": "\"metadata.dataset\"=Facebook",
-        "level": "50"
+        "level": "50",
+        "time": {
+            "startDate": "2016-11-28T20:18:30.554Z",
+            "endDate": "2016-11-30T20:18:30.575Z"
+        }
     },
     "pivotTemplate": "search-graphviz-logs"
 }

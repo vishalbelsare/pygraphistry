@@ -29,7 +29,8 @@ import {
     Tooltip,
     Popover,
     Alert
-} from 'react-bootstrap'
+} from 'react-bootstrap';
+import DateRangePickerWrapper from './TimeRangeWidget.js';
 import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import _ from 'underscore';
@@ -244,6 +245,22 @@ function renderComboCell(id, paramKey, paramValue, paramUI, handlers) {
     );
 }
 
+
+
+function renderDateRange(id, paramKey, paramValue, paramUI, handlers) {
+    return (
+        <div key={`pcell-${id}-${paramKey}`}>
+            <label>{ paramUI.label }</label>
+            <DateRangePickerWrapper
+                paramUI={paramUI}
+                paramValue={paramValue}
+                paramKey={paramKey}
+                setPivotAttributes={handlers.setPivotAttributes}
+            />
+        </div>
+    );
+}
+
 function renderPivotCell(id, paramKey, paramValue, paramUI, previousPivots, handlers) {
     switch (paramUI.inputType) {
         case 'text':
@@ -252,6 +269,8 @@ function renderPivotCell(id, paramKey, paramValue, paramUI, previousPivots, hand
             return renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, handlers);
         case 'combo':
             return renderComboCell(id, paramKey, paramValue, paramUI, handlers);
+        case 'daterange':
+            return renderDateRange(id, paramKey, paramValue, paramUI, handlers);
         default:
             throw new Error('Unknown pivot cell type:' + paramUI.inputType);
     }
