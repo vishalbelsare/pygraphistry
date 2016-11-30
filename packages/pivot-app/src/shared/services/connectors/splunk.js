@@ -76,7 +76,7 @@ export const SplunkConnector = {
                     function(results) {
                         return ({results, job});
                     });
-                const jobResults = getResults({count: job.properties().resultCount}).catch(
+                const jobResults = getResults({count: job.properties().resultCount, output_mode: 'json_cols'}).catch(
                     (e) => {
                         return Observable.throw(new Error(
                             `${e.data.messages[0].text} ========>  Splunk Query: ${query}`));
@@ -86,20 +86,20 @@ export const SplunkConnector = {
             }).map(
                 function({results, job}) {
                     const fields = results.fields;
-                    const rows = results.rows;
+                    const cols = results.columns;
                     const resultCount = job.properties().resultCount;
-                    const events = new Array(rows.length);
-                    var values;
-                    for(var i = 0; i < rows.length; i++) {
-                        events[i] = {};
-                        values = rows[i];
-                        for(var j = 0; j < values.length; j++) {
-                            var field = fields[j];
-                            var value = values[j];
-                            events[i][field] = value;
+                    const events = new Array(resultCount);
+                    for(let k = 0; k < resultCount; k++) {
+                        events[k] = {};
+                    }
+                    for(let i = 0; i < fields.length; i++) {
+                        const field = fields[i];
+                        const column = cols[i];
+                        for(let j = 0; j < column.length; j++) {
+                            events[j][field] = column[j];
                         }
                     }
-                    return { resultCount, events, searchId:job.sid };
+                    return { resultCount, events, event_cols:results, searchId:job.sid };
                 }
             );
     },
