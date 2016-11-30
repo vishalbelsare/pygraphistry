@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
+import { DataFrame as DF, Row } from 'dataframe-js';
 import DataFrame from '../DataFrame';
 import _ from 'underscore';
 import zlib from 'zlib';
@@ -130,12 +131,13 @@ function createGraph(pivots) {
     previousGraph.graph = uploadData.graph;
     previousGraph.labels = uploadData.labels;
 
-    return uploadData;
+    return { pivots, data:uploadData };
 }
 
-function makeEventTable(data) {
-    function fieldSummary(events, field) {
-        const distinct =  _.uniq(_.pluck(events, field));
+function makeEventTable({pivots}) {
+    function fieldSummary(mergedData, field) {
+
+        const distinct =  mergedData.distinct(field).toArray();
 
         var res = {
             numDistinct: distinct.length
@@ -148,24 +150,24 @@ function makeEventTable(data) {
         return res;
     }
 
+    const dataFrames = pivots.map(({df}) => df);
+    const first = dataFrames.pop();
+    const mergedData = dataFrames.reduce((a, b) => {
+        return a.union(b);
+    }, first);
 
-    const blackListedFields = ['pointColor', 'pointSize', 'type'];
-    const events = data.labels.filter(x => x.type === 'EventID')
-
-    const fields = _.difference(
-        _.uniq(_.flatten(events.map(e => _.keys(e)))),
-        blackListedFields
-    );
-
+    const fields = mergedData.listColumns();
 
     var fieldSummaries = {};
     fields.forEach(field =>
-        fieldSummaries[field] = fieldSummary(events, field)
-    )
+        fieldSummaries[field] = fieldSummary(mergedData, field)
+    );
+
+    const table = mergedData.toCollection();
 
     return {
         fieldSummaries: fieldSummaries,
-        table: _.map(events, e => _.omit(e, blackListedFields))
+        table: table
     };
 }
 
@@ -180,14 +182,14 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                         .map(({app, pivot}) => pivot)
                         .toArray()
                         .map(createGraph),
-                    ({user}, data) => ({user, data})
+                    ({user}, {pivots, data}) => ({user, pivots, data})
                 )
-                .switchMap(({user, data}) =>
+                .switchMap(({user, data, pivots}) =>
                     upload(user.etlService, user.apiKey, data)
-                        .map(dataset => ({user, dataset, data}))
+                        .map(dataset => ({user, dataset, data, pivots}))
                 )
-                .do(({user, dataset, data}) => {
-                    investigation.eventTable = makeEventTable(data);
+                .do(({user, dataset, data, pivots}) => {
+                    investigation.eventTable = makeEventTable({data, pivots});
                     investigation.url = `${user.vizService}&dataset=${dataset}`;
                     investigation.status = {ok: true};
                     log.debug('  URL: ' + investigation.url);
