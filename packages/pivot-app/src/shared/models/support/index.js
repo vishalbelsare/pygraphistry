@@ -1,1 +1,1 @@
-export * from './mapAtomsToObjects.js';
+export * from './atomHelpers.js';
