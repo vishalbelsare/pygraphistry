@@ -1,5 +1,6 @@
 import logger from '../../../shared/logger.js';
 import conf from '../../../server/config.js';
+import { DataFrame, Row } from 'dataframe-js';
 
 import { Observable } from 'rxjs';
 import splunkjs from 'splunk-sdk';
@@ -41,7 +42,7 @@ export const SplunkConnector = {
             id: jobId,
             timeout: '14400', // 4 hours
             exec_mode: 'blocking',
-            earliest: '-7d'
+            earliest_time: '-7d'
         };
 
         // Used to indentifity logs
@@ -76,7 +77,7 @@ export const SplunkConnector = {
                     function(results) {
                         return ({results, job});
                     });
-                const jobResults = getResults({count: job.properties().resultCount}).catch(
+                const jobResults = getResults({count: job.properties().resultCount, output_mode: 'json_cols'}).catch(
                     (e) => {
                         return Observable.throw(new Error(
                             `${e.data.messages[0].text} ========>  Splunk Query: ${query}`));
@@ -85,21 +86,14 @@ export const SplunkConnector = {
                 return jobResults;
             }).map(
                 function({results, job}) {
-                    const fields = results.fields;
-                    const rows = results.rows;
+                    const columns = {};
+                    results.fields.map((field, i) => {
+                        columns[field] = results.columns[i];
+                    });
+                    const df = new DataFrame(columns, results.feilds);
+                    const events = df.toCollection();
                     const resultCount = job.properties().resultCount;
-                    const events = new Array(rows.length);
-                    var values;
-                    for(var i = 0; i < rows.length; i++) {
-                        events[i] = {};
-                        values = rows[i];
-                        for(var j = 0; j < values.length; j++) {
-                            var field = fields[j];
-                            var value = values[j];
-                            events[i][field] = value;
-                        }
-                    }
-                    return { resultCount, events, searchId:job.sid };
+                    return { resultCount, events, df, searchId:job.sid };
                 }
             );
     },
