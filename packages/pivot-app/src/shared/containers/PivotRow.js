@@ -62,6 +62,16 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
             </OverlayTrigger>
         </ButtonGroup>
         {
+            status.searching ?
+                <ButtonGroup style={{marginLeft: '0.7em'}}>
+                        <Button>
+                            <Glyphicon glyph="refresh" />
+                        </Button>
+                </ButtonGroup>
+            :
+            null
+        }
+        {
             status.ok ? null
                 :
                 <ButtonGroup style={{marginLeft: '0.7em'}}>
