@@ -6,8 +6,8 @@
         "query2": "\"metadata.dataset\"=Facebook",
         "level": "50",
         "time": {
-            "startDate": "2016-11-28T20:18:30.554Z",
-            "endDate": "2016-11-30T20:18:30.575Z"
+            "startDate": "2016-11-21T20:00:00.000Z",
+            "endDate": "2016-11-28T20:00:00.000Z"
         }
     },
     "pivotTemplate": "search-graphviz-logs"

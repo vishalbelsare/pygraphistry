@@ -105,12 +105,17 @@ export const searchGraphviz = new SplunkPivot({
     toSplunk: function (pivotParameters, pivotCache) {
         const q = pivotParameters['query2'];
         const l = pivotParameters['level'];
-        return `search (host=staging* OR host=labs*) source="/var/log/graphistry-json/*.log" ${q} level >= ${l}
-            | head 1000
+        const query = `search (host=staging* OR host=labs*) source="/var/log/graphistry-json/*.log" ${q} level >= ${l}
             | spath output=File0 path="err.stackArray{0}.file"
             | spath output=File1 path="err.stackArray{1}.file"
             | eval File00=File0 | eval file=if(File00="null", File1, File0)
             ${constructFieldString(this)}`
+
+        console.log(pivotParameters.time);
+        return {
+            searchQuery: query,
+            searchParams: this.dayRangeToSplunkParams(pivotParameters.time.value),
+        };
     },
     encodings: {
         point: {
