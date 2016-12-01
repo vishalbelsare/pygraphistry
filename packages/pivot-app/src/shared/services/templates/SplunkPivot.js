@@ -30,7 +30,8 @@ export class SplunkPivot {
         pivot.template = this;
 
         return this.connector.search(searchQuery, searchParams)
-            .do(({ resultCount, events, searchId }) => {
+            .do(({ resultCount, events, searchId, df }) => {
+                pivot.df = df;
                 pivot.resultCount = resultCount;
                 pivot.results = events;
                 pivot.splunkSearchId = searchId;

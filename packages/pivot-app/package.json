@@ -36,6 +36,7 @@
     "colorbrewer": "~0.0.2",
     "compression": "1.6.2",
     "convict": "~1.5.0",
+    "dataframe-js": "~1.1.0",
     "express": "4.14.0",
     "falcor-doc-router": "0.4.0",
     "falcor-express": "0.1.2",
