@@ -44,7 +44,11 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
             <OverlayTrigger placement="top" overlay={
                 <Tooltip id={`tooltipActionPlay_${index}`}>Run step</Tooltip>
             } key={`${index}: entityRowAction_${index}`}>
-                <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="play" /></Button>
+                <Button onClick={(ev) => searchPivot({index})} disabled={status.searching}>
+                    {
+                        status.searching ? <Glyphicon glyph="hourglass" /> : <Glyphicon glyph="play" />
+                    }
+                </Button>
             </OverlayTrigger>
         </ButtonGroup>
         <ButtonGroup style={{marginLeft: '0.7em'}}>
@@ -61,16 +65,6 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
                 <Button disabled={index === 0} onClick={(ev) => splicePivot({index})}><Glyphicon glyph="trash" /></Button>
             </OverlayTrigger>
         </ButtonGroup>
-        {
-            status.searching ?
-                <ButtonGroup style={{marginLeft: '0.7em'}}>
-                        <Button>
-                            <Glyphicon glyph="refresh" />
-                        </Button>
-                </ButtonGroup>
-            :
-            null
-        }
         {
             status.ok ? null
                 :
