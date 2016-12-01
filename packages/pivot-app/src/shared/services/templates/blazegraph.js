@@ -1,10 +1,6 @@
 import _ from 'underscore';
 import request from 'request';
 import { Observable } from 'rxjs';
-import {
-    constructFieldString,
-    encodeGraph
-} from '../connectors/splunk.js';
 import logger from '../../../shared/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 

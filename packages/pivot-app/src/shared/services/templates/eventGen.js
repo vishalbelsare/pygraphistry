@@ -1,8 +1,7 @@
-import { constructFieldString, SplunkPivot } from './SplunkPivot.js';
+import { SplunkPivot } from './SplunkPivot.js';
 import logger from '../../logger.js';
 import _ from 'underscore';
 import stringhash from 'string-hash';
-
 const log = logger.createLogger('pivot-app', __filename);
 
 const SPLUNK_INDICES = {
@@ -60,7 +59,7 @@ export const PAN_SEARCH = new SplunkPivot({
     toSplunk: function(pivotParameters) {
         this.connections = pivotParameters.nodes.split(',').map((field) => field.trim());
         return `search ${SPLUNK_INDICES.PAN} ${pivotParameters.query}
-                ${constructFieldString(this)}
+                ${this.constructFieldString()}
                 | head 100`;
     }
 });
@@ -108,7 +107,7 @@ export const PAN_EXPAND = new SplunkPivot({
         subsearch = list.join(' | append ');
 
         return `search ${SPLUNK_INDICES.PAN}
-                    | search ${filter} ${subsearch} ${constructFieldString(this)}`;
+                    | search ${filter} ${subsearch} ${this.constructFieldString()}`;
 
     },
 });

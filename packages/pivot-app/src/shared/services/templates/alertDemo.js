@@ -1,8 +1,4 @@
-import {
-    expandTemplate,
-    constructFieldString,
-    SplunkPivot
-} from './SplunkPivot';
+import { SplunkPivot } from './SplunkPivot';
 import stringhash from 'string-hash';
 
 
@@ -93,7 +89,7 @@ export const searchFireeyeDemo = new SplunkPivot({
     connections: FIREEYE_FIELDS,
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
-        return `search EventID=${pivotParameters.event} ${splunkIndices.FIREEYE} ${constructFieldString(this)}`;
+        return `search EventID=${pivotParameters.event} ${splunkIndices.FIREEYE} ${this.constructFieldString()}`;
     }
 });
 
@@ -113,7 +109,7 @@ export const expandFireeyeDemo = new SplunkPivot({
         const attribs = 'EventID, Message, Fire Eye MD5, Fire Eye URL, Internal IPs, External IPs';
         const rawSearch =
             `[{{${pivotParameters.ref}}}] -[${attribs}]-> [${splunkIndices.FIREEYE}]`;
-        return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
+        return `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
     },
 });
 
@@ -133,7 +129,7 @@ export const expandBlueCoatDemo = new SplunkPivot({
         const attribs = 'Fire Eye URL';
         const rawSearch =
             `[{{${pivotParameters.pivotRef}}}] -[${attribs}]-> [${splunkIndices.BLUECOAT}]`;
-        return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
+        return `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
     }
 });
 
@@ -153,6 +149,6 @@ export const expandFirewallDemo = new SplunkPivot({
         const attribs = 'External IPs';
         const rawSearch =
             `[{{${pivotParameters.pRef}}}] -[${attribs}]-> [${splunkIndices.FIREWALL}]`;
-        return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
+        return `search ${expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
     }
 });

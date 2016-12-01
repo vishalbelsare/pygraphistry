@@ -1,4 +1,4 @@
-import { constructFieldString, SplunkPivot } from './SplunkPivot';
+import { SplunkPivot } from './SplunkPivot';
 import _ from 'underscore';
 import stringhash from 'string-hash';
 import { Observable} from 'rxjs';
@@ -17,7 +17,7 @@ export const searchSplunk = new SplunkPivot({
         }
     },
     toSplunk: function (pivotParameters, pivotCache) {
-        return `search ${pivotParameters['query']} ${constructFieldString(this)} | head 500`;
+        return `search ${pivotParameters['query']} ${this.constructFieldString()} | head 5000`;
     },
     encodings: {
         point: {
@@ -109,9 +109,8 @@ export const searchGraphviz = new SplunkPivot({
             | spath output=File0 path="err.stackArray{0}.file"
             | spath output=File1 path="err.stackArray{1}.file"
             | eval File00=File0 | eval file=if(File00="null", File1, File0)
-            ${constructFieldString(this)}`
+            ${this.constructFieldString()}`
 
-        console.log(pivotParameters.time);
         return {
             searchQuery: query,
             searchParams: this.dayRangeToSplunkParams(pivotParameters.time.value),

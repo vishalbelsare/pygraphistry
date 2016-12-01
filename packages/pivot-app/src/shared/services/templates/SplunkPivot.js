@@ -52,9 +52,29 @@ export class SplunkPivot {
                 'earliest_time': startDay.unix(),
                 'latest_time': endDay.unix(),
             };
+        } else {
+            log.debug('Got undefined day range, cannot convert to Splunk params');
         }
     }
 
+    //Assumes previous pivots have populated pivotCache
+    expandTemplate(text, pivotCache) {
+        log.debug({toExpand: text}, 'Expanding');
+        return buildLookup(text, pivotCache);
+    }
+
+    constructFieldString() {
+        const fields = (this.connections || []).concat(this.attributes || []);
+        if (fields.length > 0) {
+            return `| rename _cd as EventID
+                    | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
+                    | fields "c_time" as time, "EventID", "${fields.join('","')}" | fields - _*`;
+        } else { // If there are no fields, load all
+            return `| rename _cd as EventID
+                    | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
+                    | rename "c_time" as time | fields * | fields - _*`;
+        }
+    }
 }
 
 function buildLookup(text, pivotCache) {
@@ -83,27 +103,4 @@ function buildLookup(text, pivotCache) {
         }
         return `${ source } ${ match } | head 10000 `;
     }
-}
-
-
-//Assumes previous pivots have populated pivotCache
-export const expandTemplate = (text, pivotCache) => {
-    log.debug({toExpand: text}, 'Expanding');
-    return buildLookup(text, pivotCache);
-};
-
-
-export function constructFieldString(pivotTemplate) {
-    const fields = (pivotTemplate.connections || [])
-        .concat(pivotTemplate.attributes || []);
-    if (fields.length > 0) {
-        return `| rename _cd as EventID
-                | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
-                | fields "c_time" as time, "EventID", "${fields.join('","')}" | fields - _*`;
-    } else { // If there are no fields, load all
-        return `| rename _cd as EventID
-                | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
-                | rename "c_time" as time | fields * | fields - _*`;
-    }
-
 }
