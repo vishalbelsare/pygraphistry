@@ -24,12 +24,12 @@ export function pivots({loadPivotsById, searchPivot}) {
         returns: `Number`,
         get: getPivotsHandler,
     }, {
-        route: `pivotsById[{keys}]['enabled']`,
+        route: `pivotsById[{keys}]['enabled', 'status']`,
         returns: `String`,
         get: getPivotsHandler,
         set: setPivotsHandler,
     }, {
-        route: `pivotsById[{keys}]['id', 'resultCount', 'resultSummary', 'status']`,
+        route: `pivotsById[{keys}]['id', 'resultCount', 'resultSummary']`,
         returns: `String`,
         get: getPivotsHandler,
     }, {
