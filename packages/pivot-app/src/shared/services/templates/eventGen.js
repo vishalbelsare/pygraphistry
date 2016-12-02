@@ -58,9 +58,14 @@ export const PAN_SEARCH = new SplunkPivot({
     encodings: PAN_ENCODINGS,
     toSplunk: function(pivotParameters) {
         this.connections = pivotParameters.nodes.split(',').map((field) => field.trim());
-        return `search ${SPLUNK_INDICES.PAN} ${pivotParameters.query}
+        const query = `search ${SPLUNK_INDICES.PAN} ${pivotParameters.query}
                 ${this.constructFieldString()}
                 | head 100`;
+
+        return {
+            searchQuery: query,
+            searchParams: {earliest_time: '-1y'},
+        };
     }
 });
 
@@ -106,8 +111,12 @@ export const PAN_EXPAND = new SplunkPivot({
         );
         subsearch = list.join(' | append ');
 
-        return `search ${SPLUNK_INDICES.PAN}
+        const query = `search ${SPLUNK_INDICES.PAN}
                     | search ${filter} ${subsearch} ${this.constructFieldString()}`;
 
+        return {
+            searchQuery: query,
+            searchParams: {earliest_time: '-1y'},
+        };
     },
 });
