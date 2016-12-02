@@ -192,14 +192,27 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                         .map(createGraph),
                     ({user}, {pivots, data}) => ({user, pivots, data})
                 )
-                .switchMap(({user, data, pivots}) =>
-                    upload(user.etlService, user.apiKey, data)
-                        .map(dataset => ({user, dataset, data, pivots}))
-                )
+                .switchMap(({user, data, pivots}) => {
+                    if (data.graph.length > 0) {
+                        return upload(user.etlService, user.apiKey, data)
+                                    .map(dataset => ({user, dataset, data, pivots}));
+                    } else {
+                        log.debug('Graph is empty, skipping upload');
+                        return Observable.of({user, data, pivots});
+                    }
+                })
                 .do(({user, dataset, data, pivots}) => {
                     investigation.eventTable = makeEventTable({data, pivots});
-                    investigation.url = `${user.vizService}&dataset=${dataset}`;
-                    investigation.status = {ok: true};
+                    if (dataset) {
+                        investigation.url = `${user.vizService}&dataset=${dataset}`;
+                        investigation.status = {ok: true};
+                    } else {
+                        investigation.status = {
+                            ok: false,
+                            message: 'No events found!',
+                            msgStyle: 'info',
+                        }
+                    }
                     log.debug('  URL: ' + investigation.url);
                 }),
             ({app, investigation}) => ({app, investigation})
