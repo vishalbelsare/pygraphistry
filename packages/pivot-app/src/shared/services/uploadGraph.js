@@ -44,12 +44,12 @@ function upload0(etlService, apiKey, data, cb) {
         callback: function (err, res, body) {
             if (err) { return cb(err); }
             try {
+                log.debug('Trying to parse response body', body)
                 const json = JSON.parse(body);
                 if (!json.success) {
-                    log.trace(body, 'body in success?');
+                    log.trace('Success flag unset:', json.success);
                     throw new Error(body);
                 }
-                log.debug('  -> Uploaded' + body);
                 return cb(undefined, body);
             } catch (e) {
                 return cb(e);
@@ -108,8 +108,8 @@ function createGraph(pivots) {
     })
     mergedPivots.graph = dedupEdges;
     mergedPivots.labels = _.map(
-            _.groupBy(mergedPivots.labels, label => label.node),
-            group => group[0]
+        _.groupBy(mergedPivots.labels, label => label.node),
+        group => group[0]
     );
 
     const newEdges = _.difference(mergedPivots.graph, previousGraph.graph);
@@ -150,13 +150,21 @@ function makeEventTable({pivots}) {
         return res;
     }
 
-    const dataFrames = pivots.map(({df}) => df);
-    const first = dataFrames.pop();
+    const dataFrames = pivots
+        .filter(pivot => pivot.df !== undefined)
+        .map(pivot => pivot.df);
+
+    const fields = _.uniq(
+        _.flatten(
+            dataFrames.map(df => df.listColumns())
+        )
+    );
+    log.debug('Union of all pivot fields', fields);
+
+    const zeroDf = new DF([], fields);
     const mergedData = dataFrames.reduce((a, b) => {
         return a.union(b);
-    }, first);
-
-    const fields = mergedData.listColumns();
+    }, zeroDf);
 
     var fieldSummaries = {};
     fields.forEach(field =>
@@ -184,14 +192,27 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                         .map(createGraph),
                     ({user}, {pivots, data}) => ({user, pivots, data})
                 )
-                .switchMap(({user, data, pivots}) =>
-                    upload(user.etlService, user.apiKey, data)
-                        .map(dataset => ({user, dataset, data, pivots}))
-                )
+                .switchMap(({user, data, pivots}) => {
+                    if (data.graph.length > 0) {
+                        return upload(user.etlService, user.apiKey, data)
+                                    .map(dataset => ({user, dataset, data, pivots}));
+                    } else {
+                        log.debug('Graph is empty, skipping upload');
+                        return Observable.of({user, data, pivots});
+                    }
+                })
                 .do(({user, dataset, data, pivots}) => {
                     investigation.eventTable = makeEventTable({data, pivots});
-                    investigation.url = `${user.vizService}&dataset=${dataset}`;
-                    investigation.status = {ok: true};
+                    if (dataset) {
+                        investigation.url = `${user.vizService}&dataset=${dataset}`;
+                        investigation.status = {ok: true};
+                    } else {
+                        investigation.status = {
+                            ok: false,
+                            message: 'No events found!',
+                            msgStyle: 'info',
+                        }
+                    }
                     log.debug('  URL: ' + investigation.url);
                 }),
             ({app, investigation}) => ({app, investigation})
