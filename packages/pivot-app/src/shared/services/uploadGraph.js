@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
-import { DataFrame as DF, Row } from 'dataframe-js';
+import { DataFrame, Row } from 'dataframe-js';
 import DataFrame from '../DataFrame';
 import _ from 'underscore';
 import zlib from 'zlib';
@@ -161,7 +161,7 @@ function makeEventTable({pivots}) {
     );
     log.debug('Union of all pivot fields', fields);
 
-    const zeroDf = new DF([], fields);
+    const zeroDf = new DataFrame([], fields);
     const mergedData = dataFrames.reduce((a, b) => {
         return a.union(b);
     }, zeroDf);

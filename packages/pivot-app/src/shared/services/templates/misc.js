@@ -17,7 +17,9 @@ export const searchSplunk = new SplunkPivot({
         }
     },
     toSplunk: function (pivotParameters, pivotCache) {
-        return `search ${pivotParameters['query']} ${this.constructFieldString()} | head 5000`;
+        const query = `search ${pivotParameters['query']} ${this.constructFieldString()} | head 1000`;
+
+        return { searchQuery: query };
     },
     encodings: {
         point: {
@@ -57,10 +59,13 @@ export const searchSplunkMap = new SplunkPivot({
                 `[| loadjob "${pivotCache[pivotId].splunkSearchId}"
                     | fields ${source} | dedup ${source}
                 ]`
-            ).join(' | append ');
-        return `search ${subsearch}
+        ).join(' | append ');
+
+        const query = `search ${subsearch}
             | fields ${source}, ${dest}
             | fields  - _*`;
+
+        return { searchQuery: query };
     },
     encodings: {
         point: {
