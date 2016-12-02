@@ -157,7 +157,8 @@ function captureErrorAndNotifyClient(investigationIds) {
         const status = {
             ok: false,
             code: errorCode,
-            message: `Server error: ${e.message} (code: ${errorCode})`
+            message: `Server error: ${e.message} (code: ${errorCode})`,
+            msgStyle: 'danger',
         }
 
         return Observable.from([

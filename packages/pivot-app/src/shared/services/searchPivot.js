@@ -16,7 +16,7 @@ export function searchPivot({ loadPivotsById, pivotIds }) {
 
             return template.searchAndShape({app, pivot, pivotCache})
                 .do(({pivot}) => {
-                    pivot.status = {ok: true};
+                    pivot.status = {ok: true, searching: false};
                 })
                 .catch((e) =>
                     Observable.throw(
