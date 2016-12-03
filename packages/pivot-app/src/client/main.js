@@ -1,13 +1,9 @@
-import '../misc/themes/x_lbd_free_v1.3/assets/css/animate.min.css';
-import '../misc/themes/x_lbd_free_v1.3/assets/css/light-bootstrap-dashboard.css';
-import '../misc/themes/x_lbd_free_v1.3/assets/css/roboto.css';
-import '../misc/themes/x_lbd_free_v1.3/assets/css/pe-icon-7-stroke.css';
 import 'rc-switch/assets/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-bootstrap-table/dist/react-bootstrap-table.min.css';
 import 'react-select/dist/react-select.css';
 import '../misc/react-dates.css';
-
+import 'font-awesome/css/font-awesome.css';
 
 import ReactDOM from 'react-dom';
 import { decode } from 'querystring';

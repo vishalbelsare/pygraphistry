@@ -1,55 +1,12 @@
-@header-bg: #666;
-@header-seperator: #999;
-@header-highlight: #999;
-@header-highlight-medium: #999;
-
-
-:local(.left-nav) {
-
-    width: 90px;
-    overflow: hidden;
-
-    li {
-        height: 60px;
-        width: 90px;
-    }
-
-    p {
-        height: 30px;
-    }
-}
-
-:local(.logo) {
-    width: 90px;
-    text-align: center;
-    border-bottom: 1px solid #3f7ed9;
-    padding-top: 10px;
-    padding-bottom: 10px;
-
-    div {
-        display: inline-block;
-        padding: 0px;
-        margin: 0px;
-        width: 30px;
-        overflow: hidden;
-
-        img {
-            height: 35px;
-        }
-
-    }
-}
-
-
+@import '../vars.less';
 
 @investigation-header-height: 40px;
 @investigation-header-padding-top: ~"calc( (@{investigation-header-height} - 1px - 34px)/2 )";
 @investigation-footer-height: 250px;
 
-:local(.investigation-all) {
+.investigation-all {
 
     height: 100%;
-    width: ~"calc(100% - 90px)"; //https://github.com/less/less.js/issues/974
 
     & > *:nth-child(2) {
         height: ~"calc(100% - @{investigation-header-height})";
@@ -65,6 +22,7 @@
     border: 0px;
     border-radius: 0px;
     border-bottom: 1px solid @header-seperator;
+    margin-bottom: 0px;
 }
 
 
@@ -152,10 +110,13 @@
 }
 
 
-:local(.main-panel) {
-}
-:local(.main-panel-panel) {
+.main-panel-panel {
     background-color: whitesmoke;
+    margin-bottom: 0;
+    border-left: 0;
+    border-bottom: 0;
+    border-radius: 0;
+
     & > div > div {
         width: 100%;
     }
