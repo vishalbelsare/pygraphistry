@@ -27,9 +27,9 @@ import {
     deleteInvestigations
 } from '../actions/investigationScreen.js';
 import { container } from '@graphistry/falcor-react-redux';
-import Sidebar from './Sidebar.js';
 import styles from './styles.less';
 import logger from '../logger.js';
+import MainNav from './MainNav/MainNav.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 
@@ -172,6 +172,7 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
 
 }
 
+
 function renderHomeScreen(
     {
         user, investigations, numTemplates, switchScreen, selectInvestigation,
@@ -186,10 +187,7 @@ function renderHomeScreen(
     }
 
     return (
-        <div className="wrapper">
-            <Sidebar activeScreen='home'/>
-            <div className={`main-panel ${styles['main-panel']}`}
-                 style={{width: 'calc(100% - 90px)', height: '100%'}}>
+        <MainNav activeScreen={'home'}>{
                 <Panel className={styles['main-panel-panel']}>
                     {
                         welcomeBar(user, investigations, numTemplates)
@@ -227,8 +225,7 @@ function renderHomeScreen(
                         }
                     </Panel>
                 </Panel>
-            </div>
-        </div>
+        }</MainNav>
     );
 }
 

@@ -1,6 +1,5 @@
 import Investigation from './Investigation.js';
 import InvestigationHeader from './InvestigationHeader.js';
-import Sidebar from './Sidebar.js';
 import {
     Panel,
     Alert
@@ -9,6 +8,7 @@ import { container } from '@graphistry/falcor-react-redux';
 import styles from './styles.less';
 import { switchScreen } from '../actions/app.js';
 import SplitPane from 'react-split-pane';
+import MainNav from './MainNav/MainNav.js';
 
 function renderInvestigationBody(app, activeInvestigation, templates) {
     return (
@@ -45,15 +45,12 @@ function renderInvestigationPlaceholder(switchScreen) {
 }
 
 function renderInvestigationScreen({ app, activeInvestigation, templates, switchScreen }) {
-    const body = activeInvestigation !== undefined ?
+return (
+        <MainNav activeScreen='investigation'>{
+            activeInvestigation !== undefined ?
                  renderInvestigationBody(app, activeInvestigation, templates) :
-                 renderInvestigationPlaceholder(switchScreen);
-
-    return (
-        <div className="wrapper">
-            <Sidebar activeScreen='investigation'/>
-            { body }
-        </div>
+                 renderInvestigationPlaceholder(switchScreen)
+        }</MainNav>
     );
 }
 

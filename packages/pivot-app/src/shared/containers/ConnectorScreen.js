@@ -23,7 +23,7 @@ import {
     checkStatus
 } from '../actions/connectorScreen.js';
 import { container } from '@graphistry/falcor-react-redux';
-import Sidebar from './Sidebar.js';
+import MainNav from './MainNav/MainNav.js';
 import styles from './styles.less';
 import logger from '../logger.js';
 const log = logger.createLogger('pivot-app', __filename);
@@ -138,10 +138,7 @@ function renderConnectorScreen({ user, connectors, switchScreen, checkStatus },
     }
 
     return (
-        <div className="wrapper">
-            <Sidebar activeScreen='connectors'/>
-            <div className={`main-panel ${styles['main-panel']}`}
-                 style={{width: 'calc(100% - 90px)', height: '100%'}}>
+        <MainNav activeScreen='connectors'>
                 <Panel className={styles['main-panel-panel']}>
                     {
                         welcomeBar(user, connectors)
@@ -167,8 +164,7 @@ function renderConnectorScreen({ user, connectors, switchScreen, checkStatus },
                         }
                     </Panel>
                 </Panel>
-            </div>
-        </div>
+        </MainNav>
     );
 }
 
