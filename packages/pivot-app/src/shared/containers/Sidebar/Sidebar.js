@@ -40,7 +40,7 @@ function renderSidebar(props) {
 
             <ul className={`nav ${styles.nav}`}>
 
-                <NavButton {...props} tip="Home" screen="home" faIcon="fa-home"/>
+                <NavButton {...props} tip="Home" screen="home" faIcon="fa-th-list"/>
 
                 <NavButton {...props} tip="Most recent investigation" screen="investigation" faIcon="fa-eye"/>
 
