@@ -6,6 +6,7 @@ const splunkIndices = {
     FIREEYE: '"Alert Category"="Fire Eye" index="alert_graph_demo"',
     BLUECOAT: '"Alert Category"="Blue Coat Proxy" index="alert_graph_demo"',
     FIREWALL: '"Alert Category"="Firewall" index="alert_graph_demo"',
+    IDS: '"Alert Category"="IDS/IPS" index="alert_graph_demo"',
     ALL: 'index=alert_graph_demo'
 };
 
@@ -169,6 +170,31 @@ export const expandFirewallDemo = new SplunkPivot({
         const attribs = 'External IPs';
         const rawSearch =
             `[{{${pivotParameters.pRef}}}] -[${attribs}]-> [${splunkIndices.FIREWALL}]`;
+        const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
+
+        return {
+            searchQuery: query,
+            searchParams: {earliest_time: '-1y'},
+        };
+    }
+});
+
+export const expandIDSDemo = new SplunkPivot({
+    id: 'expand-ids-botnet-demo',
+    name: 'Expand with IDS/IPS',
+    pivotParameterKeys: ['pRef'],
+    pivotParametersUI: {
+        pRef: {
+            inputType: 'pivotCombo',
+            label: 'Any IP in:',
+        }
+    },
+    connections: [ 'Internal IPs', 'Message' ],
+    encodings: alertDemoEncodings,
+    toSplunk: function (pivotParameters, pivotCache) {
+        const attribs = 'Internal IPs';
+        const rawSearch =
+            `[{{${pivotParameters.pRef}}}] -[${attribs}]-> [${splunkIndices.IDS}]`;
         const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
 
         return {
