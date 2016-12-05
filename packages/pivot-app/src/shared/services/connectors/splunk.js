@@ -4,7 +4,7 @@ import { DataFrame, Row } from 'dataframe-js';
 
 import { Observable } from 'rxjs';
 import splunkjs from 'splunk-sdk';
-import stringHash from 'string-hash';
+import objectHash from 'object-hash';
 import VError from 'verror';
 
 
@@ -43,7 +43,7 @@ export const SplunkConnector = {
 
     search : function search(query, searchParamOverrides = {}) {
         // Generate a hash for the query so we can look it up in splunk
-        const hash = stringHash({q: query, p: searchParamOverrides})
+        const hash = objectHash.MD5({q: query, p: searchParamOverrides});
         const jobId = `pivot-app::${hash}`;
 
         // Set the splunk search parameters
