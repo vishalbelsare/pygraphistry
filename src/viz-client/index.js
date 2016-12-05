@@ -1,5 +1,5 @@
 // if (__DEV__) {
-    // require('source-map-support').install();
+//     window['__trace_container_updates__'] = true;
 // }
 
 import '@graphistry/rc-slider/assets/index.css';
@@ -112,7 +112,7 @@ Observable
         shared.take(1).do(initVizApp)
     ))
     .subscribe({
-        next([ options, state ]) {
+        next([ initialAppState, options ]) {
             // debugger;
         }
     });
@@ -129,7 +129,7 @@ function getRootDOMNode(appDomNode) {
 }
 
 function getInitialState() {
-    return window.__INITIAL_STATE__ || {};
+    return window.__INITIAL_STATE__;
 }
 
 function initVizApp([ initialAppState, options ]) {

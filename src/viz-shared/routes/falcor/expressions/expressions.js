@@ -72,7 +72,7 @@ export function expressions(path, base) {
                         values.push(
                             $invalidate(`${viewPath}.labelsByType`),
                             $invalidate(`${viewPath}.inspector.rows`),
-                            $invalidate(`${viewPath}.selection.histogramsById`)
+                            // $invalidate(`${viewPath}.selection.histogramsById`)
                         );
                     }
                     return values;
@@ -128,7 +128,7 @@ export function addExpressionHandler({
             const pathValues = [
                 $invalidate(`${viewPath}.labelsByType`),
                 $invalidate(`${viewPath}.inspector.rows`),
-                $invalidate(`${viewPath}.selection.histogramsById`),
+                // $invalidate(`${viewPath}.selection.histogramsById`),
 
                 $value(newItemPath, newItemRef),
                 $value(newLengthPath, list.length),
@@ -142,7 +142,6 @@ export function addExpressionHandler({
                     $value(`${viewPath}.layout.controls[0].selected`, false),
                     $value(`${viewPath}.filters.controls[0].selected`, false),
                     $value(`${viewPath}.exclusions.controls[0].selected`, false),
-                    $value(`${viewPath}.histograms.controls[0].selected`, false),
                     $value(`${viewPath}['${listName}'].controls[0].selected`, true),
                     $value(`${viewPath}.panels['${panelSide}']`, $ref(`${viewPath}['${listName}']`))
                 );
@@ -217,7 +216,7 @@ export function removeExpressionHandler({
 
                     $invalidate(`${viewPath}.labelsByType`),
                     $invalidate(`${viewPath}.inspector.rows`),
-                    $invalidate(`${viewPath}.selection.histogramsById`),
+                    // $invalidate(`${viewPath}.selection.histogramsById`),
                     $invalidate(`${viewPath}['${mapName}']['${itemId}']`),
 
                     $value(`${viewPath}.highlight.darken`, false),

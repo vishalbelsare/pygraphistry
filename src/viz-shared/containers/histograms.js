@@ -28,12 +28,12 @@ let Histograms = ({ addHistogram, removeHistogram, setEncoding, encodings = {},
 
     return (
         <ExpressionsList loading={loading}
+                         showHeader={false}
                          templates={templates}
                          showDataTypes={false}
-                         showHeader={false}
                          dropdownPlacement="top"
-                         placeholder="Add histogram for..."
                          addExpression={addHistogram}
+                         placeholder="Add histogram for..."
                          className={className + ' ' + styles['histograms-list']}
                          style={{ ...style, height: `100%` }} {...props}>
         {histograms.map((histogram, index) => (
@@ -50,7 +50,7 @@ let Histograms = ({ addHistogram, removeHistogram, setEncoding, encodings = {},
 
 Histograms = container({
     renderLoading: true,
-    fragment: ({ templates = [], encodings, ...histograms }) => {
+    fragment: ({ templates = [], encodings, ...histograms } = {}) => {
         return `{
             templates: {
                 length, [0...${templates.length}]: {
@@ -86,21 +86,22 @@ let Histogram = ({ range = [],
                    options, encodings = {},
                    dataType, componentType,
                    id, name, yScale = 'none',
-                   filter: { enabled = true } = {},
-                   global: _global = {}, masked = {},
+                   filter, global: _global = {}, masked = {},
                    binTouchMove, binTouchStart, binTouchCancel,
                    removeHistogram, yScaleChanged, setEncoding }) => {
 
-    const trans = Math[yScale] || ((x) => x);
-    const filtered = range && range.length > 0;
-    const { bins: maskedBins = [], isMasked } = masked;
-    const { bins: globalBins = [], numBins = 1, maxElements = 1, binType = 'nodata' } = _global;
     const { color: {
         legend: colors = [],
         attribute: encodedAttribute
     } = {} } = encodings[componentType] || {};
 
+    range = filter && range || [];
+    const trans = Math[yScale] || ((x) => x);
+    const enabled = !filter || filter.enabled;
+    const filtered = range && range.length > 0;
     const isEncoded = name === encodedAttribute;
+    const { bins: maskedBins = [], isMasked } = masked;
+    const { bins: globalBins = [], numBins = 1, maxElements = 1, binType = 'nodata' } = _global;
 
     return (
         <Sparkline id={id}
@@ -112,8 +113,8 @@ let Histogram = ({ range = [],
                    dataType={dataType}
                    encodings={encodings}
                    onClose={removeHistogram}
-                   isFilterEnabled={enabled}
                    setEncoding={setEncoding}
+                   isFilterEnabled={enabled}
                    componentType={componentType}
                    onYScaleChanged={(value) => yScaleChanged({key: 'yScale', value})}>
         {globalBins.map((
@@ -129,8 +130,8 @@ let Histogram = ({ range = [],
                           key={`${id}-bar-${binID}`}
                           name={name} values={values}
                           componentType={componentType}
-                          binWidth={`${100 * (1/(numBins||1))}%`}
                           color={isEncoded && colors[binID]}
+                          binWidth={`${100 * (1/(numBins||1))}%`}
                           filterBounds={{
                               leftest: binIsFiltered && binID <= range[0],
                               rightest: binIsFiltered && binID >= range[range.length - 1]
@@ -167,13 +168,12 @@ let HistogramBins = container({
     renderLoading: true,
     fragment: ({ bins } = {}) => `{
         id, name, yScale,
+        filter: { enabled },
         numElements, maxElements,
         binType, binWidth, numBins,
         isMasked, dataType, componentType,
-        bins: {
-            length, ...${
-                HistogramBin.fragments(bins)
-            }
+        bins: ${
+            HistogramBin.fragments(bins)
         }
     }`
 })(() => {});
