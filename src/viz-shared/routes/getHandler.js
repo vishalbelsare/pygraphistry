@@ -1,8 +1,8 @@
+const typeofNumber = 'number';
+const typeofObject = 'object';
+const  { slice } = Array.prototype;
 import { inspect } from 'util';
 import { Observable } from 'rxjs';
-const  { slice } = Array.prototype;
-import { mapObjectsToAtoms } from './mapObjectsToAtoms';
-import { captureErrorStacks } from './captureErrorStacks';
 
 function defaultPropsResolver(routerInstance) {
     const { request  = {} } = routerInstance;
@@ -61,18 +61,15 @@ export function getHandler(lists, loader, getInitialProps = defaultPropsResolver
             count = idxs.length;
 
             do {
-                if (index === count || value === undefined || typeof value !== 'object') {
-                    vals[++valsId] = { path, value };
+                if (value === undefined) {
+                    // vals[++valsId] = { value, path: path
+                    //     .concat(slice.call(idxs, index)) };
+                    break;
+                } else if (index === count || typeofObject !== typeof value) {
+                    vals[++valsId] = { value, path };
                     break;
                 } else if (type = value.$type) {
-                    vals[++valsId] = { path, value };
-                    if (type === 'ref') {
-                        idxs = slice.call(idxs, index);
-                        value = value.value.concat(idxs);
-                        vals[++valsId] = { path: path.concat(idxs),
-                                           value: { $type: 'ref', value: value } };
-                        vals[++valsId] = { isMessage: true, additionalPath: value };
-                    }
+                    vals[++valsId] = { value, path };
                     break;
                 }
                 key = idxs[index];
@@ -83,26 +80,23 @@ export function getHandler(lists, loader, getInitialProps = defaultPropsResolver
             return vals;
         });
 
-        return (values
-            .map(mapObjectsToAtoms)
-            .catch(captureErrorStacks)
-        );
+        return values;
     }
 }
 
 function keysetToKeysList(keys) {
-    if (!keys || 'object' !== typeof keys) {
+    if (!keys || typeofObject !== typeof keys) {
         return [keys];
     } else if (Array.isArray(keys)) {
         return keys;
     }
     let rangeEnd = keys.to;
     let rangeStart = keys.from || 0;
-    if ('number' !== typeof rangeEnd) {
+    if (typeofNumber !== typeof rangeEnd) {
         rangeEnd = rangeStart + (keys.length || 0) - 1;
     }
     return Array.from(
-        {length: rangeEnd - rangeStart },
+        {length: rangeEnd - rangeStart},
         (x, index) => index + rangeStart
     );
 }

@@ -1,10 +1,10 @@
 const  { isArray } = Array;
+const typeofObject = 'object';
+const typeofFunction = 'function';
 const  { slice } = Array.prototype;
 
 import { inspect } from 'util';
 import { Observable } from 'rxjs';
-import { mapObjectsToAtoms } from './mapObjectsToAtoms';
-import { captureErrorStacks } from './captureErrorStacks';
 
 function defaultValueMapper(node, key, value, path, data) {
     return Observable.of({ path, value: node[key] = value });
@@ -19,7 +19,7 @@ function defaultPropsResolver(routerInstance) {
 export function setHandler(lists, loader, mapValue, valueKeys = {},
                            getInitialProps = defaultPropsResolver) {
 
-    if (typeof mapValue !== 'function') {
+    if (typeofFunction !== typeof mapValue) {
         mapValue = defaultValueMapper;
     }
 
@@ -71,9 +71,9 @@ export function setHandler(lists, loader, mapValue, valueKeys = {},
 
             } while (++index < count);
 
-            if (!value || typeof value !== 'object') {
+            if (!value || typeof value !== typeofObject) {
                 value = [{ path, value }];
-            } else if (typeof value.subscribe !== 'function' && !isArray(value)) {
+            } else if (!isArray(value) && typeofFunction !== typeof value.subscribe) {
                 if (!value.path) {
                     value = { path, value };
                 }
@@ -82,14 +82,7 @@ export function setHandler(lists, loader, mapValue, valueKeys = {},
             return value;
         });
 
-        return (values
-            .map(mapObjectsToAtoms)
-            // .do((pv) => {
-            //     console.log(`set: ${JSON.stringify(json)}`);
-            //     console.log(`res: ${JSON.stringify(pv.path)}`);
-            // })
-            .catch(captureErrorStacks)
-        );
+        return values;
     }
 }
 
@@ -97,7 +90,7 @@ function getListsAndSuffixes(state, suffix, lists, depth, json) {
 
     if (!json || json.$type ||
         depth === lists.length ||
-        typeof json !== 'object') {
+        typeofObject !== typeof json) {
         suffix.push(json);
     } else {
 
@@ -123,7 +116,7 @@ function getListsAndSuffixes(state, suffix, lists, depth, json) {
 
 function expandJSON(json, index, expansionState, valueKeys = {}) {
 
-    if (!json || json.$type || typeof json !== 'object') {
+    if (!json || typeofObject !== typeof json || json.$type) {
         return [expansionState];
     }
 

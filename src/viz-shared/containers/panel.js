@@ -56,11 +56,8 @@ let Panel = ({
 Panel = container({
     renderLoading: true,
     fragment: ({ id, name, ...rest } = {}, { side }) => {
-        if (!id && !name) {
-            return `{ panels: { ${side} } }`;
-        }
         const Content = componentForSideAndType(side, id);
-        if (!Content.fragment) {
+        if (!Content || !Content.fragment) {
             return `{ id, name }`;
         }
         return `{ id, name, ... ${

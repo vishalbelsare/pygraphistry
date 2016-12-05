@@ -35,9 +35,9 @@ export function view(workbookId, sceneID = 'default', viewId = simpleflake().toJ
         pruneOrphans: false,
         title: '', columns: [],
         panels: {
-            left: undefined,
-            right: undefined,
-            bottom: undefined
+            // left: undefined,
+            // right: undefined,
+            // bottom: undefined
         },
         ...camera(view),
         ...scene(view, sceneID),
