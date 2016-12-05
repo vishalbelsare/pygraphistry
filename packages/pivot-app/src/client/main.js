@@ -2,6 +2,7 @@ import 'rc-switch/assets/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-bootstrap-table/dist/react-bootstrap-table.min.css';
 import 'react-select/dist/react-select.css';
+import '../misc/react-dates.css';
 import 'font-awesome/css/font-awesome.css';
 
 import ReactDOM from 'react-dom';

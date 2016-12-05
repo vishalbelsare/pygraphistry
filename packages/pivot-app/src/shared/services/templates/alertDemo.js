@@ -1,8 +1,4 @@
-import {
-    expandTemplate,
-    constructFieldString,
-    SplunkPivot
-} from './SplunkPivot';
+import { SplunkPivot } from './SplunkPivot';
 import stringhash from 'string-hash';
 
 
@@ -73,7 +69,12 @@ export const searchAlertDemo = new SplunkPivot({
         }
     },
     toSplunk: function (pivotParameters, pivotCache) {
-        return `search ${splunkIndices.ALL} ${pivotParameters.query}`
+        const query = `search ${splunkIndices.ALL} ${pivotParameters.query}`;
+
+        return {
+            searchQuery: query,
+            searchParams: {earliest_time: '-1y'},
+        };
     },
     encodings: alertDemoEncodings
 });
@@ -93,7 +94,12 @@ export const searchFireeyeDemo = new SplunkPivot({
     connections: FIREEYE_FIELDS,
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
-        return `search EventID=${pivotParameters.event} ${splunkIndices.FIREEYE} ${constructFieldString(this)}`;
+        const query = `search EventID=${pivotParameters.event} ${splunkIndices.FIREEYE} ${this.constructFieldString()}`;
+
+        return {
+            searchQuery: query,
+            searchParams: {earliest_time: '-1y'},
+        };
     }
 });
 
@@ -113,7 +119,12 @@ export const expandFireeyeDemo = new SplunkPivot({
         const attribs = 'EventID, Message, Fire Eye MD5, Fire Eye URL, Internal IPs, External IPs';
         const rawSearch =
             `[{{${pivotParameters.ref}}}] -[${attribs}]-> [${splunkIndices.FIREEYE}]`;
-        return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
+        const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
+
+        return {
+            searchQuery: query,
+            searchParams: {earliest_time: '-1y'},
+        };
     },
 });
 
@@ -133,7 +144,12 @@ export const expandBlueCoatDemo = new SplunkPivot({
         const attribs = 'Fire Eye URL';
         const rawSearch =
             `[{{${pivotParameters.pivotRef}}}] -[${attribs}]-> [${splunkIndices.BLUECOAT}]`;
-        return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
+        const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
+
+        return {
+            searchQuery: query,
+            searchParams: {earliest_time: '-1y'},
+        };
     }
 });
 
@@ -153,6 +169,11 @@ export const expandFirewallDemo = new SplunkPivot({
         const attribs = 'External IPs';
         const rawSearch =
             `[{{${pivotParameters.pRef}}}] -[${attribs}]-> [${splunkIndices.FIREWALL}]`;
-        return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
+        const query = `search ${expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
+
+        return {
+            searchQuery: query,
+            searchParams: {earliest_time: '-1y'},
+        };
     }
 });

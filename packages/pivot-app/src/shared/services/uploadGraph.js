@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
-import { DataFrame as DF, Row } from 'dataframe-js';
-import DataFrame from '../DataFrame';
+import { DataFrame, Row } from 'dataframe-js';
+import FakeDataFrame from '../DataFrame';
 import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
@@ -117,14 +117,14 @@ function createGraph(pivots) {
     const newNodes = _.difference(mergedPivots.labels, previousGraph.labels);
     const removedNodes = _.difference(previousGraph.labels, mergedPivots.labels);
 
-    DataFrame.addEdges(newEdges);
-    DataFrame.removeEdges(removedEdges);
-    DataFrame.addNodes(newNodes);
-    DataFrame.removeNodes(removedNodes);
+    FakeDataFrame.addEdges(newEdges);
+    FakeDataFrame.removeEdges(removedEdges);
+    FakeDataFrame.addNodes(newNodes);
+    FakeDataFrame.removeNodes(removedNodes);
 
     const uploadData = {
-        graph: DataFrame.getData().edges,
-        labels: DataFrame.getData().nodes,
+        graph: FakeDataFrame.getData().edges,
+        labels: FakeDataFrame.getData().nodes,
         name, type, bindings
     };
 
@@ -161,7 +161,7 @@ function makeEventTable({pivots}) {
     );
     log.debug('Union of all pivot fields', fields);
 
-    const zeroDf = new DF([], fields);
+    const zeroDf = new DataFrame([], fields);
     const mergedData = dataFrames.reduce((a, b) => {
         return a.union(b);
     }, zeroDf);

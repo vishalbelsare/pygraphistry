@@ -3,15 +3,11 @@
     "enabled": true,
     "pivotParameters": {
         "query": "Enter search query",
-        "pivot": {
-            "$type": "atom",
-            "value": [
-                [
-                    "3e11aaf23d0602dc"
-                ]
-            ],
-            "$size": 51
-        },
+        "pivot": [
+            [
+                "3e11aaf23d0602dc"
+            ]
+        ],
         "src": "\"err.message\"",
         "dst": "\"err.stackArray{}.file\""
     },

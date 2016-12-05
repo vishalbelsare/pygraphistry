@@ -4,8 +4,9 @@ import { DataFrame, Row } from 'dataframe-js';
 
 import { Observable } from 'rxjs';
 import splunkjs from 'splunk-sdk';
-import stringHash from 'string-hash';
+import objectHash from 'object-hash';
 import VError from 'verror';
+
 
 const SPLUNK_HOST = conf.get('splunk.host');
 const SPLUNK_USER = conf.get('splunk.user');
@@ -24,6 +25,13 @@ const splunkLogin = Observable.bindNodeCallback(service.login.bind(service));
 const splunkGetJob = Observable.bindNodeCallback(service.getJob.bind(service));
 const splunkSearch = Observable.bindNodeCallback(service.search.bind(service));
 
+const searchParamDefaults = {
+    timeout: Math.max(0, conf.get('splunk.jobCacheTimeout')),
+    exec_mode: 'blocking',
+    earliest_time: '-7d',
+}
+
+
 export const SplunkConnector = {
     id:'splunk-connector',
     name : 'Splunk',
@@ -33,21 +41,22 @@ export const SplunkConnector = {
         message: null
     },
 
-    search : function search(query) {
+    search : function search(query, searchParamOverrides = {}) {
         // Generate a hash for the query so we can look it up in splunk
-        const jobId = `pivot-app::${stringHash(query)}`;
+        const hash = conf.get('splunk.jobCacheTimeout') > 0 ? objectHash.MD5({q: query, p: searchParamOverrides})
+                                                            : Date.now();
+        const jobId = `pivot-app::${hash}`;
 
         // Set the splunk search parameters
         const searchParams = {
+            ...searchParamDefaults,
+            ...searchParamOverrides,
             id: jobId,
-            timeout: '14400', // 4 hours
-            exec_mode: 'blocking',
-            earliest_time: '-7d'
         };
 
         // Used to indentifity logs
         const searchInfo = { query, searchParams };
-        log.debug( searchInfo,'Fetching results for splunk job: "%s"', jobId);
+        log.debug(searchInfo, 'Tentatively fetching cached results for splunk job: "%s"', jobId);
 
         // TODO Add this as part of splunk connector
         return splunkGetJob(jobId)
