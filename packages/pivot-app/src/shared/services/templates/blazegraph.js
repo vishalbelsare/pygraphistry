@@ -1,134 +1,60 @@
-import _ from 'underscore';
-import request from 'request';
 import { Observable } from 'rxjs';
-import {
-    constructFieldString,
-    encodeGraph
-} from '../connectors/splunk.js';
-import logger from '../../../shared/logger.js';
-const log = logger.createLogger('pivot-app', __filename);
-
+import stringhash from 'string-hash';
+import request from 'request';
 
 class BlazePivot {
     constructor( pivotDescription ) {
-        const {
-            id, name,
-            pivotParameterKeys, pivotParametersUI,
-            toSplunk, connections, encodings, attributes
-        } = pivotDescription;
+        let { id, name,
+              pivotParameterKeys, pivotParametersUI,
+              connections, encodings, attributes } = pivotDescription;
 
         this.id = id;
         this.name = name;
         this.pivotParameterKeys = pivotParameterKeys;
         this.pivotParametersUI = pivotParametersUI;
-        this.toSplunk = toSplunk;
         this.connections = connections;
         this.encodings = encodings;
         this.attributes = attributes;
     }
 
-    searchAndShape({ app, pivot }) {
+    searchAndShape({app, pivot, rowId}) {
 
         const get = Observable.bindNodeCallback(request.get.bind(request));
-        const query = this.toSplunk(pivot.pivotParameters);
         pivot.template = this;
-
-        return get(query)
+        return get('https://s3-us-west-1.amazonaws.com/graphistry.data.public/blazegraph.json')
             .map(
                 ([response, body], index) => {
-                    const { graph, labels } = JSON.parse(response.body);
+                    const { graph, labels } = JSON.parse(body)
                     pivot.results = {
-                        graph: graph.map(
-                            ({ src, dst, ...rest }) => ({ source: src, destination: dst, ...rest })
-                        ),
-                        labels: labels.map(
-                            ({ community, ...rest }) => ({ community: (community) ? `Community ${community}`: undefined, ...rest})
-                        )
+                        graph: graph.map(({src, dst}) => ({ source: src, destination: dst })),
+                        labels: labels
                     }
                     return ({app, pivot})
                 }
             )
             .catch((e) => {
-                log.error(e);
-                return Observable.throw('Failed to download dataset: ' +  e);
+                console.error(e);
+                return Observable.throw('Failed to download dataset ' +  e )
             })
     }
 }
 
-
-export const blazegraphCommunities = new BlazePivot({
-    id: 'blazegraph-demo-communities',
-    name: 'Blazegraph Community',
-    pivotParameterKeys:['levels', 'tol', 'seed'],
-    pivotParametersUI: {
-        levels: {
+export const COMMUNITY_DETECTION = new BlazePivot({
+    id: 'blazegraph-community-detection-2',
+    name: 'Community Detection 2',
+    pivotParameterKeys: ['communities'],
+    pivotParametersUI : {
+        'communities': {
             inputType: 'text',
-            label: 'Levels',
-            placeholder: 'Number between 1 and 3',
-        },
-        tol: {
-            inputType: 'text',
-            label: 'Tolerance',
-            placeholder: 'String between "0.1f" and "0.00001f"'
-        },
-        seed: {
-            inputType: 'text',
-            label: 'Opt. seed IP:',
-            placeholder: '1.2.3.4'
+            label: 'Number of communities',
+            placeholder: '2'
         }
     },
-    toSplunk: function (pivotParameters, pivotCache) {
-        const seed = pivotParameters.seed === undefined ? '' : pivotParameters.seed;
-        const queryOptions = {
-            url: 'http://108.48.53.144:21026/communities',
-            headers: {
-                'Accept': 'text/plain;charset=utf-8',
-                'Accept-Encoding': 'gzip, deflate',
-                'Connection': 'keep-alive'
-            },
-            qs: {
-                filename: 'darpa-1998-edges-with-ports-cr.txt',
-                levels: `${pivotParameters.levels}`,
-                tol: `${pivotParameters.tol}`,
-                seed: `${seed.trim()}`,
-                ipidx: 'darpa-1998-ips_with_index.txt'
+    encodings: {
+        point: {
+            pointColor: (node) => {
+                node.pointColor = stringhash(node.type) % 12;
             }
         }
-        return queryOptions;
-    },
-});
-
-export const blazegraphExpand = new BlazePivot({
-    id: 'blazegraph-demo-expand',
-    name: 'Blazegraph Expand',
-    pivotParameterKeys:['seed', 'maxlevels'],
-    pivotParametersUI: {
-        maxlevels: {
-            inputType: 'text',
-            label: 'Search depth',
-            placeholder: 'Number between 1 and 3',
-        },
-        seed: {
-            inputType: 'text',
-            label: 'Seed IP:',
-            placeholder: '1.2.3.4'
-        }
-    },
-    toSplunk: function (pivotParameters, pivotCache) {
-        const queryOptions = {
-            url: 'http://108.48.53.144:21026/expand',
-            headers: {
-                'Accept': 'text/plain;charset=utf-8',
-                'Accept-Encoding': 'gzip, deflate',
-                'Connection': 'keep-alive'
-            },
-            qs: {
-                filename: 'darpa-1998-edges-with-ports-cr.txt',
-                maxlevels: `${pivotParameters.maxlevels}`,
-                seed: `${pivotParameters.seed}`,
-                ipidx: 'darpa-1998-ips_with_index.txt'
-            }
-        }
-        return queryOptions;
-    },
+    }
 });
