@@ -37,10 +37,10 @@ export const Sparkline = ({ name, yScale, children, componentType,
                     <Button href='javascript:void(0)'
                         onClick={() => onClose({ id })}
                         className={classNames({
-                            [styles['fa']]: true,
-                            [styles['fa-spin']]: loading,
-                            [styles['fa-times']]: !loading,
-                            [styles['fa-spinner']]: loading,
+                            'fa': true,
+                            'fa-spin': loading,
+                            'fa-times': !loading,
+                            'fa-spinner': loading,
                             [styles['histogram-close']]: true,
                             [styles['histogram-loading']]: loading
                         })}>

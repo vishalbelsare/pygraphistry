@@ -7,6 +7,7 @@ import 'rc-switch/assets/index.css';
 import 'rc-color-picker/assets/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-select/dist/react-select.css';
+import 'font-awesome/css/font-awesome.css';
 
 import {
     Observable, Subscriber, Subscription,
