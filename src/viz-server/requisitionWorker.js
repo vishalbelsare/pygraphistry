@@ -139,11 +139,12 @@ export function requisitionWorker({
             //     latestClientId = simpleflake().toJSON();
             // }
 
-            const query = url.parse(request.url).query || {};
+            const query = request.url ? (url.parse(request.url).query || {}) : {};
             const sessionId = query.clientId || simpleflake().toJSON();
+
             window.graphistrySessionId = sessionId;
             commonLogger.addMetadataField({sessionId});
-            console.log(`Session ID: ${sessionId}`);
+            logger.debug(`Started session with ID: ${sessionId}`);
 
             isLocked = true;
             return accept({ request, response }, latestClientId);
