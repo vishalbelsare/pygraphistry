@@ -29,25 +29,23 @@ let Labels = ({ simulating,
 
     let labels = [];
 
-    if (enabled) {
-        if (poiEnabled && point && point.length) {
-            labels = point.slice(0);
-        }
-        if (selection && highlight && (
-            selection.type === highlight.type) && (
-            selection.index === highlight.index)) {
-            highlight = undefined;
-        }
-        if (selection) {
-            labels = labels.filter(({ index }) => (
-                index !== selection.index
-            )).concat(selection);
-        }
-        if (highlight) {
-            labels = labels.filter(({ index }) => (
-                index !== highlight.index
-            )).concat(highlight);
-        }
+    if (poiEnabled && point && point.length) {
+        labels = point.slice(0);
+    }
+    if (selection && highlight && (
+        selection.type === highlight.type) && (
+        selection.index === highlight.index)) {
+        highlight = undefined;
+    }
+    if (selection) {
+        labels = labels.filter(({ index }) => (
+            index !== selection.index
+        )).concat(selection);
+    }
+    if (highlight) {
+        labels = labels.filter(({ index }) => (
+            index !== highlight.index
+        )).concat(highlight);
     }
 
     return (

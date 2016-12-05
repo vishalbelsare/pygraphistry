@@ -55,10 +55,10 @@ class Scene extends React.Component {
     constructor(props, context) {
         super(props, context);
         this.state = {
-            renderState: null,
+            renderState: undefined,
             hasDOMListeners: false,
             hasVBOListeners: false,
-            renderingScheduler: null,
+            renderingScheduler: undefined,
             renderSubscription: new Subscription(),
             resizeSubscription: new Subscription(),
         };
