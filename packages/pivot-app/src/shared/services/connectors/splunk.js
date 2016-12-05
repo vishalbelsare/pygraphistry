@@ -26,7 +26,7 @@ const splunkGetJob = Observable.bindNodeCallback(service.getJob.bind(service));
 const splunkSearch = Observable.bindNodeCallback(service.search.bind(service));
 
 const searchParamDefaults = {
-    timeout: '14400', // 4 hours
+    timeout: Math.max(0, conf.get('splunk.jobCacheTimeout')),
     exec_mode: 'blocking',
     earliest_time: '-7d',
 }
@@ -43,7 +43,8 @@ export const SplunkConnector = {
 
     search : function search(query, searchParamOverrides = {}) {
         // Generate a hash for the query so we can look it up in splunk
-        const hash = objectHash.MD5({q: query, p: searchParamOverrides});
+        const hash = conf.get('splunk.jobCacheTimeout') > 0 ? objectHash.MD5({q: query, p: searchParamOverrides})
+                                                            : Date.now();
         const jobId = `pivot-app::${hash}`;
 
         // Set the splunk search parameters
@@ -55,7 +56,7 @@ export const SplunkConnector = {
 
         // Used to indentifity logs
         const searchInfo = { query, searchParams };
-        log.debug( searchInfo,'Fetching results for splunk job: "%s"', jobId);
+        log.debug(searchInfo, 'Tentatively fetching cached results for splunk job: "%s"', jobId);
 
         // TODO Add this as part of splunk connector
         return splunkGetJob(jobId)
