@@ -103,7 +103,6 @@ export const searchGraphviz = new SplunkPivot({
         },
         'time': {
             inputType: 'daterange',
-            label: 'Time range:',
             default: moment.duration(2, 'day').toJSON()
         }
     },

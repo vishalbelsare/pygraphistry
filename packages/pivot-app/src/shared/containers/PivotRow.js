@@ -254,7 +254,6 @@ function renderComboCell(id, paramKey, paramValue, paramUI, handlers) {
 function renderDateRange(id, paramKey, paramValue, paramUI, handlers) {
     return (
         <div key={`pcell-${id}-${paramKey}`}>
-            <label>{ paramUI.label }</label>
             <DateRangePickerWrapper
                 paramUI={paramUI}
                 paramValue={paramValue}
