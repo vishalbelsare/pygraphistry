@@ -428,7 +428,7 @@ td, th {
 :local(.row-toggled-on), :local(.row-toggled-off) {
 }
 
-:local(.pivotToggle) {
+.pivotToggle {
     width: 90px;
     th& {
         padding: 0 !important;
@@ -445,12 +445,21 @@ td, th {
         font-color: #777;
         margin-right: 1em;
     }
+    :global(.rc-switch) {
+        & {
+            zoom: 80%;
+        }
+        &:global(.rc-switch-checked) {
+            background: #777;
+            border-color: #333;
+        }
+    }
 }
 :local(.pivotData0) {
     width: 200px;
     text-align: right;
 }
-:local(.pivotTypeSelectorContainer) {
+.pivotTypeSelectorContainer {
     text-align: left;
     font-weight: bold;
     & > div > div:nth-child(2):not(:hover) {
