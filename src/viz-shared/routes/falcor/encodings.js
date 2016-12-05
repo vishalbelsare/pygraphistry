@@ -6,8 +6,7 @@ import {
 import { Observable } from 'rxjs';
 import { getHandler,
          setHandler,
-         mapObjectsToAtoms,
-         captureErrorStacks } from 'viz-shared/routes';
+         mapObjectsToAtoms } from 'viz-shared/routes';
 
 export function encodings(path, base) {
     return function encodings({ loadViewsById, getEncodingOptions, setEncoding, getEncoding }) {

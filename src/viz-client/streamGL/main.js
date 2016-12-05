@@ -474,7 +474,7 @@ function setupErrorReporters (urlParams) {
 }
 
 window.addEventListener('load', () => {
-    setupErrorReporters(urlParams);
+    // setupErrorReporters(urlParams);
 
     initAnalytics(urlParams);
 

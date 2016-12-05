@@ -4,6 +4,7 @@ import stringify from 'json-stable-stringify';
 import { tagUser } from './support';
 import { Observable, Subject } from 'rxjs';
 import { loadWorkerModule } from './loadWorkerModule';
+import { logger as commonLogger } from '@graphistry/common';
 
 export function requisitionWorker({
         config, logger,
@@ -137,6 +138,14 @@ export function requisitionWorker({
             // } else {
             //     latestClientId = simpleflake().toJSON();
             // }
+
+            const query = request.url ? (url.parse(request.url).query || {}) : {};
+            const sessionId = query.clientId || simpleflake().toJSON();
+
+            window.graphistrySessionId = sessionId;
+            commonLogger.addMetadataField({sessionId});
+            logger.debug(`Started session with ID: ${sessionId}`);
+
             isLocked = true;
             return accept({ request, response }, latestClientId);
         };

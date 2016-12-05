@@ -1,8 +1,12 @@
 import path from 'path';
 import express from 'express';
+import * as bodyParser from 'body-parser';
 import { renderMiddleware } from '../middleware';
 import { getDataSourceFactory } from 'viz-shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
+
+import { logger as log } from '@graphistry/common';
+const logger = log.createLogger('viz-server:client-errors');
 
 export function httpRoutes(services, modules) {
     const getDataSource = getDataSourceFactory(services);
@@ -17,8 +21,12 @@ export function httpRoutes(services, modules) {
         route: `/graph/viz-server.js(.map)?`,
         use: (req, res, next) => res.status(404).send()
     }, {
-        route: '/graph/error',
-        post: (req, res) => res.status(200).send()
+        route: '/error',
+        use: bodyParser.json(),
+        post: (req, res) => {
+            logger.error({error: {...req.body}}, `Client error: ${req.body.msg || 'no message'}`);
+            res.status(200).send();
+        }
     }, {
         route: `/graph/model.json`,
         use: falcorMiddleware(getDataSource)

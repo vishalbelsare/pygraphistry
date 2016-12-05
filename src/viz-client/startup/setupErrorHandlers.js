@@ -3,22 +3,30 @@ import { format } from 'util';
 import { bind, partial } from 'lodash';
 import { Subject, Observable } from 'rxjs';
 
-export function setupErrorHandlers(document, window, options) {
+import { logger as commonLogger } from '@graphistry/common';
+const logger = commonLogger.createDirectLogger('streamgl');
 
+export function setupErrorHandlers(document, window, options) {
     const $document = $(document);
-    const reportURL = '/error';
+
+    const logFields = {
+        params: options,
+        origin: document.location.origin,
+        userAgent: window.navigator.userAgent
+    }
+
+    if (window.location.hostname.endsWith('graphistry.com')) {
+        console.info('Logs: https://splunk.graphistry.com:3000/en-US/app/search/session_inspector?form.debugid=' + window.graphistryDebugId);
+    } else {
+        console.info('Graphistry Debug Id:', window.graphistryDebugId);
+    }
 
     // Report all unhandled JS errors
     const unhandledExceptions = Observable.fromEvent(window, 'error', (errorEvent) => {
-        const {error} = errorEvent;
-        return {
-            stack: error && error.stack || null,
-            lineno: errorEvent.lineno,
-            message: errorEvent.message,
-            filename: errorEvent.filename
-        };
-    })
-    .map(errorToJSON('JSError'));
+        return [
+            {err: errorEvent.error, type: 'JSError'}, 'Uncaught JavaScript exception'];
+    });
+
 
     const ajaxExceptions = Observable.bindCallback(
         $document.ajaxError.bind($document),
@@ -34,7 +42,9 @@ export function setupErrorHandlers(document, window, options) {
         }
         return true;
     })
-    .map(errorToJSON('AjaxError'));
+    .map(({url, result, message}) =>
+        [{type: 'AjaxError', url, result}, message]);
+
 
     // Monkey-patch console.error and console.warn to post to the report URL.
     const consoleExceptions = ['error', 'warn']
@@ -47,30 +57,18 @@ export function setupErrorHandlers(document, window, options) {
                 // if ((/react/i).test(message)) {
                 //     return;
                 // }
-                originalFn.apply(this, arguments);
                 notifier.next({
                     message: format.apply(this, arguments)
                 });
             }
-            return notifier.map(errorToJSON(`console.${functionName}`));
+            return notifier.map(({message}) => [{type: 'console.${functionName}'}, message]);
         });
+
 
     return unhandledExceptions
         .merge(ajaxExceptions, ...consoleExceptions)
-        .mergeMap((json) => Observable.ajax.post(reportURL, json, {
-            'Content-Type': 'application/json'
-        }));
-
-    function errorToJSON(type) {
-        return function mapError(err) {
-            return {
-                err, type,
-                params: options,
-                module: 'streamgl',
-                time: (new Date()).toUTCString(),
-                origin: document.location.origin,
-                userAgent: window.navigator.userAgent
-            };
-        }
-    }
+        .map((record = [{}, '']) => {
+            logger.error({...logFields, ...record[0]}, record[1]);
+            return record;
+        });
 }

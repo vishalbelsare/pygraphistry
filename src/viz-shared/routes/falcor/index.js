@@ -1,3 +1,6 @@
+import { logger as commonLogger } from '@graphistry/common';
+const logger = commonLogger.createLogger('viz-app:falcor-router');
+
 import { app } from './app';
 import { views } from './views';
 import { labels } from './labels';
@@ -64,10 +67,11 @@ function wrapRouteHandler(handler) {
     return function routeHandlerWrapper(...args) {
         return Observable
             .defer(() => handler.apply(this, args) || [])
-            .do(null, (e) => {
-                console.error('========== BAD ROUTE', e, (e||{}).stack, handler.name || handler.toString().slice(0,20));
+            .do(null, (err) => {
+                const handlerName = handler.name || handler.toString().slice(0,20);
+                logger.error({err, handler: handlerName}, 'Bad Falcor route');
             })
-            .catch(captureErrorStacks)
+            // .catch(captureErrorStacks)
             .map(mapObjectsToAtoms);
     }
 }
