@@ -35,7 +35,7 @@ function playInvestigation(action$, store) {
                         .range(0, length)
                         .concatMap((index) => {
                             return Observable.from(falcor.set($value(['pivots', [index],'status'], { searching: true, ok: true })))
-                                .concat(falcor.call(['pivots', [index], 'searchPivot'], [index]));
+                                .concat(falcor.call(['pivots', [index], 'searchPivot']));
                         }
                         )
                         .concat(falcor.call(`play`))
@@ -67,7 +67,7 @@ function searchPivot(action$, store) {
                         // TODO Use pivot id instead of index
                         .concat(falcor.set($value(['pivots', [index], 'status'], { searching: true, ok: true })))
                         .concat(falcor.set($value(['url'], '/html/splash.html')))
-                        .concat(falcor.call(['pivots', index, 'searchPivot'], [index]))
+                        .concat(falcor.call(['pivots', index, 'searchPivot']))
                         .concat(falcor.call(`play`))
                 }
             ))

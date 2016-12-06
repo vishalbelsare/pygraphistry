@@ -49,15 +49,11 @@ export function pivots({loadPivotsById, searchPivot}) {
 }
 
 function searchPivotCallRoute({ loadPivotsById, searchPivot }) {
-    return function(path, args) {
+    return function(path) {
         const pivotIds = path[1];
 
-        // Needed in order to set 'Pivot #' Attribute (Demo)
-        // Should probably remove.
-        const rowIds = args;
-
-        return searchPivot({loadPivotsById, pivotIds, rowIds})
-            .mergeMap(({app, pivot}) => {
+        return searchPivot({ loadPivotsById, pivotIds })
+            .mergeMap(({ app, pivot }) => {
                 return [
                     $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
                     $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
