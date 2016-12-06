@@ -29,6 +29,7 @@ const searchParamDefaults = {
     timeout: Math.max(0, conf.get('splunk.jobCacheTimeout')),
     exec_mode: 'blocking',
     earliest_time: '-7d',
+    max_time: conf.get('splunk.searchMaxTime')
 }
 
 
@@ -68,10 +69,13 @@ export const SplunkConnector = {
                     return splunkFetchJob();
                 });
             })
-            .catch(({data}) => Observable.throw(new VError({
-                name: 'SplunkParseError',
-                info: searchInfo
-            }, data.messages[0].text)))
+            .catch(e => {
+                log.info(e, 'Splunk search failed.')
+                return Observable.throw(new VError({
+                    name: 'SplunkParseError',
+                    info: searchInfo
+                }, e.data.messages[0].text))
+            })
             .switchMap(job => {
                 const props = job.properties();
                 log.debug({
@@ -79,6 +83,7 @@ export const SplunkConnector = {
                     eventCount: props.eventCount,
                     resultCount: props.resultCount,
                     runDuration: props.runDuration,
+                    messages: props.messages,
                     ttl: props.ttl
                 }, 'Search job properties');
 
