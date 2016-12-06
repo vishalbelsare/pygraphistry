@@ -64,13 +64,18 @@ function wrapRouteHandlers(route) {
 }
 
 function wrapRouteHandler(handler) {
+    const handlerName = handler.name || handler.toString().slice(0,20);
+
     return function routeHandlerWrapper(...args) {
         return Observable
             .defer(() => handler.apply(this, args) || [])
-            .do(null, (err) => {
-                const handlerName = handler.name || handler.toString().slice(0,20);
-                logger.error({err, handler: handlerName}, 'Bad Falcor route');
-            })
+            .do(
+                (handlerReturn) => {
+                    logger.trace({handler: handlerName}, `Called Falcor route: ${handlerName}`)
+                }, (err) => {
+                    logger.error({err, handler: handlerName}, 'Bad Falcor route');
+                }
+            )
             // .catch(captureErrorStacks)
             .map(mapObjectsToAtoms);
     }
