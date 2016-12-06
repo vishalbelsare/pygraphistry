@@ -18,6 +18,7 @@ function upload(etlService, apiKey, data) {
         return Observable.throw(new Error('No edges to upload!'));
     }
 
+    log.debug(data, 'Content to be ETLed');
     const gzipped = gzipObservable(new Buffer(JSON.stringify(data), { level : 1}));
     return gzipped.switchMap(buffer =>
         upload0Wrapped(etlService, apiKey, buffer)
@@ -163,7 +164,7 @@ function makeEventTable({pivots}) {
 
     const zeroDf = new DataFrame([], fields);
     const mergedData = dataFrames.reduce((a, b) => {
-        return a.union(b);
+        return a.union(new DataFrame(b, fields));
     }, zeroDf);
 
     var fieldSummaries = {};
