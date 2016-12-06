@@ -12,6 +12,6 @@
     },
     "splunk": {
         "jobCacheTimeout": 3600,
-        "searchMaxTime": 5
+        "searchMaxTime": 10
     }
 }
