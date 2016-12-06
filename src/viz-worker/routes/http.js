@@ -21,12 +21,17 @@ export function httpRoutes(services, modules) {
         route: `/graph/viz-server.js(.map)?`,
         use: (req, res, next) => res.status(404).send()
     }, {
+        // NB: Normally, nginx routes `/error` to central, so it can log client errors instead of
+        // viz-app. However, if you're running locally (with no central or nginx), it's convienant
+        // to log client erros with your normal log output (usually to the terminal).
         route: '/error',
-        use: bodyParser.json(),
-        post: (req, res) => {
-            logger.error({error: {...req.body}}, `Client error: ${req.body.msg || 'no message'}`);
-            res.status(200).send();
-        }
+        post:  [
+            bodyParser.json({extended: true, limit: '512kb'}),
+            (req, res) => {
+                logger.error(req.body, `Client error: ${req.body.msg || 'no message'}`);
+                res.status(200).send();
+            }
+        ]
     }, {
         route: `/graph/model.json`,
         use: falcorMiddleware(getDataSource)
