@@ -1,7 +1,7 @@
 // This file is only used in the viz-client.js output. Viz-server still uses the original
 // `@graphistry/common` logger. This is done via a WebPack module alias in viz-client's build.
 
-import _ from 'underscore';
+import _ from 'lodash';
 import bunyan from 'bunyan';
 
 
