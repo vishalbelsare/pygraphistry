@@ -21,6 +21,7 @@ export function renderMiddleware(getDataSource, modules) {
     return function renderMiddleware(req, res) {
         const { query: options = {} } = req;
         const reqURL = url.parse(req.originalUrl);
+        const clientId = req.app.get('clientId') || '00000';
 
         if (options.workbook === undefined) {
             const redirectUrl = url.format({
@@ -39,8 +40,8 @@ export function renderMiddleware(getDataSource, modules) {
 
         try {
             const renderedResults = !renderServerSide ?
-                Observable.of(renderFullPage(null, null, paths)) :
-                renderAppWithHotReloading(modules, getDataSource(req), paths);
+                Observable.of(renderFullPage(null, null, clientId, paths)) :
+                renderAppWithHotReloading(modules, getDataSource(req), clientId, paths);
 
             renderedResults.take(1).subscribe({
                 next(html) {
@@ -63,7 +64,7 @@ export function renderMiddleware(getDataSource, modules) {
     }
 }
 
-function renderAppWithHotReloading(modules, dataSource, paths) {
+function renderAppWithHotReloading(modules, dataSource, clientId, paths) {
     return modules
         .map(({ App }) => ({
             App, falcor: new Model({
@@ -78,11 +79,11 @@ function renderAppWithHotReloading(modules, dataSource, paths) {
             }).takeLast(1),
             ({ App, falcor }, { data }) => ({ App, falcor, data })
         )
-        .map(({ App, falcor, data }) => renderFullPage(data, falcor, paths));
+        .map(({ App, falcor, data }) => renderFullPage(data, falcor, clientId, paths));
 }
 
 
-function renderFullPage(data, falcor, paths = {}, html = '') {
+function renderFullPage(data, falcor, clientId, paths = {}, html = '') {
     const { client, vendor } = webpackAssets;
     const { html: iconsHTML } = faviconStats;
     const { base = '', prefix = '' } = paths;
@@ -110,6 +111,7 @@ function renderFullPage(data, falcor, paths = {}, html = '') {
         </script>
         <div id='root'>${html}</div>
         <script id='initial-state' type='text/javascript'>
+            window.graphistryClientId = "${clientId}";
             var graphistryPath = "${ prefix || ''}";
             var __INITIAL_STATE__ = ${stringify(false && data && data.toJSON() || {})};
             var __INITIAL_CACHE__ = ${stringify(falcor && falcor.getCache() || {})};

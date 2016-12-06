@@ -130,6 +130,10 @@ export function addUserInfo(newUserInfo) {
 // Hook into window.onerror and console.error, and log them to the server.
 ////////////////////////////////////////////////////////////////////////////////
 
+if(window.graphistryClientId) {
+    addUserInfo({ cid: window.graphistryClientId });
+}
+
 
 //
 // // Track JavaScript errors
