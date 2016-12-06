@@ -28,8 +28,8 @@ import { splicePivot,
 } from '../actions/investigation';
 
 
-function pivotTable({pivots, templates, insertPivot, splicePivot, dismissAlert, searchPivot,
-                     playInvestigation, saveInvestigation}) {
+function pivotTable({ id, pivots, templates, insertPivot, splicePivot, dismissAlert, searchPivot,
+    playInvestigation, saveInvestigation }) {
     return (
         <Table>
             <thead>
@@ -38,7 +38,7 @@ function pivotTable({pivots, templates, insertPivot, splicePivot, dismissAlert, 
                         <OverlayTrigger  placement="top" overlay={
                             <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
                         }>
-                            <Button onClick={(ev) => playInvestigation({length: pivots.length})}>
+                            <Button onClick={(ev) => playInvestigation({investigationId: id, length: pivots.length})}>
                                 <Glyphicon glyph="play" />
                             </Button>
                         </OverlayTrigger>
@@ -52,6 +52,7 @@ function pivotTable({pivots, templates, insertPivot, splicePivot, dismissAlert, 
             <tbody>
                 {pivots.map((pivot, index) => (
                     <PivotRow
+                        investigationId={id}
                         data={pivot}
                         pivots={pivots}
                         templates={templates}
@@ -115,7 +116,7 @@ function renderEventTable({fieldSummaries = {}, table = {}}) {
     );
 }
 
-function renderInvestigation({status, pivots = [], templates, eventTable,
+function renderInvestigation({id, status, pivots = [], templates, eventTable,
                               searchPivot, insertPivot, splicePivot, dismissAlert,
                               playInvestigation, saveInvestigation }) {
     return (
@@ -130,7 +131,7 @@ function renderInvestigation({status, pivots = [], templates, eventTable,
                 <Tab eventKey={1} title="Pivots">
                     {
                         pivotTable({
-                            pivots, templates, insertPivot, splicePivot, dismissAlert,
+                            id, pivots, templates, insertPivot, splicePivot, dismissAlert,
                             searchPivot, playInvestigation, saveInvestigation
                         })
                     }
@@ -159,6 +160,7 @@ function mapStateToFragment({pivots = []} = {}) {
 
 function mapFragmentToProps(fragment) {
     return {
+        id: fragment.id,
         pivots: fragment.pivots,
         status: fragment.status,
         eventTable: fragment.eventTable

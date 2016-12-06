@@ -49,7 +49,7 @@ export function pivots({loadPivotsById, searchPivot}) {
 }
 
 function searchPivotCallRoute({ loadPivotsById, searchPivot }) {
-    return function(path) {
+    return function(path, args) {
         const pivotIds = path[1];
 
         return searchPivot({ loadPivotsById, pivotIds })
