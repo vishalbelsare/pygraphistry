@@ -448,6 +448,7 @@ RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (config,
 
     if (hintsAllocationCycle) {
         hintsAllocationCycle.unsubscribe();
+        return;
     }
 
     const numElements = {

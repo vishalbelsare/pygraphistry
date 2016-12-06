@@ -232,7 +232,7 @@ class Renderer extends React.Component {
         };
 
         renderBGColor = this.updateBackground(updateArg) || renderBGColor;
-        renderPanZoom = this.updateNumElements(updateArg) && false || renderPanZoom;
+        renderPanZoom = this.updateNumElements(updateArg) || renderPanZoom;
         renderPanZoom = this.updateShowArrows(updateArg) || renderPanZoom;
         renderPanZoom = this.updateEdgeScaling(updateArg) || renderPanZoom;
         renderPanZoom = this.updatePointScaling(updateArg) || renderPanZoom;
@@ -281,12 +281,11 @@ class Renderer extends React.Component {
     }) {
         if (currEdges.elements !== nextEdges.elements ||
             currPoints.elements !== nextPoints.elements) {
+            const MAX_SIZE_TO_ALLOCATE = 2000000;
+            const edges = Math.min(nextEdges.elements, MAX_SIZE_TO_ALLOCATE);
+            const points = Math.min(nextPoints.elements, MAX_SIZE_TO_ALLOCATE);
             renderingScheduler.attemptToAllocateBuffersOnHints(
-                renderState.config,
-                renderState, {
-                    edges: nextEdges.elements,
-                    points: nextPoints.elements
-                }
+                renderState.config, renderState, { edges, points, }
             );
             return true;
         }
@@ -424,7 +423,7 @@ class Renderer extends React.Component {
         if (!currEdge || !currPoint) {
             return !!(nextEdge || nextPoint);
         }
-        return currHighlight.$__version !== nextHighlight.$__version;
+        return shallowEqualOrFalcorEqual(currHighlight, nextHighlight);
     }
     updateSceneSelection({
         currSelection, nextSelection,
@@ -435,7 +434,7 @@ class Renderer extends React.Component {
         if (!currEdge || !currPoint) {
             return !!(nextEdge || nextPoint);
         }
-        return currSelection.$__version !== nextSelection.$__version;
+        return shallowEqualOrFalcorEqual(currSelection, nextSelection);
     }
 }
 

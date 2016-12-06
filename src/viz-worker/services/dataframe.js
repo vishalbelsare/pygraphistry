@@ -1,6 +1,8 @@
 import { Observable } from 'rxjs';
+import { logger as commonLogger } from '@graphistry/common';
 import { columns as createColumns } from 'viz-shared/models/columns';
 import ExpressionCodeGenerator from 'viz-worker/simulator/expressionCodeGenerator';
+const logger = commonLogger.createLogger('viz-worker/services/dataframe.js');
 
 export function appendColumn({ view, componentType, name, values, dataType }) {
     const { nBody } = view;
@@ -20,7 +22,8 @@ export function tickLayout({ view, workbook }) {
 
 export function maskDataframe({ view }) {
 
-    const { nBody, expressionsById } = view;
+    const { nBody } = view;
+    const { expressionsById } = view;
     const { dataframe, simulator } = nBody;
 
     const { selectionMasks, exclusionMasks, limits, errors } =
@@ -69,6 +72,7 @@ export function maskDataframe({ view }) {
 
     function updateLayoutDataframeBuffers(updatedBuffers) {
         if (updatedBuffers !== false) {
+            logger.trace('Updating layoutAlgorithms after dataframe mask');
             const { layoutAlgorithms } = simulator;
             return Observable.merge(
                 ...layoutAlgorithms.map((algo) =>
@@ -83,6 +87,7 @@ export function maskDataframe({ view }) {
 
     function tickSimulatorAndNotifyVBOLoop(updatedBuffers) {
         if (updatedBuffers !== false) {
+            logger.trace('ticking simulator buffers after dataframe mask');
             simulator.tickBuffers([
                 'curPoints', 'pointSizes', 'pointColors',
                 'edgeColors', 'logicalEdges', 'springsPos'
@@ -94,9 +99,12 @@ export function maskDataframe({ view }) {
                 //     server.viewConfig.next(view);
                 // }
                 if (server.ticksMulti) {
+                    logger.trace('updating ticksMulti Subject');
                     server.ticksMulti.next(nBody);
                 }
             }
+        } else {
+            logger.trace('no buffers to update after dataframe mask');
         }
     }
 }

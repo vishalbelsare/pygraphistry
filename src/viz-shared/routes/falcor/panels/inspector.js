@@ -58,7 +58,6 @@ function queryPage ({readSelection}, {view, openTab, range, searchTerm, sortKey,
 
     let { selection: { mask: rect } = {} } = view;
 
-    rect = rect && rect.value || rect;
     if (!rect || !rect.tl || !rect.br) {
         rect = { all: true };
     }

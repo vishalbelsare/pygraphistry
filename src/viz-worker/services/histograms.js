@@ -126,15 +126,14 @@ function loadPointsMask({ view, masked, histogram }) {
         return Observable.of([]);
     }
 
-    let { selection: { mask } = {} } = view;
+    let { selection: { mask: rect } = {} } = view;
 
-    mask = mask && mask.value || mask;
-    if (!mask || !mask.tl || !mask.br) {
+    if (!rect || !rect.tl || !rect.br) {
         return Observable.of([]);
     }
 
     return Observable.defer(() =>
-        nBody.simulator.selectNodesInRect({ ...mask })
+        nBody.simulator.selectNodesInRect(rect)
     );
 }
 

@@ -5,6 +5,8 @@ const  { slice } = Array.prototype;
 
 import { inspect } from 'util';
 import { Observable } from 'rxjs';
+import { mapObjectsToAtoms } from './mapObjectsToAtoms';
+import { captureErrorStacks } from './captureErrorStacks';
 
 function defaultValueMapper(node, key, value, path, data) {
     return Observable.of({ path, value: node[key] = value });
@@ -17,7 +19,8 @@ function defaultPropsResolver(routerInstance) {
 }
 
 export function setHandler(lists, loader, mapValue, valueKeys = {},
-                           getInitialProps = defaultPropsResolver) {
+                           getInitialProps = defaultPropsResolver,
+                           unboxAtoms = true, unboxRefs = false) {
 
     if (typeofFunction !== typeof mapValue) {
         mapValue = defaultValueMapper;
@@ -67,6 +70,17 @@ export function setHandler(lists, loader, mapValue, valueKeys = {},
                     continue;
                 }
 
+                if (!(!vals || typeofObject !== typeof vals)) {
+                    switch (vals.$type) {
+                        case 'ref':
+                            vals = unboxRefs ? vals.value : vals;
+                            break;
+                        case 'atom':
+                            vals = unboxAtoms ? vals.value : vals;
+                            break;
+                    }
+                }
+
                 value = mapValue(value, key, vals, path, data);
 
             } while (++index < count);
@@ -82,7 +96,9 @@ export function setHandler(lists, loader, mapValue, valueKeys = {},
             return value;
         });
 
-        return values;
+        return values
+            .map(mapObjectsToAtoms)
+            .catch(captureErrorStacks);
     }
 }
 

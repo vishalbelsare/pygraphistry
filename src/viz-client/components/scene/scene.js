@@ -214,7 +214,7 @@ class Scene extends React.Component {
 
         const {
             sceneID, handleVboUpdates, pixelRatio,
-            socket, simulation, simCameraBounds,
+            falcor, socket, simulation, simCameraBounds,
         } = props;
 
         const scene = scenes[sceneID]();
@@ -233,7 +233,7 @@ class Scene extends React.Component {
 
             hasVBOListeners = true;
 
-            const vboSubjects = handleVboUpdates(socket, uri, renderState);
+            const vboSubjects = handleVboUpdates(socket, uri, renderState, falcor);
             vboUpdatesSource = vboSubjects.vboUpdates;
             vboVersionsSource = vboSubjects.vboVersions;
 
@@ -354,10 +354,10 @@ Scene = compose(
     getContext({
         play: PropTypes.number,
         socket: PropTypes.object,
+        falcor: PropTypes.object,
         pixelRatio: PropTypes.number,
         simulation: PropTypes.object,
         handleVboUpdates: PropTypes.func,
-        // selectToolbarItem: PropTypes.func
     })
 )(Scene);
 

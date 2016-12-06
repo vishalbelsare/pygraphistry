@@ -1,8 +1,11 @@
 const typeofNumber = 'number';
 const typeofObject = 'object';
 const  { slice } = Array.prototype;
+
 import { inspect } from 'util';
 import { Observable } from 'rxjs';
+import { mapObjectsToAtoms } from './mapObjectsToAtoms';
+import { captureErrorStacks } from './captureErrorStacks';
 
 function defaultPropsResolver(routerInstance) {
     const { request  = {} } = routerInstance;
@@ -61,11 +64,7 @@ export function getHandler(lists, loader, getInitialProps = defaultPropsResolver
             count = idxs.length;
 
             do {
-                if (value === undefined) {
-                    // vals[++valsId] = { value, path: path
-                    //     .concat(slice.call(idxs, index)) };
-                    break;
-                } else if (index === count || typeofObject !== typeof value) {
+                if (index === count || !value || typeofObject !== typeof value) {
                     vals[++valsId] = { value, path };
                     break;
                 } else if (type = value.$type) {
@@ -80,7 +79,9 @@ export function getHandler(lists, loader, getInitialProps = defaultPropsResolver
             return vals;
         });
 
-        return values;
+        return values
+            .map(mapObjectsToAtoms)
+            .catch(captureErrorStacks);
     }
 }
 
