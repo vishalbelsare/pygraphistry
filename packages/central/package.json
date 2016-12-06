@@ -23,7 +23,7 @@
     "mongodb": "~2.0.25",
     "node-s3-url-encode": "0.0.4",
     "request": "~2.54.0",
-    "rxjs": "5.0.0-rc.2",
+    "rxjs": "5.0.0-rc.4",
     "simpleflakes": "~1.2.3",
     "socket.io-client": "1.4.8",
     "source-map-support": "0.4.2"
