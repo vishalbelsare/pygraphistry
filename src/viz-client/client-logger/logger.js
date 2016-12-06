@@ -5,17 +5,21 @@ import _ from 'lodash';
 import bunyan from 'bunyan';
 
 
+// Preserve the original console.* functions, in case they get monkey-patched elsewhere
+export const originalConsole = window.originalConsole || _.merge({}, console);
+window.originalConsole = originalConsole;
+
+const levelToConsole = {
+    'trace': 'debug',
+    'debug': 'debug',
+    'info': 'info',
+    'warn': 'warn',
+    'error': 'error',
+    'fatal': 'error'
+};
+
 class BrowserConsoleStream {
     constructor() {
-        this.levelToConsole = {
-            'trace': 'debug',
-            'debug': 'debug',
-            'info': 'info',
-            'warn': 'warn',
-            'error': 'error',
-            'fatal': 'error',
-        };
-
         this.fieldsToOmit = [
             'v',
             'name',
@@ -31,20 +35,21 @@ class BrowserConsoleStream {
 
     write(rec) {
         const levelName = bunyan.nameFromLevel[rec.level];
-        const method = this.levelToConsole[levelName];
+        const method = levelToConsole[levelName] || 'log';
         const prunedRec = _.omit(rec, this.fieldsToOmit);
 
         if (_.isEmpty(prunedRec)) {
-            console[method](rec.msg);
+            originalConsole[method](rec.msg);
         } else if ('err' in prunedRec){
             const e = new Error(rec.err.message);
             e.stack = rec.err.stack;
-            rec.msg === rec.err.message ? console[method](e) : console[method](rec.msg, e);
+            rec.msg === rec.err.message ? originalConsole[method](e) : originalConsole[method](rec.msg, e);
         } else {
-            console[method](rec.msg, prunedRec);
+            originalConsole[method](rec.msg, prunedRec);
         }
     }
 }
+
 
 class BrowserForwarderStream{
     constructor() {}
@@ -112,7 +117,7 @@ export function clearMetadataField(fields) {
 };
 
 
-export function  addUserInfo(newUserInfo) {
+export function addUserInfo(newUserInfo) {
     return _.extend(parentLogger.fields.metadata.userInfo, newUserInfo);
 };
 
