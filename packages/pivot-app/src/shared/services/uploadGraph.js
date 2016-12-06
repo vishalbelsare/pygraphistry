@@ -18,7 +18,7 @@ function upload(etlService, apiKey, data) {
         return Observable.throw(new Error('No edges to upload!'));
     }
 
-    log.debug(data, 'Content to be ETLed');
+    log.trace(data, 'Content to be ETLed');
     const gzipped = gzipObservable(new Buffer(JSON.stringify(data), { level : 1}));
     return gzipped.switchMap(buffer =>
         upload0Wrapped(etlService, apiKey, buffer)
