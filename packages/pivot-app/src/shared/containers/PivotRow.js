@@ -29,7 +29,8 @@ import {
     Tooltip,
     Popover,
     Alert
-} from 'react-bootstrap'
+} from 'react-bootstrap';
+import DateRangePickerWrapper from './TimeRangeWidget.js';
 import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import _ from 'underscore';
@@ -44,7 +45,11 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
             <OverlayTrigger placement="top" overlay={
                 <Tooltip id={`tooltipActionPlay_${index}`}>Run step</Tooltip>
             } key={`${index}: entityRowAction_${index}`}>
-                <Button onClick={(ev) => searchPivot({index})}><Glyphicon glyph="play" /></Button>
+                <Button onClick={(ev) => searchPivot({index})} disabled={status.searching}>
+                    {
+                        status.searching ? <Glyphicon glyph="hourglass" /> : <Glyphicon glyph="play" />
+                    }
+                </Button>
             </OverlayTrigger>
         </ButtonGroup>
         <ButtonGroup style={{marginLeft: '0.7em'}}>
@@ -66,7 +71,7 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
                 :
                 <ButtonGroup style={{marginLeft: '0.7em'}}>
                     <OverlayTrigger placement="top" trigger="click" rootClose overlay={
-                        <Popover id={`tooltipActionError_${index}`} title="ERROR RUNNING PIVOT" className={styles['pivot-error-tooltip']}>
+                        <Popover id={`tooltipActionError_${index}`} title={status.title} className={styles['pivot-error-tooltip']}>
                             <span style={{color: 'red'}}>{status.message}</span>
                         </Popover>
                     } key={`${index}: entityRowAction_${index}`}>
@@ -75,10 +80,22 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
                         </Button>
                     </OverlayTrigger>
                 </ButtonGroup>
-
-
+        }{
+            status.info === true ?
+                <ButtonGroup style={{marginLeft: '0.7em'}}>
+                    <OverlayTrigger placement="top" trigger="click" rootClose overlay={
+                        <Popover id={`tooltipActionInfo_${index}`} title={status.title} className={styles['pivot-info-tooltip']}>
+                            <span>{ status.message }</span>
+                        </Popover>
+                    } key={`${index}: entityRowAction_${index}`}>
+                        <Button bsStyle="info">
+                            <Glyphicon glyph="info-sign" />
+                        </Button>
+                    </OverlayTrigger>
+                </ButtonGroup>
+                : null
         }
-        </div>
+    </div>
     );
 }
 
@@ -244,6 +261,21 @@ function renderComboCell(id, paramKey, paramValue, paramUI, handlers) {
     );
 }
 
+
+
+function renderDateRange(id, paramKey, paramValue, paramUI, handlers) {
+    return (
+        <div key={`pcell-${id}-${paramKey}`}>
+            <DateRangePickerWrapper
+                paramUI={paramUI}
+                paramValue={paramValue}
+                paramKey={paramKey}
+                setPivotAttributes={handlers.setPivotAttributes}
+            />
+        </div>
+    );
+}
+
 function renderPivotCell(id, paramKey, paramValue, paramUI, previousPivots, handlers) {
     switch (paramUI.inputType) {
         case 'text':
@@ -252,6 +284,8 @@ function renderPivotCell(id, paramKey, paramValue, paramUI, previousPivots, hand
             return renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, handlers);
         case 'combo':
             return renderComboCell(id, paramKey, paramValue, paramUI, handlers);
+        case 'daterange':
+            return renderDateRange(id, paramKey, paramValue, paramUI, handlers);
         default:
             throw new Error('Unknown pivot cell type:' + paramUI.inputType);
     }

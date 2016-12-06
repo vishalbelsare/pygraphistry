@@ -9,5 +9,9 @@
     },
     "graphistry": {
         "host": "https://staging.graphistry.com"
+    },
+    "splunk": {
+        "jobCacheTimeout": 3600,
+        "searchMaxTime": 10
     }
 }

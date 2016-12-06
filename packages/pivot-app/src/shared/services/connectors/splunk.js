@@ -1,10 +1,12 @@
 import logger from '../../../shared/logger.js';
 import conf from '../../../server/config.js';
+import { DataFrame, Row } from 'dataframe-js';
 
 import { Observable } from 'rxjs';
 import splunkjs from 'splunk-sdk';
-import stringHash from 'string-hash';
+import objectHash from 'object-hash';
 import VError from 'verror';
+
 
 const SPLUNK_HOST = conf.get('splunk.host');
 const SPLUNK_USER = conf.get('splunk.user');
@@ -23,6 +25,14 @@ const splunkLogin = Observable.bindNodeCallback(service.login.bind(service));
 const splunkGetJob = Observable.bindNodeCallback(service.getJob.bind(service));
 const splunkSearch = Observable.bindNodeCallback(service.search.bind(service));
 
+const searchParamDefaults = {
+    timeout: Math.max(0, conf.get('splunk.jobCacheTimeout')),
+    exec_mode: 'blocking',
+    earliest_time: '-7d',
+    max_time: conf.get('splunk.searchMaxTime')
+}
+
+
 export const SplunkConnector = {
     id:'splunk-connector',
     name : 'Splunk',
@@ -32,21 +42,22 @@ export const SplunkConnector = {
         message: null
     },
 
-    search : function search(query) {
+    search : function search(query, searchParamOverrides = {}) {
         // Generate a hash for the query so we can look it up in splunk
-        const jobId = `pivot-app::${stringHash(query)}`;
+        const hash = conf.get('splunk.jobCacheTimeout') > 0 ? objectHash.MD5({q: query, p: searchParamOverrides})
+                                                            : Date.now();
+        const jobId = `pivot-app::${hash}`;
 
         // Set the splunk search parameters
         const searchParams = {
+            ...searchParamDefaults,
+            ...searchParamOverrides,
             id: jobId,
-            timeout: '14400', // 4 hours
-            exec_mode: 'blocking',
-            earliest: '-7d'
         };
 
         // Used to indentifity logs
         const searchInfo = { query, searchParams };
-        log.debug( searchInfo,'Fetching results for splunk job: "%s"', jobId);
+        log.debug(searchInfo, 'Tentatively fetching cached results for splunk job: "%s"', jobId);
 
         // TODO Add this as part of splunk connector
         return splunkGetJob(jobId)
@@ -58,50 +69,64 @@ export const SplunkConnector = {
                     return splunkFetchJob();
                 });
             })
-            .catch(({data}) => Observable.throw(new VError({
-                name: 'SplunkParseError',
-                info: searchInfo
-            }, data.messages[0].text)))
+            .catch(e =>
+                Observable.throw(
+                    new VError(
+                        {name: 'SplunkSearchError', info: searchInfo},
+                        e.data.messages[0].text
+                    )
+                )
+            )
             .switchMap(job => {
                 const props = job.properties();
+
                 log.debug({
                     sid: job.sid,
                     eventCount: props.eventCount,
                     resultCount: props.resultCount,
                     runDuration: props.runDuration,
+                    messages: props.messages,
                     ttl: props.ttl
                 }, 'Search job properties');
+                log.trace(props, 'All job properties');
 
-                const getResults = Observable.bindNodeCallback(job.results.bind(job),
-                    function(results) {
-                        return ({results, job});
-                    });
-                const jobResults = getResults({count: job.properties().resultCount}).catch(
-                    (e) => {
-                        return Observable.throw(new Error(
-                            `${e.data.messages[0].text} ========>  Splunk Query: ${query}`));
-                        }
+                const getResults = Observable.bindNodeCallback(job.results.bind(job));
+                const timeLimitMsg = props.messages.find(msg =>
+                    msg.text.startsWith('Search auto-finalized after time limit')
                 );
-                return jobResults;
-            }).map(
-                function({results, job}) {
-                    const fields = results.fields;
-                    const rows = results.rows;
-                    const resultCount = job.properties().resultCount;
-                    const events = new Array(rows.length);
-                    var values;
-                    for(var i = 0; i < rows.length; i++) {
-                        events[i] = {};
-                        values = rows[i];
-                        for(var j = 0; j < values.length; j++) {
-                            var field = fields[j];
-                            var value = values[j];
-                            events[i][field] = value;
+
+                return getResults({count: props.resultCount, output_mode: 'json_cols'})
+                    .map(args => ({
+                        results: args[0],
+                        job: args[1],
+                        props: {
+                            ...props,
+                            isPartial: timeLimitMsg !== undefined
                         }
-                    }
-                    return { resultCount, events, searchId:job.sid };
-                }
-            );
+                    }))
+                    .catch(e =>
+                        Observable.throw(
+                            new VError(
+                                {name: 'SplunkSearchError2', info: searchInfo},
+                                e.data.messages[0].text
+                            )
+                        )
+                    );
+            }).map(({results, job, props}) => {
+                const columns = {};
+                results.fields.map((field, i) => {
+                    columns[field] = results.columns[i];
+                });
+                const df = new DataFrame(columns, results.fields);
+
+                return {
+                    resultCount: props.resultCount,
+                    isPartial: props.isPartial,
+                    events: df.toCollection(),
+                    df: df,
+                    searchId: job.sid
+                };
+            });
     },
 
     login: function login() {
@@ -131,7 +156,7 @@ export const SplunkConnector = {
                     return Observable.throw(
                         new VError({
                             name: 'UnhandledStatus',
-                        }, 'Uknown response')
+                        }, 'Unknown response')
                     );
                 }
             });

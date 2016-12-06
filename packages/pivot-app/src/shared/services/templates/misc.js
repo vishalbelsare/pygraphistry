@@ -1,7 +1,8 @@
-import { constructFieldString, SplunkPivot } from './SplunkPivot';
+import { SplunkPivot } from './SplunkPivot';
 import _ from 'underscore';
 import stringhash from 'string-hash';
 import { Observable} from 'rxjs';
+import moment from 'moment';
 
 
 export const searchSplunk = new SplunkPivot({
@@ -16,7 +17,9 @@ export const searchSplunk = new SplunkPivot({
         }
     },
     toSplunk: function (pivotParameters, pivotCache) {
-        return `search ${pivotParameters['query']} ${constructFieldString(this)} | head 500`;
+        const query = `search ${pivotParameters['query']} ${this.constructFieldString()} | head 1000`;
+
+        return { searchQuery: query };
     },
     encodings: {
         point: {
@@ -56,10 +59,13 @@ export const searchSplunkMap = new SplunkPivot({
                 `[| loadjob "${pivotCache[pivotId].splunkSearchId}"
                     | fields ${source} | dedup ${source}
                 ]`
-            ).join(' | append ');
-        return `search ${subsearch}
+        ).join(' | append ');
+
+        const query = `search ${subsearch}
             | fields ${source}, ${dest}
             | fields  - _*`;
+
+        return { searchQuery: query };
     },
     encodings: {
         point: {
@@ -79,7 +85,7 @@ const DATASET_ERROR_NODE_COLORS = {}
 export const searchGraphviz = new SplunkPivot({
     id: 'search-graphviz-logs',
     name: 'Graphviz Search',
-    pivotParameterKeys: ['query2', 'level'],
+    pivotParameterKeys: ['query2', 'level', 'time'],
     pivotParametersUI: {
         'query2': {
             inputType: 'text',
@@ -94,17 +100,25 @@ export const searchGraphviz = new SplunkPivot({
                 {value: 40, label: 'warn'},
                 {value: 50, label: 'error'},
             ]
+        },
+        'time': {
+            inputType: 'daterange',
+            default: moment.duration(2, 'day').toJSON()
         }
     },
     toSplunk: function (pivotParameters, pivotCache) {
         const q = pivotParameters['query2'];
         const l = pivotParameters['level'];
-        return `search (host=staging* OR host=labs*) source="/var/log/graphistry-json/*.log" ${q} level >= ${l}
-            | head 1000
+        const query = `search (host=staging* OR host=labs*) source="/var/log/graphistry-json/*.log" ${q} level >= ${l}
             | spath output=File0 path="err.stackArray{0}.file"
             | spath output=File1 path="err.stackArray{1}.file"
             | eval File00=File0 | eval file=if(File00="null", File1, File0)
-            ${constructFieldString(this)}`
+            ${this.constructFieldString()}`
+
+        return {
+            searchQuery: query,
+            searchParams: this.dayRangeToSplunkParams(pivotParameters.time.value),
+        };
     },
     encodings: {
         point: {

@@ -1,6 +1,9 @@
 import { Observable } from 'rxjs';
 import stringhash from 'string-hash';
 import request from 'request';
+import logger from '../../../shared/logger.js';
+const log = logger.createLogger('pivot-app', __filename);
+
 
 class BlazePivot {
     constructor( pivotDescription ) {

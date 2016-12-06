@@ -121,7 +121,7 @@ function renderInvestigation({status, pivots = [], templates, eventTable,
     return (
         <div className={styles.pivots}>
             { status && !status.ok ?
-                <Alert bsStyle={'danger'} className={styles.alert} onDismiss={dismissAlert}>
+                <Alert bsStyle={status.msgStyle || 'danger'} className={styles.alert} onDismiss={dismissAlert}>
                     <strong> {status.message} </strong>
                 </Alert>
                 : null

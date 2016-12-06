@@ -24,12 +24,12 @@ export function pivots({loadPivotsById, searchPivot}) {
         returns: `Number`,
         get: getPivotsHandler,
     }, {
-        route: `pivotsById[{keys}]['enabled']`,
+        route: `pivotsById[{keys}]['enabled', 'status']`,
         returns: `String`,
         get: getPivotsHandler,
         set: setPivotsHandler,
     }, {
-        route: `pivotsById[{keys}]['id', 'resultCount', 'resultSummary', 'status']`,
+        route: `pivotsById[{keys}]['id', 'resultCount', 'resultSummary']`,
         returns: `String`,
         get: getPivotsHandler,
     }, {
@@ -76,11 +76,13 @@ function captureErrorAndNotifyClient(pivotIds) {
         const status = {
             ok: false,
             code: errorCode,
-            message: `${cause.message} (code: ${errorCode})`
+            message: `${cause && cause.message || e.message} (code: ${errorCode})`,
+            title: 'Error running pivot!'
         };
 
         return Observable.from([
-            $pathValue(`pivotsById['${pivotIds}']['status']`, $error(status))
+            $pathValue(`pivotsById['${pivotIds}']['status']`, $error(status)),
+            $pathValue(`pivotsById['${pivotIds}']['enabled']`, false),
         ]);
     }
 }

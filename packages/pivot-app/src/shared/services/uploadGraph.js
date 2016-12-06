@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
-import DataFrame from '../DataFrame';
+import { DataFrame, Row } from 'dataframe-js';
+import FakeDataFrame from '../DataFrame';
 import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
@@ -17,6 +18,7 @@ function upload(etlService, apiKey, data) {
         return Observable.throw(new Error('No edges to upload!'));
     }
 
+    log.debug(data, 'Content to be ETLed');
     const gzipped = gzipObservable(new Buffer(JSON.stringify(data), { level : 1}));
     return gzipped.switchMap(buffer =>
         upload0Wrapped(etlService, apiKey, buffer)
@@ -43,12 +45,12 @@ function upload0(etlService, apiKey, data, cb) {
         callback: function (err, res, body) {
             if (err) { return cb(err); }
             try {
+                log.debug('Trying to parse response body', body)
                 const json = JSON.parse(body);
                 if (!json.success) {
-                    log.trace(body, 'body in success?');
+                    log.trace('Success flag unset:', json.success);
                     throw new Error(body);
                 }
-                log.debug('  -> Uploaded' + body);
                 return cb(undefined, body);
             } catch (e) {
                 return cb(e);
@@ -107,8 +109,8 @@ function createGraph(pivots) {
     })
     mergedPivots.graph = dedupEdges;
     mergedPivots.labels = _.map(
-            _.groupBy(mergedPivots.labels, label => label.node),
-            group => group[0]
+        _.groupBy(mergedPivots.labels, label => label.node),
+        group => group[0]
     );
 
     const newEdges = _.difference(mergedPivots.graph, previousGraph.graph);
@@ -116,26 +118,27 @@ function createGraph(pivots) {
     const newNodes = _.difference(mergedPivots.labels, previousGraph.labels);
     const removedNodes = _.difference(previousGraph.labels, mergedPivots.labels);
 
-    DataFrame.addEdges(newEdges);
-    DataFrame.removeEdges(removedEdges);
-    DataFrame.addNodes(newNodes);
-    DataFrame.removeNodes(removedNodes);
+    FakeDataFrame.addEdges(newEdges);
+    FakeDataFrame.removeEdges(removedEdges);
+    FakeDataFrame.addNodes(newNodes);
+    FakeDataFrame.removeNodes(removedNodes);
 
     const uploadData = {
-        graph: DataFrame.getData().edges,
-        labels: DataFrame.getData().nodes,
+        graph: FakeDataFrame.getData().edges,
+        labels: FakeDataFrame.getData().nodes,
         name, type, bindings
     };
 
     previousGraph.graph = uploadData.graph;
     previousGraph.labels = uploadData.labels;
 
-    return uploadData;
+    return { pivots, data:uploadData };
 }
 
-function makeEventTable(data) {
-    function fieldSummary(events, field) {
-        const distinct =  _.uniq(_.pluck(events, field));
+function makeEventTable({pivots}) {
+    function fieldSummary(mergedData, field) {
+
+        const distinct =  mergedData.distinct(field).toArray();
 
         var res = {
             numDistinct: distinct.length
@@ -148,24 +151,32 @@ function makeEventTable(data) {
         return res;
     }
 
+    const dataFrames = pivots
+        .filter(pivot => pivot.df !== undefined)
+        .map(pivot => pivot.df);
 
-    const blackListedFields = ['pointColor', 'pointSize', 'type'];
-    const events = data.labels.filter(x => x.type === 'EventID')
-
-    const fields = _.difference(
-        _.uniq(_.flatten(events.map(e => _.keys(e)))),
-        blackListedFields
+    const fields = _.uniq(
+        _.flatten(
+            dataFrames.map(df => df.listColumns())
+        )
     );
+    log.debug('Union of all pivot fields', fields);
 
+    const zeroDf = new DataFrame([], fields);
+    const mergedData = dataFrames.reduce((a, b) => {
+        return a.union(new DataFrame(b, fields));
+    }, zeroDf);
 
     var fieldSummaries = {};
     fields.forEach(field =>
-        fieldSummaries[field] = fieldSummary(events, field)
-    )
+        fieldSummaries[field] = fieldSummary(mergedData, field)
+    );
+
+    const table = mergedData.toCollection();
 
     return {
         fieldSummaries: fieldSummaries,
-        table: _.map(events, e => _.omit(e, blackListedFields))
+        table: table
     };
 }
 
@@ -180,16 +191,29 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                         .map(({app, pivot}) => pivot)
                         .toArray()
                         .map(createGraph),
-                    ({user}, data) => ({user, data})
+                    ({user}, {pivots, data}) => ({user, pivots, data})
                 )
-                .switchMap(({user, data}) =>
-                    upload(user.etlService, user.apiKey, data)
-                        .map(dataset => ({user, dataset, data}))
-                )
-                .do(({user, dataset, data}) => {
-                    investigation.eventTable = makeEventTable(data);
-                    investigation.url = `${user.vizService}&dataset=${dataset}`;
-                    investigation.status = {ok: true};
+                .switchMap(({user, data, pivots}) => {
+                    if (data.graph.length > 0) {
+                        return upload(user.etlService, user.apiKey, data)
+                                    .map(dataset => ({user, dataset, data, pivots}));
+                    } else {
+                        log.debug('Graph is empty, skipping upload');
+                        return Observable.of({user, data, pivots});
+                    }
+                })
+                .do(({user, dataset, data, pivots}) => {
+                    investigation.eventTable = makeEventTable({data, pivots});
+                    if (dataset) {
+                        investigation.url = `${user.vizService}&dataset=${dataset}`;
+                        investigation.status = {ok: true};
+                    } else {
+                        investigation.status = {
+                            ok: false,
+                            message: 'No events found!',
+                            msgStyle: 'info',
+                        }
+                    }
                     log.debug('  URL: ' + investigation.url);
                 }),
             ({app, investigation}) => ({app, investigation})

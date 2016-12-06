@@ -1,10 +1,10 @@
+import _ from 'underscore';
+import moment from 'moment';
 import { SplunkConnector } from '../connectors';
 import { shapeSplunkResults } from '../shapeSplunkResults.js';
 import logger from '../../../shared/logger.js';
-
-import _ from 'underscore';
-
 const log = logger.createLogger('SplunkPivot', __filename);
+
 
 export class SplunkPivot {
     constructor( pivotDescription ) {
@@ -26,22 +26,57 @@ export class SplunkPivot {
 
     searchAndShape({ app, pivot, pivotCache }) {
 
-        pivot.searchQuery = this.toSplunk(pivot.pivotParameters, pivotCache);
+        const {searchQuery, searchParams} = this.toSplunk(pivot.pivotParameters, pivotCache);
         pivot.template = this;
 
-        return this.connector.search(pivot.searchQuery)
-            .do(({ resultCount, events, searchId }) => {
+        return this.connector.search(searchQuery, searchParams)
+            .do(({ resultCount, events, searchId, df, isPartial }) => {
+                pivot.df = df;
                 pivot.resultCount = resultCount;
                 pivot.results = events;
                 pivot.splunkSearchId = searchId;
-                pivotCache[pivot.id] = { results: pivot.results,
-                    query:pivot.searchQuery,
-                    splunkSearchId: pivot.splunkSearchId };
+                pivot.isPartial = isPartial;
+                pivotCache[pivot.id] = {
+                    results: pivot.results,
+                    query: searchQuery,
+                    splunkSearchId: pivot.splunkSearchId
+                };
             })
             .map(() => shapeSplunkResults({app, pivot}));
     }
 
+    dayRangeToSplunkParams({ startDate, endDate }) {
+        if (startDate && endDate) {
+            const startDay = moment(startDate).startOf('day');
+            const endDay = moment(endDate).startOf('day');
 
+            return {
+                'earliest_time': startDay.unix(),
+                'latest_time': endDay.unix(),
+            };
+        } else {
+            log.debug('Got undefined day range, cannot convert to Splunk params');
+        }
+    }
+
+    //Assumes previous pivots have populated pivotCache
+    expandTemplate(text, pivotCache) {
+        log.debug({toExpand: text}, 'Expanding');
+        return buildLookup(text, pivotCache);
+    }
+
+    constructFieldString() {
+        const fields = (this.connections || []).concat(this.attributes || []);
+        if (fields.length > 0) {
+            return `| rename _cd as EventID
+                    | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
+                    | fields "c_time" as time, "EventID", "${fields.join('","')}" | fields - _*`;
+        } else { // If there are no fields, load all
+            return `| rename _cd as EventID
+                    | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
+                    | rename "c_time" as time | fields * | fields - _*`;
+        }
+    }
 }
 
 function buildLookup(text, pivotCache) {
@@ -70,27 +105,4 @@ function buildLookup(text, pivotCache) {
         }
         return `${ source } ${ match } | head 10000 `;
     }
-}
-
-
-//Assumes previous pivots have populated pivotCache
-export const expandTemplate = (text, pivotCache) => {
-    log.debug({toExpand: text}, 'Expanding');
-    return buildLookup(text, pivotCache);
-};
-
-
-export function constructFieldString(pivotTemplate) {
-    const fields = (pivotTemplate.connections || [])
-        .concat(pivotTemplate.attributes || []);
-    if (fields.length > 0) {
-        return `| rename _cd as EventID
-                | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
-                | fields "c_time" as time, "EventID", "${fields.join('","')}" | fields - _*`;
-    } else { // If there are no fields, load all
-        return `| rename _cd as EventID
-                | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
-                | rename "c_time" as time | fields * | fields - _*`;
-    }
-
 }

@@ -1,4 +1,4 @@
-import { expandTemplate, constructFieldString, SplunkPivot } from '../connectors/splunk.js';
+import { SplunkPivot } from '../connectors/splunk.js';
 import stringhash from 'string-hash';
 
 const SPLUNK_INDICES = {
@@ -60,7 +60,7 @@ const SEARCH_SPLUNK_HEALTH = new SplunkPivot({
     name: 'Search Splunk (health)',
 
     toSplunk: function (pivotParameters, pivotCache) {
-        return `search ${SPLUNK_INDICES.HEALTH} ${pivotParameters['input']} ${constructFieldString(this)}`
+        return `search ${SPLUNK_INDICES.HEALTH} ${pivotParameters['input']} ${this.constructFieldString()}`
     }
 });
 
@@ -73,7 +73,7 @@ const SEARCH_PATIENT = new SplunkPivot({
     name: 'Search Patient',
 
     toSplunk: function (pivotParameters, pivotCache) {
-        return `search PatientID=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
+        return `search PatientID=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${this.constructFieldString()}`
     }
 
 });
@@ -88,7 +88,7 @@ const SEARCH_LAB = new SplunkPivot({
     transport: 'Splunk',
 
     toSplunk: function (pivotParameters, pivotCache) {
-        return `search LabName=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${constructFieldString(this)}`
+        return `search LabName=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${this.constructFieldString()}`
     }
 
 });
@@ -105,7 +105,7 @@ const PATIENT = new SplunkPivot({
         const attribs = 'PatientID';
         const rawSearch =
             `[{{${pivotParameters['input']}}}] -[${attribs}]-> [${SPLUNK_INDICES.HEALTH}]`;
-        return `search ${expandTemplate(rawSearch, pivotCache)} ${constructFieldString(this)}`;
+        return `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
     },
 
 });

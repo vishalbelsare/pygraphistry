@@ -16,7 +16,15 @@ export function searchPivot({ loadPivotsById, pivotIds }) {
 
             return template.searchAndShape({app, pivot, pivotCache})
                 .do(({pivot}) => {
-                    pivot.status = {ok: true};
+                    pivot.status = {ok: true, searching: false};
+                    if (pivot.isPartial) {
+                        _.extend(pivot.status, {
+                            info: true,
+                            title: 'Results are not exhaustive!',
+                            message: 'The search hit the maximum time allowed. Showing only the most recent events found.'
+                        });
+                    }
+
                 })
                 .catch((e) =>
                     Observable.throw(

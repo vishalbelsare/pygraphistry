@@ -21,7 +21,7 @@ var conf = convict({
         doc: 'Pivot-app port number',
         format: 'port',
         default: 80,
-        arg:'port',
+        arg: 'port',
         env: 'PORT'
     },
     pivotApp: {
@@ -37,22 +37,22 @@ var conf = convict({
             doc: `Log levels - ['trace', 'debug', 'info', 'warn', 'error', 'fatal']`,
             format: ['trace', 'debug', 'info', 'warn', 'error', 'fatal'],
             default: 'info',
-            arg:'log-level',
-            env:'LOG_LEVEL'
+            arg: 'log-level',
+            env: 'LOG_LEVEL'
         },
         file: {
             doc: 'Log so a file intead of standard out',
             format: String,
             default: undefined,
-            arg:'log-file',
-            env:'LOG_FILE'
+            arg: 'log-file',
+            env: 'LOG_FILE'
         },
         logSource: {
             doc: 'Logs line numbers with debug statements. Bad for Perf.',
             format: [ true, false ],
             default: false,
-            arg:'log-source',
-            env:'LOG_SOURCE'
+            arg: 'log-source',
+            env: 'LOG_SOURCE'
         }
     },
     graphistry: {
@@ -67,8 +67,8 @@ var conf = convict({
             doc: `The location of Graphistry's Server`,
             format: String,
             default: 'https://labs.graphistry.com',
-            arg:'graphistry-host',
-            env:'GRAPHISTRY_HOST'
+            arg: 'graphistry-host',
+            env: 'GRAPHISTRY_HOST'
         }
     },
     splunk: {
@@ -76,22 +76,36 @@ var conf = convict({
             doc: 'Splunk password',
             format: String,
             default: undefined,
-            arg:'splunk-key',
+            arg: 'splunk-key',
             env: 'SPLUNK_KEY'
         },
         user: {
             doc: 'Splunk user name',
             format: String,
             default: undefined,
-            arg:'splunk-user',
+            arg: 'splunk-user',
             env: 'SPLUNK_USER'
         },
         host: {
             doc: 'The hostname of the Splunk Server',
             format: String,
             default: undefined,
-            arg:'splunk-host',
+            arg: 'splunk-host',
             env: 'SPLUNK_HOST'
+        },
+        jobCacheTimeout: {
+            doc: 'Time (in seconds) during which Splunk caches the query results. Set to -1 to disable caching altogether',
+            format: Number,
+            default: 14400,
+            arg: 'splunk-cache-timeout',
+            env: 'SPLUNK_CACHE_TIMEOUT'
+        },
+        searchMaxTime: {
+            doc: 'Maximum time (in seconds) allowed for executing a Splunk search query.',
+            format: Number,
+            default: 20,
+            arg: 'splunk-search-max-time',
+            env: 'SPLUNK_SEARCH_MAX_TIME',
         }
     }
 });

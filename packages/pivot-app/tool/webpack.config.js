@@ -111,11 +111,13 @@ function clientConfig(buildOpts = {}) {
             'bunyan',
             'core-js',
             'dom-helpers',
+            'es-abstract',
             'falcor-http-datasource',
             //'fbjs', fbjs does not handle being in the vendor bundle.
             'inline-style-prefixer',
             'lodash',
             'minimatch',
+            'moment',
             'ncp',
             'querystring-es3',
             'pegjs-util',
@@ -123,16 +125,19 @@ function clientConfig(buildOpts = {}) {
             'react',
             'react-bootstrap',
             'react-bootstrap-table',
+            'react-dates',
             'react-input-autosize',
             'react-overlays',
             'react-redux',
             'react-select',
             'react-split-pane',
             'react-style-proptype',
+            'react-portal',
             'react-toastr',
             'recompose',
             'redux',
             'redux-observable',
+            'rimraf',
             'rxjs',
             'source-map',
             'source-map-support',
@@ -164,7 +169,16 @@ function clientConfig(buildOpts = {}) {
                 ExtractTextPlugin.extract({
                     loader: 'css?module&minimize&localIdentName=[local]_[hash:6]!postcss!less'
                 })
+        },
+        {
+            test: /\.scss$/,
+            loader: buildOpts.isDev ?
+                'style!css?module&-minimize&localIdentName=[local]_[hash:6]!postcss!sass' :
+                ExtractTextPlugin.extract({
+                    loader: 'css?module&minimize&localIdentName=[local]_[hash:6]!postcss!sass'
+                })
         }
+
     ];
 
     config.plugins = [
@@ -264,6 +278,10 @@ function serverConfig(buildOpts = {}) {
         {
             test: /\.less$/,
             loader: `css/locals?module&localIdentName=[local]_[hash:6]!postcss!less`
+        },
+        {
+            test: /\.scss$/,
+            loader: `css/locals?module&localIdentName=[local]_[hash:6]!postcss!sass`
         }
     ];
 
