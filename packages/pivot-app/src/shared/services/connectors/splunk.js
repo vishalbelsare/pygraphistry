@@ -70,11 +70,13 @@ export const SplunkConnector = {
                 });
             })
             .catch(e => {
-                log.info(e, 'Splunk search failed.')
-                return Observable.throw(new VError({
-                    name: 'SplunkParseError',
-                    info: searchInfo
-                }, e.data.messages[0].text))
+                log.error(e, 'Splunk search failed');
+                return Observable.throw(
+                    new VError(
+                        {name: 'SplunkParseError',info: searchInfo},
+                        e.data.messages[0].text
+                    )
+                );
             })
             .switchMap(job => {
                 const props = job.properties();
@@ -87,29 +89,32 @@ export const SplunkConnector = {
                     ttl: props.ttl
                 }, 'Search job properties');
 
-                const getResults = Observable.bindNodeCallback(job.results.bind(job),
-                    function(results) {
-                        return ({results, job});
-                    });
-                const jobResults = getResults({count: job.properties().resultCount, output_mode: 'json_cols'}).catch(
-                    (e) => {
-                        return Observable.throw(new Error(
-                            `${e.data.messages[0].text} ========>  Splunk Query: ${query}`));
-                        }
+                const getResults = Observable.bindNodeCallback(
+                    job.results.bind(job),
+                    (results) => ({results, job})
                 );
-                return jobResults;
-            }).map(
-                function({results, job}) {
-                    const columns = {};
-                    results.fields.map((field, i) => {
-                        columns[field] = results.columns[i];
+
+                return getResults({count: props.resultCount, output_mode: 'json_cols'})
+                    .catch(e => {
+                        log.error(e, 'Retrieving Splunk query results failed');
+                        return Observable.throw(
+                            new Error(`${e.data.messages[0].text} ========>  Splunk Query: ${query}`)
+                        );
                     });
-                    const df = new DataFrame(columns, results.feilds);
-                    const events = df.toCollection();
-                    const resultCount = job.properties().resultCount;
-                    return { resultCount, events, df, searchId:job.sid };
-                }
-            );
+            }).map(({results, job}) => {
+                const columns = {};
+                results.fields.map((field, i) => {
+                    columns[field] = results.columns[i];
+                });
+                const df = new DataFrame(columns, results.feilds);
+
+                return {
+                    resultCount: job.properties().resultCount,
+                    events: df.toCollection(),
+                    df: df,
+                    searchId: job.sid
+                };
+            });
     },
 
     login: function login() {
@@ -139,7 +144,7 @@ export const SplunkConnector = {
                     return Observable.throw(
                         new VError({
                             name: 'UnhandledStatus',
-                        }, 'Uknown response')
+                        }, 'Unknown response')
                     );
                 }
             });
