@@ -117,7 +117,7 @@ export const SplunkConnector = {
                 results.fields.map((field, i) => {
                     columns[field] = results.columns[i];
                 });
-                const df = new DataFrame(columns, results.feilds);
+                const df = new DataFrame(columns, results.fields);
 
                 return {
                     resultCount: props.resultCount,
