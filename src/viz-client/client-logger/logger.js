@@ -108,18 +108,21 @@ export function createLogger(module, fileName) {
 export function addMetadataField(metadata) {
     //metadata is global, same for all loggers
     if(!_.isObject(metadata)) { throw new Error('metadata must be an object'); }
+    parentLogger.fields.metadata = parentLogger.fields.metadata || {};
     return _.extend(parentLogger.fields.metadata, metadata);
-};
+}
 
 
 export function clearMetadataField(fields) {
     _.each(fields, function (field) { delete parentLogger.fields.metadata[field]; });
-};
+}
 
 
 export function addUserInfo(newUserInfo) {
+    parentLogger.fields.metadata = parentLogger.fields.metadata || {};
+    parentLogger.fields.metadata.userInfo = parentLogger.fields.metadata.userInfo || {};
     return _.extend(parentLogger.fields.metadata.userInfo, newUserInfo);
-};
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Browser error hooks
