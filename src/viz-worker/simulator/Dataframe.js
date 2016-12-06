@@ -1495,7 +1495,6 @@ Dataframe.prototype.getVersion = function (type, attrName) {
 Dataframe.prototype.getCell = function (index, type, attrName) {
 
     const attributes = this.data.attributes[type];
-    const numberPerGraphComponent = attributes[attrName].numberPerGraphComponent;
 
     // TODO FIXME HACK:
     // So computed column manager can work, we need to pass through calls from here
@@ -1509,40 +1508,44 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
         return this.getLocalBuffer(attrName)[index];
     }
 
-
+    const column = attributes[attrName];
+    const numberPerGraphComponent = column.numberPerGraphComponent;
 
     // First try to see if have values already calculated / cached for this frame
 
     // Check to see if it's computed and version matches that of computed column.
     // Computed column versions reflect dependencies between computed columns.
-    const computedVersionMatches = !(attributes[attrName].computed &&
-        (attributes[attrName].computedVersion !== this.computedColumnManager.getColumnVersion(type, attrName))
+    const computedVersionMatches = !(column.computed &&
+        (column.computedVersion !== this.computedColumnManager.getColumnVersion(type, attrName))
     );
 
-    if (computedVersionMatches && !attributes[attrName].dirty && attributes[attrName].values) {
+    if (computedVersionMatches && !column.dirty && column.values) {
 
         // TODO: Deduplicate this code from dataframe and computed column manager
         if (numberPerGraphComponent === 1) {
-            return attributes[attrName].values[index];
+            return column.values[index];
         } else {
-            const ArrayVariant = attributes[attrName].ArrayVariant || Array;
+            const ArrayVariant = column.ArrayVariant || Array;
             const returnArr = new ArrayVariant(numberPerGraphComponent);
             for (let j = 0; j < returnArr.length; j++) {
-                returnArr[j] = attributes[attrName].values[index*numberPerGraphComponent + j];
+                returnArr[j] = column.values[index*numberPerGraphComponent + j];
             }
             return returnArr;
         }
     }
 
     // If it's calculated and needs to be recomputed
-    if (attributes[attrName].computed && (!computedVersionMatches || attributes[attrName].dirty)) {
+    if (column.computed && (!computedVersionMatches || column.dirty)) {
         return this.computedColumnManager.getValue(this, type, attrName, index);
     }
 
     // If it's not calculated / cached, and filtered use last masks (parent) to index into already
     // calculated values
-    if (attributes[attrName].dirty && attributes[attrName].dirty.cause === 'filter') {
-        const parentIndex = this.lastMasks.getIndexByType(type, index);
+    if (column.dirty && column.dirty.cause === 'filter') {
+        let parentIndex = this.lastMasks.getIndexByType(type, index);
+        if (parentIndex === undefined) {
+            parentIndex = index;
+        }
         return this.rawdata.attributes[type][attrName].values[parentIndex];
     }
 

@@ -29,7 +29,7 @@ export function histograms(path, base) {
         const getHistograms = getHandler(path.concat('histogram'), loadHistogramsById);
         const setHistograms = setHandler(path.concat('histogram'), loadHistogramsById);
 
-        const addFilterHandler = addExpressionHandler({
+        const addFilter = addExpressionHandler({
             openPanel: true,
             panelSide: 'left',
             listName: 'filters',
@@ -37,17 +37,11 @@ export function histograms(path, base) {
             expressionType: 'filter',
         });
 
-        const addFilter = function(addExpr) {
-            return function(path, [expression]) {
-                return addExpr.call(this, path, [expression]);
-            }
-        }(addExpressionHandler({
-            openPanel: true,
-            panelSide: 'left',
+        const removeFilter = removeExpressionHandler({
             listName: 'filters',
-            addItem: addExpression,
             expressionType: 'filter',
-        }));
+            removeItem: removeExpressionById
+        });
 
         const addHistogramHandler = function(addExpr) {
             return function(path, callArgs) {
@@ -63,12 +57,6 @@ export function histograms(path, base) {
             listName: 'histograms',
             mapName : 'histogramsById',
         }));
-
-        const removeFilter = removeExpressionHandler({
-            listName: 'filters',
-            expressionType: 'filter',
-            removeItem: removeExpressionById
-        });
 
         const removeHistogramHandler = removeExpressionHandler({
             listName: 'histograms',
@@ -213,15 +201,14 @@ export function histograms(path, base) {
 
                 // Todo: move most of this into a service so we can run this route on the client.
 
-                const { expressionsById = {} } = view;
-
+                const { selection, expressionsById = {} } = view;
                 const viewPath = `
                         workbooksById['${workbook.id}']
                             .viewsById['${view.id}']`;
-
-                var histogramPath = `${viewPath}
+                const histogramPath = `${viewPath}
                     .histogramsById['${histogram.id}']`;
 
+                let create = false;
                 let { bins = [], filter: filterRef } = histogram;
                 let filter, query = histogramFilterQuery(histogram, binIndexes);
 
@@ -242,40 +229,39 @@ export function histograms(path, base) {
                     if (!filterRef || !filter) {
                         // If no filter for this histogram, just return an invalidation
                         return Observable.of(
-                            $value(`${histogramPath}.range`, []),
-                            $value(`${histogramPath}.filter.enabled`, true)
-                        );
+                            $invalidate(`${histogramPath}.filter`),
+                                 $value(`${histogramPath}.range`, []));
+                                 // $value(`${histogramPath}.filter.enabled`, true)
                     }
                     return removeFilter
                         .call(this, path, [filter.id])
-                        .startWith(
-                            $value(`${histogramPath}.range`, []),
-                            $value(`${histogramPath}.filter.enabled`, true)
-                        );
+                        .startWith($invalidate(`${histogramPath}.filter`),
+                                        $value(`${histogramPath}.range`, []));
+                                        // $value(`${histogramPath}.filter.enabled`, true))
                 } else if (!filter) {
-
+                    create = true;
                     filter = createFilter({
                         query,
                         name: histogram.name,
                         dataType: histogram.dataType,
                         componentType: histogram.componentType
                     });
-
-                    return Observable.of(
-                            $value(`${histogramPath}.range`,
-                                           histogram.range = binIndexes),
-                            $value(`${
-                                histogramPath}.filter`,
-                                     histogram.filter = $ref(`${viewPath}
-                                        .expressionsById['${filter.id}']`))
-                        )
-                        .concat(addFilter.call(this, path, [{
-                            ...filter, readOnly: true
-                        }]));
                 }
 
-                histogram.filter = $ref(`${viewPath}
-                    .expressionsById['${filter.id}']`);
+                const filterPath = `${viewPath}
+                    .expressionsById['${filter.id}']`;
+
+                histogram.range = binIndexes;
+                histogram.filter = $ref(filterPath);
+
+                if (create) {
+                    return addFilter.call(this, path, [{
+                        ...filter, readOnly: true
+                    }])
+                    .startWith($value(`${filterPath}.enabled`, true),
+                               $value(`${histogramPath}.range`, histogram.range),
+                               $value(`${histogramPath}.filter`, histogram.filter));
+                }
 
                 expressionsById[filter.id] = filter = {
                     ...filter,
@@ -285,25 +271,27 @@ export function histograms(path, base) {
 
                 return maskDataframe({ view }).mergeMap(() => {
 
-                    var filterPath = `${viewPath}
-                        .expressionsById['${filter.id}']`;
-
                     // If the view has histograms, invalidate the
                     // relevant fields so they're recomputed if the
                     // histograms panel is open, or the next time the
                     // panel is opened.
-                    return [
-
+                    const pathValues = [
                         $invalidate(`${viewPath}.labelsByType`),
                         $invalidate(`${viewPath}.inspector.rows`),
-                        $invalidate(`${viewPath}.selection.histogramsById`),
-
                         $value(`${viewPath}.highlight.darken`, false),
+                        $value(`${histogramPath}.range`, binIndexes),
+                        $value(`${histogramPath}.filter`, histogram.filter),
                         $value(`${filterPath}.input`, filter.input),
                         $value(`${filterPath}.enabled`, filter.enabled),
-                        $value(`${histogramPath}.range`, binIndexes),
-                        $value(`${histogramPath}.filter`, histogram.filter)
                     ];
+
+                    if (selection && selection.mask &&
+                        selection.type === 'window') {
+                        pathValues.push($invalidate(`
+                            ${viewPath}.selection.histogramsById`));
+                    }
+
+                    return pathValues;
                 });
             });
         }
@@ -341,9 +329,8 @@ export function histograms(path, base) {
                         workbooksById['${workbook.id}']
                             .viewsById['${view.id}']
                             .highlight['${componentType}']`,
-                        $atom((darken = darken || (
-                                        elements && elements.length > 0))
-                            && elements || elements)
+                        $atom((darken = darken || (elements && elements.length > 0)) &&
+                                                   elements || elements)
                     ));
 
                 return values.concat($value(`

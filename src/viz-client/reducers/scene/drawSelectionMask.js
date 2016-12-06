@@ -1,5 +1,5 @@
-import { createSubject, SceneGestures } from 'viz-client/reducers/support';
 import { SCENE_TOUCH_START } from 'viz-shared/actions/scene';
+import { createSubject, SceneGestures } from 'viz-client/reducers/support';
 import { atom as $atom, pathValue as $value } from '@graphistry/falcor-json-graph';
 
 export function drawSelectionMask(actions) {
@@ -32,9 +32,12 @@ export function drawSelectionMask(actions) {
 
 export function toValuesAndInvalidations({ rect, falcor, refreshMask }) {
     return {
-        falcor,
+        falcor: refreshMask ?
+            falcor : falcor.withoutDataSource(),
         values: [
-            $value(`selection.mask`, $atom(rect))
+            $value(`selection.mask`, $atom(rect)),
+            $value(`selection.type`, rect ? 'window' : null),
+            $value(`selection.controls[1].selected`, !!rect)
         ],
         invalidations: !refreshMask ? undefined : [
             `inspector.rows`,

@@ -1,4 +1,6 @@
 const  { isArray } = Array;
+const typeofObject = 'object';
+const typeofFunction = 'function';
 const  { slice } = Array.prototype;
 
 import { inspect } from 'util';
@@ -17,9 +19,10 @@ function defaultPropsResolver(routerInstance) {
 }
 
 export function setHandler(lists, loader, mapValue, valueKeys = {},
-                           getInitialProps = defaultPropsResolver) {
+                           getInitialProps = defaultPropsResolver,
+                           unboxAtoms = true, unboxRefs = false) {
 
-    if (typeof mapValue !== 'function') {
+    if (typeofFunction !== typeof mapValue) {
         mapValue = defaultValueMapper;
     }
 
@@ -67,13 +70,24 @@ export function setHandler(lists, loader, mapValue, valueKeys = {},
                     continue;
                 }
 
+                if (!(!vals || typeofObject !== typeof vals)) {
+                    switch (vals.$type) {
+                        case 'ref':
+                            vals = unboxRefs ? vals.value : vals;
+                            break;
+                        case 'atom':
+                            vals = unboxAtoms ? vals.value : vals;
+                            break;
+                    }
+                }
+
                 value = mapValue(value, key, vals, path, data);
 
             } while (++index < count);
 
-            if (!value || typeof value !== 'object') {
+            if (!value || typeof value !== typeofObject) {
                 value = [{ path, value }];
-            } else if (typeof value.subscribe !== 'function' && !isArray(value)) {
+            } else if (!isArray(value) && typeofFunction !== typeof value.subscribe) {
                 if (!value.path) {
                     value = { path, value };
                 }
@@ -82,14 +96,9 @@ export function setHandler(lists, loader, mapValue, valueKeys = {},
             return value;
         });
 
-        return (values
+        return values
             .map(mapObjectsToAtoms)
-            // .do((pv) => {
-            //     console.log(`set: ${JSON.stringify(json)}`);
-            //     console.log(`res: ${JSON.stringify(pv.path)}`);
-            // })
-            .catch(captureErrorStacks)
-        );
+            .catch(captureErrorStacks);
     }
 }
 
@@ -97,7 +106,7 @@ function getListsAndSuffixes(state, suffix, lists, depth, json) {
 
     if (!json || json.$type ||
         depth === lists.length ||
-        typeof json !== 'object') {
+        typeofObject !== typeof json) {
         suffix.push(json);
     } else {
 
@@ -123,7 +132,7 @@ function getListsAndSuffixes(state, suffix, lists, depth, json) {
 
 function expandJSON(json, index, expansionState, valueKeys = {}) {
 
-    if (!json || json.$type || typeof json !== 'object') {
+    if (!json || typeofObject !== typeof json || json.$type) {
         return [expansionState];
     }
 

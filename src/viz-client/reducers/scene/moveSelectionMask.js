@@ -1,6 +1,6 @@
-import { createSubject, SceneGestures } from 'viz-client/reducers/support';
 import { toValuesAndInvalidations } from './drawSelectionMask';
 import { SELECTION_MASK_TOUCH_START } from 'viz-shared/actions/scene';
+import { createSubject, SceneGestures } from 'viz-client/reducers/support';
 import { atom as $atom, pathValue as $value } from '@graphistry/falcor-json-graph';
 
 export function moveSelectionMask(actions) {
@@ -8,8 +8,11 @@ export function moveSelectionMask(actions) {
     const moveMaskStarts = SceneGestures
         .startFromActions(actions
             .ofType(SELECTION_MASK_TOUCH_START)
-            .filter(({ simulating, selectionMask, selectionType }) => (
-                !simulating && selectionMask && selectionType === 'window'
+            .filter(({ event, simulating, selectionMask, selectionType }) => (
+                !simulating &&
+                selectionMask &&
+                selectionType === 'window' && !(
+                event.getModifierState('Shift'))
             ))
         );
 

@@ -23,19 +23,17 @@ export function views(path, base) {
 
                 view[key] = value;
 
-                let obs = Observable.of(0);
+                const viewPath = path.slice(0, -1);
+                let obs = Observable.of({ path, value });
                 const { filters, exclusions } = view;
 
                 if ((filters && filters.length) || (exclusions && exclusions.length)) {
-                                                  // ignore dataframe errors
-                    obs = maskDataframe({ view }).catch((err) => Observable.of(0));
+                    obs = maskDataframe({ view }).mapTo({ path, value });
                 }
 
-                return obs
-                    .mapTo({ path, value })
-                    .concat(Observable.of($invalidate(
-                        path.slice(0, -1).concat('labelsByType')
-                    )));
+                return obs.concat(Observable.of($invalidate(
+                    [...viewPath, 'labelsByType']
+                )));
             }));
 
         return [{
@@ -104,7 +102,17 @@ export function views(path, base) {
                     Object.keys(column).map((key) => $value(
                         path(index, key), column[key]
                     ))),
-                    [$value(path('length'), columns.length)]
+                    [
+                        $value(path('length'), columns.length),
+                        $invalidate(`
+                            workbooksById['${workbookId}']
+                                .viewsById['${viewId}']
+                                .labelsByType`),
+                        $invalidate(`
+                            workbooksById['${workbookId}']
+                                .viewsById['${viewId}']
+                                .inspector.rows`)
+                    ]
                 );
 
                 function path(...keys) {

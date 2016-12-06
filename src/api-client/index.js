@@ -463,11 +463,7 @@ class Graphistry extends Observable {
         return new this(view.call('exclusions.add', [expr])
             .map(({ json }) => json.toJSON())
             .toPromise());
-
     }
-
-
-
 
     /**
      * Add an to the visualization with the given expression
@@ -497,6 +493,7 @@ class Graphistry extends Observable {
 
             //models/camera.js
             'zoom': ['view', 'scene.camera.zoom'],
+            'center': ['view', 'scene.camera.center["x", "y", "z"]'],
 
             //models/label.js
             'labelOpacity': ['view', 'scene.labels.opacity'],
@@ -512,7 +509,8 @@ class Graphistry extends Observable {
 
         const [model, path] = lookup[name];
 
-        return new this(this[model].set($value(path, val))
+        return new this(this[model]
+            .set($value(path, $atom(val, { $timestamp: Date.now() })))
             .map(({ json }) => json.toJSON())
             .toPromise());
     }
@@ -585,14 +583,14 @@ class Graphistry extends Observable {
                 (sources, id) => sources[id]
             )
             .mergeMap((group) => group
-                .do(({ id, type, pageX, pageY }) => onChange && onChange(id, type, pageX, pageY))
+                .do(({ id, type, pageX, pageY, size }) => onChange && onChange(
+                    id, type, pageX, pageY, size
+                ))
                 .takeLast(1)
                 .do(({ id, type }) => onExit && onExit(id, type))
             )
             .subscribe();
     }
-
-
 }
 
 /**
@@ -640,9 +638,11 @@ function GraphistryJS(iFrame) {
         recycleJSON: true,
         scheduler: AsapScheduler,
         treatErrorsAsValues: true,
-        allowFromWhenceYouCame: true,
-        source: new PostMessageDataSource(window, iFrame.contentWindow)
+        allowFromWhenceYouCame: true
     });
+    model._source = new PostMessageDataSource(
+        window, iFrame.contentWindow, model
+    );
 
     class InstalledGraphistry extends Graphistry {
         static model = model;
@@ -707,6 +707,7 @@ import 'rxjs/add/operator/let';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/last';
 import 'rxjs/add/operator/take';
+import 'rxjs/add/operator/scan';
 import 'rxjs/add/operator/takeLast';
 import 'rxjs/add/operator/delay';
 import 'rxjs/add/operator/merge';

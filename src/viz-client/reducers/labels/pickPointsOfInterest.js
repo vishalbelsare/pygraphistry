@@ -76,7 +76,7 @@ function scanResampleLabelHits(memo, props) {
 function setLabelHitReferences({ falcor, hits }) {
 
     let index = 0;
-    let { length } = hits;
+    let { length } = hits || [];
     length = Math.min(length, MAX_LABELS);
 
     const vals = { point: { length }};

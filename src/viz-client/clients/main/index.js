@@ -64,16 +64,15 @@ function initSocket(options, workbook) {
 }
 
 function getAppModel(options, socket) {
-    const source = new RemoteDataSource(socket);
     const model = new Model({
-        source,
         recycleJSON: true,
+        // materialized: true,
         cache: getAppCache(),
         treatErrorsAsValues: true,
         scheduler: Scheduler.async,
         allowFromWhenceYouCame: true
     });
-    source.model = model;
+    model._source = new RemoteDataSource(socket, model);
     model.sink = new LocalDataSink(model.asDataSource());
     return model;
 }

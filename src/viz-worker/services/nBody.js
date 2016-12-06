@@ -28,7 +28,7 @@ export function setLayoutControl(loadViewsById) {
             workbookIds: [workbookId], viewIds: [viewId]
         }).do(({ view }) => {
             const { nBody } = view;
-            nBody.interactions.next({
+            nBody && nBody.interactions.next({
                 play: true, layout: true, simControls: {
                     [algoName]: {
                         [id]: value

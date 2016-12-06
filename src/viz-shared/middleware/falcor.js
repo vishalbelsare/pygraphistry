@@ -17,17 +17,17 @@ export function getDataSourceFactory(services) {
         });
     }
 
-    return function getDataSource(request = {}) {
+    return function getDataSource(request = {}, _streaming = false) {
         return new AppRouter({
-            request, options: { ...request.query }
+            request, _streaming, options: { ...request.query }
         });
     }
 }
 
-function createAppRouter(routes) {
-    return class AppRouter extends Router.createClass(routes) {
+function createAppRouter(routes, options = { bufferTime: 10 }) {
+    return class AppRouter extends Router.createClass(routes, options) {
         constructor(options = {}) {
-            super();
+            super(options);
             for (const key in options) {
                 if (options.hasOwnProperty(key)) {
                     this[key] = options[key];

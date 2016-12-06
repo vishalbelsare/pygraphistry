@@ -270,7 +270,10 @@ export function createInteractionsLoop({
     const { globalControls: { simulationTime = 1 }} = nBody;
     const { Observable, Scheduler, Subscription, ReplaySubject } = Rx;
 
-    const play = interactions.filter((x = { play: false }) => x && x.play);
+    const play = interactions
+        .filter((x = { play: false }) => x && x.play)
+        .do((x) => nBody.updateSettings(x));
+
     const renderTriggers = Observable.merge(
 
             play.startWith({ play: true, layout: false }),
@@ -318,10 +321,6 @@ export function createInteractionsLoop({
             })
             .filter(({ play }) => play)
             .take(1)
-            .mergeMap(
-                (x) => nBody.updateSettings(x),
-                (x) => x
-            )
             // Recreates old functionality of forcing a break in the event loop, so
             // things like socket event handlers don't queue up
             .delay(1)
@@ -331,8 +330,7 @@ export function createInteractionsLoop({
                     perf.endTiming('tick_durationMS');
                     return nBody;
                 }
-            )
-            .subscribeOn(Scheduler.async);
+            );
     }
 }
 

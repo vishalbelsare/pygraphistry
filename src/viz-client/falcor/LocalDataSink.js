@@ -4,7 +4,7 @@ import { PostMessageDataSink } from '@graphistry/falcor-socket-datasource';
 export class LocalDataSink extends PostMessageDataSink {
     constructor(dataSource, ...args) {
 
-        super(dataSource, ...args);
+        super(() => dataSource, ...args);
 
         dataSource.get([
             ['workbooks', 'length'],

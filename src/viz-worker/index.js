@@ -131,22 +131,25 @@ export function vizWorker(app, server, sockets, caches) {
             })
             .multicast(() => new Subject(), (shared) => Observable.merge(
                 shared.skip(1),
-                shared.take(1).do(({ nBody }) => {
-                    logger.trace('ticked graph');
-                    vizServer.graph.next(nBody);
-                })
-                .mergeMap(
-                    ({ view, nBody }) => maskDataframe({ view }),
-                    ({ view, nBody }) => ({ view, nBody })
-                )
-                .mergeMap(
-                    ({ nBody }) => sendUpdate(
-                        `workbooks.open.views.current.columns.length`,
-                        `workbooks.open.views.current.histograms.length`,
-                        `workbooks.open.views.current.scene.renderer['edges', 'points'].elements`
-                    ).concat(Observable.of(1)).takeLast(1),
-                    ({ nBody }) => ({ nBody })
-                )
+                shared.take(1)
+                    .mergeMap(
+                        ({ view, nBody }) => maskDataframe({ view }),
+                        ({ view, nBody }) => ({ view, nBody })
+                    )
+                    .do(() => logger.trace('finished initial dataframe mask'))
+                    .mergeMap(
+                        ({ nBody }) => sendUpdate(
+                            `workbooks.open.views.current.columns.length`,
+                            `workbooks.open.views.current.histograms.length`,
+                            `workbooks.open.views.current.scene.renderer['edges', 'points'].elements`
+                        ).takeLast(1),
+                        ({ nBody }) => ({ nBody })
+                    )
+                    .do(() => logger.trace('finished sending initial falcor update'))
+                    .do(({ nBody }) => {
+                        logger.trace('ticked graph');
+                        vizServer.graph.next(nBody);
+                    })
             ))
             .do(({ nBody }) => vizServer.ticksMulti.next(nBody));
         }

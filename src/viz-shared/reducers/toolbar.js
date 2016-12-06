@@ -1,5 +1,6 @@
 import {
     ref as $ref,
+    atom as $atom,
     pathValue as $value,
     pathInvalidation as $invalidate
 } from '@graphistry/falcor-json-graph';
@@ -62,8 +63,8 @@ function zoomOut({ falcor }) {
 
 function centerCamera({ falcor }) {
     return falcor.set(
-        $value(`camera.zoom`, 1),
-        $value(`camera.center['x', 'y', 'z']`, 0),
+        $value(`camera.zoom`, $atom(1, { $timestamp: Date.now() })),
+        $value(`camera.center['x', 'y', 'z']`, $atom(0, { $timestamp: Date.now() })),
     );
 }
 

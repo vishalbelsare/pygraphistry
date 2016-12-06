@@ -107,7 +107,9 @@ export function computeMaskForHistogramBin({ view, histogram, bin, basedOnCurren
         return Observable.throw(errors[0]);
     }
 
-    return Observable.of(masks.toJSON());
+    const { edge, point } = masks.toJSON();
+
+    return Observable.of({ edge, point });
 }
 
 function loadPointsMask({ view, masked, histogram }) {
@@ -124,15 +126,14 @@ function loadPointsMask({ view, masked, histogram }) {
         return Observable.of([]);
     }
 
-    let { selection: { mask } = {} } = view;
+    let { selection: { mask: rect } = {} } = view;
 
-    mask = mask && mask.value || mask;
-    if (!mask || !mask.tl || !mask.br) {
+    if (!rect || !rect.tl || !rect.br) {
         return Observable.of([]);
     }
 
     return Observable.defer(() =>
-        nBody.simulator.selectNodesInRect({ ...mask })
+        nBody.simulator.selectNodesInRect(rect)
     );
 }
 

@@ -10,7 +10,6 @@ const _            = require('underscore');
 const io           = require('socket.io-client');
 
 const renderer     = require('./renderer.js');
-const caption      = require('./caption.js');
 const Command      = require('./graphVizApp/command.js');
 
 import $ from 'jquery'
@@ -292,7 +291,7 @@ function createRenderer (socket, canvas, urlParams) {
  * @param  {renderer} renderState    - The renderer object returned by renderer.create().
  * @return {BehaviorSubject} {'init', 'start', 'received', 'rendered'} Rx subject that fires every time a frame is rendered.
  */
-function handleVboUpdates (socket, uri, renderState) {
+function handleVboUpdates (socket, uri, renderState, sceneModel) {
     // The server sends `vbo_update` messages to us, containing the current revision number of each
     // of its buffers & textures, along with metadata for each of those VBOs (byte length and number
     // of elements for buffers; width, height, and byte length for textures).
@@ -329,8 +328,6 @@ function handleVboUpdates (socket, uri, renderState) {
 
         const thisStep = {step: vboUpdateStep++, data: data.step};
 
-        caption.renderCaptionFromData(data);
-
         try {
             debug('1. VBO update', thisStep);
             vboUpdates.onNext('start');
@@ -353,13 +350,29 @@ function handleVboUpdates (socket, uri, renderState) {
 
             const readyToRender = Observable.zip(readyBuffers, readyTextures, _.identity).share();
             readyToRender
-                .subscribe(() => {
+                .do(() => {
                     debug('6. All buffers and textures received, completing', thisStep);
                     handshake(Date.now() - lastHandshake);
                     lastHandshake = Date.now();
                     vboUpdates.onNext('received');
-                },
-                (err) => { console.error('6 err. readyToRender error', err, (err||{}).stack, thisStep); });
+                })
+                .switchMap(() => {
+                    const { elements = {}, bufferByteLengths = {} } = data;
+                    const numPoints = elements.pointculled || elements.uberpointculled || 0;
+                    const numEdges = (elements.edgeculled ||
+                                      elements.edgeculledindexed ||
+                                      elements.edgeculledindexedclient ||
+                                      bufferByteLengths.logicalEdges / 4 || 0) * 0.5;
+                    return sceneModel.withoutDataSource().set(
+                        { path: ['renderer', 'edges', 'elements'], value: numEdges },
+                        { path: ['renderer', 'points', 'elements'], value: numPoints }
+                    );
+                })
+                .subscribe({
+                    error(err) {
+                        console.error('6 err. readyToRender error', err, (err||{}).stack, thisStep);
+                    }
+                });
 
             const bufferVBOs = Observable.combineLatest(
                 [Observable.return()]

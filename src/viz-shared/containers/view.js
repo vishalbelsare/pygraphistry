@@ -26,13 +26,12 @@ let View = ({
     scene = {}, labels = {},
     panels = {}, toolbar = {},
     onSelectedPointTouchStart,
-    onSelectionMaskTouchStart,
-    selection = {}
+    onSelectionMaskTouchStart
 } = {}) => {
     const { left = {}, right = {}, bottom = {} } = panels;
-    const isLeftPanelOpen = !!panels.left;
-    const isRightPanelOpen = !!panels.right;
-    const isBottomPanelOpen = !!panels.bottom;
+    const isLeftPanelOpen = left && left.id !== undefined;
+    const isRightPanelOpen = right && right.id !== undefined;
+    const isBottomPanelOpen = bottom && bottom.id !== undefined;
     return (
         <div style={{ position: `absolute`, width: `100%`, height: `100%` }}>
             <Scene key='scene'
@@ -55,7 +54,10 @@ let View = ({
                       boxShadow: `none`,
                       background: `transparent`
                   }}>
-                <Panel side='right' data={right} key='right-panel'/>
+                <Panel side='right'
+                       data={right}
+                       key='right-panel'
+                       isOpen={isRightPanelOpen}/>
             </Dock>
             <Dock fluid
                   key='bottom'
@@ -64,7 +66,11 @@ let View = ({
                   position='bottom'
                   isVisible={isBottomPanelOpen}
                   defaultSize={1 - (1/Math.sqrt(2))}>
-                <Panel side='bottom' data={bottom} key='bottom-panel' selectInspectorRow={selectInspectorRow}/>
+                <Panel side='bottom'
+                       data={bottom}
+                       key='bottom-panel'
+                       isOpen={isBottomPanelOpen}
+                       selectInspectorRow={selectInspectorRow}/>
             </Dock>
             <Toolbar key='toolbar' data={toolbar} selectToolbarItem={selectToolbarItem}/>
         </div>
@@ -73,17 +79,19 @@ let View = ({
 
 View = container({
     renderLoading: true,
-    fragment: ({ scene, layout, toolbar } = {}) => `{
-        pruneOrphans,
-        scene: ${ Scene.fragment(scene) },
-        panels: {
-            left: { id, name },
-            right: { id, name },
-            bottom: { id, name }
-        },
-        layout: ${ Settings.fragment(layout) },
-        toolbar: ${ Toolbar.fragment(toolbar) }
-    }`,
+    fragment: ({ scene, layout, toolbar, panels = {} } = {}) => {
+        return `{
+            pruneOrphans,
+            scene: ${ Scene.fragment(scene) },
+            layout: ${ Settings.fragment(layout) },
+            toolbar: ${ Toolbar.fragment(toolbar) },
+            panels: {
+                ['left', 'right', 'bottom']: {
+                    id, name
+                }
+            }
+        }`
+    },
     dispatchers: {
         selectLabel,
         sceneMouseMove,

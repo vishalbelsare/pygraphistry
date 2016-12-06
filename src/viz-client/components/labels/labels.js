@@ -64,23 +64,23 @@ class Labels extends React.Component {
             camera = renderState.camera) || !(
             canvas = renderState.canvas) || !(
             matrix = camera.getMatrix())) {
+            labels = [];
             children = [];
         } else {
             pixelRatio = camera.pixelRatio;
             scalingFactor = camera.semanticZoom(sizes.length);
         }
 
-        let childIndex = -1;
+        let labelIndex = -1;
         const updatesToSend = [];
         const childrenToRender = [];
-        const childLen = children.length;
+        const labelCount = labels.length;
 
-        while (++childIndex < childLen) {
+        while (++labelIndex < labelCount) {
 
-            const label = labels[childIndex];
-            const child = children[childIndex];
+            const label = labels[labelIndex];
 
-            if (!child || !label || (
+            if (!label || (
                 label.type === undefined) || (
                 label.index === undefined || (
                 label.title === undefined))) {
@@ -99,30 +99,39 @@ class Labels extends React.Component {
             }
 
             const { x, y } = camera.canvasCoords(worldCoords.x, worldCoords.y, canvas, matrix);
+            const size = type === 'edge' ? 0 : // Clamp like in pointculled shader
+                Math.max(5, Math.min(scalingFactor * sizes[index], 50)) / pixelRatio;
 
             updatesToSend.push({
-                type,
-                id: index,
                 pageX: x,
                 pageY: y,
+                id: index,
+                type, size
             });
 
-            childrenToRender.push(React.cloneElement(child, {
-                renderState,
-                renderingScheduler,
-                style: {
-                    ...(child.props && child.props.style),
-                    transform: `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0px)`,
-                    // Clamp like in pointculled shader
-                    paddingTop: type === 'edge' ? 0 : `${0.5 *
-                        Math.max(5, Math.min(scalingFactor * sizes[index], 50)) / pixelRatio}px`,
-                }
-            }));
+            const child = children[labelIndex];
+
+            if (child) {
+
+                const radius = size * 0.5;
+                const offsetY = label !== highlight ? 0 :
+                    Math.min(Math.abs(15 - radius), 15);
+
+                childrenToRender.push(React.cloneElement(child, {
+                    renderState,
+                    renderingScheduler,
+                    style: {
+                        ...(child.props && child.props.style),
+                        paddingTop: `${offsetY + radius}px`,
+                        transform: `translate3d(${
+                            Math.round(x)}px, ${
+                            Math.round(y)}px, 0px)`,
+                    }
+                }));
+            }
         }
 
-        onLabelsUpdated &&
-            updatesToSend.length &&
-            onLabelsUpdated(updatesToSend);
+        onLabelsUpdated && onLabelsUpdated(updatesToSend);
 
         return (
             <div className={styles['labels-container']}>

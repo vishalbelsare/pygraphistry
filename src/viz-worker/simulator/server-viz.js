@@ -159,7 +159,7 @@ function sliceSelection (dataFrame, type, mask, start, end, sortColumnName, asce
     const sortCol = dataFrame.getColumnValues(sortColumnName, type);
     const taggedSortCol = new Array(count);
     mask.forEachIndexByType(type, (idx, i) => {
-        taggedSortCol[i] = [sortCol[idx], idx];
+        taggedSortCol[i] = [sortCol[i], i];
     });
 
     const sortedTags = taggedSortCol.sort((val1, val2) => {
@@ -274,32 +274,35 @@ function maskFromPointsByConnectingEdges (pointMask, {dataframe, simulator}) {
 }
 
 
-
-
 export function readSelectionCore ({dataframe, simulator}, type, query, cb) {
 
     const { sel, page, per_page, sort_by, order, search } = query;
 
-    return simulator.selectNodesInRect(sel)
-    .then(
-        (pointMask) => maskFromPointsByConnectingEdges(pointMask, {dataframe, simulator})
-    )
-    .then((lastSelectionMask) => {
-        const start = (page - 1) * per_page;
-        const end = start + per_page;
-        const data = sliceSelection(dataframe, type, lastSelectionMask, start, end,
-                                    sort_by, order === 'asc', search);
-        _.extend(data, {
-            page: page
-        });
+    return simulator
+        .selectNodesInRect(sel)
+        .then((pointIndexes) => {
 
-        if (cb) cb(null, data);
-        return data;
-    }).fail(function (err) {
-        console.log('======= fail whale');
-        if (cb) cb(err);
-        log.makeQErrorHandler(logger, 'readSelectionCore qLastSelectionIndices')(err);
-    });
+            const start = (page - 1) * per_page;
+            const end = start + per_page;
+
+            const selectionMask = new DataframeMask(dataframe,
+                pointIndexes, pointIndexes === undefined ?
+                    undefined : simulator.connectedEdges(pointIndexes)
+            );
+
+            const data = sliceSelection(dataframe, type, selectionMask, start, end,
+                                        sort_by, order === 'asc', search);
+            _.extend(data, {
+                page: page
+            });
+
+            if (cb) cb(null, data);
+            return data;
+        }).fail(function (err) {
+            console.log('======= fail whale');
+            if (cb) cb(err);
+            log.makeQErrorHandler(logger, 'readSelectionCore qLastSelectionIndices')(err);
+        });
 };
 
 VizServer.prototype.readSelection = function (type, query, res) {

@@ -129,12 +129,12 @@ function createInitialHistograms(view, dataframe) {
 
 function assignHintsToScene(scene, dataframe) {
 
-    const MAX_SIZE_TO_ALLOCATE = 2000000;
-    const numEdges = dataframe.numEdges();
-    const numPoints = dataframe.numPoints();
+    // const MAX_SIZE_TO_ALLOCATE = 2000000;
+    // const numEdges = dataframe.numEdges();
+    // const numPoints = dataframe.numPoints();
 
-    scene.renderer.edges.elements = Math.min(numEdges, MAX_SIZE_TO_ALLOCATE);
-    scene.renderer.points.elements = Math.min(numPoints, MAX_SIZE_TO_ALLOCATE);
+    scene.renderer.edges.elements = dataframe.numEdges();//Math.min(numEdges, MAX_SIZE_TO_ALLOCATE);
+    scene.renderer.points.elements = dataframe.numPoints();//Math.min(numPoints, MAX_SIZE_TO_ALLOCATE);
 
     return scene;
 }

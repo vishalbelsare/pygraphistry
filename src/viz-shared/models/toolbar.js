@@ -8,9 +8,11 @@ export function toolbar(workbookId, viewId) {
             static: {
                 id: 'static',
                 visible: true,
-                length: 2, ...[
-                    $ref(`${view}.camera.controls`),
-                    [
+                length: 2, ...[[
+                        $ref(`${view}.camera.controls[0]`),
+                        $ref(`${view}.camera.controls[1]`),
+                        $ref(`${view}.camera.controls[2]`),
+                    ], [
                         $ref(`${view}.scene.controls[1]`),
                         $ref(`${view}.labels.controls[0]`),
                     ]
@@ -19,25 +21,27 @@ export function toolbar(workbookId, viewId) {
             stable: {
                 id: 'stable',
                 visible: true,
-                length: 6, ...[
-                    $ref(`${view}.camera.controls`),
-                    [
+                length: 6, ...[[
+                        $ref(`${view}.camera.controls[0]`),
+                        $ref(`${view}.camera.controls[1]`),
+                        $ref(`${view}.camera.controls[2]`),
+                    ], [
                         $ref(`${workbook}.controls[0]`),
                         $ref(`${workbook}.controls[1]`),
-                    ],
-                    [
+                    ], [
                         $ref(`${view}.scene.controls[0]`),
                         $ref(`${view}.scene.controls[1]`),
                         $ref(`${view}.labels.controls[0]`),
                         $ref(`${view}.layout.controls[0]`),
-                    ],
-                    $ref(`${view}.selection.controls`),
-                    [
+                    ], [
+                        $ref(`${view}.selection.controls[0]`),
+                        $ref(`${view}.selection.controls[1]`)
+                    ], [
                         $ref(`${view}.histograms.controls[0]`),
                         $ref(`${view}.inspector.controls[0]`),
                         $ref(`${view}.exclusions.controls[0]`),
                         $ref(`${view}.filters.controls[0]`),
-                    ],[
+                    ], [
                         $ref(`${workbook}.controls[3]`),
                     ]
                 ]
@@ -45,22 +49,25 @@ export function toolbar(workbookId, viewId) {
             beta: {
                 id: 'beta',
                 visible: true,
-                length: 5, ...[
-                    $ref(`${view}.camera.controls`),
-                    [
+                length: 5, ...[[
+                        $ref(`${view}.camera.controls[0]`),
+                        $ref(`${view}.camera.controls[1]`),
+                        $ref(`${view}.camera.controls[2]`),
+                    ], [
                         $ref(`${view}.scene.controls[0]`),
                         $ref(`${view}.scene.controls[1]`),
                         $ref(`${view}.labels.controls[0]`),
                         $ref(`${view}.layout.controls[0]`),
-                    ],
-                    $ref(`${view}.selection.controls`),
-                    [
+                    ], [
+                        $ref(`${view}.selection.controls[0]`),
+                        $ref(`${view}.selection.controls[1]`)
+                    ], [
                         $ref(`${view}.histograms.controls[0]`),
                         $ref(`${view}.inspector.controls[0]`),
                         $ref(`${view}.timebar.controls[0]`),
                         $ref(`${view}.exclusions.controls[0]`),
                         $ref(`${view}.filters.controls[0]`),
-                    ],[
+                    ], [
                         $ref(`${workbook}.controls[0]`),
                         $ref(`${workbook}.controls[1]`),
                         $ref(`${workbook}.controls[2]`),

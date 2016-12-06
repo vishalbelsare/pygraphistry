@@ -8,10 +8,11 @@ let Selection = ({ mask = {}, ...props }) => {
     );
 };
 
-Selection = container(
-    ({ edge = [], point = [] } = {}) => `{
+Selection = container({
+    renderLoading: false,
+    fragment: ({ edge = [], point = [] } = {}) => `{
         mask, type, edge, point, darken
     }`
-)(Selection);
+})(Selection);
 
 export { Selection };
