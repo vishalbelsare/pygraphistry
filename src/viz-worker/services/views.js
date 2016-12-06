@@ -40,7 +40,7 @@ export function moveSelectedNodes(loadViewsById) {
         .mergeMap(({ workbook, view }) => {
 
             const { nBody, selection = {} } = view;
-            const { point: { value: points } = {} } = selection;
+            const { point: points } = selection;
 
             if (!nBody || !points || points.length <= 0) {
                 return Observable.empty();

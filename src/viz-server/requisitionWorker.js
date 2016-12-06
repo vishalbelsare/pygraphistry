@@ -14,7 +14,7 @@ export function requisitionWorker({
     }) {
 
     let isLocked = false;
-    let latestClientId = simpleflake().toJSON();
+    let latestClientId = null;
 
     const requests = server
         .requests
@@ -89,16 +89,12 @@ export function requisitionWorker({
                     .pluck('socket')
                     .scan(disconnectPreviousSocket, null)
                     .distinctUntilChanged()
-                    .do(logSocketHandshake)
                     .switchMap(mapSocketActivity)
         )))
         .catch((error) => {
             isLocked = false;
-            // latestClientId = simpleflake().toJSON();
-            logger.error(
-                { err: error },
-                'requisitionWorker intercepted an error. Notifying viz-server that isActive == false.'
-            );
+            latestClientId = simpleflake().toJSON();
+            logger.debug( { err: error }, 'viz-server is no longer ative' );
             return Observable.of({ ...error, isActive: false });
         })
         .mergeMap((event) => {
@@ -139,15 +135,12 @@ export function requisitionWorker({
             //     latestClientId = simpleflake().toJSON();
             // }
 
-            const query = request.url ? (url.parse(request.url).query || {}) : {};
-            const sessionId = query.clientId || simpleflake().toJSON();
-
-            window.graphistrySessionId = sessionId;
-            commonLogger.addMetadataField({sessionId});
-            logger.debug(`Started session with ID: ${sessionId}`);
+            const clientId = tagUser(request);
+            // Save the client ID to the express app, so that other modules can access it easily.
+            app.set('clientId', clientId);
 
             isLocked = true;
-            return accept({ request, response }, latestClientId);
+            return accept({ request, response }, clientId);
         };
     }
 
@@ -228,9 +221,12 @@ export function requisitionWorker({
 
         const sockets = socketConnectionAsObservable(activeClientId, request);
 
-        const worker = workerModule(app, {
-            ...server, requests: server.requests.startWith({ request, response })
-        }, sockets, caches);
+        const worker = workerModule(
+            app,
+            { ...server, requests: server.requests.startWith({ request, response }), },
+            sockets,
+            caches
+        );
 
         return { caches, worker };
     }
@@ -270,33 +266,17 @@ export function requisitionWorker({
         return socket;
     }
 
-    function logSocketHandshake(socket) {
-        const query = socket.handshake.query;
-        tagUser(query);
-        // Store information about user. Retrievable by looking up the cid set by tagUser
-        var cxinfo = { key: 'CONNECTIONINFO', ip: socket.request.connection.remoteAddress };
-        if (query.viztoken) {
-            cxinfo.viztoken = decodeURIComponent(query.viztoken);
-        }
-        if (query.usertag && query.usertag !== 'undefined') {
-            cxinfo.tag = decodeURIComponent(query.usertag);
-        }
-        logger.info(cxinfo);
-        logger.trace('waiting for user to pick app type');
-    }
-
     function mapSocketActivity(socket) {
-
         const errorEvents = Observable
             .fromEvent(socket, 'error')
-            .do((error) => logger.error({ err: error }, 'socket error'))
+            .do((error) => logger.error({ err: error, req: socket.request}, 'Socket error'))
             // TODO: should we do anything with client socket errors besides log them?
             .ignoreElements();
 
         const disconnectEvents = Observable
             .fromEvent(socket, 'disconnect')
-            .do(() => logger.info('a user successfully disconnected, exiting'))
-            .mapTo({ isActive: false, message: 'a user successfully disconnected, exiting' });
+            .do(() => logger.info({req: socket.request}, 'User disconnected from socket'))
+            .mapTo({ isActive: false, message: 'A user successfully disconnected, exiting' });
 
         return errorEvents
             .merge(disconnectEvents)

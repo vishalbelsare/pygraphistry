@@ -68,11 +68,10 @@ export function vizWorker(app, server, sockets, caches) {
         const { handshake: { query, query: { dataset, debugId, usertag }},
                 request: { connection: { remoteAddress }}} = socket;
 
-        const metadata = { dataset, debugId, usertag };
-
+        const metadata = { dataset, debugId };
         commonLogger.addMetadataField(metadata);
 
-        logger.info({ ip: remoteAddress, query }, 'Connection Info');
+        logger.info({ req: { ...socket.handshake, ...socket.request } }, 'Connection Info');
 
         return { socket, metadata };
     }
