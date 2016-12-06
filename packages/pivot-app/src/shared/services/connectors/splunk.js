@@ -80,6 +80,7 @@ export const SplunkConnector = {
             })
             .switchMap(job => {
                 const props = job.properties();
+
                 log.debug({
                     sid: job.sid,
                     eventCount: props.eventCount,
@@ -88,20 +89,29 @@ export const SplunkConnector = {
                     messages: props.messages,
                     ttl: props.ttl
                 }, 'Search job properties');
+                log.trace(props, 'All job properties');
 
-                const getResults = Observable.bindNodeCallback(
-                    job.results.bind(job),
-                    (results) => ({results, job})
+                const getResults = Observable.bindNodeCallback(job.results.bind(job));
+                const timeLimitMsg = props.messages.find(msg =>
+                    msg.text.startsWith('Search auto-finalized after time limit')
                 );
 
                 return getResults({count: props.resultCount, output_mode: 'json_cols'})
+                    .map(args => ({
+                        results: args[0],
+                        job: args[1],
+                        props: {
+                            ...props,
+                            isPartial: timeLimitMsg !== undefined
+                        }
+                    }))
                     .catch(e => {
                         log.error(e, 'Retrieving Splunk query results failed');
                         return Observable.throw(
                             new Error(`${e.data.messages[0].text} ========>  Splunk Query: ${query}`)
                         );
                     });
-            }).map(({results, job}) => {
+            }).map(({results, job, props}) => {
                 const columns = {};
                 results.fields.map((field, i) => {
                     columns[field] = results.columns[i];
@@ -109,7 +119,8 @@ export const SplunkConnector = {
                 const df = new DataFrame(columns, results.feilds);
 
                 return {
-                    resultCount: job.properties().resultCount,
+                    resultCount: props.resultCount,
+                    isPartial: props.isPartial,
                     events: df.toCollection(),
                     df: df,
                     searchId: job.sid

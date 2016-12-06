@@ -76,7 +76,8 @@ function captureErrorAndNotifyClient(pivotIds) {
         const status = {
             ok: false,
             code: errorCode,
-            message: `${cause.message} (code: ${errorCode})`
+            message: `${cause.message} (code: ${errorCode})`,
+            title: 'Error running pivot!'
         };
 
         return Observable.from([
