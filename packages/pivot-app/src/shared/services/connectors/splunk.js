@@ -69,15 +69,14 @@ export const SplunkConnector = {
                     return splunkFetchJob();
                 });
             })
-            .catch(e => {
-                log.error(e, 'Splunk search failed');
-                return Observable.throw(
+            .catch(e =>
+                Observable.throw(
                     new VError(
-                        {name: 'SplunkParseError',info: searchInfo},
+                        {name: 'SplunkSearchError', info: searchInfo},
                         e.data.messages[0].text
                     )
-                );
-            })
+                )
+            )
             .switchMap(job => {
                 const props = job.properties();
 
@@ -105,12 +104,14 @@ export const SplunkConnector = {
                             isPartial: timeLimitMsg !== undefined
                         }
                     }))
-                    .catch(e => {
-                        log.error(e, 'Retrieving Splunk query results failed');
-                        return Observable.throw(
-                            new Error(`${e.data.messages[0].text} ========>  Splunk Query: ${query}`)
-                        );
-                    });
+                    .catch(e =>
+                        Observable.throw(
+                            new VError(
+                                {name: 'SplunkSearchError2', info: searchInfo},
+                                e.data.messages[0].text
+                            )
+                        )
+                    );
             }).map(({results, job, props}) => {
                 const columns = {};
                 results.fields.map((field, i) => {
