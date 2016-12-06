@@ -169,7 +169,7 @@ export const expandFirewallDemo = new SplunkPivot({
         const attribs = 'External IPs';
         const rawSearch =
             `[{{${pivotParameters.pRef}}}] -[${attribs}]-> [${splunkIndices.FIREWALL}]`;
-        const query = `search ${expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
+        const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
 
         return {
             searchQuery: query,
