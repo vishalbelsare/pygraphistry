@@ -34,7 +34,7 @@ function initSocket(options, workbook) {
         'bg', 'view', 'type', 'scene',
         'device', 'mapper', 'vendor', 'usertag',
         'dataset', 'workbook', 'controls', 'viztoken',
-        'workerid', 'sessionid'
+        'workerid', 'clientId'
     ];
 
     const socketQuery = whiteListedQueryParams.reduce((params, key) => {

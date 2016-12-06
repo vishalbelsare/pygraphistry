@@ -90,6 +90,7 @@ export function start() {
                     process.exit(exitCode);
                 }, 1000);
             }
+
             return Observable.empty();
         });
 }

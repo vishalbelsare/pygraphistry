@@ -1,14 +1,22 @@
-import crypto from 'crypto';
-import { logger } from '@graphistry/common';
+import { logger as log } from '@graphistry/common';
+const logger = log.createLogger('viz-server', 'src/viz-server/support/tagUser.js');
 
-// Grab user info from socket and add to logger
-export function tagUser(query) {
-    // Generate unique connection id
-    logger.addUserInfo({
-        cid: crypto.randomBytes(8).toString('hex')
-    });
+import crypto from 'crypto';
+import url from 'url';
+import { simpleflake } from 'simpleflakes';
+
+// Grab user info from request and add to logger
+export function tagUser(request) {
+    const query = url.parse(request.url, true).query || {};
+
+    const clientId = query.clientId || simpleflake().toJSON();
+    log.addUserInfo({ cid: clientId });
 
     if (query.usertag && query.usertag !== 'undefined') {
-        logger.addUserInfo({ tag: decodeURIComponent(query.usertag) });
+        log.addUserInfo({ tag: query.usertag });
     }
+
+    logger.debug({req: request}, `Client has connected with clientId: ${clientId}`);
+
+    return clientId;
 }
