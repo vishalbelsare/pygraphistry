@@ -201,7 +201,7 @@ export function histograms(path, base) {
 
                 // Todo: move most of this into a service so we can run this route on the client.
 
-                const { expressionsById = {} } = view;
+                const { selection, expressionsById = {} } = view;
                 const viewPath = `
                         workbooksById['${workbook.id}']
                             .viewsById['${view.id}']`;
@@ -275,16 +275,23 @@ export function histograms(path, base) {
                     // relevant fields so they're recomputed if the
                     // histograms panel is open, or the next time the
                     // panel is opened.
-                    return [
+                    const pathValues = [
                         $invalidate(`${viewPath}.labelsByType`),
                         $invalidate(`${viewPath}.inspector.rows`),
-                        // $invalidate(`${viewPath}.selection.histogramsById`),
                         $value(`${viewPath}.highlight.darken`, false),
                         $value(`${histogramPath}.range`, binIndexes),
                         $value(`${histogramPath}.filter`, histogram.filter),
                         $value(`${filterPath}.input`, filter.input),
                         $value(`${filterPath}.enabled`, filter.enabled),
                     ];
+
+                    if (selection && selection.mask &&
+                        selection.type === 'window') {
+                        pathValues.push($invalidate(`
+                            ${viewPath}.selection.histogramsById`));
+                    }
+
+                    return pathValues;
                 });
             });
         }
