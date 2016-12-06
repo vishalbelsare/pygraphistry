@@ -1,3 +1,5 @@
+import { logger as log } from '@graphistry/common';
+const logger = log.createLogger('viz-shared', 'src/viz-shared/middleware/falcor.js');
 import { inspect } from 'util';
 import { Observable } from 'rxjs';
 import { falcor as routes } from '../routes';
@@ -33,21 +35,15 @@ function createAppRouter(routes) {
             }
             this.routeUnhandledPathsTo({
                 get(paths) {
-                    console.log('============unhandled get:');
-                    console.log(`paths: ${inspect(paths, { depth: null })}`);
+                    logger.warn({paths}, 'Falcor app router: unhandled "get"');
                     return Observable.empty();
                 },
                 set(jsonGraphEnv) {
-                    console.log('============unhandled set:');
-                    console.log(`jsonGraphEnv: ${inspect(jsonGraphEnv, { depth: null })}`);
+                    logger.warn({jsonGraphEnv}, 'Falcor app router: unhandled "set"');
                     return Observable.of(jsonGraphEnv);
                 },
                 call(callPath, args, refPaths, thisPaths) {
-                    console.log('============unhandled call:');
-                    console.log(`callPath: ${inspect(callPath, { depth: null })}`);
-                    console.log(`args: ${inspect(args, { depth: null })}`);
-                    console.log(`refPaths: ${inspect(refPaths, { depth: null })}`);
-                    console.log(`thisPaths: ${inspect(thisPaths, { depth: null })}`);
+                    logger.warn({callPath, args, refPaths, thisPaths}, 'Falcor app router: unhandled "call"');
                 }
             });
         }
