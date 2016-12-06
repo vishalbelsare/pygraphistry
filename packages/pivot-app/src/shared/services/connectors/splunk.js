@@ -29,6 +29,7 @@ const searchParamDefaults = {
     timeout: Math.max(0, conf.get('splunk.jobCacheTimeout')),
     exec_mode: 'blocking',
     earliest_time: '-7d',
+    max_time: conf.get('splunk.searchMaxTime')
 }
 
 
@@ -68,43 +69,64 @@ export const SplunkConnector = {
                     return splunkFetchJob();
                 });
             })
-            .catch(({data}) => Observable.throw(new VError({
-                name: 'SplunkParseError',
-                info: searchInfo
-            }, data.messages[0].text)))
+            .catch(e =>
+                Observable.throw(
+                    new VError(
+                        {name: 'SplunkSearchError', info: searchInfo},
+                        e.data.messages[0].text
+                    )
+                )
+            )
             .switchMap(job => {
                 const props = job.properties();
+
                 log.debug({
                     sid: job.sid,
                     eventCount: props.eventCount,
                     resultCount: props.resultCount,
                     runDuration: props.runDuration,
+                    messages: props.messages,
                     ttl: props.ttl
                 }, 'Search job properties');
+                log.trace(props, 'All job properties');
 
-                const getResults = Observable.bindNodeCallback(job.results.bind(job),
-                    function(results) {
-                        return ({results, job});
-                    });
-                const jobResults = getResults({count: job.properties().resultCount, output_mode: 'json_cols'}).catch(
-                    (e) => {
-                        return Observable.throw(new Error(
-                            `${e.data.messages[0].text} ========>  Splunk Query: ${query}`));
-                        }
+                const getResults = Observable.bindNodeCallback(job.results.bind(job));
+                const timeLimitMsg = props.messages.find(msg =>
+                    msg.text.startsWith('Search auto-finalized after time limit')
                 );
-                return jobResults;
-            }).map(
-                function({results, job}) {
-                    const columns = {};
-                    results.fields.map((field, i) => {
-                        columns[field] = results.columns[i];
-                    });
-                    const df = new DataFrame(columns, results.feilds);
-                    const events = df.toCollection();
-                    const resultCount = job.properties().resultCount;
-                    return { resultCount, events, df, searchId:job.sid };
-                }
-            );
+
+                return getResults({count: props.resultCount, output_mode: 'json_cols'})
+                    .map(args => ({
+                        results: args[0],
+                        job: args[1],
+                        props: {
+                            ...props,
+                            isPartial: timeLimitMsg !== undefined
+                        }
+                    }))
+                    .catch(e =>
+                        Observable.throw(
+                            new VError(
+                                {name: 'SplunkSearchError2', info: searchInfo},
+                                e.data.messages[0].text
+                            )
+                        )
+                    );
+            }).map(({results, job, props}) => {
+                const columns = {};
+                results.fields.map((field, i) => {
+                    columns[field] = results.columns[i];
+                });
+                const df = new DataFrame(columns, results.fields);
+
+                return {
+                    resultCount: props.resultCount,
+                    isPartial: props.isPartial,
+                    events: df.toCollection(),
+                    df: df,
+                    searchId: job.sid
+                };
+            });
     },
 
     login: function login() {
@@ -134,7 +156,7 @@ export const SplunkConnector = {
                     return Observable.throw(
                         new VError({
                             name: 'UnhandledStatus',
-                        }, 'Uknown response')
+                        }, 'Unknown response')
                     );
                 }
             });

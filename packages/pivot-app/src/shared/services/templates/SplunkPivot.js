@@ -30,11 +30,12 @@ export class SplunkPivot {
         pivot.template = this;
 
         return this.connector.search(searchQuery, searchParams)
-            .do(({ resultCount, events, searchId, df }) => {
+            .do(({ resultCount, events, searchId, df, isPartial }) => {
                 pivot.df = df;
                 pivot.resultCount = resultCount;
                 pivot.results = events;
                 pivot.splunkSearchId = searchId;
+                pivot.isPartial = isPartial;
                 pivotCache[pivot.id] = {
                     results: pivot.results,
                     query: searchQuery,

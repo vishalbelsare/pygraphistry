@@ -99,6 +99,13 @@ var conf = convict({
             default: 14400,
             arg: 'splunk-cache-timeout',
             env: 'SPLUNK_CACHE_TIMEOUT'
+        },
+        searchMaxTime: {
+            doc: 'Maximum time (in seconds) allowed for executing a Splunk search query.',
+            format: Number,
+            default: 20,
+            arg: 'splunk-search-max-time',
+            env: 'SPLUNK_SEARCH_MAX_TIME',
         }
     }
 });

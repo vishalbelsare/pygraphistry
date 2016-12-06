@@ -71,7 +71,7 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
                 :
                 <ButtonGroup style={{marginLeft: '0.7em'}}>
                     <OverlayTrigger placement="top" trigger="click" rootClose overlay={
-                        <Popover id={`tooltipActionError_${index}`} title="ERROR RUNNING PIVOT" className={styles['pivot-error-tooltip']}>
+                        <Popover id={`tooltipActionError_${index}`} title={status.title} className={styles['pivot-error-tooltip']}>
                             <span style={{color: 'red'}}>{status.message}</span>
                         </Popover>
                     } key={`${index}: entityRowAction_${index}`}>
@@ -80,10 +80,22 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
                         </Button>
                     </OverlayTrigger>
                 </ButtonGroup>
-
-
+        }{
+            status.info === true ?
+                <ButtonGroup style={{marginLeft: '0.7em'}}>
+                    <OverlayTrigger placement="top" trigger="click" rootClose overlay={
+                        <Popover id={`tooltipActionInfo_${index}`} title={status.title} className={styles['pivot-info-tooltip']}>
+                            <span>{ status.message }</span>
+                        </Popover>
+                    } key={`${index}: entityRowAction_${index}`}>
+                        <Button bsStyle="info">
+                            <Glyphicon glyph="info-sign" />
+                        </Button>
+                    </OverlayTrigger>
+                </ButtonGroup>
+                : null
         }
-        </div>
+    </div>
     );
 }
 
