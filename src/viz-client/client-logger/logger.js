@@ -58,7 +58,7 @@ class BrowserForwarderStream{
         const ajax = new XMLHttpRequest();
         ajax.open('POST', '/error', true);
         ajax.setRequestHeader('Content-type', 'application/json');
-        ajax.send(JSON.stringify(rec));
+        ajax.send(rec);
     }
 }
 
@@ -77,7 +77,7 @@ const parentLogger = bunyan.createLogger({
     streams: [{
         level: 'warn',
         stream: new BrowserForwarderStream(),
-        type: 'raw'
+        type: 'stream'
     }]
 });
 
