@@ -1492,9 +1492,9 @@ Dataframe.prototype.getVersion = function (type, attrName) {
  * @param {string} type - any of [TYPES]{@link BufferTypeKeys}.
  * @param {string} attrName - the name of the column you want
  */
-Dataframe.prototype.getCell = function (index, type, attrName) {
+Dataframe.prototype.getCell = function (index, type, attrName, global = false) {
 
-    const attributes = this.data.attributes[type];
+    const attributes = (global ? this.rawdata : this.data).attributes[type];
 
     // TODO FIXME HACK:
     // So computed column manager can work, we need to pass through calls from here
@@ -1543,9 +1543,6 @@ Dataframe.prototype.getCell = function (index, type, attrName) {
     // calculated values
     if (column.dirty && column.dirty.cause === 'filter') {
         let parentIndex = this.lastMasks.getIndexByType(type, index);
-        if (parentIndex === undefined) {
-            parentIndex = index;
-        }
         return this.rawdata.attributes[type][attrName].values[parentIndex];
     }
 
@@ -1581,12 +1578,12 @@ Dataframe.prototype.publicColumnNamesByType = function publicColumnNamesByType (
  * @param {String} type - any of [TYPES]{@link BufferTypeKeys}.
  * @param {String[]?} columnNames
  */
-Dataframe.prototype.getRowAt = function (index, type, columnNames = this.publicColumnNamesByType(type)) {
+Dataframe.prototype.getRowAt = function (index, type, columnNames = this.publicColumnNamesByType(type), global = false) {
     const origIndex = index; // For client-side metadata
 
     const row = {};
     _.each(columnNames, (columnName) => {
-        row[columnName] = this.getCell(index, type, columnName);
+        row[columnName] = this.getCell(index, type, columnName, global);
     });
     row._index = origIndex;
     return row;
@@ -1598,12 +1595,12 @@ Dataframe.prototype.getRowAt = function (index, type, columnNames = this.publicC
  * @param {BufferTypeKeys} type
  * @param {String[]} columnNames
  */
-Dataframe.prototype.getRows = function (indices, type, columnNames = this.publicColumnNamesByType(type)) {
+Dataframe.prototype.getRows = function (indices, type, columnNames = this.publicColumnNamesByType(type), global = false) {
     const mask = new DataframeMask(this);
     mask[type] = indices;
 
     return mask.mapIndexesByType(type, (index) => {
-        return this.getRowAt(index, type, columnNames);
+        return this.getRowAt(index, type, columnNames, global);
     });
 };
 
@@ -1698,7 +1695,7 @@ Dataframe.prototype.getColumnValues = function (columnName, type, global = false
         return this.getLocalBuffer(columnName);
     }
 
-    const column = attributes[columnName] || this.getColumn(columnName, type, false);
+    const column = attributes[columnName] || this.getColumn(columnName, type, global);
 
     // This lets us know if we need to reindex the values,
     // e.g., go from unsorted to sorted.
