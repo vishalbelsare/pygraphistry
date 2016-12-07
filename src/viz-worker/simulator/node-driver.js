@@ -268,70 +268,49 @@ export function createInteractionsLoop({
     }) {
 
     const { globalControls: { simulationTime = 1 }} = nBody;
-    const { Observable, Scheduler, Subscription, ReplaySubject } = Rx;
+    const { Observable, Scheduler, Subject, BehaviorSubject } = Rx;
 
-    const play = interactions
-        .filter((x = { play: false }) => x && x.play)
-        .do((x) => nBody.updateSettings(x));
+    const renderTriggers = interactions
+        .filter(Boolean)
+        .do((x) => x.simControls && nBody.updateSettings(x))
+        .multicast(
+            () => new Subject(),
+            (renderTriggers) => renderTriggers
+                .merge(Observable.merge(
+                    renderTriggers
+                        .filter(({ layout }) => layout).startWith(0)
+                        .auditTime(simulationTime, Scheduler.async),
+                    renderTriggers
+                        .filter(({ layout }) => !layout).startWith(0)
+                        .auditTime(4, Scheduler.async) // <-- todo: magic numbers?
+                )
+                .map(() => ({ play: false, layout: false }))
+            )
+        );
 
-    const renderTriggers = Observable.merge(
-
-            play.startWith({ play: true, layout: false }),
-
-            play.filter((x = { layout: false }) => x && x.layout)
-                .mapTo({ play: false, layout: false })
-                .startWith({ play: false, layout: false })
-                .delay(simulationTime),
-
-            play.filter((x) => !x || !x.layout)
-                .mapTo({ play: false, layout: false })
-                .startWith({ play: false, layout: false })
-                .delay(4) // <-- todo: magic numbers?
-        )
-        .multicast(() => new ReplaySubject(1));
-
-    let rtConnection;
-
-    return Observable
-        .using(connectRenderTriggers, () => {
-            logger.trace('LOADING DATASET');
-            return Observable.of(nBody);
-        })
-        .expand(runInteractionLoop);
-
-    function connectRenderTriggers() {
-        if(!rtConnection) {
+    return renderTriggers.multicast(() => {
             logger.trace('STARTING DRIVER');
-            rtConnection = new Subscription(() => {
-                logger.trace('STOPPING DRIVER');
-                rtConnection = null;
-            });
-            rtConnection.add(renderTriggers.subscribe((v) => {
-                logger.trace('=============================isRunningRecent:', v);
-            }));
-            rtConnection.add(renderTriggers.connect());
-        }
-        return rtConnection;
-    }
-
-    function runInteractionLoop(nBody) {
-        return Observable.defer(() => {
-                perf.startTiming('tick_durationMS');
-                return renderTriggers;
+            logger.trace('LOADING DATASET');
+            return new BehaviorSubject({ play: true, layout: false });
+        },
+        (renderTriggers) => renderTriggers.do((x) => {
+                logger.trace('=============================isRunningRecent:', x);
             })
             .filter(({ play }) => play)
-            .take(1)
-            // Recreates old functionality of forcing a break in the event loop, so
-            // things like socket event handlers don't queue up
-            .delay(1)
-            .mergeMap(
-                (x) => nBody.tick(x),
+            // Force a break in the event loop, so things
+            // like socket event handlers don't queue up
+            .auditTime(0, Scheduler.async)
+            .exhaustMap(
+                (x) => {
+                    perf.startTiming('tick_durationMS');
+                    return nBody.tick(x);
+                },
                 (x) => {
                     perf.endTiming('tick_durationMS');
                     return nBody;
                 }
-            );
-    }
+            ).take(1).subscribeOn(Scheduler.async).repeat()
+    );
 }
 
 /**

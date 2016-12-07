@@ -281,11 +281,11 @@ class Renderer extends React.Component {
     }) {
         if (currEdges.elements !== nextEdges.elements ||
             currPoints.elements !== nextPoints.elements) {
-            const MAX_SIZE_TO_ALLOCATE = 2000000;
-            const edges = Math.min(nextEdges.elements, MAX_SIZE_TO_ALLOCATE);
-            const points = Math.min(nextPoints.elements, MAX_SIZE_TO_ALLOCATE);
             renderingScheduler.attemptToAllocateBuffersOnHints(
-                renderState.config, renderState, { edges, points, }
+                renderState.config, renderState, {
+                    edges: nextEdges.elements,
+                    points: nextPoints.elements,
+                }
             );
             return true;
         }

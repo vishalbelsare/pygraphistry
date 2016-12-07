@@ -114,77 +114,6 @@ function getDataTypesFromValues (values, type, dataframe, debug = false) {
     return dataTypes;
 }
 
-/**
- * TODO: Dataframe doesn't currently support sorted/filtered views, so we just clumsily manage it here.
- * This is slow + error prone. We need to extend dataframe to allow us to have views.
- *
- * @param {Dataframe} dataFrame
- * @param {String} type
- * @param {DataframeMask} mask
- * @param {Number} start
- * @param {Number} end
- * @param {String} sortColumnName
- * @param {Boolean} ascending
- * @param {String} searchFilter
- * @returns {{count: *, values: *, dataTypes: *}}
- */
-function sliceSelection (dataFrame, type, mask, start, end, sortColumnName, ascending, searchFilter) {
-    let values;
-    let dataTypes;
-
-    if (searchFilter) {
-        searchFilter = searchFilter.toLowerCase();
-        const newIndices = [];
-        const columnNames = dataFrame.publicColumnNamesByType(type);
-        mask.forEachIndexByType(type, (idx) => {
-            // TODO: do this column-wise or at least avoid row-consing.
-            if (_.any(dataFrame.getRowAt(idx, type, columnNames),
-                    (val/* , key */) => String(val).toLowerCase().indexOf(searchFilter) > -1)) {
-                newIndices.push(idx);
-            }
-        });
-        mask[type] = newIndices;
-    }
-
-    const count = mask.numByType(type);
-
-    if (sortColumnName === undefined) {
-        values = dataFrame.getRows(mask.getIndexRangeByType(type, start, end), type);
-        dataTypes = getDataTypesFromValues(values, type, dataFrame);
-        return {count: count, values: values, dataTypes: dataTypes};
-    }
-
-    // TODO: Speed this up / cache sorting. Actually, put this into dataframe itself.
-    // Only using permutation out here because this should be pushed into dataframe.
-    const sortCol = dataFrame.getColumnValues(sortColumnName, type);
-    const taggedSortCol = new Array(count);
-    mask.forEachIndexByType(type, (idx, i) => {
-        taggedSortCol[i] = [sortCol[i], i];
-    });
-
-    const sortedTags = taggedSortCol.sort((val1, val2) => {
-        const a = val1[0];
-        const b = val2[0];
-        if (typeof a === 'string' && typeof b === 'string') {
-            return (ascending ? a.localeCompare(b) : b.localeCompare(a));
-        } else if (isNaN(a) || a < b) {
-            return ascending ? -1 : 1;
-        } else if (isNaN(b) || a > b) {
-            return ascending ? 1 : -1;
-        } else {
-            return 0;
-        }
-    });
-
-    const slicedTags = sortedTags.slice(start, end);
-    const slicedIndices = _.map(slicedTags, (val) => val[1]);
-
-    values = dataFrame.getRows(slicedIndices, type);
-    dataTypes = getDataTypesFromValues(values, type, dataFrame);
-
-    return {count: count, values: values, dataTypes: dataTypes};
-}
-
 function getControls (controlsName) {
     let controls = lConf.controls.default;
     if (controlsName in lConf.controls) {
@@ -304,6 +233,79 @@ export function readSelectionCore ({dataframe, simulator}, type, query, cb) {
             log.makeQErrorHandler(logger, 'readSelectionCore qLastSelectionIndices')(err);
         });
 };
+
+/**
+ * TODO: Dataframe doesn't currently support sorted/filtered views, so we just clumsily manage it here.
+ * This is slow + error prone. We need to extend dataframe to allow us to have views.
+ *
+ * @param {Dataframe} dataFrame
+ * @param {String} type
+ * @param {DataframeMask} mask
+ * @param {Number} start
+ * @param {Number} end
+ * @param {String} sortColumnName
+ * @param {Boolean} ascending
+ * @param {String} searchFilter
+ * @returns {{count: *, values: *, dataTypes: *}}
+ */
+function sliceSelection (dataFrame, type, mask, start, end, sortColumnName, ascending, searchFilter) {
+
+    let values, indexes, dataTypes, _global = false;
+    const columnNames = dataFrame.publicColumnNamesByType(type);
+
+    if (searchFilter) {
+        searchFilter = searchFilter.toLowerCase();
+        const newIndices = [];
+        mask.forEachIndexByType(type, (idx) => {
+            // TODO: do this column-wise or at least avoid row-consing.
+            if (_.any(dataFrame.getRowAt(idx, type, columnNames, _global),
+                    (val/* , key */) => String(val).toLowerCase().indexOf(searchFilter) > -1)) {
+                newIndices.push(idx);
+            }
+        });
+        mask[type] = newIndices;
+    }
+
+    const count = mask.numByType(type);
+
+    if (start >= count) {
+        end = Math.min(count, Math.abs(end - start));
+        start = 0;
+    }
+
+    if (sortColumnName === undefined) {
+        indexes = mask.getIndexRangeByType(type, start, end);
+    } else {
+
+        // TODO: Speed this up / cache sorting. Actually, put this into dataframe itself.
+        // Only using permutation out here because this should be pushed into dataframe.
+        const columnValuesToSortBy = dataFrame.getColumnValues(sortColumnName, type, _global);
+        const sortedColumnValuesAndIndexes = mask
+            .mapIndexesByType(type, (idx, i) => [
+                columnValuesToSortBy[idx], idx
+            ]).sort((val1, val2) => {
+                const a = val1[0];
+                const b = val2[0];
+                if (typeof a === 'string' && typeof b === 'string') {
+                    return (ascending ? a.localeCompare(b) : b.localeCompare(a));
+                } else if (isNaN(a) || a < b) {
+                    return ascending ? -1 : 1;
+                } else if (isNaN(b) || a > b) {
+                    return ascending ? 1 : -1;
+                } else {
+                    return 0;
+                }
+            })
+            .slice(start, end);
+
+        indexes = sortedColumnValuesAndIndexes.map((zippedValue) => zippedValue[1]);
+    }
+
+    values = dataFrame.getRows(indexes, type, columnNames, _global);
+    dataTypes = getDataTypesFromValues(values, type, dataFrame);
+
+    return { count, values, dataTypes };
+}
 
 VizServer.prototype.readSelection = function (type, query, res) {
     const { send } = res;

@@ -71,16 +71,11 @@ export function views(path, base) {
         function tickLayoutFn(path) {
             const workbookIds = [].concat(path[1]);
             const viewIds = [].concat(path[3]);
-
             return loadViewsById({
                 workbookIds, viewIds
-            })
-            .mergeMap(({ workbook, view }) => {
-                const workbookId = workbook.id;
-                const viewId = view.id;
-                tickLayout({workbook, view});
-                return [];
-            });
+            }).mergeMap(({ view }) => tickLayout({
+                view
+            }));
         }
 
         function addColumn(path, [componentType, name, values, dataType]) {

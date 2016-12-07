@@ -443,13 +443,18 @@ RenderingScheduler.prototype.attemptToAllocateBuffersOnHints = function (config,
         return;
     }
 
-    const timeoutLength = 1;
     const { hintsAllocationCycle } = this;
 
     if (hintsAllocationCycle) {
         hintsAllocationCycle.unsubscribe();
         return;
     }
+
+    const timeoutLength = 1;
+    const MAX_SIZE_TO_ALLOCATE = 2000000;
+
+    edges = Math.min(edges, MAX_SIZE_TO_ALLOCATE);
+    points = Math.min(points, MAX_SIZE_TO_ALLOCATE);
 
     const numElements = {
         edges, points,
