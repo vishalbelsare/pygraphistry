@@ -20,6 +20,7 @@ export function makeTestUser(investigations, templates, connectors, apiKey, grap
         $ref(`templatesById['${template.id}']`)
     );
 
+    console.log(connectors);
     const connectorRefs = _.sortBy(connectors, 'name').map(connector =>
         $ref(`connectorsById['${connector.id}']`)
     );

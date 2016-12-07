@@ -6,7 +6,7 @@ import objectHash from 'object-hash';
 import VError from 'verror';
 import logger from '../../../shared/logger.js';
 import conf from '../../../server/config.js';
-import { Connector } from '.';
+import { Connector } from './connector.js';
 
 
 class SplunkConnector extends Connector {

@@ -19,5 +19,4 @@ export class Connector {
     healthCheck() {
         return Observable.throw(new Error('Not implemented'));
     }
-
 }
