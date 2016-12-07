@@ -12,10 +12,17 @@ import { getHandler,
          captureErrorStacks } from 'viz-shared/routes';
 
 export function scene(path, base) {
-    return function scene({ loadViewsById, loadLabelsByIndexAndType }) {
+    return function scene({ tickLayout, loadViewsById, loadLabelsByIndexAndType }) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
+        const setSimulating = setHandler(path, loadViewsById,
+            (scene, key, simulating, path, { view }) => Observable.defer(() => {
+                return tickLayout({ view }).concat(Observable.of({
+                    path, value: scene[key] = simulating
+                }));
+            })
+        );
         const setColors = setHandler(path, loadViewsById,
             (node, key, color, path, { view }) => Observable.defer(() => {
 
@@ -30,7 +37,9 @@ export function scene(path, base) {
                         r: color.red(), g: color.green(),
                         b: color.blue(), a: color.alpha()
                     }});
-                    nBody.interactions.next({ play: true, layout: true });
+                    return tickLayout({ view }).concat(Observable.of({
+                        path, value: color
+                    }));
                 }
 
                 return Observable.of({ path, value: color });
@@ -42,7 +51,7 @@ export function scene(path, base) {
             get: getValues,
             route: `${base}['scene'][{keys}]`
         }, {
-            set: setValues,
+            set: setSimulating,
             route: `${base}['scene'].simulating`
         }, {
             get: getValues,
