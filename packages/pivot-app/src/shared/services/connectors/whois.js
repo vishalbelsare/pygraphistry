@@ -16,7 +16,7 @@ export const WhoisConnector = {
         message: null
     },
 
-    login: function login() {
+    healthCheck: function healthCheck() {
         const lookup = Observable.bindNodeCallback(whois.lookup);
         const testIP = '64.233.160.0';
         return lookup(testIP)
