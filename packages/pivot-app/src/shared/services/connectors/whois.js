@@ -1,31 +1,27 @@
-import logger from '../../logger.js';
-
 import { Observable } from 'rxjs';
 import whois from 'node-whois';
 import { parseWhoIsData as parse } from 'parse-whois';
 import VError from 'verror';
-
+import { Connector } from './connector.js';
+import logger from '../../logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
-export const WhoisConnector = {
-    id: 'whois-connection',
-    name: 'WHOIS',
-    lastUpdated: new Date().toLocaleString(),
-    status: {
-        level: 'info',
-        message: null
-    },
 
-    login: function login() {
+class WhoisConnector extends Connector {
+    constructor(config) {
+        super(config);
+    }
+
+    healthCheck() {
         const lookup = Observable.bindNodeCallback(whois.lookup);
-        const testIP = '64.233.160.0';
-        return lookup(testIP)
+
+        return lookup(WhoisConnector.testIP)
             .map((response) => {
                 return parse(response)
                     .filter(({attribute}) => (attribute === 'Organization'));
 
             })
-            .map(([{value}]) => `WHOIS resolved ${testIP}'s organization to: ${value}`)
+            .map(([{value}]) => `WHOIS resolved ${WhoisConnector.testIP}'s organization to: ${value}`)
             .catch((err) =>
                     Observable.throw(
                         new VError({
@@ -34,5 +30,13 @@ export const WhoisConnector = {
                         }, 'Could not connect to whois')
                     )
             );
+
     }
-};
+}
+
+WhoisConnector.testIP = '64.233.160.0';
+
+export const whoisConnector0 = new WhoisConnector({
+    id: 'whois-connection',
+    name: 'WHOIS',
+});
