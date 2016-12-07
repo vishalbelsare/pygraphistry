@@ -193,8 +193,6 @@ class Graphistry extends Observable {
             .toPromise());
     }
 
-
-
      /**
      * Toggle a leftside panel
      * @method Graphistry.toggleLeftPanel
@@ -329,9 +327,10 @@ class Graphistry extends Observable {
     }
 
     /**
-     * Run one step of Graphistry's clustering algorithm
+     * Run a number of steps of Graphistry's clustering algorithm
      * @method Graphistry.tickClustering
      * @static
+     * @param {number} ticks - The number of ticks to run
      * @return {Promise} The result of the callback
      * @example
      * GraphistryJS(document.getElementById('viz'))
@@ -341,13 +340,22 @@ class Graphistry extends Observable {
      *         return g.tickClustering();
      *     })
      */
-    static tickClustering() {
+    static tickClustering(ticks = 1) {
 
+        let obs;
         const { view } = this;
 
-        return new this(view.call('tick', [])
-            .map(({ json }) => json.toJSON())
-            .toPromise());
+        if (typeof ticks !== 'number') {
+            obs = Observable.of({});
+        } else {
+            obs = Observable
+                .timer(0, 40)
+                .take(Math.abs(ticks) || 1)
+                .concatMap(() => view.call('tick', []))
+                .takeLast(1);
+        }
+
+        return new this(obs.toPromise());
     }
 
     /**
@@ -483,7 +491,7 @@ class Graphistry extends Observable {
             'showToolbar': ['view', 'toolbar.visible'],
 
             //models/scene/scene.js
-            'pruneOrphans': ['view', 'scene.pruneOrphans'],
+            'pruneOrphans': ['view', 'pruneOrphans'],
             'showArrows':   ['view', 'scene.renderer.showArrows'],
             'background':   ['view', 'scene.renderer.background.color'],
             'edgeOpacity':  ['view', 'scene.renderer.edges.opacity'],
@@ -709,10 +717,8 @@ import 'rxjs/add/operator/last';
 import 'rxjs/add/operator/take';
 import 'rxjs/add/operator/scan';
 import 'rxjs/add/operator/takeLast';
-import 'rxjs/add/operator/delay';
 import 'rxjs/add/operator/merge';
 import 'rxjs/add/operator/concat';
-import 'rxjs/add/operator/concatMap';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/finally';
 import 'rxjs/add/operator/mergeMap';
