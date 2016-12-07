@@ -156,13 +156,6 @@ function setupRotate($eventTarget, camera) {
 
 function setupScroll($eventTarget, canvas, camera, appState) {
     return $eventTarget.onAsObservable('wheel')
-        // .auditTime(1)
-        .switchMap(util.observableFilter([appState.marqueeOn, appState.brushOn],
-            function (val) {
-                return val !== 'done';
-            },
-            util.AND
-        ))
         .filter(function (evt) {
             return !$(evt.target).parents(
                 `.${labelStyles['label-contents']}`
