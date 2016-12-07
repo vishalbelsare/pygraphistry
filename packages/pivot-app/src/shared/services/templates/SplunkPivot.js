@@ -1,6 +1,6 @@
 import _ from 'underscore';
 import moment from 'moment';
-import { splunkConnector0 as splunkConnector } from '../connectors';
+import { splunkConnector0 } from '../connectors';
 import { shapeSplunkResults } from '../shapeSplunkResults.js';
 import logger from '../../../shared/logger.js';
 const log = logger.createLogger('SplunkPivot', __filename);
@@ -21,7 +21,7 @@ export class SplunkPivot {
         this.connections = connections;
         this.encodings = encodings;
         this.attributes = attributes;
-        this.connector = splunkConnector;
+        this.connector = splunkConnector0;
     }
 
     searchAndShape({ app, pivot, pivotCache }) {

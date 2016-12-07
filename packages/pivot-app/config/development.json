@@ -8,7 +8,7 @@
         "level": "debug"
     },
     "graphistry": {
-        "host": "https://labs.graphistry.com"
+        "host": "https://staging.graphistry.com"
     },
     "splunk": {
         "jobCacheTimeout": 3600,
