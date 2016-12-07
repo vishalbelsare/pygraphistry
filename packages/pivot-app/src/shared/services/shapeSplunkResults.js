@@ -85,14 +85,14 @@ function encodeGraph({ app, pivot }) {
 }
 
 function shapeHyperGraph({ app, pivot } ) {
-    const { results, template } = pivot;
+    const { events, template } = pivot;
     const { attributes, connections } = template;
     const isStar = (connections === undefined) || (connections.indexOf('*') !== -1);
 
     const edges = [];
     const nodeLabels = [];
-    for(let i = 0; i < results.length; i++) {
-        const row = results[i];
+    for(let i = 0; i < events.length; i++) {
+        const row = events[i];
         const eventID = row['EventID'] || simpleflake().toJSON();
 
         const fields =
