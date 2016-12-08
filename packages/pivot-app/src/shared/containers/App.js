@@ -5,13 +5,13 @@ import { DevTools } from './DevTools';
 import { hoistStatics } from 'recompose';
 import { connect, container } from '@graphistry/falcor-react-redux';
 import { Alert, Button } from 'react-bootstrap';
-
+import styles from './styles.less';
 
 function renderErrorBanner(serverStatus) {
     const title = serverStatus.title ? (<h4><b>{ serverStatus.title }</b></h4>) : null
 
     return (
-        <Alert bsStyle='danger' closeLabel='test'>
+        <Alert bsStyle='danger' className={styles.serverStatusAlert}>
             { title }
             <p>
                 { serverStatus.message }
