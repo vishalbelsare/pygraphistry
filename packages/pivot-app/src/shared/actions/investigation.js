@@ -4,9 +4,9 @@ export const INSERT_PIVOT = 'insert-pivot';
 export const PLAY_INVESTIGATION = 'play-investigation';
 export const DISMISS_ALERT = 'dismiss-alert';
 
-export const searchPivot = ({index}) => {
+export const searchPivot = ({ index, investigationId }) => {
     return ({
-        index, type: SEARCH_PIVOT
+        investigationId, index, type: SEARCH_PIVOT
     });
 };
 
@@ -22,9 +22,9 @@ export const insertPivot = ({ index }) => {
     });
 };
 
-export const playInvestigation = ({ length }) => {
+export const playInvestigation = ({ length, investigationId }) => {
     return ({
-        length, type: PLAY_INVESTIGATION
+        investigationId, length, type: PLAY_INVESTIGATION
     });
 };
 

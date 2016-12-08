@@ -38,14 +38,14 @@ import React from 'react'
 import Select from 'react-select';
 
 
-function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot, status }) {
+function Actions({ index, investigationId, resultCount, splicePivot, searchPivot, insertPivot, status }) {
     return (
         <div>
         <ButtonGroup>
             <OverlayTrigger placement="top" overlay={
                 <Tooltip id={`tooltipActionPlay_${index}`}>Run step</Tooltip>
             } key={`${index}: entityRowAction_${index}`}>
-                <Button onClick={(ev) => searchPivot({index})} disabled={status.searching}>
+                <Button onClick={(ev) => searchPivot({ index, investigationId })} disabled={status.searching}>
                     {
                         status.searching ? <Glyphicon glyph="hourglass" /> : <Glyphicon glyph="play" />
                     }
@@ -63,7 +63,7 @@ function ResultCount({ index, resultCount, splicePivot, searchPivot, insertPivot
             <OverlayTrigger placement="top" overlay={
                 <Tooltip id={`tooltipActionDelete_${index}`}>Delete step</Tooltip>
             } key={`${index}: entityRowAction_${index}`}>
-                <Button disabled={index === 0} onClick={(ev) => splicePivot({index})}><Glyphicon glyph="trash" /></Button>
+                <Button disabled={index === 0} onClick={(ev) => splicePivot({ index })}><Glyphicon glyph="trash" /></Button>
             </OverlayTrigger>
         </ButtonGroup>
         {
@@ -292,7 +292,7 @@ function renderPivotCell(id, paramKey, paramValue, paramUI, previousPivots, hand
 }
 
 function renderPivotRow({
-    id, status, enabled, resultCount, resultSummary, pivotParameters, pivotTemplate, templates,
+    id, investigationId, status, enabled, resultCount, resultSummary, pivotParameters, pivotTemplate, templates,
     searchPivot, togglePivot, setPivotAttributes, splicePivot, insertPivot, pivots, rowIndex })
 {
     const handlers = {searchPivot, togglePivot, setPivotAttributes, splicePivot, insertPivot}
@@ -340,7 +340,7 @@ function renderPivotRow({
                     { renderEntitySummaries(id, resultSummary) }
             </td>
             <td className={styles.pivotIcons}>
-                <ResultCount index={rowIndex} resultCount={resultCount} searchPivot={searchPivot}
+                <Actions investigationId={investigationId} index={rowIndex} resultCount={resultCount} searchPivot={searchPivot}
                     insertPivot={insertPivot} splicePivot={splicePivot} status={status}/>
             </td>
         </tr>

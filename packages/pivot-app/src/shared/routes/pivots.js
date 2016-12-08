@@ -15,7 +15,7 @@ import logger from '../logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 
-export function pivots({loadPivotsById, searchPivot}) {
+export function pivots({loadInvestigationsById, loadPivotsById, searchPivot}) {
     const getPivotsHandler = getHandler(['pivot'], loadPivotsById);
     const setPivotsHandler = setHandler(['pivot'], loadPivotsById);
 
@@ -44,20 +44,17 @@ export function pivots({loadPivotsById, searchPivot}) {
         set: setPivotsHandler,
     }, {
         route: `pivotsById[{keys}].searchPivot`,
-        call: searchPivotCallRoute({loadPivotsById, searchPivot})
+        call: searchPivotCallRoute({loadInvestigationsById, loadPivotsById, searchPivot})
     }];
 }
 
-function searchPivotCallRoute({ loadPivotsById, searchPivot }) {
+function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPivot }) {
     return function(path, args) {
         const pivotIds = path[1];
+        const investigationId = args[0];
 
-        // Needed in order to set 'Pivot #' Attribute (Demo)
-        // Should probably remove.
-        const rowIds = args;
-
-        return searchPivot({loadPivotsById, pivotIds, rowIds})
-            .mergeMap(({app, pivot}) => {
+        return searchPivot({ loadInvestigationsById, loadPivotsById, pivotIds, investigationId })
+            .mergeMap(({ app, pivot }) => {
                 return [
                     $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
                     $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),

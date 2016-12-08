@@ -28,14 +28,14 @@ export const investigation = combineEpics(
 function playInvestigation(action$, store) {
         return action$
             .ofType(PLAY_INVESTIGATION)
-            .groupBy(({ id }) => id)
+            .groupBy(({ investigationId }) => investigationId)
             .mergeMap((actionsById) => actionsById.switchMap(
-                ({ stateKey, falcor, state, length, target }) => {
+                ({ investigationId, falcor, length }) => {
                     return Observable
                         .range(0, length)
                         .concatMap((index) => {
                             return Observable.from(falcor.set($value(['pivots', [index],'status'], { searching: true, ok: true })))
-                                .concat(falcor.call(['pivots', [index], 'searchPivot'], [index]));
+                                .concat(falcor.call(['pivots', [index], 'searchPivot'], [investigationId]));
                         }
                         )
                         .concat(falcor.call(`play`))
@@ -60,15 +60,15 @@ function dismissAlert(action$, store) {
 function searchPivot(action$, store) {
         return action$
             .ofType(SEARCH_PIVOT)
-            .groupBy(({ id }) => id)
+            .groupBy(({ investigationId }) => investigationId)
             .mergeMap((actionsById) => actionsById.switchMap(
-                ({ stateKey, falcor, state, index, target }) => {
+                ({ investigationId, falcor, index }) => {
                     return Observable.from(falcor.set($value(`pivots['${index}']['enabled']`, true)))
                         // TODO Use pivot id instead of index
                         .concat(falcor.set($value(['pivots', [index], 'status'], { searching: true, ok: true })))
                         .concat(falcor.set($value(['url'], '/html/splash.html')))
-                        .concat(falcor.call(['pivots', index, 'searchPivot'], [index]))
-                        .concat(falcor.call(`play`))
+                        .concat(falcor.call(['pivots', index, 'searchPivot'], [investigationId]))
+                        .concat(falcor.call(`play`));
                 }
             ))
             .ignoreElements();

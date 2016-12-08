@@ -33,7 +33,7 @@ export class SplunkPivot {
             .do(({ resultCount, events, searchId, df, isPartial }) => {
                 pivot.df = df;
                 pivot.resultCount = resultCount;
-                pivot.results = events;
+                pivot.events = events;
                 pivot.splunkSearchId = searchId;
                 pivot.isPartial = isPartial;
                 pivotCache[pivot.id] = {
@@ -97,7 +97,7 @@ function buildLookup(text, pivotCache) {
         var match = '';
         for (var i = 0; i < fields.length; i++) {
             const field = fields[i];
-            const vals = _.uniq(_.map(pivotCache[search].results, function (row) {
+            const vals = _.uniq(_.map(pivotCache[search].events, function (row) {
                 return row[field];
             }));
             const fieldMatch = `"${ field }"="${ vals.join(`" OR "${ field }"="`) }"`;

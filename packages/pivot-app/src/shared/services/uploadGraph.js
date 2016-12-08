@@ -1,7 +1,6 @@
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
 import { DataFrame, Row } from 'dataframe-js';
-import FakeDataFrame from '../DataFrame';
 import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
@@ -69,13 +68,6 @@ function getQuery(key) {
     };
 }
 
-
-const previousGraph = {
-    graph: [],
-    labels: []
-};
-
-
 function createGraph(pivots) {
     const name = `PivotApp/${simpleflake().toJSON()}`;
     const type = "edgelist";
@@ -113,24 +105,11 @@ function createGraph(pivots) {
         group => group[0]
     );
 
-    const newEdges = _.difference(mergedPivots.graph, previousGraph.graph);
-    const removedEdges = _.difference(previousGraph.graph, mergedPivots.graph);
-    const newNodes = _.difference(mergedPivots.labels, previousGraph.labels);
-    const removedNodes = _.difference(previousGraph.labels, mergedPivots.labels);
-
-    FakeDataFrame.addEdges(newEdges);
-    FakeDataFrame.removeEdges(removedEdges);
-    FakeDataFrame.addNodes(newNodes);
-    FakeDataFrame.removeNodes(removedNodes);
-
     const uploadData = {
-        graph: FakeDataFrame.getData().edges,
-        labels: FakeDataFrame.getData().nodes,
+        graph: mergedPivots.graph,
+        labels: mergedPivots.labels,
         name, type, bindings
     };
-
-    previousGraph.graph = uploadData.graph;
-    previousGraph.labels = uploadData.labels;
 
     return { pivots, data:uploadData };
 }
