@@ -51,6 +51,7 @@ function wrapRouteHandler(route, handler) {
 
         return Observable
             .defer(() => originalHandler.apply(this, args) || [])
+            .timeout(18000)
             .map(mapObjectsToAtoms)
             .do(res =>
                 log.trace({
