@@ -1,3 +1,4 @@
+import 'react-tag-input/example/reactTags.css';
 import 'rc-switch/assets/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-bootstrap-table/dist/react-bootstrap-table.min.css';

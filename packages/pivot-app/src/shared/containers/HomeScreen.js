@@ -18,6 +18,7 @@ import {
     OverlayTrigger,
     Tooltip
 } from 'react-bootstrap';
+import { WithContext as ReactTags } from 'react-tag-input';
 import { switchScreen } from '../actions/app';
 import {
     selectInvestigation,
@@ -81,11 +82,16 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
                              setInvestigationParams, selectHandler}) {
     function tagsFormatter(tags, row) {
         return (
-            <p> {
+            /*<p> {
                 tags.map(tag => (
                     <Label key={`ilisttags-${row.id}-${tag}`}> { tag } </Label>
                 ))
-            } </p>
+            } </p>*/
+
+            <ReactTags tags={tags.map((tag, i) => ({id: i, text: tag}))}
+                handleAddition={() => log.info('Addition')}
+                handleDelete={() => log.info('Delete')}
+            />
         );
     }
 
@@ -157,11 +163,9 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
                     Last Modified
                 </TableHeaderColumn>
 
-                {/*
                 <TableHeaderColumn dataField="tags" dataFormat={tagsFormatter} editable={false}>
                     Tags
                 </TableHeaderColumn>
-                */}
 
                 <TableHeaderColumn dataField="id" dataFormat={idFormatter} width='172px' editable={false}>
                     Actions
