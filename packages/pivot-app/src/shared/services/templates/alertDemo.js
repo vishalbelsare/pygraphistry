@@ -117,7 +117,6 @@ export const expandFireeyeDemo = new SplunkPivot({
     connections: FIREEYE_FIELDS,
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
-        console.log('pivotParameters', pivotParameters)
         const attribs = 'EventID, Message, Fire Eye MD5, Fire Eye URL, Internal IPs, External IPs';
         const refPivot = pivotParameters.ref.value[0];
         const rawSearch =
