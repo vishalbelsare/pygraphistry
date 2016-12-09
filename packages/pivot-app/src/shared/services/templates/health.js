@@ -1,3 +1,9 @@
+/*
+ *
+ * BITROTTEN AND BROKEN
+ *
+ */
+
 import { SplunkPivot } from '../connectors/splunk.js';
 import stringhash from 'string-hash';
 
@@ -58,6 +64,7 @@ const SEARCH_SPLUNK_HEALTH = new SplunkPivot({
     kind: 'text',
     label: 'Query:',
     name: 'Search Splunk (health)',
+    tags: ['HealthDemo'],
 
     toSplunk: function (pivotParameters, pivotCache) {
         return `search ${SPLUNK_INDICES.HEALTH} ${pivotParameters['input']} ${this.constructFieldString()}`
@@ -71,6 +78,7 @@ const SEARCH_PATIENT = new SplunkPivot({
     kind: 'text',
     label: 'PatientID:',
     name: 'Search Patient',
+    tags: ['HealthDemo'],
 
     toSplunk: function (pivotParameters, pivotCache) {
         return `search PatientID=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${this.constructFieldString()}`
@@ -85,7 +93,7 @@ const SEARCH_LAB = new SplunkPivot({
     kind: 'text',
     label: 'LabName',
     name: 'Search Lab',
-    transport: 'Splunk',
+    tags: ['HealthDemo'],
 
     toSplunk: function (pivotParameters, pivotCache) {
         return `search LabName=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${this.constructFieldString()}`
@@ -100,6 +108,7 @@ const PATIENT = new SplunkPivot({
     kind: 'button',
     label: 'Any Patient in:',
     name: 'Expand Patients',
+    tags: ['HealthDemo'],
 
     toSplunk: function (pivotParameters, pivotCache) {
         const attribs = 'PatientID';
