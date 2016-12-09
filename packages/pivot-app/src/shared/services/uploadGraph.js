@@ -151,7 +151,9 @@ function makeEventTable({pivots}) {
         fieldSummaries[field] = fieldSummary(mergedData, field)
     );
 
-    const table = mergedData.toCollection();
+    const table = mergedData.groupBy('EventID')
+        .aggregate((group) => group.toCollection()[0])
+        .toArray('aggregation');
 
     return {
         fieldSummaries: fieldSummaries,
