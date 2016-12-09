@@ -3,9 +3,7 @@
     "enabled": true,
     "pivotParameters": {
         "query": "Enter search query",
-        "pRef": [
-            "3dbf566346f5ecd4"
-        ]
+        "pRef": "3dbf566346f5ecd4"
     },
     "pivotTemplate": "expand-ids-botnet-demo"
 }
