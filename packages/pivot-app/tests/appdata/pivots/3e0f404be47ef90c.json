@@ -3,15 +3,9 @@
     "enabled": false,
     "pivotParameters": {
         "query": "(severity=\"critical\" OR severity=\"medium\" OR severity=\"low\")",
-        "source": {
-            "$type": "atom",
-            "value": [
-                [
-                    "3e0eabc5a48bbbbc"
-                ]
-            ],
-            "$size": 51
-        },
+        "source": [
+            "3e0eabc5a48bbbbc"
+        ],
         "sourceAttribute": "user",
         "nodes": "threat_name, user"
     },
