@@ -1,3 +1,9 @@
+/*
+ *
+ * BITROTTEN AND BROKEN
+ *
+ */
+
 import { SplunkPivot } from '../connectors/splunk.js';
 import stringhash from 'string-hash';
 
