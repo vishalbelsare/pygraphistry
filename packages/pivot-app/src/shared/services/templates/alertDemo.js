@@ -61,6 +61,7 @@ const FIREEYE_FIELDS = [
 export const searchAlertDemo = new SplunkPivot({
     id: 'search-splunk-alert-botnet-demo',
     name: 'Search Bootnet (all)',
+    tags: ['Demo'],
     pivotParameterKeys: ['query'],
     pivotParametersUI: {
         query: {
@@ -84,6 +85,7 @@ export const searchAlertDemo = new SplunkPivot({
 export const searchFireeyeDemo = new SplunkPivot({
     id: 'search-splunk-fireeye-botnet-demo',
     name: 'Search FireEye',
+    tags: ['Demo'],
     pivotParameterKeys: ['event'],
     pivotParametersUI: {
         event: {
@@ -107,6 +109,7 @@ export const searchFireeyeDemo = new SplunkPivot({
 export const expandFireeyeDemo = new SplunkPivot({
     id: 'expand-fireeye-botnet-demo',
     name: 'Expand with Fire Eye',
+    tags: ['Demo'],
     pivotParameterKeys: ['ref'],
     pivotParametersUI: {
         ref: {
@@ -132,6 +135,7 @@ export const expandFireeyeDemo = new SplunkPivot({
 export const expandBlueCoatDemo = new SplunkPivot({
     id: 'expand-bluecoat-botnet-demo',
     name: 'Expand with Blue Coat',
+    tags: ['Demo'],
     pivotParameterKeys: ['pivotRef'],
     pivotParametersUI: {
         pivotRef: {
@@ -157,6 +161,7 @@ export const expandBlueCoatDemo = new SplunkPivot({
 export const expandFirewallDemo = new SplunkPivot({
     id: 'expand-firewall-botnet-demo',
     name: 'Expand with Firewall',
+    tags: ['Demo'],
     pivotParameterKeys: ['pRef'],
     pivotParametersUI: {
         pRef: {
@@ -182,6 +187,7 @@ export const expandFirewallDemo = new SplunkPivot({
 export const expandIDSDemo = new SplunkPivot({
     id: 'expand-ids-botnet-demo',
     name: 'Expand with IDS/IPS',
+    tags: ['Demo'],
     pivotParameterKeys: ['pRef'],
     pivotParametersUI: {
         pRef: {

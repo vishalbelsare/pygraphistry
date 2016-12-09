@@ -41,6 +41,7 @@ const PAN_SHAPES = {
 export const PAN_SEARCH = new SplunkPivot({
     name: 'PAN - Search',
     id: 'pan-search',
+    tags: ['PAN'],
     pivotParameterKeys: ['query', 'nodes'],
     pivotParametersUI: {
         query: {
@@ -74,6 +75,7 @@ const contextFilter = '(severity="critical" OR severity="medium" OR severity="lo
 export const PAN_EXPAND = new SplunkPivot({
     name: 'PAN - Expand',
     id: 'pan-expand',
+    tags: ['PAN'],
     pivotParameterKeys: ['source', 'sourceAttribute', 'query', 'nodes'],
     pivotParametersUI: {
         source: {

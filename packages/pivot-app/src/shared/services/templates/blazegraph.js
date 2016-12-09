@@ -1,21 +1,17 @@
 import { Observable } from 'rxjs';
 import stringhash from 'string-hash';
 import request from 'request';
+import { PivotTemplate } from './template.js';
 import logger from '../../../shared/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 
-class BlazePivot {
+class BlazePivot extends PivotTemplate {
     constructor( pivotDescription ) {
-        let { id, name,
-              pivotParameterKeys, pivotParametersUI,
-              connections, encodings, attributes, fileName } = pivotDescription;
+        super(pivotDescription);
 
+        const { connections, encodings, attributes, fileName } = pivotDescription;
         this.fileName = fileName;
-        this.id = id;
-        this.name = name;
-        this.pivotParameterKeys = pivotParameterKeys;
-        this.pivotParametersUI = pivotParametersUI;
         this.connections = connections;
         this.encodings = encodings;
         this.attributes = attributes;
@@ -46,6 +42,7 @@ class BlazePivot {
 export const COMMUNITY_DETECTION = new BlazePivot({
     id: 'blazegraph-community-detection',
     name: 'Community Detection',
+    tags: ['Blazegraph'],
     fileName: 'blazegraph.json',
     pivotParameterKeys: ['communities'],
     pivotParametersUI : {
@@ -67,6 +64,7 @@ export const COMMUNITY_DETECTION = new BlazePivot({
 export const BLAZE_EXPAND = new BlazePivot({
     id: 'blazegraph-bfs',
     name: 'BFS',
+    tags: ['Blazegraph'],
     fileName: 'darpa-1998-json-expand-two-194.027.251.021',
     pivotParameterKeys: ['ip', 'depth'],
     pivotParametersUI : {

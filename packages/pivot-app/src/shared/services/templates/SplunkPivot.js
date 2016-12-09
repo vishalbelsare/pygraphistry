@@ -1,22 +1,17 @@
 import _ from 'underscore';
 import moment from 'moment';
+import { PivotTemplate } from './template.js';
 import { splunkConnector0 } from '../connectors';
 import { shapeSplunkResults } from '../shapeSplunkResults.js';
 import logger from '../../../shared/logger.js';
 const log = logger.createLogger('SplunkPivot', __filename);
 
 
-export class SplunkPivot {
+export class SplunkPivot extends PivotTemplate {
     constructor( pivotDescription ) {
-        let {
-            id, name,
-            pivotParameterKeys, pivotParametersUI,
-            toSplunk, connections, encodings, attributes
-        } = pivotDescription;
-        this.id = id;
-        this.name = name;
-        this.pivotParameterKeys = pivotParameterKeys;
-        this.pivotParametersUI = pivotParametersUI;
+        super(pivotDescription);
+
+        const { toSplunk, connections, encodings, attributes } = pivotDescription;
         this.toSplunk = toSplunk;
         this.connections = connections;
         this.encodings = encodings;
