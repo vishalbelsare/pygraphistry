@@ -21,7 +21,7 @@ export function investigations({ loadUsersById, loadInvestigationsById, saveInve
     const setInvestigationsHandler = setHandler(['investigation'], loadInvestigationsById);
 
     return [{
-        route: `investigationsById[{keys}]['id','name', 'url', 'status', 'tags', 'description']`,
+        route: `investigationsById[{keys}]['id','name', 'url', 'status', 'description']`,
         returns: `String`,
         get: getInvestigationsHandler,
         set: setInvestigationsHandler,
