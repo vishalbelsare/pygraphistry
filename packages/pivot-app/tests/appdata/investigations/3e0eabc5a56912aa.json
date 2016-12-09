@@ -4,11 +4,9 @@
     "id": "3e0eabc5a56912aa",
     "description": "Correlating user activity in Palo Alto Network Logs",
     "tags": [
-        "Demo",
-        "test",
-        "foo"
+        "PAN"
     ],
-    "modifiedOn": 1481239589411,
+    "modifiedOn": 1481304173129,
     "pivots": [
         "3e0eabc5a48bbbbc",
         "3e0f404be47ef90c"

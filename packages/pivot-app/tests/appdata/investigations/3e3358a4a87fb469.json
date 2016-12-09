@@ -4,9 +4,9 @@
     "id": "3e3358a4a87fb469",
     "description": "Expose attacks in netflow data using graph analytics from Blazegraph",
     "tags": [
-        "Demo"
+        "Blazegraph"
     ],
-    "modifiedOn": 1480983779693,
+    "modifiedOn": 1481305521649,
     "pivots": [
         "3e3358a4a81e46a7",
         "3e3358c5b5e22ba7"
