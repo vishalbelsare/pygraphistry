@@ -10,6 +10,10 @@ export function templates({ loadTemplatesById }) {
         returns: `String`,
         get: getTemplateHandler
     }, {
+        route: `templatesById[{keys}]['tags']`,
+        returns: `Array`,
+        get: getTemplateHandler
+    }, {
         route: `['templatesById'][{keys}]['pivotParameterKeys'].length`,
         returns: `Number`,
         get: getTemplateHandler
