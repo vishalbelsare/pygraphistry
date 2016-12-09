@@ -8,7 +8,6 @@ import { clonePivotModel } from './pivots';
 function defaults(index) {
     return {
         name: `Untitled Investigation ${index}`,
-        url: '/html/splash.html',
         id: simpleflake().toJSON(),
         description: '',
         tags: ['Demo'],
@@ -19,6 +18,7 @@ function defaults(index) {
 
 function initialSoftState(pivots) {
     return {
+        url: '/html/splash.html',
         status: {ok: true},
         eventTable: {},
         pivots: pivots.map((pivotId) =>
