@@ -226,7 +226,7 @@ function renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, han
         [
             {
                 value: JSON.stringify(previousPivots.map(({ id }) => id)),
-                label: 'Step 0'
+                label: previousPivots.length > 1 ? 'All Pivots': 'Step 0'
             }
         ];
 
