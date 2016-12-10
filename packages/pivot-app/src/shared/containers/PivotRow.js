@@ -174,7 +174,6 @@ class ComboSelector extends React.Component {
 
 }
 
-
 function renderTemplateSelector (id, pivotTemplate, templates, setPivotAttributes) {
     return (
         <span className={styles.pivotTypeSelectorContainer}>
@@ -274,7 +273,28 @@ function renderComboCell(id, paramKey, paramValue, paramUI, handlers) {
     );
 }
 
-
+function renderMultiCell(id, paramKey, paramValue, paramUI, handlers) {
+    return (
+        <div key={`pcell-${id}-${paramKey}`} className={tableCellClassName}>
+            <label>{ paramUI.label }</label>
+            <Select
+                id={`selector-${id}-${paramKey}`}
+                name={`selector-${id}-${paramKey}`}
+                clearable={true}
+                labelKey="name"
+                valueKey="id"
+                value={paramValue}
+                options={paramUI.options}
+                multi="true"
+                joinValues="true"
+                onChange={ (selected) =>
+                    handlers.setPivotAttributes({
+                        [`pivotParameters.${paramKey}`]: _.pluck(selected, 'id')
+                    })
+                }/>
+        </div>
+    )
+}
 
 function renderDateRange(id, paramKey, paramValue, paramUI, handlers) {
     return (
@@ -297,6 +317,8 @@ function renderPivotCell(id, paramKey, paramValue, paramUI, previousPivots, hand
             return renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, handlers);
         case 'combo':
             return renderComboCell(id, paramKey, paramValue, paramUI, handlers);
+        case 'multi':
+            return renderMultiCell(id, paramKey, paramValue, paramUI, handlers);
         case 'daterange':
             return renderDateRange(id, paramKey, paramValue, paramUI, handlers);
         default:
