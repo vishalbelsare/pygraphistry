@@ -1,16 +1,23 @@
 import _ from 'underscore';
-
+import { atomify }  from './support';
 
 const defaults  = {
     name: 'Untitled pivot',
+    tags: [],
     pivotParameterKeys: [],
     pivotParametersUI: {}
 };
 
-export function createTemplateModel(pivot) {
-    const clientFields = ['id', 'name', 'pivotParameterKeys', 'pivotParametersUI'];
-    return {
+export function createTemplateModel(template) {
+    const clientFields = ['id', 'name', 'tags', 'pivotParameterKeys', 'pivotParametersUI'];
+    const normalizedTemplate = {
         ...defaults,
-        ..._.pick(pivot, clientFields),
+        ..._.pick(template, clientFields),
     };
+
+    normalizedTemplate.tags = atomify(normalizedTemplate.tags);
+    normalizedTemplate.pivotParameterKeys = atomify(normalizedTemplate.pivotParameterKeys);
+    normalizedTemplate.pivotParametersUI = atomify(normalizedTemplate.pivotParametersUI);
+
+    return normalizedTemplate;
 }

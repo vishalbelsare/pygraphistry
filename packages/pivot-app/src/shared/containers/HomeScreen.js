@@ -1,4 +1,5 @@
 import React from 'react';
+import { ReplaySubject } from 'rxjs';
 import _ from 'underscore';
 import {
     BootstrapTable,
@@ -18,6 +19,7 @@ import {
     OverlayTrigger,
     Tooltip
 } from 'react-bootstrap';
+import { WithContext as ReactTags } from 'react-tag-input';
 import { switchScreen } from '../actions/app';
 import {
     selectInvestigation,
@@ -77,15 +79,90 @@ function welcomeBar(user, investigations, numTemplates) {
     );
 }
 
+
+class TagCell extends React.Component {
+    constructor(props, context) {
+        super(props, context);
+
+        this.handleAddition = this.handleAddition.bind(this);
+        this.handleDelete = this.handleDelete.bind(this);
+        this.handleDrag = this.handleDrag.bind(this);
+        this.updateServerState = this.updateServerState.bind(this);
+
+        this.state = {tags: props.tags};
+        this.serverUpdates$ = new ReplaySubject(1);
+        this.serverUpdates$
+            .debounceTime(1000)
+            .subscribe(
+                tags => this.updateServerState(tags),
+                err => log.error(err, 'TagCell server update stream error')
+            );
+    }
+
+    handleDelete(i) {
+        let { tags } = this.state;
+        tags.splice(i, 1);
+
+        this.setState({tags: tags});
+        this.serverUpdates$.next(tags);
+    }
+
+    handleAddition(tag) {
+        let { tags } = this.state;
+
+        tags.push({
+            id: tags.length + 1,
+            text: tag
+        });
+
+        this.setState({tags: tags});
+        this.serverUpdates$.next(tags);
+    }
+
+    handleDrag(tag, currPos, newPos) {
+        let tags = this.state.tags;
+
+        tags.splice(currPos, 1);
+        tags.splice(newPos, 0, tag);
+
+        this.setState({tags: tags});
+        this.serverUpdates$.next(tags);
+    }
+
+    updateServerState(tags) {
+        const { setInvestigationParams, investigationId } = this.props;
+        setInvestigationParams({tags: _.pluck(tags, 'text')}, investigationId);
+    }
+
+    render() {
+        let tags = this.state.tags;
+        let suggestions = this.state.suggestions;
+        return (
+            <div>
+                <ReactTags tags={tags}
+                           handleDelete={this.handleDelete}
+                           handleAddition={this.handleAddition}
+                           handleDrag={this.handleDrag}
+                           autofocus={false}
+                />
+            </div>
+        )
+    }
+}
+
+
 function investigationTable({user, investigations = [], switchScreen, selectInvestigation, copyInvestigation,
                              setInvestigationParams, selectHandler}) {
     function tagsFormatter(tags, row) {
+        const tagsArray = tags.map((tag, i) => ({id: i, text: tag}));
+
         return (
-            <p> {
-                tags.map(tag => (
-                    <Label key={`ilisttags-${row.id}-${tag}`}> { tag } </Label>
-                ))
-            } </p>
+            <div>
+            <TagCell
+                tags={tagsArray}
+                investigationId={row.id}
+                setInvestigationParams={setInvestigationParams} />
+            </div>
         );
     }
 
@@ -157,11 +234,9 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
                     Last Modified
                 </TableHeaderColumn>
 
-                {/*
-                <TableHeaderColumn dataField="tags" dataFormat={tagsFormatter} editable={false}>
+                <TableHeaderColumn dataField="tags" dataFormat={tagsFormatter} width="200px" editable={false}>
                     Tags
                 </TableHeaderColumn>
-                */}
 
                 <TableHeaderColumn dataField="id" dataFormat={idFormatter} width='172px' editable={false}>
                     Actions

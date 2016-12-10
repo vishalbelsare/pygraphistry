@@ -4,14 +4,15 @@ import {
 import _ from 'underscore';
 import { simpleflake } from 'simpleflakes';
 import { clonePivotModel } from './pivots';
+import { atomify, deatomify } from './support';
+
 
 function defaults(index) {
     return {
         name: `Untitled Investigation ${index}`,
-        url: '/html/splash.html',
         id: simpleflake().toJSON(),
         description: '',
-        tags: ['Demo'],
+        tags: [],
         modifiedOn: Date.now(),
         pivots: []
     };
@@ -19,6 +20,7 @@ function defaults(index) {
 
 function initialSoftState(pivots) {
     return {
+        url: '/html/splash.html',
         status: {ok: true},
         eventTable: {},
         pivots: pivots.map((pivotId) =>
@@ -32,6 +34,9 @@ export function createInvestigationModel(serializedInvestigation, index) {
         ...defaults(index || ''),
         ...serializedInvestigation
     };
+
+    normalizedInvestigation.tags = atomify(normalizedInvestigation.tags);
+
     return {
         ...normalizedInvestigation,
         ...initialSoftState(normalizedInvestigation.pivots)
@@ -39,8 +44,11 @@ export function createInvestigationModel(serializedInvestigation, index) {
 }
 
 export function serializeInvestigationModel(investigation) {
-    const hardState = _.pick(investigation, _.keys(defaults()))
-    hardState.pivots = hardState.pivots.map(pivotRef => pivotRef.value[1])
+    const hardState = _.pick(investigation, _.keys(defaults()));
+
+    hardState.pivots = hardState.pivots.map(pivotRef => pivotRef.value[1]);
+    hardState.tags = deatomify(hardState.tags);
+
     return hardState;
 }
 

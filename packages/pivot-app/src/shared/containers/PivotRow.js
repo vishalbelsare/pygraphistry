@@ -386,11 +386,11 @@ function mapStateToFragment({pivotTemplate = {pivotParameterKeys: []}} = {}) {
     const baseFields = ['enabled', 'status', 'resultCount', 'resultSummary', 'id'];
     const ppKeys = pivotTemplate.pivotParameterKeys || [];
 
-    if (ppKeys.length === 0
-        || _.keys(ppKeys).length <= 1) {
+    if (ppKeys.length === 0) {
         return `{
             ${baseFields.join(',')},
             pivotTemplate: {
+                'id', 'name', 'tags',
                 pivotParameterKeys: {
                     'length',
                     [0...${ppKeys.length}]
@@ -402,7 +402,7 @@ function mapStateToFragment({pivotTemplate = {pivotParameterKeys: []}} = {}) {
     return `{
         ${baseFields.join(',')},
         pivotTemplate: {
-            'id', 'name',
+            'id', 'name', 'tags',
             pivotParameterKeys: {
                 'length',
                 [0...${ppKeys.length}]

@@ -21,10 +21,19 @@ export function investigations({ loadUsersById, loadInvestigationsById, saveInve
     const setInvestigationsHandler = setHandler(['investigation'], loadInvestigationsById);
 
     return [{
-        route: `investigationsById[{keys}]['id','name', 'url', 'status', 'tags', 'description', 'eventTable']`,
+        route: `investigationsById[{keys}]['id','name', 'url', 'status', 'description']`,
         returns: `String`,
         get: getInvestigationsHandler,
         set: setInvestigationsHandler,
+    }, {
+        route: `investigationsById[{keys}]['tags']`,
+        returns: `Array`,
+        get: getInvestigationsHandler,
+        set: setInvestigationsHandler,
+    }, {
+        route: `investigationsById[{keys}]['eventTable']`,
+        returns: `Object`,
+        get: getInvestigationsHandler
     }, {
         route: `investigationsById[{keys}]['modifiedOn']`,
         returns: `Number`,

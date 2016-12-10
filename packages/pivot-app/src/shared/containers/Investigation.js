@@ -148,8 +148,7 @@ function renderInvestigation({id, status, pivots = [], templates, eventTable,
 
 function mapStateToFragment({pivots = []} = {}) {
     return `{
-        'status', 'id', 'name', 'url',
-        'eventTable',
+        'status', 'id', 'name', 'url', 'tags', 'eventTable',
         pivots: {
             'length', [0...${pivots.length}]: ${
                 PivotRow.fragment()

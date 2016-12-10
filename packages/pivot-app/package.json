@@ -58,6 +58,7 @@
     "react-redux": "~4.4.5",
     "react-select": "~1.0.0-rc.2",
     "react-split-pane": "~0.1.51",
+    "react-tag-input": "~4.6.1",
     "recompose": "~0.20.2",
     "redux": "~3.5.2",
     "redux-observable": "~0.9.1",

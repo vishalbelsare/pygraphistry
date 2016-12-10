@@ -1,3 +1,4 @@
+import _ from 'underscore';
 import Investigation from './Investigation.js';
 import InvestigationHeader from './InvestigationHeader.js';
 import {
@@ -11,6 +12,13 @@ import SplitPane from 'react-split-pane';
 import MainNav from './MainNav/MainNav.js';
 
 function renderInvestigationBody(app, activeInvestigation, templates) {
+    const relevantTemplates =
+        activeInvestigation.tags.length > 0 ?
+            templates.filter(template =>
+                _.intersection(template.tags, activeInvestigation.tags).length > 0
+            ) :
+            templates;
+
     return (
         <div className={`main-panel ${styles['investigation-all']}`}>
             <InvestigationHeader data={app} activeInvestigation={activeInvestigation} />
@@ -19,7 +27,7 @@ function renderInvestigationBody(app, activeInvestigation, templates) {
                 <SplitPane split="horizontal" defaultSize="60%" minSize={0}>
                    <iframe allowFullScreen="true" scrolling="no" className={styles.iframe}
                         src={activeInvestigation.url} />
-                   <Investigation data={activeInvestigation} templates={templates}/>
+                   <Investigation data={activeInvestigation} templates={relevantTemplates}/>
                </SplitPane>
             </div>
 
@@ -60,7 +68,7 @@ function mapStateToFragment({ currentUser: {templates = []} } = {}) {
             activeInvestigation: ${Investigation.fragment()},
             templates: {
                 length, [0...${templates.length}]: {
-                    name, id
+                    name, id, tags
                 }
             }
         }

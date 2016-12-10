@@ -8,6 +8,7 @@ import moment from 'moment';
 export const searchSplunk = new SplunkPivot({
     id: 'search-splunk-plain',
     name: 'Search Splunk',
+    tags: ['Splunk', 'Graphviz'],
     pivotParameterKeys: ['query', 'fields'],
     pivotParametersUI: {
         'query': {
@@ -42,6 +43,7 @@ export const searchSplunk = new SplunkPivot({
 export const searchSplunkMap = new SplunkPivot({
     id: 'search-splunk-source-dest',
     name: 'Graphviz Expand',
+    tags: ['Graphviz'],
     pivotParameterKeys: ['src', 'dst', 'pivot'],
     pivotParametersUI: {
         'src': {
@@ -94,6 +96,7 @@ const DATASET_ERROR_NODE_COLORS = {}
 export const searchGraphviz = new SplunkPivot({
     id: 'search-graphviz-logs',
     name: 'Graphviz Search',
+    tags: ['Graphviz'],
     pivotParameterKeys: ['query2', 'level', 'time'],
     pivotParametersUI: {
         'query2': {

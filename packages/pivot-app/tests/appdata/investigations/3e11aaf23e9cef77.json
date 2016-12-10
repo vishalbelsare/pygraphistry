@@ -4,9 +4,9 @@
     "id": "3e11aaf23e9cef77",
     "description": "Enrich errors for given dataset with stack traces",
     "tags": [
-        "Demo"
+        "Graphviz"
     ],
-    "modifiedOn": 1480551616978,
+    "modifiedOn": 1481304708915,
     "pivots": [
         "3e11aaf23d0602dc",
         "3e11b75b795a7aa9"
