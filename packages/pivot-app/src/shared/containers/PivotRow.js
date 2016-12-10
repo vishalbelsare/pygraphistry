@@ -220,27 +220,40 @@ function renderTextCell(id, paramKey, paramValue, paramUI, handlers) {
      );
 }
 
+// The combo box compenents only handles string values. We stringify the default value
+// and the list of options and parse then back when updating the falcor model.
 function renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, handlers) {
     var options =
         [
             {
-                value: [previousPivots.map(({ id }) => ( id ))],
-                label: 'All pivots'
+                value: JSON.stringify(previousPivots.map(({ id }) => id)),
+                label: previousPivots.length > 1 ? 'All Pivots': 'Step 0'
             }
         ];
 
     if (previousPivots.length > 1) {
         options = options.concat(
             previousPivots.map((pivot, index) =>
-                ({value: [ pivot.id ], label: `Step ${index}`})
+                ({
+                    value: JSON.stringify([ pivot.id ]),
+                    label: `Step ${index}`
+                })
             )
         );
     }
 
+    // Wrap setPivotAttributes to parse back the selected item.
+    const originalSPA = handlers.setPivotAttributes;
+    handlers.setPivotAttributes = (arg) => {
+        return originalSPA(
+            _.mapObject(arg, stringifiedArray => JSON.parse(stringifiedArray))
+        );
+    };
+
     return renderComboCell(
         id,
         paramKey,
-        paramValue,
+        JSON.stringify(paramValue),
         {options: options, ...paramUI},
         handlers
     );

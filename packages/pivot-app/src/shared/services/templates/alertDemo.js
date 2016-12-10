@@ -121,8 +121,9 @@ export const expandFireeyeDemo = new SplunkPivot({
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
         const attribs = 'EventID, Message, Fire Eye MD5, Fire Eye URL, Internal IPs, External IPs';
+        const refPivot = pivotParameters.ref.value[0];
         const rawSearch =
-            `[{{${pivotParameters.ref}}}] -[${attribs}]-> [${splunkIndices.FIREEYE}]`;
+            `[{{${refPivot}}}] -[${attribs}]-> [${splunkIndices.FIREEYE}]`;
         const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
 
         return {
@@ -147,8 +148,9 @@ export const expandBlueCoatDemo = new SplunkPivot({
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
         const attribs = 'Fire Eye URL';
+        const refPivot = pivotParameters.pivotRef.value[0];
         const rawSearch =
-            `[{{${pivotParameters.pivotRef}}}] -[${attribs}]-> [${splunkIndices.BLUECOAT}]`;
+            `[{{${refPivot}}}] -[${attribs}]-> [${splunkIndices.BLUECOAT}]`;
         const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
 
         return {
@@ -173,8 +175,9 @@ export const expandFirewallDemo = new SplunkPivot({
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
         const attribs = 'External IPs';
+        const refPivot = pivotParameters.pRef.value[0];
         const rawSearch =
-            `[{{${pivotParameters.pRef}}}] -[${attribs}]-> [${splunkIndices.FIREWALL}]`;
+            `[{{${refPivot}}}] -[${attribs}]-> [${splunkIndices.FIREWALL}]`;
         const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
 
         return {
@@ -199,8 +202,9 @@ export const expandIDSDemo = new SplunkPivot({
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
         const attribs = 'Internal IPs';
+        const refPivot = pivotParameters.pRef.value[0];
         const rawSearch =
-            `[{{${pivotParameters.pRef}}}] -[${attribs}]-> [${splunkIndices.IDS}]`;
+            `[{{${refPivot}}}] -[${attribs}]-> [${splunkIndices.IDS}]`;
         const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
 
         return {
