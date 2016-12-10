@@ -100,7 +100,7 @@ function renderEventTable({fieldSummaries = {}, table = {}}) {
                     pagination={true}
                     bordered={true}
                     tableContainerClass={styles['investigation-data']}
-                    options={{sizePerPage: 5, sizePerPageList: [ 5, 10, 20, 50, 100]}}>
+                    options={{sizePerPage: 5, hideSizePerPage: true}}>
             <TableHeaderColumn key="event-table-node" dataField="node" isKey={true} hidden={true}/>
             {
                 _.difference(fields, ['node']).map(field =>
