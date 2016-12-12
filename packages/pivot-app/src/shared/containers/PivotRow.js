@@ -243,9 +243,10 @@ function renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, han
 
     // Wrap setPivotAttributes to parse back the selected item.
     const originalSPA = handlers.setPivotAttributes;
-    handlers.setPivotAttributes = (arg) => {
+    const stringifiedSPA = (arg) => {
         return originalSPA(
-            _.mapObject(arg, stringifiedArray => JSON.parse(stringifiedArray))
+            _.mapObject(arg, stringifiedArray => JSON.parse(stringifiedArray);
+            })
         );
     };
 
@@ -254,7 +255,7 @@ function renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, han
         paramKey,
         JSON.stringify(paramValue),
         {options: options, ...paramUI},
-        handlers
+        { setPivotAttributes: stringifiedSPA }
     );
 }
 
