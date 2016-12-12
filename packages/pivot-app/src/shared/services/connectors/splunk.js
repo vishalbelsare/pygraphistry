@@ -84,7 +84,7 @@ class SplunkConnector extends Connector {
             });
     }
 
-    retrieveJobResults(job) {
+    retrieveJobResults(job, searchInfo) {
         const props = job.properties();
 
         this.log.debug({
@@ -135,7 +135,7 @@ class SplunkConnector extends Connector {
 
         return this.getOrCreateJob(jobId, searchInfo)
             .switchMap(job =>
-                this.retrieveJobResults(job)
+                this.retrieveJobResults(job, searchInfo)
             )
             .map(({results, job, props}) => {
                 const columns = {};
