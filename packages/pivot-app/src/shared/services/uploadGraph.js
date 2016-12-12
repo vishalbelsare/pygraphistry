@@ -4,6 +4,7 @@ import { DataFrame, Row } from 'dataframe-js';
 import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
+import VError from 'verror';
 
 import logger from '../../shared/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
@@ -29,7 +30,7 @@ function upload(etlService, apiKey, data) {
 function upload0(etlService, apiKey, data, cb) {
     cb = cb || function (err, res) {
         if (err) {
-            return log.error(err, 'ETL upload error');
+            return new VError(err, 'ETL upload error');
         } else {
             return log.debug(res, 'ETL success');
         }
@@ -42,13 +43,21 @@ function upload0(etlService, apiKey, data, cb) {
         headers: headers,
         body: data,
         callback: function (err, res, body) {
-            if (err) { return cb(err); }
+            if (err) {
+                return cb(err);
+            }
+            log.debug('Response status', res.statusCode, res.statusMessage);
+            if (res.statusCode >= 400) {
+                return cb(new Error(
+                    `ETL service responded with ${res.statusCode} (${res.statusMessage})`
+                ));
+            }
             try {
                 log.debug('Trying to parse response body', body)
                 const json = JSON.parse(body);
                 if (!json.success) {
-                    log.trace('Success flag unset:', json.success);
-                    throw new Error(body);
+                    log.debug('Server response', json);
+                    throw new Error('Server responded with success=false');
                 }
                 return cb(undefined, body);
             } catch (e) {
