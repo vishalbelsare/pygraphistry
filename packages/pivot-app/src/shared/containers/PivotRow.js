@@ -245,8 +245,8 @@ function renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, han
     const originalSPA = handlers.setPivotAttributes;
     const stringifiedSPA = (arg) => {
         return originalSPA(
-            _.mapObject(arg, stringifiedArray => JSON.parse(stringifiedArray);
-            })
+            _.mapObject(arg, stringifiedArray => JSON.parse(stringifiedArray)
+            )
         );
     };
 
