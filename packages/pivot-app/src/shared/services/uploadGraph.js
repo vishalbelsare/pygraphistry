@@ -131,7 +131,7 @@ function makeEventTable({pivots}) {
     }
 
     const dataFrames = pivots
-        .filter(pivot => pivot.df !== undefined)
+        .filter(pivot => (pivot.results && pivot.enabled))
         .map(pivot => pivot.df);
 
     const fields = _.uniq(
