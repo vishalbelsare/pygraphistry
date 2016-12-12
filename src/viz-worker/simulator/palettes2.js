@@ -19,7 +19,7 @@ export const colorPalettes =
 
 
 //shaped for encodings lookups & use
-export const multiplexedPalettes =
+const multiplexedPalettesRaw =
     [].concat(
         colorPalettes.map( ({name, colors}) =>
             ({  variant: 'categorical',
@@ -31,3 +31,21 @@ export const multiplexedPalettes =
                 name: `${name}:continuous:${colors.length}`,
                 colors: colors,
                 label: `Gradient (${name} ${colors.length})` })));
+
+
+const picks =
+    [
+        ['Set19',9,'categorical'],
+        ['Paired12', 12, 'categorical'],
+        ['Reds3', 3, 'continuous'],
+        ['Blues3', 3, 'continuous'],
+        ['Greens3', 3, 'continuous']]
+    .map( ([pName, pLen, pVariant]) =>
+        multiplexedPalettesRaw.filter(({name}) =>
+            name === `${pName}:${pVariant}:${pLen}` )[0])
+    .map( ({name, ...rest}) => ({
+            name: `${name}:top`,
+            ...rest
+        }));
+
+export const multiplexedPalettes = picks.concat(multiplexedPalettesRaw);
