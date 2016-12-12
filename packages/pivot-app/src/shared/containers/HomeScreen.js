@@ -153,7 +153,7 @@ class TagCell extends React.Component {
 
 function investigationTable({user, investigations = [], switchScreen, selectInvestigation, copyInvestigation,
                              setInvestigationParams, selectHandler}) {
-    function tagsFormatter(tags, row) {
+    function tagsFormatter(tags = [], row) {
         const tagsArray = tags.map((tag, i) => ({id: i, text: tag}));
 
         return (
