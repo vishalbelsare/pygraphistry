@@ -80,6 +80,8 @@ export default class EncodingPicker extends React.Component {
         this.handleSelectSizeChange = this.handleSelectSizeChange.bind(this);
         this.handleSelectColorChange = this.handleSelectColorChange.bind(this);
         this.handleSelectYAxisChange = this.handleSelectYAxisChange.bind(this);
+        this.handleReverseColorChange = this.handleReverseColorChange.bind(this);
+        this.dispatchColorEncodingChange = this.dispatchColorEncodingChange.bind(this);
         this.close = this.close.bind(this);
         this.open = this.open.bind(this);
 
@@ -92,34 +94,56 @@ export default class EncodingPicker extends React.Component {
     }
 
 
-
-    handleSelectColorChange (name) {
+    dispatchColorEncodingChange({prop, val}) {
 
         if (!this.props.setEncoding) return;
 
-        const encodingType = 'color';
         const graphType = this.props.componentType;
-        const attribute = this.props.attribute;
 
-        if (!name) {
 
-            return this.props.setEncoding({
-                reset: true, name, encodingType, graphType, attribute
-            });
-
-        } else {
-
-            const {variant: variation, colors, label} =
+        const name = //palette; reuse if prop != color
+            prop === 'color' ? val
+                : isEncoded(this.props.encodings, this.props, 'color') ?
+                    this.props.encodings[graphType].color.name
+                : undefined;
+        const {variant: variation, colors, label} =
+            name ?
                 this.props.options[this.props.componentType].color
-                    .filter( ({name: optName}) => name === optName )[0];
+                    .filter( ({name: optName}) => name === optName )[0]
+                : {};
+        const nameOpts = { reset: !name, name, variation, colors };
 
-            this.props.setEncoding({
-                reset: false, variation, name, encodingType, colors, graphType, attribute
-            });
 
-        }
+        const reverseColorOpts = {
+            reverse:
+                prop === 'reverseColor' ? val
+                    : isEncoded(this.props.encodings, this.props, 'color') ?
+                        this.props.encodings[graphType].color.reverse === true
+                    : false
+        };
+
+
+
+        return this.props.setEncoding({
+            encodingType: 'color', graphType, attribute: this.props.attribute,
+            ...reverseColorOpts,
+            ...nameOpts
+        });
+    }
+
+
+    handleSelectColorChange (name) {
+
+        return this.dispatchColorEncodingChange({ prop: 'color', val: name })
 
     }
+
+    handleReverseColorChange (reverseColor) {
+
+        return this.dispatchColorEncodingChange({ prop: 'reverseColor', val: reverseColor });
+
+    }
+
 
     handleSelectYAxisChange (yAxisValue) {
         if (this.props.onYAxisChange) {
@@ -194,7 +218,18 @@ export default class EncodingPicker extends React.Component {
                         id={`${this.props.id}_select`}
                         name={`${this.props.name || this.props.id}_select`}
                         optionRenderer={({value, label}) => label}
-                        onChange={this.handleSelectColorChange} />
+                        onChange={this.handleSelectColorChange}
+                        />
+                    <h5>Reverse color palette order</h5>
+                    <RcSwitch
+                        checked={
+                            isEncoded(this.props.encodings, this.props, 'color')
+                            ? this.props.encodings[this.props.componentType].color.reverse
+                            : false
+                        }
+                        checkedChildren={'On'}
+                        unCheckedChildren={'Off'}
+                        onChange={ this.handleReverseColorChange }/>
                     {
                         this.props.componentType === 'point'
                             ?   <div>
