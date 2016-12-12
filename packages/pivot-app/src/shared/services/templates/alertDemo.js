@@ -1,5 +1,7 @@
 import { SplunkPivot } from './SplunkPivot';
 import stringhash from 'string-hash';
+import logger from '../../logger';
+const log = logger.createLogger('pivot-app', __filename);
 
 
 const splunkIndices = {
@@ -86,17 +88,22 @@ export const searchFireeyeDemo = new SplunkPivot({
     id: 'search-splunk-fireeye-botnet-demo',
     name: 'Search FireEye',
     tags: ['Demo'],
-    pivotParameterKeys: ['event'],
+    pivotParameterKeys: ['event', 'fields'],
     pivotParametersUI: {
         event: {
             inputType: 'text',
             label: 'EventId:',
             placeholder: 'BRO8ZA4A'
+        },
+        fields: {
+            inputType: 'multi',
+            label: 'Entities:',
+            options: FIREEYE_FIELDS.map(x => ({id:x, name:x})),
         }
     },
-    connections: FIREEYE_FIELDS,
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
+        this.connections = pivotParameters.fields.value;
         const query = `search EventID=${pivotParameters.event} ${splunkIndices.FIREEYE} ${this.constructFieldString()}`;
 
         return {
@@ -110,18 +117,25 @@ export const expandFireeyeDemo = new SplunkPivot({
     id: 'expand-fireeye-botnet-demo',
     name: 'Expand with Fire Eye',
     tags: ['Demo'],
-    pivotParameterKeys: ['ref'],
+    pivotParameterKeys: ['ref', 'fields'],
     pivotParametersUI: {
         ref: {
             inputType: 'pivotCombo',
             label: 'Any field in:',
+        },
+        fields: {
+            inputType: 'multi',
+            label: 'Entities:',
+            options: FIREEYE_FIELDS.map(x => ({id:x, name:x})),
         }
+
     },
-    connections: FIREEYE_FIELDS,
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
+        log.warn({pivotParameters}, 'pivotParameters');
+        this.connections = pivotParameters.fields.value;
         const attribs = 'EventID, Message, Fire Eye MD5, Fire Eye URL, Internal IPs, External IPs';
-        const refPivot = pivotParameters.ref.value[0];
+        const refPivot = pivotParameters.ref.value;
         const rawSearch =
             `[{{${refPivot}}}] -[${attribs}]-> [${splunkIndices.FIREEYE}]`;
         const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
