@@ -4,6 +4,7 @@ import { DataFrame, Row } from 'dataframe-js';
 import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
+import VError from 'verror';
 
 import logger from '../../shared/logger.js';
 const log = logger.createLogger('pivot-app', __filename);
@@ -21,36 +22,48 @@ function upload(etlService, apiKey, data) {
     const gzipped = gzipObservable(new Buffer(JSON.stringify(data), { level : 1}));
     return gzipped.switchMap(buffer =>
         upload0Wrapped(etlService, apiKey, buffer)
-            .map(() =>  data.name)
+            .do((res) => log.debug({res}, 'ETL success'))
+            .map(() => data.name)
+            .catch((err) => Observable.throw(new VError(err, 'ETL upload error')))
     );
 }
 
 //jsonGraph * (err? -> ())? -> ()
 function upload0(etlService, apiKey, data, cb) {
+    // When called with Observable.bindNodeCallback, cb will be defined and the following
+    // default function will not be used.
     cb = cb || function (err, res) {
         if (err) {
-            return log.error(err, 'ETL upload error');
+            return new VError(err, 'ETL upload error');
         } else {
             return log.debug(res, 'ETL success');
         }
     };
 
     const headers = {'Content-Encoding': 'gzip', 'Content-Type': 'application/json'};
-    request.post({
+    return request.post({
         uri: etlService,
         qs: getQuery(apiKey),
         headers: headers,
         body: data,
         callback: function (err, res, body) {
-            if (err) { return cb(err); }
+            if (err) {
+                return cb(err);
+            }
+            log.debug('Response status', res.statusCode, res.statusMessage);
+            if (res.statusCode >= 400) {
+                return cb(new Error(
+                    `ETL service responded with ${res.statusCode} (${res.statusMessage})`
+                ));
+            }
             try {
                 log.debug('Trying to parse response body', body)
                 const json = JSON.parse(body);
                 if (!json.success) {
-                    log.trace('Success flag unset:', json.success);
-                    throw new Error(body);
+                    log.debug({body: body}, 'Server Response');
+                    return cb(new Error(`Server responded with success=false: ${json.msg}`));
                 }
-                return cb(undefined, body);
+                return cb(undefined, json);
             } catch (e) {
                 return cb(e);
             }
