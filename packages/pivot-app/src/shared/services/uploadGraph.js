@@ -22,12 +22,16 @@ function upload(etlService, apiKey, data) {
     const gzipped = gzipObservable(new Buffer(JSON.stringify(data), { level : 1}));
     return gzipped.switchMap(buffer =>
         upload0Wrapped(etlService, apiKey, buffer)
-            .map(() =>  data.name)
+            .do((res) => log.debug({res}, 'ETL success'))
+            .map(() => data.name)
+            .catch((err) => Observable.throw(new VError(err, 'ETL upload error')))
     );
 }
 
 //jsonGraph * (err? -> ())? -> ()
 function upload0(etlService, apiKey, data, cb) {
+    // When called with Observable.bindNodeCallback, cb will be defined and the following
+    // default function will not be used.
     cb = cb || function (err, res) {
         if (err) {
             return new VError(err, 'ETL upload error');
@@ -37,7 +41,7 @@ function upload0(etlService, apiKey, data, cb) {
     };
 
     const headers = {'Content-Encoding': 'gzip', 'Content-Type': 'application/json'};
-    request.post({
+    return request.post({
         uri: etlService,
         qs: getQuery(apiKey),
         headers: headers,
@@ -56,10 +60,10 @@ function upload0(etlService, apiKey, data, cb) {
                 log.debug('Trying to parse response body', body)
                 const json = JSON.parse(body);
                 if (!json.success) {
-                    log.debug('Server response', json);
-                    throw new Error('Server responded with success=false');
+                    log.debug({body: body}, 'Server Response');
+                    return cb(new Error(`Server responded with success=false: ${json.msg}`));
                 }
-                return cb(undefined, body);
+                return cb(undefined, json);
             } catch (e) {
                 return cb(e);
             }
