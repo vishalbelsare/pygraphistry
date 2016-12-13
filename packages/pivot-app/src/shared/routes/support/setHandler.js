@@ -1,23 +1,44 @@
-import { inspect } from 'util';
+const  { isArray } = Array;
+const typeofObject = 'object';
+const typeofFunction = 'function';
 const  { slice } = Array.prototype;
 
+import { inspect } from 'util';
+import { Observable } from 'rxjs';
 
-export function setHandler(lists, loader, mapValue, { valueKey, ...props } = {}) {
+function defaultValueMapper(node, key, value, path, data) {
+    return Observable.of({ path, value: node[key] = value });
+}
+
+function defaultPropsResolver(routerInstance) {
+    const { request  = {} } = routerInstance;
+    const { query = {} } = request;
+    return query;
+}
+
+export function setHandler(lists, loader, mapValue, valueKeys = {},
+                           getInitialProps = defaultPropsResolver,
+                           unboxAtoms = false, unboxRefs = false) {
+
+    if (typeofFunction !== typeof mapValue) {
+        mapValue = defaultValueMapper;
+    }
+
     return function handler(json) {
 
-        const { request = {} } = this;
-        const { query: options = {} } = request;
         const { state, suffix } = getListsAndSuffixes(
-            { ...props, options }, [], lists, 0, json
+            getInitialProps(this) || {}, [], lists, 0, json
         );
 
-        const loaded = suffix.reduce((source, json, index) => source.mergeMap(
-                ({ data, idxs }) => expandJSON(json, index, { data, idxs }, valueKey)
-            ),
-            loader(state).map((data) => ({ data, idxs: { length: 0 } }))
+        const loaded = suffix.reduce(
+            (source, json, index) => source.mergeMap(({ data, idxs }) =>
+                expandJSON(json, index, { data, idxs }, valueKeys)),
+            Observable
+                .defer(() => loader(state))
+                .map((data) => ({ data, idxs: { length: 0 } }))
         );
 
-        const values = loaded.map(({ data, idxs, vals }) => {
+        const values = loaded.mergeMap(({ data, idxs, vals }) => {
 
             const path = [];
             let index = -1, count = lists.length,
@@ -42,13 +63,34 @@ export function setHandler(lists, loader, mapValue, { valueKey, ...props } = {})
                 key = idxs[index];
                 path[++pathId] = key;
 
-                value = index < count - 1 ?
-                    value[key] || (value[key] = {}) :
-                    { path, value: value[key] = !mapValue ?
-                            vals : mapValue(vals, path, data) };
+                if (index < count - 1) {
+                    value = value[key] || (value[key] = {});
+                    continue;
+                }
+
+                if (!(!vals || typeofObject !== typeof vals)) {
+                    switch (vals.$type) {
+                        case 'ref':
+                            vals = unboxRefs ? vals.value : vals;
+                            break;
+                        case 'atom':
+                            vals = unboxAtoms ? vals.value : vals;
+                            break;
+                    }
+                }
+
+                value = mapValue(value, key, vals, path, data);
 
             } while (++index < count);
 
+            if (!value || typeof value !== typeofObject) {
+                value = [{ path, value }];
+            } else if (!isArray(value) && typeofFunction !== typeof value.subscribe) {
+                if (!value.path) {
+                    value = { path, value };
+                }
+                value = [value];
+            }
             return value;
         });
 
@@ -60,7 +102,7 @@ function getListsAndSuffixes(state, suffix, lists, depth, json) {
 
     if (!json || json.$type ||
         depth === lists.length ||
-        typeof json !== 'object') {
+        typeofObject !== typeof json) {
         suffix.push(json);
     } else {
 
@@ -84,26 +126,27 @@ function getListsAndSuffixes(state, suffix, lists, depth, json) {
     return { state, suffix };
 }
 
-function expandJSON(json, index, { data, idxs, vals }, valueKey) {
-    if (!json || json.$type || typeof json !== 'object') {
-        return [{ data, idxs, vals }];
+function expandJSON(json, index, expansionState, valueKeys = {}) {
+
+    if (!json || typeofObject !== typeof json || json.$type) {
+        return [expansionState];
     }
-    return mergeMapArray(Object.keys(json), (key, vals = json[key]) => (
-        key === valueKey ? [{
-            vals, data, idxs: {
-                ...idxs,
-                [index]: key,
-                length: index + 1
-            }
-        }] :
-        expandJSON(json[key], index + 1, {
-            vals, data, idxs: {
-                ...idxs,
-                [index]: key,
-                length: index + 1
-            }
-        }, valueKey)
-    ));
+
+    const length = index + 1;
+    const { data, idxs } = expansionState;
+
+    return mergeMapArray(Object.keys(json), (key) => {
+        const nextExpansionState = {
+            data,
+            vals: json[key],
+            idxs: { ...idxs, [index]: key, length }
+        };
+        if (valueKeys.hasOwnProperty(key)) {
+            return [nextExpansionState];
+        }
+        return expandJSON(json[key], length,
+                          nextExpansionState, valueKeys);
+    });
 }
 
 function mergeMapArray(xs, fn) {
