@@ -7,7 +7,8 @@ import {
     createPivotModel,
     serializePivotModel
 } from '../models';
-import util from 'util'
+import logger from '../logger.js';
+const log = logger.createLogger('pivot-app', __filename);
 
 
 export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
@@ -42,7 +43,7 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
             .map(({app, pivot}, index) => {
                 pivot.rowId = rowIds ? rowIds[index] : undefined;
                 return ({app, pivot});
-            })
+            });
     }
 
     function savePivotsById({pivotIds}) {

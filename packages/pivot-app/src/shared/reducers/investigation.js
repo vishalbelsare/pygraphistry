@@ -13,7 +13,8 @@ import {
     INSERT_PIVOT,
     SPLICE_PIVOT,
     PLAY_INVESTIGATION,
-    DISMISS_ALERT
+    DISMISS_ALERT,
+    TOGGLE_PIVOTS
 } from '../actions/investigation';
 import { combineEpics } from 'redux-observable';
 
@@ -22,7 +23,8 @@ export const investigation = combineEpics(
     insertPivot,
     splicePivot,
     playInvestigation,
-    dismissAlert
+    dismissAlert,
+    togglePivots
 );
 
 function playInvestigation(action$, store) {
@@ -98,4 +100,16 @@ function insertPivot(action$, store) {
                 }
             ))
             .ignoreElements();
+}
+
+function togglePivots(action$, store) {
+    return action$
+        .ofType(TOGGLE_PIVOTS)
+        .mergeMap(({falcor, indices, enabled}) =>
+            falcor.set(
+                $value(['pivots', indices, 'enabled'], enabled)
+            )
+            .progressively()
+        )
+        .ignoreElements();
 }

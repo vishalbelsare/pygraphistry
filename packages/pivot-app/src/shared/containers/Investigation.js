@@ -19,17 +19,19 @@ import {
     Tabs
 } from 'react-bootstrap';
 import styles from './styles.less';
-import { splicePivot,
-        insertPivot,
-        searchPivot,
-        playInvestigation,
-        saveInvestigation,
-        dismissAlert
+import {
+    splicePivot,
+    insertPivot,
+    searchPivot,
+    playInvestigation,
+    saveInvestigation,
+    dismissAlert,
+    togglePivots
 } from '../actions/investigation';
 
 
 function pivotTable({ id, pivots, templates, insertPivot, splicePivot, dismissAlert, searchPivot,
-    playInvestigation, saveInvestigation }) {
+    playInvestigation, saveInvestigation, togglePivots}) {
     return (
         <Table>
             <thead>
@@ -60,7 +62,8 @@ function pivotTable({ id, pivots, templates, insertPivot, splicePivot, dismissAl
                         key={`${index}: ${pivot.id}`}
                         searchPivot={searchPivot}
                         splicePivot={splicePivot}
-                        insertPivot={insertPivot}/>
+                        insertPivot={insertPivot}
+                        togglePivots={togglePivots}/>
 
                 ))}
             </tbody>
@@ -118,7 +121,7 @@ function renderEventTable({fieldSummaries = {}, table = {}}) {
 
 function renderInvestigation({id, status, pivots = [], templates, eventTable,
                               searchPivot, insertPivot, splicePivot, dismissAlert,
-                              playInvestigation, saveInvestigation }) {
+                              playInvestigation, saveInvestigation, togglePivots }) {
     return (
         <div className={styles.pivots}>
             { status && !status.ok ?
@@ -132,7 +135,7 @@ function renderInvestigation({id, status, pivots = [], templates, eventTable,
                     {
                         pivotTable({
                             id, pivots, templates, insertPivot, splicePivot, dismissAlert,
-                            searchPivot, playInvestigation, saveInvestigation
+                            searchPivot, playInvestigation, saveInvestigation, togglePivots,
                         })
                     }
                 </Tab>
@@ -177,6 +180,6 @@ export default container(
         saveInvestigation: saveInvestigation,
         searchPivot: searchPivot,
         dismissAlert: dismissAlert,
+        togglePivots: togglePivots,
     }
 )(renderInvestigation)
-
