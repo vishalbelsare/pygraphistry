@@ -12,8 +12,9 @@ import {
     SEARCH_PIVOT,
     INSERT_PIVOT,
     SPLICE_PIVOT,
-    PLAY_INVESTIGATION,
-    DISMISS_ALERT
+    GRAPH_INVESTIGATION,
+    DISMISS_ALERT,
+    TOGGLE_PIVOTS
 } from '../actions/investigation';
 import { combineEpics } from 'redux-observable';
 
@@ -21,13 +22,14 @@ export const investigation = combineEpics(
     searchPivot,
     insertPivot,
     splicePivot,
-    playInvestigation,
-    dismissAlert
+    graphInvestigation,
+    dismissAlert,
+    togglePivots
 );
 
-function playInvestigation(action$, store) {
+function graphInvestigation(action$, store) {
         return action$
-            .ofType(PLAY_INVESTIGATION)
+            .ofType(GRAPH_INVESTIGATION)
             .groupBy(({ investigationId }) => investigationId)
             .mergeMap((actionsById) => actionsById.switchMap(
                 ({ investigationId, falcor, length }) => {
@@ -38,7 +40,7 @@ function playInvestigation(action$, store) {
                                 .concat(falcor.call(['pivots', [index], 'searchPivot'], [investigationId]));
                         }
                         )
-                        .concat(falcor.call(`play`))
+                        .concat(falcor.call(`graph`))
                 }
             ))
             .ignoreElements();
@@ -68,7 +70,7 @@ function searchPivot(action$, store) {
                         .concat(falcor.set($value(['pivots', [index], 'status'], { searching: true, ok: true })))
                         .concat(falcor.set($value(['url'], '/html/splash.html')))
                         .concat(falcor.call(['pivots', index, 'searchPivot'], [investigationId]))
-                        .concat(falcor.call(`play`));
+                        .concat(falcor.call(`graph`));
                 }
             ))
             .ignoreElements();
@@ -98,4 +100,16 @@ function insertPivot(action$, store) {
                 }
             ))
             .ignoreElements();
+}
+
+function togglePivots(action$, store) {
+    return action$
+        .ofType(TOGGLE_PIVOTS)
+        .mergeMap(({falcor, indices, enabled}) =>
+            falcor.set(
+                $value(['pivots', indices, 'enabled'], enabed)
+            )
+            .progressively()
+        )
+        .ignoreElements();
 }

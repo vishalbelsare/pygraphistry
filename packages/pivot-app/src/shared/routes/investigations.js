@@ -48,8 +48,8 @@ export function investigations({ loadUsersById, loadInvestigationsById, saveInve
         returns: `$ref('pivotsById[{pivotId}]'`,
         get: getInvestigationsHandler,
     }, {
-        route: `investigationsById[{keys}].play`,
-        call: playCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph })
+        route: `investigationsById[{keys}].graph`,
+        call: graphCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph })
     }, {
         route: `investigationsById[{keys}].insertPivot`,
         call: insertPivotCallRoute({ loadInvestigationsById, insertPivot})
@@ -116,7 +116,7 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
     }
 }
 
-function playCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph }) {
+function graphCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph }) {
     return function(path, args) {
         const investigationIds = path[1];
 
