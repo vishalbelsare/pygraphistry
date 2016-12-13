@@ -71,8 +71,15 @@ if (__SERVER__) {
         LOG_SOURCE: conf.get('log.logSource'),
     });
 } else {
+    let logLevel;
+    try {
+        logLevel = window.localStorage.debugLevel || 'info';
+    } catch (e) {
+        console.warn('Cannot read localStorage to set LOG_LEVEL, defaulting to "info"');
+        logLevel = 'info';
+    }
     parentLogger = createClientLogger({
-        LOG_LEVEL: window.localStorage.debugLevel || 'info',
+        LOG_LEVEL: logLevel,
     });
 }
 

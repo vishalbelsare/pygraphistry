@@ -4,9 +4,7 @@
     "pivotParameters": {
         "query": "Enter search query",
         "pivot": [
-            [
                 "3e11aaf23d0602dc"
-            ]
         ],
         "src": "\"err.message\"",
         "dst": "\"err.stackArray{}.file\""
