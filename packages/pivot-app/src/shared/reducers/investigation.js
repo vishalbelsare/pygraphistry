@@ -38,8 +38,8 @@ function graphInvestigation(action$, store) {
                         .concatMap((index) => {
                             return Observable.from(falcor.set($value(['pivots', [index],'status'], { searching: true, ok: true })))
                                 .concat(falcor.call(['pivots', [index], 'searchPivot'], [investigationId]));
-                        }
-                        )
+                        })
+                        .concat(falcor.set($value(['status'], { etling: true, ok: true })))
                         .concat(falcor.call(`graph`))
                 }
             ))
@@ -68,8 +68,9 @@ function searchPivot(action$, store) {
                     return Observable.from(falcor.set($value(`pivots['${index}']['enabled']`, true)))
                         // TODO Use pivot id instead of index
                         .concat(falcor.set($value(['pivots', [index], 'status'], { searching: true, ok: true })))
-                        .concat(falcor.set($value(['url'], '/html/splash.html')))
                         .concat(falcor.call(['pivots', index, 'searchPivot'], [investigationId]))
+                        .concat(falcor.set($value(['status'], { etling: true, ok: true })))
+                        .concat(falcor.set($value(['url'], null)))
                         .concat(falcor.call(`graph`));
                 }
             ))
