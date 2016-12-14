@@ -14,9 +14,10 @@
 3. Register NPM with your online account: `npm adduser`
 4. Clone pivot-app using git. Open terminal in the pivot-app folder.
 5. Install dependencies with `npm install`.
-6. Compile with `npm run dev`
-7. Run with `npm run watch`
-8. Open browser on [localhost:3000](http://localhost:3000)
+6. Obtain the configuration file containing graphistry credentials `graphistryInternal.json`. Place it inside `config/`.
+7. Compile with `npm run dev` (dev build) or `npm run build` (prod build).
+8. Run with `npm start`.
+9. Open browser on [localhost:3000](http://localhost:3000)
 
 ## Testing
 
