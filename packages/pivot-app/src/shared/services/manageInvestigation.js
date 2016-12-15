@@ -77,14 +77,18 @@ export function cloneInvestigationsById({ loadInvestigationsById, loadPivotsById
 }
 
 export function saveInvestigationsById({loadInvestigationsById, persistInvestigationsById,
-                                        persistPivotsById, investigationIds}) {
+                                        persistPivotsById, unlinkPivotsById, investigationIds}) {
     return loadInvestigationsById({investigationIds})
         .mergeMap(({app, investigation}) => {
-            investigation.modifiedOn = Date.now()
-            const pivotIds = investigation.pivots.map(x => x.value[1])
+            investigation.modifiedOn = Date.now();
+            const pivotIds = investigation.pivots.map(x => x.value[1]);
 
             return persistPivotsById({pivotIds})
                 .toArray()
+                .switchMap(() =>
+                    unlinkPivotsById({pivotIds: investigation.detachedPivots})
+                        .toArray()
+                )
                 .switchMap(() =>
                     persistInvestigationsById({investigationIds: [investigation.id]})
                 )

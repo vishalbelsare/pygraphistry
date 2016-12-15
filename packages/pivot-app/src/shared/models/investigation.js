@@ -25,7 +25,8 @@ function initialSoftState(pivots) {
         eventTable: {},
         pivots: pivots.map((pivotId) =>
             $ref(`pivotsById['${pivotId}']`)
-        )
+        ),
+        detachedPivots: [],
     };
 }
 

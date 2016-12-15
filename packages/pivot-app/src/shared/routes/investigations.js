@@ -62,12 +62,13 @@ export function investigations(services) {
     }];
 }
 
-function splicePivotCallRoute({ loadInvestigationsById, splicePivot }) {
+function splicePivotCallRoute({ loadInvestigationsById, unloadPivotsById, splicePivot }) {
     return function(path, args) {
         const investigationIds = path[1];
         const pivotIndex = args[0];
 
-        return splicePivot({loadInvestigationsById, investigationIds, pivotIndex, deleteCount: 1})
+        return splicePivot({loadInvestigationsById, unloadPivotsById, investigationIds,
+                            pivotIndex, deleteCount: 1})
             .mergeMap(({app, investigation}) => {
                 return [
                     $pathValue(
@@ -130,12 +131,12 @@ function graphCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById,
 }
 
 function saveCallRoute({ loadInvestigationsById, saveInvestigationsById, persistInvestigationsById,
-                         persistPivotsById }) {
+                         persistPivotsById, unlinkPivotsById }) {
     return function(path, args) {
         const investigationIds = path[1];
 
         return saveInvestigationsById({loadInvestigationsById, persistInvestigationsById,
-                                       persistPivotsById, investigationIds})
+                                       persistPivotsById, unlinkPivotsById, investigationIds})
             .mergeMap(({app, investigation}) => [
                 $pathValue(`investigationsById['${investigationIds}'].modifiedOn`, investigation.modifiedOn)
             ])

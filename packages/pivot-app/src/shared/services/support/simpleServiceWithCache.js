@@ -31,11 +31,13 @@ export default class SimpleServiceWithCache {
             .mergeMap(
                 (app) =>
                     Observable.from(reqIds)
-                        .do(reqId => {
+                        .map(reqId => {
                             this.evictFromCache(reqId);
+                            const result = app[index][reqId];
                             delete app[index][reqId];
+                            return result;
                         }),
-                (app) => ({ app })
+                (app, result) => ({ app, [this.resultName]: result })
             )
     }
 
@@ -55,11 +57,7 @@ export default class SimpleServiceWithCache {
                         }
                     })
             },
-            (app, result) => {
-                let res = {app: app}
-                res[this.resultName] = result;
-                return res;
-            }
+            (app, result) => ({ app, [this.resultName]: result })
         )
     }
 }
