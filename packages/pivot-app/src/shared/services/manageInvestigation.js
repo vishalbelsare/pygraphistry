@@ -46,6 +46,37 @@ export function createInvestigation({ loadUsersById, userIds }) {
         );
 }
 
+export function switchActiveInvestigation({ loadUsersById, loadInvestigationsById,
+                                            unloadInvestigationsById, unloadPivotsById,
+                                            userId }) {
+    return loadUsersById({userIds: [userId]})
+        .mergeMap(({app, user}) => {
+            const activeId = getActiveInvestigationId(user)
+            if (activeId === undefined) {
+                return Observable.of(null);
+            }
+            return closeInvestigationsById({ loadInvestigationsById, unloadInvestigationsById,
+                                             unloadPivotsById, investigationIds: [activeId] })
+        });
+}
+
+function closeInvestigationsById({ loadInvestigationsById, unloadInvestigationsById,
+                                   unloadPivotsById, investigationIds }) {
+    return loadInvestigationsById({investigationIds})
+        .mergeMap(({app, investigation}) => {
+            const pivotIds = investigation.pivots.map(x => x.value[1]);
+
+            return unloadPivotsById({pivotIds});
+        })
+        .toArray()
+        .switchMap(() =>
+            unloadInvestigationsById({investigationIds})
+        )
+        .do(({investigation}) =>
+            log.info(`Closed investigation ${investigation.id}`)
+        );
+}
+
 export function cloneInvestigationsById({ loadInvestigationsById, loadPivotsById, loadUsersById,
                                           investigationIds }) {
     return loadInvestigationsById({investigationIds})

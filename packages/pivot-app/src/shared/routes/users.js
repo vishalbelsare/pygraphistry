@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import _ from 'underscore';
 import {
     pathValue as $pathValue,
     pathInvalidation as $invalidation
@@ -12,11 +13,10 @@ import logger from '../logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 
-export function users({ loadApp, createInvestigation, removeInvestigationsById,
-                        loadUsersById, unlinkInvestigationsById, unlinkPivotsById}) {
-    const appGetRoute = getHandler([], loadApp);
-    const getUserHandler = getHandler(['user'], loadUsersById);
-    const setUserHandler = setHandler(['user'], loadUsersById);
+export function users(services) {
+    const appGetRoute = getHandler([], services.loadApp);
+    const getUserHandler = getHandler(['user'], services.loadUsersById);
+    const setUserHandler = setHandler(['user'], services.loadUsersById);
 
     return [{
         route: `currentUser`,
@@ -31,7 +31,7 @@ export function users({ loadApp, createInvestigation, removeInvestigationsById,
         route: `['usersById'][{keys}]['activeInvestigation']`,
         returns: `$ref('investigationsById[{investigationId}]')`,
         get: getUserHandler,
-        set: setUserHandler,
+        set: setActiveInvestigationRoute({ ...services, setUserHandler }),
     }, {
         route: `['usersById'][{keys}]['name','id']`,
         returns: `String`,
@@ -55,12 +55,29 @@ export function users({ loadApp, createInvestigation, removeInvestigationsById,
     }, {
         get: getUserHandler,
         route: `['usersById'][{keys}].createInvestigation`,
-        call: createInvestigationCallRoute({ loadUsersById, createInvestigation })
+        call: createInvestigationCallRoute(services)
     }, {
         route: `['usersById'][{keys}]['removeInvestigations']`,
-        call: removeInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,
-                                             unlinkInvestigationsById, unlinkPivotsById })
+        call: removeInvestigationsCallRoute(services)
     }];
+}
+
+function setActiveInvestigationRoute({ loadUsersById, loadInvestigationsById,
+                                       unloadInvestigationsById, unloadPivotsById,
+                                       switchActiveInvestigation, setUserHandler }) {
+    return function (path, args) {
+        const userIds = path[1];
+        const self = this;
+
+        return Observable.forkJoin(
+                _.map(path.usersById, (user, userId) =>
+                    switchActiveInvestigation({ loadUsersById, loadInvestigationsById,
+                                                unloadInvestigationsById, unloadPivotsById,
+                                                userId })
+                )
+            )
+            .switchMap(() => setUserHandler.bind(self)(path, args));
+    }
 }
 
 function removeInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,

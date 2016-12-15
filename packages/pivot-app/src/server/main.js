@@ -17,7 +17,8 @@ import {
     connectorStore, listConnectors, checkConnector,
     userStore, templateStore, listTemplates,
     listInvestigations, investigationStore,
-    createInvestigation, cloneInvestigationsById, saveInvestigationsById, removeInvestigationsById,
+    createInvestigation, cloneInvestigationsById, saveInvestigationsById,
+    removeInvestigationsById, switchActiveInvestigation,
     pivotStore, insertPivot, splicePivot, searchPivot,
     uploadGraph
 } from '../shared/services';
@@ -77,6 +78,7 @@ function init(testUser) {
         persistInvestigationsById,
         unlinkInvestigationsById,
         createInvestigation,
+        switchActiveInvestigation,
         cloneInvestigationsById,
         saveInvestigationsById,
         removeInvestigationsById,
