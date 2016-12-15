@@ -37,12 +37,18 @@
     position: relative;
     background-color: #FBFBFB;
     tbody tr {
-    height: 400px;
+    height: 300px;
     display: flex;
-    -webkit-flex-flow: row wrap;   
+    -webkit-flex-flow: row wrap; 
+    border-top: 1px solid #ddd;    
        }
     tbody {
         width: 100%;
+    }
+    tbody tr td {
+        padding: 25px;
+        height: 20%;
+        display: inline-block;
     }
 
     & > div > div:nth-child(1) {
@@ -310,6 +316,14 @@ td, th {
     }
 }*/
 
+
+td, th {
+
+    border-top: 1px solid aqua;
+}
+
+
+
 :local(.alert) {
     position: relative
 }
@@ -471,23 +485,24 @@ td, th {
     }
     :global(.rc-switch) {
         & {
-            zoom: 80%;
+            zoom: 90%;
         }
         &:global(.rc-switch-checked) {
-            background: #777;
-            border-color: #333;
+            background: #77d6cf;
+            border-color: #777;
+            border: none;
         }
     }
     order: 1;
     width: 50%;
-    border: none;
+    border-top: none;
 }
 :local(.pivotData0) {
     width: 200px;
     text-align: right;
     order: 3;
     width: 100%;
-    border: none;
+    border-top: none;
 }
 .pivotTypeSelectorContainer {
     text-align: left;
@@ -529,9 +544,8 @@ td, th {
         font-weight: normal;
         //text-transform: uppercase;
         text-align: right;
-        margin-left: 1em;
-        margin-right: 1em;
-        width: 100px;
+        margin-left: 2px;
+        margin-right: 20px;
     }
 
 }
@@ -603,7 +617,7 @@ td, th {
         margin-top: @summaryPillHeight;
     }
     order: 5;
-    width: 100%;
+    width: 20%;
 }
 :local(.pivotResultSummaries) {
 
@@ -620,7 +634,9 @@ td, th {
         max-width: 20em;
     }
     order: 6;
-    width: 100%;
+    width: 80%;
+    margin-bottom: 100px;
+    padding-left: 0px !important;
 
 }
 :local(.result-count-on) { }
@@ -629,9 +645,17 @@ td, th {
 }
 :local(.pivotIcons) {
     white-space: nowrap;
-    background-color: darkslategray;
     order: 2;
     width: 50%;
+    padding-top: 20px !important;
+    padding-left: 0px !important; 
 }
 .pivot-error-tooltip {
 }
+
+//gets rid of stubborn bootstrap border
+td {
+    border: none !important;
+}
+
+//not sure why the opposing style has to be overriden? bootstrap thing?

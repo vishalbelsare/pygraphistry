@@ -71,7 +71,7 @@ function renderInvestigationBody(app, activeInvestigation, templates) {
             <InvestigationHeader data={app} activeInvestigation={activeInvestigation} />
 
             <div className={styles['investigation-split']}>
-                <SplitPane split="vertical" defaultSize="30%" minSize={0}>
+                <SplitPane split="vertical" defaultSize="25%" minSize={0}>
                     <Investigation data={activeInvestigation} templates={relevantTemplates}/>
                     {
                         activeInvestigation.status && renderVisualizationPanel(activeInvestigation)
