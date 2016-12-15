@@ -50,15 +50,15 @@ export const PAN_SEARCH = new SplunkPivot({
             placeholder: 'severity="critical"'
         },
         nodes: {
-            inputType: 'text',
+            inputType: 'multi',
             label: 'Nodes:',
-            placeholder: 'user, dest'
+            options: ['user', 'dest', 'threat_name'].map(x => ({id:x, name:x})),
         }
     },
     attributes: PAN_SHAPES.userToDest.attributes,
     encodings: PAN_ENCODINGS,
     toSplunk: function(pivotParameters) {
-        this.connections = pivotParameters.nodes.split(',').map((field) => field.trim());
+        this.connections = pivotParameters.nodes.value;
         const query = `search ${SPLUNK_INDICES.PAN} ${pivotParameters.query}
                 ${this.constructFieldString()}
                 | head 100`;
@@ -83,9 +83,12 @@ export const PAN_EXPAND = new SplunkPivot({
             label: 'Select events:',
         },
         sourceAttribute: {
-            inputType: 'text',
+            inputType: 'combo',
             label: 'Expand on:',
-            placeholder: 'user'
+            options: [
+                { value: 'user', label: 'user' },
+                { value: 'dest', label: 'dest' }
+            ]
         },
         query: {
             inputType: 'text',
@@ -93,15 +96,15 @@ export const PAN_EXPAND = new SplunkPivot({
             placeholder: contextFilter
         },
         nodes: {
-            inputType: 'text',
+            inputType: 'multi',
             label: 'Nodes:',
-            placeholder: 'user, dest'
+            options: ['user', 'dest', 'threat_name'].map(x => ({id:x, name:x})),
         }
     },
     attributes: PAN_SHAPES.userToDest.attributes,
     encodings: PAN_ENCODINGS,
     toSplunk: function(pivotParameters, pivotCache) {
-        this.connections = pivotParameters.nodes.split(',').map((field) => field.trim());
+        this.connections = pivotParameters.nodes.value;
         const sourceAttribute = pivotParameters.sourceAttribute;
         const filter = pivotParameters.query;
         const sourcePivots = pivotParameters.source.value;
