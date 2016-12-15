@@ -13,12 +13,9 @@ import logger from '../logger.js';
 const log = logger.createLogger('pivot-app', __filename);
 
 
-export function investigations({ loadUsersById, loadInvestigationsById, saveInvestigationsById,
-                                 loadPivotsById, savePivotsById, cloneInvestigationsById,
-                                 searchPivot, splicePivot, insertPivot, uploadGraph }) {
-
-    const getInvestigationsHandler = getHandler(['investigation'], loadInvestigationsById);
-    const setInvestigationsHandler = setHandler(['investigation'], loadInvestigationsById);
+export function investigations(services) {
+    const getInvestigationsHandler = getHandler(['investigation'], services.loadInvestigationsById);
+    const setInvestigationsHandler = setHandler(['investigation'], services.loadInvestigationsById);
 
     return [{
         route: `investigationsById[{keys}]['id','name', 'url', 'status', 'description']`,
@@ -48,20 +45,20 @@ export function investigations({ loadUsersById, loadInvestigationsById, saveInve
         returns: `$ref('pivotsById[{pivotId}]'`,
         get: getInvestigationsHandler,
     }, {
-        route: `investigationsById[{keys}].play`,
-        call: playCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph })
+        route: `investigationsById[{keys}].graph`,
+        call: graphCallRoute(services)
     }, {
         route: `investigationsById[{keys}].insertPivot`,
-        call: insertPivotCallRoute({ loadInvestigationsById, insertPivot})
+        call: insertPivotCallRoute(services)
     }, {
         route: `investigationsById[{keys}].splicePivot`,
-        call: splicePivotCallRoute({ loadInvestigationsById, splicePivot})
+        call: splicePivotCallRoute(services)
     }, {
         route: `investigationsById[{keys}].save`,
-        call: saveCallRoute({ loadInvestigationsById, saveInvestigationsById, savePivotsById})
+        call: saveCallRoute(services)
     }, {
         route: `investigationsById[{keys}].clone`,
-        call: cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, cloneInvestigationsById})
+        call: cloneCallRoute(services)
     }];
 }
 
@@ -116,7 +113,7 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
     }
 }
 
-function playCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph }) {
+function graphCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph }) {
     return function(path, args) {
         const investigationIds = path[1];
 
@@ -132,11 +129,13 @@ function playCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, 
     }
 }
 
-function saveCallRoute({ loadInvestigationsById, savePivotsById, saveInvestigationsById }) {
+function saveCallRoute({ loadInvestigationsById, saveInvestigationsById, persistInvestigationsById,
+                         persistPivotsById }) {
     return function(path, args) {
         const investigationIds = path[1];
 
-        return saveInvestigationsById({savePivotsById, investigationIds})
+        return saveInvestigationsById({loadInvestigationsById, persistInvestigationsById,
+                                       persistPivotsById, investigationIds})
             .mergeMap(({app, investigation}) => [
                 $pathValue(`investigationsById['${investigationIds}'].modifiedOn`, investigation.modifiedOn)
             ])
@@ -165,6 +164,7 @@ function captureErrorAndNotifyClient(investigationIds) {
         const errorCode = logErrorWithCode(log, e);
         const status = {
             ok: false,
+            etling: false,
             code: errorCode,
             message: `Server error: ${e.message} (code: ${errorCode})`,
             msgStyle: 'danger',

@@ -7,7 +7,8 @@ import {
     createPivotModel,
     serializePivotModel
 } from '../models';
-import util from 'util'
+import logger from '../logger.js';
+const log = logger.createLogger('pivot-app', __filename);
 
 
 export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
@@ -22,29 +23,67 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
             return readFileAsObservable(file).map(JSON.parse);
         })
 
-    function loadPivotById(pivotId, rowIds) {
-        return pivots$
-            .filter(pivot => pivot.id === pivotId)
+    function getPath(pivot) {
+        return path.resolve(pathPrefix, pivot.id + '.json');
+    }
+
+    function loadSinglePivotById(pivotId, rowIds) {
+        return pivots$.filter(pivot => pivot.id === pivotId)
     }
 
     const service = new SimpleServiceWithCache({
         loadApp: loadApp,
         resultName: 'pivot',
-        loadById: loadPivotById,
+        loadById: loadSinglePivotById,
         createModel: createPivotModel,
         cache: pivotsByIdCache
     });
 
-    // rowIds are needed to set 'Pivot #' Attribute (Demo)
-    // Should probably remove.
-    function loadPivotsById({pivotIds, rowIds}) {
+    function loadPivotsById({pivotIds}) {
         return service.loadByIds(pivotIds)
-            .map(({app, pivot}, index) => {
-                pivot.rowId = rowIds ? rowIds[index] : undefined;
-                return ({app, pivot});
-            })
+            .do(({pivot}) =>
+                log.debug(`Loaded pivot ${pivot.id}`)
+            );
     }
 
+    function unloadPivotsById({pivotIds}) {
+        return service.unloadByIds(pivotIds)
+            .do(({pivot}) =>
+                log.debug(`Unloaded pivot ${pivot.id}`)
+            );
+    }
+
+    function persistPivotsById({pivotIds}) {
+        return loadPivotsById({pivotIds})
+            .mergeMap(({app, pivot}) => {
+                const content = JSON.stringify(serializePivotModel(pivot), null, 4);
+
+                return writeFileAsObservable(getPath(pivot), content)
+                    .do(() => service.evictFromCache(pivot.id))
+                    .map(() => ({app, pivot}));
+            })
+            .do(({pivot}) =>
+                log.info(`Persisted pivot ${pivot.id}`)
+            );
+    }
+
+    function unlinkPivotsById({pivotIds}) {
+        return loadPivotsById({pivotIds})
+            .mergeMap(({app, pivot}) => {
+                const filePath = getPath(pivot);
+
+                return renameAsObservable(filePath, `${filePath}.deleted`)
+                    .catch(e =>
+                        e.code === 'ENOENT' ? Observable.of(null) : Observable.throw(e)
+                    )
+                    .map(() => ({app, pivot}))
+            })
+            .do(({pivot}) =>
+                log.info(`Unlinked pivot ${pivot.id}`)
+            );
+    }
+
+/*
     function savePivotsById({pivotIds}) {
         return loadPivotsById({pivotIds})
             .mergeMap(({app, pivot}) => {
@@ -73,10 +112,12 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
                     .map(() => {app})
             );
     }
+*/
 
     return {
         loadPivotsById,
-        savePivotsById,
-        deletePivotsById
+        unloadPivotsById,
+        persistPivotsById,
+        unlinkPivotsById,
     };
 }

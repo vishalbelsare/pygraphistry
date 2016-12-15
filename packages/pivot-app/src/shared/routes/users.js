@@ -13,7 +13,7 @@ const log = logger.createLogger('pivot-app', __filename);
 
 
 export function users({ loadApp, createInvestigation, removeInvestigationsById,
-                        loadUsersById, deleteInvestigationsById, deletePivotsById}) {
+                        loadUsersById, unlinkInvestigationsById, unlinkPivotsById}) {
     const appGetRoute = getHandler([], loadApp);
     const getUserHandler = getHandler(['user'], loadUsersById);
     const setUserHandler = setHandler(['user'], loadUsersById);
@@ -59,17 +59,17 @@ export function users({ loadApp, createInvestigation, removeInvestigationsById,
     }, {
         route: `['usersById'][{keys}]['removeInvestigations']`,
         call: removeInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,
-                                             deleteInvestigationsById, deletePivotsById })
+                                             unlinkInvestigationsById, unlinkPivotsById })
     }];
 }
 
 function removeInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,
-                                         deleteInvestigationsById, deletePivotsById }) {
+                                         unlinkInvestigationsById, unlinkPivotsById }) {
     return function (path, args) {
         const userIds = path[1];
         const investigationIds = args[0];
 
-        return removeInvestigationsById({ loadUsersById, deleteInvestigationsById, deletePivotsById,
+        return removeInvestigationsById({ loadUsersById, unlinkInvestigationsById, unlinkPivotsById,
                                           investigationIds, userIds })
             .mergeMap(({user, newLength, oldLength}) => [
                 $pathValue(`['usersById'][${user.id}]['investigations']['length']`, newLength),

@@ -35,7 +35,7 @@ export default class SimpleServiceWithCache {
                             this.evictFromCache(reqId);
                             delete app[index][reqId];
                         }),
-                (app) => app
+                (app) => ({ app })
             )
     }
 

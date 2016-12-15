@@ -17,7 +17,7 @@ import {
     connectorStore, listConnectors, checkConnector,
     userStore, templateStore, listTemplates,
     listInvestigations, investigationStore,
-    createInvestigation, cloneInvestigationsById, removeInvestigationsById,
+    createInvestigation, cloneInvestigationsById, saveInvestigationsById, removeInvestigationsById,
     pivotStore, insertPivot, splicePivot, searchPivot,
     uploadGraph
 } from '../shared/services';
@@ -53,13 +53,15 @@ function init(testUser) {
     const { loadTemplatesById } = templateStore(loadApp(app));
     const {
         loadInvestigationsById,
-        saveInvestigationsById,
-        deleteInvestigationsById
+        unloadInvestigationsById,
+        persistInvestigationsById,
+        unlinkInvestigationsById,
     } = investigationStore(loadApp(app), investigationPath);
     const {
         loadPivotsById,
-        savePivotsById,
-        deletePivotsById
+        unloadPivotsById,
+        persistPivotsById,
+        unlinkPivotsById,
     } = pivotStore(loadApp(app), pivotPath);
 
 
@@ -71,14 +73,17 @@ function init(testUser) {
         loadTemplatesById,
         loadConnectorsById,
         loadInvestigationsById,
-        saveInvestigationsById,
-        deleteInvestigationsById,
-        removeInvestigationsById,
+        unloadInvestigationsById,
+        persistInvestigationsById,
+        unlinkInvestigationsById,
         createInvestigation,
         cloneInvestigationsById,
+        saveInvestigationsById,
+        removeInvestigationsById,
         loadPivotsById,
-        savePivotsById,
-        deletePivotsById,
+        unloadPivotsById,
+        persistPivotsById,
+        unlinkPivotsById,
         insertPivot, splicePivot, searchPivot,
         checkConnector,
         uploadGraph
