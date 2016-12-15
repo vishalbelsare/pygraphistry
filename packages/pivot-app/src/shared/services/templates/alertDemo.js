@@ -58,7 +58,31 @@ const FIREEYE_FIELDS = [
     `Fire Eye URL`,
     `Internal IPs`,
     `Message`,
-]
+];
+
+const BLUECOAT_FIELDS = [
+    'Fire Eye URL',
+    'External IPs'
+];
+
+const FIREWALL_FIELDS = [
+    'External IPs',
+    'Internal IPs'
+];
+
+const IDS_FIELDS = [
+    'Internal IPs',
+    'Message'
+];
+
+const FIELDS = [
+    `Fire Eye MD5`,
+    `Fire Eye URL`,
+    `Internal IPs`,
+    'Fire Eye URL',
+    'External IPs',
+    'Message'
+];
 
 export const searchAlertDemo = new SplunkPivot({
     id: 'search-splunk-alert-botnet-demo',
@@ -88,22 +112,17 @@ export const searchFireeyeDemo = new SplunkPivot({
     id: 'search-splunk-fireeye-botnet-demo',
     name: 'Search FireEye',
     tags: ['Demo'],
-    pivotParameterKeys: ['event', 'fields'],
+    pivotParameterKeys: ['event'],
     pivotParametersUI: {
         event: {
             inputType: 'text',
             label: 'EventId:',
             placeholder: 'BRO8ZA4A'
-        },
-        fields: {
-            inputType: 'multi',
-            label: 'Entities:',
-            options: FIREEYE_FIELDS.map(x => ({id:x, name:x})),
         }
     },
+    connections: FIREEYE_FIELDS,
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
-        this.connections = pivotParameters.fields.value;
         const query = `search EventID=${pivotParameters.event} ${splunkIndices.FIREEYE} ${this.constructFieldString()}`;
 
         return {
@@ -125,19 +144,17 @@ export const expandFireeyeDemo = new SplunkPivot({
         },
         fields: {
             inputType: 'multi',
-            label: 'Entities:',
-            options: FIREEYE_FIELDS.map(x => ({id:x, name:x})),
+            label: 'Expand on',
+            options: FIELDS.map(x => ({id:x, name:x})),
         }
 
     },
+    connections: FIREEYE_FIELDS,
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
-        log.warn({pivotParameters}, 'pivotParameters');
-        this.connections = pivotParameters.fields.value;
-        const attribs = 'EventID, Message, Fire Eye MD5, Fire Eye URL, Internal IPs, External IPs';
         const refPivot = pivotParameters.ref.value;
         const rawSearch =
-            `[{{${refPivot}}}] -[${attribs}]-> [${splunkIndices.FIREEYE}]`;
+            `[{{${refPivot}}}] -[${pivotParameters.fields.value.join(', ')}]-> [${splunkIndices.FIREEYE}]`;
         const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
 
         return {
@@ -151,20 +168,25 @@ export const expandBlueCoatDemo = new SplunkPivot({
     id: 'expand-bluecoat-botnet-demo',
     name: 'Expand with Blue Coat',
     tags: ['Demo'],
-    pivotParameterKeys: ['pivotRef'],
+    pivotParameterKeys: ['pivotRef', 'fields'],
     pivotParametersUI: {
         pivotRef: {
             inputType: 'pivotCombo',
             label: 'Any URL in:',
+        },
+        fields: {
+            inputType: 'multi',
+            label: 'Expand on',
+            options: FIELDS.map(x => ({id:x, name:x})),
         }
+
     },
     connections: [ 'Fire Eye URL', 'External IPs' ],
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
-        const attribs = 'Fire Eye URL';
         const refPivot = pivotParameters.pivotRef.value[0];
         const rawSearch =
-            `[{{${refPivot}}}] -[${attribs}]-> [${splunkIndices.BLUECOAT}]`;
+            `[{{${refPivot}}}] -[${pivotParameters.fields.value.join(', ')}]-> [${splunkIndices.BLUECOAT}]`;
         const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
 
         return {
@@ -178,20 +200,25 @@ export const expandFirewallDemo = new SplunkPivot({
     id: 'expand-firewall-botnet-demo',
     name: 'Expand with Firewall',
     tags: ['Demo'],
-    pivotParameterKeys: ['pRef'],
+    pivotParameterKeys: ['pRef', 'fields'],
     pivotParametersUI: {
         pRef: {
             inputType: 'pivotCombo',
             label: 'Any IP in:',
+        },
+        fields: {
+            inputType: 'multi',
+            label: 'Expand on',
+            options: FIELDS.map(x => ({id:x, name:x})),
         }
+
     },
     connections: [ 'External IPs', 'Internal IPs' ],
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
-        const attribs = 'External IPs';
         const refPivot = pivotParameters.pRef.value[0];
         const rawSearch =
-            `[{{${refPivot}}}] -[${attribs}]-> [${splunkIndices.FIREWALL}]`;
+            `[{{${refPivot}}}] -[${pivotParameters.fields.value.join(', ')}]-> [${splunkIndices.FIREWALL}]`;
         const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
 
         return {
@@ -205,20 +232,25 @@ export const expandIDSDemo = new SplunkPivot({
     id: 'expand-ids-botnet-demo',
     name: 'Expand with IDS/IPS',
     tags: ['Demo'],
-    pivotParameterKeys: ['pRef'],
+    pivotParameterKeys: ['pRef', 'fields'],
     pivotParametersUI: {
         pRef: {
             inputType: 'pivotCombo',
             label: 'Any IP in:',
+        },
+        fields: {
+            inputType: 'multi',
+            label: 'Expand on',
+            options: FIELDS.map(x => ({id:x, name:x})),
         }
+
     },
     connections: [ 'Internal IPs', 'Message' ],
     encodings: alertDemoEncodings,
     toSplunk: function (pivotParameters, pivotCache) {
-        const attribs = 'Internal IPs';
         const refPivot = pivotParameters.pRef.value[0];
         const rawSearch =
-            `[{{${refPivot}}}] -[${attribs}]-> [${splunkIndices.IDS}]`;
+            `[{{${refPivot}}}] -[${pivotParameters.fields.value.join(', ')}]-> [${splunkIndices.IDS}]`;
         const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
 
         return {
