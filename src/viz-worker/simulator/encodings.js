@@ -53,12 +53,21 @@ function inferLoadedEncodingsFor(dataframe) {
  * @param {BinningResult} binning
  * @returns {EncodingSpec}
  */
-function inferColorScalingSpecFor ({variation, binning, colors}) {
+function inferColorScalingSpecFor ({variation, binning, colors, reverse}) {
+
+    function reverseArr(arr) {
+        var arr2 = arr.slice();
+        arr2.reverse();
+        return arr2;
+    }
+
+    const range = reverse ? reverseArr(colors) : colors;
+
     if (variation === 'categorical') {
         return {
             scalingType: 'ordinal',
             domain: [0, binning.numBins||1],
-            range: colors
+            range: range
         };
     } else if (variation === 'continuous') {
         return {
@@ -68,7 +77,7 @@ function inferColorScalingSpecFor ({variation, binning, colors}) {
                     ? colors.slice(0, binning.numBins||1).map( (c, i) => i )
                     : colors.map( (c,i) =>
                             d3Scale.linear().domain([0, colors.length]).range([0, binning.numBins])(i)),
-            range: colors
+            range: range
         };
     } else {
         throw new Error('unexpected encoding variant: ' + variation);
@@ -134,8 +143,9 @@ function domainIsPositive (aggregations) {
     return aggregations.getAggregationByType('isPositive');
 }
 
+
 /**
- * @param {EncodingSpec?} encodingSpec
+ * @param {EncodingSpec?} encoding
  * @param {ColumnAggregation} aggregations
  * @param {String} attributeName
  * @param {String} encodingType
@@ -144,7 +154,9 @@ function domainIsPositive (aggregations) {
  * @param {Array} colors
  * @returns {EncodingSpec}
  */
-function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingType, variation, binning, colors) {
+ function inferEncodingSpec ({encoding, aggregations, attributeName, encodingType,
+        variation, binning, colors, reverse}) {
+
     const summary = aggregations.getSummary();
     let scalingType, domain, range, clamp;
     const defaultDomain = [summary.minValue, summary.maxValue];
@@ -181,7 +193,7 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
         case 'pointColor':
         case 'edgeColor':
 
-            return inferColorScalingSpecFor({variation, binning, colors});
+            return inferColorScalingSpecFor({variation, binning, colors, reverse});
 
         case 'title':
         case 'pointTitle':
@@ -194,7 +206,7 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
         default:
             throw new Error('No encoding found for: ' + encodingType);
     }
-    return _.defaults(encodingSpec || {}, {
+    return _.defaults(encoding || {}, {
         scalingType: scalingType,
         domain: domain,
         range: range,
@@ -214,9 +226,9 @@ function inferEncodingSpec (encodingSpec, aggregations, attributeName, encodingT
  * @param {Array} colors
  * @returns {{legend: Array, scaling: d3.scale}}
  */
-function inferEncoding (encoding, dataframe, type, attributeName, encodingType, variation, binning, colors) {
+function inferEncoding (encoding, dataframe, type, attributeName, encodingType, variation, binning, colors, reverse) {
     const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
-    let encodingSpec = inferEncodingSpec(encoding, aggregations, attributeName, encodingType, variation, binning, colors);
+    let encodingSpec = inferEncodingSpec({encoding, aggregations, attributeName, encodingType, variation, binning, colors, reverse});
     const scaling = scalingFromSpec(encodingSpec);
     const legend = _.range(0, binning.numBins).map(scaling);
 
@@ -308,7 +320,7 @@ function applyEncodingOnNBody ({ view, encoding }) {
     }
 
     let {name, encodingType, graphType: unnormalizedType, attribute: unnormalizedAttribute,
-        variation, binning, colors, timeBounds, reset} = encoding;
+        variation, binning, colors, timeBounds, reset, reverse} = encoding;
     const ccManager = dataframe.computedColumnManager;
     let encodingMetadata = undefined;
     try {
@@ -328,7 +340,7 @@ function applyEncodingOnNBody ({ view, encoding }) {
             dataframe, type, attributeName, encodingType, timeBounds);
     } else {
         encodingWrapper = inferEncoding(
-            encoding, dataframe, type, attributeName, encodingType, variation, binning, colors);
+            encoding, dataframe, type, attributeName, encodingType, variation, binning, colors, reverse);
     }
 
     if (encodingWrapper === undefined || encodingWrapper.scaling === undefined) {
