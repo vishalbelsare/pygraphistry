@@ -11,7 +11,7 @@ export class RemoteDataSource extends FalcorPubSubDataSource {
         if (!model) {
             return;
         }
-        if (invalidated && Array.isArray(invalidated)) {
+        if (invalidated && Array.isArray(invalidated) && invalidated.length) {
             model.invalidate(...invalidated);
         }
         if (paths && jsonGraph) {

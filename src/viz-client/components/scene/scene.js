@@ -262,11 +262,12 @@ class Scene extends React.Component {
     setupDOMAndSourceListeners(props = {}, state = {}) {
 
         const { container } = this;
-        const { play = 5000,
-                socket, simulation,
+        let   { play = 5000 } = props;
+        const { socket, simulation,
                 selectToolbarItem } = props;
         let {
             renderState,
+            scrollSource,
             curPointsSource,
             hasDOMListeners,
             pointSizesSource,
@@ -298,7 +299,8 @@ class Scene extends React.Component {
             const zoomInSource = setupZoomButton(toggleZoomIn, camera, 1/1.25);
             const zoomOutSource = setupZoomButton(toggleZoomOut, camera, 1.25);
             const rotateSource = setupRotate($(container), camera);
-            const scrollSource = setupScroll(
+
+            scrollSource = setupScroll(
                 $(container), simulation,
                 camera, { marqueeOn, brushOn }
             );
@@ -307,6 +309,23 @@ class Scene extends React.Component {
                 rotateSource, scrollSource,// panSource,
                 centerSource, zoomInSource, zoomOutSource
             );
+        }
+
+        let stopAutoPlay = Observable.never();
+        let stopAutoCenter = Observable.never();
+
+        if (play === true) {
+            stopAutoPlay = Observable.never();
+            stopAutoCenter = scrollSource.take(1);
+        } else if (!(play = +play) || typeof play !== 'number') {
+            stopAutoPlay = Observable.of(true);
+            stopAutoCenter = Observable.never();
+        } else {
+            stopAutoCenter = scrollSource.take(1);
+            stopAutoPlay = Observable.race(
+                Observable.timer(play),
+                Gestures.start(container)
+            ).take(1);
         }
 
         renderSubscription = Observable.merge(
@@ -321,16 +340,13 @@ class Scene extends React.Component {
 
             vboUpdates
                 .filter((update) => update === 'received')
-                .take(1)
-                .do(() => selectToolbarItem && selectToolbarItem({
+                .take(1).filter(() => !!selectToolbarItem)
+                .do(() => selectToolbarItem({
                     socket,
-                    center: true,
-                    id: 'toggle-simulating',
-                    selected: this.props.simulating,
-                    stop: Observable.race(
-                        Observable.timer(play),
-                        Gestures.start(container)
-                    )
+                    selected: !play,
+                    stop: stopAutoPlay,
+                    center: stopAutoCenter,
+                    id: 'toggle-simulating'
                 }))
         )
         .ignoreElements()
@@ -342,10 +358,12 @@ class Scene extends React.Component {
             .subscribe(this.onResize);
 
         this.setState({
+            scrollSource,
             hasDOMListeners,
             hasSourceListeners,
             renderSubscription,
-            resizeSubscription
+            resizeSubscription,
+            cameraChangesSource
         });
     }
 }

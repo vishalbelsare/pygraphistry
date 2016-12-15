@@ -5,13 +5,18 @@ const logger = commonLogger.createLogger('viz-worker/services/sendFalcorUpdate.j
 
 export function sendFalcorUpdate(socket, getDataSource) {
     const send = Observable.bindCallback(socket.emit.bind(socket));
-    return function sendFalcorUpdate(...paths) {
+    return function sendFalcorUpdate({
+        paths: _paths = [],
+        invalidated: _invalidated = []
+    }) {
         const dataSource = getDataSource({ ...socket.handshake });
-        paths = fromPathsOrPathValues(paths);
-        return dataSource.get(paths).do(({ jsonGraph }) => {
+        _paths = fromPathsOrPathValues(_paths);
+        _invalidated = fromPathsOrPathValues(_invalidated);
+        return dataSource.get(_paths).do(({ paths, jsonGraph, invalidated = [] }) => {
             logger.trace(`sending initial post-socket update`, jsonGraph);
             send('falcor-update', {
-                paths, jsonGraph
+                paths, jsonGraph, invalidated:
+                    _invalidated.concat(invalidated)
             });
         }).mapTo(0);
     }

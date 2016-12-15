@@ -93,6 +93,7 @@ function loadDataFrameAndUpdateBuffers({ view }) {
     )
     .toArray()
     .map(() => {
+        nBody.vgraphLoaded = true;
         view = createInitialHistograms(view, dataframe);
         view.scene = assignHintsToScene(view.scene, dataframe);
         view.columns = createColumns(dataframe.getColumnsByType(true));
@@ -129,12 +130,8 @@ function createInitialHistograms(view, dataframe) {
 
 function assignHintsToScene(scene, dataframe) {
 
-    // const MAX_SIZE_TO_ALLOCATE = 2000000;
-    // const numEdges = dataframe.numEdges();
-    // const numPoints = dataframe.numPoints();
-
-    scene.renderer.edges.elements = dataframe.numEdges();//Math.min(numEdges, MAX_SIZE_TO_ALLOCATE);
-    scene.renderer.points.elements = dataframe.numPoints();//Math.min(numPoints, MAX_SIZE_TO_ALLOCATE);
+    scene.renderer.edges.elements = dataframe.numEdges();
+    scene.renderer.points.elements = dataframe.numPoints();
 
     return scene;
 }

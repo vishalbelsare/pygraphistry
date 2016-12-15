@@ -5,7 +5,9 @@ import {
     pathInvalidation as $invalidate
 } from '@graphistry/falcor-json-graph';
 
-import { Observable } from 'rxjs';
+import { Subject } from 'rxjs/Subject';
+import { Observable } from 'rxjs/Observable';
+import { ReplaySubject } from 'rxjs/ReplaySubject';
 import { SELECT_TOOLBAR_ITEM } from 'viz-shared/actions/toolbar';
 
 export function toolbar(action$, store) {
@@ -68,44 +70,56 @@ function centerCamera({ falcor }) {
     );
 }
 
-function toggleSimulating({ stop, center, falcor, socket, selected }) {
-    if (selected) {
-        return falcor.set(
-            $value(`scene.simulating`, false),
-            $value(`scene.controls[0].selected`, false),
-        );
-    } else {
-        return Observable.merge(
-            falcor.set(
-                $value(`scene.simulating`, true),
-                $value(`scene.controls[0].selected`, true),
-            ),
-            !socket &&
-                Observable.empty() ||
-                Observable.interval(40).do(() => {
-                    socket.emit('interaction', { play: true, layout: true });
-                })
-                .let((source) => !center ?
-                    source :
-                    source.exhaustMap((x, index) => {
-                        if ((index % 2 && index <= 10) ||
-                            (index % 20 === 0 && index <= 100) ||
-                            (index % 100 === 0)) {
-                            return centerCamera({ falcor }).startWith(x);
-                        }
-                        return Observable.of(x);
-                    })
-                )
-                .let((source) => !stop ?
-                    source : source
-                        .takeUntil(stop)
-                        .concat(toggleSimulating({
-                            falcor, socket, selected: true
-                        }))
-                        .concat(centerCamera({ falcor }))
-                )
-        );
+function toggleSimulating({
+    falcor, socket, selected,
+    stop = Observable.never(),
+    center = Observable.of(false)
+}) {
+
+    const setValues = falcor.set(
+        $value(`scene.simulating`, !selected),
+        $value(`scene.controls[0].selected`, !selected)
+    );
+
+    if (selected || !socket) {
+        return setValues;
     }
+
+    const emitInteractions = Observable.interval(40).do(() => {
+        socket.emit('interaction', { play: true, layout: true });
+    })
+    .takeUntil(stop);
+
+    const autoCenterAndFinish = emitInteractions.multicast(
+        () => new Subject(), (emit) => Observable.merge(
+            // When the timer is done or the stop Observable emits its last value,
+            // set `scene.simulating` to false
+            emit.takeLast(1)
+                .mergeMapTo(toggleSimulating({
+                    falcor, socket, selected: true
+                })),
+            // If `emitInteractions` finishes before the `center` Observable
+            // emits a value, center one last time.
+            emit.concat(Observable.concat(
+                    toggleSimulating({
+                        falcor, socket, selected: true
+                    }),
+                    centerCamera({ falcor })
+                ).ignoreElements())
+                // Auto center until the `center` Observable emits
+                .takeUntil(center)
+                .exhaustMap((x, index) => {
+                    if ((index % 2 && index <= 10) ||
+                        (index % 20 === 0 && index <= 100) ||
+                        (index % 100 === 0)) {
+                        return centerCamera({ falcor }).startWith(x);
+                    }
+                    return Observable.of(x);
+                })
+        )
+    );
+
+    return setValues.merge(autoCenterAndFinish);
 }
 
 function toggleFilters({ falcor, selected }) {

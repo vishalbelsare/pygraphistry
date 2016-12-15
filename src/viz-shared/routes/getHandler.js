@@ -1,11 +1,11 @@
-const typeofNumber = 'number';
-const typeofObject = 'object';
-const  { slice } = Array.prototype;
-
-import { inspect } from 'util';
 import { Observable } from 'rxjs';
 import { mapObjectsToAtoms } from './mapObjectsToAtoms';
 import { captureErrorStacks } from './captureErrorStacks';
+
+const { isArray } = Array;
+const { slice } = Array.prototype;
+const typeofNumber = 'number';
+const typeofObject = 'object';
 
 function defaultPropsResolver(routerInstance) {
     const { request  = {} } = routerInstance;
@@ -64,7 +64,9 @@ export function getHandler(lists, loader, getInitialProps = defaultPropsResolver
             count = idxs.length;
 
             do {
-                if (index === count || !value || typeofObject !== typeof value) {
+                if (value === undefined) {
+                    break;
+                } else if (index === count || !value || typeofObject !== typeof value) {
                     vals[++valsId] = { value, path };
                     break;
                 } else if (type = value.$type) {
@@ -88,7 +90,7 @@ export function getHandler(lists, loader, getInitialProps = defaultPropsResolver
 function keysetToKeysList(keys) {
     if (!keys || typeofObject !== typeof keys) {
         return [keys];
-    } else if (Array.isArray(keys)) {
+    } else if (isArray(keys)) {
         return keys;
     }
     let rangeEnd = keys.to;

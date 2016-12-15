@@ -29,7 +29,7 @@ let Labels = ({ simulating,
 
     let labels = [];
 
-    if (poiEnabled && point && point.length) {
+    if (enabled && poiEnabled && point && point.length) {
         labels = point.slice(0);
     }
     if (selection && highlight && (

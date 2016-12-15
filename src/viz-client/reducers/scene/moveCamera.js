@@ -34,7 +34,8 @@ export function moveCamera(actions) {
 
 function toValuesAndInvalidations({ falcor, camera: { center: { x, y } } }) {
     return {
-        falcor, values: [{
+        falcor: falcor.withoutDataSource(),
+        values: [{
             json: {
                 camera: {
                     center: {
