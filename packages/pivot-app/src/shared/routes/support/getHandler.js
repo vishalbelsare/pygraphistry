@@ -2,7 +2,7 @@ import { inspect } from 'util';
 const  { slice } = Array.prototype;
 import { Observable } from 'rxjs';
 import logger from '../../../shared/logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
 export function getHandler(lists, loader, props = {}) {

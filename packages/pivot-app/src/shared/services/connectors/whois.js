@@ -4,7 +4,7 @@ import { parseWhoIsData as parse } from 'parse-whois';
 import VError from 'verror';
 import { Connector } from './connector.js';
 import logger from '../../logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
 class WhoisConnector extends Connector {

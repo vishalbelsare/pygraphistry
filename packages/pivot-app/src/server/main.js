@@ -25,7 +25,7 @@ import {
 
 import conf from './config.js';
 import logger from '../shared/logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 Error.stackTraceLimit = 3;
 
