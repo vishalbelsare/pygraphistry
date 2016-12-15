@@ -2,7 +2,7 @@ import { SplunkPivot } from './SplunkPivot.js';
 import logger from '../../logger.js';
 import _ from 'underscore';
 import stringhash from 'string-hash';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 const SPLUNK_INDICES = {
     EVENT_GEN: 'index=event_gen',

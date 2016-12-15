@@ -20,7 +20,7 @@ class SplunkConnector extends Connector {
         });
 
         const metadata = { splunkHostName: config.host, splunkUser: config.user };
-        this.log = logger.createLogger('pivot-app', __filename).child(metadata);
+        this.log = logger.createLogger(__filename).child(metadata);
 
         this.slogin = Observable.bindNodeCallback(this.service.login.bind(this.service));
         this.getJob = Observable.bindNodeCallback(this.service.getJob.bind(this.service));
