@@ -1,7 +1,7 @@
 import { SplunkPivot } from './SplunkPivot';
 import stringhash from 'string-hash';
 import logger from '../../logger';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
 const splunkIndices = {

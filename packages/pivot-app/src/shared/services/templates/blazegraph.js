@@ -3,7 +3,7 @@ import stringhash from 'string-hash';
 import request from 'request';
 import { PivotTemplate } from './template.js';
 import logger from '../../../shared/logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
 class BlazePivot extends PivotTemplate {
