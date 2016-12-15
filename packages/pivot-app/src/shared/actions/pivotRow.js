@@ -7,8 +7,9 @@ export const togglePivot = ({ index, enabled }) => {
     });
 };
 
-export function setPivotAttributes(params) {
+export function setPivotAttributes(params, investigationId) {
     return {
+        investigationId,
         params: params,
         type: SET_PIVOT_ATTRIBUTES
     };

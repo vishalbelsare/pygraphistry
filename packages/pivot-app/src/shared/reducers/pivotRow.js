@@ -30,14 +30,22 @@ function togglePivot(action$, store) {
 function setPivotAttributes(action$, store) {
     return action$
         .ofType(SET_PIVOT_ATTRIBUTES)
-        .mergeMap(({falcor, params}) =>
-            Observable.from(
-                _.map(params, (value, key) =>
-                    falcor.set(
-                        $pathValue(key.split('.'), value)
-                    )
+        .mergeMap(({falcor, params, investigationId}) => {
+            const topLevelModel = falcor._root.topLevelModel;
+            return Observable.from(
+                topLevelModel.set(
+                    $pathValue(['investigationsById', investigationId, 'status'], { msgStyle: 'warning', ok: true })
                 )
-            ).mergeAll()
+            ).concat(
+                Observable.from(
+                    _.map(params, (value, key) =>
+                            falcor.set(
+                                $pathValue(key.split('.'), value)
+                            )
+                    )
+                ).mergeAll()
+            );
+        }
         )
         .ignoreElements();
 }
