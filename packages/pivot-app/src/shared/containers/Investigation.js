@@ -43,10 +43,6 @@ function pivotTable({ id, pivots, templates, insertPivot, splicePivot, dismissAl
                             </Button>
                         </OverlayTrigger>
                     </th>
-                    <th className={styles.pivotData0 + ' pivotTypeSelector'}>Step</th>
-                    <th className={styles.pivotData1}>Parameters</th>
-                    <th colSpan="2" className={styles.pivotResultCount}>Hits</th>
-                    <th className={styles.pivotResultCount}>Actions</th>
                 </tr>
             </thead>
             <tbody>

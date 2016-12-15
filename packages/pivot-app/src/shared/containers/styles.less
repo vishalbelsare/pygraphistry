@@ -1,6 +1,6 @@
 @import '../vars.less';
 
-@investigation-header-height: 40px;
+@investigation-header-height: 60px;
 @investigation-header-padding-top: ~"calc( (@{investigation-header-height} - 1px - 34px)/2 )";
 @investigation-footer-height: 250px;
 
@@ -33,12 +33,21 @@
     margin-bottom: 0px;
 }
 
-
 :local(.investigation-split) {
     position: relative;
+    background-color: #FBFBFB;
+    tbody tr {
+    height: 400px;
+    display: flex;
+    -webkit-flex-flow: row wrap;   
+       }
+    tbody {
+        width: 100%;
+    }
 
-    & > div > div:nth-child(3) {
-        overflow-y: auto;
+    & > div > div:nth-child(1) {
+        overflow-y: scroll;
+        overflow-x: hidden;
     }
 
     & > div > span {
@@ -59,6 +68,11 @@
         border-bottom: 5px solid #999;
         cursor: row-resize;
         width: 100%;
+        
+        //Vertical
+        border-right: 5px solid #999;
+        cursor: col-resize;
+        width: 0px;
 
         &:hover {
             border-bottom: 5px solid #777;
@@ -204,6 +218,8 @@
     border: 1px solid black;
     box-sizing: border-box;
 }
+
+
 
 /* INTERFERE WITH OTHER STYLESHEETS
    FIX BEFORE RE-ENABLING
@@ -462,10 +478,16 @@ td, th {
             border-color: #333;
         }
     }
+    order: 1;
+    width: 50%;
+    border: none;
 }
 :local(.pivotData0) {
     width: 200px;
     text-align: right;
+    order: 3;
+    width: 100%;
+    border: none;
 }
 .pivotTypeSelectorContainer {
     text-align: left;
@@ -479,7 +501,9 @@ td, th {
 :local(.pivotData1) {
     //https://github.com/less/less.js/issues/974
     width: ~"calc(100% - 570px)";
-    min-width: 25em;
+    order: 4;
+    width: 100%;
+    padding: 5px;
 
     button {
         font-weight: bold;
@@ -513,7 +537,7 @@ td, th {
 }
 :local(.pivotEntitySummaries) {
     display: inline-block;
-    text-align: right;
+    text-align: left;
     margin: 5px 10px 0px 0px;
 }
 :local(.pivotEntitySummary) {
@@ -574,10 +598,12 @@ td, th {
     display: none;
 }
 :local(.pivotResultCount) {
-    text-align: right;
+    text-align: left;
     span {
         margin-top: @summaryPillHeight;
     }
+    order: 5;
+    width: 100%;
 }
 :local(.pivotResultSummaries) {
 
@@ -593,6 +619,8 @@ td, th {
         white-space: nowrap;
         max-width: 20em;
     }
+    order: 6;
+    width: 100%;
 
 }
 :local(.result-count-on) { }
@@ -601,6 +629,9 @@ td, th {
 }
 :local(.pivotIcons) {
     white-space: nowrap;
+    background-color: darkslategray;
+    order: 2;
+    width: 50%;
 }
 .pivot-error-tooltip {
 }
