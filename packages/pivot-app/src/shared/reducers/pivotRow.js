@@ -17,11 +17,17 @@ function togglePivot(action$, store) {
         .ofType(TOGGLE_PIVOT)
         .groupBy(({ id }) => id)
         .mergeMap((actionsById) => actionsById.switchMap(
-            ({ falcor, index, enabled}) => {
-                return falcor.set(
-                    $pathValue(`['enabled']`, enabled)
-                )
-                    .progressively()
+            ({ falcor, enabled, investigationId }) => {
+                const topLevelModel = falcor._root.topLevelModel;
+                return Observable.from(
+                    topLevelModel.set(
+                        $pathValue(['investigationsById', investigationId, 'status'], { msgStyle: 'warning', ok: true })
+                    )
+                ).concat(
+                    falcor.set(
+                        $pathValue(`['enabled']`, enabled)
+                    )
+                );
             }
         ))
         .ignoreElements();

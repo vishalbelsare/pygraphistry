@@ -321,9 +321,7 @@ function renderPivotRow({
                 <RcSwitch defaultChecked={false}
                           checked={enabled}
                           checkedChildren={'On'}
-                          onChange={(ev) => {
-                              togglePivot({ rowIndex, enabled: ev })}
-                          }
+                          onChange={(ev) => togglePivot({ enabled: ev, investigationId })}
                           unCheckedChildren={'Off'}
                 />
             </td>

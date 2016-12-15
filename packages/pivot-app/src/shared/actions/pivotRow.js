@@ -1,9 +1,9 @@
 export const TOGGLE_PIVOT = 'toggle-pivot';
 export const SET_PIVOT_ATTRIBUTES = 'set-pivot-attributes';
 
-export const togglePivot = ({ index, enabled }) => {
+export const togglePivot = ({ enabled, investigationId }) => {
     return ({
-        index, enabled, type: TOGGLE_PIVOT
+        investigationId, enabled, type: TOGGLE_PIVOT
     });
 };
 
