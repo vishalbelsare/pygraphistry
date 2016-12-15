@@ -83,37 +83,6 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
             );
     }
 
-/*
-    function savePivotsById({pivotIds}) {
-        return loadPivotsById({pivotIds})
-            .mergeMap(({app, pivot}) => {
-                const filePath = path.resolve(pathPrefix, pivot.id + '.json')
-                const content = JSON.stringify(serializePivotModel(pivot), null, 4);
-
-                service.evictFromCache(pivot.id);
-
-                return writeFileAsObservable(filePath, content)
-                    .map(() => ({app, pivot}));
-            });
-    }
-
-    function deletePivotsById({pivotIds}) {
-        return loadApp()
-            .mergeMap((app) =>
-                Observable.from(pivotIds)
-                    .switchMap(pivotId => {
-                        const filePath = path.resolve(pathPrefix, pivotId + '.json');
-                        return renameAsObservable(filePath, `${filePath}.deleted`)
-                            .catch(e => e.code === 'ENOENT' ? Observable.of(null)
-                                                            : Observable.throw(e)
-                            )
-                            .switchMap(() => service.unloadByIds([pivotId]));
-                    })
-                    .map(() => {app})
-            );
-    }
-*/
-
     return {
         loadPivotsById,
         unloadPivotsById,
