@@ -86,9 +86,9 @@ View = container({
             layout: ${ Settings.fragment(layout) },
             toolbar: ${ Toolbar.fragment(toolbar) },
             panels: {
-                ['left', 'right', 'bottom']: {
-                    id, name
-                }
+                left: ${ Panel.fragment(panels.left, { side: 'left' }) },
+                right: ${ Panel.fragment(panels.right, { side: 'right' }) },
+                bottom: ${ Panel.fragment(panels.bottom, { side: 'bottom' }) }
             }
         }`
     },

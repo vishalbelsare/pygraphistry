@@ -26,6 +26,7 @@ export function nBody(dataset) {
     );
 
     const nBody = NBody.createSync({
+        vgraphLoaded: false,
         scene: scenes[scene](),
         bg, id, dataset, stepNumber: 0,
         globalControls: simulator.controls.global,

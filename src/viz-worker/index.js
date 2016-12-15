@@ -138,11 +138,16 @@ export function vizWorker(app, server, sockets, caches) {
                     )
                     .do(() => logger.trace('finished initial dataframe mask'))
                     .mergeMap(
-                        ({ nBody }) => sendUpdate(
-                            `workbooks.open.views.current.columns.length`,
-                            `workbooks.open.views.current.histograms.length`,
-                            `workbooks.open.views.current.scene.renderer['edges', 'points'].elements`
-                        ).takeLast(1),
+                        ({ nBody }) => sendUpdate({
+                            invalidated: [
+                                `workbooks.open.views.current.inspector.rows`
+                            ],
+                            paths: [
+                                `workbooks.open.views.current.columns.length`,
+                                `workbooks.open.views.current.histograms.length`,
+                                `workbooks.open.views.current.scene.renderer['edges', 'points'].elements`
+                            ]
+                        }).takeLast(1),
                         ({ nBody }) => ({ nBody })
                     )
                     .do(() => logger.trace('finished sending initial falcor update'))

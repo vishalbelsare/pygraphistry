@@ -213,6 +213,12 @@ function searchCount ({loadViewsById, readSelection}, path) {
     })
     .mergeMap(({ workbook, view }) => {
 
+        const { nBody: { vgraphLoaded } = {} } = view;
+
+        if (!vgraphLoaded) {
+            return $value([], 0);
+        }
+
         const queries = generateQueries(
             {workbook, view},
             {openTabs, searchTerms, sortKeys, sortOrders, rows, fields});

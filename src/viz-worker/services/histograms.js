@@ -72,16 +72,25 @@ export function loadSelectionHistograms(loadViewsById) {
             workbookIds, viewIds, histogramIds
         })
         .mergeMap(
-            ({ workbook, view, histogram }) =>
-                loadPointsMask({ view, masked, histogram }),
-            ({ workbook, view, histogram }, pointsMask) => ({
-                workbook, view, histogram, pointsMask
-            })
-        )
-        .mergeMap(
-            ({ workbook, view, histogram, pointsMask }) => computeHistogram({
-                view, masked, histogram, pointsMask, refresh
-            }),
+            ({ workbook, view, histogram }) => {
+
+                const { nBody: { vgraphLoaded } = {},
+                        selection: { histogramsById } } = view;
+
+                if (!refresh || !vgraphLoaded) {
+                    if (!histogramsById || !(histogram = histogramsById[histogram.id])) {
+                        return Observable.empty();
+                    }
+                    return Observable.of(histogram);
+                }
+
+                return loadPointsMask({
+                    view, masked, histogram
+                })
+                .mergeMap((pointsMask) => computeHistogram({
+                    view, masked, histogram, pointsMask, refresh
+                }));
+            },
             ({ workbook, view }, histogram) => ({
                 workbook, view, histogram: (
                     view.selection.histogramsById[histogram.id] = histogram)
@@ -144,11 +153,11 @@ export function getHistogramForAttribute({ view, graphType, attribute, dataType 
 
 function computeHistogram({ view, masked, histogram, pointsMask, refresh = true }) {
 
-    const { nBody: { dataframe, simulator } = {}} = view;
+    const { nBody: { dataframe, simulator, vgraphLoaded } = {}} = view;
 
     if (!dataframe || !simulator || !histogram) {
-        return Observable.of(histogram);
-    } else if (!refresh) {
+        return Observable.empty();
+    } else if (!refresh || !vgraphLoaded) {
         return Observable.of(histogram);
     }
 
@@ -196,95 +205,97 @@ function computeHistogram({ view, masked, histogram, pointsMask, refresh = true 
     /* Normalizes the binResult into a Histogram model */
     /* See Leo's notes on the binResult below */
 
-    return binsForHistogram.map((binResult) => {
-
-        const { type: binType,
-                numBins, binWidth, minValue, maxValue,
-                bins, binValues, numValues: numElements, valueToBin = null } = binResult;
-
-        let maxElements = 0,
-            isMasked = masked && binType !== 'nodata',
-            castKeyToNumber = dataType === 'number' || (
-                typeof minValue === 'number' &&
-                typeof maxValue === 'number');
-
-        let binKeys;
-
-        if (binType === 'countBy' && isMasked === true) {
-            binKeys = histogram.bins.map(({ values }) => values[0]);
-        } else {
-            binKeys = binType === 'countBy' &&
-                bins && Object.keys(bins) || Array
-                    .from({ length: numBins }, (x, i) => i);
-        }
-
-        /* Normalizes the bins, binKeys, binValues, etc. */
-        /* into simpler { count, values, exclude } sets. */
-        /*                                               */
-        /* count: int the number of elements in this bin */
-        /* values: []<any> an Array of the display value */
-        /*                              or range values. */
-        /* exclude: bool flags whether we should exclude */
-        /*               this bin's value when computing */
-        /*                                 the bin mask. */
-
-        const binsNormalized = binKeys.map((key, index) => {
-
-            let value, values,
-                count = 0, exclude = false;
-
-            if (binType !== 'nodata' &&
-                binType !== 'countBy' &&
-                binType !== 'histogram') {
-                throw new Error('Unrecognized bin result type');
-            }
-
-            count = (
-                binType !== 'nodata' && bins &&
-                typeof bins[key] === 'number') && bins[key] || 0;
-
-            if (binType === 'nodata') {
-                values = [];
-            } else if (key === '_other' && (
-                       binType === 'countBy') && (value = binValues) && (
-                       exclude = (typeof value === 'object' && (
-                                  typeof value._other === 'object')))) {
-                values = [key];
-                count = value._other.numValues;
-            } else if (!(value = binValues && binValues[key]) && binType === 'countBy') {
-                values = [castKeyToNumber ? Number(key) : key];
-            } else if (value) {
-                values = value.isSingular ?
-                    [value.representative]:
-                    [value.min, value.max];
-            } else {
-                values = [
-                    minValue + (index * binWidth),
-                    minValue + (index * binWidth) + binWidth
-                ];
-            }
-
-            isMasked = isMasked && count > 0;
-            maxElements = count > maxElements ? count : maxElements;
-
-            return { count, values, exclude };
-        });
-
-        return {
-            ...histogram,
-            minValue, maxValue,
-            numElements, maxElements,
-            binType, binWidth, numBins,
-            isMasked, bins: binsNormalized,
-            valueToBin
-        };
-    })
-    .catch((e) => !masked ?
-        Observable.throw(e) :
-        Observable.of(undefined)
-    );
+    return binsForHistogram
+        .scan(normalizeBinResult, { masked, dataType, histogram })
+        .take(1)
+        .catch((e) => !masked ?
+            Observable.throw(e) : Observable.of(undefined)
+        );
 }
 
+function normalizeBinResult({ masked, dataType, histogram }, binResult) {
+
+    const { type: binType,
+            numBins, binWidth, minValue, maxValue,
+            bins, binValues, numValues: numElements, valueToBin = null } = binResult;
+
+    let maxElements = 0,
+        isMasked = masked && binType !== 'nodata',
+        castKeyToNumber = dataType === 'number' || (
+            typeof minValue === 'number' &&
+            typeof maxValue === 'number');
+
+    let binKeys;
+
+    if (binType === 'countBy' && isMasked === true) {
+        binKeys = histogram.bins.map(({ values }) => values[0]);
+    } else {
+        binKeys = binType === 'countBy' &&
+            bins && Object.keys(bins) || Array
+                .from({ length: numBins }, (x, i) => i);
+    }
+
+    /* Normalizes the bins, binKeys, binValues, etc. */
+    /* into simpler { count, values, exclude } sets. */
+    /*                                               */
+    /* count: int the number of elements in this bin */
+    /* values: []<any> an Array of the display value */
+    /*                              or range values. */
+    /* exclude: bool flags whether we should exclude */
+    /*               this bin's value when computing */
+    /*                                 the bin mask. */
+
+    const binsNormalized = binKeys.map((key, index) => {
+
+        let value, values,
+            count = 0, exclude = false;
+
+        if (binType !== 'nodata' &&
+            binType !== 'countBy' &&
+            binType !== 'histogram') {
+            throw new Error('Unrecognized bin result type');
+        }
+
+        count = (
+            binType !== 'nodata' && bins &&
+            typeof bins[key] === 'number') && bins[key] || 0;
+
+        if (binType === 'nodata') {
+            values = [];
+        } else if (key === '_other' && (
+                   binType === 'countBy') && (value = binValues) && (
+                   exclude = (typeof value === 'object' && (
+                              typeof value._other === 'object')))) {
+            values = [key];
+            count = value._other.numValues;
+        } else if (!(value = binValues && binValues[key]) && binType === 'countBy') {
+            values = [castKeyToNumber ? Number(key) : key];
+        } else if (value) {
+            values = value.isSingular ?
+                [value.representative]:
+                [value.min, value.max];
+        } else {
+            values = [
+                minValue + (index * binWidth),
+                minValue + (index * binWidth) + binWidth
+            ];
+        }
+
+        isMasked = isMasked && count > 0;
+        maxElements = count > maxElements ? count : maxElements;
+
+        return { count, values, exclude };
+    });
+
+    return {
+        ...histogram,
+        minValue, maxValue,
+        numElements, maxElements,
+        binType, binWidth, numBins,
+        isMasked, bins: binsNormalized,
+        valueToBin
+    };
+}
 
 /*
 The histograms data structure is an adventure:
