@@ -9,7 +9,7 @@ export function socketRoutes(services, socket) {
     }, true));
 
     return [{
-        event: 'falcor-operation',
+        event: sink.event,
         handler: sink.response
     }];
 }
