@@ -200,7 +200,7 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                     investigation.eventTable = makeEventTable({data, pivots});
                     if (dataset) {
                         investigation.url = `${user.vizService}&dataset=${dataset}`;
-                        investigation.status = {ok: true};
+                        investigation.status = {ok: true, msgStyle: 'success'};
                     } else {
                         investigation.status = {
                             ok: false,
