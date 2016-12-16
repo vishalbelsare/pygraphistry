@@ -40,8 +40,8 @@
     tbody tr {
     height: 300px;
     display: flex;
-    -webkit-flex-flow: row wrap; 
-    border-top: 1px solid #ddd;    
+    -webkit-flex-flow: row wrap;
+    border-top: 1px solid #ddd;
        }
     tbody {
         width: 100%;
@@ -75,7 +75,7 @@
         border-bottom: 5px solid #999;
         cursor: row-resize;
         width: 100%;
-        
+
         //Vertical
         border-right: 5px solid #999;
         cursor: col-resize;
@@ -650,10 +650,11 @@ td, th {
     order: 2;
     width: 50%;
     padding-top: 20px !important;
-    padding-left: 0px !important; 
+    padding-left: 0px !important;
 }
 .pivot-error-tooltip {
 }
+
 
 //gets rid of stubborn bootstrap border
 td {
@@ -661,3 +662,12 @@ td {
 }
 
 //not sure why the opposing style has to be overriden? bootstrap thing?
+
+:local(.pivotTextParam) {
+    border: 2px solid black;
+}
+:local(.pivotComboParam) {
+        border: 2px solid red;
+}
+:local(.pivotMultiParam) {    border: 2px solid blue;}
+:local(.pivotDateRangeParam) {    border: 2px solid green;}
