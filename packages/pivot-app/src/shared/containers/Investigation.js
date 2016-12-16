@@ -30,8 +30,10 @@ import {
 } from '../actions/investigation';
 
 
-function pivotTable({ id, pivots, templates, insertPivot, splicePivot, dismissAlert, searchPivot,
-    graphInvestigation, saveInvestigation, togglePivots}) {
+function pivotTable({ id, status, pivots, templates, insertPivot, splicePivot, dismissAlert, searchPivot,
+    graphInvestigation, saveInvestigation, togglePivots }) {
+    console.log('Status', status);
+    const bStyle = (status && status.msgStyle) ? status.msgStyle : 'default';
     return (
         <Table>
             <thead>
@@ -40,7 +42,11 @@ function pivotTable({ id, pivots, templates, insertPivot, splicePivot, dismissAl
                         <OverlayTrigger  placement="top" overlay={
                             <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
                         }>
-                            <Button onClick={(ev) => graphInvestigation({investigationId: id, length: pivots.length})}>
+                            <Button bsStyle={bStyle}
+                                    onClick={(ev) =>
+                                        graphInvestigation({investigationId: id, length: pivots.length}
+                                    )}
+                            >
                                 <Glyphicon glyph="play" />
                             </Button>
                         </OverlayTrigger>
@@ -134,7 +140,7 @@ function renderInvestigation({id, status, pivots = [], templates, eventTable,
                 <Tab eventKey={1} title="Pivots">
                     {
                         pivotTable({
-                            id, pivots, templates, insertPivot, splicePivot, dismissAlert,
+                            id, pivots, status, templates, insertPivot, splicePivot, dismissAlert,
                             searchPivot, graphInvestigation, saveInvestigation, togglePivots,
                         })
                     }

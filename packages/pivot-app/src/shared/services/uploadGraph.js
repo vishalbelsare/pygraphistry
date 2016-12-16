@@ -202,7 +202,8 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                         investigation.url = `${user.vizService}&dataset=${dataset}`;
                         investigation.status = {
                             ok: true,
-                            etling: false
+                            etling: false,
+                            msgStyle: 'success'
                         };
                     } else {
                         investigation.status = {

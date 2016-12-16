@@ -106,13 +106,20 @@ function insertPivot(action$, store) {
 function togglePivots(action$, store) {
     return action$
         .ofType(TOGGLE_PIVOTS)
-        .mergeMap(({falcor, indices, enabled}) =>
-            Observable.from(indices)
-                .flatMap(index =>
-                    falcor.set(
-                        $value(['pivots', indices, 'enabled'], enabled)
-                    )
+        .mergeMap(({ falcor, indices, enabled, investigationId }) => {
+            const topLevelModel = falcor._root.topLevelModel;
+            return Observable.from(
+                topLevelModel.set(
+                    $value(['investigationsById', investigationId, 'status'], { msgStyle: 'warning', ok: true })
                 )
-        )
+            ).concat(
+                Observable.from(indices)
+                    .flatMap(index =>
+                        falcor.set(
+                            $value(['pivots', index, 'enabled'], enabled)
+                        )
+                    )
+            );
+        })
         .ignoreElements();
 }
