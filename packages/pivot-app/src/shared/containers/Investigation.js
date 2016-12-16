@@ -22,14 +22,16 @@ import styles from './styles.less';
 import { splicePivot,
         insertPivot,
         searchPivot,
-        playInvestigation,
+        graphInvestigation,
         saveInvestigation,
         dismissAlert
 } from '../actions/investigation';
 
+
 function pivotTable({ id, status, pivots, templates, insertPivot, splicePivot, dismissAlert, searchPivot,
-    playInvestigation, saveInvestigation }) {
+    graphInvestigation, saveInvestigation }) {
     const bStyle = (status && status.msgStyle) ? status.msgStyle : 'default';
+
     return (
         <Table>
             <thead>
@@ -38,7 +40,11 @@ function pivotTable({ id, status, pivots, templates, insertPivot, splicePivot, d
                         <OverlayTrigger  placement="top" overlay={
                             <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
                         }>
-                            <Button bsStyle={bStyle} onClick={(ev) => playInvestigation({investigationId: id, length: pivots.length})}>
+                            <Button bsStyle={bStyle}
+                                    onClick={(ev) =>
+                                        graphInvestigation({investigationId: id, length: pivots.length}
+                                    )}
+                            >
                                 <Glyphicon glyph="play" />
                             </Button>
                         </OverlayTrigger>
@@ -118,7 +124,7 @@ function renderEventTable({fieldSummaries = {}, table = {}}) {
 
 function renderInvestigation({id, status, pivots = [], templates, eventTable,
                               searchPivot, insertPivot, splicePivot, dismissAlert,
-                              playInvestigation, saveInvestigation }) {
+                              graphInvestigation, saveInvestigation }) {
     return (
         <div className={styles.pivots}>
             { status && !status.ok ?
@@ -132,7 +138,7 @@ function renderInvestigation({id, status, pivots = [], templates, eventTable,
                     {
                         pivotTable({
                             id, status, pivots, templates, insertPivot, splicePivot, dismissAlert,
-                            searchPivot, playInvestigation, saveInvestigation
+                            searchPivot, graphInvestigation, saveInvestigation
                         })
                     }
                 </Tab>
@@ -173,10 +179,9 @@ export default container(
         splicePivot: splicePivot,
         insertPivot: insertPivot,
         searchPivot: searchPivot,
-        playInvestigation: playInvestigation,
+        graphInvestigation: graphInvestigation,
         saveInvestigation: saveInvestigation,
         searchPivot: searchPivot,
         dismissAlert: dismissAlert,
     }
 )(renderInvestigation)
-

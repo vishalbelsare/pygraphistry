@@ -5,6 +5,9 @@
         "query": "Enter search query",
         "pivotRef": [
             "3dbf56157f9e4567"
+        ],
+        "fields": [
+            "Fire Eye URL"
         ]
     },
     "pivotTemplate": "expand-bluecoat-botnet-demo"
