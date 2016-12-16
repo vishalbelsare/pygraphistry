@@ -106,10 +106,12 @@ function togglePivots(action$, store) {
     return action$
         .ofType(TOGGLE_PIVOTS)
         .mergeMap(({falcor, indices, enabled}) =>
-            falcor.set(
-                $value(['pivots', indices, 'enabled'], enabled)
-            )
-            .progressively()
+            Observable.from(indices)
+                .flatMap(index =>
+                    falcor.set(
+                        $value(['pivots', index, 'enabled'], enabled)
+                    )
+                )
         )
         .ignoreElements();
 }
