@@ -279,6 +279,7 @@ function renderComboCell(id, paramKey, paramValue, paramUI, handlers) {
 
 function renderDateRange(id, paramKey, paramValue, paramUI, handlers) {
     return (
+        <div className={styles.datepicker}>
         <div key={`pcell-${id}-${paramKey}`}>
             <DateRangePickerWrapper
                 paramUI={paramUI}
@@ -287,6 +288,7 @@ function renderDateRange(id, paramKey, paramValue, paramUI, handlers) {
                 setPivotAttributes={handlers.setPivotAttributes}
             />
         </div>
+        </div>    
     );
 }
 
