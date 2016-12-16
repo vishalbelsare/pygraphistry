@@ -1,4 +1,5 @@
 import _ from 'underscore';
+import { Observable } from 'rxjs';
 import moment from 'moment';
 import { PivotTemplate } from './template.js';
 import { splunkConnector0 } from '../connectors';
@@ -24,20 +25,27 @@ export class SplunkPivot extends PivotTemplate {
         const {searchQuery, searchParams} = this.toSplunk(pivot.pivotParameters, pivotCache);
         pivot.template = this;
 
-        return this.connector.search(searchQuery, searchParams)
-            .do(({ resultCount, events, searchId, df, isPartial }) => {
-                pivot.df = df;
-                pivot.resultCount = resultCount;
-                pivot.events = events;
-                pivot.splunkSearchId = searchId;
-                pivot.isPartial = isPartial;
-                pivotCache[pivot.id] = {
-                    results: pivot.results,
-                    query: searchQuery,
-                    splunkSearchId: pivot.splunkSearchId
-                };
-            })
-            .map(() => shapeSplunkResults({app, pivot}));
+        if (!pivot.enabled) {
+            pivot.resultSummary = {};
+            pivot.resultCount = 0;
+            return Observable.of({ app, pivot });
+        } else {
+
+            return this.connector.search(searchQuery, searchParams)
+                .do(({ resultCount, events, searchId, df, isPartial }) => {
+                    pivot.df = df;
+                    pivot.resultCount = resultCount;
+                    pivot.events = events;
+                    pivot.splunkSearchId = searchId;
+                    pivot.isPartial = isPartial;
+                    pivotCache[pivot.id] = {
+                        results: pivot.results,
+                        query: searchQuery,
+                        splunkSearchId: pivot.splunkSearchId
+                    };
+                })
+                .map(() => shapeSplunkResults({app, pivot}));
+        }
     }
 
     dayRangeToSplunkParams({ startDate, endDate }) {
