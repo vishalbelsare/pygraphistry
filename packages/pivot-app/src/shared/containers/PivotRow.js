@@ -3,12 +3,7 @@ import {
     ref as $ref,
     pathValue as $pathValue
 } from '@graphistry/falcor-json-graph';
-import {
-    tcell as tableCellClassName,
-    splice as spliceIconClassName,
-    insert as insertIconClassName,
-    search as searchIconClassName
-} from './styles.less';
+
 import {
     togglePivot,
     setPivotAttributes
@@ -32,6 +27,12 @@ import {
 } from 'react-bootstrap';
 import DateRangePickerWrapper from './TimeRangeWidget.js';
 import RcSwitch from 'rc-switch';
+import {
+    tcell as tableCellClassName,
+    splice as spliceIconClassName,
+    insert as insertIconClassName,
+    search as searchIconClassName
+} from './styles.less';
 import styles from './styles.less';
 import _ from 'underscore';
 import React from 'react'
@@ -202,7 +203,7 @@ function renderTemplateSelector (id, pivotTemplate, templates, setPivotAttribute
 
 function renderTextCell(id, paramKey, paramValue, paramUI, handlers) {
      return (
-        <div className={tableCellClassName} key={`pcell-${id}-${paramKey}`}>
+        <td className={tableCellClassName + ' ' + styles.pivotTextParam} key={`pcell-${id}-${paramKey}`}>
             <label>{ paramUI.label }</label>
             <input
                 type='th'
@@ -216,7 +217,7 @@ function renderTextCell(id, paramKey, paramValue, paramUI, handlers) {
                     })
                 }
             />
-        </div>
+        </td>
      );
 }
 
@@ -263,32 +264,52 @@ function renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, han
 
 function renderComboCell(id, paramKey, paramValue, paramUI, handlers) {
     return (
-        <ComboSelector
-            key={`pcell-${id}-${paramKey}`}
-            pivotId={id}
-            fldKey={paramKey}
-            fldValue={paramValue}
-            setPivotAttributes={handlers.setPivotAttributes}
-            paramUI={paramUI}
-            options={paramUI.options}
-        />
+        <td className={styles.pivotComboParam} key={`pcell-${id}-${paramKey}`}>
+            <ComboSelector
+                pivotId={id}
+                fldKey={paramKey}
+                fldValue={paramValue}
+                setPivotAttributes={handlers.setPivotAttributes}
+                paramUI={paramUI}
+                options={paramUI.options}
+                />
+        </td>
     );
 }
 
-
+function renderMultiCell(id, paramKey, paramValue, paramUI, handlers) {
+    return (
+        <td key={`pcell-${id}-${paramKey}`} className={tableCellClassName + ' ' + styles.pivotMultiParam}>
+            <label>{ paramUI.label }</label>
+            <Select
+                id={`selector-${id}-${paramKey}`}
+                name={`selector-${id}-${paramKey}`}
+                clearable={true}
+                labelKey="name"
+                valueKey="id"
+                value={paramValue}
+                options={paramUI.options}
+                multi="true"
+                joinValues="true"
+                onChange={ (selected) =>
+                    handlers.setPivotAttributes({
+                        [`pivotParameters.${paramKey}`]: _.pluck(selected, 'id')
+                    })
+                }/>
+        </td>
+    )
+}
 
 function renderDateRange(id, paramKey, paramValue, paramUI, handlers) {
     return (
-        <div className={styles.datepicker}>
-        <div key={`pcell-${id}-${paramKey}`}>
+        <td className={styles.pivotDateRangeParam} key={`pcell-${id}-${paramKey}`}>
             <DateRangePickerWrapper
                 paramUI={paramUI}
                 paramValue={paramValue}
                 paramKey={paramKey}
                 setPivotAttributes={handlers.setPivotAttributes}
             />
-        </div>
-        </div>    
+        </td>
     );
 }
 
@@ -336,8 +357,6 @@ function renderPivotRow({
                     renderTemplateSelector(id, pivotTemplate, templates, setPivotAttributes)
                 }
             </td>
-
-            <td key={`pcell-${id}-pivotparam`} className={styles['pivotData1']}>
             {
                 pivotTemplate && pivotTemplate.pivotParameterKeys && pivotTemplate.pivotParametersUI &&
                 pivotTemplate.pivotParameterKeys.map(key =>
@@ -347,7 +366,6 @@ function renderPivotRow({
                         )
                     )
             }
-            </td>
             <td className={styles.pivotResultCount}>
                 <OverlayTrigger  placement="top" overlay={
                     <Tooltip id={`resultCountTip_${id}_${rowIndex}`}>Events</Tooltip>
