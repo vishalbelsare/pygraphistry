@@ -73,7 +73,13 @@ export class Label extends React.Component {
         let { showFull, pinned,
               color, background,
               onFilter, onExclude,
-              type, index, title, columns, ...props } = this.props;
+              type, title, columns, ...props } = this.props;
+
+        if (title == null || title == '') {
+            if (!showFull && !pinned) {
+                return null;
+            }
+        }
 
         background = showFull || pinned ? new Color(background).alpha(1).rgbaString() : background;
 
@@ -129,6 +135,15 @@ export class Label extends React.Component {
 
 function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseDown, onTouchStart }) {
 
+    const titleHTML = { __html: title };
+    const titleExcludeHTML = { __html: title };
+
+    if (title == null || title === '') {
+        title = '';
+        titleHTML.__html = '&nbsp;';
+        titleExcludeHTML.__html = `''`;
+    }
+
     if (!showFull) {
         return (
             <div className={styles['label-title']}
@@ -136,7 +151,7 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
                  onTouchStart={onTouchStart}>
                 <span onMouseDown={stopPropagationIfAnchor}
                       className={styles['label-title-text']}
-                      dangerouslySetInnerHTML={{ __html: title }}/>
+                      dangerouslySetInnerHTML={titleHTML}/>
             </div>
         );
     }
@@ -162,8 +177,8 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
                             overlay={
                                 <Tooltip className={styles['label-tooltip']}
                                          id={`tooltip:title:${type}:${title}`}>
-                                    Exclude if "title = {
-                                      <span dangerouslySetInnerHTML={{ __html: title }}/>
+                                    Exclude if "{type}:_title = {
+                                        <span dangerouslySetInnerHTML={titleExcludeHTML}/>
                                     }"
                                 </Tooltip>
                             }>
@@ -175,7 +190,10 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
                    })}
                    onMouseDown={stopPropagation}
                    onClick={ preventPropagation(() => onExclude && onExclude({
-                            componentType: type, dataType: 'string', name: '_title', value: title
+                            value: title,
+                            name: '_title',
+                            dataType: 'equals',
+                            componentType: type
                         }))}>
                     <i className={classNames({
                         'fa': true,
@@ -185,7 +203,7 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
             </OverlayTrigger>
             <span onMouseDown={stopPropagationIfAnchor}
                   className={styles['label-title-text']}
-                  dangerouslySetInnerHTML={{ __html: title }}/>
+                  dangerouslySetInnerHTML={titleHTML}/>
         </div>
     );
 }

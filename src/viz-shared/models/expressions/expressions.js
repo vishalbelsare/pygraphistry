@@ -89,6 +89,9 @@ export function expression(inputOrProps = {
             ...inputOrProps, name, dataType, identifier, componentType
         });
         input = printExpression(query);
+        if (dataType === 'equals') {
+            dataType = 'number';
+        }
     }
 
     return {
