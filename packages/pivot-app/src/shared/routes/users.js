@@ -9,7 +9,7 @@ import {
 } from './support';
 
 import logger from '../logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
 export function users({ loadApp, createInvestigation, removeInvestigationsById,

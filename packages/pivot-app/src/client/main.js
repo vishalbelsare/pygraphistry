@@ -17,7 +17,7 @@ import { Provider } from 'react-redux';
 import { configureStore } from '../shared/store/configureStore';
 
 import logger from '../shared/logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 const useLocalStorage = __DEV__;
 const localStorageToken = 'pivots-app-cache';
@@ -71,7 +71,7 @@ function getAppModel() {
         cache: getAppCache(),
         recycleJSON: true,
         scheduler: Scheduler.asap,
-        source: new DataSource('/model.json', { timeout: 20000 } ),
+        source: new DataSource('model.json', { timeout: 20000 } ),
         treatErrorsAsValues: true
     });
 }

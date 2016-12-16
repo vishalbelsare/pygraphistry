@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { routes } from '../routes';
 import Router from '@graphistry/falcor-router';
 import logger from '../../shared/logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
 export function getDataSourceFactory(services) {

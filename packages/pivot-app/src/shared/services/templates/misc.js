@@ -9,15 +9,24 @@ export const searchSplunk = new SplunkPivot({
     id: 'search-splunk-plain',
     name: 'Search Splunk',
     tags: ['Splunk', 'Graphviz'],
-    pivotParameterKeys: ['query'],
+    pivotParameterKeys: ['query', 'fields'],
     pivotParametersUI: {
         'query': {
             inputType: 'text',
             label: 'Query:',
             placeholder: 'error'
+        },
+        'fields': {
+            inputType: 'multi',
+            label: 'Entities:',
+            options: [
+                'module', 'level', 'err.message', 'time', 'metadata.dataset',
+                'err.stackArray{}.file', 'err.stackArray{}.function', 'msg', 'fileName'
+            ].map(x => ({id:x, name:x})),
         }
     },
     toSplunk: function (pivotParameters, pivotCache) {
+        this.connections = pivotParameters.fields.value;
         const query = `search ${pivotParameters['query']} ${this.constructFieldString()} | head 1000`;
 
         return { searchQuery: query };

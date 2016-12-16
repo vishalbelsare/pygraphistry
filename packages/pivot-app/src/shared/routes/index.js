@@ -13,7 +13,7 @@ import {
 } from '@graphistry/falcor-json-graph';
 
 import logger from '../logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
 export function routes(services) {
