@@ -200,10 +200,14 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                     investigation.eventTable = makeEventTable({data, pivots});
                     if (dataset) {
                         investigation.url = `${user.vizService}&dataset=${dataset}`;
-                        investigation.status = {ok: true};
+                        investigation.status = {
+                            ok: true,
+                            etling: false
+                        };
                     } else {
                         investigation.status = {
                             ok: false,
+                            etling: false,
                             message: 'No events found!',
                             msgStyle: 'info',
                         }

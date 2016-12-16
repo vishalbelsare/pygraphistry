@@ -104,6 +104,7 @@ function clientConfig(buildOpts = {}) {
             '@graphistry/falcor-router',
             '@graphistry/falcor-socket-datasource',
             'assert',
+            'better-react-spinkit',
             'brace-expansion',
             'bn.js',
             'bowser',
