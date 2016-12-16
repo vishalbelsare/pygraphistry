@@ -90,28 +90,8 @@ function s3Upload(binaryBuffer, metadata) {
 export function processRequest(req, params) {
     return Observable.defer(() => {
         logger.info({ etlparams: params }, 'ETL1 request submitted');
-        return Observable.from(etl(req.body));
+        return Observable.fromPromise(etl(req.body));
     }).do((info) => {
         logger.info('ETL1 successful, dataset name is', info.name);
     });
 }
-
-// (Int -> ()) * Request * Response * Object -> Promise()
-export function process(req, res, params) {
-    logger.info({etlparams: params}, 'ETL1 request submitted');
-
-    return Q(req.body).then(function (msg) {
-        return etl(msg)
-            .then(function (info) {
-                logger.info('ETL1 successful, dataset name is', info.name);
-
-                res.send({
-                    success: true, dataset: info.name,
-                    viztoken: apiKey.makeVizToken(params.key, info.name)
-                });
-
-                return info;
-            });
-    });
-}
-
