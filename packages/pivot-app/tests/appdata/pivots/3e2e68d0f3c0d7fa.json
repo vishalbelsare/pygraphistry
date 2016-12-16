@@ -5,6 +5,9 @@
         "query": "Enter search query",
         "pRef": [
             "3dbf566346f5ecd4"
+        ],
+        "fields": [
+            "Internal IPs"
         ]
     },
     "pivotTemplate": "expand-ids-botnet-demo"

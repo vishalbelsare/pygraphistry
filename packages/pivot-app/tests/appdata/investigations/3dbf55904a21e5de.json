@@ -1,12 +1,11 @@
 {
     "name": "Botnet",
-    "url": "http://localhost:10000/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&dataset=PivotApp/3e2e68ecbd65defd",
     "id": "3dbf55904a21e5de",
     "description": "Tracking down a botnet using FireEye, BlueCoat, and PAN",
     "tags": [
         "Demo"
     ],
-    "modifiedOn": 1481314157972,
+    "modifiedOn": 1481929535658,
     "pivots": [
         "3dbf55904a77e964",
         "3dbf56157f9e4567",

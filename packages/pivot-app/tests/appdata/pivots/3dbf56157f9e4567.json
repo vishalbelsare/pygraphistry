@@ -3,7 +3,13 @@
     "enabled": true,
     "pivotParameters": {
         "query": "Enter search query",
-        "ref": ["3dbf55904a77e964"]
+        "ref": [
+            "3dbf55904a77e964"
+        ],
+        "fields": [
+            "Fire Eye MD5",
+            "Message"
+        ]
     },
     "pivotTemplate": "expand-fireeye-botnet-demo"
 }
