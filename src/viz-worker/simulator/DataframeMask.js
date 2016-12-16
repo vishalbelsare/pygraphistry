@@ -67,6 +67,8 @@ function DataframeMask (dataframe, pointIndexes = undefined, edgeIndexes = undef
  * @param {Mask} basisMask The existing mask that the input mask indexes refer to.
  * @returns {Mask}
  */
+DataframeMask.unbaseMaskFrom = unbaseMaskFrom;
+
 function unbaseMaskFrom (mask, basisMask) {
     if (mask !== undefined && basisMask !== undefined) {
         const globalizedMask = new Uint32Array(mask.length);
@@ -86,6 +88,8 @@ function unbaseMaskFrom (mask, basisMask) {
  * @param {Mask} basisMask The mask in which the input should be re-rendered.
  * @returns {Mask}
  */
+DataframeMask.baseMaskOn = baseMaskOn;
+
 function baseMaskOn (mask, basisMask) {
     if (mask !== undefined && basisMask !== undefined) {
         const maskLength = mask.length, basisLength = basisMask.length;

@@ -59,16 +59,7 @@ function queryPage ({readSelection}, {view, openTab, range, searchTerm, sortKey,
     let { selection: { mask: rect } = {} } = view;
 
     if (!rect || !rect.tl || !rect.br) {
-        if (!view.filters || !view.filters.length) {
-            rect = { all: true };
-        } else {
-        // { all: true } is _very_ broken when the view is filtered :`(
-        // This hack forces the simulator to read the filtered point/edge indexes
-            rect = {
-                tl: { x: -10000000, y: 10000000 },
-                br: { x: 10000000, y: -10000000 }
-            };
-        }
+        rect = { all: true };
     }
 
     const query =

@@ -22,3 +22,7 @@ export function mapObjectsToAtoms(incoming = {}) {
     }
     return { ...incoming, value };
 }
+
+Color.prototype.toJSON = function() {
+    return this.rgbaString();
+}
