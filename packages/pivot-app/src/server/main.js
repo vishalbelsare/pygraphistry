@@ -35,7 +35,6 @@ const pivotPath = path.resolve(pathPrefix, 'pivots');
 mkdirp.sync(investigationPath);
 mkdirp.sync(pivotPath);
 
-
 listInvestigations(investigationPath)
     .map(investigations =>
         makeTestUser(investigations, listTemplates(), listConnectors(), conf.get('graphistry.key'),
@@ -94,17 +93,16 @@ function init(testUser) {
     const modules = reloadHot(module);
     const getDataSource = getDataSourceFactory(routeServices);
 
-    expressApp.use('/index.html', renderMiddleware(getDataSource, modules));
-
     expressApp.post('/error', bodyParser.json({limit: '512kb'}), function (req, res) {
         const record = req.body;
         log[bunyan.nameFromLevel[record.level]](record, record.msg);
         res.status(204).send();
     });
-
-    expressApp.use(['/', '/model.json'], bodyParser.urlencoded({ extended: false }));
-    expressApp.use('/model.json', falcorMiddleware(getDataSource));
+    expressApp.use(
+        '/model.json',
+        bodyParser.urlencoded({ extended: false }),
+        falcorMiddleware(getDataSource)
+    );
+    expressApp.use('/index.html', renderMiddleware(getDataSource, modules));
     expressApp.use('/', renderMiddleware(getDataSource, modules));
-
-
 }
