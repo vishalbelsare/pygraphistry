@@ -17,7 +17,8 @@ import {
     connectorStore, listConnectors, checkConnector,
     userStore, templateStore, listTemplates,
     listInvestigations, investigationStore,
-    createInvestigation, cloneInvestigationsById, removeInvestigationsById,
+    createInvestigation, cloneInvestigationsById, saveInvestigationsById,
+    removeInvestigationsById, switchActiveInvestigation,
     pivotStore, insertPivot, splicePivot, searchPivot,
     uploadGraph
 } from '../shared/services';
@@ -28,12 +29,15 @@ const log = logger.createLogger(__filename);
 
 Error.stackTraceLimit = 3;
 
+const buildNum = __BUILDNUMBER__ === undefined ? 'local build' : `build #${__BUILDNUMBER__}`;
+const buildDesc = {branch:__GITBRANCH__, commit:__GITCOMMIT__, build:__BUILDNUMBER__, builton: __BUILDDATE__};
+log.info(buildDesc, `Starting ${buildNum}`);
+
 const pathPrefix = conf.get('pivotApp.dataDir');
 const investigationPath = path.resolve(pathPrefix, 'investigations');
 const pivotPath = path.resolve(pathPrefix, 'pivots');
 mkdirp.sync(investigationPath);
 mkdirp.sync(pivotPath);
-
 
 listInvestigations(investigationPath)
     .map(investigations =>
@@ -53,13 +57,15 @@ function init(testUser) {
     const { loadTemplatesById } = templateStore(loadApp(app));
     const {
         loadInvestigationsById,
-        saveInvestigationsById,
-        deleteInvestigationsById
+        unloadInvestigationsById,
+        persistInvestigationsById,
+        unlinkInvestigationsById,
     } = investigationStore(loadApp(app), investigationPath);
     const {
         loadPivotsById,
-        savePivotsById,
-        deletePivotsById
+        unloadPivotsById,
+        persistPivotsById,
+        unlinkPivotsById,
     } = pivotStore(loadApp(app), pivotPath);
 
 
@@ -71,14 +77,18 @@ function init(testUser) {
         loadTemplatesById,
         loadConnectorsById,
         loadInvestigationsById,
-        saveInvestigationsById,
-        deleteInvestigationsById,
-        removeInvestigationsById,
+        unloadInvestigationsById,
+        persistInvestigationsById,
+        unlinkInvestigationsById,
         createInvestigation,
+        switchActiveInvestigation,
         cloneInvestigationsById,
+        saveInvestigationsById,
+        removeInvestigationsById,
         loadPivotsById,
-        savePivotsById,
-        deletePivotsById,
+        unloadPivotsById,
+        persistPivotsById,
+        unlinkPivotsById,
         insertPivot, splicePivot, searchPivot,
         checkConnector,
         uploadGraph
@@ -87,17 +97,16 @@ function init(testUser) {
     const modules = reloadHot(module);
     const getDataSource = getDataSourceFactory(routeServices);
 
-    expressApp.use('/index.html', renderMiddleware(getDataSource, modules));
-
     expressApp.post('/error', bodyParser.json({limit: '512kb'}), function (req, res) {
         const record = req.body;
         log[bunyan.nameFromLevel[record.level]](record, record.msg);
         res.status(204).send();
     });
-
-    expressApp.use(['/', '/model.json'], bodyParser.urlencoded({ extended: false }));
-    expressApp.use('/model.json', falcorMiddleware(getDataSource));
+    expressApp.use(
+        '/model.json',
+        bodyParser.urlencoded({ extended: false }),
+        falcorMiddleware(getDataSource)
+    );
+    expressApp.use('/index.html', renderMiddleware(getDataSource, modules));
     expressApp.use('/', renderMiddleware(getDataSource, modules));
-
-
 }

@@ -31,11 +31,18 @@ export default class SimpleServiceWithCache {
             .mergeMap(
                 (app) =>
                     Observable.from(reqIds)
-                        .do(reqId => {
+                        .switchMap(reqId => {
                             this.evictFromCache(reqId);
-                            delete app[index][reqId];
+
+                            if (reqId in app[index]) {
+                                const result = app[index][reqId];
+                                delete app[index][reqId];
+                                return Observable.of(result);
+                            } else {
+                                return Observable.empty();
+                            }
                         }),
-                (app) => app
+                (app, result) => ({ app, [this.resultName]: result })
             )
     }
 
@@ -55,11 +62,7 @@ export default class SimpleServiceWithCache {
                         }
                     })
             },
-            (app, result) => {
-                let res = {app: app}
-                res[this.resultName] = result;
-                return res;
-            }
+            (app, result) => ({ app, [this.resultName]: result })
         )
     }
 }
