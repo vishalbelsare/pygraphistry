@@ -17,11 +17,17 @@ function togglePivot(action$, store) {
         .ofType(TOGGLE_PIVOT)
         .groupBy(({ id }) => id)
         .mergeMap((actionsById) => actionsById.switchMap(
-            ({ falcor, index, enabled}) => {
-                return falcor.set(
-                    $pathValue(`['enabled']`, enabled)
-                )
-                    .progressively()
+            ({ falcor, enabled, investigationId }) => {
+                const topLevelModel = falcor._root.topLevelModel;
+                return Observable.from(
+                    topLevelModel.set(
+                        $pathValue(['investigationsById', investigationId, 'status'], { msgStyle: 'warning', ok: true })
+                    )
+                ).concat(
+                    falcor.set(
+                        $pathValue(`['enabled']`, enabled)
+                    )
+                );
             }
         ))
         .ignoreElements();
@@ -30,14 +36,22 @@ function togglePivot(action$, store) {
 function setPivotAttributes(action$, store) {
     return action$
         .ofType(SET_PIVOT_ATTRIBUTES)
-        .mergeMap(({falcor, params}) =>
-            Observable.from(
-                _.map(params, (value, key) =>
-                    falcor.set(
-                        $pathValue(key.split('.'), value)
-                    )
+        .mergeMap(({falcor, params, investigationId}) => {
+            const topLevelModel = falcor._root.topLevelModel;
+            return Observable.from(
+                topLevelModel.set(
+                    $pathValue(['investigationsById', investigationId, 'status'], { msgStyle: 'warning', ok: true })
                 )
-            ).mergeAll()
+            ).concat(
+                Observable.from(
+                    _.map(params, (value, key) =>
+                            falcor.set(
+                                $pathValue(key.split('.'), value)
+                            )
+                    )
+                ).mergeAll()
+            );
+        }
         )
         .ignoreElements();
 }
