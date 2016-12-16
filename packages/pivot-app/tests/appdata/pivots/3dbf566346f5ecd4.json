@@ -5,6 +5,9 @@
         "query": "Enter search query",
         "pRef": [
             "3dbf563fa4ebcfd4"
+        ],
+        "fields": [
+            "External IPs"
         ]
     },
     "pivotTemplate": "expand-firewall-botnet-demo"

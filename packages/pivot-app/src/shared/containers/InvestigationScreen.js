@@ -3,13 +3,60 @@ import Investigation from './Investigation.js';
 import InvestigationHeader from './InvestigationHeader.js';
 import {
     Panel,
-    Alert
+    Alert,
+    Image,
+    Grid,
+    Row,
+    Col
 } from 'react-bootstrap';
 import { container } from '@graphistry/falcor-react-redux';
 import styles from './styles.less';
 import { switchScreen } from '../actions/app.js';
 import SplitPane from 'react-split-pane';
 import MainNav from './MainNav/MainNav.js';
+import { ThreeBounce } from 'better-react-spinkit';
+
+
+function renderVisualizationPanel(activeInvestigation) {
+    const loadingGraph = (
+        <div>
+            Loading graph <ThreeBounce size={10}/>
+        </div>
+    );
+
+    const runPivot = (
+        <div>
+            To get started, create and run a pivot!
+        </div>
+    );
+
+    const placeholder = (
+        <Grid>
+            <Row>
+                <Col>
+                    <Image src="/img/logo.png" responsive />
+                </Col>
+            </Row><Row>
+                <Col>
+                {
+                    activeInvestigation.status.etling ? loadingGraph : runPivot
+                }
+                </Col>
+            </Row>
+        </Grid>
+    );
+
+    return (
+        activeInvestigation.url ?
+            <iframe
+                allowFullScreen="true"
+                scrolling="no"
+                className={styles.iframe}
+                src={activeInvestigation.url}
+            /> :
+            placeholder
+    );
+}
 
 function renderInvestigationBody(app, activeInvestigation, templates) {
     const relevantTemplates =
@@ -25,8 +72,9 @@ function renderInvestigationBody(app, activeInvestigation, templates) {
 
             <div className={styles['investigation-split']}>
                 <SplitPane split="horizontal" defaultSize="60%" minSize={0}>
-                   <iframe allowFullScreen="true" scrolling="no" className={styles.iframe}
-                        src={activeInvestigation.url} />
+                    {
+                        activeInvestigation.status && renderVisualizationPanel(activeInvestigation)
+                    }
                    <Investigation data={activeInvestigation} templates={relevantTemplates}/>
                </SplitPane>
             </div>
