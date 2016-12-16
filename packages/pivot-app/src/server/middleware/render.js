@@ -4,7 +4,7 @@ import { Model } from '@graphistry/falcor';
 import { renderToString as reactRenderToString } from 'react-dom/server';
 import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
 import logger from '../../shared/logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 import webpackAssets from '../webpack-assets.json';
 var faviconStats = { html:[] };

@@ -7,7 +7,7 @@ import request from 'request';
 import VError from 'verror';
 
 import logger from '../../shared/logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
 function upload(etlService, apiKey, data) {

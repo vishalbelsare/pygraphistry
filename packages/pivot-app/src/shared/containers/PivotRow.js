@@ -38,7 +38,7 @@ import React from 'react'
 import Select from 'react-select';
 
 
-function Actions({ index, investigationId, resultCount, splicePivot, searchPivot, insertPivot, status }) {
+function Actions({ index, investigationId, resultCount, splicePivot, searchPivot, insertPivot, status, numRows }) {
     return (
         <div>
         <ButtonGroup>
@@ -63,7 +63,7 @@ function Actions({ index, investigationId, resultCount, splicePivot, searchPivot
             <OverlayTrigger placement="top" overlay={
                 <Tooltip id={`tooltipActionDelete_${index}`}>Delete step</Tooltip>
             } key={`${index}: entityRowAction_${index}`}>
-                <Button disabled={index === 0} onClick={(ev) => splicePivot({ index })}><Glyphicon glyph="trash" /></Button>
+                <Button disabled={index === 0 && numRows === 1} onClick={(ev) => splicePivot({ index })}><Glyphicon glyph="trash" /></Button>
             </OverlayTrigger>
         </ButtonGroup>
         {
@@ -174,7 +174,6 @@ class ComboSelector extends React.Component {
 
 }
 
-
 function renderTemplateSelector (id, investigationId, pivotTemplate, templates, setPivotAttributes) {
     return (
         <span className={styles.pivotTypeSelectorContainer}>
@@ -190,10 +189,11 @@ function renderTemplateSelector (id, investigationId, pivotTemplate, templates, 
                         return {value: id, label: name};
                     })
                 }
-                onChange={ ({value}) =>
-                    setPivotAttributes({
+                onChange={ ({value}) => {
+                    return setPivotAttributes({
                         'pivotTemplate': $ref(`templatesById['${value}']`)
-                    })
+                    }, investigationId)
+                }
                 }
             />
         </span>
@@ -276,7 +276,28 @@ function renderComboCell(id, investigationId, paramKey, paramValue, paramUI, han
     );
 }
 
-
+function renderMultiCell(id, investigationId, paramKey, paramValue, paramUI, handlers) {
+    return (
+        <div key={`pcell-${id}-${paramKey}`} className={tableCellClassName}>
+            <label>{ paramUI.label }</label>
+            <Select
+                id={`selector-${id}-${paramKey}`}
+                name={`selector-${id}-${paramKey}`}
+                clearable={true}
+                labelKey="name"
+                valueKey="id"
+                value={paramValue}
+                options={paramUI.options}
+                multi="true"
+                joinValues="true"
+                onChange={ (selected) =>
+                    handlers.setPivotAttributes({
+                        [`pivotParameters.${paramKey}`]: _.pluck(selected, 'id')
+                    }, investigationId)
+                }/>
+        </div>
+    )
+}
 
 function renderDateRange(id, investigationId, paramKey, paramValue, paramUI, handlers) {
     return (
@@ -299,6 +320,8 @@ function renderPivotCell(id, investigationId, paramKey, paramValue, paramUI, pre
             return renderPivotCombo(id, investigationId, paramKey, paramValue, paramUI, previousPivots, handlers);
         case 'combo':
             return renderComboCell(id, investigationId, paramKey, paramValue, paramUI, handlers);
+        case 'multi':
+            return renderMultiCell(id, investigationId, paramKey, paramValue, paramUI, handlers);
         case 'daterange':
             return renderDateRange(id, investigationId, paramKey, paramValue, paramUI, handlers);
         default:
@@ -355,7 +378,7 @@ function renderPivotRow({
             </td>
             <td className={styles.pivotIcons}>
                 <Actions investigationId={investigationId} index={rowIndex} resultCount={resultCount} searchPivot={searchPivot}
-                    insertPivot={insertPivot} splicePivot={splicePivot} status={status}/>
+                    insertPivot={insertPivot} splicePivot={splicePivot} status={status} numRows={pivots.length}/>
             </td>
         </tr>
     );

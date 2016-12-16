@@ -8,7 +8,7 @@ import {
     clonePivotModel
 } from '../models';
 import logger from '../logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
 function insertAndSelectInvestigation(app, user, newInvestigation) {

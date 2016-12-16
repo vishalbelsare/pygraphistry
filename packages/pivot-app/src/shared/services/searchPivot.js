@@ -4,7 +4,7 @@ import _ from 'underscore';
 import logger from '../logger.js';
 import VError from 'verror';
 
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 const templatesMap = listTemplates();
 
