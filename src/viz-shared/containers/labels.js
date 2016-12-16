@@ -1,3 +1,4 @@
+import Color from 'color';
 import { Settings } from 'viz-shared/containers/settings';
 import { container } from '@graphistry/falcor-react-redux';
 import {
@@ -28,6 +29,9 @@ let Labels = ({ simulating,
                 point = [], highlight, selection, ...props }) => {
 
     let labels = [];
+
+    color = new Color(color).rgbaString();
+    background = new Color(background).rgbaString();
 
     if (enabled && poiEnabled && point && point.length) {
         labels = point.slice(0);
