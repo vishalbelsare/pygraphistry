@@ -10,7 +10,6 @@ import {
     search as searchIconClassName
 } from './styles.less';
 import {
-    togglePivot,
     setPivotAttributes
 } from '../actions/pivotRow';
 import {
@@ -332,9 +331,9 @@ function renderPivotCell(id, investigationId, paramKey, paramValue, paramUI, pre
 
 function renderPivotRow({
     id, investigationId, status, enabled, resultCount, resultSummary, pivotParameters, pivotTemplate, templates,
-    searchPivot, togglePivot, setPivotAttributes, splicePivot, insertPivot, pivots, rowIndex })
+    searchPivot, togglePivots, setPivotAttributes, splicePivot, insertPivot, pivots, rowIndex })
 {
-    const handlers = {searchPivot, togglePivot, setPivotAttributes, splicePivot, insertPivot};
+    const handlers = {searchPivot, togglePivots, setPivotAttributes, splicePivot, insertPivot};
 
     const previousPivots = pivots.slice(0, rowIndex);
 
@@ -345,7 +344,11 @@ function renderPivotRow({
                 <RcSwitch defaultChecked={false}
                           checked={enabled}
                           checkedChildren={'On'}
-                          onChange={(ev) => togglePivot({ enabled: ev, investigationId })}
+                          onChange={(enabled) => {
+                              const indices = enabled ? _.range(0, rowIndex + 1)
+                                                      : _.range(rowIndex, pivots.length);
+                              togglePivots({indices, enabled, investigationId});
+                          }}
                           unCheckedChildren={'Off'}
                 />
             </td>
@@ -375,7 +378,9 @@ function renderPivotRow({
                 </OverlayTrigger>
             </td>
             <td className={styles.pivotResultSummaries + ' ' + styles['result-count-' + (enabled ? 'on' : 'off')]}>
-                    { renderEntitySummaries(id, resultSummary) }
+                {
+                    resultSummary && renderEntitySummaries(id, resultSummary)
+                }
             </td>
             <td className={styles.pivotIcons}>
                 <Actions investigationId={investigationId} index={rowIndex} resultCount={resultCount} searchPivot={searchPivot}
@@ -435,6 +440,5 @@ export default container({
     mapFragment: mapFragmentToProps,
     dispatchers: {
         setPivotAttributes: setPivotAttributes,
-        togglePivot: togglePivot
     }
 })(renderPivotRow);

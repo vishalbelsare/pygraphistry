@@ -3,6 +3,7 @@ export const SPLICE_PIVOT = 'splice-pivot';
 export const INSERT_PIVOT = 'insert-pivot';
 export const GRAPH_INVESTIGATION = 'graph-investigation';
 export const DISMISS_ALERT = 'dismiss-alert';
+export const TOGGLE_PIVOTS = 'toggle-pivots';
 
 export const searchPivot = ({ index, investigationId }) => {
     return ({
@@ -31,5 +32,15 @@ export const graphInvestigation = ({ length, investigationId }) => {
 export const dismissAlert = () => {
     return ({
         type: DISMISS_ALERT
+    });
+}
+
+export function togglePivots({ indices, enabled, investigationId }) {
+    console.log('Toggle pivots called!', investigationId);
+    return ({
+        investigationId,
+        type: TOGGLE_PIVOTS,
+        indices,
+        enabled,
     });
 }
