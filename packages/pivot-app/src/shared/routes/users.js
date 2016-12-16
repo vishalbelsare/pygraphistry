@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import _ from 'underscore';
 import {
     pathValue as $pathValue,
     pathInvalidation as $invalidation
@@ -9,14 +10,13 @@ import {
 } from './support';
 
 import logger from '../logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
-export function users({ loadApp, createInvestigation, removeInvestigationsById,
-                        loadUsersById, deleteInvestigationsById, deletePivotsById}) {
-    const appGetRoute = getHandler([], loadApp);
-    const getUserHandler = getHandler(['user'], loadUsersById);
-    const setUserHandler = setHandler(['user'], loadUsersById);
+export function users(services) {
+    const appGetRoute = getHandler([], services.loadApp);
+    const getUserHandler = getHandler(['user'], services.loadUsersById);
+    const setUserHandler = setHandler(['user'], services.loadUsersById);
 
     return [{
         route: `currentUser`,
@@ -31,7 +31,7 @@ export function users({ loadApp, createInvestigation, removeInvestigationsById,
         route: `['usersById'][{keys}]['activeInvestigation']`,
         returns: `$ref('investigationsById[{investigationId}]')`,
         get: getUserHandler,
-        set: setUserHandler,
+        set: setActiveInvestigationRoute({ ...services, setUserHandler }),
     }, {
         route: `['usersById'][{keys}]['name','id']`,
         returns: `String`,
@@ -55,21 +55,38 @@ export function users({ loadApp, createInvestigation, removeInvestigationsById,
     }, {
         get: getUserHandler,
         route: `['usersById'][{keys}].createInvestigation`,
-        call: createInvestigationCallRoute({ loadUsersById, createInvestigation })
+        call: createInvestigationCallRoute(services)
     }, {
         route: `['usersById'][{keys}]['removeInvestigations']`,
-        call: removeInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,
-                                             deleteInvestigationsById, deletePivotsById })
+        call: removeInvestigationsCallRoute(services)
     }];
 }
 
+function setActiveInvestigationRoute({ loadUsersById, loadInvestigationsById,
+                                       unloadInvestigationsById, unloadPivotsById,
+                                       switchActiveInvestigation, setUserHandler }) {
+    return function (path, args) {
+        const userIds = path[1];
+        const self = this;
+
+        return Observable.forkJoin(
+                _.map(path.usersById, (user, userId) =>
+                    switchActiveInvestigation({ loadUsersById, loadInvestigationsById,
+                                                unloadInvestigationsById, unloadPivotsById,
+                                                userId })
+                )
+            )
+            .switchMap(() => setUserHandler.bind(self)(path, args));
+    }
+}
+
 function removeInvestigationsCallRoute({ removeInvestigationsById, loadUsersById,
-                                         deleteInvestigationsById, deletePivotsById }) {
+                                         unlinkInvestigationsById, unlinkPivotsById }) {
     return function (path, args) {
         const userIds = path[1];
         const investigationIds = args[0];
 
-        return removeInvestigationsById({ loadUsersById, deleteInvestigationsById, deletePivotsById,
+        return removeInvestigationsById({ loadUsersById, unlinkInvestigationsById, unlinkPivotsById,
                                           investigationIds, userIds })
             .mergeMap(({user, newLength, oldLength}) => [
                 $pathValue(`['usersById'][${user.id}]['investigations']['length']`, newLength),

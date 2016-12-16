@@ -32,7 +32,7 @@ import { container } from '@graphistry/falcor-react-redux';
 import styles from './styles.less';
 import logger from '../logger.js';
 import MainNav from './MainNav/MainNav.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
 function welcomeBar(user, investigations, numTemplates) {

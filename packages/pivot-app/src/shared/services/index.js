@@ -1,14 +1,14 @@
 import _ from 'underscore';
 import logger from '../logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 export * from './loadApp';
 export * from './loadUsers';
 export * from './loadTemplates';
-export * from './loadInvestigations';
+export * from './investigationStore';
 export * from './manageInvestigation';
 export * from './insertPivot';
-export * from './loadPivots';
+export * from './pivotStore';
 export * from './loadConnectors';
 export * from './splicePivot';
 export * from './checkConnector';
@@ -24,7 +24,11 @@ export function wrapServices(services) {
 
 function wrapService(service) {
     return function (...args) {
-        log.info(`Calling ${service.name}`);
+        const serviceArgs = _.omit(
+            _.omit(args[0], 'options'),
+            (v, k) => typeof v === 'function'
+        )
+        log.info(`Calling ${service.name}   ( ${JSON.stringify(serviceArgs)} )`);
         return service.apply(this, args);
     };
 }
