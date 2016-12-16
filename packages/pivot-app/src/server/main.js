@@ -29,6 +29,10 @@ const log = logger.createLogger(__filename);
 
 Error.stackTraceLimit = 3;
 
+const buildNum = __BUILDNUMBER__ === undefined ? 'local build' : `build #${__BUILDNUMBER__}`;
+const buildDesc = {branch:__GITBRANCH__, commit:__GITCOMMIT__, build:__BUILDNUMBER__, builton: __BUILDDATE__};
+log.info(buildDesc, `Starting ${buildNum}`);
+
 const pathPrefix = conf.get('pivotApp.dataDir');
 const investigationPath = path.resolve(pathPrefix, 'investigations');
 const pivotPath = path.resolve(pathPrefix, 'pivots');
