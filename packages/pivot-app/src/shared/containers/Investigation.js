@@ -16,7 +16,9 @@ import {
     Button,
     Glyphicon,
     Tab,
-    Tabs
+    Tabs,
+    DropdownButton,
+    MenuItem
 } from 'react-bootstrap';
 import styles from './styles.less';
 import { splicePivot,
@@ -46,6 +48,7 @@ function pivotTable({ id, pivots, templates, insertPivot, splicePivot, dismissAl
                 </tr>
             </thead>
             <tbody>
+                {/*<tr><span>"hello"</span></tr> this adds an element to the top of the pivot list*/}
                 {pivots.map((pivot, index) => (
                     <PivotRow
                         investigationId={id}
@@ -123,6 +126,13 @@ function renderInvestigation({id, status, pivots = [], templates, eventTable,
                 </Alert>
                 : null
             }
+            <div>
+                <span>
+                    <DropdownButton bsSize="medium" title="My Investigation" id="dropdown-size-large">
+                        <MenuItem eventKey="1">Botnet</MenuItem>
+                    </DropdownButton>
+                </span>
+            </div>
             <Tabs defaultActiveKey={1} id="investigation-bottom-tabbar" className={styles.investigationTabs}>
                 <Tab eventKey={1} title="Pivots">
                     {

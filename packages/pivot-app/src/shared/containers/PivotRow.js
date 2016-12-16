@@ -314,6 +314,9 @@ function renderPivotRow({
 
     return (
         <tr id={"pivotRow" + id} className={styles['row-toggled-' + (enabled ? 'on' : 'off')]}>
+            {/*<td className={styles.pivotElement}>
+                <span>"hello"</span>
+            </td> this adds a static td element that just needs a style*/}
             <td className={styles.pivotToggle}>
                 <span>{ rowIndex }</span>
                 <RcSwitch defaultChecked={false}

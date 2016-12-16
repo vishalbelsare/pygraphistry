@@ -1,6 +1,6 @@
 @import '../vars.less';
 
-@investigation-header-height: 60px;
+@investigation-header-height: 0px;
 @investigation-header-padding-top: ~"calc( (@{investigation-header-height} - 1px - 34px)/2 )";
 @investigation-footer-height: 250px;
 
@@ -31,6 +31,7 @@
     border-radius: 0px;
     border-bottom: 1px solid @header-seperator;
     margin-bottom: 0px;
+    display: none;
 }
 
 :local(.investigation-split) {
@@ -128,10 +129,10 @@
     filter: invert(100%) brightness(40%) invert(100%) sepia(100%) saturate(100%) hue-rotate(180deg);
 }
 :local(.user-greeting-heading) {
-    margin-top: 20px;
+    margin-top: 15px;
     margin-bottom: 10px;
     padding-left: 20px;
-    font-size: 30px;
+    font-size: 24px;
 }
 :local(.user-greeting-message) {
     padding-left: 20px;
@@ -415,14 +416,14 @@ td, th {
 
         li a {
             margin-right: 0;
-            padding-top: 6px;
-            padding-bottom: 6px;
+            padding-top: 10px;
+            padding-bottom: 10px;
             color: #E0E0E0;
             border-radius: 0;
-            border: 0 !important;
+            border: none !important;
             &:hover {
                 color: #E0E0E0;
-                background-color: @header-highlight;
+                background-color: #ffffff;
             }
         }
 
@@ -468,6 +469,7 @@ td, th {
 
 .pivotToggle {
     width: 90px;
+    height: 40px;
     th& {
         padding: 0 !important;
         & button {
@@ -485,10 +487,10 @@ td, th {
     }
     :global(.rc-switch) {
         & {
-            zoom: 90%;
+            zoom: 100%;
         }
         &:global(.rc-switch-checked) {
-            background: #77d6cf;
+            background: #76DD60;
             border-color: #777;
             border: none;
         }
