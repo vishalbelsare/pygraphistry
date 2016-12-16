@@ -38,7 +38,7 @@ import React from 'react'
 import Select from 'react-select';
 
 
-function Actions({ index, investigationId, resultCount, splicePivot, searchPivot, insertPivot, status }) {
+function Actions({ index, investigationId, resultCount, splicePivot, searchPivot, insertPivot, status, numRows }) {
     return (
         <div>
         <ButtonGroup>
@@ -63,7 +63,7 @@ function Actions({ index, investigationId, resultCount, splicePivot, searchPivot
             <OverlayTrigger placement="top" overlay={
                 <Tooltip id={`tooltipActionDelete_${index}`}>Delete step</Tooltip>
             } key={`${index}: entityRowAction_${index}`}>
-                <Button disabled={index === 0} onClick={(ev) => splicePivot({ index })}><Glyphicon glyph="trash" /></Button>
+                <Button disabled={index === 0 && numRows === 1} onClick={(ev) => splicePivot({ index })}><Glyphicon glyph="trash" /></Button>
             </OverlayTrigger>
         </ButtonGroup>
         {
@@ -377,7 +377,7 @@ function renderPivotRow({
             </td>
             <td className={styles.pivotIcons}>
                 <Actions investigationId={investigationId} index={rowIndex} resultCount={resultCount} searchPivot={searchPivot}
-                    insertPivot={insertPivot} splicePivot={splicePivot} status={status}/>
+                    insertPivot={insertPivot} splicePivot={splicePivot} status={status} numRows={pivots.length}/>
             </td>
         </tr>
     );
