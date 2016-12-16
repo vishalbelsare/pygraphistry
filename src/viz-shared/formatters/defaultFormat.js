@@ -26,7 +26,7 @@ export function defaultFormat (value, dataType = typeof value) {
 
     if (dataType === 'number') {
         if (value && (value % 1 !== 0)) {
-            return formatNumber(value, false);
+            return formatNumber(Number(value), false);
         }
     }
 

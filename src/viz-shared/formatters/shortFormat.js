@@ -34,7 +34,7 @@ export function shortFormat (value, dataType = typeof value) {
         return formatToString(value, true);
     }
 
-    return formatNumber(value, true);
+    return formatNumber(Number(value), true);
 }
 
 
