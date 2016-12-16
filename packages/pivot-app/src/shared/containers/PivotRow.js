@@ -122,10 +122,10 @@ class ComboSelector extends React.Component {
     }
 
     setParam(value) {
-        const {setPivotAttributes, fldKey} = this.props;
+        const {setPivotAttributes, fldKey, investigationId} = this.props;
         return this.props.setPivotAttributes({
             [`pivotParameters.${fldKey}`]: value
-        });
+        }, investigationId);
     }
 
     componentWillMount() {
@@ -244,10 +244,10 @@ function renderPivotCombo(id, investigationId, paramKey, paramValue, paramUI, pr
 
     // Wrap setPivotAttributes to parse back the selected item.
     const originalSPA = handlers.setPivotAttributes;
-    const stringifiedSPA = (arg) => {
+    const stringifiedSPA = (params, investId) => {
         return originalSPA(
-            _.mapObject(arg, stringifiedArray => JSON.parse(stringifiedArray)
-            )
+            _.mapObject(params, stringifiedArray => JSON.parse(stringifiedArray)
+            ), investId
         );
     };
 
@@ -266,6 +266,7 @@ function renderComboCell(id, investigationId, paramKey, paramValue, paramUI, han
     return (
         <ComboSelector
             key={`pcell-${id}-${paramKey}`}
+            investigationId={investigationId}
             pivotId={id}
             fldKey={paramKey}
             fldValue={paramValue}
