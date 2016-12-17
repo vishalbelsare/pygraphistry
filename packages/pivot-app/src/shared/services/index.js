@@ -28,7 +28,7 @@ function wrapService(service) {
             _.omit(args[0], 'options'),
             (v, k) => typeof v === 'function'
         )
-        log.info(`Calling ${service.name}   ( ${JSON.stringify(serviceArgs)} )`);
+        log.info(`Calling ${service.name} ${JSON.stringify(serviceArgs)}`);
         return service.apply(this, args);
     };
 }
