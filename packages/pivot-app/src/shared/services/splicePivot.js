@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import _ from 'underscore';
 import logger from '../logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
 export function splicePivot({ loadInvestigationsById, unloadPivotsById, investigationIds,

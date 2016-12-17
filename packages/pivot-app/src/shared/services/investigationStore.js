@@ -8,7 +8,7 @@ import {
     serializeInvestigationModel
 } from '../models';
 import logger from '../logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
 export function investigationStore(loadApp, pathPrefix, investigationsByIdCache = {}) {
