@@ -38,18 +38,19 @@
     position: relative;
     background-color: #FBFBFB;
     tbody tr {
-    height: 350px;
     display: flex;
     -webkit-flex-flow: row wrap;
     border-top: 1px solid #ddd;
        }
     tbody {
         width: 100%;
+        position: relative;
     }
     tbody tr td {
         padding: 25px;
         height: 20%;
         display: inline-block;
+        border: none !important;
     }
 
     & > div > div:nth-child(1) {
@@ -431,6 +432,7 @@ td, th {
 }
 
 :local(.pivots) {
+    position: relative;
     thead th {
         border: none;
         text-align: center;
@@ -498,6 +500,7 @@ td, th {
     order: 1;
     width: 50%;
     border-top: none;
+    border: 1px solid purple;
 }
 :local(.pivotData0) {
     width: 200px;
@@ -521,6 +524,7 @@ td, th {
     order: 4;
     width: 100%;
     padding: 5px;
+    border: 1px solid grey;
 
     button {
         font-weight: bold;
@@ -614,15 +618,17 @@ td, th {
     display: none;
 }
 :local(.pivotResultCount) {
+    // this is the return item count
     text-align: left;
     span {
         margin-top: @summaryPillHeight;
     }
-    order: 5;
+    order: 8;
     width: 20%;
+    border: 1px solid orange;
 }
 :local(.pivotResultSummaries) {
-
+    //this is the little idenitfier tabs
     max-width: 20em;
 
     & > * {
@@ -635,10 +641,11 @@ td, th {
         white-space: nowrap;
         max-width: 20em;
     }
-    order: 6;
+    order: 9;
     width: 80%;
-    margin-bottom: 100px;
+    margin-bottom: 20px;
     padding-left: 0px !important;
+    border: 1px solid black;
 
 }
 :local(.result-count-on) { }
@@ -651,6 +658,7 @@ td, th {
     width: 50%;
     padding-top: 20px !important;
     padding-left: 0px !important;
+    border: 1px solid yellow;
 }
 .pivot-error-tooltip {
 }
@@ -658,7 +666,7 @@ td, th {
 
 //gets rid of stubborn bootstrap border
 td {
- //   border: none !important;
+   // border: none !important;
 }
 
 //not sure why the opposing style has to be overriden? bootstrap thing?
@@ -733,10 +741,67 @@ transition-container {
 
 :local(.pivotTextParam) {
     border: 2px solid black;
+    order: 6;
+    width: 100%;
 }
 :local(.pivotComboParam) {
         border: 2px solid red;
+        order: 5;
+        width: 100%;
 }
-:local(.pivotMultiParam) {    border: 2px solid blue;}
-:local(.pivotDateRangeParam) {    border: 2px solid green;}
+:local(.pivotMultiParam) {
+    border: 2px solid blue;
+    order: 4;
+    width: 100%;
+}
+:local(.pivotDateRangeParam) {
+    border: 2px solid green;
+    order: 7;
+    width: 100%;
+}
 
+
+:global(.navbar){
+    position: absolute;
+}
+
+:global(.navbar-nav){
+    margin-left: 5% !important;
+}
+
+.placeholderWrapper {
+    //background-color: aqua;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    margin: auto;
+}
+
+.placeholderMessage {
+    width: 100%;
+    margin-top: 40%;
+    text-align: center;
+    line-height: 100%;
+}
+
+.placeholderLogo img {
+    //background-color: red;
+    position: absolute;
+    margin: auto;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 200px;
+    height: 47px;
+    margin-right: 40%;
+    margin-bottom: 35%;
+}
+
+.placeholderLogo {
+}
+
+:global(.testwrap) {
+    position: relative !important;
+    background-color: aqua;
+}

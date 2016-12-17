@@ -25,12 +25,14 @@ function renderVisualizationPanel(activeInvestigation) {
     );
 
     const runPivot = (
-        <div>
+        <div className={styles.placeholderMessage}>
             To get started, create and run a pivot!
         </div>
     );
 
     const placeholder = (
+        <div className={styles.placeholderWrapper}>
+        <div className={styles.placeholderLogo}>    
         <Grid>
             <Row>
                 <Col>
@@ -44,6 +46,8 @@ function renderVisualizationPanel(activeInvestigation) {
                 </Col>
             </Row>
         </Grid>
+        </div>
+        </div>
     );
 
     return (
