@@ -139,7 +139,7 @@ function Icon({ iconClass }) {
             <span className={styles['label-title-icon-encoded']}>
                 <i className={classNames({'fa': true, 'fa-lg': true, [iconClass]: true})} />
             </span>
-        : undefined;
+        : <span style={ {display: 'none'} } />;
 }
 
 function LabelTitle ({ type, color, title, icon, pinned, showFull, onExclude, onMouseDown, onTouchStart }) {
