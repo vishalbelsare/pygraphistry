@@ -198,6 +198,8 @@ function domainIsPositive (aggregations) {
         case 'title':
         case 'pointTitle':
         case 'edgeTitle':
+        case 'edgeIcon':
+        case 'pointIcon':
             break;
         case 'label':
         case 'pointLabel':
@@ -276,14 +278,22 @@ function inferTimeBoundEncoding (dataframe, type, attributeName, encodingType, t
 ///=======================
 
 
+function resetEncodingOnNBody ({ view, encoding }) {
 
+    const { encodingType } = encoding;
+    if (encodingType.match(/Color$/) || encodingType.match(/Size$/)) {
+        return resetEncodingOnNBody({ view, encoding });
+    }
+
+    return Observable.of({...encoding, enabled: false});
+}
 
 // {
 //    view: {nbody: {dataframe, simulator}},
 //    encoding
 // }
 // --> Observable encoding
-function resetEncodingOnNBody ({ view, encoding }) {
+function resetEncodingOnNBody_transform ({ view, encoding }) {
     const { nBody: { dataframe, simulator } = {}} = view;
 
     if (!dataframe || !simulator || !encoding) {
@@ -306,13 +316,25 @@ function resetEncodingOnNBody ({ view, encoding }) {
 
 
 
+function applyEncodingOnNBody({ view, encoding }) {
+
+    const { encodingType } = encoding;
+    if (encodingType.match(/Color$/) || encodingType.match(/Size$/)) {
+        return applyEncodingOnNBody_transform({ view, encoding });
+    }
+
+    return Observable.of({...encoding, enabled: true});
+}
+
+
 // -> Observable {
 //      enabled: bool,
 //      encodingType,
 //      bufferName,
 //      legend: encoding.legend
 //  }
-function applyEncodingOnNBody ({ view, encoding }) {
+function applyEncodingOnNBody_transform ({ view, encoding }) {
+
     const { nBody: { dataframe, simulator } = {}} = view;
 
     if (!dataframe || !simulator || !encoding) {
@@ -347,6 +369,7 @@ function applyEncodingOnNBody ({ view, encoding }) {
         return Observable.throw(
             new Error('No scaling inferred for: ' + encodingType + ' on ' + attributeName));
     }
+
 
     let wrappedScaling = encodingWrapper.scaling;
     if (encodingType.match(/Color$/)) {
@@ -435,7 +458,6 @@ function applyEncodingOnNBody ({ view, encoding }) {
 
     ccManager.addComputedColumn(dataframe, 'localBuffer', bufferName, desc);
 
-    console.error('======= TODO SIGNAL UPDATE OF VBOS');
     // TODO PAUL: Signal update to VBOs
     return Observable.of({...encoding, bufferName, enabled: true});
 
