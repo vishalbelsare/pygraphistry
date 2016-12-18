@@ -69,8 +69,10 @@
 
     width: 100%;
 
-    .label-title-icon {
+    .label-title-close {
+        float: right;
         opacity: 0.65;
+        font-size: 0.8em;
         line-height: 180%;
         margin-left: 0.35em;
         // color: @dark-grey;
@@ -102,6 +104,10 @@
         word-break: break-all;
         padding-bottom: 3px;
 
+        & > * {
+            vertical-align: middle;
+        }
+
         .label:not(.on):not(.clicked) & {
             max-width: 12em;
             overflow: hidden;
@@ -111,7 +117,7 @@
         }
 
         .label-title-icon-encoded {
-            padding-right: 0.5em;
+            margin-right: 1em;
         }
 
     }

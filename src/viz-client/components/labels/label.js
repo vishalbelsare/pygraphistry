@@ -135,10 +135,27 @@ export class Label extends React.Component {
 }
 
 function Icon({ iconClass }) {
+
     return iconClass ?
-            <span className={styles['label-title-icon-encoded']}>
-                <i className={classNames({'fa': true, 'fa-lg': true, [iconClass]: true})} />
+
+            <span className={classNames({
+                    'fa-stack': true,
+                    //'fa-lg': true,
+                    [styles['label-title-icon-encoded']]: true
+                })}>
+                <i className={classNames({
+                    'fa': true,
+                    'fa-stack-2x': true,
+                    //'fa-lg': true,
+                    'fa-circle': true})}/>
+                <i className={classNames({
+                    'fa': true,
+                    'fa-stack-1x': true,
+                    //'fa-lg': true,
+                    'fa-inverse': true,
+                    [iconClass]: true})} />
             </span>
+
         : <span style={ {display: 'none'} } />;
 }
 
@@ -176,12 +193,11 @@ function LabelTitle ({ type, color, title, icon, pinned, showFull, onExclude, on
              onTouchStart={onTouchStart}
              className={styles['label-title']}>
             <a href='javascript:void(0)'
-               style={{ color, float: `left`, fontSize: `.8em` }}
                className={classNames({
                    [styles['pinned']]: pinned,
-                   [styles['label-title-icon']]: true,
+                   [styles['label-title-close']]: true,
                })}>
-                <i className={classNames({
+                <i style={{color}} className={classNames({
                     'fa': true,
                     'fa-times': true,
                 })}/>
