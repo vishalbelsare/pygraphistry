@@ -1,10 +1,7 @@
 import { listConnectors } from '../services';
 import { Observable } from 'rxjs';
-import { simpleflake } from 'simpleflakes';
 import {
     pathValue as $pathValue,
-    pathInvalidation as $invalidation,
-    error as $error
 } from '@graphistry/falcor-json-graph';
 import {
     getHandler,
@@ -15,7 +12,6 @@ import VError from 'verror';
 import logger from '../logger.js';
 const log = logger.createLogger(__filename);
 
-const connectorList = listConnectors();
 
 export function connectors({ loadConnectorsById, checkConnector }) {
     const getConnectorsHandler = getHandler(['connector'], loadConnectorsById);

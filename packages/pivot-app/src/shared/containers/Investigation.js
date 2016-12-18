@@ -1,18 +1,13 @@
 import _ from 'underscore';
+import React from 'react';
 import { container } from '@graphistry/falcor-react-redux';
 import { Table, Alert, OverlayTrigger, Tooltip} from 'react-bootstrap';
 import PivotRow from './PivotRow';
-import {
-    table as tableClassName,
-    tbody as tableBodyClassName,
-    thead as tableHeaderClassName
-} from './styles.less';
 import {
     BootstrapTable,
     TableHeaderColumn
 } from 'react-bootstrap-table';
 import {
-    ButtonGroup,
     Button,
     Glyphicon,
     Tab,
@@ -30,8 +25,8 @@ import {
 } from '../actions/investigation';
 
 
-function pivotTable({ id, status, pivots, templates, insertPivot, splicePivot, dismissAlert, searchPivot,
-    graphInvestigation, saveInvestigation, togglePivots }) {
+function pivotTable({ id, status, pivots, templates, insertPivot, splicePivot, searchPivot,
+    graphInvestigation, togglePivots }) {
     console.log('Status', status);
     const bStyle = (status && status.msgStyle) ? status.msgStyle : 'default';
     return (
@@ -43,7 +38,7 @@ function pivotTable({ id, status, pivots, templates, insertPivot, splicePivot, d
                             <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
                         }>
                             <Button bsStyle={bStyle}
-                                    onClick={(ev) =>
+                                    onClick={() =>
                                         graphInvestigation({investigationId: id, length: pivots.length}
                                     )}
                             >
@@ -184,7 +179,6 @@ export default container(
         searchPivot: searchPivot,
         graphInvestigation: graphInvestigation,
         saveInvestigation: saveInvestigation,
-        searchPivot: searchPivot,
         dismissAlert: dismissAlert,
         togglePivots: togglePivots,
     }

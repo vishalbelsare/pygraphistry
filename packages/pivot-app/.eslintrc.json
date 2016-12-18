@@ -26,20 +26,20 @@
     },
     "extends": ["eslint:recommended", "plugin:react/recommended"],
     "rules": {
-        "indent": ["error", 4],
         "linebreak-style": ["error", "unix"],
         "no-label-var": "error",
-        "no-unused-vars": ["error", {
+        "no-unused-vars": ["warn", {
             "vars": "local",
             "args": "after-used",
             "varsIgnorePattern": "^log$"
         }],
-        "no-shadow": ["off", { "builtinGlobals": true, "hoist": "all", "allow": [] }],
+        "no-shadow": ["off", { "builtinGlobals": false, "hoist": "all", "allow": [] }],
         "no-shadow-restricted-names": "error",
         "no-use-before-define": ["error", { "functions": false, "classes": true }],
         "no-var": "error",
         "no-template-curly-in-string": "error",
         "react/jsx-no-duplicate-props": ["error", { "ignoreCase": true }],
+        "react/prop-types": "off",
         "no-console": "off"
     }
 }

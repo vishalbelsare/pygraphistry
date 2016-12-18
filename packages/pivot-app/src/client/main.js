@@ -6,6 +6,7 @@ import 'react-select/dist/react-select.css';
 import '../misc/react-dates.css';
 import 'font-awesome/css/font-awesome.css';
 
+import React from 'react';
 import ReactDOM from 'react-dom';
 import { decode } from 'querystring';
 import { Model } from '@graphistry/falcor';
@@ -32,7 +33,7 @@ Observable
         printBuildInfo();
         return decode(window.location.search.substring(1));
     })
-    .switchMap((params) => reloadHot(module))
+    .switchMap(() => reloadHot(module))
     .switchMap(({ App }) => {
         const renderAsObservable = Observable.bindCallback(ReactDOM.render);
         return renderAsObservable((
@@ -45,7 +46,7 @@ Observable
         next() {},
         error(e) {
             log.error(e);
-            debugger;
+            debugger; // eslint-disable-line no-debugger
         }
     });
 

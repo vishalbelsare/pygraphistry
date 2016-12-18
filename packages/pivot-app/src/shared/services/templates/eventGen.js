@@ -1,6 +1,5 @@
 import { SplunkPivot } from './SplunkPivot.js';
 import logger from '../../logger.js';
-import _ from 'underscore';
 import stringhash from 'string-hash';
 const log = logger.createLogger(__filename);
 
@@ -108,13 +107,12 @@ export const PAN_EXPAND = new SplunkPivot({
         const sourceAttribute = pivotParameters.sourceAttribute;
         const filter = pivotParameters.query;
         const sourcePivots = pivotParameters.source.value;
-        var subsearch = '';
         const list  = sourcePivots.map(
             (pivotId) =>
                 (`[| loadjob "${pivotCache[pivotId].splunkSearchId}"
                    | fields ${sourceAttribute} | dedup ${sourceAttribute}]`)
         );
-        subsearch = list.join(' | append ');
+        const subsearch = list.join(' | append ');
 
         const query = `search ${SPLUNK_INDICES.PAN}
                     | search ${filter} ${subsearch} ${this.constructFieldString()}`;

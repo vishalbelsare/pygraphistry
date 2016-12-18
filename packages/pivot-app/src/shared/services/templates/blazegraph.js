@@ -17,13 +17,13 @@ class BlazePivot extends PivotTemplate {
         this.attributes = attributes;
     }
 
-    searchAndShape({app, pivot, rowId}) {
+    searchAndShape({app, pivot}) {
 
         const get = Observable.bindNodeCallback(request.get.bind(request));
         pivot.template = this;
         return get(`https://s3-us-west-1.amazonaws.com/graphistry.data.public/${this.fileName}`)
             .map(
-                ([response, body], index) => {
+                ([response, body]) => {
                     const { graph, labels } = JSON.parse(body)
                     pivot.results = {
                         graph: graph.map(({src, dst}) => ({ source: src, destination: dst })),

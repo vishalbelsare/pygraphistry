@@ -1,7 +1,6 @@
 import {
     pathValue as $pathValue,
 } from '@graphistry/falcor-json-graph';
-import { combineReducers } from 'redux'
 import {
     SET_PIVOT_ATTRIBUTES
 } from '../actions/pivotRow';
@@ -11,7 +10,7 @@ import { combineEpics } from 'redux-observable';
 
 export const pivot = combineEpics(setPivotAttributes);
 
-function setPivotAttributes(action$, store) {
+function setPivotAttributes(action$) {
     return action$
         .ofType(SET_PIVOT_ATTRIBUTES)
         .mergeMap(({falcor, params, investigationId}) => {

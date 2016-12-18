@@ -1,8 +1,6 @@
-import _ from 'underscore';
 import { Observable } from 'rxjs';
 import SimpleServiceWithCache from './support/simpleServiceWithCache.js';
 import { createTemplateModel } from '../models';
-
 import * as templates from './templates';
 
 export function templateStore(loadApp) {

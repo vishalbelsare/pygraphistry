@@ -3,7 +3,6 @@ import {
 } from '@graphistry/falcor-json-graph';
 import _ from 'underscore';
 import { simpleflake } from 'simpleflakes';
-import { clonePivotModel } from './pivots';
 import { atomify, deatomify } from './support';
 
 

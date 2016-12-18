@@ -1,8 +1,6 @@
 import { Observable } from 'rxjs';
-import { simpleflake } from 'simpleflakes';
 import {
     pathValue as $pathValue,
-    pathInvalidation as $invalidation,
     error as $error
 } from '@graphistry/falcor-json-graph';
 import {

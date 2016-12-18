@@ -66,7 +66,6 @@ function setActiveInvestigationRoute({ loadUsersById, loadInvestigationsById,
                                        unloadInvestigationsById, unloadPivotsById,
                                        switchActiveInvestigation, setUserHandler }) {
     return function (path, args) {
-        const userIds = path[1];
         const self = this;
 
         return Observable.forkJoin(

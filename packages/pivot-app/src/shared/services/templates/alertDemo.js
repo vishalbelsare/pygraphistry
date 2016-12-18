@@ -60,21 +60,6 @@ const FIREEYE_FIELDS = [
     `Message`,
 ];
 
-const BLUECOAT_FIELDS = [
-    'Fire Eye URL',
-    'External IPs'
-];
-
-const FIREWALL_FIELDS = [
-    'External IPs',
-    'Internal IPs'
-];
-
-const IDS_FIELDS = [
-    'Internal IPs',
-    'Message'
-];
-
 const FIELDS = [
     `Fire Eye MD5`,
     `Fire Eye URL`,

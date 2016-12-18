@@ -1,4 +1,3 @@
-import { inspect } from 'util';
 const  { slice } = Array.prototype;
 import { Observable } from 'rxjs';
 import logger from '../../../shared/logger.js';
@@ -23,7 +22,7 @@ export function getHandler(lists, loader, props = {}) {
 
         const suffix = path.slice(count * 2);
         const loaded = suffix.reduce((source, keys, index) => source.mergeMap(
-                ({ data, idxs }) => [].concat(keys),
+                () => [].concat(keys),
                 ({ data, idxs }, key) => ({
                     data, idxs: {
                         ...idxs,
@@ -54,7 +53,8 @@ export function getHandler(lists, loader, props = {}) {
                 if (index === count || value === undefined || typeof value !== 'object') {
                     vals[++valsId] = { path, value };
                     break;
-                } else if (type = value.$type) {
+                } else if (value.$type) {
+                    type = value.$type;
                     vals[++valsId] = { path, value };
                     if (type === 'ref') {
                         idxs = slice.call(idxs, index);

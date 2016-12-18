@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
-import { DataFrame, Row } from 'dataframe-js';
+import { DataFrame } from 'dataframe-js';
 import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
@@ -132,7 +132,7 @@ function makeEventTable({pivots}) {
 
         const distinct =  mergedData.distinct(field).toArray();
 
-        var res = {
+        const res = {
             numDistinct: distinct.length
         };
 
@@ -159,7 +159,7 @@ function makeEventTable({pivots}) {
         return a.union(new DataFrame(b, fields));
     }, zeroDf);
 
-    var fieldSummaries = {};
+    const fieldSummaries = {};
     fields.forEach(field =>
         fieldSummaries[field] = fieldSummary(mergedData, field)
     );

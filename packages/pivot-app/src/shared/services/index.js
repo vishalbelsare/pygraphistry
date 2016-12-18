@@ -26,7 +26,7 @@ function wrapService(service) {
     return function (...args) {
         const serviceArgs = _.omit(
             _.omit(args[0], 'options'),
-            (v, k) => typeof v === 'function'
+            (v) => typeof v === 'function'
         )
         log.info(`Calling ${service.name} ${JSON.stringify(serviceArgs)}`);
         return service.apply(this, args);

@@ -1,7 +1,7 @@
 import App from './containers/App';
 import { BehaviorSubject } from 'rxjs';
 
-export function reloadHot(module) {
+export function reloadHot(module) { // eslint-disable-line no-shadow
 
     const hotModules = new BehaviorSubject({ App });
 

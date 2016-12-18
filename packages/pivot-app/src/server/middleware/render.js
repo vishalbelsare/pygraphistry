@@ -1,3 +1,4 @@
+import React from 'react';
 import { inspect } from 'util';
 import { Observable } from 'rxjs';
 import { Model } from '@graphistry/falcor';
@@ -7,7 +8,7 @@ import logger from '../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
 import webpackAssets from '../webpack-assets.json';
-var faviconStats = { html:[] };
+let faviconStats = { html:[] };
 try {
     faviconStats =  require('./favicon-assets.json');
 }
@@ -50,7 +51,7 @@ export function renderMiddleware(getDataSource, modules) {
 }
 
 
-function renderAppWithHotReloading(modules, dataSource, options = {}) {
+function renderAppWithHotReloading(modules, dataSource) {
     return modules
         .map(({ App }) => ({
             App, falcor: new Model({
@@ -65,7 +66,7 @@ function renderAppWithHotReloading(modules, dataSource, options = {}) {
             }).takeLast(1),
             ({ App, falcor }, { data }) => ({ App, falcor, data })
         )
-        .map(({ App, falcor, data }) => renderFullPage(falcor));
+        .map(({ falcor }) => renderFullPage(falcor));
 }
 
 function renderFullPage(model, html = '') {

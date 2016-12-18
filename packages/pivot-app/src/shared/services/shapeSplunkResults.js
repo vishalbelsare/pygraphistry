@@ -109,7 +109,7 @@ function shapeHyperGraph({ app, pivot } ) {
                 {'node': eventID, type:'EventID'}));
 
 
-        for (var j = 0; j < fields.length; j++) {
+        for (let j = 0; j < fields.length; j++) {
             const field = fields[j];
 
             if (row[field]) {
