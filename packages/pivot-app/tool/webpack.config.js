@@ -179,9 +179,9 @@ function clientConfig(buildOpts = {}) {
         {
             test: /\.scss$/,
             loader: buildOpts.isDev ?
-                'style!css?module&-minimize&localIdentName=[local]_[hash:6]!postcss!sass' :
+                'style!css?-minimize&localIdentName=[local]_[hash:6]!postcss!sass' :
                 ExtractTextPlugin.extract({
-                    loader: 'css?module&minimize&localIdentName=[local]_[hash:6]!postcss!sass'
+                    loader: 'css?minimize&localIdentName=[local]_[hash:6]!postcss!sass'
                 })
         }
 
@@ -287,7 +287,7 @@ function serverConfig(buildOpts = {}) {
         },
         {
             test: /\.scss$/,
-            loader: `css/locals?module&localIdentName=[local]_[hash:6]!postcss!sass`
+            loader: `css/localIdentName=[local]_[hash:6]!postcss!sass`
         }
     ];
 
