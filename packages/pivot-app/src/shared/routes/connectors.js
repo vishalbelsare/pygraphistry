@@ -13,7 +13,7 @@ import {
 } from './support';
 import VError from 'verror';
 import logger from '../logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 const connectorList = listConnectors();
 

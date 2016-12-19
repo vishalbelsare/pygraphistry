@@ -1,7 +1,7 @@
 export const SEARCH_PIVOT = 'search-pivot';
 export const SPLICE_PIVOT = 'splice-pivot';
 export const INSERT_PIVOT = 'insert-pivot';
-export const PLAY_INVESTIGATION = 'play-investigation';
+export const GRAPH_INVESTIGATION = 'graph-investigation';
 export const DISMISS_ALERT = 'dismiss-alert';
 export const TOGGLE_PIVOTS = 'toggle-pivots';
 
@@ -23,9 +23,9 @@ export const insertPivot = ({ index }) => {
     });
 };
 
-export const playInvestigation = ({ length, investigationId }) => {
+export const graphInvestigation = ({ length, investigationId }) => {
     return ({
-        investigationId, length, type: PLAY_INVESTIGATION
+        investigationId, length, type: GRAPH_INVESTIGATION
     });
 };
 
@@ -35,12 +35,12 @@ export const dismissAlert = () => {
     });
 }
 
-
-
-export function togglePivots({ indices, enabled }) {
-    return {
+export function togglePivots({ indices, enabled, investigationId }) {
+    console.log('Toggle pivots called!', investigationId);
+    return ({
+        investigationId,
         type: TOGGLE_PIVOTS,
         indices,
         enabled,
-    };
+    });
 }

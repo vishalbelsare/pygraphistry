@@ -20,7 +20,7 @@ class SplunkConnector extends Connector {
         });
 
         const metadata = { splunkHostName: config.host, splunkUser: config.user };
-        this.log = logger.createLogger('pivot-app', __filename).child(metadata);
+        this.log = logger.createLogger(__filename).child(metadata);
 
         this.slogin = Observable.bindNodeCallback(this.service.login.bind(this.service));
         this.getJob = Observable.bindNodeCallback(this.service.getJob.bind(this.service));
@@ -60,13 +60,23 @@ class SplunkConnector extends Connector {
             });
     }
 
+    extractSplunkErrorMsg(splunkErr) {
+        if (splunkErr.error && splunkErr.error.message) {
+            return splunkErr.error.message;
+        } else {
+            const messages = (splunkErr.data || {}).messages || [];
+            return messages !== [] ? _.pluck(messages, 'text').join('\n')
+                                   : 'Could not parse splunkErr object'
+        }
+    }
+
     getOrCreateJob(jobId, searchInfo) {
         this.log.debug(searchInfo, 'Tentatively fetching cached results for job: "%s"', jobId);
 
         return this.getJob(jobId)
             .catch(splunkErr => {
                 if (splunkErr.response.statusCode === 404) {
-                    const splunkMsgs = _.pluck(splunkErr.data.messages, 'text');
+                    const splunkMsgs = this.extractSplunkErrorMsg(splunkErr);
                     this.log.debug({splunkMsgs: splunkMsgs}, 'No job was found, creating new search job');
 
                     const { query, searchParams } = searchInfo;
@@ -74,12 +84,16 @@ class SplunkConnector extends Connector {
                         .switchMap(job =>
                             Observable.bindNodeCallback(job.fetch.bind(job))()
                         );
+                } else {
+                    return Observable.throw(splunkErr);
                 }
             })
             .catch(splunkErr => {
-                const msg = _.pluck(splunkErr.data.messages, 'text').join('\n');
                 return Observable.throw(
-                    new VError({name: 'SplunkSearchError', info: searchInfo}, msg)
+                    new VError(
+                        {name: 'SplunkSearchError', info: searchInfo},
+                         this.extractSplunkErrorMsg(splunkErr)
+                     )
                 )
             });
     }
@@ -112,9 +126,11 @@ class SplunkConnector extends Connector {
                 }
             }))
             .catch(splunkErr => {
-                const msg = _.pluck(splunkErr.data.messages, 'text').join('\n');
                 return Observable.throw(
-                    new VError({name: 'SplunkReadResultError', info: searchInfo}, msg)
+                    new VError(
+                        {name: 'SplunkReadResultError', info: searchInfo},
+                        this.extractSplunkErrorMsg(splunkErr)
+                    )
                 )
             });
     }

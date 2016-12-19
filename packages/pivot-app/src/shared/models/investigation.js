@@ -20,12 +20,13 @@ function defaults(index) {
 
 function initialSoftState(pivots) {
     return {
-        url: '/html/splash.html',
-        status: {ok: true},
+        url: null,
+        status: {ok: true, etling: false},
         eventTable: {},
         pivots: pivots.map((pivotId) =>
             $ref(`pivotsById['${pivotId}']`)
-        )
+        ),
+        detachedPivots: [],
     };
 }
 

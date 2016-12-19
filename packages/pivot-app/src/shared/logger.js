@@ -20,7 +20,6 @@ class BrowserConsoleStream {
             'pid',
             'hostname',
             'level',
-            'module',
             'time',
             'msg'
         ];
@@ -100,7 +99,7 @@ function createServerLogger({LOG_LEVEL, LOG_FILE, LOG_SOURCE}) {
 
     const logger = bunyan.createLogger({
         src: LOG_SOURCE,
-        name: 'graphistry',
+        name: 'pivot-app',
         serializers: serializers,
         streams: streams
     });
@@ -146,7 +145,7 @@ function createClientLogger({ LOG_LEVEL }) {
 ////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
-    createLogger: function(module, fileName) {
-        return parentLogger.child({module, fileName});
+    createLogger: function(fileName) {
+        return parentLogger.child({fileName});
     },
 };

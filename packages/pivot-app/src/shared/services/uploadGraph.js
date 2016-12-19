@@ -7,7 +7,7 @@ import request from 'request';
 import VError from 'verror';
 
 import logger from '../../shared/logger.js';
-const log = logger.createLogger('pivot-app', __filename);
+const log = logger.createLogger(__filename);
 
 
 function upload(etlService, apiKey, data) {
@@ -200,10 +200,15 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                     investigation.eventTable = makeEventTable({data, pivots});
                     if (dataset) {
                         investigation.url = `${user.vizService}&dataset=${dataset}`;
-                        investigation.status = {ok: true};
+                        investigation.status = {
+                            ok: true,
+                            etling: false,
+                            msgStyle: 'success'
+                        };
                     } else {
                         investigation.status = {
                             ok: false,
+                            etling: false,
                             message: 'No events found!',
                             msgStyle: 'info',
                         }

@@ -23,15 +23,17 @@ import {
     splicePivot,
     insertPivot,
     searchPivot,
-    playInvestigation,
+    graphInvestigation,
     saveInvestigation,
     dismissAlert,
     togglePivots
 } from '../actions/investigation';
 
 
-function pivotTable({ id, pivots, templates, insertPivot, splicePivot, dismissAlert, searchPivot,
-    playInvestigation, saveInvestigation, togglePivots}) {
+function pivotTable({ id, status, pivots, templates, insertPivot, splicePivot, dismissAlert, searchPivot,
+    graphInvestigation, saveInvestigation, togglePivots }) {
+    console.log('Status', status);
+    const bStyle = (status && status.msgStyle) ? status.msgStyle : 'default';
     return (
         <Table>
             <thead>
@@ -40,7 +42,11 @@ function pivotTable({ id, pivots, templates, insertPivot, splicePivot, dismissAl
                         <OverlayTrigger  placement="top" overlay={
                             <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
                         }>
-                            <Button onClick={(ev) => playInvestigation({investigationId: id, length: pivots.length})}>
+                            <Button bsStyle={bStyle}
+                                    onClick={(ev) =>
+                                        graphInvestigation({investigationId: id, length: pivots.length}
+                                    )}
+                            >
                                 <Glyphicon glyph="play" />
                             </Button>
                         </OverlayTrigger>
@@ -121,7 +127,7 @@ function renderEventTable({fieldSummaries = {}, table = {}}) {
 
 function renderInvestigation({id, status, pivots = [], templates, eventTable,
                               searchPivot, insertPivot, splicePivot, dismissAlert,
-                              playInvestigation, saveInvestigation, togglePivots }) {
+                              graphInvestigation, saveInvestigation, togglePivots }) {
     return (
         <div className={styles.pivots}>
             { status && !status.ok ?
@@ -134,8 +140,8 @@ function renderInvestigation({id, status, pivots = [], templates, eventTable,
                 <Tab eventKey={1} title="Pivots">
                     {
                         pivotTable({
-                            id, pivots, templates, insertPivot, splicePivot, dismissAlert,
-                            searchPivot, playInvestigation, saveInvestigation, togglePivots,
+                            id, pivots, status, templates, insertPivot, splicePivot, dismissAlert,
+                            searchPivot, graphInvestigation, saveInvestigation, togglePivots,
                         })
                     }
                 </Tab>
@@ -176,7 +182,7 @@ export default container(
         splicePivot: splicePivot,
         insertPivot: insertPivot,
         searchPivot: searchPivot,
-        playInvestigation: playInvestigation,
+        graphInvestigation: graphInvestigation,
         saveInvestigation: saveInvestigation,
         searchPivot: searchPivot,
         dismissAlert: dismissAlert,
