@@ -30,6 +30,7 @@
     "@graphistry/falcor-query-syntax": "2.1.7",
     "@graphistry/falcor-react-redux": "2.4.1",
     "@graphistry/falcor-router": "2.4.0",
+    "@graphistry/falcor-router-saddle": "2.6.4",
     "@graphistry/falcor-socket-datasource": "2.4.0",
     "bootstrap": "~3.3.7",
     "bunyan": "1.8.4",
