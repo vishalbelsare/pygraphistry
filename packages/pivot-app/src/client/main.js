@@ -6,9 +6,9 @@ import 'react-select/dist/react-select.css';
 import '../misc/react-dates.css';
 import 'font-awesome/css/font-awesome.css';
 
+import { Model } from './Model';
 import ReactDOM from 'react-dom';
 import { decode } from 'querystring';
-import { Model } from '@graphistry/falcor';
 import { Observable, Scheduler } from 'rxjs';
 import { reloadHot } from '../shared/reloadHot';
 import DataSource from 'falcor-http-datasource';
