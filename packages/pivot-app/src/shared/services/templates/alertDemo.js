@@ -81,7 +81,7 @@ export const searchAlertDemo = new SplunkPivot({
             placeholder: 'Conficker'
         }
     },
-    toSplunk: function (pivotParameters, pivotCache) {
+    toSplunk: function (pivotParameters) {
         const query = `search ${splunkIndices.ALL} ${pivotParameters.query}`;
 
         return {
@@ -107,7 +107,7 @@ export const searchFireeyeDemo = new SplunkPivot({
     },
     connections: FIREEYE_FIELDS,
     encodings: alertDemoEncodings,
-    toSplunk: function (pivotParameters, pivotCache) {
+    toSplunk: function (pivotParameters) {
         const query = `search EventID=${pivotParameters.event} ${splunkIndices.FIREEYE} ${this.constructFieldString()}`;
 
         return {

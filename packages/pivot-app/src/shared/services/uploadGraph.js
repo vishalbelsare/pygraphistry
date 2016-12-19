@@ -182,7 +182,7 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                 Observable.combineLatest(
                     loadUsersById({userIds: [app.currentUser.value[1]]}),
                     loadPivotsById({pivotIds: investigation.pivots.map(x => x.value[1])})
-                        .map(({app, pivot}) => pivot)
+                        .map(({ pivot }) => pivot)
                         .toArray()
                         .map(createGraph),
                     ({user}, {pivots, data}) => ({user, pivots, data})

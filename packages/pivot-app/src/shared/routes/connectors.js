@@ -1,4 +1,3 @@
-import { listConnectors } from '../services';
 import { Observable } from 'rxjs';
 import {
     pathValue as $pathValue,
@@ -30,11 +29,11 @@ export function connectors({ loadConnectorsById, checkConnector }) {
 }
 
 function checkStatusCallRoute({ loadConnectorsById, checkConnector }) {
-    return function(path, args) {
+    return function(path) {
         const connectorIds = path[1];
 
         return checkConnector({ loadConnectorsById, connectorIds })
-            .mergeMap(({app, connector}) => (
+            .mergeMap(({ connector }) => (
                [ $pathValue(`connectorsById['${connector.id}'].status`, connector.status) ]
             ))
             .catch(captureErrorAndNotifyClient(connectorIds));

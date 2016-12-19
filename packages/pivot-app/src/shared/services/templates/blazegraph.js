@@ -23,7 +23,7 @@ class BlazePivot extends PivotTemplate {
         pivot.template = this;
         return get(`https://s3-us-west-1.amazonaws.com/graphistry.data.public/${this.fileName}`)
             .map(
-                ([response, body]) => {
+                ([response, body]) => { // eslint-disable-line no-unused-vars
                     const { graph, labels } = JSON.parse(body)
                     pivot.results = {
                         graph: graph.map(({src, dst}) => ({ source: src, destination: dst })),

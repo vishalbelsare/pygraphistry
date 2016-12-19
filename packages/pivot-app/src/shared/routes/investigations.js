@@ -69,7 +69,7 @@ function splicePivotCallRoute({ loadInvestigationsById, unloadPivotsById, splice
 
         return splicePivot({loadInvestigationsById, unloadPivotsById, investigationIds,
                             pivotIndex, deleteCount: 1})
-            .mergeMap(({app, investigation}) => {
+            .mergeMap(({ investigation }) => {
                 return [
                     $pathValue(
                         `investigationsById['${investigationIds}']['pivots'].length`,
@@ -115,11 +115,11 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
 }
 
 function graphCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph }) {
-    return function(path, args) {
+    return function(path) {
         const investigationIds = path[1];
 
         return uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersById, investigationIds})
-            .mergeMap(({app, investigation}) => {
+            .mergeMap(({ investigation }) => {
                 return [
                     $pathValue(`investigationsById['${investigationIds}'].url`, investigation.url),
                     $pathValue(`investigationsById['${investigationIds}'].status`, investigation.status),
@@ -132,12 +132,12 @@ function graphCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById,
 
 function saveCallRoute({ loadInvestigationsById, saveInvestigationsById, persistInvestigationsById,
                          persistPivotsById, unlinkPivotsById }) {
-    return function(path, args) {
+    return function(path) {
         const investigationIds = path[1];
 
         return saveInvestigationsById({loadInvestigationsById, persistInvestigationsById,
                                        persistPivotsById, unlinkPivotsById, investigationIds})
-            .mergeMap(({app, investigation}) => [
+            .mergeMap(({ investigation }) => [
                 $pathValue(`investigationsById['${investigationIds}'].modifiedOn`, investigation.modifiedOn)
             ])
             .catch(captureErrorAndNotifyClient(investigationIds));
@@ -145,11 +145,11 @@ function saveCallRoute({ loadInvestigationsById, saveInvestigationsById, persist
 }
 
 function cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, cloneInvestigationsById }) {
-    return function(path, args) {
+    return function(path) {
         const investigationIds = path[1];
         return cloneInvestigationsById({loadInvestigationsById, loadPivotsById,
                                         loadUsersById, investigationIds})
-            .mergeMap(({app, user, numInvestigations}) => {
+            .mergeMap(({ user, numInvestigations }) => {
                 return [
                     $pathValue(`['usersById'][${user.id}]['investigations'].length`, numInvestigations),
                     $pathValue(`['usersById'][${user.id}].activeInvestigation`, user.activeInvestigation),

@@ -52,7 +52,7 @@ function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPi
         const investigationId = args[0];
 
         return searchPivot({ loadInvestigationsById, loadPivotsById, pivotIds, investigationId })
-            .mergeMap(({ app, pivot }) => {
+            .mergeMap(({ pivot }) => {
                 return [
                     $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
                     $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),

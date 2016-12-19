@@ -30,19 +30,6 @@ function intToHex (value) {
 }
 
 /**
- * Convert RGBA color to WebGL buffer-compatible output.
- * #sadness, rgba => abgr
- * @param {Number} value
- * @return {Number}
- */
-function convertRGBAToABGR (value) {
-    return ((value & 0xFF) << 24)
-        | ((value & 0xFF00) << 8)
-        | ((value >> 8) & 0xFF00)
-        | ((value >> 24) & 0xFF);
-}
-
-/**
  * '#AABBCC' -> int
  * TODO: this returns ABGR as that's what VGraphLoader sends to the client
  * @param {String} hexColor

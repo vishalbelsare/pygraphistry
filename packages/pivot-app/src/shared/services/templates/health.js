@@ -2,7 +2,7 @@
  *
  * BITROTTEN AND BROKEN
  *
- */
+ *
 
 import { SplunkPivot } from '../connectors/splunk.js';
 import stringhash from 'string-hash';
@@ -57,6 +57,7 @@ const HEALTH_DEMO_ENCODINGS = {
     }
 };
 
+
 const SEARCH_SPLUNK_HEALTH = new SplunkPivot({
     attributes: HEALTH_ATTRIBUTES,
     connections: HEALTH_FIELDS,
@@ -66,7 +67,7 @@ const SEARCH_SPLUNK_HEALTH = new SplunkPivot({
     name: 'Search Splunk (health)',
     tags: ['HealthDemo'],
 
-    toSplunk: function (pivotParameters, pivotCache) {
+    toSplunk: function (pivotParameters) {
         return `search ${SPLUNK_INDICES.HEALTH} ${pivotParameters['input']} ${this.constructFieldString()}`
     }
 });
@@ -80,7 +81,7 @@ const SEARCH_PATIENT = new SplunkPivot({
     name: 'Search Patient',
     tags: ['HealthDemo'],
 
-    toSplunk: function (pivotParameters, pivotCache) {
+    toSplunk: function (pivotParameters) {
         return `search PatientID=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${this.constructFieldString()}`
     }
 
@@ -95,7 +96,7 @@ const SEARCH_LAB = new SplunkPivot({
     name: 'Search Lab',
     tags: ['HealthDemo'],
 
-    toSplunk: function (pivotParameters, pivotCache) {
+    toSplunk: function (pivotParameters) {
         return `search LabName=${ pivotParameters['Search'] } ${SPLUNK_INDICES.HEALTH} ${this.constructFieldString()}`
     }
 
@@ -118,3 +119,4 @@ const PATIENT = new SplunkPivot({
     },
 
 });
+*/

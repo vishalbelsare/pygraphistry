@@ -1,12 +1,10 @@
+import { Observable } from 'rxjs';
 const  { isArray } = Array;
 const typeofObject = 'object';
 const typeofFunction = 'function';
-const  { slice } = Array.prototype;
 
-import { inspect } from 'util';
-import { Observable } from 'rxjs';
 
-function defaultValueMapper(node, key, value, path, data) {
+function defaultValueMapper(node, key, value, path) {
     return Observable.of({ path, value: node[key] = value });
 }
 
@@ -42,7 +40,7 @@ export function setHandler(lists, loader, mapValue, valueKeys = {},
 
             const path = [];
             let index = -1, count = lists.length,
-                key, type, pathId = -1, valsId = -1,
+                key, pathId = -1,
                 value = data[lists[count - 1]] || data;
 
             while (++index < count) {
