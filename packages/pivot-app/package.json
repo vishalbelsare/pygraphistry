@@ -131,7 +131,7 @@
     "pre-git": {
       "enabled": true,
       "pre-commit": [
-          "./node_modules/eslint/bin/eslint.js -c .eslintrc.json --quiet src/"
+          "./eslint_precommit.sh"
       ]
     }
   }
