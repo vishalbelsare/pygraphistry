@@ -13,7 +13,7 @@
     "watch": "npm run clean && cross-env NODE_ENV=development node tool/build --watch",
     "fancy": "npm run clean && cross-env NODE_ENV=development webpack-dashboard -- node tool/build --watch --fancy",
     "test": "rm -rf test/build && node tool/test",
-    "jshint": "jshint -c .jshintrc --exclude-path .gitignore ."
+    "jshint": "./node_modules/eslint/bin/eslint.js -c .eslintrc.json  src"
   },
   "keywords": [],
   "author": "",
