@@ -2,7 +2,7 @@ import { set } from '@graphistry/falcor-router-saddle';
 
 export function setHandler(lists, loader, mapValue,
                            valueKeys = {},
-                           getInitialProps,
+                           getInitialProps = (() => {}),
                            unboxAtoms = false,
                            unboxRefs = false,
                            unboxErrors = false) {
@@ -13,4 +13,3 @@ export function setHandler(lists, loader, mapValue,
         unboxAtoms, unboxRefs, unboxErrors
     });
 }
-
