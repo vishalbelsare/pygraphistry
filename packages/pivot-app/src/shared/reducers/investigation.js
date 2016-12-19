@@ -108,18 +108,11 @@ function togglePivots(action$, store) {
         .ofType(TOGGLE_PIVOTS)
         .mergeMap(({ falcor, indices, enabled, investigationId }) => {
             const topLevelModel = falcor._root.topLevelModel;
-            return Observable.from(
-                topLevelModel.set(
-                    $value(['investigationsById', investigationId, 'status'], { msgStyle: 'warning', ok: true })
-                )
-            ).concat(
-                Observable.from(indices)
-                    .flatMap(index =>
-                        falcor.set(
-                            $value(['pivots', index, 'enabled'], enabled)
-                        )
-                    )
-            );
+            return topLevelModel.set(
+                $value(['investigationsById', investigationId, 'status'], { msgStyle: 'warning', ok: true })
+            ).concat(falcor.set(
+                $value(['pivots', indices, 'enabled'], enabled)
+            ));
         })
         .ignoreElements();
 }
