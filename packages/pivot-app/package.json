@@ -132,7 +132,10 @@
     "pre-git": {
       "enabled": true,
       "pre-commit": [
-          "./eslint_precommit.sh"
+          "./tool/eslint_precommit.sh"
+      ],
+      "post-merge": [
+          "./tool/npminstall_postmerge.sh"
       ]
     }
   }
