@@ -33,7 +33,7 @@ fi
 ###########################
 
 docker build -f Dockerfile-build \
-       --build-arg TEST_BUILD=$([[ $TARGET == 'testing' ]] && echo "1") \
+       --build-arg TEST_BUILD=$([[ $TARGET == 'testing' ]] && echo "true" || echo "false") \
        --build-arg BUILD_NUMBER=${BUILD_NUMBER} \
        --build-arg COMMIT_ID=${COMMIT_ID} \
        --build-arg REV_NAME=${REV_NAME} \

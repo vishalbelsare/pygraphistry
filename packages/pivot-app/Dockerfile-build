@@ -13,6 +13,6 @@ COPY ./wholly-innocuous/files/npm/rc /root/.npmrc
 
 RUN npm install && \
     npm run build && \
-    if [ -z ${TEST_BUILD} ]; then npm prune --production; fi
+    if [ ${TEST_BUILD} = false ]; then npm prune --production; fi
 
 CMD npm start
