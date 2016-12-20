@@ -39,8 +39,13 @@ echo -e "\nCMD ${RUNCMD}" >> Dockerfile
 # Create + publish artifact container #
 #######################################
 
-docker build -f Dockerfile -t graphistry/pivot-app:${VERSION} .
+docker build -f Dockerfile \
+             -t graphistry/pivot-app:${VERSION} \
+             -t graphistry/pivot-app:latest \
+             .
 
 docker push graphistry/pivot-app:${VERSION}
+
+docker push graphistry/pivot-app:latest
 
 echo "Docker image graphistry/pivot-app:${VERSION} successfully published."
