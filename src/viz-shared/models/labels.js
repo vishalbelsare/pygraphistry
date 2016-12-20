@@ -16,6 +16,7 @@ export function labels(view) {
             timeZone: '', poiEnabled: true,
             foreground: { color: new Color('#000000') },
             background: { color: new Color('#ffffff').alpha(0.9) },
+            encodings: $ref(`${view}.encodings`),
             settings: [
                 $ref(`${view}.labels.options`),
             ],

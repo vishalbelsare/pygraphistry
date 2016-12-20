@@ -77,11 +77,16 @@ export default class EncodingPicker extends React.Component {
 
     constructor(props) {
         super(props);
+
         this.handleSelectSizeChange = this.handleSelectSizeChange.bind(this);
         this.handleSelectColorChange = this.handleSelectColorChange.bind(this);
+        this.handleSelectIconChange = this.handleSelectIconChange.bind(this);
         this.handleSelectYAxisChange = this.handleSelectYAxisChange.bind(this);
         this.handleReverseColorChange = this.handleReverseColorChange.bind(this);
+
         this.dispatchColorEncodingChange = this.dispatchColorEncodingChange.bind(this);
+        this.dispatchIconEncodingChange = this.dispatchIconEncodingChange.bind(this);
+
         this.close = this.close.bind(this);
         this.open = this.open.bind(this);
 
@@ -93,6 +98,20 @@ export default class EncodingPicker extends React.Component {
 
     }
 
+    dispatchIconEncodingChange({prop, val}) {
+        if (!this.props.setEncoding) return;
+
+        const reset = prop === 'icon' ? !val
+            : !isEncoded(this.props.encodings, this.props, 'icon');
+
+        return this.props.setEncoding({
+            encodingType: 'icon',
+            reset,
+            graphType: this.props.componentType,
+            attribute: this.props.attribute
+        });
+
+    }
 
     dispatchColorEncodingChange({prop, val}) {
 
@@ -141,6 +160,12 @@ export default class EncodingPicker extends React.Component {
     handleReverseColorChange (reverseColor) {
 
         return this.dispatchColorEncodingChange({ prop: 'reverseColor', val: reverseColor });
+
+    }
+
+    handleSelectIconChange (newEnabled) {
+
+        return this.dispatchIconEncodingChange({ prop: 'icon', val: newEnabled })
 
     }
 
@@ -254,6 +279,13 @@ export default class EncodingPicker extends React.Component {
                         }
                         id={`${this.props.id}_yaxis`}
                         onChange={this.handleSelectYAxisChange} />
+                    <h5>Show using icon</h5>
+                    <RcSwitch
+                        checked={ isEncoded(this.props.encodings, this.props, 'icon') }
+                        checkedChildren={'On'}
+                        unCheckedChildren={'Off'}
+                        onChange={ this.handleSelectIconChange }/>
+                    <p>Pick icons by setting field values that are <a href="http://fontawesome.io/icons/">Font Awesome</a> icon names. Example: <q>laptop</q></p>
                 </Modal.Body>
                 <Modal.Footer>
                     <Button onClick={this.close}>Close</Button>

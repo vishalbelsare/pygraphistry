@@ -18,6 +18,7 @@ export function setEncoding ({view, encoding}) {
     if (reset) {
         return dataframe.encodingsManager.setEncoding({view, encoding});
     } else {
+        //TODO getHistogram not necessary for all encodings, e.g., icon
         return getHistogramForAttribute({ view, ...encoding})
             .mergeMap( (binning) =>
                 dataframe.encodingsManager.setEncoding({view, encoding: {...encoding, binning}}))
