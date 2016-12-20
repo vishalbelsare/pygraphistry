@@ -13,6 +13,7 @@ ARTIFACTS="build node_modules tests"
 ################################
 
 docker build -f Dockerfile-build \
+       --build-arg TEST_BUILD=1
        --build-arg BUILD_NUMBER=$BUILD_NUMBER \
        --build-arg COMMIT_ID=$COMMIT_ID \
        --build-arg REV_NAME=$REV_NAME \
