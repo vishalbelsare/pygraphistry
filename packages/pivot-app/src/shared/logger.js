@@ -60,7 +60,7 @@ class BrowserForwarderStream{
 // A global singleton logger that all module-level loggers are children of.
 ////////////////////////////////////////////////////////////////////////////////
 
-var parentLogger;
+let parentLogger;
 
 if (__SERVER__) {
     const conf = require('../server/config.js');
@@ -86,7 +86,7 @@ function createServerLogger({LOG_LEVEL, LOG_FILE, LOG_SOURCE}) {
     const serializers = bunyan.stdSerializers;
 
     // Always starts with a stream that writes fatal errors to STDERR
-    var streams = [];
+    let streams = [];
 
     if(_.isUndefined(LOG_FILE)) {
         streams = [{ name: 'stdout', stream: process.stdout, level: LOG_LEVEL }];

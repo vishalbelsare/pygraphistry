@@ -42,7 +42,7 @@ export function rangesToListItems({ loadApp }) {
         return loadApp()
             // enumerate each list from the app state ...
             .mergeMap(
-                (app) => listNames,
+                () => listNames,
                 // Create an intermediate Object that preserves
                 // both the list name and the list value.
                 (app, name) => ({
@@ -52,7 +52,7 @@ export function rangesToListItems({ loadApp }) {
             // then enumerate each element from each list,
             // but don't enumerate indexes that aren't in the list.
             .mergeMap(
-                ({ name, list }) => indexes.filter((index) => (
+                ({ list }) => indexes.filter((index) => (
                     index < list.length
                 )),
                 ({ name, list }, index) => {

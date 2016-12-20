@@ -1,3 +1,4 @@
+import React from 'react';
 import { container } from '@graphistry/falcor-react-redux';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 

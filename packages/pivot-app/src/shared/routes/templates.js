@@ -1,4 +1,3 @@
-import { Observable } from 'rxjs';
 import { getHandler } from './support';
 
 

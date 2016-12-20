@@ -27,7 +27,7 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
         return path.resolve(pathPrefix, pivot.id + '.json');
     }
 
-    function loadSinglePivotById(pivotId, rowIds) {
+    function loadSinglePivotById(pivotId) {
         return pivots$.filter(pivot => pivot.id === pivotId)
     }
 

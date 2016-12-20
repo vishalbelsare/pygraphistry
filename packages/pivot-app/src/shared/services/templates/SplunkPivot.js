@@ -88,17 +88,17 @@ function buildLookup(text, pivotCache) {
     //   search can be "{{pivot###}}""
     //   field can be  "field1, field2,field3, ..."
     //   source is any search
-    var hit = text.match(/\[{{(.*)}}\] *-\[(.*)\]-> *\[(.*)\]/);
+    const hit = text.match(/\[{{(.*)}}\] *-\[(.*)\]-> *\[(.*)\]/);
     if (hit) {
-        var search = hit[1];
-        var fields = hit[2].split(',')
+        const search = hit[1];
+        const fields = hit[2].split(',')
             .map(s => s.trim())
             .map(s => s[0] === '"' ? s.slice(1,-1).trim() : s);
-        var source = hit[3];
+        const source = hit[3];
 
         log.trace({search, fields, source}, 'Looking at');
-        var match = '';
-        for (var i = 0; i < fields.length; i++) {
+        let match = '';
+        for (let i = 0; i < fields.length; i++) {
             const field = fields[i];
             const vals = _.uniq(_.map(pivotCache[search].events, function (row) {
                 return row[field];

@@ -1,0 +1,45 @@
+{
+    "root": true,
+    "plugins": [
+        "react"
+    ],
+    "parserOptions": {
+        "ecmaVersion": 7,
+        "sourceType": "module",
+        "ecmaFeatures": {
+            "jsx": true,
+            "experimentalObjectRestSpread": true,
+            "impliedStrict": true
+        }
+    },
+    "env": {
+        "browser": true,
+        "node": true
+    },
+    "globals": {
+        "__DEV__": false,
+        "__SERVER__": false,
+        "__BUILDNUMBER__": false,
+        "__BUILDDATE__": false,
+        "__GITCOMMIT__": false,
+        "__GITBRANCH__": false
+    },
+    "extends": ["eslint:recommended", "plugin:react/recommended"],
+    "rules": {
+        "linebreak-style": ["error", "unix"],
+        "no-label-var": "error",
+        "no-unused-vars": ["warn", {
+            "vars": "local",
+            "args": "after-used",
+            "varsIgnorePattern": "^log$"
+        }],
+        "no-shadow": ["off", { "builtinGlobals": false, "hoist": "all", "allow": [] }],
+        "no-shadow-restricted-names": "error",
+        "no-use-before-define": ["error", { "functions": false, "classes": true }],
+        "no-var": "error",
+        "no-template-curly-in-string": "error",
+        "react/jsx-no-duplicate-props": ["error", { "ignoreCase": true }],
+        "react/prop-types": "off",
+        "no-console": "off"
+    }
+}

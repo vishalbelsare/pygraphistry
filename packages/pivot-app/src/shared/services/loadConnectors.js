@@ -1,8 +1,6 @@
 import * as connectors from './connectors';
 import SimpleServiceWithCache from './support/simpleServiceWithCache.js';
 import logger from '../logger.js';
-
-import _ from 'underscore';
 import { Observable } from 'rxjs';
 const log = logger.createLogger('connectorStore', __filename);
 
@@ -39,4 +37,3 @@ export function listConnectors() {
             return connectorsById;
         }, {});
 }
-

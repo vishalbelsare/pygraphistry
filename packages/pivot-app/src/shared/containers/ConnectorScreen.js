@@ -5,7 +5,6 @@ import {
     TableHeaderColumn
 } from 'react-bootstrap-table';
 import {
-    ButtonGroup,
     Button,
     Glyphicon,
     Panel,
@@ -14,7 +13,6 @@ import {
     Col,
     Image,
     Media,
-    Label,
     OverlayTrigger,
     Tooltip
 } from 'react-bootstrap';
@@ -63,9 +61,9 @@ function welcomeBar(user, connectors) {
     );
 }
 
-function connectorTable({user, connectors = [], switchScreen, selectHandler, checkStatus}) {
+function connectorTable({connectors = [], selectHandler, checkStatus}) {
 
-    function nameFormatter(name, row) {
+    function nameFormatter(name) {
         return (<a href="#">
                     { name }
                 </a>);
@@ -87,7 +85,7 @@ function connectorTable({user, connectors = [], switchScreen, selectHandler, che
         );
     }
 
-    function dateFormatter(epoch, row) {
+    function dateFormatter(epoch) {
         return (new Date(epoch)).toLocaleString()
     }
 
@@ -131,8 +129,7 @@ function connectorTable({user, connectors = [], switchScreen, selectHandler, che
 
 }
 
-function renderConnectorScreen({ user, connectors, switchScreen, checkStatus },
-                          { selection }, selectHandler ) {
+function renderConnectorScreen({ user, connectors, switchScreen, checkStatus }) {
     if (user === undefined) {
         return null;
     }
@@ -151,7 +148,7 @@ function renderConnectorScreen({ user, connectors, switchScreen, checkStatus },
                                                     Add New Connector
                                                 </Tooltip>
                                             }>
-                                <Button onClick={() => createConnector()}
+                                <Button onClick={() => alert('Todo')}
                                         className={`btn-primary ${styles['add-new-investigation']}`}>
                                     <Glyphicon glyph="plus"/>
                                 </Button>
@@ -180,7 +177,7 @@ class ConnectorScreen extends React.Component {
         return renderConnectorScreen(
             this.props,
             this.state,
-            this.selectHandler.bind(this),
+            this.selectHandler.bind(this)
         );
     }
 

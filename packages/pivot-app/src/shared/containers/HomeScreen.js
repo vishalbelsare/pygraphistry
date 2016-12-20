@@ -6,7 +6,6 @@ import {
     TableHeaderColumn
 } from 'react-bootstrap-table';
 import {
-    ButtonGroup,
     Button,
     Glyphicon,
     Panel,
@@ -15,7 +14,6 @@ import {
     Col,
     Image,
     Media,
-    Label,
     OverlayTrigger,
     Tooltip
 } from 'react-bootstrap';
@@ -136,7 +134,6 @@ class TagCell extends React.Component {
 
     render() {
         let tags = this.state.tags;
-        let suggestions = this.state.suggestions;
         return (
             <div>
                 <ReactTags tags={tags}
@@ -151,7 +148,7 @@ class TagCell extends React.Component {
 }
 
 
-function investigationTable({user, investigations = [], switchScreen, selectInvestigation, copyInvestigation,
+function investigationTable({investigations = [], switchScreen, selectInvestigation, copyInvestigation,
                              setInvestigationParams, selectHandler}) {
     function tagsFormatter(tags = [], row) {
         const tagsArray = tags.map((tag, i) => ({id: i, text: tag}));
@@ -174,7 +171,7 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
                 </a>)
     }
 
-    function idFormatter(id, row) {
+    function idFormatter(id) {
         return (
             <div>
                 <Button onClick={() => copyInvestigation(id)}>
@@ -184,7 +181,7 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
         );
     }
 
-    function dateFormatter(epoch, row) {
+    function dateFormatter(epoch) {
         return (new Date(epoch)).toLocaleString()
     }
 

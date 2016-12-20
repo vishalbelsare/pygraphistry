@@ -4,7 +4,7 @@ import glob from 'glob';
 
 
 // Define a schema
-var conf = convict({
+const conf = convict({
     env: {
         doc: 'The applicaton environment.',
         format: ['production', 'development', 'test'],

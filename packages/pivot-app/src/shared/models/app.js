@@ -1,11 +1,7 @@
 import {
-    ref as $ref,
-    atom as $atom,
-    pathValue as $pathValue,
-    pathInvalidation as $invalidation
+    ref as $ref
 } from '@graphistry/falcor-json-graph';
 import { simpleflake } from 'simpleflakes';
-import { createInvestigationModel } from '../models';
 import _ from 'underscore';
 
 

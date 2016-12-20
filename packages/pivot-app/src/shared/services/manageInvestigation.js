@@ -50,7 +50,7 @@ export function switchActiveInvestigation({ loadUsersById, loadInvestigationsByI
                                             unloadInvestigationsById, unloadPivotsById,
                                             userId }) {
     return loadUsersById({userIds: [userId]})
-        .mergeMap(({app, user}) => {
+        .mergeMap(({ user }) => {
             const activeId = getActiveInvestigationId(user)
             if (activeId === undefined) {
                 return Observable.of(null);
@@ -63,7 +63,7 @@ export function switchActiveInvestigation({ loadUsersById, loadInvestigationsByI
 function closeInvestigationsById({ loadInvestigationsById, unloadInvestigationsById,
                                    unloadPivotsById, investigationIds }) {
     return loadInvestigationsById({investigationIds})
-        .mergeMap(({app, investigation}) => {
+        .mergeMap(({ investigation }) => {
             const pivotIds = investigation.pivots.map(x => x.value[1]);
 
             return unloadPivotsById({pivotIds});
@@ -133,7 +133,7 @@ export function saveInvestigationsById({loadInvestigationsById, persistInvestiga
 export function removeInvestigationsById({loadUsersById, unlinkInvestigationsById, unlinkPivotsById,
                                           investigationIds, userIds}) {
     return loadUsersById({userIds: userIds})
-        .mergeMap(({user, app}) => {
+        .mergeMap(({ user }) => {
             const newInvestigations = _.reject(user.investigations, i =>
                 investigationIds.includes(i.value[1])
             );
@@ -149,7 +149,7 @@ export function removeInvestigationsById({loadUsersById, unlinkInvestigationsByI
 
             return unlinkInvestigationsById({investigationIds})
                 .mergeMap(
-                    ({app, investigation}) => {
+                    ({ investigation }) => {
                         const pivotIds = investigation.pivots.map(x => x.value[1]);
 
                         return unlinkPivotsById({pivotIds})

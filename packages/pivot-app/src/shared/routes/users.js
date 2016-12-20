@@ -66,7 +66,6 @@ function setActiveInvestigationRoute({ loadUsersById, loadInvestigationsById,
                                        unloadInvestigationsById, unloadPivotsById,
                                        switchActiveInvestigation, setUserHandler }) {
     return function (path, args) {
-        const userIds = path[1];
         const self = this;
 
         return Observable.forkJoin(
@@ -98,11 +97,11 @@ function removeInvestigationsCallRoute({ removeInvestigationsById, loadUsersById
 
 
 function createInvestigationCallRoute({ createInvestigation, loadUsersById }) {
-    return function(path, args) {
+    return function(path) {
         const userIds = path[1];
 
         return createInvestigation({ loadUsersById, userIds })
-            .mergeMap(({app, user, numInvestigations}) => {
+            .mergeMap(({ user, numInvestigations }) => {
                 return [
                     $pathValue(`['usersById'][${user.id}]['investigations'].length`, numInvestigations),
                     $pathValue(`['usersById'][${user.id}].activeInvestigation`, user.activeInvestigation),

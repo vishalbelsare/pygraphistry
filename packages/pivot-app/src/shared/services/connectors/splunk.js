@@ -1,4 +1,4 @@
-import { DataFrame, Row } from 'dataframe-js';
+import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
 import _ from 'underscore';
 import splunkjs from 'splunk-sdk';

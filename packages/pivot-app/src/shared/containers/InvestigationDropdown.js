@@ -1,5 +1,5 @@
+import React from 'react';
 import { container } from '@graphistry/falcor-react-redux';
-import { DropdownButton, MenuItem } from 'react-bootstrap';
 import Select from 'react-select';
 
 import styles from './styles.less';
@@ -9,12 +9,11 @@ function renderInvestigationDropdown({ investigations, activeInvestigation, sele
     return (<span className={styles['investigations-dropdownbutton']}>
                 <Select
                 name="form-field-name"
-                value="one"
                 clearable={false}
                 backspaceRemoves={false}
                 value={{value: activeInvestigation.id, label: activeInvestigation.name}}
                 options={
-                    investigations.map(({id, name}, index) => {
+                    investigations.map(({id, name}) => {
                         return {value: id, label: name};
                     })
                 }

@@ -1,3 +1,4 @@
+import React from 'react';
 import _ from 'underscore';
 import Investigation from './Investigation.js';
 import InvestigationHeader from './InvestigationHeader.js';

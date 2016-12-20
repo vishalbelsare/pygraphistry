@@ -1,4 +1,3 @@
-import { Observable } from 'rxjs';
 import _ from 'underscore';
 import logger from '../logger.js';
 const log = logger.createLogger(__filename);
@@ -20,5 +19,5 @@ export function splicePivot({ loadInvestigationsById, unloadPivotsById, investig
         .do(({investigation}) => {
             const deletedIndices = _.range(pivotIndex, pivotIndex + deleteCount);
             log.debug(`Spliced pivots ${deletedIndices} in ${investigation.id}`);
-        });;
+        });
 }

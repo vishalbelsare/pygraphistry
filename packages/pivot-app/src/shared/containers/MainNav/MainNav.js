@@ -1,7 +1,5 @@
 import React from 'react';
-
 import Sidebar from '../Sidebar/Sidebar.js';
-
 import styles from './styles.less';
 
 
@@ -14,4 +12,4 @@ export default function renderMainNav({activeScreen, children}) {
             }</div>
         </div>
     );
-};
+}

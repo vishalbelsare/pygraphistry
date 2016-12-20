@@ -11,6 +11,6 @@ const patchDOM = init([
     snabbdomAttributes, snabbdomEventlisteners
 ]);
 
-export function render(dom, [model, vdom]) {
+export function render(dom, [model, vdom]) { // eslint-disable-line no-unused-vars
     return patchDOM(dom, vdom);
 }

@@ -1,8 +1,6 @@
 import { Observable } from 'rxjs';
-import { simpleflake } from 'simpleflakes';
 import {
     pathValue as $pathValue,
-    pathInvalidation as $invalidation,
     error as $error
 } from '@graphistry/falcor-json-graph';
 import {
@@ -54,7 +52,7 @@ function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPi
         const investigationId = args[0];
 
         return searchPivot({ loadInvestigationsById, loadPivotsById, pivotIds, investigationId })
-            .mergeMap(({ app, pivot }) => {
+            .mergeMap(({ pivot }) => {
                 return [
                     $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
                     $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),

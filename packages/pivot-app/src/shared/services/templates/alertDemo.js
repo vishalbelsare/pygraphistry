@@ -60,21 +60,6 @@ const FIREEYE_FIELDS = [
     `Message`,
 ];
 
-const BLUECOAT_FIELDS = [
-    'Fire Eye URL',
-    'External IPs'
-];
-
-const FIREWALL_FIELDS = [
-    'External IPs',
-    'Internal IPs'
-];
-
-const IDS_FIELDS = [
-    'Internal IPs',
-    'Message'
-];
-
 const FIELDS = [
     `Fire Eye MD5`,
     `Fire Eye URL`,
@@ -96,7 +81,7 @@ export const searchAlertDemo = new SplunkPivot({
             placeholder: 'Conficker'
         }
     },
-    toSplunk: function (pivotParameters, pivotCache) {
+    toSplunk: function (pivotParameters) {
         const query = `search ${splunkIndices.ALL} ${pivotParameters.query}`;
 
         return {
@@ -122,7 +107,7 @@ export const searchFireeyeDemo = new SplunkPivot({
     },
     connections: FIREEYE_FIELDS,
     encodings: alertDemoEncodings,
-    toSplunk: function (pivotParameters, pivotCache) {
+    toSplunk: function (pivotParameters) {
         const query = `search EventID=${pivotParameters.event} ${splunkIndices.FIREEYE} ${this.constructFieldString()}`;
 
         return {

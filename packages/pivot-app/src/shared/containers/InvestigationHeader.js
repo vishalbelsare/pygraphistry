@@ -1,3 +1,4 @@
+import React from 'react';
 import { container } from '@graphistry/falcor-react-redux';
 import { ButtonGroup, Button, Glyphicon,
     OverlayTrigger, Tooltip
@@ -14,7 +15,7 @@ import styles from './styles.less';
 
 
 function renderInvestigationHeader({user, investigations, activeInvestigation, createInvestigation,
-                                    selectInvestigation, setInvestigationParams, copyInvestigation,
+                                    selectInvestigation, copyInvestigation,
                                     saveInvestigation}) {
     return (
         <nav className={`navbar navbar-default navbar-fixed ${styles['investigation-nav']}`}>
@@ -47,7 +48,7 @@ function renderInvestigationHeader({user, investigations, activeInvestigation, c
                                     Make a copy
                                 </Tooltip>
                             }>
-                            <Button onClick={(e) => copyInvestigation(activeInvestigation.id)}>
+                            <Button onClick={() => copyInvestigation(activeInvestigation.id)}>
                                 <Glyphicon glyph="duplicate" />
                             </Button>
                         </OverlayTrigger>
@@ -57,7 +58,7 @@ function renderInvestigationHeader({user, investigations, activeInvestigation, c
                                     Save changes
                                 </Tooltip>
                             }>
-                            <Button onClick={(e) => saveInvestigation(activeInvestigation.id)}>
+                            <Button onClick={() => saveInvestigation(activeInvestigation.id)}>
                                 <Glyphicon glyph="floppy-disk" />
                             </Button>
                         </OverlayTrigger>

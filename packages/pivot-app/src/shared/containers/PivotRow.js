@@ -1,13 +1,9 @@
 import { container } from '@graphistry/falcor-react-redux';
 import {
-    ref as $ref,
-    pathValue as $pathValue
+    ref as $ref
 } from '@graphistry/falcor-json-graph';
 import {
     tcell as tableCellClassName,
-    splice as spliceIconClassName,
-    insert as insertIconClassName,
-    search as searchIconClassName
 } from './styles.less';
 import {
     setPivotAttributes
@@ -17,17 +13,13 @@ import {
     Button,
     ButtonGroup,
     ControlLabel,
-    DropdownButton,
     Form,
     FormControl,
     FormGroup,
     Glyphicon,
-    HelpBlock,
-    MenuItem,
     OverlayTrigger,
     Tooltip,
-    Popover,
-    Alert
+    Popover
 } from 'react-bootstrap';
 import DateRangePickerWrapper from './TimeRangeWidget/TimeRangeWidget.js';
 import RcSwitch from 'rc-switch';
@@ -37,14 +29,14 @@ import React from 'react'
 import Select from 'react-select';
 
 
-function Actions({ index, investigationId, resultCount, splicePivot, searchPivot, insertPivot, status, numRows }) {
+function Actions({ index, investigationId, splicePivot, searchPivot, insertPivot, status, numRows }) {
     return (
         <div>
         <ButtonGroup>
             <OverlayTrigger placement="top" overlay={
                 <Tooltip id={`tooltipActionPlay_${index}`}>Run step</Tooltip>
             } key={`${index}: entityRowAction_${index}`}>
-                <Button onClick={(ev) => searchPivot({ index, investigationId })} disabled={status.searching}>
+                <Button onClick={() => searchPivot({ index, investigationId })} disabled={status.searching}>
                     {
                         status.searching ? <Glyphicon glyph="hourglass" /> : <Glyphicon glyph="play" />
                     }
@@ -55,14 +47,14 @@ function Actions({ index, investigationId, resultCount, splicePivot, searchPivot
             <OverlayTrigger placement="top" overlay={
                 <Tooltip id={`tooltipActionAdd_${index}`}>Insert new step after</Tooltip>
             } key={`${index}: entityRowAction_${index}`}>
-                <Button onClick={(ev) => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
+                <Button onClick={() => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
             </OverlayTrigger>
         </ButtonGroup>
         <ButtonGroup style={{marginLeft: '0.7em'}}>
             <OverlayTrigger placement="top" overlay={
                 <Tooltip id={`tooltipActionDelete_${index}`}>Delete step</Tooltip>
             } key={`${index}: entityRowAction_${index}`}>
-                <Button disabled={index === 0 && numRows === 1} onClick={(ev) => splicePivot({ index })}><Glyphicon glyph="trash" /></Button>
+                <Button disabled={index === 0 && numRows === 1} onClick={() => splicePivot({ index })}><Glyphicon glyph="trash" /></Button>
             </OverlayTrigger>
         </ButtonGroup>
         {
@@ -121,7 +113,7 @@ class ComboSelector extends React.Component {
     }
 
     setParam(value) {
-        const {setPivotAttributes, fldKey, investigationId} = this.props;
+        const {fldKey, investigationId} = this.props;
         return this.props.setPivotAttributes({
             [`pivotParameters.${fldKey}`]: value
         }, investigationId);
@@ -137,7 +129,6 @@ class ComboSelector extends React.Component {
     render() {
         const {
             pivotId,
-            setPivotAttributes,
             fldKey,
             fldValue,
             options,
@@ -179,7 +170,6 @@ function renderTemplateSelector (id, investigationId, pivotTemplate, templates, 
             <Select
                 id={"templateSelector" + id}
                 name={"templateSelector" + id}
-                value="one"
                 clearable={false}
                 backspaceRemoves={false}
                 value={{value: pivotTemplate.id, label: pivotTemplate.name}}
@@ -222,7 +212,7 @@ function renderTextCell(id, investigationId, paramKey, paramValue, paramUI, hand
 // The combo box compenents only handles string values. We stringify the default value
 // and the list of options and parse then back when updating the falcor model.
 function renderPivotCombo(id, investigationId, paramKey, paramValue, paramUI, previousPivots, handlers) {
-    var options =
+    let options =
         [
             {
                 value: JSON.stringify(previousPivots.map(({ id }) => id)),

@@ -1,7 +1,5 @@
 import { SplunkPivot } from './SplunkPivot';
-import _ from 'underscore';
 import stringhash from 'string-hash';
-import { Observable} from 'rxjs';
 import moment from 'moment';
 
 
@@ -25,7 +23,7 @@ export const searchSplunk = new SplunkPivot({
             ].map(x => ({id:x, name:x})),
         }
     },
-    toSplunk: function (pivotParameters, pivotCache) {
+    toSplunk: function (pivotParameters) {
         this.connections = pivotParameters.fields.value;
         const query = `search ${pivotParameters['query']} ${this.constructFieldString()} | head 1000`;
 
@@ -118,7 +116,7 @@ export const searchGraphviz = new SplunkPivot({
             default: moment.duration(2, 'day').toJSON()
         }
     },
-    toSplunk: function (pivotParameters, pivotCache) {
+    toSplunk: function (pivotParameters) {
         const q = pivotParameters['query2'];
         const l = pivotParameters['level'];
         const query = `search (host=staging* OR host=labs*) source="/var/log/graphistry-json/*.log" ${q} level >= ${l}

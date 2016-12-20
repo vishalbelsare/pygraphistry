@@ -7,6 +7,7 @@ import '../shared/containers/TimeRangeWidget/variables.scss';
 import '../shared/containers/TimeRangeWidget/styles.scss';
 import 'font-awesome/css/font-awesome.css';
 
+import React from 'react';
 import { Model } from './Model';
 import ReactDOM from 'react-dom';
 import { decode } from 'querystring';
@@ -33,7 +34,7 @@ Observable
         printBuildInfo();
         return decode(window.location.search.substring(1));
     })
-    .switchMap((params) => reloadHot(module))
+    .switchMap(() => reloadHot(module))
     .switchMap(({ App }) => {
         const renderAsObservable = Observable.bindCallback(ReactDOM.render);
         return renderAsObservable((
@@ -46,7 +47,7 @@ Observable
         next() {},
         error(e) {
             log.error(e);
-            debugger;
+            debugger; // eslint-disable-line no-debugger
         }
     });
 
