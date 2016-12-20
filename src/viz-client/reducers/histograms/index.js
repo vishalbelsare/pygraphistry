@@ -30,9 +30,8 @@ function filterBinsOnDrag(actions) {
 
     const brushPans = filterBinsStartsById
         .take(1)
-        .mergeMap((starts) => SceneGestures
-            .pan(starts,
-                 undefined,
+        .mergeMap((filterBinsStarts) => SceneGestures
+            .pan(filterBinsStarts,
                  filterBinsMoves,
                  filterBinsEnds,
                  filterBinsCancels)
