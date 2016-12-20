@@ -24,6 +24,7 @@ done
 
 if [[ ${TARGET} != "testing" ]] && [[ ${TARGET} != "production" ]] ; then
     echo "Must specify target via --target. Acceptable values are (testing, production)"
+    exit 1
 fi
 
 
