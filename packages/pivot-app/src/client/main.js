@@ -3,13 +3,14 @@ import 'rc-switch/assets/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-bootstrap-table/dist/react-bootstrap-table.min.css';
 import 'react-select/dist/react-select.css';
-import '../misc/react-dates.css';
+import '../shared/containers/TimeRangeWidget/variables.scss';
+import '../shared/containers/TimeRangeWidget/styles.scss';
 import 'font-awesome/css/font-awesome.css';
 
 import React from 'react';
+import { Model } from './Model';
 import ReactDOM from 'react-dom';
 import { decode } from 'querystring';
-import { Model } from '@graphistry/falcor';
 import { Observable, Scheduler } from 'rxjs';
 import { reloadHot } from '../shared/reloadHot';
 import DataSource from 'falcor-http-datasource';

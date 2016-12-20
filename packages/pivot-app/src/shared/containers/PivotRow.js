@@ -21,7 +21,7 @@ import {
     Tooltip,
     Popover
 } from 'react-bootstrap';
-import DateRangePickerWrapper from './TimeRangeWidget.js';
+import DateRangePickerWrapper from './TimeRangeWidget/TimeRangeWidget.js';
 import RcSwitch from 'rc-switch';
 import styles from './styles.less';
 import _ from 'underscore';
