@@ -29,19 +29,15 @@ export default class EncodingManager {
                     color: null,
                     opacity: null,
                     size: null,
-                    weight: null
+                    weight: null,
+                    icon: null
                 },
                 edge: {
                     color: null,
                     opacity: null,
                     size: null,
-                    weight: null
-                },
-                timebar: {
-                    /*
-                    time: null,
-                    color: null
-                    */
+                    weight: null,
+                    icon: null
                 }
             }
         };

@@ -73,6 +73,7 @@ export class Label extends React.Component {
         let { showFull, pinned,
               color, background,
               onFilter, onExclude,
+              encodings,
               type, title, columns, ...props } = this.props;
 
         if (title == null || title == '') {
@@ -112,6 +113,8 @@ export class Label extends React.Component {
                         <LabelTitle type={type}
                                     color={color}
                                     title={title}
+                                    encodings={encodings}
+                                    columns={columns}
                                     pinned={pinned}
                                     showFull={showFull}
                                     onExclude={onExclude}
@@ -133,10 +136,52 @@ export class Label extends React.Component {
     }
 }
 
-function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseDown, onTouchStart }) {
+function Icon({ iconClass }) {
+
+    return iconClass ?
+
+            <span className={classNames({
+                    'fa-stack': true,
+                    //'fa-lg': true,
+                    [styles['label-title-icon-encoded']]: true
+                })}>
+                <i className={classNames({
+                    'fa': true,
+                    'fa-stack-2x': true,
+                    //'fa-lg': true,
+                    'fa-circle': true})}/>
+                <i className={classNames({
+                    'fa': true,
+                    'fa-stack-1x': true,
+                    //'fa-lg': true,
+                    'fa-inverse': true,
+                    [iconClass]: true})} />
+            </span>
+
+        : <span style={ {display: 'none'} } />;
+}
+
+function getIconClass({encodings, type, columns}) {
+
+    if (!encodings || !encodings[type] || !encodings[type].icon) {
+        return undefined;
+    }
+
+    const colMaybe = columns.filter(({key}) => key === encodings[type].icon.attribute);
+    const iconStr = colMaybe.length ? colMaybe[0].value : undefined;
+    if (!iconStr || !String(iconStr).match(/^[a-zA-Z0-9-]*$/)) {
+        return undefined;
+    }
+
+    return `fa-${iconStr}`;
+}
+
+function LabelTitle ({ type, color, encodings, columns, title, icon, pinned, showFull, onExclude, onMouseDown, onTouchStart }) {
 
     const titleHTML = { __html: title };
     const titleExcludeHTML = { __html: title };
+
+    const iconClass = getIconClass({ encodings, type, columns });
 
     if (title == null || title === '') {
         title = '';
@@ -150,8 +195,10 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
                  onMouseDown={onMouseDown}
                  onTouchStart={onTouchStart}>
                 <span onMouseDown={stopPropagationIfAnchor}
-                      className={styles['label-title-text']}
-                      dangerouslySetInnerHTML={titleHTML}/>
+                      className={styles['label-title-text']}>
+                      <Icon iconClass={iconClass}/>
+                      <span dangerouslySetInnerHTML={titleHTML} style={ {display: 'inline-block'} }/>
+                </span>
             </div>
         );
     }
@@ -161,12 +208,11 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
              onTouchStart={onTouchStart}
              className={styles['label-title']}>
             <a href='javascript:void(0)'
-               style={{ color, float: `left`, fontSize: `.8em` }}
                className={classNames({
                    [styles['pinned']]: pinned,
-                   [styles['label-title-icon']]: true,
+                   [styles['label-title-close']]: true,
                })}>
-                <i className={classNames({
+                <i style={{color}} className={classNames({
                     'fa': true,
                     'fa-times': true,
                 })}/>
@@ -202,8 +248,10 @@ function LabelTitle ({ type, color, title, pinned, showFull, onExclude, onMouseD
                 </a>
             </OverlayTrigger>
             <span onMouseDown={stopPropagationIfAnchor}
-                  className={styles['label-title-text']}
-                  dangerouslySetInnerHTML={titleHTML}/>
+                  className={styles['label-title-text']}>
+                  <Icon iconClass={iconClass}/>
+                  <span dangerouslySetInnerHTML={titleHTML} style={ {display: 'inline-block'} }/>
+            </span>
         </div>
     );
 }

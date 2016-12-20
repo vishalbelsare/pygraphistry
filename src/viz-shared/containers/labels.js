@@ -26,6 +26,7 @@ let Labels = ({ simulating,
                 enabled, poiEnabled, opacity,
                 foreground: { color: color } = {},
                 background: { color: background } = {},
+                encodings,
                 point = [], highlight, selection, ...props }) => {
 
     let labels = [];
@@ -71,6 +72,7 @@ let Labels = ({ simulating,
                    onLabelMouseMove={labelMouseMove}
                    hasHighlightedLabel={!!highlight}
                    sceneSelectionType={sceneSelectionType}
+                   encodings={encodings}
                    showFull={label === highlight || label === selection}/>
         ) || []}
         </LabelsComponent>
@@ -90,6 +92,10 @@ Labels = container({
             length, [0...${point.length || 0}]: ${
                 Label.fragment()
             }
+        },
+        encodings: {
+            point: { color, size, icon },
+            edge: { color, icon }
         }
     }`,
     dispatchers: {

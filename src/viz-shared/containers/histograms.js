@@ -64,8 +64,8 @@ Histograms = container({
                 options: {
                     ['point', 'edge']: { color }
                 },
-                point: { color, size },
-                edge: { color }
+                point: { color, size, icon },
+                edge: { color, icon }
             }
         }`;
     },

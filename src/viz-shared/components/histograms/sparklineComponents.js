@@ -37,4 +37,20 @@ function YAxisLegendIndicator (props) {
 }
 YAxisLegendIndicator.propTypes = { yAxisValue: React.PropTypes.string };
 
-export { SizeLegendIndicator, YAxisLegendIndicator };
+function IconLegendIndicator (props) {
+    return props.iconValue
+        ? <span class="label label-default">
+                <Button bsSize="small"
+                    className={styles['histogram-legend-pill']}>
+                    <span className={classNames({
+                        'fa': true,
+                        'fa-map-pin': true,
+                        [styles['histogram-size-encoding-icon']]: true
+                    })}/>
+                    Icon
+                </Button>
+            </span>
+        : null;
+}
+
+export { SizeLegendIndicator, YAxisLegendIndicator, IconLegendIndicator };
