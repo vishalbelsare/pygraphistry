@@ -4,7 +4,7 @@ import { Button, Glyphicon } from 'react-bootstrap';
 import styles from 'viz-shared/components/histograms/styles.less';
 import EncodingPicker from './EncodingPicker.js';
 import { isEncoded } from 'viz-shared/components/histograms/EncodingPicker.js';
-import { SizeLegendIndicator, YAxisLegendIndicator } from './sparklineComponents.js';
+import { SizeLegendIndicator, YAxisLegendIndicator, IconLegendIndicator } from './sparklineComponents.js';
 
 export const Sparkline = ({ name, yScale, children, componentType,
                             id, width = `calc(100% - 20px)`, height = 50,
@@ -22,6 +22,7 @@ export const Sparkline = ({ name, yScale, children, componentType,
                 <div className={styles['histogram-icons']}>
                     <SizeLegendIndicator sizeValue={ isEncoded(encodings, {componentType, attribute: name}, 'size') }/>
                     <YAxisLegendIndicator yAxisValue={yScale}/>
+                    <IconLegendIndicator iconValue={ isEncoded(encodings, {componentType, attribute: name}, 'icon') }/>
                     <EncodingPicker
                         id={`histogram-encodings-picker-${name}`}
                         attribute={name}
