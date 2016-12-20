@@ -73,6 +73,7 @@ export class Label extends React.Component {
         let { showFull, pinned,
               color, background,
               onFilter, onExclude,
+              encodings,
               type, title, columns, ...props } = this.props;
 
         if (title == null || title == '') {
@@ -112,7 +113,8 @@ export class Label extends React.Component {
                         <LabelTitle type={type}
                                     color={color}
                                     title={title}
-                                    icon={columns.filter(({key}) => key === 'icon')}
+                                    encodings={encodings}
+                                    columns={columns}
                                     pinned={pinned}
                                     showFull={showFull}
                                     onExclude={onExclude}
@@ -159,14 +161,27 @@ function Icon({ iconClass }) {
         : <span style={ {display: 'none'} } />;
 }
 
-function LabelTitle ({ type, color, title, icon, pinned, showFull, onExclude, onMouseDown, onTouchStart }) {
+function getIconClass({encodings, type, columns}) {
+
+    if (!encodings || !encodings[type] || !encodings[type].icon) {
+        return undefined;
+    }
+
+    const colMaybe = columns.filter(({key}) => key === encodings[type].icon.attribute);
+    const iconStr = colMaybe.length ? colMaybe[0].value : undefined;
+    if (!iconStr || !String(iconStr).match(/^[a-zA-Z0-9-]*$/)) {
+        return undefined;
+    }
+
+    return `fa-${iconStr}`;
+}
+
+function LabelTitle ({ type, color, encodings, columns, title, icon, pinned, showFull, onExclude, onMouseDown, onTouchStart }) {
 
     const titleHTML = { __html: title };
     const titleExcludeHTML = { __html: title };
 
-    const iconStrRaw = icon.length ? icon[0].value : undefined;
-    const iconClass = iconStrRaw && iconStrRaw.match(/^[a-zA-Z0-9-]*$/)
-        ? `fa-${iconStrRaw}` : undefined;
+    const iconClass = getIconClass({ encodings, type, columns });
 
     if (title == null || title === '') {
         title = '';
