@@ -9,7 +9,7 @@ const config = require('@graphistry/config')();
 import { resolve } from 'path';
 import { parse as urlParse, format as urlFormat } from 'url';
 import { Observable } from 'rxjs';
-import { urlencoded as parseUrlEncoded } from 'body-parser';
+import { json as parseJsonEncoded } from 'body-parser';
 
 import { api as apiKey } from '@graphistry/common';
 import { pickWorker } from './worker-router.js';
@@ -33,7 +33,7 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
 
     // viz-app should be sending client error messages directly to the viz-app server, not central,
     // but in case that fails (for some reason), we have this.
-    app.post('/error', parseUrlEncoded({extended: true, limit: '64kb'}),
+    app.post('/error', parseJsonEncoded({extended: true, limit: '512kb'}),
         (req, res) => logClientError(req, res, logger, (config.ENVIRONMENT === 'local')));
 
     apiKey.init(app);
