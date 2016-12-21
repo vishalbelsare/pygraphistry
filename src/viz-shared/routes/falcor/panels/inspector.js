@@ -207,7 +207,7 @@ function searchCount ({loadViewsById, readSelection}, path) {
         const { nBody: { vgraphLoaded } = {} } = view;
 
         if (!vgraphLoaded) {
-            return $value([], 0);
+            return [$value([], 0)];
         }
 
         const queries = generateQueries(

@@ -1,5 +1,5 @@
 import util from 'util';
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import Binning from 'viz-worker/simulator/Binning';
 import DataframeMask from 'viz-worker/simulator/DataframeMask';
 import { histogramBinHighlightQuery } from 'viz-shared/models/expressions/histograms';
@@ -75,7 +75,7 @@ export function loadSelectionHistograms(loadViewsById) {
             ({ workbook, view, histogram }) => {
 
                 const { nBody: { vgraphLoaded } = {},
-                        selection: { histogramsById } } = view;
+                        selection: { histogramsById } = {} } = view;
 
                 if (!refresh || !vgraphLoaded) {
                     if (!histogramsById || !(histogram = histogramsById[histogram.id])) {

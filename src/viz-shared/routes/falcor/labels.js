@@ -57,7 +57,6 @@ export function labels(path, base) {
             route: `${base}['labels'].options[{keys}]`
         }, {
             get: getValues,
-            set: setValues,
             route: `${base}['labels'].options[{keys}][{keys}]`
         }, {
             get: getLabelsByTypeAndIndexHandler,

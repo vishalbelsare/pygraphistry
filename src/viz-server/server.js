@@ -27,13 +27,13 @@ export function start() {
     const server = new RxHTTPServer();
     const socketServer = new SocketIOServer(server, { serveClient: false });
     const serverListen = Observable.bindNodeCallback(server.listen.bind(server), function () {
-        console.log('************************************************************');
+        console.log('***********************************************************');
         console.log('Express app listening at http://%s:%s', this.address().address, this.address().port);
         console.log('NODE_ENV:', process.env.NODE_ENV);
         console.log('process.pid:', process.pid);
         console.log('__dirname:', __dirname);
         console.log('root:', path.resolve());
-        console.log('************************************************************');
+        console.log('***********************************************************');
         return server;
     });
 

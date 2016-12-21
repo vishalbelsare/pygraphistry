@@ -214,15 +214,9 @@ export function readSelectionCore ({dataframe, simulator}, type, query, cb) {
             const start = (page - 1) * per_page;
             const end = start + per_page;
 
-            const lastMasks = dataframe.lastMasks;
-            const mask = new DataframeMask(dataframe,
+            const selectionMask = new DataframeMask(dataframe,
                 pointIndexes, pointIndexes === undefined ?
                     undefined : simulator.connectedEdges(pointIndexes)
-            );
-
-            const selectionMask = new DataframeMask(dataframe,
-                DataframeMask.baseMaskOn(mask.point, lastMasks.point),
-                DataframeMask.baseMaskOn(mask.edge , lastMasks.edge )
             );
 
             const data = sliceSelection(dataframe, type, selectionMask, start, end,

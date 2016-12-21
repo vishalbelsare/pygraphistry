@@ -977,7 +977,11 @@ function selectNodesInRect (simulator, selection) {
     logger.debug('selectNodesInRect', selection);
 
     if (selection.all) {
-        return Q(simulator.dataframe.lastMasks.point);
+        const { dataframe } = simulator;
+        const { lastMasks = {} } = dataframe;
+        const numPoints = lastMasks.point ?
+            lastMasks.point.length || 0 : dataframe.numPoints();
+        return Q(_.range(0, numPoints));
     }
 
     return simulator.otherKernels.selectNodesInRect.run(simulator, selection)
@@ -990,7 +994,11 @@ function selectNodesInCircle (simulator, selection) {
     logger.debug('selectNodesInCircle', selection);
 
     if (selection.all) {
-        return Q(simulator.dataframe.lastMasks.point);
+        const { dataframe } = simulator;
+        const { lastMasks = {} } = dataframe;
+        const numPoints = lastMasks.point ?
+            lastMasks.point.length || 0 : dataframe.numPoints();
+        return Q(_.range(0, numPoints));
     }
 
     return simulator.otherKernels.selectNodesInCircle.run(simulator, selection)
