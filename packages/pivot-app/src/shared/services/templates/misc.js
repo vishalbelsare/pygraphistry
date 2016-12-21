@@ -2,6 +2,17 @@ import { SplunkPivot } from './SplunkPivot';
 import stringhash from 'string-hash';
 import moment from 'moment';
 
+const GRAPHISTRY_SPLUNK_FIELDS = [
+    'module',
+    'level',
+    'err.message',
+    'time',
+    'metadata.dataset',
+    'err.stackArray{}.file',
+    'err.stackArray{}.function',
+    'msg',
+    'fileName'
+]
 
 export const searchSplunk = new SplunkPivot({
     id: 'search-splunk-plain',
@@ -12,15 +23,14 @@ export const searchSplunk = new SplunkPivot({
         'query': {
             inputType: 'text',
             label: 'Query:',
-            placeholder: 'error'
+            placeholder: 'error',
+            defaultValue: 'error',
         },
         'fields': {
             inputType: 'multi',
             label: 'Entities:',
-            options: [
-                'module', 'level', 'err.message', 'time', 'metadata.dataset',
-                'err.stackArray{}.file', 'err.stackArray{}.function', 'msg', 'fileName'
-            ].map(x => ({id:x, name:x})),
+            options: GRAPHISTRY_SPLUNK_FIELDS.map(x => ({id:x, name:x})),
+            defaultValue: GRAPHISTRY_SPLUNK_FIELDS
         }
     },
     toSplunk: function (pivotParameters) {
