@@ -120,7 +120,7 @@ function createServerLogger({LOG_LEVEL, LOG_FILE, LOG_SOURCE}) {
 
 function createClientLogger({ LOG_LEVEL }) {
     return bunyan.createLogger({
-        name: 'graphistry',
+        name: 'pivot-app',
         streams: [
             {
                 level: LOG_LEVEL,

@@ -1,17 +1,15 @@
-var path = require('path');
-var webpack = require('webpack');
-var vizAppPackage = require('../package.json');
-var AssetsPlugin = require('assets-webpack-plugin');
-var WebpackDashboard = require('webpack-dashboard/plugin');
-var NPMInstallPlugin = require('npm-install-webpack-plugin');
-var WebpackVisualizer = require('webpack-visualizer-plugin');
-var ExtractTextPlugin = require('extract-text-webpack-plugin');
-var WebpackNodeExternals = require('webpack-node-externals');
-var StringReplacePlugin = require('string-replace-webpack-plugin');
-var FaviconsWebpackPlugin = require('favicons-webpack-plugin');
-var ProgressBarPlugin = require('progress-bar-webpack-plugin');
-var StatsPlugin = require('stats-webpack-plugin');
-var child_process = require('child_process');
+const path = require('path');
+const webpack = require('webpack');
+const AssetsPlugin = require('assets-webpack-plugin');
+const WebpackDashboard = require('webpack-dashboard/plugin');
+const WebpackVisualizer = require('webpack-visualizer-plugin');
+const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const WebpackNodeExternals = require('webpack-node-externals');
+const StringReplacePlugin = require('string-replace-webpack-plugin');
+const FaviconsWebpackPlugin = require('favicons-webpack-plugin');
+const ProgressBarPlugin = require('progress-bar-webpack-plugin');
+const StatsPlugin = require('stats-webpack-plugin');
+const child_process = require('child_process');
 
 
 const buildNumber = process.env.BUILD_NUMBER;
@@ -43,7 +41,7 @@ const versionDefines = {
     __BUILDNUMBER__: buildNumber ? `"${buildNumber}"` : undefined,
 }
 
-function postcss(webpack) {
+function postcss() {
     return [
         require('postcss-font-awesome'),
         require('autoprefixer')
@@ -64,7 +62,7 @@ function commonConfig(buildOpts) {
             unsafeCache: true,
         },
         module: {
-            loaders: loaders(buildOpts),
+            loaders: loaders(),
             noParse: [
                 /reaxtor-falcor-syntax-pathmap\/lib\/parser\.js$/
             ]
@@ -83,7 +81,7 @@ function commonConfig(buildOpts) {
 
 
 function clientConfig(buildOpts = {}) {
-    var config = commonConfig(buildOpts);
+    const config = commonConfig(buildOpts);
 
     config.node = {
         fs: 'empty',
@@ -139,7 +137,7 @@ function clientConfig(buildOpts = {}) {
             'react-style-proptype',
             'react-portal',
             'react-tag-input',
-            'react-toastr',
+            '@allenfang/react-toastr',
             'recompose',
             'redux',
             'redux-observable',
@@ -254,7 +252,7 @@ function clientConfig(buildOpts = {}) {
 
 
 function serverConfig(buildOpts = {}) {
-    var config = commonConfig(buildOpts);
+    const config = commonConfig(buildOpts);
 
     config.node = {
         console: true,
@@ -331,7 +329,7 @@ function serverConfig(buildOpts = {}) {
 }
 
 
-function loaders(buildOpts) {
+function loaders() {
     return [
         babel(),
         { test: /\.json$/, loader: 'json' },
@@ -383,7 +381,7 @@ function loaders(buildOpts) {
 
 
 function plugins(buildOpts) {
-    var plugins = [
+    const plugins = [
         new StringReplacePlugin(),
         // new webpack.NamedModulesPlugin(),
         // Avoid publishing files when compilation fails
