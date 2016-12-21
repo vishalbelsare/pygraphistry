@@ -97,7 +97,6 @@ export const searchFireeyeDemo = new SplunkPivot({
     id: 'search-splunk-fireeye-botnet-demo',
     name: 'Search FireEye',
     tags: ['Demo'],
-    pivotParameterKeys: ['event'],
     pivotParametersUI: {
         event: {
             inputType: 'text',

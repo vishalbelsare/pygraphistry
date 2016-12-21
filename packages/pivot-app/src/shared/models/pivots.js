@@ -14,7 +14,7 @@ function defaults(pivotTemplate = 'search-splunk-plain') {
     const templateParameters = templatesMap[pivotTemplate].pivotParametersUI;
     const pivotParameters = Object.entries(templateParameters)
         .reduce((result, [key, value]) => {
-            result[key] = value.defaultValue;
+            result[`${pivotTemplate}-${key}`] = value.defaultValue;
             return result
         }, {});
 

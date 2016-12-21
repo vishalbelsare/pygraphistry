@@ -46,6 +46,13 @@ export function pivots(services) {
     }];
 }
 
+function setPivotTemplateRoute({ loadPivotsById, setPivotsHandler }) {
+    return function(path, ...args) {
+        log.warn({path, args}, 'setPivotRoute');
+        return setPivotsHandler(path)
+    }
+}
+
 function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPivot }) {
     return function(path, args) {
         const pivotIds = path[1];

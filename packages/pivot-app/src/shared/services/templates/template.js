@@ -3,7 +3,14 @@ export class PivotTemplate {
         this.id = id;
         this.name = name;
         this.tags = tags;
-        this.pivotParameterKeys = pivotParameterKeys;
-        this.pivotParametersUI = pivotParametersUI;
+        this.pivotParametersUI = Object.entries(pivotParametersUI)
+            .map(([parameter, values]) => ({ id: `${id}-${parameter}`, ...values }))
+            .reduce((result, parameter) => {
+                result[parameter.id] = parameter;
+                return result
+            },{});
+
+        this.pivotParameterKeys = Object.keys(this.pivotParametersUI)
+
     }
 }
