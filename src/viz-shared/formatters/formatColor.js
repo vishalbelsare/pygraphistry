@@ -1,4 +1,4 @@
-import { rgb } from 'd3';
+import { rgb } from 'd3-color';
 
 export function formatColor(value) {
     value = d3ColorFromRGBA(value);
