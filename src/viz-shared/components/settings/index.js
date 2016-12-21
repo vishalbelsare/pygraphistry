@@ -1,4 +1,4 @@
-import d3 from 'd3';
+import d3Scale from 'd3-scale';
 import styles from './styles.less';
 import React from 'react';
 import Color from 'color';
@@ -10,9 +10,9 @@ import { FormControl } from 'react-bootstrap';
 import { Grid, Row, Col } from 'react-bootstrap';
 
 const scales = {
-    log: d3.scale.log().domain([.1, 10]).range([1, 100]),
-    none: d3.scale.linear().domain([0, 100]).range([0, 100]),
-    percent: d3.scale.linear().domain([0, 1]).range([0, 100])
+    log: d3Scale.log().domain([.1, 10]).range([1, 100]),
+    none: d3Scale.linear().domain([0, 100]).range([0, 100]),
+    percent: d3Scale.linear().domain([0, 1]).range([0, 100])
 };
 
 const tooltipFormatters = {
