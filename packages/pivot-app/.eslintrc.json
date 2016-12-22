@@ -28,7 +28,7 @@
     "rules": {
         "linebreak-style": ["error", "unix"],
         "no-label-var": "error",
-        "no-unused-vars": ["warn", {
+        "no-unused-vars": ["error", {
             "vars": "local",
             "args": "after-used",
             "varsIgnorePattern": "^log$"

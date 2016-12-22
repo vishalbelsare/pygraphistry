@@ -4,12 +4,15 @@ COPY . /pivot-app
 
 WORKDIR /pivot-app
 
+ARG TEST_BUILD
 ARG BUILD_NUMBER
 ARG COMMIT_ID
 ARG REV_NAME
 
 COPY ./wholly-innocuous/files/npm/rc /root/.npmrc
 
-RUN npm install && npm run build && npm prune --production
+RUN npm install && \
+    npm run build && \
+    if [ ${TEST_BUILD} = false ]; then npm prune --production; fi
 
 CMD npm start
