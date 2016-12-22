@@ -30,7 +30,7 @@ docker run --rm ${TAG} sh -c "tar --create ${ARTIFACTS}" > artifact.tar
 # Create run CMD from package.json #
 ####################################
 
-RUNCMD=`docker run --rm graphistry/pivot-app:build sh -c "cat package.json" | jq -r .scripts.start`
+RUNCMD=`docker run --rm ${TAG} sh -c "cat package.json" | jq -r .scripts.start`
 
 echo -e "\nCMD ${RUNCMD}" >> Dockerfile
 
