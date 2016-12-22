@@ -113,10 +113,10 @@ class ComboSelector extends React.Component {
     }
 
     setParam(value) {
-        const {fldKey, investigationId} = this.props;
+        const {fldKey} = this.props;
         return this.props.setPivotAttributes({
             [`pivotParameters.${fldKey}`]: value
-        }, investigationId);
+        });
     }
 
     componentWillMount() {
@@ -164,7 +164,7 @@ class ComboSelector extends React.Component {
 
 }
 
-function renderTemplateSelector (id, investigationId, pivotTemplate, templates, setPivotAttributes) {
+function renderTemplateSelector (id, pivotTemplate, templates, setPivotAttributes) {
     return (
         <span className={styles.pivotTypeSelectorContainer}>
             <Select
@@ -181,7 +181,7 @@ function renderTemplateSelector (id, investigationId, pivotTemplate, templates, 
                 onChange={ ({value}) => {
                     return setPivotAttributes({
                         'pivotTemplate': $ref(`templatesById['${value}']`)
-                    }, investigationId)
+                    })
                 }
                 }
             />
@@ -189,7 +189,7 @@ function renderTemplateSelector (id, investigationId, pivotTemplate, templates, 
     );
 }
 
-function renderTextCell(id, investigationId, paramKey, paramValue, paramUI, handlers) {
+function renderTextCell(id, paramKey, paramValue, paramUI, handlers) {
      return (
         <div className={tableCellClassName} key={`pcell-${id}-${paramKey}`}>
             <label>{ paramUI.label }</label>
@@ -202,7 +202,7 @@ function renderTextCell(id, investigationId, paramKey, paramValue, paramUI, hand
                 onChange={ev => ev.preventDefault() ||
                     handlers.setPivotAttributes({
                         [`pivotParameters.${paramKey}`]: ev.target.value
-                    }, investigationId)
+                    })
                 }
             />
         </div>
@@ -211,7 +211,7 @@ function renderTextCell(id, investigationId, paramKey, paramValue, paramUI, hand
 
 // The combo box compenents only handles string values. We stringify the default value
 // and the list of options and parse then back when updating the falcor model.
-function renderPivotCombo(id, investigationId, paramKey, paramValue, paramUI, previousPivots, handlers) {
+function renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, handlers) {
     let options =
         [
             {
@@ -242,7 +242,6 @@ function renderPivotCombo(id, investigationId, paramKey, paramValue, paramUI, pr
 
     return renderComboCell(
         id,
-        investigationId,
         paramKey,
         JSON.stringify(paramValue),
         {options: options, ...paramUI},
@@ -251,11 +250,10 @@ function renderPivotCombo(id, investigationId, paramKey, paramValue, paramUI, pr
 }
 
 
-function renderComboCell(id, investigationId, paramKey, paramValue, paramUI, handlers) {
+function renderComboCell(id, paramKey, paramValue, paramUI, handlers) {
     return (
         <ComboSelector
             key={`pcell-${id}-${paramKey}`}
-            investigationId={investigationId}
             pivotId={id}
             fldKey={paramKey}
             fldValue={paramValue}
@@ -266,7 +264,7 @@ function renderComboCell(id, investigationId, paramKey, paramValue, paramUI, han
     );
 }
 
-function renderMultiCell(id, investigationId, paramKey, paramValue, paramUI, handlers) {
+function renderMultiCell(id, paramKey, paramValue, paramUI, handlers) {
     return (
         <div key={`pcell-${id}-${paramKey}`} className={tableCellClassName}>
             <label>{ paramUI.label }</label>
@@ -283,13 +281,13 @@ function renderMultiCell(id, investigationId, paramKey, paramValue, paramUI, han
                 onChange={ (selected) =>
                     handlers.setPivotAttributes({
                         [`pivotParameters.${paramKey}`]: _.pluck(selected, 'id')
-                    }, investigationId)
+                    })
                 }/>
         </div>
     )
 }
 
-function renderDateRange(id, investigationId, paramKey, paramValue, paramUI, handlers) {
+function renderDateRange(id, paramKey, paramValue, paramUI, handlers) {
     return (
         <div key={`pcell-${id}-${paramKey}`}>
             <DateRangePickerWrapper
@@ -302,18 +300,18 @@ function renderDateRange(id, investigationId, paramKey, paramValue, paramUI, han
     );
 }
 
-function renderPivotCell(id, investigationId, paramKey, paramValue, paramUI, previousPivots, handlers) {
+function renderPivotCell(id, paramKey, paramValue, paramUI, previousPivots, handlers) {
     switch (paramUI.inputType) {
         case 'text':
-            return renderTextCell(id, investigationId, paramKey, paramValue, paramUI, handlers);
+            return renderTextCell(id, paramKey, paramValue, paramUI, handlers);
         case 'pivotCombo':
-            return renderPivotCombo(id, investigationId, paramKey, paramValue, paramUI, previousPivots, handlers);
+            return renderPivotCombo(id, paramKey, paramValue, paramUI, previousPivots, handlers);
         case 'combo':
-            return renderComboCell(id, investigationId, paramKey, paramValue, paramUI, handlers);
+            return renderComboCell(id, paramKey, paramValue, paramUI, handlers);
         case 'multi':
-            return renderMultiCell(id, investigationId, paramKey, paramValue, paramUI, handlers);
+            return renderMultiCell(id, paramKey, paramValue, paramUI, handlers);
         case 'daterange':
-            return renderDateRange(id, investigationId, paramKey, paramValue, paramUI, handlers);
+            return renderDateRange(id, paramKey, paramValue, paramUI, handlers);
         default:
             throw new Error('Unknown pivot cell type:' + paramUI.inputType);
     }
@@ -345,7 +343,7 @@ function renderPivotRow({
             <td key={`pcell-${id}-pivotselector`} className={styles.pivotData0 + ' pivotTypeSelector'}>
                 {
                     pivotTemplate && templates &&
-                    renderTemplateSelector(id, investigationId, pivotTemplate, templates, setPivotAttributes)
+                    renderTemplateSelector(id, pivotTemplate, templates, setPivotAttributes)
                 }
             </td>
 
@@ -354,7 +352,7 @@ function renderPivotRow({
                 pivotTemplate && pivotTemplate.pivotParameterKeys && pivotTemplate.pivotParametersUI &&
                 pivotTemplate.pivotParameterKeys.map(key =>
                         renderPivotCell(
-                            id, investigationId, key, pivotParameters[key], pivotTemplate.pivotParametersUI[key],
+                            id, key, pivotParameters[key], pivotTemplate.pivotParametersUI[key],
                             previousPivots, handlers
                         )
                     )
