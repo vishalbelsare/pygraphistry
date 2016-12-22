@@ -34,7 +34,7 @@ let Labels = ({ simulating,
     color = new Color(color).rgbaString();
     background = new Color(background).rgbaString();
 
-    if (enabled && poiEnabled && point && point.length) {
+    if (poiEnabled && point && point.length) {
         labels = point.slice(0);
     }
     if (selection && highlight && (

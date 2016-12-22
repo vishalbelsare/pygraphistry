@@ -35,7 +35,7 @@ export function pickPointsOfInterest(action$) {
                 ...props, hitMapUpdateTime, canResample: !animating
             })
         )
-        .filter(({ enabled, poiEnabled }) => enabled && poiEnabled)
+        .filter(({ poiEnabled }) => poiEnabled)
         .distinctUntilChanged((prev, { zoom, vboUpdate, canResample, hitMapUpdateTime }) => (
             zoom === prev.zoom && (
             hitMapUpdateTime === prev.hitMapUpdateTime) && (
