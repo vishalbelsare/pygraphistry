@@ -282,7 +282,7 @@ function resetEncodingOnNBody ({ view, encoding }) {
 
     const { encodingType } = encoding;
     if (encodingType.match(/Color$/) || encodingType.match(/Size$/)) {
-        return resetEncodingOnNBody({ view, encoding });
+        return resetEncodingOnNBody_transform({ view, encoding });
     }
 
     return Observable.of({...encoding, enabled: false});
