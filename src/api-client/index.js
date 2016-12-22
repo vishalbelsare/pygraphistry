@@ -146,6 +146,57 @@ class Graphistry extends Observable {
             .toPromise());
     }
 
+//=========
+
+
+     /**
+     * Change icons based on an attribute
+     * @method Graphistry.encodeIcons
+     * @param {GraphType} [graphType] - 'point' or 'edge'
+     * @param {Attribute} [attribute] - name of data column, e.g., 'icon'
+     * @return {Promise} The result of the callback
+     * @example
+     *  GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         return g.encodeIcons('point', 'icon')
+     *     })
+     */
+    static encodeIcons(graphType, attribute) {
+        const { view } = this;
+        return new this(view.set(
+            $value(`histograms.encodings.${graphType}.icon`,
+                {   reset: false, name: 'user_' + Math.random(),
+                    encodingType: 'icon', graphType, attribute }))
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+    }
+
+     /**
+     * Reset icons to value at page load
+     * @method Graphistry.resetIcons
+     * @param {GraphType} [graphType] - 'point' or 'edge'
+     * @return {Promise} The result of the callback
+     * @example
+     *  GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         return g.encodeIcons('point', 'icon')
+     *         return g.resetIcons('point')
+     *     })
+     */
+    static resetIcons(graphType) {
+        const { view } = this;
+        return new this(view.set(
+            $value(`histograms.encodings.${graphType}.icon`,
+                {   reset: true, encodingType: 'icon' }))
+            .map(({ json }) => json.toJSON())
+            .toPromise());
+    }
+
+//=========
+
+
 
     /**
      * Change size based on an attribute

@@ -2,7 +2,7 @@
 
 const moment  = require('moment-timezone');
 const sprintf = require('sprintf-js').sprintf;
-const d3      = require('d3');
+const d3Color      = require('d3-color');
 
 // TODO: Wrap this up into a formatter object instead of a global here.
 // Initialize with moment's best guess at timezone.
@@ -119,7 +119,7 @@ function d3ColorFromRGBA (x) {
     const r = (x >> 16) & 255,
         g = (x >> 8) & 255,
         b = x & 255;
-    return d3.rgb(r, g, b);
+    return d3Color.rgb(r, g, b);
 }
 
 function formatColor (value) {
