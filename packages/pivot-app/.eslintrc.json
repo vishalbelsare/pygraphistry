@@ -33,12 +33,19 @@
             "args": "after-used",
             "varsIgnorePattern": "^log$"
         }],
-        "no-shadow": ["off", { "builtinGlobals": false, "hoist": "all", "allow": [] }],
         "no-shadow-restricted-names": "error",
-        "no-use-before-define": ["error", { "functions": false, "classes": true }],
+        "no-use-before-define": ["error", { "functions": false, "classes": false }],
         "no-var": "error",
         "no-template-curly-in-string": "error",
         "react/jsx-no-duplicate-props": ["error", { "ignoreCase": true }],
+        "no-label-var": "error",
+        "no-global-assign": "error",
+        "no-implied-eval": "error",
+
+        "curly": ["warn", "all"],
+        "dot-location": ["warn", "property"],
+        "no-loop-func": "warn",
+
         "react/prop-types": "off",
         "no-console": "off"
     }

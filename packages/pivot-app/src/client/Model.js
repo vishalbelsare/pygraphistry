@@ -27,7 +27,7 @@ export class Model extends FalcorModel {
         return super.invalidate.apply(this, fromPathsOrPathValues(invalidateArgs));
     }
     getItems(thisPathsSelector = () => [['length']],
-             restPathsSelector = ({ json: { length }}) => []) {
+             restPathsSelector = () => []) {
 
         const thisPaths = fromPathsOrPathValues(
             [].concat(thisPathsSelector(this))
