@@ -97,16 +97,28 @@ function init(testUser) {
     const modules = reloadHot(module);
     const getDataSource = getDataSourceFactory(routeServices);
 
-    expressApp.post('/error', bodyParser.json({limit: '512kb'}), function (req, res) {
+    setupRoutes(modules, getDataSource);
+}
+
+function setupRoutes(modules, getDataSource) {
+    function logClientErrors(req, res) {
         const record = req.body;
         log[bunyan.nameFromLevel[record.level]](record, record.msg);
         res.status(204).send();
-    });
+    }
+
+    expressApp.post(
+        '/error',
+        bodyParser.json({limit: '512kb'}),
+        logClientErrors
+    );
+
     expressApp.use(
         '/model.json',
         bodyParser.urlencoded({ extended: false }),
         falcorMiddleware(getDataSource)
     );
-    expressApp.use('/index.html', renderMiddleware(getDataSource, modules));
+
+    expressApp.use('/index.html', (req, res) => res.redirect('/'));
     expressApp.use('/', renderMiddleware(getDataSource, modules));
 }
