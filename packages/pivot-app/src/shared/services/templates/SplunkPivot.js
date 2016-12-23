@@ -5,7 +5,7 @@ import { PivotTemplate } from './template.js';
 import { splunkConnector0 } from '../connectors';
 import { shapeSplunkResults } from '../shapeSplunkResults.js';
 import logger from '../../../shared/logger.js';
-const log = logger.createLogger('SplunkPivot', __filename);
+const log = logger.createLogger(__filename);
 
 
 export class SplunkPivot extends PivotTemplate {
