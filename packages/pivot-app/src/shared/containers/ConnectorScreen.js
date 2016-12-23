@@ -11,7 +11,6 @@ import {
     Grid,
     Row,
     Col,
-    Image,
     Media,
     OverlayTrigger,
     Tooltip
@@ -32,13 +31,6 @@ function welcomeBar(user, connectors) {
         <Grid><Row className={styles['welcome-bar']}>
             <Col md={6}>
                 <Panel>
-                    <Media.Left align="middle">
-                        <Image width={84}
-                            height={84}
-                            src="/custom/img/abstract-user-flat-3.svg"
-                            className={styles['user-icon']}
-                            circle/>
-                    </Media.Left>
                     <Media.Body>
                         <Media.Heading className={styles['user-greeting-heading']}>
                             Connectors!
