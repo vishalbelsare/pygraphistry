@@ -14,18 +14,20 @@ export function authenticateMiddleware() {
     } else {
         passport.use(new BasicStrategy(
             function(username, password, cb) {
-                if(username !== globalUsername) { return cb(null, false); }
+                if(username !== globalUsername) {
+                    return cb(null, false);
+                }
 
-                compare(password, conf.get('auth.password'))
-                .then(
-                    function(passwordValid) {
-                        if(!passwordValid) { return cb(null, false); }
-                        return cb(null, {username: globalUsername});
-                    },
-                    function(err) {
-                        cb(err);
-                    }
-                );
+                return compare(password, conf.get('auth.password'))
+                    .then(
+                        function(passwordValid) {
+                            if(!passwordValid) { return cb(null, false); }
+                            return cb(null, {username: globalUsername});
+                        },
+                        function(err) {
+                            return cb(err);
+                        }
+                    );
             })
         );
 
