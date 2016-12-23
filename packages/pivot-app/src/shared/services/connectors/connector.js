@@ -13,10 +13,10 @@ export class Connector {
     }
 
     search() {
-        return Observable.throw(new Error('Not implemented'));
+        return Observable.throw(new Error(`Search not implemented for connector: ${this.name}`));
     }
 
     healthCheck() {
-        return Observable.throw(new Error('Not implemented'));
+        return Observable.throw(new Error(`Health check not implemented for connector: ${this.name}`));
     }
 }

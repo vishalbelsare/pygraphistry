@@ -36,7 +36,6 @@ export const dismissAlert = () => {
 }
 
 export function togglePivots({ indices, enabled, investigationId }) {
-    console.log('Toggle pivots called!', investigationId);
     return ({
         investigationId,
         type: TOGGLE_PIVOTS,

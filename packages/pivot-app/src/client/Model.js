@@ -36,10 +36,11 @@ export class Model extends FalcorModel {
         return new ObservableModelResponse(super.set.apply(
             this, fromPathsOrPathValues(setArgs)));
     }
-    call(fnPath, fnArgs, refPaths, thisPaths) {
-        fnPath = fromPath(fnPath);
-        refPaths = refPaths && fromPathsOrPathValues(refPaths) || [];
-        thisPaths = thisPaths && fromPathsOrPathValues(thisPaths) || [];
+    call(_fnPath, _fnArgs, _refPaths, _thisPaths) {
+        const fnPath = fromPath(_fnPath);
+        const fnArgs = _fnArgs;
+        const refPaths = _refPaths && fromPathsOrPathValues(_refPaths) || [];
+        const thisPaths = _thisPaths && fromPathsOrPathValues(_thisPaths) || [];
         return new ObservableModelResponse(super.call.call(this,
             fnPath, fnArgs, refPaths, thisPaths
         ));
@@ -48,9 +49,7 @@ export class Model extends FalcorModel {
         return super.invalidate.apply(this, fromPathsOrPathValues(invalidateArgs));
     }
     getItems(thisPathsSelector = () => [['length']],
-            // RestPathsSelector interface
-            // eslint-disable-next-line no-unused-vars
-            restPathsSelector = ({ json: { length }}) => []) {
+             restPathsSelector = () => []) {
 
         const thisPaths = fromPathsOrPathValues(
             [].concat(thisPathsSelector(this))

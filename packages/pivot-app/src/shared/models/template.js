@@ -1,10 +1,10 @@
 import _ from 'underscore';
 import logger from '../logger.js';
-import { atomify }  from './support';
+import { atomify } from './support';
 
 const log = logger.createLogger(__filename);
 
-const defaults  = {
+const defaults = {
     name: 'Untitled pivot',
     tags: [],
     pivotParameterKeys: [],

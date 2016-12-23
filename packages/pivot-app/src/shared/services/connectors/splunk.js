@@ -154,10 +154,10 @@ class SplunkConnector extends Connector {
                 this.retrieveJobResults(job, searchInfo)
             )
             .map(({results, job, props}) => {
-                const columns = {};
-                results.fields.map((field, i) => {
-                    columns[field] = results.columns[i];
-                });
+                const columns = results.fields.reduce((result, field, index) => {
+                    result[field] = results.columns[index];
+                    return result;
+                }, {});
                 const df = new DataFrame(columns, results.fields);
 
                 return {
