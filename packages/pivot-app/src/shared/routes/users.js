@@ -96,11 +96,14 @@ function removeInvestigationsCallRoute({ removeInvestigationsById, loadUsersById
 }
 
 
-function createInvestigationCallRoute({ createInvestigation, loadUsersById }) {
+function createInvestigationCallRoute({ createInvestigation, loadUsersById,
+                                        loadInvestigationsById, unloadInvestigationsById,
+                                        unloadPivotsById }) {
     return function(path) {
         const userIds = path[1];
 
-        return createInvestigation({ loadUsersById, userIds })
+        return createInvestigation({ loadUsersById, loadInvestigationsById,
+                                     unloadInvestigationsById, unloadPivotsById, userIds })
             .mergeMap(({ user, numInvestigations }) => {
                 return [
                     $pathValue(`['usersById'][${user.id}]['investigations'].length`, numInvestigations),
