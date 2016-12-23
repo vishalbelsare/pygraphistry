@@ -2,18 +2,27 @@ import passport from 'passport';
 import { BasicStrategy } from 'passport-http';
 import { compare } from 'bcrypt';
 import conf from '../config.js';
+import logger from '../../shared/logger.js';
+const log = logger.createLogger(__filename);
 
-const globalUsername = 'admin';
 
 export function authenticateMiddleware() {
+    const globalUsername = 'admin';
+
     if(conf.get('auth.password') === undefined || conf.get('auth.password') === '') {
+        log.info('Authentication is disabled');
+
         return function noopMiddleware(req, res, next) {
-            req.user = { username: 'guest' };
+            req.user = { username: globalUsername };
             return next();
         }
     } else {
+        log.info('Authentication is enabled');
+
         passport.use(new BasicStrategy(
             function(username, password, cb) {
+                log.info(`Authenticating user ${username}`);
+
                 if(username !== globalUsername) {
                     return cb(null, false);
                 }
