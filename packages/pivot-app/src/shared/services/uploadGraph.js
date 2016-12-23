@@ -29,10 +29,10 @@ function upload(etlService, apiKey, data) {
 }
 
 //jsonGraph * (err? -> ())? -> ()
-function upload0(etlService, apiKey, data, cb) {
+function upload0(etlService, apiKey, data, _cb) {
     // When called with Observable.bindNodeCallback, cb will be defined and the following
     // default function will not be used.
-    cb = cb || function (err, res) {
+    const cb = _cb || function (err, res) {
         if (err) {
             return new VError(err, 'ETL upload error');
         } else {
@@ -130,7 +130,7 @@ function createGraph(pivots) {
 function makeEventTable({pivots}) {
     function fieldSummary(mergedData, field) {
 
-        const distinct =  mergedData.distinct(field).toArray();
+        const distinct = mergedData.distinct(field).toArray();
 
         const res = {
             numDistinct: distinct.length
@@ -160,9 +160,10 @@ function makeEventTable({pivots}) {
     }, zeroDf);
 
     const fieldSummaries = {};
-    fields.forEach(field =>
+
+    fields.forEach(field => {
         fieldSummaries[field] = fieldSummary(mergedData, field)
-    );
+    });
 
     const table = mergedData.groupBy('EventID')
         .aggregate((group) => group.toCollection()[0])

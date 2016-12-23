@@ -107,7 +107,7 @@ export const PAN_EXPAND = new SplunkPivot({
         const sourceAttribute = pivotParameters.sourceAttribute;
         const filter = pivotParameters.query;
         const sourcePivots = pivotParameters.source.value;
-        const list  = sourcePivots.map(
+        const list = sourcePivots.map(
             (pivotId) =>
                 (`[| loadjob "${pivotCache[pivotId].splunkSearchId}"
                    | fields ${sourceAttribute} | dedup ${sourceAttribute}]`)

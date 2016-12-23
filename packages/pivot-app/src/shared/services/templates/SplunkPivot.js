@@ -48,6 +48,8 @@ export class SplunkPivot extends PivotTemplate {
         }
     }
 
+    // TODO Handle undefined day ranges properly
+    // eslint-disable-next-line consistent-return
     dayRangeToSplunkParams({ startDate, endDate }) {
         if (startDate && endDate) {
             const startDay = moment(startDate).startOf('day');
@@ -82,13 +84,15 @@ export class SplunkPivot extends PivotTemplate {
     }
 }
 
+// TODO Handle lookups properly
+// eslint-disable-next-line consistent-return
 function buildLookup(text, pivotCache) {
 
     //Special casing of [search] -[field]-> [source]
     //   search can be "{{pivot###}}""
     //   field can be  "field1, field2,field3, ..."
     //   source is any search
-    const hit = text.match(/\[{{(.*)}}\] *-\[(.*)\]-> *\[(.*)\]/);
+    const hit = text.match(/\[{{(.*)}}] *-\[(.*)]-> *\[(.*)]/);
     if (hit) {
         const search = hit[1];
         const fields = hit[2].split(',')

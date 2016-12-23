@@ -22,7 +22,7 @@ app.use((req, res, next) => {
 */
 
 app.listen(conf.get('port'), conf.get('host'), function () {
-    log.info(`Express app listening at http://${this.address().address}:${this.address().port}`);
+    log.info(`Express app listening at http://${conf.get('host')}:${conf.get('port')}`);
     log.info({
         NODE_ENV: conf.get('env'),
         'process.pid:': process.pid,

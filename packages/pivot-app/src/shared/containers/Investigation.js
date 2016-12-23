@@ -34,7 +34,7 @@ function pivotTable({ id, status, pivots, templates, insertPivot, splicePivot, s
             <thead>
                 <tr>
                     <th className={styles.pivotToggle}>
-                        <OverlayTrigger  placement="top" overlay={
+                        <OverlayTrigger placement="top" overlay={
                             <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
                         }>
                             <Button bsStyle={bStyle}

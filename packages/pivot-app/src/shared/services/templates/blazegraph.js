@@ -34,7 +34,7 @@ class BlazePivot extends PivotTemplate {
             )
             .catch((e) => {
                 console.error(e);
-                return Observable.throw('Failed to download dataset ' +  e )
+                return Observable.throw('Failed to download dataset ' + e)
             })
     }
 }

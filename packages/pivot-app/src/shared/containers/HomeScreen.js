@@ -264,7 +264,7 @@ function renderHomeScreen(
                     {
                         welcomeBar(user, investigations, numTemplates)
                     }
-                    <Panel header="Open Investigations" className={styles['panel']}>
+                    <Panel header="Open Investigations" className={styles.panel}>
                         <div className={styles['investigations-buttons']}>
                             <OverlayTrigger placement="top"
                                             overlay={

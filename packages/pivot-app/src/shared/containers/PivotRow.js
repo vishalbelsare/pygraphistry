@@ -95,7 +95,7 @@ function renderEntitySummaries (id, resultSummary) {
         {
             _.sortBy(resultSummary.entities, (summary) => summary.name)
              .map(({name, count, color}, index)=>(
-                <OverlayTrigger  placement="top" overlay={
+                <OverlayTrigger placement="top" overlay={
                     <Tooltip id={`tooltipEntity_${id}_${index}`}>{name}</Tooltip>
                 } key={`${index}: entitySummary_${id}`}>
                 <span className={styles.pivotEntitySummary}>
@@ -349,7 +349,7 @@ function renderPivotRow({
                 }
             </td>
 
-            <td key={`pcell-${id}-pivotparam`} className={styles['pivotData1']}>
+            <td key={`pcell-${id}-pivotparam`} className={styles.pivotData1}>
             {
                 pivotTemplate && pivotTemplate.pivotParameterKeys && pivotTemplate.pivotParametersUI &&
                 pivotTemplate.pivotParameterKeys.map(key =>
@@ -361,7 +361,7 @@ function renderPivotRow({
             }
             </td>
             <td className={styles.pivotResultCount}>
-                <OverlayTrigger  placement="top" overlay={
+                <OverlayTrigger placement="top" overlay={
                     <Tooltip id={`resultCountTip_${id}_${rowIndex}`}>Events</Tooltip>
                 } key={`${rowIndex}: entitySummary_${id}`}>
                     <Badge> {resultCount} </Badge>

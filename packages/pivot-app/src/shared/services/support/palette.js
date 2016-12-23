@@ -3,7 +3,7 @@
 // Provides palettes
 // Adds a final 'repeating' PairedRepeat singleton palette
 
-const _      = require('underscore');
+const _ = require('underscore');
 const brewer = require('colorbrewer');
 const sprintf = require('sprintf-js').sprintf;
 

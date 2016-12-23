@@ -1,4 +1,4 @@
-import _  from 'underscore';
+import _ from 'underscore';
 import bunyan from 'bunyan';
 
 
@@ -32,10 +32,10 @@ class BrowserConsoleStream {
 
         if (_.isEmpty(prunedRec)) {
             console[method](rec.msg);
-        } else if ('err' in prunedRec){
+        } else if ('err' in prunedRec) {
             const e = new Error(rec.err.message)
             e.stack = rec.err.stack;
-            rec.msg == rec.err.message ? console[method](e) : console[method](rec.msg, e);
+            rec.msg === rec.err.message ? console[method](e) : console[method](rec.msg, e);
         } else {
             console[method](rec.msg, prunedRec);
         }
@@ -43,9 +43,8 @@ class BrowserConsoleStream {
 }
 
 class BrowserForwarderStream{
-    constructor() {}
 
-    write(rec) {
+    static write(rec) {
         const ajax = new XMLHttpRequest();
         ajax.open('POST', '/error', true);
         ajax.setRequestHeader('Content-type', 'application/json');

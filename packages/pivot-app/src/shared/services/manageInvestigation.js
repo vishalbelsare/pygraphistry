@@ -142,7 +142,7 @@ export function removeInvestigationsById({loadUsersById, unlinkInvestigationsByI
 
             const activeInvestigationId = getActiveInvestigationId(user);
             if (investigationIds.includes(activeInvestigationId)) {
-                user.activeInvestigation  = newInvestigations.length > 0 ?
+                user.activeInvestigation = newInvestigations.length > 0 ?
                                             user.investigations[0] :
                                             undefined;
             }
@@ -155,7 +155,7 @@ export function removeInvestigationsById({loadUsersById, unlinkInvestigationsByI
                         return unlinkPivotsById({pivotIds})
                             .toArray();
                     },
-                    ({app,  investigation}) => ({
+                    ({app, investigation}) => ({
                         app,
                         user,
                         investigation,

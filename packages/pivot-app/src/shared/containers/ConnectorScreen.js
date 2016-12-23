@@ -140,7 +140,7 @@ function renderConnectorScreen({ user, connectors, switchScreen, checkStatus }) 
                     {
                         welcomeBar(user, connectors)
                     }
-                    <Panel header="Available Connectors" className={styles['panel']}>
+                    <Panel header="Available Connectors" className={styles.panel}>
                         <div className={styles['investigations-buttons']}>
                             <OverlayTrigger placement="top"
                                             overlay={
