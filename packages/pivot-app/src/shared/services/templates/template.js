@@ -1,18 +1,9 @@
 export class PivotTemplate {
-    constructor({ id, name, tags, pivotParameterKeys, pivotParametersUI, parameters }) {
+    constructor({ id, name, tags, parameters }) {
         this.id = id;
         this.name = name;
         this.tags = tags;
-        if (parameters) {
-            this.pivotParametersUI = this.addTemplateNamespace(id, parameters);
-        } else {
-            this.pivotParametersUI = Object.entries(pivotParametersUI)
-            .map(([parameter, values]) => ({ id: `${id}$$$${parameter}`, ...values }))
-            .reduce((result, parameter) => {
-                result[parameter.id] = parameter;
-                return result
-            },{});
-        }
+        this.pivotParametersUI = this.addTemplateNamespace(id, parameters);
         this.pivotParameterKeys = Object.keys(this.pivotParametersUI)
     }
 

@@ -39,7 +39,7 @@ export const searchSplunk = new SplunkPivot({
     ],
     toSplunk: function (args) {
         this.connections = args.fields.value;
-        const query = `search ${args['query']} ${this.constructFieldString()} | head 1000`;
+        const query = `search ${args.query} ${this.constructFieldString()} | head 1000`;
 
         return { searchQuery: query };
     },
@@ -112,7 +112,7 @@ export const searchGraphviz = new SplunkPivot({
     tags: ['Graphviz'],
     parameters: [
         {
-            name: 'query2',
+            name: 'query',
             inputType: 'text',
             label: 'Query:',
             placeholder: 'twitter'
@@ -134,12 +134,8 @@ export const searchGraphviz = new SplunkPivot({
         }
     ],
     toSplunk: function (args) {
-        const q = args.query2;
+        const q = args.query;
         const l = args.level;
-    },
-    toSplunk: function (pivotParameters) {
-        const q = pivotParameters.query2;
-        const l = pivotParameters.level;
         const query = `search (host=staging* OR host=labs*) source="/var/log/graphistry-json/*.log" ${q} level >= ${l}
             | spath output=File0 path="err.stackArray{0}.file"
             | spath output=File1 path="err.stackArray{1}.file"
