@@ -18,7 +18,7 @@ function setPivotAttributes(action$) {
 
             return Observable.from(
                 topLevelModel.set(
-                    $pathValue(['currentInvestigation', 'status'], { msgStyle: 'warning', ok: true })
+                    $pathValue(['activeInvestigation', 'status'], { msgStyle: 'warning', ok: true })
                 )
             ).concat(
                 Observable.from(
