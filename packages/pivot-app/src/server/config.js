@@ -24,10 +24,19 @@ const conf = convict({
         arg: 'port',
         env: 'PORT'
     },
+    auth: {
+        password: {
+            doc: 'bcrypt hashed password needed to access this app over the web',
+            format: String,
+            default: undefined,
+            arg: 'password',
+            env: 'PASSWORD'
+        }
+    },
     pivotApp: {
         dataDir: {
             doc: 'Directory to store investigation files',
-            form: String,
+            format: String,
             default: 'data',
             arg: 'pivot-data-dir'
         }
