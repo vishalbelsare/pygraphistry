@@ -144,10 +144,12 @@ function saveCallRoute({ loadInvestigationsById, saveInvestigationsById, persist
     }
 }
 
-function cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, cloneInvestigationsById }) {
+function cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById,
+                          unloadInvestigationsById, unloadPivotsById, cloneInvestigationsById }) {
     return function(path) {
         const investigationIds = path[1];
         return cloneInvestigationsById({loadInvestigationsById, loadPivotsById,
+                                        unloadInvestigationsById, unloadPivotsById,
                                         loadUsersById, investigationIds})
             .mergeMap(({ user, numInvestigations }) => {
                 return [
