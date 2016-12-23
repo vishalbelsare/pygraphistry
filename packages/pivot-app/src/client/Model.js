@@ -2,6 +2,27 @@ import { Observable } from 'rxjs/Observable';
 import { Model as FalcorModel } from '@graphistry/falcor';
 import { fromPath, fromPathsOrPathValues } from '@graphistry/falcor-path-syntax';
 
+class ObservableModelResponse extends Observable {
+    constructor(source, operator) {
+        if (typeof source !== 'function') {
+            super();
+            source && (this.source = source);
+            operator && (this.operator = operator);
+        } else {
+            super(source);
+        }
+    }
+    lift(operator) {
+        return new ObservableModelResponse(this, operator);
+    }
+    _toJSONG() {
+        return new ObservableModelResponse(this.source._toJSONG());
+    }
+    progressively() {
+        return new ObservableModelResponse(this.source.progressively());
+    }
+}
+
 export class Model extends FalcorModel {
     /* implement inspect method for node's inspect utility */
     inspect() {
@@ -27,7 +48,9 @@ export class Model extends FalcorModel {
         return super.invalidate.apply(this, fromPathsOrPathValues(invalidateArgs));
     }
     getItems(thisPathsSelector = () => [['length']],
-             restPathsSelector = ({ json: { length }}) => []) {
+            // RestPathsSelector interface
+            // eslint-disable-next-line no-unused-vars
+            restPathsSelector = ({ json: { length }}) => []) {
 
         const thisPaths = fromPathsOrPathValues(
             [].concat(thisPathsSelector(this))
@@ -60,26 +83,5 @@ export class Model extends FalcorModel {
     }
     _clone(opts) {
         return new Model(super._clone(opts));
-    }
-}
-
-class ObservableModelResponse extends Observable {
-    constructor(source, operator) {
-        if (typeof source !== 'function') {
-            super();
-            source && (this.source = source);
-            operator && (this.operator = operator);
-        } else {
-            super(source);
-        }
-    }
-    lift(operator) {
-        return new ObservableModelResponse(this, operator);
-    }
-    _toJSONG() {
-        return new ObservableModelResponse(this.source._toJSONG());
-    }
-    progressively() {
-        return new ObservableModelResponse(this.source.progressively());
     }
 }
