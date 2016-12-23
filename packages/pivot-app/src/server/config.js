@@ -129,10 +129,10 @@ if (process.env.CONFIG_FILES) {
     configFiles = glob.sync(defaultConfigPath);
 }
 
+// eslint-disable-next-line no-console
 console.log(`Loading configuration from ${configFiles.join(", ")}`);
-conf.loadFile(configFiles);
 
-// Perform validation
+conf.loadFile(configFiles);
 conf.validate({strict: true});
 
 module.exports = conf;

@@ -1,7 +1,7 @@
 import _ from 'underscore';
-import { atomify }  from './support';
+import { atomify } from './support';
 
-const defaults  = {
+const defaults = {
     name: 'Untitled pivot',
     tags: [],
     pivotParameterKeys: [],

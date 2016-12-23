@@ -10,7 +10,7 @@ const log = logger.createLogger(__filename);
 import webpackAssets from '../webpack-assets.json';
 let faviconStats = { html:[] };
 try {
-    faviconStats =  require('./favicon-assets.json');
+    faviconStats = require('./favicon-assets.json');
 }
 catch (e) {
     log.debug('Skipping favicons');

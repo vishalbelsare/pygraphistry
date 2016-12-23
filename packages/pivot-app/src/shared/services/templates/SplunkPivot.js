@@ -5,7 +5,7 @@ import { PivotTemplate } from './template.js';
 import { splunkConnector0 } from '../connectors';
 import { shapeSplunkResults } from '../shapeSplunkResults.js';
 import logger from '../../../shared/logger.js';
-const log = logger.createLogger('SplunkPivot', __filename);
+const log = logger.createLogger(__filename);
 
 
 export class SplunkPivot extends PivotTemplate {
@@ -58,7 +58,8 @@ export class SplunkPivot extends PivotTemplate {
                 'latest_time': endDay.unix(),
             };
         } else {
-            log.debug('Got undefined day range, cannot convert to Splunk params');
+            log.warn('Got undefined day range, cannot convert to Splunk params');
+            return undefined;
         }
     }
 
@@ -88,7 +89,7 @@ function buildLookup(text, pivotCache) {
     //   search can be "{{pivot###}}""
     //   field can be  "field1, field2,field3, ..."
     //   source is any search
-    const hit = text.match(/\[{{(.*)}}\] *-\[(.*)\]-> *\[(.*)\]/);
+    const hit = text.match(/\[{{(.*)}}] *-\[(.*)]-> *\[(.*)]/);
     if (hit) {
         const search = hit[1];
         const fields = hit[2].split(',')
@@ -107,5 +108,7 @@ function buildLookup(text, pivotCache) {
             match = match + (match ? ' OR ' : '') + fieldMatch;
         }
         return `${ source } ${ match } | head 10000 `;
+    } else {
+        return undefined;
     }
 }

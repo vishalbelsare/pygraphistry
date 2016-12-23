@@ -98,7 +98,7 @@ class TagCell extends React.Component {
     }
 
     handleDelete(i) {
-        let { tags } = this.state;
+        const { tags } = this.state;
         tags.splice(i, 1);
 
         this.setState({tags: tags});
@@ -106,7 +106,7 @@ class TagCell extends React.Component {
     }
 
     handleAddition(tag) {
-        let { tags } = this.state;
+        const { tags } = this.state;
 
         tags.push({
             id: tags.length + 1,
@@ -118,7 +118,7 @@ class TagCell extends React.Component {
     }
 
     handleDrag(tag, currPos, newPos) {
-        let tags = this.state.tags;
+        const tags = this.state.tags;
 
         tags.splice(currPos, 1);
         tags.splice(newPos, 0, tag);
@@ -133,7 +133,7 @@ class TagCell extends React.Component {
     }
 
     render() {
-        let tags = this.state.tags;
+        const tags = this.state.tags;
         return (
             <div>
                 <ReactTags tags={tags}
@@ -264,7 +264,7 @@ function renderHomeScreen(
                     {
                         welcomeBar(user, investigations, numTemplates)
                     }
-                    <Panel header="Open Investigations" className={styles['panel']}>
+                    <Panel header="Open Investigations" className={styles.panel}>
                         <div className={styles['investigations-buttons']}>
                             <OverlayTrigger placement="top"
                                             overlay={
