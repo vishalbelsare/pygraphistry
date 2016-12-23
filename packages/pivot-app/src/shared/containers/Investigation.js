@@ -27,14 +27,14 @@ import {
 
 function pivotTable({ id, status, pivots, templates, insertPivot, splicePivot, searchPivot,
     graphInvestigation, togglePivots }) {
-    console.log('Status', status);
+
     const bStyle = (status && status.msgStyle) ? status.msgStyle : 'default';
     return (
         <Table>
             <thead>
                 <tr>
                     <th className={styles.pivotToggle}>
-                        <OverlayTrigger  placement="top" overlay={
+                        <OverlayTrigger placement="top" overlay={
                             <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
                         }>
                             <Button bsStyle={bStyle}

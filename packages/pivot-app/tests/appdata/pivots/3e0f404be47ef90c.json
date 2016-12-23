@@ -7,7 +7,16 @@
             "3e0eabc5a48bbbbc"
         ],
         "sourceAttribute": "user",
-        "nodes": "threat_name, user"
+        "nodes": "threat_name, user",
+        "pan-expand$$$source": [
+            "3e0eabc5a48bbbbc"
+        ],
+        "pan-expand$$$sourceAttribute": "user",
+        "pan-expand$$$query": "(severity=\"critical\" OR severity=\"medium\" OR severity=\"low\")",
+        "pan-expand$$$nodes": [
+            "user",
+            "threat_name"
+        ]
     },
     "pivotTemplate": "pan-expand"
 }

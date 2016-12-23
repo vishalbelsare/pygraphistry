@@ -44,7 +44,6 @@ class DateRangePickerWrapper extends React.Component {
 
     onDatesChange({ startDate, endDate }) {
         this.setState({ startDate, endDate });
-        console.log({ startDate, endDate });
 
         const { setPivotAttributes, paramKey } = this.props;
 

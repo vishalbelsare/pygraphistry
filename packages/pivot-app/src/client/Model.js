@@ -2,6 +2,27 @@ import { Observable } from 'rxjs/Observable';
 import { Model as FalcorModel } from '@graphistry/falcor';
 import { fromPath, fromPathsOrPathValues } from '@graphistry/falcor-path-syntax';
 
+class ObservableModelResponse extends Observable {
+    constructor(source, operator) {
+        if (typeof source !== 'function') {
+            super();
+            source && (this.source = source);
+            operator && (this.operator = operator);
+        } else {
+            super(source);
+        }
+    }
+    lift(operator) {
+        return new ObservableModelResponse(this, operator);
+    }
+    _toJSONG() {
+        return new ObservableModelResponse(this.source._toJSONG());
+    }
+    progressively() {
+        return new ObservableModelResponse(this.source.progressively());
+    }
+}
+
 export class Model extends FalcorModel {
     /* implement inspect method for node's inspect utility */
     inspect() {
@@ -15,10 +36,11 @@ export class Model extends FalcorModel {
         return new ObservableModelResponse(super.set.apply(
             this, fromPathsOrPathValues(setArgs)));
     }
-    call(fnPath, fnArgs, refPaths, thisPaths) {
-        fnPath = fromPath(fnPath);
-        refPaths = refPaths && fromPathsOrPathValues(refPaths) || [];
-        thisPaths = thisPaths && fromPathsOrPathValues(thisPaths) || [];
+    call(_fnPath, _fnArgs, _refPaths, _thisPaths) {
+        const fnPath = fromPath(_fnPath);
+        const fnArgs = _fnArgs;
+        const refPaths = _refPaths && fromPathsOrPathValues(_refPaths) || [];
+        const thisPaths = _thisPaths && fromPathsOrPathValues(_thisPaths) || [];
         return new ObservableModelResponse(super.call.call(this,
             fnPath, fnArgs, refPaths, thisPaths
         ));
@@ -27,7 +49,7 @@ export class Model extends FalcorModel {
         return super.invalidate.apply(this, fromPathsOrPathValues(invalidateArgs));
     }
     getItems(thisPathsSelector = () => [['length']],
-             restPathsSelector = ({ json: { length }}) => []) {
+             restPathsSelector = () => []) {
 
         const thisPaths = fromPathsOrPathValues(
             [].concat(thisPathsSelector(this))
@@ -60,26 +82,5 @@ export class Model extends FalcorModel {
     }
     _clone(opts) {
         return new Model(super._clone(opts));
-    }
-}
-
-class ObservableModelResponse extends Observable {
-    constructor(source, operator) {
-        if (typeof source !== 'function') {
-            super();
-            source && (this.source = source);
-            operator && (this.operator = operator);
-        } else {
-            super(source);
-        }
-    }
-    lift(operator) {
-        return new ObservableModelResponse(this, operator);
-    }
-    _toJSONG() {
-        return new ObservableModelResponse(this.source._toJSONG());
-    }
-    progressively() {
-        return new ObservableModelResponse(this.source.progressively());
     }
 }

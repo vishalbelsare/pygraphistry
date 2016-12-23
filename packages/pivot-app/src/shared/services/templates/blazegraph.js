@@ -33,8 +33,8 @@ class BlazePivot extends PivotTemplate {
                 }
             )
             .catch((e) => {
-                console.error(e);
-                return Observable.throw('Failed to download dataset ' +  e )
+                log.error(e, 'Failed to download dataset');
+                return Observable.throw('Failed to download dataset ' + e)
             })
     }
 }
@@ -44,14 +44,14 @@ export const COMMUNITY_DETECTION = new BlazePivot({
     name: 'Community Detection',
     tags: ['Blazegraph'],
     fileName: 'blazegraph.json',
-    pivotParameterKeys: ['communities'],
-    pivotParametersUI : {
-        'communities': {
+    parameters: [
+        {
+            name: 'communities',
             inputType: 'text',
             label: 'Number of communities',
             placeholder: '2'
         }
-    },
+    ],
     encodings: {
         point: {
             pointColor: (node) => {
@@ -66,14 +66,14 @@ export const BLAZE_EXPAND = new BlazePivot({
     name: 'BFS',
     tags: ['Blazegraph'],
     fileName: 'darpa-1998-json-expand-two-194.027.251.021',
-    pivotParameterKeys: ['ip', 'depth'],
-    pivotParametersUI : {
-        'ip': {
+    parameters: [
+        {
+            name: 'ip',
             inputType: 'text',
             label: 'Seed IP:',
             placeholder: '192.168.0.1'
-        },
-        'depth': {
+        }, {
+            name: 'depth',
             label: 'Maximum Depth',
             inputType: 'combo',
             options: [
@@ -88,9 +88,7 @@ export const BLAZE_EXPAND = new BlazePivot({
                 {value: 9, label: '9'},
             ]
         }
-
-
-    },
+    ],
     encodings: {
         point: {
             pointColor: (node) => {

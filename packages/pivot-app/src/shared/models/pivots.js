@@ -1,16 +1,30 @@
 import { simpleflake } from 'simpleflakes';
+import { listTemplates } from '../services/loadTemplates.js'
 import _ from 'underscore';
 import { ref as $ref } from '@graphistry/falcor-json-graph';
+import logger from '../logger.js';
 import { atomify, deatomify } from './support';
 
-function defaults() {
+const log = logger.createLogger(__filename);
+
+const templatesMap = listTemplates();
+
+function defaults(pivotTemplate = 'search-splunk-plain') {
+
+    const template = templatesMap[pivotTemplate];
+    const templateParameters = template.pivotParametersUI;
+    const pivotParameters = Object.entries(templateParameters)
+        .reduce((result, [key, value]) => {
+            result[key] = value.defaultValue;
+            return result
+        }, {});
+
+
     return {
         id: simpleflake().toJSON(),
         enabled: false,
-        pivotParameters: {
-            query: 'Enter search query',
-        },
-        pivotTemplate: 'search-splunk-plain'
+        pivotParameters,
+        pivotTemplate,
     };
 }
 

@@ -1,14 +1,14 @@
 #!/bin/bash -ex
 
-TAG=graphistry/pivot-app:build
+BUILD_TAG=graphistry/pivot-app:build
 MAJORMINOR=`jq -r .version package.json | cut -d '.' -f 1,2`
 VERSION=${MAJORMINOR}.${BUILD_NUMBER}
 ARTIFACTS="build node_modules tests"
 
 for ARG in "$@"; do
     case $ARG in
-    --tag=*)
-            TAG="${ARG#*=}"
+    --build-tag=*)
+            BUILD_TAG="${ARG#*=}"
             shift
             ;;
     *)
@@ -23,14 +23,14 @@ done
 # Extract artifacts from build container #
 ##########################################
 
-docker run --rm ${TAG} sh -c "tar --create ${ARTIFACTS}" > artifact.tar
+docker run --rm ${BUILD_TAG} sh -c "tar --create ${ARTIFACTS}" > artifact.tar
 
 
 ####################################
 # Create run CMD from package.json #
 ####################################
 
-RUNCMD=`docker run --rm graphistry/pivot-app:build sh -c "cat package.json" | jq -r .scripts.start`
+RUNCMD=`docker run --rm ${BUILD_TAG} sh -c "cat package.json" | jq -r .scripts.start`
 
 echo -e "\nCMD ${RUNCMD}" >> Dockerfile
 
@@ -49,3 +49,5 @@ docker push graphistry/pivot-app:${VERSION}
 docker push graphistry/pivot-app:latest
 
 echo "Docker image graphistry/pivot-app:${VERSION} successfully published."
+
+echo "${VERSION}" > RELEASE

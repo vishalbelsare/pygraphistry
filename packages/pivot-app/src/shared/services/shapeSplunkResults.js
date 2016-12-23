@@ -55,7 +55,8 @@ function encodeGraph({ app, pivot }) {
         labels.map(
             (node) => (
                 Object.keys(encodings.point).map(
-                    (key) => {
+                    // TODO make encodings functional
+                    (key) => { // eslint-disable-line array-callback-return
                         encodings.point[key](node);
                     }
                 )
@@ -67,7 +68,8 @@ function encodeGraph({ app, pivot }) {
         edges.map(
             (edge) => (
                 Object.keys(encodings.edge).map(
-                    (key) => {
+                    // TODO make encodings functional
+                    (key) => { // eslint-disable-line array-callback-return
                         encodings.edge[key](edge);
                     }
                 )
@@ -93,7 +95,7 @@ function shapeHyperGraph({ app, pivot } ) {
     const nodeLabels = [];
     for(let i = 0; i < events.length; i++) {
         const row = events[i];
-        const eventID = row['EventID'] || simpleflake().toJSON();
+        const eventID = row.EventID || simpleflake().toJSON();
 
         const fields =
             isStar ?

@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 
-TAG=graphistry/pivot-app:build
+BUILD_TAG=graphistry/pivot-app:build
 COMMIT_ID=`git rev-parse --short HEAD`
 REV_NAME=`git name-rev --name-only HEAD`
 TARGET= # Parsed from command line args
@@ -11,8 +11,8 @@ for ARG in "$@"; do
         TARGET="${ARG#*=}"
         shift
         ;;
-    --tag=*)
-            TAG="${ARG#*=}"
+    --build-tag=*)
+            BUILD_TAG="${ARG#*=}"
             shift
             ;;
     *)
@@ -37,7 +37,7 @@ docker build -f Dockerfile-build \
        --build-arg BUILD_NUMBER=${BUILD_NUMBER} \
        --build-arg COMMIT_ID=${COMMIT_ID} \
        --build-arg REV_NAME=${REV_NAME} \
-       -t ${TAG} \
+       -t ${BUILD_TAG} \
        .
 
-echo "Docker image ${TAG} successfully built."
+echo "Docker image ${BUILD_TAG} successfully built."

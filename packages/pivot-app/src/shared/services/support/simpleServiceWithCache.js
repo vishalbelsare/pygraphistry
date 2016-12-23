@@ -16,7 +16,8 @@ export default class SimpleServiceWithCache {
             const result$ = this.loadById(reqId, this.loadApp)
                 .multicast(new ReplaySubject(1))
                 .refCount();
-            return this.cache[reqId] = result$;
+            this.cache[reqId] = result$;
+            return result$;
         }
     }
 
@@ -58,7 +59,9 @@ export default class SimpleServiceWithCache {
                         } else {
                             return this.lookupId(id)
                                 .map(this.createModel)
-                                .do(result => app[index][id] = result)
+                                .do(result => {
+                                    app[index][id] = result
+                                })
                         }
                     })
             },
