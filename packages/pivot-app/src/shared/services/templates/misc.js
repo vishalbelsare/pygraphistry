@@ -38,9 +38,8 @@ export const searchSplunk = new SplunkPivot({
         }
     ],
     toSplunk: function (args) {
-        const pivotParameters = SplunkPivot.stripTemplateNamespace(args);
-        this.connections = pivotParameters.fields.value;
-        const query = `search ${pivotParameters['query']} ${this.constructFieldString()} | head 1000`;
+        this.connections = args.fields.value;
+        const query = `search ${args['query']} ${this.constructFieldString()} | head 1000`;
 
         return { searchQuery: query };
     },
@@ -77,10 +76,9 @@ export const searchSplunkMap = new SplunkPivot({
         }
     ],
     toSplunk: function(args, pivotCache) {
-        const pivotParameters = SplunkPivot.stripTemplateNamespace(args);
-        const source = pivotParameters['src'];
-        const dest = pivotParameters['dst'];
-        const sourcePivots = pivotParameters.pivot.value;
+        const source = args.src;
+        const dest = args.dest;
+        const sourcePivots = args.pivot.value;
 
         const subsearch = sourcePivots.map(pivotId =>
                 `[| loadjob "${pivotCache[pivotId].splunkSearchId}"
@@ -113,14 +111,15 @@ export const searchGraphviz = new SplunkPivot({
     id: 'search-graphviz-logs',
     name: 'Graphviz Search',
     tags: ['Graphviz'],
-    pivotParameterKeys: ['query2', 'level', 'time'],
-    pivotParametersUI: {
-        'query2': {
+    parameters: [
+        {
+            name: 'query2',
             inputType: 'text',
             label: 'Query:',
             placeholder: 'twitter'
         },
-        'level': {
+        {
+            name: 'level',
             label: 'Severity >=',
             inputType: 'combo',
             options: [
@@ -129,14 +128,15 @@ export const searchGraphviz = new SplunkPivot({
                 {value: 50, label: 'error'},
             ]
         },
-        'time': {
+        {
+            name: 'time',
             inputType: 'daterange',
             default: moment.duration(2, 'day').toJSON()
         }
-    },
-    toSplunk: function (pivotParameters) {
-        const q = pivotParameters['query2'];
-        const l = pivotParameters['level'];
+    ],
+    toSplunk: function (args) {
+        const q = args['query2'];
+        const l = args['level'];
         const query = `search (host=staging* OR host=labs*) source="/var/log/graphistry-json/*.log" ${q} level >= ${l}
             | spath output=File0 path="err.stackArray{0}.file"
             | spath output=File1 path="err.stackArray{1}.file"
@@ -145,7 +145,7 @@ export const searchGraphviz = new SplunkPivot({
 
         return {
             searchQuery: query,
-            searchParams: this.dayRangeToSplunkParams(pivotParameters.time.value),
+            searchParams: this.dayRangeToSplunkParams(args.time.value),
         };
     },
     encodings: {
