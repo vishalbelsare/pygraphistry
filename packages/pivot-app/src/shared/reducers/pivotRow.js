@@ -13,12 +13,12 @@ export const pivot = combineEpics(setPivotAttributes);
 function setPivotAttributes(action$) {
     return action$
         .ofType(SET_PIVOT_ATTRIBUTES)
-        .mergeMap(({falcor, params, investigationId}) => {
+        .mergeMap(({falcor, params}) => {
             const topLevelModel = falcor._root.topLevelModel;
 
             return Observable.from(
                 topLevelModel.set(
-                    $pathValue(['investigationsById', investigationId, 'status'], { msgStyle: 'warning', ok: true })
+                    $pathValue(['currentInvestigation', 'status'], { msgStyle: 'warning', ok: true })
                 )
             ).concat(
                 Observable.from(
