@@ -48,8 +48,6 @@ export class SplunkPivot extends PivotTemplate {
         }
     }
 
-    // TODO Handle undefined day ranges properly
-    // eslint-disable-next-line consistent-return
     dayRangeToSplunkParams({ startDate, endDate }) {
         if (startDate && endDate) {
             const startDay = moment(startDate).startOf('day');
@@ -60,7 +58,8 @@ export class SplunkPivot extends PivotTemplate {
                 'latest_time': endDay.unix(),
             };
         } else {
-            log.debug('Got undefined day range, cannot convert to Splunk params');
+            log.warn('Got undefined day range, cannot convert to Splunk params');
+            return undefined;
         }
     }
 
@@ -84,8 +83,6 @@ export class SplunkPivot extends PivotTemplate {
     }
 }
 
-// TODO Handle lookups properly
-// eslint-disable-next-line consistent-return
 function buildLookup(text, pivotCache) {
 
     //Special casing of [search] -[field]-> [source]
@@ -111,5 +108,7 @@ function buildLookup(text, pivotCache) {
             match = match + (match ? ' OR ' : '') + fieldMatch;
         }
         return `${ source } ${ match } | head 10000 `;
+    } else {
+        return undefined;
     }
 }

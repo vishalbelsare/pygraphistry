@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import _ from 'underscore';
 import bunyan from 'bunyan';
 
@@ -43,8 +44,7 @@ class BrowserConsoleStream {
 }
 
 class BrowserForwarderStream{
-
-    static write(rec) {
+    write(rec) {
         const ajax = new XMLHttpRequest();
         ajax.open('POST', '/error', true);
         ajax.setRequestHeader('Content-type', 'application/json');

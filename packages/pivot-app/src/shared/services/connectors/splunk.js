@@ -60,7 +60,7 @@ class SplunkConnector extends Connector {
             });
     }
 
-    static extractSplunkErrorMsg(splunkErr) {
+    extractSplunkErrorMsg(splunkErr) {
         if (splunkErr.error && splunkErr.error.message) {
             return splunkErr.error.message;
         } else {

@@ -15,7 +15,7 @@ function setPivotAttributes(action$) {
         .ofType(SET_PIVOT_ATTRIBUTES)
         .mergeMap(({falcor, params, investigationId}) => {
             const topLevelModel = falcor._root.topLevelModel;
-            console.log('investigationId', investigationId);
+
             return Observable.from(
                 topLevelModel.set(
                     $pathValue(['investigationsById', investigationId, 'status'], { msgStyle: 'warning', ok: true })
