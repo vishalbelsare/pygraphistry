@@ -50,4 +50,4 @@ docker push graphistry/pivot-app:latest
 
 echo "Docker image graphistry/pivot-app:${VERSION} successfully published."
 
-echo "graphistry/pivot-app:${VERSION}" > RELEASE
+echo "${VERSION}" > RELEASE
