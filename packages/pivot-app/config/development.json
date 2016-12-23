@@ -13,9 +13,5 @@
     "splunk": {
         "jobCacheTimeout": 3600,
         "searchMaxTime": 10
-    },
-    "auth": {
-        // admin
-        "password": "$2a$12$EoP1iHQwRK5pbwuWr2RuTO2P1t4oVYNBrGLxJwPI7.LOgMsy3GBIW"
     }
 }
