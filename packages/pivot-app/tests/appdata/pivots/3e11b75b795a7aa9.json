@@ -4,10 +4,15 @@
     "pivotParameters": {
         "query": "Enter search query",
         "pivot": [
-                "3e11aaf23d0602dc"
+            "3e11aaf23d0602dc"
         ],
         "src": "\"err.message\"",
-        "dst": "\"err.stackArray{}.file\""
+        "dst": "\"err.stackArray{}.file\"",
+        "search-splunk-source-dest$$$pivot": [
+            "3e11aaf23d0602dc"
+        ],
+        "search-splunk-source-dest$$$src": "\"err.message\"",
+        "search-splunk-source-dest$$$dst": "\"err.stackArray{}.file\""
     },
     "pivotTemplate": "search-splunk-source-dest"
 }

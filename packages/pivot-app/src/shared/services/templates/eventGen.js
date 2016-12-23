@@ -36,24 +36,25 @@ export const PAN_SEARCH = new SplunkPivot({
     name: 'PAN - Search',
     id: 'pan-search',
     tags: ['PAN'],
-    pivotParameterKeys: ['query', 'nodes'],
-    pivotParametersUI: {
-        query: {
+    parameters: [
+        {
+            name: 'query',
             inputType: 'text',
             label: 'Search:',
             placeholder: 'severity="critical"'
         },
-        nodes: {
+         {
+            name: 'nodes',
             inputType: 'multi',
             label: 'Nodes:',
             options: attributes.map(x => ({id:x, name:x})),
         }
-    },
+    ],
     attributes: attributes,
     encodings: PAN_ENCODINGS,
-    toSplunk: function(pivotParameters) {
-        this.connections = pivotParameters.nodes.value;
-        const query = `search ${SPLUNK_INDICES.PAN} ${pivotParameters.query}
+    toSplunk: function(args) {
+        this.connections = args.nodes.value;
+        const query = `search ${SPLUNK_INDICES.PAN} ${args.query}
                 ${this.constructFieldString()}
                 | head 1000`;
 
@@ -71,35 +72,38 @@ export const PAN_EXPAND = new SplunkPivot({
     name: 'PAN - Expand',
     id: 'pan-expand',
     tags: ['PAN'],
-    pivotParameterKeys: ['source', 'sourceAttribute', 'query', 'nodes'],
-    pivotParametersUI: {
-        source: {
+    parameters: [
+        {
+            name: 'source',
             inputType: 'pivotCombo',
             label: 'Select events:',
         },
-        sourceAttribute: {
+        {
+            name: 'sourceAttribute',
             inputType: 'combo',
             label: 'Expand on:',
             options: attributes.map(x => ({value:x, label:x}))
         },
-        query: {
+        {
+            name: 'query',
             inputType: 'text',
             label: 'Subsearch:',
             placeholder: contextFilter
         },
-        nodes: {
+        {
+            name: 'nodes',
             inputType: 'multi',
             label: 'Nodes:',
             options: attributes.map(x => ({id:x, name:x})),
         }
-    },
+    ],
     attributes: attributes,
     encodings: PAN_ENCODINGS,
-    toSplunk: function(pivotParameters, pivotCache) {
-        this.connections = pivotParameters.nodes.value;
-        const sourceAttribute = pivotParameters.sourceAttribute;
-        const filter = pivotParameters.query;
-        const sourcePivots = pivotParameters.source.value;
+    toSplunk: function(args, pivotCache) {
+        this.connections = args.nodes.value;
+        const sourceAttribute = args.sourceAttribute;
+        const filter = args.query;
+        const sourcePivots = args.source.value;
         const list = sourcePivots.map(
             (pivotId) =>
                 (`[| loadjob "${pivotCache[pivotId].splunkSearchId}"
