@@ -1,6 +1,5 @@
 import expressApp from './app.js';
 import bodyParser from 'body-parser';
-import bunyan from 'bunyan';
 import path from 'path';
 import mkdirp from 'mkdirp';
 import { reloadHot } from '../shared/reloadHot';
@@ -101,24 +100,21 @@ function init(testUser) {
 }
 
 function setupRoutes(modules, getDataSource) {
-    function logClientErrors(req, res) {
-        const record = req.body;
-        log[bunyan.nameFromLevel[record.level]](record, record.msg);
-        res.status(204).send();
-    }
-
-    expressApp.post(
-        '/error',
-        bodyParser.json({limit: '512kb'}),
-        logClientErrors
-    );
-
     expressApp.use(
         '/model.json',
         bodyParser.urlencoded({ extended: false }),
         falcorMiddleware(getDataSource)
     );
 
-    expressApp.use('/index.html', (req, res) => res.redirect('/'));
-    expressApp.use('/', renderMiddleware(getDataSource, modules));
+    const roots = ['home', 'investigation', 'connector'];
+
+    roots.forEach(root => {
+        expressApp.use(`/${root}`, (req, res) => {
+             return renderMiddleware(getDataSource, modules)(req, res);
+         })
+    })
+
+
+
+    expressApp.use('/', (req, res) => res.redirect('/home'));
 }
