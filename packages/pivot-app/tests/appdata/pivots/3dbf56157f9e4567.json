@@ -1,6 +1,6 @@
 {
     "id": "3dbf56157f9e4567",
-    "enabled": true,
+    "enabled": false,
     "pivotParameters": {
         "query": "Enter search query",
         "ref": [
@@ -8,6 +8,15 @@
         ],
         "fields": [
             "Fire Eye MD5",
+            "Message"
+        ],
+        "expand-fireeye-botnet-demo$$$ref": [
+            "3dbf55904a77e964"
+        ],
+        "expand-fireeye-botnet-demo$$$fields": [
+            "Fire Eye MD5",
+            "Fire Eye URL",
+            "Internal IPs",
             "Message"
         ]
     },
