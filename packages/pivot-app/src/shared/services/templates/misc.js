@@ -1,6 +1,9 @@
 import { SplunkPivot } from './SplunkPivot';
 import stringhash from 'string-hash';
+import logger from '../../logger.js';
 import moment from 'moment';
+
+const log = logger.createLogger(__filename);
 
 const GRAPHISTRY_SPLUNK_FIELDS = [
     'module',
@@ -18,22 +21,24 @@ export const searchSplunk = new SplunkPivot({
     id: 'search-splunk-plain',
     name: 'Search Splunk',
     tags: ['Splunk', 'Graphviz'],
-    pivotParameterKeys: ['query', 'fields'],
-    pivotParametersUI: {
-        'query': {
+    parameters: [
+        {
+            name: 'query',
             inputType: 'text',
             label: 'Query:',
             placeholder: 'error',
             defaultValue: 'error',
         },
-        'fields': {
+        {
+            name: 'fields',
             inputType: 'multi',
             label: 'Entities:',
             options: GRAPHISTRY_SPLUNK_FIELDS.map(x => ({id:x, name:x})),
             defaultValue: GRAPHISTRY_SPLUNK_FIELDS
         }
-    },
-    toSplunk: function (pivotParameters) {
+    ],
+    toSplunk: function (args) {
+        const pivotParameters = SplunkPivot.stripTemplateNamespace(args);
         this.connections = pivotParameters.fields.value;
         const query = `search ${pivotParameters['query']} ${this.constructFieldString()} | head 1000`;
 
@@ -52,24 +57,27 @@ export const searchSplunkMap = new SplunkPivot({
     id: 'search-splunk-source-dest',
     name: 'Graphviz Expand',
     tags: ['Graphviz'],
-    pivotParameterKeys: ['src', 'dst', 'pivot'],
-    pivotParametersUI: {
-        'src': {
+    parameters: [
+        {
+            name: 'src',
             inputType: 'text',
             label: 'Source entity:',
             placeholder: '"err.message"'
         },
-        'dst': {
+        {
+            name: 'dst',
             inputType: 'text',
             label: 'Destination:',
             placeholder: '"err.stackArray{}.file"'
         },
-        'pivot': {
+        {
+            name: 'pivot',
             inputType: 'pivotCombo',
             label: 'Pivot:',
         }
-    },
-    toSplunk: function(pivotParameters, pivotCache) {
+    ],
+    toSplunk: function(args, pivotCache) {
+        const pivotParameters = SplunkPivot.stripTemplateNamespace(args);
         const source = pivotParameters['src'];
         const dest = pivotParameters['dst'];
         const sourcePivots = pivotParameters.pivot.value;

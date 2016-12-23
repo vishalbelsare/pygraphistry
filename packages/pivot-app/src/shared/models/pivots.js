@@ -11,12 +11,14 @@ const templatesMap = listTemplates();
 
 function defaults(pivotTemplate = 'search-splunk-plain') {
 
-    const templateParameters = templatesMap[pivotTemplate].pivotParametersUI;
+    const template = templatesMap[pivotTemplate];
+    const templateParameters = template.pivotParametersUI;
     const pivotParameters = Object.entries(templateParameters)
         .reduce((result, [key, value]) => {
-            result[`${pivotTemplate}-${key}`] = value.defaultValue;
+            result[key] = value.defaultValue;
             return result
         }, {});
+
 
     return {
         id: simpleflake().toJSON(),
