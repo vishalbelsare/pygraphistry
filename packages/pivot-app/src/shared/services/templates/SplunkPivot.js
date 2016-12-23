@@ -24,7 +24,7 @@ export class SplunkPivot extends PivotTemplate {
 
         const args = PivotTemplate.stripTemplateNamespace(pivot.pivotParameters);
         const {searchQuery, searchParams} = this.toSplunk(args, pivotCache);
-        log.warn({pivotParameters: pivot.pivotParameters, args});
+        log.trace({pivotParameters: pivot.pivotParameters, args}, 'Pivot parameters');
         pivot.template = this;
 
         if (!pivot.enabled) {
