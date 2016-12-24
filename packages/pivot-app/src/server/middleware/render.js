@@ -1,7 +1,6 @@
 import React from 'react';
 import { inspect } from 'util';
 import { Observable } from 'rxjs';
-import { Model } from '@graphistry/falcor';
 import { renderToString as reactRenderToString } from 'react-dom/server';
 import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
 import logger from '../../shared/logger.js';
@@ -20,13 +19,13 @@ catch (e) {
 // const renderServerSide = false;
 const renderServerSide = true;
 
-export function renderMiddleware(getDataSource, modules) {
+export function renderMiddleware(getFaclorModel, modules) {
     return function renderMiddleware(req, res) {
         try {
-
-            const renderedResults = !renderServerSide ?
-                Observable.of(renderFullPage()) :
-                renderAppWithHotReloading(modules, getDataSource(req));
+            const falcorModel = getFaclorModel(req);
+            const renderedResults =
+                !renderServerSide ? Observable.of(renderFullPage())
+                                  : renderAppWithHotReloading(modules, falcorModel);
 
             renderedResults.take(1).subscribe({
                 next(html) {
@@ -51,23 +50,24 @@ export function renderMiddleware(getDataSource, modules) {
 }
 
 
-function renderAppWithHotReloading(modules, dataSource) {
+function renderAppWithHotReloading(modules, model) {
     return modules
         .map(({ App }) => ({
-            App, falcor: new Model({
-                source: dataSource,
-                recycleJSON: true,
-                treatErrorsAsValues: true
-            })
+            App,
+            model
         }))
         .switchMap(
-            ({ App, falcor }) => fetchDataUntilSettled({
-                data: {}, falcor, fragment: App.fragment
-            }).takeLast(1),
-            ({ App, falcor }, { data }) => ({ App, falcor, data })
+            ({ App, model }) => fetchDataUntilSettled({
+                    data: {},
+                    falcor: model,
+                    fragment: App.fragment
+                })
+                .takeLast(1),
+            ({ App, model }, { data }) => ({ App, model, data })
         )
-        .map(({ falcor }) => renderFullPage(falcor));
+        .map(({ model }) => renderFullPage(model));
 }
+
 
 function renderFullPage(model, html = '') {
     const { client, vendor } = webpackAssets;
@@ -80,11 +80,13 @@ function renderFullPage(model, html = '') {
             <meta charset="utf-8" />
             <meta name="robots" content="noindex, nofollow"/>
             <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-
+            <base href="http://localhost:3000" />
             <title>Graphistry Visual Playbook Environment</title>
 
             <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
-            ${ iconsHTML.join('\n') }
+            ${ iconsHTML.length === 0 ? iconsHTML.join('\n')
+                                      : <link rel="shortcut icon" href="not_found/favicon.ico" />
+            }
 
             <link rel='stylesheet' type='text/css' href='${client.css || ''}'/>
         </head>

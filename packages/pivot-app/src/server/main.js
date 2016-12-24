@@ -1,9 +1,10 @@
+import express from 'express';
 import expressApp from './app.js';
 import bodyParser from 'body-parser';
 import path from 'path';
 import mkdirp from 'mkdirp';
 import { reloadHot } from '../shared/reloadHot';
-import { renderMiddleware } from './middleware';
+import { renderMiddleware, falcorModelFactory } from './middleware';
 import { getDataSourceFactory } from '../shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 import {
@@ -106,15 +107,18 @@ function setupRoutes(modules, getDataSource) {
         falcorMiddleware(getDataSource)
     );
 
-    const roots = ['home', 'investigation', 'connector'];
-
+    const roots = ['home', 'investigation', 'connectors'];
     roots.forEach(root => {
-        expressApp.use(`/${root}`, (req, res) => {
-             return renderMiddleware(getDataSource, modules)(req, res);
-         })
-    })
+        const router = express.Router();
 
+        router.get(`*`, (req, res) => {
+            const getFalcorModel = falcorModelFactory(getDataSource);
+            return renderMiddleware(getFalcorModel, modules)(req, res);
+        });
 
+        expressApp.use(`/${root}`, router);
+    });
 
-    expressApp.use('/', (req, res) => res.redirect('/home'));
+    expressApp.get('/', (req, res) => res.redirect('/home'));
+    expressApp.get('*', (req, res) => res.status(404).send('Not found'));
 }

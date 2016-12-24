@@ -40,6 +40,10 @@ export function getDataSourceFactory(services) {
     }
 
     return function getDataSource(request) {
-        return new AppRouter({ request });
+        if (!request.user) {
+            throw new Error('Request is not tagged with a user (no auth middleware?)');
+        }
+
+        return new AppRouter({ request, userId: request.user.userId });
     }
 }
