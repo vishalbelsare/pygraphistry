@@ -31,6 +31,13 @@ const conf = convict({
             default: '',
             arg: 'password-hash',
             env: 'PASSWORD_HASH'
+        },
+        username: {
+            doc: 'The username used to access this service',
+            format: String,
+            default: 'admin',
+            arg: 'username',
+            env: 'USERNAME'
         }
     },
     pivotApp: {

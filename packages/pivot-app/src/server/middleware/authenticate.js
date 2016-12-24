@@ -12,7 +12,7 @@ export function authenticateMiddleware() {
         log.warn(`Authentication disabled because "authentication.passwordHash" is not set in your config. Anybody will be able to access this service without restriction.`);
 
         return function authenticationDisabledMiddleware(req, res, next) {
-            req.user = { username: 'admin' };
+            req.user = { username: conf.get('authentication.username') };
             return next();
         }
     } else {
@@ -24,7 +24,7 @@ export function authenticateMiddleware() {
 
 // Called by the Passport strategy to check if a given username+password is valid
 function checkLoginCredentials(providedUsername, providedPassword, authResultsCb) {
-    const authorizedUsername = 'admin';
+    const authorizedUsername = conf.get('authentication.username');
     const authorizedPassword = conf.get('authentication.passwordHash');
 
     compare(providedPassword, authorizedPassword,
