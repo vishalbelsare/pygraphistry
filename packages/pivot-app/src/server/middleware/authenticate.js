@@ -6,40 +6,44 @@ import logger from '../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
 
+
 export function authenticateMiddleware() {
-    const globalUsername = 'admin';
+    if(!conf.get('authentication.passwordHash')) {
 
-    if(conf.get('auth.password') === undefined || conf.get('auth.password') === '') {
-        log.info('Authentication is disabled');
-
-        return function noopMiddleware(req, res, next) {
-            req.user = { username: globalUsername };
+        return function authenticationDisabledMiddleware(req, res, next) {
+            req.user = { username: 'admin' };
             return next();
         }
     } else {
         log.info('Authentication is enabled');
-
-        passport.use(new BasicStrategy(
-            function(username, password, cb) {
-                log.info(`Authenticating user ${username}`);
-
-                if(username !== globalUsername) {
-                    return cb(null, false);
-                }
-
-                return compare(password, conf.get('auth.password'))
-                    .then(
-                        function(passwordValid) {
-                            if(!passwordValid) { return cb(null, false); }
-                            return cb(null, {username: globalUsername});
-                        },
-                        function(err) {
-                            return cb(err);
-                        }
-                    );
-            })
-        );
-
+        passport.use(new BasicStrategy(checkLoginCredentials));
         return passport.authenticate('basic', { session: false });
     }
+}
+
+
+// Called by the Passport strategy to check if a given username+password is valid
+function checkLoginCredentials(providedUsername, providedPassword, authResultsCb) {
+    const authorizedUsername = 'admin';
+    const authorizedPassword = conf.get('authentication.passwordHash');
+
+    compare(providedPassword, authorizedPassword,
+        (bcryptErr, isPasswordEqualToHash) => {
+            if(bcryptErr) {
+                return authResultsCb(bcryptErr, null);
+            }
+
+            if(providedUsername !== authorizedUsername) {
+                // Invalid username; reject authentication attempt
+                return authResultsCb(null, false);
+            } else if(!isPasswordEqualToHash) {
+                // invalid password; reject authentication attempt
+                return authResultsCb(null, false);
+            } else {
+                // Only if the username and password are valid, call passport's
+                // callback, passing (truthy) user info as the second arg
+                return authResultsCb(null, { username: providedUsername });
+            }
+        }
+    );
 }
