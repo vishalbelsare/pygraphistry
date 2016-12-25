@@ -4,8 +4,11 @@ import bodyParser from 'body-parser';
 import path from 'path';
 import mkdirp from 'mkdirp';
 import { reloadHot } from '../shared/reloadHot';
-import { renderMiddleware, falcorModelFactory } from './middleware';
-import { getDataSourceFactory } from '../shared/middleware';
+import { renderMiddleware } from './middleware';
+import {
+    getDataSourceFactory,
+    falcorModelFactory
+ } from '../shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 import {
     createAppModel,
