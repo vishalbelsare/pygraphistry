@@ -1,5 +1,5 @@
 import { Subject } from 'rxjs/Subject';
-import { Model } from 'viz-client/falcor';
+import { Model } from '../../viz-app/src/viz-client/falcor';
 import $$observable from 'symbol-observable';
 import { Observable } from 'rxjs/Observable';
 import { AsyncSubject } from 'rxjs/AsyncSubject';

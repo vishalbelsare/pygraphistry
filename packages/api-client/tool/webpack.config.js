@@ -1,8 +1,9 @@
+var RELEASE = process.env.RELEASE;
+
 var path = require('path');
 var webpack = require('webpack');
 var vizAppPackage = require('../package.json');
 var AssetsPlugin = require('assets-webpack-plugin');
-var graphistryConfig = require('@graphistry/config')();
 var WebpackDashboard = require('webpack-dashboard/plugin');
 var NPMInstallPlugin = require('npm-install-webpack-plugin');
 var WebpackVisualizer = require('webpack-visualizer-plugin');
@@ -30,7 +31,7 @@ const buildNumber = process.env.BUILD_NUMBER;
 const buildDate = Date.now();
 
 const versionDefines = {
-    __RELEASE__: JSON.stringify(graphistryConfig.RELEASE),
+    __RELEASE__: JSON.stringify(RELEASE),
     __GITCOMMIT__: `"${commitId}"`,
     __GITBRANCH__: `"${revName}"`,
     __BUILDDATE__: `${buildDate}`,
@@ -170,7 +171,7 @@ function clientConfig(
                     __CLIENT__: true,
                     __SERVER__: false,
                     __VERSION__: JSON.stringify(vizAppPackage.version),
-                    __RELEASE__: JSON.stringify(graphistryConfig.RELEASE),
+                    __RELEASE__: JSON.stringify(RELEASE),
                     'process.env.NODE_ENV': '"production"'// || JSON.stringify(process.env.NODE_ENV),
                 },
                 versionDefines
@@ -306,7 +307,7 @@ function apiConfig(
             __CLIENT__: false,
             __SERVER__: false,
             __VERSION__: JSON.stringify(vizAppPackage.version),
-            __RELEASE__: JSON.stringify(graphistryConfig.RELEASE),
+            __RELEASE__: JSON.stringify(RELEASE),
             'process.env.NODE_ENV': '"production"'//JSON.stringify(process.env.NODE_ENV)
         }),
         new WebpackVisualizer({

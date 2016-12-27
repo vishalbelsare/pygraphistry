@@ -37,7 +37,7 @@ var serverConfig = webpackConfigs[1](isDevBuild, isFancyBuild);
 // copy static assets
 var shelljs = require('shelljs');
 shelljs.mkdir('-p', clientConfig.output.path);
-shelljs.cp('-rf', './src/viz-client/static/*', clientConfig.output.path);
+//shelljs.cp('-rf', './src/viz-client/static/*', clientConfig.output.path);
 shelljs.mkdir('-p', serverConfig.output.path);
 shelljs.cp('-rf', './src/viz-server/static/*', serverConfig.output.path);
 shelljs.cp('-rf', './src/viz-worker/static/*', serverConfig.output.path);
