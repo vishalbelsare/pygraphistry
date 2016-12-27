@@ -2,10 +2,11 @@
   "name": "@graphistry/graphistry-client",
   "version": "0.0.1",
   "description": "Clientside API for interacting with a Graphistry embedding",
-  "main": "index.js",
+  "main": "www/graphistryJS.js",
   "scripts": {
     "clean:docs": "rm -rf docs",
     "docs": "jsdoc -c conf.json -R ./README.md -d docs",
+    "build": "cross-env NODE_ENV=production node ./tool/build-resource -- -- 2",
     "predocs": "npm run clean:docs",
     "preserve:docs": "npm run docs",
     "serve:docs": "http-server -o -p 9000 -c-1 ./docs"
