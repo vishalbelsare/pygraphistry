@@ -1,6 +1,6 @@
 {
   "name": "@graphistry/viz-app",
-  "version": "2.7.8",
+  "version": "2.7.9",
   "description": "viz-app",
   "main": "./www/viz-server.js",
   "scripts": {
@@ -12,7 +12,6 @@
     "dev": "npm run clean && cross-env NODE_ENV=development node ./tool/build",
     "dev-client": "cross-env NODE_ENV=development node ./tool/build-resource -- -- 0",
     "dev-server": "cross-env NODE_ENV=development node ./tool/build-resource -- -- 1",
-    "prepublish": "npm run build",
     "watch": "npm run clean && cross-env NODE_ENV=development node ./tool/build --watch --",
     "fancy": "npm run clean && cross-env NODE_ENV=development webpack-dashboard -- node ./tool/build --watch --fancy",
     "debug": "node --inspect ./www/viz-server.js",
