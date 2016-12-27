@@ -1,7 +1,7 @@
 {
-  "name": "example",
-  "version": "1.0.0",
-  "description": "A couple annotated files to test jsdoc-babel plugin",
+  "name": "@graphistry/graphistry-client",
+  "version": "0.0.1",
+  "description": "Clientside API for interacting with a Graphistry embedding",
   "main": "index.js",
   "scripts": {
     "clean:docs": "rm -rf docs",
