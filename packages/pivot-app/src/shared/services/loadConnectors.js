@@ -1,5 +1,5 @@
 import * as connectors from './connectors';
-import SimpleServiceWithCache from './support/simpleServiceWithCache.js';
+import { SimpleCacheService } from './support';
 import logger from '../logger.js';
 import { Observable } from 'rxjs';
 const log = logger.createLogger(__filename);
@@ -13,7 +13,7 @@ export function connectorStore(loadApp) {
         );
     }
 
-    const service = new SimpleServiceWithCache({
+    const service = new SimpleCacheService({
         loadApp: loadApp,
         resultName: 'connector',
         loadById: loadConnectorById,
