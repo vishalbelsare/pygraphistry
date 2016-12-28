@@ -21,7 +21,8 @@
 
 ## Testing
 
-Jenkins should build the pivot-app artifact automatically. You can find the list of builds and artifacts on [Jenkins](http://deploy.graphistry.com/view/Build/job/Build%20pivot-app/) and [DockerHub](https://hub.docker.com/r/graphistry/pivot-app/tags/).
+Jenkins should build the pivot-app artifact automatically.
+You can find the list of builds and artifacts on [Jenkins](http://deploy.graphistry.com/view/Build/job/Build%20pivot-app/) and [DockerHub](https://hub.docker.com/r/graphistry/pivot-app/tags/).
 
 ### Quick test on Staging
 
