@@ -19,7 +19,7 @@
 
 4. Commit and push a new version of central, and deploy
 
-## 
+##
 
 ## Docs
 
@@ -42,7 +42,9 @@
 `cp -r viz-app/src/api-client/docs/ docs/interactions/`
 
 2. Commit and push updated documentation
-3. Verify the date at the button of [https://graphistry.github.io/docs/interactions/index.html](https://graphistry.github.io/docs/interactions/index.html). 
+3. Verify the date at the button of [https://graphistry.github.io/docs/interactions/index.html](https://graphistry.github.io/docs/interactions/index.html).
+
+
 
 
 
