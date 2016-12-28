@@ -47,7 +47,7 @@ const conf = convict({
             format: ['trace', 'debug', 'info', 'warn', 'error', 'fatal'],
             default: 'info',
             arg: 'log-level',
-            env: 'LOG_LEVEL'
+            env: 'GRAPHISTRY_LOG_LEVEL' // LOG_LEVEL conflicts with mocha
         },
         file: {
             doc: 'Log so a file intead of standard out',
