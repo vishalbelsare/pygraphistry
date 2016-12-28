@@ -6,7 +6,9 @@
   "scripts": {
     "clean:docs": "rm -rf docs",
     "docs": "jsdoc -c conf.json -R ./README.md -d docs",
-    "build": "cross-env NODE_ENV=production node ./tool/build-resource -- -- 2",
+    "build-es5": "babel src --out-dir lib",
+    "build-include": "cross-env NODE_ENV=production node ./tool/build-resource -- -- 2",
+    "build": "npm run build-es5 && npm run build-include",
     "predocs": "npm run clean:docs",
     "preserve:docs": "npm run docs",
     "serve:docs": "http-server -o -p 9000 -c-1 ./docs"
