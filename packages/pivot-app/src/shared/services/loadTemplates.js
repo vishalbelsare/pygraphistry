@@ -30,7 +30,7 @@ export function templateStore(loadApp) {
 }
 
 export function listTemplates() {
-    return Object.values(templates)
+    return Object.values(templates || {})
         .reduce(function(templatesById, template) {
             templatesById[template.id] = template;
             return templatesById;
