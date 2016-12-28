@@ -3,7 +3,7 @@
 BUILD_TAG=graphistry/pivot-app:build
 MAJORMINOR=`jq -r .version package.json | cut -d '.' -f 1,2`
 VERSION=${MAJORMINOR}.${BUILD_NUMBER}
-ARTIFACTS="build node_modules tests"
+ARTIFACTS="build node_modules test/appdata"
 
 for ARG in "$@"; do
     case $ARG in
