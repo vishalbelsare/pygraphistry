@@ -47,7 +47,7 @@
         position: relative;
     }
     tbody tr td {
-        padding: 25px;
+        padding: 20px;
         height: 20%;
         display: inline-block;
         border: none !important;
@@ -196,7 +196,7 @@
 :root {
     --app-font-size: 14px;
     --row-font-size: 18px;
-    --scrollbar-width: 15px;
+    --scrollbar-width: 0px;
 }
 
 :global(body) {
@@ -501,11 +501,12 @@ td, th {
     width: 50%;
     border-top: none;
     border: 1px solid purple;
+    padding: 25px !important;
 }
 :local(.pivotData0) {
     width: 200px;
     text-align: right;
-    order: 3;
+    order: 4;
     width: 100%;
     border-top: none;
 }
@@ -521,7 +522,7 @@ td, th {
 :local(.pivotData1) {
     //https://github.com/less/less.js/issues/974
     width: ~"calc(100% - 570px)";
-    order: 4;
+    order: 5;
     width: 100%;
     padding: 5px;
     border: 1px solid grey;
@@ -623,7 +624,7 @@ td, th {
     span {
         margin-top: @summaryPillHeight;
     }
-    order: 8;
+    order: 10;
     width: 20%;
     border: 1px solid orange;
 }
@@ -641,7 +642,7 @@ td, th {
         white-space: nowrap;
         max-width: 20em;
     }
-    order: 9;
+    order: 11;
     width: 80%;
     margin-bottom: 20px;
     padding-left: 0px !important;
@@ -746,17 +747,17 @@ transition-container {
 }
 :local(.pivotComboParam) {
         border: 2px solid red;
-        order: 5;
+        order: 7;
         width: 100%;
 }
 :local(.pivotMultiParam) {
     border: 2px solid blue;
-    order: 4;
+    order: 8;
     width: 100%;
 }
 :local(.pivotDateRangeParam) {
     border: 2px solid green;
-    order: 7;
+    order: 9;
     width: 100%;
 }
 
@@ -804,4 +805,30 @@ transition-container {
 :global(.testwrap) {
     position: relative !important;
     background-color: aqua;
+}
+
+:local(.pivotTypeTitle) {
+   // background-color: aqua;
+    order: 3;
+    width: 100%;
+    padding: 0px !important;
+    margin-left: 20px !important;
+    text-transform: uppercase;
+    font-size: 9px;
+    letter-spacing: 1px;
+    font-weight: 900;
+    color: cadetblue;
+}
+
+:local(.pivotParamTitle) {
+   // background-color: aqua;
+    order: 5;
+    width: 100%;
+    padding: 0px !important;
+    margin-left: 20px !important;
+    text-transform: uppercase;
+    font-size: 9px;
+    letter-spacing: 1px;
+    font-weight: 900;
+    color: cadetblue;
 }
