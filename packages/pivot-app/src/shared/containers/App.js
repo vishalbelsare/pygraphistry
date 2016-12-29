@@ -2,6 +2,9 @@ import React from 'react';
 import InvestigationScreen from './InvestigationScreen.js';
 import ConnectorScreen from './ConnectorScreen.js'
 import HomeScreen from './HomeScreen.js';
+import { UrlHistory } from './UrlHistory';
+import { switchScreen } from '../actions/app.js';
+import { selectInvestigation } from '../actions/investigationScreen';
 import { DevTools } from './DevTools';
 import { hoistStatics } from 'recompose';
 import { connect, container } from '@graphistry/falcor-react-redux';
@@ -24,7 +27,7 @@ function renderErrorBanner(serverStatus) {
     );
 }
 
-function renderApp({ currentUser, serverStatus, app }) {
+function renderApp({ currentUser, serverStatus, app, switchScreen, selectInvestigation}) {
     const screens = {
         'undefined': (<HomeScreen data={app}/>),
         'home': (<HomeScreen data={app}/>),
@@ -32,8 +35,16 @@ function renderApp({ currentUser, serverStatus, app }) {
         'connectors': (<ConnectorScreen data={app}/>)
     }
 
+    const navState = {
+        activeScreen: currentUser.activeScreen,
+        activeInvestigation: currentUser.activeInvestigation
+    };
+
     return (
         <div>
+            <UrlHistory navState={navState}
+                        switchScreen={switchScreen}
+                        selectInvestigation={selectInvestigation} />
             { serverStatus && !serverStatus.ok && renderErrorBanner(serverStatus) }
             { currentUser && screens[currentUser.activeScreen] }
             <DevTools/>
@@ -48,11 +59,16 @@ const App = container({
     fragment: () =>
     `{
         currentUser: {
-            activeScreen
+            activeScreen,
+            activeInvestigation
         },
         serverStatus
     }`,
-    mapFragment: app => ({app: app, ...app})
+    mapFragment: app => ({app: app, ...app}),
+    dispatchers: {
+        switchScreen: switchScreen,
+        selectInvestigation: selectInvestigation
+    }
 })(renderApp);
 
 export default hoistStatics(connect)(App);

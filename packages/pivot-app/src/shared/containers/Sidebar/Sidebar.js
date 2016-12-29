@@ -16,7 +16,7 @@ function NavButton ({activeScreen, switchScreen, tip, screen, faIcon}) {
                     overlay={
                         <Tooltip id={`sidebar-${screen}`}>{tip}</Tooltip>
                     }>
-                <a href="#" onClick={() => switchScreen(screen)}>
+                <a onClick={() => switchScreen(screen)}>
                     <i className={`fa ${faIcon}`}></i>
                 </a>
             </OverlayTrigger>

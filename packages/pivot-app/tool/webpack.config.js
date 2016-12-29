@@ -115,6 +115,7 @@ function clientConfig(buildOpts = {}) {
             'es-abstract',
             'falcor-http-datasource',
             //'fbjs', fbjs does not handle being in the vendor bundle.
+            'history',
             'inline-style-prefixer',
             'lodash',
             'minimatch',

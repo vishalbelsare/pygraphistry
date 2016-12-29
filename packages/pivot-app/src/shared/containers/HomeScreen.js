@@ -28,8 +28,8 @@ import {
 } from '../actions/investigationScreen.js';
 import { container } from '@graphistry/falcor-react-redux';
 import styles from './styles.less';
-import logger from '../logger.js';
 import MainNav from './MainNav/MainNav.js';
+import logger from '../logger.js';
 const log = logger.createLogger(__filename);
 
 
