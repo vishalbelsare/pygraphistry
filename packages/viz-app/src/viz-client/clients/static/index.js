@@ -1,4 +1,4 @@
-import { Model } from 'viz-client/falcor';
+import { Model } from '@graphistry/falcor-model-rxjs';
 import { SocketIO } from 'mock-socket';
 import { Observable, Scheduler } from 'rxjs';
 import { services } from 'viz-client/services';

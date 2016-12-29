@@ -1,7 +1,8 @@
 import SocketIO from 'socket.io-client';
 import { Observable, Scheduler } from 'rxjs';
+import { Model } from '@graphistry/falcor-model-rxjs';
 import { handleVboUpdates } from 'viz-client/streamGL/client';
-import { Model, LocalDataSink, RemoteDataSource } from 'viz-client/falcor';
+import { LocalDataSink, RemoteDataSource } from 'viz-client/falcor';
 
 export function initialize(options, debug) {
     const buildNum = __BUILDNUMBER__ === undefined ? 'Local build' : `Build #${__BUILDNUMBER__}`;
