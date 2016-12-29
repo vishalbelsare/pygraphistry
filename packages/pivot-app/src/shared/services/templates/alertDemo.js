@@ -39,6 +39,19 @@ const ALERT_DEMO_NODE_SIZES = {
     'Search': 1,
 };
 
+
+const ALERT_DEMO_NODE_ICONS = {
+    'Host': 'globe',
+    'Internal IPs': 'laptop',
+    'User': 'user',
+    'External IPs': 'user-secret',
+    'Fire Eye MD5': 'hashtag',
+    'Message': 'bell',
+    'Fire Eye URL': 'globe',
+    'EventID': 'square',
+    'Search': 'search'
+};
+
 const alertDemoEncodings = {
     point: {
         pointColor: function(node) {
@@ -49,6 +62,12 @@ const alertDemoEncodings = {
         },
         pointSizes: function(node) {
             node.pointSize = ALERT_DEMO_NODE_SIZES[node.type];
+        },
+        pointIcon: function (node) {
+            node.pointIcon = ALERT_DEMO_NODE_ICONS[node.type];
+            if (node.pointIcon === undefined) {
+                node.pointIcon = 'fw';
+            }
         }
     }
 }
