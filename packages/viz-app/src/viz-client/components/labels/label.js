@@ -232,7 +232,7 @@ function LabelTitle ({ type, color, encodings, columns, title, icon, pinned, sho
                    style={{ color, float: `right`, fontSize: `.9em` }}
                    className={classNames({
                        [styles['pinned']]: pinned,
-                       [styles['label-title-icon']]: true,
+                       [styles['label-title-close']]: true,
                    })}
                    onMouseDown={stopPropagation}
                    onClick={ preventPropagation(() => onExclude && onExclude({
