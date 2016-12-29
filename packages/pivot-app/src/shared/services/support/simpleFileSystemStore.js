@@ -77,7 +77,7 @@ export class SimpleFileSystemStore {
     }
 
     unlinkById(ids) {
-        this.loadById(ids)
+        return this.loadById(ids)
             .mergeMap((res) => {
                 const entity = res[this.entityName];
                 const filePath = this._getPath(entity);

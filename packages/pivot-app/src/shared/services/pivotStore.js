@@ -15,7 +15,7 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
         createModel: createPivotModel,
         serializeModel: serializePivotModel,
         cache: pivotsByIdCache
-    })
+    });
 
     return {
         loadPivotsById: (({pivotIds}) =>
