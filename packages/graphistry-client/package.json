@@ -2,7 +2,7 @@
   "name": "@graphistry/graphistry-client",
   "version": "2.7.9",
   "description": "Clientside API for interacting with a Graphistry embedding",
-  "main": "www/graphistryJS.js",
+  "main": "lib/index.js",
   "scripts": {
     "clean:docs": "rm -rf docs",
     "docs": "jsdoc -c conf.json -R ./README.md -d docs",
@@ -19,13 +19,16 @@
     "babel-core": "^6.10.4",
     "babel-preset-es2015": "^6.9.0",
     "babel-preset-react": "^6.11.1",
-    "@graphistry/falcor-socket-datasource": "2.6.10",
+    "@graphistry/falcor": "2.6.11",
+    "@graphistry/falcor-model-rxjs": "2.6.14",
+    "@graphistry/falcor-socket-datasource": "2.6.11",
     "@graphistry/falcor-json-graph": "2.5.3",
-    "@graphistry/falcor-react-redux": "2.6.10",
+    "@graphistry/falcor-react-redux": "2.6.11",
+    "@graphistry/falcor-path-syntax": "2.5.3",
     "http-server": "^0.9.0",
     "jsdoc": "^3.4.0",
     "jsdoc-babel": "^0.2.1",
-    "rxjs": "5.0.1"
+    "rxjs": "5.0.2"
   },
   "devDependencies": {
     "assets-webpack-plugin": "3.5.0",
@@ -33,6 +36,7 @@
     "babel-cli": "6.18.0",
     "babel-core": "6.21.0",
     "babel-loader": "6.2.10",
+    "babel-plugin-transform-export-extensions": "6.8.0",
     "babel-plugin-transform-runtime": "6.15.0",
     "babel-preset-es2015": "6.18.0",
     "babel-preset-es2016": "6.16.0",
