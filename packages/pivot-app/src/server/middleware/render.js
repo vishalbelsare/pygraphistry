@@ -1,6 +1,5 @@
 import React from 'react';
 import { inspect } from 'util';
-import { Observable } from 'rxjs';
 import { renderToString as reactRenderToString } from 'react-dom/server';
 import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
 import logger from '../../shared/logger.js';
@@ -16,16 +15,11 @@ catch (e) {
 }
 
 
-// const renderServerSide = false;
-const renderServerSide = true;
-
 export function renderMiddleware(getFaclorModel, modules) {
     return function renderMiddleware(req, res) {
         try {
             const falcorModel = getFaclorModel(req);
-            const renderedResults =
-                !renderServerSide ? Observable.of(renderFullPage())
-                                  : renderAppWithHotReloading(modules, falcorModel);
+            const renderedResults = renderAppWithHotReloading(modules, falcorModel);
 
             renderedResults.take(1).subscribe({
                 next(html) {
