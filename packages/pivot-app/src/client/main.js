@@ -8,12 +8,12 @@ import '../shared/containers/TimeRangeWidget/styles.scss';
 import 'font-awesome/css/font-awesome.css';
 
 import React from 'react';
-import { Model } from './Model';
 import ReactDOM from 'react-dom';
 import { decode } from 'querystring';
 import { Observable, Scheduler } from 'rxjs';
 import { reloadHot } from '../shared/reloadHot';
 import DataSource from 'falcor-http-datasource';
+import { Model } from '@graphistry/falcor-model-rxjs';
 
 import { Provider } from 'react-redux';
 import { configureStore } from '../shared/store/configureStore';
