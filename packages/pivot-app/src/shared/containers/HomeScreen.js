@@ -164,8 +164,7 @@ function investigationTable({investigations = [], switchScreen, selectInvestigat
     }
 
     function nameFormatter(name, row) {
-        return (<a href="#"
-                    onClick={
+        return (<a onClick={
                         () => {selectInvestigation(row.id); switchScreen('investigation')} }>
                     { name }
                 </a>)

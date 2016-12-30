@@ -56,15 +56,15 @@ function welcomeBar(user, connectors) {
 function connectorTable({connectors = [], selectHandler, checkStatus}) {
 
     function nameFormatter(name) {
-        return (<a href="#">
+        return (<span>
                     { name }
-                </a>);
+                </span>);
     }
 
     function descriptionFormatter(description, row) {
-        return (<a href="#">
+        return (<span>
                     { row.status.message }
-                </a>);
+                </span>);
     }
 
     function idFormatter(id, row) {

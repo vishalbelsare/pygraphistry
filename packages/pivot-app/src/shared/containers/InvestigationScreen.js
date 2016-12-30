@@ -92,7 +92,7 @@ function renderInvestigationPlaceholder(switchScreen) {
                     <h4>No Investigation to Open!</h4>
                     <p>
                         Please&nbsp;
-                            <a href='#' onClick={() => switchScreen('home')}>create an investigation</a>
+                            <a onClick={() => switchScreen('home')}>create an investigation</a>
                         &nbsp;first.
                     </p>
                 </Alert>
