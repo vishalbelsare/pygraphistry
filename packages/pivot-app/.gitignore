@@ -10,3 +10,4 @@ www
 test_results
 *.deleted
 config/graphistryInternal.json
+test/scratch

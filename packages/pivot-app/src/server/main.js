@@ -16,7 +16,7 @@ import {
 } from '../shared/models';
 import {
     wrapServices,
-    loadApp,
+    loadAppFactory,
     connectorStore, listConnectors, checkConnector,
     userStore, templateStore, listTemplates,
     listInvestigations, investigationStore,
@@ -55,27 +55,28 @@ listInvestigations(investigationPath)
 
 function init(testUser) {
     const app = createAppModel(testUser);
+    const loadApp = loadAppFactory(app);
 
-    const { loadUsersById } = userStore(loadApp(app));
-    const { loadTemplatesById } = templateStore(loadApp(app));
+    const { loadUsersById } = userStore(loadApp);
+    const { loadTemplatesById } = templateStore(loadApp);
     const {
         loadInvestigationsById,
         unloadInvestigationsById,
         persistInvestigationsById,
         unlinkInvestigationsById,
-    } = investigationStore(loadApp(app), investigationPath);
+    } = investigationStore(loadApp, investigationPath);
     const {
         loadPivotsById,
         unloadPivotsById,
         persistPivotsById,
         unlinkPivotsById,
-    } = pivotStore(loadApp(app), pivotPath);
+    } = pivotStore(loadApp, pivotPath);
 
 
-    const { loadConnectorsById } = connectorStore(loadApp(app));
+    const { loadConnectorsById } = connectorStore(loadApp);
 
     const routeServices = wrapServices({
-        loadApp: loadApp(app),
+        loadApp,
         loadUsersById,
         loadTemplatesById,
         loadConnectorsById,

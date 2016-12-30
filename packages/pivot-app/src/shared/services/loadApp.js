@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-export function loadApp(app) {
+export function loadAppFactory(app) {
     return function loadApp() {
         return Observable.of(app);
     }

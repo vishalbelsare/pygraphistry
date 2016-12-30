@@ -12,8 +12,9 @@
     "debug": "node --inspect --debug ./build/server/serverBundle.js",
     "watch": "npm run clean && cross-env NODE_ENV=development node tool/build --watch",
     "fancy": "npm run clean && cross-env NODE_ENV=development webpack-dashboard -- node tool/build --watch --fancy",
-    "test": "./node_modules/mocha/bin/mocha test/unit.js",
-    "ci-test": "./node_modules/mocha/bin/mocha --reporter mocha-jenkins-reporter --reporter-options junit_report_path=/report.xml,junit_report_stack=1 test/unit.js",
+    "test": "GRAPHISTRY_LOG_LEVEL=warn ./node_modules/mocha/bin/mocha test/unit.js",
+    "debug-test": "GRAPHISTRY_LOG_LEVEL=debug ./node_modules/mocha/bin/mocha test/unit.js",
+    "ci-test": "GRAPHISTRY_LOG_LEVEL=warn ./node_modules/mocha/bin/mocha --reporter mocha-jenkins-reporter --reporter-options junit_report_path=/report.xml,junit_report_stack=1 test/unit.js",
     "eslint": "./node_modules/eslint/bin/eslint.js -c .eslintrc.json  src"
   },
   "keywords": [],
