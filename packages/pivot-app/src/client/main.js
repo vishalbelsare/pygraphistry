@@ -73,7 +73,7 @@ function getAppModel() {
         cache: getAppCache(),
         recycleJSON: true,
         scheduler: Scheduler.asap,
-        source: new DataSource('model.json', { timeout: 20000 } ),
+        source: new DataSource('model.json', { timeout: 25000 } ),
         treatErrorsAsValues: true
     });
     return window.appModel;

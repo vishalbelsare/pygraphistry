@@ -371,7 +371,7 @@ function renderPivotRow({
                 }
             </td>
             <td className={styles.pivotIcons}>
-                <Actions investigationId={investigationId} index={rowIndex} resultCount={resultCount} searchPivot={searchPivot}
+                status && <Actions investigationId={investigationId} index={rowIndex} resultCount={resultCount} searchPivot={searchPivot}
                     insertPivot={insertPivot} splicePivot={splicePivot} status={status} numRows={pivots.length}/>
             </td>
         </tr>
