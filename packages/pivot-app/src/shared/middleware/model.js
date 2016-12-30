@@ -11,7 +11,7 @@ const initialModels = {
 function getInitialModel(req, screenName) {
     const userId = req.user.userId;
     const model = {
-        currentUser: { activeScreen: screenName },
+        currentUser: $ref(`usersById['${userId}']`),
         usersById: {
             [userId]: {
                 activeScreen: screenName
@@ -24,7 +24,6 @@ function getInitialModel(req, screenName) {
         const investigationRef = $ref(
             `investigationsById['${investigationId}']`
         );
-        model.currentUser.activeInvestigation = investigationRef;
         model.usersById[userId].activeInvestigation = investigationRef;
     }
 
