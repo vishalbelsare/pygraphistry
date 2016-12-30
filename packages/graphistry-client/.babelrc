@@ -1,6 +1,6 @@
 {
     "presets": [
-        { "plugins": [ "transform-runtime" ] },
+        { "plugins": [ "transform-runtime", "version-inline" ] },
         {
             "passPerPreset": false,
             "presets": ["es2015", "stage-0"]
