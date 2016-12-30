@@ -7,3 +7,7 @@ describe('Misc', function() {
 describe('Models', function() {
     require('./models/');
 });
+
+describe('Services', function() {
+    require('./services/simpleFileSystemStore');
+});

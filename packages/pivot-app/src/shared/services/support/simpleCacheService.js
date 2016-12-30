@@ -1,7 +1,7 @@
 import { Observable, ReplaySubject } from 'rxjs';
 
-export default class SimpleServiceWithCache {
-    constructor({loadApp, resultName, loadById, createModel, cache = {}}) {
+export class SimpleCacheService {
+    constructor({loadApp, resultName, loadById, createModel, cache}) {
         this.loadApp = loadApp;
         this.resultName = resultName;
         this.loadById = loadById;
