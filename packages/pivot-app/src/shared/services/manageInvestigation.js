@@ -69,6 +69,9 @@ export function switchActiveInvestigation({ loadUsersById, loadInvestigationsByI
         });
 }
 
+
+/* DISABLED UNTIL WE HAVE AUTOSAVE. MAY CAUSES DATA LOSS UNEXPECTED BY USER
+ *
 function closeInvestigationsById({ loadInvestigationsById, unloadInvestigationsById,
                                    unloadPivotsById, investigationIds }) {
     return loadInvestigationsById({investigationIds})
@@ -86,6 +89,9 @@ function closeInvestigationsById({ loadInvestigationsById, unloadInvestigationsB
             log.info(`Closed investigation ${investigation.id}`)
         )
         .defaultIfEmpty(null);
+}*/
+function closeInvestigationsById() {
+    return Observable.of(null);
 }
 
 export function cloneInvestigationsById({ loadInvestigationsById, loadPivotsById, loadUsersById,

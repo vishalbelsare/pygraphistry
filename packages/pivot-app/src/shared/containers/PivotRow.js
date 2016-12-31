@@ -30,6 +30,10 @@ import Select from 'react-select';
 
 
 function Actions({ index, investigationId, splicePivot, searchPivot, insertPivot, status, numRows }) {
+    if (!status) {
+        return null;
+    }
+
     return (
         <div>
         <ButtonGroup>

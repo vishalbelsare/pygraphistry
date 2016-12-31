@@ -83,7 +83,6 @@ const FIELDS = [
     `Fire Eye MD5`,
     `Fire Eye URL`,
     `Internal IPs`,
-    'Fire Eye URL',
     'External IPs',
     'Message'
 ];
