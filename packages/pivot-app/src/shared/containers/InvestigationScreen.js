@@ -2,6 +2,7 @@ import React from 'react';
 import _ from 'underscore';
 import Investigation from './Investigation.js';
 import InvestigationHeader from './InvestigationHeader.js';
+import { GraphistryIframe } from './GraphistryIframe.js';
 import {
     Panel,
     Alert,
@@ -47,15 +48,12 @@ function renderVisualizationPanel(activeInvestigation) {
         </Grid>
     );
 
+
+    console.log({activeInvestigation});
     return (
         activeInvestigation.url ?
-            <iframe
-                allowFullScreen="true"
-                scrolling="no"
-                className={styles.iframe}
-                src={activeInvestigation.url}
-            /> :
-            placeholder
+            <GraphistryIframe src={activeInvestigation.url} />
+            : placeholder
     );
 }
 
