@@ -48,8 +48,6 @@ function renderVisualizationPanel(activeInvestigation) {
         </Grid>
     );
 
-
-    console.log({activeInvestigation});
     return (
         activeInvestigation.url ?
             <GraphistryIframe src={activeInvestigation.url} />
