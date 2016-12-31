@@ -48,7 +48,7 @@ const ALERT_DEMO_NODE_ICONS = {
     'Fire Eye MD5': 'hashtag',
     'Message': 'bell',
     'Fire Eye URL': 'globe',
-    'EventID': 'square',
+    'EventID': '',
     'Search': 'search'
 };
 

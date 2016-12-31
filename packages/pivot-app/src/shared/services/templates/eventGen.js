@@ -12,7 +12,7 @@ const PAN_NODE_COLORS = { 'EventID': 7, 'user': 1, 'dest': 3, 'threat_name': 5 }
 
 const PAN_NODE_SIZES = { 'EventID': 0.1, 'dest': 1.1, 'user': 5, 'threat_name': 10 };
 
-const PAN_NODE_ICONS = { 'EventID': 'square', 'user': 'user', 'threat_name': 'bell' };
+const PAN_NODE_ICONS = { 'EventID': '', 'user': 'user', 'threat_name': 'bell' };
 
 const attributes = [
     'user', 'threat_name', 'action', 'url', 'severity',
