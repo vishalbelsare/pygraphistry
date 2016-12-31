@@ -14,7 +14,6 @@ import {
     pathInvalidation as $invalidate
 } from '@graphistry/falcor-json-graph';
 
-import Color from 'color';
 
 /**
  * @class Graphistry
@@ -27,8 +26,6 @@ class Graphistry extends Observable {
     static model = null;
     static workbook = null;
     static iFrame = null;
-
-    static Color = Color;
 
     /**
      * Create Graphistry Observable by extending observable's methods
