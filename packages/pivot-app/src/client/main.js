@@ -9,11 +9,12 @@ import 'font-awesome/css/font-awesome.css';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
+import SocketIO from 'socket.io-client';
 import { decode } from 'querystring';
 import { Observable, Scheduler } from 'rxjs';
 import { reloadHot } from '../shared/reloadHot';
-import DataSource from 'falcor-http-datasource';
 import { Model } from '@graphistry/falcor-model-rxjs';
+import { FalcorPubSubDataSource } from '@graphistry/falcor-socket-datasource';
 
 import { Provider } from 'react-redux';
 import { configureStore } from '../shared/store/configureStore';
@@ -35,11 +36,14 @@ Observable
         return decode(window.location.search.substring(1));
     })
     .switchMap(() => reloadHot(module))
-    .switchMap(({ App }) => {
+    .switchMap(initSocket, (options, socket) => ({
+        ...options, socket
+    }))
+    .switchMap(({ App, socket }) => {
         const renderAsObservable = Observable.bindCallback(ReactDOM.render);
         return renderAsObservable((
             <Provider store={configureStore()}>
-                <App falcor={getAppModel()}/>
+                <App falcor={getAppModel(socket)}/>
             </Provider>
         ), getAppDOMNode());
     })
@@ -68,14 +72,13 @@ function getAppDOMNode() {
     return appDomNode;
 }
 
-function getAppModel() {
+function getAppModel(socket) {
     window.appModel = new Model({
-        cache: getAppCache(),
         recycleJSON: true,
-        scheduler: Scheduler.asap,
-        source: new DataSource('model.json', { timeout: 25000 } ),
-        treatErrorsAsValues: true
+        cache: getAppCache(),
+        scheduler: Scheduler.asap
     });
+    window.appModel._source = new FalcorPubSubDataSource(socket, window.appModel);
     return window.appModel;
 }
 
@@ -100,4 +103,24 @@ function getAppCache() {
     }
 
     return appCache;
+}
+
+function initSocket() {
+
+    const socket = SocketIO.Manager({
+        path: `/socket.io`, reconnection: false,
+        query: { userId: 0 } // <-- TODO: get the user ID from falcor
+    }).socket('/');
+
+    const socketConnected = Observable.fromEvent(socket, 'connect');
+    const socketErrorConnecting = Observable.merge(
+        Observable.fromEvent(socket, 'error'),
+        Observable.fromEvent(socket, 'connect_error')
+    )
+    .mergeMap((e) => Observable.throw(e));
+
+    return socketConnected
+        .take(1).mapTo(socket)
+        .merge(socketErrorConnecting);
+
 }

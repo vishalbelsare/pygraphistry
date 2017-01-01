@@ -26,8 +26,8 @@
   },
   "dependencies": {
     "@graphistry/falcor": "2.6.11",
-    "@graphistry/falcor-model-rxjs": "2.6.14",
     "@graphistry/falcor-json-graph": "2.5.3",
+    "@graphistry/falcor-model-rxjs": "2.6.14",
     "@graphistry/falcor-path-syntax": "2.5.3",
     "@graphistry/falcor-path-utils": "2.6.11",
     "@graphistry/falcor-query-syntax": "2.6.11",
@@ -73,6 +73,8 @@
     "request": "~2.79.0",
     "rxjs": "5.0.2",
     "simpleflakes": "1.2.3",
+    "socket.io": "~1.7.2",
+    "socket.io-client": "~1.7.2",
     "source-map-support": "0.4.2",
     "splunk-sdk": "~1.8.0",
     "sprintf-js": "~1.0.0",

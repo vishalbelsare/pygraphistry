@@ -1,5 +1,5 @@
 import express from 'express';
-import expressApp from './app.js';
+import { expressApp, socketServer } from './app.js';
 import bodyParser from 'body-parser';
 import path from 'path';
 import mkdirp from 'mkdirp';
@@ -10,6 +10,7 @@ import {
     falcorModelFactory
  } from '../shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
+import { FalcorPubSubDataSink } from '@graphistry/falcor-socket-datasource';
 import {
     createAppModel,
     makeTestUser
@@ -102,6 +103,7 @@ function init(testUser) {
     const getDataSource = getDataSourceFactory(routeServices);
 
     setupRoutes(modules, getDataSource);
+    setupSocketRoutes(getDataSource);
 }
 
 function setupRoutes(modules, getDataSource) {
@@ -125,4 +127,22 @@ function setupRoutes(modules, getDataSource) {
 
     expressApp.get('/', (req, res) => res.redirect('/home'));
     expressApp.get('*', (req, res) => res.status(404).send('Not found'));
+}
+
+function setupSocketRoutes(getDataSource) {
+    socketServer.on('connection', (socket) => {
+
+        const { handshake: { query = {} }} = socket;
+        const sink = new FalcorPubSubDataSink(socket, () => getDataSource({
+            user: { userId: query.userId }
+        }, true));
+
+        socket.on(sink.event, sink.response);
+        socket.on('disconnect', onDisconnect);
+        function onDisconnect() {
+            socket.removeListener(sink.event, sink.response);
+            socket.removeListener('disconnect', onDisconnect);
+            log.info(`User ${query.userId} successfully disconnected.`);
+        }
+    });
 }

@@ -7,11 +7,23 @@ const log = logger.createLogger(__filename);
 
 export function getDataSourceFactory(services) {
 
-    const AppRouterBase = Router.createClass(routes(services));
+    const AppRouter = createAppRouter(routes(services));
 
-    class AppRouter extends AppRouterBase {
+    return function getDataSource(request, _streaming = false) {
+        if (!request.user) {
+            throw new Error('Request is not tagged with a user (no auth middleware?)');
+        }
+        return new AppRouter({
+            request, _streaming,
+            userId: request.user.userId
+        });
+    }
+}
+
+function createAppRouter(routes, options = { bufferTime: 10 }) {
+    return class AppRouter extends Router.createClass(routes, options) {
         constructor(options = {}) {
-            super();
+            super(options);
             for (const key in options) {
                 if (options.hasOwnProperty(key)) {
                     this[key] = options[key];
@@ -37,13 +49,5 @@ export function getDataSourceFactory(services) {
                 }
             });
         }
-    }
-
-    return function getDataSource(request) {
-        if (!request.user) {
-            throw new Error('Request is not tagged with a user (no auth middleware?)');
-        }
-
-        return new AppRouter({ request, userId: request.user.userId });
     }
 }
