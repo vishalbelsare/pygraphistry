@@ -14,6 +14,7 @@ export class GraphistryIframe extends React.Component {
             //mounted
             const iframe = maybeIframe;
             GraphistryJS(iframe)
+                .do((g) => g.encodeIcons('point', 'pointIcon'))
                 .subscribe(() => undefined, console.error.bind(console, 'graphistry-client', 'error'));
         } else {
             //unmounted
