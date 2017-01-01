@@ -1,6 +1,6 @@
 {
   "name": "@graphistry/graphistry-client",
-  "version": "2.8.10",
+  "version": "2.9.0",
   "description": "Clientside API for interacting with a Graphistry embedding",
   "main": "lib/index.js",
   "scripts": {
