@@ -109,8 +109,10 @@ function getIPs() {
                             logger.info('All workers are currently busy');
                             var msg = "All workers are currently busy, and your request can't be serviced at this time. Please contact help@graphistry.com for private access. (Reason: could not find an available worker in the worker ping database.)";
                             throw new Error(msg);
+                        } else {
+                            logger.info({servers: ips, workers: results}, 'Found available IPs');
+                            return {servers: ips, workers: results};
                         }
-                        return {servers: ips, workers: results};
                     });
             });
     });
@@ -135,8 +137,10 @@ function getWorkers() {
                     logger.warn({workerQuery: results}, 'Found 0 records for inactive workers in the database');
                     var msg = "Server at maximum capacity, and your request can't be serviced at this time. Please contact help@graphistry.com for private access. (Reason: query for registered, inactive workers returned no results.)";
                     throw new Error(msg);
+                } else {
+                    logger.info({ workerQuery: results}, 'Found available workers');
+                    return results;
                 }
-                return results;
             });
     });
 }
