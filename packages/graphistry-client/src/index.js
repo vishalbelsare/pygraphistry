@@ -65,7 +65,8 @@ class Graphistry extends Observable {
      * @return {Promise} A promise to return the result of the callback
      * @example
      * GraphistryJS(document.getElementById('viz'))
-     *     .flatMap(function() {
+     *     .flatMap(function(g) {
+     *         window.g = g;
      *         const columns = [
      *             ['edge', 'highways', [66, 101, 280], 'number'],
      *             ['point', 'theme parks', ['six flags', 'disney world', 'great america'], 'string']
@@ -73,6 +74,7 @@ class Graphistry extends Observable {
      *         console.log('adding columns', columns);
      *         return g.addColumns.apply(g, columns);
      *     })
+     *     .subscribe();
      */
     static addColumns(...columns) {
         const { view } = this;
@@ -110,6 +112,7 @@ class Graphistry extends Observable {
      *         window.g = g;
      *         return g.encodeColor('point', 'degree', 'categorical', ['black', 'white'])
      *     })
+     *     .subscribe();
      */
     static encodeColor(graphType, attribute, variation, colors) {
         const { view } = this;
@@ -133,6 +136,7 @@ class Graphistry extends Observable {
      *         return g.encodeColor('point', 'degree', 'categorical', ['black', 'white'])
      *         return g.resetColor('point')
      *     })
+     *     .subscribe();
      */
     static resetColor(graphType) {
         const { view } = this;
@@ -158,6 +162,7 @@ class Graphistry extends Observable {
      *         window.g = g;
      *         return g.encodeIcons('point', 'icon')
      *     })
+     *     .subscribe();
      */
     static encodeIcons(graphType, attribute) {
         const { view } = this;
@@ -181,6 +186,7 @@ class Graphistry extends Observable {
      *         return g.encodeIcons('point', 'icon')
      *         return g.resetIcons('point')
      *     })
+     *     .subscribe();
      */
     static resetIcons(graphType) {
         const { view } = this;
@@ -207,6 +213,7 @@ class Graphistry extends Observable {
      *         window.g = g;
      *         return g.encodeSize('point', 'community_infomap')
      *     })
+     *     .subscribe();
      */
     static encodeSize(graphType, attribute) {
         const { view } = this;
@@ -231,6 +238,7 @@ class Graphistry extends Observable {
      *         return g.encodeSize('point', 'community_infomap')
      *         return g.resetSize('point')
      *     })
+     *     .subscribe();
      */
     static resetSize(graphType) {
         const { view } = this;
@@ -254,6 +262,7 @@ class Graphistry extends Observable {
      *         console.log('opening filters');
      *         return g.toggleLeftPanel('filters', true);
      *     })
+     *     .subscribe();
      */
     static toggleLeftPanel(panel, turnOn) {
         const { view } = this;
@@ -299,6 +308,7 @@ class Graphistry extends Observable {
      *         console.log('opening inspector panel');
      *         return g.toggleInspector(true);
      *     })
+     *     .subscribe();
      */
     static toggleInspector(turnOn) {
         const { view } = this;
@@ -332,6 +342,7 @@ class Graphistry extends Observable {
      *         console.log('opening histogram panel');
      *         return g.toggleHistograms(true);
      *     })
+     *     .subscribe();
      */
     static toggleHistograms(turnOn) {
         const { view } = this;
@@ -363,6 +374,7 @@ class Graphistry extends Observable {
      *         console.log('closing filters');
      *         return g.closeFilters();
      *     })
+     *     .subscribe();
      */
     static closeFilters() {
         const { view } = this;
@@ -387,6 +399,7 @@ class Graphistry extends Observable {
      *         console.log('starting to cluster');
      *         return g.tickClustering();
      *     })
+     *     .subscribe();
      */
     static tickClustering(ticks = 1) {
 
@@ -420,6 +433,7 @@ class Graphistry extends Observable {
      *         console.log('centering');
      *         return g.autocenter(.90);
      *     })
+     *     .subscribe();
      */
     static autocenter(percentile, cb) {
 
@@ -437,6 +451,7 @@ class Graphistry extends Observable {
      *         window.g = g;
      *         return g.getCurrentWorkbook(function (err, obj){ alert('id: ' + obj.id); });
      *     })
+     *     .subscribe();
      */
     static getCurrentWorkbook() {
         const { workbook } = this;
@@ -457,6 +472,7 @@ class Graphistry extends Observable {
      *         window.g = g;
      *         return g.saveWorkbook();
      *     })
+     *     .subscribe();
      */
     static saveWorkbook() {
 
