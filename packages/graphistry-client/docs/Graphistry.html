@@ -92,7 +92,7 @@ to provide an API for interacting with the graph.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line93">line 93</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line113">line 113</a>
     </li></ul></dd>
     
 
@@ -203,7 +203,7 @@ to provide an API for interacting with the graph.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line141">line 141</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line161">line 161</a>
     </li></ul></dd>
     
 
@@ -253,14 +253,16 @@ to provide an API for interacting with the graph.</div>
     <h5>Example</h5>
     
     <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
-    .flatMap(function() {
+    .flatMap(function(g) {
+        window.g = g;
         const columns = [
             ['edge', 'highways', [66, 101, 280], 'number'],
             ['point', 'theme parks', ['six flags', 'disney world', 'great america'], 'string']
         ];
         console.log('adding columns', columns);
         return g.addColumns.apply(g, columns);
-    })</code></pre>
+    })
+    .subscribe();</code></pre>
 
 
 
@@ -370,7 +372,7 @@ exclusion and filter panel</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line559">line 559</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line652">line 652</a>
     </li></ul></dd>
     
 
@@ -529,7 +531,7 @@ exclusion and filter panel</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line536">line 536</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line629">line 629</a>
     </li></ul></dd>
     
 
@@ -730,7 +732,7 @@ exclusion and filter panel</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line446">line 446</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line536">line 536</a>
     </li></ul></dd>
     
 
@@ -784,7 +786,8 @@ exclusion and filter panel</td>
         window.g = g;
         console.log('centering');
         return g.autocenter(.90);
-    })</code></pre>
+    })
+    .subscribe();</code></pre>
 
 
 
@@ -844,7 +847,7 @@ exclusion and filter panel</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line386">line 386</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line474">line 474</a>
     </li></ul></dd>
     
 
@@ -898,7 +901,8 @@ exclusion and filter panel</td>
         window.g = g;
         console.log('closing filters');
         return g.closeFilters();
-    })</code></pre>
+    })
+    .subscribe();</code></pre>
 
 
 
@@ -1118,7 +1122,7 @@ exclusion and filter panel</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line185">line 185</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line207">line 207</a>
     </li></ul></dd>
     
 
@@ -1171,7 +1175,216 @@ exclusion and filter panel</td>
     .flatMap(function (g) {
         window.g = g;
         return g.encodeColor('point', 'degree', 'categorical', ['black', 'white'])
-    })</code></pre>
+    })
+    .subscribe();</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".encodeIcons"><span class="type-signature">(static) </span>encodeIcons<span class="signature">(graphType<span class="signature-attributes">opt</span>, attribute<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Change icons based on an attribute
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>graphType</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">GraphType</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">'point' or 'edge'</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>attribute</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Attribute</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">name of data column, e.g., 'icon'</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line265">line 265</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    The result of the callback
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        return g.encodeIcons('point', 'icon')
+    })
+    .subscribe();</code></pre>
 
 
 
@@ -1325,7 +1538,7 @@ exclusion and filter panel</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line238">line 238</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line321">line 321</a>
     </li></ul></dd>
     
 
@@ -1378,7 +1591,8 @@ exclusion and filter panel</td>
     .flatMap(function (g) {
         window.g = g;
         return g.encodeSize('point', 'community_infomap')
-    })</code></pre>
+    })
+    .subscribe();</code></pre>
 
 
 
@@ -1499,7 +1713,7 @@ exclusion and filter panel</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line466">line 466</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line557">line 557</a>
     </li></ul></dd>
     
 
@@ -1552,7 +1766,8 @@ exclusion and filter panel</td>
     .flatMap(function (g) {
         window.g = g;
         return g.getCurrentWorkbook(function (err, obj){ alert('id: ' + obj.id); });
-    })</code></pre>
+    })
+    .subscribe();</code></pre>
 
 
 
@@ -1673,7 +1888,7 @@ exclusion and filter panel</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line213">line 213</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line236">line 236</a>
     </li></ul></dd>
     
 
@@ -1727,7 +1942,184 @@ exclusion and filter panel</td>
         window.g = g;
         return g.encodeColor('point', 'degree', 'categorical', ['black', 'white'])
         return g.resetColor('point')
-    })</code></pre>
+    })
+    .subscribe();</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".resetIcons"><span class="type-signature">(static) </span>resetIcons<span class="signature">(graphType<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Reset icons to value at page load
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>graphType</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">GraphType</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">'point' or 'edge'</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line292">line 292</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    The result of the callback
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        return g.encodeIcons('point', 'icon')
+        return g.resetIcons('point')
+    })
+    .subscribe();</code></pre>
 
 
 
@@ -1848,7 +2240,7 @@ exclusion and filter panel</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line264">line 264</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line348">line 348</a>
     </li></ul></dd>
     
 
@@ -1902,7 +2294,8 @@ exclusion and filter panel</td>
         window.g = g;
         return g.encodeSize('point', 'community_infomap')
         return g.resetSize('point')
-    })</code></pre>
+    })
+    .subscribe();</code></pre>
 
 
 
@@ -1963,7 +2356,7 @@ of the visualization, including active filters and exclusions
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line491">line 491</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line583">line 583</a>
     </li></ul></dd>
     
 
@@ -2016,7 +2409,8 @@ of the visualization, including active filters and exclusions
     .flatMap(function (g) {
         window.g = g;
         return g.saveWorkbook();
-    })</code></pre>
+    })
+    .subscribe();</code></pre>
 
 
 
@@ -2126,7 +2520,7 @@ will subscribe to any label updates</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line652">line 652</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line745">line 745</a>
     </li></ul></dd>
     
 
@@ -2279,7 +2673,7 @@ will subscribe to any label updates</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line410">line 410</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line499">line 499</a>
     </li></ul></dd>
     
 
@@ -2333,7 +2727,8 @@ will subscribe to any label updates</td>
         window.g = g;
         console.log('starting to cluster');
         return g.tickClustering();
-    })</code></pre>
+    })
+    .subscribe();</code></pre>
 
 
 
@@ -2454,7 +2849,7 @@ will subscribe to any label updates</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line354">line 354</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line441">line 441</a>
     </li></ul></dd>
     
 
@@ -2508,7 +2903,8 @@ will subscribe to any label updates</td>
         window.g = g;
         console.log('opening histogram panel');
         return g.toggleHistograms(true);
-    })</code></pre>
+    })
+    .subscribe();</code></pre>
 
 
 
@@ -2629,7 +3025,7 @@ will subscribe to any label updates</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line322">line 322</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line408">line 408</a>
     </li></ul></dd>
     
 
@@ -2683,7 +3079,8 @@ will subscribe to any label updates</td>
         window.g = g;
         console.log('opening inspector panel');
         return g.toggleInspector(true);
-    })</code></pre>
+    })
+    .subscribe();</code></pre>
 
 
 
@@ -2837,7 +3234,7 @@ will subscribe to any label updates</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line289">line 289</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line374">line 374</a>
     </li></ul></dd>
     
 
@@ -2891,7 +3288,8 @@ will subscribe to any label updates</td>
         window.g = g;
         console.log('opening filters');
         return g.toggleLeftPanel('filters', true);
-    })</code></pre>
+    })
+    .subscribe();</code></pre>
 
 
 
@@ -3000,7 +3398,7 @@ will subscribe to any label updates</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line517">line 517</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line610">line 610</a>
     </li></ul></dd>
     
 
@@ -3184,7 +3582,7 @@ pointSize, labelOpacity, labelEnabled, labelPOI, zoom
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line582">line 582</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line675">line 675</a>
     </li></ul></dd>
     
 
@@ -3360,7 +3758,7 @@ pointSize, labelOpacity, labelEnabled, labelPOI, zoom
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line637">line 637</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line730">line 730</a>
     </li></ul></dd>
     
 
@@ -3515,7 +3913,7 @@ observable</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line123">line 123</a>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line143">line 143</a>
     </li></ul></dd>
     
 
@@ -3585,7 +3983,7 @@ observable</td>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.2</a> on Tue Dec 20 2016 18:53:30 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Sun Jan 01 2017 17:31:32 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>
