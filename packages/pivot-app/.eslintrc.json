@@ -17,6 +17,7 @@
         "node": true
     },
     "globals": {
+        "__CLIENT__": false,
         "__DEV__": false,
         "__SERVER__": false,
         "__BUILDNUMBER__": false,
