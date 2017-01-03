@@ -86,6 +86,7 @@ export class Label extends React.Component {
 
         const arrowStyle = { 'border-bottom-color': background };
         const contentStyle = { color, background, maxWidth: `none` };
+        const iconClass = getIconClass({ encodings, type, columns });
 
         return (
             <div className={classNames({
@@ -101,19 +102,20 @@ export class Label extends React.Component {
                          left: `-50%`,
                          opacity: 1,
                          marginTop: 1,
-                         position: `relative`,
+                         position: `relative`                         
                      }}
                      className={classNames({
                           'in': true,
                           'bottom': true, 'tooltip': true,
                           [styles['label-tooltip']]: true
                      })}>
+                    <PointIcon iconClass={iconClass} />
                     <div style={arrowStyle} className='tooltip-arrow'/>
                     <div style={contentStyle} className='tooltip-inner'>
                         <LabelTitle type={type}
                                     color={color}
                                     title={title}
-                                    encodings={encodings}
+                                    iconClass={iconClass}
                                     columns={columns}
                                     pinned={pinned}
                                     showFull={showFull}
@@ -134,6 +136,20 @@ export class Label extends React.Component {
             </div>
         );
     }
+}
+
+function PointIcon({ iconClass }) {
+    return iconClass ? 
+            <div className={classNames({[styles['point-icon-container']]: true})}>
+                <div className={classNames({[styles['point-icon']]: true})}>                                
+                    <i className={classNames({
+                        'fa': true,
+                        'fa-fw': true,
+                        [iconClass]: true})} />
+                </div>
+            </div>
+        : null;
+
 }
 
 function Icon({ iconClass }) {
@@ -176,12 +192,10 @@ function getIconClass({encodings, type, columns}) {
     return `fa-${iconStr}`;
 }
 
-function LabelTitle ({ type, color, encodings, columns, title, icon, pinned, showFull, onExclude, onMouseDown, onTouchStart }) {
+function LabelTitle ({ type, color, iconClass, title, icon, pinned, showFull, onExclude, onMouseDown, onTouchStart }) {
 
     const titleHTML = { __html: title };
     const titleExcludeHTML = { __html: title };
-
-    const iconClass = getIconClass({ encodings, type, columns });
 
     if (title == null || title === '') {
         title = '';
@@ -196,7 +210,7 @@ function LabelTitle ({ type, color, encodings, columns, title, icon, pinned, sho
                  onTouchStart={onTouchStart}>
                 <span onMouseDown={stopPropagationIfAnchor}
                       className={styles['label-title-text']}>
-                      <Icon iconClass={iconClass}/>
+                      {/*<Icon iconClass={iconClass}/>*/}
                       <span dangerouslySetInnerHTML={titleHTML} style={ {display: 'inline-block'} }/>
                 </span>
             </div>
@@ -249,7 +263,7 @@ function LabelTitle ({ type, color, encodings, columns, title, icon, pinned, sho
             </OverlayTrigger>
             <span onMouseDown={stopPropagationIfAnchor}
                   className={styles['label-title-text']}>
-                  <Icon iconClass={iconClass}/>
+                  {/*<Icon iconClass={iconClass}/>*/}
                   <span dangerouslySetInnerHTML={titleHTML} style={ {display: 'inline-block'} }/>
             </span>
         </div>

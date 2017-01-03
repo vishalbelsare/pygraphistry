@@ -235,7 +235,43 @@
 /********* ICONS ************/
 
 
+@icon-diameter: 30px;
+@icon-border: 2px;
+@icon-container-diameter: 40px;
+@icon-container-border: 1px;
+.point-icon-container {
+
+    background-color: #ccc;
+
+    border-radius: calc( @icon-container-diameter / 2);    
+    border: @icon-container-border solid black;
+    padding: calc( @icon-container-diameter / 2 - @icon-container-border - @icon-diameter / 2);
+
+    display: inline-block;
+    width: @icon-container-diameter;
+    height: @icon-container-diameter;
+    position: absolute;
+    top: calc(-@icon-container-diameter);
+    margin-left: calc(-@icon-container-diameter / 2);
+
+}
+.point-icon {
+
+    border-radius: calc( @icon-diameter / 2);    
+    background-color: white;
+    border: @icon-border solid black;
+    overflow: hidden;
+
+    display: inline-block;
+    width: @icon-diameter;
+    height: @icon-diameter;
+
+    font-size: 18px;
+
+}
+
 .label-tooltip {
+    text-align: center;
     pointer-events: auto;
     z-index: @graph-label-modal-z;
 }
