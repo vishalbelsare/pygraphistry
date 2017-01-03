@@ -16,6 +16,11 @@
 
 .label {
 
+    &:not(.on) :global(.tooltip-inner),
+    &:not(.on) :global(.tooltip-arrow) {
+        display: none;
+    }
+
     :global(.tooltip-inner) {
         padding-top: 3px;
         padding-left: 8px;
@@ -67,6 +72,13 @@
 
 .label-title {
 
+    .label.on:not(.clicked) & {
+        .label-title-close,
+        .label-type {
+            display: none;
+        }
+    }
+
     width: 100%;
 
     .label-title-close {
@@ -108,7 +120,7 @@
             vertical-align: middle;
         }
 
-        .label:not(.on):not(.clicked) & {
+        .label.on:not(.clicked) & {
             max-width: 12em;
             overflow: hidden;
             white-space: nowrap;
@@ -132,6 +144,10 @@
 /******** BODY ******/
 
 .label-contents {
+
+    .label:not(.clicked) & {
+        display: none;
+    }
 
     background-color: white;
     color: #2e2e2e;
