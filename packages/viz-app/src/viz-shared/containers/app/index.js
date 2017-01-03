@@ -23,7 +23,7 @@ let App = ({ workbooks = [], ...props } = {}) => {
     );
 }
 
-App = hoistStatics(connect)(container({
+App = container({
     renderLoading: true,
     fragment: ({ workbooks = [] } = {}) => {
         const { open: workbook = {} } = workbooks;
@@ -41,6 +41,8 @@ App = hoistStatics(connect)(container({
             }
         }`;
     }
-})(App));
+})(App);
+
+App = connect(App);
 
 export { App };
