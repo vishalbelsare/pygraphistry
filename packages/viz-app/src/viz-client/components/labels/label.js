@@ -167,7 +167,10 @@ export class Label extends React.Component {
 function PointIcon({ iconClass, pointColor, iconSize }) {
     return iconClass ? 
             <div className={classNames({[styles['point-icon-container']]: true})}
-                style={{backgroundColor: pointColor}}
+                style={{
+                    backgroundColor: pointColor, 
+                    top: `calc(-${iconSize}px - 10px)`,
+                    transform: `scale(${iconSize/40})`}}
             >
                 <div className={classNames({[styles['point-icon']]: true})}>                                
                     <i className={classNames({
