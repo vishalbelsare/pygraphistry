@@ -47,15 +47,27 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
 class Labels extends React.Component {
 
     getChildContext() {
+
         return {
             sizes: this.props.sizes,
-            colors: this.props.colors
+            colors: this.props.colors,
+            ...(this.props.renderState && this.props.renderState.camera ?
+                {
+                    scalingFactor: this.props.renderState.camera.semanticZoom(this.props.sizes.length || 0),
+                    pixelRatio: this.props.renderState.camera.pixelRatio
+                }
+                : {
+                    scalingFactor: 1,
+                    pixelRatio: 1
+                })
         };        
     }
 
     static childContextTypes = {
         sizes: React.PropTypes.object.isRequired,
         colors: React.PropTypes.object.isRequired,
+        scalingFactor: React.PropTypes.number.isRequired,
+        pixelRatio: React.PropTypes.number.isRequired
     }    
 
     componentWillMount() {

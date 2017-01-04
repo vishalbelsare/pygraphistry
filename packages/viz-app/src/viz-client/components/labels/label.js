@@ -34,8 +34,10 @@ export class Label extends React.Component {
 
     static contextTypes = {
         sizes: React.PropTypes.object.isRequired,
-        colors: React.PropTypes.object.isRequired
-    }
+        colors: React.PropTypes.object.isRequired,
+        scalingFactor: React.PropTypes.number.isRequired,
+        pixelRatio: React.PropTypes.number.isRequired
+    };
 
 
     constructor(props, context) {
@@ -96,6 +98,16 @@ export class Label extends React.Component {
             .alpha(1)
             .rgbaString();
 
+        const iconSize = 
+            this.props.type === 'edge' ? 
+                    40
+                :  Math.max(
+                        5, 
+                        Math.min(
+                            this.context.scalingFactor * this.context.sizes[this.props.index], 
+                            50)) / this.context.pixelRatio;
+
+
         background = showFull || pinned ? new Color(background).alpha(1).rgbaString() : background;
 
         const arrowStyle = { 'border-bottom-color': background };
@@ -123,7 +135,7 @@ export class Label extends React.Component {
                           'bottom': true, 'tooltip': true,
                           [styles['label-tooltip']]: true
                      })}>
-                    <PointIcon iconClass={iconClass} pointColor={pointColor}/>
+                    <PointIcon iconClass={iconClass} pointColor={pointColor} iconSize={iconSize}/>
                     <div style={arrowStyle} className='tooltip-arrow'/>
                     <div style={contentStyle} className='tooltip-inner'>
                         <LabelTitle type={type}
@@ -152,7 +164,7 @@ export class Label extends React.Component {
     }
 }
 
-function PointIcon({ iconClass, pointColor }) {
+function PointIcon({ iconClass, pointColor, iconSize }) {
     return iconClass ? 
             <div className={classNames({[styles['point-icon-container']]: true})}
                 style={{backgroundColor: pointColor}}
