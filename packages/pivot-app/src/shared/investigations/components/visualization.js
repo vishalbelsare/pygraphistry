@@ -1,6 +1,7 @@
 import { ThreeBounce } from 'better-react-spinkit';
 import { Col, Row, Grid, Image } from 'react-bootstrap';
-import styles from 'pivot-shared/styles.less';
+import { GraphistryIframe } from './graphistry-iframe';
+
 
 export default function VisualizationPanel({ investigation }) {
     const loadingGraph = (
@@ -33,12 +34,7 @@ export default function VisualizationPanel({ investigation }) {
 
     return (
         investigation.url ?
-            <iframe
-                allowFullScreen="true"
-                scrolling="no"
-                className={styles.iframe}
-                src={investigation.url}
-            /> :
-            placeholder
+            <GraphistryIframe src={investigation.url} />
+            : placeholder
     );
 }
