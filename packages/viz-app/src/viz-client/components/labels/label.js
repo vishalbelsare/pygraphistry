@@ -89,6 +89,13 @@ export class Label extends React.Component {
             }
         }
 
+        const pointColor = Color({
+            r: this.context.colors[this.props.index * 4 + 0],
+            g: this.context.colors[this.props.index * 4 + 1],
+            b: this.context.colors[this.props.index * 4 + 2]})
+            .alpha(1)
+            .rgbaString();
+
         background = showFull || pinned ? new Color(background).alpha(1).rgbaString() : background;
 
         const arrowStyle = { 'border-bottom-color': background };
@@ -116,7 +123,7 @@ export class Label extends React.Component {
                           'bottom': true, 'tooltip': true,
                           [styles['label-tooltip']]: true
                      })}>
-                    <PointIcon iconClass={iconClass} />
+                    <PointIcon iconClass={iconClass} pointColor={pointColor}/>
                     <div style={arrowStyle} className='tooltip-arrow'/>
                     <div style={contentStyle} className='tooltip-inner'>
                         <LabelTitle type={type}
@@ -145,9 +152,11 @@ export class Label extends React.Component {
     }
 }
 
-function PointIcon({ iconClass }) {
+function PointIcon({ iconClass, pointColor }) {
     return iconClass ? 
-            <div className={classNames({[styles['point-icon-container']]: true})}>
+            <div className={classNames({[styles['point-icon-container']]: true})}
+                style={{backgroundColor: pointColor}}
+            >
                 <div className={classNames({[styles['point-icon']]: true})}>                                
                     <i className={classNames({
                         'fa': true,
