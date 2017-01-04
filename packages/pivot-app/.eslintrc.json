@@ -24,10 +24,10 @@
         "__BUILDDATE__": false,
         "__GITCOMMIT__": false,
         "__GITBRANCH__": false,
-        "_": true,
-        "Rx": true,
-        "React": true,
-        "Observable": true
+        "_": false,
+        "Rx": false,
+        "React": false,
+        "Observable": false
     },
     "extends": ["eslint:recommended", "plugin:react/recommended"],
     "rules": {
