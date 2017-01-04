@@ -1,4 +1,3 @@
-import { Observable } from 'rxjs';
 import { ref as $ref } from '@graphistry/falcor-json-graph';
 import { createPivotModel } from '../models';
 

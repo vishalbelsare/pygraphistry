@@ -1,14 +1,17 @@
 import express from 'express';
 import compression from 'compression';
 import conf from './config.js';
+import { authenticateMiddleware } from './middleware';
 import logger from '../shared/logger.js';
 const log = logger.createLogger(__filename);
 
 
-const app = express()
+const app = express();
 
-app.disable('x-powered-by')
-app.use(compression())
+
+app.disable('x-powered-by');
+app.use(compression());
+app.use(authenticateMiddleware());
 app.use(express.static('./build/public'))
 
 /*

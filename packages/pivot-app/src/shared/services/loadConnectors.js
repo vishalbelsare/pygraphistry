@@ -1,10 +1,8 @@
 import * as connectors from './connectors';
-import SimpleServiceWithCache from './support/simpleServiceWithCache.js';
+import { SimpleCacheService } from './support';
 import logger from '../logger.js';
-
-import _ from 'underscore';
 import { Observable } from 'rxjs';
-const log = logger.createLogger('connectorStore', __filename);
+const log = logger.createLogger(__filename);
 
 export function connectorStore(loadApp) {
     const connectorsMap = listConnectors();
@@ -15,7 +13,7 @@ export function connectorStore(loadApp) {
         );
     }
 
-    const service = new SimpleServiceWithCache({
+    const service = new SimpleCacheService({
         loadApp: loadApp,
         resultName: 'connector',
         loadById: loadConnectorById,
@@ -39,4 +37,3 @@ export function listConnectors() {
             return connectorsById;
         }, {});
 }
-

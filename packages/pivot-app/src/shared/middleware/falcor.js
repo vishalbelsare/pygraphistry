@@ -1,4 +1,3 @@
-import { inspect } from 'util';
 import { Observable } from 'rxjs';
 import { routes } from '../routes';
 import Router from '@graphistry/falcor-router';
@@ -20,7 +19,7 @@ export function getDataSourceFactory(services) {
             }
             this.routeUnhandledPathsTo({
                 get(paths) {
-                    log.error({falcorReqPath: path}, 'Unhandled get');
+                    log.error({falcorReqPath: paths}, 'Unhandled get');
                     return Observable.empty();
                 },
                 set(jsonGraphEnv) {

@@ -3,12 +3,14 @@ import 'rc-switch/assets/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-bootstrap-table/dist/react-bootstrap-table.min.css';
 import 'react-select/dist/react-select.css';
-import '../misc/react-dates.css';
+import '../shared/containers/TimeRangeWidget/variables.scss';
+import '../shared/containers/TimeRangeWidget/styles.scss';
 import 'font-awesome/css/font-awesome.css';
 
+import React from 'react';
+import { Model } from './Model';
 import ReactDOM from 'react-dom';
 import { decode } from 'querystring';
-import { Model } from '@graphistry/falcor';
 import { Observable, Scheduler } from 'rxjs';
 import { reloadHot } from '../shared/reloadHot';
 import DataSource from 'falcor-http-datasource';
@@ -32,7 +34,7 @@ Observable
         printBuildInfo();
         return decode(window.location.search.substring(1));
     })
-    .switchMap((params) => reloadHot(module))
+    .switchMap(() => reloadHot(module))
     .switchMap(({ App }) => {
         const renderAsObservable = Observable.bindCallback(ReactDOM.render);
         return renderAsObservable((
@@ -42,10 +44,10 @@ Observable
         ), getAppDOMNode());
     })
     .subscribe({
-        next() {},
+        next() { /* Observable must be subscribed to in order to execute */ },
         error(e) {
             log.error(e);
-            debugger;
+            debugger; // eslint-disable-line no-debugger
         }
     });
 
@@ -55,25 +57,26 @@ function printBuildInfo() {
     log.info(`${buildNum} of ${__GITBRANCH__}@${__GITCOMMIT__} (on ${buildDate})`)
 }
 
-function getAppDOMNode(appDomNode) {
-    return appDomNode = (
-        document.getElementById('app') ||
-        document.body.appendChild((
-            appDomNode = document.createElement('article')) && (
-            appDomNode.id = 'app') && (
-            appDomNode)
-        )
-    );
+function getAppDOMNode() {
+    let appDomNode = document.getElementById('app');
+    if (appDomNode) {
+        return appDomNode
+    }
+    appDomNode = document.createElement('article');
+    appDomNode.id = 'app';
+    document.body.appendChild(appDomNode);
+    return appDomNode;
 }
 
 function getAppModel() {
-    return window.appModel = new Model({
+    window.appModel = new Model({
         cache: getAppCache(),
         recycleJSON: true,
         scheduler: Scheduler.asap,
-        source: new DataSource('model.json', { timeout: 20000 } ),
+        source: new DataSource('model.json', { timeout: 25000 } ),
         treatErrorsAsValues: true
     });
+    return window.appModel;
 }
 
 function getAppCache() {

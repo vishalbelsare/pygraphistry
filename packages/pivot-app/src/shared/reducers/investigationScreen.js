@@ -1,8 +1,6 @@
 import {
     ref as $ref,
-    atom as $atom,
     pathValue as $value,
-    pathInvalidation as $invalidate
 } from '@graphistry/falcor-json-graph';
 import { combineEpics } from 'redux-observable';
 import { Observable } from 'rxjs';
@@ -22,27 +20,27 @@ export const investigationScreen = combineEpics(
     saveInvestigation, copyInvestigation, deleteInvestigations
 );
 
-function createInvestigation(action$, store) {
+function createInvestigation(action$) {
     return action$
         .ofType(CREATE_INVESTIGATION)
         .mergeMap(({falcor, userId}) => falcor.call(['usersById', userId, 'createInvestigation']))
         .ignoreElements();
 }
 
-function selectInvestigation(action$, store) {
-        return action$
-            .ofType(SELECT_INVESTIGATION)
-            .groupBy(({ id }) => id)
-            .mergeMap((actionsById) => actionsById.switchMap(
-                ({ falcor, id }) => falcor.set(
-                    $value(`currentUser.activeInvestigation`, $ref(`investigationsById['${id}']`))
-                )
-                .progressively()
-            ))
-            .ignoreElements();
+function selectInvestigation(action$) {
+    return action$
+        .ofType(SELECT_INVESTIGATION)
+        .groupBy(({ id }) => id)
+        .mergeMap((actionsById) => actionsById.switchMap(
+            ({ falcor, id }) => falcor.set(
+                $value(`currentUser.activeInvestigation`, $ref(`investigationsById['${id}']`))
+            )
+            .progressively()
+        ))
+        .ignoreElements();
 }
 
-function setInvestigationParams(action$, store) {
+function setInvestigationParams(action$) {
     return action$
         .ofType(SET_INVESTIGATION_PARAMS)
         .mergeMap(({falcor, params, id}) => {
@@ -56,7 +54,7 @@ function setInvestigationParams(action$, store) {
         .ignoreElements();
 }
 
-function saveInvestigation(action$, store) {
+function saveInvestigation(action$) {
     return action$
         .ofType(SAVE_INVESTIGATION)
         .mergeMap(({falcor, id}) =>
@@ -65,7 +63,7 @@ function saveInvestigation(action$, store) {
         .ignoreElements();
 }
 
-function copyInvestigation(action$, store) {
+function copyInvestigation(action$) {
     return action$
         .ofType(COPY_INVESTIGATION)
         .mergeMap(({falcor, id}) =>
@@ -74,7 +72,7 @@ function copyInvestigation(action$, store) {
         .ignoreElements();
 }
 
-function deleteInvestigations(action$, store) {
+function deleteInvestigations(action$) {
     return action$
         .ofType(DELETE_INVESTIGATIONS)
         .mergeMap(({falcor, userId, investigationIds}) =>

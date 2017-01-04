@@ -1,4 +1,5 @@
-import _  from 'underscore';
+/* eslint-disable no-console */
+import _ from 'underscore';
 import bunyan from 'bunyan';
 
 
@@ -32,10 +33,10 @@ class BrowserConsoleStream {
 
         if (_.isEmpty(prunedRec)) {
             console[method](rec.msg);
-        } else if ('err' in prunedRec){
+        } else if ('err' in prunedRec) {
             const e = new Error(rec.err.message)
             e.stack = rec.err.stack;
-            rec.msg == rec.err.message ? console[method](e) : console[method](rec.msg, e);
+            rec.msg === rec.err.message ? console[method](e) : console[method](rec.msg, e);
         } else {
             console[method](rec.msg, prunedRec);
         }
@@ -43,8 +44,6 @@ class BrowserConsoleStream {
 }
 
 class BrowserForwarderStream{
-    constructor() {}
-
     write(rec) {
         const ajax = new XMLHttpRequest();
         ajax.open('POST', '/error', true);
@@ -60,7 +59,7 @@ class BrowserForwarderStream{
 // A global singleton logger that all module-level loggers are children of.
 ////////////////////////////////////////////////////////////////////////////////
 
-var parentLogger;
+let parentLogger;
 
 if (__SERVER__) {
     const conf = require('../server/config.js');
@@ -86,7 +85,7 @@ function createServerLogger({LOG_LEVEL, LOG_FILE, LOG_SOURCE}) {
     const serializers = bunyan.stdSerializers;
 
     // Always starts with a stream that writes fatal errors to STDERR
-    var streams = [];
+    let streams = [];
 
     if(_.isUndefined(LOG_FILE)) {
         streams = [{ name: 'stdout', stream: process.stdout, level: LOG_LEVEL }];
@@ -120,7 +119,7 @@ function createServerLogger({LOG_LEVEL, LOG_FILE, LOG_SOURCE}) {
 
 function createClientLogger({ LOG_LEVEL }) {
     return bunyan.createLogger({
-        name: 'graphistry',
+        name: 'pivot-app',
         streams: [
             {
                 level: LOG_LEVEL,

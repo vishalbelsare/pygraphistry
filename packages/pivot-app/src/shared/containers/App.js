@@ -1,3 +1,4 @@
+import React from 'react';
 import InvestigationScreen from './InvestigationScreen.js';
 import ConnectorScreen from './ConnectorScreen.js'
 import HomeScreen from './HomeScreen.js';
@@ -31,7 +32,6 @@ function renderApp({ currentUser, serverStatus, app }) {
         'connectors': (<ConnectorScreen data={app}/>)
     }
 
-    const errorBanner = serverStatus && !serverStatus.ok
     return (
         <div>
             { serverStatus && !serverStatus.ok && renderErrorBanner(serverStatus) }

@@ -1,3 +1,4 @@
+import React from 'react';
 import { container } from '@graphistry/falcor-react-redux';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
@@ -34,7 +35,7 @@ function renderSidebar(props) {
 
             <div className={styles.logo}>
                 <div>
-                    <img src="/img/logo.png"/>
+                    <img src="img/logo.png"/>
                 </div>
             </div>
 

@@ -1,0 +1,20 @@
+{
+    "id": "3e2e68d0f3c0d7fa",
+    "enabled": false,
+    "pivotParameters": {
+        "query": "Enter search query",
+        "pRef": [
+            "3dbf566346f5ecd4"
+        ],
+        "fields": [
+            "Internal IPs"
+        ],
+        "expand-ids-botnet-demo$$$pRef": [
+            "3dbf566346f5ecd4"
+        ],
+        "expand-ids-botnet-demo$$$fields": [
+            "Internal IPs"
+        ]
+    },
+    "pivotTemplate": "expand-ids-botnet-demo"
+}

@@ -1,3 +1,4 @@
+import React from 'react';
 import _ from 'underscore';
 import Investigation from './Investigation.js';
 import InvestigationHeader from './InvestigationHeader.js';
@@ -32,11 +33,11 @@ function renderVisualizationPanel(activeInvestigation) {
 
     const placeholder = (
         <div className={styles.placeholderWrapper}>
-        <div className={styles.placeholderLogo}>    
+        <div className={styles.placeholderLogo}>
         <Grid>
             <Row>
                 <Col>
-                    <Image src="/img/logo.png" responsive />
+                    <Image src="img/logo.png" responsive />
                 </Col>
             </Row><Row>
                 <Col>

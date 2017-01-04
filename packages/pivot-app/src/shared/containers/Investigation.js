@@ -1,18 +1,13 @@
 import _ from 'underscore';
+import React from 'react';
 import { container } from '@graphistry/falcor-react-redux';
 import { Table, Alert, OverlayTrigger, Tooltip} from 'react-bootstrap';
 import PivotRow from './PivotRow';
-import {
-    table as tableClassName,
-    tbody as tableBodyClassName,
-    thead as tableHeaderClassName
-} from './styles.less';
 import {
     BootstrapTable,
     TableHeaderColumn
 } from 'react-bootstrap-table';
 import {
-    ButtonGroup,
     Button,
     Glyphicon,
     Tab,
@@ -24,26 +19,34 @@ import {
     Nav
 } from 'react-bootstrap';
 import styles from './styles.less';
-import { splicePivot,
-        insertPivot,
-        searchPivot,
-        graphInvestigation,
-        saveInvestigation,
-        dismissAlert
+import {
+    splicePivot,
+    insertPivot,
+    searchPivot,
+    graphInvestigation,
+    saveInvestigation,
+    dismissAlert,
+    togglePivots
 } from '../actions/investigation';
 
 
-function pivotTable({ id, pivots, templates, insertPivot, splicePivot, dismissAlert, searchPivot,
-    graphInvestigation, saveInvestigation }) {
+function pivotTable({ id, status, pivots, templates, insertPivot, splicePivot, searchPivot,
+    graphInvestigation, togglePivots }) {
+
+    const bStyle = (status && status.msgStyle) ? status.msgStyle : 'default';
     return (
         <Table>
             <thead>
                 <tr>
                     <th className={styles.pivotToggle}>
-                        <OverlayTrigger  placement="top" overlay={
+                        <OverlayTrigger placement="top" overlay={
                             <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
                         }>
-                            <Button onClick={(ev) => graphInvestigation({investigationId: id, length: pivots.length})}>
+                            <Button bsStyle={bStyle}
+                                    onClick={() =>
+                                        graphInvestigation({investigationId: id, length: pivots.length}
+                                    )}
+                            >
                                 <Glyphicon glyph="play" />
                             </Button>
                         </OverlayTrigger>
@@ -62,7 +65,8 @@ function pivotTable({ id, pivots, templates, insertPivot, splicePivot, dismissAl
                         key={`${index}: ${pivot.id}`}
                         searchPivot={searchPivot}
                         splicePivot={splicePivot}
-                        insertPivot={insertPivot}/>
+                        insertPivot={insertPivot}
+                        togglePivots={togglePivots}/>
 
                 ))}
             </tbody>
@@ -120,7 +124,7 @@ function renderEventTable({fieldSummaries = {}, table = {}}) {
 
 function renderInvestigation({id, status, pivots = [], templates, eventTable,
                               searchPivot, insertPivot, splicePivot, dismissAlert,
-                              graphInvestigation, saveInvestigation }) {
+                              graphInvestigation, saveInvestigation, togglePivots }) {
     return (
         <div className={styles.pivots}>
             { status && !status.ok ?
@@ -158,8 +162,8 @@ function renderInvestigation({id, status, pivots = [], templates, eventTable,
                 <Tab eventKey={1} title="Pivots">
                     {
                         pivotTable({
-                            id, pivots, templates, insertPivot, splicePivot, dismissAlert,
-                            searchPivot, graphInvestigation, saveInvestigation
+                            id, pivots, status, templates, insertPivot, splicePivot, dismissAlert,
+                            searchPivot, graphInvestigation, saveInvestigation, togglePivots,
                         })
                     }
                 </Tab>
@@ -202,7 +206,7 @@ export default container(
         searchPivot: searchPivot,
         graphInvestigation: graphInvestigation,
         saveInvestigation: saveInvestigation,
-        searchPivot: searchPivot,
         dismissAlert: dismissAlert,
+        togglePivots: togglePivots,
     }
 )(renderInvestigation)

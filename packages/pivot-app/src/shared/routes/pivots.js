@@ -1,8 +1,6 @@
 import { Observable } from 'rxjs';
-import { simpleflake } from 'simpleflakes';
 import {
     pathValue as $pathValue,
-    pathInvalidation as $invalidation,
     error as $error
 } from '@graphistry/falcor-json-graph';
 import {
@@ -15,9 +13,9 @@ import logger from '../logger.js';
 const log = logger.createLogger(__filename);
 
 
-export function pivots({loadInvestigationsById, loadPivotsById, searchPivot}) {
-    const getPivotsHandler = getHandler(['pivot'], loadPivotsById);
-    const setPivotsHandler = setHandler(['pivot'], loadPivotsById);
+export function pivots(services) {
+    const getPivotsHandler = getHandler(['pivot'], services.loadPivotsById);
+    const setPivotsHandler = setHandler(['pivot'], services.loadPivotsById);
 
     return [{
         route: `pivotsById[{keys}].length`,
@@ -44,7 +42,7 @@ export function pivots({loadInvestigationsById, loadPivotsById, searchPivot}) {
         set: setPivotsHandler,
     }, {
         route: `pivotsById[{keys}].searchPivot`,
-        call: searchPivotCallRoute({loadInvestigationsById, loadPivotsById, searchPivot})
+        call: searchPivotCallRoute(services)
     }];
 }
 
@@ -54,7 +52,7 @@ function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPi
         const investigationId = args[0];
 
         return searchPivot({ loadInvestigationsById, loadPivotsById, pivotIds, investigationId })
-            .mergeMap(({ app, pivot }) => {
+            .mergeMap(({ pivot }) => {
                 return [
                     $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
                     $pathValue(`pivotsById['${pivot.id}']['resultSummary']`, pivot.resultSummary),
@@ -72,6 +70,7 @@ function captureErrorAndNotifyClient(pivotIds) {
         const cause = VError.cause(e);
         const status = {
             ok: false,
+            searching: false,
             code: errorCode,
             message: `${cause && cause.message || e.message} (code: ${errorCode})`,
             title: 'Error running pivot!'

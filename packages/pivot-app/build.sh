@@ -1,41 +1,43 @@
 #!/bin/bash -ex
 
-MAJORMINOR=`jq -r .version package.json | cut -d '.' -f 1,2`
-VERSION=${MAJORMINOR}.${BUILD_NUMBER}
+BUILD_TAG=graphistry/pivot-app:build
 COMMIT_ID=`git rev-parse --short HEAD`
 REV_NAME=`git name-rev --name-only HEAD`
+TARGET= # Parsed from command line args
 
-ARTIFACTS="build node_modules tests"
+for ARG in "$@"; do
+    case $ARG in
+    --target=*)
+        TARGET="${ARG#*=}"
+        shift
+        ;;
+    --build-tag=*)
+            BUILD_TAG="${ARG#*=}"
+            shift
+            ;;
+    *)
+        echo "Unknown argument $ARG"
+        exit 1
+        ;;
+    esac
+done
+
+if [[ ${TARGET} != "testing" ]] && [[ ${TARGET} != "production" ]] ; then
+    echo "Must specify target via --target. Acceptable values are (testing, production)"
+    exit 1
+fi
 
 
-################################
-# Create & run build container #
-################################
+###########################
+# Create build cointainer #
+###########################
 
 docker build -f Dockerfile-build \
-       --build-arg BUILD_NUMBER=$BUILD_NUMBER \
-       --build-arg COMMIT_ID=$COMMIT_ID \
-       --build-arg REV_NAME=$REV_NAME \
-       -t graphistry/pivot-app:build \
+       --build-arg TEST_BUILD=$([[ $TARGET == 'testing' ]] && echo "true" || echo "false") \
+       --build-arg BUILD_NUMBER=${BUILD_NUMBER} \
+       --build-arg COMMIT_ID=${COMMIT_ID} \
+       --build-arg REV_NAME=${REV_NAME} \
+       -t ${BUILD_TAG} \
        .
 
-docker run --rm graphistry/pivot-app:build sh -c "tar --create ${ARTIFACTS}" > artifact.tar
-
-
-####################################
-# Create run CMD from package.json #
-####################################
-
-RUNCMD=`docker run --rm graphistry/pivot-app:build sh -c "cat package.json" | jq -r .scripts.start`
-
-echo -e "\nCMD ${RUNCMD}" >> Dockerfile
-
-cat Dockerfile
-
-#######################################
-# Create + publish artifact container #
-#######################################
-
-docker build -f Dockerfile -t graphistry/pivot-app:$VERSION .
-
-docker push graphistry/pivot-app:$VERSION
+echo "Docker image ${BUILD_TAG} successfully built."

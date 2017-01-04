@@ -1,10 +1,11 @@
 import _ from 'underscore';
+import { Observable } from 'rxjs';
 import moment from 'moment';
 import { PivotTemplate } from './template.js';
 import { splunkConnector0 } from '../connectors';
 import { shapeSplunkResults } from '../shapeSplunkResults.js';
 import logger from '../../../shared/logger.js';
-const log = logger.createLogger('SplunkPivot', __filename);
+const log = logger.createLogger(__filename);
 
 
 export class SplunkPivot extends PivotTemplate {
@@ -21,23 +22,32 @@ export class SplunkPivot extends PivotTemplate {
 
     searchAndShape({ app, pivot, pivotCache }) {
 
-        const {searchQuery, searchParams} = this.toSplunk(pivot.pivotParameters, pivotCache);
+        const args = PivotTemplate.stripTemplateNamespace(pivot.pivotParameters);
+        const {searchQuery, searchParams} = this.toSplunk(args, pivotCache);
+        log.trace({pivotParameters: pivot.pivotParameters, args}, 'Pivot parameters');
         pivot.template = this;
 
-        return this.connector.search(searchQuery, searchParams)
-            .do(({ resultCount, events, searchId, df, isPartial }) => {
-                pivot.df = df;
-                pivot.resultCount = resultCount;
-                pivot.events = events;
-                pivot.splunkSearchId = searchId;
-                pivot.isPartial = isPartial;
-                pivotCache[pivot.id] = {
-                    results: pivot.results,
-                    query: searchQuery,
-                    splunkSearchId: pivot.splunkSearchId
-                };
-            })
-            .map(() => shapeSplunkResults({app, pivot}));
+        if (!pivot.enabled) {
+            pivot.resultSummary = {};
+            pivot.resultCount = 0;
+            return Observable.of({ app, pivot });
+        } else {
+
+            return this.connector.search(searchQuery, searchParams)
+                .do(({ resultCount, events, searchId, df, isPartial }) => {
+                    pivot.df = df;
+                    pivot.resultCount = resultCount;
+                    pivot.events = events;
+                    pivot.splunkSearchId = searchId;
+                    pivot.isPartial = isPartial;
+                    pivotCache[pivot.id] = {
+                        results: pivot.results,
+                        query: searchQuery,
+                        splunkSearchId: pivot.splunkSearchId
+                    };
+                })
+                .map(() => shapeSplunkResults({app, pivot}));
+        }
     }
 
     dayRangeToSplunkParams({ startDate, endDate }) {
@@ -50,7 +60,8 @@ export class SplunkPivot extends PivotTemplate {
                 'latest_time': endDay.unix(),
             };
         } else {
-            log.debug('Got undefined day range, cannot convert to Splunk params');
+            log.warn('Got undefined day range, cannot convert to Splunk params');
+            return undefined;
         }
     }
 
@@ -80,17 +91,17 @@ function buildLookup(text, pivotCache) {
     //   search can be "{{pivot###}}""
     //   field can be  "field1, field2,field3, ..."
     //   source is any search
-    var hit = text.match(/\[{{(.*)}}\] *-\[(.*)\]-> *\[(.*)\]/);
+    const hit = text.match(/\[{{(.*)}}] *-\[(.*)]-> *\[(.*)]/);
     if (hit) {
-        var search = hit[1];
-        var fields = hit[2].split(',')
+        const search = hit[1];
+        const fields = hit[2].split(',')
             .map(s => s.trim())
             .map(s => s[0] === '"' ? s.slice(1,-1).trim() : s);
-        var source = hit[3];
+        const source = hit[3];
 
         log.trace({search, fields, source}, 'Looking at');
-        var match = '';
-        for (var i = 0; i < fields.length; i++) {
+        let match = '';
+        for (let i = 0; i < fields.length; i++) {
             const field = fields[i];
             const vals = _.uniq(_.map(pivotCache[search].events, function (row) {
                 return row[field];
@@ -99,5 +110,7 @@ function buildLookup(text, pivotCache) {
             match = match + (match ? ' OR ' : '') + fieldMatch;
         }
         return `${ source } ${ match } | head 10000 `;
+    } else {
+        return undefined;
     }
 }

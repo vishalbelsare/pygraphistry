@@ -5,10 +5,10 @@ const log = logger.createLogger(__filename);
 export * from './loadApp';
 export * from './loadUsers';
 export * from './loadTemplates';
-export * from './loadInvestigations';
+export * from './investigationStore';
 export * from './manageInvestigation';
 export * from './insertPivot';
-export * from './loadPivots';
+export * from './pivotStore';
 export * from './loadConnectors';
 export * from './splicePivot';
 export * from './checkConnector';
@@ -26,9 +26,9 @@ function wrapService(service) {
     return function (...args) {
         const serviceArgs = _.omit(
             _.omit(args[0], 'options'),
-            (v, k) => typeof v === 'function'
+            (v) => typeof v === 'function'
         )
-        log.info(`Calling ${service.name}   ( ${JSON.stringify(serviceArgs)} )`);
+        log.info(`Calling ${service.name} ${JSON.stringify(serviceArgs)}`);
         return service.apply(this, args);
     };
 }

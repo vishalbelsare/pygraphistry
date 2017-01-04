@@ -1,7 +1,6 @@
 import rootReducer from '../reducers/';
 import { DevTools } from '../containers';
 import { compose, createStore, applyMiddleware } from 'redux';
-import { createFragmentMiddleware } from '@graphistry/falcor-react-redux';
 import { app } from '../reducers/app';
 import { investigationScreen } from '../reducers/investigationScreen';
 import { investigation } from '../reducers/investigation';
@@ -25,6 +24,6 @@ export function configureStore(initialState = {}) {
     return createStore(
         rootReducer,
         initialState,
-        enhancer,
+        enhancer
 	)
 }

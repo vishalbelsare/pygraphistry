@@ -1,7 +1,10 @@
 import _ from 'underscore';
-import { atomify }  from './support';
+import logger from '../logger.js';
+import { atomify } from './support';
 
-const defaults  = {
+const log = logger.createLogger(__filename);
+
+const defaults = {
     name: 'Untitled pivot',
     tags: [],
     pivotParameterKeys: [],
@@ -9,10 +12,11 @@ const defaults  = {
 };
 
 export function createTemplateModel(template) {
-    const clientFields = ['id', 'name', 'tags', 'pivotParameterKeys', 'pivotParametersUI'];
+    const clientFields = ['id', 'name', 'tags', 'pivotParametersUI', 'pivotParameterKeys'];
+
     const normalizedTemplate = {
         ...defaults,
-        ..._.pick(template, clientFields),
+        ..._.pick(template, clientFields)
     };
 
     normalizedTemplate.tags = atomify(normalizedTemplate.tags);

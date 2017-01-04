@@ -1,8 +1,6 @@
-import _ from 'underscore';
 import { Observable } from 'rxjs';
-import SimpleServiceWithCache from './support/simpleServiceWithCache.js';
+import { SimpleCacheService } from './support';
 import { createTemplateModel } from '../models';
-
 import * as templates from './templates';
 
 export function templateStore(loadApp) {
@@ -14,7 +12,7 @@ export function templateStore(loadApp) {
         );
     }
 
-    const service = new SimpleServiceWithCache({
+    const service = new SimpleCacheService({
         loadApp: loadApp,
         resultName: 'template',
         loadById: loadTemplateById,
@@ -32,7 +30,7 @@ export function templateStore(loadApp) {
 }
 
 export function listTemplates() {
-    return Object.values(templates)
+    return Object.values(templates || {})
         .reduce(function(templatesById, template) {
             templatesById[template.id] = template;
             return templatesById;

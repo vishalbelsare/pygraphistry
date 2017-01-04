@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
-import { DataFrame, Row } from 'dataframe-js';
+import { DataFrame } from 'dataframe-js';
 import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
@@ -29,10 +29,10 @@ function upload(etlService, apiKey, data) {
 }
 
 //jsonGraph * (err? -> ())? -> ()
-function upload0(etlService, apiKey, data, cb) {
+function upload0(etlService, apiKey, data, _cb) {
     // When called with Observable.bindNodeCallback, cb will be defined and the following
     // default function will not be used.
-    cb = cb || function (err, res) {
+    const cb = _cb || function (err, res) {
         if (err) {
             return new VError(err, 'ETL upload error');
         } else {
@@ -130,9 +130,9 @@ function createGraph(pivots) {
 function makeEventTable({pivots}) {
     function fieldSummary(mergedData, field) {
 
-        const distinct =  mergedData.distinct(field).toArray();
+        const distinct = mergedData.distinct(field).toArray();
 
-        var res = {
+        const res = {
             numDistinct: distinct.length
         };
 
@@ -159,10 +159,11 @@ function makeEventTable({pivots}) {
         return a.union(new DataFrame(b, fields));
     }, zeroDf);
 
-    var fieldSummaries = {};
-    fields.forEach(field =>
+    const fieldSummaries = {};
+
+    fields.forEach(field => {
         fieldSummaries[field] = fieldSummary(mergedData, field)
-    );
+    });
 
     const table = mergedData.groupBy('EventID')
         .aggregate((group) => group.toCollection()[0])
@@ -182,7 +183,7 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                 Observable.combineLatest(
                     loadUsersById({userIds: [app.currentUser.value[1]]}),
                     loadPivotsById({pivotIds: investigation.pivots.map(x => x.value[1])})
-                        .map(({app, pivot}) => pivot)
+                        .map(({ pivot }) => pivot)
                         .toArray()
                         .map(createGraph),
                     ({user}, {pivots, data}) => ({user, pivots, data})
@@ -202,7 +203,8 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                         investigation.url = `${user.vizService}&dataset=${dataset}`;
                         investigation.status = {
                             ok: true,
-                            etling: false
+                            etling: false,
+                            msgStyle: 'success'
                         };
                     } else {
                         investigation.status = {

@@ -13,12 +13,9 @@ import logger from '../logger.js';
 const log = logger.createLogger(__filename);
 
 
-export function investigations({ loadUsersById, loadInvestigationsById, saveInvestigationsById,
-                                 loadPivotsById, savePivotsById, cloneInvestigationsById,
-                                 searchPivot, splicePivot, insertPivot, uploadGraph }) {
-
-    const getInvestigationsHandler = getHandler(['investigation'], loadInvestigationsById);
-    const setInvestigationsHandler = setHandler(['investigation'], loadInvestigationsById);
+export function investigations(services) {
+    const getInvestigationsHandler = getHandler(['investigation'], services.loadInvestigationsById);
+    const setInvestigationsHandler = setHandler(['investigation'], services.loadInvestigationsById);
 
     return [{
         route: `investigationsById[{keys}]['id','name', 'url', 'status', 'description']`,
@@ -49,29 +46,30 @@ export function investigations({ loadUsersById, loadInvestigationsById, saveInve
         get: getInvestigationsHandler,
     }, {
         route: `investigationsById[{keys}].graph`,
-        call: graphCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph })
+        call: graphCallRoute(services)
     }, {
         route: `investigationsById[{keys}].insertPivot`,
-        call: insertPivotCallRoute({ loadInvestigationsById, insertPivot})
+        call: insertPivotCallRoute(services)
     }, {
         route: `investigationsById[{keys}].splicePivot`,
-        call: splicePivotCallRoute({ loadInvestigationsById, splicePivot})
+        call: splicePivotCallRoute(services)
     }, {
         route: `investigationsById[{keys}].save`,
-        call: saveCallRoute({ loadInvestigationsById, saveInvestigationsById, savePivotsById})
+        call: saveCallRoute(services)
     }, {
         route: `investigationsById[{keys}].clone`,
-        call: cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, cloneInvestigationsById})
+        call: cloneCallRoute(services)
     }];
 }
 
-function splicePivotCallRoute({ loadInvestigationsById, splicePivot }) {
+function splicePivotCallRoute({ loadInvestigationsById, unloadPivotsById, splicePivot }) {
     return function(path, args) {
         const investigationIds = path[1];
         const pivotIndex = args[0];
 
-        return splicePivot({loadInvestigationsById, investigationIds, pivotIndex, deleteCount: 1})
-            .mergeMap(({app, investigation}) => {
+        return splicePivot({loadInvestigationsById, unloadPivotsById, investigationIds,
+                            pivotIndex, deleteCount: 1})
+            .mergeMap(({ investigation }) => {
                 return [
                     $pathValue(
                         `investigationsById['${investigationIds}']['pivots'].length`,
@@ -117,11 +115,11 @@ function insertPivotCallRoute({ loadInvestigationsById, insertPivot }) {
 }
 
 function graphCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, uploadGraph }) {
-    return function(path, args) {
+    return function(path) {
         const investigationIds = path[1];
 
         return uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersById, investigationIds})
-            .mergeMap(({app, investigation}) => {
+            .mergeMap(({ investigation }) => {
                 return [
                     $pathValue(`investigationsById['${investigationIds}'].url`, investigation.url),
                     $pathValue(`investigationsById['${investigationIds}'].status`, investigation.status),
@@ -132,24 +130,28 @@ function graphCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById,
     }
 }
 
-function saveCallRoute({ loadInvestigationsById, savePivotsById, saveInvestigationsById }) {
-    return function(path, args) {
+function saveCallRoute({ loadInvestigationsById, saveInvestigationsById, persistInvestigationsById,
+                         persistPivotsById, unlinkPivotsById }) {
+    return function(path) {
         const investigationIds = path[1];
 
-        return saveInvestigationsById({savePivotsById, investigationIds})
-            .mergeMap(({app, investigation}) => [
+        return saveInvestigationsById({loadInvestigationsById, persistInvestigationsById,
+                                       persistPivotsById, unlinkPivotsById, investigationIds})
+            .mergeMap(({ investigation }) => [
                 $pathValue(`investigationsById['${investigationIds}'].modifiedOn`, investigation.modifiedOn)
             ])
             .catch(captureErrorAndNotifyClient(investigationIds));
     }
 }
 
-function cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById, cloneInvestigationsById }) {
-    return function(path, args) {
+function cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById,
+                          unloadInvestigationsById, unloadPivotsById, cloneInvestigationsById }) {
+    return function(path) {
         const investigationIds = path[1];
         return cloneInvestigationsById({loadInvestigationsById, loadPivotsById,
+                                        unloadInvestigationsById, unloadPivotsById,
                                         loadUsersById, investigationIds})
-            .mergeMap(({app, user, clonedInvestigation, numInvestigations}) => {
+            .mergeMap(({ user, numInvestigations }) => {
                 return [
                     $pathValue(`['usersById'][${user.id}]['investigations'].length`, numInvestigations),
                     $pathValue(`['usersById'][${user.id}].activeInvestigation`, user.activeInvestigation),
@@ -165,6 +167,7 @@ function captureErrorAndNotifyClient(investigationIds) {
         const errorCode = logErrorWithCode(log, e);
         const status = {
             ok: false,
+            etling: false,
             code: errorCode,
             message: `Server error: ${e.message} (code: ${errorCode})`,
             msgStyle: 'danger',

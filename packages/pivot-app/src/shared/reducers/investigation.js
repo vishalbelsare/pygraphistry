@@ -1,12 +1,7 @@
 import {
-    ref as $ref,
-    atom as $atom,
     pathValue as $value,
-    pathInvalidation as $invalidate
 } from '@graphistry/falcor-json-graph';
 
-import _ from 'underscore';
-import { combineReducers } from 'redux';
 import { Observable } from 'rxjs';
 import {
     SEARCH_PIVOT,
@@ -27,26 +22,26 @@ export const investigation = combineEpics(
     togglePivots
 );
 
-function graphInvestigation(action$, store) {
-        return action$
-            .ofType(GRAPH_INVESTIGATION)
-            .groupBy(({ investigationId }) => investigationId)
-            .mergeMap((actionsById) => actionsById.switchMap(
-                ({ investigationId, falcor, length }) => {
-                    return Observable
-                        .range(0, length)
-                        .concatMap((index) => {
-                            return Observable.from(falcor.set($value(['pivots', [index],'status'], { searching: true, ok: true })))
-                                .concat(falcor.call(['pivots', [index], 'searchPivot'], [investigationId]));
-                        })
-                        .concat(falcor.set($value(['status'], { etling: true, ok: true })))
-                        .concat(falcor.call(`graph`))
-                }
-            ))
-            .ignoreElements();
+function graphInvestigation(action$) {
+    return action$
+        .ofType(GRAPH_INVESTIGATION)
+        .groupBy(({ investigationId }) => investigationId)
+        .mergeMap((actionsById) => actionsById.switchMap(
+            ({ investigationId, falcor, length }) => {
+                return Observable
+                .range(0, length)
+                .concatMap((index) => {
+                    return Observable.from(falcor.set($value(['pivots', [index],'status'], { searching: true, ok: true })))
+                    .concat(falcor.call(['pivots', [index], 'searchPivot'], [investigationId]));
+                })
+                .concat(falcor.set($value(['status'], { etling: true, ok: true })))
+                .concat(falcor.call(`graph`))
+            }
+        ))
+        .ignoreElements();
 }
 
-function dismissAlert(action$, store) {
+function dismissAlert(action$) {
     return action$
         .ofType(DISMISS_ALERT)
         .groupBy(({ id }) => id)
@@ -59,58 +54,60 @@ function dismissAlert(action$, store) {
         .ignoreElements();
 }
 
-function searchPivot(action$, store) {
-        return action$
-            .ofType(SEARCH_PIVOT)
-            .groupBy(({ investigationId }) => investigationId)
-            .mergeMap((actionsById) => actionsById.switchMap(
-                ({ investigationId, falcor, index }) => {
-                    return Observable.from(falcor.set($value(`pivots['${index}']['enabled']`, true)))
-                        // TODO Use pivot id instead of index
-                        .concat(falcor.set($value(['pivots', [index], 'status'], { searching: true, ok: true })))
-                        .concat(falcor.call(['pivots', index, 'searchPivot'], [investigationId]))
-                        .concat(falcor.set($value(['status'], { etling: true, ok: true })))
-                        .concat(falcor.set($value(['url'], null)))
-                        .concat(falcor.call(`graph`));
-                }
-            ))
-            .ignoreElements();
+function searchPivot(action$) {
+    return action$
+        .ofType(SEARCH_PIVOT)
+        .groupBy(({ investigationId }) => investigationId)
+        .mergeMap((actionsById) => actionsById.switchMap(
+            ({ investigationId, falcor, index }) => {
+                return Observable.from(falcor.set($value(`pivots['${index}']['enabled']`, true)))
+                // TODO Use pivot id instead of index
+                .concat(falcor.set($value(['pivots', [index], 'status'], { searching: true, ok: true })))
+                .concat(falcor.call(['pivots', index, 'searchPivot'], [investigationId]))
+                .concat(falcor.set($value(['status'], { etling: true, ok: true })))
+                .concat(falcor.set($value(['url'], null)))
+                .concat(falcor.call(`graph`));
+            }
+        ))
+        .ignoreElements();
 }
 
-function splicePivot(action$, store) {
-        return action$
-            .ofType(SPLICE_PIVOT)
-            .groupBy(({ id }) => id)
-            .mergeMap((actionsById) => actionsById.switchMap(
-                ({ falcor, index }) => {
-                    return falcor.call(`splicePivot`, [index])
-                .progressively()
-                }
-            ))
-            .ignoreElements();
+function splicePivot(action$) {
+    return action$
+        .ofType(SPLICE_PIVOT)
+        .groupBy(({ id }) => id)
+        .mergeMap((actionsById) => actionsById.switchMap(
+            ({ falcor, index }) => {
+                return falcor.call(`splicePivot`, [index])
+            .progressively()
+            }
+        ))
+        .ignoreElements();
 }
 
-function insertPivot(action$, store) {
-        return action$
-            .ofType(INSERT_PIVOT)
-            .groupBy(({ id }) => id)
-            .mergeMap((actionsById) => actionsById.switchMap(
-                ({ stateKey, falcor, state, index, target }) => {
-                    return falcor.call(`insertPivot`, [index])
-                .progressively()
-                }
-            ))
-            .ignoreElements();
+function insertPivot(action$) {
+    return action$
+        .ofType(INSERT_PIVOT)
+        .groupBy(({ id }) => id)
+        .mergeMap((actionsById) => actionsById.switchMap(
+            ({ falcor, index }) => {
+                return falcor.call(`insertPivot`, [index])
+            .progressively()
+            }
+        ))
+        .ignoreElements();
 }
 
-function togglePivots(action$, store) {
+function togglePivots(action$) {
     return action$
         .ofType(TOGGLE_PIVOTS)
-        .mergeMap(({falcor, indices, enabled}) =>
-            falcor.set(
-                $value(['pivots', indices, 'enabled'], enabed)
-            )
-            .progressively()
-        )
+        .mergeMap(({ falcor, indices, enabled, investigationId }) => {
+            const topLevelModel = falcor._root.topLevelModel;
+            return topLevelModel.set(
+                $value(['investigationsById', investigationId, 'status'], { msgStyle: 'warning', ok: true })
+            ).concat(falcor.set(
+                $value(['pivots', indices, 'enabled'], enabled)
+            ));
+        })
         .ignoreElements();
 }

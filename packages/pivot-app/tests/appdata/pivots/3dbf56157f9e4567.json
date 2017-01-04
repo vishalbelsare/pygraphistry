@@ -1,9 +1,0 @@
-{
-    "id": "3dbf56157f9e4567",
-    "enabled": true,
-    "pivotParameters": {
-        "query": "Enter search query",
-        "ref": ["3dbf55904a77e964"]
-    },
-    "pivotTemplate": "expand-fireeye-botnet-demo"
-}

@@ -1,0 +1,20 @@
+{
+    "id": "3dbf563fa4ebcfd4",
+    "enabled": false,
+    "pivotParameters": {
+        "query": "Enter search query",
+        "pivotRef": [
+            "3dbf56157f9e4567"
+        ],
+        "fields": [
+            "Fire Eye URL"
+        ],
+        "expand-bluecoat-botnet-demo$$$pivotRef": [
+            "3dbf56157f9e4567"
+        ],
+        "expand-bluecoat-botnet-demo$$$fields": [
+            "Fire Eye URL"
+        ]
+    },
+    "pivotTemplate": "expand-bluecoat-botnet-demo"
+}

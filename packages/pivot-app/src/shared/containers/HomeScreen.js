@@ -6,7 +6,6 @@ import {
     TableHeaderColumn
 } from 'react-bootstrap-table';
 import {
-    ButtonGroup,
     Button,
     Glyphicon,
     Panel,
@@ -15,7 +14,6 @@ import {
     Col,
     Image,
     Media,
-    Label,
     OverlayTrigger,
     Tooltip
 } from 'react-bootstrap';
@@ -43,7 +41,7 @@ function welcomeBar(user, investigations, numTemplates) {
                     <Media.Left align="middle">
                         <Image width={84}
                             height={84}
-                            src="/img/abstract-user-flat-3.svg"
+                            src="img/abstract-user-flat-3.svg"
                             className={styles['user-icon']}
                             circle/>
                     </Media.Left>
@@ -100,7 +98,7 @@ class TagCell extends React.Component {
     }
 
     handleDelete(i) {
-        let { tags } = this.state;
+        const { tags } = this.state;
         tags.splice(i, 1);
 
         this.setState({tags: tags});
@@ -108,7 +106,7 @@ class TagCell extends React.Component {
     }
 
     handleAddition(tag) {
-        let { tags } = this.state;
+        const { tags } = this.state;
 
         tags.push({
             id: tags.length + 1,
@@ -120,7 +118,7 @@ class TagCell extends React.Component {
     }
 
     handleDrag(tag, currPos, newPos) {
-        let tags = this.state.tags;
+        const tags = this.state.tags;
 
         tags.splice(currPos, 1);
         tags.splice(newPos, 0, tag);
@@ -135,8 +133,7 @@ class TagCell extends React.Component {
     }
 
     render() {
-        let tags = this.state.tags;
-        let suggestions = this.state.suggestions;
+        const tags = this.state.tags;
         return (
             <div>
                 <ReactTags tags={tags}
@@ -151,7 +148,7 @@ class TagCell extends React.Component {
 }
 
 
-function investigationTable({user, investigations = [], switchScreen, selectInvestigation, copyInvestigation,
+function investigationTable({investigations = [], switchScreen, selectInvestigation, copyInvestigation,
                              setInvestigationParams, selectHandler}) {
     function tagsFormatter(tags = [], row) {
         const tagsArray = tags.map((tag, i) => ({id: i, text: tag}));
@@ -174,7 +171,7 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
                 </a>)
     }
 
-    function idFormatter(id, row) {
+    function idFormatter(id) {
         return (
             <div>
                 <Button onClick={() => copyInvestigation(id)}>
@@ -184,7 +181,7 @@ function investigationTable({user, investigations = [], switchScreen, selectInve
         );
     }
 
-    function dateFormatter(epoch, row) {
+    function dateFormatter(epoch) {
         return (new Date(epoch)).toLocaleString()
     }
 
@@ -267,7 +264,7 @@ function renderHomeScreen(
                     {
                         welcomeBar(user, investigations, numTemplates)
                     }
-                    <Panel header="Open Investigations" className={styles['panel']}>
+                    <Panel header="Open Investigations" className={styles.panel}>
                         <div className={styles['investigations-buttons']}>
                             <OverlayTrigger placement="top"
                                             overlay={

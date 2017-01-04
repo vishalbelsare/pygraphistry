@@ -5,16 +5,13 @@ import {
     TableHeaderColumn
 } from 'react-bootstrap-table';
 import {
-    ButtonGroup,
     Button,
     Glyphicon,
     Panel,
     Grid,
     Row,
     Col,
-    Image,
     Media,
-    Label,
     OverlayTrigger,
     Tooltip
 } from 'react-bootstrap';
@@ -34,13 +31,6 @@ function welcomeBar(user, connectors) {
         <Grid><Row className={styles['welcome-bar']}>
             <Col md={6}>
                 <Panel>
-                    <Media.Left align="middle">
-                        <Image width={84}
-                            height={84}
-                            src="/custom/img/abstract-user-flat-3.svg"
-                            className={styles['user-icon']}
-                            circle/>
-                    </Media.Left>
                     <Media.Body>
                         <Media.Heading className={styles['user-greeting-heading']}>
                             Connectors!
@@ -63,9 +53,9 @@ function welcomeBar(user, connectors) {
     );
 }
 
-function connectorTable({user, connectors = [], switchScreen, selectHandler, checkStatus}) {
+function connectorTable({connectors = [], selectHandler, checkStatus}) {
 
-    function nameFormatter(name, row) {
+    function nameFormatter(name) {
         return (<a href="#">
                     { name }
                 </a>);
@@ -87,7 +77,7 @@ function connectorTable({user, connectors = [], switchScreen, selectHandler, che
         );
     }
 
-    function dateFormatter(epoch, row) {
+    function dateFormatter(epoch) {
         return (new Date(epoch)).toLocaleString()
     }
 
@@ -131,8 +121,7 @@ function connectorTable({user, connectors = [], switchScreen, selectHandler, che
 
 }
 
-function renderConnectorScreen({ user, connectors, switchScreen, checkStatus },
-                          { selection }, selectHandler ) {
+function renderConnectorScreen({ user, connectors, switchScreen, checkStatus }) {
     if (user === undefined) {
         return null;
     }
@@ -143,7 +132,7 @@ function renderConnectorScreen({ user, connectors, switchScreen, checkStatus },
                     {
                         welcomeBar(user, connectors)
                     }
-                    <Panel header="Available Connectors" className={styles['panel']}>
+                    <Panel header="Available Connectors" className={styles.panel}>
                         <div className={styles['investigations-buttons']}>
                             <OverlayTrigger placement="top"
                                             overlay={
@@ -151,7 +140,7 @@ function renderConnectorScreen({ user, connectors, switchScreen, checkStatus },
                                                     Add New Connector
                                                 </Tooltip>
                                             }>
-                                <Button onClick={() => createConnector()}
+                                <Button onClick={() => alert('Todo')}
                                         className={`btn-primary ${styles['add-new-investigation']}`}>
                                     <Glyphicon glyph="plus"/>
                                 </Button>
@@ -180,7 +169,7 @@ class ConnectorScreen extends React.Component {
         return renderConnectorScreen(
             this.props,
             this.state,
-            this.selectHandler.bind(this),
+            this.selectHandler.bind(this)
         );
     }
 

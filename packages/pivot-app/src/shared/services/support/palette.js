@@ -3,7 +3,7 @@
 // Provides palettes
 // Adds a final 'repeating' PairedRepeat singleton palette
 
-const _      = require('underscore');
+const _ = require('underscore');
 const brewer = require('colorbrewer');
 const sprintf = require('sprintf-js').sprintf;
 
@@ -11,7 +11,7 @@ const sprintf = require('sprintf-js').sprintf;
 //////////// SORT PALETTES
 
 //fixed ~alphabetic order
-let palettes = ['Paired', 'Blues', 'BrBG', 'BuGn', 'BuPu', 'Dark2', 'GnBu', 'Greens', 'Greys', 'OrRd', 'Oranges',
+const palettes = ['Paired', 'Blues', 'BrBG', 'BuGn', 'BuPu', 'Dark2', 'GnBu', 'Greens', 'Greys', 'OrRd', 'Oranges',
     'PRGn', 'Accent', 'Pastel1', 'Pastel2', 'PiYG', 'PuBu', 'PuBuGn', 'PuOr', 'PuRd', 'Purples',
     'RdBu', 'RdGy', 'RdPu', 'RdYlBu', 'RdYlGn', 'Reds', 'Set1', 'Set2', 'Set3', 'Spectral',
     'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'PairedRepeat'];
@@ -30,23 +30,10 @@ function intToHex (value) {
 }
 
 /**
- * Convert RGBA color to WebGL buffer-compatible output.
- * #sadness, rgba => abgr
- * @param {Number} value
- * @return {Number}
- */
-function convertRGBAToABGR (value) {
-    return ((value & 0xFF) << 24)
-        | ((value & 0xFF00) << 8)
-        | ((value >> 8) & 0xFF00)
-        | ((value >> 24) & 0xFF);
-}
-
-/**
  * '#AABBCC' -> int
  * TODO: this returns ABGR as that's what VGraphLoader sends to the client
- * @param {String} hexColor
- * @return {Number}
+ * @param {String} hexColor The color as an hex string
+ * @return {Number} The integer encoding the color
  */
 function hexToABGR (hexColor) {
     let out = hexColor;

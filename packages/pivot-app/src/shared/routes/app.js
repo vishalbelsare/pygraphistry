@@ -1,16 +1,9 @@
-import { Observable } from 'rxjs';
-import {
-    ref as $ref,
-    pathValue as $pathValue,
-    pathInvalidation as $invalidation,
-} from '@graphistry/falcor-json-graph';
 import {
     getHandler,
-    rangesToListItems
 } from './support';
 
 
-export function app({ loadApp, createInvestigation, loadUsersById }) {
+export function app({ loadApp }) {
     const appGetRoute = getHandler([], loadApp);
 
     return [{

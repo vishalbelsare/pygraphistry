@@ -4,7 +4,7 @@ import glob from 'glob';
 
 
 // Define a schema
-var conf = convict({
+const conf = convict({
     env: {
         doc: 'The applicaton environment.',
         format: ['production', 'development', 'test'],
@@ -24,10 +24,19 @@ var conf = convict({
         arg: 'port',
         env: 'PORT'
     },
+    auth: {
+        password: {
+            doc: 'bcrypt hashed password needed to access this app over the web',
+            format: String,
+            default: undefined,
+            arg: 'password',
+            env: 'PASSWORD'
+        }
+    },
     pivotApp: {
         dataDir: {
             doc: 'Directory to store investigation files',
-            form: String,
+            format: String,
             default: 'data',
             arg: 'pivot-data-dir'
         }
@@ -38,7 +47,7 @@ var conf = convict({
             format: ['trace', 'debug', 'info', 'warn', 'error', 'fatal'],
             default: 'info',
             arg: 'log-level',
-            env: 'LOG_LEVEL'
+            env: 'GRAPHISTRY_LOG_LEVEL' // LOG_LEVEL conflicts with mocha
         },
         file: {
             doc: 'Log so a file intead of standard out',
@@ -120,10 +129,10 @@ if (process.env.CONFIG_FILES) {
     configFiles = glob.sync(defaultConfigPath);
 }
 
+// eslint-disable-next-line no-console
 console.log(`Loading configuration from ${configFiles.join(", ")}`);
-conf.loadFile(configFiles);
 
-// Perform validation
+conf.loadFile(configFiles);
 conf.validate({strict: true});
 
 module.exports = conf;

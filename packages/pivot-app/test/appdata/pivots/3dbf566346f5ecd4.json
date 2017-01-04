@@ -1,0 +1,20 @@
+{
+    "id": "3dbf566346f5ecd4",
+    "enabled": false,
+    "pivotParameters": {
+        "query": "Enter search query",
+        "pRef": [
+            "3dbf563fa4ebcfd4"
+        ],
+        "fields": [
+            "External IPs"
+        ],
+        "expand-firewall-botnet-demo$$$pRef": [
+            "3dbf563fa4ebcfd4"
+        ],
+        "expand-firewall-botnet-demo$$$fields": [
+            "External IPs"
+        ]
+    },
+    "pivotTemplate": "expand-firewall-botnet-demo"
+}
