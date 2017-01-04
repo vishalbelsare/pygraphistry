@@ -1,5 +1,5 @@
 import rootReducer from '../reducers/';
-import { DevTools } from '../containers';
+import { DevTools } from 'pivot-shared/main/components/DevTools';
 import { compose, createStore, applyMiddleware } from 'redux';
 import { app } from '../reducers/app';
 import { investigationScreen } from '../reducers/investigationScreen';

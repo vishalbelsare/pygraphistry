@@ -1,10 +1,12 @@
+// window['__trace_container_updates__'] = true;
+
 import 'react-tag-input/example/reactTags.css';
 import 'rc-switch/assets/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-bootstrap-table/dist/react-bootstrap-table.min.css';
 import 'react-select/dist/react-select.css';
-import '../shared/containers/TimeRangeWidget/variables.scss';
-import '../shared/containers/TimeRangeWidget/styles.scss';
+import 'pivot-shared/pivots/components/TimeRangeWidget/variables.scss';
+import 'pivot-shared/pivots/components/TimeRangeWidget/styles.scss';
 import 'font-awesome/css/font-awesome.css';
 
 import React from 'react';

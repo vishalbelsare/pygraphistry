@@ -1,10 +1,6 @@
-import {
-    ref as $ref,
-    pathValue as $value,
-} from '@graphistry/falcor-json-graph';
+import { $ref, $value } from '@graphistry/falcor-json-graph';
 import { combineEpics } from 'redux-observable';
 import { Observable } from 'rxjs';
-import _ from 'underscore';
 import {
     SELECT_INVESTIGATION,
     CREATE_INVESTIGATION,
@@ -23,7 +19,7 @@ export const investigationScreen = combineEpics(
 function createInvestigation(action$) {
     return action$
         .ofType(CREATE_INVESTIGATION)
-        .mergeMap(({falcor, userId}) => falcor.call(['usersById', userId, 'createInvestigation']))
+        .mergeMap(({falcor}) => falcor.call('createInvestigation'))
         .ignoreElements();
 }
 
@@ -32,9 +28,13 @@ function selectInvestigation(action$) {
         .ofType(SELECT_INVESTIGATION)
         .groupBy(({ id }) => id)
         .mergeMap((actionsById) => actionsById.switchMap(
-            ({ falcor, id }) => falcor.set(
-                $value(`currentUser.activeInvestigation`, $ref(`investigationsById['${id}']`))
-            )
+            ({ falcor, id }) => falcor.set({
+                json: {
+                    currentUser: {
+                        activeInvestigation: $ref(`investigationsById['${id}']`)
+                    }
+                }
+            })
             .progressively()
         ))
         .ignoreElements();
@@ -43,22 +43,19 @@ function selectInvestigation(action$) {
 function setInvestigationParams(action$) {
     return action$
         .ofType(SET_INVESTIGATION_PARAMS)
-        .mergeMap(({falcor, params, id}) => {
-            const root = id ? ['investigationsById', id] : ['currentUser', 'activeInvestigation']
-            return Observable.from(
-                _.map(params, (value, key) =>
-                    falcor.set($value(root.concat([key]), value))
-                )
-            ).mergeAll()
-        })
+        .switchMap(({ falcor, params, id }) =>
+            falcor.set(...Object.keys(params).map((key) => $value(
+                `investigations['${id}']['${key}']`, params[key]
+            ))).progressively()
+        )
         .ignoreElements();
 }
 
 function saveInvestigation(action$) {
     return action$
         .ofType(SAVE_INVESTIGATION)
-        .mergeMap(({falcor, id}) =>
-            Observable.from(falcor.call(['investigationsById', id, 'save']))
+        .mergeMap(({falcor}) =>
+            Observable.from(falcor.call('save'))
         )
         .ignoreElements();
 }
@@ -66,8 +63,8 @@ function saveInvestigation(action$) {
 function copyInvestigation(action$) {
     return action$
         .ofType(COPY_INVESTIGATION)
-        .mergeMap(({falcor, id}) =>
-            Observable.from(falcor.call(['investigationsById', id, 'clone']))
+        .mergeMap(({falcor}) =>
+            Observable.from(falcor.call('clone'))
         )
         .ignoreElements();
 }
@@ -75,9 +72,9 @@ function copyInvestigation(action$) {
 function deleteInvestigations(action$) {
     return action$
         .ofType(DELETE_INVESTIGATIONS)
-        .mergeMap(({falcor, userId, investigationIds}) =>
+        .mergeMap(({falcor, investigationIds}) =>
             Observable.from(
-                falcor.call(['usersById', userId, 'removeInvestigations'], [investigationIds])
+                falcor.call('removeInvestigations', [investigationIds])
             )
         )
         .ignoreElements();

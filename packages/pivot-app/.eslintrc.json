@@ -22,7 +22,11 @@
         "__BUILDNUMBER__": false,
         "__BUILDDATE__": false,
         "__GITCOMMIT__": false,
-        "__GITBRANCH__": false
+        "__GITBRANCH__": false,
+        "_": true,
+        "Rx": true,
+        "React": true,
+        "Observable": true
     },
     "extends": ["eslint:recommended", "plugin:react/recommended"],
     "rules": {
@@ -100,6 +104,7 @@
         "prefer-rest-params": "warn",
         "valid-jsdoc": "warn",
 
-        "react/prop-types": "off"
+        "react/prop-types": "off",
+        "react/react-in-jsx-scope": "off"
     }
 }

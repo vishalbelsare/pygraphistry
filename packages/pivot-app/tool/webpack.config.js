@@ -60,6 +60,15 @@ function commonConfig(buildOpts) {
         profile: buildOpts.genStats,
         resolve: {
             unsafeCache: true,
+            alias: {
+                'pivot-client': path.resolve('./src/client'),
+                'pivot-shared': path.resolve('./src/shared'),
+                'pivot-server': path.resolve('./src/server'),
+                '@graphistry/falcor': path.resolve(buildOpts.isDev ?
+                    './node_modules/@graphistry/falcor/dist/falcor.all.js' :
+                    './node_modules/@graphistry/falcor/dist/falcor.all.min.js'
+                )
+            }
         },
         module: {
             loaders: loaders(),
@@ -94,12 +103,14 @@ function clientConfig(buildOpts = {}) {
         client: './src/client/entry.js',
         vendor: [
             '@graphistry/falcor',
+            '@graphistry/falcor-router',
             '@graphistry/falcor-json-graph',
             '@graphistry/falcor-path-syntax',
             '@graphistry/falcor-path-utils',
             '@graphistry/falcor-query-syntax',
             '@graphistry/falcor-react-redux',
-            '@graphistry/falcor-router',
+            '@graphistry/falcor-react-schema',
+            '@graphistry/falcor-router-saddle',
             '@graphistry/falcor-socket-datasource',
             'assert',
             'better-react-spinkit',
@@ -203,7 +214,7 @@ function clientConfig(buildOpts = {}) {
                     __DEV__: buildOpts.isDev,
                     __CLIENT__: true,
                     __SERVER__: false,
-                    'process.env.NODE_ENV': '"production"',
+                    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)//'"production"',
                 },
                 versionDefines
             )
@@ -307,7 +318,7 @@ function serverConfig(buildOpts = {}) {
                     __DEV__: buildOpts.isDev,
                     __CLIENT__: false,
                     __SERVER__: true,
-                    'process.env.NODE_ENV': '"production"',
+                    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)//'"production"',
                 },
                 versionDefines
             )
@@ -387,7 +398,12 @@ function plugins(buildOpts) {
         // new webpack.NamedModulesPlugin(),
         // Avoid publishing files when compilation fails
         new webpack.NoErrorsPlugin(),
-        new webpack.ProvidePlugin({ React: 'react' }),
+        new webpack.ProvidePlugin({
+            Rx: 'rxjs/Rx',
+            React: 'react',
+            _: 'underscore',
+            Observable: 'rxjs/Observable'
+        }),
         new webpack.LoaderOptionsPlugin({
             debug: buildOpts.isDev,
             minimize: !buildOpts.isDev,

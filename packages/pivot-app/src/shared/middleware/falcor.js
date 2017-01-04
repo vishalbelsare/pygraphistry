@@ -1,13 +1,19 @@
 import { Observable } from 'rxjs';
-import { routes } from '../routes';
+import { App } from 'pivot-shared/main';
 import Router from '@graphistry/falcor-router';
-import logger from '../../shared/logger.js';
-const log = logger.createLogger(__filename);
+import { $error, $pathValue } from '@graphistry/falcor-json-graph';
+import { logErrorWithCode, mapObjectsToAtoms } from 'pivot-shared/util';
 
+import logger from 'pivot-shared/logger.js';
+const log = logger.createLogger(__filename);
 
 export function getDataSourceFactory(services) {
 
-    const AppRouter = createAppRouter(routes(services));
+    const AppRouter = createAppRouter(App
+        .schema(services)
+        .toArray()
+        .map(wrapRouteHandlers)
+    );
 
     return function getDataSource(request, _streaming = false) {
         if (!request.user) {
@@ -49,5 +55,67 @@ function createAppRouter(routes, options = { bufferTime: 10 }) {
                 }
             });
         }
+    }
+}
+
+function wrapRouteHandlers(route) {
+    const handlers = ['get', 'set', 'call'];
+
+    handlers.forEach(handler => {
+        if (typeof route[handler] === 'function') {
+            route[handler] = wrapRouteHandler(route, handler);
+        }
+    });
+
+    return route;
+}
+
+function wrapRouteHandler(route, handler) {
+    const originalHandler = route[handler];
+
+    return function routeHandlerWrapper(...args) {
+        log.trace({
+            falcorReqPath: args[0],
+            falcorArgs: args[1],
+            falcorOp: handler,
+        }, 'Falcor request');
+
+        return Observable
+            .defer(() => originalHandler.apply(this, args) || [])
+            .timeout(20000)
+            .map(mapObjectsToAtoms)
+            .do(({ path, value }) => {
+                if (value === undefined) {
+                    log.warn(`Get handler is returning undefined for ${JSON.stringify(path)}`);
+                }
+            })
+            .do(res =>
+                log.trace({
+                    falcorReqPath: args[0],
+                    falcorReqArgs: args[1],
+                    falcorResPath: res.path,
+                    falcorResValue: res.value,
+                    falcorOp: handler,
+                }, 'Faclor reply')
+            )
+            .catch(e => {
+                const errorContext = {
+                    err: e,
+                    falcorPath: args[0],
+                    falcorArgs: args[1],
+                    falcorOp: handler
+                };
+                const code = logErrorWithCode(log, errorContext);
+
+                return Observable.from([
+                    $pathValue('serverStatus',
+                        $error({
+                            ok: false,
+                            title: 'Ooops!',
+                            message: `Unexpected server error (code: ${code}).`
+                        })
+                    )
+                ])
+            });
     }
 }
