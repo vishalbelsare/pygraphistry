@@ -131,7 +131,6 @@ function setupRoutes(modules, getDataSource) {
 
 function setupSocketRoutes(getDataSource) {
     socketServer.on('connection', (socket) => {
-
         const { handshake: { query = {} }} = socket;
         const sink = new FalcorPubSubDataSink(socket, () => getDataSource({
             user: { userId: query.userId }
@@ -139,6 +138,7 @@ function setupSocketRoutes(getDataSource) {
 
         socket.on(sink.event, sink.response);
         socket.on('disconnect', onDisconnect);
+
         function onDisconnect() {
             socket.removeListener(sink.event, sink.response);
             socket.removeListener('disconnect', onDisconnect);

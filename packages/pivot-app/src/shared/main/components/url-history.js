@@ -7,14 +7,14 @@ export default class UrlHistory extends React.Component {
     constructor(props) {
         super(props);
 
-        const { switchScreen, selectInvestigation } = this.props;
         const history = createHistory();
 
-        history.listen(({ state }) => {
-            log.debug(`Back/Forward button pressed, jumping to ${state}`)
-            const { activeScreen, activeInvestigation } = state;
-            switchScreen(activeScreen);
-            selectInvestigation(activeInvestigation.id);
+        history.listen(({ state }, action) => {
+            if (action === 'POP') {
+                log.debug({navState: state}, `Back/Forward button pressed, jumping`)
+                const { activeScreen, activeInvestigation } = state;
+                this._setServerState(activeScreen, activeInvestigation);
+            }
         });
 
         this.state = {
@@ -30,8 +30,22 @@ export default class UrlHistory extends React.Component {
         }
     }
 
+    _setServerState(activeScreen, activeInvestigation) {
+        const { switchScreen, selectInvestigation } = this.props;
+
+        switchScreen(activeScreen);
+        if (activeInvestigation.id) {
+            selectInvestigation(activeInvestigation.id);
+        }
+    }
+
     render() {
         return null;
+    }
+
+    componentWillMount() {
+        const { activeScreen, activeInvestigation } = this.state.history.location.state;
+        this._setServerState(activeScreen, activeInvestigation);
     }
 
     componentDidUpdate() {
