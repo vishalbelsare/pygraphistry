@@ -31,6 +31,13 @@ const events = [
 ];
 
 export class Label extends React.Component {
+
+    static contextTypes = {
+        sizes: React.PropTypes.object.isRequired,
+        colors: React.PropTypes.object.isRequired
+    }
+
+
     constructor(props, context) {
         super(props, context);
         events.forEach((eventName) => {

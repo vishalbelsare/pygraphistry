@@ -4,7 +4,7 @@ import { Gestures } from 'rxjs-gestures';
 import { Observable } from 'rxjs/Observable';
 import styles from 'viz-shared/components/labels/style.less';
 import {
-    curPoints, pointSizes,
+    curPoints, pointSizes, pointColors,
     vboUpdates, cameraChanges,
     labelSettings, hitmapUpdates
 } from 'viz-client/legacy';
@@ -36,14 +36,28 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
         })
     )
     .auditTime(0, AnimationFrameScheduler)
-    .withLatestFrom(
+    .withLatestFrom(        
         pointSizes.map(({ buffer }) => new Uint8Array(buffer)),
+        pointColors.map(({ buffer }) => new Uint8Array(buffer)),
         curPoints.map(({ buffer }) => new Float32Array(buffer)),
-        (props, sizes, points) => ({ ...props, sizes, points })
+        (props, sizes, colors, points) => ({ ...props, sizes, colors, points })
     )
 );
 
 class Labels extends React.Component {
+
+    getChildContext() {
+        return {
+            sizes: this.props.sizes,
+            colors: this.props.colors
+        };        
+    }
+
+    static childContextTypes = {
+        sizes: React.PropTypes.object.isRequired,
+        colors: React.PropTypes.object.isRequired,
+    }    
+
     componentWillMount() {
         this.updateLabelSettings({}, this.props);
     }
@@ -57,7 +71,7 @@ class Labels extends React.Component {
         let { mouseX, mouseY, onLabelsUpdated,
               highlight = null, selection = null,
               renderState = null, renderingScheduler = null,
-              labels = [], sizes = [], points = [], children = []
+              labels = [], sizes = [], colors = [], points = [], children = []
         } = this.props;
 
         if (!renderState || !renderingScheduler || !(
