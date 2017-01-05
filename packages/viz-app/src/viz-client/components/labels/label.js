@@ -188,24 +188,15 @@ function Icon({ iconClass }) {
     return iconClass ?
 
             <span className={classNames({
-                    'fa-stack': true,
-                    //'fa-lg': true,
                     [styles['label-title-icon-encoded']]: true
                 })}>
                 <i className={classNames({
                     'fa': true,
-                    'fa-stack-2x': true,
-                    //'fa-lg': true,
-                    'fa-circle': true})}/>
-                <i className={classNames({
-                    'fa': true,
-                    'fa-stack-1x': true,
-                    //'fa-lg': true,
-                    'fa-inverse': true,
+                    'fa-fw': true,
                     [iconClass]: true})} />
             </span>
 
-        : <span style={ {display: 'none'} } />;
+        : null;
 }
 
 function getIconClass({encodings, type, columns}) {
@@ -241,7 +232,7 @@ function LabelTitle ({ type, color, iconClass, title, icon, pinned, showFull, on
                  onTouchStart={onTouchStart}>
                 <span onMouseDown={stopPropagationIfAnchor}
                       className={styles['label-title-text']}>
-                      {/*<Icon iconClass={iconClass}/>*/}
+                      <Icon iconClass={iconClass}/>
                       <span dangerouslySetInnerHTML={titleHTML} style={ {display: 'inline-block'} }/>
                 </span>
             </div>
@@ -294,7 +285,7 @@ function LabelTitle ({ type, color, iconClass, title, icon, pinned, showFull, on
             </OverlayTrigger>
             <span onMouseDown={stopPropagationIfAnchor}
                   className={styles['label-title-text']}>
-                  {/*<Icon iconClass={iconClass}/>*/}
+                  <Icon iconClass={iconClass}/>
                   <span dangerouslySetInnerHTML={titleHTML} style={ {display: 'inline-block'} }/>
             </span>
         </div>
