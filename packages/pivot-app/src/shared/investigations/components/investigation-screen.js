@@ -35,12 +35,12 @@ export default function InvestigationScreen({
                                  selectInvestigation={selectInvestigation}
                                  />
             <div className={styles['investigation-split']}>
-                <SplitPane split="horizontal" defaultSize="60%" minSize={0}>
+                <SplitPane split="vertical" defaultSize="25%" minSize={0}>
+                    <Investigation data={activeInvestigation} templates={relevantTemplates}/>
                     { activeInvestigation.status &&
                         <Visualization investigation={activeInvestigation}/>
                         || undefined
                     }
-                   <Investigation data={activeInvestigation} templates={relevantTemplates}/>
                </SplitPane>
             </div>
         </div>

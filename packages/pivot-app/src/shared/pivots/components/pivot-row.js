@@ -21,6 +21,12 @@ export default function PivotRow({
 
     return (
         <tr id={"pivotRow" + id} className={styles['row-toggled-' + (enabled ? 'on' : 'off')]}>
+            <td className={styles.pivotTypeTitle}>
+                <span>Pivot type</span>
+            </td>
+            <td className={styles.pivotParamTitle}>
+                <span>Paramaters</span>
+            </td>
             <td className={styles.pivotToggle}>
                 <span>{ rowIndex }</span>
                 <RcSwitch defaultChecked={false}
@@ -35,14 +41,14 @@ export default function PivotRow({
                 />
             </td>
             <td key={`pcell-${id}-pivotselector`} className={styles.pivotData0 + ' pivotTypeSelector'}>
-                {
-                    pivotTemplate && templates &&
-                    <TemplateSelector id={id}
-                                      templates={templates}
-                                      pivotTemplate={pivotTemplate}
-                                      setPivotAttributes={setPivotAttributes}/>
-                    || undefined
-                }
+            {
+                pivotTemplate && templates &&
+                <TemplateSelector id={id}
+                                  templates={templates}
+                                  pivotTemplate={pivotTemplate}
+                                  setPivotAttributes={setPivotAttributes}/>
+                || undefined
+            }
             </td>
             <td key={`pcell-${id}-pivotparam`} className={styles.pivotData1}>
             {
