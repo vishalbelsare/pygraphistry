@@ -74,13 +74,10 @@ function renderFullPage(model, html = '') {
             <meta charset="utf-8" />
             <meta name="robots" content="noindex, nofollow"/>
             <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-            <base href="http://localhost:3000" />
             <title>Graphistry Visual Playbook Environment</title>
 
             <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
-            ${ iconsHTML.length === 0 ? iconsHTML.join('\n')
-                                      : <link rel="shortcut icon" href="not_found/favicon.ico" />
-            }
+            ${ iconsHTML.length !== 0 ? iconsHTML.join('\n') : ''}
 
             <link rel='stylesheet' type='text/css' href='${client.css || ''}'/>
         </head>

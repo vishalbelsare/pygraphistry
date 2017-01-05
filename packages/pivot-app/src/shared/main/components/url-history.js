@@ -10,7 +10,7 @@ export default class UrlHistory extends React.Component {
         const history = createHistory();
 
         history.listen(({ state }, action) => {
-            if (action === 'POP') {
+            if (action === 'POP' && state !== undefined) {
                 log.debug({navState: state}, `Back/Forward button pressed, jumping`)
                 const { activeScreen, activeInvestigation } = state;
                 this._setServerState(activeScreen, activeInvestigation);
@@ -44,8 +44,17 @@ export default class UrlHistory extends React.Component {
     }
 
     componentWillMount() {
-        const { activeScreen, activeInvestigation } = this.state.history.location.state;
+        const { activeScreen, activeInvestigation } = this.props;
+        const { history } = this.state;
+
         this._setServerState(activeScreen, activeInvestigation);
+
+        const pathname = this._getPath(activeScreen, activeInvestigation);
+        history.push({
+            pathname, state: {
+                activeScreen, activeInvestigation
+            }
+        });
     }
 
     componentDidUpdate() {
@@ -55,6 +64,7 @@ export default class UrlHistory extends React.Component {
 
         if (history.location.pathname !== pathname) {
             log.debug(`Pushing new path ${pathname}`);
+
             history.push({
                 pathname, state: {
                     activeScreen, activeInvestigation
