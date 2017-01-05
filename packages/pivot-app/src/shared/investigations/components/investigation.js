@@ -1,10 +1,12 @@
 import EventTable from './event-table';
 import {
     Alert,
+    Glyphicon,
     Tab,
     Tabs,
     MenuItem,
     Navbar,
+    NavItem,
     NavDropdown,
     Nav
 } from 'react-bootstrap';
@@ -32,22 +34,25 @@ export default function Investigation({
                 </DropdownButton>
             </span>*/}
             <div className={styles.testwrap}>
-              <Navbar fixedTop>
-                <Navbar.Header>
-                  <Navbar.Brand>
-                    <a href="#">Pivot App</a>
-                  </Navbar.Brand>
-                </Navbar.Header>
-                <Nav>
-                  <NavDropdown eventKey={3} title="My Investigation" id="basic-nav-dropdown">
-                    <MenuItem eventKey={3.1}>Action</MenuItem>
-                    <MenuItem eventKey={3.2}>Another action</MenuItem>
-                    <MenuItem eventKey={3.3}>Something else here</MenuItem>
-                    <MenuItem divider />
-                    <MenuItem eventKey={3.3}>Separated link</MenuItem>
-                  </NavDropdown>
-                </Nav>
-              </Navbar>
+                <Navbar fixedTop>
+                    <Navbar.Header>
+                        <Navbar.Brand>
+                            <a href="#">Pivot App</a>
+                        </Navbar.Brand>
+                    </Navbar.Header>
+                    <Nav>
+                        <NavDropdown eventKey={3} title="My Investigation" id="basic-nav-dropdown">
+                            <MenuItem eventKey={3.1}>Action</MenuItem>
+                            <MenuItem eventKey={3.2}>Another action</MenuItem>
+                            <MenuItem eventKey={3.3}>Something else here</MenuItem>
+                            <MenuItem divider />
+                            <MenuItem eventKey={3.3}>Separated link</MenuItem>
+                        </NavDropdown>
+                        <NavItem eventKey={4}> <Glyphicon glyph="plus" /> </NavItem>
+                        <NavItem eventKey={5}> <Glyphicon glyph="duplicate" /> </NavItem>
+                        <NavItem eventKey={6}> <Glyphicon glyph="floppy-disk" /> </NavItem>
+                    </Nav>
+                </Navbar>
             </div>
             <Tabs defaultActiveKey={1} id="investigation-bottom-tabbar" className={styles.investigationTabs}>
                 <Tab eventKey={1} title="Pivots">
