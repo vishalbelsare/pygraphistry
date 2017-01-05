@@ -1,6 +1,6 @@
 @import './vars.less';
 
-@investigation-header-height: 40px;
+@investigation-header-height: 0px;
 @investigation-header-padding-top: ~"calc( (@{investigation-header-height} - 1px - 34px)/2 )";
 @investigation-footer-height: 250px;
 
@@ -31,14 +31,31 @@
     border-radius: 0px;
     border-bottom: 1px solid @header-seperator;
     margin-bottom: 0px;
+    display: none;
 }
-
 
 :local(.investigation-split) {
     position: relative;
+    background-color: #FBFBFB;
+    tbody tr {
+    display: flex;
+    -webkit-flex-flow: row wrap;
+    border-top: 1px solid #ddd;
+       }
+    tbody {
+        width: 100%;
+        position: relative;
+    }
+    tbody tr td {
+        padding: 20px;
+        height: 20%;
+        display: inline-block;
+        border: none !important;
+    }
 
-    & > div > div:nth-child(3) {
-        overflow-y: auto;
+    & > div > div:nth-child(1) {
+        overflow-y: scroll;
+        overflow-x: hidden;
     }
 
     & > div > span {
@@ -59,6 +76,11 @@
         border-bottom: 5px solid #999;
         cursor: row-resize;
         width: 100%;
+
+        //Vertical
+        border-right: 5px solid #999;
+        cursor: col-resize;
+        width: 0px;
 
         &:hover {
             border-bottom: 5px solid #777;
@@ -108,10 +130,10 @@
     filter: invert(100%) brightness(40%) invert(100%) sepia(100%) saturate(100%) hue-rotate(180deg);
 }
 :local(.user-greeting-heading) {
-    margin-top: 20px;
+    margin-top: 15px;
     margin-bottom: 10px;
     padding-left: 20px;
-    font-size: 30px;
+    font-size: 24px;
 }
 :local(.user-greeting-message) {
     padding-left: 20px;
@@ -172,9 +194,9 @@
 }
 
 :root {
-    --app-font-size: 14px;
+    --app-font-size: 12px;
     --row-font-size: 18px;
-    --scrollbar-width: 15px;
+    --scrollbar-width: 0px;
 }
 
 :global(body) {
@@ -196,94 +218,12 @@
     box-sizing: border-box;
 }
 
-/* INTERFERE WITH OTHER STYLESHEETS
-   FIX BEFORE RE-ENABLING
-
-.tcell {
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    & span {
-        padding: 3px;
-        display: inline-block;
-    }
-
-    & input[type=th] {
-
-        margin: 0;
-        padding: 5px;
-        height: 100%;
-        border: none;
-        display: inline-block;
-        vertical-align: middle;
-        box-sizing: border-box;
-        background: transparent;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        // font-size: var(--row-font-size);
-
-        &::-webkit-inner-spin-button,
-        &::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-    }
-}
-
-tr {
-    display: block;
-
-    & i {
-        font-style: normal;
-        display: inline-block;
-    }
-
-    & .search:before {
-        right: 0;
-        position: relative;
-        font-awesome: search-plus;
-    }
-
-    & .splice:before {
-        right: 350%;
-        position: relative;
-        font-awesome: minus;
-    }
-
-    & .insert:before {
-        right: 175%;
-        position: relative;
-        font-awesome: plus;
-    }
-
-    & .splice, & .insert, & .search {
-        right: 5%;
-        display: none;
-        cursor: pointer;
-        position: absolute;
-        vertical-align: middle;
-    }
-
-    &:hover .splice, &:hover .insert, &:hover .search {
-        line-height: 200%;
-        display: inline-block;
-    }
-}
 
 td, th {
-    padding: 2px;
-    position: relative;
-    white-space: nowrap;
-    display: inline-block;
-    border: none;
-    margin-right: -1px;
-    border-right: 1px solid #ddd;
-    // font-size: var(--row-font-size);
 
-    &:last-child {
-        border-right: none;
-    }
-}*/
+    border-top: 1px solid aqua;
+}
+
 
 :local(.alert) {
     position: relative
@@ -376,14 +316,14 @@ td, th {
 
         li a {
             margin-right: 0;
-            padding-top: 6px;
-            padding-bottom: 6px;
+            padding-top: 10px;
+            padding-bottom: 10px;
             color: #E0E0E0;
             border-radius: 0;
-            border: 0 !important;
+            border: none !important;
             &:hover {
                 color: #E0E0E0;
-                background-color: @header-highlight;
+                background-color: #ffffff;
             }
         }
 
@@ -391,6 +331,7 @@ td, th {
 }
 
 :local(.pivots) {
+    position: relative;
     thead th {
         border: none;
         text-align: center;
@@ -429,6 +370,7 @@ td, th {
 
 .pivotToggle {
     width: 90px;
+    height: 50px;
     th& {
         padding: 0 !important;
         & button {
@@ -446,17 +388,26 @@ td, th {
     }
     :global(.rc-switch) {
         & {
-            zoom: 80%;
+            zoom: 100%;
         }
         &:global(.rc-switch-checked) {
-            background: #777;
-            border-color: #333;
+            background: #76DD60;
+            border-color: #777;
+            border: none;
         }
     }
+    order: 1;
+    width: 50%;
+    border-top: none;
+    border: 1px solid purple;
+    padding: 25px !important;
 }
 :local(.pivotData0) {
     width: 200px;
     text-align: right;
+    order: 4;
+    width: 100%;
+    border-top: none;
 }
 .pivotTypeSelectorContainer {
     text-align: left;
@@ -470,7 +421,10 @@ td, th {
 :local(.pivotData1) {
     //https://github.com/less/less.js/issues/974
     width: ~"calc(100% - 570px)";
-    min-width: 25em;
+    order: 5;
+    width: 100%;
+    padding: 5px;
+    border: 1px solid grey;
 
     button {
         font-weight: bold;
@@ -496,15 +450,14 @@ td, th {
         font-weight: normal;
         //text-transform: uppercase;
         text-align: right;
-        margin-left: 1em;
-        margin-right: 1em;
-        width: 100px;
+        margin-left: 2px;
+        margin-right: 20px;
     }
 
 }
 :local(.pivotEntitySummaries) {
     display: inline-block;
-    text-align: right;
+    text-align: left;
     margin: 5px 10px 0px 0px;
 }
 :local(.pivotEntitySummary) {
@@ -565,13 +518,17 @@ td, th {
     display: none;
 }
 :local(.pivotResultCount) {
-    text-align: right;
+    // this is the return item count
+    text-align: left;
     span {
         margin-top: @summaryPillHeight;
     }
+    order: 10;
+    width: 20%;
+    border: 1px solid orange;
 }
 :local(.pivotResultSummaries) {
-
+    //this is the little idenitfier tabs
     max-width: 20em;
 
     & > * {
@@ -584,6 +541,11 @@ td, th {
         white-space: nowrap;
         max-width: 20em;
     }
+    order: 11;
+    width: 80%;
+    margin-bottom: 20px;
+    padding-left: 0px !important;
+    border: 1px solid black;
 
 }
 :local(.result-count-on) { }
@@ -592,6 +554,180 @@ td, th {
 }
 :local(.pivotIcons) {
     white-space: nowrap;
+    order: 2;
+    width: 50%;
+    padding-top: 20px !important;
+    padding-left: 0px !important;
+    border: 1px solid yellow;
 }
 .pivot-error-tooltip {
+}
+
+
+//gets rid of stubborn bootstrap border
+td {
+   // border: none !important;
+}
+
+//not sure why the opposing style has to be overriden? bootstrap thing?
+
+
+transition-container {
+    width: auto;
+    border-radius: 5px;
+}
+
+:global(.DateInput) {
+    font-size: 12px;
+    width: 100px;
+}
+
+:global(.DateRangePicker) {
+    height: auto !important;
+    width: 100% !important;
+}
+
+:global(.DateRangePicker tr) {
+    height: auto !important;
+    width: auto !important;
+}
+
+:global(.DateRangePicker td) {
+    padding: 8px !important;
+}
+
+:global(.CalendarMonth){
+    padding: 0;
+    font-size: 10px;
+    margin: 0;
+}
+
+:global(.CalendarMonth__caption){
+    padding: 10px;
+    font-size: 12px;
+    text-align: left;
+    margin-left: 90px;
+}
+
+:global(.DayPicker--horizontal) {
+    width: 275px !important;
+    height: auto !important;
+}
+
+.datepicker {
+    margin-top: 20px;
+    border-radius: 10px;
+}
+
+:global(.transition-container--horizontal) {
+    width: 275px !important;
+}
+
+:global(.DayPicker__week-header) {
+    display: none !important;
+}
+
+:global(.CalendarMonthGrid--horizontal) {
+    left: 0px;
+}
+
+:global(.DateRangePickerInput__arrow svg) {
+    height: 10px;
+    width: 10px;
+}
+
+:global(.DateRangePickerInput) {
+}
+
+:local(.pivotTextParam) {
+    border: 2px solid black;
+    order: 6;
+    width: 100%;
+}
+:local(.pivotComboParam) {
+        border: 2px solid red;
+        order: 7;
+        width: 100%;
+}
+:local(.pivotMultiParam) {
+    border: 2px solid blue;
+    order: 8;
+    width: 100%;
+}
+:local(.pivotDateRangeParam) {
+    border: 2px solid green;
+    order: 9;
+    width: 100%;
+}
+
+
+:global(.navbar){
+    position: absolute;
+}
+
+:global(.navbar-nav){
+    margin-left: 5% !important;
+}
+
+.placeholderWrapper {
+    //background-color: aqua;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    margin: auto;
+}
+
+.placeholderMessage {
+    width: 100%;
+    margin-top: 40%;
+    text-align: center;
+    line-height: 100%;
+}
+
+.placeholderLogo img {
+    //background-color: red;
+    position: absolute;
+    margin: auto;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 200px;
+    height: 47px;
+    margin-right: 40%;
+    margin-bottom: 35%;
+}
+
+.placeholderLogo {
+}
+
+:global(.testwrap) {
+    position: relative !important;
+    background-color: aqua;
+}
+
+:local(.pivotTypeTitle) {
+   // background-color: aqua;
+    order: 3;
+    width: 100%;
+    padding: 0px !important;
+    margin-left: 20px !important;
+    text-transform: uppercase;
+    font-size: 9px;
+    letter-spacing: 1px;
+    font-weight: 900;
+    color: #333;
+}
+
+:local(.pivotParamTitle) {
+   // background-color: aqua;
+    order: 5;
+    width: 100%;
+    padding: 0px !important;
+    margin-left: 20px !important;
+    text-transform: uppercase;
+    font-size: 9px;
+    letter-spacing: 1px;
+    font-weight: 900;
+    color: #333;
 }

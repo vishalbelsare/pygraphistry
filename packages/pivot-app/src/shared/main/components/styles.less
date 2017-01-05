@@ -38,7 +38,7 @@
     height: 100%;
     .logo {
         height: 56px;
-        width: 44px; //no border
+        width: 45px; //no border
     }
     .nav {
         height: ~"calc(100% - 56px)";
@@ -48,17 +48,17 @@
 
 .left-nav {
 
-    background: @default-bg;
+    background: @sidebar-bg;
 
     .nav {
-        border-right: 1px solid #e5e5e5;
+        border-right: none;
     }
 
     li {
         width: 100%;
-        border-bottom: 1px solid #e5e5e5;
+        border-bottom: none;
         &:first-child {
-            border-top: 1px solid #666;
+            border-top: none;
         }
     }
 
@@ -66,11 +66,11 @@
         & a {
             background: @active-bg;
             i:global(.fa) {
-                color: #333;
+                color: #416650;
             }
         }
         &:global(.active) a {
-            background-color: @sidebar-bg;
+            background-color: @sidebar-active-bg;
             i:global(.fa) {
                 color: @header-highlight;
             }
