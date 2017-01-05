@@ -58,7 +58,7 @@ const conf = convict({
         },
         logSource: {
             doc: 'Logs line numbers with debug statements. Bad for Perf.',
-            format: [ true, false ],
+            format: Boolean,
             default: false,
             arg: 'log-source',
             env: 'LOG_SOURCE'
