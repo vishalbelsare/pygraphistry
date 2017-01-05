@@ -2,6 +2,7 @@ import React from 'react';
 import { inspect } from 'util';
 import { renderToString as reactRenderToString } from 'react-dom/server';
 import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
+import conf from '../config.js';
 import logger from '../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
@@ -23,6 +24,9 @@ export function renderMiddleware(getFaclorModel, modules) {
 
             renderedResults.take(1).subscribe({
                 next(html) {
+                    if(conf.get('env') !== 'production') {
+                        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+                    }
                     res.type('html').send(html);
                 },
                 error(e, error = e && e.stack || inspect(e, { depth: null })) {
