@@ -14,9 +14,10 @@ import { PivotTable } from 'pivot-shared/pivots';
 import styles from 'pivot-shared/styles.less';
 
 export default function Investigation({
-    id, status, pivots = [], templates, eventTable,
+    id, status, user, pivots = [], templates, eventTable,
     searchPivot, insertPivot, splicePivot, dismissAlert,
-    graphInvestigation, saveInvestigation, togglePivots
+    graphInvestigation, saveInvestigation, togglePivots, createInvestigation,
+    copyInvestigation
 }) {
     return (
         <div className={styles.pivots}>
@@ -48,9 +49,15 @@ export default function Investigation({
                             <MenuItem divider />
                             <MenuItem eventKey={3.3}>Separated link</MenuItem>
                         </NavDropdown>
-                        <NavItem eventKey={4}> <Glyphicon glyph="plus" /> </NavItem>
-                        <NavItem eventKey={5}> <Glyphicon glyph="duplicate" /> </NavItem>
-                        <NavItem eventKey={6}> <Glyphicon glyph="floppy-disk" /> </NavItem>
+                        <NavItem eventKey={4} onSelect={() => createInvestigation(user.id)}> 
+                            <Glyphicon glyph="plus" /> 
+                        </NavItem>
+                        <NavItem eventKey={5} onSelect={() => copyInvestigation(id)}> 
+                            <Glyphicon glyph="duplicate" /> 
+                        </NavItem>
+                        <NavItem eventKey={6} onSelect={() => saveInvestigation(id)}> 
+                            <Glyphicon glyph="floppy-disk" /> 
+                        </NavItem>
                     </Nav>
                 </Navbar>
             </div>
