@@ -28,6 +28,7 @@ export const latestHighlightedObject = new ReplaySubject(1);
 export const curPoints = new ReplaySubject(1);
 export const pointSizes = new ReplaySubject(1);
 export const pointColors = new ReplaySubject(1);
+export const edgeColors = new ReplaySubject(1);
 export const selectedEdgeIndexes = new ReplaySubject(1);
 export const selectedPointIndexes = new ReplaySubject(1);
 

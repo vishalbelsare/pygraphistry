@@ -34,7 +34,8 @@ export class Label extends React.Component {
 
     static contextTypes = {
         sizes: React.PropTypes.object.isRequired,
-        colors: React.PropTypes.object.isRequired,
+        pointColors: React.PropTypes.object.isRequired,
+        edgeColors: React.PropTypes.object.isRequired,
         scalingFactor: React.PropTypes.number.isRequired,
         pixelRatio: React.PropTypes.number.isRequired
     };
@@ -91,12 +92,14 @@ export class Label extends React.Component {
             }
         }
 
-        const pointColor = Color({
-            r: this.context.colors[this.props.index * 4 + 0],
-            g: this.context.colors[this.props.index * 4 + 1],
-            b: this.context.colors[this.props.index * 4 + 2]})
-            .alpha(1)
-            .rgbaString();
+
+        const pointColor = this.props.type === 'edge' ? '#ccc' 
+            : Color({
+                r: this.context.pointColors[this.props.index * 4 + 0],
+                g: this.context.pointColors[this.props.index * 4 + 1],
+                b: this.context.pointColors[this.props.index * 4 + 2]})
+                .alpha(1)
+                .rgbaString();
 
         const iconSize = 
             this.props.type === 'edge' ? 

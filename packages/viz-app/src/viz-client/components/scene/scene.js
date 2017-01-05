@@ -10,6 +10,7 @@ import styles from 'viz-shared/components/scene/styles.less';
 import {
     pointSizes,
     pointColors,
+    edgeColors,
     toggleZoomIn,
     toggleCenter,
     toggleZoomOut,
@@ -228,7 +229,8 @@ class Scene extends React.Component {
         const { hostBuffers: {
             'curPoints': curPointsSource,
             'pointSizes': pointSizesSource,
-            'pointColors': pointColorsSource
+            'pointColors': pointColorsSource,
+            'edgeColors': edgeColorsSource
         }} = renderState;
 
         if (hasVBOListeners === false) {
@@ -256,6 +258,7 @@ class Scene extends React.Component {
             hasVBOListeners,
             pointSizesSource,
             pointColorsSource,
+            edgeColorsSource,
             vboUpdatesSource,
             vboVersionsSource,
             hasSourceListeners,
@@ -275,6 +278,7 @@ class Scene extends React.Component {
             hasDOMListeners,
             pointSizesSource,
             pointColorsSource,
+            edgeColorsSource,
             vboUpdatesSource,
             vboVersionsSource,
             hasSourceListeners,
@@ -339,6 +343,7 @@ class Scene extends React.Component {
             curPointsSource.do(curPoints),
             pointSizesSource.do(pointSizes),
             pointColorsSource.do(pointColors),
+            edgeColorsSource.do(edgeColors),
             vboUpdatesSource.do(vboUpdates),
             vboVersionsSource.do(vboVersions),
             cameraChangesSource.do(cameraChanges),
