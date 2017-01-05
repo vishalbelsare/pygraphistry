@@ -1,5 +1,13 @@
 import EventTable from './event-table';
-import { Tab, Tabs, Alert } from 'react-bootstrap';
+import {
+    Alert,
+    Tab,
+    Tabs,
+    MenuItem,
+    Navbar,
+    NavDropdown,
+    Nav
+} from 'react-bootstrap';
 import { PivotTable } from 'pivot-shared/pivots';
 import styles from 'pivot-shared/styles.less';
 
@@ -16,6 +24,31 @@ export default function Investigation({
                 </Alert>
                 : null
             }
+            {/*<Navbar inverse>*/}
+            {/*<span>
+                <nav
+                <DropdownButton bsSize="medium" title="My Investigation" id="dropdown-size-large">
+                    <MenuItem eventKey="1">Botnet</MenuItem>
+                </DropdownButton>
+            </span>*/}
+            <div className={styles.testwrap}>
+              <Navbar fixedTop>
+                <Navbar.Header>
+                  <Navbar.Brand>
+                    <a href="#">Pivot App</a>
+                  </Navbar.Brand>
+                </Navbar.Header>
+                <Nav>
+                  <NavDropdown eventKey={3} title="My Investigation" id="basic-nav-dropdown">
+                    <MenuItem eventKey={3.1}>Action</MenuItem>
+                    <MenuItem eventKey={3.2}>Another action</MenuItem>
+                    <MenuItem eventKey={3.3}>Something else here</MenuItem>
+                    <MenuItem divider />
+                    <MenuItem eventKey={3.3}>Separated link</MenuItem>
+                  </NavDropdown>
+                </Nav>
+              </Navbar>
+            </div>
             <Tabs defaultActiveKey={1} id="investigation-bottom-tabbar" className={styles.investigationTabs}>
                 <Tab eventKey={1} title="Pivots">
                     <PivotTable id={id}
@@ -41,4 +74,3 @@ export default function Investigation({
         </div>
     );
 }
-

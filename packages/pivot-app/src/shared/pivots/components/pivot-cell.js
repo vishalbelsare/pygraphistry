@@ -3,6 +3,8 @@ import Select from 'react-select';
 import ComboSelector from './combo-selector';
 import { tcell as tableCellClassName } from 'pivot-shared/styles.less';
 import DateRangePickerWrapper from './TimeRangeWidget/TimeRangeWidget.js';
+import styles from 'pivot-shared/styles.less';
+
 
 const componentsByInputType = {
     text: TextCell,
@@ -22,7 +24,7 @@ export default function PivotCell({ paramUI, ...props }) {
 
 function TextCell({ id, paramKey, paramValue, paramUI, handlers }) {
      return (
-        <div className={tableCellClassName} key={`pcell-${id}-${paramKey}`}>
+         <td className={tableCellClassName + ' ' + styles.pivotTextParam} key={`pcell-${id}-${paramKey}`}>
             <label>{ paramUI.label }</label>
             <input
                 type='th'
@@ -36,7 +38,7 @@ function TextCell({ id, paramKey, paramValue, paramUI, handlers }) {
                     })
                 }
             />
-        </div>
+        </td>
      );
 }
 
@@ -83,20 +85,23 @@ function PivotCombo({ id, paramKey, paramValue, paramUI, previousPivots, handler
 
 function ComboCell({ id, paramKey, paramValue, paramUI, handlers }) {
     return (
-        <ComboSelector pivotId={id}
-                       fldKey={paramKey}
-                       paramUI={paramUI}
-                       fldValue={paramValue}
-                       options={paramUI.options}
-                       key={`pcell-${id}-${paramKey}`}
-                       setPivotAttributes={handlers.setPivotAttributes}
-        />
+        <td className={styles.pivotComboParam} key={`pcell-${id}-${paramKey}`}>
+            <ComboSelector pivotId={id}
+                           fldKey={paramKey}
+                           paramUI={paramUI}
+                           fldValue={paramValue}
+                           options={paramUI.options}
+                           key={`pcell-${id}-${paramKey}`}
+                           setPivotAttributes={handlers.setPivotAttributes}
+            />
+        </td>
     );
 }
 
 function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
     return (
-        <div key={`pcell-${id}-${paramKey}`} className={tableCellClassName}>
+        <td key={`pcell-${id}-${paramKey}`}
+            className={tableCellClassName + ' ' + styles.pivotMultiParam}>
             <label>{ paramUI.label }</label>
             <Select id={`selector-${id}-${paramKey}`}
                     name={`selector-${id}-${paramKey}`}
@@ -112,19 +117,19 @@ function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
                             [`pivotParameters.${paramKey}`]: _.pluck(selected, 'id')
                         })
                     }/>
-        </div>
+            </td>
     )
 }
 
 function DateRange({ id, paramKey, paramValue, paramUI, handlers }) {
     return (
-        <div key={`pcell-${id}-${paramKey}`}>
+        <td className={styles.pivotDateRangeParam} key={`pcell-${id}-${paramKey}`}>
             <DateRangePickerWrapper
                 paramUI={paramUI}
                 paramValue={paramValue}
                 paramKey={paramKey}
                 setPivotAttributes={handlers.setPivotAttributes}
             />
-        </div>
+        </td>
     );
 }
