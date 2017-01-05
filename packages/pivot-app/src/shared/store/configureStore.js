@@ -1,5 +1,5 @@
 import rootReducer from '../reducers/';
-import { DevTools } from '../containers';
+import { DevTools } from 'pivot-shared/main/components/DevTools';
 import { compose, createStore, applyMiddleware } from 'redux';
 import { app } from '../reducers/app';
 import { investigationScreen } from '../reducers/investigationScreen';
@@ -9,7 +9,7 @@ import { pivot } from '../reducers/pivotRow';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
 
 
-export function configureStore(initialState = {}) {
+export function configureStore() {
     const epicsMiddleware = createEpicMiddleware(
         combineEpics(app, investigationScreen, connectorScreen, investigation, pivot)
     );
@@ -23,7 +23,7 @@ export function configureStore(initialState = {}) {
 
     return createStore(
         rootReducer,
-        initialState,
+        undefined,
         enhancer
 	)
 }
