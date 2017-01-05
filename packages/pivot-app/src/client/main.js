@@ -60,7 +60,7 @@ Observable
 function printBuildInfo() {
     const buildNum = __BUILDNUMBER__ === undefined ? 'Local build' : `Build #${__BUILDNUMBER__}`;
     const buildDate = (new Date(__BUILDDATE__)).toLocaleString();
-    log.info(`${buildNum} of ${__GITBRANCH__}@${__GITCOMMIT__} (on ${buildDate})`)
+    log.info(`[PivotApp] ${buildNum} of ${__GITBRANCH__}@${__GITCOMMIT__} (on ${buildDate})`);
 }
 
 function getAppDOMNode() {
