@@ -1,4 +1,4 @@
-import App from './containers/App';
+import { App } from './main';
 import { BehaviorSubject } from 'rxjs';
 
 export function reloadHot(module) { // eslint-disable-line no-shadow
@@ -10,7 +10,7 @@ export function reloadHot(module) { // eslint-disable-line no-shadow
             './containers/App.js'
         ], () => {
             hotModules.next({
-                App: require('./containers/App').default
+                App: require('./main').App
             });
         })
     }
