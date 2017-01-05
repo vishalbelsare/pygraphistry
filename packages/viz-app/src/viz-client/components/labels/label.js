@@ -7,6 +7,9 @@ import { Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import { ColorPill } from 'viz-shared/components/color-pill/colorPill';
 import { getDefaultQueryForDataType } from 'viz-shared/models/expressions';
 
+import { logger as commonLogger } from '@graphistry/common';
+const logger = commonLogger.createLogger('viz-app:labels');
+
 function preventPropagation (f) {
     return function (e) {
         e.stopPropagation();
@@ -91,6 +94,17 @@ export class Label extends React.Component {
                 return null;
             }
         }
+
+
+
+        // TODO remove these diagnostics remove when we confirm that
+        // we are not getting an occasional null/parse exception here        
+        if (this.props.index === undefined || this.props.type === undefined) {
+            logger.warn('bad label render', this.props.index, this.props.type);
+            return null;
+        }
+        //////////
+
 
 
         const pointColor = this.props.type === 'edge' ? '#ccc' 
