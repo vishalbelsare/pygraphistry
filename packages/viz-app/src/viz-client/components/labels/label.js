@@ -117,7 +117,7 @@ export class Label extends React.Component {
 
         const iconSize = 
             this.props.type === 'edge' ? 
-                    40
+                    30
                 :  Math.max(
                         5, 
                         Math.min(
@@ -152,7 +152,7 @@ export class Label extends React.Component {
                           'bottom': true, 'tooltip': true,
                           [styles['label-tooltip']]: true
                      })}>
-                    <PointIcon iconClass={iconClass} pointColor={pointColor} iconSize={iconSize}/>
+                    <PointIcon iconClass={iconClass} pointColor={pointColor} iconSize={iconSize} type={this.props.type}/>
                     <div style={arrowStyle} className='tooltip-arrow'/>
                     <div style={contentStyle} className='tooltip-inner'>
                         <LabelTitle type={type}
@@ -181,8 +181,8 @@ export class Label extends React.Component {
     }
 }
 
-function PointIcon({ iconClass, pointColor, iconSize }) {
-    return iconClass ? 
+function PointIcon({ iconClass, pointColor, iconSize, type }) {
+    return iconClass && type === 'point' ? 
             <div className={classNames({[styles['point-icon-container']]: true})}
                 style={{
                     backgroundColor: pointColor, 
