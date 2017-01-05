@@ -50,7 +50,6 @@ export default function PivotRow({
                 || undefined
             }
             </td>
-            <td key={`pcell-${id}-pivotparam`} className={styles.pivotData1}>
             {
                 pivotTemplate && pivotTemplate.pivotParameterKeys && pivotTemplate.pivotParametersUI &&
                 pivotTemplate.pivotParameterKeys.map((key, index) =>
@@ -63,7 +62,6 @@ export default function PivotRow({
                                paramUI={pivotTemplate.pivotParametersUI[key]}/>
                 )
             }
-            </td>
             <td className={styles.pivotResultCount}>
                 <OverlayTrigger placement="top" overlay={
                     <Tooltip id={`resultCountTip_${id}_${rowIndex}`}>Events</Tooltip>

@@ -26,7 +26,7 @@ const getActiveScreenComponent = (function() {
 })();
 
 export const appContainer = container({
-    renderLoading: false,
+    renderLoading: true,
     fragment: ({ currentUser = {} } = {}) => {
         const ActiveScreen = getActiveScreenComponent(currentUser);
         return `{
