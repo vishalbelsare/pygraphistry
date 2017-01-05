@@ -30,7 +30,7 @@ docker run --rm ${BUILD_TAG} sh -c "tar --create ${ARTIFACTS}" > artifact.tar
 # Create run CMD from package.json #
 ####################################
 
-RUNCMD=`docker run --rm ${BUILD_TAG} sh -c "cat package.json" | jq -r .scripts.start`
+RUNCMD=`docker run --rm ${BUILD_TAG} sh -c "cat package.json" | jq -r '.scripts.start | split(" ") | tojson'`
 
 echo -e "\nCMD ${RUNCMD}" >> Dockerfile
 
