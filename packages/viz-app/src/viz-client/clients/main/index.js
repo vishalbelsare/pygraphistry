@@ -11,6 +11,20 @@ export function initialize(options, debug) {
 
     console.info(`Connecting to ${window.graphistryPath || 'local'}`);
 
+    if (window.graphistryClientId) {
+        const splunkSearch = `search (host=staging* OR host=labs*) (level=60 OR level=50 OR level=40) source="/var/log/graphistry-json/*.log" metadata.userInfo.cid="${window.graphistryClientId}"`;
+        const params = {
+            q: splunkSearch,
+            'display.page.search.mode':'verbose',
+            'earliest': '',
+            'latest': ''
+        }
+        const paramString = Object.entries(params).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&');
+        console.info(`Access splunk logs for this session at https://splunk.graphistry.com:3000/en-US/app/search/search?${paramString}`);
+    } else {
+        console.info('window does not have property graphistryClientId');
+    }
+
     let workbook = options.workbook;
 
     if (workbook == null) {
