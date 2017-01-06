@@ -2,7 +2,6 @@ import _ from 'underscore';
 import SplitPane from 'react-split-pane';
 import Visualization from './visualization';
 import styles from 'pivot-shared/styles.less';
-import navStyles from 'pivot-shared/main/components/styles.less';
 import { Investigation, InvestigationHeader } from 'pivot-shared/investigations';
 
 export default function InvestigationScreen({
@@ -24,7 +23,7 @@ export default function InvestigationScreen({
             templates;
 
     return (
-        <div className={`${navStyles['main-panel']} ${styles['investigation-all']}`}>
+        <div className={styles['investigation-all']}>
             <InvestigationHeader user={user}
                                  data={activeInvestigation}
                                  investigations={investigations}
