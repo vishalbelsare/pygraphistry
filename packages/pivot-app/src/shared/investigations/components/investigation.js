@@ -1,21 +1,19 @@
 import EventTable from './event-table';
+import { InvestigationHeader } from '../index.js';
+import { PivotTable } from 'pivot-shared/pivots';
+import styles from 'pivot-shared/styles.less';
+
 import {
     Alert,
     Tab,
     Tabs,
-    MenuItem,
-    Navbar,
-    NavDropdown,
-    Nav
 } from 'react-bootstrap';
-import { PivotTable } from 'pivot-shared/pivots';
-import styles from 'pivot-shared/styles.less';
 
 export default function Investigation({
-    id, status, pivots = [], templates, eventTable,
+    id, status, pivots = [], templates, investigations, eventTable,
     searchPivot, insertPivot, splicePivot, dismissAlert,
-    graphInvestigation, saveInvestigation, togglePivots
-}) {
+    graphInvestigation, saveInvestigation, togglePivots }) {
+
     return (
         <div className={styles.pivots}>
             { status && !status.ok ?
@@ -24,31 +22,7 @@ export default function Investigation({
                 </Alert>
                 : null
             }
-            {/*<Navbar inverse>*/}
-            {/*<span>
-                <nav
-                <DropdownButton bsSize="medium" title="My Investigation" id="dropdown-size-large">
-                    <MenuItem eventKey="1">Botnet</MenuItem>
-                </DropdownButton>
-            </span>*/}
-            <div className={styles.testwrap}>
-              <Navbar fixedTop>
-                <Navbar.Header>
-                  <Navbar.Brand>
-                    <a href="#">Pivot App</a>
-                  </Navbar.Brand>
-                </Navbar.Header>
-                <Nav>
-                  <NavDropdown eventKey={3} title="My Investigation" id="basic-nav-dropdown">
-                    <MenuItem eventKey={3.1}>Action</MenuItem>
-                    <MenuItem eventKey={3.2}>Another action</MenuItem>
-                    <MenuItem eventKey={3.3}>Something else here</MenuItem>
-                    <MenuItem divider />
-                    <MenuItem eventKey={3.3}>Separated link</MenuItem>
-                  </NavDropdown>
-                </Nav>
-              </Navbar>
-            </div>
+            <InvestigationHeader investigations={investigations}/>
             <Tabs defaultActiveKey={1} id="investigation-bottom-tabbar" className={styles.investigationTabs}>
                 <Tab eventKey={1} title="Pivots">
                     <PivotTable id={id}

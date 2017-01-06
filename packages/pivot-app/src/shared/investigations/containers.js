@@ -18,16 +18,16 @@ import {
     createInvestigation,
 } from 'pivot-shared/actions/investigationScreen';
 
+
 export const investigationContainer = container({
     fragment: ({ pivots } = {}) => `{
-        id, name, status,
-        url, tags, eventTable,
-        modifiedOn, pivots: ${
+        id, name, status, eventTable, modifiedOn, description, tags,
+        pivots: ${
             Pivot.fragments(pivots)
         }
     }`,
-    mapFragment: ({ id, pivots, status, eventTable } = {}) => ({
-        id, pivots, status, eventTable
+    mapFragment: ({ id, name, pivots, status, eventTable } = {}) => ({
+        id, name, pivots, status, eventTable
     }),
     dispatchers: {
         splicePivot,
@@ -40,6 +40,7 @@ export const investigationContainer = container({
         graphInvestigation,
     }
 });
+
 
 export const investigationScreenContainer = container({
     renderLoading: false,
