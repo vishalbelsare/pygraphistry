@@ -14,10 +14,10 @@ import { PivotTable } from 'pivot-shared/pivots';
 import styles from 'pivot-shared/styles.less';
 
 export default function Investigation({
-    id, status, user, pivots = [], templates, eventTable,
+    id, status, name, user, pivots = [], templates, investigations, eventTable,
     searchPivot, insertPivot, splicePivot, dismissAlert,
     graphInvestigation, saveInvestigation, togglePivots, createInvestigation,
-    copyInvestigation
+    copyInvestigation, selectInvestigation
 }) {
     return (
         <div className={styles.pivots}>
@@ -38,16 +38,22 @@ export default function Investigation({
                 <Navbar fixedTop>
                     <Navbar.Header>
                         <Navbar.Brand>
-                            <a href="#">Pivot App</a>
+                            <a href="#"> { name } </a>
                         </Navbar.Brand>
                     </Navbar.Header>
                     <Nav>
-                        <NavDropdown eventKey={3} title="My Investigation" id="basic-nav-dropdown">
-                            <MenuItem eventKey={3.1}>Action</MenuItem>
-                            <MenuItem eventKey={3.2}>Another action</MenuItem>
-                            <MenuItem eventKey={3.3}>Something else here</MenuItem>
-                            <MenuItem divider />
-                            <MenuItem eventKey={3.3}>Separated link</MenuItem>
+                        <NavDropdown eventKey={3} title="Open" id="basic-nav-dropdown">
+                            { 
+                                investigations.map((investigation) => (
+                                    <MenuItem 
+                                        key={investigation.id}
+                                        eventKey={investigation.id} 
+                                        onSelect={(eventKey) => selectInvestigation(eventKey)}
+                                    > 
+                                        { investigation.name } 
+                                    </MenuItem>)
+                                ) 
+                            }
                         </NavDropdown>
                         <NavItem eventKey={4} onSelect={() => createInvestigation(user.id)}> 
                             <Glyphicon glyph="plus" /> 

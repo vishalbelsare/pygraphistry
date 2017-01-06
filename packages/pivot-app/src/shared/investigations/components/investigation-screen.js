@@ -14,8 +14,8 @@ export default function InvestigationScreen({
     selectInvestigation, createInvestigation,
 }) {
 
+    const { name } = activeInvestigation;
     const { tags: activeTags = [] } = activeInvestigation || {};
-
     const relevantTemplates =
         activeTags.length > 0 ?
             templates.filter(({ tags: templateTags = [] }) =>
@@ -29,6 +29,7 @@ export default function InvestigationScreen({
                 <SplitPane split="vertical" defaultSize="25%" minSize={0}>
                     <Investigation 
                         data={activeInvestigation} 
+                        name={name}
                         investigations={investigations}
                         templates={relevantTemplates}
                         user={user}
