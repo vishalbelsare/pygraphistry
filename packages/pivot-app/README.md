@@ -46,11 +46,39 @@ docker run --rm -i -t --network host \
 Staging does not have bunyan installed locally. To parse and print logs, you can use the container's bunyan:
 
 ```bash
-docker exec -it <CONTAINERID> /usr/local/bin/node node_modules/bunyan/bin/bunyan --no-pager -o short <LOGFILE>
+docker exec -i <CONTAINERID> /usr/local/bin/node node_modules/bunyan/bin/bunyan --no-pager -o short <LOGFILE>
 ```
 
-## Localhost
+## Running Official Builds Locally
 
-1. Run a stock splunk instance; mirror our splunk datasets & username/pwd
-2. Run standard vizapp
-3. In pivot-app, run "./run.pivot.sh"
+1. In any directory, create a folder named `./config`.
+2. Create `./config/local.json`, a configuration file for *localhost* by adapting the example below:
+
+   ```json
+   {
+       "port": 3000,
+       "host": "127.0.0.1",
+       "graphistry": {
+           "host": "localhost:4000",
+           "key": "XXX"
+       },
+       "splunk": {
+           "user": "admin",
+           "key": "1234",
+           "host": "localhost:5000"
+       }
+   }
+```
+
+3. Select a build to run on [DockerHub](https://hub.docker.com/r/graphistry/pivot-app/tags/)
+4. Run the pivot-app image tagged *X.Y.Z* with
+
+   ```bash
+docker run --rm -i -t --network host \
+     -v `pwd`/config:/pivot-app/config \
+      graphistry/pivot-app:X.Y.Z
+```
+
+   You may need to run `docker login` first.
+
+5. Stop pivot-app using Ctrl-C.
