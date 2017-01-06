@@ -1,5 +1,5 @@
 import EventTable from './event-table';
-import InvestigationHeader from './investigation-header';
+import { InvestigationHeader } from '../index.js';
 import { PivotTable } from 'pivot-shared/pivots';
 import styles from 'pivot-shared/styles.less';
 
@@ -10,11 +10,10 @@ import {
 } from 'react-bootstrap';
 
 export default function Investigation({
-    id, status, name, user, pivots = [], templates, investigations, eventTable,
+    id, status, pivots = [], templates, investigations, eventTable,
     searchPivot, insertPivot, splicePivot, dismissAlert,
-    graphInvestigation, saveInvestigation, togglePivots, createInvestigation,
-    copyInvestigation, selectInvestigation
-}) {
+    graphInvestigation, saveInvestigation, togglePivots }) {
+
     return (
         <div className={styles.pivots}>
             { status && !status.ok ?
@@ -23,9 +22,7 @@ export default function Investigation({
                 </Alert>
                 : null
             }
-            { InvestigationHeader({id, name, user, investigations, saveInvestigation, 
-                  createInvestigation, copyInvestigation, selectInvestigation})
-            }
+            <InvestigationHeader investigations={investigations}/>
             <Tabs defaultActiveKey={1} id="investigation-bottom-tabbar" className={styles.investigationTabs}>
                 <Tab eventKey={1} title="Pivots">
                     <PivotTable id={id}

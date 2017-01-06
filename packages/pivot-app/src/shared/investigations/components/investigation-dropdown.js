@@ -1,6 +1,7 @@
 import Select from 'react-select';
 import styles from 'pivot-shared/styles.less';
 
+
 export default function InvestigationDropdown({ investigations, activeInvestigation, selectInvestigation }) {
     return (
         <span className={styles['investigations-dropdownbutton']}>
