@@ -361,7 +361,7 @@ function loaders() {
             include: /node_modules\/pegjs-util/,
             loader: StringReplacePlugin.replace({ // from the 'string-replace-webpack-plugin'
                 replacements: [{
-                    pattern: /typeof define\.amd !== (\"|\')undefined(\"|\')/ig,
+                    pattern: /typeof define\.amd !== ("|')undefined("|')/ig,
                     replacement: function(/*match, p1, offset, string*/) {
                         return false;
                     }
