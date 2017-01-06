@@ -35,13 +35,22 @@ export default function Investigation({
                 </DropdownButton>
             </span>*/}
             <div className={styles.testwrap}>
-                <Navbar fixedTop>
+                <Navbar inverse fixedTop fluid>
                     <Navbar.Header>
                         <Navbar.Brand>
                             <a href="#"> { name } </a>
                         </Navbar.Brand>
                     </Navbar.Header>
-                    <Nav>
+                    <Nav pullRight>
+                        <NavItem eventKey={4} onSelect={() => createInvestigation(user.id)}> 
+                            <Glyphicon glyph="plus" /> 
+                        </NavItem>
+                        <NavItem eventKey={5} onSelect={() => copyInvestigation(id)}> 
+                            <Glyphicon glyph="duplicate" /> 
+                        </NavItem>
+                        <NavItem eventKey={6} onSelect={() => saveInvestigation(id)}> 
+                            <Glyphicon glyph="floppy-disk" /> 
+                        </NavItem>
                         <NavDropdown eventKey={3} title="Open" id="basic-nav-dropdown">
                             { 
                                 investigations.map((investigation) => (
@@ -55,15 +64,6 @@ export default function Investigation({
                                 ) 
                             }
                         </NavDropdown>
-                        <NavItem eventKey={4} onSelect={() => createInvestigation(user.id)}> 
-                            <Glyphicon glyph="plus" /> 
-                        </NavItem>
-                        <NavItem eventKey={5} onSelect={() => copyInvestigation(id)}> 
-                            <Glyphicon glyph="duplicate" /> 
-                        </NavItem>
-                        <NavItem eventKey={6} onSelect={() => saveInvestigation(id)}> 
-                            <Glyphicon glyph="floppy-disk" /> 
-                        </NavItem>
                     </Nav>
                 </Navbar>
             </div>
