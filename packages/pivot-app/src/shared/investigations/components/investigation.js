@@ -23,7 +23,7 @@ export default function Investigation({
                 </Alert>
                 : null
             }
-            { InvestigationHeader({user, investigations, saveInvestigation, 
+            { InvestigationHeader({id, name, user, investigations, saveInvestigation, 
                   createInvestigation, copyInvestigation, selectInvestigation})
             }
             <Tabs defaultActiveKey={1} id="investigation-bottom-tabbar" className={styles.investigationTabs}>
