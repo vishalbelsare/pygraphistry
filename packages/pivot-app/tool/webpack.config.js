@@ -112,6 +112,7 @@ function clientConfig(buildOpts = {}) {
             '@graphistry/falcor-react-schema',
             '@graphistry/falcor-router-saddle',
             '@graphistry/falcor-socket-datasource',
+            '@graphistry/graphistry-client',
             'assert',
             'better-react-spinkit',
             'brace-expansion',
@@ -124,11 +125,12 @@ function clientConfig(buildOpts = {}) {
             'dnd-core',
             'dom-helpers',
             'es-abstract',
-            'falcor-http-datasource',
             //'fbjs', fbjs does not handle being in the vendor bundle.
             'history',
             'inline-style-prefixer',
+            'json3',
             'lodash',
+            'lodash.omitby',
             'minimatch',
             'moment',
             'ncp',
@@ -141,6 +143,7 @@ function clientConfig(buildOpts = {}) {
             'react-dates',
             'react-dnd',
             'react-dnd-html5-backend',
+            'react-dom',
             'react-input-autosize',
             'react-overlays',
             'react-redux',
@@ -155,11 +158,13 @@ function clientConfig(buildOpts = {}) {
             'redux-observable',
             'rimraf',
             'rxjs',
+            'socket.io-client',
             'source-map',
             'source-map-support',
             'uncontrollable',
             'underscore',
-            'util'
+            'util',
+            'verror'
         ]
     };
 
