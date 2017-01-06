@@ -143,9 +143,8 @@ class Labels extends React.Component {
             if (child) {
 
                 const radius = size * 0.5;
-                const offsetY = label !== highlight ? 0 :
-                    Math.min(Math.abs(15 - radius), 15);
-
+                const offsetY = 0;
+                
                 childrenToRender.push(React.cloneElement(child, {
                     renderState,
                     renderingScheduler,
