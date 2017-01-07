@@ -8,7 +8,7 @@ import {
     Glyphicon
 } from 'react-bootstrap';
 
-export default function InvestigationHeader({id, name, user, investigations, saveInvestigation, 
+export default function InvestigationHeader({id, name, user, investigations, saveInvestigation,
     createInvestigation, copyInvestigation, selectInvestigation
 }) {
     return (
@@ -20,26 +20,26 @@ export default function InvestigationHeader({id, name, user, investigations, sav
                         </Navbar.Brand>
                     </Navbar.Header>
                     <Nav pullRight>
-                        <NavItem eventKey={4} onSelect={() => createInvestigation(user.id)}> 
-                            <Glyphicon glyph="plus" /> 
+                        <NavItem eventKey={4} onSelect={() => createInvestigation(user.id)}>
+                            <Glyphicon glyph="plus" />
                         </NavItem>
-                        <NavItem eventKey={5} onSelect={() => copyInvestigation(id)}> 
-                            <Glyphicon glyph="duplicate" /> 
+                        <NavItem eventKey={5} onSelect={() => copyInvestigation(id)}>
+                            <Glyphicon glyph="duplicate" />
                         </NavItem>
-                        <NavItem eventKey={6} onSelect={() => saveInvestigation(id)}> 
-                            <Glyphicon glyph="floppy-disk" /> 
+                        <NavItem eventKey={6} onSelect={() => saveInvestigation(id)}>
+                            <Glyphicon glyph="floppy-disk" />
                         </NavItem>
                         <NavDropdown eventKey={3} title="Open" id="basic-nav-dropdown">
-                            { 
+                            {
                                 investigations.map((investigation) => (
-                                    <MenuItem 
+                                    <MenuItem
                                         key={investigation.id}
-                                        eventKey={investigation.id} 
+                                        eventKey={investigation.id}
                                         onSelect={(eventKey) => selectInvestigation(eventKey)}
-                                    > 
-                                        { investigation.name } 
+                                    >
+                                        { investigation.name }
                                     </MenuItem>)
-                                ) 
+                                )
                             }
                         </NavDropdown>
                     </Nav>
