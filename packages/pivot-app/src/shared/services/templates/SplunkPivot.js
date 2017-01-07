@@ -22,7 +22,7 @@ export class SplunkPivot extends PivotTemplate {
 
     searchAndShape({ app, pivot, pivotCache }) {
 
-        const args = PivotTemplate.stripTemplateNamespace(pivot.pivotParameters);
+        const args = this.stripTemplateNamespace(pivot.pivotParameters);
         const {searchQuery, searchParams} = this.toSplunk(args, pivotCache);
         log.trace({pivotParameters: pivot.pivotParameters, args}, 'Pivot parameters');
         pivot.template = this;
