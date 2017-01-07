@@ -97,23 +97,33 @@ export class Label extends React.Component {
 
 
 
-        // TODO remove these diagnostics remove when we confirm that
+        // TODO remove these diagnostics and checks when we confirm that
         // we are not getting an occasional null/parse exception here        
+        let pointColor = undefined;
+
         if (this.props.index === undefined || this.props.type === undefined) {
             logger.warn('bad label render', this.props.index, this.props.type);
             return null;
         }
-        //////////
 
-
-
-        const pointColor = this.props.type === 'edge' ? '#ccc' 
-            : Color({
+        try {
+            pointColor = this.props.type === 'edge' ? '#ccc' 
+                : Color({
+                    r: this.context.pointColors[this.props.index * 4 + 0],
+                    g: this.context.pointColors[this.props.index * 4 + 1],
+                    b: this.context.pointColors[this.props.index * 4 + 2]})
+                    .alpha(1)
+                    .rgbaString();
+        } catch (e) {
+            logger.error('Could not create color', e, this.props.type, this.props.index);
+            logger.error('Color vals: ', {
                 r: this.context.pointColors[this.props.index * 4 + 0],
                 g: this.context.pointColors[this.props.index * 4 + 1],
-                b: this.context.pointColors[this.props.index * 4 + 2]})
-                .alpha(1)
-                .rgbaString();
+                b: this.context.pointColors[this.props.index * 4 + 2]});
+            return null;
+        }
+        ///////////////////
+
 
         const iconSize = 
             this.props.type === 'edge' ? 
