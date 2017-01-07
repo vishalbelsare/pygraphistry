@@ -14,23 +14,14 @@
 }
 /******** /CONTAINER ******/
 
-.label {
+.label {    
 
-    &:not(.on) :global(.tooltip-inner),
-    &:not(.on) :global(.tooltip-arrow) {
-        display: none;
+    &:not(.on) {
+        max-width: 7em;
     }
 
-    :global(.tooltip-inner) {
-        padding-top: 3px;
-        padding-left: 8px;
-        padding-right: 8px;
-        padding-bottom: 0px;
-    }
-
-    &.on  :global(.tooltip-inner),
-    &.clicked :global(.tooltip-inner) {
-        padding-bottom: 3px;
+    &.on:not(.clicked) {
+        max-width: 12em;
     }
 
     cursor: pointer;
@@ -68,9 +59,44 @@
     }
 }
 
+
+.label {
+
+    &:not(.on) :global(.tooltip-arrow) {
+        display: none;
+    }
+
+    :global(.tooltip-inner) {
+        padding-top: 3px;
+        padding-left: 8px;
+        padding-right: 8px;
+        padding-bottom: 0px;
+    }
+
+    &:not(.on) :global(.tooltip-inner) {
+        background: transparent !important;
+        color: rgba(25,25,25,0.75) !important;
+        font-weight: bold !important;
+    }
+
+    &.on  :global(.tooltip-inner),
+    &.clicked :global(.tooltip-inner) {
+        padding-bottom: 3px;
+    }
+}
+
+
 /******** HEADER ******/
 
 .label-title {
+
+    .label:not(.on) & {
+        .label-title-close,
+        .label-title-icon-encoded,
+        .label-type {
+            display: none;
+        }
+    }
 
     .label.on:not(.clicked) & {
         .label-title-close,
@@ -120,8 +146,7 @@
             vertical-align: middle;
         }
 
-        .label.on:not(.clicked) & {
-            max-width: 12em;
+        .label:not(.on) &, .label.on:not(.clicked) & {
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
@@ -145,7 +170,7 @@
 
 .label-contents {
 
-    .label:not(.clicked) & {
+    .label:not(.on) & {
         display: none;
     }
 
