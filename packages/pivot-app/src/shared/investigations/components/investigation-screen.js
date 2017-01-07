@@ -9,6 +9,7 @@ export default function InvestigationScreen({
     templates = [],
     investigations = [],
     activeInvestigation = {},
+    selectInvestigation
 }) {
 
     const { tags: activeTags = [] } = activeInvestigation || {};
@@ -27,6 +28,7 @@ export default function InvestigationScreen({
                         data={activeInvestigation}
                         investigations={investigations}
                         templates={relevantTemplates}
+                        selectInvestigation={selectInvestigation}
                     />
                     { activeInvestigation.status &&
                         <Visualization investigation={activeInvestigation}/>

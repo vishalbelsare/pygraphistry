@@ -12,7 +12,7 @@ import {
 export default function Investigation({
     id, status, pivots = [], templates, investigations, eventTable,
     searchPivot, insertPivot, splicePivot, dismissAlert,
-    graphInvestigation, saveInvestigation, togglePivots }) {
+    graphInvestigation, saveInvestigation, togglePivots, selectInvestigation }) {
 
     return (
         <div className={styles.pivots}>
@@ -22,7 +22,8 @@ export default function Investigation({
                 </Alert>
                 : null
             }
-            <InvestigationHeader investigations={investigations}/>
+            <InvestigationHeader investigations={investigations}
+                                 selectInvestigation={selectInvestigation} />
             <Tabs defaultActiveKey={1} id="investigation-bottom-tabbar" className={styles.investigationTabs}>
                 <Tab eventKey={1} title="Pivots">
                     <PivotTable id={id}
