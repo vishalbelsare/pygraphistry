@@ -7,7 +7,7 @@ import { LocalDataSink, RemoteDataSource } from 'viz-client/falcor';
 export function initialize(options, debug) {
     const buildNum = __BUILDNUMBER__ === undefined ? 'Local build' : `Build #${__BUILDNUMBER__}`;
     const buildDate = (new Date(__BUILDDATE__)).toLocaleString();
-    console.info(`${buildNum} of ${__GITBRANCH__}@${__GITCOMMIT__} (on ${buildDate})`)
+    console.info(`[VizApp] ${buildNum} of ${__GITBRANCH__}@${__GITCOMMIT__} (on ${buildDate})`)
 
     console.info(`Connecting to ${window.graphistryPath || 'local'}`);
 
