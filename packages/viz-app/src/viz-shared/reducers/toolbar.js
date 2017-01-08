@@ -94,18 +94,18 @@ function toggleSimulating({
         () => new Subject(), (emit) => Observable.merge(
             // When the timer is done or the stop Observable emits its last value,
             // set `scene.simulating` to false
-            emit.takeLast(1)
+            emit.defaultIfEmpty(0)
+                .takeLast(1)
                 .mergeMapTo(toggleSimulating({
                     falcor, socket, selected: true
                 })),
             // If `emitInteractions` finishes before the `center` Observable
             // emits a value, center one last time.
-            emit.concat(Observable.concat(
-                    toggleSimulating({
-                        falcor, socket, selected: true
-                    }),
-                    centerCamera({ falcor })
-                ).ignoreElements())
+            emit.concat(Observable
+                    .timer(500)
+                    .mergeMapTo(centerCamera({ falcor }))
+                    .ignoreElements()
+                )
                 // Auto center until the `center` Observable emits
                 .takeUntil(center)
                 .exhaustMap((x, index) => {
