@@ -19,12 +19,10 @@ import {
     setEncoding,
 } from 'viz-shared/actions/encodings';
 
-let Histograms = ({ addHistogram, removeHistogram, setEncoding, encodings = {},
+let Histograms = ({ addHistogram, removeHistogram, setEncoding, encodings,
                     templates = [], histograms = [],
                     loading = false, className = '',
                     style = {}, ...props }) => {
-
-    const { options, point, edge } = encodings;
 
     return (
         <ExpressionsList loading={loading}
@@ -39,9 +37,8 @@ let Histograms = ({ addHistogram, removeHistogram, setEncoding, encodings = {},
         {histograms.map((histogram, index) => (
             <Histogram data={histogram}
                        key={`${index}: ${histogram.id}`}
-                       options={options}
-                       encodings={{ edge, point }}
-                       setEncoding={ setEncoding }
+                       encodings={encodings}
+                       setEncoding={setEncoding}
                        removeHistogram={removeHistogram}/>
         ))}
         </ExpressionsList>
@@ -83,23 +80,23 @@ Histograms = container({
 
 let Histogram = ({ range = [],
                    loading = false,
-                   options, encodings = {},
                    dataType, componentType,
-                   id, name, yScale = 'none',
+                   id, name, yScale = 'none', encodings,
                    filter, global: _global = {}, masked = {},
                    binTouchMove, binTouchStart, binTouchCancel,
                    removeHistogram, yScaleChanged, setEncoding }) => {
 
+    const { [componentType]: encodingDescription = {} } = encodings || {};
     const { color: {
         legend: colors = [],
         attribute: encodedAttribute
-    } = {} } = encodings[componentType] || {};
+    } = {} } = encodingDescription;
 
     range = filter && range || [];
     const trans = Math[yScale] || ((x) => x);
     const enabled = !filter || filter.enabled;
     const filtered = range && range.length > 0;
-    const isEncoded = name === encodedAttribute;
+    const isEncoded = encodings && name === encodedAttribute;
     const { bins: maskedBins = [], isMasked } = masked;
     const { bins: globalBins = [], numBins = 1, maxElements = 1, binType = 'nodata' } = _global;
 
@@ -108,7 +105,6 @@ let Histogram = ({ range = [],
                    name={name}
                    yScale={yScale}
                    loading={loading}
-                   options={options}
                    filtered={filtered}
                    dataType={dataType}
                    encodings={encodings}
@@ -125,7 +121,6 @@ let Histogram = ({ range = [],
                             ~range.indexOf(binID)),
             { count: maskedCount = 0 } = maskedBins[binID] || {}) => (
             <SparklineBar index={binID}
-                          encodings={encodings}
                           filtered={binIsFiltered}
                           key={`${id}-bar-${binID}`}
                           name={name} values={values}
