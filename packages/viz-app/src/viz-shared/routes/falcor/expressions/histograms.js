@@ -256,7 +256,9 @@ export function histograms(path, base) {
 
                 if (create) {
                     return addFilter.call(this, path, [{
-                        ...filter, readOnly: true
+                        ...filter,
+                        readOnly: true,
+                        histogramId: histogram.id
                     }])
                     .startWith($value(`${filterPath}.enabled`, true),
                                $value(`${histogramPath}.range`, histogram.range),
