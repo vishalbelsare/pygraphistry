@@ -16,12 +16,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@graphistry/falcor": "2.6.19",
-    "@graphistry/falcor-json-graph": "2.6.16",
-    "@graphistry/falcor-model-rxjs": "2.6.19",
-    "@graphistry/falcor-path-syntax": "2.5.3",
-    "@graphistry/falcor-react-redux": "2.6.19",
-    "@graphistry/falcor-socket-datasource": "2.6.19",
+    "@graphistry/falcor": "~2.6.23",
+    "@graphistry/falcor-json-graph": "~2.6.16",
+    "@graphistry/falcor-model-rxjs": "~2.6.23",
+    "@graphistry/falcor-path-syntax": "~2.5.3",
+    "@graphistry/falcor-react-redux": "~2.6.23",
+    "@graphistry/falcor-socket-datasource": "~2.6.23",
     "rxjs": "5.0.2"
   },
   "devDependencies": {
