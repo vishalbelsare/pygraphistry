@@ -1,3 +1,6 @@
+import logger from '../../../shared/logger.js';
+const log = logger.createLogger(__filename);
+
 export class PivotTemplate {
     constructor({ id, name, tags, parameters }) {
         this.id = id;
@@ -16,8 +19,9 @@ export class PivotTemplate {
             }, {});
     }
 
-    static stripTemplateNamespace(parameters) {
+    stripTemplateNamespace(parameters) {
         return Object.entries(parameters)
+            .filter(([key]) => key.startsWith(this.id))
             .map(([key, value]) =>
                 ({
                     key:(key.split('$$$')[1]),
