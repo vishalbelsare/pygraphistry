@@ -37,8 +37,8 @@ let Histograms = ({ addHistogram, removeHistogram, setEncoding, encodings,
         {histograms.map((histogram, index) => (
             <Histogram data={histogram}
                        key={`${index}: ${histogram.id}`}
-                       encodings={encodings}
                        setEncoding={setEncoding}
+                       encodings={{ ...encodings }}
                        removeHistogram={removeHistogram}/>
         ))}
         </ExpressionsList>
