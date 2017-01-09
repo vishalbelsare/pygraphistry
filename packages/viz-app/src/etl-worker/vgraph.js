@@ -220,6 +220,15 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         logger.info('There are', nodeCount - nlabels.length, 'labels missing');
     }
 
+    //Support singletons
+    for (var i = 0; i < nlabels.length; i++) {
+        var label = nlabels[i];
+        var nodeId = label[idField];
+        if (!(nodeId in node2Idx)) {
+            addNode(nodeId);
+        }
+    }
+
     var sortedLabels = new Array(nodeCount);
     var warnsLeftLabel = 100;
     for (var i = 0; i < nlabels.length; i++) {
