@@ -7,6 +7,9 @@ import {
 import { Observable } from 'rxjs';
 import _ from 'underscore';
 import { combineEpics } from 'redux-observable';
+import logger from '../logger.js';
+const log = logger.createLogger(__filename);
+
 
 export const pivot = combineEpics(setPivotAttributes);
 
@@ -18,7 +21,7 @@ function setPivotAttributes(action$) {
 
             return Observable.from(
                 topLevelModel.set(
-                    $pathValue(['activeInvestigation', 'status'], { msgStyle: 'warning', ok: true })
+                    $pathValue(['currentUser', 'activeInvestigation', 'status'], { msgStyle: 'warning', ok: true })
                 )
             ).concat(
                 Observable.from(

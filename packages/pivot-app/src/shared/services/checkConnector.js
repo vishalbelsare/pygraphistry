@@ -17,6 +17,7 @@ export function checkConnector({ loadConnectorsById, connectorIds }) {
                 .do((response) => {
                     const lastUpdated = Date.now();
                     connector.status = {
+                        enabled: true,
                         level: 'success',
                         message: response,
                         lastUpdated: lastUpdated

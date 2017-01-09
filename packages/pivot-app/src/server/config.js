@@ -54,7 +54,7 @@ const conf = convict({
             format: ['trace', 'debug', 'info', 'warn', 'error', 'fatal'],
             default: 'info',
             arg: 'log-level',
-            env: 'LOG_LEVEL'
+            env: 'GRAPHISTRY_LOG_LEVEL' // LOG_LEVEL conflicts with mocha
         },
         file: {
             doc: 'Log so a file intead of standard out',
@@ -65,7 +65,7 @@ const conf = convict({
         },
         logSource: {
             doc: 'Logs line numbers with debug statements. Bad for Perf.',
-            format: [ true, false ],
+            format: Boolean,
             default: false,
             arg: 'log-source',
             env: 'LOG_SOURCE'

@@ -12,6 +12,8 @@ const PAN_NODE_COLORS = { 'EventID': 7, 'user': 1, 'dest': 3, 'threat_name': 5 }
 
 const PAN_NODE_SIZES = { 'EventID': 0.1, 'dest': 1.1, 'user': 5, 'threat_name': 10 };
 
+const PAN_NODE_ICONS = { 'EventID': '', 'user': 'user', 'threat_name': 'bell' };
+
 const attributes = [
     'user', 'threat_name', 'action', 'url', 'severity',
     'application', 'filename', 'client_location', 'dest_hostname'
@@ -27,6 +29,12 @@ const PAN_ENCODINGS = {
         },
         pointSizes: function(node) {
             node.pointSize = PAN_NODE_SIZES[node.type] || 2;
+        },
+        pointIcon: function (node) {
+            node.pointIcon = PAN_NODE_ICONS[node.type];
+            if (node.pointIcon === undefined) {
+                node.pointIcon = 'fw';
+            }
         }
     }
 };

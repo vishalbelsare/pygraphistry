@@ -13,10 +13,7 @@ function checkStatus(action$) {
         .ofType(CHECK_STATUS)
         .groupBy(({ id }) => id)
         .mergeMap((actionsById) => actionsById.switchMap(
-            ({ falcor, id }) => falcor.call(
-                ['connectorsById', [id], 'checkStatus']
-            )
-            .progressively()
+            ({ falcor }) => falcor.call('checkStatus').progressively()
         ))
         .ignoreElements();
 }

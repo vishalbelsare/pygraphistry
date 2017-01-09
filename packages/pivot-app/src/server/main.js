@@ -1,19 +1,23 @@
-import expressApp from './app.js';
+import express from 'express';
+import { expressApp, socketServer } from './app.js';
 import bodyParser from 'body-parser';
-import bunyan from 'bunyan';
 import path from 'path';
 import mkdirp from 'mkdirp';
 import { reloadHot } from '../shared/reloadHot';
 import { renderMiddleware } from './middleware';
-import { getDataSourceFactory } from '../shared/middleware';
+import {
+    getDataSourceFactory,
+    falcorModelFactory
+ } from '../shared/middleware';
 import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
+import { FalcorPubSubDataSink } from '@graphistry/falcor-socket-datasource';
 import {
     createAppModel,
     makeTestUser
 } from '../shared/models';
 import {
     wrapServices,
-    loadApp,
+    loadAppFactory,
     connectorStore, listConnectors, checkConnector,
     userStore, templateStore, listTemplates,
     listInvestigations, investigationStore,
@@ -52,27 +56,28 @@ listInvestigations(investigationPath)
 
 function init(testUser) {
     const app = createAppModel(testUser);
+    const loadApp = loadAppFactory(app);
 
-    const { loadUsersById } = userStore(loadApp(app));
-    const { loadTemplatesById } = templateStore(loadApp(app));
+    const { loadUsersById } = userStore(loadApp);
+    const { loadTemplatesById } = templateStore(loadApp);
     const {
         loadInvestigationsById,
         unloadInvestigationsById,
         persistInvestigationsById,
         unlinkInvestigationsById,
-    } = investigationStore(loadApp(app), investigationPath);
+    } = investigationStore(loadApp, investigationPath);
     const {
         loadPivotsById,
         unloadPivotsById,
         persistPivotsById,
         unlinkPivotsById,
-    } = pivotStore(loadApp(app), pivotPath);
+    } = pivotStore(loadApp, pivotPath);
 
 
-    const { loadConnectorsById } = connectorStore(loadApp(app));
+    const { loadConnectorsById } = connectorStore(loadApp);
 
     const routeServices = wrapServices({
-        loadApp: loadApp(app),
+        loadApp,
         loadUsersById,
         loadTemplatesById,
         loadConnectorsById,
@@ -97,16 +102,47 @@ function init(testUser) {
     const modules = reloadHot(module);
     const getDataSource = getDataSourceFactory(routeServices);
 
-    expressApp.post('/error', bodyParser.json({limit: '512kb'}), function (req, res) {
-        const record = req.body;
-        log[bunyan.nameFromLevel[record.level]](record, record.msg);
-        res.status(204).send();
-    });
+    setupRoutes(modules, getDataSource);
+    setupSocketRoutes(getDataSource);
+}
+
+function setupRoutes(modules, getDataSource) {
     expressApp.use(
         '/model.json',
         bodyParser.urlencoded({ extended: false }),
         falcorMiddleware(getDataSource)
     );
-    expressApp.use('/index.html', renderMiddleware(getDataSource, modules));
-    expressApp.use('/', renderMiddleware(getDataSource, modules));
+
+    const roots = ['home', 'investigation', 'connectors'];
+    roots.forEach(root => {
+        const router = express.Router();
+
+        router.get(`*`, (req, res) => {
+            const getFalcorModel = falcorModelFactory(getDataSource);
+            return renderMiddleware(getFalcorModel, modules)(req, res);
+        });
+
+        expressApp.use(`/${root}`, router);
+    });
+
+    expressApp.get('/', (req, res) => res.redirect('/home'));
+    expressApp.get('*', (req, res) => res.status(404).send('Not found'));
+}
+
+function setupSocketRoutes(getDataSource) {
+    socketServer.on('connection', (socket) => {
+        const { handshake: { query = {} }} = socket;
+        const sink = new FalcorPubSubDataSink(socket, () => getDataSource({
+            user: { userId: query.userId }
+        }, true));
+
+        socket.on(sink.event, sink.response);
+        socket.on('disconnect', onDisconnect);
+
+        function onDisconnect() {
+            socket.removeListener(sink.event, sink.response);
+            socket.removeListener('disconnect', onDisconnect);
+            log.info(`User ${query.userId} successfully disconnected.`);
+        }
+    });
 }
