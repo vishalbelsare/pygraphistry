@@ -24,13 +24,20 @@ const conf = convict({
         arg: 'port',
         env: 'PORT'
     },
-    auth: {
-        password: {
-            doc: 'bcrypt hashed password needed to access this app over the web',
+    authentication: {
+        passwordHash: {
+            doc: 'Bcrypt hash of the password required to access this service, or unset/empty to disable authentication (default)',
             format: String,
-            default: undefined,
-            arg: 'password',
-            env: 'PASSWORD'
+            default: '',
+            arg: 'password-hash',
+            env: 'PASSWORD_HASH'
+        },
+        username: {
+            doc: 'The username used to access this service',
+            format: String,
+            default: 'admin',
+            arg: 'username',
+            env: 'USERNAME'
         }
     },
     pivotApp: {
