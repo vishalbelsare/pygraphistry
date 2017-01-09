@@ -7,7 +7,6 @@ import {
 
 export function exclusions(view) {
     return {
-        exclusionsById: {},
         exclusions: {
             length: 0,
             id: 'exclusions',

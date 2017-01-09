@@ -35,8 +35,8 @@ export function toValuesAndInvalidations({ rect, falcor, refreshMask }) {
         falcor: refreshMask ?
             falcor : falcor.withoutDataSource(),
         values: [
-            $value(`selection.mask`, $atom(rect)),
             $value(`selection.type`, rect ? 'window' : null),
+            $value(`selection.mask`, rect ? { ...rect } : null),
             $value(`selection.controls[1].selected`, !!rect)
         ],
         invalidations: !refreshMask ? undefined : [

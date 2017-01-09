@@ -317,7 +317,7 @@ class Scene extends React.Component {
         if (play === true) {
             stopAutoPlay = Observable.never();
             stopAutoCenter = scrollSource.take(1);
-        } else if (!(play = +play) || typeof play !== 'number') {
+        } else if (typeof play !== 'number' || !(play = +play)) {
             stopAutoPlay = Observable.of(true);
             stopAutoCenter = Observable.never();
         } else {
@@ -343,7 +343,7 @@ class Scene extends React.Component {
                 .take(1).filter(() => !!selectToolbarItem)
                 .do(() => selectToolbarItem({
                     socket,
-                    selected: !play,
+                    selected: false,
                     stop: stopAutoPlay,
                     center: stopAutoCenter,
                     id: 'toggle-simulating'

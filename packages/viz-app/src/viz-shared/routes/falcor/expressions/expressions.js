@@ -184,9 +184,10 @@ export function addExpressionHandler({
 
 export function removeExpressionHandler({
     removeItem,
+    itemIDName = 'expressionId',
     mapName = 'expressionsById',
     listName = 'expressions',
-    itemIDName = 'expressionId',
+    itemName = 'expression',
     ...restProps
 }) {
     return function removeExpressionHandler(path, [itemId]) {
@@ -195,7 +196,7 @@ export function removeExpressionHandler({
         return removeItem({
             workbookIds, viewIds, [itemIDName]: itemId, ...restProps
         })
-        .mergeMap(({ workbook, view }) => {
+        .mergeMap(({ workbook, view, [itemName]: item }) => {
 
             const { selection, [listName]: list } = view;
             const viewPath = `
@@ -224,13 +225,23 @@ export function removeExpressionHandler({
             }
 
             if (found) {
+                list[listLen - 1] = undefined;
                 pathValues.push(
                     $invalidate(`${viewPath}.labelsByType`),
                     $invalidate(`${viewPath}.inspector.rows`),
                     $invalidate(`${viewPath}['${mapName}']['${itemId}']`),
+                    $invalidate(`${viewPath}['${listName}']['${listLen - 1}']`),
                     $value(`${viewPath}.highlight.darken`, false),
                     $value(`${viewPath}['${listName}'].length`, list.length -= 1)
                 );
+
+                if (item && item.histogramId) {
+                    const histogramPath = `${viewPath}.histogramsById['${item.histogramId}']`;
+                    pathValues.push(
+                        $invalidate(`${histogramPath}.filter`),
+                        $value(`${histogramPath}.filter`, undefined)
+                    );
+                }
 
                 if (selection && selection.mask &&
                     selection.type === 'window') {
