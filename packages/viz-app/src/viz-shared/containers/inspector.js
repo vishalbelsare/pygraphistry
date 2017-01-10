@@ -31,13 +31,12 @@ function coerceSortKey(templates, openTab, sortKey) {
 }
 
 
-let Inspector = ({
-        open, rows = {}, templates = [],
-        loading = false, currentQuery = {},
-        openTab = 'points', setInspectorPage,
-        selectInspectorRow, selectInspectorTab,
-        setInspectorSortKey, setInspectorColumns,
-        setInspectorSortOrder, setInspectorSearchTerm }) => {
+let Inspector = ({ open, rows = {}, templates = [],
+                   loading = false, currentQuery = {},
+                   openTab = 'points', setInspectorPage,
+                   selectInspectorRow, selectInspectorTab,
+                   setInspectorSortKey, setInspectorColumns,
+                   setInspectorSortOrder, setInspectorSearchTerm }) => {
 
     const { searchTerm = '', sortKey, sortOrder, rowsPerPage=6, page=1, columns=[] } = currentQuery;
     const sortBy = coerceSortKey(templates, openTab, sortKey);
