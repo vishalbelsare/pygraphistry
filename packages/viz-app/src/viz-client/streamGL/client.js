@@ -84,10 +84,10 @@ function makeFetcher (workerUrl, endpoint, queryKey) {
         const now = Date.now();
         oReq.onload = () => {
             debug('got texture/vbo data', bufferName, Date.now() - now, 'ms');
-            let trimmedArray, errorCreatingBuffer = false;
+            let trimmedArray, bufferLength, errorCreatingBuffer = false;
             try {
+                bufferLength = bufferByteLengths[bufferName];
                 const arrayBuffer = oReq.response; // Note: not oReq.responseText
-                const bufferLength = bufferByteLengths[bufferName] || 0;
                 debug('Buffer length (%s): %d', bufferName, bufferLength);
                 trimmedArray = new Uint8Array(arrayBuffer, 0, bufferLength);
             } catch (e) {
