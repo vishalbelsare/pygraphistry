@@ -32,48 +32,51 @@ function coerceSortKey(templates, openTab, sortKey) {
 
 
 let Inspector = ({
-        openTab = 'points', currentQuery = {},
-        loading,
-        selectInspectorRow,
-        selectInspectorTab, setInspectorPage, setInspectorSortKey,
-        setInspectorSortOrder, setInspectorSearchTerm, setInspectorColumns,
-
-        templates = [], rows }) => {
+        open, rows = {}, templates = [],
+        loading = false, currentQuery = {},
+        openTab = 'points', setInspectorPage,
+        selectInspectorRow, selectInspectorTab,
+        setInspectorSortKey, setInspectorColumns,
+        setInspectorSortOrder, setInspectorSearchTerm }) => {
 
     const { searchTerm = '', sortKey, sortOrder, rowsPerPage=6, page=1, columns=[] } = currentQuery;
-
     const sortBy = coerceSortKey(templates, openTab, sortKey);
+    const sortByKey = `sort-${sortBy||''}`;
+    const searchKey = `search-${searchTerm||''}`;
 
-    var count = 0;
-    var currentRows = undefined;
-    try {
-        count = rows[openTab][`search-${searchTerm||''}`][`sort-${sortBy||''}`][sortOrder].count;
-        currentRows = rows[openTab][`search-${searchTerm||''}`][`sort-${sortBy||''}`][sortOrder];
-    } catch (e) {
-        if (!loading) console.warn('Maybe exn', e);
-    }
+    const { [openTab]: openRows = {} } = rows;
+    const { [searchKey]: searchRows = {} } = openRows;
+    const { [sortByKey]: sortedByRows = {} } = searchRows;
+    const { [sortOrder]: sortedByOrder = {} } = sortedByRows;
+    const { count: sortedRowCount = 0 } = sortedByOrder;
 
-    return <InspectorComponent
-        {...{ searchTerm, sortKey: sortBy, sortOrder, rowsPerPage, page } }
-        dataLoading={loading}
-        columns={ columns.columns? columns.columns : columns }
-        numPages={Math.ceil(count / rowsPerPage)}
-        open={open} openTab={openTab} templates={getTemplates(templates, openTab)}
-        rows={currentRows}
-        onRowSelect={selectInspectorRow}
-        onPageSelect={setInspectorPage}
-        onSelect={selectInspectorTab}
-        onColumnsSelect={setInspectorColumns}
-        onSearch={setInspectorSearchTerm}
-        toggleColumnSort={ ({name}) => {
-            if (name === sortBy) {
-                setInspectorSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-            } else {
-                setInspectorSortKey(name);
-                setInspectorSortOrder('asc');
-            }
-        }}
-        />;
+    return (
+        <InspectorComponent open={open}
+                            page={page}
+                            sortKey={sortBy}
+                            openTab={openTab}
+                            rows={sortedByOrder}
+                            sortOrder={sortOrder}
+                            dataLoading={loading}
+                            searchTerm={searchTerm}
+                            rowsPerPage={rowsPerPage}
+                            onSelect={selectInspectorTab}
+                            onPageSelect={setInspectorPage}
+                            onRowSelect={selectInspectorRow}
+                            onSearch={setInspectorSearchTerm}
+                            onColumnsSelect={setInspectorColumns}
+                            templates={getTemplates(templates, openTab)}
+                            numPages={Math.ceil(sortedRowCount / rowsPerPage)}
+                            columns={ columns.columns ? columns.columns : columns }
+                            toggleColumnSort={ ({name}) => {
+                                if (name === sortBy) {
+                                    setInspectorSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                                } else {
+                                    setInspectorSortKey(name);
+                                    setInspectorSortOrder('asc');
+                                }
+                            }}/>
+        );
 };
 
 
