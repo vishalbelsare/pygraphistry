@@ -2,7 +2,7 @@ import { ref as $ref, pathValue as $value } from '@graphistry/falcor-json-graph'
 
 export function app({ loadConfig }) {
     return [{
-        route: `release.current.['tag', 'buildNumber']`,
+        route: `release.current['tag', 'buildNumber']`,
         returns: `String`,
         get(path) {
             const { request: { query: options = {}}} = this;

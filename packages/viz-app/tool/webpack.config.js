@@ -26,7 +26,7 @@ module.exports = [
 
 const commitId = child_process.execSync('git rev-parse --short HEAD').toString().trim();
 const revName = child_process.execSync('git name-rev --name-only HEAD').toString().trim();
-const buildNumber = process.env.BUILD_NUMBER;
+const buildNumber = process.env.BUILD_NUMBER || 'dev';
 const buildDate = Date.now();
 
 const versionDefines = {

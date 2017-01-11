@@ -69,6 +69,26 @@ class BrowserForwarderStream{
 // A global singleton logger that all module-level loggers are children of.
 ////////////////////////////////////////////////////////////////////////////////
 
+
+// Normally pulled from window.localStorage, if set. However, since trying to use that API when it's
+// not available can lead to a crash, add some extra logic to detect that and default to 'info'.
+function getClientLogLevel() {
+    // From https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
+    try {
+        var storage = window['localStorage'];
+        var x = '__storage_test__';
+        storage.setItem(x, x);
+        storage.removeItem(x);
+
+        return window.localStorage.debugLevel || 'info';
+    }
+    catch(e) {
+        console.warn('Cannot read localStorage to set LOG_LEVEL, defaulting to "info"');
+        return 'info';
+    }
+}
+
+
 // The parent logger is the parent of all other loggers. It sends all 'warn' or higher level
 // messages to the server Metadata fields, etc. should be added to it, to ensure all subsequent log
 // messages include those fields.
@@ -86,7 +106,7 @@ const parentLogger = bunyan.createLogger({
 // created via `logger.createLogger()`). It logs all messages of a configured level or higher (by
 // default 'info') to the browser console. Since it is a child of `parentLogger`, it also logs
 // all >= 'warn' messages to the server as well.
-const consoleLogLevel = window.localStorage.debugLevel || 'info';
+const consoleLogLevel = getClientLogLevel();
 const consoleLogger = parentLogger.child({
     streams: [{
         level: consoleLogLevel,

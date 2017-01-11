@@ -48,16 +48,20 @@ export const Sparkline = ({ name, yScale, children, componentType,
                                     componentType={componentType}
                                     onYAxisChange={onYScaleChanged}
                                     id={`histogram-encodings-picker-${name}`}/>
-                    <Button href='javascript:void(0)'
+                    <Button bsSize='xsmall'
+                            href='javascript:void(0)'
                             onClick={() => onClose({ id })}
                             className={classNames({
-                                'fa': true,
-                                'fa-spin': loading,
-                                'fa-times': !loading,
-                                'fa-spinner': loading,
                                 [styles['histogram-close']]: true,
                                 [styles['histogram-loading']]: loading
-                            })}/>
+                            })}>
+                        <i className={classNames({
+                            'fa': true,
+                            'fa-spin': loading,
+                            'fa-times': !loading,
+                            'fa-spinner': loading,
+                        })}/>
+                    </Button>
                 </div>
                 <span>
                     {componentType || '\u00a0'}
