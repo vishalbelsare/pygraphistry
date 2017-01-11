@@ -27,13 +27,17 @@ export function views(path, base) {
                 let obs = Observable.of({ path, value });
                 const { filters, exclusions } = view;
 
-                if ((filters && filters.length) || (exclusions && exclusions.length)) {
-                    obs = maskDataframe({ view }).mapTo({ path, value });
+                if ((filters && filters.length > 1) || (exclusions && exclusions.length)) {
+                    obs = maskDataframe({ view })
+                        .mapTo({ path, value })
+                        .concat(Observable.of(
+                            $invalidate([...viewPath, 'labelsByType']),
+                            $invalidate([...viewPath, 'inspector', 'rows']),
+                            $invalidate([...viewPath, 'selection', 'histogramsById'])
+                        ));
                 }
 
-                return obs.concat(Observable.of($invalidate(
-                    [...viewPath, 'labelsByType']
-                )));
+                return obs;
             }));
 
         return [{
