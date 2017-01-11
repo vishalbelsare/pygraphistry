@@ -24,23 +24,40 @@ let Histograms = ({ addHistogram, removeHistogram, setEncoding, encodings,
                     loading = false, className = '',
                     style = {}, ...props }) => {
 
+    let showLoadingInHeader = false;
+
+    const histogramItems = Array.from(histograms, (histogram, index) => {
+        let style;
+        if (!histogram) {
+            showLoadingInHeader = loading;
+            style = { 'border-bottom-style': 'dashed' };
+            histogram = { id: 'pending', componentType: '' };
+        }
+        return (
+            <Histogram style={style}
+                       data={histogram}
+                       setEncoding={setEncoding}
+                       encodings={{ ...encodings }}
+                       key={`${index}: ${histogram.id}`}
+                       removeHistogram={removeHistogram}/>
+        );
+    });
+
     return (
-        <ExpressionsList loading={loading}
-                         showHeader={false}
-                         templates={templates}
+        <ExpressionsList showHeader={false}
                          showDataTypes={false}
                          dropdownPlacement="top"
                          addExpression={addHistogram}
+                         loading={showLoadingInHeader}
                          placeholder="Add histogram for..."
                          className={className + ' ' + styles['histograms-list']}
-                         style={{ ...style, height: `100%` }} {...props}>
-        {histograms.map((histogram, index) => (
-            <Histogram data={histogram}
-                       key={`${index}: ${histogram.id}`}
-                       setEncoding={setEncoding}
-                       encodings={{ ...encodings }}
-                       removeHistogram={removeHistogram}/>
-        ))}
+                         style={{ ...style, height: `100%` }} {...props}
+                         templates={
+                             templates.filter(({ name = '' }) => (
+                                name.indexOf('__') !== 0
+                            )
+                        )}>
+            {histogramItems}
         </ExpressionsList>
     );
 };

@@ -44,12 +44,15 @@ export default class ColumnPicker extends React.Component {
     }
 
     open() {
-        this.setState({ showModal: true });
+        if (!this.props.loading) {
+            this.setState({ showModal: true });
+        }
     }
 
 
     render(){
 
+        const { loading = false } = this.props;
         const options =
             sortOptions(this.props.options)
                 .map( ({identifier, dataType, ...rest}, idx) => ({
@@ -69,8 +72,10 @@ export default class ColumnPicker extends React.Component {
 
             <Button href='javascript:void(0)'
                 className={classNames({
-                    fa: true,
-                    'fa-cogs': true
+                    'fa': true,
+                    'fa-spin': loading,
+                    'fa-cogs': !loading,
+                    'fa-spinner': loading,
                 })}
                 onClick={this.open} />
 

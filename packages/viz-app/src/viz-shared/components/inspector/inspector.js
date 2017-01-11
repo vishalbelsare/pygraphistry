@@ -83,24 +83,16 @@ class DataTable extends React.Component {
                         onSelect={this.props.onPageSelect} />
 
                     <span style={{ float: 'right' }}>
-                    {
-                        dataLoading
-                            ? ( <Button>
-                                <i className={classNames({
-                                    'fa': true,
-                                    'fa-spin': true,
-                                    'fa-spinner': true})} />
-                                </Button>)
-                            : <ColumnPicker
-                                id="InspectorColumnPicker"
-                                placeholder="Pick columns"
-                                value={columns}
-                                options={templatesArray}
-                                onChange={ (columns) => {
-                                    return this.props.onColumnsSelect({columns})
-                                } }
-                            />
-                    }
+                        <ColumnPicker
+                            id="InspectorColumnPicker"
+                            placeholder="Pick columns"
+                            value={columns}
+                            loading={dataLoading}
+                            options={templatesArray}
+                            onChange={ (columns) => {
+                                return this.props.onColumnsSelect({columns})
+                            } }
+                        />
                     </span>
 
                 </div>

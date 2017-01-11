@@ -11,6 +11,7 @@ export const Sparkline = ({ name, yScale, children, componentType,
                             loading = false, filtered = false, colors = false,
                             isFilterEnabled = true, setEncoding, encodings,
                             onClose, onYScaleChanged, onEncodingChanged }) => {
+    const { options } = encodings || {};
     return (
         <div className={classNames({
                 [styles['histogram']]: true,
@@ -20,34 +21,49 @@ export const Sparkline = ({ name, yScale, children, componentType,
             })}>
             <div className={styles['histogram-title']}>
                 <div className={styles['histogram-icons']}>
-                    <SizeLegendIndicator sizeValue={ isEncoded(encodings, {componentType, attribute: name}, 'size') }/>
-                    <YAxisLegendIndicator yAxisValue={yScale}/>
-                    <IconLegendIndicator iconValue={ isEncoded(encodings, {componentType, attribute: name}, 'icon') }/>
-                    <EncodingPicker
-                        id={`histogram-encodings-picker-${name}`}
-                        attribute={name}
-                        componentType={componentType}
-                        showModal={false}
-                        encodings={encodings}
-                        yAxisValue={yScale}
-                        sizeValue={[]}
-                        onYAxisChange={onYScaleChanged}
-                        setEncoding={setEncoding}
-                        options={(encodings || {}).options}
-                    />
+                    <SizeLegendIndicator sizeValue={isEncoded(encodings, {componentType, attribute: name}, 'size')}
+                                         onClick={() => setEncoding && setEncoding({
+                                             reset: true,
+                                             attribute: name,
+                                             encodingType: 'size',
+                                             graphType: componentType,
+                                             name: componentType + 'Size'
+                                         })}/>
+                    <YAxisLegendIndicator yAxisValue={yScale}
+                                          onClick={() => onYScaleChanged('none')}/>
+                    <IconLegendIndicator iconValue={isEncoded(encodings, {componentType, attribute: name}, 'icon')}
+                                         onClick={() => setEncoding && setEncoding({
+                                             reset: true,
+                                             attribute: name,
+                                             encodingType: 'icon',
+                                             graphType: componentType
+                                         })}/>
+                    <EncodingPicker sizeValue={[]}
+                                    attribute={name}
+                                    options={options}
+                                    showModal={false}
+                                    yAxisValue={yScale}
+                                    encodings={encodings}
+                                    setEncoding={setEncoding}
+                                    componentType={componentType}
+                                    onYAxisChange={onYScaleChanged}
+                                    id={`histogram-encodings-picker-${name}`}/>
                     <Button href='javascript:void(0)'
-                        onClick={() => onClose({ id })}
-                        className={classNames({
-                            'fa': true,
-                            'fa-spin': loading,
-                            'fa-times': !loading,
-                            'fa-spinner': loading,
-                            [styles['histogram-close']]: true,
-                            [styles['histogram-loading']]: loading
-                        })}>
-                    </Button>
+                            onClick={() => onClose({ id })}
+                            className={classNames({
+                                'fa': true,
+                                'fa-spin': loading,
+                                'fa-times': !loading,
+                                'fa-spinner': loading,
+                                [styles['histogram-close']]: true,
+                                [styles['histogram-loading']]: loading
+                            })}/>
                 </div>
-                <span>{componentType}:&#8203;{name}</span>
+                <span>
+                    {componentType || '\u00a0'}
+                    {componentType ? ':' : ''}
+                    &#8203;{name || '\u00a0'}
+                </span>
             </div>
             <div className={styles['histogram-picture']} style={{ width, height }}>
                 {children}
