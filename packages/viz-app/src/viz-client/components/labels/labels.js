@@ -1,5 +1,6 @@
 import _ from 'underscore';
 import React, { PropTypes } from 'react';
+import classNames from 'classnames';
 import { Gestures } from 'rxjs-gestures';
 import { Observable } from 'rxjs/Observable';
 import styles from 'viz-shared/components/labels/style.less';
@@ -162,7 +163,9 @@ class Labels extends React.Component {
         onLabelsUpdated && onLabelsUpdated(updatesToSend);
 
         return (
-            <div className={styles['labels-container']}>
+            <div className={classNames({
+                [styles['labels-container']]: true,
+                [styles['labels-zoomed-in']]: scalingFactor > 2})}>
                 {childrenToRender}
             </div>
         );

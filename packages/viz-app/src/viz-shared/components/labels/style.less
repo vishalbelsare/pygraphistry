@@ -12,6 +12,9 @@
 
     pointer-events: none;
 }
+
+.labels-zoomed-in { }
+
 /******** /CONTAINER ******/
 
 .label {    
@@ -62,7 +65,7 @@
 
 .label {
 
-    &:not(.on) :global(.tooltip-arrow) {
+    .labels-zoomed-in &:not(.on) :global(.tooltip-arrow) {
         display: none;
     }
 
@@ -73,7 +76,8 @@
         padding-bottom: 0px;
     }
 
-    &:not(.on) :global(.tooltip-inner) {
+    
+    .labels-zoomed-in &:not(.on) :global(.tooltip-inner) {
         background: transparent !important;
         color: rgba(25,25,25,0.75) !important;
         font-weight: bold !important;
@@ -136,6 +140,7 @@
     }
 
     .label-title-text {
+
         display: block;
         font-weight: bold;
         text-align: center;
