@@ -178,9 +178,9 @@ function getControls(controls) {
 function toClient(layoutAlgorithms) {
     return _.map(layoutAlgorithms, function (la) {
         return {
-            name: la.algo.name,
+            name: la.algo.algoName,
             params: _.map(la.params, function (p, name) {
-                return p.toClient(name, la.algo.name);
+                return p.toClient(name, la.algo.algoName);
             })
         };
     });
@@ -188,7 +188,7 @@ function toClient(layoutAlgorithms) {
 
 function fromClient(controls, simControls) {
     var algoParams = _.object(_.map(controls.layoutAlgorithms, function (la) {
-        return [la.algo.name, la.params];
+        return [la.algo.algoName, la.params];
     }));
 
     return _.object(_.map(simControls, function (update, algoName) {
