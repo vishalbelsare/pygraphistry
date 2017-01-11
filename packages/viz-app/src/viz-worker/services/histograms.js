@@ -1,5 +1,6 @@
 import util from 'util';
 import { Observable } from 'rxjs/Observable';
+import * as Scheduler from 'rxjs/scheduler/async'
 import Binning from 'viz-worker/simulator/Binning';
 import DataframeMask from 'viz-worker/simulator/DataframeMask';
 import { histogramBinHighlightQuery } from 'viz-shared/models/expressions/histograms';
@@ -71,7 +72,7 @@ export function loadSelectionHistograms(loadViewsById) {
         return loadHistogramsById({
             workbookIds, viewIds, histogramIds
         })
-        .mergeMap(
+        .concatMap(
             ({ workbook, view, histogram }) => {
 
                 const { nBody: { vgraphLoaded } = {},
@@ -89,7 +90,10 @@ export function loadSelectionHistograms(loadViewsById) {
                 })
                 .mergeMap((pointsMask) => computeHistogram({
                     view, masked, histogram, pointsMask, refresh
-                }));
+                }))
+                // Inject time between computeHistogram subscriptions
+                // to allow them to flush results out to the router individually.
+                .subscribeOn(Scheduler.async, 100);
             },
             ({ workbook, view }, histogram) => ({
                 workbook, view, histogram: (
@@ -147,8 +151,10 @@ function loadPointsMask({ view, masked, histogram }) {
 }
 
 export function getHistogramForAttribute({ view, graphType, attribute, dataType = 'number' }) {
-    const histogram = createHistogram({ name: attribute, dataType, componentType: graphType });
-    return computeHistogram({ view, histogram, refresh: true })
+    return computeHistogram({ view, refresh: true, histogram: createHistogram({
+            dataType, name: attribute, componentType: graphType
+        })
+    });
 }
 
 function computeHistogram({ view, masked, histogram, pointsMask, refresh = true }) {
