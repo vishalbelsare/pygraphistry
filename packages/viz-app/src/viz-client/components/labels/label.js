@@ -100,6 +100,7 @@ export class Label extends React.Component {
         // TODO remove these diagnostics and checks when we confirm that
         // we are not getting an occasional null/parse exception here        
         let pointColor = undefined;
+        let pointRgb = undefined;
 
         if (this.props.index === undefined || this.props.type === undefined) {
             logger.warn('bad label render', this.props.index, this.props.type);
@@ -107,11 +108,12 @@ export class Label extends React.Component {
         }
 
         try {
-            pointColor = this.props.type === 'edge' ? '#ccc' 
-                : Color({
+            pointRgb = {
                     r: this.context.pointColors[this.props.index * 4 + 0],
                     g: this.context.pointColors[this.props.index * 4 + 1],
-                    b: this.context.pointColors[this.props.index * 4 + 2]})
+                    b: this.context.pointColors[this.props.index * 4 + 2]};
+            pointColor = this.props.type === 'edge' ? '#ccc' 
+                : Color(pointRgb)
                     .alpha(1)
                     .rgbaString();
         } catch (e) {
@@ -162,7 +164,7 @@ export class Label extends React.Component {
                           'bottom': true, 'tooltip': true,
                           [styles['label-tooltip']]: true
                      })}>
-                    <PointIcon iconClass={iconClass} pointColor={pointColor} iconSize={iconSize} type={this.props.type}/>
+                    <PointIcon iconClass={iconClass} pointColor={pointColor} pointRgb={pointRgb} iconSize={iconSize} type={this.props.type}/>
                     <div style={arrowStyle} className='tooltip-arrow'/>
                     <div style={contentStyle} className='tooltip-inner'>
                         <LabelTitle type={type}
@@ -191,22 +193,28 @@ export class Label extends React.Component {
     }
 }
 
-function PointIcon({ iconClass, pointColor, iconSize, type }) {
-    return iconClass && type === 'point' && iconSize > 15 ? 
-            <div className={classNames({[styles['point-icon-container']]: true})}
-                style={{
-                    backgroundColor: pointColor, 
-                    top: `calc(-${iconSize}px - 10px)`,
-                    transform: `scale(${iconSize/40})`}}
-            >
-                <div className={classNames({[styles['point-icon']]: true})}>                                
-                    <i className={classNames({
-                        'fa': true,
-                        'fa-fw': true,
-                        [iconClass]: true})} />
-                </div>
+function PointIcon({ iconClass, pointColor, pointRgb, iconSize, type }) {
+    if (!iconClass || type !== 'point' || iconSize <= 15) {
+        return null;
+    }    
+
+    const lumens = 0.299 * pointRgb.r + 0.587 * pointRgb.g + 0.114 * pointRgb.b;
+
+    return <div className={classNames({
+                [styles['point-icon-container']]: true,
+                [styles['light-color']]: lumens > 0.5 * 255})}
+            style={{
+                backgroundColor: pointColor, 
+                top: `calc(-${iconSize}px - 10px)`,
+                transform: `scale(${iconSize/40})`}}
+        >
+            <div className={classNames({[styles['point-icon']]: true})}>                                
+                <i className={classNames({
+                    'fa': true,
+                    'fa-fw': true,
+                    [iconClass]: true})} />
             </div>
-        : null;
+        </div>;
 
 }
 

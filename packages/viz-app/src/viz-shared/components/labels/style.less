@@ -309,8 +309,15 @@
 .point-icon {
 
     border-radius: calc( @icon-diameter / 2);    
-    background-color: white;
-    border: @icon-border solid black;
+
+    .point-icon-container.light-color & {
+        color: #2e2e2e;
+    }
+    .point-icon-container:not(.light-color) & {
+        color: white;
+    }
+
+
     overflow: hidden;
 
     display: inline-block;
