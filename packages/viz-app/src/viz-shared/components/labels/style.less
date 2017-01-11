@@ -287,7 +287,7 @@
 @icon-diameter: 30px;
 @icon-border: 2px;
 @icon-container-diameter: 40px;
-@icon-container-border: 1px;
+@icon-container-border: 2px;
 .point-icon-container {
 
     pointer-events: none;
@@ -295,7 +295,7 @@
     background-color: #ccc;
 
     border-radius: calc( @icon-container-diameter / 2);    
-    border: @icon-container-border solid black;
+    border: @icon-container-border solid rgba(0,0,0,0.5);
     padding: calc( @icon-container-diameter / 2 - @icon-container-border - @icon-diameter / 2);
 
     display: inline-block;
