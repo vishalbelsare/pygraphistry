@@ -108,7 +108,7 @@ function assignNBodyToView(workbook, nBody, view) {
                             .layout.options`;
         layout.options = ([]
             .concat(fromLayoutAlgorithms(layoutAlgorithms))
-            .reduce((options, { name, params }, index) => {
+            .reduce((options, { name, params }) => {
                 options.name = name;
                 options.id = name.toLowerCase();
                 return { ...options, ...toControls(optionsPath, params) };

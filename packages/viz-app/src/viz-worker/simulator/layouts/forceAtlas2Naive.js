@@ -33,7 +33,7 @@ function ForceAtlas2Fast(clContext) {
 ForceAtlas2Fast.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2Fast.prototype.constructor = ForceAtlas2Fast;
 
-// ForceAtlas2Fast.name = 'ForceAtlas2Fast';
+ForceAtlas2Fast.algoName = 'ForceAtlas2Fast';
 ForceAtlas2Fast.argsPoints = [
     'strongGravity', 'scalingRatio', 'gravity',
     'edgeInfluence', 'tilePointsParam',
