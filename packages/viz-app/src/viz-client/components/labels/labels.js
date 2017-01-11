@@ -15,7 +15,6 @@ import { animationFrame as AnimationFrameScheduler } from 'rxjs/scheduler/animat
 import {
     compose,
     getContext,
-    shallowEqual,
     mapPropsStream
 } from 'recompose';
 
@@ -37,7 +36,7 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
         })
     )
     .auditTime(0, AnimationFrameScheduler)
-    .withLatestFrom(        
+    .withLatestFrom(
         pointSizes.map(({ buffer }) => new Uint8Array(buffer)),
         pointColors.map(({ buffer }) => new Uint8Array(buffer)),
         edgeColors.map(({ buffer }) => new Uint8Array(buffer)),
@@ -63,7 +62,7 @@ class Labels extends React.Component {
                     scalingFactor: 1,
                     pixelRatio: 1
                 })
-        };        
+        };
     }
 
     static childContextTypes = {
@@ -72,7 +71,7 @@ class Labels extends React.Component {
         edgeColors: React.PropTypes.object.isRequired,
         scalingFactor: React.PropTypes.number.isRequired,
         pixelRatio: React.PropTypes.number.isRequired
-    }    
+    }
 
     componentWillMount() {
         this.updateLabelSettings({}, this.props);
@@ -145,7 +144,7 @@ class Labels extends React.Component {
 
                 const radius = size * 0.5;
                 const offsetY = 0;
-                
+
                 childrenToRender.push(React.cloneElement(child, {
                     renderState,
                     renderingScheduler,

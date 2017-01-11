@@ -30,9 +30,9 @@ export function ExpressionsList({
     id, templates = [], addExpression,
     showHeader = true, header,
     dropdownPlacement = 'bottom',
-    side='left',
-    placeholder,
-    style = {}, children, name, ...props
+    side='left', placeholder,
+    style = {}, itemStyle = {},
+    children, name, ...props
 }) {
 
     const dropdown = <ExpressionTemplates name={name}
@@ -55,8 +55,9 @@ export function ExpressionsList({
                {...props}>
             <ListGroup fill style={side==='left' ? {maxHeight: '300px', 'overflowY': 'scroll'} : {}}>
             {children.map((child) => (
-                <ListGroupItem key={child.key}
-                               style={{ paddingLeft: 0, paddingRight: 0 }}>
+                <ListGroupItem key={child.key} style={{
+                                   paddingLeft: 0, paddingRight: 0, ...child.props.style
+                               }}>
                     {child}
                 </ListGroupItem>
             ))}
@@ -71,34 +72,28 @@ export function ExpressionTemplates({ name = 'Expressions', templates = [],
 
     templates = templates.slice(0);
 
-    return  (<Select
-        className={styles['expression-select']}
-        id='add-expression-dropdown'
-        title={`Add ${name.slice(0, -1)}`}
-        placeholder={placeholder}
-        onChange={ ({value}) => addExpression(templates[value]) }
-        optionRenderer={
-          ({componentType, name, dataType}) => (
-              <span>
-                  <span>{componentType}:</span>
-                  <label>{name}</label>
-                  {showDataTypes &&
-                  <span style={{'fontStyle': 'italic', 'marginLeft': '5px' }}>{dataType}</span> }
-              </span>
-            )
-        }
-        options={
-            templates.map(({ name, dataType, identifier, componentType }, index) => {
-                return {
-                    value: index,
-                    label: `${identifier} (${dataType})`,
-                    dataType: dataType,
-                    identifier: identifier,
-                    name: name,
-                    componentType: componentType
-                };
-        }) }
-      />);
+    return (
+        <Select isLoading={loading}
+                placeholder={placeholder}
+                id='add-expression-dropdown'
+                title={`Add ${name.slice(0, -1)}`}
+                className={styles['expression-select']}
+                onChange={ ({value}) => addExpression(templates[value]) }
+                optionRenderer={({componentType, name, dataType}) => (
+                    <span>
+                        <span>{componentType}:</span>
+                        <label>{name}</label>
+                        {showDataTypes &&
+                        <span style={{'fontStyle': 'italic', 'marginLeft': '5px' }}>{dataType}</span> }
+                    </span>
+                )}
+                options={
+                    templates.map(({ name, dataType, identifier, componentType }, index) => ({
+                        name, dataType, identifier, componentType,
+                        value: index, label: `${identifier} (${dataType})`
+                    }))
+                }/>
+    );
 }
 
 export function ExpressionItem({

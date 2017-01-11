@@ -26,7 +26,7 @@ module.exports = [
 
 const commitId = child_process.execSync('git rev-parse --short HEAD').toString().trim();
 const revName = child_process.execSync('git name-rev --name-only HEAD').toString().trim();
-const buildNumber = process.env.BUILD_NUMBER;
+const buildNumber = process.env.BUILD_NUMBER || 'dev';
 const buildDate = Date.now();
 
 const versionDefines = {
@@ -273,9 +273,14 @@ function serverConfig(
         ),
         new WebpackVisualizer({
             filename: `${config.output.filename}.stats.html`
-        }),
-        new webpack.optimize.UglifyJsPlugin(serverUglifyJSConfig())
+        })
     ];
+
+    if (!isDevBuild) {
+        config.plugins.push(createClosureCompilerPlugin(config));
+    } else {
+        config.plugins.push(new webpack.optimize.UglifyJsPlugin(serverUglifyJSConfig()));
+    }
 
     return config;
 }
@@ -315,26 +320,7 @@ function apiConfig(
     ];
 
     if (!isDevBuild) {
-        config.plugins = [
-            ...config.plugins,
-            new ClosureCompilerPlugin({
-                compiler: {
-                    language_in: 'ECMASCRIPT5',
-                    language_out: 'ECMASCRIPT5',
-                    compilation_level: 'SIMPLE',
-                    rewrite_polyfills: false,
-                    use_types_for_optimization: false,
-                    warning_level: 'QUIET',
-                    jscomp_off: '*',
-                    jscomp_warning: '*',
-                    source_map_format: 'V3',
-                    create_source_map: `${config.output.path}/${
-                                          config.output.filename}.map`,
-                    output_wrapper: `%output%\n//# sourceMappingURL=${config.output.filename}.map`
-                },
-                concurrency: 3,
-            })
-        ];
+        config.plugins.push(createClosureCompilerPlugin(config));
     }
 
     return config;
@@ -436,6 +422,26 @@ function postcss(webpack) {
         require('postcss-font-awesome'),
         require('autoprefixer')
     ];
+}
+
+function createClosureCompilerPlugin(config) {
+    return new ClosureCompilerPlugin({
+        concurrency: 3,
+        compiler: {
+            language_in: 'ECMASCRIPT5',
+            language_out: 'ECMASCRIPT5',
+            compilation_level: 'SIMPLE',
+            rewrite_polyfills: false,
+            use_types_for_optimization: false,
+            warning_level: 'QUIET',
+            jscomp_off: '*',
+            jscomp_warning: '*',
+            source_map_format: 'V3',
+            create_source_map: `${config.output.path}/${
+                                  config.output.filename}.map`,
+            output_wrapper: `%output%\n//# sourceMappingURL=${config.output.filename}.map`
+        }
+    });
 }
 
 function serverUglifyJSConfig() {

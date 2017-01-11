@@ -1,10 +1,8 @@
 import React from 'react';
 import Select from 'react-select';
-import { Modal, Button, OverlayTrigger, Tooltip, Popover } from 'react-bootstrap';
+import styles from './styles.less';
 import classNames from 'classnames';
-
-import styles from '../index.less';
-import localStyles from '../components/column-picker/styles.less';
+import { Modal, Button, OverlayTrigger, Tooltip, Popover } from 'react-bootstrap';
 
 function sortOptions (templates) {
     const sortedTemplates = templates.slice(0);
@@ -18,7 +16,6 @@ function sortOptions (templates) {
     return sortedTemplates;
 }
 
-
 const propTypes = {
     id: React.PropTypes.string.isRequired,
     name: React.PropTypes.string,
@@ -28,7 +25,7 @@ const propTypes = {
     onChange: React.PropTypes.func
 };
 
-export default class ColumnPicker extends React.Component {
+export class ColumnPicker extends React.Component {
 
     constructor(props) {
         super(props);
@@ -44,12 +41,15 @@ export default class ColumnPicker extends React.Component {
     }
 
     open() {
-        this.setState({ showModal: true });
+        if (!this.props.loading) {
+            this.setState({ showModal: true });
+        }
     }
 
 
     render(){
 
+        const { loading = false } = this.props;
         const options =
             sortOptions(this.props.options)
                 .map( ({identifier, dataType, ...rest}, idx) => ({
@@ -67,14 +67,19 @@ export default class ColumnPicker extends React.Component {
 
         return (<div id={this.props.id} name={this.props.name || this.props.id}>
 
-            <Button href='javascript:void(0)'
-                className={classNames({
-                    fa: true,
-                    'fa-cogs': true
-                })}
-                onClick={this.open} />
+            <Button onClick={this.open}
+                    href='javascript:void(0)'
+                    style={{ paddingTop: 0 }}>
+                <i style={{ verticalAlign: 'middle' }}
+                   className={classNames({
+                       'fa': true,
+                       'fa-spin': loading,
+                       'fa-cogs': !loading,
+                       'fa-spinner': loading,
+                   })}/>
+            </Button>
 
-            <Modal show={this.state.showModal} onHide={this.close} dialogClassName={localStyles['column-picker-modal']}>
+            <Modal show={this.state.showModal} onHide={this.close} dialogClassName={styles['column-picker-modal']}>
                 <Modal.Header closeButton>
                     <Modal.Title>Pick fields</Modal.Title>
                 </Modal.Header>

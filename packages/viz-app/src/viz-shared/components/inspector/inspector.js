@@ -1,18 +1,9 @@
-import React, { PropTypes } from 'react';
+import _ from 'underscore';
 import styles from './styles.less';
 import classNames from 'classnames';
-
-import {
-    compose,
-    getContext,
-    shallowEqual
-} from 'recompose';
-
+import React, { PropTypes } from 'react';
+import { ColumnPicker } from 'viz-shared/components/column-picker';
 import { Tab, Tabs, Table, Pagination, FormGroup, FormControl, InputGroup, Button } from 'react-bootstrap';
-
-import ColumnPicker from '../../containers/ColumnPicker';
-
-import _ from 'underscore';
 
 const propTypes = {
     templates: React.PropTypes.array, //possible
@@ -37,8 +28,6 @@ const datatablePropTypes =
     _.extend(
         {entityType: React.PropTypes.string},
         propTypes);
-
-
 
 class DataTable extends React.Component {
     constructor(props) {
@@ -83,24 +72,16 @@ class DataTable extends React.Component {
                         onSelect={this.props.onPageSelect} />
 
                     <span style={{ float: 'right' }}>
-                    {
-                        dataLoading
-                            ? ( <Button>
-                                <i className={classNames({
-                                    'fa': true,
-                                    'fa-spin': true,
-                                    'fa-spinner': true})} />
-                                </Button>)
-                            : <ColumnPicker
-                                id="InspectorColumnPicker"
-                                placeholder="Pick columns"
-                                value={columns}
-                                options={templatesArray}
-                                onChange={ (columns) => {
-                                    return this.props.onColumnsSelect({columns})
-                                } }
-                            />
-                    }
+                        <ColumnPicker
+                            id="InspectorColumnPicker"
+                            placeholder="Pick columns"
+                            value={columns}
+                            loading={dataLoading}
+                            options={templatesArray}
+                            onChange={ (columns) => {
+                                return this.props.onColumnsSelect({columns})
+                            } }
+                        />
                     </span>
 
                 </div>
@@ -148,8 +129,6 @@ class DataTable extends React.Component {
 
 DataTable.propTypes = datatablePropTypes;
 
-
-
 class Inspector extends React.Component {
 
     constructor(props) { super(props); }
@@ -167,8 +146,8 @@ class Inspector extends React.Component {
             </Tabs>
         </div>;
     }
-
 }
+
 Inspector.propTypes = propTypes;
 
 export { Inspector };

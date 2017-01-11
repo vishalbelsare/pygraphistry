@@ -20,7 +20,6 @@ const propTypes = {
     encodings: React.PropTypes.object,
     onYAxisChange: React.PropTypes.func,
     setEncoding: React.PropTypes.func,
-    globalBinning: React.PropTypes.object,
     options: React.PropTypes.object.isRequired
 };
 
@@ -58,8 +57,6 @@ function makeOptionLists(options) {
         sizeValue: [],
         yAxisValue: 'none'
     };
-
-
 }
 
 
@@ -69,9 +66,6 @@ export function isEncoded(encodings, column, encodingType) {
         && encodings[column.componentType][encodingType]
         && encodings[column.componentType][encodingType].attribute === column.attribute;
 }
-
-
-
 
 export default class EncodingPicker extends React.Component {
 
@@ -94,8 +88,9 @@ export default class EncodingPicker extends React.Component {
             showModal: false
         };
 
-        this.options = makeOptionLists(props.options);
-
+        if (props.options) {
+            this.options = makeOptionLists(props.options);
+        }
     }
 
     dispatchIconEncodingChange({prop, val}) {
@@ -110,7 +105,6 @@ export default class EncodingPicker extends React.Component {
             graphType: this.props.componentType,
             attribute: this.props.attribute
         });
-
     }
 
     dispatchColorEncodingChange({prop, val}) {
@@ -185,14 +179,12 @@ export default class EncodingPicker extends React.Component {
         const reset = !newEnabled;
         const name = this.props.componentType + 'Size';
         const encodingType = 'size';
-        const binning = this.props.globalBinning;
         const graphType = this.props.componentType;
         const attribute = this.props.attribute;
 
         this.props.setEncoding({
-            name, encodingType, graphType, attribute, binning, reset
+            name, encodingType, graphType, attribute, reset
         });
-
     }
 
     close() {
@@ -204,16 +196,21 @@ export default class EncodingPicker extends React.Component {
     }
 
 
-    render(){
+    render() {
 
-        const { options } = this;
+        const { props, options } = this;
+        const { encodings, componentType } = props;
 
-        return (<div id={this.props.id} name={this.props.name || this.props.id} style={{display: 'inline-block'}}>
+        if (!options || !encodings || !componentType) {
+            return <div></div>;
+        }
+
+        return (<div id={props.id} name={props.name || props.id} style={{display: 'inline-block'}}>
 
             <OverlayTrigger placement='top'
                 trigger={['hover']} // <-- do this so react bootstrap doesn't complain about accessibility
                 style={{zIndex: 999999999}}
-                overlay={ <Tooltip id={`${this.props.id}_tooltip`}>Pick fields</Tooltip> }>
+                overlay={ <Tooltip id={`${props.id}_tooltip`}>Pick fields</Tooltip> }>
                 <Button href='javascript:void(0)'
                     className={classNames({
                         'fa': true,
@@ -225,63 +222,63 @@ export default class EncodingPicker extends React.Component {
 
             <Modal show={this.state.showModal} onHide={this.close} style={{zIndex: 999999999}}>
                 <Modal.Header closeButton>
-                    <Modal.Title>Visualize <b>{this.props.componentType}:{this.props.attribute}</b></Modal.Title>
+                    <Modal.Title>Visualize <b>{componentType}:{props.attribute}</b></Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <h5>Show using color</h5>
                     <Select simpleValue
                         disabled={false}
                         value={
-                            isEncoded(this.props.encodings, this.props, 'color')
-                                ? options[this.props.componentType].color
+                            isEncoded(encodings, props, 'color')
+                                ? options[componentType].color
                                     .filter( ({value}) =>
-                                            value === this.props.encodings[this.props.componentType].color.name )[0]
+                                            value === encodings[componentType].color.name )[0]
                                 : []
                         }
                         placeholder="Pick how to visualize"
-                        options={ options[this.props.componentType].color }
-                        id={`${this.props.id}_select`}
-                        name={`${this.props.name || this.props.id}_select`}
+                        options={ options[componentType].color }
+                        id={`${props.id}_select`}
+                        name={`${props.name || props.id}_select`}
                         optionRenderer={({value, label}) => label}
                         onChange={this.handleSelectColorChange}
                         />
                     <h5>Reverse color palette order</h5>
                     <RcSwitch
                         checked={
-                            isEncoded(this.props.encodings, this.props, 'color')
-                            ? this.props.encodings[this.props.componentType].color.reverse
+                            isEncoded(encodings, props, 'color')
+                            ? encodings[componentType].color.reverse
                             : false
                         }
                         checkedChildren={'On'}
                         unCheckedChildren={'Off'}
                         onChange={ this.handleReverseColorChange }/>
                     {
-                        this.props.componentType === 'point'
+                        componentType === 'point'
                             ?   <div>
                                     <h5>Show using size</h5>
                                     <RcSwitch
-                                        checked={ isEncoded(this.props.encodings, this.props, 'size') }
+                                        checked={ isEncoded(encodings, props, 'size') }
                                         checkedChildren={'On'}
                                         unCheckedChildren={'Off'}
                                         onChange={ this.handleSelectSizeChange }/>
                                 </div>
                             : null
                     }
-                    <h5>Histogram Y-Axis Scaling</h5>
+                    <h5>Histogram Y-Axis scaling</h5>
                     <Select simpleValue
                         disabled={false}
-                        value={ this.props.yAxisValue}
+                        value={props.yAxisValue}
                         resetValue={ options.yAxisValue }
                         placeholder="Pick transform"
                         options={
                             [{value: 'none', label: 'none'},
                              {value: 'log', label: 'log'}]
                         }
-                        id={`${this.props.id}_yaxis`}
+                        id={`${props.id}_yaxis`}
                         onChange={this.handleSelectYAxisChange} />
                     <h5>Show using icon</h5>
                     <RcSwitch
-                        checked={ isEncoded(this.props.encodings, this.props, 'icon') }
+                        checked={ isEncoded(encodings, props, 'icon') }
                         checkedChildren={'On'}
                         unCheckedChildren={'Off'}
                         onChange={ this.handleSelectIconChange }/>

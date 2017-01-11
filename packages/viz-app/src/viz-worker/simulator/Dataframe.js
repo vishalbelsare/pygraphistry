@@ -71,6 +71,7 @@ function Dataframe () {
     );
     /** The last mask applied as a result of selections. Empty by default. */
     this.lastSelectionMasks = this.newEmptyMask();
+    this.lastHistogramSelectionMasks = undefined;
     this.masksForVizSets = {};
     this.bufferAliases = {};
     /** @type DataframeData */
@@ -543,6 +544,8 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
     if (masks.equalsMask(this.lastMasks)) {
         return Q(false);
     }
+
+    this.lastHistogramSelectionMasks = undefined;
 
     const start = Date.now();
 

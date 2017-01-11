@@ -1,5 +1,6 @@
 import util from 'util';
 import { Observable } from 'rxjs/Observable';
+import * as Scheduler from 'rxjs/scheduler/async'
 import Binning from 'viz-worker/simulator/Binning';
 import DataframeMask from 'viz-worker/simulator/DataframeMask';
 import { histogramBinHighlightQuery } from 'viz-shared/models/expressions/histograms';
@@ -53,7 +54,7 @@ export function loadHistograms(loadViewsById) {
                 workbook, view, histogram: view.histogramsById[histogramId]
             })
         )
-        .mergeMap(
+        .concatMap(
             ({ workbook, view, histogram }) => computeHistogram({
                 view, histogram, refresh
             }),
@@ -71,7 +72,7 @@ export function loadSelectionHistograms(loadViewsById) {
         return loadHistogramsById({
             workbookIds, viewIds, histogramIds
         })
-        .mergeMap(
+        .concatMap(
             ({ workbook, view, histogram }) => {
 
                 const { nBody: { vgraphLoaded } = {},
@@ -81,14 +82,15 @@ export function loadSelectionHistograms(loadViewsById) {
                     if (!histogramsById || !(histogram = histogramsById[histogram.id])) {
                         return Observable.empty();
                     }
-                    return Observable.of(histogram);
+                    return Observable.of({ ...histogram });
                 }
 
-                return loadPointsMask({
-                    view, masked, histogram
+                return loadSelectionMasks({
+                    view, masked
                 })
-                .mergeMap((pointsMask) => computeHistogram({
-                    view, masked, histogram, pointsMask, refresh
+                .mergeMap((selectionMasks) => computeHistogram({
+                    view, masked, refresh, selectionMasks, histogram,
+                    selectionHistogram: histogramsById[histogram.id]
                 }));
             },
             ({ workbook, view }, histogram) => ({
@@ -121,39 +123,64 @@ export function computeMaskForHistogramBin({ view, histogram, bin, basedOnCurren
     return Observable.of({ edge, point });
 }
 
-function loadPointsMask({ view, masked, histogram }) {
+function loadSelectionMasks({ view, masked }) {
 
-    if (masked === undefined) {
-        return Observable.of(undefined);
-    } else if (!masked) {
-        return Observable.of([]);
+    const { nBody = {} } = view;
+    const { dataframe = {}, simulator } = nBody;
+
+    if (!masked) {
+        return Observable.of(
+            dataframe.lastHistogramSelectionMasks =
+                new DataframeMask(dataframe, [], [])
+        );
     }
 
-    const { nBody } = view;
+    const { lastHistogramSelectionMasks } = dataframe;
 
-    if (!nBody) {
-        return Observable.of([]);
+    if (lastHistogramSelectionMasks) {
+        return Observable.of(lastHistogramSelectionMasks);
     }
 
     let { selection: { mask: rect } = {} } = view;
 
     if (!rect || !rect.tl || !rect.br) {
-        return Observable.of([]);
+        return Observable.of(
+            dataframe.lastHistogramSelectionMasks =
+                new DataframeMask(dataframe, [], [])
+        );
     }
 
-    return Observable.defer(() =>
-        nBody.simulator.selectNodesInRect(rect)
+    return Observable
+        .defer(() => simulator.selectNodesInRect(rect))
+        .map((pointsMask) =>
+            dataframe.lastHistogramSelectionMasks =
+                createHistogramsSelectionMask(dataframe, simulator, pointsMask)
+        );
+}
+
+let selectionMasksTag = 0;
+function createHistogramsSelectionMask(dataframe, simulator, pointsMask) {
+    const mask = new DataframeMask(
+        dataframe, pointsMask, pointsMask === undefined ?
+            undefined : simulator.connectedEdges(pointsMask)
     );
+    // Unbase mask from local filtered coordinate system to global coordinate system
+    // TODO: We really shouldn't have to track this kind of nonsense.
+    const unbasedMask = new DataframeMask(dataframe, mask.point, mask.edge, dataframe.lastMasks);
+    unbasedMask.tag = ++selectionMasksTag;
+    return unbasedMask;
 }
 
 export function getHistogramForAttribute({ view, graphType, attribute, dataType = 'number' }) {
-    const histogram = createHistogram({ name: attribute, dataType, componentType: graphType });
-    return computeHistogram({ view, histogram, refresh: true })
+    return computeHistogram({ view, refresh: true, histogram: createHistogram({
+            dataType, name: attribute, componentType: graphType
+        })
+    });
 }
 
-function computeHistogram({ view, masked, histogram, pointsMask, refresh = true }) {
+function computeHistogram({ view, masked, histogram, refresh = true, selectionMasks, selectionHistogram }) {
 
-    const { nBody: { dataframe, simulator, vgraphLoaded } = {}} = view;
+    const { nBody: { dataframe, simulator, vgraphLoaded } = {} } = view;
 
     if (!dataframe || !simulator || !histogram) {
         return Observable.empty();
@@ -161,59 +188,83 @@ function computeHistogram({ view, masked, histogram, pointsMask, refresh = true 
         return Observable.of(histogram);
     }
 
-    const { name, componentType } = histogram;
-    const binningHint = !(
-        histogram.hasOwnProperty('numBins'))  || !(
-        histogram.hasOwnProperty('binType'))  || !(
-        histogram.hasOwnProperty('binWidth')) || !(
-        histogram.hasOwnProperty('minValue')) || !(
-        histogram.hasOwnProperty('maxValue')) ? undefined : {
-            numBins: histogram.numBins,
-            binWidth: histogram.binWidth,
-            minValue: histogram.minValue,
-            maxValue: histogram.maxValue,
-            isCountBy: histogram.binType === 'countBy'
-        };
+    let referenceHistogram = histogram;
+    const { name, binType, componentType } = histogram;
 
-    const binningInstance = new Binning(dataframe);
+    if (masked) {
+        if (!histogram.bins) {
+            referenceHistogram = undefined;
+        } else if (!selectionMasks.isEmpty()) {
+            referenceHistogram = selectionHistogram;
+        } else {
+            referenceHistogram = {
+                ...histogram, bins: histogram.bins.map(({ values, exclude }) => ({
+                    count: 0, values, exclude
+                }))
+            };
+        }
+    }
 
-    const mask = new DataframeMask(
-        dataframe, pointsMask, pointsMask === undefined ?
-            undefined : simulator.connectedEdges(pointsMask)
-    );
+    if (referenceHistogram && referenceHistogram.bins) {
+        if (!masked || !selectionMasks) {
+            return Observable.of(referenceHistogram);
+        } else if (selectionMasks.isEmpty() ||
+                   selectionMasks.tag === referenceHistogram.tag) {
+            return Observable.of(referenceHistogram);
+        }
+    }
 
-    // Unbase mask from local filtered coordinate system to global coordinate system
-    // TODO: We really shouldn't have to track this kind of nonsense.
-    const unbasedMask = new DataframeMask(dataframe, mask.point, mask.edge, dataframe.lastMasks);
+    if (!selectionMasks) {
+        selectionMasks = new DataframeMask(dataframe);
+    }
 
     const dataType = dataframe.getDataType(name, componentType);
     const aggregations = dataframe.getColumnAggregations(name, componentType, true);
     const countDistinct = aggregations.getAggregationByType('countDistinct');
     const isCountBy = countDistinct < maxBinCount;
 
-    const binsForHistogram = Observable.defer(() =>
-        (isCountBy || dataType === 'string') ?
-            binningInstance.binningForColumnByDistinctValue(
-                { attribute: name, type: componentType }, unbasedMask, dataType
-            ) :
-            binningInstance.binningForColumn(
+    const binsForHistogram = Observable.defer(() => {
+
+        const binningInstance = new Binning(dataframe);
+
+        if (isCountBy || dataType === 'string') {
+            return binningInstance.binningForColumnByDistinctValue(
+                { attribute: name, type: componentType }, selectionMasks, dataType
+            );
+        } else {
+            const binningHint = !(
+                histogram.hasOwnProperty('numBins')  &&
+                histogram.hasOwnProperty('binType')  &&
+                histogram.hasOwnProperty('binWidth') &&
+                histogram.hasOwnProperty('minValue') &&
+                histogram.hasOwnProperty('maxValue')
+            ) ? undefined : {
+                numBins: histogram.numBins,
+                binWidth: histogram.binWidth,
+                minValue: histogram.minValue,
+                maxValue: histogram.maxValue,
+                isCountBy: histogram.binType === 'countBy'
+            };
+            return binningInstance.binningForColumn(
                 { attribute: name, type: componentType },
-                binningHint, goalNumberOfBins, unbasedMask, dataType
-            )
-    );
+                binningHint, goalNumberOfBins, selectionMasks, dataType
+            );
+        }
+    });
 
     /* Normalizes the binResult into a Histogram model */
     /* See Leo's notes on the binResult below */
 
     return binsForHistogram
-        .scan(normalizeBinResult, { masked, dataType, histogram })
+        .scan(normalizeBinResult, { masked, dataType, histogram, selectionMasks })
         .take(1)
-        .catch((e) => !masked ?
-            Observable.throw(e) : Observable.of(undefined)
-        );
+        .catch((e) => !masked ? Observable.throw(e) : Observable.of(undefined))
+        // Inject time between computeHistogram subscriptions
+        // to allow them to flush results out to the router individually.
+        .subscribeOn(Scheduler.async, 100);
 }
 
-function normalizeBinResult({ masked, dataType, histogram }, binResult) {
+function normalizeBinResult({ masked, dataType, histogram, selectionMasks }, binResult) {
 
     const { type: binType,
             numBins, binWidth, minValue, maxValue,
@@ -225,7 +276,8 @@ function normalizeBinResult({ masked, dataType, histogram }, binResult) {
             typeof minValue === 'number' &&
             typeof maxValue === 'number');
 
-    let binKeys;
+    let binKeys, tag = isMasked && selectionMasks &&
+                       selectionMasks.tag || undefined;
 
     if (binType === 'countBy' && isMasked === true) {
         binKeys = histogram.bins.map(({ values }) => values[0]);
@@ -293,7 +345,7 @@ function normalizeBinResult({ masked, dataType, histogram }, binResult) {
         numElements, maxElements,
         binType, binWidth, numBins,
         isMasked, bins: binsNormalized,
-        valueToBin
+        valueToBin, tag
     };
 }
 

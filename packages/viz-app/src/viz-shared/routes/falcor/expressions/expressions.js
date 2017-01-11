@@ -198,7 +198,7 @@ export function removeExpressionHandler({
         })
         .mergeMap(({ workbook, view, [itemName]: item }) => {
 
-            const { selection, [listName]: list } = view;
+            const { selection, histogramsById, [listName]: list } = view;
             const viewPath = `
                 workbooksById['${workbook.id}']
                     .viewsById['${view.id}']`;
@@ -236,6 +236,10 @@ export function removeExpressionHandler({
                 );
 
                 if (item && item.histogramId) {
+                    const histogram = histogramsById && histogramsById[item.histogramId];
+                    if (histogram) {
+                        histogram.filter = undefined;
+                    }
                     const histogramPath = `${viewPath}.histogramsById['${item.histogramId}']`;
                     pathValues.push(
                         $invalidate(`${histogramPath}.filter`),

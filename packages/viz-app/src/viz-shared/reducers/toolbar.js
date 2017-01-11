@@ -264,7 +264,9 @@ function toggleSelectNodes({ falcor, selected }) {
             $value(`selection.controls[0].selected`, false)
         );
     } else {
+        falcor.invalidate(`inspector.rows`, `selection.histogramsById`);
         return falcor.set(
+            $value(`selection.mask`, null),
             $value(`selection.type`, 'select'),
             $value(`selection.controls[0].selected`, true),
             $value(`selection.controls[1].selected`, false),
@@ -274,7 +276,7 @@ function toggleSelectNodes({ falcor, selected }) {
 
 function toggleWindowNodes({ falcor, selected }) {
     if (selected) {
-        falcor.invalidate(`selection.histogramsById`);
+        falcor.invalidate(`inspector.rows`, `selection.histogramsById`);
         return falcor.set(
             $value(`selection['mask', 'type']`, null),
             $value(`selection.controls[1].selected`, false)
