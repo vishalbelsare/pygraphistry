@@ -9,7 +9,7 @@ import { SizeLegendIndicator, YAxisLegendIndicator, IconLegendIndicator } from '
 export const Sparkline = ({ name, yScale, children, componentType,
                             id, width = `calc(100% - 20px)`, height = 50,
                             loading = false, filtered = false, colors = false,
-                            isFilterEnabled = true, setEncoding, options, encodings,
+                            isFilterEnabled = true, setEncoding, encodings,
                             onClose, onYScaleChanged, onEncodingChanged }) => {
     return (
         <div className={classNames({
@@ -33,7 +33,7 @@ export const Sparkline = ({ name, yScale, children, componentType,
                         sizeValue={[]}
                         onYAxisChange={onYScaleChanged}
                         setEncoding={setEncoding}
-                        options={options}
+                        options={(encodings || {}).options}
                     />
                     <Button href='javascript:void(0)'
                         onClick={() => onClose({ id })}

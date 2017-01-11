@@ -83,18 +83,24 @@ function makeFetcher (workerUrl, endpoint, queryKey) {
 
         const now = Date.now();
         oReq.onload = () => {
+            debug('got texture/vbo data', bufferName, Date.now() - now, 'ms');
+            let trimmedArray, errorCreatingBuffer = false;
             try {
-                debug('got texture/vbo data', bufferName, Date.now() - now, 'ms');
-
                 const arrayBuffer = oReq.response; // Note: not oReq.responseText
-                const bufferLength = bufferByteLengths[bufferName];
+                const bufferLength = bufferByteLengths[bufferName] || 0;
                 debug('Buffer length (%s): %d', bufferName, bufferLength);
-                const trimmedArray = new Uint8Array(arrayBuffer, 0, bufferLength);
-
-                res.onNext(trimmedArray);
-
+                trimmedArray = new Uint8Array(arrayBuffer, 0, bufferLength);
             } catch (e) {
-                console.error('Render error on loading data into WebGL:', e, e.stack);
+                errorCreatingBuffer = true;
+                console.error(`Error creating buffer for ${bufferName} with length ${bufferLength}`, e, e.stack);
+                res.onError(e);
+            }
+            if (!errorCreatingBuffer) {
+                try {
+                    res.onNext(trimmedArray);
+                } catch (e) {
+                    console.error('Render error on loading data into WebGL:', e, e.stack);
+                }
             }
         };
 

@@ -130,12 +130,14 @@ class DataTable extends React.Component {
                                 index: row._index,
                                 componentType: componentType
                         })}>{
-                            renderColumns.map(({name}) => (
-                                <td>
-                                    {row && row[name] || '\u00a0' /* nbsp forces height sizing*/}
-                                </td>
-                            ))}
-                        </tr>
+                            renderColumns.map(({name}) => {
+                                let cellValue = row && row[name];
+                                if (cellValue == null || cellValue === '') {
+                                    cellValue = '\u00a0'; /* nbsp forces height sizing*/
+                                }
+                                return <td>{cellValue}</td>;
+                            })
+                        }</tr>
                     ))}
                 </tbody>
             </Table>

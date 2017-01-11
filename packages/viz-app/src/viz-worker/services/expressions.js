@@ -51,13 +51,14 @@ export function removeExpression(loadViewsById) {
         })
         .mergeMap(({ workbook, view }) => {
             const { expressionsById } = view;
+            const { [expressionId]: expression } = expressionsById;
             if (!expressionsById.hasOwnProperty(expressionId)) {
                 return Observable.of({ workbook, view, expressionId })
             }
             delete expressionsById[expressionId];
             return maskDataframe({ view })
                 .catch((errors) => Observable.throw({ workbook, view, errors }))
-                .map(({ view }) => ({ workbook, view, expressionId }));
+                .map(({ view }) => ({ workbook, view, expression, expressionId }));
         });
     }
 }

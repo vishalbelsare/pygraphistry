@@ -4,8 +4,7 @@ import { Popover, OverlayTrigger } from 'react-bootstrap';
 import { ColorPill } from 'viz-shared/components/color-pill/colorPill.js'
 import styles from 'viz-shared/components/histograms/styles.less';
 
-export const SparklineBar = ({ color = false,
-                               encodings, componentType,
+export const SparklineBar = ({ color = false, componentType,
                                index, name, binType, dataType,
                                values = [], binWidth = `20px`,
                                isMasked = false, filtered = false,
