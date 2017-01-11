@@ -12,20 +12,19 @@
 
     pointer-events: none;
 }
+
+.labels-zoomed-in { }
+
 /******** /CONTAINER ******/
 
-.label {
+.label {    
 
-    :global(.tooltip-inner) {
-        padding-top: 3px;
-        padding-left: 8px;
-        padding-right: 8px;
-        padding-bottom: 0px;
+    &:not(.on) {
+        max-width: 7em;
     }
 
-    &.on  :global(.tooltip-inner),
-    &.clicked :global(.tooltip-inner) {
-        padding-bottom: 3px;
+    &.on:not(.clicked) {
+        max-width: 12em;
     }
 
     cursor: pointer;
@@ -63,9 +62,52 @@
     }
 }
 
+
+.label {
+
+    .labels-zoomed-in &:not(.on) :global(.tooltip-arrow) {
+        display: none;
+    }
+
+    :global(.tooltip-inner) {
+        padding-top: 3px;
+        padding-left: 8px;
+        padding-right: 8px;
+        padding-bottom: 0px;
+    }
+
+    
+    .labels-zoomed-in &:not(.on) :global(.tooltip-inner) {
+        background: transparent !important;
+        color: rgba(25,25,25,0.75) !important;
+        font-weight: bold !important;
+    }
+
+    &.on  :global(.tooltip-inner),
+    &.clicked :global(.tooltip-inner) {
+        padding-bottom: 3px;
+    }
+}
+
+
 /******** HEADER ******/
 
 .label-title {
+
+    .label:not(.on) & {
+        .label-title-close,
+        .label-title-icon-encoded,
+        .label-type {
+            display: none;
+        }
+    }
+
+    .label.on:not(.clicked) & {
+        .label-title-close,
+        .label-type {
+            display: none;
+        }
+    }
 
     width: 100%;
 
@@ -98,6 +140,7 @@
     }
 
     .label-title-text {
+
         display: block;
         font-weight: bold;
         text-align: center;
@@ -108,8 +151,7 @@
             vertical-align: middle;
         }
 
-        .label:not(.on):not(.clicked) & {
-            max-width: 12em;
+        .label:not(.on) &, .label.on:not(.clicked) & {
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
@@ -132,6 +174,13 @@
 /******** BODY ******/
 
 .label-contents {
+
+    .label:not(.on) & {
+        display: none;
+    }
+
+    background-color: white;
+    color: #2e2e2e;
 
     cursor: auto;
 
@@ -184,7 +233,7 @@
     text-overflow: ellipsis;
 
     &:nth-child(odd) > td {
-        background-color: rgba(51,51,102,0.1);
+        //background-color: rgba(51,51,102,0.1);
     }
 
     border-bottom: 1px solid transparent;
@@ -235,7 +284,52 @@
 /********* ICONS ************/
 
 
+@icon-diameter: 30px;
+@icon-border: 2px;
+@icon-container-diameter: 40px;
+@icon-container-border: 2px;
+.point-icon-container {
+
+    pointer-events: none;
+    
+    background-color: #ccc;
+
+    border-radius: calc( @icon-container-diameter / 2);    
+    border: @icon-container-border solid rgba(0,0,0,0.5);
+    padding: calc( @icon-container-diameter / 2 - @icon-container-border - @icon-diameter / 2);
+
+    display: inline-block;
+    width: @icon-container-diameter;
+    height: @icon-container-diameter;
+    position: absolute;
+    top: calc(-@icon-container-diameter);
+    margin-left: calc(-@icon-container-diameter / 2);
+
+}
+.point-icon {
+
+    border-radius: calc( @icon-diameter / 2);    
+
+    .point-icon-container.light-color & {
+        color: #2e2e2e;
+    }
+    .point-icon-container:not(.light-color) & {
+        color: white;
+    }
+
+
+    overflow: hidden;
+
+    display: inline-block;
+    width: @icon-diameter;
+    height: @icon-diameter;
+
+    font-size: 18px;
+
+}
+
 .label-tooltip {
+    text-align: center;
     pointer-events: auto;
     z-index: @graph-label-modal-z;
 }
