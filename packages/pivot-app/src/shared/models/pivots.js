@@ -65,6 +65,17 @@ export function serializePivotModel(pivot) {
 
 export function clonePivotModel(pivot) {
     const deepCopy = JSON.parse(JSON.stringify(serializePivotModel(pivot)));
+    const templateId = pivot.pivotTemplate.value[1];
+    const template = templatesMap[templateId];
+    deepCopy.pivotParameters = Object.entries(deepCopy.pivotParameters)
+        .filter(([key]) => key.startsWith(templateId))
+        .reduce((result, [key, value]) => {
+            result[key] = value
+            return result;
+        }, {});
+    deepCopy.pivotRefs = Object.values(template.pivotParametersUI)
+        .filter((parameter) => parameter.inputType === 'pivotCombo')
+        .map(({id}) => id);
     const clonedHardState = {
         ...deepCopy,
         id: simpleflake().toJSON()

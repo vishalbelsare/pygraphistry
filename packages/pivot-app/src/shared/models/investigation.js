@@ -5,6 +5,9 @@ import _ from 'underscore';
 import { simpleflake } from 'simpleflakes';
 import { atomify, deatomify } from './support';
 
+import logger from '../logger.js';
+const log = logger.createLogger(__filename);
+
 
 function defaults(index) {
     return {
@@ -54,10 +57,25 @@ export function serializeInvestigationModel(investigation) {
 
 export function cloneInvestigationModel(investigation, clonedPivots) {
     const deepCopy = JSON.parse(JSON.stringify(serializeInvestigationModel(investigation)));
+    const oldPivotIds = investigation.pivots.map(x => x.value[1]);
+    const newPivotIds = clonedPivots.map(({id}) => id);
+    const pivots = clonedPivots.map((pivot) => {
+        const pivotRefs = pivot.pivotRefs
+        delete pivot.pivotRefs;
+        const pivotParameters = Object.entries(pivot.pivotParameters)
+            .reduce((result, [key, value]) => {
+                if (pivotRefs.indexOf(key) >= 0) {
+                    value.value = value.value.map((val) => newPivotIds[oldPivotIds.indexOf(val)]);
+                } 
+                result[key] = value
+                return result;
+            }, {})
+        return { pivotParameters, ...pivot };
+    });
 
     return {
         ...deepCopy,
-        ...initialSoftState(_.pluck(clonedPivots, 'id')),
+        ...initialSoftState(_.pluck(pivots, 'id')),
         id: simpleflake().toJSON(),
         name: `Copy of ${investigation.name}`,
     };
