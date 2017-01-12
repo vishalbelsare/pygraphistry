@@ -28,7 +28,7 @@ export function labels(path, base) {
             get: getValues,
             set: setValues,
             route: `${base}['labels'][
-                'id', 'name', 'opacity', 'enabled',
+                'id', 'name', 'opacity', 'enabled', 'renderer',
                 'timeZone', 'highlight', 'selection', 'poiEnabled',
                 'encodings'
             ]`

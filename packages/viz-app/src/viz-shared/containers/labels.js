@@ -83,6 +83,9 @@ Labels = container({
     fragment: ({ edge = [], point = [], settings } = {}) => `{
         id, name, timeZone,
         opacity, enabled, poiEnabled,
+        renderer: { 
+            background: { color } 
+        },
         ['background', 'foreground']: { color },
         ...${ Settings.fragment({ settings }) },
         ['highlight', 'selection']: ${
