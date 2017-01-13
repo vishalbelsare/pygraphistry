@@ -39,10 +39,12 @@
     height: 100%;
     background-color: #FBFBFB;
     tbody tr {
-    display: flex;
-    -webkit-flex-flow: row wrap;
-    border-top: 1px solid #ddd;
-       }
+        display: flex;
+        -webkit-flex-flow: row wrap;
+    }
+    tbody tr:not(:first-child) {
+        border-top: 1px solid #ddd;
+    }
     tbody {
         width: 100%;
         position: relative;
@@ -230,27 +232,21 @@ td, th {
     position: relative
 }
 
-:local(.investigation-header) {
-    text-align: right;
-    white-space: nowrap;
-    height: 100%;
 
-    & > div:first-child {
-        float: left;
-        text-align: left;
-    }
+.investigation-header {
+    position: static !important;
+    margin: 0;
+}
 
-    & > div:nth-child(2) {
-        display: inline-block;
-    }
+.play-all {
+    width: 100%;
+    border-radius: 0;
+    border: 0px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 4px 0px rgba(102, 102, 102, 0.5);
 }
-@media (max-width: 600px) {
-    :local(.investigation-header) {
-        & > div:nth-child(2) {
-            display: none;
-        }
-    }
-}
+
+
 
 :local(.investigations-dropdownbutton) {
     & > * {
@@ -331,7 +327,14 @@ td, th {
     }
 }
 
-:local(.pivots) {
+.pivot-table {
+    height: ~"calc(100% - 84px)";
+    overflow: scroll;    
+}
+
+
+.pivots {
+    height: 100%;
     position: relative;
     thead th {
         border: none;
@@ -702,10 +705,6 @@ transition-container {
 .placeholderLogo {
 }
 
-:global(.testwrap) {
-    position: relative !important;
-    background-color: aqua;
-}
 
 :local(.pivotTypeTitle) {
    // background-color: aqua;

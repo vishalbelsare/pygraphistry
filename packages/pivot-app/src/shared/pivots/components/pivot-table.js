@@ -1,32 +1,16 @@
 import { PivotRow } from 'pivot-shared/pivots';
 import styles from 'pivot-shared/styles.less';
-import { Button, Table, Tooltip, Glyphicon, OverlayTrigger } from 'react-bootstrap';
+import { Table } from 'react-bootstrap';
 
 export default function PivotTable({
-    id, status, pivots, templates,
+    id, pivots, templates,
     insertPivot, splicePivot, searchPivot,
-    graphInvestigation, togglePivots
+    togglePivots
 }) {
-
-    const bStyle = (status && status.msgStyle) ? status.msgStyle : 'default';
+    
     return (
+        <div className={styles['pivot-table']}>
         <Table>
-            <thead>
-                <tr>
-                    <th className={styles.pivotToggle}>
-                        <OverlayTrigger placement="top" overlay={
-                            <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
-                        }>
-                            <Button bsStyle={bStyle}
-                                    onClick={() =>
-                                        graphInvestigation({investigationId: id, length: pivots.length}
-                                    )}>
-                                <Glyphicon glyph="play" />
-                            </Button>
-                        </OverlayTrigger>
-                    </th>
-                </tr>
-            </thead>
             <tbody>{
                 pivots.map((pivot, index) => (
                     <PivotRow data={pivot}
@@ -44,5 +28,6 @@ export default function PivotTable({
             }
             </tbody>
         </Table>
+        </div>
     );
 }
