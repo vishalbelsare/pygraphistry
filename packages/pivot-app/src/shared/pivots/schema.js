@@ -2,7 +2,7 @@ import VError from 'verror';
 import { Observable } from 'rxjs';
 import { withSchema } from '@graphistry/falcor-react-schema';
 import { logErrorWithCode } from 'pivot-shared/util';
-import { $error, $pathValue } from '@graphistry/falcor-json-graph';
+import { $pathValue } from '@graphistry/falcor-json-graph';
 
 import logger from 'pivot-shared/logger.js';
 const log = logger.createLogger(__filename);
