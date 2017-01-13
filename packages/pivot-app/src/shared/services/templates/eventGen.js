@@ -1,40 +1,77 @@
 import { SplunkPivot } from './SplunkPivot.js';
 import logger from '../../logger.js';
-import stringhash from 'string-hash';
 const log = logger.createLogger(__filename);
+
 
 const SPLUNK_INDICES = {
     EVENT_GEN: 'index=event_gen',
     PAN: 'index=event_gen | search vendor="Palo Alto Networks"'
 };
 
-const PAN_NODE_COLORS = { 'EventID': 7, 'user': 1, 'dest': 3, 'threat_name': 5 };
+const simOntology = {
+    EventID: {
+        pointSize: 0.1,
+        pointColor: 7,
+    },
+    user: {
+        pointSize: 5,
+        pointColor: 1,
+        pointIcon: 'user'
+    },
+    threat_name: {
+        pointSize: 10,
+        pointColor: 5,
+        pointIcon: 'bell',
+    },
+    action: {
+        pointSize: 5,
+        pointColor: 2,
+        pointIcon: 'bolt',
+    },
+    url: {
+        pointSize: 5,
+        pointColor: 3,
+        pointIcon: 'link',
+    },
+    severity: {
+        pointSize: 5,
+        pointColor: 4,
+        pointIcon: 'thermometer-half',
+    },
+    application: {
+        pointSize: 5,
+        pointColor: 5,
+        pointIcon: 'file-code-o',
+    },
+    filename: {
+        pointSize: 5,
+        pointColor: 6,
+        pointIcon: 'file',
+    },
+    client_location: {
+        pointSize: 5,
+        pointColor: 8,
+        pointIcon: 'map-marker',
+    },
+    dest_hostname: {
+        pointSize: 5,
+        pointColor: 9,
+        pointIcon: 'server',
+    },
+}
 
-const PAN_NODE_SIZES = { 'EventID': 0.1, 'dest': 1.1, 'user': 5, 'threat_name': 10 };
+const simAttributes = _.keys(simOntology);
 
-const PAN_NODE_ICONS = { 'EventID': '', 'user': 'user', 'threat_name': 'bell' };
-
-const attributes = [
-    'user', 'threat_name', 'action', 'url', 'severity',
-    'application', 'filename', 'client_location', 'dest_hostname'
-]
-
-const PAN_ENCODINGS = {
+const SIM_ENCODINGS = {
     point: {
         pointColor: function(node) {
-            node.pointColor = PAN_NODE_COLORS[node.type];
-            if (node.pointColor === undefined) {
-                node.pointColor = stringhash(node.type) % 12;
-            }
+            node.pointColor = simOntology[node.type].pointColor || 12;
         },
         pointSizes: function(node) {
-            node.pointSize = PAN_NODE_SIZES[node.type] || 2;
+            node.pointSize = simOntology[node.type].pointSize || 5;
         },
         pointIcon: function (node) {
-            node.pointIcon = PAN_NODE_ICONS[node.type];
-            if (node.pointIcon === undefined) {
-                node.pointIcon = 'fw';
-            }
+            node.pointIcon = simOntology[node.type].pointIcon || 'question';
         }
     }
 };
@@ -55,11 +92,11 @@ export const PAN_SEARCH = new SplunkPivot({
             name: 'nodes',
             inputType: 'multi',
             label: 'Nodes:',
-            options: attributes.map(x => ({id:x, name:x})),
+            options: simAttributes.map(x => ({id:x, name:x})),
         }
     ],
-    attributes: attributes,
-    encodings: PAN_ENCODINGS,
+    attributes: simAttributes,
+    encodings: SIM_ENCODINGS,
     toSplunk: function(args) {
         this.connections = args.nodes.value;
         const query = `search ${SPLUNK_INDICES.PAN} ${args.query}
@@ -90,7 +127,7 @@ export const PAN_EXPAND = new SplunkPivot({
             name: 'sourceAttribute',
             inputType: 'combo',
             label: 'Expand on:',
-            options: attributes.map(x => ({value:x, label:x}))
+            options: simAttributes.map(x => ({value:x, label:x}))
         },
         {
             name: 'query',
@@ -102,11 +139,11 @@ export const PAN_EXPAND = new SplunkPivot({
             name: 'nodes',
             inputType: 'multi',
             label: 'Nodes:',
-            options: attributes.map(x => ({id:x, name:x})),
+            options: simAttributes.map(x => ({id:x, name:x})),
         }
     ],
-    attributes: attributes,
-    encodings: PAN_ENCODINGS,
+    attributes: simAttributes,
+    encodings: SIM_ENCODINGS,
     toSplunk: function(args, pivotCache) {
         this.connections = args.nodes.value;
         const sourceAttribute = args.sourceAttribute;

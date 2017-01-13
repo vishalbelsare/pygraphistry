@@ -17,6 +17,56 @@ const GRAPHISTRY_SPLUNK_FIELDS = [
     'fileName'
 ]
 
+const graphistryLogOntology = {
+    'time': {
+        pointSize: 1,
+        pointColor: 3,
+    },
+    'EventID': {
+        pointSize: 1,
+        pointColor: 9
+    },
+    'module': {
+        pointSize: 4,
+        pointColor: 0
+    },
+    'level': {
+        pointSize: 4,
+        pointColor: 1,
+        pointIcon: 'thermometer-half',
+    },
+    'err.message': {
+        pointSize: 10,
+        pointColor: 2,
+        pointIcon: 'bug',
+    },
+    'metadata.dataset': {
+        pointSize: 4,
+        pointColor: 4,
+        pointIcon: 'database',
+    },
+    'err.stackArray{}.file': {
+        pointSize: 5,
+        pointColor: 5,
+        pointIcon: 'file-code-o',
+    },
+    'err.stackArray{}.function': {
+        pointSize: 5,
+        pointColor: 6,
+        pointIcon: 'stack-overflow',
+    },
+    'msg': {
+        pointSize: 5,
+        pointColor: 7,
+        pointIcon: 'comment',
+    },
+    'fileName': {
+        pointSize: 4,
+        pointColor: 8,
+        pointIcon: 'file',
+    }
+}
+
 export const searchSplunk = new SplunkPivot({
     id: 'search-splunk-plain',
     name: 'Search Splunk',
@@ -94,17 +144,17 @@ export const searchSplunkMap = new SplunkPivot({
     encodings: {
         point: {
             pointColor: (node) => {
-                node.pointColor = stringhash(node.type) % 12;
-            }
+                node.pointColor = graphistryLogOntology[node.type].pointColor;
+            },
+            pointSize: (node) => {
+                node.pointSize = graphistryLogOntology[node.type].pointSize;
+            },
+            pointIcon: (node) => {
+                node.pointIcon = graphistryLogOntology[node.type].pointIcon;
+            },
         }
     }
 });
-
-const DATASET_ERROR_NODE_COLORS = {}
-    /*    'dataset': 1,
-    'msg': 5,
-    'EventID': 7
-}*/
 
 export const searchGraphviz = new SplunkPivot({
     id: 'search-graphviz-logs',
@@ -149,14 +199,17 @@ export const searchGraphviz = new SplunkPivot({
     },
     encodings: {
         point: {
-            pointColor: function(node) {
-                node.pointColor = DATASET_ERROR_NODE_COLORS[node.type];
-                if (node.pointColor === undefined) {
-                    node.pointColor = stringhash(node.type) % 12;
-                }
-            }
+            pointColor: (node) => {
+                node.pointColor = graphistryLogOntology[node.type].pointColor;
+            },
+            pointSize: (node) => {
+                node.pointSize = graphistryLogOntology[node.type].pointSize;
+            },
+            pointIcon: (node) => {
+                node.pointIcon = graphistryLogOntology[node.type].pointIcon;
+            },
         }
     },
-    connections: ['level', 'msg', 'err.message', 'file', 'module', 'metadata.dataset'],
+    connections: _.without(_.keys(graphistryLogOntology), 'time', 'EventID'),
     attributes: ['time']
 });
