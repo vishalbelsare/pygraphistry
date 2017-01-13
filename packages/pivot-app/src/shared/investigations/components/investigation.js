@@ -19,15 +19,8 @@ export default function Investigation({
 
     return (
         <div className={styles.pivots}>
-            { status && !status.ok ?
-                <Alert bsStyle={status.msgStyle || 'danger'} className={styles.alert} onDismiss={dismissAlert}>
-                    <strong> {status.message} </strong>
-                </Alert>
-                : null
-            }
             <InvestigationHeader investigations={investigations}
                                  selectInvestigation={selectInvestigation} />
-
             <OverlayTrigger placement="bottom" overlay={
                     <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
                 }>
@@ -39,6 +32,12 @@ export default function Investigation({
                     <Glyphicon glyph="play" />
                 </Button>
             </OverlayTrigger>
+            { status && !status.ok ?
+                <Alert bsStyle={status.msgStyle || 'danger'} className={styles.alert} onDismiss={dismissAlert}>
+                    <strong> {status.message} </strong>
+                </Alert>
+                : null
+            }
 
             <PivotTable id={id}
                         pivots={pivots}

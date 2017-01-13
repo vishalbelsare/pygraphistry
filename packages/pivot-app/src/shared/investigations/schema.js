@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import { logErrorWithCode } from 'pivot-shared/util';
 import { withSchema } from '@graphistry/falcor-react-schema';
-import { $error, $pathValue, $invalidation } from '@graphistry/falcor-json-graph';
+import { $pathValue, $invalidation } from '@graphistry/falcor-json-graph';
 
 import logger from 'pivot-shared/logger.js';
 const log = logger.createLogger(__filename);
@@ -156,7 +156,7 @@ function captureErrorAndNotifyClient(investigationIds) {
         }
 
         return Observable.from([
-            $pathValue(`investigationsById['${investigationIds}']['status']`, $error(status))
+            $pathValue(`investigationsById['${investigationIds}']['status']`, status)
         ]);
     }
 }
