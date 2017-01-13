@@ -156,7 +156,7 @@ function captureErrorAndNotifyClient(investigationIds) {
         }
 
         return Observable.from([
-            $pathValue(`investigationsById['${investigationIds}']['status']`, $error(status))
+            $pathValue(`investigationsById['${investigationIds}']['status']`, status)
         ]);
     }
 }

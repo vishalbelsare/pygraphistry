@@ -16,14 +16,14 @@ export default function Investigation({
 
     return (
         <div className={styles.pivots}>
+            <InvestigationHeader investigations={investigations}
+                                 selectInvestigation={selectInvestigation} />
             { status && !status.ok ?
                 <Alert bsStyle={status.msgStyle || 'danger'} className={styles.alert} onDismiss={dismissAlert}>
                     <strong> {status.message} </strong>
                 </Alert>
                 : null
             }
-            <InvestigationHeader investigations={investigations}
-                                 selectInvestigation={selectInvestigation} />
             <Tabs defaultActiveKey={1} id="investigation-bottom-tabbar" className={styles.investigationTabs}>
                 <Tab eventKey={1} title="Pivots">
                     <PivotTable id={id}
