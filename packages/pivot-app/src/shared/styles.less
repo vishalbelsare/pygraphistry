@@ -331,7 +331,8 @@ td, th {
 
 .pivot-table {
     height: ~"calc(100% - 84px)";
-    overflow: scroll;    
+    overflow: scroll;
+    background-color: #eeeeee;    
 }
 
 
@@ -354,8 +355,11 @@ td, th {
         text-align: right;
     }
 
-    tbody tr:nth-child(even) {
-        background-color: #f4f4f4;
+    tbody tr {
+        background-color: #fff;
+        margin: 1em;
+        border-radius: 10px;
+        border: 1px solid #ddd;
     }
 
     tbody td {
@@ -371,7 +375,27 @@ td, th {
     }
 }
 
-:local(.row-toggled-on), :local(.row-toggled-off) {
+
+.pivot-row {
+    background-color: #fff;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    margin: 1em;
+    & > div {
+        margin: 1em;
+    }
+    :global(.panel-group) {
+        margin: 0px;        
+    }
+    :global(.panel-body) {
+        padding: 0;
+        & > div {
+            margin: 1em;
+        }
+    }
+}
+.pivot-row-header > * {
+    vertical-align: middle;
 }
 
 .pivotToggle {
@@ -406,7 +430,6 @@ td, th {
     width: 50%;
     border-top: none;
     border: 1px solid purple;
-    padding: 25px !important;
 }
 :local(.pivotData0) {
     width: 200px;
@@ -416,6 +439,8 @@ td, th {
     border-top: none;
 }
 .pivotTypeSelectorContainer {
+    display: inline-block;
+    width: ~"calc(100% - 8em)";
     text-align: left;
     font-weight: bold;
     & > div > div:nth-child(2):not(:hover) {
@@ -460,6 +485,12 @@ td, th {
         margin-right: 20px;
     }
 
+}
+.pivot-number {
+    display: inline-block;
+    font-weight: bold;
+    font-size: 2em;
+    margin: 10px;
 }
 :local(.pivotEntitySummaries) {
     display: inline-block;
@@ -534,24 +565,18 @@ td, th {
     border: 1px solid orange;
 }
 :local(.pivotResultSummaries) {
-    //this is the little idenitfier tabs
-    max-width: 20em;
+    padding-left: 0px !important;
+    margin: 0 !important;
+    padding: 1em !important;
+    padding-left: 0px !important;
+    text-align: center;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    width: 100%;
 
     & > * {
         vertical-align: middle;
     }
-
-    &:not(:hover) > * {
-        text-overflow: ellipsis;
-        overflow: hidden;
-        white-space: nowrap;
-        max-width: 20em;
-    }
-    order: 11;
-    width: 80%;
-    margin-bottom: 20px;
-    padding-left: 0px !important;
-    border: 1px solid black;
 
 }
 :local(.result-count-on) { }
@@ -560,11 +585,8 @@ td, th {
 }
 :local(.pivotIcons) {
     white-space: nowrap;
-    order: 2;
-    width: 50%;
-    padding-top: 20px !important;
     padding-left: 0px !important;
-    border: 1px solid yellow;
+    text-align: right;
 }
 .pivot-error-tooltip {
 }
@@ -646,22 +668,24 @@ transition-container {
 }
 
 :local(.pivotTextParam) {
-    border: 2px solid black;
     order: 6;
     width: 100%;
+    input {
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        padding: 0.5em;
+        margin-left: 0.5em;
+    }
 }
 :local(.pivotComboParam) {
-        border: 2px solid red;
         order: 7;
         width: 100%;
 }
 :local(.pivotMultiParam) {
-    border: 2px solid blue;
     order: 8;
     width: 100%;
 }
 :local(.pivotDateRangeParam) {
-    border: 2px solid green;
     order: 9;
     width: 100%;
 }

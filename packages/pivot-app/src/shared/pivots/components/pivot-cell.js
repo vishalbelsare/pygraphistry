@@ -24,7 +24,7 @@ export default function PivotCell({ paramUI, ...props }) {
 
 function TextCell({ id, paramKey, paramValue, paramUI, handlers }) {
      return (
-         <td className={tableCellClassName + ' ' + styles.pivotTextParam} key={`pcell-${id}-${paramKey}`}>
+         <div className={tableCellClassName + ' ' + styles.pivotTextParam} key={`pcell-${id}-${paramKey}`}>
             <label>{ paramUI.label }</label>
             <input
                 type='th'
@@ -38,7 +38,7 @@ function TextCell({ id, paramKey, paramValue, paramUI, handlers }) {
                     })
                 }
             />
-        </td>
+        </div>
      );
 }
 
@@ -85,7 +85,7 @@ function PivotCombo({ id, paramKey, paramValue, paramUI, previousPivots, handler
 
 function ComboCell({ id, paramKey, paramValue, paramUI, handlers }) {
     return (
-        <td className={styles.pivotComboParam} key={`pcell-${id}-${paramKey}`}>
+        <div className={styles.pivotComboParam} key={`pcell-${id}-${paramKey}`}>
             <ComboSelector pivotId={id}
                            fldKey={paramKey}
                            paramUI={paramUI}
@@ -94,13 +94,13 @@ function ComboCell({ id, paramKey, paramValue, paramUI, handlers }) {
                            key={`pcell-${id}-${paramKey}`}
                            setPivotAttributes={handlers.setPivotAttributes}
             />
-        </td>
+        </div>
     );
 }
 
 function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
     return (
-        <td key={`pcell-${id}-${paramKey}`}
+        <div key={`pcell-${id}-${paramKey}`}
             className={tableCellClassName + ' ' + styles.pivotMultiParam}>
             <label>{ paramUI.label }</label>
             <Select id={`selector-${id}-${paramKey}`}
@@ -117,19 +117,19 @@ function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
                             [`pivotParameters.${paramKey}`]: _.pluck(selected, 'id')
                         })
                     }/>
-            </td>
+            </div>
     )
 }
 
 function DateRange({ id, paramKey, paramValue, paramUI, handlers }) {
     return (
-        <td className={styles.pivotDateRangeParam} key={`pcell-${id}-${paramKey}`}>
+        <div className={styles.pivotDateRangeParam} key={`pcell-${id}-${paramKey}`}>
             <DateRangePickerWrapper
                 paramUI={paramUI}
                 paramValue={paramValue}
                 paramKey={paramKey}
                 setPivotAttributes={handlers.setPivotAttributes}
             />
-        </td>
+        </div>
     );
 }

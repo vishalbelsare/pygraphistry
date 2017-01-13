@@ -10,8 +10,7 @@ export default function PivotTable({
     
     return (
         <div className={styles['pivot-table']}>
-        <Table>
-            <tbody>{
+        {
                 pivots.map((pivot, index) => (
                     <PivotRow data={pivot}
                               pivots={pivots}
@@ -25,9 +24,7 @@ export default function PivotTable({
                               key={`${index}: ${pivot.id}`}
                               />
                 ))
-            }
-            </tbody>
-        </Table>
+        }
         </div>
     );
 }
