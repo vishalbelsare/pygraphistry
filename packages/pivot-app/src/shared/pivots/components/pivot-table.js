@@ -1,6 +1,5 @@
 import { PivotRow } from 'pivot-shared/pivots';
 import styles from 'pivot-shared/styles.less';
-import { Table } from 'react-bootstrap';
 
 export default function PivotTable({
     id, pivots, templates,

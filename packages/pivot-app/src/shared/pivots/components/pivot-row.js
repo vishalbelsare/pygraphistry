@@ -5,7 +5,7 @@ import PivotActions from './pivot-actions';
 import EntitySummaries from './entity-summaries';
 import TemplateSelector from './template-selector';
 import styles from 'pivot-shared/styles.less';
-import { Badge, Tooltip, OverlayTrigger, Accordion, PanelGroup, Panel } from 'react-bootstrap';
+import { Badge, Tooltip, OverlayTrigger, Accordion, Panel } from 'react-bootstrap';
 
 export default function PivotRow({
     id, investigationId, status,

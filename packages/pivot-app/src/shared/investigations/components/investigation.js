@@ -1,17 +1,17 @@
-import EventTable from './event-table';
 import { InvestigationHeader } from '../index.js';
 import { PivotTable } from 'pivot-shared/pivots';
 import styles from 'pivot-shared/styles.less';
 
 import {
     Alert,
-    Tab,
-    Tabs,
-    Button, Tooltip, Glyphicon, OverlayTrigger
+    Button,
+    Tooltip, 
+    Glyphicon, 
+    OverlayTrigger
 } from 'react-bootstrap';
 
 export default function Investigation({
-    id, status, pivots = [], templates, investigations, eventTable,
+    id, status, pivots = [], templates, investigations, 
     searchPivot, insertPivot, splicePivot, dismissAlert,
     graphInvestigation, saveInvestigation, togglePivots, selectInvestigation }) {
 
