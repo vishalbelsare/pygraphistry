@@ -12,8 +12,7 @@ export default function InvestigationHeader({id, name, user, investigations, sav
     createInvestigation, copyInvestigation, selectInvestigation
 }) {
     return (
-            <div className={styles.testwrap}>
-                <Navbar inverse fixedTop fluid>
+                <Navbar className={styles['investigation-header']} inverse fixedTop fluid>
                     <Navbar.Header>
                         <Navbar.Brand>
                             <a href="#"> { name } </a>
@@ -44,6 +43,6 @@ export default function InvestigationHeader({id, name, user, investigations, sav
                         </NavDropdown>
                     </Nav>
                 </Navbar>
-            </div>
+            
     )
 }
