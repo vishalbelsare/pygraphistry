@@ -40,22 +40,22 @@ const simOntology = {
     },
     application: {
         pointSize: 5,
-        pointColor: 5,
+        pointColor: 6,
         pointIcon: 'file-code-o',
     },
     filename: {
         pointSize: 5,
-        pointColor: 6,
+        pointColor: 8,
         pointIcon: 'file',
     },
     client_location: {
         pointSize: 5,
-        pointColor: 8,
+        pointColor: 9,
         pointIcon: 'map-marker',
     },
     dest_hostname: {
         pointSize: 5,
-        pointColor: 9,
+        pointColor: 10,
         pointIcon: 'server',
     },
 }
@@ -71,7 +71,7 @@ const SIM_ENCODINGS = {
             node.pointSize = simOntology[node.type].pointSize || 5;
         },
         pointIcon: function (node) {
-            node.pointIcon = simOntology[node.type].pointIcon || 'question';
+            node.pointIcon = simOntology[node.type].pointIcon;
         }
     }
 };
