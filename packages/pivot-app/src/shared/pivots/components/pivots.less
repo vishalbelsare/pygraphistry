@@ -1,0 +1,150 @@
+@import '../../vars.less';
+
+.pivot-table {
+    height: ~"calc(100% - 84px)";
+    overflow: scroll;
+    background-color: #eeeeee;    
+}
+
+
+.pivot-row {
+    background-color: #fff;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    margin: 1em;
+
+
+    //accordion weirdness
+    & > div {
+        margin: 1em;
+    }
+    :global(.panel-group) {
+        margin: 0px;        
+    }
+    :global(.panel-body) {
+        padding: 0;
+        & > div {
+            margin: 1em;
+        }
+    }
+
+    .pivot-row-header {
+	    
+	    & > * {
+	    	vertical-align: middle;
+	    }
+
+	    .pivot-number {
+		    display: inline-block;
+		    font-weight: bold;
+		    font-size: 2em;
+		    margin: 10px;
+		}
+
+		.pivot-result-summaries {
+		    padding-left: 0px !important;
+		    margin: 0 !important;
+		    padding: 1em !important;
+		    padding-left: 0px !important;
+		    text-align: center;
+		    border-top: 1px solid #ccc;
+		    border-bottom: 1px solid #ccc;
+		    width: 100%;
+
+		    & > * {
+		        vertical-align: middle;
+		    }
+		}
+
+		.result-count-on { }
+		.result-count-off {
+		    opacity: 0.4;
+		}
+		.pivot-icons {
+		    white-space: nowrap;
+		    padding-left: 0px !important;
+		    text-align: right;
+		}
+	}
+}
+
+.pivot-type-selector-container {
+    display: inline-block;
+    width: ~"calc(100% - 8em)";
+    text-align: left;
+    font-weight: bold;
+    & > div > div:nth-child(2):not(:hover) {
+        border-width: 0;
+        background-color: transparent;
+        border-bottom: 1px dotted #aaaaaa;
+    }
+}
+
+
+.pivoty-text-param,
+.pivotComboParam,
+.pivot-multi-param,
+.pivot-date-range-param {
+	width: 100%;
+}
+
+.pivot-text-param {
+    width: 100%;
+    input {
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        padding: 0.5em;
+        margin-left: 0.5em;
+    }
+}
+
+@summaryPillHeight: 7px;
+.pivot-entity-summaries {
+    display: inline-block;
+    text-align: left;
+    margin: 5px 10px 0px 0px;
+
+	.pivot-entity-summary {
+	    display: inline-block;
+	    overflow: hidden;
+	    margin: 0 0 0 5px;
+	    padding: 0 0 0 0;
+	    border-bottom-left-radius: 5px;
+	    border-bottom-right-radius: 5px;
+	    border: 1px solid #777;
+	}
+
+
+	.pivot-entity-pill {
+	    display: block;
+	    height: @summaryPillHeight;
+	    width: 100%;
+	    border-bottom: 1px solid #777;
+	    border-top-right-radius: 0;
+	    border-bottom-right-radius: 0;
+	}
+
+	.pivot-entity-name {
+	    font-weight: bold;
+	    text-transform: uppercase;
+	    font-size: 12px;
+	    vertical-align: top;
+	    display: block;
+	    margin-left: 0px;
+	    color: #777;
+	    padding: 2px 5px 0px 5px;
+	    height: 20px;
+	    max-width: 70px;
+	    text-overflow: ellipsis;
+	    overflow: hidden;
+	    white-space: nowrap;
+	}
+
+}
+
+
+
+.pivot-info-tooltip,
+.pivot-error-tooltip { 
+
+}

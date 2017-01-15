@@ -1,4 +1,4 @@
-import styles from 'pivot-shared/styles.less';
+import styles from './pivots.less';
 import {
     Tooltip, Popover,
     Button, ButtonGroup,

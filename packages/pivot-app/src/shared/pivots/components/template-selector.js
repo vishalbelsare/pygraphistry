@@ -1,10 +1,10 @@
 import Select from 'react-select';
 import { $ref } from '@graphistry/falcor-json-graph';
-import styles from 'pivot-shared/styles.less';
+import styles from './pivots.less';
 
 export default function TemplateSelector({ id, pivotTemplate, templates, setPivotAttributes }) {
     return (
-        <span className={styles.pivotTypeSelectorContainer}>
+        <span className={styles['pivot-type-selector-container']}>
             <Select
                 id={"templateSelector" + id}
                 name={"templateSelector" + id}

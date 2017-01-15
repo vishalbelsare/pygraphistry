@@ -1,6 +1,6 @@
 import _ from 'underscore';
 import { Alert } from 'react-bootstrap';
-import styles from 'pivot-shared/styles.less';
+import styles from './investigations.less';
 import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
 
 export default function EventTable({ fieldSummaries = {}, table = {} }) {

@@ -1,4 +1,4 @@
-import styles from 'pivot-shared/styles.less';
+import styles from './investigations.less';
 import {
     MenuItem,
     Navbar,

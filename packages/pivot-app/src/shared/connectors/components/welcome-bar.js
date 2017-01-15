@@ -1,14 +1,14 @@
-import styles from 'pivot-shared/styles.less';
+import mainStyles from 'pivot-shared/styles.less';
 import { Col, Row, Grid, Media, Panel } from 'react-bootstrap';
 
 export default function WelcomeBar({ connectors = [] }) {
     return (
         <Grid>
-            <Row className={styles['welcome-bar']}>
+            <Row className={mainStyles['welcome-bar']}>
                 <Col md={6}>
                     <Panel>
                         <Media.Body>
-                            <Media.Heading className={styles['user-greeting-heading']}>
+                            <Media.Heading className={mainStyles['user-greeting-heading']}>
                                 Connectors!
                             </Media.Heading>
                             <span>
