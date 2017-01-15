@@ -1,147 +1,5 @@
 @import './vars.less';
 
-@investigation-header-height: 0px;
-@investigation-header-padding-top: ~"calc( (@{investigation-header-height} - 1px - 34px)/2 )";
-@investigation-footer-height: 250px;
-
-
-:local(.serverStatusAlert) {
-    position: relative;
-    left: 0;
-    top: 0;
-    z-index: 999999999999;
-}
-
-.investigation-all {
-
-    height: 100%;
-
-    & > *:nth-child(2) {
-        height: ~"calc(100% - @{investigation-header-height})";
-        width: 100%;
-    }
-
-}
-
-:local(.investigation-nav) {
-    min-height: @investigation-header-height;
-    height: @investigation-header-height;
-    background-color: @header-bg;
-    border: 0px;
-    border-radius: 0px;
-    border-bottom: 1px solid @header-seperator;
-    margin-bottom: 0px;
-    display: none;
-}
-
-:local(.investigation-split) {
-    position: relative;
-    height: 100%;
-    background-color: #FBFBFB;
-    tbody tr {
-        display: flex;
-        -webkit-flex-flow: row wrap;
-    }
-    tbody tr:not(:first-child) {
-        border-top: 1px solid #ddd;
-    }
-    tbody {
-        width: 100%;
-        position: relative;
-    }
-    tbody tr td {
-        padding: 20px;
-        height: 20%;
-        display: inline-block;
-        border: none !important;
-    }
-
-    & > div > div:nth-child(1) {
-        overflow-y: scroll;
-        overflow-x: hidden;
-    }
-
-    & > div > span {
-
-
-        //Resizer
-        -moz-box-sizing: border-box;
-        -webkit-box-sizing: border-box;
-        box-sizing: border-box;
-        background: #000;
-        opacity: .2;
-        z-index: 1;
-        -moz-background-clip: padding;
-        -webkit-background-clip: padding;
-        background-clip: padding-box;
-
-        //Horizontal
-        border-bottom: 5px solid #999;
-        cursor: row-resize;
-        width: 100%;
-
-        //Vertical
-        border-right: 5px solid #999;
-        cursor: col-resize;
-        width: 0px;
-
-        &:hover {
-            border-bottom: 5px solid #777;
-        }
-
-        background-color: red;
-        &:hover {
-            position: relative;
-            //iframe is capturing mouse, so extend hit zone
-            border-top: 50px solid transparent;
-            margin-top: -50px;
-        }
-    }
-}
-
-
-
-
-:local(.welcome-bar) {
-    color: #333;
-    font-weight: bold;
-}
-
-@media (max-width: 992px) {
-    :local(.welcome-bar) {
-        & > div {
-            padding: 0 !important;
-        }
-    }
-}
-
-@media (min-width: 992px) {
-    :local(.welcome-bar) {
-        & > div {
-            padding-left: 15px;
-        }
-        & > div:first-child {
-            padding-left: 0 !important;
-        }
-        & > div:last-child {
-            padding-right: 0 !important;
-        }
-    }
-}
-
-:local(.user-icon) {
-    filter: invert(100%) brightness(40%) invert(100%) sepia(100%) saturate(100%) hue-rotate(180deg);
-}
-:local(.user-greeting-heading) {
-    margin-top: 15px;
-    margin-bottom: 10px;
-    padding-left: 20px;
-    font-size: 24px;
-}
-:local(.user-greeting-message) {
-    padding-left: 20px;
-}
-
 
 .main-panel-panel {
     background-color: whitesmoke;
@@ -153,48 +11,39 @@
     & > div > div {
         width: 100%;
     }
-}
-:local(.panel) {
-    & > div:first-child {
-        font-weight: bold;
-        text-transform: uppercase;
-        background-color: white;
+
+    .panel {
+        & > div:first-child {
+            font-weight: bold;
+            text-transform: uppercase;
+            background-color: white;
+        }
+
+
+        .investigations-buttons {
+            & > button:not(:first-child) {
+                margin-left: 5px;
+            }
+        }
+
+        .add-new-investigation {
+            &:not(:hover) {
+                background-color: white;
+                color: #337ab7;
+            }
+        }
+        .delete-investigations {
+            &:not(:hover) {
+                background-color: white;
+                color: #d9534f;
+            }
+        }
     }
+
 }
 
-:local(.investigation-table) {
-    & > div > div {
-        margin-left: 0px;
-        margin-right: 0px;
-        border: none;
-    }
-    & td:not(:first-child) {
-        border-left: 0px;
-    }
-    & td:not(:last-child) {
-        border-right: 0px;
-    }
-    & thead th {
-        border: none;
-    }
-}
-:local(.add-new-investigation) {
-    &:not(:hover) {
-        background-color: white;
-        color: #337ab7;
-    }
-}
-:local(.delete-investigations) {
-    &:not(:hover) {
-        background-color: white;
-        color: #d9534f;
-    }
-}
-:local(.investigations-buttons) {
-    & > button:not(:first-child) {
-        margin-left: 5px;
-    }
-}
+
+
 
 :root {
     --app-font-size: 12px;
@@ -210,394 +59,8 @@
 }
 
 
-.app {
-    display: block;
-    padding: 20px;
-}
-
-.frame {
-    width: 100%;
-    border: 1px solid black;
-    box-sizing: border-box;
-}
 
 
-td, th {
-
-    border-top: 1px solid aqua;
-}
-
-
-:local(.alert) {
-    position: absolute;
-    z-index: 100;
-    width: 100%;
-}
-
-
-.investigation-header {
-    position: static !important;
-    margin: 0;
-}
-
-.play-all {
-    width: 100%;
-    border-radius: 0;
-    border: 0px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.4);
-    box-shadow: 0 4px 4px 0px rgba(102, 102, 102, 0.5);
-}
-
-
-
-:local(.investigations-dropdownbutton) {
-    & > * {
-        width: 15em;
-        height: @investigation-header-height;
-        padding-top: @investigation-header-padding-top;
-        padding-right: 15px;
-        border-right: 1px solid @header-highlight-medium;
-    }
-    & > * > *:nth-child(2) {
-        border-radius: 10px;
-        margin-right: 15px;
-        background-color: @header-bg;
-        border-color: white;
-
-        span {
-            color: white !important; //input text
-        }
-    }
-
-    & > * > *:nth-child(3) {
-        word-wrap: break-word;
-        overflow-x: scroll;
-        width: 100%;
-        white-space: normal;
-    }
-
-    & > * > *:nth-child(2) > span:nth-child(2) > span {
-        border-color: @header-highlight transparent transparent; //arrow
-    }
-
-    & > *:not(.is-open) > div:nth-child(2) {
-        //input border
-        border-color: transparent;
-    }
-
-}
-
-:local(.investigation-header-buttons) {
-
-    float: right;
-    margin-right: -15px;
-    border-left: 1px solid @header-highlight-medium;
-
-    & > button {
-        margin: 0px !important;
-        height: @investigation-header-height;
-        border-radius: 0px !important;
-        background-color: transparent !important;
-        color: white !important;
-        border: 0px;
-        border-right: 1px solid @header-highlight-medium !important;
-        padding: 0px !important;
-        width: 90px;
-    }
-}
-
-
-:local(.investigationTabs) {
-
-    ul {
-
-        background-color: @header-bg;
-
-        li a {
-            margin-right: 0;
-            padding-top: 10px;
-            padding-bottom: 10px;
-            color: #E0E0E0;
-            border-radius: 0;
-            border: none !important;
-            &:hover {
-                color: #E0E0E0;
-                background-color: #ffffff;
-            }
-        }
-
-    }
-}
-
-.pivot-table {
-    height: ~"calc(100% - 84px)";
-    overflow: scroll;
-    background-color: #eeeeee;    
-}
-
-
-.pivots {
-    height: 100%;
-    position: relative;
-    thead th {
-        border: none;
-        text-align: center;
-        text-transform: uppercase;
-        font-weight: bold;
-        padding-right: 1.5em;
-        color: #777;
-    }
-    thead th:not(:first-child) {
-        border-left: 1px solid #ddd !important;
-    }
-
-    thead td:nth-child(2) {
-        text-align: right;
-    }
-
-    tbody tr {
-        background-color: #fff;
-        margin: 1em;
-        border-radius: 10px;
-        border: 1px solid #ddd;
-    }
-
-    tbody td {
-        vertical-align: middle !important;
-    }
-}
-
-:local(.investigation-data) {
-    margin: 0px;
-    border: 0px;
-    tbody td {
-        font-size: 12px;
-    }
-}
-
-
-.pivot-row {
-    background-color: #fff;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-    margin: 1em;
-    & > div {
-        margin: 1em;
-    }
-    :global(.panel-group) {
-        margin: 0px;        
-    }
-    :global(.panel-body) {
-        padding: 0;
-        & > div {
-            margin: 1em;
-        }
-    }
-}
-.pivot-row-header > * {
-    vertical-align: middle;
-}
-
-.pivotToggle {
-    width: 90px;
-    height: 50px;
-    th& {
-        padding: 0 !important;
-        & button {
-            padding: 0;
-            border: transparent;
-            width: 100%;
-            height: 100%;
-            border-radius: 0;
-        }
-    }
-    td& span {
-        font-weight: bold;
-        font-color: #777;
-        margin-right: 1em;
-    }
-    :global(.rc-switch) {
-        & {
-            zoom: 100%;
-        }
-        &:global(.rc-switch-checked) {
-            background: #76DD60;
-            border-color: #777;
-            border: none;
-        }
-    }
-    order: 1;
-    width: 50%;
-    border-top: none;
-    border: 1px solid purple;
-}
-:local(.pivotData0) {
-    width: 200px;
-    text-align: right;
-    order: 4;
-    width: 100%;
-    border-top: none;
-}
-.pivotTypeSelectorContainer {
-    display: inline-block;
-    width: ~"calc(100% - 8em)";
-    text-align: left;
-    font-weight: bold;
-    & > div > div:nth-child(2):not(:hover) {
-        border-width: 0;
-        background-color: transparent;
-        border-bottom: 1px dotted #aaaaaa;
-    }
-}
-:local(.pivotData1) {
-    //https://github.com/less/less.js/issues/974
-    width: ~"calc(100% - 570px)";
-    order: 5;
-    width: 100%;
-    padding: 5px;
-    border: 1px solid grey;
-
-    button {
-        font-weight: bold;
-        text-decoration: underline;
-        padding-bottom: 0px;
-    }
-    button:not(:hover) {
-        border-color: transparent;
-        background: transparent;
-    }
-    input {
-        border: 1px solid transparent !important;
-        border-bottom: 1px dotted rgba(85,85,85,0.5) !important;
-        font-weight: bold;
-        width: ~"calc(100% - 140px)";
-    }
-    input:hover, input:active, input:focus {
-        border: 1px solid #ddd !important;
-        border-radius: 15px;
-    }
-
-    label {
-        font-weight: normal;
-        //text-transform: uppercase;
-        text-align: right;
-        margin-left: 2px;
-        margin-right: 20px;
-    }
-
-}
-.pivot-number {
-    display: inline-block;
-    font-weight: bold;
-    font-size: 2em;
-    margin: 10px;
-}
-:local(.pivotEntitySummaries) {
-    display: inline-block;
-    text-align: left;
-    margin: 5px 10px 0px 0px;
-}
-:local(.pivotEntitySummary) {
-    display: inline-block;
-    overflow: hidden;
-    margin: 0 0 0 5px;
-    padding: 0 0 0 0;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
-    border: 1px solid #777;
-}
-@summaryPillHeight: 7px;
-:local(.pivotEntityPill) {
-    display: block;
-    height: @summaryPillHeight;
-    width: 100%;
-    border-bottom: 1px solid #777;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-}
-:local(.pivotEntityCount) {
-    font-weight: bold;
-    text-transform: uppercase;
-    font-size: 12px;
-    vertical-align: top;
-    display: inline-block;
-    margin-left: 2px;
-    color: #777;
-    border-right: 1px solid #777;
-    padding: 2px 3px 0px 3px;
-    height: 20px;
-
-    border-right: 1px solid #777;
-}
-:local(.pivotEntityName) {
-    font-weight: bold;
-    text-transform: uppercase;
-    font-size: 12px;
-    vertical-align: top;
-    display: block;
-    margin-left: 0px;
-    color: #777;
-    padding: 2px 5px 0px 5px;
-    height: 20px;
-    max-width: 70px;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-}
-
-:local(.pivotData2) {
-    display: none;
-}
-:local(.pivotData3) {
-    display: none;
-}
-:local(.pivotData4) {
-    display: none;
-}
-:local(.pivotResultCount) {
-    // this is the return item count
-    text-align: left;
-    span {
-        margin-top: @summaryPillHeight;
-    }
-    order: 10;
-    width: 20%;
-    border: 1px solid orange;
-}
-:local(.pivotResultSummaries) {
-    padding-left: 0px !important;
-    margin: 0 !important;
-    padding: 1em !important;
-    padding-left: 0px !important;
-    text-align: center;
-    border-top: 1px solid #ccc;
-    border-bottom: 1px solid #ccc;
-    width: 100%;
-
-    & > * {
-        vertical-align: middle;
-    }
-
-}
-:local(.result-count-on) { }
-:local(.result-count-off) {
-    opacity: 0.4;
-}
-:local(.pivotIcons) {
-    white-space: nowrap;
-    padding-left: 0px !important;
-    text-align: right;
-}
-.pivot-error-tooltip {
-}
-
-
-//gets rid of stubborn bootstrap border
-td {
-   // border: none !important;
-}
-
-//not sure why the opposing style has to be overriden? bootstrap thing?
 
 
 transition-container {
@@ -667,93 +130,65 @@ transition-container {
 :global(.DateRangePickerInput) {
 }
 
-:local(.pivotTextParam) {
-    order: 6;
-    width: 100%;
-    input {
-        border-radius: 10px;
-        border: 1px solid #ddd;
-        padding: 0.5em;
-        margin-left: 0.5em;
+
+
+
+
+@media (max-width: 992px) {
+    .welcome-bar {
+        & > div {
+            padding: 0 !important;
+        }
     }
 }
-:local(.pivotComboParam) {
-        order: 7;
-        width: 100%;
+@media (min-width: 992px) {
+    .welcome-bar {
+        & > div {
+            padding-left: 15px;
+        }
+        & > div:first-child {
+            padding-left: 0 !important;
+        }
+        & > div:last-child {
+            padding-right: 0 !important;
+        }
+    }
 }
-:local(.pivotMultiParam) {
-    order: 8;
-    width: 100%;
-}
-:local(.pivotDateRangeParam) {
-    order: 9;
-    width: 100%;
-}
-
-
-:global(.navbar){
-    position: absolute;
-}
-
-:global(.navbar-nav){
-    margin-left: 5% !important;
-}
-
-.placeholderWrapper {
-    //background-color: aqua;
-    height: 100%;
-    width: 100%;
-    position: relative;
-    margin: auto;
-}
-
-.placeholderMessage {
-    width: 100%;
-    margin-top: 40%;
-    text-align: center;
-    line-height: 100%;
-}
-
-.placeholderLogo img {
-    //background-color: red;
-    position: absolute;
-    margin: auto;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 200px;
-    height: 47px;
-    margin-right: 40%;
-    margin-bottom: 35%;
-}
-
-.placeholderLogo {
-}
-
-
-:local(.pivotTypeTitle) {
-   // background-color: aqua;
-    order: 3;
-    width: 100%;
-    padding: 0px !important;
-    margin-left: 20px !important;
-    text-transform: uppercase;
-    font-size: 9px;
-    letter-spacing: 1px;
-    font-weight: 900;
+.welcome-bar {
     color: #333;
+    font-weight: bold;
+
+    .user-icon {
+        filter: invert(100%) brightness(40%) invert(100%) sepia(100%) saturate(100%) hue-rotate(180deg);
+    }
+
+
+    .user-greeting-heading {
+        margin-top: 15px;
+        margin-bottom: 10px;
+        padding-left: 20px;
+        font-size: 24px;
+    }
+    .user-greeting-message {
+        padding-left: 20px;
+    }
+
 }
 
-:local(.pivotParamTitle) {
-   // background-color: aqua;
-    order: 5;
-    width: 100%;
-    padding: 0px !important;
-    margin-left: 20px !important;
-    text-transform: uppercase;
-    font-size: 9px;
-    letter-spacing: 1px;
-    font-weight: 900;
-    color: #333;
+
+.investigation-table {
+    & > div > div {
+        margin-left: 0px;
+        margin-right: 0px;
+        border: none;
+    }
+    & td:not(:first-child) {
+        border-left: 0px;
+    }
+    & td:not(:last-child) {
+        border-right: 0px;
+    }
+    & thead th {
+        border: none;
+    }
 }

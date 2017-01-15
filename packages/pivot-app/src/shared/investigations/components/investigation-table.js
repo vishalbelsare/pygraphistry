@@ -1,6 +1,6 @@
 import{ Button } from 'react-bootstrap';
 import InvestigationTags from './investigation-tags';
-import styles from 'pivot-shared/styles.less';
+import mainStyles from '../../styles.less';
 import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
 
 import logger from 'pivot-shared/logger.js';
@@ -72,7 +72,7 @@ export default function InvestigationTable({
     };
 
     return (
-        <div className={styles['investigation-table']}>
+        <div className={mainStyles['investigation-table']}>
             <BootstrapTable data={investigations.filter(Boolean)}
                             selectRow={selectRowProp}
                             cellEdit={cellEditProp}

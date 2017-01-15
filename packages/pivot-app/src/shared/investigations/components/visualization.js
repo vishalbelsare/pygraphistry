@@ -1,25 +1,25 @@
 import { ThreeBounce } from 'better-react-spinkit';
 import { Col, Row, Grid, Image } from 'react-bootstrap';
 import { GraphistryIframe } from './graphistry-iframe';
-import styles from 'pivot-shared/styles.less';
+import styles from './investigations.less';
 
 
 export default function VisualizationPanel({ investigation }) {
     const loadingGraph = (
-        <div>
+        <span>
             Loading graph <ThreeBounce size={10}/>
-        </div>
+        </span>
     );
 
     const runPivot = (
-        <div className={styles.placeholderMessage}>
+        <span>
             To get started, create and run a pivot!
-        </div>
+        </span>
     );
 
     const placeholder = (
-        <div className={styles.placeholderWrapper}>
-             <div className={styles.placeholderLogo}>
+        <div className={styles['placeholder-wrapper']}>
+             <div className={styles['placeholder-logo']}>
                 <Grid>
                     <Row>
                         <Col>
@@ -27,9 +27,11 @@ export default function VisualizationPanel({ investigation }) {
                         </Col>
                     </Row><Row>
                         <Col>
-                        {
-                            investigation.status.etling ? loadingGraph : runPivot
-                        }
+                            <div className={styles['placeholder-message']}>
+                                {
+                                    investigation.status.etling ? loadingGraph : runPivot
+                                }
+                            </div>
                         </Col>
                     </Row>
                 </Grid>

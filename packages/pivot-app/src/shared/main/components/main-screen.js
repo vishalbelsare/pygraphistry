@@ -1,5 +1,5 @@
 import WelcomeBar from './welcome-bar';
-import styles from 'pivot-shared/styles.less';
+import mainStyles from 'pivot-shared/styles.less';
 import { InvestigationTable } from 'pivot-shared/investigations';
 import { Panel, Button, Tooltip, Glyphicon, OverlayTrigger } from 'react-bootstrap';
 
@@ -62,12 +62,12 @@ function MainScreen({
     }
 
     return (
-        <Panel className={styles['main-panel-panel']}>
+        <Panel className={mainStyles['main-panel-panel']}>
             <WelcomeBar user={user}
                         numTemplates={numTemplates}
                         investigations={investigations}/>
-            <Panel header="Open Investigations" className={styles.panel}>
-                <div className={styles['investigations-buttons']}>
+            <Panel header="Open Investigations" className={mainStyles.panel}>
+                <div className={mainStyles['investigations-buttons']}>
                     <OverlayTrigger placement="top"
                                     overlay={
                                         <Tooltip id="AddNewInvestigationTooltip">
@@ -75,7 +75,7 @@ function MainScreen({
                                         </Tooltip>
                                     }>
                         <Button onClick={() => createInvestigation(user.id) }
-                                className={`btn-primary ${styles['add-new-investigation']}`}>
+                                className={`btn-primary ${mainStyles['add-new-investigation']}`}>
                             <Glyphicon glyph="plus"/>
                         </Button>
                     </OverlayTrigger>
@@ -86,7 +86,7 @@ function MainScreen({
                                         </Tooltip>
                                     }>
                         <Button onClick={deleteHandler}
-                                className={`btn-danger ${styles['delete-investigations']}`}>
+                                className={`btn-danger ${mainStyles['delete-investigations']}`}>
                             <Glyphicon glyph="trash"/>
                         </Button>
                     </OverlayTrigger>

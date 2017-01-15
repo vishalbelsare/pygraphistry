@@ -1,9 +1,8 @@
 import _ from 'underscore';
 import Select from 'react-select';
 import ComboSelector from './combo-selector';
-import { tcell as tableCellClassName } from 'pivot-shared/styles.less';
 import DateRangePickerWrapper from './TimeRangeWidget/TimeRangeWidget.js';
-import styles from 'pivot-shared/styles.less';
+import styles from './pivots.less';
 
 
 const componentsByInputType = {
@@ -24,7 +23,7 @@ export default function PivotCell({ paramUI, ...props }) {
 
 function TextCell({ id, paramKey, paramValue, paramUI, handlers }) {
      return (
-         <div className={tableCellClassName + ' ' + styles.pivotTextParam} key={`pcell-${id}-${paramKey}`}>
+         <div className={styles['pivot-text-param']} key={`pcell-${id}-${paramKey}`}>
             <label>{ paramUI.label }</label>
             <input
                 type='th'
@@ -85,7 +84,7 @@ function PivotCombo({ id, paramKey, paramValue, paramUI, previousPivots, handler
 
 function ComboCell({ id, paramKey, paramValue, paramUI, handlers }) {
     return (
-        <div className={styles.pivotComboParam} key={`pcell-${id}-${paramKey}`}>
+        <div className={styles['pivot-combo-param']} key={`pcell-${id}-${paramKey}`}>
             <ComboSelector pivotId={id}
                            fldKey={paramKey}
                            paramUI={paramUI}
@@ -101,7 +100,7 @@ function ComboCell({ id, paramKey, paramValue, paramUI, handlers }) {
 function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
     return (
         <div key={`pcell-${id}-${paramKey}`}
-            className={tableCellClassName + ' ' + styles.pivotMultiParam}>
+            className={styles['pivot-multi-param']}>
             <label>{ paramUI.label }</label>
             <Select id={`selector-${id}-${paramKey}`}
                     name={`selector-${id}-${paramKey}`}
@@ -123,7 +122,7 @@ function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
 
 function DateRange({ id, paramKey, paramValue, paramUI, handlers }) {
     return (
-        <div className={styles.pivotDateRangeParam} key={`pcell-${id}-${paramKey}`}>
+        <div className={styles['pivot-date-range-param']} key={`pcell-${id}-${paramKey}`}>
             <DateRangePickerWrapper
                 paramUI={paramUI}
                 paramValue={paramValue}

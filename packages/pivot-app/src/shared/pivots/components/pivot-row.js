@@ -4,7 +4,7 @@ import PivotCell from './pivot-cell';
 import PivotActions from './pivot-actions';
 import EntitySummaries from './entity-summaries';
 import TemplateSelector from './template-selector';
-import styles from 'pivot-shared/styles.less';
+import styles from './pivots.less';
 import { Badge, Tooltip, OverlayTrigger, Accordion, Panel } from 'react-bootstrap';
 
 export default function PivotRow({
@@ -65,7 +65,7 @@ export default function PivotRow({
                     </div>
 
                     {resultCount ?
-                    <div className={styles.pivotResultSummaries + ' ' + styles['result-count-' + (enabled ? 'on' : 'off')]}>
+                    <div className={styles['pivot-result-summaries'] + ' ' + styles['result-count-' + (enabled ? 'on' : 'off')]}>
                         <OverlayTrigger placement="top" overlay={
                             <Tooltip id={`resultCountTip_${id}_${rowIndex}`}>Events</Tooltip>
                         } key={`${rowIndex}: entitySummary_${id}`}>
@@ -79,7 +79,7 @@ export default function PivotRow({
                     </div>
                     : null}
 
-                    <div className={styles.pivotIcons}>
+                    <div className={styles['pivot-icons']}>
                         <PivotActions investigationId={investigationId} index={rowIndex} resultCount={resultCount} searchPivot={searchPivot}
                             insertPivot={insertPivot} splicePivot={splicePivot} status={status} numRows={pivots.length}/>
                     </div>

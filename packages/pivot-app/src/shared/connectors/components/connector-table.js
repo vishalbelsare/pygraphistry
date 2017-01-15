@@ -1,7 +1,7 @@
 import { ConnectorRow } from 'pivot-shared/connectors';
 import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
 
-import styles from 'pivot-shared/styles.less';
+import mainStyles from 'pivot-shared/styles.less';
 
 function nameFormatter(name) {
     return <span>{ name }</span>;
@@ -36,7 +36,7 @@ export default function ConnectorTable({ connectors = [], selectHandler }) {
     };
 
     return (
-        <div className={styles['investigation-table']}>
+        <div className={mainStyles['investigation-table']}>
             <BootstrapTable data={connectors.filter(Boolean)}
                             selectRow={selectRowProp}
                             striped={false}

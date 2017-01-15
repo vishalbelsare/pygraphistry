@@ -1,6 +1,6 @@
 import { InvestigationHeader } from '../index.js';
 import { PivotTable } from 'pivot-shared/pivots';
-import styles from 'pivot-shared/styles.less';
+import styles from './investigations.less';
 
 import {
     Alert,

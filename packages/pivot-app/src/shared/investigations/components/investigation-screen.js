@@ -1,7 +1,7 @@
 import _ from 'underscore';
 import SplitPane from 'react-split-pane';
 import Visualization from './visualization';
-import styles from 'pivot-shared/styles.less';
+import styles from './investigations.less';
 import { Investigation } from 'pivot-shared/investigations';
 
 
