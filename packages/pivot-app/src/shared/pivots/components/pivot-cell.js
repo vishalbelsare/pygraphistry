@@ -1,7 +1,6 @@
 import _ from 'underscore';
 import Select from 'react-select';
 import ComboSelector from './combo-selector';
-import { tcell as tableCellClassName } from './pivots.less';
 import DateRangePickerWrapper from './TimeRangeWidget/TimeRangeWidget.js';
 import styles from './pivots.less';
 

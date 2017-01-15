@@ -1,6 +1,5 @@
 import{ Button } from 'react-bootstrap';
 import InvestigationTags from './investigation-tags';
-import styles from './investigations.less';
 import mainStyles from '../../styles.less';
 import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
 

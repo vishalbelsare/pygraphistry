@@ -27,7 +27,7 @@ export default function VisualizationPanel({ investigation }) {
                         </Col>
                     </Row><Row>
                         <Col>
-                            <div  className={styles['placeholder-message']}>
+                            <div className={styles['placeholder-message']}>
                                 {
                                     investigation.status.etling ? loadingGraph : runPivot
                                 }

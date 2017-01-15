@@ -1,5 +1,4 @@
 import WelcomeBar from './welcome-bar';
-import styles from './styles.less';
 import mainStyles from 'pivot-shared/styles.less';
 import { InvestigationTable } from 'pivot-shared/investigations';
 import { Panel, Button, Tooltip, Glyphicon, OverlayTrigger } from 'react-bootstrap';
