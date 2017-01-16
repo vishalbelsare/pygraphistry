@@ -77,6 +77,8 @@ export default function PivotRow({
 
                     {resultCount ?
                     <div className={`${styles['pivot-result-summaries']} ${styles['result-count-' + (enabled ? 'on' : 'off')]}`}>
+                        <label>Events: </label>
+
                         <OverlayTrigger placement="top" overlay={
                             <Tooltip id={`resultCountTip_${id}_${rowIndex}`}>Events</Tooltip>
                         } key={`${rowIndex}: entitySummary_${id}`}>

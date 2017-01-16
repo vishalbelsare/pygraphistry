@@ -18,7 +18,7 @@ export default function PivotCell({ paramUI, ...props }) {
     if (!Component) {
         throw new Error('Unknown pivot cell type:' + paramUI.inputType);
     }
-    return <Component paramUI={paramUI} {...props}/>
+    return <div className={styles['pivot-cell']}><Component paramUI={paramUI} {...props}/></div>
 }
 
 function TextCell({ id, paramKey, paramValue, paramUI, handlers }) {
