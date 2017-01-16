@@ -31,6 +31,8 @@
 }
 
 
+
+@split-margin: 15px;
 .investigation-all {
 
     height: 100%;
@@ -40,6 +42,27 @@
 	    position: relative;
 	    height: 100%;
 	    background-color: #FBFBFB;
+
+        //3px withg +/- 10px hit region
+        :global(.Resizer.vertical) {
+            width: calc(@split-margin * 2 + 3px);
+            min-width: calc(@split-margin * 2 + 3px);
+
+            box-sizing: border-box;
+            background-clip: padding-box;
+
+            border-left: @split-margin solid @pivot-table-bg;
+            border-right: @split-margin solid @pivot-table-bg;
+
+            background: #ddd;
+            cursor: col-resize;
+
+            &:hover {
+                transition: all 1s ease;
+                border-left: @split-margin solid @pivot-table-fg-light;
+                border-right: @split-margin solid @pivot-table-fg-light;
+            }
+        }
 	}
 
 }

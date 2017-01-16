@@ -5,6 +5,10 @@
     overflow: scroll;
     background-color: @pivot-table-bg;
     color: @pivot-table-fg;
+
+    .pivot-cell + .pivot-cell {
+    	margin-top: 1em;
+    }
 }
 
 
@@ -141,7 +145,6 @@
 	    margin: 0 !important;
 	    padding: 1em !important;
 	    padding-left: 0px !important;
-	    text-align: center;
 	    border-top: 1px solid #ccc;
 	    border-bottom: 1px solid #ccc;
 	    width: 100%;
@@ -156,6 +159,18 @@
 		    opacity: 0.4;
 		}
 
+		label {
+			float: left;
+		    margin-left: 1em;
+		    margin-top: 10px;
+		    text-transform: uppercase;
+		    margin-right: 1em;
+		}
+
+		:global(.badge) {
+			margin-left: 1em;
+			margin-right: 1.5em;
+		}
 	}
 
 	.pivot-icons {
@@ -185,22 +200,36 @@
 }
 
 
-.pivoty-text-param,
-.pivotComboParam,
+.pivot-text-param,
+.pivot-combo-param, .pivot-combo-param :global(.form-inline),
 .pivot-multi-param,
 .pivot-date-range-param {
 	width: 100%;
 }
+.pivot-combo-param :global(.form-inline .form-group) {
+	width: 100% !important;
+}
 
-.pivot-text-param {
-    width: 100%;
-    input {
+.pivot-text-param,
+.pivot-combo-param :global(.form-group) {
+    display: flex;
+}
+
+.pivot-text-param, .pivot-combo-param {  
+    label {
+    	order: 1;
+    	margin-top: 10px;
+    }
+    input, select {
+    	order: 2;
+    	flex-grow: 1;
         border-radius: 10px;
         border: 1px solid #ddd;
         padding: 0.5em;
-        margin-left: 0.5em;
+        margin-left: 1em;
     }
 }
+
 
 @summaryPillHeight: 7px;
 .pivot-entity-summaries {
