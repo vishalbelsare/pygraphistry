@@ -3,21 +3,30 @@
 .pivot-table {
     height: ~"calc(100% - 84px)";
     overflow: scroll;
-    background-color: #eeeeee;    
+    background-color: @pivot-table-bg;
+    color: @pivot-table-fg;
 }
 
 
+
+@disabled-opacity: 0.5;
+
 .pivot-row {
-    background-color: #fff;
-    border-radius: 10px;
-    border: 1px solid #ddd;
     margin: 1em;
+    position: relative;
+
+    &.pivot-checked-false {
+	    .pivot-number {
+	    	opacity: @disabled-opacity;
+	    }
+	    .pivot-row-header-item:nth-child(3) {
+	    	opacity: @disabled-opacity;
+	    }
+	    
+    }
 
 
     //accordion weirdness
-    & > div {
-        margin: 1em;
-    }
     :global(.panel-group) {
         margin: 0px;        
     }
@@ -28,10 +37,46 @@
         }
     }
 
-    .pivot-row-header {
+    .pivot-row-header {    	
+
+    	height: 4em;
 	    
-	    & > * {
+	    .pivot-row-header-item {
 	    	vertical-align: middle;
+	    	margin-right: 0.5em;
+	    	display: inline-block;	  
+	    	height: 4em;
+	    }
+
+	    .pivot-row-header-item:nth-child(1) {
+	    	width: 2em;
+	    }
+	    .pivot-row-header-item:nth-child(2) {
+	    	width: 4em;
+	    }
+	    .pivot-row-header-item:nth-child(1),
+	    .pivot-row-header-item:nth-child(2) {
+	    	position: relative;
+		    margin: 0 !important;
+		    margin-right: 1em !important;
+		    padding: 0 !important;
+	    	& > * {
+			    position: relative;
+			    top: 50%;
+			    transform: translateY(-50%);
+			}
+	    }
+	    .pivot-row-header-item:nth-child(3) {
+	    	width: ~"calc(100% - 8em)";
+		    background-color: white;
+		    padding-left: 0.5em;
+		    padding-right: 0.5em;
+		    margin-right: 0em;
+		    border: 1px solid #ddd;
+		    position: absolute !important;
+		    right: 0em;		    
+		    border-top-left-radius: 1em;
+		    border-top-right-radius: 1em;
 	    }
 
 	    .pivot-number {
@@ -39,38 +84,97 @@
 		    font-weight: bold;
 		    font-size: 2em;
 		    margin: 10px;
+		    margin-top: 0;
+		    margin-bottom: 0;
 		}
 
-		.pivot-result-summaries {
-		    padding-left: 0px !important;
-		    margin: 0 !important;
-		    padding: 1em !important;
-		    padding-left: 0px !important;
-		    text-align: center;
-		    border-top: 1px solid #ccc;
-		    border-bottom: 1px solid #ccc;
-		    width: 100%;
-
-		    & > * {
-		        vertical-align: middle;
-		    }
-		}
-
-		.result-count-on { }
-		.result-count-off {
-		    opacity: 0.4;
-		}
-		.pivot-icons {
-		    white-space: nowrap;
-		    padding-left: 0px !important;
-		    text-align: right;
-		}
 	}
+
 }
 
+.pivot-expander {
+
+	.pivot-row.pivot-checked-false & {
+		opacity: @disabled-opacity;
+	}
+
+	display: block;
+    cursor: pointer;
+    background-color: #c2d4de;
+    color: white;
+    font-size: 1.5em;
+
+	.pivot-expander-open, 
+	.pivot-expander-closed {
+		display: none;
+	}
+	:global(.react-sanfona-item.react-sanfona-item-expanded) & .pivot-expander-open,
+	:global(.react-sanfona-item:not(.react-sanfona-item-expanded)) & .pivot-expander-closed {
+		display: inline-block;
+		margin-left: 0.25em;
+	}
+
+
+}
+
+.pivot-expander-body {
+
+    background-color: #fff;
+    border: 1px solid #ddd;
+	border-radius: 10px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    
+
+	.pivot-row.pivot-checked-false & {
+		opacity: @disabled-opacity;
+	}
+
+	& > * {
+		margin: 1em;
+	}
+
+	.pivot-params { }
+
+	.pivot-result-summaries {
+	    padding-left: 0px !important;
+	    margin: 0 !important;
+	    padding: 1em !important;
+	    padding-left: 0px !important;
+	    text-align: center;
+	    border-top: 1px solid #ccc;
+	    border-bottom: 1px solid #ccc;
+	    width: 100%;
+
+	    & > * {
+	        vertical-align: middle;
+	    }
+
+
+		&.result-count-on { }
+		&.result-count-off {
+		    opacity: 0.4;
+		}
+
+	}
+
+	.pivot-icons {
+	    white-space: nowrap;
+	    padding-left: 0px !important;
+	    text-align: right;
+	}	
+}
+
+
+
 .pivot-type-selector-container {
+
+	.pivot-row.pivot-checked-false & {
+		opacity: @disabled-opacity;
+	}
+
     display: inline-block;
-    width: ~"calc(100% - 8em)";
+    width: 100%;
     text-align: left;
     font-weight: bold;
     & > div > div:nth-child(2):not(:hover) {

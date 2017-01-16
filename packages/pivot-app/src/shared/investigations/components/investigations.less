@@ -13,12 +13,13 @@
 .pivots {
     height: 100%;
 
-    .play-all {
-	    width: 100%;
-	    border-radius: 0;
+    .play-all {	    
+		width: ~"calc(100% - 1em)";
+	    border-radius: 0.5em;
 	    border: 0px;
-	    border-bottom: 1px solid rgba(0, 0, 0, 0.4);
-	    box-shadow: 0 4px 4px 0px rgba(102, 102, 102, 0.5);
+	    border: 1px solid rgba(43, 43, 43, 0.4);
+	    margin-left: 0.5em;
+	    margin-right: 0.5em;
 	}
 
 	.alert {
@@ -92,6 +93,15 @@
 .investigation-header {
     position: static !important;
     margin: 0;
+    border: 0px;
+
+    background-color: @pivot-table-bg;
+    
+    color: @pivot-table-fg;    
+    &:global(.navbar-inverse .navbar-brand),
+    &:global(.navbar-inverse .navbar-nav>li>a) {
+	    color: inherit;
+	}
 }
 
 

@@ -5,7 +5,8 @@ import PivotActions from './pivot-actions';
 import EntitySummaries from './entity-summaries';
 import TemplateSelector from './template-selector';
 import styles from './pivots.less';
-import { Badge, Tooltip, OverlayTrigger, Accordion, Panel } from 'react-bootstrap';
+import { Badge, Tooltip, OverlayTrigger } from 'react-bootstrap';
+import { Accordion, AccordionItem } from 'react-sanfona';
 
 export default function PivotRow({
     id, investigationId, status,
@@ -20,34 +21,44 @@ export default function PivotRow({
     const previousPivots = pivots.slice(0, rowIndex);
 
     return (
-        <div id={"pivotRow" + id} className={styles['pivot-row']}>
-            
+        <div id={"pivotRow" + id} className={`${styles['pivot-row']} ${styles['pivot-checked-' + Boolean(enabled)]}`}>            
 
                 <div className={styles['pivot-row-header']}>
-                    <span className={styles['pivot-number']}>{ rowIndex }</span>
-                    <RcSwitch defaultChecked={false}
-                              checked={enabled}
-                              checkedChildren={'On'}
-                              onChange={(enabled) => {
-                                  const indices = enabled ? _.range(0, rowIndex + 1)
-                                                          : _.range(rowIndex, pivots.length);
-                                  togglePivots({indices, enabled, investigationId});
-                              }}
-                              unCheckedChildren={'Off'}
-                    />
+                    <span className={styles['pivot-row-header-item']}>
+                        <span className={styles['pivot-number']}>{ rowIndex }</span>
+                    </span>
+                    <span className={styles['pivot-row-header-item']}>
+                        <RcSwitch defaultChecked={false}
+                                  checked={enabled}
+                                  checkedChildren={'On'}
+                                  onChange={(enabled) => {
+                                      const indices = enabled ? _.range(0, rowIndex + 1)
+                                                              : _.range(rowIndex, pivots.length);
+                                      togglePivots({indices, enabled, investigationId});
+                                  }}
+                                  unCheckedChildren={'Off'}
+                        />
+                    </span>
 
                     {
                         pivotTemplate && templates &&
-                        <TemplateSelector id={id}
+                        <span className={styles['pivot-row-header-item']}><TemplateSelector id={id}
                                           templates={templates}
                                           pivotTemplate={pivotTemplate}
-                                          setPivotAttributes={setPivotAttributes}/>
+                                          setPivotAttributes={setPivotAttributes}/></span>
                         || undefined
                     }
                 </div>
-                <Accordion><Panel header="↓" eventKey='1'>
+                <Accordion><AccordionItem
+                        title={
+                            <span className={styles['pivot-expander']}>
+                                <i className={`fa fa-fw fa-caret-down ${styles['pivot-expander-open']}`} />
+                                <i className={`fa fa-fw fa-caret-right ${styles['pivot-expander-closed']}`} />
+                            </span>
+                        }                        
+                    ><div className={styles['pivot-expander-body']}>
 
-                    <div>
+                    <div className={styles['pivot-params']}>
 
                         {
                             pivotTemplate && pivotTemplate.pivotParameterKeys && pivotTemplate.pivotParametersUI &&
@@ -65,7 +76,7 @@ export default function PivotRow({
                     </div>
 
                     {resultCount ?
-                    <div className={styles['pivot-result-summaries'] + ' ' + styles['result-count-' + (enabled ? 'on' : 'off')]}>
+                    <div className={`${styles['pivot-result-summaries']} ${styles['result-count-' + (enabled ? 'on' : 'off')]}`}>
                         <OverlayTrigger placement="top" overlay={
                             <Tooltip id={`resultCountTip_${id}_${rowIndex}`}>Events</Tooltip>
                         } key={`${rowIndex}: entitySummary_${id}`}>
@@ -84,7 +95,7 @@ export default function PivotRow({
                             insertPivot={insertPivot} splicePivot={splicePivot} status={status} numRows={pivots.length}/>
                     </div>
 
-                </Panel></Accordion>
+                </div></AccordionItem></Accordion>
             
         </div>
     );
