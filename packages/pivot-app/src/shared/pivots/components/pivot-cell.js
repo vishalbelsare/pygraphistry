@@ -102,7 +102,7 @@ function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
         <div key={`pcell-${id}-${paramKey}`}
             className={styles['pivot-multi-param']}>
             <label>{ paramUI.label }</label>
-            <Select id={`selector-${id}-${paramKey}`}
+            <Select.Creatable id={`selector-${id}-${paramKey}`}
                     name={`selector-${id}-${paramKey}`}
                     clearable={true}
                     labelKey="name"

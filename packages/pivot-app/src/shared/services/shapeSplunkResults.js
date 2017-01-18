@@ -89,7 +89,7 @@ function encodeGraph({ app, pivot }) {
 }
 
 function extractAllNodes(connections) {
-    return (connections === undefined) 
+    return (connections === undefined)
             || (connections.length === 0)
             || (connections.indexOf('*') !== -1)
 }
