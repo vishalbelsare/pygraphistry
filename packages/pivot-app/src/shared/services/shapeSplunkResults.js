@@ -1,6 +1,8 @@
 import { simpleflake } from 'simpleflakes';
 import _ from 'underscore';
 import { categoryToColorInt, intToHex } from '../services/support/palette.js';
+import logger from '../../shared/logger.js';
+const log = logger.createLogger(__filename);
 
 //Do not make these nodes in '*' mode
 const SKIP = {
@@ -86,10 +88,16 @@ function encodeGraph({ app, pivot }) {
     return ({ app, pivot });
 }
 
+function extractAllNodes(connections) {
+    return (connections === undefined)
+            || (connections.length === 0)
+            || (connections.indexOf('*') !== -1)
+}
+
 function shapeHyperGraph({ app, pivot } ) {
     const { events, template } = pivot;
     const { attributes, connections } = template;
-    const isStar = (connections === undefined) || (connections.indexOf('*') !== -1);
+    const isStar = extractAllNodes(connections);
 
     const edges = [];
     const nodeLabels = [];
