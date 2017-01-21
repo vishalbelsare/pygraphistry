@@ -31,6 +31,10 @@ import conf from './config.js';
 import logger from '../shared/logger.js';
 const log = logger.createLogger(__filename);
 
+import { HealthChecker } from './HealthChecker.js';
+const healthcheck = HealthChecker();
+
+
 Error.stackTraceLimit = 3;
 
 const buildNum = __BUILDNUMBER__ === undefined ? 'local build' : `build #${__BUILDNUMBER__}`;
@@ -125,8 +129,15 @@ function setupRoutes(modules, getDataSource) {
         expressApp.use(`/${root}`, router);
     });
 
+    expressApp.get('/pivot/healthcheck', function(req, res) {
+        const health = healthcheck();
+        log.info({...health, req, res}, 'healthcheck');
+        res.status(health.clear.success ? 200 : 500).json({...health.clear});
+    });
+
     expressApp.get('/', (req, res) => res.redirect('/home'));
     expressApp.get('*', (req, res) => res.status(404).send('Not found'));
+
 }
 
 function setupSocketRoutes(getDataSource) {
