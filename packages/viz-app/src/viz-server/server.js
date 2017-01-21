@@ -18,11 +18,20 @@ import { nocache, allowCrossOrigin } from './middleware';
 export const config = _config();
 export const logger = commonLogger.createLogger('viz-server:server');
 
+import { HealthChecker } from './HealthChecker.js';
+const healthcheck = HealthChecker();
+
 export function start() {
 
     const app = express();
     const appRoute = Observable.bindCallback(app);
     const appRouteHandler = ({ request, response }) => appRoute(request, response);
+
+    app.get('/vizapp/healthcheck', function(req, res) {
+        const health = healthcheck();
+        logger.info({...health, req, res}, 'healthcheck');
+        res.status(health.clear.success ? 200 : 500).json({...health.clear});
+    });
 
     const server = new RxHTTPServer();
     const socketServer = new SocketIOServer(server, { serveClient: false });
