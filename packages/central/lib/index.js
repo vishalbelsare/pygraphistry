@@ -16,7 +16,7 @@ import { pickWorker } from './worker-router.js';
 import { logClientError } from './logClientError.js';
 import { initWorkbookApi } from './rest-api';
 
-import { HealthChecker } from './healthCheck.js';
+import { HealthChecker } from './HealthChecker.js';
 const healthcheck = HealthChecker();
 
 import { Server as httpServer } from 'http';
@@ -43,7 +43,7 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
 
 
     //TODO worker info
-    app.get('/healthcheck', function(req, res) {
+    app.get('/central/healthcheck', function(req, res) {
         const health = healthcheck();
         logger.info({...health, req, res}, 'healthcheck');
         res.status(health.clear.success ? 200 : 500).json({...health.clear});
