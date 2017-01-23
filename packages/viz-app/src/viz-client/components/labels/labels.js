@@ -1,4 +1,5 @@
 import _ from 'underscore';
+import Color from 'color';
 import React, { PropTypes } from 'react';
 import classNames from 'classnames';
 import { Gestures } from 'rxjs-gestures';
@@ -18,7 +19,7 @@ import {
     mapPropsStream
 } from 'recompose';
 
-import { Label } from './label';
+import { Label, isDark } from './label';
 
 const WithPointsAndMousePosition = mapPropsStream((props) => props
     .combineLatest(
@@ -86,6 +87,7 @@ class Labels extends React.Component {
         let { mouseX, mouseY, onLabelsUpdated,
               highlight = null, selection = null,
               renderState = null, renderingScheduler = null,
+              renderer,
               labels = [], sizes = [], pointColors = [], edgeColors = [], points = [], children = []
         } = this.props;
 
@@ -164,6 +166,7 @@ class Labels extends React.Component {
         return (
             <div className={classNames({
                 [styles['labels-container']]: true,
+                [styles['labels-container-dark']]: isDark(Color(renderer.background.color).rgb()),
                 [styles['labels-zoomed-in']]: scalingFactor > 2})}>
                 {childrenToRender}
             </div>

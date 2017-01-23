@@ -193,16 +193,19 @@ export class Label extends React.Component {
     }
 }
 
+export function isDark ({r,g,b}) {
+    const lumens = 0.299 * r + 0.587 * g + 0.114 * b;
+    return lumens <= 0.5 * 255;
+}
+
 function PointIcon({ iconClass, pointColor, pointRgb, iconSize, type }) {
     if (!iconClass || type !== 'point' || iconSize <= 15) {
         return null;
     }    
 
-    const lumens = 0.299 * pointRgb.r + 0.587 * pointRgb.g + 0.114 * pointRgb.b;
-
     return <div className={classNames({
                 [styles['point-icon-container']]: true,
-                [styles['light-color']]: lumens > 0.5 * 255})}
+                [styles['light-color']]: !isDark(pointRgb)})}
             style={{
                 backgroundColor: pointColor, 
                 top: `calc(-${iconSize}px - 10px)`,
