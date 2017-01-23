@@ -29,7 +29,9 @@ export default function Investigation({
                         onClick={() =>
                             graphInvestigation({investigationId: id, length: pivots.length}
                         )}>
-                    <Glyphicon glyph="play" />
+                    Run All
+                   { ' ' }
+                    <Glyphicon glyph="play" style={{fontSize: 'x-small'}}/>
                 </Button>
             </OverlayTrigger>
             { status && !status.ok ?
