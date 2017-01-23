@@ -24,7 +24,7 @@ const reducers = {
     'embed-workbook': embedWorkbook,
     'fullscreen-workbook': fullscreenWorkbook,
     'toggle-filters': toggleFilters,
-    'toggle-timebar': toggleTimebar,
+    // 'toggle-timebar': toggleTimebar,
     'toggle-inspector': toggleInspector,
     'toggle-histograms': toggleHistograms,
     'toggle-exclusions': toggleExclusions,
@@ -173,20 +173,20 @@ function toggleHistograms({ falcor, selected }) {
     }
 }
 
-function toggleTimebar({ falcor, selected }) {
-    if (selected) {
-        return falcor.set(
-            $value(`panels.bottom`, undefined),
-            $value(`timebar.controls[0].selected`, false)
-        );
-    } else {
-        return falcor.set(
-            $value(`timebar.controls[0].selected`, true),
-            $value(`inspector.controls[0].selected`, false),
-            $value(`panels.bottom`, $ref(falcor._path.concat(`timebar`)))
-        );
-    }
-}
+// function toggleTimebar({ falcor, selected }) {
+//     if (selected) {
+//         return falcor.set(
+//             $value(`panels.bottom`, undefined),
+//             $value(`timebar.controls[0].selected`, false)
+//         );
+//     } else {
+//         return falcor.set(
+//             $value(`timebar.controls[0].selected`, true),
+//             $value(`inspector.controls[0].selected`, false),
+//             $value(`panels.bottom`, $ref(falcor._path.concat(`timebar`)))
+//         );
+//     }
+// }
 
 function toggleInspector({ falcor, selected }) {
     if (selected) {
@@ -197,7 +197,7 @@ function toggleInspector({ falcor, selected }) {
     } else {
         return falcor.set(
             $value(`inspector.controls[0].selected`, true),
-            $value(`timebar.controls[0].selected`, false),
+            // $value(`timebar.controls[0].selected`, false),
             $value(`panels.bottom`, $ref(falcor._path.concat(`inspector`)))
         );
     }

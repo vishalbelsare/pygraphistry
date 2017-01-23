@@ -23,12 +23,12 @@ let View = ({
     sceneTouchStart,
     selectToolbarItem,
     selectInspectorRow,
-    scene = {}, labels = {},
-    panels = {}, toolbar = {},
+    scene = [], labels = [],
+    panels = [], toolbar = [],
     onSelectedPointTouchStart,
     onSelectionMaskTouchStart
 } = {}) => {
-    const { left = {}, right = {}, bottom = {} } = panels;
+    const { left = [], right = [], bottom = [] } = panels;
     const isLeftPanelOpen = left && left.id !== undefined;
     const isRightPanelOpen = right && right.id !== undefined;
     const isBottomPanelOpen = bottom && bottom.id !== undefined;
@@ -66,11 +66,21 @@ let View = ({
                   position='bottom'
                   isVisible={isBottomPanelOpen}
                   defaultSize={1 - (1/Math.sqrt(2))}>
+            {({ position, isResizing, size, isVisible }) => (
                 <Panel side='bottom'
                        data={bottom}
                        key='bottom-panel'
-                       isOpen={isBottomPanelOpen}
-                       selectInspectorRow={selectInspectorRow}/>
+                       colWidth={150}
+                       rowHeight={30}
+                       colHeaderWidth={0}
+                       rowHeaderHeight={30}
+                       width={window.innerWidth}
+                       selectInspectorRow={selectInspectorRow}
+                       height={size * window.innerHeight - 62}
+                       isOpen={isVisible && isBottomPanelOpen}
+                       style={{ width: window.innerWidth,
+                                height: size * window.innerHeight }}/>
+            )}
             </Dock>
             <Toolbar key='toolbar' data={toolbar} selectToolbarItem={selectToolbarItem}/>
         </div>

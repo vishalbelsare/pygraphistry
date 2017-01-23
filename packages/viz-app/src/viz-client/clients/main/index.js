@@ -81,7 +81,6 @@ function initSocket(options, workbook) {
 function getAppModel(options, socket) {
     const model = new Model({
         recycleJSON: true,
-        // materialized: true,
         cache: getAppCache(),
         treatErrorsAsValues: true,
         scheduler: Scheduler.async,

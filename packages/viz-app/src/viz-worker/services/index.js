@@ -14,7 +14,7 @@ import { Observable } from 'rxjs';
 import { loadLabels } from './labels';
 import { loadVGraph } from './vgraph';
 import { appendColumn, maskDataframe, tickLayout } from './dataframe';
-import { readSelection } from './inspector';
+import { loadRows, filterRows } from './inspector';
 import { loadViews, moveSelectedNodes } from './views';
 import { loadWorkbooks, saveWorkbookService } from './workbooks';
 import { sendFalcorUpdate } from './sendFalcorUpdate';
@@ -39,6 +39,8 @@ export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }
     const loadHistogramsById = loadHistograms(loadViewsById);
     const loadLabelsByIndexAndType = loadLabels(loadViewsById);
     const setLayoutControlById = setLayoutControl(loadViewsById);
+    const filterRowsByQuery = filterRows(loadViewsById);
+    const loadRowsByIndexAndType = loadRows(loadViewsById);
     const loadSelectionHistogramsById = loadSelectionHistograms(loadViewsById);
 
     const addExpressionImpl = addExpression(loadViewsById);
@@ -56,7 +58,9 @@ export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }
         loadWorkbooksById,
 
         saveWorkbook,
+        filterRowsByQuery,
         loadHistogramsById,
+        loadRowsByIndexAndType,
         loadLabelsByIndexAndType,
         loadSelectionHistogramsById,
 
@@ -75,8 +79,6 @@ export function services({ config, s3WorkbookCache, nBodiesById, workbooksById }
         updateExpressionById,
         removeExpressionById,
         addExpression: addExpressionImpl,
-
-        readSelection,
 
         removeHistogramById,
         addHistogram: addHistogramImpl,

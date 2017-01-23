@@ -57,6 +57,7 @@ export const Sparkline = ({ name, yScale, children, componentType,
                             })}>
                         <i className={classNames({
                             'fa': true,
+                            'fa-fw': true,
                             'fa-spin': loading,
                             'fa-times': !loading,
                             'fa-spinner': loading,

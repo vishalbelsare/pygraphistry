@@ -18,8 +18,8 @@ export const setInspectorPage = (page) => {
     return {page, type: SET_INSPECTOR_PAGE};
 };
 
-export const setInspectorSortKey = (key) => {
-    return {key, type: SET_INSPECTOR_SORT_KEY};
+export const setInspectorSortKey = (sortKey) => {
+    return {sortKey, type: SET_INSPECTOR_SORT_KEY};
 };
 
 export const setInspectorSortOrder = (order) => {

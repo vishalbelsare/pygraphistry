@@ -1,21 +1,10 @@
-import { Observable } from 'rxjs';
-
-import {
-    ref as $ref,
-    atom as $atom,
-    pathValue as $value
-} from '@graphistry/falcor-json-graph';
-import Color from 'color';
-import { getHandler,
-         setHandler,
-         mapObjectsToAtoms,
-         captureErrorStacks } from 'viz-shared/routes';
-
-import _ from 'underscore';
-
+import sanitizeHTML from 'sanitize-html';
+import { Observable } from 'rxjs/Observable';
+import { getHandler, setHandler } from 'viz-shared/routes';
+import { $ref, $value, $invalidate } from '@graphistry/falcor-json-graph';
 
 export function inspector(path, base) {
-    return function inspector({ loadViewsById, readSelection }) {
+    return function inspector({ loadViewsById, filterRowsByQuery, loadRowsByIndexAndType }) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
@@ -26,200 +15,85 @@ export function inspector(path, base) {
             set: setValues,
             route: `${base}['inspector']['open', 'openTab', 'length', 'id', 'name', 'templates', 'currentQuery']`,
         }, {
-            returns: `*`,
-            get: getValues,
-            set: setValues, //should update rows..
-            route: `${base}['inspector'].queries[{keys}][{keys}]`,
-        }, {
             get: getValues,
             route: `${base}['inspector'].controls[{keys}]`
+        }, {
+            returns: `*`,
+            get: getValues,
+            set: setValues,
+            route: `${base}['inspector'].queries[{keys}][{keys}]`
         }, {
             get: getValues,
             set: setValues,
             route: `${base}['inspector'].controls[{keys}][{keys}]`
         }, {
-            returns: `*`,
-            get: searchCount.bind(null, {loadViewsById, readSelection}),
-            route: `${base}['inspector'].rows[{keys:openTabs}][{keys:searchTerms}][{keys:sortKeys}][{keys:sortOrders}].count`
+            get: getRowsByTypeAndIndex,
+            route: `${base}['componentsByType']['point', 'edge'].rows[{integers}][{keys: columnNames}]`
         }, {
-            returns: `*`,
-            get: searchRows.bind(null, {loadViewsById, readSelection}),
-            route: `${base}['inspector'].rows[{keys:openTabs}][{keys:searchTerms}][{keys:sortKeys}][{keys:sortOrders}][{ranges:rows}][{keys:fields}]`
+            get: getRowLengthOrValueRefsByQuery,
+            route: `${base}['inspector'].rows['point', 'edge'].length`
+        }, {
+            get: getRowLengthOrValueRefsByQuery,
+            route: `${base}['inspector'].rows['point', 'edge'][{integers}]`
+        }, {
+            get: getRowLengthOrValueRefsByQuery,
+            route: `${base}['inspector'].rows['point', 'edge'][{keys: sortKeys}].length`
+        }, {
+            get: getRowLengthOrValueRefsByQuery,
+            route: `${base}['inspector'].rows['point', 'edge'][{keys: sortKeys}][{integers}]`
+        }, {
+            get: getRowLengthOrValueRefsByQuery,
+            route: `${base}['inspector'].rows['point', 'edge'][{keys: sortKeys}][{keys: sortOrders}].length`
+        }, {
+            get: getRowLengthOrValueRefsByQuery,
+            route: `${base}['inspector'].rows['point', 'edge'][{keys: sortKeys}][{keys: sortOrders}][{integers}]`
+        }, {
+            get: getRowLengthOrValueRefsByQuery,
+            route: `${base}['inspector'].rows['point', 'edge'][{keys: sortKeys}][{keys: sortOrders}][{keys: searchTerms}].length`
+        }, {
+            get: getRowLengthOrValueRefsByQuery,
+            route: `${base}['inspector'].rows['point', 'edge'][{keys: sortKeys}][{keys: sortOrders}][{keys: searchTerms}][{integers}]`
         }];
-    }
-}
 
-//====== HELPERS ====
-function queryPage ({readSelection}, {view, openTab, range, searchTerm, sortKey, sortOrder}) {
-    const {from, to} = range;
+        function getRowsByTypeAndIndex(rowsPath) {
 
-    const perPage = to - from + 1;
-    const page = 1 + Math.floor(to / perPage);
+            const componentTypes = [].concat(rowsPath[rowsPath.length - 4]);
 
-    let { selection: { mask: rect } = {} } = view;
+            const getRowsByIndexAndTypeHandler = getHandler(path, (context) => loadRowsByIndexAndType({
+                ...context, componentTypes
+            }));
 
-    if (!rect || !rect.tl || !rect.br) {
-        rect = { all: true };
-    }
-
-    const query =
-        {
-            type: openTab === 'points' ? 'point' : 'edge',
-            query: {
-                sel: rect,
-                page: page,
-                per_page: to - from + 1,
-                sort_by: !sortKey ? null : sortKey,
-                order: sortOrder,
-                search: searchTerm
-            }
-        };
-    return readSelection({view, ...query });
-}
-
-function generateQueries(
-        {workbook, view},
-        {openTabs, searchTerms, sortKeys, sortOrders, rows, fields}) {
-
-    return openTabs.reduce((values, openTab) =>
-            searchTerms.reduce((values, searchTerm) =>
-                sortKeys.reduce((values, sortKey) =>
-                    sortOrders.reduce((values, sortOrder) =>
-                        rows.reduce((values, range) =>
-                            values.concat(
-                                [{workbook, view,
-                                 openTab,
-                                 searchTerm: searchTerm.slice('search-'.length),
-                                 sortKey: sortKey.slice('sort-'.length),
-                                 sortOrder, range, fields}]),
-                        values),
-                    values),
-                values),
-            values),
-        []);
-}
-
-function genPathPrefix (basePath, {openTab, searchTerm, sortKey, sortOrder}) {
-    return [
-        'workbooksById', [basePath[1][0]], 'viewsById', [basePath[3][0]],
-        'inspector', 'rows',
-        [openTab], [`search-${searchTerm||''}`], [`sort-${sortKey||''}`], [sortOrder]
-    ];
-}
-
-//////////// ROW QUERY
-
-
-//TODO also return count path, even though not part of the explicit request
-function pageToRows (
-        {basePath},
-        {workbook, view, openTab, searchTerm, sortKey, sortOrder, range, fields},
-        page) {
-
-    //{...range: { ...fields} }
-    const fragment =
-        _.object(
-            page.values.map((v,idx)=> range.from + idx),
-            page.values.map((o) => _.pick(o, fields)));
-
-    //[openTab, `search-`, `sort-`, sortOrder]
-    const midFragment = {
-        [openTab]: {
-            [`search-${searchTerm||''}`]: {
-                [`sort-${sortKey||''}`]: {
-                    [sortOrder]: fragment } } } };
-
-    //basePath
-    const fullFragment = {
-        workbooksById: {
-            [basePath[1][0]]: {
-                viewsById: {
-                    [basePath[3][0]]: {
-                        inspector: {
-                            rows: midFragment } } } } } };
-
-    const prefix = genPathPrefix(basePath, {openTab, searchTerm, sortKey, sortOrder});
-
-    const paths = [ prefix.concat([ [range], fields]) ];
-
-    return {paths, jsonGraph: fullFragment };
-}
-
-function searchRows ({loadViewsById, readSelection}, path) {
-
-    const basePath = path.slice(0, path.length - 6);
-    const workbookIds = [].concat(path[1]);
-    const viewIds = [].concat(path[3]);
-    const { openTabs, searchTerms, sortKeys, sortOrders, rows, fields } = path;
-
-    return loadViewsById({
-        workbookIds, viewIds
-    })
-    .mergeMap(({ workbook, view }) => {
-
-        const queries = generateQueries(
-            {workbook, view},
-            {openTabs, searchTerms, sortKeys, sortOrders, rows, fields});
-
-        const searches =
-            queries.map((query) =>
-                queryPage({readSelection}, query)
-                    .map(pageToRows.bind(null, {basePath}, query)));
-
-        return Observable.merge(...searches);
-
-    });
-};
-
-
-
-//////////// COUNT QUERY
-
-
-function pageToCount (
-        basePath,
-        {workbook, view,
-         openTab, searchTerm, sortKey, sortOrder, range, fields },
-         page) {
-
-    const prefix = genPathPrefix(basePath, {openTab, searchTerm, sortKey, sortOrder});
-    const paths = prefix.concat(['count']);
-
-    return $value(paths, page.count);
-}
-
-
-function searchCount ({loadViewsById, readSelection}, path) {
-
-    const basePath = path.slice(0, path.length - 6);
-    const workbookIds = [].concat(path[1]);
-    const viewIds = [].concat(path[3]);
-
-    const {openTabs, searchTerms, sortKeys, sortOrders} = path;
-    const rows = [ {from: 0, to: 1} ];
-    const fields = [];
-
-    return loadViewsById({
-        workbookIds, viewIds
-    })
-    .mergeMap(({ workbook, view }) => {
-
-        const { nBody: { vgraphLoaded } = {} } = view;
-
-        if (!vgraphLoaded) {
-            return [$value([], 0)];
+            return getRowsByIndexAndTypeHandler.call(this, rowsPath).map(({ path, value }) => {
+                if (typeof value === 'string') {
+                    value = sanitizeHTML(decodeURIComponent(value));
+                }
+                return { path, value };
+            });
         }
 
-        const queries = generateQueries(
-            {workbook, view},
-            {openTabs, searchTerms, sortKeys, sortOrders, rows, fields});
+        function getRowLengthOrValueRefsByQuery(rowsPath) {
 
-        const searches =
-            queries.map((query) =>
-                queryPage({readSelection}, query)
-                    .map(pageToCount.bind(null, basePath, query)));
+            const { sortKeys, sortOrders, searchTerms } = rowsPath;
+            const componentTypes = [].concat(rowsPath[rowsPath.length -
+                Number(Boolean(searchTerms)) -
+                Number(Boolean(sortOrders)) -
+                Number(Boolean(sortKeys)) -
+                2
+            ]);
 
-        return Observable.merge(...searches);
+            const getRowValuesHandler = getHandler(path, (context) => filterRowsByQuery({
+                ...context, componentTypes, searchTerms, sortKeys, sortOrders
+            }));
 
-    });
+            return getRowValuesHandler.call(this, rowsPath).map(({ path, value }) => {
+                if (path[path.length - 1] !== 'length') {
+                    const rowsKeyIndex = path.indexOf('rows');
+                    const componentType = path[rowsKeyIndex + 1];
+                    const basePath = path.slice(0, rowsKeyIndex - 1);
+                    value = $ref(basePath.concat('componentsByType', componentType, 'rows', value._selectionIndex));
+                }
+                return { path, value };
+            });
+        }
+    }
 }

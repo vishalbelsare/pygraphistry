@@ -9,7 +9,7 @@ import { toolbar } from './toolbar';
 import { selection } from './selection';
 import { workbooks } from './workbooks';
 import { scene, camera } from './scene';
-import { inspector, timebar } from './panels';
+import { inspector } from './panels';
 
 import { Observable } from 'rxjs/Observable';
 import { mapObjectsToAtoms, captureErrorStacks } from 'viz-shared/routes';
@@ -37,7 +37,6 @@ export function routes(services) {
         layout(['workbook', 'view'], `${view}`)(services),
         selection(['workbook', 'view'], `${view}`)(services),
 
-        timebar(['workbook', 'view'], `${view}`)(services),
         inspector(['workbook', 'view'], `${view}`)(services),
 
         filters(['workbook', 'view'], `${view}`)(services),

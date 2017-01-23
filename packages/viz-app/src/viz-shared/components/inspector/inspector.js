@@ -1,156 +1,152 @@
-import _ from 'underscore';
 import styles from './styles.less';
 import classNames from 'classnames';
-import React, { PropTypes } from 'react';
+import { DataGrid } from 'viz-shared/components/data-grid';
+import { Pagination } from 'viz-shared/components/pagination';
 import { ColumnPicker } from 'viz-shared/components/column-picker';
-import { Tab, Tabs, Table, Pagination, FormGroup, FormControl, InputGroup, Button } from 'react-bootstrap';
+import {
+    Tab, Tabs, Row, Col, Grid, Table,
+    Button, FormGroup, FormControl, InputGroup
+} from 'react-bootstrap';
 
-const propTypes = {
-    templates: React.PropTypes.array, //possible
-    columns: React.PropTypes.array, //render
-    rows: React.PropTypes.array,
-    openTab: React.PropTypes.string,
-    searchTerm: React.PropTypes.string,
-    sortKey: React.PropTypes.string,
-    sortOrder: React.PropTypes.string,
-    toggleColumnSort: React.PropTypes.func,
-    numPages: React.PropTypes.number,
-    page: React.PropTypes.number,
-    rowsPerPage: React.PropTypes.number,
-    onSelect: React.PropTypes.func,
-    onRowSelect: React.PropTypes.func,
-    onPageSelect: React.PropTypes.func,
-    onColumnsSelect: React.PropTypes.func,
-    onSearch: React.PropTypes.func
-};
-
-const datatablePropTypes =
-    _.extend(
-        {entityType: React.PropTypes.string},
-        propTypes);
-
-class DataTable extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    render () {
-
-        const onRowSelect = this.props.onRowSelect;
-        const { rows: visibleRows = [] } = this.props;
-        const componentType = this.props.openTab === 'points' ? 'point' : 'edge';
-
-        const firstRow = this.props.rowsPerPage * (this.props.page - 1);
-
-        const { templates, columns = [], entityType, dataLoading, searchTerm } = this.props;
-        const renderColumns = columns.length && columns[0] ? columns : templates;
-        const templatesArray = _.range(0, templates.length).map((i) => templates[i]);
-
-        return (
-            <div>
-                <div className={styles['inspector-table-header']}>
-
-                    {
-                        <InputGroup style={{marginRight: '1em'}}>
-                            <FormControl type="text"
-                                value={this.props.searchTerm || ''} placeholder="Search"
-                                onChange={(e) => this.props.onSearch(e.target.value) }
-                                />
-                        </InputGroup>
-                    }
-
-                     <Pagination
-                        prev
-                        next
-                        first
-                        last
-                        ellipsis
-                        boundaryLinks
-                        items={this.props.numPages}
-                        maxButtons={5}
-                        activePage={this.props.page}
-                        onSelect={this.props.onPageSelect} />
-
-                    <span style={{ float: 'right' }}>
-                        <ColumnPicker
-                            id="InspectorColumnPicker"
-                            placeholder="Pick columns"
-                            value={columns}
-                            loading={dataLoading}
-                            options={templatesArray}
-                            onChange={ (columns) => {
-                                return this.props.onColumnsSelect({columns})
-                            } }
-                        />
-                    </span>
-
-                </div>
-                <div className={styles['inspector-table-container']}>
-                <Table className={styles['inspector-table']}
-                    striped={true} bordered={true} condensed={true} hover={true}>
-                <thead>
-                    {renderColumns.map(({name}) => (
-                        <th  className={ this.props.sortKey === name ? styles['isSorting'] : null }
-                                onClick={ () => this.props.toggleColumnSort({name}) }>
-                            {name === '_title' ? entityType : name}
-                            { this.props.sortKey === name
-                                ? <i className={`
-                                    ${styles['sort-active']}
-                                    fa fa-fw
-                                    ${'fa-sort-' + this.props.sortOrder}`}></i>
-                                : <i className={`
-                                    ${styles['sort-inactive']}
-                                    fa fa-fw fa-sort`}></i>
-                            }
-                        </th>))}
-                </thead>
-                <tbody>{
-                   _.range(firstRow, firstRow + this.props.rowsPerPage)
-                    .map((visibleRowIndex, x, y, row = visibleRows[visibleRowIndex]) => (
-                        <tr onClick={!row ? undefined : onRowSelect.bind(null, {
-                                index: row._index,
-                                componentType: componentType
-                        })}>{
-                            renderColumns.map(({name}) => {
-                                let cellValue = row && row[name];
-                                if (cellValue == null || cellValue === '') {
-                                    cellValue = '\u00a0'; /* nbsp forces height sizing*/
-                                }
-                                return <td>{cellValue}</td>;
-                            })
-                        }</tr>
-                    ))}
-                </tbody>
-            </Table>
-            </div>
-        </div>);
-    }
-}
-
-DataTable.propTypes = datatablePropTypes;
-
-class Inspector extends React.Component {
-
-    constructor(props) { super(props); }
-
-    render() {
-        return <div className={styles.inspector}>
-            <Tabs className={styles.inspectorTabs}
-                    activeKey={this.props.openTab}  onSelect={this.props.onSelect}>
-                <Tab eventKey={'points'} title="Points">
-                    <DataTable {...this.props} entityType={"Node"}/>
+export function Inspector(props) {
+    return (
+        <div style={props.style} className={styles.inspector}>
+            <Tabs onSelect={props.onSelect}
+                  activeKey={props.openTab}
+                  className={styles.inspectorTabs}>
+                <Tab eventKey='point' title='Points'>
+                    <DataTable {...props} entityType='Node'/>
                 </Tab>
-                <Tab eventKey={'edges'} title="Edges">
-                    <DataTable {...this.props} entityType={"Edge"}/>
+                <Tab eventKey='edge' title='Edges'>
+                    <DataTable {...props} entityType='Edge'/>
                 </Tab>
             </Tabs>
-        </div>;
+        </div>
+    );
+}
+
+function DataTable(props) {
+
+    const { columns, templates, colsPerPage, rowsPerPage,
+            loading, width, page, numPages, openTab, searchTerm,
+            onPage, onSort, onSearch, onColumnsSelect, selectInspectorRow } = props;
+
+    return (
+        <Grid fluid style={{ padding: 0, margin: 0 }}>
+            <Row style={{ padding: 0, paddingTop: 4, margin: 0 }}
+                 className={styles['inspector-header']}>
+                <Col xs={4} lg={4} lg={4} style={{ paddingRight: 0, margin: 0 }}>
+                    <InputGroup style={{ width: `100%` }}>
+                        <InputGroup.Button>
+                            <ColumnPicker value={columns}
+                                          loading={loading}
+                                          id='InspectorColumnPicker'
+                                          placeholder='Pick columns'
+                                          onChange={onColumnsSelect}
+                                          options={Array.from(templates)}/>
+                        </InputGroup.Button>
+                        <FormControl type='text'
+                                     value={searchTerm}
+                                     placeholder='Search'
+                                     onChange={(e) => onSearch(e.target.value)}/>
+                    </InputGroup>
+                </Col>
+                <Col xs={8} lg={8} lg={8} style={{ paddingTop: 0, margin: 0 }}>
+                    <Pagination ellipsis
+                                next prev
+                                page={page}
+                                pages={numPages}
+                                onSelect={onPage}
+                                maxButtons={Math.floor(width / 75)}/>
+                </Col>
+            </Row>
+            <Row style={{ padding: 0, margin: 0, height: `100%` }}>
+                <Col xs={12} lg={12} lg={12} style={{ padding: 0, margin: 0 }}>
+                    <DataGrid {...props}
+                              renderCell={renderCell}
+                              onRowSelect={onRowSelect}
+                              onColHeaderSelect={onColHeaderSelect}
+                              renderColHeaderCell={renderColHeaderCell}/>
+                </Col>
+            </Row>
+        </Grid>
+    );
+
+    function onRowSelect({ currentTarget: target }) {
+        const { rows, startRow } = props;
+        const { rowIndex } = target.dataset;
+        const row = rows[rowIndex - startRow];
+        if (row) {
+            selectInspectorRow({
+                index: row._index,
+                componentType: openTab
+            });
+        }
+    }
+
+    function onColHeaderSelect({ currentTarget: target }) {
+        const { cols } = props;
+        const { colIndex } = target.dataset;
+        const col = cols[colIndex];
+        if (col) {
+            onSort(col.name);
+        }
     }
 }
 
-Inspector.propTypes = propTypes;
+function renderColHeaderCell(colIndex, { cols, sortKey, sortOrder, entityType }) {
 
-export { Inspector };
+    const col = cols[colIndex];
 
+    if (!col) {
+        return '';
+    }
 
+    const { name = '\u00a0' } = col;
+    const isSorting = sortKey === name;
 
+    return (
+        <Button block active={isSorting}
+                href='javascript:void(0)'
+                className={styles['inspector-header-cell']}>
+            <span>{name === '_title' ? entityType : name}</span>
+            <i className={classNames({
+                'fa': true,
+                'fa-fw': true,
+                'fa-sort': !isSorting,
+                [styles['sort-active']]: isSorting,
+                [`fa-sort-${sortOrder}`]: isSorting,
+                [styles['sort-inactive']]: !isSorting
+            })}/>
+        </Button>
+    );
+}
+
+function renderCell(colIndex, rowIndex, { cols, rows, startRow }) {
+
+    const col = cols[colIndex];
+
+    if (col) {
+
+        const row = rows[rowIndex - startRow];
+
+        if (row && row.rowIsLoading && colIndex === 0) {
+            return [
+                `Loading row ${row.pendingIndex}`,
+                '\u00a0' /* force space between text and icon */,
+                <i className='fa fa-ellipsis-h'/>
+            ];
+        }
+
+        const { name = '' } = col;
+        const value = row && name && row[name];
+
+        if (value != null && value !== '') {
+            return (
+                <span dangerouslySetInnerHTML={{ __html: value }}/>
+            );
+        }
+    }
+
+    return '\u00a0' /* nbsp forces height sizing*/;
+}

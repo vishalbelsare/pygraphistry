@@ -4,29 +4,19 @@ import { pathValue as $value, ref as $ref, atom as $atom } from '@graphistry/fal
 import {
     SELECT_INSPECTOR_TAB,
     SELECT_INSPECTOR_ROW,
-    SET_INSPECTOR_PAGE,
     SET_INSPECTOR_SORT_KEY,
     SET_INSPECTOR_SORT_ORDER,
     SET_INSPECTOR_SEARCH_TERM,
     SET_INSPECTOR_COLUMNS
 } from 'viz-shared/actions/inspector';
 
-
-
-//export const setInspectorColumns = (columns) => {
-    //return {columns, type: SET_INSPECTOR_COLUMNS};
-//};
-
-
 export function inspector(action$, store) {
     return Observable.merge(
         selectInspectorTab(action$, store),
         selectInspectorRow(action$, store),
         setInspectorColumns(action$, store),
-        genericSetter(SET_INSPECTOR_PAGE, 'currentQuery.page', 'page')(action$, store),
-        genericSetter(SET_INSPECTOR_SORT_KEY, 'currentQuery.sortKey', 'key')(action$, store),
-        genericSetter(SET_INSPECTOR_SORT_ORDER, 'currentQuery.sortOrder', 'order')(action$, store),
-        genericSetter(SET_INSPECTOR_SEARCH_TERM, 'currentQuery.searchTerm', 'term')(action$, store)
+        sortInspectorColumns(action$, store),
+        setInspectorSearchTerm(action$, store),
     ).ignoreElements();
 }
 
@@ -75,11 +65,27 @@ function setInspectorColumns(action$, store) {
             falcor.set($value('currentQuery.columns', $atom(columns)))));
 }
 
-function genericSetter(token, path, prop) {
-    return function (action$, store) {
-        return action$
-            .ofType(token)
-            .switchMap(({falcor, ...rest}) => (
-                falcor.set($value(path, rest[prop]))));
-    };
+function sortInspectorColumns(action$, store) {
+    return action$
+        .ofType(SET_INSPECTOR_SORT_KEY)
+        .scan(([currKey, sortOrder], { sortKey, falcor }) => {
+
+            sortOrder = sortKey !== currKey ? 'asc' :
+                        sortOrder === 'desc'? 'asc' :
+                                              'desc';
+
+            return [sortKey, sortOrder, falcor.set(
+                $value('currentQuery.sortKey', sortKey),
+                $value('currentQuery.sortOrder', sortOrder)
+            )];
+        }, ['_title', 'asc', []])
+        .switchMap(([sortKey, sortOrder, setValues]) => setValues);
+}
+
+function setInspectorSearchTerm(action$, store) {
+    return action$
+        .ofType(SET_INSPECTOR_SEARCH_TERM)
+        .switchMap(({ falcor, term }) => falcor.set(
+            $value('currentQuery.searchTerm', term || '')
+        ));
 }
