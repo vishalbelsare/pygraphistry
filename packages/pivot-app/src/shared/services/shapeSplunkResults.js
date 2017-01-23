@@ -14,7 +14,7 @@ const SKIP = {
     'LabUnits': true
 };
 
-function summarizeOutput ({labels}) {
+function summarizeOutput ({ results: { labels }}) {
 
     //{ typeName -> int }
     const entityTypes = {};
@@ -28,6 +28,7 @@ function summarizeOutput ({labels}) {
             count: 0,
             example: example,
             name: entityType,
+            icon: labels[example].pointIcon,
             color: intToHex(categoryToColorInt[labels[example].pointColor])};
     });
 
@@ -44,7 +45,8 @@ function summarizeOutput ({labels}) {
         }
     }
 
-    return {entities: _.values(entitySummaries), resultCount: labels.length};
+    const entitySummary = {entities: _.values(entitySummaries), resultCount: labels.length};
+    return entitySummary;
 }
 
 function encodeGraph({ app, pivot }) {
@@ -83,7 +85,7 @@ function encodeGraph({ app, pivot }) {
         graph: edges,
         labels: labels
     };
-    pivot.resultSummary = summarizeOutput(pivot.results);
+    pivot.resultSummary = summarizeOutput(pivot);
 
     return ({ app, pivot });
 }
