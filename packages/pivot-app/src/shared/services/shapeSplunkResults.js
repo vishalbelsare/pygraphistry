@@ -45,6 +45,8 @@ function summarizeOutput ({ results: { labels }}) {
         }
     }
 
+    delete entitySummaries.EventID
+
     const entitySummary = {entities: _.values(entitySummaries), resultCount: labels.length};
     return entitySummary;
 }
