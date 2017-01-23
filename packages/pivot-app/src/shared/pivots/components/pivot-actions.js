@@ -1,7 +1,7 @@
 import styles from './pivots.less';
 import {
     Tooltip, Popover,
-    Button, ButtonGroup,
+    Button, ButtonGroup, ButtonToolbar,
     Glyphicon, OverlayTrigger
 } from 'react-bootstrap';
 
@@ -13,29 +13,26 @@ export default function PivotActions({ index, investigationId, splicePivot, sear
 
     return (
         <div>
-        <ButtonGroup>
-            <OverlayTrigger placement="top" overlay={
-                <Tooltip id={`tooltipActionPlay_${index}`}>Run step</Tooltip>
-            } key={`${index}: entityRowAction_${index}`}>
-                <Button onClick={() => searchPivot({ index, investigationId })} disabled={status.searching}>
-                    <Glyphicon glyph={status.searching ? "hourglass" : "play"}/>
-                </Button>
-            </OverlayTrigger>
-        </ButtonGroup>
-        <ButtonGroup style={{marginLeft: '0.7em'}}>
-            <OverlayTrigger placement="top" overlay={
-                <Tooltip id={`tooltipActionAdd_${index}`}>Insert new step after</Tooltip>
-            } key={`${index}: entityRowAction_${index}`}>
-                <Button onClick={() => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
-            </OverlayTrigger>
-        </ButtonGroup>
-        <ButtonGroup style={{marginLeft: '0.7em'}}>
+        <ButtonToolbar>
             <OverlayTrigger placement="top" overlay={
                 <Tooltip id={`tooltipActionDelete_${index}`}>Delete step</Tooltip>
-            } key={`${index}: entityRowAction_${index}`}>
-                <Button disabled={index === 0 && numRows === 1} onClick={() => splicePivot({ index })}><Glyphicon glyph="trash" /></Button>
+            } key={`${index}: entityRowActionDelete_${index}`}>
+                <Button bsSize='small' disabled={index === 0 && numRows === 1} onClick={() => splicePivot({ index })}><Glyphicon glyph="trash" /></Button>
             </OverlayTrigger>
-        </ButtonGroup>
+            <ButtonGroup style={{float: 'right'}}>
+                <OverlayTrigger placement="top" overlay={
+                    <Tooltip id={`tooltipActionPlay_${index}`}>Run step</Tooltip>
+                } key={`${index}: entityRowActionPlay_${index}`}>
+                    <Button bsSize='small' onClick={() => searchPivot({ index, investigationId })} disabled={status.searching}>
+                        <Glyphicon glyph={status.searching ? "hourglass" : "play"}/>
+                    </Button>
+                </OverlayTrigger>
+                <OverlayTrigger placement="top" overlay={
+                    <Tooltip id={`tooltipActionAdd_${index}`}>Insert new step after</Tooltip>
+                } key={`${index}: entityRowActionAdd_${index}`}>
+                    <Button bsSize='small' onClick={() => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
+                </OverlayTrigger>
+            </ButtonGroup>
         {
             status.ok ? null
                 :
@@ -45,7 +42,7 @@ export default function PivotActions({ index, investigationId, splicePivot, sear
                             <span style={{color: 'red'}}>{status.message}</span>
                         </Popover>
                     } key={`${index}: entityRowAction_${index}`}>
-                        <Button bsStyle="danger">
+                        <Button bsSize='small' bsStyle="danger">
                             <Glyphicon glyph="warning-sign" />
                         </Button>
                     </OverlayTrigger>
@@ -58,13 +55,14 @@ export default function PivotActions({ index, investigationId, splicePivot, sear
                             <span>{ status.message }</span>
                         </Popover>
                     } key={`${index}: entityRowAction_${index}`}>
-                        <Button bsStyle="info">
+                        <Button bsSize='small' bsStyle="info">
                             <Glyphicon glyph="info-sign" />
                         </Button>
                     </OverlayTrigger>
                 </ButtonGroup>
                 : null
         }
+    </ButtonToolbar>
     </div>
     );
 }
