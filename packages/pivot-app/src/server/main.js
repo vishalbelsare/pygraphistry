@@ -126,7 +126,7 @@ function setupRoutes(modules, getDataSource) {
         expressApp.use(`${mountPoint}/${root}`, router);
     });
 
-    expressApp.get(`${mountPoint}/`, (req, res) => res.redirect('/home'));
+    expressApp.get(`${mountPoint}/`, (req, res) => res.redirect(`${mountPoint}/home`));
     expressApp.get('*', (req, res) => res.status(404).send('Not found'));
 }
 
