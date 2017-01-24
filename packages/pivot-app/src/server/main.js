@@ -107,8 +107,9 @@ function init(testUser) {
 }
 
 function setupRoutes(modules, getDataSource) {
+    const mountPoint = '/pivot';
     expressApp.use(
-        '/model.json',
+	`${mountPoint}/model.json`,
         bodyParser.urlencoded({ extended: false }),
         falcorMiddleware(getDataSource)
     );
@@ -122,10 +123,10 @@ function setupRoutes(modules, getDataSource) {
             return renderMiddleware(getFalcorModel, modules)(req, res);
         });
 
-        expressApp.use(`/${root}`, router);
+        expressApp.use(`${mountPoint}/${root}`, router);
     });
 
-    expressApp.get('/', (req, res) => res.redirect('/home'));
+    expressApp.get(`${mountPoint}/`, (req, res) => res.redirect('/home'));
     expressApp.get('*', (req, res) => res.status(404).send('Not found'));
 }
 
