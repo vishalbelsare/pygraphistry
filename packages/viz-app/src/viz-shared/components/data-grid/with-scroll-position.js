@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs/Observable';
-import * as Scheduler from 'rxjs/Scheduler/animationFrame';
+import * as Scheduler from 'rxjs/scheduler/animationFrame';
 import shallowEqual from 'recompose/shallowEqual';
 import mapPropsStream from 'recompose/mapPropsStream';
 import createEventHandler from 'recompose/createEventHandler';
