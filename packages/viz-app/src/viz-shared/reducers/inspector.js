@@ -85,6 +85,7 @@ function sortInspectorColumns(action$, store) {
 function setInspectorSearchTerm(action$, store) {
     return action$
         .ofType(SET_INSPECTOR_SEARCH_TERM)
+        .debounceTime(300)
         .switchMap(({ falcor, term }) => falcor.set(
             $value('currentQuery.searchTerm', term || '')
         ));

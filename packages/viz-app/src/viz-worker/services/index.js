@@ -13,13 +13,13 @@ export * from './inspector';
 import { Observable } from 'rxjs';
 import { loadLabels } from './labels';
 import { loadVGraph } from './vgraph';
-import { appendColumn, maskDataframe, tickLayout } from './dataframe';
-import { loadRows, filterRows } from './inspector';
+import { filterRows } from './inspector';
 import { loadViews, moveSelectedNodes } from './views';
 import { loadWorkbooks, saveWorkbookService } from './workbooks';
 import { sendFalcorUpdate } from './sendFalcorUpdate';
 import { loadNBody, setLayoutControl } from './nBody';
 import { setEncoding, getEncoding, getEncodingOptions } from './encodings'
+import { loadRows, appendColumn, maskDataframe, tickLayout } from './dataframe';
 import {
     addHistogram, removeHistogram,
     loadHistograms, loadSelectionHistograms,

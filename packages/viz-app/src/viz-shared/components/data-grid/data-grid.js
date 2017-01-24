@@ -9,7 +9,7 @@ function stopPropagationIfAnchor(e) {
 
 export function DataGrid(props) {
 
-    const {
+    let {
         renderCell,
         bodyX, bodyY,
         width, height,
@@ -46,11 +46,10 @@ export function DataGrid(props) {
             col = startCol + colIndex;
             thead.push(
                 <th data-col-index={col} onClick={onColHeaderSelect}>
-                    <div style={colCellStyle} className={styles['grid-cell']}>
+                    <div style={colCellStyle}>
                         <div style={colHeaderStyle}
                              key={`grid-head-cell-${col}`}
-                             className={`${styles['grid-head-cell']} ${
-                             (col === 0) ? styles['grid-cell-col-0'] : ''}`}>
+                             className={styles['grid-head-cell']}>
                             {renderColHeaderCell(col, props)}
                         </div>
                     </div>
@@ -70,7 +69,6 @@ export function DataGrid(props) {
                 cells.push(
                     <td onClick={stopPropagationIfAnchor}>
                         <div style={cellStyle} className={`${styles['grid-cell']} ${
-                                               (col === 0) ? styles['grid-cell-col-0'] : ''} ${
                                                  (row % 2) ? styles['grid-cell-odd'] :
                                                              styles['grid-cell-even']}`}>
                             {renderCell(col, row, props)}
@@ -87,10 +85,19 @@ export function DataGrid(props) {
         }
     }
 
-    const tableContainerStyle = { width: bodyWidth, height: bodyHeight };
+    if (typeof width === 'number') {
+        bodyWidth = Math.max(width, bodyWidth);
+    }
+
+    if (typeof height === 'number') {
+        bodyHeight = Math.max(height, bodyHeight);
+    }
+
+    const scrollerStyle = { width, height };
     const tbodyStyle = { transform: `translate3d(${bodyX}px, ${bodyY}px, 0px)` };
     const tfootStyle = { transform: `translate3d(${rowHeaderX}px, ${rowHeaderY}px, 0px)` };
-    const scrollerStyle = { width, height, paddingTop: rowHeaderHeight || 0, paddingLeft: colHeaderWidth || 0 };
+    const tableContainerStyle = { width: bodyWidth, height: bodyHeight, overflow: 'hidden',
+                                  paddingTop: rowHeaderHeight || 0, paddingLeft: colHeaderWidth || 0 };
 
     return (
         <div className={styles['grid-scroller-container']}>

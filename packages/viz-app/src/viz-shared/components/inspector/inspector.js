@@ -1,8 +1,11 @@
 import styles from './styles.less';
 import classNames from 'classnames';
+import { findDOMNode } from 'react-dom';
+import { defaultFormat } from 'viz-shared/formatters';
 import { DataGrid } from 'viz-shared/components/data-grid';
 import { Pagination } from 'viz-shared/components/pagination';
 import { ColumnPicker } from 'viz-shared/components/column-picker';
+import { ColorPill } from 'viz-shared/components/color-pill/colorPill';
 import {
     Tab, Tabs, Row, Col, Grid, Table,
     Button, FormGroup, FormControl, InputGroup
@@ -11,19 +14,16 @@ import {
 export function Inspector(props) {
     return (
         <div style={props.style} className={styles.inspector}>
-            <Tabs onSelect={props.onSelect}
-                  activeKey={props.openTab}
-                  className={styles.inspectorTabs}>
-                <Tab eventKey='point' title='Points'>
-                    <DataTable {...props} entityType='Node'/>
-                </Tab>
-                <Tab eventKey='edge' title='Edges'>
-                    <DataTable {...props} entityType='Edge'/>
-                </Tab>
+            <Tabs onSelect={props.onSelect} activeKey={props.openTab}>
+                <Tab eventKey='point' title='Points'/>
+                <Tab eventKey='edge' title='Edges'/>
             </Tabs>
+            <DataTable {...props} entityType={props.openTab === 'point' ? 'Node' : 'Edge'}/>
         </div>
     );
 }
+
+const checkSearchInputValue = scanCheckSearchInputValue();
 
 function DataTable(props) {
 
@@ -46,8 +46,10 @@ function DataTable(props) {
                                           options={Array.from(templates)}/>
                         </InputGroup.Button>
                         <FormControl type='text'
-                                     value={searchTerm}
                                      placeholder='Search'
+                                     defaultValue={searchTerm}
+                                     data-component-type={openTab}
+                                     ref={checkSearchInputValue(searchTerm)}
                                      onChange={(e) => onSearch(e.target.value)}/>
                     </InputGroup>
                 </Col>
@@ -94,6 +96,17 @@ function DataTable(props) {
     }
 }
 
+function scanCheckSearchInputValue(componentType) {
+    return function checkSearchInputValue(searchTerm) {
+        return function checkSearchInputValueRef(ref) {
+            if (ref && ref.value !== searchTerm && ref.props &&
+                componentType !== (componentType = ref.props['data-component-type'])) {
+                findDOMNode(ref).value = searchTerm;
+            }
+        }
+    }
+}
+
 function renderColHeaderCell(colIndex, { cols, sortKey, sortOrder, entityType }) {
 
     const col = cols[colIndex];
@@ -122,31 +135,31 @@ function renderColHeaderCell(colIndex, { cols, sortKey, sortOrder, entityType })
     );
 }
 
-function renderCell(colIndex, rowIndex, { cols, rows, startRow }) {
+function renderCell(colIndex, rowIndex, { cols, rows, startCol, startRow }) {
 
     const col = cols[colIndex];
+    const row = rows[rowIndex - startRow];
 
-    if (col) {
+    let dataType, value = '';
 
-        const row = rows[rowIndex - startRow];
-
-        if (row && row.rowIsLoading && colIndex === 0) {
-            return [
-                `Loading row ${row.pendingIndex}`,
-                '\u00a0' /* force space between text and icon */,
-                <i className='fa fa-ellipsis-h'/>
-            ];
-        }
-
-        const { name = '' } = col;
-        const value = row && name && row[name];
-
-        if (value != null && value !== '') {
+    if (row) {
+        if (row.rowIsLoading && (colIndex - startCol) === 0) {
             return (
-                <span dangerouslySetInnerHTML={{ __html: value }}/>
+                <span>
+                    Loading row {row.pendingIndex}
+                    {'\u00a0' /* force space between text and icon */}
+                    <i className='fa fa-ellipsis-h'/>
+                </span>
             );
+        }
+        if (col) {
+            value = row[col.name];
+            value = (value != null && value !== '') &&
+                defaultFormat(value, dataType = col.dataType) || '';
         }
     }
 
-    return '\u00a0' /* nbsp forces height sizing*/;
+    return dataType === 'color' && value ?
+        <span><ColorPill color={value}/> {value}</span> :
+        <span title={value} dangerouslySetInnerHTML={{ __html: value }}/>;
 }

@@ -56,20 +56,20 @@ let Inspector = container({
 
         const cols = (columns.length && columns[0] ? columns : templates);
 
-        const bodyWidth = colWidth * cols.length;
-        const bodyHeight = rowHeight * rows.length;
+        const bodyWidth = colHeaderWidth + colWidth * cols.length;
+        const bodyHeight = rowHeaderHeight + rowHeight * rows.length;
 
         const numPages = Math.ceil((bodyHeight - height) / (rowHeight * rowsPerPage)) || 1;
         const page = 1 + Math.max(0, Math.min(numPages - 1, Math.floor(
             ((scrollTop - rowHeaderHeight) / rowHeight) / rowsPerPage)));
 
-        startCol = Math.max(0, Math.min(cols.length - colsPerPage - 1, startCol));
-        startRow = Math.max(0, Math.min(rows.length - rowsPerPage - 1, startRow));
+        startCol = Math.max(0, Math.min(cols.length - colsPerPage - 1, startCol)) || 0;
+        startRow = Math.max(0, Math.min(rows.length - rowsPerPage - 1, startRow)) || 0;
 
         const endRow = Math.min(rows.length, startRow + rowsPerPage * 2) || 0;
-        const rowsSortedByOrder = new Array(endRow - startRow);
+        const rowsSortedByOrder = new Array(Math.max(endRow - startRow, 0) || 0);
 
-        for (let i = -1, n = endRow - startRow; ++i < n;) {
+        for (let i = -1, n = rowsSortedByOrder.length; ++i < n;) {
             const row = rows[startRow + i];
             rowsSortedByOrder[i] = row ? row : {
                 rowIsLoading: true, pendingIndex: startRow + i
@@ -83,8 +83,8 @@ let Inspector = container({
             cols, rows: rowsSortedByOrder,
             bodyWidth, bodyHeight, page, numPages,
             openTab, sortKey, sortOrder, searchTerm,
-            rowsPerPage: Math.max(rowsPerPage, Math.min(rowsPerPage + 2, rows.length - startRow)),
-            colsPerPage: Math.max(colsPerPage, Math.min(colsPerPage + 2, cols.length - startCol)),
+            rowsPerPage: Math.max(1 + rowsPerPage, Math.min(rowsPerPage + 2, rows.length - startRow)),
+            colsPerPage: Math.max(1 + colsPerPage, Math.min(colsPerPage + 2, cols.length - startCol)),
         };
     },
     dispatchers: {

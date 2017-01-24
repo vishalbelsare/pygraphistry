@@ -7,10 +7,12 @@ import {
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 
-import { getHandler,
-         setHandler,
-         mapObjectsToAtoms,
-         captureErrorStacks } from 'viz-shared/routes';
+import {
+    getHandler,
+    setHandler,
+    mapObjectsToAtoms,
+    captureErrorStacks
+} from 'viz-shared/routes';
 
 export function labels(path, base) {
     return function labels({ loadViewsById, loadLabelsByIndexAndType }) {

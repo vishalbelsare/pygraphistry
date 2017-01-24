@@ -1608,9 +1608,7 @@ Dataframe.prototype.getRows = function (indices, type, columnNames = this.public
     mask[type] = indices;
 
     return mask.mapIndexesByType(type, (index, i) => {
-        const row = this.getRowAt(index, type, columnNames, global);
-        row._selectionIndex = i;
-        return row;
+        return this.getRowAt(index, type, columnNames, global);
     });
 };
 

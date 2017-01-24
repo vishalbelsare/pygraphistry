@@ -1,8 +1,7 @@
 import sanitizeHTML from 'sanitize-html';
-import palettes from '../simulator/palettes';
-import dataTypeUtil from '../simulator/dataTypes';
+import palettes from 'viz-worker/simulator/palettes';
+import dataTypeUtil from 'viz-worker/simulator/dataTypes';
 
-import { loadViews } from './views';
 import { cache as Cache } from '@graphistry/common';
 import { Observable, ReplaySubject } from 'rxjs';
 import { ref as $ref, atom as $atom } from '@graphistry/falcor-json-graph';
@@ -86,7 +85,7 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
                     undefined;
 
                 if (dataType === 'string') {
-                    value = sanitizeHTML(value);
+                    value = sanitizeHTML(decodeURIComponent(value));
                 }
 
                 columns.push({ key, value, displayName, dataType });
@@ -103,7 +102,7 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
         return {
             workbook, view, label: {
                 type: labelType, index: labelIndexes[index], data: {
-                    title, columns
+                    title: sanitizeHTML(decodeURIComponent(title)), columns
                 }
             }
         };

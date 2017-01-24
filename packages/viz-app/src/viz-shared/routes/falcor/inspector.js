@@ -1,4 +1,3 @@
-import sanitizeHTML from 'sanitize-html';
 import { Observable } from 'rxjs/Observable';
 import { getHandler, setHandler } from 'viz-shared/routes';
 import { $ref, $value, $invalidate } from '@graphistry/falcor-json-graph';
@@ -28,7 +27,7 @@ export function inspector(path, base) {
             route: `${base}['inspector'].controls[{keys}][{keys}]`
         }, {
             get: getRowsByTypeAndIndex,
-            route: `${base}['componentsByType']['point', 'edge'].rows[{integers}][{keys: columnNames}]`
+            route: `${base}['componentsByType']['point', 'edge'].rows[{integers: rowIndexes}][{keys: columnNames}]`
         }, {
             get: getRowLengthOrValueRefsByQuery,
             route: `${base}['inspector'].rows['point', 'edge'].length`
@@ -55,22 +54,6 @@ export function inspector(path, base) {
             route: `${base}['inspector'].rows['point', 'edge'][{keys: sortKeys}][{keys: sortOrders}][{keys: searchTerms}][{integers}]`
         }];
 
-        function getRowsByTypeAndIndex(rowsPath) {
-
-            const componentTypes = [].concat(rowsPath[rowsPath.length - 4]);
-
-            const getRowsByIndexAndTypeHandler = getHandler(path, (context) => loadRowsByIndexAndType({
-                ...context, componentTypes
-            }));
-
-            return getRowsByIndexAndTypeHandler.call(this, rowsPath).map(({ path, value }) => {
-                if (typeof value === 'string') {
-                    value = sanitizeHTML(decodeURIComponent(value));
-                }
-                return { path, value };
-            });
-        }
-
         function getRowLengthOrValueRefsByQuery(rowsPath) {
 
             const { sortKeys, sortOrders, searchTerms } = rowsPath;
@@ -90,9 +73,39 @@ export function inspector(path, base) {
                     const rowsKeyIndex = path.indexOf('rows');
                     const componentType = path[rowsKeyIndex + 1];
                     const basePath = path.slice(0, rowsKeyIndex - 1);
-                    value = $ref(basePath.concat('componentsByType', componentType, 'rows', value._selectionIndex));
+                    value = $ref(basePath.concat('componentsByType', componentType, 'rows', value._index));
                 }
                 return { path, value };
+            });
+        }
+
+        function getRowsByTypeAndIndex(path) {
+
+            const workbookIds = [].concat(path[1]);
+            const viewIds = [].concat(path[3]);
+            const componentTypes = [].concat(path[path.length - 4]);
+            const { rowIndexes = [], columnNames = [] } = path;
+
+            return loadRowsByIndexAndType({
+                workbookIds, viewIds, rowIndexes, columnNames, componentTypes
+            })
+            .mergeMap(({ workbook, view, componentType, row }) => {
+
+                const { _index } = row;
+                const basePath = `workbooksById['${workbook.id}']` +
+                                     `.viewsById['${view.id}']` +
+                                     `.componentsByType['${componentType}']` +
+                                     `.rows[${_index}]`;
+
+                return columnNames.map((columnName) => $value(
+                    `${basePath}['${columnName}']`, row[columnName]
+                ));
+
+                return labelKeys.map((key) => $value(
+                    `${basePath}['${type}'][${index}]['${key}']`,
+                    key ===  'type' ? type :
+                    key === 'index' ? index : data[key]
+                ));
             });
         }
     }

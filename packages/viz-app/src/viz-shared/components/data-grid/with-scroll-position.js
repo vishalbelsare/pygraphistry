@@ -6,6 +6,7 @@ import createEventHandler from 'recompose/createEventHandler';
 
 function preventDefault(e) {
     e.preventDefault && e.preventDefault();
+    e.stopPropagation && e.stopPropagation();
     e.stopImmediatePropagation && e.stopImmediatePropagation();
 }
 
@@ -18,12 +19,8 @@ export const WithScrollPosition = mapPropsStream((props) => {
     const scrollPosition = scrolls
         .map(({ target }) => target)
         .auditTime(0, Scheduler.animationFrame)
-        .merge(wheels.do(preventDefault))
-        .merge(pages.withLatestFrom(props, (page, { height, rowHeight, rowHeaderHeight }) => ({
-            scrollTop: page === 1 ? 0 : rowHeaderHeight + (page - 1) * (
-                (rowHeight * /* rowsPerPage */ Math.floor(
-                        (height - rowHeaderHeight) / rowHeight)))
-        })))
+        .merge(pages, wheels.do(preventDefault))
+        .withLatestFrom(props)
         .startWith({ scrollTop: 0, scrollLeft: 0,
                      offsetWidth: 0, offsetHeight: 0,
                      scrollWidth: Infinity, scrollHeight: Infinity })
@@ -35,45 +32,68 @@ export const WithScrollPosition = mapPropsStream((props) => {
     }));
 });
 
-function scanScrollPosition(memo, eventOrTarget) {
+function scanScrollPosition(memo, [eventPageOrTarget, props]) {
 
-    let { currentTarget: target } = eventOrTarget;
+    let page, target;
     let { scrollLeft, scrollTop,
           scrollWidth, scrollHeight,
           offsetWidth, offsetHeight } = memo;
 
-    if (target === undefined) {
-        target = eventOrTarget;
-        scrollTop = target.scrollTop;
-        if ((scrollLeft = target.scrollLeft) === undefined) {
-            scrollLeft = memo.scrollLeft;
-        }
+    const { height, rowHeight, colHeaderWidth, rowHeaderHeight } = props;
+
+    if (typeof eventPageOrTarget === 'number') {
+        page = eventPageOrTarget;
+        scrollTop = page === 1 ? 0 : rowHeaderHeight + (page - 1) * (
+            (rowHeight * /* rowsPerPage */ Math.floor(
+                    (height - rowHeaderHeight) / rowHeight)))
     } else {
-        scrollTop += eventOrTarget.deltaY;
-        scrollLeft += eventOrTarget.deltaX;
-    }
 
-    if (scrollWidth !== (scrollWidth = target.scrollWidth)) {
-        if (scrollWidth === undefined) {
-            scrollWidth = memo.scrollWidth;
+        if (!(target = eventPageOrTarget.currentTarget)) {
+            target = eventPageOrTarget;
+            scrollTop = target.scrollTop;
+            if ((scrollLeft = target.scrollLeft) === undefined) {
+                scrollLeft = memo.scrollLeft;
+            }
+        } else {
+            scrollTop += eventPageOrTarget.deltaY;
+            scrollLeft += eventPageOrTarget.deltaX;
         }
-    }
 
-    if (scrollHeight !== (scrollHeight = target.scrollHeight)) {
-        if (scrollHeight === undefined) {
-            scrollHeight = memo.scrollHeight;
+        if (offsetWidth !== (offsetWidth = target.offsetWidth)) {
+            if (offsetWidth === undefined) {
+                offsetWidth = memo.offsetWidth;
+            }
         }
-    }
 
-    if (offsetWidth !== (offsetWidth = target.offsetWidth)) {
-        if (offsetWidth === undefined) {
-            offsetWidth = memo.offsetWidth;
+        if (offsetHeight !== (offsetHeight = target.offsetHeight)) {
+            if (offsetHeight === undefined) {
+                offsetHeight = memo.offsetHeight;
+            }
         }
-    }
 
-    if (offsetHeight !== (offsetHeight = target.offsetHeight)) {
-        if (offsetHeight === undefined) {
-            offsetHeight = memo.offsetHeight;
+        if (!target.children[0]) {
+            if (scrollWidth !== (scrollWidth = target.scrollWidth)) {
+                if (scrollWidth === undefined) {
+                    scrollWidth = memo.scrollWidth;
+                }
+            }
+            if (scrollHeight !== (scrollHeight = target.scrollHeight)) {
+                if (scrollHeight === undefined) {
+                    scrollHeight = memo.scrollHeight;
+                }
+            }
+        } else {
+            target = target.children[0];
+            if (scrollWidth !== (scrollWidth = target.offsetWidth)) {
+                if (scrollWidth === undefined) {
+                    scrollWidth = memo.scrollWidth;
+                }
+            }
+            if (scrollHeight !== (scrollHeight = target.offsetHeight)) {
+                if (scrollHeight === undefined) {
+                    scrollHeight = memo.scrollHeight;
+                }
+            }
         }
     }
 
@@ -83,6 +103,6 @@ function scanScrollPosition(memo, eventOrTarget) {
     return {
         scrollTop, scrollLeft,
         scrollWidth, scrollHeight,
-        offsetWidth, offsetHeight
+        offsetWidth, offsetHeight,
     };
 }
