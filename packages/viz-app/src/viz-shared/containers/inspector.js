@@ -1,151 +1,168 @@
-import {
-    atom as $atom,
-} from '@graphistry/falcor-json-graph';
-
+import compose from 'recompose/compose';
+import { Observable } from 'rxjs/Observable';
 import { container } from '@graphistry/falcor-react-redux';
-
-import { Inspector as InspectorComponent } from '../components/inspector/inspector';
+import { Inspector as InspectorComponent } from 'viz-shared/components/inspector';
 import {
-    selectInspectorTab, setInspectorPage, setInspectorSortKey,
-    setInspectorSortOrder, setInspectorSearchTerm, setInspectorColumns
+    selectInspectorTab, setInspectorSortKey,
+    setInspectorSearchTerm, setInspectorColumns
 } from 'viz-shared/actions/inspector';
 
-import _ from 'underscore';
+import { WithGridLayout, WithScrollPosition } from 'viz-shared/components/data-grid';
 
-
-function getTemplates(templates, openTab) {
-    const componentToTab = {'point': 'points', 'edge': 'edges'};
-    const blacklist = {
-        '__defaultPointSize': true,
-        '__pointCommunity': true
-    };
-    return templates
-        .filter(({name}) => !blacklist[name])
-        .filter(({componentType}) => componentToTab[componentType] === openTab);
-}
-
-function coerceSortKey(templates, openTab, sortKey) {
-    return !sortKey
-        ? getTemplates(templates, openTab).concat([{name:''}])[0].name
-        : sortKey;
-}
-
-
-let Inspector = ({ open, rows = {}, templates = [],
-                   loading = false, currentQuery = {},
-                   openTab = 'points', setInspectorPage,
-                   selectInspectorRow, selectInspectorTab,
-                   setInspectorSortKey, setInspectorColumns,
-                   setInspectorSortOrder, setInspectorSearchTerm }) => {
-
-    const { searchTerm = '', sortKey, sortOrder, rowsPerPage=6, page=1, columns=[] } = currentQuery;
-    const sortBy = coerceSortKey(templates, openTab, sortKey);
-    const sortByKey = `sort-${sortBy||''}`;
-    const searchKey = `search-${searchTerm||''}`;
-
-    const { [openTab]: openRows = {} } = rows;
-    const { [searchKey]: searchRows = {} } = openRows;
-    const { [sortByKey]: sortedByRows = {} } = searchRows;
-    const { [sortOrder]: sortedByOrder = {} } = sortedByRows;
-    const { count: sortedRowCount = 0 } = sortedByOrder;
-
-    return (
-        <InspectorComponent open={open}
-                            page={page}
-                            sortKey={sortBy}
-                            openTab={openTab}
-                            rows={sortedByOrder}
-                            sortOrder={sortOrder}
-                            dataLoading={loading}
-                            searchTerm={searchTerm}
-                            rowsPerPage={rowsPerPage}
-                            onSelect={selectInspectorTab}
-                            onPageSelect={setInspectorPage}
-                            onRowSelect={selectInspectorRow}
-                            onSearch={setInspectorSearchTerm}
-                            onColumnsSelect={setInspectorColumns}
-                            templates={getTemplates(templates, openTab)}
-                            numPages={Math.ceil(sortedRowCount / rowsPerPage)}
-                            columns={ columns.columns ? columns.columns : columns }
-                            toggleColumnSort={ ({name}) => {
-                                if (name === sortBy) {
-                                    setInspectorSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                                } else {
-                                    setInspectorSortKey(name);
-                                    setInspectorSortOrder('asc');
-                                }
-                            }}/>
-        );
-};
-
-
-Inspector = container({
+let Inspector = container({
     renderLoading: true,
-    fragment:  ({ currentQuery = {}, templates = [], openTab, ...props }) => {
+    fragment: (fragment, props) => {
 
-        const { searchTerm, sortKey, sortOrder, rowsPerPage=0, page=1}
-            = currentQuery;
+        const { rowHeight, startRow, rowsPerPage } = props;
+        const { rows, query, columns, templates, allTemplatesLength } = getInspectorState(fragment);
+        const columnNames = (columns.length && columns[0] ? columns : templates).map(({ name }) => name);
 
-        const sortBy = coerceSortKey(templates, openTab, sortKey);
-
-        const hasAllQueryProps =
-            _.intersection(['searchTerm', 'sortKey', 'sortOrder'], _.keys(currentQuery)).length === 3;
-
-        const hasAllTemplateNames =
-            templates.length === 0
-            || (templates.length === _.keys(templates).length - 1);
-
-        if (!rowsPerPage || !hasAllQueryProps || !hasAllTemplateNames) {
-            return `{
-                id, name, open, openTab,
-                currentQuery: { searchTerm, sortKey, sortOrder, rowsPerPage, page, columns },
-                templates: {
-                    length, [0...${templates.length}]: {
-                        name, dataType, identifier, componentType
-                    }
-                }
-            }`;
-        }
-
-
-        const start = rowsPerPage * (page - 1);
-        const stop = start + Math.max(rowsPerPage, 1) - 1;
+        const from = Math.max(0, Math.min(rows.length - rowsPerPage - 1, startRow));
+        const to = Math.min(rows.length, from + rowsPerPage * 2);
 
         return `{
             id, name, open, openTab,
-            currentQuery: { searchTerm, sortKey, sortOrder, rowsPerPage, page, columns },
+            currentQuery: {
+                columns, sortKey, sortOrder, searchTerm
+            },
             templates: {
-                length, [0...${templates.length}]: {
-                    name, dataType, identifier, componentType
+                length, [0...${allTemplatesLength}]: {
+                    name, isPrivate, isInternal, dataType, identifier, componentType
                 }
             },
             rows: {
-                ${openTab}: {
-                    'search-${searchTerm||''}': {
-                        'sort-${sortBy||''}': {
-                            ${sortOrder}: {
-                                count,
-                                [${start}..${stop}]: {
-                                    ${ getTemplates(templates, openTab)
-                                        .map(({name}) => `"${name}"`)
-                                        .map(name => name)
-                                        .concat('_index')
-                                        .join(', ') }
-                                }
-                            }
+                ${query.reduceRight((next, key) =>
+                    `['${key}']: {
+                        ${next}
+                    }`,
+                    `length, [${from}...${to}]: {
+                        _title, _index, ${columnNames
+                            .map((x) => `'${escapeQuotes(x)}'`)
+                            .join(', ')
                         }
-                    }
-                }
+                    }`
+                )}
             }
         }`;
+    },
+    mapFragment: (fragment, props) => {
 
+        let { startCol, startRow } = props;
+        const { width, height, scrollTop,
+                colHeaderWidth, rowHeaderHeight,
+                colWidth, rowHeight, colsPerPage, rowsPerPage } = props;
+
+        const { rows, columns, templates,
+                openTab, sortKey, sortOrder, searchTerm } = getInspectorState(fragment);
+
+        const cols = (columns.length && columns[0] ? columns : templates);
+
+        const bodyWidth = colWidth * cols.length;
+        const bodyHeight = rowHeight * rows.length;
+
+        const numPages = Math.ceil((bodyHeight - height) / (rowHeight * rowsPerPage)) || 0;
+        const page = 1 + Math.max(0, Math.min(numPages - 1, Math.floor(
+            ((scrollTop - rowHeaderHeight) / rowHeight) / rowsPerPage)));
+
+        startCol = Math.max(0, Math.min(cols.length - colsPerPage - 1, startCol)) || 0;
+        startRow = Math.max(0, Math.min(rows.length - rowsPerPage - 1, startRow)) || 0;
+
+        const endRow = Math.min(rows.length, startRow + rowsPerPage * 2) || 0;
+        const rowsSortedByOrder = new Array(Math.max(endRow - startRow, 0) || 0);
+
+        for (let i = -1, n = rowsSortedByOrder.length; ++i < n;) {
+            const row = rows[startRow + i];
+            rowsSortedByOrder[i] = row ? row : {
+                rowIsLoading: true, pendingIndex: startRow + i
+            };
+        }
+
+        return {
+            ...fragment,
+            startCol, startRow,
+            templates, columns,
+            bodyWidth: bodyWidth + colHeaderWidth,
+            bodyHeight: bodyHeight + rowHeaderHeight,
+            openTab, sortKey, sortOrder, searchTerm,
+            cols, rows: rowsSortedByOrder, page, numPages,
+            rowsPerPage: Math.max(1 + rowsPerPage, Math.min(rowsPerPage + 2, rows.length - startRow)),
+            colsPerPage: Math.max(1 + colsPerPage, Math.min(colsPerPage + 2, cols.length - startCol)),
+        };
     },
     dispatchers: {
-        selectInspectorTab, setInspectorPage, setInspectorSortKey,
-        setInspectorSortOrder, setInspectorSearchTerm, setInspectorColumns
+        onSort: setInspectorSortKey,
+        onSelect: selectInspectorTab,
+        onSearch: setInspectorSearchTerm,
+        onColumnsSelect: setInspectorColumns,
     }
-})(Inspector);
+});
 
-
+Inspector = compose(
+    WithScrollPosition,
+    WithGridLayout,
+    Inspector
+)(InspectorComponent);
 
 export { Inspector };
+
+function getInspectorState(fragment) {
+
+    let { templates = [] } = fragment;
+    const { length: allTemplatesLength } = templates;
+    const { currentQuery = {}, openTab = 'point' } = fragment;
+
+    templates = getTemplatesForTab(templates, openTab);
+
+    const sortKey = coerceSortKey(templates, currentQuery.sortKey);
+    const { columns = [], sortOrder = 'asc', searchTerm = '' } = currentQuery;
+
+    let query = [{ key: 'componentType', val: openTab }];
+    sortKey && query.push({ key: 'sortKey', val: sortKey });
+    sortOrder && query.push({ key: 'sortOrder', val: sortOrder });
+    searchTerm && query.push({ key: 'searchTerm', val: searchTerm.toLowerCase() });
+
+    query = query.map(({ key, val }) => (
+        (key ===    'sortKey') ? `sortBy:${escapeQuotes(val)}` :
+        (key === 'searchTerm') ? `search:${escapeQuotes(val)}` : val
+    ));
+
+    const rows = query.reduce((node, key, index) => (
+        node[key] || (
+        node[key] = (index < query.length - 1) ? {} : [])
+    ), fragment.rows || {});
+
+    return {
+        rows, query, columns,
+        templates, allTemplatesLength,
+        openTab, sortKey, sortOrder, searchTerm
+    };
+}
+
+const blacklist = {
+    __pointCommunity: true,
+    __defaultPointSize: true
+};
+
+function escapeQuotes(str) {
+    return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+function mapKeyIdToKey(keyId, query) {
+    let key = query[keyId];
+    key = keyId === 'sortKey' && `sortBy:${key}` || key;
+    key = keyId === 'searchTerm' && `search:${key}` || key;
+    return key;
+}
+
+function getTemplatesForTab(templates = [], componentType) {
+    return Array.from(templates).filter((template) => (
+        template && !blacklist[template.name] &&
+        template.componentType === componentType
+    ));
+}
+
+function coerceSortKey(templates, sortKey) {
+    return sortKey || (
+        templates.length > 0 && templates[0] ?
+            templates[0].name : '_title');
+}

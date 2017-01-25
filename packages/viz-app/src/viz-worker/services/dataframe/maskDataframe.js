@@ -1,25 +1,7 @@
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 import { logger as commonLogger } from '@graphistry/common';
-import { columns as createColumns } from 'viz-shared/models/columns';
 import ExpressionCodeGenerator from 'viz-worker/simulator/expressionCodeGenerator';
-const logger = commonLogger.createLogger('viz-worker/services/dataframe.js');
-
-export function appendColumn({ view, componentType, name, values, dataType }) {
-    const { nBody } = view;
-    const { dataframe } = nBody;
-    return (view.columns = createColumns(dataframe
-        .addClientProvidedColumn(componentType, name, values, dataType)
-        .getColumnsByType(true)
-    ));
-}
-
-export function tickLayout({ view }) {
-    const { nBody } = view;
-    nBody.interactions.next({
-        play: true, layout: true
-    });
-    return Observable.empty();
-}
+const logger = commonLogger.createLogger('viz-worker/services/dataframe/maskDataframe.js');
 
 export function maskDataframe({ view }) {
 

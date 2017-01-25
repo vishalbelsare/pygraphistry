@@ -20,8 +20,8 @@ export function views(workbookId, viewId = simpleflake().toJSON()) {
     return {
         views: {
             length: 1,
-            current: $ref(`${view}`),
-            0:       $ref(`${view}`),
+            current: $ref(`${view}`, { $expires: 1 }),
+            0:       $ref(`${view}`, { $expires: 1 }),
         },
         viewsById: {}
     };

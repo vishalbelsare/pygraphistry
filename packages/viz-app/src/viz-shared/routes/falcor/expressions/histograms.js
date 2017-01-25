@@ -273,11 +273,15 @@ export function histograms(path, base) {
 
                 return maskDataframe({ view }).mergeMap(() => {
 
+                    view.inspector.rows = undefined;
+                    view.componentsByType = undefined;
+
                     // If the view has histograms, invalidate the
                     // relevant fields so they're recomputed if the
                     // histograms panel is open, or the next time the
                     // panel is opened.
                     const pathValues = [
+                        $invalidate(`${viewPath}.componentsByType`),
                         $invalidate(`${viewPath}.labelsByType`),
                         $invalidate(`${viewPath}.inspector.rows`),
                         $value(`${viewPath}.highlight.darken`, false),

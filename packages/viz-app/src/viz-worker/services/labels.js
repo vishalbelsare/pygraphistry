@@ -1,7 +1,7 @@
-import palettes from '../simulator/palettes';
-import dataTypeUtil from '../simulator/dataTypes';
+import sanitizeHTML from 'sanitize-html';
+import palettes from 'viz-worker/simulator/palettes';
+import dataTypeUtil from 'viz-worker/simulator/dataTypes';
 
-import { loadViews } from './views';
 import { cache as Cache } from '@graphistry/common';
 import { Observable, ReplaySubject } from 'rxjs';
 import { ref as $ref, atom as $atom } from '@graphistry/falcor-json-graph';
@@ -73,7 +73,7 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
         const names = columnNames.length && columnNames || Object.keys(row);
         const columns = names.reduce((columns, columnName) => {
 
-            const value = row[columnName];
+            let value = row[columnName];
 
             if (columnName !== titleColumnName && !(
                 dataTypeUtil.valueSignifiesUndefined(value))) {
@@ -83,6 +83,10 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
                 const displayName = colorMappedByColumnName.hasOwnProperty(columnName) ?
                     palettes.intToHex(palettes.bindings[value]) :
                     undefined;
+
+                if (dataType === 'string') {
+                    value = sanitizeHTML(decodeURIComponent(value));
+                }
 
                 columns.push({ key, value, displayName, dataType });
             }
@@ -98,7 +102,7 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
         return {
             workbook, view, label: {
                 type: labelType, index: labelIndexes[index], data: {
-                    title, columns
+                    title: sanitizeHTML(decodeURIComponent(title)), columns
                 }
             }
         };

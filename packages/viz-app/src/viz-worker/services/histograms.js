@@ -3,6 +3,7 @@ import { Observable } from 'rxjs/Observable';
 import * as Scheduler from 'rxjs/scheduler/async'
 import Binning from 'viz-worker/simulator/Binning';
 import DataframeMask from 'viz-worker/simulator/DataframeMask';
+import { computeSelectionMasks } from 'viz-worker/services/dataframe';
 import { histogramBinHighlightQuery } from 'viz-shared/models/expressions/histograms';
 import { histogram as createHistogram } from 'viz-shared/models/expressions/histograms';
 import {
@@ -68,7 +69,7 @@ export function loadHistograms(loadViewsById) {
 
 export function loadSelectionHistograms(loadViewsById) {
     const loadHistogramsById = loadHistograms(loadViewsById);
-    return function loadSelectionHistogramsById({ masked, workbookIds, viewIds, histogramIds, refresh = true }) {
+    return function loadSelectionHistogramsById({ workbookIds, viewIds, histogramIds, refresh = true, masked = true }) {
         return loadHistogramsById({
             workbookIds, viewIds, histogramIds
         })
@@ -85,8 +86,8 @@ export function loadSelectionHistograms(loadViewsById) {
                     return Observable.of({ ...histogram });
                 }
 
-                return loadSelectionMasks({
-                    view, masked
+                return computeSelectionMasks({
+                    view, emptyIfAllSelected: masked
                 })
                 .mergeMap((selectionMasks) => computeHistogram({
                     view, masked, refresh, selectionMasks, histogram,
@@ -101,7 +102,7 @@ export function loadSelectionHistograms(loadViewsById) {
     }
 }
 
-export function computeMaskForHistogramBin({ view, histogram, bin, basedOnCurrentDataframe }) {
+export function computeMaskForHistogramBin({ view, histogram, bin, basedOnCurrentDataframe = true }) {
 
     const { nBody } = view;
     const { dataframe } = nBody;
@@ -121,54 +122,6 @@ export function computeMaskForHistogramBin({ view, histogram, bin, basedOnCurren
     const { edge, point } = masks.toJSON();
 
     return Observable.of({ edge, point });
-}
-
-function loadSelectionMasks({ view, masked }) {
-
-    const { nBody = {} } = view;
-    const { dataframe = {}, simulator } = nBody;
-
-    if (!masked) {
-        return Observable.of(
-            dataframe.lastHistogramSelectionMasks =
-                new DataframeMask(dataframe, [], [])
-        );
-    }
-
-    const { lastHistogramSelectionMasks } = dataframe;
-
-    if (lastHistogramSelectionMasks) {
-        return Observable.of(lastHistogramSelectionMasks);
-    }
-
-    let { selection: { mask: rect } = {} } = view;
-
-    if (!rect || !rect.tl || !rect.br) {
-        return Observable.of(
-            dataframe.lastHistogramSelectionMasks =
-                new DataframeMask(dataframe, [], [])
-        );
-    }
-
-    return Observable
-        .defer(() => simulator.selectNodesInRect(rect))
-        .map((pointsMask) =>
-            dataframe.lastHistogramSelectionMasks =
-                createHistogramsSelectionMask(dataframe, simulator, pointsMask)
-        );
-}
-
-let selectionMasksTag = 0;
-function createHistogramsSelectionMask(dataframe, simulator, pointsMask) {
-    const mask = new DataframeMask(
-        dataframe, pointsMask, pointsMask === undefined ?
-            undefined : simulator.connectedEdges(pointsMask)
-    );
-    // Unbase mask from local filtered coordinate system to global coordinate system
-    // TODO: We really shouldn't have to track this kind of nonsense.
-    const unbasedMask = new DataframeMask(dataframe, mask.point, mask.edge, dataframe.lastMasks);
-    unbasedMask.tag = ++selectionMasksTag;
-    return unbasedMask;
 }
 
 export function getHistogramForAttribute({ view, graphType, attribute, dataType = 'number' }) {
@@ -216,6 +169,10 @@ function computeHistogram({ view, masked, histogram, refresh = true, selectionMa
 
     if (!selectionMasks) {
         selectionMasks = new DataframeMask(dataframe);
+    } else {
+        // Unbase mask from local filtered coordinate system to global coordinate system
+        // TODO: We really shouldn't have to track this kind of nonsense.
+        selectionMasks = new DataframeMask(dataframe, selectionMasks.point, selectionMasks.edge, dataframe.lastMasks);
     }
 
     const dataType = dataframe.getDataType(name, componentType);

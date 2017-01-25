@@ -71,7 +71,7 @@ function Dataframe () {
     );
     /** The last mask applied as a result of selections. Empty by default. */
     this.lastSelectionMasks = this.newEmptyMask();
-    this.lastHistogramSelectionMasks = undefined;
+    this.lastTaggedSelectionMasks = undefined;
     this.masksForVizSets = {};
     this.bufferAliases = {};
     /** @type DataframeData */
@@ -545,7 +545,7 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
         return Q(false);
     }
 
-    this.lastHistogramSelectionMasks = undefined;
+    this.lastTaggedSelectionMasks = undefined;
 
     const start = Date.now();
 
@@ -1512,6 +1512,11 @@ Dataframe.prototype.getCell = function (index, type, attrName, global = false) {
     }
 
     const column = attributes[attrName];
+
+    if (!column) {
+        return undefined;
+    }
+
     const numberPerGraphComponent = column.numberPerGraphComponent;
 
     // First try to see if have values already calculated / cached for this frame
@@ -1602,7 +1607,7 @@ Dataframe.prototype.getRows = function (indices, type, columnNames = this.public
     const mask = new DataframeMask(this);
     mask[type] = indices;
 
-    return mask.mapIndexesByType(type, (index) => {
+    return mask.mapIndexesByType(type, (index, i) => {
         return this.getRowAt(index, type, columnNames, global);
     });
 };

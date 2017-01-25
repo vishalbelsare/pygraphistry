@@ -114,10 +114,10 @@ class Scene extends React.Component {
         }
     }
     componentWillReceiveProps(nextProps) {
-        const currProps = this.props;
-        const { sceneID: currSceneID } = currProps;
+        const { props, state } = this;
+        const { sceneID: currSceneID } = props;
         const { sceneID: nextSceneID } = nextProps;
-        if (nextSceneID && currSceneID !== nextSceneID && (nextSceneID in scenes)) {
+        if (!state.renderState && nextSceneID && currSceneID !== nextSceneID && (nextSceneID in scenes)) {
             this.setupRenderStateAndScheduler(nextProps, this.state);
         }
     }

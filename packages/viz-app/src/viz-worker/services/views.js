@@ -100,6 +100,7 @@ function assignNBodyToView(workbook, nBody, view) {
         background = scene.renderer.background.color;
     }
 
+    scene.simulating = false;
     scene.renderer.background.color = background;
 
     if (options.length === 0) {
