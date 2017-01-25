@@ -24,23 +24,36 @@ let Histograms = ({ addHistogram, removeHistogram, setEncoding, encodings,
                     loading = false, className = '',
                     style = {}, ...props }) => {
 
+    let showLoadingInHeader = false;
+
+    const histogramItems = Array.from(histograms, (histogram, index) => {
+        let style;
+        if (!histogram) {
+            showLoadingInHeader = loading;
+            style = { 'border-bottom-style': 'dashed' };
+            histogram = { id: 'pending', componentType: '' };
+        }
+        return (
+            <Histogram style={style}
+                       data={histogram}
+                       setEncoding={setEncoding}
+                       encodings={{ ...encodings }}
+                       key={`${index}: ${histogram.id}`}
+                       removeHistogram={removeHistogram}/>
+        );
+    });
+
     return (
-        <ExpressionsList loading={loading}
-                         showHeader={false}
-                         templates={templates}
+        <ExpressionsList showHeader={false}
                          showDataTypes={false}
                          dropdownPlacement="top"
                          addExpression={addHistogram}
+                         loading={showLoadingInHeader}
                          placeholder="Add histogram for..."
+                         style={{ ...style, height: `100%` }} {...props}
                          className={className + ' ' + styles['histograms-list']}
-                         style={{ ...style, height: `100%` }} {...props}>
-        {histograms.map((histogram, index) => (
-            <Histogram data={histogram}
-                       key={`${index}: ${histogram.id}`}
-                       encodings={encodings}
-                       setEncoding={setEncoding}
-                       removeHistogram={removeHistogram}/>
-        ))}
+                         templates={templates.filter(({ isInternal }) => !isInternal)}>
+            {histogramItems}
         </ExpressionsList>
     );
 };
@@ -51,7 +64,7 @@ Histograms = container({
         return `{
             templates: {
                 length, [0...${templates.length}]: {
-                    name, dataType, identifier, componentType
+                    name, isPrivate, isInternal, dataType, identifier, componentType
                 }
             },
             id, name, length, ...${

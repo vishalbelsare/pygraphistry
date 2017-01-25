@@ -72,7 +72,7 @@ function loadVGraphJSON(nBody, { metadata: dataset, body: buffer }, config, s3Ca
 
 function loadDataFrameAndUpdateBuffers({ view }) {
 
-    const { nBody } = view;
+    const { nBody, layout: { options } = {} } = view;
     const { simulator, simulator: { dataframe, layoutAlgorithms }} = nBody;
     // Load into dataframe data attributes that rely on the simulator existing.
     const inDegrees = dataframe.getHostBuffer('backwardsEdges').degreesTyped;
@@ -81,6 +81,21 @@ function loadDataFrameAndUpdateBuffers({ view }) {
 
     dataframe.loadDegrees(outDegrees, inDegrees);
     dataframe.loadEdgeDestinations(unsortedEdges);
+
+    if (options && options.length) {
+        Array.from(options).forEach((control) => {
+            if (control && control.props) {
+                const { id, value, props: { algoName }} = control;
+                nBody.updateSettings({
+                    simControls: {
+                        [algoName]: {
+                            [id]: value
+                        }
+                    }
+                });
+            }
+        });
+    }
 
     // Tell all layout algorithms to load buffers from dataframe, now that
     // we're about to enable ticking
@@ -96,7 +111,7 @@ function loadDataFrameAndUpdateBuffers({ view }) {
         nBody.vgraphLoaded = true;
         view = createInitialHistograms(view, dataframe);
         view.scene = assignHintsToScene(view.scene, dataframe);
-        view.columns = createColumns(dataframe.getColumnsByType(true));
+        view.columns = createColumns(dataframe, dataframe.getColumnsByType(true));
         return view;
     });
 }

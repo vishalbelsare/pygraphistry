@@ -56,10 +56,7 @@ export function expressions(path, base) {
 
                     const { selection } = view;
                     const { histograms = [] } = view;
-
-                    const viewPath = `
-                            workbooksById['${workbook.id}']
-                                .viewsById['${view.id}']`;
+                    const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
 
                     if (expression.enabled === true || (
                         'enabled' in expressionProps)) {
@@ -69,11 +66,14 @@ export function expressions(path, base) {
                         // histograms panel is open, or the next time the
                         // panel is opened.
 
+                        view.inspector.rows = undefined;
+                        view.componentsByType = undefined;
+
                         values.push(
+                            $invalidate(`${viewPath}.componentsByType`),
                             $invalidate(`${viewPath}.labelsByType`),
                             $invalidate(`${viewPath}.inspector.rows`)
                         );
-
 
                         if (histograms.length > 0 &&
                             selection && selection.mask &&
@@ -122,11 +122,12 @@ export function addExpressionHandler({
         })
         .mergeMap(({ workbook, view, [itemName]: value }) => {
 
-            const viewPath = `
-                workbooksById['${workbook.id}']
-                    .viewsById['${view.id}']`;
+            view.inspector.rows = undefined;
+            view.componentsByType = undefined;
 
             const { selection, [listName]: list } = view;
+            const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+
             const newLengthPath = `${viewPath}['${listName}'].length`;
             const newItemPath = `${viewPath}['${listName}'][${list.length}]`;
             const newItemRef = $ref(`${viewPath}['${mapName}']['${value.id}']`);
@@ -134,6 +135,7 @@ export function addExpressionHandler({
             list[list.length++] = newItemRef;
 
             const pathValues = [
+                $invalidate(`${viewPath}.componentsByType`),
                 $invalidate(`${viewPath}.labelsByType`),
                 $invalidate(`${viewPath}.inspector.rows`),
                 $value(newItemPath, newItemRef),
@@ -198,7 +200,7 @@ export function removeExpressionHandler({
         })
         .mergeMap(({ workbook, view, [itemName]: item }) => {
 
-            const { selection, [listName]: list } = view;
+            const { selection, histogramsById, [listName]: list } = view;
             const viewPath = `
                 workbooksById['${workbook.id}']
                     .viewsById['${view.id}']`;
@@ -225,8 +227,14 @@ export function removeExpressionHandler({
             }
 
             if (found) {
+
+                view.inspector.rows = undefined;
+                view.componentsByType = undefined;
+
                 list[listLen - 1] = undefined;
+
                 pathValues.push(
+                    $invalidate(`${viewPath}.componentsByType`),
                     $invalidate(`${viewPath}.labelsByType`),
                     $invalidate(`${viewPath}.inspector.rows`),
                     $invalidate(`${viewPath}['${mapName}']['${itemId}']`),
@@ -236,6 +244,10 @@ export function removeExpressionHandler({
                 );
 
                 if (item && item.histogramId) {
+                    const histogram = histogramsById && histogramsById[item.histogramId];
+                    if (histogram) {
+                        histogram.filter = undefined;
+                    }
                     const histogramPath = `${viewPath}.histogramsById['${item.histogramId}']`;
                     pathValues.push(
                         $invalidate(`${histogramPath}.filter`),

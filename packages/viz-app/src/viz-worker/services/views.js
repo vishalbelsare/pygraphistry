@@ -100,6 +100,7 @@ function assignNBodyToView(workbook, nBody, view) {
         background = scene.renderer.background.color;
     }
 
+    scene.simulating = false;
     scene.renderer.background.color = background;
 
     if (options.length === 0) {
@@ -108,7 +109,7 @@ function assignNBodyToView(workbook, nBody, view) {
                             .layout.options`;
         layout.options = ([]
             .concat(fromLayoutAlgorithms(layoutAlgorithms))
-            .reduce((options, { name, params }, index) => {
+            .reduce((options, { name, params }) => {
                 options.name = name;
                 options.id = name.toLowerCase();
                 return { ...options, ...toControls(optionsPath, params) };

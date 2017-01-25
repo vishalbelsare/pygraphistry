@@ -3,7 +3,7 @@ import {
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 
-import { Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
 
 import { getHandler,
          setHandler,

@@ -9,6 +9,8 @@ import styles from 'viz-shared/components/scene/styles.less';
 
 import {
     pointSizes,
+    pointColors,
+    edgeColors,
     toggleZoomIn,
     toggleCenter,
     toggleZoomOut,
@@ -112,10 +114,10 @@ class Scene extends React.Component {
         }
     }
     componentWillReceiveProps(nextProps) {
-        const currProps = this.props;
-        const { sceneID: currSceneID } = currProps;
+        const { props, state } = this;
+        const { sceneID: currSceneID } = props;
         const { sceneID: nextSceneID } = nextProps;
-        if (nextSceneID && currSceneID !== nextSceneID && (nextSceneID in scenes)) {
+        if (!state.renderState && nextSceneID && currSceneID !== nextSceneID && (nextSceneID in scenes)) {
             this.setupRenderStateAndScheduler(nextProps, this.state);
         }
     }
@@ -227,6 +229,8 @@ class Scene extends React.Component {
         const { hostBuffers: {
             'curPoints': curPointsSource,
             'pointSizes': pointSizesSource,
+            'pointColors': pointColorsSource,
+            'edgeColors': edgeColorsSource
         }} = renderState;
 
         if (hasVBOListeners === false) {
@@ -253,6 +257,8 @@ class Scene extends React.Component {
             curPointsSource,
             hasVBOListeners,
             pointSizesSource,
+            pointColorsSource,
+            edgeColorsSource,
             vboUpdatesSource,
             vboVersionsSource,
             hasSourceListeners,
@@ -271,6 +277,8 @@ class Scene extends React.Component {
             curPointsSource,
             hasDOMListeners,
             pointSizesSource,
+            pointColorsSource,
+            edgeColorsSource,
             vboUpdatesSource,
             vboVersionsSource,
             hasSourceListeners,
@@ -334,6 +342,8 @@ class Scene extends React.Component {
             // within the React component lifecycle, then delete this code.
             curPointsSource.do(curPoints),
             pointSizesSource.do(pointSizes),
+            pointColorsSource.do(pointColors),
+            edgeColorsSource.do(edgeColors),
             vboUpdatesSource.do(vboUpdates),
             vboVersionsSource.do(vboVersions),
             cameraChangesSource.do(cameraChanges),

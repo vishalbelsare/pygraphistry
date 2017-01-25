@@ -2,8 +2,6 @@ import { renderNothing } from 'recompose';
 import { Popover } from 'react-bootstrap';
 import panelStyles from '../components/panel.less';
 import { container } from '@graphistry/falcor-react-redux';
-
-// import { Timebar } from './timebar';
 import { Settings } from './settings';
 import { Expressions } from './expressions';
 import { Inspector } from './inspector';
@@ -11,7 +9,6 @@ import { Histograms } from './histograms';
 
 const panelsById = {
     'filters': Expressions,
-    'timebar': Timebar,
     'inspector': Inspector,
     'exclusions': Expressions,
     'histograms': Histograms,
@@ -29,12 +26,10 @@ function componentForSideAndType(side, id) {
     );
 }
 
+function Panel({ panel = {}, placement,
+                 className = '', positionTop, positionLeft,
+                 id, side, isOpen, name, style, ...props }) {
 
-let Panel = ({
-        panel = {}, placement,
-        className = '', positionTop, positionLeft,
-        id, side, isOpen, name, style, ...props
-    } = {}) => {
     const Component = componentForSideAndType(side, panel.id);
     const componentInstance = (
         <Component name={name} side={side}
@@ -42,38 +37,34 @@ let Panel = ({
                    className={className + ' ' + panelStyles[`panel-${side}`]}
                    {...props}/>
     );
+
     if (side === 'left') {
         return (
-            <div style={leftPanelStyles(isOpen)}
+            <div style={{ ...leftPanelStyles(isOpen), ...style }}
                  className={className + ' ' + panelStyles[`panel-${side}`]}>
                 {componentInstance}
             </div>
         );
     }
+
     return componentInstance;
 };
 
 Panel = container({
     renderLoading: true,
-    fragment: ({ id, name, ...rest } = {}, { side }) => {
-        const Content = componentForSideAndType(side, id);
+    fragment: ({ id, name, ...rest } = {}, props) => {
+        const Content = componentForSideAndType(props.side, id);
         if (!Content || !Content.fragment) {
             return `{ id, name }`;
         }
         return `{ id, name, ... ${
-            Content.fragment({ id, name, ...rest })}
+            Content.fragment({ id, name, ...rest }, props)}
         }`;
     },
     mapFragment: (panel) => ({ panel })
 })(Panel);
 
 export { Panel };
-
-function Timebar() {
-    return (
-        <h1>Timebar</h1>
-    );
-}
 
 function leftPanelStyles(isOpen) {
     return {

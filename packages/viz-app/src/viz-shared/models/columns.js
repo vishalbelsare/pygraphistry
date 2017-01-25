@@ -1,4 +1,4 @@
-export function columns(columnsByComponentType) {
+export function columns(dataframe, columnsByComponentType) {
 
     const columns = {}, allColumnsByType = {};
 
@@ -39,7 +39,9 @@ export function columns(columnsByComponentType) {
                 name: columnName,
                 dataType: column.type,
                 identifier: attribute,
-                componentType: 'point'
+                componentType: 'point',
+                isPrivate: dataframe.isAttributeNamePrivate(columnName),
+                isInternal: dataframe.isAttributeNameInternal(columnName)
             };
 
             columns[edgeAttribute] = {
@@ -47,7 +49,9 @@ export function columns(columnsByComponentType) {
                 attribute: edgeAttribute,
                 dataType: edgeColumn.type,
                 identifier: edgeAttribute,
-                componentType: 'edge'
+                componentType: 'edge',
+                isPrivate: dataframe.isAttributeNamePrivate(columnName),
+                isInternal: dataframe.isAttributeNameInternal(columnName)
             };
 
         } else if (!columns.hasOwnProperty(columnName)) {
@@ -56,7 +60,9 @@ export function columns(columnsByComponentType) {
                 name: columnName,
                 dataType: column.type,
                 identifier: attribute,
-                componentType: 'point'
+                componentType: 'point',
+                isPrivate: dataframe.isAttributeNamePrivate(columnName),
+                isInternal: dataframe.isAttributeNameInternal(columnName)
             };
         }
     }
@@ -70,7 +76,9 @@ export function columns(columnsByComponentType) {
                 name: columnName,
                 dataType: column.type,
                 identifier: attribute,
-                componentType: 'edge'
+                componentType: 'edge',
+                isPrivate: dataframe.isAttributeNamePrivate(columnName),
+                isInternal: dataframe.isAttributeNameInternal(columnName)
             };
         }
     }

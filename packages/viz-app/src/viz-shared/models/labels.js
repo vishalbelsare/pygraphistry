@@ -14,8 +14,9 @@ export function labels(view) {
             edge: [], point: [],
             opacity: 1, enabled: true,
             timeZone: '', poiEnabled: true,
-            foreground: { color: new Color('#000000') },
-            background: { color: new Color('#ffffff').alpha(0.9) },
+            foreground: { color: new Color('#fff') },
+            background: { color: new Color('#2e2e2e').alpha(1.0) },
+            renderer: $ref(`${view}.scene.renderer`),
             encodings: $ref(`${view}.encodings`),
             settings: [
                 $ref(`${view}.labels.options`),

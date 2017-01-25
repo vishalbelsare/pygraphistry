@@ -1,10 +1,12 @@
 import _ from 'underscore';
+import Color from 'color';
 import React, { PropTypes } from 'react';
+import classNames from 'classnames';
 import { Gestures } from 'rxjs-gestures';
 import { Observable } from 'rxjs/Observable';
 import styles from 'viz-shared/components/labels/style.less';
 import {
-    curPoints, pointSizes,
+    curPoints, pointSizes, pointColors, edgeColors,
     vboUpdates, cameraChanges,
     labelSettings, hitmapUpdates
 } from 'viz-client/legacy';
@@ -14,11 +16,10 @@ import { animationFrame as AnimationFrameScheduler } from 'rxjs/scheduler/animat
 import {
     compose,
     getContext,
-    shallowEqual,
     mapPropsStream
 } from 'recompose';
 
-import { Label } from './label';
+import { Label, isDark } from './label';
 
 const WithPointsAndMousePosition = mapPropsStream((props) => props
     .combineLatest(
@@ -38,12 +39,41 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
     .auditTime(0, AnimationFrameScheduler)
     .withLatestFrom(
         pointSizes.map(({ buffer }) => new Uint8Array(buffer)),
+        pointColors.map(({ buffer }) => new Uint8Array(buffer)),
+        edgeColors.map(({ buffer }) => new Uint8Array(buffer)),
         curPoints.map(({ buffer }) => new Float32Array(buffer)),
-        (props, sizes, points) => ({ ...props, sizes, points })
+        (props, sizes, pointColors, edgeColors, points) => ({ ...props, sizes, pointColors, edgeColors, points })
     )
 );
 
 class Labels extends React.Component {
+
+    getChildContext() {
+
+        return {
+            sizes: this.props.sizes,
+            pointColors: this.props.pointColors,
+            edgeColors: this.props.edgeColors,
+            ...(this.props.renderState && this.props.renderState.camera ?
+                {
+                    scalingFactor: this.props.renderState.camera.semanticZoom(this.props.sizes.length || 0),
+                    pixelRatio: this.props.renderState.camera.pixelRatio
+                }
+                : {
+                    scalingFactor: 1,
+                    pixelRatio: 1
+                })
+        };
+    }
+
+    static childContextTypes = {
+        sizes: React.PropTypes.object.isRequired,
+        pointColors: React.PropTypes.object.isRequired,
+        edgeColors: React.PropTypes.object.isRequired,
+        scalingFactor: React.PropTypes.number.isRequired,
+        pixelRatio: React.PropTypes.number.isRequired
+    }
+
     componentWillMount() {
         this.updateLabelSettings({}, this.props);
     }
@@ -57,7 +87,8 @@ class Labels extends React.Component {
         let { mouseX, mouseY, onLabelsUpdated,
               highlight = null, selection = null,
               renderState = null, renderingScheduler = null,
-              labels = [], sizes = [], points = [], children = []
+              renderer,
+              labels = [], sizes = [], pointColors = [], edgeColors = [], points = [], children = []
         } = this.props;
 
         if (!renderState || !renderingScheduler || !(
@@ -114,8 +145,7 @@ class Labels extends React.Component {
             if (child) {
 
                 const radius = size * 0.5;
-                const offsetY = label !== highlight ? 0 :
-                    Math.min(Math.abs(15 - radius), 15);
+                const offsetY = 0;
 
                 childrenToRender.push(React.cloneElement(child, {
                     renderState,
@@ -134,7 +164,10 @@ class Labels extends React.Component {
         onLabelsUpdated && onLabelsUpdated(updatesToSend);
 
         return (
-            <div className={styles['labels-container']}>
+            <div className={classNames({
+                [styles['labels-container']]: true,
+                [styles['labels-container-dark']]: isDark(Color(renderer.background.color).rgb()),
+                [styles['labels-zoomed-in']]: scalingFactor > 2})}>
                 {childrenToRender}
             </div>
         );

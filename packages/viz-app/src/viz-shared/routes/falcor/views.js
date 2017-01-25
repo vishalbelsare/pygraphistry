@@ -27,13 +27,17 @@ export function views(path, base) {
                 let obs = Observable.of({ path, value });
                 const { filters, exclusions } = view;
 
-                if ((filters && filters.length) || (exclusions && exclusions.length)) {
-                    obs = maskDataframe({ view }).mapTo({ path, value });
+                if ((filters && filters.length > 1) || (exclusions && exclusions.length)) {
+                    obs = maskDataframe({ view })
+                        .mapTo({ path, value })
+                        .concat(Observable.of(
+                            $invalidate([...viewPath, 'labelsByType']),
+                            $invalidate([...viewPath, 'inspector', 'rows']),
+                            $invalidate([...viewPath, 'selection', 'histogramsById'])
+                        ));
                 }
 
-                return obs.concat(Observable.of($invalidate(
-                    [...viewPath, 'labelsByType']
-                )));
+                return obs;
             }));
 
         return [{
@@ -87,30 +91,27 @@ export function views(path, base) {
             })
             .mergeMap(({ workbook, view }) => {
 
+                view.inspector.rows = undefined;
+                view.componentsByType = undefined;
+
                 const workbookId = workbook.id;
                 const viewId = view.id;
-                const columns = appendColumn({
-                    view, componentType, name, values, dataType
-                });
+                const viewPath = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
+                const columns = appendColumn({ view, componentType, name, values, dataType });
 
                 return columns.reduce((values, column = {}, index) => values.concat(
                     Object.keys(column).map((key) => $value(
-                        path(index, key), column[key]
+                        colPath(index, key), column[key]
                     ))),
                     [
-                        $value(path('length'), columns.length),
-                        $invalidate(`
-                            workbooksById['${workbookId}']
-                                .viewsById['${viewId}']
-                                .labelsByType`),
-                        $invalidate(`
-                            workbooksById['${workbookId}']
-                                .viewsById['${viewId}']
-                                .inspector.rows`)
+                        $invalidate(`${viewPath}.componentsByType`),
+                        $invalidate(`${viewPath}.labelsByType`),
+                        $invalidate(`${viewPath}.inspector.rows`),
+                        $value(colPath('length'), columns.length)
                     ]
                 );
 
-                function path(...keys) {
+                function colPath(...keys) {
                     return [
                         'workbooksById', workbookId,
                             'viewsById', viewId,

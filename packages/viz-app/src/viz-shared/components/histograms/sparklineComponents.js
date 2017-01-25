@@ -1,56 +1,82 @@
 import React from 'react';
-import { Button, Tooltip, Popover, OverlayTrigger } from 'react-bootstrap';
 import classNames from 'classnames';
-
+import { Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import styles from 'viz-shared/components/histograms/styles.less';
-import stylesGlobal from 'viz-shared/index.less';
 
+const tooltipShowDelay = 350;
+const SizeLegendIndicatorTooltip = (
+    <Tooltip id='SizeLegendIndicatorTooltip'>
+        Reset sizes
+    </Tooltip>
+);
+const YAxisLegendIndicatorTooltip = (
+    <Tooltip id='YAxisLegendIndicatorTooltip'>
+        Reset Y-Axis
+    </Tooltip>
+);
+const IconLegendIndicatorTooltip = (
+    <Tooltip id='IconLegendIndicatorTooltip'>
+        Reset icons
+    </Tooltip>
+);
 
-function SizeLegendIndicator (props) {
-    return props.sizeValue
-        ?  <span class="label label-default">
-                <Button bsSize="small"
-                    className={styles['histogram-legend-pill']}>
-                    <span className={classNames({
-                        'fa': true,
-                        'fa-dot-circle-o': true,
+function SizeLegendIndicator ({ sizeValue, ...props }) {
+    return !sizeValue ? null : (
+        <span class='label label-default'>
+            <OverlayTrigger placement='top'
+                            delayShow={tooltipShowDelay}
+                            overlay={SizeLegendIndicatorTooltip}>
+                <Button className={styles['histogram-legend-pill']}
+                        bsSize='xsmall' href='javascript:void(0)' {...props}>
+                    <i className={classNames({
+                        'fa': true, 'fa-dot-circle-o': true,
                         [styles['histogram-size-encoding-icon']]: true
                     })}/>
-                    Size
+                    {/*Size*/}
                 </Button>
-            </span>
-        : null;
+            </OverlayTrigger>
+        </span>
+    );
 }
 SizeLegendIndicator.propTypes = { sizeValue: React.PropTypes.array };
 
-
-
-function YAxisLegendIndicator (props) {
-    return props.yAxisValue !== 'none'
-        ?   <span class="label label-default">
-                <Button bsSize="small"
-                    className={styles['histogram-legend-pill']}>
-                    Y-Axis: {props.yAxisValue}
+function YAxisLegendIndicator ({ yAxisValue = 'none', ...props }) {
+    return yAxisValue == 'none' ? null : (
+        <span class='label label-default'>
+            <OverlayTrigger placement='top'
+                            delayShow={tooltipShowDelay}
+                            overlay={YAxisLegendIndicatorTooltip}>
+                <Button className={styles['histogram-legend-pill']}
+                        bsSize='xsmall' href='javascript:void(0)' {...props}>
+                    <i className={classNames({
+                        'fa': true, 'fa-signal': true,
+                        [styles['histogram-size-encoding-icon']]: true
+                    })}/>
+                    {/*Y-Axis: {yAxisValue}*/}
                 </Button>
-            </span>
-        : null;
+            </OverlayTrigger>
+        </span>
+    );
 }
 YAxisLegendIndicator.propTypes = { yAxisValue: React.PropTypes.string };
 
-function IconLegendIndicator (props) {
-    return props.iconValue
-        ? <span class="label label-default">
-                <Button bsSize="small"
-                    className={styles['histogram-legend-pill']}>
-                    <span className={classNames({
-                        'fa': true,
-                        'fa-map-pin': true,
+function IconLegendIndicator ({ iconValue, ...props }) {
+    return !iconValue ? null : (
+        <span class='label label-default'>
+            <OverlayTrigger placement='top'
+                            delayShow={tooltipShowDelay}
+                            overlay={IconLegendIndicatorTooltip}>
+                <Button className={styles['histogram-legend-pill']}
+                        bsSize='xsmall' href='javascript:void(0)' {...props}>
+                    <i className={classNames({
+                        'fa': true, 'fa-map-pin': true,
                         [styles['histogram-size-encoding-icon']]: true
                     })}/>
-                    Icon
+                    {/*Icon*/}
                 </Button>
-            </span>
-        : null;
+            </OverlayTrigger>
+        </span>
+    );
 }
 
 export { SizeLegendIndicator, YAxisLegendIndicator, IconLegendIndicator };

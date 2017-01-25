@@ -7,6 +7,9 @@ import { Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import { ColorPill } from 'viz-shared/components/color-pill/colorPill';
 import { getDefaultQueryForDataType } from 'viz-shared/models/expressions';
 
+import { logger as commonLogger } from '@graphistry/common';
+const logger = commonLogger.createLogger('viz-app:labels');
+
 function preventPropagation (f) {
     return function (e) {
         e.stopPropagation();
@@ -31,6 +34,16 @@ const events = [
 ];
 
 export class Label extends React.Component {
+
+    static contextTypes = {
+        sizes: React.PropTypes.object.isRequired,
+        pointColors: React.PropTypes.object.isRequired,
+        edgeColors: React.PropTypes.object.isRequired,
+        scalingFactor: React.PropTypes.number.isRequired,
+        pixelRatio: React.PropTypes.number.isRequired
+    };
+
+
     constructor(props, context) {
         super(props, context);
         events.forEach((eventName) => {
@@ -82,10 +95,53 @@ export class Label extends React.Component {
             }
         }
 
+
+
+        // TODO remove these diagnostics and checks when we confirm that
+        // we are not getting an occasional null/parse exception here        
+        let pointColor = undefined;
+        let pointRgb = undefined;
+
+        if (this.props.index === undefined || this.props.type === undefined) {
+            logger.warn('bad label render', this.props.index, this.props.type);
+            return null;
+        }
+
+        try {
+            pointRgb = {
+                    r: this.context.pointColors[this.props.index * 4 + 0],
+                    g: this.context.pointColors[this.props.index * 4 + 1],
+                    b: this.context.pointColors[this.props.index * 4 + 2]};
+            pointColor = this.props.type === 'edge' ? '#ccc' 
+                : Color(pointRgb)
+                    .alpha(1)
+                    .rgbaString();
+        } catch (e) {
+            logger.error('Could not create color', e, this.props.type, this.props.index);
+            logger.error('Color vals: ', {
+                r: this.context.pointColors[this.props.index * 4 + 0],
+                g: this.context.pointColors[this.props.index * 4 + 1],
+                b: this.context.pointColors[this.props.index * 4 + 2]});
+            return null;
+        }
+        ///////////////////
+
+
+        const iconSize = 
+            this.props.type === 'edge' ? 
+                    30
+                :  Math.max(
+                        5, 
+                        Math.min(
+                            this.context.scalingFactor * this.context.sizes[this.props.index], 
+                            50)) / this.context.pixelRatio;
+
+
         background = showFull || pinned ? new Color(background).alpha(1).rgbaString() : background;
 
         const arrowStyle = { 'border-bottom-color': background };
         const contentStyle = { color, background, maxWidth: `none` };
+        const iconClass = getIconClass({ encodings, type, columns });
 
         return (
             <div className={classNames({
@@ -101,19 +157,20 @@ export class Label extends React.Component {
                          left: `-50%`,
                          opacity: 1,
                          marginTop: 1,
-                         position: `relative`,
+                         position: `relative`                         
                      }}
                      className={classNames({
                           'in': true,
                           'bottom': true, 'tooltip': true,
                           [styles['label-tooltip']]: true
                      })}>
+                    <PointIcon iconClass={iconClass} pointColor={pointColor} pointRgb={pointRgb} iconSize={iconSize} type={this.props.type}/>
                     <div style={arrowStyle} className='tooltip-arrow'/>
                     <div style={contentStyle} className='tooltip-inner'>
                         <LabelTitle type={type}
                                     color={color}
                                     title={title}
-                                    encodings={encodings}
+                                    iconClass={iconClass}
                                     columns={columns}
                                     pinned={pinned}
                                     showFull={showFull}
@@ -136,29 +193,48 @@ export class Label extends React.Component {
     }
 }
 
+export function isDark ({r,g,b}) {
+    const lumens = 0.299 * r + 0.587 * g + 0.114 * b;
+    return lumens <= 0.5 * 255;
+}
+
+function PointIcon({ iconClass, pointColor, pointRgb, iconSize, type }) {
+    if (!iconClass || type !== 'point' || iconSize <= 15) {
+        return null;
+    }    
+
+    return <div className={classNames({
+                [styles['point-icon-container']]: true,
+                [styles['light-color']]: !isDark(pointRgb)})}
+            style={{
+                backgroundColor: pointColor, 
+                top: `calc(-${iconSize}px - 10px)`,
+                transform: `scale(${iconSize/40})`}}
+        >
+            <div className={classNames({[styles['point-icon']]: true})}>                                
+                <i className={classNames({
+                    'fa': true,
+                    'fa-fw': true,
+                    [iconClass]: true})} />
+            </div>
+        </div>;
+
+}
+
 function Icon({ iconClass }) {
 
     return iconClass ?
 
             <span className={classNames({
-                    'fa-stack': true,
-                    //'fa-lg': true,
                     [styles['label-title-icon-encoded']]: true
                 })}>
                 <i className={classNames({
                     'fa': true,
-                    'fa-stack-2x': true,
-                    //'fa-lg': true,
-                    'fa-circle': true})}/>
-                <i className={classNames({
-                    'fa': true,
-                    'fa-stack-1x': true,
-                    //'fa-lg': true,
-                    'fa-inverse': true,
+                    'fa-fw': true,
                     [iconClass]: true})} />
             </span>
 
-        : <span style={ {display: 'none'} } />;
+        : null;
 }
 
 function getIconClass({encodings, type, columns}) {
@@ -176,12 +252,10 @@ function getIconClass({encodings, type, columns}) {
     return `fa-${iconStr}`;
 }
 
-function LabelTitle ({ type, color, encodings, columns, title, icon, pinned, showFull, onExclude, onMouseDown, onTouchStart }) {
+function LabelTitle ({ type, color, iconClass, title, icon, pinned, showFull, onExclude, onMouseDown, onTouchStart }) {
 
     const titleHTML = { __html: title };
     const titleExcludeHTML = { __html: title };
-
-    const iconClass = getIconClass({ encodings, type, columns });
 
     if (title == null || title === '') {
         title = '';

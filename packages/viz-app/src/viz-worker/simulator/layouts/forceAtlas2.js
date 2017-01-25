@@ -209,7 +209,7 @@ function ForceAtlas2Barnes(clContext) {
 
 ForceAtlas2Barnes.prototype = Object.create(LayoutAlgo.prototype);
 ForceAtlas2Barnes.prototype.constructor = ForceAtlas2Barnes;
-// ForceAtlas2Barnes.name = 'ForceAtlas2Barnes';
+ForceAtlas2Barnes.algoName = 'ForceAtlas2Barnes';
 
 // ForceAtlas2 uses a bitmask flag in order to set settings preventOverlap, strongGravity,
 // dissuadeHubs, and linLog. layoutFlags keeps track of the current state of these settings.
@@ -317,6 +317,7 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
 
     simulator.resetBuffers(layoutBuffers);
     var sizes = computeSizes(simulator, warpsize, numPoints);
+    logger.info({sizes}, 'Initializing layout buffers');
     var numNodes = sizes.numNodes;
     var num_nodes = sizes.numNodes;
     var numBodies = sizes.numBodies;
@@ -628,8 +629,9 @@ var computeSizes = function (simulator, warpsize, numPoints) {
     if (numPoints === undefined) {
         numPoints = simulator.dataframe.getNumElements('point');
     }
-    var num_nodes = numPoints * 5;
-    if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
+    var num_nodes = numPoints * 2;
+    // GPU optimization. Disable for now to allow for more users
+    //if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
     while ((num_nodes & (warpsize - 1)) != 0) num_nodes++;
     num_nodes--;
     var num_bodies = numPoints;

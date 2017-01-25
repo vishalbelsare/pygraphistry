@@ -70,7 +70,8 @@ export function workbooks(path, base) {
                 workbookIds, options
             })
             .map(({ workbook }) => $value(
-                `workbooks.open`, $ref(`workbooksById['${workbookId}']`)
+                `workbooks.open`, $ref(
+                    `workbooksById['${workbookId}']`, { $expires: 1 })
             ));
         }
 

@@ -157,7 +157,7 @@ function EdgeBundling(clContext) {
 EdgeBundling.prototype = Object.create(LayoutAlgo.prototype);
 EdgeBundling.prototype.constructor = EdgeBundling;
 
-// EdgeBundling.name = 'EdgeBundling';
+EdgeBundling.algoName = 'EdgeBundling';
 
 // Contains any temporary buffers needed for layout
 var layoutBuffers  = {};
