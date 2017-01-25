@@ -53,6 +53,7 @@
     "font-awesome-webpack": "0.0.4",
     "glsl-loader": "0.0.1",
     "handlebars-loader": "1.4.0",
+    "http-server": "~0.9.0",
     "jsdoc": "~3.4.3",
     "jsdoc-babel": "0.3.0",
     "json-loader": "0.5.4",
