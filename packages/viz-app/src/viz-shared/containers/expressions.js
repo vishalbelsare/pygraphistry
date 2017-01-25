@@ -20,8 +20,8 @@ let Expressions = ({ templates = [], expressions = [],
     return (
         <ExpressionsList templates={templates}
                          addExpression={addExpression}
-                         className={className + ' ' + styles['expressions-list']}
-                         style={{ ...style, height: `100%` }} {...props}>
+                         style={{ ...style, height: `100%` }} {...props}
+                         className={className + ' ' + styles['expressions-list']}>
         {expressions.map((expression, index) => (
             <Expression data={expression}
                         templates={templates}
@@ -40,7 +40,7 @@ Expressions = container({
         },
         templates: {
             length, [0...${templates.length || 0}]: {
-                name, dataType, identifier, componentType
+                name, isPrivate, isInternal, dataType, identifier, componentType
             }
         }
     }`,

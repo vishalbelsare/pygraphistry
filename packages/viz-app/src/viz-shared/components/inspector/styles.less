@@ -60,12 +60,22 @@
 }
 
 .inspector-header-cell {
-    padding: 4px;
+
     font-size: 14px;
     font-weight: bold;
+    text-align: center;
     pointer-events: auto;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding: 4px 0 4px 9px;
     border-radius: 0 !important;
     border-style: none !important;
+
+    & :global(i.fa) {
+        float: right;
+        margin-top: 3px;
+    }
 }
 
 .sort-active {

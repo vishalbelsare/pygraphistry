@@ -95,10 +95,10 @@ function scanScrollPosition(memo, [eventPageOrTarget, props]) {
                 }
             }
         }
-    }
 
-    scrollTop = Math.max(0, Math.min(scrollTop, scrollHeight - offsetHeight));
-    scrollLeft = Math.max(0, Math.min(scrollLeft, scrollWidth - offsetWidth));
+        scrollTop = Math.max(0, Math.min(scrollTop, scrollHeight - offsetHeight));
+        scrollLeft = Math.max(0, Math.min(scrollLeft, scrollWidth - offsetWidth));
+    }
 
     return {
         scrollTop, scrollLeft,

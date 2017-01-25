@@ -117,12 +117,13 @@ function renderColHeaderCell(colIndex, { cols, sortKey, sortOrder, entityType })
 
     const { name = '\u00a0' } = col;
     const isSorting = sortKey === name;
+    const label = name === '_title' ? entityType : name;
 
     return (
-        <Button block active={isSorting}
+        <Button title={label}
+                block active={isSorting}
                 href='javascript:void(0)'
                 className={styles['inspector-header-cell']}>
-            <span>{name === '_title' ? entityType : name}</span>
             <i className={classNames({
                 'fa': true,
                 'fa-fw': true,
@@ -131,6 +132,7 @@ function renderColHeaderCell(colIndex, { cols, sortKey, sortOrder, entityType })
                 [`fa-sort-${sortOrder}`]: isSorting,
                 [styles['sort-inactive']]: !isSorting
             })}/>
+            <span>{label}</span>
         </Button>
     );
 }

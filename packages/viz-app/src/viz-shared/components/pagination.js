@@ -36,7 +36,7 @@ const Paginate = mapPropsStream((props) => {
     }
 });
 
-function Pagination({ page = 1, pages = 1,
+function Pagination({ page = 1, pages = 0,
                       prev = false, next = false,
                       size, buttonSize = 30, maxButtons = Infinity,
                       vertical, ellipsis = false, boundaryLinks = false,
@@ -134,6 +134,8 @@ function Pagination({ page = 1, pages = 1,
     if (typeof size === 'number') {
         props.style = { [vertical ? 'maxHeight' : 'maxWidth']: size, ...props.style };
     }
+
+    props.style = { visibility: pages > 0 ? 'visible' : 'hidden', ...props.style };
 
     return <ButtonGroup {...props}>{buttons}</ButtonGroup>;
 }

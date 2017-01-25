@@ -14,27 +14,29 @@ export function sortAndFilterRowsByQuery({ view, rows, columnNames, ...query }) 
         return Observable.of(rows || []);
     }
 
-    const { searchTerm,
-            sortColumn = query.sortKey,
-            componentType = query.openTab } = query;
+    let { sortColumn = query.sortKey } = query;
+    const { searchTerm, componentType = query.openTab } = query;
 
-    columnNames = columnNames || dataframe.publicColumnNamesByType(componentType);
+    columnNames = (columnNames || dataframe.getAttributeKeys(componentType)).map((columnName) => ({
+        columnName, key: dataframe.getAttributeKeyForColumnName(columnName, componentType)
+    }));
 
     if (!columnNames || columnNames.length <= 0) {
         return Observable.of([]);
     }
 
+    const keys = columnNames.map(({ key }) => key);
     let filteredRows, sortColumnDataType, rowsPerRange = 10000;
 
     const { dataTypesByColumnName, colorMappedByColumnName } =
-        getDataTypesAndColorColumns(dataframe, columnNames, componentType);
+        getDataTypesAndColorColumns(dataframe, keys, componentType);
 
     if (!searchTerm) {
         filteredRows = Observable.of(rows.slice(0));
     } else {
 
         const filterRowsPredicate = filterRowsBySearchTerm(
-            columnNames, ('' + searchTerm).toLowerCase(),
+            keys, ('' + searchTerm).toLowerCase(),
             dataTypesByColumnName, colorMappedByColumnName
         );
 
@@ -47,7 +49,10 @@ export function sortAndFilterRowsByQuery({ view, rows, columnNames, ...query }) 
             .toArray();
     }
 
-    if (sortColumn && (sortColumnDataType = dataTypesByColumnName[sortColumn])) {
+    if (sortColumn) {
+
+        sortColumnDataType = dataTypesByColumnName[sortColumn =
+            dataframe.getAttributeKeyForColumnName(sortColumn, componentType)];
 
         // TODO: Speed this up / cache sorting. Actually, put this into dataframe itself.
         // Only using permutation out here because this should be pushed into dataframe.
@@ -139,7 +144,7 @@ function filterRowsBySearchTerm(columnNames, searchTerm, dataTypes, colorColumns
             } else if (dataType === 'color') {
                 value = palettes.intToHex(value);
             } else if (dataType !== 'string') {
-                value = '' + defaultFormat(value, dataType);
+                value = ('' + value).toLowerCase();
             } else {
                 value = decodeURIComponent(value).toLowerCase();
             }

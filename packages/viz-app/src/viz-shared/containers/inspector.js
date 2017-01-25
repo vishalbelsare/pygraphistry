@@ -15,12 +15,10 @@ let Inspector = container({
 
         const { rowHeight, startRow, rowsPerPage } = props;
         const { rows, query, columns, templates, allTemplatesLength } = getInspectorState(fragment);
+        const columnNames = (columns.length && columns[0] ? columns : templates).map(({ name }) => name);
 
         const from = Math.max(0, Math.min(rows.length - rowsPerPage - 1, startRow));
         const to = Math.min(rows.length, from + rowsPerPage * 2);
-        const columnNames = (columns.length && columns[0] ?
-                                columns : templates).map(
-                                    ({ name }) => name).concat('_index');
 
         return `{
             id, name, open, openTab,
@@ -29,7 +27,7 @@ let Inspector = container({
             },
             templates: {
                 length, [0...${allTemplatesLength}]: {
-                    name, dataType, identifier, componentType
+                    name, isPrivate, isInternal, dataType, identifier, componentType
                 }
             },
             rows: {
@@ -38,7 +36,10 @@ let Inspector = container({
                         ${next}
                     }`,
                     `length, [${from}...${to}]: {
-                        ${columnNames.map((x) => `'${escapeQuotes(x)}'`)}
+                        _title, _index, ${columnNames
+                            .map((x) => `'${escapeQuotes(x)}'`)
+                            .join(', ')
+                        }
                     }`
                 )}
             }
@@ -56,10 +57,10 @@ let Inspector = container({
 
         const cols = (columns.length && columns[0] ? columns : templates);
 
-        const bodyWidth = colHeaderWidth + colWidth * cols.length;
-        const bodyHeight = rowHeaderHeight + rowHeight * rows.length;
+        const bodyWidth = colWidth * cols.length;
+        const bodyHeight = rowHeight * rows.length;
 
-        const numPages = Math.ceil((bodyHeight - height) / (rowHeight * rowsPerPage)) || 1;
+        const numPages = Math.ceil((bodyHeight - height) / (rowHeight * rowsPerPage)) || 0;
         const page = 1 + Math.max(0, Math.min(numPages - 1, Math.floor(
             ((scrollTop - rowHeaderHeight) / rowHeight) / rowsPerPage)));
 
@@ -80,9 +81,10 @@ let Inspector = container({
             ...fragment,
             startCol, startRow,
             templates, columns,
-            cols, rows: rowsSortedByOrder,
-            bodyWidth, bodyHeight, page, numPages,
+            bodyWidth: bodyWidth + colHeaderWidth,
+            bodyHeight: bodyHeight + rowHeaderHeight,
             openTab, sortKey, sortOrder, searchTerm,
+            cols, rows: rowsSortedByOrder, page, numPages,
             rowsPerPage: Math.max(1 + rowsPerPage, Math.min(rowsPerPage + 2, rows.length - startRow)),
             colsPerPage: Math.max(1 + colsPerPage, Math.min(colsPerPage + 2, cols.length - startCol)),
         };

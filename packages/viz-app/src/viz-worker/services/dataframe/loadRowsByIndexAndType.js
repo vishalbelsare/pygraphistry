@@ -51,20 +51,23 @@ function getRowsForType({ workbook, view, columnNames, rowIndexes, componentType
         return [];
     }
 
-    columnNames = columnNames || dataframe.publicColumnNamesByType(componentType);
+    columnNames = (columnNames || dataframe.getAttributeKeys(componentType)).map((columnName) => ({
+        columnName, key: dataframe.getAttributeKeyForColumnName(columnName, componentType)
+    }));
 
-    const rows = dataframe.getRows(rowIndexes, componentType, columnNames);
+    const keys = columnNames.map(({ key }) => key);
+    const rows = dataframe.getRows(rowIndexes, componentType, keys);
 
     const { dataTypesByColumnName, colorMappedByColumnName } =
-        getDataTypesAndColorColumns(dataframe, columnNames, componentType);
+        getDataTypesAndColorColumns(dataframe, keys, componentType);
 
-    return rows.map((row, index) => {
+    return rows.map((row) => {
         const names = columnNames.length && columnNames || Object.keys(row);
-        return names.reduce((row, columnName) => {
-            let value = row[columnName];
-            const dataType = dataTypesByColumnName[columnName];
+        return names.reduce((row, { key, columnName }) => {
+            let value = row[key];
+            const dataType = dataTypesByColumnName[key];
             if (dataTypeUtil.valueSignifiesUndefined(value) === false) {
-                if (colorMappedByColumnName.hasOwnProperty(columnName)) {
+                if (colorMappedByColumnName.hasOwnProperty(key)) {
                     row[columnName] = palettes.intToHex(palettes.bindings[value]);
                 } else if (dataType === 'color') {
                     row[columnName] = palettes.intToHex(value);
