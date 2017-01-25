@@ -14,15 +14,13 @@ const mountPoint = `/pivot`;
 
 const expressApp = express();
 const httpServer = http.createServer(expressApp);
-const socketServer = SocketIOServer(httpServer);
+const socketServer = SocketIOServer(httpServer, {path: `${mountPoint}/socket.io`});
 
 expressApp.disable('x-powered-by');
 expressApp.use(compression());
 expressApp.use(authenticateMiddleware());
 
 expressApp.use(mountPoint, express.static('./build/public'));
-
-socketServer.path(`${mountPoint}/socket.io`);
 
 expressApp.post(
     `${mountPoint}/error`,
