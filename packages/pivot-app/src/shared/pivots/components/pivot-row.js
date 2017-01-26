@@ -1,49 +1,8 @@
-import _ from 'underscore';
-import RcSwitch from 'rc-switch';
 import PivotCell from './pivot-cell';
 import PivotActions from './pivot-actions';
 import EntitySummaries from './entity-summaries';
-import TemplateSelector from './template-selector';
 import styles from './pivots.less';
 import { PanelGroup, Panel, Well, Badge, Tooltip, OverlayTrigger } from 'react-bootstrap';
-
-function PivotRowHeader({ id, investigationId, enabled, rowIndex, pivots, templates, 
-    togglePivots, pivotTemplate, setPivotAttributes
-}) {
-    return (
-        <div className={styles['pivot-row-header']}>
-            <span className={styles['pivot-row-header-item']}>
-                <span className={styles['pivot-number']}>{ rowIndex }</span>
-            </span>
-            <span className={styles['pivot-row-header-item']}>
-                <RcSwitch 
-                    defaultChecked={false}
-                    checked={enabled}
-                    checkedChildren={'On'}
-                    onChange={(enabled) => {
-                        const indices = enabled ? _.range(0, rowIndex + 1)
-                            : _.range(rowIndex, pivots.length);
-                        togglePivots({indices, enabled, investigationId});
-                    }}
-                    unCheckedChildren={'Off'}
-                />
-            </span>
-
-            {
-                pivotTemplate && templates &&
-                    <span className={styles['pivot-row-header-item']}>
-                        <TemplateSelector
-                            id={id}
-                            templates={templates}
-                            pivotTemplate={pivotTemplate}
-                            setPivotAttributes={setPivotAttributes}
-                        />
-                    </span>
-                    || undefined
-            }
-        </div>
-    )
-}
 
 class PivotPanel extends Panel {
     constructor(...args) {
@@ -138,7 +97,7 @@ function ResultSummaryPanel({id, enabled, resultSummary, resultCount, rowIndex})
 export default function PivotRow({
     id, investigationId, status,
     enabled, resultCount, resultSummary,
-    pivotParameters, pivotTemplate, templates,
+    pivotParameters, pivotTemplate,
     searchPivot, togglePivots, setPivotAttributes,
     splicePivot, insertPivot, pivots, rowIndex
 }) {
@@ -147,17 +106,6 @@ export default function PivotRow({
 
     return (
         <div id={"pivotRow" + id} className={`${styles['pivot-row']} ${styles['pivot-checked-' + Boolean(enabled)]}`}>
-            <PivotRowHeader 
-                id={id} 
-                investigationId={investigationId} 
-                enabled={enabled}
-                rowIndex={rowIndex}
-                pivots={pivots}
-                templates={templates}
-                togglePivots={togglePivots}
-                pivotTemplate={pivotTemplate} 
-                setPivotAttributes={setPivotAttributes} 
-            />
             <PanelGroup>
                 <ParameterPanel 
                     id={id} 
