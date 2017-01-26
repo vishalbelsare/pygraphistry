@@ -49,7 +49,7 @@ const PivotPanels = React.createClass({
                                 footer={
                                     <span className={styles['pivot-footer']}>
                                         <i style={{float: 'right', width: '100%', textAlign: 'right'}}
-                                            className={`fa fa-fw fa-caret-${this.state.activeKey === `${index}` ? 'up' : 'left'}`}
+                                            className={`fa fa-fw fa-caret-${this.state.activeKey === index ? 'up' : 'left'}`}
                                             onClick={((event) => {
                                                 event.preventDefault()
                                                 this.handleSelect(index)
