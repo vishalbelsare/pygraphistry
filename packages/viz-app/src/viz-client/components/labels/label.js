@@ -34,16 +34,6 @@ const events = [
 ];
 
 export class Label extends React.Component {
-
-    static contextTypes = {
-        sizes: React.PropTypes.object.isRequired,
-        pointColors: React.PropTypes.object.isRequired,
-        edgeColors: React.PropTypes.object.isRequired,
-        scalingFactor: React.PropTypes.number.isRequired,
-        pixelRatio: React.PropTypes.number.isRequired
-    };
-
-
     constructor(props, context) {
         super(props, context);
         events.forEach((eventName) => {
@@ -87,7 +77,8 @@ export class Label extends React.Component {
               color, background,
               onFilter, onExclude,
               encodings,
-              type, title, columns, ...props } = this.props;
+              sizes, pointColors, scalingFactor, pixelRatio,
+              type, index, title, columns, ...props } = this.props;
 
         if (title == null || title == '') {
             if (!showFull && !pinned) {
@@ -95,47 +86,35 @@ export class Label extends React.Component {
             }
         }
 
-
-
         // TODO remove these diagnostics and checks when we confirm that
-        // we are not getting an occasional null/parse exception here        
+        // we are not getting an occasional null/parse exception here
         let pointColor = undefined;
         let pointRgb = undefined;
 
-        if (this.props.index === undefined || this.props.type === undefined) {
-            logger.warn('bad label render', this.props.index, this.props.type);
+        if (index === undefined || type === undefined) {
+            logger.warn('bad label render', index, type);
             return null;
         }
 
         try {
-            pointRgb = {
-                    r: this.context.pointColors[this.props.index * 4 + 0],
-                    g: this.context.pointColors[this.props.index * 4 + 1],
-                    b: this.context.pointColors[this.props.index * 4 + 2]};
-            pointColor = this.props.type === 'edge' ? '#ccc' 
-                : Color(pointRgb)
-                    .alpha(1)
-                    .rgbaString();
+            pointColor = type === 'edge' ? '#ccc' : Color(pointRgb = {
+                r: pointColors[index * 4 + 0],
+                g: pointColors[index * 4 + 1],
+                b: pointColors[index * 4 + 2]
+            }).alpha(1).rgbaString();
         } catch (e) {
-            logger.error('Could not create color', e, this.props.type, this.props.index);
-            logger.error('Color vals: ', {
-                r: this.context.pointColors[this.props.index * 4 + 0],
-                g: this.context.pointColors[this.props.index * 4 + 1],
-                b: this.context.pointColors[this.props.index * 4 + 2]});
+            logger.warn('Could not create color', e, type, index);
+            logger.warn('Color vals: ', {
+                r: pointColors[index * 4 + 0],
+                g: pointColors[index * 4 + 1],
+                b: pointColors[index * 4 + 2]
+            });
             return null;
         }
         ///////////////////
 
-
-        const iconSize = 
-            this.props.type === 'edge' ? 
-                    30
-                :  Math.max(
-                        5, 
-                        Math.min(
-                            this.context.scalingFactor * this.context.sizes[this.props.index], 
-                            50)) / this.context.pixelRatio;
-
+        const iconSize = type === 'edge' ? 30 :
+            Math.max(5, Math.min(scalingFactor * sizes[index], 50)) / pixelRatio;
 
         background = showFull || pinned ? new Color(background).alpha(1).rgbaString() : background;
 
@@ -157,7 +136,7 @@ export class Label extends React.Component {
                          left: `-50%`,
                          opacity: 1,
                          marginTop: 1,
-                         position: `relative`                         
+                         position: `relative`
                      }}
                      className={classNames({
                           'in': true,
@@ -201,17 +180,17 @@ export function isDark ({r,g,b}) {
 function PointIcon({ iconClass, pointColor, pointRgb, iconSize, type }) {
     if (!iconClass || type !== 'point' || iconSize <= 15) {
         return null;
-    }    
+    }
 
     return <div className={classNames({
                 [styles['point-icon-container']]: true,
                 [styles['light-color']]: !isDark(pointRgb)})}
             style={{
-                backgroundColor: pointColor, 
+                backgroundColor: pointColor,
                 top: `calc(-${iconSize}px - 10px)`,
                 transform: `scale(${iconSize/40})`}}
         >
-            <div className={classNames({[styles['point-icon']]: true})}>                                
+            <div className={classNames({[styles['point-icon']]: true})}>
                 <i className={classNames({
                     'fa': true,
                     'fa-fw': true,

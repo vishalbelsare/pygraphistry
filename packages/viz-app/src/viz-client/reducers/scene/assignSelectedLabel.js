@@ -7,8 +7,8 @@ export function assignSelectedLabel(actions) {
     const labelSelectionStarts = SceneGestures
         .startFromActions(actions
             .ofType(SELECT_LABEL)
-            .filter(({ simulating, selectionType }) => (
-                !simulating && !selectionType
+            .filter(({ simulating, isSelected, selectionType }) => (
+                isSelected || (!simulating && !selectionType)
             ))
         );
 

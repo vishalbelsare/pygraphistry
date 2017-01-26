@@ -11,12 +11,10 @@ export function addExpression(loadViewsById) {
         return loadViewsById({
             workbookIds, viewIds
         })
-        .mergeMap(({ workbook, view }) => {
+        .map(({ workbook, view }) => {
             const { expressionsById } = view;
             expressionsById[expression.id] = expression;
-            return maskDataframe({ view })
-                .catch((errors) => Observable.throw({ workbook, view, errors }))
-                .map(({ view }) => ({ workbook, view, expression }));
+            return { workbook, view, expression };
         });
     }
 }
@@ -49,16 +47,14 @@ export function removeExpression(loadViewsById) {
         return loadViewsById({
             workbookIds, viewIds
         })
-        .mergeMap(({ workbook, view }) => {
+        .map(({ workbook, view }) => {
             const { expressionsById } = view;
             const { [expressionId]: expression } = expressionsById;
             if (!expressionsById.hasOwnProperty(expressionId)) {
                 return Observable.of({ workbook, view, expressionId })
             }
             delete expressionsById[expressionId];
-            return maskDataframe({ view })
-                .catch((errors) => Observable.throw({ workbook, view, errors }))
-                .map(({ view }) => ({ workbook, view, expression, expressionId }));
+            return { workbook, view, expression, expressionId };
         });
     }
 }

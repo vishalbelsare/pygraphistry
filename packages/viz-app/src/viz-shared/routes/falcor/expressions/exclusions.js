@@ -3,7 +3,7 @@ import { exclusion as createExclusion } from 'viz-shared/models/expressions';
 import { addExpressionHandler, removeExpressionHandler } from './expressions';
 
 export function exclusions(path, base) {
-    return function exclusions({ loadViewsById, addExpression, removeExpressionById }) {
+    return function exclusions({ loadViewsById, maskDataframe, addExpression, removeExpressionById }) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
@@ -16,6 +16,7 @@ export function exclusions(path, base) {
                 })]);
             }
         }(addExpressionHandler({
+            maskDataframe,
             openPanel: true,
             panelSide: 'left',
             listName: 'exclusions',
@@ -24,6 +25,7 @@ export function exclusions(path, base) {
         }));
 
         const removeExclusion = removeExpressionHandler({
+            maskDataframe,
             listName: 'exclusions',
             expressionType: 'exclusion',
             removeItem: removeExpressionById

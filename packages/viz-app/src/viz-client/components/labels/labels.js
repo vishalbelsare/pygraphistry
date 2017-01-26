@@ -47,33 +47,6 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
 );
 
 class Labels extends React.Component {
-
-    getChildContext() {
-
-        return {
-            sizes: this.props.sizes,
-            pointColors: this.props.pointColors,
-            edgeColors: this.props.edgeColors,
-            ...(this.props.renderState && this.props.renderState.camera ?
-                {
-                    scalingFactor: this.props.renderState.camera.semanticZoom(this.props.sizes.length || 0),
-                    pixelRatio: this.props.renderState.camera.pixelRatio
-                }
-                : {
-                    scalingFactor: 1,
-                    pixelRatio: 1
-                })
-        };
-    }
-
-    static childContextTypes = {
-        sizes: React.PropTypes.object.isRequired,
-        pointColors: React.PropTypes.object.isRequired,
-        edgeColors: React.PropTypes.object.isRequired,
-        scalingFactor: React.PropTypes.number.isRequired,
-        pixelRatio: React.PropTypes.number.isRequired
-    }
-
     componentWillMount() {
         this.updateLabelSettings({}, this.props);
     }
@@ -99,7 +72,7 @@ class Labels extends React.Component {
             children = [];
         } else {
             pixelRatio = camera.pixelRatio;
-            scalingFactor = camera.semanticZoom(sizes.length);
+            scalingFactor = camera.semanticZoom(sizes.length || 0);
         }
 
         let labelIndex = -1;
@@ -148,6 +121,9 @@ class Labels extends React.Component {
                 const offsetY = 0;
 
                 childrenToRender.push(React.cloneElement(child, {
+                    sizes,
+                    edgeColors,
+                    pointColors,
                     renderState,
                     renderingScheduler,
                     style: {
