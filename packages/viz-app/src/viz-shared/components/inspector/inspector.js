@@ -156,8 +156,10 @@ function renderCell(colIndex, rowIndex, { cols, rows, startCol, startRow }) {
         }
         if (col) {
             value = row[col.name];
-            value = (value != null && value !== '') &&
-                defaultFormat(value, dataType = col.dataType) || '';
+            if (value != null && value !== '') {
+                value = '' + value;
+                dataType = col.dataType;
+            }
         }
     }
 

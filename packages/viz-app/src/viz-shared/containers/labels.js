@@ -50,7 +50,12 @@ let Labels = ({ simulating,
     if (highlight) {
         labels = labels.filter(({ index }) => (
             index !== highlight.index
-        )).concat(highlight);
+        ));
+        if (sceneSelectionType) {
+            highlight = undefined
+        } else {
+            labels.push(highlight);
+        }
     }
 
     return (
@@ -83,8 +88,8 @@ Labels = container({
     fragment: ({ edge = [], point = [], settings } = {}) => `{
         id, name, timeZone,
         opacity, enabled, poiEnabled,
-        renderer: { 
-            background: { color } 
+        renderer: {
+            background: { color }
         },
         ['background', 'foreground']: { color },
         ...${ Settings.fragment({ settings }) },
