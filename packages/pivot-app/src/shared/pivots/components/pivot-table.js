@@ -18,26 +18,26 @@ const PivotPanels = React.createClass({
     },
 
     render() {
-        const { 
-            pivots, 
-            id, 
-            templates, 
+        const {
+            pivots,
+            id,
+            templates,
             togglePivots,
             insertPivot,
             searchPivot,
             splicePivot
         } = this.props;
         return (
-            <PanelGroup 
-                activeKey={this.state.activeKey} 
-                onSelect={this.handleSelect} 
+            <PanelGroup
+                activeKey={this.state.activeKey}
+                onSelect={this.handleSelect}
                 accordion
             >
                 {
                     pivots.map((pivot, index) => (
                             <Panel eventKey={index}
                                 header={
-                                    <PivotRowHeader 
+                                    <PivotRowHeader
                                         data={pivot}
                                         investigationId={id}
                                         rowIndex={index}
@@ -45,11 +45,11 @@ const PivotPanels = React.createClass({
                                         templates={templates}
                                         togglePivots={togglePivots}
                                     />
-                                } 
+                                }
                                 footer={
                                     <span className={styles['pivot-footer']}>
-                                        <i style={{float: 'right', width: '100%', textAlign: 'right'}} 
-                                            className={`fa fa-fw fa-caret-${this.state.activeKey === `${index}` ? 'up' : 'left'}`} 
+                                        <i style={{float: 'right', width: '100%', textAlign: 'right'}}
+                                            className={`fa fa-fw fa-caret-${this.state.activeKey === `${index}` ? 'up' : 'left'}`}
                                             onClick={((event) => {
                                                 event.preventDefault()
                                                 this.handleSelect(index)
