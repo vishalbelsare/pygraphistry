@@ -73,7 +73,7 @@ let Inspector = container({
         for (let i = -1, n = rowsSortedByOrder.length; ++i < n;) {
             const row = rows[startRow + i];
             rowsSortedByOrder[i] = row ? row : {
-                rowIsLoading: true, pendingIndex: startRow + i
+                rowIsLoading: true, pendingIndex: startRow + i + 1
             };
         }
 

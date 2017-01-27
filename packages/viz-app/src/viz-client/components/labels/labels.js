@@ -118,20 +118,20 @@ class Labels extends React.Component {
             if (child) {
 
                 const radius = size * 0.5;
-                const offsetY = 0;
 
                 childrenToRender.push(React.cloneElement(child, {
                     sizes,
+                    pixelRatio,
                     edgeColors,
                     pointColors,
+                    scalingFactor,
                     renderState,
                     renderingScheduler,
                     style: {
                         ...(child.props && child.props.style),
-                        paddingTop: `${offsetY + radius}px`,
-                        transform: `translate3d(${
-                            Math.round(x)}px, ${
-                            Math.round(y)}px, 0px)`,
+                        paddingTop: `${radius}px`,
+                        transform: `${`translate3d(${x}px, ${y}px, 0)` /* force hardware acceleration */} ${
+                                      `perspective(1000px)` /* force sub-pixel font rendering*/}`
                     }
                 }));
             }

@@ -1,13 +1,14 @@
 .grid-scroller-container {
     overflow: hidden;
-    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    transform: perspective(1000px) translate3d(0, 0, 0);
 }
 
 .grid-scroller {
     overflow: auto;
 }
 
-.grid {
+.grid, .grid > thead, .grid > tbody, .grid > tfoot {
     backface-visibility: hidden;
 }
 
