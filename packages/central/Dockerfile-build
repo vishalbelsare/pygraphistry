@@ -2,21 +2,14 @@ FROM graphistry/baseapp:1.2
 
 # fetch secrets from our vault, do the npm installs, and delete the secrets.
 
+# DEV-1144 # ARG BUILD_NUMBER
 ENV APPDIR /app
 WORKDIR $APPDIR
 
-COPY . $APPDIR
+COPY ./wholly-innocuous/files/npm/rc /root/.npmrc
 
+COPY . .
 
-RUN mkdir /root/.ssh && \
-    curl $(/sbin/ip route | awk '/default/ {print $3}'):17290/github/id_rsa > /root/.ssh/id_rsa && \
-    curl $(/sbin/ip route | awk '/default/ {print $3}'):17290/github/id_rsa.pub > /root/.ssh/id_rsa.pub && \
-    curl $(/sbin/ip route | awk '/default/ {print $3}'):17290/npm/rc > /root/.npmrc && \
-    chmod 400 /root/.ssh/* && \
-    md5sum /root/.ssh/* && \
-    (ssh -o StrictHostKeyChecking=no -T git@github.com || true) && \
-    cd $APPDIR && \
-    npm install && \
-    npm run build && \
-    npm publish && \
-    shred -u /root/.ssh/* /root/.npmrc
+RUN npm install
+RUN npm run build
+RUN npm publish
