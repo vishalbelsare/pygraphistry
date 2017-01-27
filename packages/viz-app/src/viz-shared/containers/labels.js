@@ -43,12 +43,14 @@ let Labels = ({ simulating,
         highlight = undefined;
     }
     if (selection) {
-        labels = labels.filter(({ index }) => (
+        labels = labels.filter(({ type, index }) => (
+            type !== selection.type ||
             index !== selection.index
         )).concat(selection);
     }
     if (highlight) {
-        labels = labels.filter(({ index }) => (
+        labels = labels.filter(({ type, index }) => (
+            type !== highlight.type ||
             index !== highlight.index
         ));
         if (sceneSelectionType) {

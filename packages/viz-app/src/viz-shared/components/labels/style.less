@@ -11,13 +11,15 @@
     height: 0;
 
     pointer-events: none;
+    transform-style: preserve-3d;
+    text-rendering: geometricPrecision;
 }
 
 .labels-zoomed-in { }
 
 /******** /CONTAINER ******/
 
-.label {    
+.label {
 
     &:not(.on) {
         max-width: 7em;
@@ -31,6 +33,8 @@
     position: absolute;
     z-index: @graph-label-z;
     pointer-events: none;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
 
     &, & * {
         .noselect();
@@ -76,7 +80,7 @@
         padding-bottom: 0px;
     }
 
-    
+
     .labels-zoomed-in &:not(.on) :global(.tooltip-inner) {
         background: transparent !important;
         color: rgba(25,25,25,0.75) !important;
@@ -163,7 +167,7 @@
         }
 
         .label-title-icon-encoded {
-            margin-right: 1em;
+            margin-right: 8px;
         }
 
     }
@@ -288,31 +292,34 @@
 /********* ICONS ************/
 
 
-@icon-diameter: 30px;
-@icon-border: 2px;
-@icon-container-diameter: 40px;
-@icon-container-border: 2px;
+@icon-border: 1px;
+@icon-diameter: 50px;
+
 .point-icon-container {
-
-    pointer-events: none;
-    
-    background-color: #ccc;
-
-    border-radius: calc( @icon-container-diameter / 2);    
-    border: @icon-container-border solid rgba(0,0,0,0.5);
-    padding: calc( @icon-container-diameter / 2 - @icon-container-border - @icon-diameter / 2);
-
-    display: inline-block;
-    width: @icon-container-diameter;
-    height: @icon-container-diameter;
+    top: 0;
+    left: -50%;
+    width: 100%;
     position: absolute;
-    top: calc(-@icon-container-diameter);
-    margin-left: calc(-@icon-container-diameter / 2);
-
+    backface-visibility: hidden;
 }
+
 .point-icon {
 
-    border-radius: calc( @icon-diameter / 2);    
+    top: 0;
+    left: 50%;
+    font-size: 18px;
+    position: absolute;
+    text-align: center;
+    vertical-align: middle;
+
+    border-radius: @icon-diameter / 2;
+    border: @icon-border solid rgba(0, 0, 0, 1);
+
+    width: @icon-diameter - 2 * @icon-border;
+    height: @icon-diameter - 2 * @icon-border;
+    line-height: @icon-diameter - 2 * @icon-border;
+    margin-top: @icon-diameter * -0.5 + @icon-border;
+    margin-left: @icon-diameter * -0.5 + @icon-border;
 
     .point-icon-container.light-color & {
         color: #2e2e2e;
@@ -320,16 +327,6 @@
     .point-icon-container:not(.light-color) & {
         color: white;
     }
-
-
-    overflow: hidden;
-
-    display: inline-block;
-    width: @icon-diameter;
-    height: @icon-diameter;
-
-    font-size: 18px;
-
 }
 
 .label-tooltip {

@@ -7,9 +7,6 @@ import { Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import { ColorPill } from 'viz-shared/components/color-pill/colorPill';
 import { getDefaultQueryForDataType } from 'viz-shared/models/expressions';
 
-import { logger as commonLogger } from '@graphistry/common';
-const logger = commonLogger.createLogger('viz-app:labels');
-
 function preventPropagation (f) {
     return function (e) {
         e.stopPropagation();
@@ -28,10 +25,8 @@ function stopPropagationIfAnchor(e) {
     }
 }
 
-const events = [
-    'onLabelSelected',
-    'onLabelMouseMove',
-];
+const events = ['onLabelSelected', 'onLabelMouseMove'];
+const labelTooltipStyle = { left: `-50%`, marginTop: 1, position: `relative` };
 
 export class Label extends React.Component {
     constructor(props, context) {
@@ -86,32 +81,14 @@ export class Label extends React.Component {
             }
         }
 
-        // TODO remove these diagnostics and checks when we confirm that
-        // we are not getting an occasional null/parse exception here
-        let pointColor = undefined;
         let pointRgb = undefined;
+        let pointColor = undefined;
 
-        if (index === undefined || type === undefined) {
-            logger.warn('bad label render', index, type);
-            return null;
-        }
-
-        try {
-            pointColor = type === 'edge' ? '#ccc' : Color(pointRgb = {
-                r: pointColors[index * 4 + 0],
-                g: pointColors[index * 4 + 1],
-                b: pointColors[index * 4 + 2]
-            }).alpha(1).rgbaString();
-        } catch (e) {
-            logger.warn('Could not create color', e, type, index);
-            logger.warn('Color vals: ', {
-                r: pointColors[index * 4 + 0],
-                g: pointColors[index * 4 + 1],
-                b: pointColors[index * 4 + 2]
-            });
-            return null;
-        }
-        ///////////////////
+        pointColor = type === 'edge' ? '#ccc' : Color(pointRgb = {
+            r: pointColors[index * 4 + 0],
+            g: pointColors[index * 4 + 1],
+            b: pointColors[index * 4 + 2]
+        }).alpha(1).rgbaString();
 
         const iconSize = type === 'edge' ? 30 :
             Math.max(5, Math.min(scalingFactor * sizes[index], 50)) / pixelRatio;
@@ -129,21 +106,18 @@ export class Label extends React.Component {
                      [styles['clicked']]: pinned,
                  })}
                  {...props}>
-                <div onMouseMove={this.onLabelMouseMove}
+                <PointIcon type={type}
+                           iconSize={iconSize} iconClass={iconClass}
+                           pointRgb={pointRgb} pointColor={pointColor}/>
+                <div style={labelTooltipStyle}
+                     onMouseMove={this.onLabelMouseMove}
                      onMouseDown={!pinned && this.onLabelSelected || undefined}
                      onTouchStart={!pinned && this.onLabelSelected || undefined}
-                     style={{
-                         left: `-50%`,
-                         opacity: 1,
-                         marginTop: 1,
-                         position: `relative`
-                     }}
                      className={classNames({
                           'in': true,
                           'bottom': true, 'tooltip': true,
                           [styles['label-tooltip']]: true
                      })}>
-                    <PointIcon iconClass={iconClass} pointColor={pointColor} pointRgb={pointRgb} iconSize={iconSize} type={this.props.type}/>
                     <div style={arrowStyle} className='tooltip-arrow'/>
                     <div style={contentStyle} className='tooltip-inner'>
                         <LabelTitle type={type}
@@ -178,26 +152,30 @@ export function isDark ({r,g,b}) {
 }
 
 function PointIcon({ iconClass, pointColor, pointRgb, iconSize, type }) {
+
     if (!iconClass || type !== 'point' || iconSize <= 15) {
         return null;
     }
 
-    return <div className={classNames({
-                [styles['point-icon-container']]: true,
-                [styles['light-color']]: !isDark(pointRgb)})}
-            style={{
-                backgroundColor: pointColor,
-                top: `calc(-${iconSize}px - 10px)`,
-                transform: `scale(${iconSize/40})`}}
-        >
-            <div className={classNames({[styles['point-icon']]: true})}>
+    return (
+        <div style={{ transform: `${
+                `scale(${iconSize / 50})`} ${
+                `translate3d(0, 0, 0)` /* force hardware acceleration */} ${
+                `perspective(1000px)` /* force sub-pixel font rendering when scaled*/}`
+            }}
+             className={ classNames({
+                 [styles['point-icon-container']]: true,
+                 [styles['light-color']]: !isDark(pointRgb)
+            })}>
+            <div className={[styles['point-icon']]}
+                 style={{ backgroundColor: pointColor }}>
                 <i className={classNames({
                     'fa': true,
                     'fa-fw': true,
                     [iconClass]: true})} />
             </div>
-        </div>;
-
+        </div>
+    );
 }
 
 function Icon({ iconClass }) {
@@ -250,7 +228,7 @@ function LabelTitle ({ type, color, iconClass, title, icon, pinned, showFull, on
                 <span onMouseDown={stopPropagationIfAnchor}
                       className={styles['label-title-text']}>
                       <Icon iconClass={iconClass}/>
-                      <span dangerouslySetInnerHTML={titleHTML} style={ {display: 'inline-block'} }/>
+                      <span dangerouslySetInnerHTML={titleHTML}/>
                 </span>
             </div>
         );
@@ -303,7 +281,7 @@ function LabelTitle ({ type, color, iconClass, title, icon, pinned, showFull, on
             <span onMouseDown={stopPropagationIfAnchor}
                   className={styles['label-title-text']}>
                   <Icon iconClass={iconClass}/>
-                  <span dangerouslySetInnerHTML={titleHTML} style={ {display: 'inline-block'} }/>
+                  <span dangerouslySetInnerHTML={titleHTML} style={{ display: 'inline-block' }}/>
             </span>
         </div>
     );
