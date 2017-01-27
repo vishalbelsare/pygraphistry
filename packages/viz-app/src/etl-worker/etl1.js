@@ -18,15 +18,6 @@ var logger   = Log.createLogger('etlworker:etl1');
 
 var tmpCache = new Cache(config.LOCAL_DATASET_CACHE_DIR, config.LOCAL_DATASET_CACHE);
 
-//function isJsonString(str) {
-    //try {
-        //JSON.parse(str);
-    //} catch (e) {
-        //return false;
-    //}
-    //return true;
-//}
-
 function validateUpload(msg) {
     const { name, graph, bindings } = msg;
     if (Object.keys(msg).length === 0) {
