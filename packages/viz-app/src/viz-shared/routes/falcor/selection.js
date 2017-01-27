@@ -15,7 +15,9 @@ export function selection(path, base) {
         const setSelectionMask = setHandler(path, loadViewsById,
             (node, key, value, path, { view }) => {
                 const { nBody: { dataframe } = {} } = view;
-                dataframe.lastHistogramSelectionMasks = undefined;
+                view.inspector.rows = undefined;
+                view.componentsByType = undefined;
+                dataframe.lastTaggedSelectionMasks = undefined;
                 return Observable.of({
                     path, value: node[key] = value
                 });

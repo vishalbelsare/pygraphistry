@@ -30,6 +30,7 @@ export function histograms(path, base) {
         const setHistograms = setHandler(path.concat('histogram'), loadHistogramsById);
 
         const addFilter = addExpressionHandler({
+            maskDataframe,
             openPanel: true,
             panelSide: 'left',
             listName: 'filters',
@@ -38,6 +39,7 @@ export function histograms(path, base) {
         });
 
         const removeFilter = removeExpressionHandler({
+            maskDataframe,
             listName: 'filters',
             expressionType: 'filter',
             removeItem: removeExpressionById
@@ -231,13 +233,11 @@ export function histograms(path, base) {
                         return Observable.of(
                             $invalidate(`${histogramPath}.filter`),
                                  $value(`${histogramPath}.range`, []));
-                                 // $value(`${histogramPath}.filter.enabled`, true)
                     }
                     return removeFilter
                         .call(this, path, [filter.id])
                         .startWith($invalidate(`${histogramPath}.filter`),
                                         $value(`${histogramPath}.range`, []));
-                                        // $value(`${histogramPath}.filter.enabled`, true))
                 } else if (!filter) {
                     create = true;
                     filter = createFilter({
@@ -273,11 +273,15 @@ export function histograms(path, base) {
 
                 return maskDataframe({ view }).mergeMap(() => {
 
+                    view.inspector.rows = undefined;
+                    view.componentsByType = undefined;
+
                     // If the view has histograms, invalidate the
                     // relevant fields so they're recomputed if the
                     // histograms panel is open, or the next time the
                     // panel is opened.
                     const pathValues = [
+                        $invalidate(`${viewPath}.componentsByType`),
                         $invalidate(`${viewPath}.labelsByType`),
                         $invalidate(`${viewPath}.inspector.rows`),
                         $value(`${viewPath}.highlight.darken`, false),

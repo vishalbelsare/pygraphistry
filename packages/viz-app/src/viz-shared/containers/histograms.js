@@ -50,13 +50,9 @@ let Histograms = ({ addHistogram, removeHistogram, setEncoding, encodings,
                          addExpression={addHistogram}
                          loading={showLoadingInHeader}
                          placeholder="Add histogram for..."
-                         className={className + ' ' + styles['histograms-list']}
                          style={{ ...style, height: `100%` }} {...props}
-                         templates={
-                             templates.filter(({ name = '' }) => (
-                                name.indexOf('__') !== 0
-                            )
-                        )}>
+                         className={className + ' ' + styles['histograms-list']}
+                         templates={templates.filter(({ isInternal }) => !isInternal)}>
             {histogramItems}
         </ExpressionsList>
     );
@@ -68,7 +64,7 @@ Histograms = container({
         return `{
             templates: {
                 length, [0...${templates.length}]: {
-                    name, dataType, identifier, componentType
+                    name, isPrivate, isInternal, dataType, identifier, componentType
                 }
             },
             id, name, length, ...${

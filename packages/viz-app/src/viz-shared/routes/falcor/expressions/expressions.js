@@ -5,7 +5,8 @@ import {
     pathInvalidation as $invalidate
 } from '@graphistry/falcor-json-graph';
 
-import { Subject, Observable } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
+import * as Scheduler from 'rxjs/scheduler/async';
 
 import { getHandler,
          setHandler,
@@ -50,43 +51,46 @@ export function expressions(path, base) {
                 viewId, workbookId, expressionId
             })
             .filter(({ values }) => values.length > 0)
-            .mergeMap(
-                ({ view }) => maskDataframe({ view }),
-                ({ view, workbook, expression, values }) => {
+            .mergeMap(({ view, workbook, expression, values }) => {
+                return Observable
+                    .from(values)
+                    .concat(maskDataframe({ view })
+                        .subscribeOn(Scheduler.async, 100)
+                        .mergeMap(({ view }) => {
 
-                    const { selection } = view;
-                    const { histograms = [] } = view;
+                            const invalidations = [];
+                            const { selection } = view;
+                            const { histograms = [] } = view;
+                            const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
 
-                    const viewPath = `
-                            workbooksById['${workbook.id}']
-                                .viewsById['${view.id}']`;
+                            if (expression.enabled === true || (
+                                'enabled' in expressionProps)) {
 
-                    if (expression.enabled === true || (
-                        'enabled' in expressionProps)) {
+                                // If the view has histograms, invalidate the
+                                // relevant fields so they're recomputed if the
+                                // histograms panel is open, or the next time the
+                                // panel is opened.
 
-                        // If the view has histograms, invalidate the
-                        // relevant fields so they're recomputed if the
-                        // histograms panel is open, or the next time the
-                        // panel is opened.
+                                view.inspector.rows = undefined;
+                                view.componentsByType = undefined;
 
-                        values.push(
-                            $invalidate(`${viewPath}.labelsByType`),
-                            $invalidate(`${viewPath}.inspector.rows`)
-                        );
+                                invalidations.push(
+                                    $invalidate(`${viewPath}.componentsByType`),
+                                    $invalidate(`${viewPath}.labelsByType`),
+                                    $invalidate(`${viewPath}.inspector.rows`)
+                                );
 
-
-                        if (histograms.length > 0 &&
-                            selection && selection.mask &&
-                            selection.type === 'window') {
-                            values.push($invalidate(`
-                                ${viewPath}.selection.histogramsById`));
-                        }
-                    }
-
-                    return values;
-                }
-            )
-            .mergeMap((values) => values);
+                                if (histograms.length > 0 &&
+                                    selection && selection.mask &&
+                                    selection.type === 'window') {
+                                    invalidations.push($invalidate(`
+                                        ${viewPath}.selection.histogramsById`));
+                                }
+                            }
+                            return invalidations;
+                        })
+                    );
+            });
         }
 
         return [{
@@ -104,6 +108,7 @@ export function expressions(path, base) {
 }
 
 export function addExpressionHandler({
+    maskDataframe,
     addItem,
     mapName = 'expressionsById',
     listName = 'expressions',
@@ -122,20 +127,25 @@ export function addExpressionHandler({
         })
         .mergeMap(({ workbook, view, [itemName]: value }) => {
 
-            const viewPath = `
-                workbooksById['${workbook.id}']
-                    .viewsById['${view.id}']`;
+            view.inspector.rows = undefined;
+            view.componentsByType = undefined;
 
             const { selection, [listName]: list } = view;
+            const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+
             const newLengthPath = `${viewPath}['${listName}'].length`;
             const newItemPath = `${viewPath}['${listName}'][${list.length}]`;
             const newItemRef = $ref(`${viewPath}['${mapName}']['${value.id}']`);
 
             list[list.length++] = newItemRef;
 
-            const pathValues = [
+            const invalidations = [
+                $invalidate(`${viewPath}.componentsByType`),
                 $invalidate(`${viewPath}.labelsByType`),
                 $invalidate(`${viewPath}.inspector.rows`),
+            ];
+
+            const pathValues = [
                 $value(newItemPath, newItemRef),
                 $value(newLengthPath, list.length),
                 $value(`${viewPath}.highlight.darken`, false),
@@ -143,7 +153,7 @@ export function addExpressionHandler({
 
             if (selection && selection.mask &&
                 selection.type === 'window') {
-                pathValues.push($invalidate(`
+                invalidations.push($invalidate(`
                     ${viewPath}.selection.histogramsById`));
             }
 
@@ -159,30 +169,40 @@ export function addExpressionHandler({
                 );
             }
 
-            return pathValues;
-        })
-        .catch(captureErrorStacks)
-        .catch((err) => {
-
-            if (!err.workbook) {
-                return Observable.throw(err);
+            if (!maskDataframe) {
+                return pathValues;
             }
 
-            const { workbook, view, errors } = err;
-            const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
-
-            const { [listName]: list } = view;
-            const newLengthPath = `${viewPath}['${listName}'].length`;
-            const newItemPath = `${viewPath}['${listName}'][${list.length}]`;
-            return [
-                $value(newItemPath, $error(errors)),
-                $value(newLengthPath, list.length++),
-            ];
+            return Observable
+                .from(pathValues)
+                .concat(maskDataframe({ view })
+                    .subscribeOn(Scheduler.async, 100)
+                    .mergeMapTo(invalidations)
+                );
         });
+        // .catch(captureErrorStacks)
+        // .catch((err) => {
+
+        //     if (!err.workbook) {
+        //         return Observable.throw(err);
+        //     }
+
+        //     const { workbook, view, errors } = err;
+        //     const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+
+        //     const { [listName]: list } = view;
+        //     const newLengthPath = `${viewPath}['${listName}'].length`;
+        //     const newItemPath = `${viewPath}['${listName}'][${list.length}]`;
+        //     return [
+        //         $value(newItemPath, $error(errors)),
+        //         $value(newLengthPath, list.length++),
+        //     ];
+        // });
     }
 }
 
 export function removeExpressionHandler({
+    maskDataframe,
     removeItem,
     itemIDName = 'expressionId',
     mapName = 'expressionsById',
@@ -204,6 +224,8 @@ export function removeExpressionHandler({
                     .viewsById['${view.id}']`;
 
             const pathValues = [];
+            const invalidations = [];
+
             let listLen = list.length;
             let index = -1, found = false;
 
@@ -225,10 +247,19 @@ export function removeExpressionHandler({
             }
 
             if (found) {
+
+                view.inspector.rows = undefined;
+                view.componentsByType = undefined;
+
                 list[listLen - 1] = undefined;
-                pathValues.push(
+
+                invalidations.push(
+                    $invalidate(`${viewPath}.componentsByType`),
                     $invalidate(`${viewPath}.labelsByType`),
                     $invalidate(`${viewPath}.inspector.rows`),
+                );
+
+                pathValues.push(
                     $invalidate(`${viewPath}['${mapName}']['${itemId}']`),
                     $invalidate(`${viewPath}['${listName}']['${listLen - 1}']`),
                     $value(`${viewPath}.highlight.darken`, false),
@@ -249,12 +280,22 @@ export function removeExpressionHandler({
 
                 if (selection && selection.mask &&
                     selection.type === 'window') {
-                    pathValues.push($invalidate(`
+                    invalidations.push($invalidate(`
                         ${viewPath}.selection.histogramsById`));
                 }
             }
 
-            return pathValues;
+
+            if (!maskDataframe) {
+                return pathValues;
+            }
+
+            return Observable
+                .from(pathValues)
+                .concat(maskDataframe({ view })
+                    .subscribeOn(Scheduler.async, 100)
+                    .mergeMapTo(invalidations)
+                );
         });
     }
 }

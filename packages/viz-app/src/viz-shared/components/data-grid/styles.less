@@ -1,0 +1,58 @@
+.grid-scroller-container {
+    overflow: hidden;
+    backface-visibility: hidden;
+    transform: perspective(1000px) translate3d(0, 0, 0);
+}
+
+.grid-scroller {
+    overflow: auto;
+}
+
+.grid, .grid > thead, .grid > tbody, .grid > tfoot {
+    backface-visibility: hidden;
+}
+
+.grid-cell {
+    color: black;
+    font-size: .9em;
+    overflow: hidden;
+    white-space: nowrap;
+    vertical-align: middle;
+    text-overflow: ellipsis;
+    border-right: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    &:after {
+        content: '\00a0';
+    }
+}
+
+.grid-head-cell {
+    top: 0;
+    position: fixed;
+    background: white;
+    vertical-align: middle;
+    font-variant: small-caps;
+    border-top: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+}
+
+.grid > tbody .grid-cell {
+    padding-left: 4px;
+}
+
+.grid > tbody .grid-cell-odd {
+    background-color: #eee;
+}
+
+.grid > tbody .grid-cell-even {
+    background-color: white;
+}
+
+.grid > thead, .grid > tbody, .grid > tfoot {
+    will-change: transform;
+}
+
+.grid > thead th, .grid > tfoot th {
+    pointer-events: none;
+}

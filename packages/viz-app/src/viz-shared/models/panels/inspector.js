@@ -7,41 +7,41 @@ import {
 
 export function inspector(view) {
     return {
+        componentsByType: { edge: {}, point: {} },
         inspector: {
             open: false,
             length: 0,
             id: 'inspector',
             name: 'Data inspector',
-            openTab: 'points', // 'edges', 'events', ...
+            openTab: 'point', // 'edge', 'event', ...
             templates: $ref(`${view}.columns`),
-            currentQuery: $ref(`${view}.inspector.queries.points`),
-            currentRows: $ref(`${view}.inspector.rows.points.search-.sort-_title.asc`),
+            currentQuery: $ref(`${view}.inspector.queries.point`),
             queries: {
-                points: { //table
+                point: { //table
+                    page: 1,
                     searchTerm: '',
                     sortKey: '_title', //int or string column reference
                     sortOrder: 'asc', // or 'desc'
-                    rowsPerPage: 6, //fix CSS if we want to do more
-                    page: 1,
+                    componentType: 'point',
                     columns: $atom([])
-                    //rows: $ref(`${view}.inspector.rows.points.search-.community_infomap.asc`)
+                    //rows: $ref(`${view}.inspector.rows.point.search-.community_infomap.asc`)
                 },
-                edges: { //table
+                edge: { //table
+                    page: 1,
                     searchTerm: '',
                     sortKey: '_title', //int or string column reference
                     sortOrder: 'asc', // or 'desc'
-                    rowsPerPage: 6, //fix CSS if we want to do more
-                    page: 1,
+                    componentType: 'edge',
                     columns: $atom([])
-                    //rows: $ref(`${view}.inspector.rows.edges.search-._title.asc`),
+                    //rows: $ref(`${view}.inspector.rows.edge.search-._title.asc`),
                 }
             },
             rows: {
-                points: { //table
-                    'search-': {  //search term -- "search:asdf xya"
-                        'sort-': { //sort column
-                            'asc': {
-                                count: 0 //# search hits; independent of visible page
+                point: { //table
+                    'sortBy:_title': { //sort column
+                        'asc': {
+                            'search:': {  //search term -- "search:asdf xya"
+                                length: 0 //# search hits; independent of visible page
                                 //0: { field1, ... },
                                 //1: { field1, ... }
                                 //...

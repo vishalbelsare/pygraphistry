@@ -7,10 +7,12 @@ import {
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 
-import { getHandler,
-         setHandler,
-         mapObjectsToAtoms,
-         captureErrorStacks } from 'viz-shared/routes';
+import {
+    getHandler,
+    setHandler,
+    mapObjectsToAtoms,
+    captureErrorStacks
+} from 'viz-shared/routes';
 
 export function labels(path, base) {
     return function labels({ loadViewsById, loadLabelsByIndexAndType }) {
@@ -89,20 +91,12 @@ export function labels(path, base) {
                 workbookIds, viewIds, labelTypes, labelIndexes, options
             })
             .mergeMap(({ workbook, view, label }) => {
-                const { labelsByType } = view;
                 const { data, type, index } = label;
-                const labelByType = labelsByType[type] || (labelsByType[type] = {});
-
-                labelByType[index] = data;
-
-                return labelKeys.map((key) => $value(`
-                        workbooksById['${workbook.id}']
-                            .viewsById['${view.id}']
-                            .labelsByType
-                            ['${type}'][${index}]['${key}']`,
-                    key === 'type' ?
-                        type : key === 'index' ?
-                        index : data[key]
+                const basePath = `workbooksById['${workbook.id}'].viewsById['${view.id}'].labelsByType`;
+                return labelKeys.map((key) => $value(
+                    `${basePath}['${type}'][${index}]['${key}']`,
+                    key ===  'type' ? type :
+                    key === 'index' ? index : data[key]
                 ));
             })
             .map(mapObjectsToAtoms)

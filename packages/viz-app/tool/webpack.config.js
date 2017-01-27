@@ -364,7 +364,11 @@ function loaders(isDevBuild) {
             query: {
                 babelrc: false,
                 cacheDirectory: true, // cache into OS temp folder by default
-                plugins: ['transform-runtime'],
+                plugins: isDevBuild ? [
+                    'transform-runtime'] : [
+                    'transform-runtime',
+                    'transform-react-inline-elements',
+                    'transform-react-constant-elements'],
                 presets: [
                     // !isDevBuild ? 'es2016' :
                     ['es2015', { modules: false, loose: true }],

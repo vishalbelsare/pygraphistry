@@ -3,7 +3,7 @@ import { filter as createFilter } from 'viz-shared/models/expressions';
 import { addExpressionHandler, removeExpressionHandler } from './expressions';
 
 export function filters(path, base) {
-    return function filters({ loadViewsById, addExpression, removeExpressionById }) {
+    return function filters({ loadViewsById, maskDataframe, addExpression, removeExpressionById }) {
 
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
@@ -16,6 +16,7 @@ export function filters(path, base) {
                 })]);
             }
         }(addExpressionHandler({
+            maskDataframe,
             openPanel: true,
             panelSide: 'left',
             listName: 'filters',
@@ -24,6 +25,7 @@ export function filters(path, base) {
         }));
 
         const removeFilter = removeExpressionHandler({
+            maskDataframe,
             listName: 'filters',
             expressionType: 'filter',
             removeItem: removeExpressionById
