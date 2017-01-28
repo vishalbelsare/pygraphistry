@@ -43,7 +43,7 @@ function scanScrollPosition(memo, [eventPageOrTarget, props]) {
 
     if (typeof eventPageOrTarget === 'number') {
         page = eventPageOrTarget;
-        scrollTop = page === 1 ? 0 : rowHeaderHeight + (page - 1) * (
+        scrollTop = page === 1 ? 0 : (page - 1) * (
             (rowHeight * /* rowsPerPage */ Math.floor(
                     (height - rowHeaderHeight) / rowHeight)))
     } else {

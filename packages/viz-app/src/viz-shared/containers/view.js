@@ -72,11 +72,11 @@ let View = ({
                        key='bottom-panel'
                        colWidth={150}
                        rowHeight={30}
-                       colHeaderWidth={0}
-                       rowHeaderHeight={30}
+                       colHeaderWidth={48}
+                       rowHeaderHeight={32}
                        width={window.innerWidth}
                        selectInspectorRow={selectInspectorRow}
-                       height={size * window.innerHeight - 62}
+                       height={size * window.innerHeight - 61}
                        isOpen={isVisible && isBottomPanelOpen}
                        style={{ width: window.innerWidth,
                                 height: size * window.innerHeight }}/>

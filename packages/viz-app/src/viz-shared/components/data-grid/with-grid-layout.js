@@ -27,6 +27,7 @@ function getViewport(props) {
         colsPerPage = Math.floor((width - colHeaderWidth) / colWidth);
 
         bodyX = startCol * colWidth;
+        colHeaderX = scrollLeft - (startCol * colWidth);
         rowHeaderX = (startCol * colWidth) - scrollLeft;
     }
 
