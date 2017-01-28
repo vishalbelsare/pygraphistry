@@ -1,10 +1,15 @@
 import React from 'react';
+import { hoistStatics } from 'recompose';
 
-export function WithGridLayout(Component) {
+function WithGridLayout(Component) {
     return function GridLayout(props) {
         return <Component {...props} {...getViewport(props)}/>;
-    }
+    };
 }
+
+WithGridLayout = hoistStatics(WithGridLayout);
+
+export { WithGridLayout };
 
 function getViewport(props) {
 

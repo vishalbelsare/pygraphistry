@@ -76,7 +76,7 @@ let View = ({
                        rowHeaderHeight={32}
                        width={window.innerWidth}
                        selectInspectorRow={selectInspectorRow}
-                       height={size * window.innerHeight - 61}
+                       height={size * window.innerHeight - 60}
                        isOpen={isVisible && isBottomPanelOpen}
                        style={{ width: window.innerWidth,
                                 height: size * window.innerHeight }}/>

@@ -1,11 +1,5 @@
-import {
-    ref as $ref,
-    pathValue as $value
-} from '@graphistry/falcor-json-graph';
-import { getHandler,
-         setHandler,
-         mapObjectsToAtoms,
-         captureErrorStacks } from 'viz-shared/routes';
+import { getHandler, setHandler } from 'viz-shared/routes';
+import { $ref, $value, $invalidate } from '@graphistry/falcor-json-graph';
 
 export function selection(path, base) {
     return function selection({ loadViewsById, loadHistogramsById }) {
@@ -13,14 +7,20 @@ export function selection(path, base) {
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
         const setSelectionMask = setHandler(path, loadViewsById,
-            (node, key, value, path, { view }) => {
-                const { nBody: { dataframe } = {} } = view;
+            (node, key, value, path, { workbook, view }) => {
+
+                const { nBody: { dataframe = {} } = {} } = view;
+                const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+
                 view.inspector.rows = undefined;
                 view.componentsByType = undefined;
                 dataframe.lastTaggedSelectionMasks = undefined;
-                return Observable.of({
-                    path, value: node[key] = value
-                });
+
+                return Observable.of(
+                    $value(path, node[key] = value),
+                    $invalidate(`${viewPath}.inspector.rows`),
+                    $invalidate(`${viewPath}.componentsByType`),
+                );
             }
         );
 
