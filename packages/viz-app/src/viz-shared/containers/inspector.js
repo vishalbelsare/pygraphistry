@@ -13,12 +13,26 @@ let Inspector = container({
     renderLoading: true,
     fragment: (fragment, props) => {
 
-        const { rowHeight, startRow, rowsPerPage } = props;
         const { rows, query, columns, templates, allTemplatesLength } = getInspectorState(fragment);
-        const columnNames = (columns.length && columns[0] ? columns : templates).map(({ name }) => name);
 
-        const from = Math.max(0, Math.min(rows.length - rowsPerPage - 1, startRow));
-        const to = Math.min(rows.length, from + rowsPerPage * 2);
+        if (!fragment || !fragment.currentQuery || !(templates[0] || columns[0])) {
+            return `{
+                id, name, open, openTab,
+                currentQuery: {
+                    columns, sortKey, sortOrder, searchTerm
+                },
+                templates: {
+                    length, [0...${allTemplatesLength || 0}]: {
+                        name, isPrivate, isInternal, dataType, identifier, componentType
+                    }
+                }
+            }`;
+        }
+
+        const { startRow, rowsPerPage } = props;
+        const from = Math.max(0, startRow - rowsPerPage * 2 - 1) || 0;
+        const to = Math.min(rows.length, startRow + rowsPerPage * 2 + 1) || 0;
+        const columnNames = (columns.length && columns[0] ? columns : templates).map(({ name }) => name);
 
         return `{
             id, name, open, openTab,
@@ -73,7 +87,7 @@ let Inspector = container({
 
         for (let i = -1, n = rowsPerPage + 2; ++i < n;) {
             const row = rows[startRow + i];
-            if (startRow + i > endRow) {
+            if (startRow + i >= rows.length) {
                 rowsToRender[i] = null;
             } else {
                 rowsToRender[i] = row ? row : {
@@ -110,7 +124,7 @@ Inspector = compose(
 
 export { Inspector };
 
-function getInspectorState(fragment) {
+function getInspectorState(fragment = []) {
 
     let { templates = [] } = fragment;
     const { length: allTemplatesLength } = templates;

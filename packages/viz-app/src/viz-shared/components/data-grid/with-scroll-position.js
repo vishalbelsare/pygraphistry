@@ -1,5 +1,7 @@
 import { Observable } from 'rxjs/Observable';
 import * as Scheduler from 'rxjs/scheduler/animationFrame';
+import { hoistStatics } from 'recompose';
+import compose from 'recompose/compose';
 import shallowEqual from 'recompose/shallowEqual';
 import mapPropsStream from 'recompose/mapPropsStream';
 import createEventHandler from 'recompose/createEventHandler';
@@ -10,7 +12,11 @@ function preventDefault(e) {
     e.stopImmediatePropagation && e.stopImmediatePropagation();
 }
 
-export const WithScrollPosition = mapPropsStream((props) => {
+export function WithScrollPosition(Component) {
+    return hoistStatics(EnhanceWithScrollPosition)(Component);
+}
+
+const EnhanceWithScrollPosition = mapPropsStream((props) => {
 
     const { stream: pages, handler: onPage } = createEventHandler();
     const { stream: wheels, handler: onWheel } = createEventHandler();

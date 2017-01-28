@@ -52,14 +52,12 @@ function Panel({ panel = {}, placement,
 
 Panel = container({
     renderLoading: true,
-    fragment: ({ id, name, ...rest } = {}, props) => {
-        const Content = componentForSideAndType(props.side, id);
+    fragment: (fragment = {}, props) => {
+        const Content = componentForSideAndType(props.side, fragment.id);
         if (!Content || !Content.fragment) {
             return `{ id, name }`;
         }
-        return `{ id, name, ... ${
-            Content.fragment({ id, name, ...rest }, props)}
-        }`;
+        return Content.fragment(fragment, props);
     },
     mapFragment: (panel) => ({ panel })
 })(Panel);
