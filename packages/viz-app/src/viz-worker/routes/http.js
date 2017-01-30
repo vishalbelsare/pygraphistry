@@ -8,6 +8,10 @@ import { dataSourceRoute as falcorMiddleware } from 'falcor-express';
 import { logger as log } from '@graphistry/common';
 const logger = log.createLogger('viz-server:client-errors');
 
+import { HealthChecker } from '../services/HealthChecker.js';
+const healthcheck = HealthChecker();
+
+
 export function httpRoutes(services, modules) {
     const getDataSource = getDataSourceFactory(services);
     return [{
@@ -35,6 +39,13 @@ export function httpRoutes(services, modules) {
     }, {
         route: `/graph/model.json`,
         use: falcorMiddleware(getDataSource)
+    }, {
+        route: `/graph/healthcheck`,
+        use: (req, res, next) => {
+            const health = healthcheck();
+            logger.info({...health, req, res}, 'healthcheck');
+            res.status(health.clear.success ? 200 : 500).json({...health.clear});
+        }
     }, {
         route: '/graph',
         use: express.static(path.resolve(), { fallthrough: false })
