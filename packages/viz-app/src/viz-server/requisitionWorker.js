@@ -51,22 +51,15 @@ export function requisitionWorker({
     const healthcheckRequests = requests
         .filter(requestIsHealthcheck)
         .mergeMap(function ({ request, response }) {
-            if (!isLocked) {
+            const health = healthcheck();
+            logger.info({...health, request, response}, 'healthcheck');
 
-                const health = healthcheck();
-                logger.info({...health, request, response}, 'healthcheck');
-
-                const buffer = new Buffer(stringify({...health.clear}), 'utf8');
-                response.writeHead(health.clear.success ? 200 : 500, {
-                    'Content-Type': 'application/json',
-                    'Content-Length': buffer.length
-                });
-                response.end(buffer);
-
-                return Observable.empty();
-            } else {
-                return Observable.of({ request, response });
-            }            
+            const buffer = new Buffer(stringify({...health.clear}), 'utf8');
+            response.writeHead(health.clear.success ? 200 : 500, {
+                'Content-Type': 'application/json',
+                'Content-Length': buffer.length
+            });
+            response.end(buffer);    
         });
 
 
