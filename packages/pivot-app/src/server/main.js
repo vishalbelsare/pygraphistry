@@ -111,8 +111,9 @@ function init(testUser) {
 }
 
 function setupRoutes(modules, getDataSource) {
+    const mountPoint = '/pivot';
     expressApp.use(
-        '/model.json',
+	`${mountPoint}/model.json`,
         bodyParser.urlencoded({ extended: false }),
         falcorMiddleware(getDataSource)
     );
@@ -126,16 +127,16 @@ function setupRoutes(modules, getDataSource) {
             return renderMiddleware(getFalcorModel, modules)(req, res);
         });
 
-        expressApp.use(`/${root}`, router);
+        expressApp.use(`${mountPoint}/${root}`, router);
     });
 
-    expressApp.get('/pivot/healthcheck', function(req, res) {
+    expressApp.get(`${mountPoint}/healthcheck`, function(req, res) {
         const health = healthcheck();
         log.info({...health, req, res}, 'healthcheck');
         res.status(health.clear.success ? 200 : 500).json({...health.clear});
     });
 
-    expressApp.get('/', (req, res) => res.redirect('/home'));
+    expressApp.get(`${mountPoint}/`, (req, res) => res.redirect(`${mountPoint}/home`));
     expressApp.get('*', (req, res) => res.status(404).send('Not found'));
 
 }

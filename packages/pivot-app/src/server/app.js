@@ -10,18 +10,20 @@ import logger from '../shared/logger.js';
 
 const log = logger.createLogger(__filename);
 
+const mountPoint = `/pivot`;
+
 const expressApp = express();
 const httpServer = http.createServer(expressApp);
-const socketServer = SocketIOServer(httpServer);
+const socketServer = SocketIOServer(httpServer, {path: `${mountPoint}/socket.io`});
 
 expressApp.disable('x-powered-by');
 expressApp.use(compression());
 expressApp.use(authenticateMiddleware());
 
-expressApp.use(express.static('./build/public'))
+expressApp.use(mountPoint, express.static('./build/public'));
 
 expressApp.post(
-    '/error',
+    `${mountPoint}/error`,
     bodyParser.json({limit: '512kb'}),
     (req, res) => {
         const record = req.body;
