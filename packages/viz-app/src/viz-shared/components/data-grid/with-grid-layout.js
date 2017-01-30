@@ -1,10 +1,15 @@
 import React from 'react';
+import { hoistStatics } from 'recompose';
 
-export function WithGridLayout(Component) {
+function WithGridLayout(Component) {
     return function GridLayout(props) {
         return <Component {...props} {...getViewport(props)}/>;
-    }
+    };
 }
+
+WithGridLayout = hoistStatics(WithGridLayout);
+
+export { WithGridLayout };
 
 function getViewport(props) {
 
@@ -27,6 +32,7 @@ function getViewport(props) {
         colsPerPage = Math.floor((width - colHeaderWidth) / colWidth);
 
         bodyX = startCol * colWidth;
+        colHeaderX = scrollLeft - (startCol * colWidth);
         rowHeaderX = (startCol * colWidth) - scrollLeft;
     }
 

@@ -1,5 +1,7 @@
 import { Observable } from 'rxjs/Observable';
 import * as Scheduler from 'rxjs/scheduler/animationFrame';
+import { hoistStatics } from 'recompose';
+import compose from 'recompose/compose';
 import shallowEqual from 'recompose/shallowEqual';
 import mapPropsStream from 'recompose/mapPropsStream';
 import createEventHandler from 'recompose/createEventHandler';
@@ -10,7 +12,11 @@ function preventDefault(e) {
     e.stopImmediatePropagation && e.stopImmediatePropagation();
 }
 
-export const WithScrollPosition = mapPropsStream((props) => {
+export function WithScrollPosition(Component) {
+    return hoistStatics(EnhanceWithScrollPosition)(Component);
+}
+
+const EnhanceWithScrollPosition = mapPropsStream((props) => {
 
     const { stream: pages, handler: onPage } = createEventHandler();
     const { stream: wheels, handler: onWheel } = createEventHandler();
@@ -43,7 +49,7 @@ function scanScrollPosition(memo, [eventPageOrTarget, props]) {
 
     if (typeof eventPageOrTarget === 'number') {
         page = eventPageOrTarget;
-        scrollTop = page === 1 ? 0 : rowHeaderHeight + (page - 1) * (
+        scrollTop = page === 1 ? 0 : (page - 1) * (
             (rowHeight * /* rowsPerPage */ Math.floor(
                     (height - rowHeaderHeight) / rowHeight)))
     } else {
