@@ -6,6 +6,9 @@ import { Observable, Subject } from 'rxjs';
 import { loadWorkerModule } from './loadWorkerModule';
 import { logger as commonLogger } from '@graphistry/common';
 
+import { HealthChecker } from './HealthChecker.js';
+const healthcheck = HealthChecker();
+
 export function requisitionWorker({
         config, logger,
         app /*: Express */,
@@ -43,6 +46,23 @@ export function requisitionWorker({
     const requestIsClaim = requestIsPathname('/claim');
     const requestIsGraph = requestIsPathname('/graph.html');
 
+    const requestIsHealthcheck = requestIsPathname('/vizapp/healthcheck');
+
+    const healthcheckRequests = requests
+        .filter(requestIsHealthcheck)
+        .mergeMap(function ({ request, response }) {
+            const health = healthcheck();
+            logger.info({...health, request, response}, 'healthcheck');
+
+            const buffer = new Buffer(stringify({...health.clear}), 'utf8');
+            response.writeHead(health.clear.success ? 200 : 500, {
+                'Content-Type': 'application/json',
+                'Content-Length': buffer.length
+            });
+            response.end(buffer);    
+        });
+
+
     const eltRequests = requests
         .filter(requestIsETL)
         .mergeMap(requisition(acceptETL, rejectETL));
@@ -78,7 +98,8 @@ export function requisitionWorker({
         .merge(
             eltRequests,
             graphIndexRequests,
-            claimThenIndexRequests
+            claimThenIndexRequests,
+            healthcheckRequests.switchMap( (_) => Observable.empty() )
         )
         .switchMap(loadWorker)
         .scan(trackVizWorkerCaches, { caches: {} })
