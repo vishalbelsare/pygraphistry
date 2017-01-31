@@ -1,3 +1,4 @@
+import shallowEqual from 'recompose/shallowEqual';
 import { getHandler, setHandler } from 'viz-shared/routes';
 import { $ref, $value, $invalidate } from '@graphistry/falcor-json-graph';
 
@@ -9,18 +10,26 @@ export function selection(path, base) {
         const setSelectionMask = setHandler(path, loadViewsById,
             (node, key, value, path, { workbook, view }) => {
 
-                const { nBody: { dataframe = {} } = {} } = view;
-                const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+                const invalidations = [];
+                const { selection = {} } = view;
 
-                view.inspector.rows = undefined;
-                view.componentsByType = undefined;
-                dataframe.lastTaggedSelectionMasks = undefined;
+                if (selection.type === 'window' && !shallowEqual(node[key], value)) {
 
-                return Observable.of(
-                    $value(path, node[key] = value),
-                    $invalidate(`${viewPath}.inspector.rows`),
-                    $invalidate(`${viewPath}.componentsByType`),
-                );
+                    const { nBody: { dataframe = {} } = {} } = view;
+                    const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+
+                    view.inspector.rows = undefined;
+                    view.componentsByType = undefined;
+                    dataframe.lastTaggedSelectionMasks = undefined;
+
+                    invalidations.push(
+                        $invalidate(`${viewPath}.inspector.rows`),
+                        $invalidate(`${viewPath}.componentsByType`),
+                        $invalidate(`${viewPath}.selection.histogramsById`),
+                    );
+                }
+
+                return Observable.of(...invalidations, $value(path, node[key] = value));
             }
         );
 

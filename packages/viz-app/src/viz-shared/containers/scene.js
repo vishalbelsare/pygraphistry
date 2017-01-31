@@ -42,7 +42,7 @@ let Scene = ({
 );
 
 Scene = container({
-    renderLoading: false,
+    renderLoading: true,
     fragment: (scene = {}) => `{
         id, simulating,
         release: { tag, buildNumber },
