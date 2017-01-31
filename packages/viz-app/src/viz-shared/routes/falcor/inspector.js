@@ -69,7 +69,7 @@ export function inspector(path, base) {
             }));
 
             return getRowValuesHandler.call(this, rowsPath).map(({ path, value }) => {
-                if (path[path.length - 1] !== 'length') {
+                if (path[path.length - 1] !== 'length' && value) {
                     const rowsKeyIndex = path.indexOf('rows');
                     const componentType = path[rowsKeyIndex + 1];
                     const basePath = path.slice(0, rowsKeyIndex - 1);
