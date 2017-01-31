@@ -1,0 +1,13 @@
+FROM node:alpine
+
+WORKDIR /app
+
+COPY ./wholly-innocuous/files/npm/rc /root/.npmrc
+COPY ./config .
+
+ARG BUILD_NUMBER
+RUN apk add --no-cache jq
+RUN jq 'setpath(["version"]; (getpath(["version"]) | sub("[0-9]+$"; "'$BUILD_NUMBER'")))' < package.json > package.json.new && mv package.json.new package.json
+
+RUN npm install
+RUN npm publish
