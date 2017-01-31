@@ -23,7 +23,7 @@ export default function VisualizationPanel({ investigation }) {
                 <Grid>
                     <Row>
                         <Col>
-                            <Image src="/img/logo.png" responsive />
+                            <Image src="/pivot/img/logo.png" responsive />
                         </Col>
                     </Row><Row>
                         <Col>

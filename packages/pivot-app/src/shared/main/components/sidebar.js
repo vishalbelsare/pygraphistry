@@ -29,7 +29,7 @@ export default function Sidebar(props) {
 
             <div className={styles.logo}>
                 <div>
-                    <img src="/img/logo.png"/>
+                    <img src="/pivot/img/logo.png"/>
                 </div>
             </div>
 

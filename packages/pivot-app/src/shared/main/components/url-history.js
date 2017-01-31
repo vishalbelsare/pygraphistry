@@ -24,9 +24,9 @@ export default class UrlHistory extends React.Component {
 
     _getPath(activeScreen, activeInvestigation) {
         if (activeScreen === 'investigation') {
-            return `/${activeScreen}/${activeInvestigation.id}`
+            return `/pivot/${activeScreen}/${activeInvestigation.id}`
         } else {
-            return `/${activeScreen || 'home'}`;
+            return `/pivot/${activeScreen || 'home'}`;
         }
     }
 
