@@ -4,6 +4,10 @@ import { inspect } from 'util';
 import { Observable } from 'rxjs';
 import { falcor as routes } from '../routes';
 import Router from '@graphistry/falcor-router';
+import JSONGraphError from '@graphistry/falcor-router/src/errors/JSONGraphError';
+import CallNotFoundError from '@graphistry/falcor-router/src/errors/CallNotFoundError';
+import MaxPathsExceededError from '@graphistry/falcor-router/src/errors/MaxPathsExceededError';
+import CallRequiresPathsError from '@graphistry/falcor-router/src/errors/CallRequiresPathsError';
 
 export function getDataSourceFactory(services) {
 
@@ -47,12 +51,44 @@ function createAppRouter(routes, options = { bufferTime: 10 }) {
                 }
             });
         }
-        // get(paths) {
-        //     console.log('\n============requested paths:');
-        //     console.log('\t' + paths
-        //         .map((path) => JSON.stringify(path))
-        //         .join('\n\t') + '\n');
-        //     return super.get(paths);
-        // }
+        get(paths) {
+            return super.get(paths).do(null, (err) => {
+                if (err instanceof JSONGraphError ||
+                    err instanceof CallNotFoundError ||
+                    err instanceof MaxPathsExceededError ||
+                    err instanceof CallRequiresPathsError){
+                    logger.error(
+                        {err, paths, requestType: 'get'},
+                        `Falcor Router get error: ${err && err.constructor.name || 'Unknown Error'}`
+                    );
+                }
+            });
+        }
+        set(values) {
+            return super.set(values).do(null, (err) => {
+                if (err instanceof JSONGraphError ||
+                    err instanceof CallNotFoundError ||
+                    err instanceof MaxPathsExceededError ||
+                    err instanceof CallRequiresPathsError){
+                    logger.error(
+                        {err, values, requestType: 'set'},
+                        `Falcor Router set error: ${err && err.constructor.name || 'Unknown Error'}`
+                    );
+                }
+            });
+        }
+        call(callPath, args, refPaths, thisPaths) {
+            return super.call(callPath, args, refPaths, thisPaths).do(null, (err) => {
+                if (err instanceof JSONGraphError ||
+                    err instanceof CallNotFoundError ||
+                    err instanceof MaxPathsExceededError ||
+                    err instanceof CallRequiresPathsError){
+                    logger.error(
+                        {err, callPath, args, refPaths, thisPaths, requestType: 'call'},
+                        `Falcor Router call error: ${err && err.constructor.name || 'Unknown Error'}`
+                    );
+                }
+            });
+        }
     };
 }
