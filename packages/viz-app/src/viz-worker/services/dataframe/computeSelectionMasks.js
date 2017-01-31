@@ -3,8 +3,12 @@ import DataframeMask from 'viz-worker/simulator/DataframeMask';
 
 export function computeSelectionMasks({ view, emptyIfAllSelected = false }) {
 
-    const { nBody = {} } = view;
-    const { dataframe = {}, simulator } = nBody;
+    const { nBody: { dataframe, simulator, vgraphLoaded } } = view;
+
+    if (!dataframe || !simulator || !vgraphLoaded) {
+        return Observable.empty();
+    }
+
     const { selection: { mask: rect } = {} } = view;
     const hasSelectionRect = rect && rect.tl && rect.br;
 
@@ -14,13 +18,20 @@ export function computeSelectionMasks({ view, emptyIfAllSelected = false }) {
         );
     } else if (dataframe.lastTaggedSelectionMasks) {
         return Observable.of(dataframe.lastTaggedSelectionMasks);
+    } else if (dataframe.pendingTaggedSelectionMasks) {
+        return dataframe.pendingTaggedSelectionMasks;
     } else {
-        return Observable
+        return (dataframe.pendingTaggedSelectionMasks = Observable
             .defer(() => simulator.selectNodesInRect(rect || { all: true }))
             .map((pointsMask) =>
                 dataframe.lastTaggedSelectionMasks =
                     createTaggedSelectionMasks(dataframe, simulator, pointsMask)
-            );
+            )
+            .take(1)
+            .finally(() => {
+                dataframe.pendingTaggedSelectionMasks = null;
+            })
+            .share());
     }
 }
 
