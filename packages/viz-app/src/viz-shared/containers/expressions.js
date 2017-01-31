@@ -33,9 +33,9 @@ let Expressions = ({ templates = [], expressions = [],
 };
 
 Expressions = container({
-    renderLoading: false,
+    renderLoading: true,
     fragment: ({ templates = [], ...expressions } = {}) => `{
-        id, name, length, ...${
+        id, name, ...${
             Expression.fragments(expressions)
         },
         templates: {
@@ -56,7 +56,7 @@ Expressions = container({
 })(Expressions);
 
 let Expression = container({
-    renderLoading: false,
+    renderLoading: true,
     fragment: () => `{
         id, input, level,
         readOnly, name, enabled, identifier,

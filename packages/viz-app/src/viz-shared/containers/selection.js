@@ -9,7 +9,7 @@ let Selection = ({ mask = {}, ...props }) => {
 };
 
 Selection = container({
-    renderLoading: false,
+    renderLoading: true,
     fragment: ({ edge = [], point = [] } = {}) => `{
         mask, type, edge, point, darken
     }`
