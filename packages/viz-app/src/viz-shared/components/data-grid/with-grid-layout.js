@@ -29,7 +29,7 @@ function getViewport(props) {
     } else {
 
         startCol = Math.floor(scrollLeft / colWidth);
-        colsPerPage = Math.floor((width - colHeaderWidth) / colWidth);
+        colsPerPage = Math.max(0, Math.floor((width - colHeaderWidth) / colWidth));
 
         bodyX = startCol * colWidth;
         colHeaderX = scrollLeft - (startCol * colWidth);
@@ -41,7 +41,7 @@ function getViewport(props) {
     } else {
 
         startRow = Math.floor(scrollTop / rowHeight);
-        rowsPerPage = Math.floor((height - rowHeaderHeight) / rowHeight);
+        rowsPerPage = Math.max(0, Math.floor((height - rowHeaderHeight) / rowHeight));
 
         bodyY = startRow * rowHeight;
         colHeaderY = (startRow * rowHeight) - scrollTop;
