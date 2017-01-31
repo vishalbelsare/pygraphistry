@@ -576,18 +576,18 @@ function getNumWorkitemsByHardware(deviceProps) {
 
     if (gpuOptions) {
         logger.info(gpuOptions, 'GPU options passed in through config');
-        const maxWorkgroupSize = gpuOptions.MAX_WORK_GROUP_SIZE;
+        const maxWorkgroupSize = gpuOptions.MAX_WORK_GROUP_SIZE || 256;
         const numWorkGroups = gpuOptions.NUM_WORKGROUPS;
         sizes = {
-            toBarnesLayout: [numWorkGroups.TO_BARNES_LAYOUT, maxWorkgroupSize],
-            boundBox: [numWorkGroups.BOUND_BOX, maxWorkgroupSize],
-            buildTree: [numWorkGroups.BUILD_TREE, maxWorkgroupSize],
-            computeSums: [numWorkGroups.COMPUTE_SUMS, maxWorkgroupSize],
-            sort: [numWorkGroups.SORT, maxWorkgroupSize],
-            edgeForces: [numWorkGroups.EDGE_FORCES, maxWorkgroupSize],
-            segReduce: [numWorkGroups.SEG_REDUCE, maxWorkgroupSize],
-            calculateForces: [numWorkGroups.CALCULATE_FORCES, maxWorkgroupSize]
-        }
+            toBarnesLayout: [numWorkGroups.TO_BARNES_LAYOUT || 30, maxWorkgroupSize],
+            boundBox: [numWorkGroups.BOUND_BOX || 30, maxWorkgroupSize],
+            buildTree: [numWorkGroups.BUILD_TREE || 30, maxWorkgroupSize],
+            computeSums: [numWorkGroups.COMPUTE_SUMS || 10, maxWorkgroupSize],
+            sort: [numWorkGroups.SORT || 16, maxWorkgroupSize],
+            edgeForces: [numWorkGroups.EDGE_FORCES || 100, maxWorkgroupSize],
+            segReduce: [numWorkGroups.SEG_REDUCE || 1000, maxWorkgroupSize],
+            calculateForces: [numWorkGroups.CALCULATE_FORCES || 60, maxWorkgroupSize]
+        };
     } else if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1 ||
         deviceProps.NAME.indexOf('GeForce GT 750M') != -1) {
         sizes.buildTree[0] = 1;
