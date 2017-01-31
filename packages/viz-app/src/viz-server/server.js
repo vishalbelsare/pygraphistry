@@ -91,7 +91,7 @@ export function start() {
             }
             const { error, message, exitCode, shouldExit } = e;
             if (error || message) {
-                const err = new VError(error, 'viz-server exiting');
+                const err = new VError(error || message, `viz-server exit reason: ${message}`);
                 logger.error({ err });
             }
             if (shouldExit) {
