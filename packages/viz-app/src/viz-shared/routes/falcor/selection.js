@@ -1,11 +1,6 @@
-import {
-    ref as $ref,
-    pathValue as $value
-} from '@graphistry/falcor-json-graph';
-import { getHandler,
-         setHandler,
-         mapObjectsToAtoms,
-         captureErrorStacks } from 'viz-shared/routes';
+import shallowEqual from 'recompose/shallowEqual';
+import { getHandler, setHandler } from 'viz-shared/routes';
+import { $ref, $value, $invalidate } from '@graphistry/falcor-json-graph';
 
 export function selection(path, base) {
     return function selection({ loadViewsById, loadHistogramsById }) {
@@ -13,14 +8,28 @@ export function selection(path, base) {
         const getValues = getHandler(path, loadViewsById);
         const setValues = setHandler(path, loadViewsById);
         const setSelectionMask = setHandler(path, loadViewsById,
-            (node, key, value, path, { view }) => {
-                const { nBody: { dataframe } = {} } = view;
-                view.inspector.rows = undefined;
-                view.componentsByType = undefined;
-                dataframe.lastTaggedSelectionMasks = undefined;
-                return Observable.of({
-                    path, value: node[key] = value
-                });
+            (node, key, value, path, { workbook, view }) => {
+
+                const invalidations = [];
+                const { selection = {} } = view;
+
+                if (selection.type === 'window' && !shallowEqual(node[key], value)) {
+
+                    const { nBody: { dataframe = {} } = {} } = view;
+                    const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+
+                    view.inspector.rows = undefined;
+                    view.componentsByType = undefined;
+                    dataframe.lastTaggedSelectionMasks = undefined;
+
+                    invalidations.push(
+                        $invalidate(`${viewPath}.inspector.rows`),
+                        $invalidate(`${viewPath}.componentsByType`),
+                        $invalidate(`${viewPath}.selection.histogramsById`),
+                    );
+                }
+
+                return Observable.of(...invalidations, $value(path, node[key] = value));
             }
         );
 

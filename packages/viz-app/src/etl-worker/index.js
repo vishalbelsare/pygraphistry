@@ -19,12 +19,25 @@ import stringify from 'json-stable-stringify';
 import { parse as parseURL } from 'url';
 import { Observable, Subject, Subscription } from 'rxjs';
 
+import { HealthChecker } from './HealthChecker.js';
+const healthcheck = HealthChecker();
+
 // Express.App * Socket -> ()
 export function etlWorker(app, server, sockets, caches) {
+    
+    app.get('/etl/healthcheck', function(req, res) {
+        const health = healthcheck();
+        logger.info({...health, req, res}, 'healthcheck');
+        res.status(health.clear.success ? 200 : 500).json({...health.clear});
+    });
+    
+
     const { requests } = server;
     return requests
         .mergeMap(filterETLRequests)
-        .startWith({ isActive: true });
+        .startWith({ isActive: true }) 
+        //.timeout(...) //config var
+        //.do(... done or crashed ...)
 }
 
 function filterETLRequests({ request, response } = {}) {

@@ -1,6 +1,5 @@
 import React from 'react'
 import styles from './styles.less';
-import { hoistStatics } from 'recompose';
 import { connect, container } from '@graphistry/falcor-react-redux';
 import { renderNothing } from 'recompose';
 import { View } from 'viz-shared/containers/view';

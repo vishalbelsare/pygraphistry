@@ -10,6 +10,7 @@ import { labelMouseMove } from 'viz-shared/actions/labels';
 import { addFilter, addExclusion } from 'viz-shared/actions/expressions';
 
 let Label = container({
+    renderLoading: false,
     fragment: () => `{
         type, index, title, columns
     }`,
@@ -43,14 +44,21 @@ let Labels = ({ simulating,
         highlight = undefined;
     }
     if (selection) {
-        labels = labels.filter(({ index }) => (
+        labels = labels.filter(({ type, index }) => (
+            type !== selection.type ||
             index !== selection.index
         )).concat(selection);
     }
     if (highlight) {
-        labels = labels.filter(({ index }) => (
+        labels = labels.filter(({ type, index }) => (
+            type !== highlight.type ||
             index !== highlight.index
-        )).concat(highlight);
+        ));
+        if (sceneSelectionType) {
+            highlight = undefined
+        } else {
+            labels.push(highlight);
+        }
     }
 
     return (
@@ -80,11 +88,12 @@ let Labels = ({ simulating,
 };
 
 Labels = container({
+    renderLoading: false,
     fragment: ({ edge = [], point = [], settings } = {}) => `{
         id, name, timeZone,
         opacity, enabled, poiEnabled,
-        renderer: { 
-            background: { color } 
+        renderer: {
+            background: { color }
         },
         ['background', 'foreground']: { color },
         ...${ Settings.fragment({ settings }) },

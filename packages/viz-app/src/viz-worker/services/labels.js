@@ -69,7 +69,12 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
 
     return rows.map((row, index) => {
 
-        const title = row[titleColumnName];
+        let title = row[titleColumnName];
+
+        if (typeof title === 'string') {
+            title = sanitizeHTML(decodeURIComponent('' + title));
+        }
+
         const names = columnNames.length && columnNames || Object.keys(row);
         const columns = names.reduce((columns, columnName) => {
 
@@ -102,7 +107,7 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
         return {
             workbook, view, label: {
                 type: labelType, index: labelIndexes[index], data: {
-                    title: sanitizeHTML(decodeURIComponent(title)), columns
+                    title, columns
                 }
             }
         };

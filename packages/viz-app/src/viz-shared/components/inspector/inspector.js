@@ -27,8 +27,8 @@ const checkSearchInputValue = scanCheckSearchInputValue();
 
 function DataTable(props) {
 
-    const { columns, templates, colsPerPage, rowsPerPage,
-            loading, width, page, numPages, openTab, searchTerm,
+    const { width, page, numPages, openTab, searchTerm,
+            columns, templates, colsPerPage, rowsPerPage,
             onPage, onSort, onSearch, onColumnsSelect, selectInspectorRow } = props;
 
     return (
@@ -39,7 +39,6 @@ function DataTable(props) {
                     <InputGroup style={{ width: `100%` }}>
                         <InputGroup.Button>
                             <ColumnPicker value={columns}
-                                          loading={loading}
                                           id='InspectorColumnPicker'
                                           placeholder='Pick columns'
                                           onChange={onColumnsSelect}
@@ -68,7 +67,8 @@ function DataTable(props) {
                               renderCell={renderCell}
                               onRowSelect={onRowSelect}
                               onColHeaderSelect={onColHeaderSelect}
-                              renderColHeaderCell={renderColHeaderCell}/>
+                              renderColHeaderCell={renderColHeaderCell}
+                              renderRowHeaderCell={renderRowHeaderCell}/>
                 </Col>
             </Row>
         </Grid>
@@ -78,7 +78,7 @@ function DataTable(props) {
         const { rows, startRow } = props;
         const { rowIndex } = target.dataset;
         const row = rows[rowIndex - startRow];
-        if (row) {
+        if (row && typeof row._index === 'number') {
             selectInspectorRow({
                 index: row._index,
                 componentType: openTab
@@ -90,7 +90,7 @@ function DataTable(props) {
         const { cols } = props;
         const { colIndex } = target.dataset;
         const col = cols[colIndex];
-        if (col) {
+        if (col && col.name) {
             onSort(col.name);
         }
     }
@@ -105,6 +105,15 @@ function scanCheckSearchInputValue(componentType) {
             }
         }
     }
+}
+
+function renderRowHeaderCell(rowIndex, { rows, startRow }, isTopLeftCell) {
+    const show = !isTopLeftCell && rows[rowIndex - startRow];
+    return (
+        <span className={show ? '' : styles['head-row-cell-content-hidden']}>
+            {rowIndex + 1 /* force header to measure width of last rowIndex */}
+        </span>
+    );
 }
 
 function renderColHeaderCell(colIndex, { cols, sortKey, sortOrder, entityType }) {
@@ -144,20 +153,18 @@ function renderCell(colIndex, rowIndex, { cols, rows, startCol, startRow }) {
 
     let dataType, value = '';
 
-    if (row) {
-        if (row.rowIsLoading && (colIndex - startCol) === 0) {
+    if (row && col) {
+        if (row.rowIsLoading) {
             return (
-                <span>
-                    Loading row {row.pendingIndex}
-                    {'\u00a0' /* force space between text and icon */}
+                <p className={styles['loading-cell']}>
                     <i className='fa fa-ellipsis-h'/>
-                </span>
+                </p>
             );
         }
-        if (col) {
-            value = row[col.name];
-            value = (value != null && value !== '') &&
-                defaultFormat(value, dataType = col.dataType) || '';
+        value = row[col.name];
+        if (value != null && value !== '') {
+            value = '' + value;
+            dataType = col.dataType;
         }
     }
 
