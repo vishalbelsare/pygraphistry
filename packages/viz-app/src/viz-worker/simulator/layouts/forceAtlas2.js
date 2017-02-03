@@ -685,7 +685,7 @@ var getWarpsize = function (deviceProps) {
     var warpsize = 1; // Always correct
     if (config.GPU_OPTIONS && config.GPU_OPTIONS.WARPSIZE) {
         warpsize = config.GPU_OPTIONS.WARPSIZE;
-    } else if (type === 'CPU') {
+    } else if (type === 'cpu') {
         warpsize = 1;
     } else if (vendor.indexOf('intel') != -1) {
         warpsize = 16;
