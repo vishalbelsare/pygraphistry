@@ -1,0 +1,14 @@
+FROM node:alpine
+
+WORKDIR /app
+
+COPY ./wholly-innocuous/files/npm/rc /root/.npmrc
+COPY ./config .
+
+ARG BUILD_NUMBER
+RUN apk add --no-cache jq
+RUN mv package.json package.json.old
+RUN jq . < package.json.old | sed -E -e 's/("version": "\d+[.]\d+[.])[^"]+/\1'${BUILD_NUMBER}/ > package.json
+
+RUN npm install
+RUN npm publish
