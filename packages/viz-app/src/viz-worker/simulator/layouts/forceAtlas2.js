@@ -9,6 +9,9 @@ var _     = require('underscore'),
     log        = require('@graphistry/common').logger,
     logger     = log.createLogger('graph-viz', 'graph-viz/js/layouts/forceAtlas2.js');
 
+import _config from '@graphistry/config';
+const config = _config();
+
 var argsType = {
         ONE: cljs.types.uint_t,
         ZERO: cljs.types.uint_t,
@@ -556,8 +559,9 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
 }
 
 function getNumWorkitemsByHardware(deviceProps) {
+    const gpuOptions = config.GPU_OPTIONS;
 
-    var numWorkGroups = {
+    var sizes = {
         toBarnesLayout: [30, 256],
         boundBox: [30, 256],
         buildTree: [30, 256],
@@ -568,29 +572,43 @@ function getNumWorkitemsByHardware(deviceProps) {
         calculateForces: [60, 256]
     };
 
-    if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1 ||
+    if (gpuOptions) {
+        logger.debug({gpuOptions}, 'GPU workgroup size and number passed in through config');
+        const maxWorkgroupSize = gpuOptions.MAX_WORK_GROUP_SIZE || 256;
+        const numWorkGroups = gpuOptions.NUM_WORKGROUPS;
+        sizes = {
+            toBarnesLayout: [numWorkGroups.TO_BARNES_LAYOUT || 30, maxWorkgroupSize],
+            boundBox: [numWorkGroups.BOUND_BOX || 30, maxWorkgroupSize],
+            buildTree: [numWorkGroups.BUILD_TREE || 30, maxWorkgroupSize],
+            computeSums: [numWorkGroups.COMPUTE_SUMS || 10, maxWorkgroupSize],
+            sort: [numWorkGroups.SORT || 16, maxWorkgroupSize],
+            edgeForces: [numWorkGroups.EDGE_FORCES || 100, maxWorkgroupSize],
+            segReduce: [numWorkGroups.SEG_REDUCE || 1000, maxWorkgroupSize],
+            calculateForces: [numWorkGroups.CALCULATE_FORCES || 60, maxWorkgroupSize]
+        };
+    } else if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1 ||
         deviceProps.NAME.indexOf('GeForce GT 750M') != -1) {
-        numWorkGroups.buildTree[0] = 1;
-        numWorkGroups.computeSums[0] = 1;
+        sizes.buildTree[0] = 1;
+        sizes.computeSums[0] = 1;
     } else if (deviceProps.NAME.indexOf('Iris Pro') != -1) {
-        numWorkGroups.computeSums[0] = 6;
-        numWorkGroups.sort[0] = 8;
+        sizes.computeSums[0] = 6;
+        sizes.sort[0] = 8;
     } else if (deviceProps.NAME.indexOf('Iris') != -1) {
-        numWorkGroups.computeSums[0] = 6;
-        numWorkGroups.sort[0] = 8;
+        sizes.computeSums[0] = 6;
+        sizes.sort[0] = 8;
     } else if (deviceProps.NAME.indexOf('M290X') != -1) {
-        numWorkGroups.buildTree[0] = 1;
-        numWorkGroups.computeSums[0] = 1;
-        numWorkGroups.computeSums[0] = 1; //6;
-        numWorkGroups.sort[0] = 1; //8;
+        sizes.buildTree[0] = 1;
+        sizes.computeSums[0] = 1;
+        sizes.computeSums[0] = 1; //6;
+        sizes.sort[0] = 1; //8;
     } else if (deviceProps.NAME.indexOf('K520') != -1) {
         // 1024
         // 30:14.1, 36:14.3, 40:13.6, 46:14.5, 50:14.1, 60:14.1, 100:14.7,
         //
         // base 14.6% @ 200
 
-        numWorkGroups.segReduce = [40, 1024];
-        numWorkGroups.edgeForces = [200, 1024];
+        sizes.segReduce = [40, 1024];
+        sizes.edgeForces = [200, 1024];
 
         // 1024
         // 6:35, 7:31, 8:27, 9:54, 10:50, 16:38, 20:52, 26:44
@@ -598,7 +616,7 @@ function getNumWorkitemsByHardware(deviceProps) {
         //
         // 512
         // 2:92, 6:34, 7:29, 8:26, 9:44, 10:40, 14:31, 18:41, 24:35, 30:48
-        numWorkGroups.buildTree = [8, 512];
+        sizes.buildTree = [8, 512];
 
         // 1024
         // 10:36, 14:27, 15:26, 16:24, 17:39, 18:38, 20:35, 26:28, 30:25, 36:30, 40:28, 46:25, 50:28, 60:25,
@@ -606,21 +624,24 @@ function getNumWorkitemsByHardware(deviceProps) {
         //
         // 512
         // 10:65, 20:35, 26:29, 28:27, 30:26, 34:39, 40:34
-        numWorkGroups.calculateForces = [16, 1024];
+        sizes.calculateForces = [16, 1024];
 
         // 1024
         // 6:4, 8:4, 10:5,
-        numWorkGroups.computeSums = [8, 1024];
+        sizes.computeSums = [8, 1024];
 
 
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
         logger.debug('Expected slow kernels: sort, calculate_forces');
     }
 
-    return _.mapObject(numWorkGroups, function(val, key) {
+
+    const gpuSizes = _.mapObject(sizes, function(val, key) {
         val[0] = val[0] * val[1];
         return val;
     });
+    logger.debug({gpuSizes}, 'Computed GPU workgroup and global sizes')
+    return gpuSizes;
 }
 
 var computeSizes = function (simulator, warpsize, numPoints) {
@@ -647,6 +668,9 @@ var computeSizes = function (simulator, warpsize, numPoints) {
 };
 
 var getWarpsize = function (vendor) {
+    if (config.GPU_OPTIONS && config.GPU_OPTIONS.WARPSIZE) {
+        return config.GPU_OPTIONS.WARPSIZE;
+    }
     var warpsize = 1; // Always correct
     if (vendor.indexOf('intel') != -1) {
         warpsize = 16;
