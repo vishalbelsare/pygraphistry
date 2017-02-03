@@ -12,8 +12,6 @@ var _     = require('underscore'),
 import _config from '@graphistry/config';
 const config = _config();
 
-logger.warn({config: config}, 'COnfig is here!');
-
 var argsType = {
         ONE: cljs.types.uint_t,
         ZERO: cljs.types.uint_t,
@@ -575,7 +573,7 @@ function getNumWorkitemsByHardware(deviceProps) {
     };
 
     if (gpuOptions) {
-        logger.info(gpuOptions, 'GPU options passed in through config');
+        logger.debug({gpuOptions}, 'GPU workgroup size and number passed in through config');
         const maxWorkgroupSize = gpuOptions.MAX_WORK_GROUP_SIZE || 256;
         const numWorkGroups = gpuOptions.NUM_WORKGROUPS;
         sizes = {
@@ -642,7 +640,7 @@ function getNumWorkitemsByHardware(deviceProps) {
         val[0] = val[0] * val[1];
         return val;
     });
-    logger.info({gpuSizes}, 'GPU workgroup and global sizes')
+    logger.debug({gpuSizes}, 'Computed GPU workgroup and global sizes')
     return gpuSizes;
 }
 
