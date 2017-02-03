@@ -559,6 +559,7 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
 }
 
 function getNumWorkitemsByHardware(deviceProps) {
+    logger.trace({deviceProps}, 'Device props');
     const gpuOptions = config.GPU_OPTIONS;
 
     var sizes = {
@@ -573,8 +574,30 @@ function getNumWorkitemsByHardware(deviceProps) {
     };
 
     if (gpuOptions) {
-        logger.debug({gpuOptions}, 'GPU workgroup size and number passed in through config');
+        logger.trace({gpuOptions}, 'GPU workgroup size and number passed in through config');
         sizes = gpuOptions.SIZES;
+    } else if (deviceProps.NAME.indexOf('M370X') != -1) {
+        sizes = {
+            toBarnesLayout: [1, 256],
+            boundBox: [1, 256],
+            buildTree: [1, 256],
+            computeSums: [1, 256],
+            sort: [1, 256],
+            edgeForces: [1, 256],
+            segReduce: [8, 256],
+            calculateForces: [8, 256]
+        }
+    } else if (deviceProps.NAME.indexOf('Intel(R) Core') != -1) {
+        sizes = {
+            toBarnesLayout: [8, 1],
+            boundBox: [8, 1],
+            buildTree: [8, 1],
+            computeSums: [8, 1],
+            sort: [1, 1],
+            edgeForces: [1, 1],
+            segReduce: [8, 1],
+            calculateForces: [8, 1],
+        }
     } else if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1 ||
         deviceProps.NAME.indexOf('GeForce GT 750M') != -1) {
         sizes.buildTree[0] = 1;
@@ -625,11 +648,12 @@ function getNumWorkitemsByHardware(deviceProps) {
     }
 
 
-    const gpuSizes = _.mapObject(sizes, function(val, key) {
-        val[0] = val[0] * val[1];
-        return val;
-    });
-    logger.debug({gpuSizes}, 'Computed GPU workgroup and global sizes')
+    const gpuSizes = Object.entries(sizes).reduce((result, [key, [numWorkGroups, workGroupSize]]) => {
+        result[key] = [(numWorkGroups * workGroupSize), workGroupSize];
+        return result;
+    }, {});
+
+    logger.trace({gpuSizes}, 'Computed GPU workgroup and global sizes')
     return gpuSizes;
 }
 
@@ -657,17 +681,17 @@ var computeSizes = function (simulator, warpsize, numPoints) {
 };
 
 var getWarpsize = function (vendor) {
-    if (config.GPU_OPTIONS && config.GPU_OPTIONS.WARPSIZE) {
-        return config.GPU_OPTIONS.WARPSIZE;
-    }
     var warpsize = 1; // Always correct
-    if (vendor.indexOf('intel') != -1) {
+    if (config.GPU_OPTIONS && config.GPU_OPTIONS.WARPSIZE) {
+        warpsize = config.GPU_OPTIONS.WARPSIZE;
+    } else if (vendor.indexOf('intel') != -1) {
         warpsize = 16;
     } else if (vendor.indexOf('nvidia') != -1) {
         warpsize = 32;
     } else if (vendor.indexOf('amd') != -1) {
         warpsize = 64;
     }
+    logger.trace({warpsize}, `Warpsize: ${warpsize}`);
     return warpsize;
 
 }

@@ -100,7 +100,7 @@ function atlasControls(algo) {
 
     var devices;
     if (algo === ForceAtlas2) {
-        devices = ['GPU'];
+        devices = ['GPU', 'CPU'];
     } else {
         devices = ['CPU', 'GPU'];
     }
@@ -140,7 +140,7 @@ function atlasControls(algo) {
 
 
 var controls = {
-    'default':      [atlasControls(ForceAtlas2), atlasControls(ForceAtlas2Naive)],
+    'default':      [atlasControls(ForceAtlas2)],
     'gis':         [uberControls],
     'atlas':        [atlasControls(ForceAtlas2), atlasControls(ForceAtlas2Naive)],
     'atlas2':       [atlasControls(ForceAtlas2Naive)],
