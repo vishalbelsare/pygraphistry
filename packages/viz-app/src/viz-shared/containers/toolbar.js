@@ -21,7 +21,7 @@ let Toolbar = ({ toolbar = [], selectToolbarItem, ...props } = {}) => {
 Toolbar = container({
     renderLoading: false,
     fragment: (toolbar = []) => `{
-        visible, length, ...${
+        visible, ...${
             ToolbarItems.fragments(toolbar)
         }
     }`,
@@ -45,11 +45,8 @@ let ToolbarItems = ({ items = [], selectToolbarItem, ...props } = {}) => {
 
 ToolbarItems = container({
     renderLoading: false,
-    fragment: (toolbarItems = []) => `{
-        length, ...${
-            ToolbarItem.fragments(toolbarItems)
-        }
-    }`,
+    fragment: (toolbarItems) =>
+        ToolbarItem.fragments(toolbarItems),
     // map fragment to component props
     mapFragment: (items) => ({ items })
 })(ToolbarItems);

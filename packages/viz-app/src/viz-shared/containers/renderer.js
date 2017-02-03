@@ -19,8 +19,9 @@ let Renderer = ({
     );
 }
 
-Renderer = container(({ highlight = {}, selection = {} } = {}) => {
-    return `{
+Renderer = container({
+    renderLoading: true,
+    fragment: ({ highlight = {}, selection = {} } = {}) => `{
         showArrows,
         camera: { zoom, center: { x, y, z } },
         edges: { scaling, opacity, elements },
@@ -28,7 +29,7 @@ Renderer = container(({ highlight = {}, selection = {} } = {}) => {
         ['background', 'foreground']: { color },
         highlight: ${ Selection.fragment(highlight) },
         selection: ${ Selection.fragment(selection) }
-    }`;
+    }`
 })(Renderer);
 
 export { Renderer };

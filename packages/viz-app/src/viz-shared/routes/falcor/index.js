@@ -69,13 +69,12 @@ function wrapRouteHandler(handler) {
     return function routeHandlerWrapper(...args) {
         return Observable
             .defer(() => handler.apply(this, args) || [])
-            // .catch(captureErrorStacks)
             .map(mapObjectsToAtoms)
             .do(
                 (handlerReturn) => {
                     logger.trace({handler: handlerName, ...handlerReturn}, `Called Falcor route: ${handlerName}`)
                 }, (err) => {
-                    logger.error({err, handler: handlerName}, 'Bad Falcor route');
+                    logger.error({err, handler: handlerName, input: args}, 'Bad Falcor route');
                 }
             )
     }

@@ -1,6 +1,7 @@
 'use strict';
 
 import { Observable } from 'rxjs';
+var VError = require('verror');
 
 var urllib   = require('url');
 var crypto   = require('crypto');
@@ -17,6 +18,26 @@ var logger   = Log.createLogger('etlworker:etl1');
 
 var tmpCache = new Cache(config.LOCAL_DATASET_CACHE_DIR, config.LOCAL_DATASET_CACHE);
 
+function validateUpload(msg) {
+    const { name, graph, bindings } = msg;
+    if (Object.keys(msg).length === 0) {
+        return Observable.throw(new Error('Invalid JSON post'));
+    } else if(!name) {
+        return Observable.throw(new Error('Name attribute is not defined'));
+    } else if (!graph) {
+        return Observable.throw(new Error('Graph attribute is not defined'));
+    } else if (!bindings) {
+        return Observable.throw(Error('Bindings attribute is not defined'));
+    } else {
+        const { sourceField, destinationField } = bindings;
+        if (!sourceField) {
+            return Observable.throw(new Error('sourceField binding is not defined'));
+        } else if(!destinationField) {
+            return Observable.throw(new Error('destinationField binding is not defined'));
+        }
+    }
+    return Observable.of(msg);
+}
 
 // Convert JSON edgelist to VGraph then upload VGraph to S3 and local /tmp
 // JSON
@@ -90,7 +111,9 @@ function s3Upload(binaryBuffer, metadata) {
 export function processRequest(req, params) {
     return Observable.defer(() => {
         logger.info({ etlparams: params }, 'ETL1 request submitted');
-        return Observable.fromPromise(etl(req.body));
+        return validateUpload(req.body)
+            .mergeMap((msg) => Observable.fromPromise(etl(msg)))
+            .catch((err) => Observable.throw(new VError(err, 'Request for ETL 1 failed')));
     }).do((info) => {
         logger.info('ETL1 successful, dataset name is', info.name);
     });

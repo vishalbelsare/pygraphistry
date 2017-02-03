@@ -6,6 +6,7 @@ import SocketIOServer from 'socket.io';
 import RxHTTPServer from 'rx-http-server';
 import _config from '@graphistry/config';
 import { BehaviorSubject, Observable } from 'rxjs';
+import VError from 'verror';
 
 import { requisitionWorker } from './requisitionWorker';
 import { reportWorkerActivity } from './reportWorkerActivity';
@@ -90,7 +91,8 @@ export function start() {
             }
             const { error, message, exitCode, shouldExit } = e;
             if (error || message) {
-                logger.error({ err: error }, `viz-server exit reason: ${message}`);
+                const err = new VError(error || message, `viz-server exit reason: ${message}`);
+                logger.error({ err });
             }
             if (shouldExit) {
                 logger.info('Exiting viz-server process.');
@@ -98,9 +100,10 @@ export function start() {
                 setTimeout(() => {
                     process.exit(exitCode);
                 }, 1000);
+                return Observable.never();
+            } else {
+                return Observable.empty();
             }
-
-            return Observable.empty();
         });
 }
 

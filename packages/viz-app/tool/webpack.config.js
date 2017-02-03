@@ -367,7 +367,10 @@ function loaders(isDevBuild) {
                 plugins: isDevBuild ? [
                     'transform-runtime'] : [
                     'transform-runtime',
-                    'transform-react-inline-elements',
+                    // The Babel "jsx" helper method this plugin uses gets
+                    // deoptimized by v8, since it does argument reassignment.
+                    // This is no good in a React render() call tree.
+                    // 'transform-react-inline-elements',
                     'transform-react-constant-elements'],
                 presets: [
                     // !isDevBuild ? 'es2016' :

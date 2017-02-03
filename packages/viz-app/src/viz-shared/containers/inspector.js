@@ -11,7 +11,7 @@ import { WithGridLayout, WithScrollPosition } from 'viz-shared/components/data-g
 
 let Inspector = container({
     renderLoading: true,
-    fragment: (fragment, props) => {
+    fragment: (fragment, props = {}) => {
 
         const { rows, query, columns, templates, allTemplatesLength } = getInspectorState(fragment);
 
@@ -29,7 +29,7 @@ let Inspector = container({
             }`;
         }
 
-        const { startRow, rowsPerPage } = props;
+        const { startRow = 0, rowsPerPage = 0 } = props;
         const from = Math.max(0, startRow - rowsPerPage * 2 - 1) || 0;
         const to = Math.min(rows.length, startRow + rowsPerPage * 2 + 1) || 0;
         const columnNames = (columns.length && columns[0] ? columns : templates).map(({ name }) => name);

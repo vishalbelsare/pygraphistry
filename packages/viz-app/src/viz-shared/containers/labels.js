@@ -10,6 +10,7 @@ import { labelMouseMove } from 'viz-shared/actions/labels';
 import { addFilter, addExclusion } from 'viz-shared/actions/expressions';
 
 let Label = container({
+    renderLoading: false,
     fragment: () => `{
         type, index, title, columns
     }`,
@@ -87,6 +88,7 @@ let Labels = ({ simulating,
 };
 
 Labels = container({
+    renderLoading: false,
     fragment: ({ edge = [], point = [], settings } = {}) => `{
         id, name, timeZone,
         opacity, enabled, poiEnabled,

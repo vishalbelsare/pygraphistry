@@ -54,18 +54,24 @@ class Renderer extends React.Component {
         const currProps = this.props;
 
         const {
+            background: currBackground,
             edges: currEdges, points: currPoints,
-            background: currBackground, ...restCurrProps
+            highlight: currHighlight, selection: currSelection,
+            ...restCurrProps
         } = currProps;
 
         const {
+            background: nextBackground,
             edges: nextEdges, points: nextPoints,
-            background: nextBackground, ...restNextProps
+            highlight: nextHighlight, selection: nextSelection,
+            ...restNextProps
         } = nextProps;
 
         return (
             !shallowEqual(currEdges, nextEdges) ||
             !shallowEqual(currPoints, nextPoints) ||
+            !shallowEqualOrFalcorEqual(currHighlight, nextHighlight) ||
+            !shallowEqualOrFalcorEqual(currSelection, nextSelection) ||
             !shallowEqualOrFalcorEqual(currBackground, nextBackground) ||
             !shallowEqual(restCurrProps, restNextProps)
         );
@@ -423,7 +429,7 @@ class Renderer extends React.Component {
         if (!currEdge || !currPoint) {
             return !!(nextEdge || nextPoint);
         }
-        return shallowEqualOrFalcorEqual(currHighlight, nextHighlight);
+        return !shallowEqualOrFalcorEqual(currHighlight, nextHighlight);
     }
     updateSceneSelection({
         currSelection, nextSelection,
@@ -434,7 +440,7 @@ class Renderer extends React.Component {
         if (!currEdge || !currPoint) {
             return !!(nextEdge || nextPoint);
         }
-        return shallowEqualOrFalcorEqual(currSelection, nextSelection);
+        return !shallowEqualOrFalcorEqual(currSelection, nextSelection);
     }
 }
 

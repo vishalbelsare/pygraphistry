@@ -54,20 +54,18 @@ let Control = ({ id, type, ...rest } = {}) => {
 };
 
 Settings = container({
-    renderLoading: false,
+    renderLoading: true,
     fragment: ({ settings = [] } = {}) => `{
-        id, name, settings: {
-            length, ... ${
-                Options.fragments(settings)
-            }
+        id, name, settings: ${
+            Options.fragments(settings)
         }
     }`
 })(Settings);
 
 Options = container({
-    renderLoading: false,
+    renderLoading: true,
     fragment: (options = []) => `{
-        name, length, ...${
+        name, ...${
             Control.fragments(options)
         }
     }`,
@@ -77,7 +75,7 @@ Options = container({
 })(Options);
 
 Control = container({
-    renderLoading: false,
+    renderLoading: true,
     fragment: () => `{ id, name, type, props, value: {${null}} }`,
     dispatchers: {
         setValue: setControlValue
