@@ -8,7 +8,7 @@ WORKDIR $APPDIR
 
 COPY ./wholly-innocuous/files/npm/rc /root/.npmrc
 
-COPY . .
+COPY ./central .
 
 RUN npm install
 RUN npm run build
