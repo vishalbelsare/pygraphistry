@@ -143,14 +143,16 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
     // Try device specified in config first
     const { GPU_OPTIONS: { device: desiredDevice } = {}} = config;
     if (desiredDevice) {
-        devices.sort(function(a, b) {
-            if (a.name.indexOf(desiredDevice)) {
+        devices.sort((a, b) => {
+            if (a.name.indexOf(desiredDevice) !== -1) {
+                return -1;
+            } else if (b.name.indexOf(desiredDevice) !== -1) {
                 return 1;
             } else {
-                return -1;
+                return 0;
             }
         });
-    }
+    };
 
     var deviceWrapper = null, err = null;
     var i;

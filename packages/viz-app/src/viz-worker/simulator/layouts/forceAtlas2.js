@@ -250,8 +250,7 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
 // Returns a map from the name of the buffer used in this layout to the actual buffer
 function getBufferBindings(simulator, stepNumber) {
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
-    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
-    var warpsize = getWarpsize(vendor);
+    var warpsize = getWarpsize(simulator.cl.deviceProps);
     return {
         THREADS_BOUND: workItems.boundBox[1],
         THREADS_FORCES: workItems.calculateForces[1],
@@ -314,8 +313,7 @@ var layoutBuffers  = {};
 
 ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
-    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
-    var warpsize = getWarpsize(vendor);
+    var warpsize = getWarpsize(simulator.cl.deviceProps);
     var numPoints = simulator.dataframe.getNumElements('point');
 
     simulator.resetBuffers(layoutBuffers);
@@ -560,7 +558,7 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
 
 function getNumWorkitemsByHardware(deviceProps) {
     logger.trace({deviceProps}, 'Device props');
-    const gpuOptions = config.GPU_OPTIONS;
+    const configOptions = config.GPU_OPTIONS && config.GPU_OPTIONS.SIZES;
 
     var sizes = {
         toBarnesLayout: [30, 256],
@@ -573,9 +571,8 @@ function getNumWorkitemsByHardware(deviceProps) {
         calculateForces: [60, 256]
     };
 
-    if (gpuOptions) {
-        logger.trace({gpuOptions}, 'GPU workgroup size and number passed in through config');
-        sizes = gpuOptions.SIZES;
+    if (configOptions) {
+        sizes = configOptions;
     } else if (deviceProps.NAME.indexOf('M370X') != -1) {
         sizes = {
             toBarnesLayout: [1, 256],
@@ -680,10 +677,16 @@ var computeSizes = function (simulator, warpsize, numPoints) {
     };
 };
 
-var getWarpsize = function (vendor) {
+var getWarpsize = function (deviceProps) {
+    logger.trace({deviceProps});
+    const { TYPE, VENDOR } = deviceProps;
+    const vendor = VENDOR.toLowerCase();
+    const type = TYPE.toLowerCase();
     var warpsize = 1; // Always correct
     if (config.GPU_OPTIONS && config.GPU_OPTIONS.WARPSIZE) {
         warpsize = config.GPU_OPTIONS.WARPSIZE;
+    } else if (type === 'CPU') {
+        warpsize = 1;
     } else if (vendor.indexOf('intel') != -1) {
         warpsize = 16;
     } else if (vendor.indexOf('nvidia') != -1) {
