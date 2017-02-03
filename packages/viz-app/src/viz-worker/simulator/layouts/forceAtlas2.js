@@ -670,7 +670,7 @@ var computeSizes = function (simulator, warpsize, numPoints) {
 };
 
 var getWarpsize = function (vendor) {
-    if (config.GPU_OPTIONS.WARPSIZE) {
+    if (config.GPU_OPTIONS && config.GPU_OPTIONS.WARPSIZE) {
         return config.GPU_OPTIONS.WARPSIZE;
     }
     var warpsize = 1; // Always correct
