@@ -3,7 +3,7 @@ FROM node:alpine
 WORKDIR /app
 
 COPY ./wholly-innocuous/files/npm/rc /root/.npmrc
-COPY ./config .
+COPY ./common .
 
 ARG BUILD_NUMBER
 RUN apk add --no-cache jq
