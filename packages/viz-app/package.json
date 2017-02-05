@@ -4,7 +4,7 @@
   "description": "viz-app",
   "main": "./www/viz-server.js",
   "scripts": {
-    "start": "cd www && node ./viz-server.js",
+    "start": "node ./www/viz-server.js",
     "clean": "rm -rf ./www/*",
     "build": "npm run clean && cross-env NODE_ENV=production node ./tool/build",
     "build-client": "cross-env NODE_ENV=production node ./tool/build-resource -- -- 0",
