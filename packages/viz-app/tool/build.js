@@ -154,7 +154,7 @@ compile.multicast(function() { return new Subject(); }, function(shared) {
             child = childProcess.fork(path.join(
                 serverConfig.output.path,
                 serverConfig.output.filename), serverArgs, {
-                env: process.env, cwd: path.resolve('www'), execArgv: serverExecArgv
+                env: process.env, cwd: process.cwd(), execArgv: serverExecArgv
             });
             return processToObservable(child)
                 .last(null, null, { code: 1 })
