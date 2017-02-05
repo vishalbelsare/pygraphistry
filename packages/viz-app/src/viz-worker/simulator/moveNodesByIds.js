@@ -1,8 +1,9 @@
 'use strict';
 
+import Kernel from './kernel.js';
+
 var    cljs = require('./cl.js'),
           Q = require('q'),
-     Kernel = require('./kernel.js'),
         log = require('@graphistry/common').logger,
      logger = log.createLogger('graph-viz', 'graph-viz/js/moveNodesByIds.js');
 
