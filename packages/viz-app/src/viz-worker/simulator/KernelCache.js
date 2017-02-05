@@ -7,21 +7,50 @@ const logger      = log.createLogger('graph-viz', 'simulator/kernel/KernelCache.
 
 export default function KernelCache () {
 
-	this.name2kernel = {};
+	this.argsToKernel = {};
 
 }
 
 KernelCache.prototype.fetchOrCreate = function (name, argNames, argTypes, file, clContext) {
 
-	logger.info('==== KERNEL', name);
+	//known to be cacheable
+	const whitelist = [
 
-	if (this.name2kernel[name]) {
-		logger.info(`== KERNEL: FETCHED ${name}`);
-		return this.name2kernel[name];
+		//THESE RECOMPILE AT RUNTIME SOME REASON
+		//'to_barnes_layout',
+		//'bound_box',
+		//'build_tree',
+		//'compute_sums',
+		//'sort',
+		//'calculate_forces',
+
+		'faEdgeMap',
+		'segReduce',
+		'faSwingsTractions',
+		'faIntegrate',
+		'moveNodes',
+		'moveNodesByIds',
+		'selectNodesInRect',
+		'selectNodesInCircle'
+
+	];	
+
+	const key = file + ':' + argNames.join(' ');
+
+	if (whitelist.indexOf(name) > -1 && this.argsToKernel[key]) {
+
+		return this.argsToKernel[key];
+
 	} else {
-		logger.info(`== KERNEL: CREATED ${name}`);
-		this.name2kernel[name] = new Kernel(name, argNames, argTypes, file, clContext);
-		return this.name2kernel[name];
-	}
 
+		const kernel = new Kernel(name, argNames, argTypes, file, clContext);
+
+		if (whitelist.indexOf(name) > -1) {
+			kernel.compile();
+		}
+
+		this.argsToKernel[key] = kernel;
+		return kernel;
+
+	}
 };
