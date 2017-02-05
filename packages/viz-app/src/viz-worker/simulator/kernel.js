@@ -20,7 +20,6 @@ const logger      = log.createLogger('graph-viz', 'graph-viz/js/kernel.js');
 
 // String * [String] * {String: Type} * String * clCtx
 export default function Kernel (name, argNames, argTypes, file, clContext) {
-    logger.info(`== KERNEL: RAW ${name}`);
     logger.trace({kernelName: name,
                 file: file}, 'Creating Kernel: %s', name);
 

@@ -226,10 +226,6 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
  */
 var compile = Q.promised(function (cl, source, kernels) {
 
-
-    logger.info(`==== COMPILING ${kernels[0]}`);
-
-
     perf.startTiming('graph-viz:cl:compilekernel');
 
     logger.trace('Kernel: ', kernels[0]);
@@ -247,7 +243,6 @@ var compile = Q.promised(function (cl, source, kernels) {
         if (parseFloat(cl.deviceProps.MAX_CL_VERSION) >= 2.0 && ocl.VERSION_2_0) {
             clver = ' -cl-std=CL2.0';
         }
-        logger.info('=== BUILD PROGRAM', '-I ' + includeDir + ' -cl-fast-relaxed-math ' + clver);
         ocl.buildProgram(program, [cl.device], '-I ' + includeDir + ' -cl-fast-relaxed-math ' + clver);
 
         // create kernels

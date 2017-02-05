@@ -12,15 +12,10 @@ const logger = log.createLogger('graph-viz', 'simulator/KernelPreload.js');
 
 export function preload (clContext, kernelCache) {
 
-	logger.info("==== CONTROLS ", controls.default);
-
 	controls.default.forEach( (cfg) => {
 		cfg.layoutAlgorithms.forEach( ({algo, params}) => {	
 		
-			logger.info(`===== PRELOADING ${algo.name}`);
-
 			const compiled = new algo(clContext, kernelCache);
-        	//compiled.setPhysics(_.object(_.map(params, (p, name) => [name, p.value])));
 
 		});
 	});
