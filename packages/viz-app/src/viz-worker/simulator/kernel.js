@@ -142,6 +142,7 @@ export default function Kernel (name, argNames, argTypes, file, clContext) {
                 .then((kernels) => kernels[name]);
         });
     }
+    this.compile = compile; 
 
     function setAllArgs(kernel) {
         logger.trace({kernelName: name}, 'Setting arguments for kernel');

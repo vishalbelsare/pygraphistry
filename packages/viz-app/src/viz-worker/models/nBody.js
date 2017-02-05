@@ -8,21 +8,37 @@ import { scenes } from 'viz-shared/models/scene';
 import * as driver from '../simulator/node-driver';
 import { controls as layoutControls } from '../simulator/layout.config';
 
+import KernelCache from '../simulator/KernelCache';
+import { preload as preloadKernels } from '../simulator/KernelPreload';
+
+
+///////////////// PRELOAD CL CONTEXT, KERNELS /////////////////
+
+import _config from '@graphistry/config';
+const { GPU_OPTIONS: { vendor, device } = {} } = _config();
+
+const renderer = new Renderer();
+const contexts = CLjs.createSync(renderer, device, vendor);
+const kernelCache = new KernelCache();
+
+preloadKernels(contexts, kernelCache);
+
+///////////////////////////////////////////////////////////////
+
+
 export function nBody(dataset) {
 
     const {
         bg, id, scene,
-        vendor, device,
         controls: datasetControls,
     } = dataset;
 
-    const renderer = new Renderer();
     const dataframe = new Dataframe();
     const interactions = new Subject();
-    const contexts = CLjs.createSync(renderer, device, vendor);
     const simulator = SimCL.createSync(
         dataframe, renderer, contexts, device,
-        vendor, layoutControls[datasetControls]
+        vendor, layoutControls[datasetControls],
+        kernelCache
     );
 
     const nBody = NBody.createSync({

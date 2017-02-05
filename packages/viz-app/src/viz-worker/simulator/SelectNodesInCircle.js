@@ -8,7 +8,7 @@ var    cljs = require('./cl.js'),
 var log         = require('@graphistry/common').logger;
 var logger      = log.createLogger('graph-viz', 'graph-viz/js/SelectNodesInCircle.js');
 
-function SelectNodesInCircle(clContext) {
+function SelectNodesInCircle(clContext, kernelCache) {
     logger.trace('Creating selectNodesInCircle kernel');
 
     var args = ['center_x', 'center_y', 'radius_squared', 'positions', 'mask'];
@@ -19,7 +19,7 @@ function SelectNodesInCircle(clContext) {
         positions: null,
         mask: null
     };
-    this.kernel = new Kernel('selectNodesInCircle', args, argsType, 'selectNodesInCircle.cl', clContext);
+    this.kernel = kernelCache.fetchOrCreate('selectNodesInCircle', args, argsType, 'selectNodesInCircle.cl', clContext);
 }
 
 

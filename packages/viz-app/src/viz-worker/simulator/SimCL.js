@@ -41,15 +41,15 @@ const randLength = 73;
  * @param renderer
  * @param cl
  */
-function createSimCL (simObj, algos, cl, renderer, controls, dataframe) {
+function createSimCL (simObj, algos, cl, renderer, controls, dataframe, kernelCache) {
     logger.trace('Creating SimCL...');
 
     simObj.layoutAlgorithms = algos;
     simObj.otherKernels = {
-        moveNodes: new MoveNodes(cl),
-        moveNodesByIds: new MoveNodesByIds(cl),
-        selectNodesInRect: new SelectNodesInRect(cl),
-        selectNodesInCircle: new SelectNodesInCircle(cl)
+        moveNodes: new MoveNodes(cl, kernelCache),
+        moveNodesByIds: new MoveNodesByIds(cl, kernelCache),
+        selectNodesInRect: new SelectNodesInRect(cl, kernelCache),
+        selectNodesInCircle: new SelectNodesInCircle(cl, kernelCache)
         // histogramKernel: new HistogramKernel(cl),
     };
     simObj.tilesPerIteration = 1;
@@ -148,7 +148,7 @@ function createSimCL (simObj, algos, cl, renderer, controls, dataframe) {
  * @param {Object} cfg
  * @returns {Simulator}
  */
-export function createSync (dataframe, renderer, cl, device, vendor, cfg) {
+export function createSync (dataframe, renderer, cl, device, vendor, cfg, kernelCache) {
     // Pick the first layout algorithm that matches our device type
 
     // GPU device type
@@ -184,12 +184,12 @@ export function createSync (dataframe, renderer, cl, device, vendor, cfg) {
     logger.debug({layoutAlgorithms: layoutAlgorithms}, 'Instantiating layout algorithms');
 
     const algos = _.map(layoutAlgorithms, (la) => {
-        const algo = new la.algo(cl);
+        const algo = new la.algo(cl, kernelCache);
         algo.setPhysics(_.object(_.map(la.params, (p, name) => [name, p.value])));
         return algo;
     });
 
-    createSimCL.call(this, simObj, algos, cl, renderer, controls, dataframe);
+    createSimCL.call(this, simObj, algos, cl, renderer, controls, dataframe, kernelCache);
 
     return simObj;
 

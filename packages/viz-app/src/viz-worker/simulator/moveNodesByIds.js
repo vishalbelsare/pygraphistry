@@ -7,7 +7,7 @@ var    cljs = require('./cl.js'),
         log = require('@graphistry/common').logger,
      logger = log.createLogger('graph-viz', 'graph-viz/js/moveNodesByIds.js');
 
-function MoveNodesByIds(clContext) {
+function MoveNodesByIds(clContext, kernelCache) {
     logger.trace('Creating moveNodesByIds kernel');
 
     var args = ['ids', 'deltaX', 'deltaY', 'inputPositions', 'outputPositions'];
@@ -19,7 +19,7 @@ function MoveNodesByIds(clContext) {
         outputPositions: null
     };
 
-    this.moveNodesByIds = new Kernel('moveNodesByIds', args, argsType, 'moveNodesByIds.cl', clContext);
+    this.moveNodesByIds = kernelCache.fetchOrCreate('moveNodesByIds', args, argsType, 'moveNodesByIds.cl', clContext);
 }
 
 MoveNodesByIds.prototype.run = function (simulator, ids, diff) {

@@ -195,13 +195,13 @@ var kernelSpecs = {
     }
 }
 
-function ForceAtlas2Barnes(clContext) {
+function ForceAtlas2Barnes(clContext, kernelCache) {
     LayoutAlgo.call(this, 'ForceAtlas2Barnes');
     logger.trace('Creating ForceAtlasBarnes kernels');
     var that = this;
     _.each(kernelSpecs, function (kernel, name) {
         var newKernel =
-            new Kernel(kernel.kernelName, kernel.args, argsType, kernel.fileName, clContext)
+            kernelCache.fetchOrCreate(kernel.kernelName, kernel.args, argsType, kernel.fileName, clContext)
         that[name] = newKernel;
         that.kernels.push(newKernel);
     });

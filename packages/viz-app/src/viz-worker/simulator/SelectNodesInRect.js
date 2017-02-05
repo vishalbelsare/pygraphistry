@@ -8,7 +8,7 @@ var    cljs = require('./cl.js'),
 var log         = require('@graphistry/common').logger;
 var logger      = log.createLogger('graph-viz', 'graph-viz/js/selectNodesInRect.js');
 
-function SelectNodesInRect(clContext) {
+function SelectNodesInRect(clContext, kernelCache) {
     logger.trace('Creating selectNodesInRect kernel');
 
     var args = ['top', 'left', 'bottom', 'right', 'positions', 'mask'];
@@ -20,7 +20,7 @@ function SelectNodesInRect(clContext) {
         positions: null,
         mask: null
     };
-    this.kernel = new Kernel('selectNodesInRect', args, argsType, 'selectNodesInRect.cl', clContext);
+    this.kernel = kernelCache.fetchOrCreate('selectNodesInRect', args, argsType, 'selectNodesInRect.cl', clContext);
 }
 
 
