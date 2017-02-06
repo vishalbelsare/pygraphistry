@@ -124,7 +124,7 @@ export function requisitionWorker({
         }
         return acceptedClaims.switchMap(
             (claimId) => initialAppRequests
-                .filter(([indexId]) => claimId === indexId)
+                // .filter(([indexId]) => claimId === indexId)
                 .map((arr) => arr.slice(1))
                 .timeout(claimTimeout * 1000)
                 .catch((e) => {
