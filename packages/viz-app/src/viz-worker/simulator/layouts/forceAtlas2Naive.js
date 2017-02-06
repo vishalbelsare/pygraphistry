@@ -1,6 +1,6 @@
 'use strict';
 
-import Kernel from '../kernel.js';
+import Kernel from '../kernel/kernel.js';
 
 var          _ = require('underscore'),
        cljs = require('../cl.js'),

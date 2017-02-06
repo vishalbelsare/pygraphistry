@@ -1,7 +1,5 @@
 'use strict';
 
-import Kernel from './kernel.js';
-
 var    cljs = require('./cl.js'),
           Q = require('q'),
         log = require('@graphistry/common').logger,

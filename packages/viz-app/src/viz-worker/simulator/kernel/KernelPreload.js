@@ -6,22 +6,22 @@
 //////////////////////////////////////////////////////
 
 
-import { controls } from './layout.config.js';
+import { controls } from '../layout.config.js';
 import _ from 'underscore';
 
 import _config from '@graphistry/config';
 import { Renderer } from 'viz-shared/renderers';
-import * as CLjs from './cl';
+import * as CLjs from '../cl';
 import KernelCache from './KernelCache';
 
 
-import MoveNodes from './moveNodes.js';
-import MoveNodesByIds from './moveNodesByIds.js';
-import SelectNodesInCircle from './SelectNodesInCircle.js';
-import SelectNodesInRect from './SelectNodesInRect.js';
+import MoveNodes from '../moveNodes.js';
+import MoveNodesByIds from '../moveNodesByIds.js';
+import SelectNodesInCircle from '../SelectNodesInCircle.js';
+import SelectNodesInRect from '../SelectNodesInRect.js';
 
 import { logger as log } from '@graphistry/common';
-const logger = log.createLogger('graph-viz', 'simulator/KernelPreload.js');
+const logger = log.createLogger('graph-viz', 'simulator/kernel/KernelPreload.js');
 
 
 //////////////////////////////////////////////////////

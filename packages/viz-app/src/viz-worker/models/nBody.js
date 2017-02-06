@@ -6,7 +6,7 @@ import { scenes } from 'viz-shared/models/scene';
 import * as driver from '../simulator/node-driver';
 import { controls as layoutControls } from '../simulator/layout.config';
 
-import { preloaded } from '../simulator/KernelPreload';
+import { preloaded } from '../simulator/kernel/KernelPreload';
 
 
 export function nBody(dataset) {

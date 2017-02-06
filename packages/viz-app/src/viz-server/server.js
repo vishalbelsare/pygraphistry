@@ -23,7 +23,7 @@ import { HealthChecker } from './HealthChecker.js';
 const healthcheck = HealthChecker();
 
 
-import { initialize as initializeNbody } from '../viz-worker/simulator/KernelPreload';
+import { initialize as initializeNbody } from 'viz-worker/simulator/kernel/KernelPreload';
 
 export function start() {
 

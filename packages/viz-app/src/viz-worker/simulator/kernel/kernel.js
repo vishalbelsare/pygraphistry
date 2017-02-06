@@ -3,14 +3,14 @@
 const _ = require('underscore');
 const Q = require('q');
 const sprintf = require('sprintf-js').sprintf;
-const util = require('./util');
+const util = require('../util');
 
-const cljs = require('./cl.js');
+const cljs = require('../cl.js');
 const ocl = require('node-opencl');
 const config = require('@graphistry/config')();
 
 const log         = require('@graphistry/common').logger;
-const logger      = log.createLogger('graph-viz', 'graph-viz/js/kernel.js');
+const logger      = log.createLogger('graph-viz', 'simulator/kernel/kernel.js');
 
 // Disable debug logging since this file is responsible for 90% of log output.
 // Comment me for local debugging.
