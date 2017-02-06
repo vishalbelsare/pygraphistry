@@ -22,6 +22,9 @@ export const logger = commonLogger.createLogger('viz-server:server');
 import { HealthChecker } from './HealthChecker.js';
 const healthcheck = HealthChecker();
 
+
+import { initialize as initializeNbody } from '../viz-worker/simulator/KernelPreload';
+
 export function start() {
 
     const app = express();
@@ -59,6 +62,10 @@ export function start() {
     // Tell Express to trust reverse-proxy connections from localhost, linklocal, and private IP ranges.
     // This allows Express to expose the client's real IP and protocol, not the proxy's.
     app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
+
+
+    initializeNbody();
+
 
     return Observable.defer(() => serverListen(
             config.VIZ_LISTEN_PORT,

@@ -17,8 +17,14 @@ function getShaderSource(id) {
 
 
 function getKernelSource(id) {
-    // const kernelPath = path.resolve(__dirname, '..' ,'kernels', id);
-    const kernelPath = path.resolve('./kernels', id);
+
+    //Both prod & dev start at vizapp/packages/vizapp/www due to process.chdir(www)
+    //From there, dev should use ../src while prod uses ./kernels
+
+    const kernelPath = __DEV__  ?
+        path.resolve('..', __dirname, '..', 'static', 'kernels', id)
+        :  path.resolve('kernels', id);
+
     logger.trace('Fetching source for kernel %s at path %s, using fs read', id, kernelPath);
     return Q.denodeify(fs.readFile)(kernelPath, {encoding: 'utf8'});
 }
