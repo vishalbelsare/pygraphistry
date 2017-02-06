@@ -18,9 +18,6 @@ function getShaderSource(id) {
 
 function getKernelSource(id) {
 
-    //Both prod & dev start at vizapp/packages/vizapp/www due to process.chdir(www)
-    //From there, dev should use ../src while prod uses ./kernels
-
     const kernelPath = path.resolve('kernels', id);
 
     logger.trace('Fetching source for kernel %s at path %s, using fs read', id, kernelPath);
