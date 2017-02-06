@@ -24,7 +24,6 @@ Rx.Subscription.prototype.dispose = Rx.Subscription.prototype.unsubscribe;
 
 var os          = require('os');
 var _           = require('lodash');
-var request     = require('request');
 var MongoClient = require('mongodb').MongoClient;
 
 var config      = require('@graphistry/config')();
@@ -67,57 +66,6 @@ function get_likely_local_ip() {
 var VIZ_SERVER_HOST = get_likely_local_ip();
 var nextLocalWorker = 0;
 
-/**
- * Gets all the currently registered viz worker servers, and all currently registered viz worker
- * processes.
- *
- * @returns {Rx.Observable<servers, workers>} An Observable with a single item, an object with a
- * `servers` property containing the list of all viz servers, and a `workers` property, containing
- * the list of all worker process.
- */
-function getIPs() {
-    // The absolute Date that defines the time threshild between fresh/stale pings
-    var freshDate = new Date(Date.now() - (config.GPU_PING_TIMEOUT * 1000));
-
-    return dbObs.flatMap(function(db) {
-        // Find all the server running workers, sort by available GPU memory
-        var workerServers = db.collection('gpu_monitor')
-            .find(
-                {'updated': {'$gt': freshDate}},
-                {'sort': [['gpu_memory_free', 'desc']]}
-            );
-
-        return Rx.Observable
-            .bindNodeCallback(workerServers.toArray.bind(workerServers))()
-            .flatMap(function (ips) {
-                if (ips.length < 1) {
-                    logger.info('No worker currently registered to this cluster.');
-                    return Rx.Observable.throw(new Error(
-                        'There are no worker currently registered to this cluster. Please contact help@graphistry.com for further assistance.'));
-                }
-
-                // Find all idle node processes
-                var nodeCollection = db.collection('node_monitor').find({
-                    'active': false,
-                    'updated': {'$gt': freshDate}
-                });
-
-                return Rx.Observable
-                    .bindNodeCallback(nodeCollection.toArray.bind(nodeCollection))()
-                    .map(function (results) {
-                        if (!results.length) {
-                            logger.info('All workers are currently busy');
-                            var msg = "All workers are currently busy, and your request can't be serviced at this time. Please contact help@graphistry.com for private access. (Reason: could not find an available worker in the worker ping database.)";
-                            throw new Error(msg);
-                        } else {
-                            logger.info({servers: ips, workers: results}, 'Found available IPs');
-                            return {servers: ips, workers: results};
-                        }
-                    });
-            });
-    });
-}
-
 
 function getWorkers() {
     // The absolute Date that defines the time threshild between fresh/stale pings
@@ -146,66 +94,31 @@ function getWorkers() {
 }
 
 
-/**
- * Queries a worker's to see if it is available. If it's available, the query has the side effect of
- * reserving the worker for a short period of time, making it unavailable for assignment during this
- * period.
- *
- * @param {Object.<hostname, port>} workerNfo - The worker to query.
- *
- * @returns {Rx.Observable<bool>} an Observable with a single item: a bool indicating if this worker
- * is available (and, consequently, has been reserved for the current user.)
- */
-function handshakeIp (workerNfo) {
+// Tracks when we last assigned a client to a worker
+const workerLastAssigned = {};
 
-    var url = 'http://' + workerNfo.hostname + ':' + workerNfo.port + '/claim';
-    var cfg = {url: url, json: true, timeout: 250};
+function checkIfWorkerAssigned(workerNfo) {
+    const workerAssignmentTimeout = config.WORKER_CONNECT_TIMEOUT;
+    const workerId = workerNfo.hostname + ':' + workerNfo.port;
 
-    logger.info('Trying worker', cfg, workerNfo);
-
-    return Rx.Observable
-        .bindNodeCallback(request.get.bind(request))(cfg)
-        .pluck(1)
-        .map(function (resp) {
-            logger.debug('Worker response', resp);
-            return !!resp.success;
-        })
-        .catch(function catchHandshakeHTTPErrors(err) {
-            logger.warn(err, 'Handshake error: encountered a HTTP error attempting to handshake "%s". Catching error and reporting unsuccessful handshake to caller.',
-                url);
+    if(!workerLastAssigned[workerId]) {
+        return Rx.Observable.return(false);
+    } else {
+        const assignedElapsed = (new Date()) - workerLastAssigned[workerId];
+        if(assignedElapsed > workerAssignmentTimeout) {
             return Rx.Observable.return(false);
-        });
-}
-
-
-/**
- * Given a list of servers and workers, combines them to return a list of worker info (hostname,
- * port, ping timestamp), sorted in order of free space.
- */
-function combineWorkerInfo (servers, workers) {
-    var workerInfo = [];
-
-    // Try each IP in order of free space
-    for (var i in servers) {
-        if(!servers.hasOwnProperty(i)) { continue; }
-
-        var ip = servers[i]['ip'];
-
-        for (var j in workers) {
-            if (workers[j]['ip'] !== ip) {
-                continue;
-            }
-
-            workerInfo.push(
-                {'hostname': ip,
-                 'port': workers[j]['port'],
-                 'timestamp': Date.now()
-                });
+        } else {
+            return Rx.Observable.return(true);
         }
     }
-
-    return workerInfo; //{i: 0, workers: workers, worker: null};
 }
+
+
+function markWorkerAsAssigned(workerNfo) {
+    const workerId = workerNfo.hostname + ':' + workerNfo.port;
+    workerLastAssigned[workerId] = new Date();
+}
+
 
 
 /**
@@ -238,7 +151,7 @@ export function pickWorker() {
     // Observable sequentially. Since we unsubscribe as soon as we receive the
     // first valid result, we don't execute any more handshakes than we need to.
     return ips.concatMap(
-                (workerNfo) => handshakeIp(workerNfo),
+                (workerNfo) => checkIfWorkerAssigned(workerNfo),
                 (workerNfo, success) => success ? workerNfo : false
             )
         // Skip events until workerNfo isn't false
@@ -266,7 +179,8 @@ export function pickWorker() {
         .do({
             next(worker) {
                 // If we get a worker, we know everything succeeded.
-                logger.debug("Assigning worker on %s, port %d", worker.hostname, worker.port);
+                logger.debug('Assigning worker on %s, port %d', worker.hostname, worker.port);
+                markWorkerAsAssigned(worker);
             },
             error({ type, error, message }) {
                 // If we get a message, log it and send it back.
