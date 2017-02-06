@@ -31,7 +31,7 @@ export default function Investigation({
                         )}>
                     Run All
                    { ' ' }
-                    <Glyphicon glyph="play" style={{fontSize: 'x-small'}}/>
+                    <Glyphicon glyph="play" style={{fontSize: '8px'}}/>
                 </Button>
             </OverlayTrigger>
             { status && !status.ok ?

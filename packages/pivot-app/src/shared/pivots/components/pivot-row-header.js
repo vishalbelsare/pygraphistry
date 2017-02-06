@@ -25,7 +25,7 @@ export default function PivotRowHeader({ id, investigationId, enabled, rowIndex,
             {
                 pivotTemplate && templates &&
                     <span 
-                        style={{width: '85%', display:'inline-flex'}}
+                        style={{width: '80%', display:'inline-flex'}}
                         className={styles['pivot-row-header-item']}
                     >
                         <TemplateSelector

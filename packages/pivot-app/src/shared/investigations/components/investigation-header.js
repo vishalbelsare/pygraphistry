@@ -12,7 +12,7 @@ export default function InvestigationHeader({id, user, investigations, saveInves
 }) {
     return (
                 <Navbar className={styles['investigation-header']} inverse fixedTop fluid>
-                    <Navbar.Form style={{width: '70%', padding: '0'}} pullLeft> 
+                    <Navbar.Form style={{width: '60%', padding: '0'}} pullLeft> 
                         <Select
                             name="investigation-selector"
                             value={id}

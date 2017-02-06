@@ -3,11 +3,12 @@
 .pivot-table {
     height: ~"calc(100% - 84px)";
     overflow: scroll;
-    background-color: @pivot-table-bg;
+    background-color: #F6F6F6; //aqua
     color: @pivot-table-fg;
+    margin-top: 10px;
 
     .pivot-cell + .pivot-cell {
-    	margin-top: 1em;
+    	margin-top: 0.5em;
     }
 }
 
@@ -16,7 +17,7 @@
 @disabled-opacity: 0.5;
 
 .pivot-row {
-    margin: 1em;
+    margin: 0em;
     position: relative;
 
     &.pivot-checked-false {
@@ -37,13 +38,14 @@
     :global(.panel-body) {
         padding: 0;
         & > div {
-            margin: 1em;
+            margin: 0em;
         }
     }
 
     .pivot-row-header {    	
 
     	height: 4em;
+        display: inline-flex;
         background-color: white;
         border-top-left-radius: 1em;
         border-top-right-radius: 1em;
@@ -76,7 +78,7 @@
 	    }
 	    .pivot-row-header-item:nth-child(3) {
 	    	width: ~"calc(100% - 8em)";
-		    background-color: white;
+		    background-color: green;
 		    padding-left: 0.5em;
 		    padding-right: 0.5em;
 		    margin-right: 0em;
@@ -109,9 +111,10 @@
 	display: flex;
     cursor: pointer;
     background-color: #c2d4de;
-    color: black;
+    color: #7FA1B4;
     font-size: 1.5em;
     text-align: right;
+    padding: 0px !important;
 }
 
 .pivot-expander {
@@ -141,7 +144,6 @@
 .pivot-expander-body {
 
     background-color: #fff;
-    border: 1px solid #ddd;
 	border-radius: 10px;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
@@ -209,6 +211,7 @@
     width: 100%;
     text-align: left;
     font-weight: bold;
+    font-size: 10px;
     & > div > div:nth-child(2):not(:hover) {
         border-width: 0;
         background-color: transparent;
@@ -224,7 +227,7 @@
 	width: 100%;
 }
 .pivot-combo-param :global(.form-inline .form-group) {
-	width: 100% !important;
+	width: 50% !important;
 }
 
 .pivot-text-param,
@@ -260,7 +263,8 @@
 	    overflow: hidden;
 	    margin: 0 0 0 5px;
 	    padding: 0 0 0 0;
-	    border: 1px solid #777;
+	    border: 1px solid #D3D3D3;
+        border-radius: 5px;
 	}
 
 
@@ -268,7 +272,6 @@
 	    display: block;
 	    height: @summaryPillHeight;
 	    width: 100%;
-	    border-bottom: 1px solid #777;
 	    border-top-right-radius: 0;
 	    border-bottom-right-radius: 0;
 	}
@@ -311,4 +314,84 @@
 .pivot-info-tooltip,
 .pivot-error-tooltip { 
 
+}
+
+:global(.panel-body) {
+        padding: 0px !important;
+}
+
+:global(.panel-footer) {
+    background-color: #c2d4de !important;
+    padding: 1px 15px !important;
+}
+
+:global(.panel-default) {
+    margin-bottom: 15px !important;
+    border: none !important;
+}
+
+:global(.panel-heading) {
+    background-color: #ffffff !important;
+}
+
+:global(.panel-body) {
+    border: none !important;
+}
+
+::-webkit-scrollbar { 
+    display: none; 
+}
+
+:global(.btn-toolbar) {
+    padding: 10px !important;
+}
+
+:global(.fa-2x) {
+    font-size: 1em !important;
+}
+
+:global(.rc-switch-inner) {
+    display: none !important;
+}
+:global(.rc-switch) {
+    height: 18px !important;
+    width: 35px !important;
+    left: 10px !important;
+    margin-right: 20px !important;
+}
+:global(.rc-switch:after) {
+    height: 14px !important;
+    width: 14px !important;
+}
+:global(.rc-switch-checked:after) {
+    left: 17px !important;
+}
+
+.splunk-query {
+    margin: 1em !important;
+}
+
+:global(.btn) {
+    font-size: 9px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    font-weight: 700 !important;
+}
+
+:global(.navbar-left) {
+    margin-left: -15px !important;
+}
+
+:global(.navbar-left .Select-value) {
+    background-color: #F6F6F6 !important; 
+    border: none !important;
+    font-weight: 900 !important;
+}
+
+:global(.navbar-left .Select-control) {
+    border: none !important;
+}
+
+:global(.Select-control) {
+    height: 30px !important;
 }

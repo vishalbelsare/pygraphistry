@@ -62,7 +62,7 @@ function ParameterPanel({id, pivotTemplate, pivotParameters, pivots, handlers, r
 function QueryOutputPanel() {
     return (
         <PivotPanel header={'Splunk Query'} eventKey='2' >
-            <Well bsSize='sm'> search 'This is not a real splunk query! Implement me please!' </Well>
+            <div className={styles['splunk-query']}><Well bsSize='sm'> 'This is not a real splunk query! Implement me please!' </Well></div>
         </PivotPanel>
     )
 }

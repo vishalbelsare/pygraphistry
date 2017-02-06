@@ -23,7 +23,7 @@ export default function InvestigationScreen({
     return (
         <div className={styles['investigation-all']}>
             <div className={styles['investigation-split']}>
-                <SplitPane split="vertical" minSize={0} defaultSize={450}>
+                <SplitPane split="vertical" minSize={0} defaultSize={375}>
                     <Investigation
                         data={activeInvestigation}
                         investigations={investigations}
