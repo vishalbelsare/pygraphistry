@@ -1,6 +1,6 @@
 import { PivotRow, PivotRowHeader } from 'pivot-shared/pivots';
 import styles from './pivots.less';
-import { PanelGroup, Panel } from 'react-bootstrap';
+import { PanelGroup, Panel, Button } from 'react-bootstrap';
 
 const PivotPanels = React.createClass({
     getInitialState() {
@@ -96,6 +96,9 @@ export default function PivotTable({
                 searchPivot={searchPivot}
                 togglePivots={togglePivots}
             />
+            <Button block
+                onClick={() => insertPivot({index: pivots.length - 1})}
+            >{ 'Add new pivot' }</Button>
         </div>
     );
 }
