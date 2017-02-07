@@ -154,9 +154,9 @@ export function createSync (dataframe, renderer, cl, device, vendor, cfg, kernel
     // GPU device type
     const type = cl.deviceProps.TYPE.trim();
 
-    // Available controls for device type
-    const availableControls = _.filter(cfg,
-        (algo) => _.contains(algo.devices, type));
+    // TODO Remove. Algorithms run on all devices
+    var availableControls = _.filter(cfg,
+        (algo) => true || _.contains(algo.devices, type));
 
     if (availableControls.length === 0) {
         logger.die('No layout controls satisfying device/vendor requirements', device, vendor);
@@ -194,6 +194,7 @@ export function createSync (dataframe, renderer, cl, device, vendor, cfg, kernel
     return simObj;
 
 }
+
 
 
 // TODO: Deprecate this in favor of encodings.

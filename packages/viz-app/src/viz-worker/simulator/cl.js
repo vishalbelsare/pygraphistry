@@ -13,6 +13,8 @@ var perf        = require('@graphistry/common').perfStats.createPerfMonitor();
 
 logger.trace("Initializing node-webcl flavored cl.js");
 //var webcl = require('node-webcl');
+import _config from '@graphistry/config';
+const config = _config();
 var ocl = require('node-opencl');
 // Q.longStackSupport = true;
 
@@ -87,8 +89,30 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
         throw new Error("No OpenCL devices of specified type (" + DEVICE_TYPE + ") found");
     }
 
-    var devices = clDevices.map(function(d) {
-        logger.trace("Found device %s", nodeutil.inspect(d, {depth: null, showHidden: true, colors: true}));
+    function getDevicesNamesAndPlatforms() {
+        var devices = [];
+        var devicesDisplayName = [];
+        var platforms = [];
+
+        ocl.getPlatformIDs().reverse().forEach(function (p) {
+            var pDevices = ocl.getDeviceIDs(p).reverse();
+            var info = ocl.getPlatformInfo(p, ocl.PLATFORM_VERSION);
+            devicesDisplayName = devicesDisplayName.concat(pDevices.map(function (d) {
+                return info + " : " + ocl.getDeviceInfo(d, ocl.DEVICE_NAME);
+            }));
+            devices = devices.concat(pDevices);
+            platforms = platforms.concat(pDevices.map(function () {
+                return p;
+            }));
+
+        });
+        return { devices, devicesDisplayName, platforms };
+    }
+
+    var { devices, devicesDisplayName } = getDevicesNamesAndPlatforms();
+    logger.debug({devices: devicesDisplayName}, 'Test');
+
+    devices = devices.map(function(d) {
 
         var typeToString = function (v) {
             return v === ocl.DEVICE_TYPE_CPU ? 'CPU'
@@ -107,7 +131,8 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
         return {
             device: d,
             deviceType: typeToString(ocl.getDeviceInfo(d, ocl.DEVICE_TYPE)),
-            computeUnits: computeUnits
+            computeUnits: computeUnits,
+            name: ocl.getDeviceInfo(d, ocl.DEVICE_NAME)
         };
     });
 
@@ -115,21 +140,19 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
         vendor = defaultVendor;
     }
 
-    // sort devices first by "nvidia" and then by "computeUnits"
-    devices.sort(function(a, b) {
-        // FIXME: the number of compute units is calculated weirdly
-        var nameA = ocl.getDeviceInfo(a.device, ocl.DEVICE_VENDOR).toLowerCase();
-        var nameB = ocl.getDeviceInfo(b.device, ocl.DEVICE_VENDOR).toLowerCase();
-
-        if (nameA.indexOf(vendor) !== -1 && nameB.indexOf(vendor) === -1) {
-            return -1;
-        }
-        if (nameB.indexOf(vendor) !== -1 && nameA.indexOf(vendor) === -1) {
-            return 1;
-        }
-        return b.computeUnits - a.computeUnits;
-    });
-
+    // Try device specified in config first
+    const { GPU_OPTIONS: { device: desiredDevice } = {}} = config;
+    if (desiredDevice) {
+        devices.sort((a, b) => {
+            if (a.name.indexOf(desiredDevice) !== -1) {
+                return -1;
+            } else if (b.name.indexOf(desiredDevice) !== -1) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
+    };
 
     var deviceWrapper = null, err = null;
     var i;

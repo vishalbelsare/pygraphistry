@@ -249,8 +249,7 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
 // Returns a map from the name of the buffer used in this layout to the actual buffer
 function getBufferBindings(simulator, stepNumber) {
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
-    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
-    var warpsize = getWarpsize(vendor);
+    var warpsize = getWarpsize(simulator.cl.deviceProps);
     return {
         THREADS_BOUND: workItems.boundBox[1],
         THREADS_FORCES: workItems.calculateForces[1],
@@ -313,8 +312,7 @@ var layoutBuffers  = {};
 
 ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
     var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
-    var vendor = simulator.cl.deviceProps.VENDOR.toLowerCase();
-    var warpsize = getWarpsize(vendor);
+    var warpsize = getWarpsize(simulator.cl.deviceProps);
     var numPoints = simulator.dataframe.getNumElements('point');
 
     simulator.resetBuffers(layoutBuffers);
@@ -558,7 +556,8 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
 }
 
 function getNumWorkitemsByHardware(deviceProps) {
-    const gpuOptions = config.GPU_OPTIONS;
+    logger.trace({deviceProps}, 'Device props');
+    const configOptions = config.GPU_OPTIONS && config.GPU_OPTIONS.SIZES;
 
     var sizes = {
         toBarnesLayout: [30, 256],
@@ -571,20 +570,30 @@ function getNumWorkitemsByHardware(deviceProps) {
         calculateForces: [60, 256]
     };
 
-    if (gpuOptions) {
-        logger.debug({gpuOptions}, 'GPU workgroup size and number passed in through config');
-        const maxWorkgroupSize = gpuOptions.MAX_WORK_GROUP_SIZE || 256;
-        const numWorkGroups = gpuOptions.NUM_WORKGROUPS;
+    if (configOptions) {
+        sizes = configOptions;
+    } else if (deviceProps.NAME.indexOf('M370X') != -1) {
         sizes = {
-            toBarnesLayout: [numWorkGroups.TO_BARNES_LAYOUT || 30, maxWorkgroupSize],
-            boundBox: [numWorkGroups.BOUND_BOX || 30, maxWorkgroupSize],
-            buildTree: [numWorkGroups.BUILD_TREE || 30, maxWorkgroupSize],
-            computeSums: [numWorkGroups.COMPUTE_SUMS || 10, maxWorkgroupSize],
-            sort: [numWorkGroups.SORT || 16, maxWorkgroupSize],
-            edgeForces: [numWorkGroups.EDGE_FORCES || 100, maxWorkgroupSize],
-            segReduce: [numWorkGroups.SEG_REDUCE || 1000, maxWorkgroupSize],
-            calculateForces: [numWorkGroups.CALCULATE_FORCES || 60, maxWorkgroupSize]
-        };
+            toBarnesLayout: [1, 256],
+            boundBox: [1, 256],
+            buildTree: [1, 256],
+            computeSums: [1, 256],
+            sort: [1, 256],
+            edgeForces: [1, 256],
+            segReduce: [8, 256],
+            calculateForces: [8, 256]
+        }
+    } else if (deviceProps.NAME.indexOf('Intel(R) Core') != -1) {
+        sizes = {
+            toBarnesLayout: [8, 1],
+            boundBox: [8, 1],
+            buildTree: [8, 1],
+            computeSums: [8, 1],
+            sort: [1, 1],
+            edgeForces: [1, 1],
+            segReduce: [8, 1],
+            calculateForces: [8, 1],
+        }
     } else if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1 ||
         deviceProps.NAME.indexOf('GeForce GT 750M') != -1) {
         sizes.buildTree[0] = 1;
@@ -635,11 +644,12 @@ function getNumWorkitemsByHardware(deviceProps) {
     }
 
 
-    const gpuSizes = _.mapObject(sizes, function(val, key) {
-        val[0] = val[0] * val[1];
-        return val;
-    });
-    logger.debug({gpuSizes}, 'Computed GPU workgroup and global sizes')
+    const gpuSizes = Object.entries(sizes).reduce((result, [key, [numWorkGroups, workGroupSize]]) => {
+        result[key] = [(numWorkGroups * workGroupSize), workGroupSize];
+        return result;
+    }, {});
+
+    logger.trace({gpuSizes}, 'Computed GPU workgroup and global sizes')
     return gpuSizes;
 }
 
@@ -666,18 +676,24 @@ var computeSizes = function (simulator, warpsize, numPoints) {
     };
 };
 
-var getWarpsize = function (vendor) {
-    if (config.GPU_OPTIONS && config.GPU_OPTIONS.WARPSIZE) {
-        return config.GPU_OPTIONS.WARPSIZE;
-    }
+var getWarpsize = function (deviceProps) {
+    logger.trace({deviceProps});
+    const { TYPE, VENDOR } = deviceProps;
+    const vendor = VENDOR.toLowerCase();
+    const type = TYPE.toLowerCase();
     var warpsize = 1; // Always correct
-    if (vendor.indexOf('intel') != -1) {
+    if (config.GPU_OPTIONS && config.GPU_OPTIONS.WARPSIZE) {
+        warpsize = config.GPU_OPTIONS.WARPSIZE;
+    } else if (type === 'cpu') {
+        warpsize = 1;
+    } else if (vendor.indexOf('intel') != -1) {
         warpsize = 16;
     } else if (vendor.indexOf('nvidia') != -1) {
         warpsize = 32;
     } else if (vendor.indexOf('amd') != -1) {
         warpsize = 64;
     }
+    logger.trace({warpsize}, `Warpsize: ${warpsize}`);
     return warpsize;
 
 }
