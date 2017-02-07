@@ -51,11 +51,11 @@
   dependencies:
     "@graphistry/falcor-path-syntax" "^2.5.3"
 
-"@graphistry/falcor-model-rxjs@~2.7.0":
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-model-rxjs/-/falcor-model-rxjs-2.7.0.tgz#37e4c67619e2c3741b44c82dae2051bed6819b6d"
+"@graphistry/falcor-model-rxjs@~2.7.1":
+  version "2.7.1"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-model-rxjs/-/falcor-model-rxjs-2.7.1.tgz#abd01cafb8e2c7e5b16cfdcea102bb18a6a12f3e"
   dependencies:
-    "@graphistry/falcor" "^2.7.0"
+    "@graphistry/falcor" "^2.7.1"
     "@graphistry/falcor-path-syntax" "^2.5.3"
     babel-plugin-transform-runtime "~6.15.0"
     rxjs "~5.0.2"
@@ -64,27 +64,27 @@
   version "2.5.3"
   resolved "https://registry.yarnpkg.com/@graphistry/falcor-path-syntax/-/falcor-path-syntax-2.5.3.tgz#830a2e6076d83e38fd6a7d9cb96b02d5d1fe458f"
 
-"@graphistry/falcor-path-utils@^2.6.16", "@graphistry/falcor-path-utils@~2.6.16":
-  version "2.6.16"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-path-utils/-/falcor-path-utils-2.6.16.tgz#2802001f34efb29bc993650c11ad1f4db21cdd95"
+"@graphistry/falcor-path-utils@^2.7.1", "@graphistry/falcor-path-utils@~2.7.1":
+  version "2.7.1"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-path-utils/-/falcor-path-utils-2.7.1.tgz#c66356dd6d6a8cf468286ac532f6470edd9f3597"
 
-"@graphistry/falcor-query-syntax@^2.7.0", "@graphistry/falcor-query-syntax@~2.7.0":
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-query-syntax/-/falcor-query-syntax-2.7.0.tgz#0fb5437862f263e8c857b06cffcb894a6eeb3ef5"
+"@graphistry/falcor-query-syntax@^2.7.1", "@graphistry/falcor-query-syntax@~2.7.1":
+  version "2.7.1"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-query-syntax/-/falcor-query-syntax-2.7.1.tgz#1bf49db11623840c7e3c20a23df067c7f7df667d"
   dependencies:
-    "@graphistry/falcor-path-utils" "^2.6.16"
+    "@graphistry/falcor-path-utils" "^2.7.1"
     babel-plugin-transform-runtime "~6.15.0"
     pegjs "0.10.0"
 
-"@graphistry/falcor-react-redux@~2.7.0":
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-react-redux/-/falcor-react-redux-2.7.0.tgz#50f1598ad4ae133f141e67b0e2b194cf2d423ca5"
+"@graphistry/falcor-react-redux@~2.7.1":
+  version "2.7.1"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-react-redux/-/falcor-react-redux-2.7.1.tgz#b2b63146e3942fe1904167e84a6e83d6b04f3d9b"
   dependencies:
-    "@graphistry/falcor" "^2.7.0"
+    "@graphistry/falcor" "^2.7.1"
     "@graphistry/falcor-json-graph" "^2.6.16"
     "@graphistry/falcor-path-syntax" "^2.5.3"
-    "@graphistry/falcor-path-utils" "^2.6.16"
-    "@graphistry/falcor-query-syntax" "^2.7.0"
+    "@graphistry/falcor-path-utils" "^2.7.1"
+    "@graphistry/falcor-query-syntax" "^2.7.1"
     babel-plugin-transform-runtime "~6.15.0"
     babel-preset-react "~6.16.0"
     hoist-non-react-statics "~1.2.0"
@@ -96,48 +96,48 @@
     redux "~3.6.0"
     warning "~3.0.0"
 
-"@graphistry/falcor-react-schema@~2.7.0":
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-react-schema/-/falcor-react-schema-2.7.0.tgz#68bf9879279780a5a95d987b056959321706e227"
+"@graphistry/falcor-react-schema@~2.7.1":
+  version "2.7.1"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-react-schema/-/falcor-react-schema-2.7.1.tgz#471193237506700a2e9044510c00d7703fc640b3"
   dependencies:
-    "@graphistry/falcor" "^2.7.0"
+    "@graphistry/falcor" "^2.7.1"
     "@graphistry/falcor-json-graph" "^2.6.16"
-    "@graphistry/falcor-path-utils" "^2.6.16"
-    "@graphistry/falcor-query-syntax" "^2.7.0"
-    babel-plugin-transform-runtime "~6.15.0"
-    babel-preset-react "~6.16.0"
+    "@graphistry/falcor-path-utils" "^2.7.1"
+    "@graphistry/falcor-query-syntax" "^2.7.1"
+    babel-plugin-transform-runtime "~6.22.0"
+    babel-preset-react "~6.22.0"
     invariant "~2.2.2"
     pegjs-util "~1.4.1"
     react "~15.4.1"
-    recompose "~0.21.2"
-    rxjs "~5.0.2"
+    recompose "~0.22.0"
+    rxjs "~5.1.0"
 
-"@graphistry/falcor-router-saddle@~2.7.0":
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-router-saddle/-/falcor-router-saddle-2.7.0.tgz#c6288cf8b9e1d941c7432ac1f5789b67ec1ba18d"
+"@graphistry/falcor-router-saddle@~2.7.1":
+  version "2.7.1"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-router-saddle/-/falcor-router-saddle-2.7.1.tgz#ef5ebfa911f3537469e36a9404352e37e3b19cdd"
   dependencies:
     rxjs "~5.0.2"
 
-"@graphistry/falcor-router@~2.7.0":
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-router/-/falcor-router-2.7.0.tgz#9c8e694fc73c3764055c1e877937cf2d8ef17781"
+"@graphistry/falcor-router@~2.7.1":
+  version "2.7.1"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-router/-/falcor-router-2.7.1.tgz#20b4692c930f38068994357c5898df4e35a640bc"
   dependencies:
     "@graphistry/falcor-path-syntax" "^2.5.3"
-    "@graphistry/falcor-path-utils" "^2.6.16"
+    "@graphistry/falcor-path-utils" "^2.7.1"
     rxjs "^5.0.2"
 
-"@graphistry/falcor-socket-datasource@~2.7.0":
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-socket-datasource/-/falcor-socket-datasource-2.7.0.tgz#8b8fb1269a92255127e84c431096926615adb10f"
+"@graphistry/falcor-socket-datasource@~2.7.1":
+  version "2.7.1"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-socket-datasource/-/falcor-socket-datasource-2.7.1.tgz#f1b7829efeb2c50ce295ceea798245b9e0a7904c"
   dependencies:
     babel-plugin-transform-runtime "~6.15.0"
     simpleflakes "~1.2.3"
 
-"@graphistry/falcor@^2.7.0", "@graphistry/falcor@~2.7.0":
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor/-/falcor-2.7.0.tgz#47a63e780b8e1484a33802f2ccbdb9f5192c61b5"
+"@graphistry/falcor@^2.7.1", "@graphistry/falcor@~2.7.1":
+  version "2.7.1"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor/-/falcor-2.7.1.tgz#9b6d75fa2a5556dfe1388d69a320f8ec1544f6e5"
   dependencies:
-    "@graphistry/falcor-path-utils" "^2.6.16"
+    "@graphistry/falcor-path-utils" "^2.7.1"
     symbol-observable "1.0.4"
 
 "@graphistry/node-pigz@2.0.0":
@@ -994,7 +994,7 @@ babel-plugin-transform-export-extensions@^6.22.0:
     babel-plugin-syntax-export-extensions "^6.8.0"
     babel-runtime "^6.22.0"
 
-babel-plugin-transform-flow-strip-types@^6.3.13:
+babel-plugin-transform-flow-strip-types@^6.22.0, babel-plugin-transform-flow-strip-types@^6.3.13:
   version "6.22.0"
   resolved "https://registry.yarnpkg.com/babel-plugin-transform-flow-strip-types/-/babel-plugin-transform-flow-strip-types-6.22.0.tgz#84cb672935d43714fdc32bce84568d87441cf7cf"
   dependencies:
@@ -1021,7 +1021,7 @@ babel-plugin-transform-react-constant-elements@6.9.1:
   dependencies:
     babel-runtime "^6.9.1"
 
-babel-plugin-transform-react-display-name@^6.3.13:
+babel-plugin-transform-react-display-name@^6.22.0, babel-plugin-transform-react-display-name@^6.3.13:
   version "6.22.0"
   resolved "https://registry.yarnpkg.com/babel-plugin-transform-react-display-name/-/babel-plugin-transform-react-display-name-6.22.0.tgz#077197520fa8562b8d3da4c3c4b0b1bdd7853f26"
   dependencies:
@@ -1033,21 +1033,21 @@ babel-plugin-transform-react-inline-elements@6.8.0:
   dependencies:
     babel-runtime "^6.0.0"
 
-babel-plugin-transform-react-jsx-self@^6.11.0:
+babel-plugin-transform-react-jsx-self@^6.11.0, babel-plugin-transform-react-jsx-self@^6.22.0:
   version "6.22.0"
   resolved "https://registry.yarnpkg.com/babel-plugin-transform-react-jsx-self/-/babel-plugin-transform-react-jsx-self-6.22.0.tgz#df6d80a9da2612a121e6ddd7558bcbecf06e636e"
   dependencies:
     babel-plugin-syntax-jsx "^6.8.0"
     babel-runtime "^6.22.0"
 
-babel-plugin-transform-react-jsx-source@^6.3.13:
+babel-plugin-transform-react-jsx-source@^6.22.0, babel-plugin-transform-react-jsx-source@^6.3.13:
   version "6.22.0"
   resolved "https://registry.yarnpkg.com/babel-plugin-transform-react-jsx-source/-/babel-plugin-transform-react-jsx-source-6.22.0.tgz#66ac12153f5cd2d17b3c19268f4bf0197f44ecd6"
   dependencies:
     babel-plugin-syntax-jsx "^6.8.0"
     babel-runtime "^6.22.0"
 
-babel-plugin-transform-react-jsx@^6.3.13:
+babel-plugin-transform-react-jsx@^6.22.0, babel-plugin-transform-react-jsx@^6.3.13:
   version "6.22.0"
   resolved "https://registry.yarnpkg.com/babel-plugin-transform-react-jsx/-/babel-plugin-transform-react-jsx-6.22.0.tgz#48556b7dd4c3fe97d1c943bcd54fc3f2561c1817"
   dependencies:
@@ -1066,6 +1066,12 @@ babel-plugin-transform-runtime@6.15.0, babel-plugin-transform-runtime@^6.5.0, ba
   resolved "https://registry.yarnpkg.com/babel-plugin-transform-runtime/-/babel-plugin-transform-runtime-6.15.0.tgz#3d75b4d949ad81af157570273846fb59aeb0d57c"
   dependencies:
     babel-runtime "^6.9.0"
+
+babel-plugin-transform-runtime@~6.22.0:
+  version "6.22.0"
+  resolved "https://registry.yarnpkg.com/babel-plugin-transform-runtime/-/babel-plugin-transform-runtime-6.22.0.tgz#10968d760bbf6517243081eec778e10fa828551c"
+  dependencies:
+    babel-runtime "^6.22.0"
 
 babel-plugin-transform-strict-mode@^6.18.0, babel-plugin-transform-strict-mode@^6.22.0:
   version "6.22.0"
@@ -1152,6 +1158,18 @@ babel-preset-react@6.16.0, babel-preset-react@~6.16.0:
     babel-plugin-transform-react-jsx "^6.3.13"
     babel-plugin-transform-react-jsx-self "^6.11.0"
     babel-plugin-transform-react-jsx-source "^6.3.13"
+
+babel-preset-react@~6.22.0:
+  version "6.22.0"
+  resolved "https://registry.yarnpkg.com/babel-preset-react/-/babel-preset-react-6.22.0.tgz#7bc97e2d73eec4b980fb6b4e4e0884e81ccdc165"
+  dependencies:
+    babel-plugin-syntax-flow "^6.3.13"
+    babel-plugin-syntax-jsx "^6.3.13"
+    babel-plugin-transform-flow-strip-types "^6.22.0"
+    babel-plugin-transform-react-display-name "^6.22.0"
+    babel-plugin-transform-react-jsx "^6.22.0"
+    babel-plugin-transform-react-jsx-self "^6.22.0"
+    babel-plugin-transform-react-jsx-source "^6.22.0"
 
 babel-preset-stage-0@6.16.0:
   version "6.16.0"
@@ -1958,7 +1976,7 @@ core-js@^2.4.0:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/core-js/-/core-js-2.4.1.tgz#4de911e667b0eae9124e34254b53aea6fc618d3e"
 
-core-util-is@~1.0.0:
+core-util-is@1.0.2, core-util-is@~1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
 
@@ -3062,6 +3080,10 @@ extract-zip@~1.5.0:
 extsprintf@1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.0.2.tgz#e1080e0658e300b06294990cc70e1502235fd550"
+
+extsprintf@^1.2.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.3.0.tgz#96918440e3041a7a414f8c52e3c574eb3c3e1e05"
 
 falcor-doc-router@0.3.0:
   version "0.3.0"
@@ -6737,6 +6759,15 @@ recompose@0.21.2, recompose@~0.21.2:
     hoist-non-react-statics "^1.0.0"
     symbol-observable "^1.0.4"
 
+recompose@~0.22.0:
+  version "0.22.0"
+  resolved "https://registry.yarnpkg.com/recompose/-/recompose-0.22.0.tgz#f099d18385882ca41d9eec891718dadddc3204ef"
+  dependencies:
+    change-emitter "^0.1.2"
+    fbjs "^0.8.1"
+    hoist-non-react-statics "^1.0.0"
+    symbol-observable "^1.0.4"
+
 redent@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/redent/-/redent-1.0.0.tgz#cf916ab1fd5f1f16dfb20822dd6ec7f730c2afde"
@@ -7095,6 +7126,12 @@ rxjs-gestures@1.1.3:
 rxjs@5.0.3, rxjs@>=5.0.0-rc.1, rxjs@^5.0.2, rxjs@~5.0.2:
   version "5.0.3"
   resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.0.3.tgz#fc8bdf464ebf938812748e4196788f392fef9754"
+  dependencies:
+    symbol-observable "^1.0.1"
+
+rxjs@~5.1.0:
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.1.0.tgz#0aa9018b7f440b505fa42bd742b6738be550e720"
   dependencies:
     symbol-observable "^1.0.1"
 
@@ -7978,6 +8015,14 @@ verror@1.3.6:
   resolved "https://registry.yarnpkg.com/verror/-/verror-1.3.6.tgz#cff5df12946d297d2baaefaa2689e25be01c005c"
   dependencies:
     extsprintf "1.0.2"
+
+verror@^1.9.0:
+  version "1.9.0"
+  resolved "https://registry.yarnpkg.com/verror/-/verror-1.9.0.tgz#107a8a2d14c33586fc4bb830057cd2d19ae2a6ee"
+  dependencies:
+    assert-plus "^1.0.0"
+    core-util-is "1.0.2"
+    extsprintf "^1.2.0"
 
 viewport-dimensions@^0.2.0:
   version "0.2.0"
