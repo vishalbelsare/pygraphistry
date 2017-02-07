@@ -10,6 +10,7 @@ import { resolve } from 'path';
 import { parse as urlParse, format as urlFormat } from 'url';
 import { Observable } from 'rxjs';
 import { json as parseJsonEncoded } from 'body-parser';
+import { simpleflake } from 'simpleflakes';
 
 import { api as apiKey } from '@graphistry/common';
 import { pickWorker } from './worker-router.js';
@@ -52,7 +53,7 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
 
     initWorkbookApi(app, config);
 
-    app.all('/graph/*', handleWorkerRequest);
+    app.all('/graph/*', handleVizAppRequest);
     app.all('/etl', handleWorkerRequest);
     app.all('/etlvgraph', handleWorkerRequest);
 
@@ -70,6 +71,26 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
         });
 }
 
+function handleVizAppRequest(req, res) {
+
+    const { query = {} } = req;
+    const reqURL = urlParse(req.originalUrl);
+
+    if (query.workbook === undefined) {
+        const redirectUrl = urlFormat({
+                ...reqURL,
+                search: undefined,
+                query: {
+                    ...query,
+                    workbook: simpleflake().toJSON()
+                }
+            });
+
+        return res.redirect(redirectUrl);
+    } else {
+        handleWorkerRequest(req, res);
+    }
+}
 
 function handleWorkerRequest(req, res) {
     // const metadataFields = ['dataset', 'debugId'];
