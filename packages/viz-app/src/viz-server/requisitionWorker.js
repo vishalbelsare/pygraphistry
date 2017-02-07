@@ -45,7 +45,6 @@ export function requisitionWorker({
     const requestIsETL = requestIsPathname('/etl');
     const requestIsClaim = requestIsPathname('/claim');
     const requestIsGraph = requestIsPathname('/graph.html');
-
     const requestIsHealthcheck = requestIsPathname('/vizapp/healthcheck');
 
     const healthcheckRequests = requests
@@ -59,48 +58,24 @@ export function requisitionWorker({
                 'Content-Type': 'application/json',
                 'Content-Length': buffer.length
             });
-            response.end(buffer);    
+            response.end(buffer);
         });
-
 
     const eltRequests = requests
         .filter(requestIsETL)
-        .mergeMap(requisition(acceptETL, rejectETL));
+        .mergeMap(requisition(acceptETL));
 
-    const claimRequests = requests
-        .filter(requestIsClaim)
-        .mergeMap(requisition(acceptClaim, rejectClaim));
-
-    const graphIndexRequests = requests
+    const vizRequests = requests
         .filter(requestIsGraph)
-        .mergeMap(requisition(acceptIndex, rejectIndex));
+        .mergeMap(requisition(acceptIndex));
 
-    const claimThenIndexRequests = claimRequests.mergeMap(() => (
-        graphIndexRequests
-            .timeout(claimTimeout * 1000)
-            .catch((e) => {
-                logger.error({ err: e }, 'Timeout to claim worker.');
-                return Observable.throw({
-                    error: e,
-                    message: `Timeout to claim worker.`
-                });
-            })
-            .take(1)
-        ),
-        (claimId, [indexId, indexType, request, response]) => [
-            claimId, indexId, indexType, request, response
-        ]
-    )
-    .filter(([claimId, indexId]) => claimId === indexId)
-    .map((arr) => arr.slice(1));
+    const requisitionRequests = requests
+        .filter(requestIsClaim)
+        .mergeMap(requisition(acceptClaim, rejectClaim))
+        .let(requisitionByClaimOrTimeout);
 
     return Observable
-        .merge(
-            eltRequests,
-            graphIndexRequests,
-            claimThenIndexRequests,
-            healthcheckRequests.switchMap( (_) => Observable.empty() )
-        )
+        .merge(requisitionRequests, healthcheckRequests.ignoreElements())
         .switchMap(loadWorker)
         .scan(trackVizWorkerCaches, { caches: {} })
         .switchMap(({ worker }) => worker.multicast(
@@ -136,58 +111,64 @@ export function requisitionWorker({
             return Observable.of(event);
         });
 
-
     function requestIsPathname(pathname) {
         return function checkRequestPathname({ request }) {
             return url.parse(request.url).pathname.endsWith(pathname);
         };
     }
 
+    function requisitionByClaimOrTimeout(acceptedClaims) {
+        const initialAppRequests = Observable.race(eltRequests, vizRequests);
+        if (!canLockWorker) {
+            return initialAppRequests.take(1).repeat();
+        }
+        return acceptedClaims.switchMap(
+            (claimId) => initialAppRequests
+                .do(([clientId]) =>
+                    logger.info('Accepted request before timeout', { claimId, clientId }))
+                .timeout(claimTimeout * 1000)
+                .catch((e) => {
+                    logger.error({ err: e }, 'Timeout to claim worker.');
+                    return Observable.throw({
+                        error: e,
+                        message: `Timeout to claim worker.`
+                    });
+                })
+                .take(1)
+        );
+    }
+
     function requisition(accept, reject) {
         return function requisitionRequest({ request, response }) {
-            // if (workerIsLocked(request)) {
-            //     logger.info('GPU worker already claimed');
-            //     return reject({ request, response }).ignoreElements();
-            // } else
-            // if (requestIsIndex({ request })) {
-            //     const { query = {} } = url.parse(request.url);
-            //     latestClientId = query.clientId || latestClientId || simpleflake().toJSON();
-            // } else {
-            //     latestClientId = simpleflake().toJSON();
-            // }
+            if (canLockWorker && isLocked && reject) {
+                logger.info('GPU worker already claimed');
+                return reject({ request, response }).ignoreElements();
+            }
 
-            const clientId = tagUser(request);
-            // Save the client ID to the express app, so that other modules can access it easily.
-            app.set('clientId', clientId);
+            let clientId = app.get('clientId');
+
+            if (clientId === undefined) {
+                // Save the client ID to the express app, so that other modules can access it easily.
+                app.set('clientId', clientId = tagUser(request));
+            }
 
             isLocked = true;
             return accept({ request, response }, clientId);
         };
     }
 
-    // function workerIsLocked(request) {
-    //     if (canLockWorker && isLocked) {
-    //         if (requestIsIndex({ request })) {
-    //             // const { query = {} } = url.parse(request.url);
-    //             // if (query.clientId === latestClientId) {
-    //             //     return false;
-    //             // }
-    //             return false;
-    //         }
-    //         return true;
-    //     }
-    //     return false;
-    // }
-
     function etlAccepted({ request, response }, clientId, callback) {
+        logger.info('ETL request accepted', { clientId });
         callback(null, [clientId, 'etl', request, response]);
     }
 
     function etlRejected({ request, response }, callback) {
+        logger.info('ETL request rejected');
         return claimRejected({ response }, callback);
     }
 
     function claimAccepted({ response }, clientId, callback) {
+        logger.info('Claim request accepted', { clientId });
         const buffer = new Buffer(stringify({ success: true, clientId }, 'utf8'));
         response.writeHead(200, {
             'Content-Type': 'application/json',
@@ -197,6 +178,7 @@ export function requisitionWorker({
     }
 
     function claimRejected({ response }, callback) {
+        logger.info('Claim request rejected');
         const buffer = new Buffer(stringify({
             success: false, error: 'GPU worker already claimed' }), 'utf8');
         response.writeHead(502, {
@@ -207,6 +189,7 @@ export function requisitionWorker({
     }
 
     function indexAccepted({ request, response }, clientId, callback) {
+        logger.info('Index request accepted', { clientId });
         logger.debug({req: request, res: response}, 'Accepting graph.html request');
         const path = url.parse(request.url).pathname;
         const clientType = path.substring(path.indexOf('/') + 1, path.lastIndexOf('/'));
@@ -214,6 +197,7 @@ export function requisitionWorker({
     }
 
     function redirectIndex({ request, response }, callback) {
+        logger.info('Index request rejected', { clientId });
         logger.warn({req: request, res: response}, 'Rejecting request for a "./graph.html" page');
 
         const buffer = new Buffer('Error: unable to load page because you are not assigned to this visualization server process. ' +
