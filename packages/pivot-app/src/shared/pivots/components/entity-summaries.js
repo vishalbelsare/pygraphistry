@@ -7,7 +7,7 @@ export default function EntitySummaries({ id, resultSummary }) {
     return (<div className={styles['pivot-entity-summaries']}>
         {
             _.sortBy(resultSummary.entities, (summary) => summary.name)
-             .map(({name, count, color, icon}, index)=>(
+             .map(({name, count, color, icon = ''}, index)=>(
                 <OverlayTrigger placement="top" overlay={
                     <Tooltip id={`tooltipEntity_${id}_${index}`}>{name}</Tooltip>
                 } key={`${index}: entitySummary_${id}`}>
