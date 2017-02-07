@@ -73,10 +73,10 @@ function ResultSummaryPanel({id, enabled, resultSummary, resultCount, rowIndex})
             <div className={styles['pivot-expander-body']}>
                 {resultCount ?
                         <div className={`${styles['pivot-result-summaries']} ${styles['result-count-' + (enabled ? 'on' : 'off')]}`}>
-                            <label>Events: </label>
+                            <label></label>
 
                             <OverlayTrigger placement="top" overlay={
-                                <Tooltip id={`resultCountTip_${id}_${rowIndex}`}>Events</Tooltip>
+                                <Tooltip id={`resultCountTip_${id}_${rowIndex}`}>Total Results</Tooltip>
                             } key={`${rowIndex}: entitySummary_${id}`}>
                             <Badge> {resultCount} </Badge>
                         </OverlayTrigger>
