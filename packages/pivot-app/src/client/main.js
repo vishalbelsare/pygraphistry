@@ -110,7 +110,7 @@ function getAppCache() {
 function initSocket() {
 
     const socket = SocketIO.Manager({
-        path: `/socket.io`, reconnection: false,
+        path: `/pivot/socket.io`, reconnection: false,
         query: { userId: 0 } // <-- TODO: get the user ID from falcor
     }).socket('/');
 

@@ -31,6 +31,10 @@ import conf from './config.js';
 import logger from '../shared/logger.js';
 const log = logger.createLogger(__filename);
 
+import { HealthChecker } from './HealthChecker.js';
+const healthcheck = HealthChecker();
+
+
 Error.stackTraceLimit = 3;
 
 const buildNum = __BUILDNUMBER__ === undefined ? 'local build' : `build #${__BUILDNUMBER__}`;
@@ -107,8 +111,9 @@ function init(testUser) {
 }
 
 function setupRoutes(modules, getDataSource) {
+    const mountPoint = '/pivot';
     expressApp.use(
-        '/model.json',
+	`${mountPoint}/model.json`,
         bodyParser.urlencoded({ extended: false }),
         falcorMiddleware(getDataSource)
     );
@@ -122,11 +127,18 @@ function setupRoutes(modules, getDataSource) {
             return renderMiddleware(getFalcorModel, modules)(req, res);
         });
 
-        expressApp.use(`/${root}`, router);
+        expressApp.use(`${mountPoint}/${root}`, router);
     });
 
-    expressApp.get('/', (req, res) => res.redirect('/home'));
+    expressApp.get(`${mountPoint}/healthcheck`, function(req, res) {
+        const health = healthcheck();
+        log.info({...health, req, res}, 'healthcheck');
+        res.status(health.clear.success ? 200 : 500).json({...health.clear});
+    });
+
+    expressApp.get(`${mountPoint}/`, (req, res) => res.redirect(`${mountPoint}/home`));
     expressApp.get('*', (req, res) => res.status(404).send('Not found'));
+
 }
 
 function setupSocketRoutes(getDataSource) {

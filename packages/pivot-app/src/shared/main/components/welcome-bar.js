@@ -10,7 +10,7 @@ export default function WelcomeBar({ user, investigations = [], numTemplates }) 
                         <Media.Left align="middle">
                             <Image width={84}
                                 height={84}
-                                src="/img/abstract-user-flat-3.svg"
+                                src="/pivot/img/abstract-user-flat-3.svg"
                                 className={styles['user-icon']}
                                 circle/>
                         </Media.Left>

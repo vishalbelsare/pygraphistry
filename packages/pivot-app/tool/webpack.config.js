@@ -170,7 +170,7 @@ function clientConfig(buildOpts = {}) {
 
     config.output = {
         path: path.resolve('./build/public'),
-        publicPath: '/',
+        publicPath: '/pivot/',
         pathinfo: buildOpts.isDev,
         filename: 'clientBundle.js'
     };
