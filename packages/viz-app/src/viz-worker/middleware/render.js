@@ -8,7 +8,6 @@ import faviconStats from './favicon-assets.json';
 import webpackAssets from './webpack-assets.json';
 
 import { Provider } from 'react-redux';
-import { simpleflake } from 'simpleflakes';
 import { Observable } from 'rxjs/Observable'
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { renderToString as reactRenderToString } from 'react-dom/server';
@@ -21,25 +20,8 @@ const renderServerSide = true;
 
 export function renderMiddleware(getDataSource, modules) {
     return function renderMiddleware(req, res) {
-        const { query: options = {} } = req;
-        const reqURL = url.parse(req.originalUrl);
-        const clientId = req.app.get('clientId') || '00000';
-
-        if (options.workbook === undefined) {
-            const redirectUrl = url.format({
-                    ...reqURL,
-                    search: undefined,
-                    query: {
-                        ...options,
-                        workbook: simpleflake().toJSON()
-                    }
-                });
-
-            return res.redirect(redirectUrl);
-        }
-
         const paths = getProxyPaths(req);
-
+        const clientId = req.app.get('clientId') || '00000';
         try {
             const renderedResults = !renderServerSide ?
                 Observable.of(renderFullPage(null, null, clientId, paths)) :

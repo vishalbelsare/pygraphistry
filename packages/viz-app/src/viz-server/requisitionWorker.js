@@ -124,8 +124,8 @@ export function requisitionWorker({
         }
         return acceptedClaims.switchMap(
             (claimId) => initialAppRequests
-                // .filter(([indexId]) => claimId === indexId)
-                .map((arr) => arr.slice(1))
+                .do(([clientId]) =>
+                    logger.info('Accepted request before timeout', { claimId, clientId }))
                 .timeout(claimTimeout * 1000)
                 .catch((e) => {
                     logger.error({ err: e }, 'Timeout to claim worker.');
@@ -140,38 +140,21 @@ export function requisitionWorker({
 
     function requisition(accept, reject) {
         return function requisitionRequest({ request, response }) {
-            if (reject && workerIsLocked(request)) {
+            if (canLockWorker && isLocked && reject) {
                 logger.info('GPU worker already claimed');
                 return reject({ request, response }).ignoreElements();
             }
-            // else if (requestIsIndex({ request })) {
-            //     const { query = {} } = url.parse(request.url);
-            //     latestClientId = query.clientId || latestClientId || simpleflake().toJSON();
-            // } else {
-            //     latestClientId = simpleflake().toJSON();
-            // }
 
-            const clientId = tagUser(request);
-            // Save the client ID to the express app, so that other modules can access it easily.
-            app.set('clientId', clientId);
+            let clientId = app.get('clientId');
+
+            if (clientId === undefined) {
+                // Save the client ID to the express app, so that other modules can access it easily.
+                app.set('clientId', clientId = tagUser(request));
+            }
 
             isLocked = true;
             return accept({ request, response }, clientId);
         };
-    }
-
-    function workerIsLocked(request) {
-        if (canLockWorker && isLocked) {
-            // if (requestIsIndex({ request })) {
-            //     // const { query = {} } = url.parse(request.url);
-            //     // if (query.clientId === latestClientId) {
-            //     //     return false;
-            //     // }
-            //     return false;
-            // }
-            return true;
-        }
-        return false;
     }
 
     function etlAccepted({ request, response }, clientId, callback) {
