@@ -2,7 +2,7 @@ import PivotCell from './pivot-cell';
 import PivotActions from './pivot-actions';
 import EntitySummaries from './entity-summaries';
 import styles from './pivots.less';
-import { PanelGroup, Panel, Well, Badge, Tooltip, OverlayTrigger } from 'react-bootstrap';
+import { PanelGroup, Panel } from 'react-bootstrap';
 
 class PivotPanel extends Panel {
     constructor(...args) {
@@ -59,34 +59,27 @@ function ParameterPanel({id, pivotTemplate, pivotParameters, pivots, handlers, r
     )
 }
 
-function QueryOutputPanel() {
-    return (
-        <PivotPanel header={'Splunk Query'} eventKey='2' >
-            <div className={styles['splunk-query']}><Well bsSize='sm'> 'This is not a real splunk query! Implement me please!' </Well></div>
-        </PivotPanel>
-    )
-}
+//function QueryOutputPanel() {
+    //return (
+        //<PivotPanel header={'Splunk Query'} eventKey='2' >
+            //<div className={styles['splunk-query']}><Well bsSize='sm'> 'This is not a real splunk query! Implement me please!' </Well></div>
+        //</PivotPanel>
+    //)
+//}
 
-function ResultSummaryPanel({id, enabled, resultSummary, resultCount, rowIndex}) {
+function ResultSummaryPanel({id, enabled, resultSummary, resultCount}) {
     return (
         <PivotPanel header={"Result Summary"} eventKey='3'>
             <div className={styles['pivot-expander-body']}>
                 {resultCount ?
                         <div className={`${styles['pivot-result-summaries']} ${styles['result-count-' + (enabled ? 'on' : 'off')]}`}>
-                            <label></label>
-
-                            <OverlayTrigger placement="top" overlay={
-                                <Tooltip id={`resultCountTip_${id}_${rowIndex}`}>Total Results</Tooltip>
-                            } key={`${rowIndex}: entitySummary_${id}`}>
-                            <Badge> {resultCount} </Badge>
-                        </OverlayTrigger>
                         {
                             resultSummary &&
                                 <EntitySummaries id={id} resultSummary={resultSummary}/>
                                 || null
                         }
                     </div>
-                        : 'Run query to select events'}
+                        : <b>{ 'Run query to select events' }</b>}
 
 
                     </div>
@@ -115,7 +108,11 @@ export default function PivotRow({
                     rowIndex={rowIndex}
                     pivotParameters={pivotParameters}
                 />
+                { /*
+                        //TODO implement output query 
                 <QueryOutputPanel/>
+                */
+                }
                 <ResultSummaryPanel
                     id={id}
                     enabled={enabled}
