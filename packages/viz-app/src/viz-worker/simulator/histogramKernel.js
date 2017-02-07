@@ -2,7 +2,7 @@
 
 const  cljs = require('./cl.js'),
           Q = require('q'),
-     Kernel = require('./kernel.js');
+     Kernel = require('./kernel/kernel.js');
 
 const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz:cl:histogramKernel');

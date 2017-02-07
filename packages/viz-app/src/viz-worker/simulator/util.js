@@ -17,8 +17,9 @@ function getShaderSource(id) {
 
 
 function getKernelSource(id) {
-    // const kernelPath = path.resolve(__dirname, '..' ,'kernels', id);
-    const kernelPath = path.resolve('./kernels', id);
+
+    const kernelPath = path.resolve('kernels', id);
+
     logger.trace('Fetching source for kernel %s at path %s, using fs read', id, kernelPath);
     return Q.denodeify(fs.readFile)(kernelPath, {encoding: 'utf8'});
 }

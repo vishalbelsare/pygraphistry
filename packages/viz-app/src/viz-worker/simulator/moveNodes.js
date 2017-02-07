@@ -2,11 +2,10 @@
 
 var    cljs = require('./cl.js'),
           Q = require('q'),
-     Kernel = require('./kernel.js'),
         log = require('@graphistry/common').logger,
      logger = log.createLogger('graph-viz', 'graph-viz/js/moveNodes.js');
 
-function MoveNodes(clContext) {
+function MoveNodes(clContext, kernelCache) {
     logger.trace('Creating moveNodes kernel');
 
     var args = ['top', 'left', 'bottom', 'right', 'deltaX', 'deltaY',
@@ -21,7 +20,7 @@ function MoveNodes(clContext) {
         inputPositions: null,
         outputPositions: null
     };
-    this.moveNodes = new Kernel('moveNodes', args, argsType, 'moveNodes.cl', clContext);
+    this.moveNodes = kernelCache.fetchOrCreate('moveNodes', args, argsType, 'moveNodes.cl', clContext);
 }
 
 

@@ -1,8 +1,10 @@
 'use strict';
+
+import Kernel from '../kernel/kernel.js';
+
 var _          = require('underscore'),
     Q          = require('q'),
     cljs       = require('../cl.js'),
-    Kernel     = require('../kernel.js'),
     LayoutAlgo = require('../layoutAlgo.js'),
     log         = require('@graphistry/common').logger,
     logger      = log.createLogger('graph-viz:cl:edgebundling');

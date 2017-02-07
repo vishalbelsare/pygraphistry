@@ -248,6 +248,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
  *          kernel name mapped to its kernel object.
  */
 var compile = Q.promised(function (cl, source, kernels) {
+
     perf.startTiming('graph-viz:cl:compilekernel');
 
     logger.trace('Kernel: ', kernels[0]);

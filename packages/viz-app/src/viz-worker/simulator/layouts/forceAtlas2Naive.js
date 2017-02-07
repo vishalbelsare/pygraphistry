@@ -1,10 +1,11 @@
 'use strict';
 
+import Kernel from '../kernel/kernel.js';
+
 var          _ = require('underscore'),
        cljs = require('../cl.js'),
           Q = require('q'),
  LayoutAlgo = require('../layoutAlgo.js'),
-     Kernel = require('../kernel.js'),
     log        = require('@graphistry/common').logger,
     logger     = log.createLogger('graph-viz:cl:forceatlas2');
 
