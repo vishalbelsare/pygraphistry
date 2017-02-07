@@ -115,7 +115,12 @@
     font-size: 1.5em;
     text-align: right;
     padding: 0px !important;
+    transition: background-color 0.1s ease;
 }
+
+/*.pivot-footer:hover {
+    background-color: #B1C8D5;
+}*/
 
 .pivot-expander {
 
@@ -323,7 +328,12 @@
 :global(.Pane1 .panel-footer) {
     background-color: #c2d4de !important;
     padding: 1px 15px !important;
+    transition: background-color 0.1s ease;
 }
+
+/*:global(.Pane1 .panel-footer:hover) {
+    background-color: #B1C8D5 !important;
+}*/
 
 :global(.Pane1 .panel-default) {
     margin-bottom: 15px !important;
@@ -394,4 +404,12 @@
 
 :global(.Pane1 .Select-control) {
     height: 30px !important;
+    transition: background-color 0.1s ease;
+}
+
+:global(.Pane1 .Select-control:hover) {
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    background-color: #F9F9F9 !important;
 }

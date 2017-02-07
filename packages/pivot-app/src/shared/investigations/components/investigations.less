@@ -23,6 +23,7 @@
 	    border: 1px solid #DBDBDB;
         height: 25px;
         p {font-size: 5px;}
+        transition: background-color 0.5s ease;
 	}
 
 	.alert {
@@ -48,8 +49,9 @@
 
         //3px withg +/- 10px hit region
         :global(.Resizer.vertical) {
-            width: 5px;
-            min-width: 5px;
+            width: 1px;
+            min-width: 1px;
+            z-index: 101;
 
             box-sizing: border-box;
             background-clip: padding-box;
@@ -166,4 +168,14 @@
 
 :global(.glyphicon) {
     top: 0px !important;
+    transition: color 0.2s ease;
+}
+
+:global(.glyphicon:hover) {
+    color: #87d068 !important;
+}
+
+:global(.Pane1) {
+    box-shadow: rgba(0, 0, 0, 0.05) 7px 0px 10px;
+    z-index: 100;
 }
