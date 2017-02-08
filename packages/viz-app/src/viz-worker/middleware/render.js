@@ -16,7 +16,6 @@ import { Model } from '@graphistry/falcor';
 import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
 
 const renderServerSide = true;
-// const renderServerSide = false;
 
 export function renderMiddleware(getDataSource, modules) {
     return function renderMiddleware(req, res) {
