@@ -2,7 +2,7 @@ import _ from 'underscore';
 import SplitPane from 'react-split-pane';
 import Visualization from './visualization';
 import styles from './investigations.less';
-import { Investigation } from 'pivot-shared/investigations';
+import { Investigation, InvestigationHeader } from 'pivot-shared/investigations';
 
 
 export default function InvestigationScreen({
@@ -23,13 +23,22 @@ export default function InvestigationScreen({
     return (
         <div className={styles['investigation-all']}>
             <div className={styles['investigation-split']}>
-                <SplitPane split="vertical" minSize={0} defaultSize={450}>
-                    <Investigation
-                        data={activeInvestigation}
-                        investigations={investigations}
-                        templates={relevantTemplates}
-                        selectInvestigation={selectInvestigation}
-                    />
+                <SplitPane pane1Style={{overflowY: 'auto'}} split="vertical" minSize={0} defaultSize={375}>
+                    <div>
+                        <InvestigationHeader 
+                            key={`investigation-header:${activeInvestigation.id}`}
+                            investigations={investigations}
+                            activeInvestigation={activeInvestigation}
+                            selectInvestigation={selectInvestigation}
+                        />
+                        <Investigation
+                            key={`investigation:${activeInvestigation.id}`}
+                            data={activeInvestigation}
+                            investigations={investigations}
+                            templates={relevantTemplates}
+                            selectInvestigation={selectInvestigation}
+                        />
+                    </div>
                     { activeInvestigation.status &&
                         <Visualization investigation={activeInvestigation}/>
                         || undefined

@@ -19,8 +19,6 @@ export default function Investigation({
 
     return (
         <div className={styles.pivots}>
-            <InvestigationHeader investigations={investigations}
-                                 selectInvestigation={selectInvestigation} />
             <OverlayTrigger placement="bottom" overlay={
                     <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
                 }>
@@ -29,7 +27,9 @@ export default function Investigation({
                         onClick={() =>
                             graphInvestigation({investigationId: id, length: pivots.length}
                         )}>
-                    <Glyphicon glyph="play" />
+                    Run All
+                   { ' ' }
+                    <Glyphicon glyph="play" style={{fontSize: '8px'}}/>
                 </Button>
             </OverlayTrigger>
             { status && !status.ok ?

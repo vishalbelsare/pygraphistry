@@ -1,23 +1,27 @@
 import styles from './investigations.less';
 import {
-    MenuItem,
     Navbar,
     NavItem,
-    NavDropdown,
     Nav,
     Glyphicon
 } from 'react-bootstrap';
+import Select from 'react-select'
 
-export default function InvestigationHeader({id, name, user, investigations, saveInvestigation,
+export default function InvestigationHeader({activeInvestigation, user, investigations = [], saveInvestigation,
     createInvestigation, copyInvestigation, selectInvestigation
 }) {
+    const { id } = activeInvestigation;
     return (
                 <Navbar className={styles['investigation-header']} inverse fixedTop fluid>
-                    <Navbar.Header>
-                        <Navbar.Brand>
-                            <a href="#"> { name } </a>
-                        </Navbar.Brand>
-                    </Navbar.Header>
+                    <Navbar.Form style={{width: '60%', padding: '0'}} pullLeft> 
+                        <Select
+                            name="investigation-selector"
+                            value={id}
+                            options={investigations.map((investigation) => ({value: investigation.id, label: investigation.name }))}
+                            onChange={(selection) => selectInvestigation(selection.value)}
+                            pullLeft
+                        />
+                    </Navbar.Form>
                     <Nav pullRight>
                         <NavItem eventKey={4} onSelect={() => createInvestigation(user.id)}>
                             <Glyphicon glyph="plus" />
@@ -28,19 +32,6 @@ export default function InvestigationHeader({id, name, user, investigations, sav
                         <NavItem eventKey={6} onSelect={() => saveInvestigation(id)}>
                             <Glyphicon glyph="floppy-disk" />
                         </NavItem>
-                        <NavDropdown eventKey={3} title="Open" id="basic-nav-dropdown">
-                            {
-                                investigations.map((investigation) => (
-                                    <MenuItem
-                                        key={investigation.id}
-                                        eventKey={investigation.id}
-                                        onSelect={(eventKey) => selectInvestigation(eventKey)}
-                                    >
-                                        { investigation.name }
-                                    </MenuItem>)
-                                )
-                            }
-                        </NavDropdown>
                     </Nav>
                 </Navbar>
             

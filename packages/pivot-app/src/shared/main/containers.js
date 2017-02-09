@@ -15,7 +15,9 @@ import { Investigation, InvestigationScreen } from 'pivot-shared/investigations'
 
 const getActiveScreenComponent = (function() {
     let screens;
-    return function getActiveScreenComponent({ activeScreen = 'home' }) {
+    let lastScreen = 'home';
+    return function getActiveScreenComponent({ activeScreen = lastScreen }) {
+        lastScreen = activeScreen;
         return (screens || (screens = {
             'home': MainScreen,
             'undefined': MainScreen,

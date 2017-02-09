@@ -1,6 +1,6 @@
 {
     "id": "3dbf563fa4ebcfd4",
-    "enabled": false,
+    "enabled": true,
     "pivotParameters": {
         "query": "Enter search query",
         "pivotRef": [

@@ -204,7 +204,7 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                         investigation.status = {
                             ok: true,
                             etling: false,
-                            msgStyle: 'success'
+                            msgStyle: 'default'
                         };
                     } else {
                         investigation.status = {

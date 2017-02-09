@@ -48,7 +48,7 @@ function PivotCombo({ id, paramKey, paramValue, paramUI, previousPivots, handler
         [
             {
                 value: JSON.stringify(previousPivots.map(({ id }) => id)),
-                label: previousPivots.length > 1 ? 'All Pivots': 'Step 0'
+                label: previousPivots.length > 1 ? 'All Pivots': 'Pivot 0'
             }
         ];
 
@@ -57,7 +57,7 @@ function PivotCombo({ id, paramKey, paramValue, paramUI, previousPivots, handler
             previousPivots.map((pivot, index) =>
                 ({
                     value: JSON.stringify([ pivot.id ]),
-                    label: `Step ${index}`
+                    label: `Pivot ${index}`
                 })
             )
         );
