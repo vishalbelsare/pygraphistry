@@ -11,6 +11,6 @@ const InvestigationContainer = compose(
 )(Investigation);
 
 export { InvestigationContainer as Investigation };
-export { InvestigationHeader as InvestigationHeader };
+export { InvestigationHeader };
 export { InvestigationScreenContainer as InvestigationScreen };
 export { default as InvestigationTable } from './components/investigation-table';

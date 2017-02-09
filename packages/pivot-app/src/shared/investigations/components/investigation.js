@@ -1,4 +1,3 @@
-import { InvestigationHeader } from '../index.js';
 import { PivotTable } from 'pivot-shared/pivots';
 import styles from './investigations.less';
 
@@ -11,9 +10,9 @@ import {
 } from 'react-bootstrap';
 
 export default function Investigation({
-    id, status, pivots = [], templates, investigations, 
+    id, status, pivots = [], templates,
     searchPivot, insertPivot, splicePivot, dismissAlert,
-    graphInvestigation, saveInvestigation, togglePivots, selectInvestigation }) {
+    graphInvestigation, saveInvestigation, togglePivots }) {
 
     const bStyle = (status && status.msgStyle) ? status.msgStyle : 'default';
 
