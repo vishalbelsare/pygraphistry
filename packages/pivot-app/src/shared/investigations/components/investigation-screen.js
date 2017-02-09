@@ -27,6 +27,7 @@ export default function InvestigationScreen({
                     <div>
                         <InvestigationHeader 
                             key={`investigation-header:${activeInvestigation.id}`}
+                            investigations={investigations}
                             activeInvestigation={activeInvestigation}
                             selectInvestigation={selectInvestigation}
                         />

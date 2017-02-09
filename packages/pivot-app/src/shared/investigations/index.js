@@ -6,12 +6,11 @@ import InvestigationScreen from './components/investigation-screen';
 import { investigationContainer, investigationScreenContainer } from './containers';
 
 const InvestigationScreenContainer = investigationScreenContainer(InvestigationScreen);
-const InvestigationHeaderContainer = investigationScreenContainer(InvestigationHeader);
 const InvestigationContainer = compose(
     investigationSchema, investigationContainer
 )(Investigation);
 
 export { InvestigationContainer as Investigation };
-export { InvestigationHeaderContainer as InvestigationHeader };
+export { InvestigationHeader as InvestigationHeader };
 export { InvestigationScreenContainer as InvestigationScreen };
 export { default as InvestigationTable } from './components/investigation-table';
