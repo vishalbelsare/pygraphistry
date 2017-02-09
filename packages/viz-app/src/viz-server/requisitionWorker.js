@@ -9,6 +9,10 @@ import { logger as commonLogger } from '@graphistry/common';
 import { HealthChecker } from './HealthChecker.js';
 const healthcheck = HealthChecker();
 
+export const messages = {
+    SUCCESSFUL_EXIT: "A user successfully disconnected, exiting"
+};
+
 export function requisitionWorker({
         config, logger,
         app /*: Express */,
@@ -281,7 +285,7 @@ export function requisitionWorker({
         const disconnectEvents = Observable
             .fromEvent(socket, 'disconnect')
             .do(() => logger.info({req: socket.request}, 'User disconnected from socket'))
-            .mapTo({ isActive: false, message: 'A user successfully disconnected, exiting' });
+            .mapTo({ isActive: false, message: messages.SUCCESSFUL_EXIT});
 
         return errorEvents
             .merge(disconnectEvents)
