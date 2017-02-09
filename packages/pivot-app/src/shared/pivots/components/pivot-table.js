@@ -72,7 +72,8 @@ export default function PivotTable({
                         pivots={pivots}
                         pivot={pivot}
                         templates={templates}
-                        spliacePivot={splicePivot}
+                        insertPivot={insertPivot}
+                        splicePivot={splicePivot}
                         searchPivot={searchPivot}
                         togglePivots={togglePivots}
                     />
