@@ -7,9 +7,10 @@ import {
 } from 'react-bootstrap';
 import Select from 'react-select'
 
-export default function InvestigationHeader({id, user, investigations, saveInvestigation,
+export default function InvestigationHeader({activeInvestigation, user, investigations = [], saveInvestigation,
     createInvestigation, copyInvestigation, selectInvestigation
 }) {
+    const { id } = activeInvestigation;
     return (
                 <Navbar className={styles['investigation-header']} inverse fixedTop fluid>
                     <Navbar.Form style={{width: '60%', padding: '0'}} pullLeft> 

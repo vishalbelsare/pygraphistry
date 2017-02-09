@@ -19,8 +19,6 @@ export default function Investigation({
 
     return (
         <div className={styles.pivots}>
-            <InvestigationHeader investigations={investigations}
-                                 selectInvestigation={selectInvestigation} />
             <OverlayTrigger placement="bottom" overlay={
                     <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
                 }>

@@ -6,7 +6,7 @@ import InvestigationScreen from './components/investigation-screen';
 import { investigationContainer, investigationScreenContainer } from './containers';
 
 const InvestigationScreenContainer = investigationScreenContainer(InvestigationScreen);
-const InvestigationHeaderContainer = investigationContainer(InvestigationHeader);
+const InvestigationHeaderContainer = investigationScreenContainer(InvestigationHeader);
 const InvestigationContainer = compose(
     investigationSchema, investigationContainer
 )(Investigation);
