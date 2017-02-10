@@ -9,11 +9,11 @@ var _ = require('lodash');
 var configErrors = [];
 
 
-function getS3() {
+function getS3(access, secret, region) {
     try {
         var AWS = require('aws-sdk');
-        AWS.config.update({accessKeyId: 'AKIAJSGVPK46VRVYMU2A', secretAccessKey: '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'});
-        AWS.config.update({region: 'us-west-1'});
+        AWS.config.update({accessKeyId: access, secretAccessKey: secret});
+        AWS.config.update({region: region});
 
         return new AWS.S3();
     } catch(err) {
@@ -68,7 +68,8 @@ function defaults() {
         // Enable S3 write for etl, save-a-copy, fork
         S3UPLOADS: true,
         BUCKET: 'graphistry.data',
-        S3: getS3(),
+        S3: null,
+        S3_REGION: "us-west-1",
         READ_PROCESS_DISCARD: false,
 
         MONGO_USERNAME: undefined,
@@ -237,7 +238,9 @@ function synthesized(options) {
         options['MONGO_DATABASE'],
         options['MONGO_REPLICA_SET']);
 
-    return {MONGO_SERVER: mongoServer};
+    var s3 = getS3(options['S3_ACCESS'], options['S3_SECRET'], options['S3_REGION']);
+
+    return {MONGO_SERVER: mongoServer, S3: s3};
 }
 
 
