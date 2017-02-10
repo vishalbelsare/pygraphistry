@@ -8,7 +8,7 @@ import _config from '@graphistry/config';
 import { BehaviorSubject, Observable } from 'rxjs';
 import VError from 'verror';
 
-import { requisitionWorker } from './requisitionWorker';
+import { requisitionWorker, messages } from './requisitionWorker';
 import { reportWorkerActivity } from './reportWorkerActivity';
 import { logger as commonLogger } from '@graphistry/common';
 
@@ -97,7 +97,8 @@ export function start() {
                 return Observable.throw(e);
             }
             const { error, message, exitCode, shouldExit } = e;
-            if (error || message) {
+            const reason = error || message;
+            if (reason && (reason !== messages.SUCCESSFUL_EXIT)) {
                 const err = new VError(error || message, `viz-server exit reason: ${message}`);
                 logger.error({ err });
             }
