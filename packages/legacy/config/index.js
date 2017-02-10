@@ -17,6 +17,7 @@ function getS3() {
 
         return new AWS.S3();
     } catch(err) {
+        console.log(err);
         configErrors.push(err);
         return null;
     }
@@ -88,7 +89,7 @@ function defaults() {
 
         PYGRAPHISTRY: {
             minVersion: '0.9.0',
-            latestVersion: '0.9.38'
+            latestVersion: '0.9.39'
         },
 
         RELEASE: 'Nov 16 R1',  // human-readable, shown under logo
@@ -115,6 +116,22 @@ function defaults() {
         // then central will append '/vizaddr' to get the route it will listen for viz server
         // address requests, '/foo/vizaddr'. This applies to both static and dynamic content.
         BASE_PATH: '/',
+
+        GPU_OPTIONS: {
+            MAX_WORK_GROUP_SIZE: 256,
+            WARPSIZE: 16,
+            NUM_WORKGROUPS: {
+                TO_BARNES_LAYOUT: 30,
+                BOUND_BOX: 30,
+                BUILD_TREE: 30,
+                COMPUTE_SUMS: 6,
+                SORT: 8,
+                EDGE_FORCES: 100,
+                SEG_REDUCE:1000,
+                CALCULATE_FORCES: 60,
+                SEG_REDUCE: 40
+            }
+        }
     };
 }
 
