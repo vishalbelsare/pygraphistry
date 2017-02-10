@@ -1,7 +1,7 @@
 {
   "name": "@graphistry/config",
   "description": "Graphistry configuration resolver",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "main": "./index.js",
   "bin": {
     "graphistry-config": "./bin/graphistry-config"
