@@ -82,7 +82,7 @@ function handleVizAppRequest(req, res) {
         if (typeof (splashAfter = parseInt(splashAfter, 10)) !== 'number') {
             showSplashScreen = true;
         } else {
-            showSplashScreen = Date.now() / 1000 >= splashAfter;
+            showSplashScreen = (Date.now() / 1000) - 20 >= splashAfter;
         }
     }
 
