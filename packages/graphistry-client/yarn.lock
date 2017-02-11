@@ -8,40 +8,40 @@
   dependencies:
     "@graphistry/falcor-path-syntax" "^2.5.3"
 
-"@graphistry/falcor-model-rxjs@~2.7.0":
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-model-rxjs/-/falcor-model-rxjs-2.7.0.tgz#37e4c67619e2c3741b44c82dae2051bed6819b6d"
+"@graphistry/falcor-model-rxjs@~2.7.2":
+  version "2.7.2"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-model-rxjs/-/falcor-model-rxjs-2.7.2.tgz#dbccccf629013670618cf7188f8e3e54bbfab5bd"
   dependencies:
-    "@graphistry/falcor" "^2.7.0"
+    "@graphistry/falcor" "^2.7.2"
     "@graphistry/falcor-path-syntax" "^2.5.3"
     babel-plugin-transform-runtime "~6.15.0"
-    rxjs "~5.0.2"
+    rxjs "~5.1.0"
 
 "@graphistry/falcor-path-syntax@^2.5.3", "@graphistry/falcor-path-syntax@~2.5.3":
   version "2.5.3"
   resolved "https://registry.yarnpkg.com/@graphistry/falcor-path-syntax/-/falcor-path-syntax-2.5.3.tgz#830a2e6076d83e38fd6a7d9cb96b02d5d1fe458f"
 
-"@graphistry/falcor-path-utils@^2.6.16":
-  version "2.6.16"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-path-utils/-/falcor-path-utils-2.6.16.tgz#2802001f34efb29bc993650c11ad1f4db21cdd95"
+"@graphistry/falcor-path-utils@^2.7.1":
+  version "2.7.1"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-path-utils/-/falcor-path-utils-2.7.1.tgz#c66356dd6d6a8cf468286ac532f6470edd9f3597"
 
-"@graphistry/falcor-query-syntax@^2.7.0":
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-query-syntax/-/falcor-query-syntax-2.7.0.tgz#0fb5437862f263e8c857b06cffcb894a6eeb3ef5"
+"@graphistry/falcor-query-syntax@^2.7.2":
+  version "2.7.2"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-query-syntax/-/falcor-query-syntax-2.7.2.tgz#7bdf61a3a86a8294e6b709f98df4d34b00f57bd9"
   dependencies:
-    "@graphistry/falcor-path-utils" "^2.6.16"
+    "@graphistry/falcor-path-utils" "^2.7.1"
     babel-plugin-transform-runtime "~6.15.0"
     pegjs "0.10.0"
 
-"@graphistry/falcor-react-redux@~2.7.0":
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-react-redux/-/falcor-react-redux-2.7.0.tgz#50f1598ad4ae133f141e67b0e2b194cf2d423ca5"
+"@graphistry/falcor-react-redux@~2.7.2":
+  version "2.7.2"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-react-redux/-/falcor-react-redux-2.7.2.tgz#5014735797cfaa293dbbe7411603139d4b27dc75"
   dependencies:
-    "@graphistry/falcor" "^2.7.0"
+    "@graphistry/falcor" "^2.7.2"
     "@graphistry/falcor-json-graph" "^2.6.16"
     "@graphistry/falcor-path-syntax" "^2.5.3"
-    "@graphistry/falcor-path-utils" "^2.6.16"
-    "@graphistry/falcor-query-syntax" "^2.7.0"
+    "@graphistry/falcor-path-utils" "^2.7.1"
+    "@graphistry/falcor-query-syntax" "^2.7.2"
     babel-plugin-transform-runtime "~6.15.0"
     babel-preset-react "~6.16.0"
     hoist-non-react-statics "~1.2.0"
@@ -53,18 +53,18 @@
     redux "~3.6.0"
     warning "~3.0.0"
 
-"@graphistry/falcor-socket-datasource@~2.7.0":
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-socket-datasource/-/falcor-socket-datasource-2.7.0.tgz#8b8fb1269a92255127e84c431096926615adb10f"
+"@graphistry/falcor-socket-datasource@~2.7.2":
+  version "2.7.2"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-socket-datasource/-/falcor-socket-datasource-2.7.2.tgz#d497a7749ed19273edbf7ec5e98074b909b17113"
   dependencies:
     babel-plugin-transform-runtime "~6.15.0"
     simpleflakes "~1.2.3"
 
-"@graphistry/falcor@^2.7.0", "@graphistry/falcor@~2.7.0":
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor/-/falcor-2.7.0.tgz#47a63e780b8e1484a33802f2ccbdb9f5192c61b5"
+"@graphistry/falcor@^2.7.2", "@graphistry/falcor@~2.7.2":
+  version "2.7.2"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor/-/falcor-2.7.2.tgz#3f97affff518dc3218d19d4c01e2407ff6724e32"
   dependencies:
-    "@graphistry/falcor-path-utils" "^2.6.16"
+    "@graphistry/falcor-path-utils" "^2.7.1"
     symbol-observable "1.0.4"
 
 abbrev@1:
@@ -2937,9 +2937,9 @@ ini@~1.3.0:
   version "1.3.4"
   resolved "https://registry.yarnpkg.com/ini/-/ini-1.3.4.tgz#0537cb79daf59b59a1a517dff706c86ec039162e"
 
-"inline-style-prefixer@github:khan/inline-style-prefixer#f41f3040ac27eeec3b7a1fb7450ddce250cac4e4":
+inline-style-prefixer@Khan/inline-style-prefixer#f41f3040ac27eeec3b7a1fb7450ddce250cac4e4:
   version "0.6.7"
-  resolved "https://codeload.github.com/khan/inline-style-prefixer/tar.gz/f41f3040ac27eeec3b7a1fb7450ddce250cac4e4"
+  resolved "https://codeload.github.com/Khan/inline-style-prefixer/tar.gz/f41f3040ac27eeec3b7a1fb7450ddce250cac4e4"
   dependencies:
     bowser "^1.0.0"
 
@@ -5584,13 +5584,13 @@ right-align@^0.1.1:
   dependencies:
     align-text "^0.1.1"
 
-rimraf@2, rimraf@~2.5.1, rimraf@~2.5.4:
+rimraf@2, rimraf@^2.2.8, rimraf@~2.5.1, rimraf@~2.5.4:
   version "2.5.4"
   resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-2.5.4.tgz#96800093cbf1a0c86bd95b4625467535c29dfa04"
   dependencies:
     glob "^7.0.5"
 
-rimraf@^2.2.8, rimraf@~2.2.6:
+rimraf@~2.2.6:
   version "2.2.8"
   resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-2.2.8.tgz#e439be2aaee327321952730f99a8929e4fc50582"
 
@@ -5602,9 +5602,9 @@ ripemd160@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/ripemd160/-/ripemd160-1.0.1.tgz#93a4bbd4942bc574b69a8fa57c71de10ecca7d6e"
 
-rxjs@5.0.3, rxjs@~5.0.2:
-  version "5.0.3"
-  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.0.3.tgz#fc8bdf464ebf938812748e4196788f392fef9754"
+rxjs@~5.1.0:
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.1.0.tgz#0aa9018b7f440b505fa42bd742b6738be550e720"
   dependencies:
     symbol-observable "^1.0.1"
 
