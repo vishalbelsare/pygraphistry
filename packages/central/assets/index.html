@@ -8,13 +8,6 @@
 
 var SUBTITLE = '<p><a href="mailto:info@graphistry.com">Email</a> us for a tool preview</p>';
 
-var NETFLOW = {
-    title: 'Datacenter Netflow Communication Logs',
-    nodes: 'Pairs of <i>(IP,protocol)</i>',
-    edges: 'Bandwidth from <span style="color:green">low</span> to <span style="color:red">high</span>',
-    mapper: 'opentsdb'
-};
-
 var TITLES = {
     Facebook: {
         title: 'Facebook friendships',
@@ -27,45 +20,6 @@ var TITLES = {
         nodes: 'Characters. Color indicates community and size shows popularity.',
         edges: 'Characters co-occurred.',
         mapper: 'miserables'
-    },
-    NetflowSmall: NETFLOW,
-    NetflowMedium: NETFLOW,
-    NetflowLarge: NETFLOW,
-    NetflowHuge: NETFLOW,
-    Enron: {
-        title: 'Enron emails',
-        nodes: 'People. Color indicates community and size shows popularity.',
-        edges: 'Indicates email exchanged'
-    },
-    Oregon: {
-        title: 'Autonomous System Peering (Oregon)',
-        nodes: '',
-        edges: ''
-    },
-    Wikivotes: {
-        title: 'Wikipedia Editor Elections',
-        nodes: 'User',
-        edges: 'Vote cast by one user for another'
-    },
-    Wikiriots: {
-        title: 'Wikipedia Edits during Middle East riots Elections',
-        nodes: 'Edits, Pages, Users, or Location',
-        edges: 'Actions'
-    },
-    Amazon: {
-        title: 'Amazon Product Co-Purchases',
-        nodes: 'Product or a customer',
-        edges: 'Product reviewd by a customer'
-    },
-    Gnutella: {
-        title: 'Gnutella Peer-to-Peer Network',
-        nodes: 'Hosts (computers)',
-        edges: 'Communications'
-    },
-    Epinions: {
-        title: 'Epinions Trust Relationships',
-        nodes: 'Users',
-        edges: 'Trust relationship'
     },
     Twitter: {
         title: 'Criminal Twitter Botnet',
@@ -94,7 +48,9 @@ for (var i in TITLES) {
 }
 
 function getURL(dataset) {
-    var cfg = TITLES[dataset]  || {
+    var chunks = dataset.split('/');
+    var datasetName = chunks[chunks.length - 1];
+    var cfg = TITLES[datasetName]  || {
             title: '<h3>Graph: ' + dataset + '</h3>',
             nodes: 'undefined',
             edges: 'undefined'
@@ -195,18 +151,15 @@ $(document).ready(function () {
             <span class="status">offline</span>
         </div>
         <div class="cali">
-            <b>california</b>
+            <b>local</b>
             <div style="font-size: 0.5em; padding-top: 0.3em; text-align: center; line-height: 1.8em">
-            <!--
-                <a href="graph/uber.html?dataset=Uber&type=OBSOLETE_geo&scene=uber&controls=uber&info=true">uber</a>
-            -->
-                <a class="dataset-link" data-dataset="NetflowLarge">netflow logs</a> (<a class="dataset-link" data-dataset="NetflowHuge">huge: 2min</a>)
-
+                <a class="dataset-link" data-dataset="Twitter">Twitter criminal botnet</a>
                 <br/>
-                <a class="dataset-link" data-dataset="Twitter">twitter criminal botnet</a>
-
+                <a class="dataset-link" data-dataset="Miserables">Characters crossing paths in <i>Les Misérables</i></a>
                 <br/>
-                <a class="dataset-link" data-dataset="Facebook"> facebook friendships </a>
+                <a class="dataset-link" data-dataset="Biogrid">BioGRID Protein Interactions</a>
+                <br/>
+                <a class="dataset-link" data-dataset="Facebook">Facebook friendships</a>
 
                 <div id="ping" style="position: absolute; padding-left: 6em; padding-top: 0.2em; font-size: 0.8em"></div>
             </div>
@@ -220,40 +173,6 @@ $(document).ready(function () {
             <span class="name">singapore</span>
             <span class="status">offline</span>
         </div>
-    </div>
-
-    <div class="loader">
-        <h3>+ experimental datasets</h3>
-        <span>
-            <input id="dataset" list="datasets" type="text" size="64" name="url" value="Miserables" />
-            <datalist id="datasets">
-                <option value="Amazon">
-                <option value="Biogrid">
-                <option value="Enron">
-                <option value="Epinions">
-                <option value="Facebook">
-                <option value="Gnutella">
-                <option value="Miserables">
-                <option value="NetflowSmall">
-                <option value="NetflowMedium">
-                <option value="NetflowLarge">
-                <option value="NetflowHuge">
-                <option value="Oregon">
-                <option value="Twitter">
-                <option value="Wikivotes">
-                <option value="Wikiriots">
-            </datalist>
-        </span>
-        <!--
-        <span> layout:
-            <select id="controls" >
-                <option value="atlas">Force Atlas 2</option>
-                <option value="gauss">Gauss-Seidel</option>
-                <option value="uber">Edge Bundling</option>
-            </select>
-        </span>
-        -->
-        <button type="button" onclick="jump();">go</button>
     </div>
 </div>
 

@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@graphistry/common": "3.0.2",
-    "@graphistry/config": "3.0.1",
+    "@graphistry/config": "3.0.3",
     "babel-runtime": "~6.11.6",
     "body-parser": "~1.15.2",
     "express": "~4.12.3",
