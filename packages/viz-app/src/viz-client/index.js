@@ -55,8 +55,7 @@ import {
     getURLParameters,
     loadClientModule,
     setupErrorHandlers,
-    setupDocumentElement,
-    setupSplashOrContinue } from './startup';
+    setupDocumentElement } from './startup';
 import { setupLegacyInterop } from './legacy';
 
 const debug = _debug('graphistry:viz-client');
@@ -75,9 +74,6 @@ Observable
             .mergeMap(partial(setupErrorHandlers, document, window))
             .ignoreElements(),
     ))
-    // Show the splash screen and continue when the user clicks through, or
-    // continue immediately if we're not supposed to show the splash screen.
-    .mergeMap(partial(setupSplashOrContinue, document))
     // Apply global classes to the document element.
     .do(partial(setupDocumentElement, document))
     .mergeMapTo(reloadHot(module), (options, { App }) => ({ options, App }))

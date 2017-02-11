@@ -957,22 +957,22 @@ Dataframe.prototype.addClientProvidedColumn = function (columnType, columnName, 
 
     if (!_.contains(GraphComponentTypes, columnType)) {
         logger.debug(`Attempted to add invalid column type: ${columnType}`);
-        return;
+        return false;
     }
 
     if (this.rawdata.attributes[columnType][columnName]) {
         logger.debug(`Attempted to overwrite a column in the base dataset: ${columnType}:${columnName}`)
-        return;
+        return false;
     }
 
     if (!values) {
         logger.debug(`Attempted to add a column without valid values.`);
-        return;
+        return false;
     }
 
     if (!_.contains(acceptedDatatypes, dataType)) {
         logger.debug(`Attempted to add a column with invalid dataType: ${dataType}`);
-        return;
+        return false;
     }
 
 
@@ -1002,7 +1002,7 @@ Dataframe.prototype.addClientProvidedColumn = function (columnType, columnName, 
 
     ccManager.addComputedColumn(this, columnType, columnName, spec);
 
-    return this;
+    return true;
 };
 
 
