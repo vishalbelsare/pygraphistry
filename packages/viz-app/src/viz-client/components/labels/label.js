@@ -85,9 +85,9 @@ export class Label extends React.Component {
         let pointColor = undefined;
 
         pointColor = type === 'edge' ? '#ccc' : Color(pointRgb = {
-            r: pointColors[index * 4 + 0],
-            g: pointColors[index * 4 + 1],
-            b: pointColors[index * 4 + 2]
+            r: pointColors[index * 4 + 0] || 0,
+            g: pointColors[index * 4 + 1] || 0,
+            b: pointColors[index * 4 + 2] || 0
         }).alpha(1).rgbaString();
 
         const iconSize = type === 'edge' ? 30 :
