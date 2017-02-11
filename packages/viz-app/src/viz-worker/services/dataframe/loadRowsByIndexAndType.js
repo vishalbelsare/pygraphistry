@@ -51,6 +51,10 @@ function getRowsForType({ workbook, view, columnNames, rowIndexes, componentType
         return [];
     }
 
+    if (componentType === 'event') {
+        componentType = 'point';
+    }
+
     columnNames = (columnNames || dataframe.getAttributeKeys(componentType)).map((columnName) => ({
         columnName, key: dataframe.getAttributeKeyForColumnName(columnName, componentType)
     }));

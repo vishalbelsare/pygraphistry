@@ -14,8 +14,14 @@ export function sortAndFilterRowsByQuery({ view, rows, columnNames, ...query }) 
         return Observable.of(rows || []);
     }
 
+    let filterForRowsWithEventIDs = false;
     let { sortColumn = query.sortKey } = query;
-    const { searchTerm, componentType = query.openTab } = query;
+    let { searchTerm = '', componentType = query.openTab } = query;
+
+    if (componentType === 'event') {
+        componentType = 'point';
+        filterForRowsWithEventIDs = true;
+    }
 
     columnNames = (columnNames || dataframe.getAttributeKeys(componentType)).map((columnName) => ({
         columnName, key: dataframe.getAttributeKeyForColumnName(columnName, componentType)
@@ -31,13 +37,15 @@ export function sortAndFilterRowsByQuery({ view, rows, columnNames, ...query }) 
     const { dataTypesByColumnName, colorMappedByColumnName } =
         getDataTypesAndColorColumns(dataframe, keys, componentType);
 
-    if (!searchTerm) {
+    if (!searchTerm && !filterForRowsWithEventIDs) {
         filteredRows = Observable.of(rows.slice(0));
     } else {
 
         const filterRowsPredicate = filterRowsBySearchTerm(
             keys, ('' + searchTerm).toLowerCase(),
-            dataTypesByColumnName, colorMappedByColumnName
+            dataTypesByColumnName, colorMappedByColumnName,
+            filterForRowsWithEventIDs ?
+                includeRowsWithTypeColumnAndTypeIsEventID : null
         );
 
         filteredRows = listToItemRanges(rows, rowsPerRange)
@@ -129,9 +137,19 @@ function compareRowsByColumnName(columnName, ascending, comparator) {
     }
 }
 
-function filterRowsBySearchTerm(columnNames, searchTerm, dataTypes, colorColumns) {
+function includeRowsWithTypeColumnAndTypeIsEventID(row) {
+    if (row && row['type'] === 'EventID') {
+        return true;
+    }
+    return false;
+}
+
+function filterRowsBySearchTerm(columnNames, searchTerm, dataTypes, colorColumns, eventPredicate) {
     const columnsLength = columnNames.length;
     return function filterRow(row) {
+        if (eventPredicate && eventPredicate(row) === false) {
+            return false;
+        }
         let itr = -1;
         while (++itr < columnsLength) {
             const columnName = columnNames[itr];

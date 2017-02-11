@@ -15,10 +15,11 @@ export function Inspector(props) {
     return (
         <div style={props.style} className={styles.inspector}>
             <Tabs onSelect={props.onSelect} activeKey={props.openTab}>
-                <Tab eventKey='point' title='Points'/>
-                <Tab eventKey='edge' title='Edges'/>
+                {(props.tabs || []).map(({ name, componentType }) => (
+                    <Tab eventKey={componentType} title={name}/>
+                ))}
             </Tabs>
-            <DataTable {...props} entityType={props.openTab === 'point' ? 'Node' : 'Edge'}/>
+            <DataTable {...props} entityType={props.openTab === 'edge' ? 'Edge' : 'Node'}/>
         </div>
     );
 }
@@ -81,7 +82,7 @@ function DataTable(props) {
         if (row && typeof row._index === 'number') {
             selectInspectorRow({
                 index: row._index,
-                componentType: openTab
+                componentType: openTab === 'event' ? 'point' : openTab
             });
         }
     }

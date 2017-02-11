@@ -555,15 +555,24 @@ function load (graph, dataset) {
  * @param {DataframeMetadata} graphInfo
  */
 function loadDataframe (dataframe, attributeObjects, numPoints, numEdges, aliases = {}, graphInfo = {}) {
+
+    let pointTypeIncludesEventID = false;
     const edgeAttributeObjects = _.filter(attributeObjects, (value) => value.target === EDGE);
     const pointAttributeObjects = _.filter(attributeObjects, (value) => value.target === VERTEX);
 
     const edgeAttributeObjectsByName = _.object(_.map(edgeAttributeObjects, (value) => [value.name, value]));
 
-    const pointAttributeObjectsByName = _.object(_.map(pointAttributeObjects, (value) => [value.name, value]));
+    const pointAttributeObjectsByName = _.object(_.map(pointAttributeObjects, (value) => {
+        const { name } = value;
+        if (!pointTypeIncludesEventID && name === 'type') {
+            pointTypeIncludesEventID = (value.values || []).some((x) => x === 'EventID');
+        }
+        return [name, value];
+    }));
 
     _.extend(dataframe.bufferAliases, aliases);
     _.extend(dataframe.metadata, graphInfo);
+    dataframe.pointTypeIncludesEventID = pointTypeIncludesEventID;
     dataframe.loadAttributesForType(edgeAttributeObjectsByName, 'edge', numEdges);
     dataframe.loadAttributesForType(pointAttributeObjectsByName, 'point', numPoints);
 }
