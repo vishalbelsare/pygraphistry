@@ -54,18 +54,20 @@ function setInvestigationParams(action$) {
 function saveInvestigation(action$) {
     return action$
         .ofType(SAVE_INVESTIGATION)
-        .mergeMap(({falcor}) =>
-            Observable.from(falcor.call('save'))
-        )
+        .mergeMap(({falcor, id}) => {
+            const topLevelModel = falcor._root.topLevelModel;
+            return Observable.from(topLevelModel.call(['investigationsById', [id], 'save']))
+        })
         .ignoreElements();
 }
 
 function copyInvestigation(action$) {
     return action$
         .ofType(COPY_INVESTIGATION)
-        .mergeMap(({falcor}) =>
-            Observable.from(falcor.call('clone'))
-        )
+        .mergeMap(({falcor, id}) => {
+            const topLevelModel = falcor._root.topLevelModel;
+            return Observable.from(topLevelModel.call(['investigationsById', [id], 'clone']))
+        })
         .ignoreElements();
 }
 
