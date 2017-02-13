@@ -16,6 +16,7 @@ export default function InvestigationHeader({activeInvestigation, user, investig
                     <Navbar.Form style={{width: '60%', padding: '0'}} pullLeft> 
                         <Select
                             name="investigation-selector"
+                            clearable={false}
                             value={id}
                             options={investigations.map((investigation) => ({value: investigation.id, label: investigation.name }))}
                             onChange={(selection) => selectInvestigation(selection.value)}
