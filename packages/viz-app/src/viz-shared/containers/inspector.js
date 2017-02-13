@@ -31,10 +31,13 @@ let Inspector = container({
             }`;
         }
 
+        const { startCol = 0, colsPerPage = 0 } = props;
         const { startRow = 0, rowsPerPage = 0 } = props;
         const from = Math.max(0, startRow - rowsPerPage * 2 - 1) || 0;
         const to = Math.min(rows.length, startRow + rowsPerPage * 2 + 1) || 0;
-        const columnNames = (columns.length && columns[0] ? columns : templates).map(({ name }) => name);
+        const columnNames = (columns.length && columns[0] ? columns : templates)
+            .slice(startCol, startCol + colsPerPage + 2)
+            .map(({ name }) => name);
 
         return `{
             id, name, open, openTab, tabs: {
