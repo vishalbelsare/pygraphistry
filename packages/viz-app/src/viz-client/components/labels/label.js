@@ -26,7 +26,6 @@ function stopPropagationIfAnchor(e) {
 }
 
 const events = ['onLabelSelected', 'onLabelMouseMove'];
-const labelTooltipStyle = { left: `-50%`, marginTop: 1, position: `relative` };
 
 export class Label extends React.Component {
     constructor(props, context) {
@@ -71,7 +70,7 @@ export class Label extends React.Component {
         let { showFull, pinned,
               color, background,
               onFilter, onExclude,
-              encodings,
+              encodings, tooltipOffsetY = 0,
               sizes, pointColors, scalingFactor, pixelRatio,
               type, index, title, columns, ...props } = this.props;
 
@@ -109,7 +108,9 @@ export class Label extends React.Component {
                 <PointIcon type={type}
                            iconSize={iconSize} iconClass={iconClass}
                            pointRgb={pointRgb} pointColor={pointColor}/>
-                <div style={labelTooltipStyle}
+                <div style={{ left: `-50%`,
+                              position: `relative`,
+                              marginTop: tooltipOffsetY + 1 }}
                      onMouseMove={this.onLabelMouseMove}
                      onMouseDown={!pinned && this.onLabelSelected || undefined}
                      onTouchStart={!pinned && this.onLabelSelected || undefined}
