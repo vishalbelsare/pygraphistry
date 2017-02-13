@@ -72,7 +72,7 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
         let title = row[titleColumnName];
 
         if (typeof title === 'string') {
-            title = sanitizeHTML(decodeURIComponent('' + title));
+            title = decodeAndSanitize('' + title);
         }
 
         const names = columnNames.length && columnNames || Object.keys(row);
@@ -90,7 +90,7 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
                     undefined;
 
                 if (dataType === 'string') {
-                    value = sanitizeHTML(decodeURIComponent(value));
+                    value = decodeAndSanitize('' + value);
                 }
 
                 columns.push({ key, value, displayName, dataType });
@@ -112,4 +112,13 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
             }
         };
     });
+}
+
+function decodeAndSanitize(input) {
+    let decoded = input, value = input;
+    try { decoded = decodeURIComponent(input); }
+    catch (e) { decoded = input; }
+    try { value = sanitizeHTML(decoded); }
+    catch (e) { value = decoded; }
+    return value;
 }

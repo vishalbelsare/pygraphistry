@@ -13,11 +13,13 @@ let Inspector = container({
     renderLoading: true,
     fragment: (fragment, props = {}) => {
 
-        const { rows, query, columns, templates, allTemplatesLength } = getInspectorState(fragment);
+        const { tabs, rows, query, columns, templates, allTemplatesLength } = getInspectorState(fragment);
 
         if (!fragment || !fragment.currentQuery || !(templates[0] || columns[0])) {
             return `{
-                id, name, open, openTab,
+                id, name, open, openTab, tabs: {
+                    length, [0...${tabs.length}]
+                },
                 currentQuery: {
                     columns, sortKey, sortOrder, searchTerm
                 },
@@ -29,13 +31,18 @@ let Inspector = container({
             }`;
         }
 
+        const { startCol = 0, colsPerPage = 0 } = props;
         const { startRow = 0, rowsPerPage = 0 } = props;
         const from = Math.max(0, startRow - rowsPerPage * 2 - 1) || 0;
         const to = Math.min(rows.length, startRow + rowsPerPage * 2 + 1) || 0;
-        const columnNames = (columns.length && columns[0] ? columns : templates).map(({ name }) => name);
+        const columnNames = (columns.length && columns[0] ? columns : templates)
+            .slice(startCol, startCol + colsPerPage + 2)
+            .map(({ name }) => name);
 
         return `{
-            id, name, open, openTab,
+            id, name, open, openTab, tabs: {
+                length, [0...${tabs.length}]
+            },
             currentQuery: {
                 columns, sortKey, sortOrder, searchTerm
             },
@@ -126,7 +133,7 @@ export { Inspector };
 
 function getInspectorState(fragment = []) {
 
-    let { templates = [] } = fragment;
+    let { tabs = [], templates = [] } = fragment;
     const { length: allTemplatesLength } = templates;
     const { currentQuery = {}, openTab = 'point' } = fragment;
 
@@ -151,7 +158,7 @@ function getInspectorState(fragment = []) {
     ), fragment.rows || {});
 
     return {
-        rows, query, columns,
+        tabs, rows, query, columns,
         templates, allTemplatesLength,
         openTab, sortKey, sortOrder, searchTerm
     };
@@ -174,6 +181,9 @@ function mapKeyIdToKey(keyId, query) {
 }
 
 function getTemplatesForTab(templates = [], componentType) {
+    if (componentType === 'event') {
+        componentType = 'point';
+    }
     return Array.from(templates).filter((template) => (
         template && !blacklist[template.name] &&
         template.componentType === componentType

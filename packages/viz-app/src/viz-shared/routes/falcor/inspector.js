@@ -15,6 +15,9 @@ export function inspector(path, base) {
             route: `${base}['inspector']['open', 'openTab', 'length', 'id', 'name', 'templates', 'currentQuery']`,
         }, {
             get: getValues,
+            route: `${base}['inspector'].tabs[{keys}]`
+        }, {
+            get: getValues,
             route: `${base}['inspector'].controls[{keys}]`
         }, {
             returns: `*`,
@@ -27,42 +30,42 @@ export function inspector(path, base) {
             route: `${base}['inspector'].controls[{keys}][{keys}]`
         }, {
             get: getRowsByTypeAndIndex,
-            route: `${base}['componentsByType']['point', 'edge'].rows[{integers: rowIndexes}][{keys: columnNames}]`
+            route: `${base}['componentsByType'][{keys: componentTypes}].rows[{integers: rowIndexes}][{keys: columnNames}]`
         }, {
             get: getRowLengthOrValueRefsByQuery,
-            route: `${base}['inspector'].rows['point', 'edge'].length`
+            route: `${base}['inspector'].rows[{keys: componentTypes}].length`
         }, {
             get: getRowLengthOrValueRefsByQuery,
-            route: `${base}['inspector'].rows['point', 'edge'][{integers}]`
+            route: `${base}['inspector'].rows[{keys: componentTypes}][{integers}]`
         }, {
             get: getRowLengthOrValueRefsByQuery,
-            route: `${base}['inspector'].rows['point', 'edge'][{keys: sortKeys}].length`
+            route: `${base}['inspector'].rows[{keys: componentTypes}][{keys: sortKeys}].length`
         }, {
             get: getRowLengthOrValueRefsByQuery,
-            route: `${base}['inspector'].rows['point', 'edge'][{keys: sortKeys}][{integers}]`
+            route: `${base}['inspector'].rows[{keys: componentTypes}][{keys: sortKeys}][{integers}]`
         }, {
             get: getRowLengthOrValueRefsByQuery,
-            route: `${base}['inspector'].rows['point', 'edge'][{keys: sortKeys}][{keys: sortOrders}].length`
+            route: `${base}['inspector'].rows[{keys: componentTypes}][{keys: sortKeys}][{keys: sortOrders}].length`
         }, {
             get: getRowLengthOrValueRefsByQuery,
-            route: `${base}['inspector'].rows['point', 'edge'][{keys: sortKeys}][{keys: sortOrders}][{integers}]`
+            route: `${base}['inspector'].rows[{keys: componentTypes}][{keys: sortKeys}][{keys: sortOrders}][{integers}]`
         }, {
             get: getRowLengthOrValueRefsByQuery,
-            route: `${base}['inspector'].rows['point', 'edge'][{keys: sortKeys}][{keys: sortOrders}][{keys: searchTerms}].length`
+            route: `${base}['inspector'].rows[{keys: componentTypes}][{keys: sortKeys}][{keys: sortOrders}][{keys: searchTerms}].length`
         }, {
             get: getRowLengthOrValueRefsByQuery,
-            route: `${base}['inspector'].rows['point', 'edge'][{keys: sortKeys}][{keys: sortOrders}][{keys: searchTerms}][{integers}]`
+            route: `${base}['inspector'].rows[{keys: componentTypes}][{keys: sortKeys}][{keys: sortOrders}][{keys: searchTerms}][{integers}]`
         }];
 
         function getRowLengthOrValueRefsByQuery(rowsPath) {
 
-            const { sortKeys, sortOrders, searchTerms } = rowsPath;
-            const componentTypes = [].concat(rowsPath[rowsPath.length -
-                Number(Boolean(searchTerms)) -
-                Number(Boolean(sortOrders)) -
-                Number(Boolean(sortKeys)) -
-                2
-            ]);
+            const { sortKeys, sortOrders, searchTerms, componentTypes } = rowsPath;
+            // const componentTypes = [].concat(rowsPath[rowsPath.length -
+            //     Number(Boolean(searchTerms)) -
+            //     Number(Boolean(sortOrders)) -
+            //     Number(Boolean(sortKeys)) -
+            //     2
+            // ]);
 
             const getRowValuesHandler = getHandler(path, (context) => filterRowsByQuery({
                 ...context, componentTypes, searchTerms, sortKeys, sortOrders
@@ -83,8 +86,8 @@ export function inspector(path, base) {
 
             const workbookIds = [].concat(path[1]);
             const viewIds = [].concat(path[3]);
-            const componentTypes = [].concat(path[path.length - 4]);
-            const { rowIndexes = [], columnNames = [] } = path;
+            // const componentTypes = [].concat(path[path.length - 4]);
+            const { componentTypes = [], rowIndexes = [], columnNames = [] } = path;
 
             return loadRowsByIndexAndType({
                 workbookIds, viewIds, rowIndexes, columnNames, componentTypes

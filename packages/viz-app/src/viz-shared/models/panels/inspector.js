@@ -14,6 +14,13 @@ export function inspector(view) {
             id: 'inspector',
             name: 'Data inspector',
             openTab: 'point', // 'edge', 'event', ...
+            tabs: [{
+                name: 'Points',
+                componentType: 'point'
+            }, {
+                name: 'Edges',
+                componentType: 'edge'
+            }],
             templates: $ref(`${view}.columns`),
             currentQuery: $ref(`${view}.inspector.queries.point`),
             queries: {
@@ -25,6 +32,15 @@ export function inspector(view) {
                     componentType: 'point',
                     columns: $atom([])
                     //rows: $ref(`${view}.inspector.rows.point.search-.community_infomap.asc`)
+                },
+                event: { //table
+                    page: 1,
+                    searchTerm: '',
+                    sortKey: '_title', //int or string column reference
+                    sortOrder: 'asc', // or 'desc'
+                    componentType: 'edge',
+                    columns: $atom([])
+                    //rows: $ref(`${view}.inspector.rows.event.search-._title.asc`),
                 },
                 edge: { //table
                     page: 1,

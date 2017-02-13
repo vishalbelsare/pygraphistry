@@ -140,11 +140,14 @@ export function vizWorker(app, server, sockets, caches) {
                     .mergeMap(
                         ({ nBody }) => sendUpdate({
                             invalidated: [
-                                `workbooks.open.views.current.inspector.rows`
+                                `workbooks.open.views.current.labelsByType`,
+                                `workbooks.open.views.current.inspector.rows`,
+                                `workbooks.open.views.current.componentsByType`
                             ],
                             paths: [
                                 `workbooks.open.views.current.columns.length`,
                                 `workbooks.open.views.current.histograms.length`,
+                                `workbooks.open.views.current.inspector.tabs.length`,
                                 `workbooks.open.views.current.scene.renderer['edges', 'points'].elements`
                             ]
                         }).takeLast(1),

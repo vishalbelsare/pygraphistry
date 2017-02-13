@@ -51,6 +51,10 @@ function getRowsForType({ workbook, view, columnNames, rowIndexes, componentType
         return [];
     }
 
+    if (componentType === 'event') {
+        componentType = 'point';
+    }
+
     columnNames = (columnNames || dataframe.getAttributeKeys(componentType)).map((columnName) => ({
         columnName, key: dataframe.getAttributeKeyForColumnName(columnName, componentType)
     }));
@@ -73,10 +77,19 @@ function getRowsForType({ workbook, view, columnNames, rowIndexes, componentType
                     row[columnName] = palettes.intToHex(value);
                 } else if (dataType === 'string') {
                     // If the data type is a string, decode and sanitize in case it's HTML
-                    row[columnName] = sanitizeHTML(decodeURIComponent(value));
+                    row[columnName] = decodeAndSanitize(value);
                 }
             }
             return row;
         }, row);
     });
+}
+
+function decodeAndSanitize(input) {
+    let decoded = input, value = input;
+    try { decoded = decodeURIComponent(input); }
+    catch (e) { decoded = input; }
+    try { value = sanitizeHTML(decoded); }
+    catch (e) { value = decoded; }
+    return value;
 }

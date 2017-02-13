@@ -1,10 +1,11 @@
 import $ from 'jquery';
 import { Gestures } from 'rxjs-gestures';
 import React, { PropTypes } from 'react';
-import {
-    Subject, Observable,
-    Subscription, ReplaySubject
-} from 'rxjs';
+import { Subject } from 'rxjs/Subject';
+import { Observable } from 'rxjs/Observable';
+import { Subscription } from 'rxjs/Subscription';
+import { ReplaySubject } from 'rxjs/ReplaySubject';
+
 import styles from 'viz-shared/components/scene/styles.less';
 
 import {

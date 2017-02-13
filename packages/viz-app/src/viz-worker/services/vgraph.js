@@ -112,6 +112,12 @@ function loadDataFrameAndUpdateBuffers({ view }) {
         view = createInitialHistograms(view, dataframe);
         view.scene = assignHintsToScene(view.scene, dataframe);
         view.columns = createColumns(dataframe, dataframe.getColumnsByType(true));
+        if (dataframe.pointTypeIncludesEventID) {
+            view.inspector.tabs.push({
+                name: 'Events',
+                componentType: 'event'
+            });
+        }
         return view;
     });
 }

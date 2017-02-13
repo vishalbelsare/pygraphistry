@@ -255,7 +255,7 @@ function serverConfig(
         new webpack.BannerPlugin({
             raw: true,
             entryOnly: true,
-            banner: `require('source-map-support').install({ environment: 'node' });`
+            banner: `require('raf').polyfill();require('source-map-support').install({ environment: 'node' });`
         }),
         new webpack.DefinePlugin(
             Object.assign(
@@ -370,7 +370,7 @@ function loaders(isDevBuild) {
                     // The Babel "jsx" helper method this plugin uses gets
                     // deoptimized by v8, since it does argument reassignment.
                     // This is no good in a React render() call tree.
-                    // 'transform-react-inline-elements',
+                    'transform-react-inline-elements',
                     'transform-react-constant-elements'],
                 presets: [
                     // !isDevBuild ? 'es2016' :
