@@ -1,9 +1,10 @@
 import Color from 'color';
 import classNames from 'classnames';
 import React, { PropTypes } from 'react';
-import {
-    Subscription, Observable, Scheduler
-} from 'rxjs';
+
+import { Observable } from 'rxjs/Observable';
+import { Subscription } from 'rxjs/Subscription';
+import * as Scheduler from 'rxjs/scheduler/animationFrame';
 
 import {
     pointSizes,
