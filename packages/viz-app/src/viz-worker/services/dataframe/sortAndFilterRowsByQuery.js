@@ -164,7 +164,7 @@ function filterRowsBySearchTerm(columnNames, searchTerm, dataTypes, colorColumns
             } else if (dataType !== 'string') {
                 value = ('' + value).toLowerCase();
             } else {
-                value = decodeURIComponent(value).toLowerCase();
+                value = tryDecode(value).toLowerCase();
             }
             if (~value.indexOf(searchTerm)) {
                 return true;
@@ -172,5 +172,12 @@ function filterRowsBySearchTerm(columnNames, searchTerm, dataTypes, colorColumns
         }
         return false;
     };
+}
+
+function tryDecode(input) {
+    let value = input;
+    try { value = decodeURIComponent(input); }
+    catch (e) { value = input; }
+    return value;
 }
 
