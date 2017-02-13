@@ -55,13 +55,10 @@ export const Sparkline = ({ name, yScale, children, componentType,
                                 [styles['histogram-close']]: true,
                                 [styles['histogram-loading']]: loading
                             })}>
-                        <i className={classNames({
-                            'fa': true,
-                            'fa-fw': true,
-                            'fa-spin': loading,
-                            'fa-times': !loading,
-                            'fa-spinner': loading,
-                        })}/>
+                        {loading &&
+                            <span className='Select-loading'/> ||
+                            <i className='fa fa-fw fa-times'/>
+                        }
                     </Button>
                 </div>
                 <span>
