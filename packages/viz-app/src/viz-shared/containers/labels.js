@@ -11,9 +11,11 @@ import { addFilter, addExclusion } from 'viz-shared/actions/expressions';
 
 let Label = container({
     renderLoading: false,
-    fragment: () => `{
-        type, index, title, columns
-    }`,
+    fragment: (fragment, { pinned, showFull } = {}) => {
+        return (!pinned && !showFull) &&
+            `{ type, index, title }` ||
+            `{ type, index, title, columns }`;
+    },
     dispatchers: {
         onFilter: addFilter,
         onExclude: addExclusion,
@@ -68,21 +70,25 @@ let Labels = ({ simulating,
                          selection={selection}
                          poiEnabled={poiEnabled}
                          {...props}>
-        {enabled && labels.filter(Boolean).map((label, index) =>
-            <Label data={label}
-                   color={color}
-                   opacity={opacity}
-                   key={`label-${index}`}
-                   simulating={simulating}
-                   background={background}
-                   pinned={label === selection}
-                   onLabelSelected={selectLabel}
-                   onLabelMouseMove={labelMouseMove}
-                   hasHighlightedLabel={!!highlight}
-                   sceneSelectionType={sceneSelectionType}
-                   encodings={encodings}
-                   showFull={label === highlight || label === selection}/>
-        ) || []}
+        {enabled && labels.filter(Boolean).map((label) => {
+            const key = label === selection ? 'selection' :
+                        label === highlight ? 'highlight' : label.index;
+            return (
+                <Label data={label}
+                       color={color}
+                       opacity={opacity}
+                       key={`label-${key}`}
+                       encodings={encodings}
+                       simulating={simulating}
+                       background={background}
+                       pinned={label === selection}
+                       onLabelSelected={selectLabel}
+                       onLabelMouseMove={labelMouseMove}
+                       hasHighlightedLabel={!!highlight}
+                       sceneSelectionType={sceneSelectionType}
+                       showFull={label === highlight || label === selection}/>
+           );
+        }) || []}
         </LabelsComponent>
     );
 };
