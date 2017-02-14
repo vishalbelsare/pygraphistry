@@ -41,6 +41,7 @@ export function vizWorker(app, server, sockets, caches) {
             addExpressRoutes(app, expressRoutes)
         )
         .mergeMap(() => requests.merge(sockets
+            .let(timeoutIfNoSocketConnectionIfNotRunningLocally)
             .map(enrichLogs)
             .mergeMap(({ socket, metadata }) => {
 
@@ -62,6 +63,23 @@ export function vizWorker(app, server, sockets, caches) {
             })
         ))
         .takeWhile((x) => !x || (x && x.type !== 'disconnect'))
+
+    function timeoutIfNoSocketConnectionIfNotRunningLocally(source) {
+        if (config.ENVIRONMENT === 'local') {
+            return source;
+        }
+        return source
+            .timeout(config.SOCKET_CLAIM_TIMEOUT * 1000)
+            .do(() => logger.info('Socket connected before timeout'))
+            .catch((e) => {
+                logger.error({ err: e }, 'Worker socket connection timeout.');
+                return Observable.throw({
+                    error: e,
+                    message: `Worker socket connection timeout.`
+                });
+            })
+            .take(1);
+    }
 
     function enrichLogs(socket) {
 
