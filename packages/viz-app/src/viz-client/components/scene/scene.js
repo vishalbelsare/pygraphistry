@@ -361,7 +361,7 @@ class Scene extends React.Component {
                 }))
         )
         .ignoreElements()
-        .subscribe();
+        .subscribe({});
 
         resizeSubscription = Observable
             .fromEvent(window, 'resize')

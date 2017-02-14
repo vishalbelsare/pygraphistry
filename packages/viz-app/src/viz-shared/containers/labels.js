@@ -12,7 +12,7 @@ import { addFilter, addExclusion } from 'viz-shared/actions/expressions';
 let Label = container({
     renderLoading: false,
     fragment: (fragment, { pinned, showFull } = {}) => {
-        return (!pinned && !showFull) &&
+        return (false && !pinned && !showFull) &&
             `{ type, index, title }` ||
             `{ type, index, title, columns }`;
     },

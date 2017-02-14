@@ -118,7 +118,7 @@ class Labels extends React.Component {
             if (child) {
 
                 const radius = size * 0.5;
-                const tooltipOffsetY = label !== highlight ?
+                const tooltipOffsetY = type !== 'edge' || label !== highlight ?
                     0 : Math.min(Math.abs(15 - radius), 15);
 
                 childrenToRender.push(React.cloneElement(child, {

@@ -88,6 +88,7 @@ let Inspector = container({
         const lastRenderedRowIndex = Math.max(rowsPerPage, endRow - startRow) +
                                     (scrollTop + rowHeaderHeight) / rowHeight;
 
+        const loadingRow = { rowIsLoading: true };
         const rowsToRender = new Array(rowsPerPage + 2);
         const numPages = rows.length && Math.ceil(bodyHeight / (rowHeight * rowsPerPage)) || 0;
         const page = Math.max(1, Math.min(numPages, Math.floor(lastRenderedRowIndex / rowsPerPage)));
@@ -97,9 +98,7 @@ let Inspector = container({
             if (startRow + i >= rows.length) {
                 rowsToRender[i] = null;
             } else {
-                rowsToRender[i] = row ? row : {
-                    rowIsLoading: true, pendingIndex: startRow + i + 1
-                };
+                rowsToRender[i] = row ? row : loadingRow;
             }
         }
 
@@ -111,7 +110,7 @@ let Inspector = container({
             bodyHeight: bodyHeight + rowHeaderHeight,
             openTab, sortKey, sortOrder, searchTerm,
             cols, rows: rowsToRender, page, numPages,
-            rowsPerPage: rowsPerPage + 2,
+            rowsPerPage: rowsPerPage + 2, loadingRow,
             colsPerPage: Math.max(1 + colsPerPage, Math.min(colsPerPage + 2, cols.length - startCol)),
         };
     },
