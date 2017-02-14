@@ -1385,7 +1385,7 @@ VizServer.prototype.setupBinningRequestHandling = function () {
                 }
             }
         })
-        .subscribe();
+        .subscribe({});
 };
 
 // FIXME: ExpressJS routing does not support re-targeting. So we set a global for now!
