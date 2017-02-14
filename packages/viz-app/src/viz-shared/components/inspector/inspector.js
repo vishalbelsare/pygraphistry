@@ -147,7 +147,7 @@ function renderColHeaderCell(colIndex, { cols, sortKey, sortOrder, entityType })
     );
 }
 
-function renderCell(colIndex, rowIndex, { cols, rows, startCol, startRow }) {
+function renderCell(colIndex, rowIndex, { cols, rows, startCol, startRow, loadingRow }) {
 
     const col = cols[colIndex];
     const row = rows[rowIndex - startRow];
@@ -155,14 +155,15 @@ function renderCell(colIndex, rowIndex, { cols, rows, startCol, startRow }) {
     let dataType, value = '';
 
     if (row && col) {
-        if (row.rowIsLoading) {
+        if (row === loadingRow || ((
+            value = row[col.name]) === undefined &&
+            row.$__status === 'pending')) {
             return (
                 <p className={styles['loading-cell']}>
                     <i className='fa fa-ellipsis-h'/>
                 </p>
             );
         }
-        value = row[col.name];
         if (value != null && value !== '') {
             value = '' + value;
             dataType = col.dataType;
