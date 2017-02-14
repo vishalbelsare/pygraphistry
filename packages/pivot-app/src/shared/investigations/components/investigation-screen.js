@@ -9,7 +9,11 @@ export default function InvestigationScreen({
     templates = [],
     investigations = [],
     activeInvestigation = {},
-    selectInvestigation
+    selectInvestigation,
+    createInvestigation,
+    copyInvestigation,
+    saveInvestigation,
+    user
 }) {
 
     const { tags: activeTags = [] } = activeInvestigation || {};
@@ -30,6 +34,10 @@ export default function InvestigationScreen({
                             investigations={investigations}
                             activeInvestigation={activeInvestigation}
                             selectInvestigation={selectInvestigation}
+                            createInvestigation={createInvestigation}
+                            copyInvestigation={copyInvestigation}
+                            saveInvestigation={saveInvestigation}
+                            user={user}
                         />
                         <Investigation
                             key={`investigation:${activeInvestigation.id}`}

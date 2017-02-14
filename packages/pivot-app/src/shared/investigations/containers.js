@@ -54,5 +54,7 @@ export const investigationScreenContainer = container({
     }),
     dispatchers: {
         createInvestigation,
+        copyInvestigation,
+        saveInvestigation
     }
 });
