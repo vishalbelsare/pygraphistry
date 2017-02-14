@@ -20,7 +20,7 @@
     "@graphistry/falcor-json-graph": "~2.6.16",
     "@graphistry/falcor-model-rxjs": "~2.7.5",
     "@graphistry/falcor-path-syntax": "~2.5.3",
-    "@graphistry/falcor-react-redux": "~2.7.6",
+    "@graphistry/falcor-react-redux": "^2.7.7",
     "@graphistry/falcor-socket-datasource": "~2.7.5",
     "http-server": "^0.9.0",
     "rxjs": "~5.1.1"
@@ -87,7 +87,7 @@
     "url-loader": "0.5.7",
     "webgl-debug": "1.0.2",
     "webpack": "2.1.0-beta.22",
-    "webpack-closure-compiler": "2.1.2",
+    "webpack-closure-compiler": "~2.1.4",
     "webpack-dashboard": "0.2.0",
     "webpack-glsl-loader": "1.0.1",
     "webpack-hot-middleware": "~2.14.0",

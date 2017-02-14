@@ -3,6 +3,7 @@ import styles from './styles.less';
 import { connect, container } from '@graphistry/falcor-react-redux';
 import { renderNothing } from 'recompose';
 import { View } from 'viz-shared/containers/view';
+import * as Scheduler from 'rxjs/scheduler/animationFrame';
 
 let DevTools = renderNothing();
 
@@ -42,6 +43,6 @@ App = container({
     }
 })(App);
 
-App = connect(App);
+App = connect(App, Scheduler.animationFrame);
 
 export { App };
