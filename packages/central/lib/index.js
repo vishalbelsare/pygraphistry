@@ -16,6 +16,7 @@ import { api as apiKey } from '@graphistry/common';
 import { pickWorker } from './worker-router.js';
 import { logClientError } from './logClientError.js';
 import { initWorkbookApi } from './rest-api';
+import { renderSplashScreen } from './render-splash-screen';
 
 import { HealthChecker } from './HealthChecker.js';
 const healthcheck = HealthChecker();
@@ -73,23 +74,40 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
 
 function handleVizAppRequest(req, res) {
 
-    const { query = {} } = req;
-    const reqURL = urlParse(req.originalUrl);
+    let { query = {} } = req,
+        { splashAfter } = query,
+        showSplashScreen = false;
 
-    if (query.workbook === undefined) {
-        const redirectUrl = urlFormat({
-                ...reqURL,
-                search: undefined,
-                query: {
-                    ...query,
-                    workbook: simpleflake().toJSON()
-                }
-            });
-
-        return res.redirect(redirectUrl);
-    } else {
-        handleWorkerRequest(req, res);
+    if (splashAfter !== undefined) {
+        if (typeof (splashAfter = parseInt(splashAfter, 10)) !== 'number') {
+            showSplashScreen = true;
+        } else {
+            showSplashScreen = (Date.now() / 1000) - 20 >= splashAfter;
+        }
     }
+
+    if (!showSplashScreen && query.workbook) {
+        return handleWorkerRequest(req, res);
+    }
+
+    query = { ...query };
+
+    if (!query.workbook) {
+        query.workbook = simpleflake().toJSON();
+    }
+
+    if (showSplashScreen) {
+        delete query.splashAfter;
+    }
+
+    const reqURL = urlParse(req.originalUrl);
+    const redirectURL = urlFormat({ ...reqURL, query, search: undefined });
+
+    if (showSplashScreen) {
+        return res.type('html').send(renderSplashScreen(redirectURL));
+    }
+
+    return res.redirect(redirectURL);
 }
 
 function handleWorkerRequest(req, res) {
