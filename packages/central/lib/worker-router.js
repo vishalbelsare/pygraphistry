@@ -95,17 +95,19 @@ function getWorkers() {
 
 
 // Tracks when we last assigned a client to a worker
-const workerLastAssigned = {};
+export const workerLastAssigned = {};
 
 function checkIfWorkerAssigned(workerNfo) {
     const workerAssignmentTimeout = config.WORKER_CONNECT_TIMEOUT;
     const workerId = workerNfo.hostname + ':' + workerNfo.port;
 
     if(!workerLastAssigned[workerId]) {
+        markWorkerAsAssigned(workerNfo);
         return Rx.Observable.return(false);
     } else {
         const assignedElapsed = (new Date()) - workerLastAssigned[workerId];
         if(assignedElapsed > workerAssignmentTimeout) {
+            markWorkerAsAssigned(workerNfo);
             return Rx.Observable.return(false);
         } else {
             return Rx.Observable.return(true);
@@ -131,6 +133,7 @@ export function pickWorker() {
     const ips = Observable.defer(() => {
         if(config.PINGER_ENABLED) {
             return getWorkers()
+                .do((workers) => logger.debug({workers: workers, workerLastAssigned: workerLastAssigned}, 'Queried database for available workers to pick for routing request'))
                 .flatMap((workers) => Observable.from(workers))
                 .map((worker) => {
                     return { hostname: worker.ip, port: worker.port, timestamp: worker.updated };
@@ -180,7 +183,6 @@ export function pickWorker() {
             next(worker) {
                 // If we get a worker, we know everything succeeded.
                 logger.debug('Assigning worker on %s, port %d', worker.hostname, worker.port);
-                markWorkerAsAssigned(worker);
             },
             error({ type, error, message }) {
                 // If we get a message, log it and send it back.
