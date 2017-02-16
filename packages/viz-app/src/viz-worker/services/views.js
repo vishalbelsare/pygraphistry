@@ -64,6 +64,14 @@ function assignViewToWorkbook(workbook, view) {
     const { id: viewId } = view;
     const { id: workbookId, viewsById, views } = workbook;
 
+    if (!view.session) {
+        view.session = {
+            status: 'init',
+            progress: 100 * 5/10,
+            message: `Locating Graphistry's farm`
+        };
+    }
+
     if (!viewsById[viewId]) {
 
         const viewIndex = views.length;

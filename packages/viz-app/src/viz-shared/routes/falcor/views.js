@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import * as Scheduler from 'rxjs/scheduler/async';
 import {
     ref as $ref,
     pathValue as $value,
@@ -21,20 +22,26 @@ export function views(path, base) {
         const setPruneOrphansAndMaskDataframe = setHandler(path, loadViewsById,
             (node, key, value, path, { workbook, view }) => Observable.defer(() => {
 
-                view[key] = value;
-
                 const viewPath = path.slice(0, -1);
-                let obs = Observable.of({ path, value });
                 const { filters, exclusions } = view;
+                let obs = Observable.of($value(path, node[key] = value));
 
                 if ((filters && filters.length > 1) || (exclusions && exclusions.length)) {
-                    obs = maskDataframe({ view })
-                        .mapTo({ path, value })
-                        .concat(Observable.of(
+                    obs = obs.merge(Observable.of(
+                        $value([...viewPath, 'session', 'status'], 'primary'),
+                        $value([...viewPath, 'session', 'progress'], 100),
+                        $value([...viewPath, 'session', 'message'], 'Filtering nodes')
+                    ))
+                    .concat(maskDataframe({ view })
+                        .subscribeOn(Scheduler.async, 100)
+                        .mergeMap(() => [
                             $invalidate([...viewPath, 'labelsByType']),
                             $invalidate([...viewPath, 'inspector', 'rows']),
-                            $invalidate([...viewPath, 'selection', 'histogramsById'])
-                        ));
+                            $invalidate([...viewPath, 'selection', 'histogramsById']),
+                            $value([...viewPath, 'session', 'status'], 'success'),
+                            $value([...viewPath, 'session', 'progress'], 100),
+                            $value([...viewPath, 'session', 'message'], null)
+                        ]));
                 }
 
                 return obs;

@@ -6,6 +6,7 @@ import {
 } from '@graphistry/falcor-json-graph';
 
 import { Observable } from 'rxjs';
+import * as Scheduler from 'rxjs/scheduler/async';
 import { getHandler, setHandler } from 'viz-shared/routes';
 import { printExpression } from 'viz-shared/models/expressions';
 import { addExpressionHandler, removeExpressionHandler } from './expressions';
@@ -271,34 +272,45 @@ export function histograms(path, base) {
                     input: printExpression(query)
                 };
 
-                return maskDataframe({ view }).mergeMap(() => {
+                return Observable.of(
+                    $value(`${viewPath}.session.status`, 'primary'),
+                    $value(`${viewPath}.session.progress`, 100),
+                    $value(`${viewPath}.session.message`, 'Filtering nodes')
+                ).concat(maskDataframe({ view })
+                    .subscribeOn(Scheduler.async, 100)
+                    .mergeMap(() => {
 
-                    view.inspector.rows = undefined;
-                    view.componentsByType = undefined;
+                        view.inspector.rows = undefined;
+                        view.componentsByType = undefined;
 
-                    // If the view has histograms, invalidate the
-                    // relevant fields so they're recomputed if the
-                    // histograms panel is open, or the next time the
-                    // panel is opened.
-                    const pathValues = [
-                        $invalidate(`${viewPath}.componentsByType`),
-                        $invalidate(`${viewPath}.labelsByType`),
-                        $invalidate(`${viewPath}.inspector.rows`),
-                        $value(`${viewPath}.highlight.darken`, false),
-                        $value(`${histogramPath}.range`, binIndexes),
-                        $value(`${histogramPath}.filter`, histogram.filter),
-                        $value(`${filterPath}.input`, filter.input),
-                        $value(`${filterPath}.enabled`, filter.enabled),
-                    ];
+                        // If the view has histograms, invalidate the
+                        // relevant fields so they're recomputed if the
+                        // histograms panel is open, or the next time the
+                        // panel is opened.
+                        const pathValues = [
+                            $invalidate(`${viewPath}.componentsByType`),
+                            $invalidate(`${viewPath}.labelsByType`),
+                            $invalidate(`${viewPath}.inspector.rows`),
+                            $value(`${viewPath}.highlight.darken`, false),
+                            $value(`${histogramPath}.range`, binIndexes),
+                            $value(`${histogramPath}.filter`, histogram.filter),
+                            $value(`${filterPath}.input`, filter.input),
+                            $value(`${filterPath}.enabled`, filter.enabled),
+                        ];
 
-                    if (selection && selection.mask &&
-                        selection.type === 'window') {
-                        pathValues.push($invalidate(`
-                            ${viewPath}.selection.histogramsById`));
-                    }
+                        if (selection && selection.mask &&
+                            selection.type === 'window') {
+                            pathValues.push($invalidate(`
+                                ${viewPath}.selection.histogramsById`));
+                        }
 
-                    return pathValues;
-                });
+                        return pathValues.concat(
+                            $value(`${viewPath}.session.status`, 'success'),
+                            $value(`${viewPath}.session.progress`, 100),
+                            $value(`${viewPath}.session.message`, null)
+                        );
+                    })
+                );
             });
         }
 

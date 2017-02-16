@@ -59,7 +59,7 @@ export function serializeWorkbook(workbook) {
     const whiteListed = _.pick(workbook, wbFields);
 
     whiteListed.viewsById = _.mapObject(workbook.viewsById, view => {
-        return _.omit(view, 'nBody', 'columns', 'componentsByType', 'labelsByType');
+        return _.omit(view, 'nBody', 'session', 'columns', 'componentsByType', 'labelsByType');
     });
 
     return whiteListed;

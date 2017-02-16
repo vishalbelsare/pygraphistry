@@ -1,15 +1,8 @@
 import React from 'react'
 import styles from './styles.less';
 import { connect, container } from '@graphistry/falcor-react-redux';
-import { renderNothing } from 'recompose';
 import { View } from 'viz-shared/containers/view';
 import * as Scheduler from 'rxjs/scheduler/animationFrame';
-
-let DevTools = renderNothing();
-
-// if (__DEV__) {
-//     DevTools = require('viz-shared/components').DevTools;
-// }
 
 let App = ({ workbooks = [], ...props } = {}) => {
     const { open: workbook = {} } = workbooks;
@@ -18,7 +11,6 @@ let App = ({ workbooks = [], ...props } = {}) => {
     return (
         <div className={styles['app']}>
             <View key='view' data={view} />
-            <DevTools key='dev-tools'/>
         </div>
     );
 }
