@@ -466,7 +466,6 @@ function setPoints (simulator, points) {
     simulator.tickBuffers(['curPoints', 'randValues']);
 
     const swingsBytes = numPoints * Float32Array.BYTES_PER_ELEMENT;
-    const randBufBytes = randLength * elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
 
     return Q.all([
         simulator.renderer.createBuffer(points, 'curPoints'),
@@ -475,9 +474,9 @@ function setPoints (simulator, points) {
         simulator.cl.createBuffer(points.byteLength, 'prevForces'),
         simulator.cl.createBuffer(swingsBytes, 'swings'),
         simulator.cl.createBuffer(swingsBytes, 'tractions'),
-        simulator.cl.createBuffer(randBufBytes, 'randValues')])
+    ])
     .spread((pointsVBO, nextPointsBuf,
-        curForcesBuf, prevForcesBuf, swingsBuf, tractionsBuf, randBuf) => {
+        curForcesBuf, prevForcesBuf, swingsBuf, tractionsBuf) => {
 
         logger.trace('Created most of the points');
 
@@ -488,13 +487,6 @@ function setPoints (simulator, points) {
         simulator.dataframe.loadBuffer('tractions', 'simulator', tractionsBuf);
 
         simulator.dataframe.loadRendererBuffer('curPoints', pointsVBO);
-
-        // Generate an array of random values we will write to the randValues buffer
-        simulator.dataframe.loadBuffer('randValues', 'simulator', randBuf);
-        const rands = new Float32Array(randLength * simulator.elementsPerPoint);
-        for (let i = 0; i < rands.length; i++) {
-            rands[i] = Math.random();
-        }
 
         const zeros = new Float32Array(numPoints * simulator.elementsPerPoint);
         for (let i = 0; i < zeros.length; i++) {
@@ -507,12 +499,8 @@ function setPoints (simulator, points) {
             swingZeros[i] = 0;
             tractionOnes[i] = 1;
         }
-
-        swingsBuf.write(swingZeros);
-        tractionsBuf.write(tractionOnes);
         return Q.all([
             simulator.cl.createBufferGL(pointsVBO, 'curPoints'),
-            simulator.dataframe.writeBuffer('randValues', 'simulator', rands, simulator),
             simulator.dataframe.writeBuffer('prevForces', 'simulator', zeros, simulator),
             simulator.dataframe.writeBuffer('swings', 'simulator', swingZeros, simulator),
             simulator.dataframe.writeBuffer('tractions', 'simulator', tractionOnes, simulator)
