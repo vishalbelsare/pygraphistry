@@ -18,8 +18,6 @@ var argsType = {
         THREADS_FORCES: cljs.types.define,
         THREADS_SUMS: cljs.types.define,
         WARPSIZE: cljs.types.define,
-        accX: null,
-        accY: null,
         backwardsEdges: null,
         backwardsEdgeWeights: null,
         backwardsEdgeStartEndIdxs: null,
@@ -97,7 +95,7 @@ var argsType = {
 
 // Many BarnesHut kernels have same arguements
 var barnesHutCommonArgs = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
-    'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
+    'yCoords', 'children', 'mass', 'start',
     'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
     'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
     'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau', 'WARPSIZE',
@@ -260,8 +258,6 @@ function getBufferBindings(simulator, stepNumber) {
         THREADS_FORCES: workItems.calculateForces[1],
         THREADS_SUMS: workItems.computeSums[1],
         WARPSIZE:warpsize,
-        accX:layoutBuffers.accx.buffer,
-        accY:layoutBuffers.accy.buffer,
         backwardsEdges: simulator.dataframe.getBuffer('backwardsEdges', 'simulator').buffer,
         backwardsEdgeWeights: simulator.dataframe.getClBuffer(simulator.cl, 'backwardsEdgeWeights', 'hostBuffer').then( obj => obj.buffer ),
         backwardsWorkItems: simulator.dataframe.getBuffer('backwardsWorkItems', 'simulator').buffer,
@@ -335,8 +331,6 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
     return Q.all( [
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'x_cords'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'y_cords'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accx'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accy'),
         simulator.cl.createBuffer(4*(num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'children'),
         simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'mass'),
         simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'start'),
@@ -361,15 +355,13 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
         simulator.cl.createBuffer(forwardsEdges.edgeStartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs'),
         simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs'),
         simulator.cl.createBuffer((numPoints * Float32Array.BYTES_PER_ELEMENT) / 2, 'segStart')
-     ]).spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort,
+     ]).spread(function (x_cords, y_cords, children, mass, start, sort,
                          xmin, xmax, ymin, ymax, globalSwings, globalTractions, count,
                          blocked, step, bottom, maxdepth, radius, globalSpeed, pointForces, partialForces,
                         outputEdgeForcesMap, globalCarryOut, forwardsEdgeStartEndIdxs,
                         backwardsEdgeStartEndIdxs, segStart) {
          layoutBuffers.x_cords = x_cords;
          layoutBuffers.y_cords = y_cords;
-         layoutBuffers.accx = accx;
-         layoutBuffers.accy = accy;
          layoutBuffers.children = children;
          layoutBuffers.mass = mass;
          layoutBuffers.start = start;
