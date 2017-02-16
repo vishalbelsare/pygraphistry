@@ -471,21 +471,17 @@ function setPoints (simulator, points) {
     return Q.all([
         simulator.renderer.createBuffer(points, 'curPoints'),
         simulator.cl.createBuffer(points.byteLength, 'nextPoints'),
-        simulator.cl.createBuffer(points.byteLength, 'partialForces1'),
-        simulator.cl.createBuffer(points.byteLength, 'partialForces2'),
         simulator.cl.createBuffer(points.byteLength, 'curForces'),
         simulator.cl.createBuffer(points.byteLength, 'prevForces'),
         simulator.cl.createBuffer(swingsBytes, 'swings'),
         simulator.cl.createBuffer(swingsBytes, 'tractions'),
         simulator.cl.createBuffer(randBufBytes, 'randValues')])
-    .spread((pointsVBO, nextPointsBuf, partialForces1Buf, partialForces2Buf,
+    .spread((pointsVBO, nextPointsBuf,
         curForcesBuf, prevForcesBuf, swingsBuf, tractionsBuf, randBuf) => {
 
         logger.trace('Created most of the points');
 
         simulator.dataframe.loadBuffer('nextPoints', 'simulator', nextPointsBuf);
-        simulator.dataframe.loadBuffer('partialForces1', 'simulator', partialForces1Buf);
-        simulator.dataframe.loadBuffer('partialForces2', 'simulator', partialForces2Buf);
         simulator.dataframe.loadBuffer('curForces', 'simulator', curForcesBuf);
         simulator.dataframe.loadBuffer('prevForces', 'simulator', prevForcesBuf);
         simulator.dataframe.loadBuffer('swings', 'simulator', swingsBuf);
