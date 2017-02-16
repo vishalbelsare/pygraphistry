@@ -36,6 +36,12 @@ var dbObs = ((config.ENVIRONMENT === 'local') ?
     (Rx.Observable.empty()) :
     (mongoClientConnect(config.MONGO_SERVER, {auto_reconnect: true})
         .map(function(database) { return database.db(config.DATABASE); }))
+        .catch((err) => {
+            logger.fatal({err}, 'Fatal error connecting to the MongoDB database. Terminating.');
+            // Wait 1s to allow logs to be written, etc.
+            setTimeout(() => process.exit(16), 1000);
+            throw err;
+        })
 ).publishReplay(1);
 
 dbObs.connect();
