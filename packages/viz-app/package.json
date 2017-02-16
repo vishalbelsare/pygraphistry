@@ -41,7 +41,7 @@
     "@graphistry/falcor-path-syntax": "~2.5.3",
     "@graphistry/falcor-path-utils": "~2.7.1",
     "@graphistry/falcor-query-syntax": "~2.7.5",
-    "@graphistry/falcor-react-redux": "^2.7.7",
+    "@graphistry/falcor-react-redux": "^2.7.8",
     "@graphistry/falcor-react-schema": "~2.7.5",
     "@graphistry/falcor-router": "~2.7.5",
     "@graphistry/falcor-router-saddle": "~2.7.5",
