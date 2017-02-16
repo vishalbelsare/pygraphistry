@@ -12,11 +12,10 @@ export function sendFalcorUpdate(socket, getDataSource) {
         const dataSource = getDataSource({ ...socket.handshake });
         _paths = fromPathsOrPathValues(_paths);
         _invalidated = fromPathsOrPathValues(_invalidated);
-        return dataSource.get(_paths).do(({ paths, jsonGraph, invalidated = [] }) => {
-            logger.trace(`sending initial post-socket update`, jsonGraph);
-            send('falcor-update', {
-                paths, jsonGraph, invalidated:
-                    _invalidated.concat(invalidated)
+        return dataSource.get(_paths).mergeMap(({ paths, jsonGraph, invalidated = [] }) => {
+            logger.trace(`sending falcor update`, jsonGraph);
+            return Observable.bindCallback(socket.emit.bind(socket))('falcor-update', {
+                paths, jsonGraph, invalidated: _invalidated.concat(invalidated)
             });
         }).mapTo(0);
     }
