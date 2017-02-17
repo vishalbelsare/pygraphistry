@@ -108,12 +108,10 @@ function checkIfWorkerAssigned(workerNfo) {
     const workerId = workerNfo.hostname + ':' + workerNfo.port;
 
     if(!workerLastAssigned[workerId]) {
-        markWorkerAsAssigned(workerNfo);
         return Rx.Observable.return(false);
     } else {
         const assignedElapsed = (new Date()) - workerLastAssigned[workerId];
         if(assignedElapsed > workerAssignmentTimeout) {
-            markWorkerAsAssigned(workerNfo);
             return Rx.Observable.return(false);
         } else {
             return Rx.Observable.return(true);
@@ -143,7 +141,28 @@ export function pickWorker() {
                 .flatMap((workers) => Observable.from(workers))
                 .map((worker) => {
                     return { hostname: worker.ip, port: worker.port, timestamp: worker.updated };
-                });
+                })
+                .filter((workerNfo) => checkIfWorkerAssigned(workerNfo))
+                .take(1)
+                .single()
+                .do((workerNfo) => {
+                    markWorkerAsAssigned(workerNfo);
+                    logger.debug('Assigning worker on %s, port %d', workerNfo.hostname, workerNfo.port);
+                })
+                .catch((err) => {
+                    if (!err || err.type !== 'unhandled') {
+                        logger.error(err, 'Could not pick a worker for the request because no available workers were found. Either no workers are running, or there are too many users and all workers are in-use.');
+
+                        var error = new Error('Too many users, please contact help@graphistry.com for private access.');
+                        error.type = 'exhausted';
+                        error.source = err;
+
+                        return Observable.throw(error);
+                    } else {
+                        logger.error(err, 'Unexpected error when picking a worker for the request.')
+                        return Observable.throw(err);
+                    }
+                })
         } else {
             var numWorkers = config.VIZ_LISTEN_PORTS.length;
             var port = config.VIZ_LISTEN_PORTS[nextLocalWorker];
@@ -155,48 +174,4 @@ export function pickWorker() {
             return Observable.of({ port, hostname: VIZ_SERVER_HOST });
         }
     });
-
-    // `concatMap` ensures we subscribe to each successive handshakeIp
-    // Observable sequentially. Since we unsubscribe as soon as we receive the
-    // first valid result, we don't execute any more handshakes than we need to.
-    return ips.concatMap(
-                (workerNfo) => checkIfWorkerAssigned(workerNfo),
-                (workerNfo, success) => success ? workerNfo : false
-            )
-        // Skip events until workerNfo isn't false
-        .skipWhile((workerNfo) => workerNfo === false)
-        // Coerce any errors into a format we can digest
-        .catch((err) => Observable.throw({
-            type: 'unhandled',
-            message: 'assign_worker error',
-            error: err || new Error('Unexpected error while assigning workers.'),
-        }))
-        // take the first workerNfo to succeed
-        .take(1)
-        // throw an error if the source completes without yielding a workerNfo
-        .single()
-        // If `last` throws an error, coerce it into a format we can digest, otherwise re-throw.
-        .catch((err) => {
-            if (!err || err.type !== 'unhandled') {
-                err = {
-                    type: 'exhausted', message: 'assign_worker exhausted search (too many users?)',
-                    error: new Error('Too many users, please contact help@graphistry.com for private access.')
-                };
-            }
-            return Observable.throw(err);
-        })
-        .do({
-            next(worker) {
-                // If we get a worker, we know everything succeeded.
-                logger.debug('Assigning worker on %s, port %d', worker.hostname, worker.port);
-            },
-            error({ type, error, message }) {
-                // If we get a message, log it and send it back.
-                if (type === 'exhausted') {
-                    logger.error(message);
-                } else {
-                    logger.error(error, message);
-                }
-            }
-        });
 }
