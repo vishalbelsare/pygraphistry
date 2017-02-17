@@ -103,18 +103,18 @@ function getWorkers() {
 // Tracks when we last assigned a client to a worker
 export const workerLastAssigned = {};
 
-function checkIfWorkerAssigned(workerNfo) {
+function checkIfWorkerUnassigned(workerNfo) {
     const workerAssignmentTimeout = config.WORKER_CONNECT_TIMEOUT;
     const workerId = workerNfo.hostname + ':' + workerNfo.port;
 
     if(!workerLastAssigned[workerId]) {
-        return Rx.Observable.return(false);
+        return true;
     } else {
         const assignedElapsed = (new Date()) - workerLastAssigned[workerId];
         if(assignedElapsed > workerAssignmentTimeout) {
-            return Rx.Observable.return(false);
+            return true;
         } else {
-            return Rx.Observable.return(true);
+            return false;
         }
     }
 }
@@ -142,7 +142,7 @@ export function pickWorker() {
                 .map((worker) => {
                     return { hostname: worker.ip, port: worker.port, timestamp: worker.updated };
                 })
-                .filter((workerNfo) => checkIfWorkerAssigned(workerNfo))
+                .filter((workerNfo) => checkIfWorkerUnassigned(workerNfo))
                 .take(1)
                 .single()
                 .do((workerNfo) => {
