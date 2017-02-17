@@ -50,6 +50,18 @@ var clDeviceType = {
     'default': ocl.DEVICE_TYPE_ALL
 };
 
+var clMemFlags = {
+    'mem_read_write': ocl.MEM_READ_WRITE,
+    'mem_read_only': ocl.MEM_READ_ONLY,
+    'mem_write_only': ocl.MEM_WRITE_ONLY,
+    'mem_use_host_ptr': ocl.MEM_USE_HOST_PTR,
+    'mem_alloc_host_ptr': ocl.MEM_ALLOC_HOST_PTR,
+    'mem_copy_host_ptr': ocl.MEM_COPY_HOST_PTR,
+    'mem_host_write_only': ocl.MEM_HOST_WRITE_ONLY,
+    'mem_host_read_only': ocl.MEM_HOST_READ_ONLY,
+    'mem_host_no_access': ocl.MEM_HOST_NO_ACCESS
+}
+
 function createSync(renderer, device = 'all', vendor = 'default') {
     var clDevice = clDeviceType[device.toLowerCase()];
     if (!clDevice) {
@@ -342,10 +354,19 @@ var finish = function(queue) {
     ocl.finish(queue);
 };
 
-var createBuffer = Q.promised(function(cl, size, name) {
+var createBuffer = Q.promised(function(cl, size, name, flags) {
     logger.debug("Creating buffer %s, size %d", name, size);
 
-    var buffer = ocl.createBuffer(cl.context, ocl.MEM_READ_WRITE, size);
+    var memFlags;
+    if (!flags) {
+        memFlags = ocl.MEM_READ_WRITE;
+    } else {
+        const map = flags.map((flag) => clMemFlags[flag])
+        memFlags = map.reduce((a, b) => a | b, 0);
+        logger.warn({memFlags, map}, 'Flags set');
+    }
+
+    var buffer = ocl.createBuffer(cl.context, memFlags, size);
 
     if (buffer === null) {
         throw new Error("Could not create the OpenCL buffer");
