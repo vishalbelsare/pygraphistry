@@ -104,6 +104,8 @@ function getWorkers() {
 export const workerLastAssigned = {};
 
 function checkIfWorkerUnassigned(workerNfo) {
+    logger.info({workerLastAssigned}, 'Checking available workers last assigned time');
+
     const workerAssignmentTimeout = config.WORKER_CONNECT_TIMEOUT;
     const workerId = workerNfo.hostname + ':' + workerNfo.port;
 
@@ -137,7 +139,7 @@ export function pickWorker() {
     return Observable.defer(() => {
         if(config.PINGER_ENABLED) {
             return getWorkers()
-                .do((workers) => logger.debug({workers: workers, workerLastAssigned: workerLastAssigned}, 'Queried database for available workers to pick for routing request'))
+                .do((workers) => logger.info({workers: workers, workerLastAssigned: workerLastAssigned}, 'Queried database for available workers to pick for routing request'))
                 .flatMap((workers) => Observable.from(workers))
                 .map((worker) => {
                     return { hostname: worker.ip, port: worker.port, timestamp: worker.updated };
