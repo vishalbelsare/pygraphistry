@@ -134,7 +134,7 @@ function markWorkerAsAssigned(workerNfo) {
  */
 
 export function pickWorker() {
-    const ips = Observable.defer(() => {
+    return Observable.defer(() => {
         if(config.PINGER_ENABLED) {
             return getWorkers()
                 .do((workers) => logger.debug({workers: workers, workerLastAssigned: workerLastAssigned}, 'Queried database for available workers to pick for routing request'))
