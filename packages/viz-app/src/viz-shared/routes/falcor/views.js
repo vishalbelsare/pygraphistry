@@ -28,7 +28,7 @@ export function views(path, base) {
 
                 if ((filters && filters.length > 1) || (exclusions && exclusions.length)) {
                     obs = obs.merge(Observable.of(
-                        $value([...viewPath, 'session', 'status'], 'primary'),
+                        $value([...viewPath, 'session', 'status'], 'default'),
                         $value([...viewPath, 'session', 'progress'], 100),
                         $value([...viewPath, 'session', 'message'], 'Updating graph')
                     ))
