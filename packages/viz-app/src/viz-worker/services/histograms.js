@@ -1,4 +1,5 @@
 import util from 'util';
+import sanitizeHTML from 'sanitize-html';
 import { Observable } from 'rxjs/Observable';
 import * as Scheduler from 'rxjs/scheduler/async'
 import Binning from 'viz-worker/simulator/Binning';
@@ -278,7 +279,7 @@ function normalizeBinResult({ masked, dataType, histogram, selectionMasks }, bin
             values = [key];
             count = value._other.numValues;
         } else if (!(value = binValues && binValues[key]) && binType === 'countBy') {
-            values = [castKeyToNumber ? Number(key) : key];
+            values = [castKeyToNumber ? Number(key) : decodeAndSanitize(key)];
         } else if (value) {
             values = value.isSingular ?
                 [value.representative]:
@@ -304,6 +305,15 @@ function normalizeBinResult({ masked, dataType, histogram, selectionMasks }, bin
         isMasked, bins: binsNormalized,
         valueToBin, tag
     };
+}
+
+function decodeAndSanitize(input) {
+    let decoded = input, value = input;
+    try { decoded = decodeURIComponent(input); }
+    catch (e) { decoded = input; }
+    try { value = sanitizeHTML(decoded); }
+    catch (e) { value = decoded; }
+    return value;
 }
 
 /*
