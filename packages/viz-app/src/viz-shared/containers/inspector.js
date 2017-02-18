@@ -182,15 +182,27 @@ function mapKeyIdToKey(keyId, query) {
 function getTemplatesForTab(templates = [], componentType) {
     if (componentType === 'event') {
         componentType = 'point';
+        return Array.from(templates).filter((template) => (
+            template && !blacklist[template.name] &&
+            template.componentType === componentType &&
+            !template.isInternal && template.name !== 'type'
+        ))
+        .sort(sortTemplatesByName);
     }
     return Array.from(templates).filter((template) => (
         template && !blacklist[template.name] &&
         template.componentType === componentType
-    ));
+    ))
+    .sort(sortTemplatesByName);
 }
 
 function coerceSortKey(templates, sortKey) {
     return sortKey || (
         templates.length > 0 && templates[0] ?
             templates[0].name : '_title');
+}
+
+function sortTemplatesByName(a, b) {
+    return a.name < b.name ? -1 :
+           a.name > b.name ? 1 : 0;
 }
