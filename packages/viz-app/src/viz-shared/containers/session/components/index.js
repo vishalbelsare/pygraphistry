@@ -1,43 +1,51 @@
 import styles from './styles.less';
+import { Label, ProgressBar } from 'react-bootstrap';
 import { TrackInitProgress } from './track-init-progress';
-import { Col, Row, Grid, Modal, ProgressBar } from 'react-bootstrap';
 
-const InitGridProgressBar = TrackInitProgress()(GridProgressBar);
+const TimeoutProgressIndicator = TrackInitProgress()(ProgressIndicator);
 
 export function Session({ status = 'primary', message = '', progress = 100 }) {
-
-    console.log('session update', JSON.stringify({ status, message, progress }));
 
     if (typeof progress !== 'number') {
         progress = 100;
     }
 
     if (status === 'init') {
-        status = progress === 100 ? 'success' : 'primary';
+        status = progress === 100 ? 'success' : 'default';
+        if (message) {
+            message = `${message} (${Math.round(progress)}%)`;
+        }
+    }
+
+    if (status === 'success') {
+        return null;
     }
 
     return (
-        <Modal autoFocus={false}
-               className={styles['session']}
-               animation={progress !== 100} backdrop='static'
-               show={status !== 'success' || progress !== 100}>
-            <Modal.Body style={{ backgroundColor: 'transparent' }}>
-                <InitGridProgressBar status={status} message={message} progress={progress}/>
-            </Modal.Body>
-        </Modal>
+        <TimeoutProgressIndicator className={styles['session']}
+                                  style={{ transform: `translate3d(-6px, 3px, 0)` }}
+                                  status={status} message={message} progress={progress}/>
     );
 }
 
-function GridProgressBar({ status = 'primary', reload, progress = 100,
-                           message = `Locating Graphistry's farm` }) {
+const statusStyle = { marginRight: 3 };
+const defaultStatusStyle = { backgroundColor: 'transparent', marginRight: 3 };
+
+function ProgressIndicator({ className, style = {},
+                             message = `Locating Graphistry's farm`,
+                             reload, progress = 100, status = 'default' }) {
     return (
-        <Grid fluid onClick={reload}>
-            <Row>
-                <Col xs={12} md={6} mdOffset={3} lg={6} lgOffset={3}>
-                    <ProgressBar style={{ cursor: reload && 'pointer' || 'initial' }}
-                                 active now={progress} bsStyle={status} label={message}/>
-                </Col>
-            </Row>
-        </Grid>
+        <p onClick={reload} className={className} style={{
+                ...style, cursor: reload && 'pointer' || 'initial'
+            }}>
+            <Label bsStyle={status} style={status === 'default' && defaultStatusStyle || statusStyle}>
+                {message}
+            </Label>
+            {status === 'default' && (!!message &&
+                <span className='Select-loading'/> ||
+                <i className={styles['vbo-loading'] + ' fa fa-bolt'}/>) ||
+                undefined
+            }
+        </p>
     );
 }

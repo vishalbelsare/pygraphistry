@@ -1,11 +1,19 @@
 @import '~viz-shared/index.less';
 
 .session {
-    z-index: @modal-z;
-    background-color: transparent;
-    :global(.modal-content) {
-        border: none;
-        box-shadow: none;
-        background-color: transparent;
-    }
+    top: 0;
+    right: 100%;
+    color: white;
+    z-index: @meter-z;
+    text-align: right;
+    position: absolute;
+    text-shadow: 0px 0px 30px black;
+}
+
+.vbo-loading {
+    width: 16;
+    height: 16;
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
 }

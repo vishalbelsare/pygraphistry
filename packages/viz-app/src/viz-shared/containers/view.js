@@ -53,9 +53,18 @@ let View = ({
                   defaultSize={0.2}
                   isVisible={isRightPanelOpen}
                   dockStyle={{
+                      opacity: 1,
                       boxShadow: `none`,
+                      overflow: `visible`,
+                      background: `transparent`
+                  }}
+                  dockHiddenStyle={{
+                      opacity: 1,
+                      boxShadow: `none`,
+                      overflow: `visible`,
                       background: `transparent`
                   }}>
+                <Session data={session}/>
                 <Panel side='right'
                        data={right}
                        key='right-panel'
@@ -85,7 +94,6 @@ let View = ({
             )}
             </Dock>
             <Toolbar key='toolbar' data={toolbar} selectToolbarItem={selectToolbarItem}/>
-            <Session data={session}/>
         </div>
     );
 };

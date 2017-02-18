@@ -1,7 +1,7 @@
 import mapPropsStream from 'recompose/mapPropsStream';
 import { Col, Row, Grid, ProgressBar } from 'react-bootstrap';
 
-export function TrackInitProgress(latencyThreshold = 8000, refreshThreshold = 12000) {
+export function TrackInitProgress(latencyThreshold = 12000, refreshThreshold = 8000) {
     return mapPropsStream((props) => {
 
         function reload() {
@@ -18,12 +18,12 @@ export function TrackInitProgress(latencyThreshold = 8000, refreshThreshold = 12
                     return props
                         .timeout(refreshThreshold)
                         .catch(updateWithRefreshMessage)
-                        .startWith({ message: `Herding stray GPUs` });
+                        .startWith({ status: 'default', message: `Herding stray GPUs` });
                 }
 
                 function updateWithRefreshMessage(error, props) {
                     return props.startWith({
-                        status: 'warning', reload, progress: 100,
+                        status: 'danger', reload, progress: 100,
                         message: `Something went wrong, click here to try again`
                     });
                 }
