@@ -54,9 +54,9 @@ export function expressions(path, base) {
             .mergeMap(({ view, workbook, expression, values }) => {
                 const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
                 return Observable.from(values.concat(
-                        $value(`${viewPath}.session.status`, 'primary'),
+                        $value(`${viewPath}.session.status`, 'default'),
                         $value(`${viewPath}.session.progress`, 100),
-                        $value(`${viewPath}.session.message`, 'Filtering nodes')
+                        $value(`${viewPath}.session.message`, 'Updating graph')
                     ))
                     .concat(maskDataframe({ view })
                         .subscribeOn(Scheduler.async, 100)
@@ -182,9 +182,9 @@ export function addExpressionHandler({
 
             return Observable
                 .from(pathValues.concat(
-                    $value(`${viewPath}.session.status`, 'primary'),
+                    $value(`${viewPath}.session.status`, 'default'),
                     $value(`${viewPath}.session.progress`, 100),
-                    $value(`${viewPath}.session.message`, 'Filtering nodes')
+                    $value(`${viewPath}.session.message`, 'Updating graph')
                 ))
                 .concat(maskDataframe({ view })
                     .subscribeOn(Scheduler.async, 100)
@@ -289,9 +289,9 @@ export function removeExpressionHandler({
 
             return Observable
                 .from(pathValues.concat(
-                    $value(`${viewPath}.session.status`, 'primary'),
+                    $value(`${viewPath}.session.status`, 'default'),
                     $value(`${viewPath}.session.progress`, 100),
-                    $value(`${viewPath}.session.message`, 'Filtering nodes')
+                    $value(`${viewPath}.session.message`, 'Updating graph')
                 ))
                 .concat(maskDataframe({ view })
                     .subscribeOn(Scheduler.async, 100)

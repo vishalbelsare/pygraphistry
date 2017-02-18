@@ -30,7 +30,7 @@ export function views(path, base) {
                     obs = obs.merge(Observable.of(
                         $value([...viewPath, 'session', 'status'], 'primary'),
                         $value([...viewPath, 'session', 'progress'], 100),
-                        $value([...viewPath, 'session', 'message'], 'Filtering nodes')
+                        $value([...viewPath, 'session', 'message'], 'Updating graph')
                     ))
                     .concat(maskDataframe({ view })
                         .subscribeOn(Scheduler.async, 100)

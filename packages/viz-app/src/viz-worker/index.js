@@ -136,6 +136,7 @@ export function vizWorker(app, server, sockets, caches) {
                 const { nBody } = view;
                 const { interactions, interactionsLoop } = nBody;
 
+                vizServer.updateSession = sendSessionUpdate.bind(null, sendUpdate, view);
                 vizServer.animationStep = {
                     interact(x) {
                         interactions.next(x);
@@ -154,7 +155,7 @@ export function vizWorker(app, server, sockets, caches) {
                 shared.skip(1),
                 shared.take(1)
                     .let(sendSessionUpdate(sendUpdate, {
-                        progress: 100 * 10/10, status: 'init', message: 'Applying filters'
+                        progress: 100 * 8/10, status: 'init', message: 'Applying filters'
                     }))
                     .mergeMap(maskDataframe, ({ view, nBody, workbook }) => ({
                         view, nBody, workbook
@@ -180,7 +181,7 @@ export function vizWorker(app, server, sockets, caches) {
                         ({ view, nBody, workbook }) => ({ view, nBody, workbook })
                     )
                     .let(sendSessionUpdate(sendUpdate, {
-                        progress: 100 * 10/10, status: 'init', message: null
+                        progress: 100 * 9/10, status: 'init', message: 'Loading graph'
                     }))
                     .do(() => logger.trace('finished sending initial falcor update'))
                     .do(({ nBody }) => {

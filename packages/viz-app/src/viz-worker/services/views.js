@@ -67,7 +67,7 @@ function assignViewToWorkbook(workbook, view) {
     if (!view.session) {
         view.session = {
             status: 'init',
-            progress: 100 * 5/10,
+            progress: 100 * 1/10,
             message: `Locating Graphistry's farm`
         };
     }

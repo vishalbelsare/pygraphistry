@@ -40,7 +40,7 @@ function loadAndUnpackVGraph(config, s3Cache, updateSession) {
         const unpack = unpackers[dataset.type];
 
         return updateSession({
-            progress: 100 * 5/10,
+            progress: 100 * 2/10,
             status: 'init',
             message: 'Loading dataset'
         })()

@@ -513,7 +513,7 @@ function runLoaders (loaders) {
 **/
 function load (graph, dataset, config, s3Cache, updateSession) {
     return updateSession({
-        progress: 100 * 5/10,
+        progress: 100 * 3/10,
         status: 'init',
         message: 'Decoding dataset'
     })()
@@ -609,7 +609,7 @@ function decode0 (graph, vg, metadata, updateSession) {
 
     if (vertices === undefined) {
         vertices = updateSession({
-            progress: 100 * 5/10,
+            progress: 100 * 4/10,
             status: 'init',
             message: 'Initializing positions'
         })().map(() =>
@@ -647,19 +647,19 @@ function decode0 (graph, vg, metadata, updateSession) {
         });
 
         return updateSession({
-            progress: 100 * 6/10,
+            progress: 100 * 5/10,
             status: 'init',
             message: 'Binding nodes'
         })()
         .mergeMap(() => graph.setVertices(vertices))
         .let(updateSession({
-            progress: 100 * 7/10,
+            progress: 100 * 6/10,
             status: 'init',
             message: 'Binding edges'
         }))
         .mergeMap(() => graph.setEdges(edges, vertices))
         .let(updateSession({
-            progress: 100 * 8/10,
+            progress: 100 * 7/10,
             status: 'init',
             message: 'Binding everything else'
         }))
@@ -1050,7 +1050,7 @@ function decode1 (graph, vg, metadata, updateSession) {
 
     if (vertices === undefined) {
         vertices = updateSession({
-            progress: 100 * 5/10,
+            progress: 100 * 4/10,
             status: 'init',
             message: 'Initializing positions'
         })().map(() =>
@@ -1091,19 +1091,19 @@ function decode1 (graph, vg, metadata, updateSession) {
         });
 
         return updateSession({
-            progress: 100 * 6/10,
+            progress: 100 * 5/10,
             status: 'init',
             message: 'Binding nodes'
         })()
         .mergeMap(() => graph.setVertices(vertices))
         .let(updateSession({
-            progress: 100 * 7/10,
+            progress: 100 * 6/10,
             status: 'init',
             message: 'Binding edges'
         }))
         .mergeMap(() => graph.setEdges(edges, vertices))
         .let(updateSession({
-            progress: 100 * 8/10,
+            progress: 100 * 7/10,
             status: 'init',
             message: 'Binding everything else'
         }))
