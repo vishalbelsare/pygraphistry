@@ -118,10 +118,13 @@ function loadDataFrameAndUpdateBuffers({ view }) {
         view.scene = assignHintsToScene(view.scene, dataframe);
         view.columns = createColumns(dataframe, dataframe.getColumnsByType(true));
         if (dataframe.pointTypeIncludesEventID) {
-            view.inspector.tabs.push({
-                name: 'Events',
-                componentType: 'event'
-            });
+            view.inspector.openTab = 'event';
+            if (view.inspector.tabs[0].componentType !== 'event') {
+                view.inspector.tabs.unshift({
+                    name: 'Events',
+                    componentType: 'event'
+                });
+            }
         }
         return view;
     });
