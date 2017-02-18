@@ -95,7 +95,9 @@ const SparklineBarInfo = ({ values, color, binType, dataType, globalCount, maske
     if (binType === 'countBy') {
         rows.push([
             <p>CATEGORY</p>,
-            <p>{defaultFormat(values[0], dataType)}</p>
+            <p dangerouslySetInnerHTML={{
+                __html: defaultFormat(values[0], dataType)
+            }}/>
         ]);
     } else if (binType === 'histogram') {
         if (values.length === 1) {

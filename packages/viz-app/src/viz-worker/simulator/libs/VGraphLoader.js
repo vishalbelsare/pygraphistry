@@ -6,6 +6,8 @@ const moment = require('moment');
 const Color = require('color');
 const d3Scale = require('d3-scale');
 
+import { Observable } from 'rxjs/Observable';
+
 const util = require('../util.js');
 const weaklycc = require('../weaklycc.js');
 const palettes = require('../palettes.js');
@@ -509,11 +511,18 @@ function runLoaders (loaders) {
 /**
  * Load the raw data from the dataset object from S3
 **/
-function load (graph, dataset) {
-    const vg = protoBufDefinitions.VectorGraph.decode(dataset.body);
-    logger.trace('attaching vgraph to simulator');
-    graph.simulator.vgraph = vg;
-    return decodersByVersion[vg.version](graph, vg, dataset.metadata);
+function load (graph, dataset, config, s3Cache, updateSession) {
+    return updateSession({
+        progress: 100 * 3/10,
+        status: 'init',
+        message: 'Decoding dataset'
+    })()
+    .mergeMap(() => {
+        const vg = protoBufDefinitions.VectorGraph.decode(dataset.body);
+        logger.trace('attaching vgraph to simulator');
+        graph.simulator.vgraph = vg;
+        return decodersByVersion[vg.version](graph, vg, dataset.metadata, updateSession);
+    });
 }
 
 /** @typedef {Object} DataframeMetadataByColumn
@@ -578,7 +587,7 @@ function loadDataframe (dataframe, attributeObjects, numPoints, numEdges, aliase
 }
 
 
-function decode0 (graph, vg, metadata) {
+function decode0 (graph, vg, metadata, updateSession) {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
           vg.version, vg.name, vg.vertexCount, vg.edgeCount);
 
@@ -599,56 +608,81 @@ function decode0 (graph, vg, metadata) {
     let vertices = lookupInitialPosition(vg, attributes);
 
     if (vertices === undefined) {
-        // clientNotification.loadingStatus(graph.socket, 'Initializing positions');
-        vertices = computeInitialPositions(vg.vertexCount, edges, dimensions, graph.socket);
+        vertices = updateSession({
+            progress: 100 * 4/10,
+            status: 'init',
+            message: 'Initializing positions'
+        })().map(() =>
+            computeInitialPositions(vg.vertexCount, edges, dimensions, graph.socket)
+        );
+    } else {
+        vertices = Observable.of(vertices);
     }
 
-    let loaders = attributeLoaders(graph);
-    const mapper = getMapper(metadata.mapper);
-    loaders = wrap(mapper.mappings, loaders);
-    logger.trace('Attribute loaders:', loaders);
+    return vertices.mergeMap((vertices) => {
 
-    _.each(attributes, (attr) => {
-        const attributeName = attr.name;
-        if (!(attributeName in loaders)) {
-            logger.debug('Skipping unmapped attribute', attributeName);
-            return;
-        }
+        let loaders = attributeLoaders(graph);
+        const mapper = getMapper(metadata.mapper);
+        loaders = wrap(mapper.mappings, loaders);
+        logger.trace('Attribute loaders:', loaders);
 
-        const loaderArray = loaders[attributeName];
-
-        _.each(loaderArray, (loader) => {
-            if (attr.target !== loader.target) {
-                logger.warn('Vertex/Node attribute mismatch for ' + attributeName);
-            } else if (!_.contains(loader.type, attr.type)) {
-                logger.warn('Expected type in ' + loader.type + ', but got ' + attr.type + ' for ' + attributeName);
-            } else {
-                loader.values = attr.values;
+        _.each(attributes, (attr) => {
+            const attributeName = attr.name;
+            if (!(attributeName in loaders)) {
+                logger.debug('Skipping unmapped attribute', attributeName);
+                return;
             }
+
+            const loaderArray = loaders[attributeName];
+
+            _.each(loaderArray, (loader) => {
+                if (attr.target !== loader.target) {
+                    logger.warn('Vertex/Node attribute mismatch for ' + attributeName);
+                } else if (!_.contains(loader.type, attr.type)) {
+                    logger.warn('Expected type in ' + loader.type + ', but got ' + attr.type + ' for ' + attributeName);
+                } else {
+                    loader.values = attr.values;
+                }
+            });
         });
 
-    });
-
-    return graph.setVertices(vertices)
-        .then(() => graph.setEdges(edges, vertices))
-        .then(() => {
-            calculateAndStoreCommunities(graph);
-            calculateAndStoreDefaultPointSizeColumns(graph);
-            return runLoaders(loaders);
-        })
-        .then(() => graph)
-        .fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
-    // return clientNotification.loadingStatus(graph.socket, 'Binding nodes')
-    //     .then(() => graph.setVertices(vertices))
-    //     .then(() => clientNotification.loadingStatus(graph.socket, 'Binding edges'))
-    //     .then(() => graph.setEdges(edges, vertices))
-    //     .then(() => clientNotification.loadingStatus(graph.socket, 'Binding everything else'))
-    //     .then(() => {
-    //         calculateAndStoreCommunities(graph);
-    //         calculateAndStoreDefaultPointSizeColumns(graph);
-    //         return runLoaders(loaders);
-    //     }).then(() => graph)
-    //     .fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
+        return updateSession({
+            progress: 100 * 5/10,
+            status: 'init',
+            message: 'Binding nodes'
+        })()
+        .mergeMap(() => graph.setVertices(vertices))
+        .let(updateSession({
+            progress: 100 * 6/10,
+            status: 'init',
+            message: 'Binding edges'
+        }))
+        .mergeMap(() => graph.setEdges(edges, vertices))
+        .let(updateSession({
+            progress: 100 * 7/10,
+            status: 'init',
+            message: 'Binding everything else'
+        }))
+        .mergeMap(
+            () => {
+                calculateAndStoreCommunities(graph);
+                calculateAndStoreDefaultPointSizeColumns(graph);
+                return runLoaders(loaders);
+            },
+            () => graph
+        );
+        // return clientNotification.loadingStatus(graph.socket, 'Binding nodes')
+        //     .then(() => graph.setVertices(vertices))
+        //     .then(() => clientNotification.loadingStatus(graph.socket, 'Binding edges'))
+        //     .then(() => graph.setEdges(edges, vertices))
+        //     .then(() => clientNotification.loadingStatus(graph.socket, 'Binding everything else'))
+        //     .then(() => {
+        //         calculateAndStoreCommunities(graph);
+        //         calculateAndStoreDefaultPointSizeColumns(graph);
+        //         return runLoaders(loaders);
+        //     }).then(() => graph)
+        //     .fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
+    }).catch(log.makeRxErrorHandler(logger, 'Failure in VGraphLoader decode0'));
 }
 
 
@@ -995,7 +1029,7 @@ function checkMetadataAgainstVGraph (metadata, vg, vgAttributes) {
  * @param {DataframeMetadata} metadata
  * @returns {Promise<U>}
  */
-function decode1 (graph, vg, metadata) {
+function decode1 (graph, vg, metadata, updateSession) {
     logger.debug('Decoding VectorGraph (version: %d, name: %s, nodes: %d, edges: %d)',
                  vg.version, vg.name, vg.vertexCount, vg.edgeCount);
 
@@ -1013,59 +1047,87 @@ function decode1 (graph, vg, metadata) {
     const dimensions = [1, 1];
 
     let vertices = lookupInitialPosition(vg, _.values(vgAttributes.nodes));
+
     if (vertices === undefined) {
-        // clientNotification.loadingStatus(graph.socket, 'Initializing positions');
-        vertices = computeInitialPositions(vg.vertexCount, edges, dimensions, graph.socket);
+        vertices = updateSession({
+            progress: 100 * 4/10,
+            status: 'init',
+            message: 'Initializing positions'
+        })().map(() =>
+            computeInitialPositions(vg.vertexCount, edges, dimensions, graph.socket)
+        );
+    } else {
+        vertices = Observable.of(vertices);
     }
 
-    let loaders = attributeLoaders(graph);
-    const mapper = getMapper(metadata.mapper);
-    loaders = wrap(mapper.mappings, loaders);
-    logger.trace('Attribute loaders:', loaders);
+    return vertices.mergeMap((vertices) => {
 
-    const encodingsByTarget = _.map(ColumnVectorTargets,
-        (targetType) => getSimpleEncodings(graphInfo[accessorForTargetType[targetType]].encodings,
-            loaders, targetType));
-    const shapeMappings = getShapeMappings(graphInfo);
+        let loaders = attributeLoaders(graph);
+        const mapper = getMapper(metadata.mapper);
+        loaders = wrap(mapper.mappings, loaders);
+        logger.trace('Attribute loaders:', loaders);
 
-    const flatAttributeArray = _.values(vgAttributes.nodes).concat(_.values(vgAttributes.edges));
-    const allEncodings =  _.extend({}, encodingsByTarget[VERTEX], encodingsByTarget[EDGE], shapeMappings);
-    loadDataframe(graph.dataframe, flatAttributeArray, vg.vertexCount, vg.edgeCount, allEncodings, graphInfo);
+        const encodingsByTarget = _.map(ColumnVectorTargets,
+            (targetType) => getSimpleEncodings(graphInfo[accessorForTargetType[targetType]].encodings,
+                loaders, targetType));
+        const shapeMappings = getShapeMappings(graphInfo);
 
-    _.each(loaders, (loaderArray, graphProperty) => {
-        _.each(loaderArray, (loader) => {
-            const encodings = encodingsByTarget[loader.target];
-            const attributes = vgAttributes[accessorForTargetType[loader.target]];
-            if (graphProperty in encodings) {
-                const attributeName = encodings[graphProperty];
-                logger.debug('Loading values for', graphProperty, 'from attribute', attributeName);
-                loader.values = attributes[attributeName].values;
-            } else {
-                logger.debug('Loading default values for', graphProperty);
-            }
+        const flatAttributeArray = _.values(vgAttributes.nodes).concat(_.values(vgAttributes.edges));
+        const allEncodings =  _.extend({}, encodingsByTarget[VERTEX], encodingsByTarget[EDGE], shapeMappings);
+        loadDataframe(graph.dataframe, flatAttributeArray, vg.vertexCount, vg.edgeCount, allEncodings, graphInfo);
+
+        _.each(loaders, (loaderArray, graphProperty) => {
+            _.each(loaderArray, (loader) => {
+                const encodings = encodingsByTarget[loader.target];
+                const attributes = vgAttributes[accessorForTargetType[loader.target]];
+                if (graphProperty in encodings) {
+                    const attributeName = encodings[graphProperty];
+                    logger.debug('Loading values for', graphProperty, 'from attribute', attributeName);
+                    loader.values = attributes[attributeName].values;
+                } else {
+                    logger.debug('Loading default values for', graphProperty);
+                }
+            });
         });
-    });
 
-    return graph.setVertices(vertices)
-        .then(() => graph.setEdges(edges, vertices))
-        .then(() => {
-            calculateAndStoreCommunities(graph);
-            calculateAndStoreDefaultPointSizeColumns(graph);
-            return runLoaders(loaders);
-        })
-        .then(() => graph)
-        .fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
-    // return clientNotification.loadingStatus(graph.socket, 'Binding nodes')
-    //     .then(() => graph.setVertices(vertices))
-    //     .then(() => clientNotification.loadingStatus(graph.socket, 'Binding edges'))
-    //     .then(() => graph.setEdges(edges, vertices))
-    //     .then(() => clientNotification.loadingStatus(graph.socket, 'Binding everything else'))
-    //     .then(() => {
-    //         calculateAndStoreCommunities(graph);
-    //         calculateAndStoreDefaultPointSizeColumns(graph);
-    //         return runLoaders(loaders);
-    //     }).then(() => graph)
-    //     .fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
+        return updateSession({
+            progress: 100 * 5/10,
+            status: 'init',
+            message: 'Binding nodes'
+        })()
+        .mergeMap(() => graph.setVertices(vertices))
+        .let(updateSession({
+            progress: 100 * 6/10,
+            status: 'init',
+            message: 'Binding edges'
+        }))
+        .mergeMap(() => graph.setEdges(edges, vertices))
+        .let(updateSession({
+            progress: 100 * 7/10,
+            status: 'init',
+            message: 'Binding everything else'
+        }))
+        .mergeMap(
+            () => {
+                calculateAndStoreCommunities(graph);
+                calculateAndStoreDefaultPointSizeColumns(graph);
+                return runLoaders(loaders);
+            },
+            () => graph
+        );
+        // return clientNotification.loadingStatus(graph.socket, 'Binding nodes')
+        //     .then(() => graph.setVertices(vertices))
+        //     .then(() => clientNotification.loadingStatus(graph.socket, 'Binding edges'))
+        //     .then(() => graph.setEdges(edges, vertices))
+        //     .then(() => clientNotification.loadingStatus(graph.socket, 'Binding everything else'))
+        //     .then(() => {
+        //         calculateAndStoreCommunities(graph);
+        //         calculateAndStoreDefaultPointSizeColumns(graph);
+        //         return runLoaders(loaders);
+        //     }).then(() => graph)
+        //     .fail(log.makeQErrorHandler(logger, 'Failure in VGraphLoader'));
+    })
+    .catch(log.makeRxErrorHandler(logger, 'Failure in VGraphLoader decode1'));
 }
 
 function notifyClientOfSizesForAllocation (socket, edgeCount, vertexCount) {

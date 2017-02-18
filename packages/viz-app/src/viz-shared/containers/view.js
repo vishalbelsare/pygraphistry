@@ -4,6 +4,7 @@ import { Overlay } from 'react-bootstrap';
 import { Scene } from 'viz-shared/containers/scene';
 import { Panel } from 'viz-shared/containers/panel';
 import { Toolbar } from 'viz-shared/containers/toolbar';
+import { Session } from 'viz-shared/containers/session';
 import { Settings } from 'viz-shared/containers/settings';
 import { selectToolbarItem } from 'viz-shared/actions/toolbar';
 
@@ -18,6 +19,7 @@ import { selectLabel } from 'viz-shared/actions/labels';
 import { selectInspectorRow } from 'viz-shared/actions/inspector';
 
 let View = ({
+    session,
     selectLabel,
     sceneMouseMove,
     sceneTouchStart,
@@ -51,9 +53,18 @@ let View = ({
                   defaultSize={0.2}
                   isVisible={isRightPanelOpen}
                   dockStyle={{
+                      opacity: 1,
                       boxShadow: `none`,
+                      overflow: `visible`,
+                      background: `transparent`
+                  }}
+                  dockHiddenStyle={{
+                      opacity: 1,
+                      boxShadow: `none`,
+                      overflow: `visible`,
                       background: `transparent`
                   }}>
+                <Session data={session}/>
                 <Panel side='right'
                        data={right}
                        key='right-panel'
@@ -89,12 +100,13 @@ let View = ({
 
 View = container({
     renderLoading: true,
-    fragment: ({ scene, layout, toolbar, panels = {} } = {}) => {
+    fragment: ({ scene, layout, toolbar, session, panels = {} } = {}) => {
         return `{
             pruneOrphans,
             scene: ${ Scene.fragment(scene) },
             layout: ${ Settings.fragment(layout) },
             toolbar: ${ Toolbar.fragment(toolbar) },
+            session: ${ Session.fragment(session) },
             panels: {
                 left: ${ Panel.fragment(panels.left, { side: 'left' }) },
                 right: ${ Panel.fragment(panels.right, { side: 'right' }) },

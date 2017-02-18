@@ -3,7 +3,6 @@ import zlib from 'zlib';
 import { Observable } from 'rxjs';
 import { cache as Cache, logger as commonLogger } from '@graphistry/common';
 
-
 const log = commonLogger.createLogger('viz-worker:services:datasets');
 
 const downloaders = {

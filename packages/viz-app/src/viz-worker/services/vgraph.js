@@ -20,15 +20,15 @@ const unpackers = {
     'jsonMeta': loadVGraphJSON
 };
 
-export function loadVGraph(view, config, s3Cache) {
+export function loadVGraph(view, config, s3Cache, updateSession) {
     return Observable
         .of({ view, loaded: false })
-        .expand(loadAndUnpackVGraph(config, s3Cache))
+        .expand(loadAndUnpackVGraph(config, s3Cache, updateSession))
         .takeLast(1)
         .mergeMap(loadDataFrameAndUpdateBuffers)
 }
 
-function loadAndUnpackVGraph(config, s3Cache) {
+function loadAndUnpackVGraph(config, s3Cache, updateSession) {
     return function loadAndUnpackVGraph({ view, loaded }) {
 
         if (loaded === true) {
@@ -39,21 +39,26 @@ function loadAndUnpackVGraph(config, s3Cache) {
         const { dataset } = nBody;
         const unpack = unpackers[dataset.type];
 
-        return loadDataset(dataset, config, s3Cache)
-            .map((buffer) => ({ metadata: dataset, body: buffer }))
-            .mergeMap(
-                (tuple) => unpack(nBody, tuple, config, s3Cache),
-                (tuple, nBodyOrTuple) => {
-                    let loaded = false;
-                    if (nBodyOrTuple.loaded === false) {
-                        view.nBody = nBodyOrTuple.nBody;
-                    } else {
-                        loaded = true;
-                        view.nBody = nBodyOrTuple;
-                    }
-                    return { view, loaded };
+        return updateSession({
+            progress: 100 * 2/10,
+            status: 'init',
+            message: 'Loading dataset'
+        })()
+        .mergeMap(() => loadDataset(dataset, config, s3Cache))
+        .map((buffer) => ({ metadata: dataset, body: buffer }))
+        .mergeMap(
+            (tuple) => unpack(nBody, tuple, config, s3Cache, updateSession),
+            (tuple, nBodyOrTuple) => {
+                let loaded = false;
+                if (nBodyOrTuple.loaded === false) {
+                    view.nBody = nBodyOrTuple.nBody;
+                } else {
+                    loaded = true;
+                    view.nBody = nBodyOrTuple;
                 }
-            );
+                return { view, loaded };
+            }
+        );
     }
 }
 
@@ -67,7 +72,7 @@ function loadVGraphJSON(nBody, { metadata: dataset, body: buffer }, config, s3Ca
         url: url.parse(datasource.url)
     };
 
-    return Observable.of({ nBody, loaded: false })
+    return Observable.of({ nBody, loaded: false });
 }
 
 function loadDataFrameAndUpdateBuffers({ view }) {
@@ -113,10 +118,13 @@ function loadDataFrameAndUpdateBuffers({ view }) {
         view.scene = assignHintsToScene(view.scene, dataframe);
         view.columns = createColumns(dataframe, dataframe.getColumnsByType(true));
         if (dataframe.pointTypeIncludesEventID) {
-            view.inspector.tabs.push({
-                name: 'Events',
-                componentType: 'event'
-            });
+            view.inspector.openTab = 'event';
+            if (view.inspector.tabs[0].componentType !== 'event') {
+                view.inspector.tabs.unshift({
+                    name: 'Events',
+                    componentType: 'event'
+                });
+            }
         }
         return view;
     });

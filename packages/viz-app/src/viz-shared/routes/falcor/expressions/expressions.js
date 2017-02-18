@@ -52,8 +52,12 @@ export function expressions(path, base) {
             })
             .filter(({ values }) => values.length > 0)
             .mergeMap(({ view, workbook, expression, values }) => {
-                return Observable
-                    .from(values)
+                const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+                return Observable.from(values.concat(
+                        $value(`${viewPath}.session.status`, 'default'),
+                        $value(`${viewPath}.session.progress`, 100),
+                        $value(`${viewPath}.session.message`, 'Updating graph')
+                    ))
                     .concat(maskDataframe({ view })
                         .subscribeOn(Scheduler.async, 100)
                         .mergeMap(({ view }) => {
@@ -61,7 +65,6 @@ export function expressions(path, base) {
                             const invalidations = [];
                             const { selection } = view;
                             const { histograms = [] } = view;
-                            const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
 
                             if (expression.enabled === true || (
                                 'enabled' in expressionProps)) {
@@ -87,7 +90,11 @@ export function expressions(path, base) {
                                         ${viewPath}.selection.histogramsById`));
                                 }
                             }
-                            return invalidations;
+                            return invalidations.concat(
+                                $value(`${viewPath}.session.status`, 'success'),
+                                $value(`${viewPath}.session.progress`, 100),
+                                $value(`${viewPath}.session.message`, null)
+                            );
                         })
                     );
             });
@@ -174,30 +181,20 @@ export function addExpressionHandler({
             }
 
             return Observable
-                .from(pathValues)
+                .from(pathValues.concat(
+                    $value(`${viewPath}.session.status`, 'default'),
+                    $value(`${viewPath}.session.progress`, 100),
+                    $value(`${viewPath}.session.message`, 'Updating graph')
+                ))
                 .concat(maskDataframe({ view })
                     .subscribeOn(Scheduler.async, 100)
-                    .mergeMapTo(invalidations)
+                    .mergeMap(() => invalidations.concat(
+                        $value(`${viewPath}.session.status`, 'success'),
+                        $value(`${viewPath}.session.progress`, 100),
+                        $value(`${viewPath}.session.message`, null)
+                    ))
                 );
         });
-        // .catch(captureErrorStacks)
-        // .catch((err) => {
-
-        //     if (!err.workbook) {
-        //         return Observable.throw(err);
-        //     }
-
-        //     const { workbook, view, errors } = err;
-        //     const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
-
-        //     const { [listName]: list } = view;
-        //     const newLengthPath = `${viewPath}['${listName}'].length`;
-        //     const newItemPath = `${viewPath}['${listName}'][${list.length}]`;
-        //     return [
-        //         $value(newItemPath, $error(errors)),
-        //         $value(newLengthPath, list.length++),
-        //     ];
-        // });
     }
 }
 
@@ -291,10 +288,18 @@ export function removeExpressionHandler({
             }
 
             return Observable
-                .from(pathValues)
+                .from(pathValues.concat(
+                    $value(`${viewPath}.session.status`, 'default'),
+                    $value(`${viewPath}.session.progress`, 100),
+                    $value(`${viewPath}.session.message`, 'Updating graph')
+                ))
                 .concat(maskDataframe({ view })
                     .subscribeOn(Scheduler.async, 100)
-                    .mergeMapTo(invalidations)
+                    .mergeMap(() => invalidations.concat(
+                        $value(`${viewPath}.session.status`, 'success'),
+                        $value(`${viewPath}.session.progress`, 100),
+                        $value(`${viewPath}.session.message`, null)
+                    ))
                 );
         });
     }

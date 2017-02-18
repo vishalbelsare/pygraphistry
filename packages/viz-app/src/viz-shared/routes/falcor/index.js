@@ -6,6 +6,7 @@ import { views } from './views';
 import { labels } from './labels';
 import { layout } from './layout';
 import { toolbar } from './toolbar';
+import { session } from './session';
 import { selection } from './selection';
 import { workbooks } from './workbooks';
 import { scene, camera } from './scene';
@@ -35,6 +36,7 @@ export function routes(services) {
 
         labels(['workbook', 'view'], `${view}`)(services),
         layout(['workbook', 'view'], `${view}`)(services),
+        session(['workbook', 'view'], `${view}`)(services),
         selection(['workbook', 'view'], `${view}`)(services),
 
         inspector(['workbook', 'view'], `${view}`)(services),

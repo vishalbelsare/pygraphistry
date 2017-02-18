@@ -60,13 +60,6 @@ export function inspector(path, base) {
         function getRowLengthOrValueRefsByQuery(rowsPath) {
 
             const { sortKeys, sortOrders, searchTerms, componentTypes } = rowsPath;
-            // const componentTypes = [].concat(rowsPath[rowsPath.length -
-            //     Number(Boolean(searchTerms)) -
-            //     Number(Boolean(sortOrders)) -
-            //     Number(Boolean(sortKeys)) -
-            //     2
-            // ]);
-
             const getRowValuesHandler = getHandler(path, (context) => filterRowsByQuery({
                 ...context, componentTypes, searchTerms, sortKeys, sortOrders
             }));
@@ -86,7 +79,7 @@ export function inspector(path, base) {
 
             const workbookIds = [].concat(path[1]);
             const viewIds = [].concat(path[3]);
-            // const componentTypes = [].concat(path[path.length - 4]);
+
             const { componentTypes = [], rowIndexes = [], columnNames = [] } = path;
 
             return loadRowsByIndexAndType({

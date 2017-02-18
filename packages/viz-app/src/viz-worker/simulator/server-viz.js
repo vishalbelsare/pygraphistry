@@ -1819,6 +1819,16 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
 
     clientReady.subscribe(logger.debug.bind(logger, 'CLIENT STATUS'), log.makeRxErrorHandler(logger, 'clientReady'));
 
+    const { updateSession } = this;
+    if (updateSession) {
+        clientReady.debounceTime(200).filter(Boolean).let(updateSession({
+            message: null,
+            status: 'init',
+            progress: 100 * 10/10
+        }))
+        .subscribe({});
+    }
+
     logger.trace('SETTING UP CLIENT EVENT LOOP ===================================================================');
     let step = 0;
     let lastVersions = null;
@@ -1858,6 +1868,14 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     })
                     .map(_.constant(VBOs));
             })
+            .publish((source) => !updateSession ? source : source.merge(source
+                .let(updateSession({
+                    message: null,
+                    status: 'default',
+                    progress: 100 * 10/10,
+                }))
+                .ignoreElements())
+            )
             .flatMap((VBOs) => {
                 logger.trace('3. tell client about availability');
 
@@ -1912,11 +1930,11 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
                     // return observableCallback;
                     // return updateVBOCommand.sendWithObservableResult(metadata);
                     return emitOnSocket('vbo_update', metadata);
-                }).do(
-                    (clientElapsed) => {
-                        logger.trace('6. client all received');
-                        logger.trace('Socket', '...client received all buffers in ' + clientElapsed + 'ms');
-                    });
+                })
+                .do((clientElapsed) => {
+                    logger.trace('6. client all received');
+                    logger.trace('Socket', '...client received all buffers in ' + clientElapsed + 'ms');
+                });
 
                 return receivedAll;
             })
@@ -1947,6 +1965,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture) {
 VizServer.prototype.dispose =
 VizServer.prototype.unsubscribe = function () {
     logger.info('disconnecting', this.socket.client.id);
+    delete this.updateSession;
     delete this.lastCompressedVBOs;
     delete this.bufferTransferFinisher;
     delete this.cachedVBOs[this.socket.client.id];

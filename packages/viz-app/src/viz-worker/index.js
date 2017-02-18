@@ -123,7 +123,10 @@ export function vizWorker(app, server, sockets, caches) {
                 logger.trace('assigned socket and viz-server to nBody');
             })
             .mergeMap(
-                ({ workbook, view }) => loadVGraph(view, config, s3DatasetCache),
+                ({ workbook, view }) => loadVGraph(
+                    view, config, s3DatasetCache,
+                    sendSessionUpdate.bind(null, sendUpdate, view)
+                ),
                 ({ workbook},view) => ({ workbook, view })
             )
             .mergeMap(({ workbook, view }) => {
@@ -133,6 +136,7 @@ export function vizWorker(app, server, sockets, caches) {
                 const { nBody } = view;
                 const { interactions, interactionsLoop } = nBody;
 
+                vizServer.updateSession = sendSessionUpdate.bind(null, sendUpdate, view);
                 vizServer.animationStep = {
                     interact(x) {
                         interactions.next(x);
@@ -145,32 +149,40 @@ export function vizWorker(app, server, sockets, caches) {
                 vizServer.viewConfig.next(view);
                 vizServer.renderConfig.next(nBody.scene);
 
-                return interactionsLoop.map((nBody) => ({ view, nBody }));
+                return interactionsLoop.map((nBody) => ({ view, nBody, workbook }));
             })
             .multicast(() => new Subject(), (shared) => Observable.merge(
                 shared.skip(1),
                 shared.take(1)
-                    .mergeMap(
-                        ({ view, nBody }) => maskDataframe({ view }),
-                        ({ view, nBody }) => ({ view, nBody })
-                    )
+                    .let(sendSessionUpdate(sendUpdate, {
+                        progress: 100 * 8/10, status: 'init', message: 'Applying filters'
+                    }))
+                    .mergeMap(maskDataframe, ({ view, nBody, workbook }) => ({
+                        view, nBody, workbook
+                    }))
                     .do(() => logger.trace('finished initial dataframe mask'))
                     .mergeMap(
-                        ({ nBody }) => sendUpdate({
-                            invalidated: [
-                                `workbooks.open.views.current.labelsByType`,
-                                `workbooks.open.views.current.inspector.rows`,
-                                `workbooks.open.views.current.componentsByType`
-                            ],
-                            paths: [
-                                `workbooks.open.views.current.columns.length`,
-                                `workbooks.open.views.current.histograms.length`,
-                                `workbooks.open.views.current.inspector.tabs.length`,
-                                `workbooks.open.views.current.scene.renderer['edges', 'points'].elements`
-                            ]
-                        }).takeLast(1),
-                        ({ nBody }) => ({ nBody })
+                        ({ view, nBody, workbook }) => {
+                            const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+                            return sendUpdate({
+                                invalidated: [
+                                    `${viewPath}.labelsByType`,
+                                    `${viewPath}.inspector.rows`,
+                                    `${viewPath}.componentsByType`,
+                                ],
+                                paths: [
+                                    `${viewPath}.columns.length`,
+                                    `${viewPath}.histograms.length`,
+                                    `${viewPath}.inspector.tabs.length`,
+                                    `${viewPath}.scene.renderer['edges', 'points'].elements`
+                                ]
+                            }).takeLast(1)
+                        },
+                        ({ view, nBody, workbook }) => ({ view, nBody, workbook })
                     )
+                    .let(sendSessionUpdate(sendUpdate, {
+                        progress: 100 * 9/10, status: 'init', message: 'Loading graph'
+                    }))
                     .do(() => logger.trace('finished sending initial falcor update'))
                     .do(({ nBody }) => {
                         logger.trace('ticked graph');
@@ -179,5 +191,24 @@ export function vizWorker(app, server, sockets, caches) {
             ))
             .do(({ nBody }) => vizServer.ticksMulti.next(nBody));
         }
+
+    }
+}
+
+function sendSessionUpdate(sendUpdate, _view, session) {
+    session = session || _view;
+    return function letSendSessionUpdate(source = Observable.of({})) {
+        return source.mergeMap(
+            ({ workbook, view }) => {
+                _view = view || _view;
+                _view.session = session;
+                const workbookPath = workbook ? `workbooksById['${workbook.id}']` : 'workbooks.open';
+                const viewPath = `${workbookPath}.viewsById['${_view.id}']`;
+                return sendUpdate({
+                    paths: [`${viewPath}.session['status', 'message', 'progress']`]
+                }).takeLast(1);
+            },
+            (args) => args
+        );
     }
 }

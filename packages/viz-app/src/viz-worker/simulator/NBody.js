@@ -4,7 +4,7 @@ const Q = require('q');
 const lConf = require('./layout.config.js');
 const events = require('./SimpleEvents.js');
 const _ = require('underscore');
-const clientNotification = require('./clientNotification.js');
+// const clientNotification = require('./clientNotification.js');
 
 const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/NBody');
