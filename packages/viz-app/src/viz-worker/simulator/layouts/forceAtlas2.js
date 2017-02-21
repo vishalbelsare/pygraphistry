@@ -666,7 +666,7 @@ var computeSizes = function (simulator, warpsize, numPoints) {
     if (numPoints === undefined) {
         numPoints = simulator.dataframe.getNumElements('point');
     }
-    var num_nodes = numPoints * 5; // TODO (paden) GPU optimization. Need to allow for more users
+    var num_nodes = numPoints * 2; // TODO (paden) GPU optimization. Need to allow for more users
     if (num_nodes < 1024*blocks) num_nodes = 1024*blocks;
     while ((num_nodes & (warpsize - 1)) != 0) num_nodes++;
     num_nodes--;
