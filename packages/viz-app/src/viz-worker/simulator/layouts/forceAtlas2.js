@@ -12,85 +12,85 @@ import _config from '@graphistry/config';
 const config = _config();
 
 var argsType = {
-        ONE: cljs.types.uint_t,
-        ZERO: cljs.types.uint_t,
-        THREADS_BOUND: cljs.types.define,
-        THREADS_FORCES: cljs.types.define,
-        THREADS_SUMS: cljs.types.define,
-        WARPSIZE: cljs.types.define,
-        backwardsEdges: null,
-        backwardsEdgeWeights: null,
-        backwardsEdgeStartEndIdxs: null,
-        backwardsWorkItems: null,
-        blocked: null,
-        bottom: null,
-        carryOutGlobal: null,
-        children: null,
-        count: null,
-        curForces: null,
-        edgeInfluence: cljs.types.uint_t,
-        edgeStartEndIdxs: null,
-        edgeWeights: null,
-        edges: null,
-        flags: cljs.types.uint_t,
-        forwardsEdges: null,
-        forwardsEdgeWeights: null,
-        forwardsEdgeStartEndIdxs: null,
-        forwardsWorkItems: null,
-        gSpeed: cljs.types.float_t,
-        gSpeeds: null,
-        globalSpeed: null,
-        globalSwings: null,
-        globalTractions: null,
-        globalXMax: null,
-        globalXMin: null,
-        globalYMax: null,
-        globalYMin: null,
-        gravity: cljs.types.float_t,
-        height: cljs.types.float_t,
-        input: null,
-        inputPoints: null,
-        inputPositions: null,
-        intermediateForcesMap: null,
-        isForward: cljs.types.uint_t,
-        mass: null,
-        maxDepth: null,
-        numBodies: cljs.types.uint_t,
-        numEdges: cljs.types.uint_t,
-        numInput: cljs.types.uint_t,
-        numMidPoints: cljs.types.uint_t,
-        numNodes: cljs.types.uint_t,
-        numOutput: cljs.types.uint_t,
-        numPoints: cljs.types.uint_t,
-        numWorkItems: cljs.types.uint_t,
-        output: null,
-        outputForces: null,
-        outputForcesMap: null,
-        outputPoints: null,
-        outputPositions: null,
-        partialForces: null,
-        pointDegrees: null,
-        pointForces: null,
-        prevForces: null,
-        radius: null,
-        scalingRatio: cljs.types.float_t,
-        segStart: null,
-        sort: null,
-        springs: null,
-        start: null,
-        step: null,
-        stepNumber: cljs.types.uint_t,
-        swings: null,
-        tau: cljs.types.float_t,
-        tilePointsParam2: cljs.types.local_t,
-        tilePointsParam: cljs.types.local_t,
-        tilesPerIteration: cljs.types.uint_t,
-        tractions: null,
-        width: cljs.types.float_t,
-        workList: null,
-        xCoords: null,
-        yCoords: null
-    }
+    ONE: cljs.types.uint_t,
+    ZERO: cljs.types.uint_t,
+    THREADS_BOUND: cljs.types.define,
+    THREADS_FORCES: cljs.types.define,
+    THREADS_SUMS: cljs.types.define,
+    WARPSIZE: cljs.types.define,
+    backwardsEdges: null,
+    backwardsEdgeWeights: null,
+    backwardsEdgeStartEndIdxs: null,
+    backwardsWorkItems: null,
+    blocked: null,
+    bottom: null,
+    carryOutGlobal: null,
+    children: null,
+    count: null,
+    curForces: null,
+    edgeInfluence: cljs.types.uint_t,
+    edgeStartEndIdxs: null,
+    edgeWeights: null,
+    edges: null,
+    flags: cljs.types.uint_t,
+    forwardsEdges: null,
+    forwardsEdgeWeights: null,
+    forwardsEdgeStartEndIdxs: null,
+    forwardsWorkItems: null,
+    gSpeed: cljs.types.float_t,
+    gSpeeds: null,
+    globalSpeed: null,
+    globalSwings: null,
+    globalTractions: null,
+    globalXMax: null,
+    globalXMin: null,
+    globalYMax: null,
+    globalYMin: null,
+    gravity: cljs.types.float_t,
+    height: cljs.types.float_t,
+    input: null,
+    inputPoints: null,
+    inputPositions: null,
+    intermediateForcesMap: null,
+    isForward: cljs.types.uint_t,
+    mass: null,
+    maxDepth: null,
+    numBodies: cljs.types.uint_t,
+    numEdges: cljs.types.uint_t,
+    numInput: cljs.types.uint_t,
+    numMidPoints: cljs.types.uint_t,
+    numNodes: cljs.types.uint_t,
+    numOutput: cljs.types.uint_t,
+    numPoints: cljs.types.uint_t,
+    numWorkItems: cljs.types.uint_t,
+    output: null,
+    outputForces: null,
+    outputForcesMap: null,
+    outputPoints: null,
+    outputPositions: null,
+    partialForces: null,
+    pointDegrees: null,
+    pointForces: null,
+    prevForces: null,
+    radius: null,
+    scalingRatio: cljs.types.float_t,
+    segStart: null,
+    sort: null,
+    springs: null,
+    start: null,
+    step: null,
+    stepNumber: cljs.types.uint_t,
+    swings: null,
+    tau: cljs.types.float_t,
+    tilePointsParam2: cljs.types.local_t,
+    tilePointsParam: cljs.types.local_t,
+    tilesPerIteration: cljs.types.uint_t,
+    tractions: null,
+    width: cljs.types.float_t,
+    workList: null,
+    xCoords: null,
+    yCoords: null
+}
 
 
 // Many BarnesHut kernels have same arguements
@@ -114,7 +114,7 @@ var kernelSpecs = {
         kernelName: 'to_barnes_layout',
         args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
         'inputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
-        'pointDegrees', 'stepNumber', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        'pointDegrees', 'stepNumber'
         ],
         fileName: 'layouts/forceAtlas2/barnesHut/toBarnesLayout.cl'
     },
@@ -123,28 +123,28 @@ var kernelSpecs = {
         args: ['xCoords', 'yCoords', 'children', 'mass', 'start', 'globalXMin', 'globalXMax', 
             'globalYMin', 'globalYMax', 'globalSwings', 'globalTractions', 'swings', 
             'tractions', 'blocked', 'step', 'bottom', 'radius', 'globalSpeed', 'stepNumber',
-            'numBodies', 'numNodes', 'tau', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+            'numBodies', 'numNodes', 'tau', 'THREADS_BOUND'
         ],
         fileName: 'layouts/forceAtlas2/barnesHut/boundBox.cl'
     },
     buildTree: {
         kernelName: 'build_tree',
         args: ['xCoords', 'yCoords', 'children', 'mass', 'start', 'bottom', 'maxDepth', 'radius',
-            'numBodies', 'numNodes', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+            'numBodies', 'numNodes'
         ],
         fileName: 'layouts/forceAtlas2/barnesHut/buildTree.cl'
     },
     computeSums: {
         kernelName: 'compute_sums',
         args: ['xCoords', 'yCoords', 'children', 'mass', 'count', 'bottom', 'numBodies', 'numNodes', 
-            'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS' 
+            'WARPSIZE', 'THREADS_BOUND', 'THREADS_SUMS' 
         ],
         fileName: 'layouts/forceAtlas2/barnesHut/computeSums.cl'
     },
     sort: {
         kernelName: 'sort',
         args: ['children', 'start', 'sort', 'count', 'bottom', 'numBodies', 
-            'numNodes', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+            'numNodes'
         ],
         fileName: 'layouts/forceAtlas2/barnesHut/sort.cl'
     },
@@ -152,7 +152,7 @@ var kernelSpecs = {
         kernelName: 'calculate_forces',
         args: ['scalingRatio', 'gravity', 'flags', 'xCoords', 'yCoords', 'children', 'mass', 'sort', 
             'step',  'maxDepth', 'radius', 'width', 'height', 'numBodies', 'numNodes', 'pointForces', 
-            'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+            'WARPSIZE', 'THREADS_FORCES'
         ],
         fileName: 'layouts/forceAtlas2/barnesHut/calculatePointForces.cl'
     },
@@ -612,8 +612,8 @@ function getNumWorkitemsByHardware(deviceProps) {
         //
         // base 14.6% @ 200
 
-        sizes.segReduce = [40, 1024];
-        sizes.edgeForces = [200, 1024];
+        //sizes.segReduce = [40, 1024];
+        //sizes.edgeForces = [200, 1024];
 
         // 1024
         // 6:35, 7:31, 8:27, 9:54, 10:50, 16:38, 20:52, 26:44
@@ -621,7 +621,7 @@ function getNumWorkitemsByHardware(deviceProps) {
         //
         // 512
         // 2:92, 6:34, 7:29, 8:26, 9:44, 10:40, 14:31, 18:41, 24:35, 30:48
-        sizes.buildTree = [8, 512];
+        //sizes.buildTree = [8, 512];
 
         // 1024
         // 10:36, 14:27, 15:26, 16:24, 17:39, 18:38, 20:35, 26:28, 30:25, 36:30, 40:28, 46:25, 50:28, 60:25,
@@ -629,11 +629,21 @@ function getNumWorkitemsByHardware(deviceProps) {
         //
         // 512
         // 10:65, 20:35, 26:29, 28:27, 30:26, 34:39, 40:34
-        sizes.calculateForces = [16, 1024];
+        //sizes.calculateForces = [16, 1024];
 
         // 1024
         // 6:4, 8:4, 10:5,
-        sizes.computeSums = [8, 1024];
+        //sizes.computeSums = [8, 1024];
+        sizes = {
+            toBarnesLayout: [8, 1024],
+            boundBox: [8, 512],
+            buildTree: [8, 256],
+            computeSums: [8, 256],
+            sort: [8, 512],
+            edgeForces: [8, 1024],
+            segReduce: [8, 512],
+            calculateForces: [8, 256]
+        };
 
 
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {
