@@ -363,7 +363,7 @@ var createBuffer = Q.promised(function(cl, size, name, flags) {
     } else {
         const map = flags.map((flag) => clMemFlags[flag])
         memFlags = map.reduce((a, b) => a | b, 0);
-        logger.warn({memFlags, map}, 'Flags set');
+        logger.debug({memFlags, map}, 'Flags set');
     }
 
     var buffer = ocl.createBuffer(cl.context, memFlags, size);
