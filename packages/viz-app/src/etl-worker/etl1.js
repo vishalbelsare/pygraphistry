@@ -21,13 +21,13 @@ var tmpCache = new Cache(config.LOCAL_DATASET_CACHE_DIR, config.LOCAL_DATASET_CA
 function validateUpload(msg) {
     const { name, graph, bindings } = msg;
     if (Object.keys(msg).length === 0) {
-        return Observable.throw(new Error('Invalid JSON post'));
+        return Observable.throw(new Error('JSON file must have fields name, graph, and bindings: may be due to a missing or invalid JSON file'));
     } else if(!name) {
         return Observable.throw(new Error('Name attribute is not defined'));
     } else if (!graph) {
         return Observable.throw(new Error('Graph attribute is not defined'));
     } else if (!bindings) {
-        return Observable.throw(Error('Bindings attribute is not defined'));
+        return Observable.throw(new Error('Bindings attribute is not defined'));
     } else {
         const { sourceField, destinationField } = bindings;
         if (!sourceField) {
