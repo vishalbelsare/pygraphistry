@@ -120,7 +120,8 @@ function saveCallRoute({ loadInvestigationsById, saveInvestigationsById, persist
         return saveInvestigationsById({loadInvestigationsById, persistInvestigationsById,
                                        persistPivotsById, unlinkPivotsById, investigationIds})
             .mergeMap(({ investigation }) => [
-                $pathValue(`investigationsById['${investigationIds}'].modifiedOn`, investigation.modifiedOn)
+                $pathValue(`investigationsById['${investigationIds}'].modifiedOn`, investigation.modifiedOn),
+                $pathValue(`investigationsById['${investigationIds}'].status`, { ok: false, saved: true, msgStyle: 'success', message: 'Investigation Saved!'})
             ])
             .catch(captureErrorAndNotifyClient(investigationIds));
     }

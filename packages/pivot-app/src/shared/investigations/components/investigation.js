@@ -16,6 +16,10 @@ export default function Investigation({
 
     const bStyle = (status && status.msgStyle) ? status.msgStyle : 'default';
 
+    if (status.saved) {
+        setTimeout(dismissAlert, 3000)
+    }
+
     return (
         <div className={styles.pivots}>
             <OverlayTrigger placement="bottom" overlay={
