@@ -12,92 +12,90 @@ import _config from '@graphistry/config';
 const config = _config();
 
 var argsType = {
-        ONE: cljs.types.uint_t,
-        ZERO: cljs.types.uint_t,
-        THREADS_BOUND: cljs.types.define,
-        THREADS_FORCES: cljs.types.define,
-        THREADS_SUMS: cljs.types.define,
-        WARPSIZE: cljs.types.define,
-        accX: null,
-        accY: null,
-        backwardsEdges: null,
-        backwardsEdgeWeights: null,
-        backwardsEdgeStartEndIdxs: null,
-        backwardsWorkItems: null,
-        blocked: null,
-        bottom: null,
-        carryOutGlobal: null,
-        children: null,
-        count: null,
-        curForces: null,
-        edgeInfluence: cljs.types.uint_t,
-        edgeStartEndIdxs: null,
-        edgeWeights: null,
-        edges: null,
-        flags: cljs.types.uint_t,
-        forwardsEdges: null,
-        forwardsEdgeWeights: null,
-        forwardsEdgeStartEndIdxs: null,
-        forwardsWorkItems: null,
-        gSpeed: cljs.types.float_t,
-        gSpeeds: null,
-        globalSpeed: null,
-        globalSwings: null,
-        globalTractions: null,
-        globalXMax: null,
-        globalXMin: null,
-        globalYMax: null,
-        globalYMin: null,
-        gravity: cljs.types.float_t,
-        height: cljs.types.float_t,
-        input: null,
-        inputPoints: null,
-        inputPositions: null,
-        intermediateForcesMap: null,
-        isForward: cljs.types.uint_t,
-        mass: null,
-        maxDepth: null,
-        numBodies: cljs.types.uint_t,
-        numEdges: cljs.types.uint_t,
-        numInput: cljs.types.uint_t,
-        numMidPoints: cljs.types.uint_t,
-        numNodes: cljs.types.uint_t,
-        numOutput: cljs.types.uint_t,
-        numPoints: cljs.types.uint_t,
-        numWorkItems: cljs.types.uint_t,
-        output: null,
-        outputForces: null,
-        outputForcesMap: null,
-        outputPoints: null,
-        outputPositions: null,
-        partialForces: null,
-        pointDegrees: null,
-        pointForces: null,
-        prevForces: null,
-        radius: null,
-        scalingRatio: cljs.types.float_t,
-        segStart: null,
-        sort: null,
-        springs: null,
-        start: null,
-        step: null,
-        stepNumber: cljs.types.uint_t,
-        swings: null,
-        tau: cljs.types.float_t,
-        tilePointsParam2: cljs.types.local_t,
-        tilePointsParam: cljs.types.local_t,
-        tilesPerIteration: cljs.types.uint_t,
-        tractions: null,
-        width: cljs.types.float_t,
-        workList: null,
-        xCoords: null,
-        yCoords: null
-    }
+    ONE: cljs.types.uint_t,
+    ZERO: cljs.types.uint_t,
+    THREADS_BOUND: cljs.types.define,
+    THREADS_FORCES: cljs.types.define,
+    THREADS_SUMS: cljs.types.define,
+    WARPSIZE: cljs.types.define,
+    backwardsEdges: null,
+    backwardsEdgeWeights: null,
+    backwardsEdgeStartEndIdxs: null,
+    backwardsWorkItems: null,
+    blocked: null,
+    bottom: null,
+    carryOutGlobal: null,
+    children: null,
+    count: null,
+    curForces: null,
+    edgeInfluence: cljs.types.uint_t,
+    edgeStartEndIdxs: null,
+    edgeWeights: null,
+    edges: null,
+    flags: cljs.types.uint_t,
+    forwardsEdges: null,
+    forwardsEdgeWeights: null,
+    forwardsEdgeStartEndIdxs: null,
+    forwardsWorkItems: null,
+    gSpeed: cljs.types.float_t,
+    gSpeeds: null,
+    globalSpeed: null,
+    globalSwings: null,
+    globalTractions: null,
+    globalXMax: null,
+    globalXMin: null,
+    globalYMax: null,
+    globalYMin: null,
+    gravity: cljs.types.float_t,
+    height: cljs.types.float_t,
+    input: null,
+    inputPoints: null,
+    inputPositions: null,
+    intermediateForcesMap: null,
+    isForward: cljs.types.uint_t,
+    mass: null,
+    maxDepth: null,
+    numBodies: cljs.types.uint_t,
+    numEdges: cljs.types.uint_t,
+    numInput: cljs.types.uint_t,
+    numMidPoints: cljs.types.uint_t,
+    numNodes: cljs.types.uint_t,
+    numOutput: cljs.types.uint_t,
+    numPoints: cljs.types.uint_t,
+    numWorkItems: cljs.types.uint_t,
+    output: null,
+    outputForces: null,
+    outputForcesMap: null,
+    outputPoints: null,
+    outputPositions: null,
+    partialForces: null,
+    pointDegrees: null,
+    pointForces: null,
+    prevForces: null,
+    radius: null,
+    scalingRatio: cljs.types.float_t,
+    segStart: null,
+    sort: null,
+    springs: null,
+    start: null,
+    step: null,
+    stepNumber: cljs.types.uint_t,
+    swings: null,
+    tau: cljs.types.float_t,
+    tilePointsParam2: cljs.types.local_t,
+    tilePointsParam: cljs.types.local_t,
+    tilesPerIteration: cljs.types.uint_t,
+    tractions: null,
+    width: cljs.types.float_t,
+    workList: null,
+    xCoords: null,
+    yCoords: null
+}
 
 
 // Many BarnesHut kernels have same arguements
 var barnesHutCommonArgs = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
-    'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
+    'yCoords', 'children', 'mass', 'start',
     'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
     'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
     'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau', 'WARPSIZE',
@@ -116,69 +114,74 @@ var kernelSpecs = {
         kernelName: 'to_barnes_layout',
         args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numPoints',
         'inputPositions', 'xCoords', 'yCoords', 'mass', 'blocked', 'maxDepth',
-        'pointDegrees', 'stepNumber', 'WARPSIZE', 'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        'pointDegrees', 'stepNumber'
         ],
         fileName: 'layouts/forceAtlas2/barnesHut/toBarnesLayout.cl'
     },
     boundBox: {
         kernelName: 'bound_box',
-        args: ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
-        'yCoords', 'accX', 'accY', 'children', 'mass', 'start',
-        'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'globalSwings', 'globalTractions', 'swings', 'tractions',
-        'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-        'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau', 'WARPSIZE',
-        'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
+        args: ['xCoords', 'yCoords', 'children', 'mass', 'start', 'globalXMin', 'globalXMax', 
+            'globalYMin', 'globalYMax', 'globalSwings', 'globalTractions', 'swings', 
+            'tractions', 'blocked', 'step', 'bottom', 'radius', 'globalSpeed', 'stepNumber',
+            'numBodies', 'numNodes', 'tau', 'THREADS_BOUND'
         ],
         fileName: 'layouts/forceAtlas2/barnesHut/boundBox.cl'
     },
     buildTree: {
         kernelName: 'build_tree',
-        args: barnesHutCommonArgs,
+        args: ['xCoords', 'yCoords', 'children', 'mass', 'start', 'bottom', 'maxDepth', 'radius',
+            'numBodies', 'numNodes'
+        ],
         fileName: 'layouts/forceAtlas2/barnesHut/buildTree.cl'
     },
     computeSums: {
         kernelName: 'compute_sums',
-        args: barnesHutCommonArgs,
+        args: ['xCoords', 'yCoords', 'children', 'mass', 'count', 'bottom', 'numBodies', 'numNodes', 
+            'WARPSIZE', 'THREADS_BOUND', 'THREADS_SUMS' 
+        ],
         fileName: 'layouts/forceAtlas2/barnesHut/computeSums.cl'
     },
     sort: {
         kernelName: 'sort',
-        args: barnesHutCommonArgs,
+        args: ['children', 'start', 'sort', 'count', 'bottom', 'numBodies', 
+            'numNodes'
+        ],
         fileName: 'layouts/forceAtlas2/barnesHut/sort.cl'
     },
     calculatePointForces: {
         kernelName: 'calculate_forces',
-        args: barnesHutCommonArgs,
+        args: ['scalingRatio', 'gravity', 'flags', 'xCoords', 'yCoords', 'children', 'mass', 'sort', 
+            'step',  'maxDepth', 'radius', 'width', 'height', 'numBodies', 'numNodes', 'pointForces', 
+            'WARPSIZE', 'THREADS_FORCES'
+        ],
         fileName: 'layouts/forceAtlas2/barnesHut/calculatePointForces.cl'
     },
     // Edge force mapper and segmented reduce kernels used to calculate edge forces
     forwardsEdgeForceMapper : {
         kernelName: 'faEdgeMap',
-        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'forwardsEdges',
-            'numEdges', 'pointDegrees', 'inputPositions', 'forwardsEdgeWeights', 'outputForcesMap'
+        args: [ 'edgeInfluence', 'flags', 'isForward', 'forwardsEdges', 'numEdges', 'pointDegrees', 
+            'inputPositions', 'forwardsEdgeWeights', 'outputForcesMap'
         ],
         fileName: 'layouts/forceAtlas2/faEdgeMap.cl'
     },
     reduceForwardsEdgeForces : {
         kernelName: 'segReduce',
-        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numEdges', 'outputForcesMap',
-        'forwardsEdgeStartEndIdxs', 'segStart', 'forwardsWorkItems', 'numPoints', 'carryOutGlobal',
-        'partialForces', 'pointForces'
+        args: [ 'numEdges', 'outputForcesMap', 'forwardsEdgeStartEndIdxs',  'numPoints', 
+            'partialForces', 'pointForces'
         ],
         fileName: 'segReduce.cl'
     },
     backwardsEdgeForceMapper : {
         kernelName: 'faEdgeMap',
-        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'isForward', 'backwardsEdges',
-            'numEdges', 'pointDegrees', 'inputPositions', 'backwardsEdgeWeights', 'outputForcesMap'
+        args: [ 'edgeInfluence', 'flags', 'isForward', 'backwardsEdges', 'numEdges', 'pointDegrees', 
+            'inputPositions', 'backwardsEdgeWeights', 'outputForcesMap'
         ],
         fileName: 'layouts/forceAtlas2/faEdgeMap.cl'
     },
     reduceBackwardsEdgeForces : {
         kernelName: 'segReduce',
-        args: [ 'scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'numEdges', 'outputForcesMap',
-        'backwardsEdgeStartEndIdxs', 'segStart', 'backwardsWorkItems', 'numPoints',
-        'carryOutGlobal', 'curForces', 'partialForces'
+        args: [ 'numEdges', 'outputForcesMap', 'backwardsEdgeStartEndIdxs', 'numPoints', 'curForces', 
+            'partialForces'
         ],
         fileName: 'segReduce.cl'
     },
@@ -255,8 +258,6 @@ function getBufferBindings(simulator, stepNumber) {
         THREADS_FORCES: workItems.calculateForces[1],
         THREADS_SUMS: workItems.computeSums[1],
         WARPSIZE:warpsize,
-        accX:layoutBuffers.accx.buffer,
-        accY:layoutBuffers.accy.buffer,
         backwardsEdges: simulator.dataframe.getBuffer('backwardsEdges', 'simulator').buffer,
         backwardsEdgeWeights: simulator.dataframe.getClBuffer(simulator.cl, 'backwardsEdgeWeights', 'hostBuffer').then( obj => obj.buffer ),
         backwardsWorkItems: simulator.dataframe.getBuffer('backwardsWorkItems', 'simulator').buffer,
@@ -328,43 +329,39 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
     var backwardsEdges = simulator.dataframe.getHostBuffer('backwardsEdges');
     var numEdges = simulator.dataframe.getNumElements('edge');
     return Q.all( [
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'x_cords'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'y_cords'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accx'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'accy'),
-        simulator.cl.createBuffer(4*(num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'children'),
-        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'mass'),
-        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'start'),
-        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'sort'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_mins'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_maxs'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_mins'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_maxs'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'globalSwings'),
-        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'globalTractions'),
-        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'count'),
-        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'blocked'),
-        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'step'),
-        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'bottom'),
-        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'maxdepth'),
-        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius'),
-        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed'),
-        simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'pointForces'),
-        simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'partialForces'),
-        simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap'),
-        simulator.cl.createBuffer(1 + Math.ceil(numEdges / 256), 'globalCarryIn'),
-        simulator.cl.createBuffer(forwardsEdges.edgeStartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs'),
-        simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs'),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT,  'x_cords', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'y_cords', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(4*(num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'children', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer((num_nodes + 1)*Float32Array.BYTES_PER_ELEMENT, 'mass', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'start', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'sort', ['mem_read_write', 'mem_host_no_access']  ),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_mins', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_x_maxs', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_mins', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'global_y_maxs', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'globalSwings', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer((num_work_groups)*Float32Array.BYTES_PER_ELEMENT, 'globalTractions', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer((num_nodes + 1)*Int32Array.BYTES_PER_ELEMENT, 'count', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'blocked',['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'step', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'bottom', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(Int32Array.BYTES_PER_ELEMENT, 'maxdepth', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'radius', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'pointForces', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'partialForces', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap',['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(1 + Math.ceil(numEdges / 256), 'globalCarryIn',['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(forwardsEdges.edgeStartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs', ['mem_read_only', 'mem_host_write']),
+        simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs', ['mem_read_only', 'mem_host_write']),
         simulator.cl.createBuffer((numPoints * Float32Array.BYTES_PER_ELEMENT) / 2, 'segStart')
-     ]).spread(function (x_cords, y_cords, accx, accy, children, mass, start, sort,
+     ]).spread(function (x_cords, y_cords, children, mass, start, sort,
                          xmin, xmax, ymin, ymax, globalSwings, globalTractions, count,
                          blocked, step, bottom, maxdepth, radius, globalSpeed, pointForces, partialForces,
                         outputEdgeForcesMap, globalCarryOut, forwardsEdgeStartEndIdxs,
                         backwardsEdgeStartEndIdxs, segStart) {
          layoutBuffers.x_cords = x_cords;
          layoutBuffers.y_cords = y_cords;
-         layoutBuffers.accx = accx;
-         layoutBuffers.accy = accy;
          layoutBuffers.children = children;
          layoutBuffers.mass = mass;
          layoutBuffers.start = start;
@@ -615,8 +612,8 @@ function getNumWorkitemsByHardware(deviceProps) {
         //
         // base 14.6% @ 200
 
-        sizes.segReduce = [40, 1024];
-        sizes.edgeForces = [200, 1024];
+        //sizes.segReduce = [40, 1024];
+        //sizes.edgeForces = [200, 1024];
 
         // 1024
         // 6:35, 7:31, 8:27, 9:54, 10:50, 16:38, 20:52, 26:44
@@ -624,7 +621,7 @@ function getNumWorkitemsByHardware(deviceProps) {
         //
         // 512
         // 2:92, 6:34, 7:29, 8:26, 9:44, 10:40, 14:31, 18:41, 24:35, 30:48
-        sizes.buildTree = [8, 512];
+        //sizes.buildTree = [8, 512];
 
         // 1024
         // 10:36, 14:27, 15:26, 16:24, 17:39, 18:38, 20:35, 26:28, 30:25, 36:30, 40:28, 46:25, 50:28, 60:25,
@@ -632,11 +629,21 @@ function getNumWorkitemsByHardware(deviceProps) {
         //
         // 512
         // 10:65, 20:35, 26:29, 28:27, 30:26, 34:39, 40:34
-        sizes.calculateForces = [16, 1024];
+        //sizes.calculateForces = [16, 1024];
 
         // 1024
         // 6:4, 8:4, 10:5,
-        sizes.computeSums = [8, 1024];
+        //sizes.computeSums = [8, 1024];
+        sizes = {
+            toBarnesLayout: [8, 1024],
+            boundBox: [8, 512],
+            buildTree: [8, 256],
+            computeSums: [8, 256],
+            sort: [8, 512],
+            edgeForces: [8, 1024],
+            segReduce: [8, 512],
+            calculateForces: [8, 256]
+        };
 
 
     } else if (deviceProps.NAME.indexOf('HD Graphics 4000') != -1) {

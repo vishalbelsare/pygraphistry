@@ -6,7 +6,6 @@ __kernel void faEdgeMap(
     //input
 
     //GRAPH_PARAMS
-    const float scalingRatio, const float gravity,
     const uint edgeInfluence, const uint flags,
     const uint isForward,
 
