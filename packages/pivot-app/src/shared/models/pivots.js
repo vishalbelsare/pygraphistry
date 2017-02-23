@@ -32,7 +32,7 @@ function initialSoftState(pivotTemplate) {
     return {
         pivotTemplate: $ref(`templatesById['${pivotTemplate}']`),
         status: {ok: true, searching: false},
-        resultCount: 0,
+        resultCount: -1,
         resultSummary: {entities: []}
     };
 }
