@@ -71,7 +71,7 @@ function ResultSummaryPanel({id, enabled, resultSummary, resultCount}) {
     return (
         <PivotPanel header={"Result Summary"} eventKey='3'>
             <div className={styles['pivot-expander-body']}>
-                {resultCount ?
+                {resultCount > 0 ?
                         <div className={`${styles['pivot-result-summaries']} ${styles['result-count-' + (enabled ? 'on' : 'off')]}`}>
                         {
                             resultSummary &&
@@ -79,7 +79,7 @@ function ResultSummaryPanel({id, enabled, resultSummary, resultCount}) {
                                 || null
                         }
                     </div>
-                        : <b>{ 'Run query to select events' }</b>}
+                        : resultCount === -1 ? <b>{ 'Run query to select events' }</b> : <b>{ 'No events found!' }</b> } 
 
 
                     </div>
