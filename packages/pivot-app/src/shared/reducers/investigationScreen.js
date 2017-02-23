@@ -43,10 +43,12 @@ function selectInvestigation(action$) {
 function setInvestigationParams(action$) {
     return action$
         .ofType(SET_INVESTIGATION_PARAMS)
-        .switchMap(({ falcor, params, id }) =>
-            falcor.set(...Object.keys(params).map((key) => $value(
-                `investigations['${id}']['${key}']`, params[key]
-            ))).progressively()
+        .switchMap(({ falcor, params, id }) => {
+            const topLevelModel = falcor._root.topLevelModel;
+            return Observable.from(topLevelModel.set(...Object.keys(params).map((key) => $value(
+                `investigationsById['${id}']['${key}']`, params[key]
+            ))));
+        }
         )
         .ignoreElements();
 }
