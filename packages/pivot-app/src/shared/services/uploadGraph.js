@@ -210,7 +210,7 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                         investigation.status = {
                             ok: false,
                             etling: false,
-                            message: 'No events found!',
+                            message: 'Attempting to upload empty graph!',
                             msgStyle: 'info',
                         }
                     }
