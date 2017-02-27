@@ -70,7 +70,6 @@ function createSimCL (simObj, algos, cl, renderer, controls, dataframe, kernelCa
     simObj.connectedEdges = connectedEdges.bind(this, simObj);
     simObj.resetBuffers = resetBuffers.bind(this, simObj);
     simObj.tickBuffers = tickBuffers.bind(this, simObj);
-    simObj.highlightShortestPaths = highlightShortestPaths.bind(this, renderer, simObj);
     simObj.setColor = setColor.bind(this, renderer, simObj);
     simObj.setMidEdges = setMidEdges.bind(this, simObj);
     simObj.tickInitialBufferVersions = tickInitialBufferVersions.bind(this, simObj);
@@ -239,27 +238,31 @@ function setColor (renderer, simulator, colorObj) {
  * @param {Number} dst destination point index
  * @returns {Number} raises not found
  */
-function findEdgeDirected (simulator, src, dst) {
-    const buffers = simulator.dataframe.getHostBuffer('forwardsEdges');
+//function findEdgeDirected (simulator, src, dst) {
+    //const buffers = simulator.dataframe.getHostBuffer('forwardsEdges');
+    //const forwardsEdgeStartEndIdxs = simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator');
 
-    const workItem = buffers.srcToWorkItem[ src ];
-    const firstEdge = buffers.workItemsTyped[4 * workItem];
-    const numSiblings = buffers.workItemsTyped[4 * workItem + 1];
+    //const workItem = buffers.srcToWorkItem[ src ];
+    //const firstEdge = buffers.workItemsTyped[4 * workItem];
+    //const numSiblings = buffers.workItemsTyped[4 * workItem + 1];
+    //const start = forwardsEdgeStartEndIdxs[2 * workItem];
+    //const stop = forwardsEdgeStartEndIdxs[2 * workItem + 1];
+    //logger.warn({workItem, firstEdge, start, stop}, 'here');
 
-    if (firstEdge === -1) {
-        throw new Error('not found');
-    }
+    //if (firstEdge === -1) {
+        //throw new Error('not found');
+    //}
 
-    for (let sibling = 0; sibling < numSiblings; sibling++) {
-        const edge = firstEdge + sibling;
-        const sink = buffers.edgesTyped[2 * edge + 1];
-        if (sink === dst) {
-            return edge;
-        }
-    }
+    //for (let sibling = 0; sibling < numSiblings; sibling++) {
+        //const edge = firstEdge + sibling;
+        //const sink = buffers.edgesTyped[2 * edge + 1];
+        //if (sink === dst) {
+            //return edge;
+        //}
+    //}
 
-    throw new Error('not found');
-}
+    //throw new Error('not found');
+//}
 
 /**
  * @param {Simulator} simulator
@@ -267,92 +270,93 @@ function findEdgeDirected (simulator, src, dst) {
  * @param {Number} dst destination point index
  * @returns {Number} raises not found
  */
-function findEdgeUndirected (simulator, src, dst) {
-    try {
-        return findEdgeDirected(simulator, src, dst);
-    } catch (ignore) {
-        return findEdgeDirected(simulator, dst, src);
-    }
-}
+//function findEdgeUndirected (simulator, src, dst) {
+    //try {
+        //return findEdgeDirected(simulator, src, dst);
+    //} catch (ignore) {
+        //return findEdgeDirected(simulator, dst, src);
+    //}
+//}
 
-function highlightPath (renderer, simulator, path, i) {
-    if (path.length < 2) {
-        return;
-    }
+//function highlightPath (renderer, simulator, path, i) {
+    //logger.error({i, path}, 'Highlgiht path');
+    //if (path.length < 2) {
+        //return;
+    //}
 
-    const COLOR = -1 * util.palettes.qual_palette1[i % util.palettes.qual_palette1.length];
+    //const COLOR = -1 * util.palettes.qual_palette1[i % util.palettes.qual_palette1.length];
 
-    const points = _.union(path);
-    points.forEach((point) => {
-        if (point !== path[0] && point !== path[path.length -1]) {
-            simulator.dataframe.setLocalBufferValue('pointColors', point, COLOR);
-        }
-    });
+    //const points = _.union(path);
+    //points.forEach((point) => {
+        //if (point !== path[0] && point !== path[path.length -1]) {
+            //simulator.dataframe.setLocalBufferValue('pointColors', point, COLOR);
+        //}
+    //});
 
-    const edges = _.zip(path.slice(0, -1), path.slice(1));
-    edges.forEach((pair/*, i*/) => {
-        const edge = findEdgeUndirected(simulator, pair[0], pair[1]);
-        simulator.dataframe.setLocalBufferValue('edgeColors', 2 * edge, COLOR);
-        simulator.dataframe.setLocalBufferValue('edgeColors', 2 * edge + 1, COLOR);
-    });
-}
+    //const edges = _.zip(path.slice(0, -1), path.slice(1));
+    //edges.forEach((pair[>, i<]) => {
+        //const edge = findEdgeUndirected(simulator, pair[0], pair[1]);
+        //simulator.dataframe.setLocalBufferValue('edgeColors', 2 * edge, COLOR);
+        //simulator.dataframe.setLocalBufferValue('edgeColors', 2 * edge + 1, COLOR);
+    //});
+//}
 
-function highlightShortestPaths (renderer, simulator, pair) {
-    const MAX_PATHS = util.palettes.qual_palette1.length * 2;
+//function highlightShortestPaths (renderer, simulator, pair) {
+    //const MAX_PATHS = util.palettes.qual_palette1.length * 2;
 
-    const graph = new dijkstra.Graph();
+    //const graph = new dijkstra.Graph();
 
-    for (let v = 0; v < renderer.numPoints; v++) {
-        graph.addVertex(v);
-    }
-    for (let e = 0; e < renderer.numEdges; e++) {
-        const src = simulator.dataframe.getHostBuffer('forwardsEdges').edgesTyped[2 * e];
-        const dst = simulator.dataframe.getHostBuffer('forwardsEdges').edgesTyped[2 * e + 1];
+    //for (let v = 0; v < renderer.numPoints; v++) {
+        //graph.addVertex(v);
+    //}
+    //for (let e = 0; e < renderer.numEdges; e++) {
+        //const src = simulator.dataframe.getHostBuffer('forwardsEdges').edgesTyped[2 * e];
+        //const dst = simulator.dataframe.getHostBuffer('forwardsEdges').edgesTyped[2 * e + 1];
 
-        graph.addEdge(src, dst, 1);
-        graph.addEdge(dst, src, 1);
-    }
+        //graph.addEdge(src, dst, 1);
+        //graph.addEdge(dst, src, 1);
+    //}
 
-    const paths = [];
-    const t0 = Date.now();
-    let ok = pair[0] !== pair[1];
-    while (ok && (Date.now() - t0 < 20 * 1000) && paths.length < MAX_PATHS) {
+    //const paths = [];
+    //const t0 = Date.now();
+    //let ok = pair[0] !== pair[1];
+    //while (ok && (Date.now() - t0 < 20 * 1000) && paths.length < MAX_PATHS) {
 
-        const path = dijkstra.dijkstra(graph, pair[0]);
+        //const path = dijkstra.dijkstra(graph, pair[0]);
 
-        if (path[pair[1]] === -1) {
-            ok = false;
-        } else {
-            const steps = [];
-            let step = pair[1];
-            while (step !== pair[0]) {
-                steps.push(step);
-                step = path[step];
-            }
-            steps.push(pair[0]);
-            steps.reverse();
-            paths.push(steps);
+        //if (path[pair[1]] === -1) {
+            //ok = false;
+        //} else {
+            //const steps = [];
+            //let step = pair[1];
+            //while (step !== pair[0]) {
+                //steps.push(step);
+                //step = path[step];
+            //}
+            //steps.push(pair[0]);
+            //steps.reverse();
+            //paths.push(steps);
 
-            for (let i = 0; i < steps.length - 1; i++) {
-                graph.removeEdge(steps[i], steps[i + 1]);
-            }
+            //for (let i = 0; i < steps.length - 1; i++) {
+                //graph.removeEdge(steps[i], steps[i + 1]);
+            //}
 
-        }
-    }
+        //}
+    //}
 
-    paths.forEach(highlightPath.bind('', renderer, simulator));
+    //paths.forEach(highlightPath.bind('', renderer, simulator));
 
-    let biggestPoint = Math.max(
-        simulator.dataframe.getLocalBuffer('pointSizes')[pair[0]],
-        simulator.dataframe.getLocalBuffer('pointSizes')[pair[1]]);
-    for (let i = 0; i < Math.min(10000, renderer.numPoints); i++) {
-        biggestPoint = Math.max(biggestPoint, simulator.dataframe.getLocalBuffer('pointSizes')[i]);
-    }
-    simulator.dataframe.setLocalBufferValue('pointSizes', pair[0], biggestPoint);
-    simulator.dataframe.setLocalBufferValue('pointSizes', pair[1], biggestPoint);
+    //let biggestPoint = Math.max(
+        //simulator.dataframe.getLocalBuffer('pointSizes')[pair[0]],
+        //simulator.dataframe.getLocalBuffer('pointSizes')[pair[1]]);
+    //for (let i = 0; i < Math.min(10000, renderer.numPoints); i++) {
+        //biggestPoint = Math.max(biggestPoint, simulator.dataframe.getLocalBuffer('pointSizes')[i]);
+    //}
+    //simulator.dataframe.setLocalBufferValue('pointSizes', pair[0], biggestPoint);
+    //simulator.dataframe.setLocalBufferValue('pointSizes', pair[1], biggestPoint);
 
-    simulator.tickBuffers(['pointSizes', 'pointColors', 'edgeColors']);
-}
+    //simulator.tickBuffers(['pointSizes', 'pointColors', 'edgeColors']);
+//}
 
 /**
  * Increase buffer version to tick number, signifying its contents may have changed
@@ -633,10 +637,8 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
         simulator.dataframe.getBuffer('degrees', 'simulator'),
         simulator.dataframe.getBuffer('forwardsEdges', 'simulator'),
         simulator.dataframe.getBuffer('forwardsDegrees', 'simulator'),
-        simulator.dataframe.getBuffer('forwardsWorkItems', 'simulator'),
         simulator.dataframe.getBuffer('backwardsEdges', 'simulator'),
         simulator.dataframe.getBuffer('backwardsDegrees', 'simulator'),
-        simulator.dataframe.getBuffer('backwardsWorkItems', 'simulator'),
         simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator'),
         simulator.dataframe.getBuffer('springsPos', 'simulator'),
         simulator.dataframe.getBuffer('midSpringsPos', 'simulator'),
@@ -651,8 +653,6 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
         simulator.dataframe.setNumElements('edge', numEdges);
         logger.debug('Number of edges in simulation: %d', numEdges);
 
-        simulator.dataframe.setNumElements('forwardsWorkItems', forwardsEdges.workItemsTyped.length / elementsPerWorkItem);
-        simulator.dataframe.setNumElements('backwardsWorkItems', backwardsEdges.workItemsTyped.length / elementsPerWorkItem);
         simulator.dataframe.setNumElements('midPoints', midPoints.length / simulator.elementsPerPoint);
         simulator.dataframe.setNumElements('midEdges', numMidEdges);
 
@@ -661,10 +661,8 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
             simulator.cl.createBuffer(degrees.byteLength, 'degrees'),
             simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'forwardsEdges'),
             simulator.cl.createBuffer(forwardsEdges.degreesTyped.byteLength, 'forwardsDegrees'),
-            simulator.cl.createBuffer(forwardsEdges.workItemsTyped.byteLength, 'forwardsWorkItems'),
             simulator.cl.createBuffer(backwardsEdges.edgesTyped.byteLength, 'backwardsEdges'),
             simulator.cl.createBuffer(backwardsEdges.degreesTyped.byteLength, 'backwardsDegrees'),
-            simulator.cl.createBuffer(backwardsEdges.workItemsTyped.byteLength, 'backwardsWorkItems'),
             simulator.cl.createBuffer(midPoints.byteLength, 'nextMidPoints'),
             simulator.renderer.createBuffer(numEdges * elementsPerEdge * simulator.elementsPerPoint * Float32Array.BYTES_PER_ELEMENT, 'springs'),
             simulator.renderer.createBuffer(midPoints, 'curMidPoints'),
@@ -677,8 +675,8 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
             simulator.cl.createBuffer((numPoints * Float32Array.BYTES_PER_ELEMENT) / 2, 'segStart')])
     })
     .spread((degreesBuffer,
-             forwardsEdgesBuffer, forwardsDegreesBuffer, forwardsWorkItemsBuffer,
-             backwardsEdgesBuffer, backwardsDegreesBuffer, backwardsWorkItemsBuffer,
+             forwardsEdgesBuffer, forwardsDegreesBuffer,
+             backwardsEdgesBuffer, backwardsDegreesBuffer,
              nextMidPointsBuffer, springsVBO,
              midPointsVBO, midSpringsVBO, midSpringsColorCoordVBO,
              outputEdgeForcesMap, globalCarryOut, forwardsEdgeStartEndIdxs, backwardsEdgeStartEndIdxs,
@@ -687,10 +685,8 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
         simulator.dataframe.loadBuffer('degrees', 'simulator', degreesBuffer);
         simulator.dataframe.loadBuffer('forwardsEdges', 'simulator', forwardsEdgesBuffer);
         simulator.dataframe.loadBuffer('forwardsDegrees', 'simulator', forwardsDegreesBuffer);
-        simulator.dataframe.loadBuffer('forwardsWorkItems', 'simulator', forwardsWorkItemsBuffer);
         simulator.dataframe.loadBuffer('backwardsEdges', 'simulator', backwardsEdgesBuffer);
         simulator.dataframe.loadBuffer('backwardsDegrees', 'simulator', backwardsDegreesBuffer);
-        simulator.dataframe.loadBuffer('backwardsWorkItems', 'simulator', backwardsWorkItemsBuffer);
         simulator.dataframe.loadBuffer('nextMidPoints', 'simulator', nextMidPointsBuffer);
         simulator.dataframe.loadBuffer('outputEdgeForcesMap', 'simulator', outputEdgeForcesMap);
         simulator.dataframe.loadBuffer('globalCarryOut', 'simulator', globalCarryOut);
@@ -711,10 +707,8 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
             simulator.dataframe.writeBuffer('degrees', 'simulator', degrees, simulator),
             simulator.dataframe.writeBuffer('forwardsEdges', 'simulator', forwardsEdges.edgesTyped, simulator),
             simulator.dataframe.writeBuffer('forwardsDegrees', 'simulator', forwardsEdges.degreesTyped, simulator),
-            simulator.dataframe.writeBuffer('forwardsWorkItems', 'simulator', forwardsEdges.workItemsTyped, simulator),
             simulator.dataframe.writeBuffer('backwardsEdges', 'simulator', backwardsEdges.edgesTyped, simulator),
             simulator.dataframe.writeBuffer('backwardsDegrees', 'simulator', backwardsEdges.degreesTyped, simulator),
-            simulator.dataframe.writeBuffer('backwardsWorkItems', 'simulator', backwardsEdges.workItemsTyped, simulator),
             simulator.dataframe.writeBuffer('forwardsEdgeStartEndIdxs', 'simulator', forwardsEdges.edgeStartEndIdxsTyped, simulator),
             simulator.dataframe.writeBuffer('backwardsEdgeStartEndIdxs', 'simulator', backwardsEdges.edgeStartEndIdxsTyped, simulator)
         ]);
@@ -944,34 +938,39 @@ function selectNodesInCircle (simulator, selection) {
 // TODO: Move into dataframe, since it has the crazy sorted/unsorted knowledge?
 function connectedEdges (simulator, nodeIndices) {
 
-    const forwardsBuffers = simulator.dataframe.getHostBuffer('forwardsEdges');
-    const backwardsBuffers = simulator.dataframe.getHostBuffer('backwardsEdges');
-    const forwardsPermutation = forwardsBuffers.edgePermutation;
+    // As far as I can tell this is not needed. Maybe for dataframe operations? 
+    //const forwardsBuffers = simulator.dataframe.getHostBuffer('forwardsEdges');
+    //const backwardsBuffers = simulator.dataframe.getHostBuffer('backwardsEdges');
+    //const forwardsEdgeStartEndIdxs = simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator');
+    //const forwardsPermutation = forwardsBuffers.edgePermutation;
 
-    const setOfEdges = [];
-    const edgeHash = {};
+    //const setOfEdges = [];
+    //const edgeHash = {};
 
-    const addOutgoingEdgesToSet = (buffers) => {
-        _.each(nodeIndices, (idx) => {
-            const workItemId = buffers.srcToWorkItem[idx];
-            const firstEdgeId = buffers.workItemsTyped[4*workItemId];
-            const numEdges = buffers.workItemsTyped[4*workItemId + 1];
-            const permutation = buffers.edgePermutationInverseTyped;
+    //const addOutgoingEdgesToSet = (buffers) => {
+        //_.each(nodeIndices, (idx) => {
+            //const workItemId = buffers.srcToWorkItem[idx];
+            //const firstEdgeId = buffers.workItemsTyped[4*workItemId];
+            //const numEdges = buffers.workItemsTyped[4*workItemId + 1];
+            //const start = forwardsEdgeStartEndIdxs[workItemId * 2];
+            //const stop = forwardsEdgeStartEndIdxs[workItemId * 2 + 1];
+            //logger.warn({workItemId, firstEdgeId, numEdges, start, stop}, 'here');
+            //const permutation = buffers.edgePermutationInverseTyped;
 
-            for (let i = 0; i < numEdges; i++) {
-                const edge = forwardsPermutation[permutation[firstEdgeId + i]];
-                if (!edgeHash[edge]) {
-                    setOfEdges.push(edge);
-                    edgeHash[edge] = true;
-                }
-            }
-        });
-    };
+            //for (let i = 0; i < numEdges; i++) {
+                //const edge = forwardsPermutation[permutation[firstEdgeId + i]];
+                //if (!edgeHash[edge]) {
+                    //setOfEdges.push(edge);
+                    //edgeHash[edge] = true;
+                //}
+            //}
+        //});
+    //};
 
-    addOutgoingEdgesToSet(forwardsBuffers);
-    addOutgoingEdgesToSet(backwardsBuffers);
+    //addOutgoingEdgesToSet(forwardsBuffers);
+    //addOutgoingEdgesToSet(backwardsBuffers);
 
-    return new Uint32Array(setOfEdges);
+    //return new Uint32Array(setOfEdges);
 }
 
 // TODO: Deprecate this fully once we don't have any versioned buffers

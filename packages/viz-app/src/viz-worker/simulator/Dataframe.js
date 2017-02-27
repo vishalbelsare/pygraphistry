@@ -648,11 +648,8 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
         newData.numElements[key] = rawdata.numElements[key];
     });
     // Update point/edge counts, since those were filtered,
-    // along with forwardsWorkItems/backwardsWorkItems.
     newData.numElements.point = masks.numPoints();
     newData.numElements.edge = masks.numEdges();
-    newData.numElements.forwardsWorkItems = newData.hostBuffers.forwardsEdges.workItemsTyped.length / 4;
-    newData.numElements.backwardsWorkItems = newData.hostBuffers.backwardsEdges.workItemsTyped.length / 4;
     // TODO: NumMidPoints and MidEdges
 
     ///////////////////////////////////////////////////////////////////////////
@@ -744,8 +741,8 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
         });
 
         const someBufferPropertyNames = ['curPoints', 'prevForces', 'degrees', 'forwardsEdges', 'forwardsDegrees',
-            'forwardsWorkItems', 'forwardsEdgeStartEndIdxs', 'backwardsEdges',
-            'backwardsDegrees', 'backwardsWorkItems', 'backwardsEdgeStartEndIdxs',
+            'forwardsEdgeStartEndIdxs', 'backwardsEdges',
+            'backwardsDegrees', 'backwardsEdgeStartEndIdxs',
             'springsPos'
         ];
         _.each(someBufferPropertyNames, (key) => {
@@ -760,11 +757,9 @@ Dataframe.prototype.applyDataframeMaskToFilterInPlace = function (masks, simulat
             newBuffers.springsPos.write(newSpringsPos),
             newBuffers.forwardsEdges.write(forwardsEdges.edgesTyped),
             newBuffers.forwardsDegrees.write(forwardsEdges.degreesTyped),
-            newBuffers.forwardsWorkItems.write(forwardsEdges.workItemsTyped),
             newBuffers.forwardsEdgeStartEndIdxs.write(forwardsEdges.edgeStartEndIdxsTyped),
             newBuffers.backwardsEdges.write(backwardsEdges.edgesTyped),
             newBuffers.backwardsDegrees.write(backwardsEdges.degreesTyped),
-            newBuffers.backwardsWorkItems.write(backwardsEdges.workItemsTyped),
             newBuffers.backwardsEdgeStartEndIdxs.write(backwardsEdges.edgeStartEndIdxsTyped)
         ]);
 
