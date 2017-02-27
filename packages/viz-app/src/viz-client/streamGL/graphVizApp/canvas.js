@@ -191,7 +191,7 @@ function RenderingScheduler (renderState, vboUpdates, vboVersions, hitmapUpdates
         .switchMap(() => {
             var bufUpdates = [
                 'curPoints', 'logicalEdges', 'edgeColors',
-                'pointSizes', 'curMidPoints', 'edgeSeqLens'
+                'pointSizes', 'curMidPoints'
             ].map((bufName) => {
                 var bufUpdate = hostBuffers[bufName] || Observable.return();
                 return bufUpdate.do((data) => {
