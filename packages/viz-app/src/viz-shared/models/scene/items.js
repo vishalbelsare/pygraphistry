@@ -219,7 +219,6 @@ export const items = {
         },
         'otherBuffers': {
             'forwardsEdgeStartEndIdxs': ['forwardsEdgeStartEndIdxs', 'curIdx'],
-            'backwardssEdgeStartEndIdxs': ['backwardsEdgeStartEndIdxs', 'curIdx'],
         },
         'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
