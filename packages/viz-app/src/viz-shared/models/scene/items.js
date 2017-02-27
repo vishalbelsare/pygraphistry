@@ -56,7 +56,6 @@ export const items = {
         },
         'otherBuffers': {
             'logicalEdges': ['logicalEdges', 'curIdx'],
-            'edgeSeqLens': ['edgeSeqLens', 'edgeSeqLen'],
             'forwardsEdgeToUnsortedEdge': ['forwardsEdgeToUnsortedEdge', 'forwardsEdgeToUnsortedEdge'],
             'curMidPoints': ['curMidPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor'],

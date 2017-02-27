@@ -531,8 +531,6 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
 
-    var edgeSeqLenBuffer = new Uint32Array(bufferSnapshots.edgeSeqLens.buffer);
-
     var numEdges = logicalEdges.length / 2;
 
     var numVertices = (2 * numEdges) * (numRenderedSplits + 1);
@@ -592,7 +590,11 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
         dstPointY = curPoints[2 * dstPointIdx + 1];
 
         heightCounter = 0;
-        edgeSeqLen = edgeSeqLenBuffer[edgeIndex];
+
+        edgeSeqLen = 0;
+        while(srcPointIdx === logicalEdges[2 * (edgeIndex + edgeSeqLen)]){
+            edgeSeqLen++;
+        }
 
         prevSrcIdx = srcPointIdx;
         prevDstIdx = dstPointIdx;
