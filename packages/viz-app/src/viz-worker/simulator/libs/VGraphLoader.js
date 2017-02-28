@@ -121,13 +121,6 @@ const attributeLoaders = function (graph) {
             target: EDGE,
             values: undefined
         },
-        midEdgeColor: {
-            load: graph.setMidEdgeColors,
-            type: ['number', 'color'],
-            default: graph.setMidEdgeColors,
-            target: EDGE,
-            values: undefined
-        },
         pointLabel: {
             load: function (values) {
 
