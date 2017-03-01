@@ -107,7 +107,6 @@ function createSimCL (simObj, algos, cl, renderer, controls, dataframe, kernelCa
         swings: null,
         tractions: null,
         outputEdgeForcesMap: null,
-        globalCarryOut: null,
         forwardsEdgeStartEndIdxs: null,
         backwardsEdgeStartEndIdxs: null,
         segStart: null,
@@ -647,7 +646,6 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
             simulator.cl.createBuffer(backwardsEdges.edgesTyped.byteLength, 'backwardsEdges'),
             simulator.cl.createBuffer(backwardsEdges.degreesTyped.byteLength, 'backwardsDegrees'),
             simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap'),
-            simulator.cl.createBuffer(1 + Math.ceil(numEdges / 256), 'globalCarryIn'),
             simulator.cl.createBuffer(forwardsEdges.edgeStartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs'),
             simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs'),
             simulator.cl.createBuffer((numPoints * Float32Array.BYTES_PER_ELEMENT) / 2, 'segStart')])
@@ -655,7 +653,7 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
     .spread((degreesBuffer,
              forwardsEdgesBuffer, forwardsDegreesBuffer,
              backwardsEdgesBuffer, backwardsDegreesBuffer,
-            outputEdgeForcesMap, globalCarryOut, forwardsEdgeStartEndIdxs, backwardsEdgeStartEndIdxs,
+            outputEdgeForcesMap, forwardsEdgeStartEndIdxs, backwardsEdgeStartEndIdxs,
              segStart) => {
         // Bind buffers
         simulator.dataframe.loadBuffer('degrees', 'simulator', degreesBuffer);
@@ -664,7 +662,6 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
         simulator.dataframe.loadBuffer('backwardsEdges', 'simulator', backwardsEdgesBuffer);
         simulator.dataframe.loadBuffer('backwardsDegrees', 'simulator', backwardsDegreesBuffer);
         simulator.dataframe.loadBuffer('outputEdgeForcesMap', 'simulator', outputEdgeForcesMap);
-        simulator.dataframe.loadBuffer('globalCarryOut', 'simulator', globalCarryOut);
         simulator.dataframe.loadBuffer('forwardsEdgeStartEndIdxs', 'simulator', forwardsEdgeStartEndIdxs);
         simulator.dataframe.loadBuffer('backwardsEdgeStartEndIdxs', 'simulator', backwardsEdgeStartEndIdxs);
         simulator.dataframe.loadBuffer('segStart', 'simulator', segStart);
