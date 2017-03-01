@@ -566,7 +566,7 @@ function setPoints (simulator, points) {
  * @param {Float32Array} midPoints - dense array of control points (packed sequence of nDim structs)
  * @returns {Promise<Simulator>} a promise for the simulator object
  */
-function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsEdges, degrees, trash, endPoints, points) {
+function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsEdges, degrees, endPoints, points) {
     // edges, workItems
 
     const nDim = simulator.controls.global.dimensions.length;
