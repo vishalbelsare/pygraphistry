@@ -12,8 +12,6 @@ import _config from '@graphistry/config';
 const config = _config();
 
 var argsType = {
-    ONE: cljs.types.uint_t,
-    ZERO: cljs.types.uint_t,
     THREADS_BOUND: cljs.types.define,
     THREADS_FORCES: cljs.types.define,
     THREADS_SUMS: cljs.types.define,
@@ -27,15 +25,10 @@ var argsType = {
     count: null,
     curForces: null,
     edgeInfluence: cljs.types.uint_t,
-    edgeStartEndIdxs: null,
-    edgeWeights: null,
-    edges: null,
     flags: cljs.types.uint_t,
     forwardsEdges: null,
     forwardsEdgeWeights: null,
     forwardsEdgeStartEndIdxs: null,
-    gSpeed: cljs.types.float_t,
-    gSpeeds: null,
     globalSpeed: null,
     globalSwings: null,
     globalTractions: null,
@@ -45,25 +38,17 @@ var argsType = {
     globalYMin: null,
     gravity: cljs.types.float_t,
     height: cljs.types.float_t,
-    input: null,
-    inputPoints: null,
     inputPositions: null,
-    intermediateForcesMap: null,
     isForward: cljs.types.uint_t,
     mass: null,
     maxDepth: null,
     numBodies: cljs.types.uint_t,
     numEdges: cljs.types.uint_t,
-    numInput: cljs.types.uint_t,
-    numMidPoints: cljs.types.uint_t,
     numNodes: cljs.types.uint_t,
     numOutput: cljs.types.uint_t,
     numPoints: cljs.types.uint_t,
     numWorkItems: cljs.types.uint_t,
-    output: null,
-    outputForces: null,
     outputForcesMap: null,
-    outputPoints: null,
     outputPositions: null,
     partialForces: null,
     pointDegrees: null,
@@ -78,25 +63,12 @@ var argsType = {
     stepNumber: cljs.types.uint_t,
     swings: null,
     tau: cljs.types.float_t,
-    tilePointsParam2: cljs.types.local_t,
-    tilePointsParam: cljs.types.local_t,
-    tilesPerIteration: cljs.types.uint_t,
     tractions: null,
     width: cljs.types.float_t,
     workList: null,
     xCoords: null,
     yCoords: null
 }
-
-
-// Many BarnesHut kernels have same arguements
-var barnesHutCommonArgs = ['scalingRatio', 'gravity', 'edgeInfluence', 'flags', 'xCoords',
-    'yCoords', 'children', 'mass', 'start',
-    'sort', 'globalXMin', 'globalXMax', 'globalYMin', 'globalYMax', 'swings', 'tractions',
-    'count', 'blocked', 'step', 'bottom', 'maxDepth', 'radius', 'globalSpeed', 'stepNumber',
-    'width', 'height', 'numBodies', 'numNodes', 'pointForces', 'tau', 'WARPSIZE',
-    'THREADS_BOUND', 'THREADS_FORCES', 'THREADS_SUMS'
-];
 
 // Kernel Specifications used in this layout.
 // key & name: the javascript variable names of of the kernel wrappers
