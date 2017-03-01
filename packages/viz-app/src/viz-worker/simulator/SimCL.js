@@ -648,13 +648,13 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
             simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap'),
             simulator.cl.createBuffer(forwardsEdges.edgeStartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs'),
             simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs'),
-            simulator.cl.createBuffer((numPoints * Float32Array.BYTES_PER_ELEMENT) / 2, 'segStart')])
+        ])
     })
     .spread((degreesBuffer,
              forwardsEdgesBuffer, forwardsDegreesBuffer,
              backwardsEdgesBuffer, backwardsDegreesBuffer,
-            outputEdgeForcesMap, forwardsEdgeStartEndIdxs, backwardsEdgeStartEndIdxs,
-             segStart) => {
+            outputEdgeForcesMap, forwardsEdgeStartEndIdxs, backwardsEdgeStartEndIdxs
+    ) => {
         // Bind buffers
         simulator.dataframe.loadBuffer('degrees', 'simulator', degreesBuffer);
         simulator.dataframe.loadBuffer('forwardsEdges', 'simulator', forwardsEdgesBuffer);
@@ -664,7 +664,6 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
         simulator.dataframe.loadBuffer('outputEdgeForcesMap', 'simulator', outputEdgeForcesMap);
         simulator.dataframe.loadBuffer('forwardsEdgeStartEndIdxs', 'simulator', forwardsEdgeStartEndIdxs);
         simulator.dataframe.loadBuffer('backwardsEdgeStartEndIdxs', 'simulator', backwardsEdgeStartEndIdxs);
-        simulator.dataframe.loadBuffer('segStart', 'simulator', segStart);
 
 
         return Q.all([

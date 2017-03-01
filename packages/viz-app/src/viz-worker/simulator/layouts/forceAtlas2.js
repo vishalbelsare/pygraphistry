@@ -71,7 +71,6 @@ var argsType = {
     prevForces: null,
     radius: null,
     scalingRatio: cljs.types.float_t,
-    segStart: null,
     sort: null,
     springs: null,
     start: null,
@@ -289,7 +288,6 @@ function getBufferBindings(simulator, stepNumber) {
         // TODO This should not be in simulator...
         outputForcesMap: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer,
         radius:layoutBuffers.radius.buffer,
-        segStart: simulator.dataframe.getBuffer('segStart', 'simulator').buffer,
         sort:layoutBuffers.sort.buffer,
         start:layoutBuffers.start.buffer,
         step:layoutBuffers.step.buffer,
@@ -348,12 +346,11 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
         simulator.cl.createBuffer(1 + Math.ceil(numEdges / 256), 'globalCarryIn',['mem_read_write', 'mem_host_no_access']),
         simulator.cl.createBuffer(forwardsEdges.edgeStartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs', ['mem_read_only', 'mem_host_write']),
         simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs', ['mem_read_only', 'mem_host_write']),
-        simulator.cl.createBuffer((numPoints * Float32Array.BYTES_PER_ELEMENT) / 2, 'segStart')
      ]).spread(function (x_cords, y_cords, children, mass, start, sort,
                          xmin, xmax, ymin, ymax, globalSwings, globalTractions, count,
                          blocked, step, bottom, maxdepth, radius, globalSpeed, pointForces, partialForces,
                         outputEdgeForcesMap, globalCarryOut, forwardsEdgeStartEndIdxs,
-                        backwardsEdgeStartEndIdxs, segStart) {
+                        backwardsEdgeStartEndIdxs) {
          layoutBuffers.x_cords = x_cords;
          layoutBuffers.y_cords = y_cords;
          layoutBuffers.children = children;
@@ -381,7 +378,6 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
          layoutBuffers.globalCarryOut = globalCarryOut;
          layoutBuffers.forwardsEdgeStartEndIdxs = forwardsEdgeStartEndIdxs;
          layoutBuffers.backwardsEdgeStartEndIdxs = backwardsEdgeStartEndIdxs;
-         layoutBuffers.segStart = segStart;
          return Q.all([
             layoutBuffers.forwardsEdgeStartEndIdxs.write(forwardsEdges.edgeStartEndIdxsTyped),
             layoutBuffers.backwardsEdgeStartEndIdxs.write(backwardsEdges.edgeStartEndIdxsTyped)
