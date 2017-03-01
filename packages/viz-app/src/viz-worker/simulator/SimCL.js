@@ -95,10 +95,8 @@ function createSimCL (simObj, algos, cl, renderer, controls, dataframe, kernelCa
         curPoints: null,
         degrees: null,
         forwardsEdges: null,
-        forwardsDegrees: null,
         forwardsWorkItems: null,
         backwardsEdges: null,
-        backwardsDegrees: null,
         backwardsWorkItems: null,
         partialForces1: null,
         partialForces2: null,
@@ -621,9 +619,7 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
 
         simulator.dataframe.getBuffer('degrees', 'simulator'),
         simulator.dataframe.getBuffer('forwardsEdges', 'simulator'),
-        simulator.dataframe.getBuffer('forwardsDegrees', 'simulator'),
         simulator.dataframe.getBuffer('backwardsEdges', 'simulator'),
-        simulator.dataframe.getBuffer('backwardsDegrees', 'simulator'),
         simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator'),
         simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator'),
         simulator.dataframe.getBuffer('backwardsStartEndIdxs', 'simulator'),
@@ -642,25 +638,21 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
         return Q.all([
             simulator.cl.createBuffer(degrees.byteLength, 'degrees'),
             simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'forwardsEdges'),
-            simulator.cl.createBuffer(forwardsEdges.degreesTyped.byteLength, 'forwardsDegrees'),
             simulator.cl.createBuffer(backwardsEdges.edgesTyped.byteLength, 'backwardsEdges'),
-            simulator.cl.createBuffer(backwardsEdges.degreesTyped.byteLength, 'backwardsDegrees'),
             simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap'),
             simulator.cl.createBuffer(forwardsEdges.edgeStartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs'),
             simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs'),
         ])
     })
     .spread((degreesBuffer,
-             forwardsEdgesBuffer, forwardsDegreesBuffer,
-             backwardsEdgesBuffer, backwardsDegreesBuffer,
+             forwardsEdgesBuffer, 
+             backwardsEdgesBuffer, 
             outputEdgeForcesMap, forwardsEdgeStartEndIdxs, backwardsEdgeStartEndIdxs
     ) => {
         // Bind buffers
         simulator.dataframe.loadBuffer('degrees', 'simulator', degreesBuffer);
         simulator.dataframe.loadBuffer('forwardsEdges', 'simulator', forwardsEdgesBuffer);
-        simulator.dataframe.loadBuffer('forwardsDegrees', 'simulator', forwardsDegreesBuffer);
         simulator.dataframe.loadBuffer('backwardsEdges', 'simulator', backwardsEdgesBuffer);
-        simulator.dataframe.loadBuffer('backwardsDegrees', 'simulator', backwardsDegreesBuffer);
         simulator.dataframe.loadBuffer('outputEdgeForcesMap', 'simulator', outputEdgeForcesMap);
         simulator.dataframe.loadBuffer('forwardsEdgeStartEndIdxs', 'simulator', forwardsEdgeStartEndIdxs);
         simulator.dataframe.loadBuffer('backwardsEdgeStartEndIdxs', 'simulator', backwardsEdgeStartEndIdxs);
@@ -669,9 +661,7 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
         return Q.all([
             simulator.dataframe.writeBuffer('degrees', 'simulator', degrees, simulator),
             simulator.dataframe.writeBuffer('forwardsEdges', 'simulator', forwardsEdges.edgesTyped, simulator),
-            simulator.dataframe.writeBuffer('forwardsDegrees', 'simulator', forwardsEdges.degreesTyped, simulator),
             simulator.dataframe.writeBuffer('backwardsEdges', 'simulator', backwardsEdges.edgesTyped, simulator),
-            simulator.dataframe.writeBuffer('backwardsDegrees', 'simulator', backwardsEdges.degreesTyped, simulator),
             simulator.dataframe.writeBuffer('forwardsEdgeStartEndIdxs', 'simulator', forwardsEdges.edgeStartEndIdxsTyped, simulator),
             simulator.dataframe.writeBuffer('backwardsEdgeStartEndIdxs', 'simulator', backwardsEdges.edgeStartEndIdxsTyped, simulator)
         ]);

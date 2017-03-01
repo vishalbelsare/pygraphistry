@@ -445,8 +445,6 @@ ForceAtlas2Barnes.prototype.pointForces = function(simulator, workItems) {
 
     var resources = [
         simulator.dataframe.getBuffer('curPoints', 'simulator'),
-        simulator.dataframe.getBuffer('forwardsDegrees', 'simulator'),
-        simulator.dataframe.getBuffer('backwardsDegrees', 'simulator'),
         simulator.dataframe.getBuffer('partialForces1', 'simulator')
     ];
 
