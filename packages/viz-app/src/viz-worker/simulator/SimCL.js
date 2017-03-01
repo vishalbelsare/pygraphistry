@@ -93,9 +93,7 @@ function createSimCL (simObj, algos, cl, renderer, controls, dataframe, kernelCa
         curPoints: null,
         degrees: null,
         forwardsEdges: null,
-        forwardsWorkItems: null,
         backwardsEdges: null,
-        backwardsWorkItems: null,
         curForces: null,
         prevForces: null,
         swings: null,
@@ -103,8 +101,6 @@ function createSimCL (simObj, algos, cl, renderer, controls, dataframe, kernelCa
         outputEdgeForcesMap: null,
         forwardsEdgeStartEndIdxs: null,
         backwardsEdgeStartEndIdxs: null,
-        segStart: null,
-        edgeWeights: null
     };
 
     dataframe.setNumElements('point', renderer.numPoints);
@@ -601,9 +597,7 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
     simulator.dataframe.loadHostBuffer('forwardsEdges', forwardsEdges);
     simulator.dataframe.loadHostBuffer('backwardsEdges', backwardsEdges);
 
-    simulator.tickBuffers(['forwardsEdgeStartEndIdxs', 'backwardsEdgeStartEndIdxs',
-            'edgeHeights', 'edgeSeqLens'
-    ]);
+    simulator.tickBuffers(['forwardsEdgeStartEndIdxs', 'backwardsEdgeStartEndIdxs']);
 
     simulator.resetBuffers([
 
@@ -634,10 +628,8 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
             simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs'),
         ])
     })
-    .spread((degreesBuffer,
-             forwardsEdgesBuffer, 
-             backwardsEdgesBuffer, 
-            outputEdgeForcesMap, forwardsEdgeStartEndIdxs, backwardsEdgeStartEndIdxs
+    .spread((degreesBuffer, forwardsEdgesBuffer, backwardsEdgesBuffer, outputEdgeForcesMap, 
+            forwardsEdgeStartEndIdxs, backwardsEdgeStartEndIdxs
     ) => {
         // Bind buffers
         simulator.dataframe.loadBuffer('degrees', 'simulator', degreesBuffer);
