@@ -20,7 +20,6 @@ const logger      = log.createLogger('graph-viz','graph-viz/js/SimCL.js');
 // Do NOT enable this in prod. It destroys performance.
 // Seriously.
 // Q.longStackSupport = true;
-const randLength = 73;
 
 /** @typedef {Object} Simulator
  * @property {Dataframe} dataframe
@@ -91,7 +90,6 @@ function createSimCL (simObj, algos, cl, renderer, controls, dataframe, kernelCa
 
     simObj.buffers = {
         nextPoints: null,
-        randValues: null,
         curPoints: null,
         degrees: null,
         forwardsEdges: null,
@@ -427,7 +425,6 @@ function setPoints (simulator, points) {
 
     simulator.resetBuffers([
         simulator.dataframe.getBuffer('nextPoints', 'simulator'),
-        simulator.dataframe.getBuffer('randValues', 'simulator'),
         simulator.dataframe.getBuffer('curPoints', 'simulator'),
         simulator.dataframe.getBuffer('curForces', 'simulator'),
         simulator.dataframe.getBuffer('prevForces', 'simulator'),
@@ -448,9 +445,6 @@ function setPoints (simulator, points) {
     simulator.renderer.numPoints = numPoints;
 
     logger.debug('Number of points in simulation: %d', numPoints);
-
-    // Create buffers and write initial data to them, then set
-    simulator.tickBuffers(['curPoints', 'randValues']);
 
     const swingsBytes = numPoints * Float32Array.BYTES_PER_ELEMENT;
 
