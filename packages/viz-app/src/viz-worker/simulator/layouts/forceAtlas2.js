@@ -343,14 +343,11 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
         simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'pointForces', ['mem_read_write', 'mem_host_no_access']),
         simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'partialForces', ['mem_read_write', 'mem_host_no_access']),
         simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap',['mem_read_write', 'mem_host_no_access']),
-        simulator.cl.createBuffer(1 + Math.ceil(numEdges / 256), 'globalCarryIn',['mem_read_write', 'mem_host_no_access']),
-        simulator.cl.createBuffer(forwardsEdges.edgeStartEndIdxsTyped.byteLength, 'forwardsEdgeStartEndIdxs', ['mem_read_only', 'mem_host_write']),
-        simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs', ['mem_read_only', 'mem_host_write']),
+        simulator.cl.createBuffer(1 + Math.ceil(numEdges / 256), 'globalCarryIn',['mem_read_write', 'mem_host_no_access'])
      ]).spread(function (x_cords, y_cords, children, mass, start, sort,
                          xmin, xmax, ymin, ymax, globalSwings, globalTractions, count,
                          blocked, step, bottom, maxdepth, radius, globalSpeed, pointForces, partialForces,
-                        outputEdgeForcesMap, globalCarryOut, forwardsEdgeStartEndIdxs,
-                        backwardsEdgeStartEndIdxs) {
+                        outputEdgeForcesMap, globalCarryOut) {
          layoutBuffers.x_cords = x_cords;
          layoutBuffers.y_cords = y_cords;
          layoutBuffers.children = children;
@@ -376,11 +373,7 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
          layoutBuffers.partialForces = partialForces,
          layoutBuffers.outputEdgeForcesMap = outputEdgeForcesMap;
          layoutBuffers.globalCarryOut = globalCarryOut;
-         layoutBuffers.forwardsEdgeStartEndIdxs = forwardsEdgeStartEndIdxs;
-         layoutBuffers.backwardsEdgeStartEndIdxs = backwardsEdgeStartEndIdxs;
          return Q.all([
-            layoutBuffers.forwardsEdgeStartEndIdxs.write(forwardsEdges.edgeStartEndIdxsTyped),
-            layoutBuffers.backwardsEdgeStartEndIdxs.write(backwardsEdges.edgeStartEndIdxsTyped)
         ]).then(function () {
             return layoutBuffers;
         })
