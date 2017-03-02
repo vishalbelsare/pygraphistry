@@ -1,18 +1,13 @@
 import { Subject } from 'rxjs/Subject';
-import { Model } from '@graphistry/falcor-model-rxjs';
 import $$observable from 'symbol-observable';
 import { Observable } from 'rxjs/Observable';
 import { AsyncSubject } from 'rxjs/AsyncSubject';
+import * as Scheduler from 'rxjs/scheduler/async';
 import { ReplaySubject } from 'rxjs/ReplaySubject';
-import { asap as AsapScheduler } from 'rxjs/scheduler/asap';
+import { Model } from '@graphistry/falcor-model-rxjs';
 import { PostMessageDataSource } from '@graphistry/falcor-socket-datasource';
+import { $ref, $atom, $value, $invalidate } from '@graphistry/falcor-json-graph';
 import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
-import {
-    ref as $ref,
-    atom as $atom,
-    pathValue as $value,
-    pathInvalidation as $invalidate
-} from '@graphistry/falcor-json-graph';
 
 
 /**
@@ -708,10 +703,10 @@ function GraphistryJS(iFrame) {
 
     const model = new Model({
         recycleJSON: true,
-        scheduler: AsapScheduler,
-        treatErrorsAsValues: true,
+        scheduler: Scheduler.async,
         allowFromWhenceYouCame: true
     });
+
     model._source = new PostMessageDataSource(
         window, iFrame.contentWindow, model
     );
@@ -815,5 +810,6 @@ function wrapStaticObservableMethods(Observable, Graphistry) {
         Graphistry[staticMethodName] = createStaticWrapper(staticMethodName);
     }
     Graphistry.bindCallback = (...args) => (...args2) => new Graphistry(Observable.bindCallback(...args)(...args2));
+    Graphistry.bindNodeCallback = (...args) => (...args2) => new Graphistry(Observable.bindNodeCallback(...args)(...args2));
     return Graphistry;
 }

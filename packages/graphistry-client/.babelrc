@@ -1,9 +1,12 @@
 {
     "presets": [
-        { "plugins": [ "transform-runtime", "version-inline" ] },
+        { "plugins": ["transform-runtime", "version-inline"] },
         {
             "passPerPreset": false,
-            "presets": ["es2015", "stage-0"]
+            "presets": [[
+                 "es2015", { modules: false, loose: true }],
+                 "stage-0"
+            ]
         }
     ]
 }
