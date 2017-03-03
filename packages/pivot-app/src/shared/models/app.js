@@ -6,7 +6,7 @@ import _ from 'underscore';
 
 
 export function makeTestUser(investigations, templates, connectors, apiKey, graphistryHost) {
-    const suffix = '/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&info=false&logo=false';
+    const suffix = '/graph/graph.html?bg=%23eeeeee&type=vgraph&info=false&logo=false';
 
     const investigationsRefs = investigations.map(investigation =>
         $ref(`investigationsById['${investigation.id}']`)
