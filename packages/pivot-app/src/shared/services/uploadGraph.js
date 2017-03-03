@@ -173,7 +173,7 @@ export function rowColumnCounts(rows) {
 
 // {a: b} -> {b: [a]} (whereas _.invert :: {a: b} -> {b: a})
 export function nonuniqueInvert(h) {
-    return _.mapObject(_.groupBy(_.pairs(h), ([k,v]) => v), (v) => _.map(v, ([k,v]) => k));
+    return _.mapObject(_.groupBy(_.pairs(h), ([,v]) => v), (v) => _.map(v, ([k,]) => k));
 }
 
 // {nodeName: Int}, {"Int": Int}, {nodeName: Int} -> {nodeName: Int}
@@ -181,7 +181,7 @@ export function rowsToColumns(nodeRows, columnCounts, nodeDegrees) {
     const maxColumn = _.max(_.values(columnCounts));
     const orderedRows = _.mapObject(nonuniqueInvert(nodeRows),
                                     (nodes) => nodes.sort((a,b) => (nodeDegrees[b] - nodeDegrees[a]) || (a > b ? 1 : -1)));
-    var nodeColumns = {};
+    const nodeColumns = {};
     _.each(orderedRows, (row) => { _.each(row, (node, idx) => {
         nodeColumns[node] = (maxColumn - row.length)/2 + idx
     })});
@@ -197,8 +197,8 @@ export function mergeRowsColumnsToXY(rows, columns, fudgeX, fudgeY) {
 export function decorateGraphLabelsWithXY(labels, xy) {
     const i = bindings.idField;
     _.each(labels, function(label) {
-            label['x'] = xy[label[i]].x;
-            label['y'] = xy[label[i]].y;
+            label.x = xy[label[i]].x;
+            label.y = xy[label[i]].y;
         });
 }
 
