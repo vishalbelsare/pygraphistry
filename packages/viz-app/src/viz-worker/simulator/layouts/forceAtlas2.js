@@ -264,8 +264,8 @@ function getBufferBindings(simulator, stepNumber) {
         start:layoutBuffers.start.buffer,
         step:layoutBuffers.step.buffer,
         stepNumber: stepNumber,
-        swings: simulator.dataframe.getBuffer('swings', 'simulator').buffer,
-        tractions: simulator.dataframe.getBuffer('tractions', 'simulator').buffer,
+        swings: layoutBuffers.swings.buffer,
+        tractions: layoutBuffers.tractions.buffer,
         width:simulator.controls.global.dimensions[0],
         xCoords: layoutBuffers.x_cords.buffer,
         yCoords:layoutBuffers.y_cords.buffer,
@@ -315,11 +315,13 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
         simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'pointForces', ['mem_read_write', 'mem_host_no_access']),
         simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'partialForces', ['mem_read_write', 'mem_host_no_access']),
         simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap',['mem_read_write', 'mem_host_no_access']),
-        simulator.cl.createBuffer(1 + Math.ceil(numEdges / 256), 'globalCarryIn',['mem_read_write', 'mem_host_no_access'])
+        simulator.cl.createBuffer(1 + Math.ceil(numEdges / 256), 'globalCarryIn',['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(numPoints * Float32Array.BYTES_PER_ELEMENT, 'swings', ['mem_read_write']),
+        simulator.cl.createBuffer(numPoints * Float32Array.BYTES_PER_ELEMENT, 'tractions', ['mem_read_write'])
      ]).spread(function (x_cords, y_cords, children, mass, start, sort,
                          xmin, xmax, ymin, ymax, globalSwings, globalTractions, count,
                          blocked, step, bottom, maxdepth, radius, globalSpeed, pointForces, partialForces,
-                        outputEdgeForcesMap, globalCarryOut) {
+                        outputEdgeForcesMap, globalCarryOut, swings, tractions) {
          layoutBuffers.x_cords = x_cords;
          layoutBuffers.y_cords = y_cords;
          layoutBuffers.children = children;
@@ -345,7 +347,19 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
          layoutBuffers.partialForces = partialForces,
          layoutBuffers.outputEdgeForcesMap = outputEdgeForcesMap;
          layoutBuffers.globalCarryOut = globalCarryOut;
+         layoutBuffers.swings = swings;
+         layoutBuffers.tractions = tractions;
+         logger.warn({numPoints}, 'Here');
+
+         const swingZeros = new Float32Array(numPoints);
+         const tractionOnes = new Float32Array(numPoints);
+         for (let i = 0; i < swingZeros.length; i++) {
+             swingZeros[i] = 0;
+             tractionOnes[i] = 1;
+         }
          return Q.all([
+             swings.write(swingZeros),
+             tractions.write(tractionOnes)
         ]).then(function () {
             return layoutBuffers;
         })
@@ -387,19 +401,23 @@ ForceAtlas2Barnes.prototype.integrate = function(simulator, workItems) {
 ForceAtlas2Barnes.prototype.updateDataframeBuffers = function(simulator) {
     var that = this;
 
+
     var unresolvedBufferBindings = getBufferBindings(simulator, 0);
     var pairs = _.pairs(unresolvedBufferBindings);
     var keys = _.map(pairs, (p) => p[0]);
     var values = _.map(pairs, (p) => p[1]);
 
-    return Q.all(values).then(function (results) {
-        var resultHash = {};
-        for (var i = 0; i < results.length; i++) {
-            resultHash[keys[i]] = results[i];
-        }
 
-        return that.updateBufferBindings(resultHash);
-    });
+    return Q.all(values)
+    .then(function (results) {
+            var resultHash = {};
+            for (var i = 0; i < results.length; i++) {
+                resultHash[keys[i]] = results[i];
+            }
+
+            return that.updateBufferBindings(resultHash);
+    })
+    .fail(log.makeQErrorHandler(logger, 'update DataframeBuffers failed'));
 };
 
 ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
@@ -458,6 +476,7 @@ ForceAtlas2Barnes.prototype.edgeForces = function(simulator, workItemsSize) {
 }
 
 ForceAtlas2Barnes.prototype.updateBufferBindings = function(bufferBindings) {
+    logger.warn('Updated buffer bindings!');
     _.each(this.kernels, function(kernel) {
         kernel.set(_.pick(bufferBindings, kernel.argNames));
     })

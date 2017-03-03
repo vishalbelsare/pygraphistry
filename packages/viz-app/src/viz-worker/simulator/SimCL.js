@@ -96,8 +96,6 @@ function createSimCL (simObj, algos, cl, renderer, controls, dataframe, kernelCa
         backwardsEdges: null,
         curForces: null,
         prevForces: null,
-        swings: null,
-        tractions: null,
         outputEdgeForcesMap: null,
         forwardsEdgeStartEndIdxs: null,
         backwardsEdgeStartEndIdxs: null,
@@ -424,8 +422,6 @@ function setPoints (simulator, points) {
         simulator.dataframe.getBuffer('curPoints', 'simulator'),
         simulator.dataframe.getBuffer('curForces', 'simulator'),
         simulator.dataframe.getBuffer('prevForces', 'simulator'),
-        simulator.dataframe.getBuffer('swings', 'simulator'),
-        simulator.dataframe.getBuffer('tractions', 'simulator')
     ]);
 
     const numPoints = points.length / elementsPerPoint;
@@ -442,26 +438,19 @@ function setPoints (simulator, points) {
 
     logger.debug('Number of points in simulation: %d', numPoints);
 
-    const swingsBytes = numPoints * Float32Array.BYTES_PER_ELEMENT;
-
     return Q.all([
         simulator.renderer.createBuffer(points, 'curPoints'),
         simulator.cl.createBuffer(points.byteLength, 'nextPoints'),
         simulator.cl.createBuffer(points.byteLength, 'curForces'),
         simulator.cl.createBuffer(points.byteLength, 'prevForces'),
-        simulator.cl.createBuffer(swingsBytes, 'swings'),
-        simulator.cl.createBuffer(swingsBytes, 'tractions'),
     ])
-    .spread((pointsVBO, nextPointsBuf,
-        curForcesBuf, prevForcesBuf, swingsBuf, tractionsBuf) => {
+    .spread((pointsVBO, nextPointsBuf, curForcesBuf, prevForcesBuf) => {
 
         logger.trace('Created most of the points');
 
         simulator.dataframe.loadBuffer('nextPoints', 'simulator', nextPointsBuf);
         simulator.dataframe.loadBuffer('curForces', 'simulator', curForcesBuf);
         simulator.dataframe.loadBuffer('prevForces', 'simulator', prevForcesBuf);
-        simulator.dataframe.loadBuffer('swings', 'simulator', swingsBuf);
-        simulator.dataframe.loadBuffer('tractions', 'simulator', tractionsBuf);
 
         simulator.dataframe.loadRendererBuffer('curPoints', pointsVBO);
 
@@ -470,17 +459,9 @@ function setPoints (simulator, points) {
             zeros[i] = 0;
         }
 
-        const swingZeros = new Float32Array(numPoints);
-        const tractionOnes = new Float32Array(numPoints);
-        for (let i = 0; i < swingZeros.length; i++) {
-            swingZeros[i] = 0;
-            tractionOnes[i] = 1;
-        }
         return Q.all([
             simulator.cl.createBufferGL(pointsVBO, 'curPoints'),
             simulator.dataframe.writeBuffer('prevForces', 'simulator', zeros, simulator),
-            simulator.dataframe.writeBuffer('swings', 'simulator', swingZeros, simulator),
-            simulator.dataframe.writeBuffer('tractions', 'simulator', tractionOnes, simulator)
         ]);
     })
     .spread((pointsBuf) => {
