@@ -81,14 +81,15 @@ function getQuery(key) {
     };
 }
 
+export const bindings = {
+    "sourceField": "source",
+    "destinationField": "destination",
+    "idField": "node"
+}
+
 function createGraph(pivots) {
     const name = `PivotApp/${simpleflake().toJSON()}`;
     const type = "edgelist";
-    const bindings = {
-        "sourceField": "source",
-        "destinationField": "destination",
-        "idField": "node"
-    }
     const mergedPivots = {
         graph:[],
         labels: []
