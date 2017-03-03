@@ -354,7 +354,6 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
          layoutBuffers.globalCarryOut = globalCarryOut;
          layoutBuffers.swings = swings;
          layoutBuffers.tractions = tractions;
-         logger.warn({numPoints}, 'Here');
 
          const forcesZeros = new Float32Array(numPoints * 2);
          for (let i = 0; i < forcesZeros.length; i++) {
@@ -477,7 +476,6 @@ ForceAtlas2Barnes.prototype.edgeForces = function(simulator, workItemsSize) {
 }
 
 ForceAtlas2Barnes.prototype.updateBufferBindings = function(bufferBindings) {
-    logger.warn('Updated buffer bindings!');
     _.each(this.kernels, function(kernel) {
         kernel.set(_.pick(bufferBindings, kernel.argNames));
     })
