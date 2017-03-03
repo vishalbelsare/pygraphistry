@@ -636,99 +636,99 @@ function setSelectedPointIndexes (simulator, selectedPointIndexes) {
 }
 
 // TODO Write kernel for this.
-function setMidEdgeColors (simulator, midEdgeColors) {
-    let /*midEdgeColors, */forwardsEdges, srcNodeIdx, dstNodeIdx, srcColorInt, srcColor,
-        dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
-        colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColorInt;
+//function setMidEdgeColors (simulator, midEdgeColors) {
+    //let [>midEdgeColors, <]forwardsEdges, srcNodeIdx, dstNodeIdx, srcColorInt, srcColor,
+        //dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
+        //colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColorInt;
 
-    const numEdges = simulator.dataframe.getNumElements('edge');
-    const numRenderedSplits = simulator.dataframe.getNumElements('renderedSplits');
-    const numMidEdgeColors = numEdges * (numRenderedSplits + 1);
+    //const numEdges = simulator.dataframe.getNumElements('edge');
+    //const numRenderedSplits = simulator.dataframe.getNumElements('renderedSplits');
+    //const numMidEdgeColors = numEdges * (numRenderedSplits + 1);
 
-    const interpolatedColor = {};
-    srcColor = {};
-    dstColor = {};
+    //const interpolatedColor = {};
+    //srcColor = {};
+    //dstColor = {};
 
-    if (!midEdgeColors) {
-        logger.trace('Using default midedge colors');
-        midEdgeColors = new Uint32Array(4 * numMidEdgeColors);
-        numSegments = numRenderedSplits + 1;
-        forwardsEdges = simulator.dataframe.getHostBuffer('forwardsEdges');
-        // forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
+    //if (!midEdgeColors) {
+        //logger.trace('Using default midedge colors');
+        //midEdgeColors = new Uint32Array(4 * numMidEdgeColors);
+        //numSegments = numRenderedSplits + 1;
+        //forwardsEdges = simulator.dataframe.getHostBuffer('forwardsEdges');
+        //// forwardsEdges = simulator.bufferHostCopies.forwardsEdges;
 
-        // Interpolate colors in the HSV color space.
-        colorHSVInterpolator = (color1, color2, lambda) => {
-            let color1HSV = color1.hsv(), color2HSV = color2.hsv();
-            const h1 = color1HSV.h;
-            const h2 = color2HSV.h;
-            const maxCCW = h1 - h2;
-            const maxCW =  (h2 + 360) - h1;
-            let hueStep;
-            if (maxCW > maxCCW) {
-                //hueStep = higherHue - lowerHue;
+        //// Interpolate colors in the HSV color space.
+        //colorHSVInterpolator = (color1, color2, lambda) => {
+            //let color1HSV = color1.hsv(), color2HSV = color2.hsv();
+            //const h1 = color1HSV.h;
+            //const h2 = color2HSV.h;
+            //const maxCCW = h1 - h2;
+            //const maxCW =  (h2 + 360) - h1;
+            //let hueStep;
+            //if (maxCW > maxCCW) {
+                ////hueStep = higherHue - lowerHue;
+                ////hueStep = h2 - h1;
                 //hueStep = h2 - h1;
-                hueStep = h2 - h1;
-            } else {
-                //hueStep = higherHue - lowerHue;
-                hueStep = (360 + h2) - h1;
-            }
-            const h = (h1 + (hueStep * (lambda))) % 360;
-            //h = color1HSV.h * (1 - lambda) + color2HSV.h * (lambda);
-            const s = color1HSV.s * (1 - lambda) + color2HSV.s * (lambda);
-            const v = color1HSV.v * (1 - lambda) + color2HSV.v * (lambda);
-            return interpolatedColor.hsv([h, s, v]);
-        };
+            //} else {
+                ////hueStep = higherHue - lowerHue;
+                //hueStep = (360 + h2) - h1;
+            //}
+            //const h = (h1 + (hueStep * (lambda))) % 360;
+            ////h = color1HSV.h * (1 - lambda) + color2HSV.h * (lambda);
+            //const s = color1HSV.s * (1 - lambda) + color2HSV.s * (lambda);
+            //const v = color1HSV.v * (1 - lambda) + color2HSV.v * (lambda);
+            //return interpolatedColor.hsv([h, s, v]);
+        //};
 
-        const colorRGBInterpolator = (color1, color2, lambda) => {
-            const r = color1.r * (1 - lambda) + color2.r * (lambda);
-            const g = color1.g * (1 - lambda) + color2.g * (lambda);
-            const b = color1.b * (1 - lambda) + color2.b * (lambda);
-            return {r, g, b};
-        };
+        //const colorRGBInterpolator = (color1, color2, lambda) => {
+            //const r = color1.r * (1 - lambda) + color2.r * (lambda);
+            //const g = color1.g * (1 - lambda) + color2.g * (lambda);
+            //const b = color1.b * (1 - lambda) + color2.b * (lambda);
+            //return {r, g, b};
+        //};
 
-        // Convert from HSV to RGB Int
-        convertColor2RGBInt = (color) => {
-            return (color.r << 0) + (color.g << 8) + (color.b << 16);
-        };
+        //// Convert from HSV to RGB Int
+        //convertColor2RGBInt = (color) => {
+            //return (color.r << 0) + (color.g << 8) + (color.b << 16);
+        //};
 
-        // Convert from RGB Int to HSV
-        convertRGBInt2Color= (rgbInt) => {
-            return {
-                r:rgbInt & 0xFF,
-                g:(rgbInt >> 8) & 0xFF,
-                b:(rgbInt >> 16) & 0xFF
-            };
-        };
+        //// Convert from RGB Int to HSV
+        //convertRGBInt2Color= (rgbInt) => {
+            //return {
+                //r:rgbInt & 0xFF,
+                //g:(rgbInt >> 8) & 0xFF,
+                //b:(rgbInt >> 16) & 0xFF
+            //};
+        //};
 
-        const pointColorsBuffer = simulator.dataframe.getLocalBuffer('pointColors');
+        //const pointColorsBuffer = simulator.dataframe.getLocalBuffer('pointColors');
 
-        for (edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
-            srcNodeIdx = forwardsEdges.edgesTyped[2 * edgeIndex];
-            dstNodeIdx = forwardsEdges.edgesTyped[2 * edgeIndex + 1];
+        //for (edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
+            //srcNodeIdx = forwardsEdges.edgesTyped[2 * edgeIndex];
+            //dstNodeIdx = forwardsEdges.edgesTyped[2 * edgeIndex + 1];
 
-            srcColorInt = pointColorsBuffer[srcNodeIdx];
-            dstColorInt = pointColorsBuffer[dstNodeIdx];
+            //srcColorInt = pointColorsBuffer[srcNodeIdx];
+            //dstColorInt = pointColorsBuffer[dstNodeIdx];
 
-            srcColor = convertRGBInt2Color(srcColorInt);
-            dstColor = convertRGBInt2Color(dstColorInt);
+            //srcColor = convertRGBInt2Color(srcColorInt);
+            //dstColor = convertRGBInt2Color(dstColorInt);
 
-            interpolatedColorInt = convertColor2RGBInt(srcColor);
+            //interpolatedColorInt = convertColor2RGBInt(srcColor);
 
-            for (midEdgeIndex = 0; midEdgeIndex < numSegments; midEdgeIndex++) {
-                midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex)] =
-                    interpolatedColorInt;
-                lambda = (midEdgeIndex + 1) / (numSegments);
-                interpolatedColorInt =
-                    convertColor2RGBInt(colorRGBInterpolator(srcColor, dstColor, lambda));
-                midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex) + 1] =
-                    interpolatedColorInt;
-            }
-        }
-    }
-    simulator.dataframe.loadLocalBuffer('midEdgeColors', midEdgeColors);
-    simulator.tickBuffers(['midEdgeColors']);
-    return Q(simulator);
-}
+            //for (midEdgeIndex = 0; midEdgeIndex < numSegments; midEdgeIndex++) {
+                //midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex)] =
+                    //interpolatedColorInt;
+                //lambda = (midEdgeIndex + 1) / (numSegments);
+                //interpolatedColorInt =
+                    //convertColor2RGBInt(colorRGBInterpolator(srcColor, dstColor, lambda));
+                //midEdgeColors[(2 * edgeIndex) * numSegments + (2 * midEdgeIndex) + 1] =
+                    //interpolatedColorInt;
+            //}
+        //}
+    //}
+    //simulator.dataframe.loadLocalBuffer('midEdgeColors', midEdgeColors);
+    //simulator.tickBuffers(['midEdgeColors']);
+    //return Q(simulator);
+//}
 
 function setLocks (simulator, cfg) {
     _.extend(simulator.controls.locks, cfg || {});
