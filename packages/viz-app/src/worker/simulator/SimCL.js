@@ -466,39 +466,27 @@ function setPoints (simulator, points) {
     simulator.tickBuffers(['curPoints', 'randValues']);
 
     const swingsBytes = numPoints * Float32Array.BYTES_PER_ELEMENT;
-    const randBufBytes = randLength * elementsPerPoint * Float32Array.BYTES_PER_ELEMENT;
 
     return Q.all([
         simulator.renderer.createBuffer(points, 'curPoints'),
         simulator.cl.createBuffer(points.byteLength, 'nextPoints'),
-        simulator.cl.createBuffer(points.byteLength, 'partialForces1'),
-        simulator.cl.createBuffer(points.byteLength, 'partialForces2'),
         simulator.cl.createBuffer(points.byteLength, 'curForces'),
         simulator.cl.createBuffer(points.byteLength, 'prevForces'),
         simulator.cl.createBuffer(swingsBytes, 'swings'),
         simulator.cl.createBuffer(swingsBytes, 'tractions'),
-        simulator.cl.createBuffer(randBufBytes, 'randValues')])
-    .spread((pointsVBO, nextPointsBuf, partialForces1Buf, partialForces2Buf,
-        curForcesBuf, prevForcesBuf, swingsBuf, tractionsBuf, randBuf) => {
+    ])
+    .spread((pointsVBO, nextPointsBuf,
+        curForcesBuf, prevForcesBuf, swingsBuf, tractionsBuf) => {
 
         logger.trace('Created most of the points');
 
         simulator.dataframe.loadBuffer('nextPoints', 'simulator', nextPointsBuf);
-        simulator.dataframe.loadBuffer('partialForces1', 'simulator', partialForces1Buf);
-        simulator.dataframe.loadBuffer('partialForces2', 'simulator', partialForces2Buf);
         simulator.dataframe.loadBuffer('curForces', 'simulator', curForcesBuf);
         simulator.dataframe.loadBuffer('prevForces', 'simulator', prevForcesBuf);
         simulator.dataframe.loadBuffer('swings', 'simulator', swingsBuf);
         simulator.dataframe.loadBuffer('tractions', 'simulator', tractionsBuf);
 
         simulator.dataframe.loadRendererBuffer('curPoints', pointsVBO);
-
-        // Generate an array of random values we will write to the randValues buffer
-        simulator.dataframe.loadBuffer('randValues', 'simulator', randBuf);
-        const rands = new Float32Array(randLength * simulator.elementsPerPoint);
-        for (let i = 0; i < rands.length; i++) {
-            rands[i] = Math.random();
-        }
 
         const zeros = new Float32Array(numPoints * simulator.elementsPerPoint);
         for (let i = 0; i < zeros.length; i++) {
@@ -511,12 +499,8 @@ function setPoints (simulator, points) {
             swingZeros[i] = 0;
             tractionOnes[i] = 1;
         }
-
-        swingsBuf.write(swingZeros);
-        tractionsBuf.write(tractionOnes);
         return Q.all([
             simulator.cl.createBufferGL(pointsVBO, 'curPoints'),
-            simulator.dataframe.writeBuffer('randValues', 'simulator', rands, simulator),
             simulator.dataframe.writeBuffer('prevForces', 'simulator', zeros, simulator),
             simulator.dataframe.writeBuffer('swings', 'simulator', swingZeros, simulator),
             simulator.dataframe.writeBuffer('tractions', 'simulator', tractionOnes, simulator)

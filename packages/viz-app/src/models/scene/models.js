@@ -22,18 +22,6 @@ export const models = {
             'normalize': false
         }
     },
-    'edgeHeights': {
-        'edgeHeight': {
-            'datasource': VBODataSources.HOST,
-            'index': true,
-            'type': 'UNSIGNED_INT',
-            'hint': DrawOptions.STATIC_DRAW,
-            'count': 1,
-            'offset': 0,
-            'stride': 0,
-            'normalize': false
-        }
-    },
     'edgeSeqLens': {
         'edgeSeqLen': {
             'datasource': VBODataSources.HOST,

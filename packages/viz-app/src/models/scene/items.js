@@ -31,7 +31,6 @@ export const items = {
         },
         'otherBuffers': {
             'logicalEdges': ['logicalEdges', 'curIdx'],
-            'edgeHeights': ['edgeHeights', 'edgeHeight'],
             'edgeSeqLens': ['edgeSeqLens', 'edgeSeqLen'],
             'forwardsEdgeToUnsortedEdge': ['forwardsEdgeToUnsortedEdge', 'forwardsEdgeToUnsortedEdge'],
             'curMidPoints': ['curMidPoints', 'curPos'],
@@ -57,7 +56,6 @@ export const items = {
         },
         'otherBuffers': {
             'logicalEdges': ['logicalEdges', 'curIdx'],
-            'edgeHeights': ['edgeHeights', 'edgeHeight'],
             'edgeSeqLens': ['edgeSeqLens', 'edgeSeqLen'],
             'forwardsEdgeToUnsortedEdge': ['forwardsEdgeToUnsortedEdge', 'forwardsEdgeToUnsortedEdge'],
             'curMidPoints': ['curMidPoints', 'curPos'],

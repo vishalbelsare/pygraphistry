@@ -77,35 +77,20 @@ inline int reduction_thread_vote(__local int* const buffer, const float distSqua
 
 __kernel void calculate_forces(
         //graph params
-        const float scalingRatio, const float gravity, const unsigned int edgeWeightInfluence, const unsigned int flags,
-        __global float *x_cords,
-        __global float *y_cords,
-        __global float *accx,
-        __global float * accy,
-        __global int* children,
-        __global float* mass,
-        __global int* start,
-        __global int* sort,
-        __global float* global_x_mins,
-        __global float* global_x_maxs,
-        __global float* global_y_mins,
-        __global float* global_y_maxs,
-        __global float* swings,
-        __global float* tractions,
-        __global int* count,
-        __global int* blocked,
-        __global int* step,
-        __global int* bottom,
-        __global int* maxdepth,
-        __global float* radiusd,
-        __global volatile float* globalSpeed,
-        unsigned int step_number,
-        float width,
-        float height,
+        const float scalingRatio, const float gravity, const unsigned int flags,
+        const __global float *x_cords,
+        const __global float *y_cords,
+        const __global int* children,
+        const __global float* mass,
+        const __global int* sort,
+        const __global int* step,
+        const __global int* maxdepth,
+        const __global float* radiusd,
+        const float width,
+        const float height,
         const int num_bodies,
         const int num_nodes,
-        __global float2* pointForces,
-        float tau
+        __global float2* pointForces
 ){
 
     debugonce("calculate forces\n");

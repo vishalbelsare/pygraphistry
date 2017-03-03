@@ -93,7 +93,7 @@ function RenderingScheduler(renderState, renderer,
         .switchMap(() => {
             var bufUpdates = [
                 'curPoints', 'logicalEdges', 'edgeColors',
-                'pointSizes', 'curMidPoints', 'edgeHeights', 'edgeSeqLens'
+                'pointSizes', 'curMidPoints', 'edgeSeqLens'
             ].map((bufName) => {
                 var bufUpdate = hostBuffers[bufName] || Observable.return();
                 return bufUpdate.do((data) => {
@@ -439,7 +439,6 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
     var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
     var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
 
-    var edgeHeightBuffer = new Uint32Array(bufferSnapshots.edgeHeights.buffer);
     var edgeSeqLenBuffer = new Uint32Array(bufferSnapshots.edgeSeqLens.buffer);
 
     var numEdges = logicalEdges.length / 2;
@@ -500,7 +499,7 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
         dstPointX = curPoints[2 * dstPointIdx];
         dstPointY = curPoints[2 * dstPointIdx + 1];
 
-        heightCounter = edgeHeightBuffer[edgeIndex];
+        heightCounter = 0;
         edgeSeqLen = edgeSeqLenBuffer[edgeIndex];
 
         prevSrcIdx = srcPointIdx;
