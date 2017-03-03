@@ -94,8 +94,6 @@ function createSimCL (simObj, algos, cl, renderer, controls, dataframe, kernelCa
         degrees: null,
         forwardsEdges: null,
         backwardsEdges: null,
-        curForces: null,
-        prevForces: null,
         outputEdgeForcesMap: null,
         forwardsEdgeStartEndIdxs: null,
         backwardsEdgeStartEndIdxs: null,
@@ -420,19 +418,10 @@ function setPoints (simulator, points) {
     simulator.resetBuffers([
         simulator.dataframe.getBuffer('nextPoints', 'simulator'),
         simulator.dataframe.getBuffer('curPoints', 'simulator'),
-        simulator.dataframe.getBuffer('curForces', 'simulator'),
-        simulator.dataframe.getBuffer('prevForces', 'simulator'),
     ]);
 
     const numPoints = points.length / elementsPerPoint;
     simulator.dataframe.setNumElements('point', numPoints);
-
-    // FIXME HACK:
-    const guess = (numPoints * -0.00625 + 210).toFixed(0);
-    logger.debug('Points:%d\tGuess:%d', numPoints, guess);
-
-    simulator.tilesPerIteration = Math.min(Math.max(16, guess), 512);
-    logger.debug('Using %d tiles per iterations', simulator.tilesPerIteration);
 
     simulator.renderer.numPoints = numPoints;
 
@@ -441,27 +430,17 @@ function setPoints (simulator, points) {
     return Q.all([
         simulator.renderer.createBuffer(points, 'curPoints'),
         simulator.cl.createBuffer(points.byteLength, 'nextPoints'),
-        simulator.cl.createBuffer(points.byteLength, 'curForces'),
-        simulator.cl.createBuffer(points.byteLength, 'prevForces'),
     ])
-    .spread((pointsVBO, nextPointsBuf, curForcesBuf, prevForcesBuf) => {
+    .spread((pointsVBO, nextPointsBuf) => {
 
         logger.trace('Created most of the points');
 
         simulator.dataframe.loadBuffer('nextPoints', 'simulator', nextPointsBuf);
-        simulator.dataframe.loadBuffer('curForces', 'simulator', curForcesBuf);
-        simulator.dataframe.loadBuffer('prevForces', 'simulator', prevForcesBuf);
 
         simulator.dataframe.loadRendererBuffer('curPoints', pointsVBO);
 
-        const zeros = new Float32Array(numPoints * simulator.elementsPerPoint);
-        for (let i = 0; i < zeros.length; i++) {
-            zeros[i] = 0;
-        }
-
         return Q.all([
             simulator.cl.createBufferGL(pointsVBO, 'curPoints'),
-            simulator.dataframe.writeBuffer('prevForces', 'simulator', zeros, simulator),
         ]);
     })
     .spread((pointsBuf) => {

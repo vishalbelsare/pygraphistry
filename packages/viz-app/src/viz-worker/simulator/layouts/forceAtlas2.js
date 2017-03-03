@@ -233,7 +233,7 @@ function getBufferBindings(simulator, stepNumber) {
         bottom:layoutBuffers.bottom.buffer,
         children:layoutBuffers.children.buffer,
         count:layoutBuffers.count.buffer,
-        curForces: simulator.dataframe.getBuffer('curForces', 'simulator').buffer,
+        curForces: layoutBuffers.curForces.buffer,
         forwardsEdges: simulator.dataframe.getBuffer('forwardsEdges', 'simulator').buffer,
         forwardsEdgeWeights: simulator.dataframe.getClBuffer(simulator.cl, 'forwardsEdgeWeights', 'hostBuffer').then( obj => obj.buffer ),
         forwardsEdgeStartEndIdxs: simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator').buffer,
@@ -255,7 +255,7 @@ function getBufferBindings(simulator, stepNumber) {
         pointDegrees: simulator.dataframe.getBuffer('degrees', 'simulator').buffer,
         partialForces: layoutBuffers.partialForces.buffer,
         pointForces: layoutBuffers.pointForces.buffer,
-        prevForces: simulator.dataframe.getBuffer('prevForces', 'simulator').buffer,
+        prevForces: layoutBuffers.prevForces.buffer,
         outputPositions: simulator.dataframe.getBuffer('nextPoints', 'simulator').buffer,
         // TODO This should not be in simulator...
         outputForcesMap: simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator').buffer,
@@ -314,6 +314,8 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
         simulator.cl.createBuffer(Float32Array.BYTES_PER_ELEMENT, 'global_speed', ['mem_read_write', 'mem_host_no_access']),
         simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'pointForces', ['mem_read_write', 'mem_host_no_access']),
         simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'partialForces', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'curForces', ['mem_read_write', 'mem_host_no_access']),
+        simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'prevForces', ['mem_read_write']),
         simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap',['mem_read_write', 'mem_host_no_access']),
         simulator.cl.createBuffer(1 + Math.ceil(numEdges / 256), 'globalCarryIn',['mem_read_write', 'mem_host_no_access']),
         simulator.cl.createBuffer(numPoints * Float32Array.BYTES_PER_ELEMENT, 'swings', ['mem_read_write']),
@@ -321,6 +323,7 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
      ]).spread(function (x_cords, y_cords, children, mass, start, sort,
                          xmin, xmax, ymin, ymax, globalSwings, globalTractions, count,
                          blocked, step, bottom, maxdepth, radius, globalSpeed, pointForces, partialForces,
+                        curForces, prevForces,
                         outputEdgeForcesMap, globalCarryOut, swings, tractions) {
          layoutBuffers.x_cords = x_cords;
          layoutBuffers.y_cords = y_cords;
@@ -344,12 +347,19 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
          layoutBuffers.numBodies = numBodies;
          layoutBuffers.globalSpeed = globalSpeed;
          layoutBuffers.pointForces = pointForces,
+         layoutBuffers.curForces = curForces,
+         layoutBuffers.prevForces = prevForces,
          layoutBuffers.partialForces = partialForces,
          layoutBuffers.outputEdgeForcesMap = outputEdgeForcesMap;
          layoutBuffers.globalCarryOut = globalCarryOut;
          layoutBuffers.swings = swings;
          layoutBuffers.tractions = tractions;
          logger.warn({numPoints}, 'Here');
+
+         const forcesZeros = new Float32Array(numPoints * 2);
+         for (let i = 0; i < forcesZeros.length; i++) {
+             forcesZeros[i] = 0;
+         }
 
          const swingZeros = new Float32Array(numPoints);
          const tractionOnes = new Float32Array(numPoints);
@@ -359,7 +369,8 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
          }
          return Q.all([
              swings.write(swingZeros),
-             tractions.write(tractionOnes)
+             tractions.write(tractionOnes),
+             prevForces.write(forcesZeros)
         ]).then(function () {
             return layoutBuffers;
         })
@@ -369,10 +380,6 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
 ForceAtlas2Barnes.prototype.calculateSwings = function(simulator,  workItems) {
 
     var resources = [
-        simulator.dataframe.getBuffer('prevForces', 'simulator'),
-        simulator.dataframe.getBuffer('curForces', 'simulator'),
-        simulator.dataframe.getBuffer('swings', 'simulator'),
-        simulator.dataframe.getBuffer('tractions', 'simulator')
     ];
 
     simulator.tickBuffers(['swings', 'tractions']);
@@ -385,9 +392,6 @@ ForceAtlas2Barnes.prototype.integrate = function(simulator, workItems) {
 
     var resources = [
         simulator.dataframe.getBuffer('curPoints', 'simulator'),
-        simulator.dataframe.getBuffer('curForces', 'simulator'),
-        simulator.dataframe.getBuffer('swings', 'simulator'),
-        simulator.dataframe.getBuffer('nextPoints', 'simulator')
     ];
 
     simulator.tickBuffers(['nextPoints']);
@@ -428,10 +432,7 @@ ForceAtlas2Barnes.prototype.pointForces = function(simulator, workItems) {
 
     var resources = [
         simulator.dataframe.getBuffer('curPoints', 'simulator'),
-        simulator.dataframe.getBuffer('partialForces1', 'simulator')
     ];
-
-    simulator.tickBuffers(['partialForces1']);
 
     logger.trace("Running Force Atlas2 with BarnesHut Kernels");
 
@@ -512,8 +513,8 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
         simulator.tickBuffers(['curPoints']);
         var nextPoints = simulator.dataframe.getBuffer('nextPoints', 'simulator');
         var curPoints = simulator.dataframe.getBuffer('curPoints', 'simulator');
-        var curForces = simulator.dataframe.getBuffer('curForces', 'simulator');
-        var prevForces = simulator.dataframe.getBuffer('prevForces', 'simulator');
+        var curForces = layoutBuffers.curForces;
+        var prevForces = layoutBuffers.prevForces;
 
         return Q.all([
             nextPoints.copyInto(curPoints),
