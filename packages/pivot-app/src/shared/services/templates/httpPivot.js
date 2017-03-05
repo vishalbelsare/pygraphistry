@@ -1,13 +1,12 @@
-import _ from 'underscore';
 import { Observable } from 'rxjs';
 import request from 'request';
+import stringhash from 'string-hash';
 import { run } from 'node-jq';
 import { VError } from 'verror'
 const get = Observable.bindNodeCallback(request.get.bind(request));
 
 import { PivotTemplate } from './template.js';
 import { httpConnector0 } from '../connectors/http';
-import { shapeSplunkResults } from '../shapeSplunkResults.js';
 import logger from '../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
@@ -45,7 +44,7 @@ class HttpPivot extends PivotTemplate {
                     return Observable.throw(
                             new VError({
                                 name: 'HttpStatusError',
-                                cause: e,
+                                cause: 'URL gave an unexpected response code',
                                 info: info,
                             }, 'URL gave an unexpected response code', info));
                 }
