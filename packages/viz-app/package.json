@@ -86,7 +86,9 @@
   "files": [
     "kernels",
     "textures",
-    "build"
+    "www",
+    "index.js",
+    "config.js"
   ],
   "author": "",
   "license": "ISC",
