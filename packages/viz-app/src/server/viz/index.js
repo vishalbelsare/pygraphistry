@@ -7,7 +7,7 @@ import configureVGraphPipeline from './pipeline';
 import { textureHandler, colorTexture } from './texture';
 import { createLogger } from '@graphistry/common/logger';
 
-const logger = createLogger('viz-app:server:express');
+const logger = createLogger('viz-app:server:viz');
 
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
@@ -18,9 +18,9 @@ import configureServices from 'viz-app/worker/services';
 import configureFalcorRouter from 'viz-app/router/falcor';
 import VizServer from 'viz-app/worker/simulator/server-viz';
 
-function configureExpress(io, config) {
+function configureVizWorker(config, activeCB, io) {
 
-    console.log('========> configureExpress called');
+    // console.log('========> configureVizWorker called');
 
     let services, getDataSource, vbos = {};
     const nBodiesById = {}, workbooksById = {};
@@ -44,22 +44,24 @@ function configureExpress(io, config) {
         });
     }
 
-    const app = express();
+    const app = express.Router();
 
     // Register the texture request handler
     app.get('/texture', textureHandler);
     // Register the vbo request handler
     app.get('/vbo', configureVBOHandler(app, vbos));
     // Setup the public directory so that we can serve static assets.
-    app.use(`/graph`, express.static(path.join(process.cwd(), './build/public')));
-    app.use(`/public`, express.static(path.join(process.cwd(), './build/public')));
+    app.use(`/graph`, express.static(path.join(process.cwd(), './www/public')));
+    app.use(`/public`, express.static(path.join(process.cwd(), './www/public')));
 
     // Register server-side rendering middleware
     const loadVGraphPipeline = configureVGraphPipeline(config, s3DatasetCache);
-    const renderHTML = configureRender((request) => getDataSource(request, { streaming: false }));
+    const renderHTML = configureRender(config, (request) => getDataSource(request, { streaming: false }));
     const setupClientSocket = configureSocket(io, config, (request) => getDataSource(request, { streaming: true }));
 
-    app.use(`/graph/graph.html`, (req, res) => {
+    app.get(`/graph/graph.html`, (req, res) => {
+
+        activeCB(null, true);
 
         let { query: { workbook: workbookId } = {} } = req;
 
@@ -72,7 +74,7 @@ function configureExpress(io, config) {
             req.query.workbook = workbookId = simpleflake().toJSON();
         }
 
-        console.log('========> rendering graph.html with options:', JSON.stringify(req.query));
+        // console.log('========> rendering graph.html with options:', JSON.stringify(req.query));
 
         app.socket = null;
 
@@ -125,17 +127,14 @@ function configureExpress(io, config) {
         ))
         // legacy: pump the `nBody` into the vizServer VBO loop
         .do(({ view, vizServer }) => vizServer.ticksMulti.next(view.nBody))
-        .subscribe({
-            error(err) { logger.error({ err }, 'initialization sequence'); },
-            complete() { logger.die('viz session unexpectedly terminated'); },
-        });
+        .subscribe({ error: activeCB, complete: activeCB.bind(null, null, false) });
     });
 
     return app;
 }
 
-export { configureExpress };
-export default configureExpress;
+export { configureVizWorker };
+export default configureVizWorker;
 
 function sendSessionUpdate(sendUpdate, _view, session) {
     session = session || _view;

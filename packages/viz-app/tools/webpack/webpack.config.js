@@ -87,7 +87,7 @@ function makeWebpackConfig({
             new webpack.IgnorePlugin(/^\.\/locale$/, [/moment$/]),
             new AssetsPlugin({
                 filename: `webpack-${type}-stats.json`,
-                path: path.join(process.cwd(), './build')
+                path: path.join(process.cwd(), './www')
             }),
             // Setup enviorment variables for client
             new webpack.EnvironmentPlugin({ NODE_ENV: JSON.stringify(environment) }),

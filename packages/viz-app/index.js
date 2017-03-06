@@ -44,8 +44,8 @@ let serverMiddleware;
 
 // Run express as webpack dev server
 if (process.env.NODE_ENV === 'production') {
-    const PROD_SERVER_PATH = path.join(process.cwd(), './build/server.js');
-    const CLIENT_STATS_PATH = path.join(process.cwd(), './build/webpack-client-stats.json');
+    const PROD_SERVER_PATH = path.join(process.cwd(), './www/server.js');
+    const CLIENT_STATS_PATH = path.join(process.cwd(), './www/webpack-client-stats.json');
     serverMiddleware = require(PROD_SERVER_PATH).default(require(CLIENT_STATS_PATH));
 } else {
     global.__DEV__ = true;
@@ -84,14 +84,21 @@ if (port) {
             logger.error({ err }, `😭  Failed to start viz-app:server`);
         } else {
             logger.info(`Started viz-app:server at http://${host}:${port}`);
-            console.log('***********************************************************');
-            console.log(`Started viz-app:server at http://${host}:${port}`);
-            console.log('NODE_ENV:', process.env.NODE_ENV);
-            console.log('process.pid:', process.pid);
-            console.log('__dirname:', __dirname);
-            console.log('root:', path.resolve());
-            console.log(chalk.green(`==> 🌎  Listening at http://${host}:${port}`));
-            console.log('***********************************************************');
+            console.log(
+                [
+                    ``,
+                    `***********************************************************`,
+                    `Express app listening at http://${host}:${port}`,
+                    `Time        : ${(new Date()).toDateString()}`,
+                    `args        : "${process.argv.slice(2).join('", "')}"`,
+                    `NODE_ENV    : ${process.env.NODE_ENV}`,
+                    `process.pid : ${process.pid}`,
+                    `__dirname   : ${__dirname}`,
+                    `root        : ${path.resolve()}`,
+                    `***********************************************************`,
+                    ``,
+                ].join("\n")
+            );
 
             // if (config.ENVIRONMENT === 'local') {
             //     // Open a browser window
@@ -103,15 +110,3 @@ if (port) {
     logger.error(`😭  Failed to start viz-app:server`);
     console.error(chalk.red('==> 😭  No PORT environment variable specified'));
 }
-
-// // This should be the same as webpack context
-// const dirRoot = require('path').join(process.cwd());
-
-// // Settings of webpack-isomorphic-tools
-// global.webpackIsomorphicTools = new WebpackIsomorphicTools(require('./tools/webpack/WIT.config')).server(dirRoot, () => {
-//     if (__DEV__) {
-//         require('./src/server');
-//     } else {
-//         require('./build/server');  // eslint-disable-line import/no-unresolved
-//     }
-// });

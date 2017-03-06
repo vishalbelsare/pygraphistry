@@ -42,16 +42,16 @@ function addStyleLoaders({ type, isDev, threadPool, CSSModules, environment }, a
 
     appConfig.plugins.push(new HappyPack({
         id: 'css',
-        threadPool,
         verbose: false,
+        threadPool: threadPool,
         cacheContext: { env: environment },
         loaders: [cssLoader(type, isDev, false)],
     }));
 
     appConfig.plugins.push(new HappyPack({
         id: 'less',
-        threadPool,
         verbose: false,
+        threadPool: threadPool,
         cacheContext: { env: environment },
         loaders: [{
             loader: 'less-loader',

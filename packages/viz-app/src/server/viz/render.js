@@ -12,6 +12,8 @@ import 'rxjs/add/observable/bindCallback';
 import 'rxjs/add/observable/bindNodeCallback';
 
 import template from './template';
+import App from 'viz-app/containers/app';
+
 import { Model } from '@graphistry/falcor-model-rxjs';
 import { createLogger } from '@graphistry/common/logger';
 const logger = createLogger('viz-app:server:express:renderer');
@@ -19,14 +21,14 @@ const logger = createLogger('viz-app:server:express:renderer');
 import RedBox from 'redbox-react';
 import { renderToString } from 'react-dom/server';
 
-function configureRender(getDataSource) {
+function configureRender(config, getDataSource) {
 
-    let App = require('viz-app/containers/app').default; // eslint-disable-line global-require
+    let AppContainer = App;
 
-    // Hot reload the server App container
+    // Hot reload the server AppContainer
     if (module.hot) {
         module.hot.accept('viz-app/containers/app', () => {
-            App = require('viz-app/containers/app').default; // eslint-disable-line global-require
+            AppContainer = require('viz-app/containers/app').default; // eslint-disable-line global-require
         });
     }
 
@@ -36,47 +38,39 @@ function configureRender(getDataSource) {
         const clientId = req.app.get('clientId') || '00000';
         const model = new Model({ recycleJSON: true, source: getDataSource(req) });
 
+        // Wrap in Observable.defer in case `template` or `AppContainer.load` throws an error
         return Observable.defer(() => {
             // If __DISABLE_SSR__ = true, disable server side rendering
             if (__DISABLE_SSR__) {
                 return Observable.of({
-                    status: 200, payload: template({ clientId, paths })
+                    status: 200, payload: template({ paths, clientId })
                 });
-            } else {
-                const fakeStore = {
-                    dispatch() {},
-                    getState() {
-                        return ((model || {})._seed || {}).json || {};
-                    },
-                    subscribe() { return () => {}; },
-                };
-                return App
-                    .load({ falcor: model })
-                    .map(() => ({
-                        status: 200,
-                        payload: template({
-                            clientId, paths,
-                            initialState: model.getCache(),
-                            reactRoot: ''
-                            // reactRoot: renderToString(
-                            //     <App falcor={model}
-                            //          key='viz-client'
-                            //          store={fakeStore}
-                            //          params={req.query}/>
-                            // )
-                        })
-                    }))
-                    .catch((err) => {
-                        logger.error({ err }, `error rendering graph.html`);
-                        return !__DEV__ ? Observable.throw(err) : Observable.of({
-                            status: 500, payload: renderToString(<RedBox error={err}/>)
-                        });
-                    });
             }
+            return AppContainer.load({ falcor: model }).map(() => ({
+                status: 200, payload: template({
+                    paths, clientId,
+                    initialState: model.getCache(),
+                    reactRoot: '',
+                    // reactRoot: renderToString(
+                    //     <App falcor={model} key='viz-client' params={req.query} store={{
+                    //         dispatch() {},
+                    //         getState() {
+                    //             return ((model || {})._seed || {}).json || {};
+                    //         },
+                    //         subscribe() { return () => {}; },
+                    //     }}/>
+                    // )
+                })
+            }));
         })
         .catch((err) => {
-            logger.error({ err }, `error loading graph.html`);
-            return !__DEV__ ? Observable.throw(err) : Observable.of({
+            logger.error({ err }, `error rendering graph.html`);
+            // If not in local dev mode, re-throw the error so we can 502 the request.
+            if (config.ENVIRONMENT !== 'local') {
+                return Observable.throw(err);
+            }
+            // If in local dev mode, render an error page
+            return Observable.of({
                 status: 500, payload: renderToString(<RedBox error={err}/>)
             });
         });

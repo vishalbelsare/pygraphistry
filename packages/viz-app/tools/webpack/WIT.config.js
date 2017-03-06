@@ -4,10 +4,10 @@ const WebpackIsomorphicToolsPlugin = require('webpack-isomorphic-tools/plugin');
 module.exports = {
   // debug: true,
   // alias: {
-  //   'favicon-assets.json': path.join(process.cwd(), './build/favicon-assets.json'),
+  //   'favicon-assets.json': path.join(process.cwd(), './www/favicon-assets.json'),
   // },
-  webpack_stats_file_path: './build/webpack-stats.json',
-  webpack_assets_file_path: './build/webpack-assets.json',
+  webpack_stats_file_path: './www/webpack-stats.json',
+  webpack_assets_file_path: './www/webpack-assets.json',
   assets: {
     images: {
       extensions: ['png', 'jpg', 'jpeg', 'gif'],

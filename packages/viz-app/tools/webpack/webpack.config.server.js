@@ -12,12 +12,12 @@ const serverWebpackConfig = makeWebpackConfig({
     environment: process.env.NODE_ENV,
     output: {
         libraryTarget: 'commonjs2',
-        path: path.join(process.cwd(), './build'),
+        path: path.join(process.cwd(), './www'),
     }
 });
 
 serverWebpackConfig.devServer = {
-    outputPath: path.join(process.cwd(), './build')
+    outputPath: path.join(process.cwd(), './www')
 };
 
 serverWebpackConfig.externals = [
