@@ -26,9 +26,9 @@ const conf = convict({
     },
     log: {
         level: {
-            doc: `Log levels - ['trace', 'debug', 'info', 'warn', 'error', 'fatal']`,
-            format: ['trace', 'debug', 'info', 'warn', 'error', 'fatal'],
-            default: 'info',
+            doc: `Log levels - ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']`,
+            format: ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'],
+            default: 'INFO',
             arg: 'log-level',
             env: 'GRAPHISTRY_LOG_LEVEL' // LOG_LEVEL conflicts with mocha
         },
