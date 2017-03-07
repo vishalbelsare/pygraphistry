@@ -119,8 +119,8 @@ var kernelSpecs = {
     },
     boundBox: {
         kernelName: 'bound_box',
-        args: ['xCoords', 'yCoords', 'children', 'mass', 'start', 'globalXMin', 'globalXMax',
-            'globalYMin', 'globalYMax', 'globalSwings', 'globalTractions', 'swings',
+        args: ['xCoords', 'yCoords', 'children', 'mass', 'start', 'globalXMin', 'globalXMax', 
+            'globalYMin', 'globalYMax', 'globalSwings', 'globalTractions', 'swings', 
             'tractions', 'blocked', 'step', 'bottom', 'radius', 'globalSpeed', 'stepNumber',
             'numBodies', 'numNodes', 'tau', 'THREADS_BOUND'
         ],
@@ -135,22 +135,22 @@ var kernelSpecs = {
     },
     computeSums: {
         kernelName: 'compute_sums',
-        args: ['xCoords', 'yCoords', 'children', 'mass', 'count', 'bottom', 'numBodies', 'numNodes',
-            'WARPSIZE', 'THREADS_BOUND', 'THREADS_SUMS'
+        args: ['xCoords', 'yCoords', 'children', 'mass', 'count', 'bottom', 'numBodies', 'numNodes', 
+            'WARPSIZE', 'THREADS_BOUND', 'THREADS_SUMS' 
         ],
         fileName: 'layouts/forceAtlas2/barnesHut/computeSums.cl'
     },
     sort: {
         kernelName: 'sort',
-        args: ['children', 'start', 'sort', 'count', 'bottom', 'numBodies',
+        args: ['children', 'start', 'sort', 'count', 'bottom', 'numBodies', 
             'numNodes'
         ],
         fileName: 'layouts/forceAtlas2/barnesHut/sort.cl'
     },
     calculatePointForces: {
         kernelName: 'calculate_forces',
-        args: ['scalingRatio', 'gravity', 'flags', 'xCoords', 'yCoords', 'children', 'mass', 'sort',
-            'step',  'maxDepth', 'radius', 'width', 'height', 'numBodies', 'numNodes', 'pointForces',
+        args: ['scalingRatio', 'gravity', 'flags', 'xCoords', 'yCoords', 'children', 'mass', 'sort', 
+            'step',  'maxDepth', 'radius', 'width', 'height', 'numBodies', 'numNodes', 'pointForces', 
             'WARPSIZE', 'THREADS_FORCES'
         ],
         fileName: 'layouts/forceAtlas2/barnesHut/calculatePointForces.cl'
@@ -158,28 +158,28 @@ var kernelSpecs = {
     // Edge force mapper and segmented reduce kernels used to calculate edge forces
     forwardsEdgeForceMapper : {
         kernelName: 'faEdgeMap',
-        args: [ 'edgeInfluence', 'flags', 'isForward', 'forwardsEdges', 'numEdges', 'pointDegrees',
+        args: [ 'edgeInfluence', 'flags', 'isForward', 'forwardsEdges', 'numEdges', 'pointDegrees', 
             'inputPositions', 'forwardsEdgeWeights', 'outputForcesMap'
         ],
         fileName: 'layouts/forceAtlas2/faEdgeMap.cl'
     },
     reduceForwardsEdgeForces : {
         kernelName: 'segReduce',
-        args: [ 'numEdges', 'outputForcesMap', 'forwardsEdgeStartEndIdxs',  'numPoints',
+        args: [ 'numEdges', 'outputForcesMap', 'forwardsEdgeStartEndIdxs',  'numPoints', 
             'partialForces', 'pointForces'
         ],
         fileName: 'segReduce.cl'
     },
     backwardsEdgeForceMapper : {
         kernelName: 'faEdgeMap',
-        args: [ 'edgeInfluence', 'flags', 'isForward', 'backwardsEdges', 'numEdges', 'pointDegrees',
+        args: [ 'edgeInfluence', 'flags', 'isForward', 'backwardsEdges', 'numEdges', 'pointDegrees', 
             'inputPositions', 'backwardsEdgeWeights', 'outputForcesMap'
         ],
         fileName: 'layouts/forceAtlas2/faEdgeMap.cl'
     },
     reduceBackwardsEdgeForces : {
         kernelName: 'segReduce',
-        args: [ 'numEdges', 'outputForcesMap', 'backwardsEdgeStartEndIdxs', 'numPoints', 'curForces',
+        args: [ 'numEdges', 'outputForcesMap', 'backwardsEdgeStartEndIdxs', 'numPoints', 'curForces', 
             'partialForces'
         ],
         fileName: 'segReduce.cl'
