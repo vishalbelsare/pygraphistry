@@ -95,6 +95,7 @@ function configureVizWorker(config, activeCB, io) {
 
         // setup the socket.io connection listeners and
         const establishVizConnection = setupClientSocket(req, res)
+            .do({ error: activeCB })
             // flatMap the socket into a vizServer with Observable.using, so
             // the vizServer gets disposed when the subscription to the whole
             // Observable is disposed (on error, complete, or unsubscribe).
