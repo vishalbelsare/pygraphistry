@@ -10,13 +10,14 @@ export function sendFalcorUpdate(getSocket, getDataSource) {
     }) {
         const socket = getSocket();
         if (!socket) {
+            logger.debug(`Attempted to send falcor update, but no socket connected yet.`);
             return Observable.of(0);
         }
         const dataSource = getDataSource({ ...socket.handshake });
         _paths = fromPathsOrPathValues(_paths);
         _invalidated = fromPathsOrPathValues(_invalidated);
         return dataSource.get(_paths).mergeMap(({ paths, jsonGraph, invalidated = [] }) => {
-            logger.trace(`sending falcor update`, jsonGraph);
+            logger.debug(`sending falcor update`, jsonGraph);
             return Observable.bindCallback(socket.emit.bind(socket))('falcor-update', {
                 paths, jsonGraph, invalidated: _invalidated.concat(invalidated)
             });

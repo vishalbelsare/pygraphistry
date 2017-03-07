@@ -44,12 +44,14 @@ function configureVizWorker(config, activeCB, io) {
         });
     }
 
+    let appSocket = null;
+    const getSocket = () => appSocket;
     const app = express.Router();
 
     // Register the texture request handler
     app.get('/texture', textureHandler);
     // Register the vbo request handler
-    app.get('/vbo', configureVBOHandler(app, vbos));
+    app.get('/vbo', configureVBOHandler(app, getSocket, vbos));
     // Setup the public directory so that we can serve static assets.
     app.use(`/graph`, express.static(path.join(process.cwd(), './www/public')));
     app.use(`/public`, express.static(path.join(process.cwd(), './www/public')));
@@ -76,10 +78,10 @@ function configureVizWorker(config, activeCB, io) {
 
         // console.log('========> rendering graph.html with options:', JSON.stringify(req.query));
 
-        app.socket = null;
+        appSocket = null;
 
         const { sendFalcorUpdate } = services;
-        const sendUpdate = sendFalcorUpdate(() => app.socket, getDataSource);
+        const sendUpdate = sendFalcorUpdate(getSocket, getDataSource);
         const updateSession = sendSessionUpdate.bind(null, sendUpdate);
         // load the workbook, download the dataset, decode the vGraph, and load it into the simulator
         const loadAndRunVisualization = loadVGraphPipeline(
@@ -93,12 +95,12 @@ function configureVizWorker(config, activeCB, io) {
 
         // setup the socket.io connection listeners and
         const establishVizConnection = setupClientSocket(req, res)
-            // flatMap the socket into a vizServer with Observable.using, so we
+            // flatMap the socket into a vizServer with Observable.using, so
             // the vizServer gets disposed when the subscription to the whole
             // Observable is disposed (on error, complete, or unsubscribe).
             .mergeMap(({ socket, metadata }) => Observable.using(
-                () => new VizServer(app, socket, vbos, metadata, colorTexture),
-                (vizServer) => Observable.of({ socket: app.socket = socket, vizServer: vizServer })
+                () => new VizServer(app, appSocket = socket, vbos, metadata, colorTexture),
+                (vizServer) => Observable.of({ socket, vizServer }).concat(Observable.never())
             ));
 
         // Render the page, establish the socket comms, and load the viz runner in parallel

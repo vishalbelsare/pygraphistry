@@ -46,7 +46,7 @@ let serverMiddleware;
 if (process.env.NODE_ENV === 'production') {
     const PROD_SERVER_PATH = path.join(process.cwd(), './www/server.js');
     const CLIENT_STATS_PATH = path.join(process.cwd(), './www/webpack-client-stats.json');
-    serverMiddleware = require(PROD_SERVER_PATH).default(require(CLIENT_STATS_PATH));
+    serverMiddleware = require(PROD_SERVER_PATH).default(require(CLIENT_STATS_PATH), config);
 } else {
     global.__DEV__ = true;
     const webpack = require('webpack');

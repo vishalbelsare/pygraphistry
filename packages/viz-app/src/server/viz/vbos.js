@@ -1,11 +1,11 @@
 import { createLogger } from '@graphistry/common/logger';
 const logger = createLogger('viz-app:server:vbos');
 
-function configureVBOsHandler(app, vbosByClientId) {
+function configureVBOsHandler(app, getSocket, vbosByClientId) {
     return function vbosHandler(req, res) {
 
         let buffer, buffers;
-        const { socket } = app;
+        const socket = getSocket();
         const { query: { buffer: bufferName }} = req;
 
         if (!bufferName) {

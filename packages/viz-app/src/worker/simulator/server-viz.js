@@ -337,6 +337,7 @@ VizServer.prototype.unsubscribe = function () {
     delete this.cachedVBOs[this.socket.client.id];
     delete this.lastCompressedVBOs;
     delete this.updateSession;
+    delete this.socket;
     delete this.app;
     this.isActive = false;
 };
