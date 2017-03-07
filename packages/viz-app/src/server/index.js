@@ -30,9 +30,8 @@ function server(webpackStats = {}, config = {}) {
         logger.trace({req, res}, 'Received Express.js request');
 
         if (!serverMiddleware) {
-            const { io, config } = req;
             try {
-                serverMiddleware = configureWorkers(config, setActiveStatus, io);
+                serverMiddleware = configureWorkers(req.config, setActiveStatus, req.io);
             } catch (err) {
                 setActiveStatus(err);
             }
