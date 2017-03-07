@@ -17,27 +17,24 @@ export function views(path, base) {
 
                 const viewPath = path.slice(0, -1);
                 const { filters, exclusions } = view;
-                let obs = Observable.of($value(path, node[key] = value));
 
-                if ((filters && filters.length > 1) || (exclusions && exclusions.length)) {
-                    obs = obs.merge(Observable.of(
-                        $value([...viewPath, 'session', 'status'], 'default'),
+                return Observable.of(
+                    $value(path, node[key] = value),
+                    $value([...viewPath, 'session', 'status'], 'default'),
+                    $value([...viewPath, 'session', 'progress'], 100),
+                    $value([...viewPath, 'session', 'message'], 'Updating graph')
+                )
+                .concat(maskDataframe({ view })
+                    .subscribeOn(Scheduler.async, 100)
+                    .mergeMap(() => [
+                        $invalidate([...viewPath, 'labelsByType']),
+                        $invalidate([...viewPath, 'inspector', 'rows']),
+                        $invalidate([...viewPath, 'selection', 'histogramsById']),
+                        $value([...viewPath, 'session', 'status'], 'success'),
                         $value([...viewPath, 'session', 'progress'], 100),
-                        $value([...viewPath, 'session', 'message'], 'Updating graph')
-                    ))
-                    .concat(maskDataframe({ view })
-                        .subscribeOn(Scheduler.async, 100)
-                        .mergeMap(() => [
-                            $invalidate([...viewPath, 'labelsByType']),
-                            $invalidate([...viewPath, 'inspector', 'rows']),
-                            $invalidate([...viewPath, 'selection', 'histogramsById']),
-                            $value([...viewPath, 'session', 'status'], 'success'),
-                            $value([...viewPath, 'session', 'progress'], 100),
-                            $value([...viewPath, 'session', 'message'], null)
-                        ]));
-                }
-
-                return obs;
+                        $value([...viewPath, 'session', 'message'], null)
+                    ])
+                );
             }));
 
         return [{
