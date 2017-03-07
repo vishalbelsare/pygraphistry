@@ -33,7 +33,6 @@ export const items = {
             'logicalEdges': ['logicalEdges', 'curIdx'],
             'edgeSeqLens': ['edgeSeqLens', 'edgeSeqLen'],
             'forwardsEdgeToUnsortedEdge': ['forwardsEdgeToUnsortedEdge', 'forwardsEdgeToUnsortedEdge'],
-            'curMidPoints': ['curMidPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor'],
             'startPos': ['midSpringsStarts', 'startPos'],
             'endPos': ['midSpringsEnds', 'endPos']
@@ -56,9 +55,7 @@ export const items = {
         },
         'otherBuffers': {
             'logicalEdges': ['logicalEdges', 'curIdx'],
-            'edgeSeqLens': ['edgeSeqLens', 'edgeSeqLen'],
             'forwardsEdgeToUnsortedEdge': ['forwardsEdgeToUnsortedEdge', 'forwardsEdgeToUnsortedEdge'],
-            'curMidPoints': ['curMidPoints', 'curPos'],
             'edgeColor': ['edgeColors', 'edgeColor'],
             'startPos': ['midSpringsStarts', 'startPos'],
             'endPos': ['midSpringsEnds', 'endPos']
@@ -220,7 +217,6 @@ export const items = {
         },
         'otherBuffers': {
             'forwardsEdgeStartEndIdxs': ['forwardsEdgeStartEndIdxs', 'curIdx'],
-            'backwardssEdgeStartEndIdxs': ['backwardsEdgeStartEndIdxs', 'curIdx'],
         },
         'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
@@ -324,15 +320,6 @@ export const items = {
         'glOptions': pickingGlOpts,
         'renderTarget': 'pointHitmapDownsampled',
         'readTarget': true,
-    },
-    'midpoints': {
-        'program': 'midpoints',
-        'triggers': ['renderSceneFast', 'renderSceneFull'],
-        'bindings': {
-            'curPos': ['curMidPoints', 'curPos']
-        },
-        'drawType': 'POINTS',
-        'glOptions': {}
     },
     'fullscreen': {
         'program': 'fullscreen',

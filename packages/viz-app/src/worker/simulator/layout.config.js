@@ -6,8 +6,6 @@ var logger      = log.createLogger('graph-viz:cl:layoutconfig');
 
 import * as SimCL from './SimCL.js';
 import ForceAtlas2 from './layouts/forceAtlas2.js';
-import EdgeBundling from './layouts/edgeBundling.js';
-import ForceAtlas2Naive from './layouts/forceAtlas2Naive.js';
 
 var SIMULATION_TIME = 100;
 
@@ -65,36 +63,37 @@ function BoolParam(name, value) {
 BoolParam.prototype = Object.create(Param.prototype);
 BoolParam.prototype.constructor = BoolParam;
 
-var edgeBundlingSplits = 7;
-var uberControls = {
-    simulator: SimCL,
-    layoutAlgorithms: [
-        {
-            algo: EdgeBundling,
-            params: {
-                tau: new ContinuousParam('Speed', 1, 0.01, 10),
-                charge: new ContinuousParam('Charge', -0.05, -1, -0.0000000001),
-                springStrength: new ContinuousParam('Spring Strength', 400, 0, 800),
-                springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
-            }
-        }
-    ],
-    locks: {
-        lockPoints: true,
-        lockEdges: false,
-        lockMidpoints: false,
-        lockMidedges: false,
-        interpolateMidPoints: false,
-        interpolateMidPointsOnce: true
-    },
-    global: {
-        simulationTime: 1, //SIMULATION_TIME, //milliseconds
-        dimensions: [1, 1],
-        numSplits: edgeBundlingSplits,
-        numRenderedSplits: edgeBundlingSplits
-    },
-    devices: ['CPU', 'GPU']
-};
+// Old edge bundling controls
+//var edgeBundlingSplits = 7;
+//var uberControls = {
+    //simulator: SimCL,
+    //layoutAlgorithms: [
+        //{
+            //algo: EdgeBundling,
+            //params: {
+                //tau: new ContinuousParam('Speed', 1, 0.01, 10),
+                //charge: new ContinuousParam('Charge', -0.05, -1, -0.0000000001),
+                //springStrength: new ContinuousParam('Spring Strength', 400, 0, 800),
+                //springDistance: new ContinuousParam('Spring Distance', 0.5, 0.0000001, 1),
+            //}
+        //}
+    //],
+    //locks: {
+        //lockPoints: true,
+        //lockEdges: false,
+        //lockMidpoints: false,
+        //lockMidedges: false,
+        //interpolateMidPoints: false,
+        //interpolateMidPointsOnce: true
+    //},
+    //global: {
+        //simulationTime: 1, //SIMULATION_TIME, //milliseconds
+        //dimensions: [1, 1],
+        //numSplits: edgeBundlingSplits,
+        //numRenderedSplits: edgeBundlingSplits
+    //},
+    //devices: ['CPU', 'GPU']
+//};
 
 
 function atlasControls(algo) {
@@ -142,10 +141,7 @@ function atlasControls(algo) {
 
 export var controls = {
     'default':      [atlasControls(ForceAtlas2)],
-    'gis':         [uberControls],
-    'atlas':        [atlasControls(ForceAtlas2), atlasControls(ForceAtlas2Naive)],
-    'atlas2':       [atlasControls(ForceAtlas2Naive)],
-    'atlas2fast':   [atlasControls(ForceAtlas2Naive)],
+    //'gis':         [uberControls],
     'atlasbarnes':  [atlasControls(ForceAtlas2)]
 };
 

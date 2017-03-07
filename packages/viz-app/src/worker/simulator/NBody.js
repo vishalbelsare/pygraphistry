@@ -180,30 +180,13 @@ const setEdges = Q.promised((graph, edges, points) => {
     }
 
     const nDim = graph.globalControls.dimensions.length;
-    const numSplits = graph.globalControls.numSplits;
-    const midPoints = new Float32Array((edges.length / 2) * numSplits * nDim || 1);
-    if (numSplits) {
-        for (let i = 0; i < edges.length; i+=2) {
-            const src = forwardEdges.edgesTyped[i];
-            const dst = forwardEdges.edgesTyped[i + 1];
-            for (let d = 0; d < nDim; d++) {
-                const start = points[(src * nDim) + d];
-                const end = points[(dst * nDim) + d];
-                const step = (end - start) / (numSplits + 1);
-                for (let q = 0; q < numSplits; q++) {
-                    midPoints[((((i/2) * numSplits) + q) * nDim) + d] = start + step * (q + 1);
-                }
-            }
-        }
-    }
-
     const endPoints = scatterEdgePos(edges, points);
 
     logger.info('Dataset    nodes:%d  edges:%d  splits:%d',
-                numPoints, edges.length, numSplits);
+                numPoints, edges.length);
 
     return graph.simulator.setEdges(edges, forwardEdges, backwardsEdges,
-                                    degrees, midPoints, endPoints, points)
+                                    degrees, endPoints, points)
         .then(() => {
             // TODO: THESE SHOULDN'T BE HERE
             return graph.simulator.setSelectedPointIndexes(new Uint32Array());
