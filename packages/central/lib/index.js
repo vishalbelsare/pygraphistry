@@ -13,7 +13,7 @@ import { json as parseJsonEncoded } from 'body-parser';
 import { simpleflake } from 'simpleflakes';
 
 import { api as apiKey } from '@graphistry/common';
-import { pickWorker } from './worker-router.js';
+import { pickWorker, workerLastAssigned } from './worker-router.js';
 import { logClientError } from './logClientError.js';
 import { initWorkbookApi } from './rest-api';
 import { renderSplashScreen } from './render-splash-screen';
@@ -47,7 +47,7 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
     //TODO worker info
     app.get('/central/healthcheck', function(req, res) {
         const health = healthcheck();
-        logger.info({...health, req, res}, 'healthcheck');
+        logger.info({...health, req, res, workerLastAssigned}, 'healthcheck');
         res.status(health.clear.success ? 200 : 500).json({...health.clear});
     });
 
