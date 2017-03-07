@@ -66,6 +66,7 @@ function makeWebpackConfig({
         },
         module: {
             noParse: [
+                /node_modules\/brace/,
                 /node_modules\/jquery/,
                 // /node_modules\/lodash/,
                 /node_modules\/underscore/,
