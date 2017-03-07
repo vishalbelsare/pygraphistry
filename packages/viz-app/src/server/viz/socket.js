@@ -59,22 +59,20 @@ function addSocketEventListeners(req, getDataSource) {
             .do(sink.response);
 
         const errorEvents = Observable.fromEvent(socket, 'error').mergeMap((err) => {
-            logger.error({ err: err, req: socket.request }, 'Socket error');
+            logger.error({ err, req }, 'Socket error');
             return Observable.throw({
                 err, req, message: 'Socket error'
             });
         });
 
-        const disconnectEvents = Observable.fromEvent(socket, 'disconnect').mergeMap(() => {
-            logger.info({ req }, 'User disconnected from socket');
-            return Observable.throw({
-                message: "A user successfully disconnected, exiting"
-            });
-        });
+        const disconnectEvents = Observable.fromEvent(socket, 'disconnect')
+            .do(() => logger.info({ req }, 'User disconnected from socket'));
 
-        return Observable
-            .merge(falcorEvents, errorEvents, disconnectEvents)
-            .ignoreElements().startWith(socket);
+        return falcorEvents
+            .ignoreElements()
+            .startWith(socket)
+            .merge(errorEvents)
+            .takeUntil(disconnectEvents);
     }
 }
 
