@@ -106,7 +106,7 @@ export const workerLastAssigned = {};
 function checkIfWorkerUnassigned(workerNfo) {
     logger.info({workerLastAssigned}, 'Checking available workers last assigned time');
 
-    const workerAssignmentTimeout = config.WORKER_CONNECT_TIMEOUT;
+    const workerAssignmentTimeout = config.WORKER_CONNECT_TIMEOUT * 1000;
     const workerId = workerNfo.hostname + ':' + workerNfo.port;
 
     if(!workerLastAssigned[workerId]) {
