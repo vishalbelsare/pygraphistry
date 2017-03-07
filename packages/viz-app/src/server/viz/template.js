@@ -26,8 +26,7 @@ export default function template({
         <meta http-equiv='Content-Language' content='en' />${
             iconsHTML.join('\n')
         }
-
-        ${head.base.toString()}
+        ${base && `<base href="${base}">` || ''}
         ${head.title.toString()}
         ${head.meta.toString()}
         ${head.link.toString()}
