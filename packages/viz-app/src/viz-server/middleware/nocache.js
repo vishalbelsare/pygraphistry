@@ -1,7 +1,0 @@
-// Express middleware function for sending "don't cache" headers to the browser
-export function nocache(req, res, next) {
-    res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
-    res.header('Expires', '-1');
-    res.header('Pragma', 'no-cache');
-    next();
-}

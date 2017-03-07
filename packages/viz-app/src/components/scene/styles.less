@@ -1,0 +1,80 @@
+@import '~viz-app/index.less';
+
+html.nologo .logo-container {
+    display: none;
+}
+
+.logo-container {
+
+    &.disabled {
+        display: none;
+    }
+
+    right: 0.8em;
+    bottom: 0.8em;
+    z-index: @meter-z;
+    position: absolute;
+    pointer-events: none;
+
+    img {
+        height: 3em;
+        .noselect();
+        .hideOnMouseOver();
+        pointer-events: all;
+    }
+
+    .logo-version {
+        color: white;
+        opacity: 0.5;
+        margin-top: -1em;
+        font-size: 0.9em;
+        text-align: right;
+        pointer-events: all;
+    }
+}
+
+.meter {
+
+    :global(body.hide-chrome) & {
+        display: none;
+    }
+
+    .noselect();
+    .hideOnMouseOver();
+
+    left: 1em;
+    bottom: 0.5em;
+    opacity: 0.75;
+    cursor: default;
+    position: fixed;
+    z-index: @meter-z;
+    font-weight: bold;
+    text-shadow: none;
+    pointer-events: none;
+    text-transform: uppercase;
+    mix-blend-mode: difference;
+    color: rgb(245, 245, 253);
+    background-color: rgba(0,0,0,0);
+
+    .meter-label {
+        .noselect();
+        color: #fff;
+        text-align: right;
+        pointer-events: all;
+        vertical-align: bottom;
+        background-color: rgba(0,0,0,0);
+        text-shadow: rgba(0, 0, 0, 0.498039) 1px 1px 0;
+    }
+
+    .meter-value {
+        .noselect();
+        padding: 0 5px;
+        font-size: 24px;
+        line-height: 27px;
+        text-align: right;
+        pointer-events: all;
+        vertical-align: bottom;
+        background-color: rgba(0,0,0,0);
+        font-family: Consolas, 'Andale Mono', monospace;
+    }
+}
