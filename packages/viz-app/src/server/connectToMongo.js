@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 import { MongoClient } from 'mongodb';
 
 export function connectToMongo({
-    config, mongoConnectOptions = { auto_reconnect: true }
+    config, mongoConnectOptions = { autoReconnect: true }
 }) {
 
     const connectToMongo = Observable
