@@ -41,8 +41,8 @@ function makeWebpackConfig({
         stats: { assets: false },
         output: Object.assign({
             publicPath: '',
-            filename: '[name].js',
-            chunkFilename: '[name].chunk.js'
+            filename: `[name].js`,
+            chunkFilename: `[name].chunk.js`
             // Don't use chunkhash in development it will increase compilation time
             // filename: isDev ? '[name].js' : '[name].[chunkhash:8].js',
             // chunkFilename: isDev ? '[name].chunk.js' : '[name].[chunkhash:8].chunk.js',
@@ -123,9 +123,8 @@ function makeWebpackConfig({
                 jscomp_off: '*',
                 jscomp_warning: '*',
                 source_map_format: 'V3',
-                create_source_map: `${baseConfig.output.path}/${
-                                      baseConfig.output.filename}.map`,
-                output_wrapper: `%output%\n//# sourceMappingURL=${baseConfig.output.filename}.map`
+                create_source_map: `${baseConfig.output.path}/${type}.js.map`,
+                output_wrapper: `%output%\n//# sourceMappingURL=${type}.js.map`
             },
         }));
     }

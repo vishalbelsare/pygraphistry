@@ -16,6 +16,7 @@ const serverWebpackConfig = makeWebpackConfig({
     }
 });
 
+// serverWebpackConfig.devtool = isDev ? 'cheap-module-eval-source-map' : 'cheap-module-source-map';
 serverWebpackConfig.devServer = {
     outputPath: path.join(process.cwd(), './www')
 };
@@ -45,7 +46,9 @@ serverWebpackConfig.plugins.push(
     new webpack.BannerPlugin({
         raw: true,
         entryOnly: true,
-        banner: `require('raf').polyfill();`
+        // banner: `require('raf').polyfill();`
+        banner: isDev ?                                             `require('raf').polyfill();` :
+        `require('source-map-support').install({environment:'node'});require('raf').polyfill();`
     }),
     new FaviconsWebpackPlugin({
         emitStats: true,

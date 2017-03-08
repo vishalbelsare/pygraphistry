@@ -927,8 +927,13 @@ Dataframe.prototype.addClientProvidedColumn = function (columnType, columnName, 
         return false;
     }
 
+    let ArrayVariant = values.constructor;
+    if (ArrayVariant === Object) {
+        ArrayVariant = Array;
+    }
 
     const numElements = this.rawdata.numElements[columnType];
+
     if (values.length !== numElements) {
         logger.debug(`Warning: Provided values for ${columnType}:${columnName} have different length than original dataset. ${values.length} vs ${numElements}.`);
     }
@@ -938,7 +943,7 @@ Dataframe.prototype.addClientProvidedColumn = function (columnType, columnName, 
     }
 
     let spec = new ComputedColumnSpec({
-        ArrayVariant: values.constructor,
+        ArrayVariant: ArrayVariant,
         type: dataType,
         numberPerGraphComponent: 1,
         graphComponentType: columnType,
