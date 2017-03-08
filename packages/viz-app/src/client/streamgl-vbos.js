@@ -149,6 +149,7 @@ function handleVboUpdates (socket, uri, renderState, sceneModel, renderer) {
     debug('Server buffers/textures', bufferNames, textureNames);
 
     let lastHandshake = Date.now();
+    let lastNumEdges = null, lastNumPoints = null;
     const vboUpdates = new BehaviorSubject('init');
 
     const previousVersions = {buffers: {}, textures: {}};
@@ -196,10 +197,21 @@ function handleVboUpdates (socket, uri, renderState, sceneModel, renderer) {
                                       elements.edgeculledindexed ||
                                       elements.edgeculledindexedclient ||
                                       bufferByteLengths.logicalEdges / 4 || 0) * 0.5;
-                    return sceneModel.withoutDataSource().set(
-                        { path: ['renderer', 'edges', 'elements'], value: numEdges },
-                        { path: ['renderer', 'points', 'elements'], value: numPoints }
-                    );
+                    const values = [];
+                    if (lastNumEdges !== numEdges) {
+                        values.push({
+                            value: lastNumEdges = numEdges,
+                            path: ['renderer', 'edges', 'elements']
+                        });
+                    }
+                    if (lastNumPoints !== numPoints) {
+                        values.push({
+                            value: lastNumPoints = numPoints,
+                            path: ['renderer', 'points', 'elements']
+                        });
+                    }
+                    return !values.length ? Observable.empty() :
+                        sceneModel.withoutDataSource().set(...values);
                 })
                 .subscribe({
                     error(err) {
