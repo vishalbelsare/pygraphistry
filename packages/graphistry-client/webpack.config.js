@@ -14,13 +14,15 @@ var webpackConfig = {
     output: {
         path: path.resolve('./lib'),
         filename: `graphistryJS${isDev ? '' : '.min'}.js`,
-        library: 'GraphistryJS',
+        // library: 'GraphistryJS',
         libraryTarget: 'umd',
         umdNamedDefine: true
     },
     module: {
         rules: [babel(isDev)],
         noParse: [
+            /node_modules\/pegjs-util\/PEGUtil\.js/,
+            /\@graphistry\/falcor\/dist/,
             /\@graphistry\/falcor-query-syntax\/lib\/paths\-parser\.js$/,
             /\@graphistry\/falcor-query-syntax\/lib\/route\-parser\.js$/
         ]
