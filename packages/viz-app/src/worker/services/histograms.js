@@ -142,7 +142,7 @@ function computeHistogram({ view, masked, histogram, refresh = true, selectionMa
     if (masked) {
         if (!histogram.bins) {
             referenceHistogram = undefined;
-        } else if (!selectionMasks.isEmpty()) {
+        } else if (!selectionMasks.isEmptyByType(componentType)) {
             referenceHistogram = selectionHistogram;
         } else {
             referenceHistogram = {
@@ -156,7 +156,7 @@ function computeHistogram({ view, masked, histogram, refresh = true, selectionMa
     if (referenceHistogram && referenceHistogram.bins) {
         if (!masked || !selectionMasks) {
             return Observable.of(referenceHistogram);
-        } else if (selectionMasks.isEmpty() ||
+        } else if (selectionMasks.isEmptyByType(componentType) ||
                    selectionMasks.tag === referenceHistogram.tag) {
             return Observable.of(referenceHistogram);
         }

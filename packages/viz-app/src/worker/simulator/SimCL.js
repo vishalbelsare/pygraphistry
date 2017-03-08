@@ -588,7 +588,7 @@ function setEdges (renderer, simulator, unsortedEdges, forwardsEdges, backwardsE
             simulator.cl.createBuffer(backwardsEdges.edgeStartEndIdxsTyped.byteLength, 'backwardsEdgeStartEndIdxs'),
         ])
     })
-    .spread((degreesBuffer, forwardsEdgesBuffer, backwardsEdgesBuffer, outputEdgeForcesMap, 
+    .spread((degreesBuffer, forwardsEdgesBuffer, backwardsEdgesBuffer, outputEdgeForcesMap,
             forwardsEdgeStartEndIdxs, backwardsEdgeStartEndIdxs
     ) => {
         // Bind buffers
@@ -821,39 +821,39 @@ function selectNodesInCircle (simulator, selection) {
 // TODO: Move into dataframe, since it has the crazy sorted/unsorted knowledge?
 function connectedEdges (simulator, nodeIndices) {
 
-    // As far as I can tell this is not needed. Maybe for dataframe operations? 
-    //const forwardsBuffers = simulator.dataframe.getHostBuffer('forwardsEdges');
-    //const backwardsBuffers = simulator.dataframe.getHostBuffer('backwardsEdges');
-    //const forwardsEdgeStartEndIdxs = simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator');
-    //const forwardsPermutation = forwardsBuffers.edgePermutation;
+    // As far as I can tell this is not needed. Maybe for dataframe operations?
+    const forwardsBuffers = simulator.dataframe.getHostBuffer('forwardsEdges');
+    const backwardsBuffers = simulator.dataframe.getHostBuffer('backwardsEdges');
+    const forwardsEdgeStartEndIdxs = simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator');
+    const forwardsPermutation = forwardsBuffers.edgePermutation;
 
-    //const setOfEdges = [];
-    //const edgeHash = {};
+    const setOfEdges = [];
+    const edgeHash = {};
 
-    //const addOutgoingEdgesToSet = (buffers) => {
-        //_.each(nodeIndices, (idx) => {
-            //const workItemId = buffers.srcToWorkItem[idx];
-            //const firstEdgeId = buffers.workItemsTyped[4*workItemId];
-            //const numEdges = buffers.workItemsTyped[4*workItemId + 1];
-            //const start = forwardsEdgeStartEndIdxs[workItemId * 2];
-            //const stop = forwardsEdgeStartEndIdxs[workItemId * 2 + 1];
-            //logger.warn({workItemId, firstEdgeId, numEdges, start, stop}, 'here');
-            //const permutation = buffers.edgePermutationInverseTyped;
+    const addOutgoingEdgesToSet = (buffers) => {
+        _.each(nodeIndices, (idx) => {
+            const workItemId = buffers.srcToWorkItem[idx];
+            const firstEdgeId = buffers.workItemsTyped[4*workItemId];
+            const numEdges = buffers.workItemsTyped[4*workItemId + 1];
+            const start = forwardsEdgeStartEndIdxs[workItemId * 2];
+            const stop = forwardsEdgeStartEndIdxs[workItemId * 2 + 1];
+            // logger.warn({workItemId, firstEdgeId, numEdges, start, stop}, 'here');
+            const permutation = buffers.edgePermutationInverseTyped;
 
-            //for (let i = 0; i < numEdges; i++) {
-                //const edge = forwardsPermutation[permutation[firstEdgeId + i]];
-                //if (!edgeHash[edge]) {
-                    //setOfEdges.push(edge);
-                    //edgeHash[edge] = true;
-                //}
-            //}
-        //});
-    //};
+            for (let i = 0; i < numEdges; i++) {
+                const edge = forwardsPermutation[permutation[firstEdgeId + i]];
+                if (!edgeHash[edge]) {
+                    setOfEdges.push(edge);
+                    edgeHash[edge] = true;
+                }
+            }
+        });
+    };
 
-    //addOutgoingEdgesToSet(forwardsBuffers);
-    //addOutgoingEdgesToSet(backwardsBuffers);
+    addOutgoingEdgesToSet(forwardsBuffers);
+    addOutgoingEdgesToSet(backwardsBuffers);
 
-    //return new Uint32Array(setOfEdges);
+    return new Uint32Array(setOfEdges);
 }
 
 // TODO: Deprecate this fully once we don't have any versioned buffers

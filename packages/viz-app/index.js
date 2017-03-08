@@ -25,7 +25,9 @@ global.window = global;
 app.disable('x-powered-by');
 
 // Using helmet to secure Express with various HTTP headers
-app.use(helmet());
+app.use(helmet({
+    frameguard: false
+}));
 
 // Prevent HTTP parameter pollution.
 app.use(hpp());

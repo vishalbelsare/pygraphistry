@@ -93,7 +93,7 @@ function RenderingScheduler(renderState, renderer,
         .switchMap(() => {
             var bufUpdates = [
                 'curPoints', 'logicalEdges', 'edgeColors',
-                'pointSizes', 'curMidPoints'
+                'pointSizes'
             ].map((bufName) => {
                 var bufUpdate = hostBuffers[bufName] || Observable.return();
                 return bufUpdate.do((data) => {
@@ -890,7 +890,6 @@ RenderingScheduler.prototype.renderSlowEffects = function () {
     if (clientMidEdgeInterpolation && appSnapshot.vboUpdated) {
         //ARCS
         start = Date.now();
-
         expanded = this.expandLogicalEdges(renderState, appSnapshot.buffers, numRenderedSplits, edgeHeight);
         midSpringsPos = expanded.midSpringsPos;
         appSnapshot.buffers.midSpringsPos = midSpringsPos;
@@ -1082,7 +1081,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
     var numMidEdges = numRenderedSplits + 1;
 
     // We haven't received any VBOs yet, so we shouldn't attempt to render.
-    if (!buffers.logicalEdges) {
+    if (!buffers.logicalEdges || !buffers.midSpringsPos) {
         return;
     }
 

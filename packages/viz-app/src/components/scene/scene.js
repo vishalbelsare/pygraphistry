@@ -25,7 +25,6 @@ import shallowEqual from 'recompose/shallowEqual';
 
 import { scenes } from 'viz-app/models/scene';
 import RenderingScheduler from './rendering-scheduler';
-// import * as renderer from 'viz-app/components/scene/renderer';
 import { init as initRenderer } from './renderer';
 import { setupRotate, setupCenter, setupScroll, setupZoomButton } from './interaction';
 
@@ -290,7 +289,6 @@ class Scene extends React.Component {
 
         renderSubscription.unsubscribe();
         resizeSubscription.unsubscribe();
-        renderer && renderer.unsubscribe();
 
         if (hasDOMListeners === false) {
 

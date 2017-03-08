@@ -9,7 +9,6 @@ import { PostMessageDataSource } from '@graphistry/falcor-socket-datasource';
 import { $ref, $atom, $value, $invalidate } from '@graphistry/falcor-json-graph';
 import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
 
-
 /**
  * @class Graphistry
  * @classdesc This object wraps a HTML IFrame of a Graphistry Visualization in order
@@ -797,8 +796,8 @@ import 'rxjs/add/observable/bindCallback';
 
 Graphistry = wrapStaticObservableMethods(Observable, Graphistry);
 
-module.exports = GraphistryJS;
-module.exports.GraphistryJS = GraphistryJS;
+export { GraphistryJS };
+// export default GraphistryJS;
 
 function wrapStaticObservableMethods(Observable, Graphistry) {
     function createStaticWrapper(staticMethodName) {
