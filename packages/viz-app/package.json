@@ -12,6 +12,8 @@
     "build": "npm run build:client && npm run build:server",
     "build:client": "npm run clean:client && better-npm-run build:client",
     "build:server": "npm run clean:server && better-npm-run build:server",
+    "build:client:dev": "npm run clean:client && better-npm-run build:client:dev",
+    "build:server:dev": "npm run clean:server && better-npm-run build:server:dev",
     "lint": "npm run lint:js && npm run lint:style",
     "lint:js": "better-npm-run lint:js",
     "lint:style": "better-npm-run lint:style",
@@ -25,21 +27,33 @@
   },
   "betterScripts": {
     "start:dev": {
-      "command": "nodemon ./index.js '{\"LOG_LEVEL\": \"INFO\" }' | ./node_modules/.bin/bunyan -o short",
+      "command": "nodemon ./index.js '{\"LOG_LEVEL\": \"DEBUG\" }' | ./node_modules/.bin/bunyan -o short",
       "env": {
         "NODE_ENV": "development"
       }
     },
     "start:debug": {
-      "command": "node --inspect-brk ./index.js '{\"LOG_LEVEL\": \"INFO\" }' | ./node_modules/.bin/bunyan -o short",
+      "command": "node --inspect-brk ./index.js '{\"LOG_LEVEL\": \"ERROR\" }' | ./node_modules/.bin/bunyan -o short",
       "env": {
         "NODE_ENV": "production"
       }
     },
     "start:prod": {
-      "command": "node ./index.js '{\"LOG_LEVEL\": \"INFO\" }' | ./node_modules/.bin/bunyan -o short",
+      "command": "node ./index.js '{\"LOG_LEVEL\": \"ERROR\" }' | ./node_modules/.bin/bunyan -o short",
       "env": {
         "NODE_ENV": "production"
+      }
+    },
+    "build:client:dev": {
+      "command": "webpack --hide-modules --config ./tools/webpack/webpack.config.client.js",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    "build:server:dev": {
+      "command": "webpack --hide-modules --config ./tools/webpack/webpack.config.server.js",
+      "env": {
+        "NODE_ENV": "development"
       }
     },
     "build:client": {
