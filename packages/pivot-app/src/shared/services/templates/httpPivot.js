@@ -1,78 +1,123 @@
+import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
-import request from 'request';
 import stringhash from 'string-hash';
 import { run } from 'node-jq';
 import { VError } from 'verror'
-const get = Observable.bindNodeCallback(request.get.bind(request));
 
+import { shapeSplunkResults } from '../shapeSplunkResults.js';
 import { PivotTemplate } from './template.js';
 import { httpConnector0 } from '../connectors/http';
 import logger from '../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
 
+//{x: {y: 1}} => {"x.y": 1}
+//http://stackoverflow.com/questions/19098797/fastest-way-to-flatten-un-flatten-nested-json-objects
+function flattenJson (data) {
+    var result = {};
+    function recurse (cur, prop) {
+        if (Object(cur) !== cur) {
+            result[prop] = cur;
+        } else if (Array.isArray(cur)) {
+             for(var i=0, l=cur.length; i<l; i++)
+                 recurse(cur[i], prop + "[" + i + "]");
+            if (l == 0)
+                result[prop] = [];
+        } else {
+            var isEmpty = true;
+            for (var p in cur) {
+                isEmpty = false;
+                recurse(cur[p], prop ? prop+"."+p : p);
+            }
+            if (isEmpty && prop)
+                result[prop] = {};
+        }
+    }
+    recurse(data, "");
+    return result;
+}
+
 class HttpPivot extends PivotTemplate {
     constructor( pivotDescription ) {
         super(pivotDescription);
 
-        const { connections, encodings, attributes, connector } = pivotDescription;
+        const { toUrl, connections, encodings, attributes, connector } = pivotDescription;
+        this.toUrl = toUrl;
         this.connections = connections;
         this.encodings = encodings;
         this.attributes = attributes;
         this.connector = connector || httpConnector0;
     }
 
-    searchAndShape({ app, pivot }) {
+    searchAndShape({ app, pivot, pivotCache }) {
 
-        const { endpoint, jq } = this.stripTemplateNamespace(pivot.pivotParameters);
+        pivot.template = this;
 
-        return get(endpoint)
-            .catch((e) => {
-                return Observable.throw(
-                    new VError({
-                        name: 'HttpGetError',
-                        cause: e,
-                        info: { endpoint },
-                    }, 'Failed to make http request', endpoint)
-                );
-            })
-            //.timeout(20 * 1000, new Error({'msg': 'Timeout', endpoint}))
+        //TODO why isn't this in the caller?
+        if (!pivot.enabled) {
+            pivot.resultSummary = {};
+            pivot.resultCount = 0;
+            return Observable.of({ app, pivot });
+        }
+
+        const params = this.stripTemplateNamespace(pivot.pivotParameters);
+        log.info({
+            params,
+            pivotParameters: pivot.pivotParameters
+        })
+        const { endpoint, jq } = params;
+
+        const url = this.toUrl(params, pivotCache);
+        
+        return this.connector.search(url)
             .switchMap(([response]) => {
-
-                if (!response || response.statusCode !== 200) {
-                    const info = { endpoint, statusCode: (response||{}).statusCode };
-                    return Observable.throw(
-                            new VError({
-                                name: 'HttpStatusError',
-                                cause: 'URL gave an unexpected response code',
-                                info: info,
-                            }, 'URL gave an unexpected response code', info));
-                }
-
                 return Observable
                     .fromPromise(run(jq || '.', response.body, { input: 'string', output: 'json'}))
                     .catch((e) => {
                         return Observable.throw(
                             new VError({
-                                name: 'HttpJqError',
+                                name: 'JqRuntimeError',
                                 cause: e,
-                                info: { endpoint, jq },
-                            }, 'Failed to post process', { endpoint, jq }));
+                                info: { url, jq },
+                            }, 'Failed to run jq post process', { url, jq }));
                     })
+            })            
+            .do((x) => log.trace('jq out', x))
+            .map((response) => {
+                const rows = 
+                    response instanceof Array 
+                        ? response.map(flattenJson) 
+                        : [flattenJson(response)];
+                if (rows.length) {
+                    if (!('EventID' in rows[0])) {
+                        for (var i = 0; i < rows.length; i++) {
+                            rows[i].EventID = pivot.id + ':' + i;
+                        }
+                    }                    
+                }
+                return new DataFrame(rows);
             })
-            .do((x) => log.info('jq out', x))
-            .map(() => ({
+            .map((df) => ({
                 app,
                 pivot: {
+                    ...pivot,
+                    df: df,
+                    resultCount: df.count(),//really want shaped..
                     template: this,
+                    events: df.toCollection(),
                     results: {
                         graph: [],
                         labels: []
-                    },
-                    ...pivot
+                    }
                 }
             }))
-            .do(() => log.info('searchAndShape http', endpoint));
+            .map(shapeSplunkResults)
+            .do(({app, pivot: realPivot}) => {
+                for (var i in realPivot) pivot[i] = realPivot[i];
+                log.info('results', pivot.results);
+                pivotCache[pivot.id] = { params,  results: pivot.results };
+            })
+            .do(({app, pivot}) => log.trace('searchAndShape http', url, pivot));
 
     }
 
@@ -89,6 +134,13 @@ export const HTTP_SEARCH = new HttpPivot({
     id: 'http-search',
     name: 'Search through a URL',
     tags: ['Demo', 'Splunk'],
+    attributes: [ ],
+    connections: [ ],    
+    toUrl: function ({ endpoint, nodes, attributes }) {
+        this.connections = nodes ? nodes.value : [];
+        this.attributes = attributes ? attributes.value : [];
+        return endpoint;
+    },
     parameters: [
         {
             name: 'endpoint',
@@ -96,7 +148,19 @@ export const HTTP_SEARCH = new HttpPivot({
             label: 'URL:',
             placeholder: 'http://'
         },
-        JQ_PARAMETER
+        JQ_PARAMETER,
+        {
+            name: 'nodes',
+            inputType: 'multi',
+            label: 'Nodes:',
+            options: [],
+        },
+        {
+            name: 'attributes',
+            inputType: 'multi',
+            label: 'Attributes:',
+            options: [],
+        }
     ],
     encodings: {
         point: {
@@ -125,7 +189,7 @@ export const HTTP_EXPAND = new HttpPivot({
         },
         JQ_PARAMETER
     ],
-    connections: [ ],
+    toRequest: ({ endpoint }, pivotCache) =>  endpoint,
     encodings: {
         point: {
             pointColor: (node) => {
