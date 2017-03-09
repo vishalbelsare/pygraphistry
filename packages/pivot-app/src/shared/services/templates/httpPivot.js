@@ -14,18 +14,19 @@ const log = logger.createLogger(__filename);
 //{x: {y: 1}} => {"x.y": 1}
 //http://stackoverflow.com/questions/19098797/fastest-way-to-flatten-un-flatten-nested-json-objects
 function flattenJson (data) {
-    var result = {};
+    const result = {};
     function recurse (cur, prop) {
         if (Object(cur) !== cur) {
             result[prop] = cur;
         } else if (Array.isArray(cur)) {
-             for(var i=0, l=cur.length; i<l; i++)
+            let l = cur.length;
+            for(let i=0; i<l; i++)
                  recurse(cur[i], prop + "[" + i + "]");
-            if (l == 0)
+            if (l === 0)
                 result[prop] = [];
         } else {
-            var isEmpty = true;
-            for (var p in cur) {
+            let isEmpty = true;
+            for (let p in cur) {
                 isEmpty = false;
                 recurse(cur[p], prop ? prop+"."+p : p);
             }
@@ -41,8 +42,8 @@ class HttpPivot extends PivotTemplate {
     constructor( pivotDescription ) {
         super(pivotDescription);
 
-        const { toUrl, connections, encodings, attributes, connector } = pivotDescription;
-        this.toUrl = toUrl;
+        const { toUrls, connections, encodings, attributes, connector } = pivotDescription;
+        this.toUrls = toUrls;
         this.connections = connections;
         this.encodings = encodings;
         this.attributes = attributes;
@@ -65,39 +66,44 @@ class HttpPivot extends PivotTemplate {
             params,
             pivotParameters: pivot.pivotParameters
         })
-        const { endpoint, jq } = params;
+        const { jq } = params;
 
-        const url = this.toUrl(params, pivotCache);
-        
-        return this.connector.search(url)
-            .switchMap(([response]) => {
-                return Observable
-                    .fromPromise(run(jq || '.', response.body, { input: 'string', output: 'json'}))
-                    .catch((e) => {
-                        return Observable.throw(
-                            new VError({
-                                name: 'JqRuntimeError',
-                                cause: e,
-                                info: { url, jq },
-                            }, 'Failed to run jq post process', { url, jq }));
+        const df = this.toUrls(params, pivotCache)
+            .flatMap((url) => {
+                return this.connector.search(url)                    
+                    .switchMap(([response]) => {
+                        return Observable
+                            .fromPromise(run(jq || '.', response.body, { input: 'string', output: 'json'}))
+                            .catch((e) => {
+                                return Observable.throw(
+                                    new VError({
+                                        name: 'JqRuntimeError',
+                                        cause: e,
+                                        info: { url, jq },
+                                    }, 'Failed to run jq post process', { url, jq }));
+                            })
                     })
-            })            
-            .do((x) => log.trace('jq out', x))
-            .map((response) => {
-                const rows = 
-                    response instanceof Array 
-                        ? response.map(flattenJson) 
-                        : [flattenJson(response)];
-                if (rows.length) {
-                    if (!('EventID' in rows[0])) {
-                        for (var i = 0; i < rows.length; i++) {
-                            rows[i].EventID = pivot.id + ':' + i;
+                    .do((x) => log.trace('jq out', x))
+                    .map((response) => {
+                        const rows = 
+                            response instanceof Array 
+                                ? response.map(flattenJson) 
+                                : [flattenJson(response)];
+                        if (rows.length) {
+                            if (!('EventID' in rows[0])) {
+                                for (let i = 0; i < rows.length; i++) {
+                                    rows[i].EventID = pivot.id + ':' + i;
+                                }
+                            }                    
                         }
-                    }                    
-                }
-                return new DataFrame(rows);
+                        return new DataFrame(rows);
+                    })
+                    .do((df) => log.trace('searchAndShape http', {url, rows: df.count()}));
             })
-            .map((df) => ({
+            .reduce((acc, df) => acc ? acc.union(df) : df)
+            .last();
+
+        return df.map((df) => ({
                 app,
                 pivot: {
                     ...pivot,
@@ -112,23 +118,67 @@ class HttpPivot extends PivotTemplate {
                 }
             }))
             .map(shapeSplunkResults)
-            .do(({app, pivot: realPivot}) => {
-                for (var i in realPivot) pivot[i] = realPivot[i];
+            .do(({pivot: realPivot}) => {
+                for (let i in realPivot) pivot[i] = realPivot[i];
                 log.info('results', pivot.results);
                 pivotCache[pivot.id] = { params,  results: pivot.results };
             })
-            .do(({app, pivot}) => log.trace('searchAndShape http', url, pivot));
+            .do(() => log.trace('searchAndShape http'));
 
     }
 
 }
 
-const JQ_PARAMETER = {
-    name: 'jq',
-    inputType: 'text',
-    label: 'Postprocess with jq:',
-    placeholder: '.'
-};
+const PARAMETERS = [
+    {
+        name: 'endpoint',
+        inputType: 'text',
+        label: 'URL:',
+        placeholder: 'http://'
+    },
+    {
+        name: 'jq',
+        inputType: 'text',
+        label: 'Postprocess with jq:',
+        placeholder: '.'
+    },
+    {
+        name: 'nodes',
+        inputType: 'multi',
+        label: 'Nodes:',
+        options: [],
+    },
+    {
+        name: 'attributes',
+        inputType: 'multi',
+        label: 'Attributes:',
+        options: [],
+    }
+];
+
+
+
+function bindTemplateString (str, event, params) {
+    return str.split(/({.*?})/) // x={...}&y={...} => ['x=','{...}','&y=','{...}']
+        .map((arg) => {
+            if ((arg.length > 2) && (arg[0] === '{') && (arg[arg.length - 1] === '}')) {
+                const name = arg.slice(1,-1).trim();
+                if (name in params) {
+                    return params[name];
+                } else if (name in event) {
+                    return event[name];
+                } else {
+                    log.error('Template parameter not found in event, pivot params', {str,name});
+                    throw new VError({
+                        name: 'Template parameter not found in event, pivot params',
+                        info: { str, name },
+                    }, 'Failed to run jq post process', { str, name });
+                }
+            } else {
+                return arg;
+            }
+        }).join('');
+}
 
 export const HTTP_SEARCH = new HttpPivot({
     id: 'http-search',
@@ -136,32 +186,21 @@ export const HTTP_SEARCH = new HttpPivot({
     tags: ['Demo', 'Splunk'],
     attributes: [ ],
     connections: [ ],    
-    toUrl: function ({ endpoint, nodes, attributes }) {
+    toUrls: function ({ endpoint, nodes, attributes }) {
+
+        //update dropdown optionlists
         this.connections = nodes ? nodes.value : [];
         this.attributes = attributes ? attributes.value : [];
-        return endpoint;
+
+        const url = bindTemplateString(endpoint, {}, {
+            endpoint, 
+            nodes: this.connections,
+            attributes: this.attributes
+        });
+
+        return Observable.of(url);
     },
-    parameters: [
-        {
-            name: 'endpoint',
-            inputType: 'text',
-            label: 'URL:',
-            placeholder: 'http://'
-        },
-        JQ_PARAMETER,
-        {
-            name: 'nodes',
-            inputType: 'multi',
-            label: 'Nodes:',
-            options: [],
-        },
-        {
-            name: 'attributes',
-            inputType: 'multi',
-            label: 'Attributes:',
-            options: [],
-        }
-    ],
+    parameters: PARAMETERS,
     encodings: {
         point: {
             pointColor: (node) => {
@@ -173,23 +212,42 @@ export const HTTP_SEARCH = new HttpPivot({
 
 export const HTTP_EXPAND = new HttpPivot({
     id: 'http-expand',
-    name: 'Expand with a URL',
+    name: 'Expand with a URL',    
     tags: ['Demo', 'Splunk'],
-    parameters: [
-        {
-            name: 'endpoint',
-            inputType: 'text',
-            label: 'URL:',
-            placeholder: 'http://'
-        },    
-        {
+    attributes: [ ],
+    connections: [ ],    
+    parameters:
+        [{
             name: 'pRef',
             inputType: 'pivotCombo',
             label: 'Any event in:',
-        },
-        JQ_PARAMETER
-    ],
-    toRequest: ({ endpoint }, pivotCache) =>  endpoint,
+        }].concat(PARAMETERS),
+    toUrls: function ({ endpoint = '', nodes, attributes, pRef }, pivotCache) {
+
+        const refVal = pRef ? pRef.value : '';
+
+        //update dropdown optionlists
+        this.connections = nodes ? nodes.value : [];
+        this.attributes = attributes ? attributes.value : [];
+
+        log.info('pivot refVal', refVal);
+
+        const pivots = refVal instanceof Array ? refVal : [refVal];
+        return Observable.from(pivots)
+            .map((refVal) => pivotCache[refVal].events)
+            .flatMap((events) => Observable.from(events))
+            .map((row, i) => {
+                log.info('row', i, row);                
+                const url = bindTemplateString(endpoint, row, {
+                    endpoint, 
+                    nodes: this.connections,
+                    attributes: this.attributes
+                });
+                log.info('row endpoint', url);
+                return url;
+            });
+
+    },
     encodings: {
         point: {
             pointColor: (node) => {
