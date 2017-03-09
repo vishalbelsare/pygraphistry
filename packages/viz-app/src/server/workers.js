@@ -11,6 +11,9 @@ function configureWorkers(config, activeCB, io) {
     let workerRouter, appRouter = Router();
     const allowMultipleVizConnections = !!config.ALLOW_MULTIPLE_VIZ_CONNECTIONS;
 
+    appRouter.use('/healthcheck', healthcheckHandler);
+    appRouter.use('/etl/healthcheck', healthcheckHandler);
+    appRouter.use('/graph/healthcheck', healthcheckHandler);
     appRouter.use('/etl', selectWorkerRouter(configureEtlWorker), requestErrorHandler);
     appRouter.use('/graph/graph.html', selectWorkerRouter(configureVizWorker), requestErrorHandler);
     appRouter.use((req, res, next) => {
@@ -53,6 +56,14 @@ function configureWorkers(config, activeCB, io) {
 
 export { configureWorkers };
 export default configureWorkers;
+
+import { HealthChecker } from './HealthChecker';
+const healthcheck = HealthChecker();
+function healthcheckHandler(req, res, next) {
+    const health = healthcheck();
+    logger.info({health, req, res}, 'healthcheck');
+    res.status(health.clear.success ? 200 : 500).json(health.clear);
+}
 
 // eslint-disable-next-line no-unused-vars
 function requestErrorHandler(err, req, res, next) {
