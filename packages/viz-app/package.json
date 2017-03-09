@@ -33,13 +33,13 @@
       }
     },
     "start:debug": {
-      "command": "node --inspect-brk ./index.js '{\"LOG_LEVEL\": \"ERROR\" }' | ./node_modules/.bin/bunyan -o short",
+      "command": "node --inspect-brk ./index.js '{\"LOG_LEVEL\": \"DEBUG\" }' | ./node_modules/.bin/bunyan -o short",
       "env": {
         "NODE_ENV": "production"
       }
     },
     "start:prod": {
-      "command": "node ./index.js '{\"LOG_LEVEL\": \"ERROR\" }' | ./node_modules/.bin/bunyan -o short",
+      "command": "node ./index.js '{\"LOG_LEVEL\": \"INFO\" }' | ./node_modules/.bin/bunyan -o short",
       "env": {
         "NODE_ENV": "production"
       }

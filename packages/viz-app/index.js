@@ -45,11 +45,7 @@ app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 let serverMiddleware;
 
 // Run express as webpack dev server
-if (process.env.NODE_ENV === 'production') {
-    const PROD_SERVER_PATH = path.join(process.cwd(), './www/server.js');
-    const CLIENT_STATS_PATH = path.join(process.cwd(), './www/webpack-client-stats.json');
-    serverMiddleware = require(PROD_SERVER_PATH).default(require(CLIENT_STATS_PATH), config);
-} else {
+if (process.env.NODE_ENV === 'development' && config.ENVIRONMENT === 'local') {
     global.__DEV__ = true;
     const webpack = require('webpack');
     const clientWebpackConfig = require('./tools/webpack/webpack.config.client');
@@ -70,6 +66,10 @@ if (process.env.NODE_ENV === 'production') {
     serverMiddleware = require('webpack-hot-server-middleware')(compiler, {
         chunkName: 'server'
     });
+} else {
+    const PROD_SERVER_PATH = path.join(process.cwd(), './www/server.js');
+    const CLIENT_STATS_PATH = path.join(process.cwd(), './www/webpack-client-stats.json');
+    serverMiddleware = require(PROD_SERVER_PATH).default(require(CLIENT_STATS_PATH), config);
 }
 
 app.use((req, res, next) => {
