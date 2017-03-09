@@ -343,7 +343,7 @@ class Scene extends React.Component {
                 .take(1).filter(() => !!selectToolbarItem)
                 .do(() => selectToolbarItem({
                     socket,
-                    selected: false,
+                    selected: !play,
                     stop: stopAutoPlay,
                     center: stopAutoCenter,
                     id: 'toggle-simulating'
