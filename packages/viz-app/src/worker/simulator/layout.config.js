@@ -138,10 +138,15 @@ function atlasControls(algo) {
     };
 }
 
+function lockedAtlasControlsXY(aC) {
+    aC.locks.lockPoints = true;
+    return aC;
+}
 
 export var controls = {
     'default':      [atlasControls(ForceAtlas2)],
     //'gis':         [uberControls],
+    'lockedAtlasBarnesXY': [lockedAtlasControlsXY(atlasControls(ForceAtlas2))],
     'atlasbarnes':  [atlasControls(ForceAtlas2)]
 };
 
