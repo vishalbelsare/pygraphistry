@@ -9,7 +9,7 @@ export function scene(path, base) {
         const setValues = setHandler(path, loadViewsById);
         const setSimulating = setHandler(path, loadViewsById,
             (scene, key, simulating, path, { view }) => Observable.defer(() => {
-                return tickLayout({ view }).concat(Observable.of({
+                return tickLayout({ view, play: !!simulating, layout: !!simulating }).concat(Observable.of({
                     path, value: scene[key] = simulating
                 }));
             })
