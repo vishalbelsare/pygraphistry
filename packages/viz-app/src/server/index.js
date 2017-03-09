@@ -42,10 +42,13 @@ function server(webpackStats = {}, config = {}) {
 
     function setActiveStatus(err, isActive = false) {
         if (!err && isActive) {
+            logger.info({ active: true }, 'Reporting worker is active.');
             return isWorkerActive.next(true);
         }
+        logger.info({ active: false }, 'Reporting worker is inactive.');
         isWorkerActive.next(false);
         if (exitOnDisconnect) {
+            logger.info('Attempting to exit worker process.');
             terminateServer(err);
         }
     }

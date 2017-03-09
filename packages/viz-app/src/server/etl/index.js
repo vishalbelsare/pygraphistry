@@ -13,9 +13,6 @@ var logger      = Log.createLogger('etlworker:index');
 
 import { Observable, Subject } from 'rxjs';
 
-import { HealthChecker as getHealthChecker } from './HealthChecker.js';
-const healthcheck = getHealthChecker();
-
 const JSONParser = bodyParser.json({ limit: '384mb' }); // This is the uncompressed size
 const formParser = multer({ storage: multer.memoryStorage() })
     .fields(
@@ -32,18 +29,12 @@ function etlWorker(config, activeCB) {
 
     const app = Router();
 
-    app.get('/etl/healthcheck', function(req, res) {
-        const health = healthcheck();
-        logger.info({health, req, res}, 'healthcheck');
-        res.status(health.clear.success ? 200 : 500).json(health.clear);
-    });
-
     app.post('/etl', JSONParser, formParser, (req, res, next) => {
         activeCB(null, true);
         etlRequestHandler(req, res, next).subscribe({
             error: activeCB,
             complete: activeCB.bind(null, null, false)
-        })
+        });
     }, function(err, req, res, next) {
 
         logger.error({req, res, err}, 'Express raised an error handling the ETL request.');

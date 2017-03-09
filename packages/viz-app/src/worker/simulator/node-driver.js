@@ -291,7 +291,7 @@ export function createInteractionsLoop({
     return renderTriggers.multicast(() => {
             logger.trace('STARTING DRIVER');
             logger.trace('LOADING DATASET');
-            return new BehaviorSubject({ play: true, layout: false });
+            return new BehaviorSubject({ play: false, layout: false });
         },
         (renderTriggers) => renderTriggers.do((x) => {
                 logger.trace('=============================isRunningRecent:', x);
@@ -310,7 +310,7 @@ export function createInteractionsLoop({
                     return nBody;
                 }
             ).take(1).subscribeOn(Scheduler.async).repeat()
-    );
+    ).startWith(nBody);
 }
 
 /**
