@@ -4,12 +4,13 @@
   "description": "viz-app",
   "main": "index.js",
   "scripts": {
-    "dev": "better-npm-run start:dev",
     "start": "better-npm-run start:dev",
+    "start:dev": "better-npm-run start:dev",
     "start:debug": "better-npm-run start:debug",
     "start:production": "npm run build && npm run start:prod",
     "start:prod": "better-npm-run start:prod",
     "build": "npm run build:client && npm run build:server",
+    "build:dev": "npm run build:client:dev && npm run build:server:dev",
     "build:client": "npm run clean:client && better-npm-run build:client",
     "build:server": "npm run clean:server && better-npm-run build:server",
     "build:client:dev": "npm run clean:client && better-npm-run build:client:dev",
@@ -39,7 +40,7 @@
       }
     },
     "start:prod": {
-      "command": "node ./index.js '{\"LOG_LEVEL\": \"INFO\" }' | ./node_modules/.bin/bunyan -o short",
+      "command": "node ./index.js '{\"LOG_LEVEL\": \"ERROR\" }' | ./node_modules/.bin/bunyan -o short",
       "env": {
         "NODE_ENV": "production"
       }

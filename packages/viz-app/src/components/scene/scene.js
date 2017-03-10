@@ -354,8 +354,9 @@ class Scene extends React.Component {
 
         resizeSubscription = Observable.defer(() => typeof document === 'undefined' ? Observable
             .empty() : Observable
-            .fromEvent(document, 'resize'))
-            .debounceTime(200)
+            .fromEvent(window, 'resize'))
+            .debounceTime(100)
+            .delay(50)
             .catch(() => Observable.empty())
             .subscribe(this.onResize);
 

@@ -95,7 +95,7 @@ const WithPointsAndSizes = mapPropsStream((props) => props
             .startWith({}),
         Observable.defer(() => typeof document === 'undefined' ? Observable
                   .empty() : Observable
-                  .fromEvent(document, 'resize'))
+                  .fromEvent(window, 'resize'))
                   .debounceTime(100)
                   .delay(50).startWith(null),
         (props) => props

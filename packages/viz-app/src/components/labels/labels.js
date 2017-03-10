@@ -29,7 +29,7 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
         cameraChanges.startWith({}),
         Observable.defer(() => typeof document === 'undefined' ? Observable
                   .empty() : Observable
-                  .fromEvent(document, 'resize'))
+                  .fromEvent(window, 'resize'))
                   .debounceTime(100).delay(50).startWith(null),
         (props, { clientX = 0, clientY = 0 }) => ({
             ...props, mouseX: clientX, mouseY: clientY,
