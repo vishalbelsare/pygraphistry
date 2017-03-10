@@ -25,7 +25,7 @@ export const PARAMETERS = [
     }
 ];
 
-export function bindTemplateString (str, event, params) {
+export function bindTemplateString (str = '', event = {}, params = {}) {
     return str.split(/({.*?})/) // x={...}&y={...} => ['x=','{...}','&y=','{...}']
         .map((arg) => {
             if ((arg.length > 2) && (arg[0] === '{') && (arg[arg.length - 1] === '}')) {
