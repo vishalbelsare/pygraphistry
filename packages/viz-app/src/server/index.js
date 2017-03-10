@@ -46,7 +46,7 @@ function server(webpackStats = {}, config = {}) {
             return isWorkerActive.next(true);
         }
         logger.info({ active: false }, 'Reporting worker is inactive.');
-        isWorkerActive.next(false);
+        // isWorkerActive.next(false);
         if (exitOnDisconnect) {
             logger.info('Attempting to exit worker process.');
             terminateServer(err);
