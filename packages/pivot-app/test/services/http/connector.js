@@ -77,4 +77,13 @@ describe('HttpConnector', function () {
 	});
 
 	
+	it('healthcheck', (done) => {
+		httpConnector0.healthCheck()
+			.subscribe((v) => {
+					assert.deepEqual(v, 'Health checks passed');
+					done();
+				}, (e) => done(new Error(e)));			
+	});
+
+	
 });	

@@ -58,7 +58,7 @@ class HttpConnector extends Connector {
     healthCheck() {
         return Observable
             .of('Health checks passed')
-            .do(this.log.info('Health checks passed for HTTP connnector'));
+            .do(() => log.info('Health checks passed for HTTP connnector'));
     }
 
 }
