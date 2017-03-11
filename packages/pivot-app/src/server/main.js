@@ -118,17 +118,17 @@ function setupRoutes(modules, getDataSource) {
         falcorMiddleware(getDataSource)
     );
 
-    const roots = ['home', 'investigation', 'connectors'];
+    const roots = [':activeScreen', ':activeScreen/:investigationId'];
+    const router = express.Router();
     roots.forEach(root => {
-        const router = express.Router();
 
-        router.get(`*`, (req, res) => {
+        router.get(`/${root}`, (req, res) => {
             const getFalcorModel = falcorModelFactory(getDataSource);
             return renderMiddleware(getFalcorModel, modules)(req, res);
         });
 
-        expressApp.use(`${mountPoint}/${root}`, router);
     });
+    expressApp.use(`${mountPoint}`, router);
 
     expressApp.get(`${mountPoint}/healthcheck`, function(req, res) {
         const health = healthcheck();
