@@ -17,6 +17,7 @@ describe('Services', function() {
 
 describe('HttpConnector', function() {
     require('./services/http/common');
+    require('./services/http/connector');
 });
 
 describe('Support', function() {

@@ -9,9 +9,9 @@ import { Connector } from './connector.js';
 const log = logger.createLogger(__filename);
 
 
-class HttpConnector extends Connector {
+class HttpConnector extends Connector {    
 
-    constructor({user, pwd, endpoint, isBatch, ...config}) {
+    constructor({user, pwd, endpoint, isBatch, timeout_s = 20, ...config}) {
         super(config);
 
         this.user = user;
@@ -19,13 +19,13 @@ class HttpConnector extends Connector {
         this.endpoint = endpoint;
         this.isBatch = isBatch || false;
 
+        this.timeout_s = timeout_s;
+
     }
 
     search (url) {
 
         log.debug('HttpConnector get', url);
-
-        const TIMEOUT_S = 20;
 
         return get(url)
             .catch((e) => {
@@ -40,16 +40,16 @@ class HttpConnector extends Connector {
             .do(([response]) => {
                 log.trace(response);
                 if (!response || response.statusCode !== 200) {
-                    const info = { endpoint, statusCode: (response||{}).statusCode };
+                    const info = { url, statusCode: (response||{}).statusCode };
                     throw new VError({
                             name: 'HttpStatusError',
                             info: info,
                         }, 'URL gave an unexpected response code', info);
                 }
             })            
-            .timeoutWith(TIMEOUT_S * 1000, Observable.throw(new VError({
+            .timeoutWith(this.timeout_s * 1000, Observable.throw(new VError({
                     name: 'Timeout',
-                    info: `Max wait: ${TIMEOUT_S} seconds`
+                    info: `Max wait: ${this.timeout_s} seconds`
                 }, 'URL took too long to respond')));
     }
 
