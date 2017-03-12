@@ -41,6 +41,14 @@ export class HttpPivot extends PivotTemplate {
         })
         const { jq } = params;
 
+        if ((jq||'').match(/\|.*(include|import)\s/)) {
+            return Observable.throw(new VError({
+                name: 'JqSandboxException',
+                cause: new Error('JqSandboxException'),
+                info: { jq },
+            }, 'JQ include and imports disallowed', { jq }));
+        }
+
         const df = Observable.from(this.toUrls(params, pivotCache))
             .flatMap((url) => {
                 return this.connector.search(url)                    

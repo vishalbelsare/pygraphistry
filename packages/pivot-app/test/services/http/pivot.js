@@ -88,7 +88,6 @@ describe('httpPivot', function () {
 				}, (e) => done(new Error(e)));
 	});
 
-
 	it('fromData', (done) => {
 		const pivot = new HttpPivot({
 			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
@@ -145,6 +144,29 @@ describe('httpPivot', function () {
 					     { node: "10", type: 'x' } ]);
 					done();
 				}, (e) => done(new Error(e)));
+	});
+
+	it('no includes', (done) => {
+		const pivot = new HttpPivot({
+			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
+			toUrls: () => ['http://localhost:3000/echo?x=1'],
+			parameters: [],
+			encodings: {}
+		});
+		pivot.searchAndShape({
+				app: {}, 
+				pivot: {
+					id: 'x',
+					enabled: true, 
+					pivotParameters: {'x$$$jq': '. | import [{x: 1}, {x: 3}]'}					
+				}, 
+				pivotCache: {}})
+			.subscribe(({pivot, ...rest}) => {
+					done(new Error({msg: "Expected exception"}));
+				}, (e) => {
+					if (e && (e.name === 'JqSandboxException')) done();
+					else done(new Error({msg: "Excepted sandbox exception"}));
+				});
 	});
 
 });
