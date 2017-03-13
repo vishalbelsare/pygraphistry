@@ -100,12 +100,13 @@ export class HttpPivot extends PivotTemplate {
             }))
             .map(shapeSplunkResults)
             .do(({pivot: realPivot}) => {
-                for (let i in realPivot) pivot[i] = realPivot[i];
+                for (const i in realPivot) {
+                    pivot[i] = realPivot[i];
+                }
                 log.info('results', pivot.results);
-                pivotCache[pivot.id] = { params,  results: pivot.results };
+                pivotCache[pivot.id] = { params, results: pivot.results };
             })
             .do(() => log.trace('searchAndShape http'));
-
     }
 
 }
