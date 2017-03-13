@@ -1,7 +1,7 @@
 import stringhash from 'string-hash';
 import { VError } from 'verror'
 
-import { HttpPivot } from './HttpPivot';
+import { HttpPivot } from './httpPivot';
 import { PARAMETERS, bindTemplateString } from './common.js';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
