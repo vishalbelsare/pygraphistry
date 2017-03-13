@@ -25,6 +25,8 @@ export const HTTP_SEARCH = new HttpPivot({
             attributes: this.attributes
         });
 
+        log.debug('url', url);
+
         return [url];
     },
     parameters: PARAMETERS,

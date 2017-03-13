@@ -41,6 +41,8 @@ export class HttpPivot extends PivotTemplate {
         })
         const { jq } = params;
 
+        log.trace('searchAndShape http: jq', {jq});
+
         if ((jq||'').match(/\|.*(include|import)\s/)) {
             return Observable.throw(new VError({
                 name: 'JqSandboxException',
@@ -51,6 +53,7 @@ export class HttpPivot extends PivotTemplate {
 
         const df = Observable.from(this.toUrls(params, pivotCache))
             .flatMap((url) => {
+                log.info('searchAndShape http: url', {url});
                 return this.connector.search(url)                    
                     .switchMap(([response]) => {
                         return Observable
@@ -64,8 +67,8 @@ export class HttpPivot extends PivotTemplate {
                                     }, 'Failed to run jq post process', { url, jq }));
                             })
                     })
-                    .do((x) => log.trace('jq out', x))
-                    .map((response) => {
+                    .map((response) => {                        
+                        log.trace('searchAndShape response', response);
                         const rows = 
                             response instanceof Array 
                                 ? response.map(flattenJson) 
@@ -100,12 +103,12 @@ export class HttpPivot extends PivotTemplate {
             }))
             .map(shapeSplunkResults)
             .do(({pivot: realPivot}) => {
-                for (let i in realPivot) pivot[i] = realPivot[i];
-                log.info('results', pivot.results);
+                for (let i in realPivot) {
+                    pivot[i] = realPivot[i];
+                }
+                log.info('results', pivot.resultCount);
                 pivotCache[pivot.id] = { params,  results: pivot.results };
-            })
-            .do(() => log.trace('searchAndShape http'));
-
+            });
     }
 
 }

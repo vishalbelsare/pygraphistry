@@ -25,7 +25,7 @@ class HttpConnector extends Connector {
 
     search (url) {
 
-        log.debug('HttpConnector get', url);
+        log.info('HttpConnector get', url);
 
         return get(url)
             .catch((e) => {
