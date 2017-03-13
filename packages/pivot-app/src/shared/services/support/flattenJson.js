@@ -1,12 +1,9 @@
-const unbend = require('unbend');
+const flatten = require('flat');
 
 //{x: {y: 1}, z: ['a']} => {"x.y": 1, z.0: 'a'}
 export function flattenJson (data = {}) {
-    return unbend(
-        data,
-        {
-            separator: '.',
-            skipFirstSeparator: true,
-            parseArray: true
-        });
+    if (data === null) {
+        return {};
+    }
+    return flatten(data);
 }
