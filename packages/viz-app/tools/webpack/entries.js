@@ -6,7 +6,7 @@ function addEntries({ type, isDev, vendor }, appConfig) {
 
     if (type === 'client') {
         if (!isDev) {
-            appConfig.entry.vendor = vendor;
+            // appConfig.entry.vendor = vendor;
         } else {
             appConfig.entry[type].unshift(
                 'react-hot-loader/patch',

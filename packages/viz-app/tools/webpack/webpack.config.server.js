@@ -22,12 +22,14 @@ serverWebpackConfig.devServer = {
 };
 
 serverWebpackConfig.externals = [
-    // these assets produced by assets-webpack-plugin
-    /^.+stats\.json$/i,
+    // these assets produced by webpack and assets-webpack-plugin
+    /^.+(stats|assets)\.json$/i,
     // native modules will be excluded, e.g require('react/server')
     WebpackNodeExternals({
-        // Load non-javascript files with extensions, presumably via loaders
-        whitelist: [/\.(?!(?:jsx?|json)$).{1,5}$/i],
+        whitelist: [
+            // Load non-javascript files with extensions, presumably via loaders
+            /\.(?!(?:jsx?|json)$).{1,5}$/i
+        ],
     }),
 ];
 
@@ -36,6 +38,14 @@ serverWebpackConfig.node = {
     console: false, process: false,
     __dirname: true, __filename: true,
 };
+
+if (isDev) {
+    serverWebpackConfig.plugins.push(
+        // Prints more readable module names in the browser console on HMR updates
+        new webpack.NamedModulesPlugin(),
+        new webpack.HotModuleReplacementPlugin({ multiStep: false })
+    );
+}
 
 serverWebpackConfig.plugins.push(
     new webpack.DefinePlugin({
@@ -53,7 +63,7 @@ serverWebpackConfig.plugins.push(
     new FaviconsWebpackPlugin({
         emitStats: true,
         prefix: '/public/favicons/',
-        statsFilename: 'favicon-stats.json',
+        statsFilename: 'favicon-assets.json',
         logo: path.resolve(process.cwd(), './src/assets/img/logo_g.png'),
     }),
     new CopyWebpackPlugin([

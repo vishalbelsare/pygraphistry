@@ -2,8 +2,8 @@ const HappyPack = require('happypack')
 
 module.exports = addBabelRules;
 
-function addBabelRules({ isDev, type, environment, threadPool }, appConfig) {
-    appConfig.plugins.push(happyBabelPlugin(isDev, type, environment, threadPool));
+function addBabelRules({ isDev, type, vendor, environment, threadPool }, appConfig) {
+    appConfig.plugins.push(happyBabelPlugin(isDev, type, vendor, environment, threadPool));
     appConfig.module.rules.push({
         test: /\.js$/,
         exclude: /node_modules/,
@@ -12,7 +12,68 @@ function addBabelRules({ isDev, type, environment, threadPool }, appConfig) {
     return appConfig;
 }
 
-function happyBabelPlugin(isDev, type, environment, threadPool) {
+function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
+    const presets = [
+        // ['env', {
+        //     loose: true,
+        //     modules: false,
+        //     useBuiltIns: true,
+        //     exclude: ['transform-regenerator'],
+        //     targets: {
+        //         node: type === 'client' ? false : 'current',
+        //         browsers: type === 'client' ? ['last 2 versions'] : false
+        //     }
+        // }],
+        ['es2015', { modules: false, loose: true }],
+        'react',
+        // ['babili', {
+        //     mangle: false,
+        //     deadcode: true,
+        //     evaluate: true,
+        // }],
+        'stage-0'
+    ];
+
+    const imports = {
+        // 'rxjs': {
+        //     'transform': 'rxjs/${member}',
+        //     'preventFullImport': false
+        // },
+        'lodash': {
+            'transform': 'lodash/${member}',
+            'preventFullImport': true
+        },
+        'react-bootstrap': {
+            'transform': 'react-bootstrap/lib/${member}',
+            'preventFullImport': true
+        }
+    };
+    // const imports = vendor.reduce((opts, dependency) => {
+    //     opts[dependency] = {
+    //         'transform': dependency + '/${member}';
+    //         // 'transform': 'react-bootstrap/lib/${member}',
+    //         'preventFullImport': false
+    //     };
+    //     return opts;
+    // }, {});
+
+    const plugins = [
+        'transform-runtime',
+        ['transform-imports', imports]
+    ];
+
+    if (isDev) {
+        plugins.push('react-hot-loader/babel');
+    } else {
+        plugins.push(
+            // The Babel 'jsx' helper method this plugin uses gets
+            // deoptimized by v8, since it does argument reassignment.
+            // This is no good in a React render() call tree.
+            'transform-react-inline-elements',
+            'transform-react-constant-elements'
+        );
+    }
+
     return new HappyPack({
         id: 'js',
         verbose: false,
@@ -32,39 +93,8 @@ function happyBabelPlugin(isDev, type, environment, threadPool) {
                 options: {
                     babelrc: false,
                     cacheDirectory: isDev,
-                    presets: [
-                        // ['env', {
-                        //     loose: true,
-                        //     modules: false,
-                        //     useBuiltIns: true,
-                        //     exclude: ['transform-regenerator'],
-                        //     targets: {
-                        //         node: type === 'client' ? false : 'current',
-                        //         browsers: type === 'client' ? ['last 2 versions'] : false
-                        //     }
-                        // }],
-                        ['es2015', { modules: false, loose: true }],
-                        'react',
-                        // ['babili', {
-                        //     mangle: false,
-                        //     deadcode: true,
-                        //     evaluate: true,
-                        // }],
-                        'stage-0'
-                    ],
-                    // presets: [['es2015', { modules: false }], 'react', 'stage-0'],
-                    plugins: isDev ? [
-                        'transform-runtime',
-                        'react-hot-loader/babel'
-                      ] : [
-                        'transform-runtime',
-                        // The Babel "jsx" helper method this plugin uses gets
-                        // deoptimized by v8, since it does argument reassignment.
-                        // This is no good in a React render() call tree.
-                        'transform-react-inline-elements',
-                        'transform-react-constant-elements'
-                    ],
-                    // plugins: ['transform-runtime', 'react-hot-loader/babel'],
+                    presets: presets,
+                    plugins: plugins,
               },
             }
         ],

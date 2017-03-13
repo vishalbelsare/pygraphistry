@@ -22,12 +22,18 @@ const CSSModules = true;
 // Register vendors here
 const vendor = [
 
+    'ace',
+    'brace',
     'chalk',
     'debug',
-    'jquery', // TODO: kill jQuery
+    // 'jquery', // TODO: kill jQuery
     'lodash',
     'recompose',
     'underscore',
+
+    'd3-color',
+    'd3-scale',
+    'd3-time-format',
 
     'react',
     'redux',

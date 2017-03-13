@@ -10,7 +10,6 @@ function configureVGraphPipeline(config, s3DatasetCache) {
 
         return loadWorkbooksById({ workbookIds, options })
             .map(({ workbook }) => workbook.views.current.value.slice(-1))
-            .do((viewIds) => logger.info('========> loading views', viewIds))
             .mergeMap((viewIds) => loadViewsById({ workbookIds, viewIds, options }))
             .mergeMap(
                 ({ workbook, view }) => loadVGraph(view, config, s3DatasetCache, updateSession),

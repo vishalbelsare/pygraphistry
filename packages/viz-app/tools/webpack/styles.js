@@ -26,7 +26,7 @@ function addStyleLoaders({ type, isDev, threadPool, CSSModules, environment }, a
         rules = rules.map((rule) => ({
             test: rule.test,
             loader: ExtractTextPlugin.extract({
-                fallback: 'style-loader', use: rule.use,
+                use: rule.use, fallback: 'style-loader?convertToAbsoluteUrls'
             })
         }));
 
@@ -72,7 +72,8 @@ function cssLoader(type, isDev, CSSModules) {
         options: {
             minimize: !isDev,
             modules: CSSModules,
-            sourceMap: type === 'client',
+            sourceMap: false,
+            // sourceMap: type === 'client',
             context: path.join(process.cwd(), './src'),
             localIdentName: isDev ? '[name]__[local].[hash:base64:5]' : '[hash:base64:5]',
         }
