@@ -88,44 +88,50 @@ const SparklineBarInfo = ({ values, color, binType, dataType, globalCount, maske
     const rows = [];
 
     rows.push([
-        <p>COUNT</p>,
-        <p>{globalCount}</p>
+        <p key='count-label'>COUNT</p>,
+        <p key='count-value'>{globalCount}</p>
     ]);
 
     if (binType === 'countBy') {
         rows.push([
-            <p>CATEGORY</p>,
-            <p dangerouslySetInnerHTML={{
+            <p key='value-label'>CATEGORY</p>,
+            <p key='value-value' dangerouslySetInnerHTML={{
                 __html: defaultFormat(values[0], dataType)
             }}/>
         ]);
     } else if (binType === 'histogram') {
         if (values.length === 1) {
             rows.push([
-                <p>VALUE</p>,
-                <p>{shortFormat(values[0], dataType)}</p>
+                <p key='value-label'>VALUE</p>,
+                <p key='value-value'>{shortFormat(values[0], dataType)}</p>
             ]);
         } else if (values.length === 2) {
             rows.push([
-                <p>RANGE</p>,
-                <p>{values
+                <p key='value-label'>RANGE</p>,
+                <p key='value-value'>
+                {values
                     .map((x) => shortFormat(x, dataType))
-                    .join(' : ')}</p>
+                    .join(' : ')
+                }</p>
             ]);
         }
     }
 
     if (maskedCount) {
         rows.push([
-            <p style={{ color: '#ff6600' }}>SELECTED</p>,
-            <p style={{ color: '#ff6600' }}>{maskedCount}</p>
+            <p key='selected-label' style={{ color: '#ff6600' }}>SELECTED</p>,
+            <p key='selected-value' style={{ color: '#ff6600' }}>{maskedCount}</p>
         ]);
     }
 
     if (globalCount && color) {
         rows.push([
-            <p>Color</p>,
-            <p>{ color }<ColorPill color={color}/></p>]);
+            <p key='color-label'>Color</p>,
+            <p key='color-value'>
+                {color}
+                <ColorPill color={color}/>
+            </p>
+        ]);
     }
 
 

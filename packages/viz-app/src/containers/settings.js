@@ -25,7 +25,7 @@ const controlsByType = {
 
 let Settings = ({ id, name, settings = [], ...props } = {}) => {
     return (
-        <SettingsList name={name} {...props}>
+        <SettingsList id={id} name={name} {...props}>
         {settings.map((options, index) => (
             <Options data={options} key={`${index}: ${options.name}`}/>
         ))}

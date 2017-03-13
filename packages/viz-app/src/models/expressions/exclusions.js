@@ -15,7 +15,8 @@ export function exclusions(view) {
             controls: [{
                 selected: false,
                 id: 'toggle-exclusions',
-                name: 'Exclusions'
+                name: 'Exclusions',
+                type: 'settings'
             }]
         }
     }

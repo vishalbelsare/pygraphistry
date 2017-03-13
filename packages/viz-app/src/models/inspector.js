@@ -12,7 +12,7 @@ export function inspector(view) {
             open: false,
             length: 0,
             id: 'inspector',
-            name: 'Data inspector',
+            name: 'Data Table',
             openTab: 'point', // 'edge', 'event', ...
             tabs: [{
                 name: 'Points',
@@ -69,7 +69,7 @@ export function inspector(view) {
             controls: [{
                 selected: false,
                 id: 'toggle-inspector',
-                name: 'Inspector',
+                name: 'Data Table',
             }]
         }
     }

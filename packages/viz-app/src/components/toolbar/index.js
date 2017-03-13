@@ -1,11 +1,11 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import styles from './styles.less';
 import classNames from 'classnames';
 
 import {
-    Button, Tooltip, OverlayTrigger,
-    ButtonGroup, ButtonToolbar,
-    ListGroup, ListGroupItem
+    Button, ButtonGroup, Overlay,
+    Tooltip, Popover, OverlayTrigger,
 } from 'react-bootstrap';
 
 export function ButtonList({ children, visible, ...props }) {
@@ -15,26 +15,22 @@ export function ButtonList({ children, visible, ...props }) {
     }
 
     return (
-        <ListGroup className={styles['button-list']} {...props}>
-        {children.map((child) => (
-            <ListGroupItem key={child.key} style={{
-                padding: `2px 0px`,
-                background: `transparent`,
-                borderColor: `rgba(0,0,0,0)` }}>
-                {child}
-            </ListGroupItem>
-        ))}
-        </ListGroup>
+        <ul className={`dropdown-menu open ${styles['button-list']}`} {...props}>
+            {children}
+        </ul>
     );
 }
 
-export function ButtonListItems({ children, ...props }) {
+export function ButtonListItems({ name, popover, children, ...props }) {
     return (
-        <ButtonToolbar style={{ marginLeft: 0 }} {...props}>
-            <ButtonGroup vertical>
+        <li>
+            <span className='dropdown-header' style={{display: `inline`}}>
+                {name}
+            </span>
+            <ButtonGroup>
                 {children}
             </ButtonGroup>
-        </ButtonToolbar>
+        </li>
     );
 }
 
@@ -44,25 +40,58 @@ function ButtonListItemTooltip(name) {
     );
 }
 
-export function ButtonListItem({ onItemSelected, ...props }) {
+export function ButtonListItem({ onItemSelected, popover, ...props }) {
 
-    const { id, name, selected } = props;
-
-    return (
-        <OverlayTrigger trigger={['hover']}
-                        placement='right'
-                        overlay={ButtonListItemTooltip(name)}>
-            <Button id={id} href='#'
-                    active={selected}
-                    onClick={(e) => e.preventDefault() || onItemSelected(props)}
-                    className={classNames({
-                         [styles[id]]: true,
-                         fa: true,
-                         'fa-fw': true,
-                         [styles['selected']]: selected,
-                         [styles['button-list-item']]: true
-                    })}
-            />
-        </OverlayTrigger>
+    let buttonRef;
+    const { id, name, type, selected } = props;
+    const button = (
+        <Button id={id} href='#'
+                active={selected}
+                ref={(ref) => buttonRef = ref}
+                onClick={(e) => e.preventDefault() || onItemSelected(props)}
+                className={classNames({
+                     [styles[id]]: true,
+                     fa: true,
+                     // 'fa-fw': true,
+                     [styles['selected']]: selected,
+                     [styles['button-list-item']]: true
+                })}
+        />
     );
+
+    let buttonWithOverlay;
+
+    if (type !== 'settings' || !selected) {
+        buttonWithOverlay = (
+            <span>
+                <OverlayTrigger trigger={['hover']} placement='bottom'
+                                overlay={ButtonListItemTooltip(name)}>
+                    {button}
+                </OverlayTrigger>
+            </span>
+        );
+    } else {
+        buttonWithOverlay = (
+            <span>
+                {button}
+                <Overlay show={selected}
+                         animation={false} placement='bottom'
+                         target={() => ReactDOM.findDOMNode(buttonRef)}>
+                    {popover}
+                </Overlay>
+            </span>
+        );
+    }
+
+    return buttonWithOverlay;
+    // return (
+    //     <span style={{ float: `left` }}>
+    //         {buttonWithHover}
+    //         <Overlay show={selected}
+    //                  animation={false} placement='bottom'
+    //                  target={() => ReactDOM.findDOMNode(buttonRef)}>
+    //             {popover}
+    //         </Overlay>
+    //     </span>
+    // );
 }

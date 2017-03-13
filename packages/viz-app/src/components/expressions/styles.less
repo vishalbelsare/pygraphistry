@@ -8,7 +8,19 @@
 }
 
 .expressions-list {
-     min-width: 300px;
+    min-width: 300px;
+    :global(.popover-content) {
+        padding: 0;
+    }
+    :global(.list-group-item) {
+        margin: 0;
+        padding-left: 0;
+        padding-right: 0;
+        border-radius: 0;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+    }
 }
 
 .expression-item {

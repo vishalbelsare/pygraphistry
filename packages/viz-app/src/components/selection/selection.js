@@ -93,11 +93,11 @@ const WithPointsAndSizes = mapPropsStream((props) => props
         cameraChanges
             .auditTime(0, Scheduler.animationFrame)
             .startWith({}),
-        Observable.defer(() => typeof document === 'undefined' ? Observable
-                  .empty() : Observable
-                  .fromEvent(window, 'resize'))
-                  .debounceTime(100)
-                  .delay(50).startWith(null),
+        // Observable.defer(() => typeof document === 'undefined' ? Observable
+        //           .empty() : Observable
+        //           .fromEvent(window, 'resize'))
+        //           .debounceTime(100)
+        //           .delay(50).startWith(null),
         (props) => props
     )
     .withLatestFrom(

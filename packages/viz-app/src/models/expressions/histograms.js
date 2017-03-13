@@ -4,7 +4,10 @@ import {
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 import { simpleflake } from 'simpleflakes';
+import { createLogger } from '@graphistry/common/logger';
 import { getDefaultQueryForDataType } from 'viz-app/models/expressions';
+
+const logger = createLogger('viz-app:models:histograms');
 
 export function histograms(view) {
     return {
@@ -178,7 +181,7 @@ export function histogramBinQuery(histogram, bin, shouldCoerceTypeToBinaryPredic
 export function histogramBinHighlightQuery(histogram, bin) {
     const { identifier } = histogram;
     if (!identifier) {
-        console.error({msg: 'histogramBinHighlightQuery without identifier', histogram, bin, exn: new Error()});
+        logger.error({msg: 'histogramBinHighlightQuery without identifier', histogram, bin, exn: new Error()});
         throw new Error('histogramBinHighlightQuery: Making histogram without identifier')
     }
     const query = histogramBinQuery(histogram, bin);

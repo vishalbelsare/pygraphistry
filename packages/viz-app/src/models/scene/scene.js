@@ -38,6 +38,7 @@ export function scene(view, sceneID = 'default') {
                 selected: false,
                 id: 'toggle-scene-settings',
                 name: 'Scene settings',
+                type: 'settings'
             }],
             settings: [{
                 id: 'canvas',

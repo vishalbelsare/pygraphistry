@@ -1,5 +1,4 @@
 import React from 'react';
-import _ from 'underscore';
 import RcSwitch from 'rc-switch';
 import Select from 'react-select';
 import styles from './styles.less';

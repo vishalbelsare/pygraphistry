@@ -16,19 +16,19 @@ export function toolbar(path, base) {
             get: getValues,
             set: setValues,
             returns: 'Boolean',
-            route: `${base}['toolbars'][{keys}].visible`
+            route: `${base}['toolbars']['beta', 'iFrame', 'static', 'stable'].visible`
         }, {
             returns: '*',
             get: getValues,
-            route: `${base}['toolbars'][{keys}]`
+            route: `${base}['toolbars']['beta', 'iFrame', 'static', 'stable'].length`
         }, {
             returns: '*',
             get: getValues,
-            route: `${base}['toolbars'][{keys}][{keys}]`
+            route: `${base}['toolbars']['beta', 'iFrame', 'static', 'stable'][{integers}].name`
         }, {
             returns: '*',
             get: getValues,
-            route: `${base}['toolbars'][{keys}][{keys}][{keys}]`
+            route: `${base}['toolbars']['beta', 'iFrame', 'static', 'stable'][{integers}].items[{keys}]`
         }];
     }
 }

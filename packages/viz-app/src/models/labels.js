@@ -25,6 +25,7 @@ export function labels(view) {
                 selected: false,
                 id: 'toggle-label-settings',
                 name: 'Label settings',
+                type: 'settings'
             }],
             options: {
                 id: 'label-options',

@@ -957,7 +957,8 @@ export function init(config, canvas, urlParams) {
             numElements = state.numElements,
             buffers     = state.buffers;
 
-        const toRender = getItemsForTrigger(state, renderListTrigger) || renderListOverride;
+        // const toRender = getItemsForTrigger(state, renderListTrigger) || renderListOverride;
+        const toRender = renderListOverride || getItemsForTrigger(state, renderListTrigger);
         if (toRender === undefined || toRender.length === 0) {
             console.warn('Nothing to render for tag', tag);
             if (callback) {

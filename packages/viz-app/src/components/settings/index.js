@@ -5,7 +5,7 @@ import Color from 'color';
 import RcSwitch from 'rc-switch';
 import RcColorPicker from 'rc-color-picker';
 import RcSlider from '@graphistry/rc-slider';
-import { Panel } from 'react-bootstrap';
+import { Popover } from 'react-bootstrap';
 import { FormControl } from 'react-bootstrap';
 import { Grid, Row, Col } from 'react-bootstrap';
 
@@ -21,13 +21,12 @@ const tooltipFormatters = {
     percent: (x) => `${x}%`
 };
 
-export function SettingsList({ id, name, side, loading, style = {}, children = [], ...props } = {}) {
+export function SettingsList({ id, name, side, loading, style, children = [], ...props } = {}) {
     return (
-        <Panel header={name}
-               style={{ ...style, minWidth: `350px` }}
-               {...props}>
+        <Popover title={name} id={`${id}-popover`}
+                 style={{ ...style, minWidth: `250px` }} {...props}>
             {children}
-        </Panel>
+        </Popover>
     );
 }
 

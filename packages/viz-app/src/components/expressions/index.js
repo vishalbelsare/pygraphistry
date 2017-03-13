@@ -24,45 +24,49 @@ const deleteExpressionTooltip = (
     <Tooltip id='delete-expression-tooltip'>Delete Expression</Tooltip>
 );
 
-export function ExpressionsList({
-    loading = false, showDataTypes = true,
-    id, templates = [], addExpression,
-    showHeader = true, header,
-    dropdownPlacement = 'bottom',
-    side='left', placeholder,
-    style = {}, itemStyle = {},
-    children, name, ...props
-}) {
+export function HistogramsList({ style, ...props }) {
+    return (
+        <Panel className={props.className}
+               header={<ExpressionTemplates {...props}/>}
+               style={{ ...style, margin: 0, display: `block` }}>
+            <ExpressionsListGroup fill {...props}/>
+        </Panel>
+    );
+}
 
-    const dropdown = (
-        <ExpressionTemplates name={name}
-                             loading={loading}
-                             templates={templates}
-                             placeholder={placeholder}
-                             showDataTypes={showDataTypes}
-                             addExpression={addExpression}/>
+export function ExpressionsList({
+    id, name, side, loading, style,
+    children, templates, addExpression, ...props
+}) {
+    return (
+        <Popover title={name}
+                 id={`${id}-popover`}
+                 style={{ ...style, padding: 0, minWidth: `400px` }}
+                 {...props}>
+            <ExpressionsListGroup style={{ marginBottom: 0 }} {...props}>
+                {children}
+            </ExpressionsListGroup>
+            <div style={{ margin: `9px 14px`, backgroundColor: `#f7f7f7`, minWidth: `372px` }}>
+                <ExpressionTemplates loading={loading}
+                                     templates={templates}
+                                     addExpression={addExpression}
+                                     {...props}/>
+            </div>
+        </Popover>
     );
 
-    const title = !showHeader ? undefined : (header ? header : name);
-    const top = dropdownPlacement === 'top'
-        ? <div>{title}{dropdown}</div>
-        : title;
-    const bottom = dropdownPlacement === 'bottom' ? dropdown : undefined;
+}
 
+export function ExpressionsListGroup({ style, fill, side = 'left', children = [] }) {
     return (
-        <Panel header={top} footer={bottom}
-               style={{ ...style, display: `block`, margin: 0 }}
-               {...props}>
-            <ListGroup fill style={side==='left' ? {maxHeight: '300px', 'overflowY': 'scroll'} : {}}>
-            {children.map((child) => (
-                <ListGroupItem key={child.key} style={{
-                                   paddingLeft: 0, paddingRight: 0, ...child.props.style
-                               }}>
-                    {child}
-                </ListGroupItem>
-            ))}
-            </ListGroup>
-        </Panel>
+        <ListGroup style={side === 'left' &&
+            { ...style, maxHeight: '300px', 'overflowY': 'scroll' } || style}>
+        {children.map((child) => (
+            <ListGroupItem key={child.key} style={child.props.style}>
+            {child}
+            </ListGroupItem>
+        ))}
+        </ListGroup>
     );
 }
 
@@ -109,7 +113,7 @@ export function ExpressionItem({
         <Row className={styles['expression-row']}>
             <Col xs={12} md={12} lg={12}
                  style={!isSystem && { paddingRight: 0 } || undefined}>
-                <OverlayTrigger placement='top' overlay={!readOnly && expressionTooltip || <renderNothing id='nothing'/>}>
+                <OverlayTrigger placement='top' trigger={!readOnly ? ['hover'] : []} overlay={expressionTooltip}>
                     <div className={classNames({ [styles['read-only']]: readOnly })}
                          style={{ border: `1px solid #cccccc`, borderRadius: `3px`, minWidth: 250 }}>
                         <ExpressionEditor width='100%'

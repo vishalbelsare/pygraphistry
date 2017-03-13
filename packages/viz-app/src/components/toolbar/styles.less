@@ -2,21 +2,62 @@
 
 @import '../../index.less';
 
+@media (min-width: 810px) {
+    .button-list {
+        height: 40px;
+    }
+    .button-list-item {
+        width: 40px;
+        line-height: 40px;
+    }
+}
+
+@media (max-width: 809px) {
+    .button-list {
+        height: 30px;
+        & li :global(.dropdown-header) {
+            padding: 3px 10px;
+        }
+    }
+    .button-list-item {
+        width: 30px;
+        line-height: 30px;
+    }
+}
 
 .button-list {
-    position: absolute;
+    display: block;
+    border-width: 0;
+    border-radius: 0;
     z-index: @menu-z;
-    top: 3px;
-    left: 5px;
+    position: relative;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    line-height: 100%;
+    background-color: white;
+    white-space: nowrap;
 
     :global(body.hide-chrome) & {
         display: none;
     }
+
+    & li {
+        display: inline-block;
+        border-right: 1px solid #ccc;
+    }
 }
 
 .button-list-item {
-    padding: 6px;
+    padding: 0;
     color: @dark-grey;
+    border-width: 0;
+    border-radius: 0;
+    display: inline-block;
+    float: none !important;
     &:focus {
         color: @dark-grey !important;
         z-index: initial !important;
@@ -48,177 +89,184 @@
 .zoom-in {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: search-plus;
     }
 }
 .zoom-out {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: search-minus;
     }
 }
 .center-camera {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: crosshairs;
     }
 }
 .toggle-simulating {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: play-circle;
     }
     &.selected:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: stop-circle;
     }
 }
 .toggle-scene-settings {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: paint-brush;
     }
 }
 .toggle-label-settings {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: font;
     }
 }
 .toggle-layout-settings {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: cogs;
     }
 }
 .toggle-select-nodes {
-    .fa();
-    .fa-stack();
-    height: 2.9em;
-    padding-top: 4px;
-    font-size: 75%;
+    // .fa();
+    // .fa-stack();
+    // height: 2.9em;
+    // padding-top: 4px;
+    // font-size: 75%;
     &:before {
-        // .fa();
-        .fa-fw();
-        .fa-stack-2x();
-        font-awesome: square-o;
+        .fa();
+        // .fa-fw();
+        // .fa-stack-2x();
+        font-awesome: mouse-pointer;
     }
-    &:after {
-        // .fa();
-        .fa-fw();
-        .fa-stack-1x();
-        font-awesome: arrows;
-    }
+    // &:after {
+    //     // .fa();
+    //     // .fa-fw();
+    //     .fa-stack-1x();
+    //     font-awesome: arrows;
+    // }
 }
 .toggle-window-nodes {
-    height: 2.25em;
-    &:before, &:after {
-        content: '';
-        .fa();
-        .fa-fw();
-        border-style: dashed;
-        border-width: 0.1em;
-    }
     &:before {
-        border-color: transparent;
+        .fa();
+        // .fa-fw();
+        font-awesome: square-o;
     }
-     &:after {
-        position: absolute;
-        top: 25%;
-        left: 25%;
-        width: 50%;
-        height: 50%;
-     }
 }
+// .toggle-window-nodes {
+//     height: 2.25em;
+//     &:before, &:after {
+//         content: '';
+//         .fa();
+//         // .fa-fw();
+//         border-style: dashed;
+//         border-width: 0.1em;
+//     }
+//     &:before {
+//         border-color: transparent;
+//     }
+//      &:after {
+//         position: absolute;
+//         top: 25%;
+//         left: 25%;
+//         width: 50%;
+//         height: 50%;
+//      }
+// }
 .toggle-histograms {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: bar-chart;
     }
 }
 .toggle-inspector {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: table;
     }
 }
 .toggle-timebar {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: clock-o;
     }
 }
 .toggle-exclusions {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: ban;
     }
 }
 .toggle-filters {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: filter;
     }
 }
 .toggle-sets {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: tag;
     }
 }
 .open-workbook {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: external-link;
     }
 }
 .fullscreen-workbook {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: expand;
     }
 }
 .fork-workbook {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: code-fork;
     }
 }
 .save-workbook {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: floppy-o;
     }
 }
 .embed-workbook {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: share-alt;
     }
 }
 .live-workbook {
     &:before {
         .fa();
-        .fa-fw();
+        // .fa-fw();
         font-awesome: share-square;
     }
 }

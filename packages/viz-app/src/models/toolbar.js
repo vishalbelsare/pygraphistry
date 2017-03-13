@@ -21,30 +21,41 @@ export function toolbar(workbookId, viewId) {
             stable: {
                 id: 'stable',
                 visible: true,
-                length: 6, ...[[
-                        $ref(`${view}.camera.controls[0]`),
-                        $ref(`${view}.camera.controls[1]`),
-                        $ref(`${view}.camera.controls[2]`),
-                    ], [
-                        $ref(`${workbook}.controls[0]`),
-                        $ref(`${workbook}.controls[1]`),
-                    ], [
-                        $ref(`${view}.scene.controls[0]`),
-                        $ref(`${view}.scene.controls[1]`),
-                        $ref(`${view}.labels.controls[0]`),
-                        $ref(`${view}.layout.controls[0]`),
-                    ], [
-                        $ref(`${view}.selection.controls[0]`),
-                        $ref(`${view}.selection.controls[1]`)
-                    ], [
-                        $ref(`${view}.histograms.controls[0]`),
-                        $ref(`${view}.inspector.controls[0]`),
-                        $ref(`${view}.exclusions.controls[0]`),
-                        $ref(`${view}.filters.controls[0]`),
-                    ], [
-                        $ref(`${workbook}.controls[3]`),
-                    ]
-                ]
+                length: 4,
+                0: {
+                    name: 'Graph',
+                    items: {
+                        length: 4,
+                        0: $ref(`${view}.scene.controls[0]`),
+                        1: $ref(`${view}.scene.controls[1]`),
+                        2: $ref(`${view}.labels.controls[0]`),
+                        3: $ref(`${view}.layout.controls[0]`)
+                    }
+                },
+                1: {
+                    name: 'Interact',
+                    items: {
+                        length: 2,
+                        0: $ref(`${view}.selection.controls[0]`),
+                        1: $ref(`${view}.selection.controls[1]`)
+                    }
+                },
+                2: {
+                    name: 'Query',
+                    items: {
+                        length: 2,
+                        0: $ref(`${view}.filters.controls[0]`),
+                        1: $ref(`${view}.exclusions.controls[0]`)
+                    }
+                },
+                3: {
+                    name: 'Inspect',
+                    items: {
+                        length: 2,
+                        0: $ref(`${view}.histograms.controls[0]`),
+                        1: $ref(`${view}.inspector.controls[0]`)
+                    }
+                }
             },
             beta: {
                 id: 'beta',
