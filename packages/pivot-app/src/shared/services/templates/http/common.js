@@ -1,3 +1,9 @@
+import { VError } from 'verror'
+
+import logger from '../../../../shared/logger.js';
+const log = logger.createLogger(__filename);
+
+
 export const PARAMETERS = [
     {
         name: 'endpoint',

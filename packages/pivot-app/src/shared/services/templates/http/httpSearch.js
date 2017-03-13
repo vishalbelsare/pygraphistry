@@ -1,5 +1,4 @@
 import stringhash from 'string-hash';
-import { VError } from 'verror'
 
 import { HttpPivot } from './httpPivot';
 import { PARAMETERS, bindTemplateString } from './common.js';
