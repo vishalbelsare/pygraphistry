@@ -1,6 +1,6 @@
 import stringhash from 'string-hash';
 
-import { HttpPivot } from './HttpPivot';
+import { HttpPivot } from './httpPivot';
 import { PARAMETERS, bindTemplateString } from './common.js';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
@@ -25,20 +25,17 @@ export const HTTP_EXPAND = new HttpPivot({
         //update dropdown optionlists
         this.connections = nodes ? nodes.value : [];
         this.attributes = attributes ? attributes.value : [];
-
-        log.info('pivot refVal', refVal);
-
+        
         const pivots = refVal instanceof Array ? refVal : [refVal];
         const events = pivots.map((refVal) => pivotCache[refVal].events);
         return [].concat.apply([], events)
             .map((row, i) => {
-                log.info('row', i, row);                
                 const url = bindTemplateString(endpoint, row, {
                     endpoint, 
                     nodes: this.connections,
                     attributes: this.attributes
                 });
-                log.info('row endpoint', url);
+                log.debug('row endpoint', url, i ,row);
                 return url;
             });
 
