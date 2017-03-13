@@ -6,7 +6,7 @@ import { VError } from 'verror'
 import { shapeSplunkResults } from '../../shapeSplunkResults.js';
 import { flattenJson } from '../../support/flattenJson.js';
 import { PivotTemplate } from '../template.js';
-import { httpConnector0 } from '../../connectors/http';
+import { defaultHttpConnector } from '../../connectors/http';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
@@ -20,7 +20,7 @@ export class HttpPivot extends PivotTemplate {
         this.connections = connections;
         this.encodings = encodings;
         this.attributes = attributes;
-        this.connector = connector || httpConnector0;
+        this.connector = connector || defaultHttpConnector;
     }
 
     searchAndShape({ app, pivot, pivotCache }) {

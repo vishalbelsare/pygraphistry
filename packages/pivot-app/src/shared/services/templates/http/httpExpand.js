@@ -1,7 +1,8 @@
 import stringhash from 'string-hash';
+import template from 'string-template';
 
 import { HttpPivot } from './httpPivot';
-import { PARAMETERS, bindTemplateString } from './common.js';
+import { PARAMETERS } from './common.js';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
@@ -30,7 +31,8 @@ export const HTTP_EXPAND = new HttpPivot({
         const events = pivots.map((refVal) => pivotCache[refVal].events);
         return [].concat.apply([], events)
             .map((row, i) => {
-                const url = bindTemplateString(endpoint, row, {
+                const url = template(endpoint, {
+                    ...row,
                     endpoint, 
                     nodes: this.connections,
                     attributes: this.attributes
