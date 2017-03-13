@@ -24,5 +24,5 @@ describe('HttpConnector', function() {
 });
 
 describe('Support', function() {
-    require('./services/support/flattenjson');
+    require('./services/support/flattenJson');
 });
