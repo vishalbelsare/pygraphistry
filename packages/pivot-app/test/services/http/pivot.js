@@ -8,6 +8,7 @@ const get = Observable.bindNodeCallback(request.get.bind(request));
 import { httpConnector0 } from '../../../src/shared/services/connectors/http';
 import { HttpPivot } from '../../../src/shared/services/templates/http/httpPivot';
 
+const PORT = 3001;
 
 describe('httpPivot', function () {
 
@@ -30,7 +31,7 @@ describe('httpPivot', function () {
 	    });
 	    expressApp.get('/timeout', () => {});
 	    expressApp.get('/404', (req, res) => res.status(404).json({}));
-	    server = expressApp.listen(3000);	    
+	    server = expressApp.listen(PORT);	    
 	});
 
 	afterEach(function () {
@@ -41,7 +42,7 @@ describe('httpPivot', function () {
 	////////////////////////////////
 
 	it('testEcho', (done) => {
-		get('http://localhost:3000/echo?x=1')
+		get(`http://localhost:${PORT}/echo?x=1`)
 			.subscribe(
 				([response]) => { 
 					assert.deepEqual(JSON.parse(response.body), {x: '1'})
@@ -62,7 +63,7 @@ describe('httpPivot', function () {
 	it('constant', (done) => {
 		const pivot = new HttpPivot({
 			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
-			toUrls: () => ['http://localhost:3000/echo?x=1'],
+			toUrls: () => [`http://localhost:${PORT}/echo?x=1`],
 			parameters: [],
 			encodings: {}
 		});
@@ -91,7 +92,7 @@ describe('httpPivot', function () {
 	it('fromData', (done) => {
 		const pivot = new HttpPivot({
 			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
-			toUrls: () => ['http://localhost:3000/echo?x=5&x=10'],
+			toUrls: () => [`http://localhost:${PORT}/echo?x=5&x=10`],
 			parameters: [],
 			encodings: {}
 		});
@@ -120,7 +121,7 @@ describe('httpPivot', function () {
 	it('userEventID', (done) => {
 		const pivot = new HttpPivot({
 			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
-			toUrls: () => ['http://localhost:3000/echo?x=5&x=10'],
+			toUrls: () => [`http://localhost:${PORT}/echo?x=5&x=10`],
 			parameters: [],
 			encodings: {}
 		});
@@ -149,7 +150,7 @@ describe('httpPivot', function () {
 	it('no includes', (done) => {
 		const pivot = new HttpPivot({
 			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
-			toUrls: () => ['http://localhost:3000/echo?x=1'],
+			toUrls: () => [`http://localhost:${PORT}/echo?x=1`],
 			parameters: [],
 			encodings: {}
 		});

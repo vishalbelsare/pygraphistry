@@ -7,6 +7,7 @@ import styles from './pivots.less';
 
 const componentsByInputType = {
     text: TextCell,
+    textarea: TextareaCell,
     combo: ComboCell,
     multi: MultiCell,
     daterange: DateRange,
@@ -26,6 +27,26 @@ function TextCell({ id, paramKey, paramValue, paramUI, handlers }) {
          <div className={styles['pivot-text-param']} key={`pcell-${id}-${paramKey}`}>
             <label>{ paramUI.label }</label>
             <input
+                type='th'
+                defaultValue={paramValue}
+                placeholder={paramUI.placeholder}
+                readOnly={false}
+                disabled={false}
+                onChange={ev => ev.preventDefault() ||
+                    handlers.setPivotAttributes({
+                        [`pivotParameters.${paramKey}`]: ev.target.value
+                    })
+                }
+            />
+        </div>
+     );
+}
+
+function TextareaCell({ id, paramKey, paramValue, paramUI, handlers }) {
+     return (
+         <div className={styles['pivot-textarea-param']} key={`pcell-${id}-${paramKey}`}>
+            <label>{ paramUI.label }</label>
+            <textarea
                 type='th'
                 defaultValue={paramValue}
                 placeholder={paramUI.placeholder}

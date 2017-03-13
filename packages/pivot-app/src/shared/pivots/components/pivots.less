@@ -226,6 +226,7 @@
 
 
 .pivot-text-param,
+.pivot-textarea-param,
 .pivot-combo-param, .pivot-combo-param :global(.form-inline),
 .pivot-multi-param,
 .pivot-date-range-param {
@@ -236,16 +237,17 @@
 }
 
 .pivot-text-param,
+.pivot-textarea-param,
 .pivot-combo-param :global(.form-group) {
     display: flex;
 }
 
-.pivot-text-param, .pivot-combo-param {  
+.pivot-text-param, .pivot-textarea-param, .pivot-combo-param {  
     label {
     	order: 1;
     	margin-top: 10px;
     }
-    input, select {
+    input, select, textarea {
     	order: 2;
     	flex-grow: 1;
         border-radius: 10px;

@@ -4,3 +4,4 @@ export * from './eventGen.js';
 export * from './blazegraph.js';
 export * from './http/httpSearch.js';
 export * from './http/httpExpand.js';
+export * from './manual.js';
