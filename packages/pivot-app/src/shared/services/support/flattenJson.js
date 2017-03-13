@@ -1,33 +1,12 @@
-//{x: {y: 1}} => {"x.y": 1}
-//http://stackoverflow.com/questions/19098797/fastest-way-to-flatten-un-flatten-nested-json-objects
-export function flattenJson (data = {}) {
-    const result = {};
-    function recurse (cur, prop) {
-        if (cur !== data) {
-            if (Object(cur) !== cur) {
-                result[prop] = cur;
-                return;
-            } else if (Array.isArray(cur)) {
-                const l = cur.length;
-                for (let i=0; i<l; i++) {
-                     recurse(cur[i], prop + "[" + i + "]");
-                }
-                if (l === 0) {
-                    result[prop] = [];
-                }
-                return;
-            }
-        }
+const unbend = require('unbend');
 
-        let isEmpty = true;
-        for (const p in cur) {
-            isEmpty = false;
-            recurse(cur[p], prop ? prop+"."+p : p);
-        }
-        if (isEmpty && prop) {
-            result[prop] = {};
-        }    
-    }
-    recurse(data, "");
-    return result;
+//{x: {y: 1}, z: ['a']} => {"x.y": 1, z.0: 'a'}
+export function flattenJson (data = {}) {
+    return unbend(
+        data,
+        {
+            separator: '.',
+            skipFirstSeparator: true,
+            parseArray: true
+        });
 }
