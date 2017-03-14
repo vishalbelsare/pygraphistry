@@ -1,0 +1,25 @@
+{
+    "id": "3f302c64dda2536f",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [
+            "module",
+            "level",
+            "err.message",
+            "time",
+            "metadata.dataset",
+            "err.stackArray{}.file",
+            "err.stackArray{}.function",
+            "msg",
+            "fileName"
+        ],
+        "manual-data$$$events": "[{\"sourcehw1l3gvj.ru\noa505txzz.ru\nofplmh29.ru\nwd9szyfi.ru",
+        "http-expand$$$pRef": [
+            "3f3003becd92a0ba"
+        ],
+        "http-expand$$$endpoint": "http://localhost:3000/pivot/echo?domain={domain}&site=hw1l3gvj.ru&site=oa505txzz.ru&site=ofplmh29.ru&site=wd9szyfi.ru",
+        "http-expand$$$jq": "[ .domain as \\$domain | .site[] | {\"domain\": \\$domain, \"site\": ., \"origin\": \"OpenDNS\"}]"
+    },
+    "pivotTemplate": "http-expand"
+}
