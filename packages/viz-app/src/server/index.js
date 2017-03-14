@@ -1,4 +1,5 @@
 import { VError } from 'verror';
+import { Router } from 'express';
 import configureWorkers from './workers';
 import { createLogger } from '@graphistry/common/logger';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
@@ -6,6 +7,7 @@ import { reportWorkerActivity } from './reportWorkerActivity';
 import setObservableConfig from 'recompose/setObservableConfig';
 import rxjsObservableConfig from 'recompose/rxjsObservableConfig';
 import { initialize as initializeNbody } from 'viz-app/worker/simulator/kernel/KernelPreload';
+import { authenticateMiddleware } from './authentication';
 
 setObservableConfig(rxjsObservableConfig);
 
@@ -23,15 +25,20 @@ function server(webpackStats = {}, config = {}) {
     reportWorkerActivity({ config, isWorkerActive })
         .do(null, setActiveStatus).publish().connect();
 
-    let serverMiddleware;
+    const serverRouter = new Router();
 
-    return function hotServerMiddleware(req, res, next) {
+    const authenticate = authenticateMiddleware(config);
+    serverRouter.use(authenticate);
+
+    let serverMiddleware;
+    function hotServerMiddleware(req, res, next) {
 
         logger.trace({req, res}, 'Received Express.js request');
 
         if (!serverMiddleware) {
             try {
                 serverMiddleware = configureWorkers(req.config, setActiveStatus, req.io);
+                serverMiddleware.use('*', authenticate);
             } catch (err) {
                 setActiveStatus(err);
             }
@@ -39,6 +46,9 @@ function server(webpackStats = {}, config = {}) {
 
         return serverMiddleware(req, res, next);
     }
+    serverRouter.use(hotServerMiddleware);
+
+    return serverRouter;
 
     function setActiveStatus(err, isActive = false) {
         if (!err && isActive) {

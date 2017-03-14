@@ -1,6 +1,6 @@
 const { createLogger } = require('@graphistry/common/logger');
 const compress = require('@graphistry/node-pigz');
-const _config = require('@graphistry/config');
+const getConfig = require('@graphistry/config');
 const cookieParser = require('cookie-parser');
 const SocketIOServer = require('socket.io');
 const compression = require('compression');
@@ -12,8 +12,16 @@ const path = require('path');
 const hpp = require('hpp');
 const fs = require('fs');
 
+
+const config = getConfig();
+// Allow our Graphistry config object to be used like a node-confict object :-X
+config.get = convict.get.bind(convict);
+// config.has = convict.has.bind(convict);
+// config.default = convict.default.bind(convict);
+// config.reset = convict.reset.bind(convict);
+// config.set = convict.set.bind(convict);
+
 const app = express();
-const config = _config();
 const port = convict.get('port');
 const host = convict.get('host');
 const logger = createLogger('viz-app');

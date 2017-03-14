@@ -46,6 +46,22 @@ const conf = convict({
             arg: 'log-source',
             env: 'LOG_SOURCE'
         }
+    },
+    authentication: {
+        username: {
+            doc: 'The username used to access this service',
+            format: String,
+            default: 'admin',
+            arg: 'username',
+            env: 'USERNAME'
+        },
+        passwordHash: {
+            doc: 'Bcrypt hash of the password required to access this service, or unset/empty to disable authentication (default)',
+            format: String,
+            default: '',
+            arg: 'password-hash',
+            env: 'PASSWORD_HASH'
+        }
     }
 });
 
