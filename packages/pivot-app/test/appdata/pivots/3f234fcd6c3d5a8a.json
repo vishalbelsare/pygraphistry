@@ -1,0 +1,25 @@
+{
+    "id": "3f234fcd6c3d5a8a",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [
+            "module",
+            "level",
+            "err.message",
+            "time",
+            "metadata.dataset",
+            "err.stackArray{}.file",
+            "err.stackArray{}.function",
+            "msg",
+            "fileName"
+        ],
+        "http-expand$$$pRef": [
+            "3f22f0c5cbf227b9",
+            "3f22f188ba9e8e11"
+        ],
+        "http-expand$$$endpoint": "http://localhost:3000/pivot/echo?ip={ip}&nodes={nodes}",
+        "http-expand$$$jq": "."
+    },
+    "pivotTemplate": "http-expand"
+}
