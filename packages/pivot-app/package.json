@@ -128,7 +128,7 @@
     "postcss-import": "9.0.0",
     "postcss-loader": "1.2.1",
     "postcss-nesting": "2.3.1",
-    "pre-git": "3.12.0",
+    "pre-git": "3.14.0",
     "progress-bar-webpack-plugin": "1.9.2",
     "redux-devtools": "3.3.2",
     "redux-devtools-dock-monitor": "1.1.1",
@@ -151,7 +151,8 @@
   "config": {
     "pre-git": {
       "enabled": true,
-      "pre-commit": [
+      "pre-commit": [],
+      "pre-push": [
         "./tool/eslint_precommit.sh"
       ],
       "post-merge": [
