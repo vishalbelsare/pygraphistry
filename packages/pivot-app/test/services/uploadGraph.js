@@ -39,32 +39,33 @@ const undecoratedLabels = [{node: n1},
                            {node: n5},
                            {node: n6},
                            {node: n7}];
-const decoratedLabels = [{node: n1, x: 0, y: 1},
+const decoratedLabels = [{node: n1, x: 1, y: 0},
                          {node: n2, x: 1, y: 1},
-                         {node: n3, x: 4, y: 1},
-                         {node: n4, x: 3, y: 0},
-                         {node: n5, x: 7, y: 1},
-                         {node: n6, x: 3, y: 1},
-                         {node: n7, x: 3, y: 2}];
-const rows = {[n1]: 0, [n2]: 1, [n3]: 4, [n4]: 3, [n5]: 7, [n6]: 3, [n7]: 3};
+                         {node: n3, x: 1, y: 8},
+                         {node: n4, x: 0, y: 5},
+                         {node: n5, x: 1, y: 13},
+                         {node: n6, x: 1, y: 5},
+                         {node: n7, x: 2, y: 5}];
+const rows = {[n1]: 0, [n2]: 1, [n3]: 8, [n4]: 5, [n5]: 13, [n6]: 5, [n7]: 5};
 const degrees = {[n1]: 1, [n2]: 4, [n3]: 1, [n4]: 3, [n5]: 1, [n6]: 1, [n7]: 1};
-const rowColumnCounts = {0: 1, 1: 1, 3: 3, 4: 1, 7: 1};
+const rowColumnCounts = {0: 1, 1: 1, 5: 3, 8: 1, 13: 1};
 const rowColumns = {[n1]: 1, [n2]: 1, [n3]: 1, [n4]: 0, [n5]: 1, [n6]: 1, [n7]: 2};
 const fudgeX = 1;
-const fudgeY = 1;
-const xys = {[n1]: {x: 0, y: 1},
+const fudgeY = 2;
+const spacerY = 1;
+const xys = {[n1]: {x: 1, y: 0},
              [n2]: {x: 1, y: 1},
-             [n3]: {x: 4, y: 1},
-             [n4]: {x: 3, y: 0},
-             [n5]: {x: 7, y: 1},
-             [n6]: {x: 3, y: 1},
-             [n7]: {x: 3, y: 2}};
+             [n3]: {x: 1, y: 8},
+             [n4]: {x: 0, y: 5},
+             [n5]: {x: 1, y: 13},
+             [n6]: {x: 1, y: 5},
+             [n7]: {x: 2, y: 5}};
 const hugeDataStructure = {data: {graph: edges, labels: undecoratedLabels}};
 const hugeDecoratedDataStructure = {data: {graph: edges, labels: decoratedLabels}};
 
 describe('edgesToRows', function() {
         it('should pull out minimum rows from src/dest edges', function() {
-                assert.deepEqual(uploadGraph.edgesToRows(edges), rows);
+                assert.deepEqual(uploadGraph.edgesToRows(edges, fudgeY), rows);
             }); });
 
 describe('graphDegrees', function() {
@@ -88,7 +89,7 @@ describe('rowsToColumns', function() {
 
 describe('mergeRowsColumnsToXY', function() {
         it('should merge keys correctly', function() {
-                assert.deepEqual(uploadGraph.mergeRowsColumnsToXY(rows, rowColumns, fudgeX, fudgeY), xys);
+                assert.deepEqual(uploadGraph.mergeRowsColumnsToXY(rows, rowColumns, fudgeX), xys);
             });
     });
 
@@ -103,6 +104,6 @@ describe('decorateGraphLabelsWithXY', function() {
 
 describe('stackedBushyGraph', function() {
         it('should decorate nodes with positions', function() {
-                assert.deepEqual(uploadGraph.stackedBushyGraph(hugeDataStructure), hugeDecoratedDataStructure);
+                assert.deepEqual(uploadGraph.stackedBushyGraph(hugeDataStructure, fudgeX, fudgeY, spacerY), hugeDecoratedDataStructure);
             });
     });

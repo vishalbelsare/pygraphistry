@@ -133,15 +133,13 @@ function createGraph(pivots) {
 // More formally: for all {Pivot: id, s: n1, d: n2} in graph, put n1 into the smallest row id*2, and n2 into the smallest row id*2+1. Then,
 // in each row, order each node into columns based on degree and lexicographic order. Then,
 // for each row indexed by r, for each column indexed by c, set the node's x to be rFudge * r, and set the node's y to be cFudge * (max(|c|) - |c| + c) (for centering)
-export function stackedBushyGraph(graph) {
-    // fs.writeFileSync("this-is-my-graph-lol.json", safeStringify(graph));
-    const nodeRows = edgesToRows(graph.data.graph);
+// by default, create a graph that has aspect 1:√(max(|c|)), going from top to bottom.
+export function stackedBushyGraph(graph, fudgeX = 1, fudgeY = -Math.sqrt(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity)))), spacerY = -1) {
+    const nodeRows = edgesToRows(graph.data.graph, fudgeY, spacerY);
     const nodeDegrees = graphDegrees(graph.data.graph);
     const columnCounts = rowColumnCounts(nodeRows);
     const nodeColumns = rowsToColumns(nodeRows, columnCounts, nodeDegrees);
-    const fudgeX = 1;
-    const fudgeY = 1; // maybe we set fudgeY to be a function of the maxColumn?
-    const nodeXYs = mergeRowsColumnsToXY(nodeRows, nodeColumns, fudgeX, fudgeY);
+    const nodeXYs = mergeRowsColumnsToXY(nodeRows, nodeColumns, fudgeX);
 
     decorateGraphLabelsWithXY(graph.data.labels, nodeXYs);
 
@@ -149,10 +147,10 @@ export function stackedBushyGraph(graph) {
 }
 
 // [{Pivot: Int, bindings.sourceField: nodeName, bindings.destinationField: nodeName}] -> {nodeName: Int}
-export function edgesToRows(edges) {
+export function edgesToRows(edges, fudgeY, spacerY) {
     const allEdgeRows = _.flatten(_.map(edges, (e) => [
-        {node: e[bindings.sourceField], row: e.Pivot * 2},
-        {node: e[bindings.destinationField], row: e.Pivot * 2 + 1}
+        {node: e[bindings.sourceField], row: e.Pivot * 2 * fudgeY},
+        {node: e[bindings.destinationField], row: e.Pivot * 2 * fudgeY + spacerY}
                                                        ]),"shallow");
     const leastEdgeRows = _.mapObject(_.groupBy(allEdgeRows, 'node'),
                                       (allRows) => _.min(_.pluck(allRows, 'row')));
@@ -189,8 +187,8 @@ export function rowsToColumns(nodeRows, columnCounts, nodeDegrees) {
 }
 
 // {nodeName: Int}, {nodeName: Int}, Int, Int -> {nodeName: {x: Int}, {y: Int}}
-export function mergeRowsColumnsToXY(rows, columns, fudgeX, fudgeY) {
-    return _.mapObject(rows, (rowIdx, node) => ({x: fudgeX * rowIdx, y: fudgeY * columns[node]}));
+export function mergeRowsColumnsToXY(rows, columns, fudgeX) {
+    return _.mapObject(rows, (rowIdx, node) => ({x: fudgeX * columns[node], y: rowIdx}));
 }
 
 // [{idField: n}] -> () // [{idField: n, x: Int, y: Int}]
@@ -262,6 +260,7 @@ function makeEventTable({pivots}) {
 export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersById,
                              investigationIds}) {
     const layoutType = "stackedBushyGraph";
+    const layoutControls = {"stackedBushyGraph": "lockedAtlasBarnesY"};
     return loadInvestigationsById({investigationIds})
         .mergeMap(
             ({app, investigation}) =>
@@ -271,7 +270,7 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                         .map(({ pivot }) => pivot)
                         .toArray()
                         .map(createGraph)
-                        .map(fixedPositionLayout(layoutType)),
+                        .map((g) => fixedPositionLayout(layoutType)(g)),
                     ({user}, {pivots, data}) => ({user, pivots, data})
                 )
                 .switchMap(({user, data, pivots}) => {
@@ -286,7 +285,7 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                 .do(({user, dataset, data, pivots}) => {
                     investigation.eventTable = makeEventTable({data, pivots});
                     if (dataset) {
-                        investigation.url = `${user.vizService}&dataset=${dataset}${layoutType ? '&play=0' : ''}`;
+                        investigation.url = `${user.vizService}&dataset=${dataset}${layoutType ? ('&controls=' + layoutControls[layoutType]) : ''}`;
                         investigation.status = {
                             ok: true,
                             etling: false,
