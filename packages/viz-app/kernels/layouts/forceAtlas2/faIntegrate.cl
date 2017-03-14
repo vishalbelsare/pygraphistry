@@ -1,4 +1,5 @@
 #include "common.h"
+#include "layouts/forceAtlas2/forceAtlas2Common.h"
 
 __kernel void faIntegrate (
     //input
@@ -6,6 +7,7 @@ __kernel void faIntegrate (
     const __global float2* inputPositions,
     const __global float2* curForces,
     const __global float* swings,
+    const uint flags,
     //output
     __global float2* outputPositions
 ) {
@@ -20,6 +22,8 @@ __kernel void faIntegrate (
     float maxSpeed = maxSpeedFactor / length(curForces[n1Idx]);
 
     float2 delta = *globalSpeed * min(maxSpeed, speed) * curForces[n1Idx];
+    delta.x = delta.x * (1 - IS_LOCKED_X(flags));
+    delta.y = delta.y * (1 - IS_LOCKED_Y(flags));
     debug4("Speed (%d) %f max: %f\n", n1Idx, speed, maxSpeed);
     debug4("Delta (%d) %f\t%f\n", n1Idx, delta.x, delta.y);
 
