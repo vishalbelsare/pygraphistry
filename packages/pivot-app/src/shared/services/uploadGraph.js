@@ -135,11 +135,11 @@ function createGraph(pivots) {
 // for each row indexed by r, for each column indexed by c, set the node's x to be rFudge * r, and set the node's y to be cFudge * (max(|c|) - |c| + c) (for centering)
 // by default, create a graph that has aspect 1:√(max(|c|)), going from top to bottom.
 export function stackedBushyGraph(graph, fudgeX = 1, fudgeY = -Math.sqrt(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity)))), spacerY = Math.sign(fudgeY) * Math.sqrt(Math.abs(fudgeY))) {
-    const nodeRows = edgesToRows(graph.data.graph, fudgeY, spacerY);
+    const nodeRows = edgesToRows(graph.data.graph);
     const nodeDegrees = graphDegrees(graph.data.graph);
     const columnCounts = rowColumnCounts(nodeRows);
     const nodeColumns = rowsToColumns(nodeRows, columnCounts, nodeDegrees);
-    const nodeXYs = mergeRowsColumnsToXY(nodeRows, nodeColumns, fudgeX);
+    const nodeXYs = mergeRowsColumnsToXY(nodeRows, nodeColumns, fudgeX, fudgeY, spacerY);
 
     decorateGraphLabelsWithXY(graph.data.labels, nodeXYs);
 
@@ -147,10 +147,10 @@ export function stackedBushyGraph(graph, fudgeX = 1, fudgeY = -Math.sqrt(_.max(_
 }
 
 // [{Pivot: Int, bindings.sourceField: nodeName, bindings.destinationField: nodeName}] -> {nodeName: Int}
-export function edgesToRows(edges, fudgeY, spacerY) {
+export function edgesToRows(edges) {
     const allEdgeRows = _.flatten(_.map(edges, (e) => [
-        {node: e[bindings.sourceField], row: e.Pivot * 2 * fudgeY},
-        {node: e[bindings.destinationField], row: e.Pivot * 2 * fudgeY + spacerY}
+        {node: e[bindings.sourceField], row: e.Pivot * 2},
+        {node: e[bindings.destinationField], row: e.Pivot * 2 + 1}
                                                        ]),"shallow");
     const leastEdgeRows = _.mapObject(_.groupBy(allEdgeRows, 'node'),
                                       (allRows) => _.min(_.pluck(allRows, 'row')));
@@ -187,8 +187,10 @@ export function rowsToColumns(nodeRows, columnCounts, nodeDegrees) {
 }
 
 // {nodeName: Int}, {nodeName: Int}, Int, Int -> {nodeName: {x: Int}, {y: Int}}
-export function mergeRowsColumnsToXY(rows, columns, fudgeX) {
-    return _.mapObject(rows, (rowIdx, node) => ({x: fudgeX * columns[node], y: rowIdx}));
+export function mergeRowsColumnsToXY(rows, columns, fudgeX, fudgeY, spacerY) {
+    return _.mapObject(rows, (rowIdx, node) => (
+        {x: fudgeX * columns[node], y: fudgeY * (rowIdx - (rowIdx & 1)) + spacerY * (rowIdx & 1) }
+                                                ));
 }
 
 // [{idField: n}] -> () // [{idField: n, x: Int, y: Int}]
