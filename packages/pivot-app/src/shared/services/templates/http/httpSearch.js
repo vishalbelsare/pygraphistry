@@ -1,7 +1,8 @@
 import stringhash from 'string-hash';
+import template from 'string-template';
 
 import { HttpPivot } from './httpPivot';
-import { PARAMETERS, bindTemplateString } from './common.js';
+import { PARAMETERS } from './common.js';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
@@ -18,7 +19,7 @@ export const HTTP_SEARCH = new HttpPivot({
         this.connections = nodes ? nodes.value : [];
         this.attributes = attributes ? attributes.value : [];
 
-        const url = bindTemplateString(endpoint, {}, {
+        const url = template(endpoint, {
             endpoint, 
             nodes: this.connections,
             attributes: this.attributes

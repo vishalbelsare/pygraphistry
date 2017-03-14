@@ -5,22 +5,12 @@ import { Observable } from 'rxjs';
 import request from 'request';
 const get = Observable.bindNodeCallback(request.get.bind(request));
 
-import { httpConnector0 } from '../../../src/shared/services/connectors/http';
+import { defaultHttpConnector } from '../../../src/shared/services/connectors/http';
 import { HttpPivot } from '../../../src/shared/services/templates/http/httpPivot';
 
 const PORT = 3001;
 
 describe('httpPivot', function () {
-
-	let timeout;
-    beforeEach(function () {
-		timeout = httpConnector0.timeout_s;
-		httpConnector0.timeout_s = 0.05;
-    })
-	afterEach(function () {
-		httpConnector0.timeout_s = timeout;
-	});
-
 
     let server;
 	beforeEach(function() {

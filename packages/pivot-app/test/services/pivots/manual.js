@@ -20,20 +20,20 @@ describe('manualPivot', function () {
                 }, 
                 pivotCache: {}})
             .subscribe(({pivot, ...rest}) => {
-                    const base = {x: 1, y: 'aa', 'z[0]': 'a', 'z[1]': 'b'};
+                    const base = {x: 1, y: 'aa', 'z.0': 'a', 'z.1': 'b'};
                     assert.deepEqual(pivot.events, [{...base, EventID:'x:0'}]);
                     const base2 = {...base, _pivotId: 'x', source: 'x:0'};
                     assert.deepEqual(pivot.results.graph, 
                         [{ ...base2, destination: 1, edgeType: 'EventID->x'},
                          { ...base2, destination: 'aa', edgeType: 'EventID->y'},
-                         { ...base2, destination: 'a', edgeType: 'EventID->z[0]'},
-                         { ...base2, destination: 'b', edgeType: 'EventID->z[1]'}]);
+                         { ...base2, destination: 'a', edgeType: 'EventID->z.0'},
+                         { ...base2, destination: 'b', edgeType: 'EventID->z.1'}]);
                     assert.deepEqual(pivot.results.labels,
                         [{ ...base, node: 'x:0', type: 'EventID', pointColor: 4 },
                          { node: 1, type: 'x', pointColor: 5 },
                          { node: 'aa', type: 'y', pointColor: 4 },
-                         { node: 'a', type: 'z[0]', pointColor: 1 },
-                         { node: 'b', type: 'z[1]', pointColor: 4 }
+                         { node: 'a', type: 'z.0', pointColor: 1 },
+                         { node: 'b', type: 'z.1', pointColor: 4 }
                          ]);
                     done();
                 }, (e) => done(new Error(e)));

@@ -1,4 +1,3 @@
-//import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
 import { VError } from 'verror'
 import request from 'request';
@@ -11,16 +10,9 @@ const log = logger.createLogger(__filename);
 
 class HttpConnector extends Connector {    
 
-    constructor({user, pwd, endpoint, isBatch, timeout_s = 20, ...config}) {
+    constructor({timeout_s = 20, ...config}) {
         super(config);
-
-        this.user = user;
-        this.pwd = pwd;
-        this.endpoint = endpoint;
-        this.isBatch = isBatch || false;
-
         this.timeout_s = timeout_s;
-
     }
 
     search (url) {
@@ -64,7 +56,7 @@ class HttpConnector extends Connector {
 }
 
 
-export const httpConnector0 = new HttpConnector({
+export const defaultHttpConnector = new HttpConnector({
     id:'http-connector',
     name : 'HTTP'
 });

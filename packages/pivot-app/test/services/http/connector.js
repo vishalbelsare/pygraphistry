@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import request from 'request';
 const get = Observable.bindNodeCallback(request.get.bind(request));
 
-import { HttpConnector, httpConnector0 } from '../../../src/shared/services/connectors/http';
+import { HttpConnector, defaultHttpConnector } from '../../../src/shared/services/connectors/http';
 
 const PORT = 3002;
 
@@ -13,11 +13,11 @@ describe('HttpConnector', function () {
 
     let timeout;
     beforeEach(function () {
-		timeout = httpConnector0.timeout_s;
-		httpConnector0.timeout_s = 0.05;
+		timeout = defaultHttpConnector.timeout_s;
+		defaultHttpConnector.timeout_s = 0.05;
     })
 	afterEach(function () {
-		httpConnector0.timeout_s = timeout;
+		defaultHttpConnector.timeout_s = timeout;
 	});
 
 
@@ -51,7 +51,7 @@ describe('HttpConnector', function () {
 	});
 	
 	it('search', (done) => {
-		httpConnector0
+		defaultHttpConnector
 			.search(`http://localhost:${PORT}/echo?x=1`)
 			.subscribe(
 				([response]) => { 
@@ -61,7 +61,7 @@ describe('HttpConnector', function () {
 	});
 
 	it('timeout', (done) => {
-		httpConnector0
+		defaultHttpConnector
 			.search(`http://localhost:${PORT}/timeout`)
 			.subscribe(
 				() => done(new Error('expected timeout')),
@@ -70,7 +70,7 @@ describe('HttpConnector', function () {
 	});
 
 	it('404', (done) => {
-		httpConnector0
+		defaultHttpConnector
 			.search(`http://localhost:${PORT}/404`)
 			.subscribe(
 				() => done(new Error('expected 404')),
@@ -80,7 +80,7 @@ describe('HttpConnector', function () {
 
 	
 	it('healthcheck', (done) => {
-		httpConnector0.healthCheck()
+		defaultHttpConnector.healthCheck()
 			.subscribe((v) => {
 					assert.deepEqual(v, 'Health checks passed');
 					done();
