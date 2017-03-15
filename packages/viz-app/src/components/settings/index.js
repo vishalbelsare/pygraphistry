@@ -24,7 +24,7 @@ const tooltipFormatters = {
 export function SettingsList({ id, name, side, loading, style, children = [], ...props } = {}) {
     return (
         <Popover title={name} id={`${id}-popover`}
-                 style={{ ...style, minWidth: `250px` }} {...props}>
+                 style={{ ...style, minWidth: `300px` }} {...props}>
             {children}
         </Popover>
     );
