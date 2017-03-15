@@ -26,7 +26,7 @@ function addStyleLoaders({ type, isDev, threadPool, CSSModules, environment }, a
         rules = rules.map((rule) => ({
             test: rule.test,
             loader: ExtractTextPlugin.extract({
-                use: rule.use, fallback: 'style-loader?convertToAbsoluteUrls'
+                use: rule.use, fallback: 'style-loader'
             })
         }));
 

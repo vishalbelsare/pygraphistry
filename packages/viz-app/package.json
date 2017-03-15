@@ -85,7 +85,7 @@
       "command": "rimraf ./www/*.js ./www/*.map ./www/*.hot-update.json"
     },
     "clean:client": {
-      "command": "rimraf ./www/public/*.js  ./www/public/*.css ./www/public/*.map ./www/public/*.json ./www/public/*.eot ./www/public/*.svg ./www/public/*.ttf ./www/public/*.woff ./www/public/*.woff2"
+      "command": "rimraf ./www/*.js ./www/public/**/*.js ./www/public/**/*.hot-update.json ./www/public/**/*.css ./www/public/**/*.map ./www/public/**/*.json ./www/public/**/*.eot ./www/public/**/*.svg ./www/public/**/*.ttf ./www/public/**/*.woff ./www/public/**/*.woff2"
     },
     "clean:coverage": {
       "command": "rimraf ./coverage"
