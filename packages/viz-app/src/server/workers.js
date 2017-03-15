@@ -6,7 +6,7 @@ const logger = createLogger('viz-app:server:workerRouter');
 import configureEtlWorker from './etl';
 import configureVizWorker from './viz';
 
-function configureWorkers(config, activeCB, io) {
+function configureWorkers(config, activeCB) {
 
     let workerName, workerRouter, appRouter = Router();
     const allowMultipleVizConnections = !!config.ALLOW_MULTIPLE_VIZ_CONNECTIONS;
@@ -44,7 +44,7 @@ function configureWorkers(config, activeCB, io) {
 
             if (workerName !== configureName) {
                 workerName = configureName;
-                workerRouter = configureWorker(config, activeCB, io);
+                workerRouter = configureWorker(config, activeCB, req.app.io);
             }
 
             // Tell Express to continue processing this request, and pass it to the

@@ -21,32 +21,32 @@ const logger = createLogger('viz-app:server');
 const isWorkerActive = new BehaviorSubject(false);
 const exitOnDisconnect = !config.ALLOW_MULTIPLE_VIZ_CONNECTIONS;
 
-const authenticate = authenticateMiddleware();
-
-logger.warn(`Precompiling layout kernels`);
-initializeNbody();
-
 reportWorkerActivity({ config, isWorkerActive })
-    .do(null, setActiveStatus).publish().connect();
+    .do(null, setActiveStatus)
+    .publish()
+    .connect();
 
 
-let serverMiddleware;
-export default function hotServerMiddleware(req, res, next) {
+// The Express router that handles all incoming requests
+const serverRouter = Router();
 
-    logger.trace({req, res}, 'Received Express.js request');
-
-    if (!serverMiddleware) {
-        try {
-            serverMiddleware = Router();
-            serverMiddleware.use(authenticate);
-            serverMiddleware.use(configureWorkers(config, setActiveStatus, req.app.io));
-        } catch (err) {
-            setActiveStatus(err);
-        }
-    }
-
-    return serverMiddleware(req, res, next);
+try {
+    const authenticate = authenticateMiddleware();
+    serverRouter.use('/', authenticate);
+} catch(authMiddlewareError) {
+    logger.fatal(authMiddlewareError, 'An error occured loading the Express.js authentication middleware. Because this could compromise security, server will now terminate.');
+    setActiveStatus(authMiddlewareError);
 }
+
+try {
+    const selectWorkerRouter = configureWorkers(config, setActiveStatus);
+    serverRouter.use('/', selectWorkerRouter);
+} catch(selectWorkerMiddlewareError) {
+    logger.fatal(selectWorkerMiddlewareError, 'An error occured loading the Express.js "select worker" middleware (in viz-app/src/server/workers.js).');
+    setActiveStatus(selectWorkerMiddlewareError);
+}
+
+export default serverRouter;
 
 
 function setActiveStatus(err, isActive = false) {
@@ -95,13 +95,8 @@ ${'-'.repeat(80)}
 }
 
 
+logger.debug(`Precompiling layout kernels`);
+initializeNbody();
 
 
-// const serverRouter = Router();
-// serverRouter.use('/', authenticate);
-// serverRouter.use('/', hotServerMiddleware)
-//
-//
-// export default function routeRequest(req, res, next) {
-//     serverRouter.handle(req, res, next);
-// }
+logger.debug('Server module loaded/reloaded and ready to handle requests');
