@@ -1,3 +1,6 @@
+// Warning: only use Node.js natively supported JavaScript features in this file. It is imported
+// and run directly into Node, without Babel complication, by the root `viz-server/index.js`.
+
 const path = require('path');
 const glob = require('glob');
 const convict = require('convict');

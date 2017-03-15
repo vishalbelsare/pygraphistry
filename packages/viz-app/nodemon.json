@@ -4,6 +4,8 @@
         "tools/webpack/",
         "!tools/webpack/webpack.server.babel.js",
         "!tools/webpack/webpack.test.babel.js",
-        "src/server/**/*"
+        "src/server/**/*",
+        "config.js",
+        "config/*.json"
     ]
 }

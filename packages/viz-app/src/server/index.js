@@ -1,7 +1,9 @@
 import { VError } from 'verror';
+import { Router } from 'express';
 import configureWorkers from './workers';
 import _config from '@graphistry/config';
 import { createLogger } from '@graphistry/common/logger';
+import { authenticateMiddleware } from './authentication';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { reportWorkerActivity } from './reportWorkerActivity';
 import setObservableConfig from 'recompose/setObservableConfig';
@@ -20,13 +22,14 @@ const isWorkerActive = new BehaviorSubject(false);
 const exitOnDisconnect = !config.ALLOW_MULTIPLE_VIZ_CONNECTIONS;
 
 logger.warn(`Precompiling layout kernels`);
-
 initializeNbody();
+
 reportWorkerActivity({ config, isWorkerActive })
     .do(null, setActiveStatus).publish().connect();
 
+
 let serverMiddleware;
-export default function hotServerMiddleware(req, res, next) {
+function hotServerMiddleware(req, res, next) {
 
     logger.trace({req, res}, 'Received Express.js request');
 
@@ -41,6 +44,7 @@ export default function hotServerMiddleware(req, res, next) {
     return serverMiddleware(req, res, next);
 }
 
+
 function setActiveStatus(err, isActive = false) {
     if (!err && isActive) {
         logger.info({ active: true }, 'Reporting worker is active.');
@@ -53,6 +57,7 @@ function setActiveStatus(err, isActive = false) {
         terminateServer(err);
     }
 }
+
 
 function terminateServer(err) {
     // The delay (in ms) before this function calls `process.exit()`. That function is pretty
@@ -81,6 +86,18 @@ Server process has completed normally, and will terminate.
 ${'-'.repeat(80)}
 `;
         console.log(partingMessage);
-        setTimeout(() => process.exit(0), exitDelay)
+        setTimeout(() => process.exit(0), exitDelay);
     }
+}
+
+
+const authenticate = authenticateMiddleware();
+
+
+const serverRouter = Router();
+serverRouter.use(authenticate, hotServerMiddleware);
+
+
+export default function routeRequest(req, res, next) {
+    serverRouter.handle(req, res, next);
 }
