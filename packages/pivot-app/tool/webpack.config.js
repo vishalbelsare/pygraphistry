@@ -64,6 +64,7 @@ function commonConfig(buildOpts) {
                 'pivot-client': path.resolve('./src/client'),
                 'pivot-shared': path.resolve('./src/shared'),
                 'pivot-server': path.resolve('./src/server'),
+                'react-split-pane': '@graphistry/react-split-pane',
                 '@graphistry/falcor': path.resolve(buildOpts.isDev ?
                     './node_modules/@graphistry/falcor/dist/falcor.all.js' :
                     './node_modules/@graphistry/falcor/dist/falcor.all.min.js'
