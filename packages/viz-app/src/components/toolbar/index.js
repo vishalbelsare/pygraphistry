@@ -51,7 +51,7 @@ export function ButtonListItem({ onItemSelected, popover, ...props }) {
     let overlayRef, buttonWithOverlay;
     const { id, name, type, selected } = props;
 
-    if (type !== 'settings' || !selected) {
+    if (type === undefined || !selected) {
         buttonWithOverlay = (
             <OverlayTrigger defaultOverlayShown={false}
                             trigger={['hover']} placement='right'
@@ -87,6 +87,7 @@ export function ButtonListItem({ onItemSelected, popover, ...props }) {
                 <span ref={(ref) => overlayRef = ref}/>
                 <Overlay show={selected}
                          rootClose={true}
+                         shouldUpdatePosition={true}
                          animation={true} placement='right'
                          onHide={() => onItemSelected(props)}
                          target={() => ReactDOM.findDOMNode(overlayRef)}>

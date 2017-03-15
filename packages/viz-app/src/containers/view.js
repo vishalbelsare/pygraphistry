@@ -108,8 +108,6 @@ View = container({
         layout: ${ Settings.fragment(layout) },
         toolbar: ${ Toolbar.fragment(toolbar) },
         session: ${ Session.fragment(session) },
-        filters: ${ Expressions.fragment(filters, { side: 'left' }) },
-        exclusions: ${ Expressions.fragment(exclusions, { side: 'left' }) },
         panels: {
             left: ${ Panel.fragment(panels.left, { side: 'left' }) },
             right: ${ Panel.fragment(panels.right, { side: 'right' }) },

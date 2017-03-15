@@ -8,7 +8,7 @@ const clientWebpackConfig = makeWebpackConfig({
     type: 'client',
     environment: process.env.NODE_ENV,
     output: {
-        publicPath: '/graph/',
+        publicPath: '/',
         path: path.join(process.cwd(), './www/public'),
     }
 });

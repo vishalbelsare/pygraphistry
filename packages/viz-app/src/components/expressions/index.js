@@ -30,7 +30,6 @@ export function HistogramsList({ style, children, ...props }) {
         <Panel className={props.className}
                header={<ExpressionTemplates {...props}/>}
                style={{ ...style, margin: 0, display: `block` }}>
-
             <ListGroup fill>
             {children.map((child) => (
                 <ListGroupItem key={child.key} style={child.props.style}>
@@ -38,27 +37,6 @@ export function HistogramsList({ style, children, ...props }) {
                 </ListGroupItem>
             ))}
             </ListGroup>
-
-            {/*
-            <Grid fluid style={{ overflowY: 'auto', padding: 0 }}>
-            {children.map((child) => (
-                <Row key={child.key} style={child.props.style}>
-                    <Col xs={12} md={12} lg={12}>
-                        {child}
-                    </Col>
-                </Row>
-            ))}
-            </Grid>
-            {/*
-            <ExpressionsListGroup {...props}/>
-            <div style={{ flex: '1 1 auto' }}>
-                <AutoSizer disableWidth>
-                {({ height }) => (
-                    <ExpressionsListGroup fill style={{ height }} {...props}/>
-                )}
-                </AutoSizer>
-            </div>
-            */}
        </Panel>
     );
 }
@@ -75,7 +53,13 @@ export function ExpressionsList({
             <Grid fluid style={{ ...style, overflowY: 'auto', maxHeight: 300, padding: 0 }}>
                 {children}
             </Grid>
-            <div style={{ margin: `9px 14px`, backgroundColor: `#f7f7f7`, width: `372px`, minWidth: `372px` }}>
+            <div style={{
+                padding: '9px 14px',
+                backgroundColor: '#f7f7f7',
+                borderBottomLeftRadius: '5px',
+                borderBottomRightRadius: '5px',
+                borderTop: '1px solid #ebebeb',
+            }}>
                 <ExpressionTemplates loading={loading}
                                      templates={templates}
                                      addExpression={addExpression}
@@ -83,20 +67,7 @@ export function ExpressionsList({
             </div>
         </Popover>
     );
-
 }
-
-// export function ExpressionsListGroup({ fill, style, side = 'left', children = [] }) {
-//     return (
-//         <ListGroup fill={fill} style={{ marginBottom: 0 }}>
-//         {children.map((child) => (
-//             <ListGroupItem key={child.key} style={child.props.style}>
-//             {child}
-//             </ListGroupItem>
-//         ))}
-//         </ListGroup>
-//     );
-// }
 
 function TemplateOptionRenderer({ name, dataType, componentType, showDataTypes }) {
     return (
@@ -141,17 +112,16 @@ export function ExpressionItem({
 }) {
     const isSystem = level === 'system';
     return (
-        <Row className={styles['expression-row']}>
+        <Row className={styles['expression-row'] + ' ' + styles['expression-item']}>
             <Col xs={12} md={12} lg={12}
                  style={!isSystem && { paddingRight: 0 } || undefined}>
                 <OverlayTrigger placement='top' trigger={!readOnly ? ['hover'] : []} overlay={expressionTooltip}>
                     <div className={classNames({ [styles['read-only']]: readOnly })}
                          style={{ border: `1px solid #cccccc`, borderRadius: `3px`, minWidth: 250 }}>
-                        <ExpressionEditor width='100%'
-                                          value={input}
-                                          templates={templates}
-                                          name={`expression-${id}`}
+                        <ExpressionEditor name={`expression-${id}`}
+                                          width='100%' height='100%'
                                           readOnly={readOnly || isSystem}
+                                          value={input} templates={templates}
                                           onChange={(input) => cancelUpdateExpression({ id })}
                                           onUpdate={(input) => updateExpression({ id, input })}/>
                     </div>

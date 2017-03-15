@@ -80,11 +80,65 @@ function makeWebpackConfig({
                 { test: /\.proto$/, loader: 'proto-loader' },
                 { test: /\.glsl$/, loader: 'webpack-glsl-loader' },
                 { test: /\.pegjs$/, loader: 'pegjs-loader?cache=true&optimize=size' },
-                { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: 'file-loader?&name=[name]_[hash:6].[ext]' },
-                { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: 'file-loader?&name=[name]_[hash:6].[ext]&mimetype=image/svg+xml' },
-                { test: /\.woff(\?v=\d+\.\d+\.\d+)?$/, loader: 'file-loader?&name=[name]_[hash:6].[ext]&mimetype=application/font-woff' },
-                { test: /\.woff2(\?v=\d+\.\d+\.\d+)?$/, loader: 'file-loader?&name=[name]_[hash:6].[ext]&mimetype=application/font-woff' },
-                { test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, loader: 'file-loader?&name=[name]_[hash:6].[ext]&mimetype=application/octet-stream' },
+                {
+                    test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
+                    use: [{
+                        loader: 'file-loader',
+                        options: {
+                            name: 'fonts/[name]_[hash:6].[ext]',
+                            publicPath: '/graph/',
+                            // outputPath: 'fonts/',
+                        }
+                    }]
+                },
+                {
+                    test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
+                    use: [{
+                        loader: 'file-loader',
+                        options: {
+                            name: 'fonts/[name]_[hash:6].[ext]',
+                            publicPath: '/graph/',
+                            // outputPath: 'fonts/',
+                            mimetype: 'image/svg+xml'
+                        }
+                    }]
+                },
+                {
+                    test: /\.woff(\?v=\d+\.\d+\.\d+)?$/,
+                    use: [{
+                        loader: 'file-loader',
+                        options: {
+                            name: 'fonts/[name]_[hash:6].[ext]',
+                            publicPath: '/graph/',
+                            // outputPath: 'fonts/',
+                            mimetype: 'application/font-woff'
+                        }
+                    }]
+                },
+                {
+                    test: /\.woff2(\?v=\d+\.\d+\.\d+)?$/,
+                    use: [{
+                        loader: 'file-loader',
+                        options: {
+                            name: 'fonts/[name]_[hash:6].[ext]',
+                            publicPath: '/graph/',
+                            // outputPath: 'fonts/',
+                            mimetype: 'application/font-woff'
+                        }
+                    }]
+                },
+                {
+                    test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/,
+                    use: [{
+                        loader: 'file-loader',
+                        options: {
+                            name: 'fonts/[name]_[hash:6].[ext]',
+                            publicPath: '/graph/',
+                            // outputPath: 'fonts/',
+                            mimetype: 'application/octet-stream'
+                        }
+                    }]
+                },
             ],
         },
         plugins: [
