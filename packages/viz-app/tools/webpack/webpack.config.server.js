@@ -62,7 +62,7 @@ serverWebpackConfig.plugins.push(
     }),
     new FaviconsWebpackPlugin({
         emitStats: true,
-        prefix: '/public/favicons/',
+        prefix: 'public/favicons/',
         statsFilename: 'favicon-assets.json',
         logo: path.resolve(process.cwd(), './src/assets/img/logo_g.png'),
     }),

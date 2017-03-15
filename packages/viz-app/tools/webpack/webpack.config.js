@@ -100,7 +100,6 @@ function makeWebpackConfig({
             new webpack.EnvironmentPlugin({ NODE_ENV: JSON.stringify(environment) }),
             // Setup global variables for client
             new webpack.DefinePlugin(Object.assign({}, versions, {
-                __DEV__: JSON.stringify(isDev),
                 __CLIENT__: JSON.stringify(type === 'client'),
                 __SERVER__: JSON.stringify(type === 'server'),
                 __DISABLE_SSR__: JSON.stringify(false),

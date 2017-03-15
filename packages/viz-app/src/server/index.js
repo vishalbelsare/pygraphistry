@@ -10,7 +10,7 @@ import { initialize as initializeNbody } from 'viz-app/worker/simulator/kernel/K
 
 setObservableConfig(rxjsObservableConfig);
 
-if (__DEV__) {
+if (process.env.NODE_ENV !== 'production') {
     require('./hot-server.js');
 }
 

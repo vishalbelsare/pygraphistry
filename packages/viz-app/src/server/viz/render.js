@@ -37,9 +37,10 @@ function configureRender(config, getDataSource) {
         const paths = getProxyPaths(req);
         const clientId = req.app.get('clientId') || '00000';
         const model = new Model({ recycleJSON: true, source: getDataSource(req) });
-        const clientAssets = !__DEV__ ?
-            require('./client-stats.json').assetsByChunkName :
-            res.locals.webpackStats.toJson().assetsByChunkName;
+        const clientAssets = (res.locals &&
+                              res.locals.webpackStats &&
+                              res.locals.webpackStats.toJson() ||
+                              require('./client-stats.json')).assetsByChunkName
 
         // Wrap in Observable.defer in case `template` or `AppContainer.load` throws an error
         return Observable.defer(() => {

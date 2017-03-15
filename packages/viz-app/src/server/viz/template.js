@@ -70,7 +70,7 @@ export default function template({
         ${client && client.js ? `
         <script type="text/javascript" src="${client.js}"></script>` : ''}
         ${head.script.toString()}
-    ${__DEV__ ? `\n` : `
+    ${process.env.NODE_ENV !== 'production' ? `\n` : `
         <script type='text/javascript'>
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
             (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
