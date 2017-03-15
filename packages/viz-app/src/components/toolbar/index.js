@@ -1,8 +1,10 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import styles from './styles.less';
 import classNames from 'classnames';
 
 import {
+    Overlay,
     Button, Tooltip, OverlayTrigger,
     ButtonGroup, ButtonToolbar,
     ListGroup, ListGroupItem
@@ -28,7 +30,7 @@ export function ButtonList({ children, visible, ...props }) {
     );
 }
 
-export function ButtonListItems({ children, ...props }) {
+export function ButtonListItems({ name, children, popover, ...props }) {
     return (
         <ButtonToolbar style={{ marginLeft: 0 }} {...props}>
             <ButtonGroup vertical>
@@ -44,16 +46,36 @@ function ButtonListItemTooltip(name) {
     );
 }
 
-export function ButtonListItem({ onItemSelected, ...props }) {
+export function ButtonListItem({ onItemSelected, popover, ...props }) {
 
-    const { id, name, selected } = props;
+    let overlayRef, buttonWithOverlay;
+    const { id, name, type, selected } = props;
 
-    return (
-        <OverlayTrigger trigger={['hover']}
-                        placement='right'
-                        overlay={ButtonListItemTooltip(name)}>
-            <Button id={id} href='#'
+    if (type !== 'settings' || !selected) {
+        buttonWithOverlay = (
+            <OverlayTrigger defaultOverlayShown={false}
+                            trigger={['hover']} placement='right'
+                            overlay={ButtonListItemTooltip(name)}>
+                <Button id={id}
+                        active={selected}
+                        href='javascript:void(0)'
+                        onClick={(e) => e.preventDefault() || onItemSelected(props)}
+                        className={classNames({
+                             [styles[id]]: true,
+                             fa: true,
+                             'fa-fw': true,
+                             [styles['selected']]: selected,
+                             [styles['button-list-item']]: true
+                        })}>
+                    <span ref={(ref) => overlayRef = ref}/>
+                </Button>
+            </OverlayTrigger>
+        );
+    } else {
+        buttonWithOverlay = (
+            <Button id={id}
                     active={selected}
+                    href='javascript:void(0)'
                     onClick={(e) => e.preventDefault() || onItemSelected(props)}
                     className={classNames({
                          [styles[id]]: true,
@@ -61,8 +83,18 @@ export function ButtonListItem({ onItemSelected, ...props }) {
                          'fa-fw': true,
                          [styles['selected']]: selected,
                          [styles['button-list-item']]: true
-                    })}
-            />
-        </OverlayTrigger>
-    );
+                    })}>
+                <span ref={(ref) => overlayRef = ref}/>
+                <Overlay show={selected}
+                         rootClose={true}
+                         animation={true} placement='right'
+                         onHide={() => onItemSelected(props)}
+                         target={() => ReactDOM.findDOMNode(overlayRef)}>
+                    {popover}
+                </Overlay>
+            </Button>
+        );
+    }
+
+    return buttonWithOverlay;
 }

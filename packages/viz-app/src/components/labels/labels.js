@@ -27,10 +27,10 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
             )),
         hitmapUpdates,
         cameraChanges.startWith({}),
-        Observable.defer(() => typeof document === 'undefined' ? Observable
-                  .empty() : Observable
-                  .fromEvent(document, 'resize'))
-                  .debounceTime(100).delay(50).startWith(null),
+        // Observable.defer(() => typeof document === 'undefined' ? Observable
+        //           .empty() : Observable
+        //           .fromEvent(window, 'resize'))
+        //           .debounceTime(100).delay(50).startWith(null),
         (props, { clientX = 0, clientY = 0 }) => ({
             ...props, mouseX: clientX, mouseY: clientY,
         })
@@ -58,8 +58,7 @@ class Labels extends React.Component {
             pointSize, pixelRatio, scalingFactor;
         let { mouseX, mouseY, onLabelsUpdated,
               highlight = null, selection = null,
-              renderState = null, renderingScheduler = null,
-              renderer,
+              renderer, renderState = null, renderingScheduler = null,
               labels = [], sizes = [], pointColors = [], edgeColors = [], points = [], children = []
         } = this.props;
 

@@ -1,6 +1,6 @@
 import { container } from '@graphistry/falcor-react-redux';
 import styles from 'viz-app/components/histograms/styles.less';
-import { ExpressionsList } from 'viz-app/components/expressions';
+import { HistogramsList } from 'viz-app/components/expressions';
 import { Sparkline, SparklineBar } from 'viz-app/components/histograms';
 
 import {
@@ -43,17 +43,17 @@ let Histograms = ({ addHistogram, removeHistogram, setEncoding, encodings,
     });
 
     return (
-        <ExpressionsList showHeader={false}
-                         showDataTypes={false}
-                         dropdownPlacement="top"
-                         addExpression={addHistogram}
-                         loading={showLoadingInHeader}
-                         placeholder="Add histogram for..."
-                         style={{ ...style, height: `100%` }} {...props}
-                         className={className + ' ' + styles['histograms-list']}
-                         templates={templates.filter(({ isInternal }) => !isInternal)}>
+        <HistogramsList showHeader={false}
+                        showDataTypes={false}
+                        dropdownPlacement="top"
+                        addExpression={addHistogram}
+                        loading={showLoadingInHeader}
+                        placeholder="Add histogram for..."
+                        style={{ ...style, height: `100%` }} {...props}
+                        className={className + ' ' + styles['histograms-list']}
+                        templates={templates.filter(({ isInternal }) => !isInternal)}>
             {histogramItems}
-        </ExpressionsList>
+        </HistogramsList>
     );
 };
 

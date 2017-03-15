@@ -112,7 +112,9 @@ function atlasControls(algo) {
         edgeInfluence: new DiscreteParam('Edge Influence', 0, 0, 5, 1),
         strongGravity: new BoolParam('Compact Layout', false),
         dissuadeHubs: new BoolParam('Dissuade Hubs', false),
-        linLog: new BoolParam('Strong Separation (LinLog)', false)
+        linLog: new BoolParam('Strong Separation (LinLog)', false),
+        lockedX: new BoolParam('Locked X coordinates', false),
+        lockedY: new BoolParam('Locked Y coordinates', false)
     };
 
     return {
@@ -139,7 +141,16 @@ function atlasControls(algo) {
 }
 
 function lockedAtlasControlsXY(aC) {
-    aC.locks.lockPoints = true;
+    return lockedAtlasControlsX(lockedAtlasControlsY(aC));
+}
+
+function lockedAtlasControlsX(aC) {
+    aC.layoutAlgorithms[0].params.lockedX = new BoolParam('Locked X coordinates', true);
+    return aC;
+}
+
+function lockedAtlasControlsY(aC) {
+    aC.layoutAlgorithms[0].params.lockedY = new BoolParam('Locked Y coordinates', true);
     return aC;
 }
 
@@ -147,6 +158,8 @@ export var controls = {
     'default':      [atlasControls(ForceAtlas2)],
     //'gis':         [uberControls],
     'lockedAtlasBarnesXY': [lockedAtlasControlsXY(atlasControls(ForceAtlas2))],
+    'lockedAtlasBarnesX': [lockedAtlasControlsX(atlasControls(ForceAtlas2))],
+    'lockedAtlasBarnesY': [lockedAtlasControlsY(atlasControls(ForceAtlas2))],
     'atlasbarnes':  [atlasControls(ForceAtlas2)]
 };
 

@@ -160,7 +160,7 @@ var kernelSpecs = {
     },
     faIntegrate: {
         kernelName: 'faIntegrate',
-        args: ['globalSpeed', 'inputPositions', 'curForces', 'swings', 'outputPositions'],
+        args: ['globalSpeed', 'inputPositions', 'curForces', 'swings', 'flags', 'outputPositions'],
         fileName: 'layouts/forceAtlas2/faIntegrate.cl'
     }
 }
@@ -194,7 +194,7 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
     // These should correspond to the flags defined in forceAtlas2Common.h
-    var flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog'];
+    var flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog', 'lockedX', 'lockedY'];
 
     // Adjusts the bit vector for flags used in ForceAtlas2. See flag definitions in
     // ForceAtlas2Common.h

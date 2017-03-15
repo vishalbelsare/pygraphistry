@@ -6,7 +6,7 @@ import { isEncoded, EncodingPicker } from './EncodingPicker';
 import { SizeLegendIndicator, YAxisLegendIndicator, IconLegendIndicator } from './sparklineComponents';
 
 export const Sparkline = ({ name, yScale, children, componentType,
-                            id, width = `calc(100% - 20px)`, height = 50,
+                            id, width = `100%`, height = 50,
                             loading = false, filtered = false, colors = false,
                             isFilterEnabled = true, setEncoding, encodings,
                             onClose, onYScaleChanged, onEncodingChanged }) => {

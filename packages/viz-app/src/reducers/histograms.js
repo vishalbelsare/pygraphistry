@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import { range as _range } from 'lodash';
 import { Observable } from 'rxjs/Observable';
 import * as Scheduler from 'rxjs/scheduler/animationFrame';
 import { createSubject, SceneGestures } from './support';
@@ -88,11 +88,11 @@ function filterBinsOnDrag(actions) {
     return brushPans.repeat().switch();
 
     function selectBinID({ binID }) { return binID; }
-    function selectBinIDAndAnchor({ binID, range, falcor, binIsFiltered }) {
-        return [binID, binID, falcor, range, binIsFiltered];
+    function selectBinIDAndAnchor({ binID, range_, falcor, binIsFiltered }) {
+        return [binID, binID, falcor, range_, binIsFiltered];
     }
 
-    function scanBinIDsAndAnchor(memo, [binID, x, falcor, range, binIsFiltered]) {
+    function scanBinIDsAndAnchor(memo, [binID, x, falcor, range_, binIsFiltered]) {
         const [anchor, cursor] = memo;
         memo[1] = binID;
         memo[0] = binID > cursor ? anchor :
@@ -111,33 +111,33 @@ function filterBinsOnDrag(actions) {
     }
 
     function toLocalFilterValues([
-        anchor, cursor, falcor, range, binIsFiltered, _range = _.range(
+        anchor, cursor, falcor, range_, binIsFiltered, range = _range(
             Math.min(anchor, cursor), Math.max(anchor, cursor) + 1)]) {
         return falcor.withoutDataSource().set(
-            $value('range', _range),
+            $value('range', range),
             $value('filter.enabled', true)
         );
     }
 
     function toRemoteFilterCall([
-        anchor, cursor, falcor, range, binIsFiltered]) {
+        anchor, cursor, falcor, range_, binIsFiltered]) {
 
-        let _range = [];
+        let range = [];
 
         if (anchor === cursor) {
             if (!binIsFiltered) {
-                _range = [anchor];
+                range = [anchor];
             }
         } else {
-            _range = _.range(
+            range = _range(
                 Math.min(anchor, cursor),
                 Math.max(anchor, cursor) + 1);
         }
 
         return Observable.merge(
-            falcor.call('filter', _range),
+            falcor.call('filter', range),
             falcor.withoutDataSource().set(
-                $value('range', _range),
+                $value('range', range),
                 $value('filter.enabled', true)
             )
         );

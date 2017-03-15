@@ -1,5 +1,7 @@
 import path from 'path';
 import express from 'express';
+import * as bodyParser from 'body-parser';
+
 import configureRender from './render';
 import configureSocket from './socket';
 import configureVBOHandler from './vbos';
@@ -19,8 +21,6 @@ import configureFalcorRouter from 'viz-app/router/falcor';
 import VizServer from 'viz-app/worker/simulator/server-viz';
 
 function configureVizWorker(config, activeCB, io) {
-
-    // console.log('========> configureVizWorker called');
 
     let services, getDataSource, vbos = {};
     const nBodiesById = {}, workbooksById = {};
@@ -52,6 +52,16 @@ function configureVizWorker(config, activeCB, io) {
     app.get('/texture', textureHandler);
     // Register the vbo request handler
     app.get('/vbo', configureVBOHandler(app, getSocket, vbos));
+    // NB: Normally, nginx routes `/error` to central, so it can log client errors instead of
+    // viz-app. However, if you're running locally (with no central or nginx), it's convienant
+    // to log client erros with your normal log output (usually to the terminal).
+    app.post('/error',
+        bodyParser.json({extended: true, limit: '512kb'}),
+        (req, res) => {
+            logger.error(req.body, `Client error: ${req.body.msg || 'no message'}`);
+            res.status(200).send();
+        }
+    );
     // Setup the public directory so that we can serve static assets.
     app.use(`/graph`, express.static(path.join(process.cwd(), './www/public')));
     app.use(`/public`, express.static(path.join(process.cwd(), './www/public')));
@@ -75,8 +85,6 @@ function configureVizWorker(config, activeCB, io) {
             }
             req.query.workbook = workbookId = simpleflake().toJSON();
         }
-
-        // console.log('========> rendering graph.html with options:', JSON.stringify(req.query));
 
         appSocket = null;
 

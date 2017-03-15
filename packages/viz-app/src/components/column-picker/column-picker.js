@@ -11,7 +11,7 @@ const ColumnPickerTooltip = (
 );
 
 function sortOptions (templates) {
-    const sortedTemplates = templates.slice(0);
+    const sortedTemplates = (templates || []).slice(0);
     sortedTemplates.sort((a,b) => {
         const aLower = a.identifier.toLowerCase();
         const bLower = b.identifier.toLowerCase();
@@ -23,7 +23,7 @@ function sortOptions (templates) {
 }
 
 const propTypes = {
-    id: React.PropTypes.string.isRequired,
+    id: React.PropTypes.string,//.isRequired,
     name: React.PropTypes.string,
     options: React.PropTypes.array,//.isRequired,
     value: React.PropTypes.array,//.isRequired,

@@ -24,14 +24,17 @@ export function sortAndFilterRowsByQuery({ view, rows, columnNames, ...query }) 
     }
 
     columnNames = (columnNames || dataframe.getAttributeKeys(componentType)).map((columnName) => ({
-        columnName, key: dataframe.getAttributeKeyForColumnName(columnName, componentType)
+        columnName, key: dataframe.getAttributeKeyForColumnName(columnName, componentType) || columnName
     }));
 
     if (!columnNames || columnNames.length <= 0) {
         return Observable.of([]);
     }
 
-    const keys = columnNames.map(({ key }) => key);
+    const keys = columnNames
+        .map(({ key }) => key)
+        .filter((key) => key !== '_index');
+
     let filteredRows, sortColumnDataType, rowsPerRange = 10000;
 
     const { dataTypesByColumnName, colorMappedByColumnName } =

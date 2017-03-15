@@ -73,6 +73,18 @@ function RenderingScheduler(renderState, renderer,
     Object.seal(this.appSnapshot);
     Object.seal(this.appSnapshot.buffers);
 
+    /* Push a render task into the renderer queue
+     * String * {trigger, items, readPixels, callback} -> () */
+    this.renderScene = function(tag, task) {
+        renderTasks.onNext({
+            tag: tag,
+            trigger: task.trigger,
+            items: task.items,
+            readPixels: task.readPixels,
+            callback: task.callback,
+            data: task.data
+        });
+    };
 
     /*
      * Set up fullscreen buffer for mouseover effects.
@@ -130,38 +142,25 @@ function RenderingScheduler(renderState, renderer,
         }).subscribe({})
     );
 
-    /* Push a render task into the renderer queue
-     * String * {trigger, items, readPixels, callback} -> () */
-    this.renderScene = function(tag, task) {
-        renderTasks.onNext({
-            tag: tag,
-            trigger: task.trigger,
-            items: task.items,
-            readPixels: task.readPixels,
-            callback: task.callback,
-            data: task.data
-        });
-    };
-
     // Setup resize handler, which tells renderer to resize textures
     // and the scheduler to rerun picking/populate textures. Split into fast/slow tasks
-    const resizes = Observable.fromEvent(window, 'resize').share();
+    // const resizes = Observable.fromEvent(window, 'resize').share();
 
-    this.add(resizes
-        .debounceTime(100)
-        .delay(50)
-        .do(() => renderer.resizeCanvas(this.renderState))
-        .subscribe({})
-    );
+    // this.add(resizes
+    //     .debounceTime(100)
+    //     .delay(50)
+    //     .do(() => renderer.resizeCanvas(this.renderState))
+    //     .subscribe({})
+    // );
 
     // TODO: We really only need to refresh picking and fullscreen cached texture
-    this.add(resizes
-        .debounceTime(500)
-        .do(() => this.renderScene('resizeRerender', {
-            trigger: 'renderSceneFull'
-        }))
-        .subscribe({})
-    );
+    // this.add(resizes
+    //     .debounceTime(500)
+    //     .do(() => this.renderScene('resizeRerender', {
+    //         trigger: 'renderSceneFull'
+    //     }))
+    //     .subscribe({})
+    // );
 
     /*
      * Helpers to start/stop the rendering loop within an animation frame. The rendering loop

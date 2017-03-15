@@ -14,14 +14,13 @@ import {
     cancelUpdateExpression
 } from 'viz-app/actions/expressions';
 
-let Expressions = ({ templates = [], expressions = [],
-                     addExpression, removeExpression,
-                     className = '', style = {}, ...props }) => {
+let Expressions = ({ id, removeExpression,
+                     templates = [], expressions = [],
+                     className = '', ...props }) => {
     return (
-        <ExpressionsList templates={templates}
-                         addExpression={addExpression}
-                         style={{ ...style, height: `100%` }} {...props}
-                         className={className + ' ' + styles['expressions-list']}>
+        <ExpressionsList id={id} templates={templates}
+                         className={`${className} ${styles['expressions-list']}`}
+                         {...props}>
         {expressions.map((expression, index) => (
             <Expression data={expression}
                         templates={templates}

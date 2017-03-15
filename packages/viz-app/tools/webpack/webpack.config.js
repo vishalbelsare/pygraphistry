@@ -38,20 +38,21 @@ function makeWebpackConfig({
         context: path.join(process.cwd()),
         target: type === 'client' ? 'web' : 'node',
         devtool: isDev ? 'source-map' : 'hidden-source-map',
-        stats: { assets: false },
+        stats: { assets: true, colors: true, chunks: true },
         output: Object.assign({
             publicPath: '',
-            filename: `[name].js`,
-            chunkFilename: `[name].chunk.js`
+            // filename: `[name].js`,
+            // chunkFilename: `[name].chunk.js`
             // Don't use chunkhash in development it will increase compilation time
-            // filename: isDev ? '[name].js' : '[name].[chunkhash:8].js',
-            // chunkFilename: isDev ? '[name].chunk.js' : '[name].[chunkhash:8].chunk.js',
+            filename: isDev ? '[name].js' : '[name].[chunkhash:8].js',
+            chunkFilename: isDev ? '[name].chunk.js' : '[name].[chunkhash:8].chunk.js',
         }, output),
         resolve: {
             modules: ['src', 'node_modules'],
             extensions: ['.js', '.jsx', '.json'],
             alias: {
                 'viz-app': path.resolve(process.cwd(), './src'),
+                'react-split-pane': '@graphistry/react-split-pane',
                 // 'viz-client': path.resolve(process.cwd(), './src/viz-client'),
                 // 'viz-server': path.resolve(process.cwd(), './src/viz-server'),
                 // 'viz-shared': path.resolve(process.cwd(), './src/viz-shared'),
@@ -67,7 +68,7 @@ function makeWebpackConfig({
         module: {
             noParse: [
                 /node_modules\/brace/,
-                /node_modules\/jquery/,
+                // /node_modules\/jquery/,
                 // /node_modules\/lodash/,
                 /node_modules\/underscore/,
                 /node_modules\/pegjs-util\/PEGUtil\.js/,
@@ -79,6 +80,11 @@ function makeWebpackConfig({
                 { test: /\.proto$/, loader: 'proto-loader' },
                 { test: /\.glsl$/, loader: 'webpack-glsl-loader' },
                 { test: /\.pegjs$/, loader: 'pegjs-loader?cache=true&optimize=size' },
+                { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: 'file-loader?&name=[name]_[hash:6].[ext]' },
+                { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: 'file-loader?&name=[name]_[hash:6].[ext]&mimetype=image/svg+xml' },
+                { test: /\.woff(\?v=\d+\.\d+\.\d+)?$/, loader: 'file-loader?&name=[name]_[hash:6].[ext]&mimetype=application/font-woff' },
+                { test: /\.woff2(\?v=\d+\.\d+\.\d+)?$/, loader: 'file-loader?&name=[name]_[hash:6].[ext]&mimetype=application/font-woff' },
+                { test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, loader: 'file-loader?&name=[name]_[hash:6].[ext]&mimetype=application/octet-stream' },
             ],
         },
         plugins: [
@@ -87,14 +93,13 @@ function makeWebpackConfig({
             new webpack.ProvidePlugin({ React: 'react' }),
             new webpack.IgnorePlugin(/^\.\/locale$/, [/moment$/]),
             new AssetsPlugin({
-                filename: `webpack-${type}-stats.json`,
+                filename: `${type}-assets.json`,
                 path: path.join(process.cwd(), './www')
             }),
             // Setup enviorment variables for client
             new webpack.EnvironmentPlugin({ NODE_ENV: JSON.stringify(environment) }),
             // Setup global variables for client
             new webpack.DefinePlugin(Object.assign({}, versions, {
-                __DEV__: JSON.stringify(isDev),
                 __CLIENT__: JSON.stringify(type === 'client'),
                 __SERVER__: JSON.stringify(type === 'server'),
                 __DISABLE_SSR__: JSON.stringify(false),
@@ -123,8 +128,9 @@ function makeWebpackConfig({
                 jscomp_off: '*',
                 jscomp_warning: '*',
                 source_map_format: 'V3',
-                create_source_map: `${baseConfig.output.path}/${type}.js.map`,
-                output_wrapper: `%output%\n//# sourceMappingURL=${type}.js.map`
+                create_source_map: true
+                // create_source_map: `${baseConfig.output.path}/${type}.js.map`,
+                // output_wrapper: `%output%\n//# sourceMappingURL=${type}.js.map`
             },
         }));
     }

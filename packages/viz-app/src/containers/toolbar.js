@@ -7,11 +7,12 @@ import { ButtonList,
          ButtonListItems
 } from 'viz-app/components/toolbar';
 
-let Toolbar = ({ toolbar = [], selectToolbarItem, ...props } = {}) => {
+let Toolbar = ({ children, toolbar = [], selectToolbarItem, ...props } = {}) => {
     return (
         <ButtonList {...props}>
         {toolbar.map((items, index) => (
             <ToolbarItems data={items}
+                          popover={children}
                           key={`toolbar-items-${index}`}
                           selectToolbarItem={selectToolbarItem}/>
         ))}
@@ -32,11 +33,11 @@ Toolbar = container({
     })
 })(Toolbar);
 
-let ToolbarItems = ({ items = [], selectToolbarItem, ...props } = {}) => {
+let ToolbarItems = ({ name, popover, items = [], selectToolbarItem, ...props } = {}) => {
     return (
-        <ButtonListItems {...props}>
+        <ButtonListItems name={name} {...props}>
         {items.map((item, index) => (
-            <ToolbarItem data={item}
+            <ToolbarItem data={item} popover={popover}
                          key={`${index}: toolbar-item-${item.id}`}
                          selectToolbarItem={selectToolbarItem}/>
         ))}
@@ -46,15 +47,16 @@ let ToolbarItems = ({ items = [], selectToolbarItem, ...props } = {}) => {
 
 ToolbarItems = container({
     renderLoading: false,
-    fragment: (toolbarItems) =>
-        ToolbarItem.fragments(toolbarItems),
-    // map fragment to component props
-    mapFragment: (items) => ({ items })
+    fragment: ({ items } = {}) => `{
+        name, items: ${
+            ToolbarItem.fragments(items)
+        }
+    }`
 })(ToolbarItems);
 
 let ToolbarItem = container({
     renderLoading: false,
-    fragment: () => `{ id, name, selected }`,
+    fragment: () => `{ id, name, type, selected }`,
     mapFragment: (item, { selectToolbarItem }) => ({
         ...item, onItemSelected: selectToolbarItem
     })

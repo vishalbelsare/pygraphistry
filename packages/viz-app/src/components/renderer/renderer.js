@@ -43,6 +43,7 @@ class Renderer extends React.Component {
         this.renderFast = undefined;
         this.renderPanZoom = undefined;
         this.renderBGColor = undefined;
+        this.renderResized = undefined;
         this.renderMouseOver = undefined;
         this.hasRenderedSelectionOnce = false;
         this.cameraChangesSubscription = new Subscription();
@@ -82,7 +83,11 @@ class Renderer extends React.Component {
         this.updateRendererStateAndScheduler(this.props, nextProps, nextState);
     }
     componentDidMount() {
-        this.container.appendChild(this.props.simulation);
+        // console.log('mounted renderer');
+        if (!this.container.contains(this.props.simulation)) {
+            // console.log('adding the simulation canvas element');
+            this.container.appendChild(this.props.simulation);
+        }
         this.cameraChangesSubscription = cameraChanges
             .distinctUntilChanged(
                 shallowEqual,
@@ -97,6 +102,7 @@ class Renderer extends React.Component {
             });
     }
     componentWillUnmount() {
+        // console.log('unmounting renderer');
         const { cameraChangesSubscription } = this;
         cameraChangesSubscription.unsubscribe();
         this.container = undefined;
@@ -104,6 +110,7 @@ class Renderer extends React.Component {
         this.renderFast = undefined;
         this.renderPanZoom = undefined;
         this.renderBGColor = undefined;
+        this.renderResized = undefined;
         this.renderMouseOver = undefined;
         this.assignContainerRef = undefined;
         this.cameraChangesSubscription = undefined;
@@ -117,7 +124,7 @@ class Renderer extends React.Component {
 
         if (renderState && renderingScheduler && container && simulation) {
 
-            let { renderFast, renderPanZoom, renderMouseOver, renderBGColor } = this;
+            let { renderFast, renderPanZoom, renderMouseOver, renderBGColor, renderResized } = this;
 
             if (renderBGColor) {
                 renderBGColor = false;
@@ -170,9 +177,18 @@ class Renderer extends React.Component {
                 renderingScheduler.renderScene('mouseOver', mouseoverTask);
             }
 
+            if (renderResized) {
+                renderResized = false;
+                // TODO: We really only need to refresh picking and fullscreen cached texture
+                // renderingScheduler.renderScene('resizeRerender', { trigger: 'renderSceneFull' });
+                renderingScheduler.renderScene('resizeRerender', { trigger: 'picking' });
+                renderingScheduler.renderScene('resizeRerender', { trigger: 'highlight' });
+            }
+
             this.renderFast = renderFast;
             this.renderPanZoom = renderPanZoom;
             this.renderBGColor = renderBGColor;
+            this.renderResized = renderResized;
             this.renderMouseOver = renderMouseOver;
         }
 
@@ -205,6 +221,8 @@ class Renderer extends React.Component {
             background: currBackground = {},
             simulating: currSimulating = true,
             showArrows: currShowArrows = true,
+            simulationWidth: currSimWidth = 0,
+            simulationHeight: currSimHeight = 0,
         } = currProps;
 
         const {
@@ -216,10 +234,13 @@ class Renderer extends React.Component {
             background: nextBackground = currBackground,
             simulating: nextSimulating = currSimulating,
             showArrows: nextShowArrows = currShowArrows,
+            simulationWidth: nextSimWidth = currSimWidth,
+            simulationHeight: nextSimHeight = currSimHeight,
         } = nextProps;
 
         let { renderFast,
               renderBGColor,
+              renderResized,
               renderPanZoom,
               renderMouseOver,
               hasRenderedSelectionOnce } = this;
@@ -228,6 +249,8 @@ class Renderer extends React.Component {
             currEdges, currPoints,
             nextEdges, nextPoints,
             currCamera, nextCamera,
+            currSimWidth, currSimHeight,
+            nextSimWidth, nextSimHeight,
             currHighlight, nextHighlight,
             currSelection, nextSelection,
             currBackground, nextBackground,
@@ -246,6 +269,7 @@ class Renderer extends React.Component {
         renderPanZoom = this.updateCameraCenterAndZoom(updateArg) || renderPanZoom;
         renderPanZoom = this.updateSimulating(updateArg) || renderPanZoom && !nextSimulating;
         renderMouseOver = this.updateSceneHighlight(updateArg) || renderMouseOver && !nextSimulating;
+        renderResized = this.updateSceneDimensions(updateArg) && !renderMouseOver && !nextSimulating && !renderPanZoom && !renderBGColor;
 
         if (hasRenderedSelectionOnce === true) {
             renderMouseOver = this.updateSceneSelection(updateArg) || renderMouseOver && !nextSimulating;
@@ -256,7 +280,7 @@ class Renderer extends React.Component {
                               (renderMouseOver);
         }
 
-        if (renderPanZoom || renderBGColor) {
+        if (renderPanZoom || renderBGColor || renderResized) {
             if (typeof renderFast === 'number') {
                 clearTimeout(renderFast);
                 renderFast = undefined;
@@ -277,7 +301,14 @@ class Renderer extends React.Component {
         this.renderFast = renderFast;
         this.renderPanZoom = renderPanZoom;
         this.renderBGColor = renderBGColor;
+        this.renderResized = renderResized;
         this.renderMouseOver = renderMouseOver;
+    }
+    updateSceneDimensions({
+        currSimWidth, currSimHeight,
+        nextSimWidth, nextSimHeight,
+    }) {
+        return (currSimWidth !== nextSimWidth) || (currSimHeight !== nextSimHeight);
     }
     updateNumElements({
         currEdges, currPoints,

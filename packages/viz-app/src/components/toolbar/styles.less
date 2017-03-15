@@ -1,7 +1,6 @@
 @import (reference) '~font-awesome/less/font-awesome.less';
 
-@import '../../index.less';
-
+@import '~viz-app/vars.less';
 
 .button-list {
     position: absolute;
@@ -14,9 +13,19 @@
     }
 }
 
+.button-list-item-container {
+    padding: 0;
+}
+
 .button-list-item {
+    width: 100%;
     padding: 6px;
     color: @dark-grey;
+    float: none !important;
+    & span {
+        width: 100%;
+        display: inline-block;
+    }
     &:focus {
         color: @dark-grey !important;
         z-index: initial !important;

@@ -29,6 +29,9 @@ export function inspector(path, base) {
             set: setValues,
             route: `${base}['inspector'].controls[{keys}][{keys}]`
         }, {
+            call: filterRowsByColumnAndValue,
+            route: `${base}['componentsByType'][{keys: componentTypes}].rows.filter`
+        }, {
             get: getRowsByTypeAndIndex,
             route: `${base}['componentsByType'][{keys: componentTypes}].rows[{integers: rowIndexes}][{keys: columnNames}]`
         }, {
@@ -96,12 +99,50 @@ export function inspector(path, base) {
                 return columnNames.map((columnName) => $value(
                     `${basePath}['${columnName}']`, row[columnName]
                 ));
+            });
+        }
 
-                return labelKeys.map((key) => $value(
-                    `${basePath}['${type}'][${index}]['${key}']`,
-                    key ===  'type' ? type :
-                    key === 'index' ? index : data[key]
-                ));
+
+        function filterRowsByColumnAndValue(path, [name, dataType, values = []]) {
+            const workbookIds = [].concat(path[1]);
+            const viewIds = [].concat(path[3]);
+            const { componentTypes = [] } = path;
+            const map = values.reduce((map, val) => {
+                map[val] = true;
+                return map;
+            }, {});
+
+            return loadViewsById({
+                workbookIds, viewIds
+            })
+            .mergeMap(
+                ({ workbook, view }) => componentTypes,
+                ({ workbook, view }, componentType) => ({
+                    workbook, view, componentType
+                })
+            )
+            .mergeMap(({ workbook, view, componentType }) => {
+
+                const { nBody: { dataframe, vgraphLoaded } } = view;
+                if (!dataframe || !vgraphLoaded) {
+                    return [];
+                }
+
+                const masks = dataframe.getAttributeMask(
+                    componentType, name, (x) => values.some((y) => x == y), false
+                );
+
+                const length = masks.numByType(componentType);
+                const basePath = `workbooksById['${workbook.id}']` +
+                                     `.viewsById['${view.id}']` +
+                                     `.componentsByType['${componentType}']` +
+                                     `.rows`;
+                return [
+                    $value(`${basePath}.filter.length`, length),
+                    ...masks.mapIndexesByType(componentType, (_index, i) => $value(
+                        `${basePath}.filter[${i}]`, $ref(`${basePath}[${_index}]`)
+                    ))
+                ];
             });
         }
     }

@@ -17,7 +17,8 @@ export function loadRowsForSelectionMasks({ view, columnNames, componentType, se
     }
 
     columnNames = (columnNames || dataframe.getAttributeKeys(componentType))
-        .map((columnName) => dataframe.getAttributeKeyForColumnName(columnName, componentType));
+        .map((columnName) => dataframe.getAttributeKeyForColumnName(columnName, componentType))
+        .filter((columnName) => columnName !== '_index');
 
     return dataframe.getRows(indexes, componentType, columnNames, false);
 }

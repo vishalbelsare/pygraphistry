@@ -25,7 +25,7 @@ const app = express();
 const port = convict.get('port');
 const host = convict.get('host');
 const logger = createLogger('viz-app');
-const io = new SocketIOServer({ serveClient: false });
+const io = app.io = new SocketIOServer({ serveClient: false });
 
 global.window = global;
 
@@ -59,34 +59,15 @@ if (process.env.NODE_ENV === 'development' && config.ENVIRONMENT === 'local') {
     const clientWebpackConfig = require('./tools/webpack/webpack.config.client');
     const serverWebpackConfig = require('./tools/webpack/webpack.config.server');
     const compiler = webpack([clientWebpackConfig, serverWebpackConfig]);
-
-    const clientCompiler = compiler.compilers.find(compiler => compiler.name === 'client');
-    const serverCompiler = compiler.compilers.find(compiler => compiler.name === 'server');
-    serverCompiler.outputFileSystem.readFileSync = fs.readFileSync.bind(fs);
-    app.use(require('webpack-dev-middleware')(compiler, {
-        hot: true, noInfo: true, stats: 'minimal',
-        publicPath: clientWebpackConfig.output.publicPath,
+    app.use(require('webpack-universal-middleware')(compiler, {
+        webpackDevMiddleware: {
+            serverSideRender: true
+        }
     }));
-
-    // Only the client bundle needs to be passed to `webpack-hot-middleware`.
-    app.use(require('webpack-hot-middleware')(clientCompiler));
-
-    serverMiddleware = require('webpack-hot-server-middleware')(compiler, {
-        chunkName: 'server'
-    });
 } else {
-    const PROD_SERVER_PATH = path.join(process.cwd(), './www/server.js');
-    const CLIENT_STATS_PATH = path.join(process.cwd(), './www/webpack-client-stats.json');
-    serverMiddleware = require(PROD_SERVER_PATH).default(require(CLIENT_STATS_PATH), config);
+    const SERVER_STATS = require('./www/server-assets.json');
+    app.use(require(`./www/${SERVER_STATS.server.js}`).default);
 }
-
-app.use((req, res, next) => {
-    req.io = io;
-    req.app = app;
-    req.config = config;
-    req.logger = logger;
-    serverMiddleware(req, res, next);
-});
 
 if (port) {
     io.listen(app.listen(port, host, function (err) {
@@ -100,6 +81,7 @@ if (port) {
                     `***********************************************************`,
                     `Express app listening at http://${host}:${port}`,
                     `Time        : ${(new Date()).toDateString()}`,
+                    config.ENVIRONMENT !== 'local' ? '' :
                     `args        : "${process.argv.slice(2).join('", "')}"`,
                     `NODE_ENV    : ${process.env.NODE_ENV}`,
                     `process.pid : ${process.pid}`,
