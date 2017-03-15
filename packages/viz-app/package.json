@@ -128,7 +128,7 @@
     "@graphistry/falcor-socket-datasource": "~2.8.2",
     "@graphistry/node-pigz": "2.0.0",
     "@graphistry/rc-slider": "5.1.3",
-    "@graphistry/react-split-pane": "~0.1.60",
+    "@graphistry/react-split-pane": "~0.1.61",
     "babel-core": "^6.23.1",
     "babel-runtime": "^6.23.0",
     "bcrypt": "~1.0.2",
