@@ -79,7 +79,7 @@ if (process.env.CONFIG_FILES) {
 
 if (configFiles && configFiles.length) {
     // eslint-disable-next-line no-console
-    console.log(`Loading configuration from ${configFiles.join(", ")}`);
+    console.log(`Loading configuration from ${configFiles.join(', ')}`);
     conf.loadFile(configFiles);
 }
 

@@ -21,6 +21,8 @@ const logger = createLogger('viz-app:server');
 const isWorkerActive = new BehaviorSubject(false);
 const exitOnDisconnect = !config.ALLOW_MULTIPLE_VIZ_CONNECTIONS;
 
+const authenticate = authenticateMiddleware();
+
 logger.warn(`Precompiling layout kernels`);
 initializeNbody();
 
@@ -29,13 +31,15 @@ reportWorkerActivity({ config, isWorkerActive })
 
 
 let serverMiddleware;
-function hotServerMiddleware(req, res, next) {
+export default function hotServerMiddleware(req, res, next) {
 
     logger.trace({req, res}, 'Received Express.js request');
 
     if (!serverMiddleware) {
         try {
-            serverMiddleware = configureWorkers(config, setActiveStatus, req.app.io);
+            serverMiddleware = Router();
+            serverMiddleware.use(authenticate);
+            serverMiddleware.use(configureWorkers(config, setActiveStatus, req.app.io));
         } catch (err) {
             setActiveStatus(err);
         }
@@ -91,13 +95,13 @@ ${'-'.repeat(80)}
 }
 
 
-const authenticate = authenticateMiddleware();
 
 
-const serverRouter = Router();
-serverRouter.use(authenticate, hotServerMiddleware);
-
-
-export default function routeRequest(req, res, next) {
-    serverRouter.handle(req, res, next);
-}
+// const serverRouter = Router();
+// serverRouter.use('/', authenticate);
+// serverRouter.use('/', hotServerMiddleware)
+//
+//
+// export default function routeRequest(req, res, next) {
+//     serverRouter.handle(req, res, next);
+// }
