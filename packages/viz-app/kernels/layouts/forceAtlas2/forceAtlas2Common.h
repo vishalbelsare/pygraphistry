@@ -5,6 +5,8 @@
 #define IS_STRONG_GRAVITY(flags)  (flags & 2)
 #define IS_DISSUADE_HUBS(flags)   (flags & 4)
 #define IS_LIN_LOG(flags)         (flags & 8)
+#define IS_LOCKED_X(flags)        ((flags >> 4) & 1)
+#define IS_LOCKED_Y(flags)        ((flags >> 5) & 1)
 
 inline float repulsionForce(const float distSquared, const uint n1DegreePlusOne, const uint n2DegreePlusOne,
                             const float scalingRatio) {
