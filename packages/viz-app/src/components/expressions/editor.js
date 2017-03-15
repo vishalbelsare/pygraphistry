@@ -107,6 +107,7 @@ export class Editor extends React.Component {
                 mode='graphistry'
                 minLines={1}
                 maxLines={4}
+                focus={true}
                 showGutter={false}
                 readOnly={readOnly}
                 enableSnippets={true}

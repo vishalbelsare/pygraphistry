@@ -15,7 +15,7 @@ import getContext from 'recompose/getContext';
 import shallowEqual from 'recompose/shallowEqual';
 import mapPropsStream from 'recompose/mapPropsStream';
 
-function SelectionArea({ mask, renderState, ...props }) {
+function SelectionArea({ mask, renderState, onMouseDown, onTouchStart }) {
     if (!mask || !renderState) {
         return null;
     }
@@ -24,18 +24,19 @@ function SelectionArea({ mask, renderState, ...props }) {
     tl = camera.canvasCoords(tl.x || 0, tl.y || 0, canvas);
     br = camera.canvasCoords(br.x || 0, br.y || 0, canvas);
     return (
-        <div style={{
+        <div onMouseDown={onMouseDown}
+             onTouchStart={onTouchStart}
+             className={classNames({
+                 [styles['draggable']]: true,
+                 [styles['selection-area']]: true
+             })}
+             style={{
                  width: (br.x - tl.x) || 0,
                  height: (br.y - tl.y) || 0,
                  transform: `translate3d(${
                     tl.x || 0}px, ${
                     tl.y || 0}px, 0)`
              }}
-             className={classNames({
-                 [styles['draggable']]: true,
-                 [styles['selection-area']]: true
-             })}
-             { ...props }
         />
     );
 }
@@ -116,6 +117,8 @@ const Selection = compose(
 )(({ mask,
      simulating,
      sizes, points,
+     simulationWidth,
+     simulationHeight,
      highlightedPoint,
      point: pointIndexes = [],
      onSelectedPointTouchStart,
@@ -153,12 +156,16 @@ const Selection = compose(
                             index={highlightedPoint}
                             renderState={renderState}
                             sizes={sizes} points={points}
+                            simulationWidth={simulationWidth}
+                            simulationHeight={simulationHeight}
                             onPointSelected={onPointTouchStart}/>
             <SelectionArea mask={mask}
                            key='selection-mask'
                            renderState={renderState}
                            onMouseDown={onMaskTouchStart}
-                           onTouchStart={onMaskTouchStart}/>
+                           onTouchStart={onMaskTouchStart}
+                           simulationWidth={simulationWidth}
+                           simulationHeight={simulationHeight}/>
         </div>
     );
 });

@@ -4,8 +4,10 @@ import styles from './styles.less';
 import classNames from 'classnames';
 
 import {
-    Button, ButtonGroup, Overlay,
-    Tooltip, Popover, OverlayTrigger,
+    Overlay,
+    Button, Tooltip, OverlayTrigger,
+    ButtonGroup, ButtonToolbar,
+    ListGroup, ListGroupItem
 } from 'react-bootstrap';
 
 export function ButtonList({ children, visible, ...props }) {
@@ -15,22 +17,26 @@ export function ButtonList({ children, visible, ...props }) {
     }
 
     return (
-        <ul className={`dropdown-menu open ${styles['button-list']}`} {...props}>
-            {children}
-        </ul>
+        <ListGroup className={styles['button-list']} {...props}>
+        {children.map((child) => (
+            <ListGroupItem key={child.key} style={{
+                padding: `2px 0px`,
+                background: `transparent`,
+                borderColor: `rgba(0,0,0,0)` }}>
+                {child}
+            </ListGroupItem>
+        ))}
+        </ListGroup>
     );
 }
 
-export function ButtonListItems({ name, popover, children, ...props }) {
+export function ButtonListItems({ name, children, popover, ...props }) {
     return (
-        <li>
-            <span className='dropdown-header' style={{display: `inline`}}>
-                {name}
-            </span>
-            <ButtonGroup>
+        <ButtonToolbar style={{ marginLeft: 0 }} {...props}>
+            <ButtonGroup vertical>
                 {children}
             </ButtonGroup>
-        </li>
+        </ButtonToolbar>
     );
 }
 
@@ -42,56 +48,53 @@ function ButtonListItemTooltip(name) {
 
 export function ButtonListItem({ onItemSelected, popover, ...props }) {
 
-    let buttonRef;
+    let overlayRef, buttonWithOverlay;
     const { id, name, type, selected } = props;
-    const button = (
-        <Button id={id} href='#'
-                active={selected}
-                ref={(ref) => buttonRef = ref}
-                onClick={(e) => e.preventDefault() || onItemSelected(props)}
-                className={classNames({
-                     [styles[id]]: true,
-                     fa: true,
-                     // 'fa-fw': true,
-                     [styles['selected']]: selected,
-                     [styles['button-list-item']]: true
-                })}
-        />
-    );
-
-    let buttonWithOverlay;
 
     if (type !== 'settings' || !selected) {
         buttonWithOverlay = (
-            <span>
-                <OverlayTrigger trigger={['hover']} placement='bottom'
-                                overlay={ButtonListItemTooltip(name)}>
-                    {button}
-                </OverlayTrigger>
-            </span>
+            <OverlayTrigger defaultOverlayShown={false}
+                            trigger={['hover']} placement='right'
+                            overlay={ButtonListItemTooltip(name)}>
+                <Button id={id}
+                        active={selected}
+                        href='javascript:void(0)'
+                        onClick={(e) => e.preventDefault() || onItemSelected(props)}
+                        className={classNames({
+                             [styles[id]]: true,
+                             fa: true,
+                             'fa-fw': true,
+                             [styles['selected']]: selected,
+                             [styles['button-list-item']]: true
+                        })}>
+                    <span ref={(ref) => overlayRef = ref}/>
+                </Button>
+            </OverlayTrigger>
         );
     } else {
         buttonWithOverlay = (
-            <span>
-                {button}
+            <Button id={id}
+                    active={selected}
+                    href='javascript:void(0)'
+                    onClick={(e) => e.preventDefault() || onItemSelected(props)}
+                    className={classNames({
+                         [styles[id]]: true,
+                         fa: true,
+                         'fa-fw': true,
+                         [styles['selected']]: selected,
+                         [styles['button-list-item']]: true
+                    })}>
+                <span ref={(ref) => overlayRef = ref}/>
                 <Overlay show={selected}
-                         animation={false} placement='bottom'
-                         target={() => ReactDOM.findDOMNode(buttonRef)}>
+                         rootClose={true}
+                         animation={true} placement='right'
+                         onHide={() => onItemSelected(props)}
+                         target={() => ReactDOM.findDOMNode(overlayRef)}>
                     {popover}
                 </Overlay>
-            </span>
+            </Button>
         );
     }
 
     return buttonWithOverlay;
-    // return (
-    //     <span style={{ float: `left` }}>
-    //         {buttonWithHover}
-    //         <Overlay show={selected}
-    //                  animation={false} placement='bottom'
-    //                  target={() => ReactDOM.findDOMNode(buttonRef)}>
-    //             {popover}
-    //         </Overlay>
-    //     </span>
-    // );
 }
