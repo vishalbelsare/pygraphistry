@@ -62,14 +62,12 @@ serverWebpackConfig.plugins.push(
     }),
     new FaviconsWebpackPlugin({
         emitStats: true,
-        prefix: 'public/favicons/',
+        prefix: '/public/favicons/',
         statsFilename: 'favicon-assets.json',
         logo: path.resolve(process.cwd(), './src/assets/img/logo_g.png'),
     }),
     new CopyWebpackPlugin([
-        // { from: 'src/viz-worker/static' },
         { from: 'src/assets/img', to: 'public/img' },
-        // { from: 'src/viz-worker/kernels', to: 'kernels/' },
     ], {
         copyUnmodified: false,
         ignore: ['.DS_STORE']

@@ -41,8 +41,6 @@ function makeWebpackConfig({
         stats: { assets: true, colors: true, chunks: true },
         output: Object.assign({
             publicPath: '',
-            // filename: `[name].js`,
-            // chunkFilename: `[name].chunk.js`
             // Don't use chunkhash in development it will increase compilation time
             filename: isDev ? '[name].js' : '[name].[chunkhash:8].js',
             chunkFilename: isDev ? '[name].chunk.js' : '[name].[chunkhash:8].chunk.js',
@@ -53,11 +51,6 @@ function makeWebpackConfig({
             alias: {
                 'viz-app': path.resolve(process.cwd(), './src'),
                 'react-split-pane': '@graphistry/react-split-pane',
-                // 'viz-client': path.resolve(process.cwd(), './src/viz-client'),
-                // 'viz-server': path.resolve(process.cwd(), './src/viz-server'),
-                // 'viz-shared': path.resolve(process.cwd(), './src/viz-shared'),
-                // 'viz-worker': path.resolve(process.cwd(), './src/viz-worker'),
-                // 'etl-worker': path.resolve(process.cwd(), './src/etl-worker'),
                 'moment': path.resolve(process.cwd(), './node_modules/moment/min/moment.min.js'),
                 '@graphistry/falcor': path.resolve(process.cwd(), isDev ?
                     './node_modules/@graphistry/falcor/dist/falcor.all.js' :
@@ -68,7 +61,6 @@ function makeWebpackConfig({
         module: {
             noParse: [
                 /node_modules\/brace/,
-                // /node_modules\/jquery/,
                 // /node_modules\/lodash/,
                 /node_modules\/underscore/,
                 /node_modules\/pegjs-util\/PEGUtil\.js/,
@@ -87,7 +79,6 @@ function makeWebpackConfig({
                         options: {
                             name: 'fonts/[name]_[hash:6].[ext]',
                             publicPath: '/graph/',
-                            // outputPath: 'fonts/',
                         }
                     }]
                 },
@@ -98,7 +89,6 @@ function makeWebpackConfig({
                         options: {
                             name: 'fonts/[name]_[hash:6].[ext]',
                             publicPath: '/graph/',
-                            // outputPath: 'fonts/',
                             mimetype: 'image/svg+xml'
                         }
                     }]
@@ -110,7 +100,6 @@ function makeWebpackConfig({
                         options: {
                             name: 'fonts/[name]_[hash:6].[ext]',
                             publicPath: '/graph/',
-                            // outputPath: 'fonts/',
                             mimetype: 'application/font-woff'
                         }
                     }]
@@ -122,7 +111,6 @@ function makeWebpackConfig({
                         options: {
                             name: 'fonts/[name]_[hash:6].[ext]',
                             publicPath: '/graph/',
-                            // outputPath: 'fonts/',
                             mimetype: 'application/font-woff'
                         }
                     }]
@@ -134,7 +122,6 @@ function makeWebpackConfig({
                         options: {
                             name: 'fonts/[name]_[hash:6].[ext]',
                             publicPath: '/graph/',
-                            // outputPath: 'fonts/',
                             mimetype: 'application/octet-stream'
                         }
                     }]
@@ -183,8 +170,6 @@ function makeWebpackConfig({
                 jscomp_warning: '*',
                 source_map_format: 'V3',
                 create_source_map: true
-                // create_source_map: `${baseConfig.output.path}/${type}.js.map`,
-                // output_wrapper: `%output%\n//# sourceMappingURL=${type}.js.map`
             },
         }));
     }

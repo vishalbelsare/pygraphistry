@@ -73,6 +73,8 @@ function cssLoader(type, isDev, CSSModules) {
             minimize: !isDev,
             modules: CSSModules,
             sourceMap: false,
+            // this breaks file-loader URLS in dev mode,
+            // disabling for now since css sourcemaps are a nice-to-have
             // sourceMap: type === 'client',
             context: path.join(process.cwd(), './src'),
             localIdentName: isDev ? '[name]__[local].[hash:base64:5]' : '[hash:base64:5]',

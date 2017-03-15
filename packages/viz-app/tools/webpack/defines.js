@@ -26,7 +26,6 @@ const vendor = [
     'brace',
     'chalk',
     'debug',
-    // 'jquery', // TODO: kill jQuery
     'lodash',
     'recompose',
     'underscore',
