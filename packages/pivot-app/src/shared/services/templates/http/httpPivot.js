@@ -51,6 +51,7 @@ export class HttpPivot extends PivotTemplate {
             }, 'JQ include and imports disallowed', { jq }));
         }
 
+        let eventCounter = 0;    
         const df = Observable.from(this.toUrls(params, pivotCache))
             .flatMap((url) => {
                 log.info('searchAndShape http: url', {url});
@@ -76,8 +77,9 @@ export class HttpPivot extends PivotTemplate {
                         if (rows.length) {
                             if (!('EventID' in rows[0])) {
                                 for (let i = 0; i < rows.length; i++) {
-                                    rows[i].EventID = pivot.id + ':' + i;
+                                    rows[i].EventID = pivot.id + ':' + (eventCounter + i);
                                 }
+                                eventCounter += rows.length;
                             }                    
                         }
                         return new DataFrame(rows);

@@ -160,4 +160,35 @@ describe('httpPivot', function () {
 				});
 	});
 
+	it('search multiple events', (done) => {
+		const pivot = new HttpPivot({
+			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
+			toUrls: () => 
+				[`http://localhost:${PORT}/echo?x=a`, 
+				 `http://localhost:${PORT}/echo?x=b`],
+			parameters: [],
+			encodings: {}
+		});
+		pivot.searchAndShape({
+				app: {}, 
+				pivot: {
+					id: 'x',
+					enabled: true, 
+					pivotParameters: {'x$$$jq': '.'}					
+				}, 
+				pivotCache: {}})
+			.subscribe(({pivot, ...rest}) => {
+					assert.deepEqual(pivot.events, [{x: "a", EventID:'x:0'}, {x: "b", EventID:'x:1'}]);
+					assert.deepEqual(pivot.results.graph, 
+						[{x: "a", destination: "a", 'source': 'x:0', edgeType: 'EventID->x', _pivotId: 'x'},
+						 {x: "b", destination: "b", 'source': 'x:1', edgeType: 'EventID->x', _pivotId: 'x'}]);
+					assert.deepEqual(pivot.results.labels,
+						[{ x: "a", node: 'x:0', type: 'EventID' },
+					     { node: "a", type: 'x' },
+					     { x: "b", node: 'x:1', type: 'EventID' },
+					     { node: "b", type: 'x' } ]);				
+					done();
+				}, (e) => done(e));
+	});
+
 });
