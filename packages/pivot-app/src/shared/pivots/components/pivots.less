@@ -159,7 +159,7 @@
 	}
 
 	& > * {
-		margin: 1em;
+		margin: 5px;
 	}
 
 	.pivot-params { }
@@ -167,10 +167,8 @@
 	.pivot-result-summaries {
 	    padding-left: 0px !important;
 	    margin: 0 !important;
-	    padding: 1em !important;
+	    padding: 5px !important;
 	    padding-left: 0px !important;
-	    border-top: 1px solid #ccc;
-	    border-bottom: 1px solid #ccc;
 	    width: 100%;
 
 	    & > * {
@@ -364,17 +362,17 @@
     display: none !important;
 }
 :global(.Pane1 .rc-switch) {
-    height: 18px !important;
-    width: 35px !important;
-    left: 10px !important;
-    margin-right: 20px !important;
+    height: 17px !important;
+    width: 30px !important;
+    left: 7px !important;
+    margin-right: 12px !important;
 }
 :global(.Pane1 .rc-switch:after) {
-    height: 14px !important;
-    width: 14px !important;
+    height: 13px !important;
+    width: 13px !important;
 }
 :global(.Pane1 .rc-switch-checked:after) {
-    left: 17px !important;
+    left: 12px !important;
 }
 
 .splunk-query {
@@ -412,4 +410,76 @@
     border-left: none !important;
     border-right: none !important;
     background-color: #F9F9F9 !important;
+}
+
+:global(.container-fluid) {
+    height: 41px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #CCCCCC;
+	position: fixed !important; // >> Fixes position of the header
+	width: 300px; // >> for some reason setting to 100% width doesn't contain the header in the investigation panel ??
+	z-index: 100; // >> have to set the z index or it exist behind alot of investigation header elements
+}
+
+:global(.navbar-form.navbar-left) {
+    margin-top: 3px !important;
+    margin-left: -12px !important;
+}
+
+:global(.navbar-nav li a) {
+    padding-top: 12px;
+    width: 41px;
+    height: 40px;
+}
+
+:global(.navbar-nav li a:hover) {
+background-color: #e6e6e6 !important;
+}
+
+
+:global(.navbar-nav li a:hover .glyphicon) {
+color: #333 !important;
+}
+
+
+:global(.Pane1 .panel-heading) {
+    font-weight: 600;
+    font-size: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+:global(.panel-body label) {
+    font-weight: 100 !important;
+    font-size: 10px;
+    margin-left: 16px;
+}
+
+:global(.panel-body b) {
+    font-weight: 100 !important;
+    font-size: 10px;
+    margin-left: 16px;
+
+}
+
+/*:global(.Pane1 .panel-group .panel .panel-default) {
+    margin-bottom: 0px;
+    background-color: blue;
+}*/
+
+:global(.Pane1 .panel-default) {
+    border: 1px solid #CCCCCC !important;
+}
+
+:global(.Pane1 .panel-default .panel-default) {
+    border: none !important;
+	margin-bottom: 0 !important;
+}
+
+:global(.btn-block) {
+    margin-bottom: 80px;
+}
+
+:global(pivot-result-summaries) {
+    border: none !important;
 }

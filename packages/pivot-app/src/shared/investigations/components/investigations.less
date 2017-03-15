@@ -55,18 +55,16 @@
 
             box-sizing: border-box;
             background-clip: padding-box;
-
-            border-left: 1px solid @pivot-table-bg;
-            border-right: 1px solid @pivot-table-bg;
+            border-right: 1px solid #CCCCCC;
 
             background: #ddd;
             cursor: col-resize;
 
-            &:hover {
+/*            &:hover {
                 transition: all 1s ease;
                 border-left: 5px solid @pivot-table-fg-light;
                 border-right: 5px solid @pivot-table-fg-light;
-            }
+            }*/
         }
 	}
 
@@ -168,14 +166,14 @@
 
 :global(.navbar-right .glyphicon) {
     top: 0px !important;
-    transition: color 0.2s ease;
+    color: #646464;
 }
 
-:global(.navbar-right .glyphicon:hover) {
-    color: #87d068 !important;
-}
+/*:global(.navbar-right .glyphicon:hover) {
+    color: #000000 !important;
+}*/
 
 :global(.Pane1) {
-    box-shadow: rgba(0, 0, 0, 0.05) 7px 0px 10px;
+    box-shadow: rgba(0, 0, 0, 0.05) 7px 41px 10px;
     z-index: 100;
 }

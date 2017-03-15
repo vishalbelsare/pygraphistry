@@ -15,7 +15,6 @@ export default function EntitySummaries({ id, resultSummary }) {
                         <FontAwesome name={(icon === '') ? 'question-circle': icon} size='2x'/>
                         <span style={{backgroundColor: color}} className={styles['pivot-entity-pill']}></span>
                         <span className={styles['pivot-entity-count']}>{count}</span>
-                        <span className={styles['pivot-entity-name']}> { name } </span>
                 </span>
                 </OverlayTrigger>))
         }

@@ -7,7 +7,7 @@ export default function PivotRowHeader({ id, investigationId, enabled, rowIndex,
 }) {
     return (
         <div className={styles['pivot-row-header']}>
-            { rowIndex }
+            { rowIndex + 1 }
             <span className={styles['pivot-row-header-item']}>
                 <RcSwitch 
                     defaultChecked={false}
