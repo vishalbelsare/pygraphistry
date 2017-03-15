@@ -78,7 +78,7 @@ function makeWebpackConfig({
                         loader: 'file-loader',
                         options: {
                             name: 'fonts/[name]_[hash:6].[ext]',
-                            publicPath: '/graph/',
+                            publicPath: '',
                         }
                     }]
                 },
@@ -88,7 +88,7 @@ function makeWebpackConfig({
                         loader: 'file-loader',
                         options: {
                             name: 'fonts/[name]_[hash:6].[ext]',
-                            publicPath: '/graph/',
+                            publicPath: '',
                             mimetype: 'image/svg+xml'
                         }
                     }]
@@ -99,7 +99,7 @@ function makeWebpackConfig({
                         loader: 'file-loader',
                         options: {
                             name: 'fonts/[name]_[hash:6].[ext]',
-                            publicPath: '/graph/',
+                            publicPath: '',
                             mimetype: 'application/font-woff'
                         }
                     }]
@@ -110,7 +110,7 @@ function makeWebpackConfig({
                         loader: 'file-loader',
                         options: {
                             name: 'fonts/[name]_[hash:6].[ext]',
-                            publicPath: '/graph/',
+                            publicPath: '',
                             mimetype: 'application/font-woff'
                         }
                     }]
@@ -121,7 +121,7 @@ function makeWebpackConfig({
                         loader: 'file-loader',
                         options: {
                             name: 'fonts/[name]_[hash:6].[ext]',
-                            publicPath: '/graph/',
+                            publicPath: '',
                             mimetype: 'application/octet-stream'
                         }
                     }]
