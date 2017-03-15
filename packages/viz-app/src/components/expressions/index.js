@@ -4,7 +4,6 @@ import styles from './styles.less';
 import classNames from 'classnames';
 import { AutoSizer } from 'react-virtualized';
 import renderNothing from 'recompose/renderNothing';
-import { Editor as ExpressionEditor } from './editor';
 import {
     Col, Row, Grid,
     Panel, Popover,
@@ -12,6 +11,12 @@ import {
     Button, Tooltip, MenuItem,
     DropdownButton, OverlayTrigger,
 } from 'react-bootstrap';
+
+let ExpressionEditor = renderNothing();
+
+if (__CLIENT__) {
+    ExpressionEditor = require('./editor').Editor;
+}
 
 const expressionTooltip = (
     <Tooltip id='expression-tooltip'>Expression</Tooltip>

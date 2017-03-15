@@ -19,8 +19,6 @@ const host = convict.get('host');
 const logger = createLogger('viz-app');
 const io = app.io = new SocketIOServer({ serveClient: false });
 
-global.window = global;
-
 // Remove Express header.
 app.disable('x-powered-by');
 
