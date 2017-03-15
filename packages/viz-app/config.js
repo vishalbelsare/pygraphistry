@@ -1,3 +1,6 @@
+// Warning: only use Node.js natively supported JavaScript features in this file. It is imported
+// and run directly into Node, without Babel complication, by the root `viz-server/index.js`.
+
 const path = require('path');
 const glob = require('glob');
 const convict = require('convict');
@@ -46,6 +49,22 @@ const conf = convict({
             arg: 'log-source',
             env: 'LOG_SOURCE'
         }
+    },
+    authentication: {
+        username: {
+            doc: 'The username used to access this service',
+            format: String,
+            default: 'admin',
+            arg: 'username',
+            env: 'USERNAME'
+        },
+        passwordHash: {
+            doc: 'Bcrypt hash of the password required to access this service, or unset/empty to disable authentication (default)',
+            format: String,
+            default: '',
+            arg: 'password-hash',
+            env: 'PASSWORD_HASH'
+        }
     }
 });
 
@@ -60,7 +79,7 @@ if (process.env.CONFIG_FILES) {
 
 if (configFiles && configFiles.length) {
     // eslint-disable-next-line no-console
-    console.log(`Loading configuration from ${configFiles.join(", ")}`);
+    console.log(`Loading configuration from ${configFiles.join(', ')}`);
     conf.loadFile(configFiles);
 }
 

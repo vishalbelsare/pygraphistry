@@ -1,7 +1,9 @@
 import { VError } from 'verror';
+import { Router } from 'express';
 import configureWorkers from './workers';
 import _config from '@graphistry/config';
 import { createLogger } from '@graphistry/common/logger';
+import { authenticateMiddleware } from './authentication';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { reportWorkerActivity } from './reportWorkerActivity';
 import setObservableConfig from 'recompose/setObservableConfig';
@@ -19,27 +21,33 @@ const logger = createLogger('viz-app:server');
 const isWorkerActive = new BehaviorSubject(false);
 const exitOnDisconnect = !config.ALLOW_MULTIPLE_VIZ_CONNECTIONS;
 
-logger.warn(`Precompiling layout kernels`);
-
-initializeNbody();
 reportWorkerActivity({ config, isWorkerActive })
-    .do(null, setActiveStatus).publish().connect();
+    .do(null, setActiveStatus)
+    .publish()
+    .connect();
 
-let serverMiddleware;
-export default function hotServerMiddleware(req, res, next) {
 
-    logger.trace({req, res}, 'Received Express.js request');
+// The Express router that handles all incoming requests
+const serverRouter = Router();
 
-    if (!serverMiddleware) {
-        try {
-            serverMiddleware = configureWorkers(config, setActiveStatus, req.app.io);
-        } catch (err) {
-            setActiveStatus(err);
-        }
-    }
-
-    return serverMiddleware(req, res, next);
+try {
+    const authenticate = authenticateMiddleware();
+    serverRouter.use('/', authenticate);
+} catch(authMiddlewareError) {
+    logger.fatal(authMiddlewareError, 'An error occured loading the Express.js authentication middleware. Because this could compromise security, server will now terminate.');
+    setActiveStatus(authMiddlewareError);
 }
+
+try {
+    const selectWorkerRouter = configureWorkers(config, setActiveStatus);
+    serverRouter.use('/', selectWorkerRouter);
+} catch(selectWorkerMiddlewareError) {
+    logger.fatal(selectWorkerMiddlewareError, 'An error occured loading the Express.js "select worker" middleware (in viz-app/src/server/workers.js).');
+    setActiveStatus(selectWorkerMiddlewareError);
+}
+
+export default serverRouter;
+
 
 function setActiveStatus(err, isActive = false) {
     if (!err && isActive) {
@@ -53,6 +61,7 @@ function setActiveStatus(err, isActive = false) {
         terminateServer(err);
     }
 }
+
 
 function terminateServer(err) {
     // The delay (in ms) before this function calls `process.exit()`. That function is pretty
@@ -81,6 +90,13 @@ Server process has completed normally, and will terminate.
 ${'-'.repeat(80)}
 `;
         console.log(partingMessage);
-        setTimeout(() => process.exit(0), exitDelay)
+        setTimeout(() => process.exit(0), exitDelay);
     }
 }
+
+
+logger.debug(`Precompiling layout kernels`);
+initializeNbody();
+
+
+logger.debug('Server module loaded/reloaded and ready to handle requests');

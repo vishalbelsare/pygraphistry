@@ -42,6 +42,13 @@ app.use(cookieParser());
 // This allows Express to expose the client's real IP and protocol, not the proxy's.
 app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
+// Log all requests as the first action
+app.use(function(req, res, next) {
+    logger.trace({req, res}, 'HTTP request received by Express.js');
+    next();
+});
+
+
 let serverMiddleware;
 
 // Run express as webpack dev server
