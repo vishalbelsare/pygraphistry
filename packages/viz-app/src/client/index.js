@@ -1,9 +1,10 @@
 import '@graphistry/rc-slider/assets/index.css';
 import 'rc-switch/assets/index.css';
 import 'rc-color-picker/assets/index.css';
-// import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-select/dist/react-select.css';
-// import 'font-awesome/css/font-awesome.css';
+import 'font-awesome/css/font-awesome.css';
+import 'viz-app/index.less';
 
 require('./startup/setupRxAndRecompose');
 
@@ -79,7 +80,7 @@ function getRootDOMNode(appDomNode) {
     );
 }
 
-if (__DEV__) {
+if (process.env.NODE_ENV !== 'production') {
 
     // Enable the React debugger in the console after the first mount
     window.React = React;

@@ -16,6 +16,7 @@ export function layout(view) {
                 selected: false,
                 id: 'toggle-layout-settings',
                 name: 'Layout settings',
+                type: 'settings'
             }],
             options: {
                 id: 'layout-options',

@@ -37,6 +37,10 @@ function configureRender(config, getDataSource) {
         const paths = getProxyPaths(req);
         const clientId = req.app.get('clientId') || '00000';
         const model = new Model({ recycleJSON: true, source: getDataSource(req) });
+        const clientAssets = (res.locals &&
+                              res.locals.webpackStats &&
+                              res.locals.webpackStats.toJson() ||
+                              require('./client-stats.json')).assetsByChunkName
 
         // Wrap in Observable.defer in case `template` or `AppContainer.load` throws an error
         return Observable.defer(() => {
@@ -48,9 +52,8 @@ function configureRender(config, getDataSource) {
             }
             return AppContainer.load({ falcor: model }).map(() => ({
                 status: 200, payload: template({
-                    paths, clientId,
+                    paths, clientId, clientAssets,
                     initialState: model.getCache(),
-                    reactRoot: '',
                     // reactRoot: renderToString(
                     //     <App falcor={model} key='viz-client' params={req.query} store={{
                     //         dispatch() {},

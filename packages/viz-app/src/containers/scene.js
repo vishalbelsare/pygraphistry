@@ -10,12 +10,15 @@ let Scene = ({
         selectLabel,
         sceneMouseMove,
         sceneTouchStart,
+        simulationWidth,
+        simulationHeight,
         onSelectedPointTouchStart,
         onSelectionMaskTouchStart,
         id, simulating, labels = {},
         release = {}, renderer = {},
         selection = {}, highlight = {}, ...props } = {}) => (
-    <SceneComponent sceneID={id}
+    <SceneComponent key='scene'
+                    sceneID={id}
                     release={release}
                     selection={selection}
                     edges={renderer.edges}
@@ -23,13 +26,19 @@ let Scene = ({
                     points={renderer.points}
                     mouseMove={sceneMouseMove}
                     touchStart={sceneTouchStart}
+                    simulationWidth={simulationWidth}
+                    simulationHeight={simulationHeight}
                     {...props}>
         <Renderer key='renderer'
                   data={renderer}
-                  simulating={simulating}/>
+                  simulating={simulating}
+                  simulationWidth={simulationWidth}
+                  simulationHeight={simulationHeight}/>
         <Selection key='selection'
                    data={selection}
                    simulating={simulating}
+                   simulationWidth={simulationWidth}
+                   simulationHeight={simulationHeight}
                    onSelectedPointTouchStart={onSelectedPointTouchStart}
                    onSelectionMaskTouchStart={onSelectionMaskTouchStart}
                    highlightedPoint={highlight && highlight.point && highlight.point[0]}/>
@@ -37,6 +46,8 @@ let Scene = ({
                 data={labels}
                 simulating={simulating}
                 selectLabel={selectLabel}
+                simulationWidth={simulationWidth}
+                simulationHeight={simulationHeight}
                 sceneSelectionType={selection.type}/>
     </SceneComponent>
 );

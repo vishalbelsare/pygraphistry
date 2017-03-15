@@ -78,8 +78,8 @@ const MemoizeStyleProps = mapPropsStream((props) => {
         theadStyle.transform = `translate3d(${colHeaderX}px, 0px, 0px)`;
         cornerStyle.transform = `translate3d(${colHeaderX}px, 0px, 0px)`;
 
-        tableContainerStyle.width = bodyWidth;
-        tableContainerStyle.height = bodyHeight;
+        tableContainerStyle.width = bodyWidth || 'auto';
+        tableContainerStyle.height = bodyHeight || 'auto';
         tableContainerStyle.paddingTop = rowHeaderHeight || 0;
 
         props = Object.create(props);

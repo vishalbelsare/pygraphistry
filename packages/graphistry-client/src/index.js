@@ -52,6 +52,23 @@ class Graphistry extends Observable {
         return observable;
     }
 
+    static _getIds(componentType, name, dataType, values = []) {
+        const { view } = this;
+        return new this(view
+            .call(`componentsByType['${componentType}'].rows.filter`, [name, dataType, values], ['_index'])
+            .takeLast(1)
+            .map(({ json = {} }) => {
+                const { componentsByType = {} } = json;
+                const { [componentType]: componentsForType = {} } = componentsByType;
+                const { rows = {} } = componentsForType;
+                return Array
+                    .from(rows.filter || [])
+                    .filter(Boolean).map(({ _index }) => _index);
+            })
+            .toPromise()
+        );
+    }
+
     /**
      * Add columns to the current graph visuzliation's dataset
      * @method Graphistry.addColumns
@@ -771,6 +788,7 @@ function GraphistryJS(iFrame) {
 import 'rxjs/add/operator/do';
 import 'rxjs/add/operator/let';
 import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/zip';
 import 'rxjs/add/operator/last';
 import 'rxjs/add/operator/take';
 import 'rxjs/add/operator/scan';
@@ -784,8 +802,10 @@ import 'rxjs/add/operator/concatMap';
 import 'rxjs/add/operator/multicast';
 import 'rxjs/add/operator/toPromise';
 import 'rxjs/add/operator/takeUntil';
+import 'rxjs/add/operator/combineLatest';
 
 import 'rxjs/add/observable/of';
+import 'rxjs/add/observable/zip';
 import 'rxjs/add/observable/from';
 import 'rxjs/add/observable/defer';
 import 'rxjs/add/observable/timer';
@@ -793,6 +813,7 @@ import 'rxjs/add/observable/merge';
 import 'rxjs/add/observable/concat';
 import 'rxjs/add/observable/fromEvent';
 import 'rxjs/add/observable/bindCallback';
+import 'rxjs/add/observable/combineLatest';
 
 Graphistry = wrapStaticObservableMethods(Observable, Graphistry);
 

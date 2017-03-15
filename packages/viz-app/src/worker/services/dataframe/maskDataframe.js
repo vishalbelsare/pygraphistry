@@ -78,7 +78,7 @@ export function maskDataframe({ view }) {
             const { interactions } = nBody;
             if (interactions) {
                 logger.trace('updating interactions Subject');
-                interactions.next({ play: true, layout: true });
+                interactions.next({ play: true, layout: false });
             }
         } else {
             logger.trace('no buffers to update after dataframe mask');

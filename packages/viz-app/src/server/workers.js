@@ -8,14 +8,14 @@ import configureVizWorker from './viz';
 
 function configureWorkers(config, activeCB, io) {
 
-    let workerRouter, appRouter = Router();
+    let workerName, workerRouter, appRouter = Router();
     const allowMultipleVizConnections = !!config.ALLOW_MULTIPLE_VIZ_CONNECTIONS;
 
     appRouter.use('/healthcheck', healthcheckHandler);
     appRouter.use('/etl/healthcheck', healthcheckHandler);
     appRouter.use('/graph/healthcheck', healthcheckHandler);
-    appRouter.use('/etl', selectWorkerRouter(configureEtlWorker), requestErrorHandler);
-    appRouter.use('/graph/graph.html', selectWorkerRouter(configureVizWorker), requestErrorHandler);
+    appRouter.use('/etl', selectWorkerRouter('etl', configureEtlWorker), requestErrorHandler);
+    appRouter.use('/graph/graph.html', selectWorkerRouter('viz', configureVizWorker), requestErrorHandler);
     appRouter.use((req, res, next) => {
         if (!workerRouter) {
             logger.warn(`Error trying to find the current worker router in 'workerStatus'. Ignoring request, and telling Express let the next maching middleware/route handle it.`);
@@ -26,24 +26,26 @@ function configureWorkers(config, activeCB, io) {
 
     return appRouter;
 
-    function selectWorkerRouter(configureWorker) {
+    function selectWorkerRouter(configureName, configureWorker) {
         return function innerSelectWorkerRouter(req, res, next) {
 
             if (workerRouter) {
-                if (allowMultipleVizConnections) {
-                    return next();
+                if (!allowMultipleVizConnections) {
+                    const inUseError = new WError(
+                        {info: { httpStatus: 409 }},
+                        'This viz-app worker is already in use by another client'
+                    );
+                    logger.warn({req, res, err: inUseError}, "A client tried to connect to this worker, but it's currently in use with an existing client. Will reject the request with an error response.");
+                    // Pass the error to Express, so an error handling middleware can take care
+                    // of notifying the client.
+                    return next(inUseError);
                 }
-                const inUseError = new WError(
-                    {info: { httpStatus: 409 }},
-                    'This viz-app worker is already in use by another client'
-                );
-                logger.warn({req, res, err: inUseError}, "A client tried to connect to this worker, but it's currently in use with an existing client. Will reject the request with an error response.");
-                // Pass the error to Express, so an error handling middleware can take care
-                // of notifying the client.
-                return next(inUseError);
             }
 
-            workerRouter = configureWorker(config, activeCB, io);
+            if (workerName !== configureName) {
+                workerName = configureName;
+                workerRouter = configureWorker(config, activeCB, io);
+            }
 
             // Tell Express to continue processing this request, and pass it to the
             // next matching middleware/route. This allows the reequest to

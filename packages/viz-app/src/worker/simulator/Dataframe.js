@@ -897,6 +897,12 @@ Dataframe.prototype.registerNewComputedColumn = function (computedColumnManager,
     };
 
     attrs[columnType][columnName] = col;
+
+    if (this.data !== this.rawdata) {
+        const rawAttrs = this.rawdata.attributes;
+        rawAttrs[columnType] = rawAttrs[columnType] || {};
+        rawAttrs[columnType][columnName] = col;
+    }
 };
 
 // Add a column given via the client API.
@@ -932,9 +938,12 @@ Dataframe.prototype.addClientProvidedColumn = function (columnType, columnName, 
         ArrayVariant = Array;
     }
 
+    const defaultValue = dataType === 'string' ? '' : 0;
     const numElements = this.rawdata.numElements[columnType];
 
-    if (values.length !== numElements) {
+    if (values.length === undefined) {
+        values.length = numElements;
+    } else if (values.length !== numElements) {
         logger.debug(`Warning: Provided values for ${columnType}:${columnName} have different length than original dataset. ${values.length} vs ${numElements}.`);
     }
 
@@ -951,7 +960,11 @@ Dataframe.prototype.addClientProvidedColumn = function (columnType, columnName, 
         dependencies: [],
         computeAllValues: (outArr, numGraphElements, lastMasks) => {
             lastMasks.forEachIndexByType(columnType, (idx, i) => {
-                outArr[i] = values[idx];
+                let val = values[idx];
+                if (val === null || val === undefined) {
+                    val = defaultValue;
+                }
+                outArr[i] = val;
             });
             return outArr;
         }
@@ -1480,7 +1493,7 @@ Dataframe.prototype.getCell = function (index, type, attrName, global = false) {
 
     // Check to see if it's computed and version matches that of computed column.
     // Computed column versions reflect dependencies between computed columns.
-    const computedVersionMatches = !(column.computed &&
+    let computedVersionMatches = !(column.computed &&
         (column.computedVersion !== this.computedColumnManager.getColumnVersion(type, attrName))
     );
 
@@ -1500,7 +1513,7 @@ Dataframe.prototype.getCell = function (index, type, attrName, global = false) {
     }
 
     // If it's calculated and needs to be recomputed
-    if (column.computed && (!computedVersionMatches || column.dirty)) {
+    if (column.computed) {
         return this.computedColumnManager.getValue(this, type, attrName, index);
     }
 
@@ -1508,7 +1521,13 @@ Dataframe.prototype.getCell = function (index, type, attrName, global = false) {
     // calculated values
     if (column.dirty && column.dirty.cause === 'filter') {
         let parentIndex = this.lastMasks.getIndexByType(type, index);
-        return this.rawdata.attributes[type][attrName].values[parentIndex];
+        let parentValue;
+        try {
+            parentValue = this.rawdata.attributes[type][attrName].values[parentIndex];
+            return parentValue;
+        } catch (err) {
+            logger.error({ err, type, attrName, index, parentIndex });
+        }
     }
 
     // Nothing was found, so throw error.

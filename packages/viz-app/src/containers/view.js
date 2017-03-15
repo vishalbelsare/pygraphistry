@@ -1,10 +1,12 @@
-import Dock from 'react-dock';
+import SplitPane from 'react-split-pane';
+import { AutoSizer } from 'react-virtualized';
 import { Scene } from 'viz-app/containers/scene';
 import { Panel } from 'viz-app/containers/panel';
 import { Toolbar } from 'viz-app/containers/toolbar';
 import { Session } from 'viz-app/containers/session';
 import { Settings } from 'viz-app/containers/settings';
 import { container } from '@graphistry/falcor-react-redux';
+import { Expressions } from 'viz-app/containers/expressions';
 import { selectToolbarItem } from 'viz-app/actions/toolbar';
 
 import {
@@ -18,6 +20,8 @@ import { selectLabel } from 'viz-app/actions/labels';
 import { selectInspectorRow } from 'viz-app/actions/inspector';
 
 const viewStyle = { position: `absolute`, width: `100%`, height: `100%` };
+const containerStyle = { ...viewStyle, position: `relative`, overflow: 'hidden' };
+const containerVisibleStyle = { ...containerStyle, overflow: 'visible', flex: '1 1 auto' };
 const rightDockHiddenStyle = { opacity: 1, boxShadow: `none`, overflow: `visible`, background: `transparent` };
 const rightDockVisibleStyle = { opacity: 1, boxShadow: `none`, overflow: `visible`, background: `transparent` };
 
@@ -38,62 +42,67 @@ let View = ({
     const isRightPanelOpen = right && right.id !== undefined;
     const isBottomPanelOpen = bottom && bottom.id !== undefined;
     return (
+        // <SplitPane allowResize={false} split='horizontal' size='0px'>
         <div style={viewStyle}>
-            <Scene key='scene'
-                   data={scene}
-                   selectLabel={selectLabel}
-                   sceneMouseMove={sceneMouseMove}
-                   sceneTouchStart={sceneTouchStart}
-                   selectToolbarItem={selectToolbarItem}
-                   onSelectedPointTouchStart={onSelectedPointTouchStart}
-                   onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
-            <Panel key='left-panel' side='left' data={left} isOpen={isLeftPanelOpen}/>
-            <Dock fluid
-                  key='right'
-                  dimMode='none'
-                  zIndex={3700}
-                  position='right'
-                  defaultSize={0.2}
-                  isVisible={isRightPanelOpen}
-                  dockStyle={rightDockVisibleStyle}
-                  dockHiddenStyle={rightDockHiddenStyle}>
-                <Session data={session}/>
-                <Panel side='right'
-                       data={right}
-                       key='right-panel'
-                       isOpen={isRightPanelOpen}/>
-            </Dock>
-            <Dock fluid
-                  key='bottom'
-                  zIndex={3700}
-                  dimMode='none'
-                  position='bottom'
-                  isVisible={isBottomPanelOpen}
-                  defaultSize={1 - (1/Math.sqrt(2))}>
-            {({ position, isResizing, size, isVisible }) => (
-                <Panel side='bottom'
-                       data={bottom}
-                       key='bottom-panel'
-                       colWidth={150}
-                       rowHeight={30}
-                       colHeaderWidth={48}
-                       rowHeaderHeight={32}
-                       width={window.innerWidth}
-                       selectInspectorRow={selectInspectorRow}
-                       height={size * window.innerHeight - 60}
-                       isOpen={isVisible && isBottomPanelOpen}
-                       style={{ width: window.innerWidth,
-                                height: size * window.innerHeight }}/>
-            )}
-            </Dock>
-            <Toolbar key='toolbar' data={toolbar} selectToolbarItem={selectToolbarItem}/>
+            <SplitPane allowResize={isBottomPanelOpen}
+                       split='horizontal' primary='second'
+                       minSize={0} paneStyle={containerStyle}
+                       defaultSize={isBottomPanelOpen ? `${(1 - (1/Math.sqrt(2)))*100}%` : '0%'}>
+                <SplitPane allowResize={isRightPanelOpen}
+                           split='vertical' primary='second'
+                           minSize={0} paneStyle={containerVisibleStyle}
+                           defaultSize={isRightPanelOpen ? `20%` : '0%'}>
+                    <div style={containerVisibleStyle}>
+                        <AutoSizer>
+                        {({ width, height }) => (
+                        <Scene key='scene'
+                               data={scene}
+                               simulationWidth={width}
+                               simulationHeight={height}
+                               selectLabel={selectLabel}
+                               sceneMouseMove={sceneMouseMove}
+                               sceneTouchStart={sceneTouchStart}
+                               selectToolbarItem={selectToolbarItem}
+                               style={{ ...viewStyle, width, height }}
+                               onSelectedPointTouchStart={onSelectedPointTouchStart}
+                               onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
+                        )}
+                        </AutoSizer>
+                    </div>
+                    <div style={containerVisibleStyle}>
+                        <Session data={session}/>
+                        <Panel side='right' data={right} key='right-panel' isOpen={isRightPanelOpen}/>
+                    </div>
+                </SplitPane>
+                <div style={{ ...containerVisibleStyle, flex: '1 1 auto' }}>
+                    <AutoSizer>
+                    {({ width, height = 0 }) => (
+                        <Panel side='bottom'
+                               data={bottom}
+                               key='bottom-panel'
+                               colWidth={150}
+                               rowHeight={30}
+                               colHeaderWidth={48}
+                               rowHeaderHeight={32}
+                               height={Math.max(height - 50, 0) || 0}
+                               width={width} isOpen={isBottomPanelOpen}
+                               style={{ width, height: height || 0 }}
+                               selectInspectorRow={selectInspectorRow}/>
+                    )}
+                    </AutoSizer>
+                </div>
+            </SplitPane>
+            <Toolbar key='toolbar' data={toolbar} selectToolbarItem={selectToolbarItem}>
+                <Panel key='left-panel' side='left' data={left} isOpen={isLeftPanelOpen}/>
+            </Toolbar>
         </div>
+        // </SplitPane>
     );
 };
 
 View = container({
     renderLoading: true,
-    fragment: ({ scene, layout, toolbar, session, panels = {} } = {}) => `{
+    fragment: ({ scene, layout, toolbar, session, filters, exclusions, panels = {} } = {}) => `{
         pruneOrphans,
         scene: ${ Scene.fragment(scene) },
         layout: ${ Settings.fragment(layout) },

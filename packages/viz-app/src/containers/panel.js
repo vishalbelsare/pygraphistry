@@ -26,28 +26,15 @@ function componentForSideAndType(side, id) {
     );
 }
 
-function Panel({ panel = {}, placement,
-                 className = '', positionTop, positionLeft,
+function Panel({ panel = {}, className = '',
                  id, side, isOpen, name, style, ...props }) {
-
     const Component = componentForSideAndType(side, panel.id);
-    const componentInstance = (
-        <Component name={name} side={side}
-                   data={panel} style={style}
+    return (
+        <Component data={panel} style={style}
+                   id={panel.id} name={name} side={side}
                    className={className + ' ' + panelStyles[`panel-${side}`]}
                    {...props}/>
     );
-
-    if (side === 'left') {
-        return (
-            <div style={{ ...leftPanelStyles(isOpen), ...style }}
-                 className={className + ' ' + panelStyles[`panel-${side}`]}>
-                {componentInstance}
-            </div>
-        );
-    }
-
-    return componentInstance;
 };
 
 Panel = container({
@@ -63,21 +50,3 @@ Panel = container({
 })(Panel);
 
 export { Panel };
-
-function leftPanelStyles(isOpen) {
-    return {
-        top: `0px`,
-        left: `44px`,
-        zIndex: 3700,
-        position: `absolute`,
-        opacity: Number(isOpen),
-        // minWidth: isOpen ? undefined : `200px`,
-        minWidth: `200px`,
-        minHeight: isOpen ? undefined : `200px`,
-        visibility: isOpen && 'visible' || 'hidden',
-        transform: `translate3d(${Number(!isOpen) * -10}%, 6px, 0)`,
-        transition: isOpen &&
-            `opacity 0.2s, transform 0.2s, visibility 0s` ||
-            `opacity 0.0s, transform 0.0s, visibility 0s linear 0.2s`
-    };
-}

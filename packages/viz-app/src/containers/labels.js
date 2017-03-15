@@ -56,7 +56,7 @@ let Labels = ({ simulating,
             type !== highlight.type ||
             index !== highlight.index
         ));
-        if (sceneSelectionType) {
+        if (sceneSelectionType || simulating) {
             highlight = undefined
         } else {
             labels.push(highlight);

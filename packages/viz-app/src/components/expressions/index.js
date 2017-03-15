@@ -2,6 +2,7 @@ import RcSwitch from 'rc-switch';
 import Select from 'react-select';
 import styles from './styles.less';
 import classNames from 'classnames';
+import { AutoSizer } from 'react-virtualized';
 import renderNothing from 'recompose/renderNothing';
 import { Editor as ExpressionEditor } from './editor';
 import {
@@ -24,45 +25,58 @@ const deleteExpressionTooltip = (
     <Tooltip id='delete-expression-tooltip'>Delete Expression</Tooltip>
 );
 
-export function ExpressionsList({
-    loading = false, showDataTypes = true,
-    id, templates = [], addExpression,
-    showHeader = true, header,
-    dropdownPlacement = 'bottom',
-    side='left', placeholder,
-    style = {}, itemStyle = {},
-    children, name, ...props
-}) {
-
-    const dropdown = (
-        <ExpressionTemplates name={name}
-                             loading={loading}
-                             templates={templates}
-                             placeholder={placeholder}
-                             showDataTypes={showDataTypes}
-                             addExpression={addExpression}/>
-    );
-
-    const title = !showHeader ? undefined : (header ? header : name);
-    const top = dropdownPlacement === 'top'
-        ? <div>{title}{dropdown}</div>
-        : title;
-    const bottom = dropdownPlacement === 'bottom' ? dropdown : undefined;
-
+export function HistogramsList({ style, children, ...props }) {
     return (
-        <Panel header={top} footer={bottom}
-               style={{ ...style, display: `block`, margin: 0 }}
-               {...props}>
-            <ListGroup fill style={side==='left' ? {maxHeight: '300px', 'overflowY': 'scroll'} : {}}>
+        <Panel className={props.className}
+               header={<ExpressionTemplates {...props}/>}
+               style={{ ...style, margin: 0, display: `block` }}>
+            <ListGroup fill>
             {children.map((child) => (
-                <ListGroupItem key={child.key} style={{
-                                   paddingLeft: 0, paddingRight: 0, ...child.props.style
-                               }}>
-                    {child}
+                <ListGroupItem key={child.key} style={child.props.style}>
+                {child}
                 </ListGroupItem>
             ))}
             </ListGroup>
-        </Panel>
+       </Panel>
+    );
+}
+
+export function ExpressionsList({
+    id, name, side, loading, style,
+    children, templates, addExpression, ...props
+}) {
+    return (
+        <Popover title={name}
+                 id={`${id}-popover`}
+                 style={{ ...style, padding: 0, width: `400px`, minWidth: `400px` }}
+                 {...props}>
+            <Grid fluid style={{ ...style, overflowY: 'auto', maxHeight: 300, padding: 0 }}>
+                {children}
+            </Grid>
+            <div style={{
+                padding: '9px 14px',
+                backgroundColor: '#f7f7f7',
+                borderBottomLeftRadius: '5px',
+                borderBottomRightRadius: '5px',
+                borderTop: '1px solid #ebebeb',
+            }}>
+                <ExpressionTemplates loading={loading}
+                                     templates={templates}
+                                     addExpression={addExpression}
+                                     {...props}/>
+            </div>
+        </Popover>
+    );
+}
+
+function TemplateOptionRenderer({ name, dataType, componentType, showDataTypes }) {
+    return (
+        <span>
+            <span>{componentType}:</span>
+            <label>{name}</label>
+            {showDataTypes &&
+            <span style={{'fontStyle': 'italic', 'marginLeft': '5px' }}>{dataType}</span> }
+        </span>
     );
 }
 
@@ -78,19 +92,12 @@ export function ExpressionTemplates({ name = 'Expressions', templates = [],
                 id='add-expression-dropdown'
                 title={`Add ${name.slice(0, -1)}`}
                 className={styles['expression-select']}
-                onChange={ ({value}) => addExpression(templates[value]) }
-                optionRenderer={({componentType, name, dataType}) => (
-                    <span>
-                        <span>{componentType}:</span>
-                        <label>{name}</label>
-                        {showDataTypes &&
-                        <span style={{'fontStyle': 'italic', 'marginLeft': '5px' }}>{dataType}</span> }
-                    </span>
-                )}
+                optionRenderer={TemplateOptionRenderer}
+                onChange={({ value }) => addExpression(templates[value])}
                 options={
                     templates.map(({ name, dataType, identifier, componentType }, index) => ({
-                        name, dataType, identifier, componentType,
-                        value: index, label: `${identifier} (${dataType})`
+                        value: index, label: `${identifier} (${dataType})`,
+                        name, dataType, identifier, componentType, showDataTypes
                     }))
                 }/>
     );
@@ -105,18 +112,16 @@ export function ExpressionItem({
 }) {
     const isSystem = level === 'system';
     return (
-        <Grid fluid style={{ padding: 0 }}>
-        <Row className={styles['expression-row']}>
+        <Row className={styles['expression-row'] + ' ' + styles['expression-item']}>
             <Col xs={12} md={12} lg={12}
                  style={!isSystem && { paddingRight: 0 } || undefined}>
-                <OverlayTrigger placement='top' overlay={!readOnly && expressionTooltip || <renderNothing id='nothing'/>}>
+                <OverlayTrigger placement='top' trigger={!readOnly ? ['hover'] : []} overlay={expressionTooltip}>
                     <div className={classNames({ [styles['read-only']]: readOnly })}
                          style={{ border: `1px solid #cccccc`, borderRadius: `3px`, minWidth: 250 }}>
-                        <ExpressionEditor width='100%'
-                                          value={input}
-                                          templates={templates}
-                                          name={`expression-${id}`}
+                        <ExpressionEditor name={`expression-${id}`}
+                                          width='100%' height='100%'
                                           readOnly={readOnly || isSystem}
+                                          value={input} templates={templates}
                                           onChange={(input) => cancelUpdateExpression({ id })}
                                           onUpdate={(input) => updateExpression({ id, input })}/>
                     </div>
@@ -147,6 +152,5 @@ export function ExpressionItem({
             </Col>
         }
         </Row>
-        </Grid>
     );
 }

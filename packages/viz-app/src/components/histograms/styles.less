@@ -1,5 +1,4 @@
 @import '~viz-app/vars.less';
-@import '~viz-app/index.less';
 
 @text-color: #646464;
 @left-padding: 10px;
@@ -11,10 +10,18 @@
 @color-highlight-hover: #ff6600;
 
 .histograms-list {
+    :global(.list-group) {
+        padding: 0;
+        overflow-y: auto;
+        height: ~'calc(100% - 60px)';
+    }
     :global(.list-group-item) {
         margin: 0;
         padding: 0;
+        border-radius: 0;
         border-top: none;
+        border-left: none;
+        border-right: none;
     }
 }
 
@@ -130,7 +137,8 @@
     position: relative;
     display: inline-block;
     text-align: left;
-    margin-left: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
 .histogram-info {

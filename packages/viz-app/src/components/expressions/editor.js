@@ -107,6 +107,7 @@ export class Editor extends React.Component {
                 mode='graphistry'
                 minLines={1}
                 maxLines={4}
+                focus={true}
                 showGutter={false}
                 readOnly={readOnly}
                 enableSnippets={true}
@@ -128,10 +129,10 @@ export class Editor extends React.Component {
                 }}
                 editorProps={{
                     $blockScrolling: Infinity,
-                    // behavioursEnabled: true,
-                    // wrapBehavioursEnabled: true,
-                    // highlightActiveLine: false,
-                    // highlightSelectedWord: true
+                    behavioursEnabled: !readOnly,
+                    wrapBehavioursEnabled: !readOnly,
+                    highlightActiveLine: false,
+                    highlightSelectedWord: !readOnly
                 }}
                 value={this.state.value}
                 onLoad={!readOnly && this.onLoad || undefined}

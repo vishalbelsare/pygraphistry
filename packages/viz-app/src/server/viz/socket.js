@@ -53,11 +53,7 @@ function addSocketEventListeners(req, getDataSource) {
     return function addEventListeners(socket) {
 
         const sink = new FalcorPubSubDataSink(socket, () => getDataSource(req));
-
-        const falcorEvents = Observable.fromEvent(socket, sink.event)
-            // .do(() => console.log('received client falcor socket event'))
-            .do(sink.response);
-
+        const falcorEvents = Observable.fromEvent(socket, sink.event).do(sink.response);
         const errorEvents = Observable.fromEvent(socket, 'error').mergeMap((err) => {
             logger.error({ err, req }, 'Socket error');
             return Observable.throw({

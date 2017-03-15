@@ -29,6 +29,8 @@ import { init as initRenderer } from './renderer';
 import { setupRotate, setupCenter, setupScroll, setupZoomButton } from './interaction';
 
 const events = ['mouseMove', 'touchStart'];
+let globalVboUpdates, globalVboVersions, globalAutoPlayed;
+let globalRenderer, globalRenderState, globalRenderingScheduler;
 
 class Scene extends React.Component {
     static childContextTypes = {
@@ -40,29 +42,31 @@ class Scene extends React.Component {
         this.state = {
             renderer: undefined,
             renderState: undefined,
+            renderingScheduler: undefined,
             hasDOMListeners: false,
             hasVBOListeners: false,
-            renderingScheduler: undefined,
             renderSubscription: new Subscription(),
-            resizeSubscription: new Subscription(),
         };
         this.simulationWidth = 0;
         this.simulationHeight = 0;
         this.container = undefined;
         this.assignRef = (container) => {
-            this.onResize && this.onResize(this.container = container);
+            (this.container = container) && this.onResize && this.onResize({
+                simulationWidth: container.offsetWidth,
+                simulationHeight: container.offsetHeight
+            });
         };
-        this.onResize = () => {
-            const { container } = this;
-            if (container) {
-                this.simulationWidth = container.offsetWidth;
-                this.simulationHeight = container.offsetHeight;
+        this.onResize = ({ simulationWidth, simulationHeight }) => {
+            this.simulationWidth = simulationWidth;
+            this.simulationHeight = simulationHeight;
+            const { renderer, renderState = {} } = this.state;
+            const { camera } = renderState;
+            if (renderer && renderState && camera) {
+                camera.simulationWidth = simulationWidth;
+                camera.simulationHeight = simulationHeight;
+                renderer.resizeCanvas(renderState);
             }
-            const { renderState: { camera } = {} } = this.state;
-            if (camera) {
-                camera.simulationWidth = this.simulationWidth;
-                camera.simulationHeight = this.simulationHeight;
-            }
+            return !!camera;
         };
         events.forEach((eventName) => {
             this[eventName] = (event) => {
@@ -104,24 +108,30 @@ class Scene extends React.Component {
         }
     }
     componentDidMount() {
+        // console.log('mounted scene');
         const { props, state } = this;
         const { renderer, renderState } = state;
         renderer && renderer.resizeCanvas(renderState);
         this.setupDOMAndSourceListeners(props, state);
     }
-    componentDidUpdate() {
+    componentDidUpdate(prevProps) {
         this.setupDOMAndSourceListeners(this.props, this.state);
+        const { simulationWidth, simulationHeight } = this.props;
+        if (this.simulationWidth !== simulationWidth || this.simulationHeight !== simulationHeight) {
+            this.onResize({ simulationWidth, simulationHeight });
+        }
     }
     componentWillUnmount() {
+        // console.log('unmounting scene');
         this.onResize = undefined;
-        this.container = undefined;
         this.assignRef = undefined;
-        const { renderer, renderingScheduler } = this.state;
-        const { resizeSubscription, renderSubscription } = this.state;
-        renderer && renderer.unsubscribe();
-        resizeSubscription && resizeSubscription.unsubscribe();
+        const { renderSubscription } = this.state;
+        // const { renderer, renderingScheduler } = this.state;
+        // const { resizeSubscription, renderSubscription } = this.state;
+        // renderer && renderer.unsubscribe();
+        // resizeSubscription && resizeSubscription.unsubscribe();
         renderSubscription && renderSubscription.unsubscribe();
-        renderingScheduler && renderingScheduler.unsubscribe();
+        // renderingScheduler && renderingScheduler.unsubscribe();
         events.forEach((eventName) => this[eventName] = undefined);
     }
     render() {
@@ -132,14 +142,10 @@ class Scene extends React.Component {
         return (
             <div id='simulation-container'
                  ref={this.assignRef}
+                 style={this.props.style}
                  onMouseMove={this.mouseMove}
                  onMouseDown={this.touchStart}
-                 onTouchStart={this.touchStart}
-                 style={{
-                     width: `100%`,
-                     height: `100%`,
-                     position: `absolute`
-                 }}>
+                 onTouchStart={this.touchStart}>
                 {children}
                 {(  (edges && edges.elements !== undefined) ||
                     (points && points.elements !== undefined)) &&
@@ -192,11 +198,13 @@ class Scene extends React.Component {
     setupRenderStateAndScheduler(props, state) {
 
         let {
+            renderer,
+            renderState,
+            renderingScheduler,
             hasVBOListeners,
             vboUpdatesSource,
             vboVersionsSource,
             hasSourceListeners,
-            renderingScheduler,
         } = state;
 
         hasSourceListeners = false;
@@ -210,37 +218,51 @@ class Scene extends React.Component {
             return;
         }
 
-        const scene = scenes[sceneID]();
-        const uri = {
-            pathname: `${window.graphistryPath || ''}`,
-            href: `${window.graphistryPath || ''}/graph/`,
-        };
-        const rendererOptions = { pixelRatio, ...simCameraBounds };
-        const { state: renderState, renderer } = initRenderer(scene, simulation, rendererOptions);
+        // console.log('initializing render state and scheduler');
+
+        if (globalRenderer && globalRenderState && globalRenderingScheduler) {
+            hasVBOListeners = true;
+            renderer = globalRenderer;
+            renderState = globalRenderState;
+            renderingScheduler = globalRenderingScheduler;
+            vboUpdatesSource = globalVboUpdates;
+            vboVersionsSource = globalVboVersions;
+        } else {
+            const scene = scenes[sceneID]();
+            const rendererOptions = { pixelRatio, ...simCameraBounds };
+            const rendererInit = initRenderer(scene, simulation, rendererOptions);
+            renderer = globalRenderer = rendererInit.renderer;
+            renderState = globalRenderState = rendererInit.state;
+
+            if (hasVBOListeners === false) {
+
+                hasVBOListeners = true;
+
+                const uri = {
+                    pathname: `${window.graphistryPath || ''}`,
+                    href: `${window.graphistryPath || ''}/graph/`
+                };
+                const vboSubjects = handleVboUpdates(socket, uri, renderState, falcor, renderer);
+                vboUpdatesSource = globalVboUpdates = vboSubjects.vboUpdates;
+                vboVersionsSource = globalVboVersions = vboSubjects.vboVersions;
+
+                renderingScheduler = globalRenderingScheduler = new RenderingScheduler(
+                    renderState, renderer,
+                    vboUpdates, vboVersions,
+                    hitmapUpdates, isAnimating,
+                    simulateOn, { edge: undefined, point: undefined }
+                );
+            } else {
+                renderingScheduler.renderState = renderState;
+            }
+        }
+
         const { hostBuffers: {
             'curPoints': curPointsSource,
             'pointSizes': pointSizesSource,
             'pointColors': pointColorsSource,
             'edgeColors': edgeColorsSource
         }} = renderState;
-
-        if (hasVBOListeners === false) {
-
-            hasVBOListeners = true;
-
-            const vboSubjects = handleVboUpdates(socket, uri, renderState, falcor, renderer);
-            vboUpdatesSource = vboSubjects.vboUpdates;
-            vboVersionsSource = vboSubjects.vboVersions;
-
-            renderingScheduler = new RenderingScheduler(
-                renderState, renderer,
-                vboUpdates, vboVersions,
-                hitmapUpdates, isAnimating,
-                simulateOn, { edge: undefined, point: undefined }
-            );
-        } else {
-            renderingScheduler.renderState = renderState;
-        }
 
         this.setState({
             renderer,
@@ -275,7 +297,7 @@ class Scene extends React.Component {
             vboVersionsSource,
             hasSourceListeners,
             renderSubscription,
-            resizeSubscription,
+            // resizeSubscription,
             renderingScheduler,
             cameraChangesSource,
         } = state;
@@ -288,7 +310,7 @@ class Scene extends React.Component {
         hasSourceListeners = true;
 
         renderSubscription.unsubscribe();
-        resizeSubscription.unsubscribe();
+        // resizeSubscription.unsubscribe();
 
         if (hasDOMListeners === false) {
 
@@ -340,7 +362,9 @@ class Scene extends React.Component {
 
             vboUpdates
                 .filter((update) => update === 'received')
-                .take(1).filter(() => !!selectToolbarItem)
+                .take(1)
+                .filter(() => !!selectToolbarItem)
+                .takeWhile(() => !globalAutoPlayed && (globalAutoPlayed = true))
                 .do(() => selectToolbarItem({
                     socket,
                     selected: !play,
@@ -352,19 +376,20 @@ class Scene extends React.Component {
         .ignoreElements()
         .subscribe({});
 
-        resizeSubscription = Observable.defer(() => typeof document === 'undefined' ? Observable
-            .empty() : Observable
-            .fromEvent(document, 'resize'))
-            .debounceTime(200)
-            .catch(() => Observable.empty())
-            .subscribe(this.onResize);
+        // resizeSubscription = Observable.defer(() => typeof document === 'undefined' ? Observable
+        //     .empty() : Observable
+        //     .fromEvent(window, 'resize'))
+        //     .debounceTime(100)
+        //     .delay(50)
+        //     .catch(() => Observable.empty())
+        //     .subscribe(this.onResize);
 
         this.setState({
             scrollSource,
             hasDOMListeners,
             hasSourceListeners,
             renderSubscription,
-            resizeSubscription,
+            // resizeSubscription,
             cameraChangesSource
         });
     }

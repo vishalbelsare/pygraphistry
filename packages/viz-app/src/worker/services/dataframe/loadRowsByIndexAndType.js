@@ -56,10 +56,13 @@ function getRowsForType({ workbook, view, columnNames, rowIndexes, componentType
     }
 
     columnNames = (columnNames || dataframe.getAttributeKeys(componentType)).map((columnName) => ({
-        columnName, key: dataframe.getAttributeKeyForColumnName(columnName, componentType)
+        columnName, key: dataframe.getAttributeKeyForColumnName(columnName, componentType) || columnName
     }));
 
-    const keys = columnNames.map(({ key }) => key);
+    const keys = columnNames
+        .map(({ key }) => key)
+        .filter((key) => key !== '_index');
+
     const rows = dataframe.getRows(rowIndexes, componentType, keys);
 
     const { dataTypesByColumnName, colorMappedByColumnName } =

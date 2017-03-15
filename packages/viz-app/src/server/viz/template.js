@@ -1,19 +1,31 @@
 import Helmet from 'react-helmet';
 import stringify from 'json-stable-stringify';
-import faviconStats from './favicon-stats.json';
-import webpackClientStats from './webpack-client-stats.json';
+
+function assetsFromStats(stats = []) {
+    return stats.reduce((assets, asset) => {
+        if (asset.endsWith('.js')) {
+            assets.js = asset;
+        } else if (asset.endsWith('.css')) {
+            assets.css = asset;
+        }
+        return assets;
+    }, {});
+}
 
 export default function template({
     paths = {},
-    clientId = '',
-    reactRoot = '',
-    initialState = {}
+    clientId = '', reactRoot = '',
+    initialState = {}, clientAssets = {},
 } = {}) {
 
     const head = Helmet.rewind();
-    const { html: iconsHTML } = faviconStats;
     const { base = '', prefix = '' } = paths;
-    const { client, vendor } = webpackClientStats;
+    let { client, vendor, manifest } = clientAssets;
+    const { html: iconsHTML } = require('./favicon-assets.json');
+
+    client = assetsFromStats(client);
+    vendor = assetsFromStats(vendor);
+    manifest = assetsFromStats(manifest);
 
     // Setup html page
     return `
@@ -30,8 +42,10 @@ export default function template({
         ${head.title.toString()}
         ${head.meta.toString()}
         ${head.link.toString()}
-        <link rel='stylesheet' type='text/css' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
-        <link rel="stylesheet" type='text/css' href="https://opensource.keycdn.com/fontawesome/4.7.0/font-awesome.min.css" integrity="sha384-dNpIIXE8U05kAbPhy3G1cz+yZmTzA6CY8Vg/u2L9xRnHjJiAK76m2BIEaSEV+/aU" crossorigin="anonymous">
+        ${'' /*<link rel='stylesheet' type='text/css' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>*/}
+        ${'' /*<link rel="stylesheet" type='text/css' href="https://opensource.keycdn.com/fontawesome/4.7.0/font-awesome.min.css" integrity="sha384-dNpIIXE8U05kAbPhy3G1cz+yZmTzA6CY8Vg/u2L9xRnHjJiAK76m2BIEaSEV+/aU" crossorigin="anonymous">*/}
+        ${vendor && vendor.css ?`
+        <link rel='stylesheet' type='text/css' href='${`${vendor.css}`}'/>`: ''}
         ${client && client.css ?`
         <link rel='stylesheet' type='text/css' href='${`${client.css}`}'/>`: ''}
     </head>
@@ -49,12 +63,14 @@ export default function template({
             <script src='https://cdnjs.cloudflare.com/ajax/libs/es5-shim/4.5.9/es5-sham.min.js'></script>
         <![endif]-->
 
+        ${manifest && manifest.js ? `
+        <script type="text/javascript" src="${manifest.js}"></script>` : ''}
         ${vendor && vendor.js ? `
         <script type="text/javascript" src="${vendor.js}"></script>` : ''}
         ${client && client.js ? `
         <script type="text/javascript" src="${client.js}"></script>` : ''}
         ${head.script.toString()}
-    ${__DEV__ ? `\n` : `
+    ${process.env.NODE_ENV !== 'production' ? `\n` : `
         <script type='text/javascript'>
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
             (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
