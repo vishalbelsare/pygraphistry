@@ -46,25 +46,25 @@
       }
     },
     "build:client:dev": {
-      "command": "webpack --json --config ./tools/webpack/webpack.config.client.js > ./www/client-stats.json",
+      "command": "mkdir -p www && webpack --json --config ./tools/webpack/webpack.config.client.js > ./www/client-stats.json",
       "env": {
         "NODE_ENV": "development"
       }
     },
     "build:server:dev": {
-      "command": "webpack --json --config ./tools/webpack/webpack.config.server.js > ./www/server-stats.json",
+      "command": "mkdir -p www && webpack --json --config ./tools/webpack/webpack.config.server.js > ./www/server-stats.json",
       "env": {
         "NODE_ENV": "development"
       }
     },
     "build:client": {
-      "command": "webpack --json --config ./tools/webpack/webpack.config.client.js > ./www/client-stats.json",
+      "command": "mkdir -p www && webpack --json --config ./tools/webpack/webpack.config.client.js > ./www/client-stats.json",
       "env": {
         "NODE_ENV": "production"
       }
     },
     "build:server": {
-      "command": "webpack --json --config ./tools/webpack/webpack.config.server.js > ./www/server-stats.json",
+      "command": "mkdir -p www && webpack --json --config ./tools/webpack/webpack.config.server.js > ./www/server-stats.json",
       "env": {
         "NODE_ENV": "production"
       }
