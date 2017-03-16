@@ -72,7 +72,7 @@ let Labels = ({ simulating,
                          {...props}>
         {enabled && labels.filter(Boolean).map((label) => {
             const key = label === selection ? 'selection' :
-                        label === highlight ? 'highlight' : label.index;
+                        label === highlight ? 'highlight' : label.globalIndex;
             return (
                 <Label data={label}
                        color={color}

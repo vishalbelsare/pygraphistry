@@ -16,30 +16,49 @@ import getContext from 'recompose/getContext';
 import mapPropsStream from 'recompose/mapPropsStream';
 import { Label, isDark } from './label';
 
+const globalMousePosition = Observable.defer(() => Gestures.move())
+    .startWith({})
+    .catch(() => Observable.empty())
+    .distinctUntilChanged((a, b) => (
+        a.clientX === b.clientX &&
+        a.clientY === b.clientY
+    ))
+    .auditTime(0, Scheduler.animationFrame);
+
+const sceneUpdates = cameraChanges
+    .merge(hitmapUpdates)
+    .auditTime(0, Scheduler.animationFrame)
+    .startWith({})
+    .map(() => Scheduler.animationFrame.now());
+
+const keysThatCanCauseRenders = [
+    'enabled',
+    'highlight', 'selection',
+    'simulating', 'poiEnabled',
+    'sceneUpdateTime', 'simulationWidth',
+    'simulationHeight', 'sceneSelectionType',
+];
+
 const WithPointsAndMousePosition = mapPropsStream((props) => props
     .combineLatest(
-        Observable.defer(() => Gestures.move())
-            .startWith({})
-            .catch(() => Observable.empty())
-            .auditTime(0, Scheduler.animationFrame)
-            .distinctUntilChanged((a, b) => (
-                a.clientX === b.clientX &&
-                a.clientY === b.clientY
-            )),
-        cameraChanges
-            .merge(hitmapUpdates)
-            .auditTime(0, Scheduler.animationFrame)
-            .startWith({}),
-        (props, { clientX = 0, clientY = 0 }) => ({
-            ...props, mouseX: clientX, mouseY: clientY,
-        })
-    )
+        sceneUpdates,
+        globalMousePosition,
+        (props, sceneUpdateTime, { clientX = 0, clientY = 0 }) => ({
+        ...props, sceneUpdateTime, mouseX: clientX, mouseY: clientY,
+    }))
+    .distinctUntilChanged((prev, curr) => (
+        keysThatCanCauseRenders.every((key) => prev[key] === curr[key]) && (
+        (prev.mouseX !== curr.mouseX || prev.mouseY !== curr.mouseY) &&
+        (!curr.highlight || curr.highlight.type !== 'edge')
+    )))
     .withLatestFrom(
-        pointSizes.map(({ buffer }) => new Uint8Array(buffer)),
-        pointColors.map(({ buffer }) => new Uint8Array(buffer)),
-        edgeColors.map(({ buffer }) => new Uint8Array(buffer)),
-        curPoints.map(({ buffer }) => new Float32Array(buffer)),
-        (props, sizes, pointColors, edgeColors, points) => ({ ...props, sizes, pointColors, edgeColors, points })
+        pointSizes.map(({ buffer }) => new Uint8Array(buffer)).startWith(new Uint8Array(0)),
+        pointColors.map(({ buffer }) => new Uint8Array(buffer)).startWith(new Uint8Array(0)),
+        edgeColors.map(({ buffer }) => new Uint8Array(buffer)).startWith(new Uint8Array(0)),
+        curPoints.map(({ buffer }) => new Float32Array(buffer)).startWith(new Float32Array(0)),
+        (props, sizes, pointColors, edgeColors, points) => ({
+            ...props, sizes, pointColors, edgeColors, points
+        })
     )
 );
 
@@ -103,10 +122,11 @@ class Labels extends React.Component {
                 Math.max(5, Math.min(scalingFactor * sizes[index], 50)) / pixelRatio;
 
             updatesToSend.push({
-                pageX: x,
-                pageY: y,
                 type, size,
-                id: globalIndex
+                id: globalIndex,
+                pageX: x, pageY: y,
+                selected: label === selection,
+                highlight: label === highlight
             });
 
             const child = children[labelIndex];
