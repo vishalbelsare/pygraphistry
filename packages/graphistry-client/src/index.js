@@ -634,15 +634,17 @@ class Graphistry extends Observable {
     static labelUpdates() {
         return this.labelsStream || (this.labelsStream = this
             .fromEvent(window, 'message')
-            .filter(({ data } = {}) => data && data.type === 'labels-update')
-            .map(({ data }) => data.labels || [])
+            .pluck('data')
+            .filter((data) => data && data.type === 'labels-update')
             .multicast(() => new ReplaySubject(1))
             .let((connectable) => connectable.connect() && connectable.refCount())
-            .scan(({ sources, prevLabelsById }, labels) => {
+            .scan((memo, { labels, simulating, semanticZoomLevel }) => {
 
+                labels = labels || [];
                 const updates = [], newSources = [];
                 const labelsById = Object.create(null);
                 const nextSources = Object.create(null);
+                const { sources, prevLabelsById } = memo;
                 let idx = -1, len = labels.length, label;
 
                 while (++idx < len) {
@@ -653,12 +655,14 @@ class Graphistry extends Observable {
                     if (id in sources) {
                         source = sources[id];
                         delete sources[id];
-                        if (!shallowEqual(prevLabelsById[id], label)) {
-                            updates.push({ ...label, tag: 'updated' });
+                        if (memo.simulating !== simulating ||
+                            memo.semanticZoomLevel !== semanticZoomLevel ||
+                            !shallowEqual(prevLabelsById[id], label)) {
+                            updates.push({ ...label, simulating, semanticZoomLevel, tag: 'updated' });
                         }
                     } else {
                         newSources.push(source = new ReplaySubject(1));
-                        updates.push({ ...label, tag: 'added' });
+                        updates.push({ ...label, simulating, semanticZoomLevel, tag: 'added' });
                         source.key = id;
                     }
 
@@ -679,6 +683,8 @@ class Graphistry extends Observable {
 
                 return {
                     newSources,
+                    simulating,
+                    semanticZoomLevel,
                     sources: nextSources,
                     prevLabelsById: labelsById
                 };
@@ -701,7 +707,6 @@ class Graphistry extends Observable {
      */
     static subscribeLabels({ onChange, onExit }) {
         return this.labelUpdates().mergeMap((group) => group
-            // .auditTime(0, Scheduler.animationFrame)
             .do((event) => onChange && onChange(event))
             .takeLast(1)
             .do((event) => onExit && onExit(event))
@@ -850,6 +855,8 @@ function wrapStaticObservableMethods(Observable, Graphistry) {
  * @property {number} pageY - the pageY of the element the label describes
  * @property {boolean} selected - a boolean that describes whether element the label describes is selected
  * @property {boolean} highlight - a boolean that describes whether element the label describes is highlighted
+ * @property {boolean} simulating - a boolean that indicates the visualization is running clustering
+ * @property {number} semanticZoomLevel - the semantic zoom level of the visualization
  */
 
 /**
