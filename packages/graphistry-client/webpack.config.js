@@ -2,14 +2,19 @@ process.noDeprecation = true;
 
 var path = require('path');
 var webpack = require('webpack');
-var OptimizeJsPlugin = require('optimize-js-plugin');
-var WebpackVisualizer = require('webpack-visualizer-plugin');
+var ProgressBarPlugin = require('progress-bar-webpack-plugin');
 var ClosureCompilerPlugin = require('webpack-closure-compiler');
 
 var isDev = process.env.NODE_ENV === 'development';
 
 var webpackConfig = {
     amd: false,
+    stats: {
+        assets: true,
+        colors: true,
+        chunks: true,
+        errors: true
+    },
     // Create Sourcemaps for the bundle
     devtool: isDev ? 'source-map' : 'hidden-source-map',
     entry: { GraphistryJS: ['./src/index.js'] },
@@ -29,10 +34,6 @@ var webpackConfig = {
             /\@graphistry\/falcor-query-syntax\/lib\/route\-parser\.js$/
         ]
     },
-    stats: {
-        'errors-only': true,
-        colors: true /* Nice colored output */
-    }
 };
 
 webpackConfig.plugins = plugins(webpackConfig, isDev);
@@ -40,14 +41,18 @@ webpackConfig.plugins = plugins(webpackConfig, isDev);
 module.exports = webpackConfig;
 
 function babel(isDev) {
-    return {
+
+    const loader = {
         test: /\.(js|es6|mjs|jsx)$/,
         exclude: /node_modules/,
         loader: 'babel-loader',
         options: {
             babelrc: false,
             cacheDirectory: isDev, // cache into OS temp folder by default
-            plugins: ['version-inline'],
+            plugins: [
+                'transform-runtime',
+                'version-inline'
+            ],
             presets: [
                 // !isDev ? 'es2016' :
                 ['es2015', { modules: false, loose: true }],
@@ -55,41 +60,42 @@ function babel(isDev) {
             ]
         }
     };
+
+    return loader;
 }
 
 function plugins(config, isDev) {
 
     var plugins = [
         new webpack.NoEmitOnErrorsPlugin(),
-        new webpack.ProvidePlugin({ 'Promise': 'es6-promise' })
+        new ProgressBarPlugin({ clear: false, }),
+        new webpack.ProvidePlugin({ 'Promise': 'es6-promise' }),
     ];
     if (isDev) {
-        // Prints more readable module names in the browser console on HMR updates
-        new webpack.NamedModulesPlugin(),
-        plugins.push(new WebpackVisualizer({
-            filename: `${config.output.filename}.stats.html`
-        }));
+        plugins.push(
+            // Prints more readable module names in the browser console on HMR updates
+            new webpack.NamedModulesPlugin()
+        );
     } else {
-        new webpack.HashedModuleIdsPlugin(),
-        plugins.push(new ClosureCompilerPlugin({
-            concurrency: 3,
-            compiler: {
-                language_in: 'ECMASCRIPT6',
-                language_out: 'ECMASCRIPT5',
-                compilation_level: 'SIMPLE',
-                rewrite_polyfills: false,
-                use_types_for_optimization: false,
-                warning_level: 'QUIET',
-                jscomp_off: '*',
-                jscomp_warning: '*',
-                source_map_format: 'V3',
-                create_source_map: true
-            },
-        }));
+        plugins.push(
+            new webpack.HashedModuleIdsPlugin(),
+            new ClosureCompilerPlugin({
+                concurrency: require('os').cpus().length || 4,
+                compiler: {
+                    language_in: 'ECMASCRIPT6',
+                    language_out: 'ECMASCRIPT5',
+                    compilation_level: 'SIMPLE',
+                    rewrite_polyfills: false,
+                    use_types_for_optimization: false,
+                    warning_level: 'QUIET',
+                    jscomp_off: '*',
+                    jscomp_warning: '*',
+                    source_map_format: 'V3',
+                    create_source_map: true
+                }
+            })
+        );
     }
-    // plugins.push(new OptimizeJsPlugin({
-    //     sourceMap: true
-    // }));
     plugins.push(license());
     return plugins;
 }

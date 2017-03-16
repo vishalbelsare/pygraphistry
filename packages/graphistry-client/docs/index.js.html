@@ -26,22 +26,18 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>import { Subject } from 'rxjs/Subject';
-import $$observable from 'symbol-observable';
-import { Observable } from 'rxjs/Observable';
-import { AsyncSubject } from 'rxjs/AsyncSubject';
-import * as Scheduler from 'rxjs/scheduler/async';
-import { ReplaySubject } from 'rxjs/ReplaySubject';
+            <pre class="prettyprint source linenums"><code>import shallowEqual from 'recompose/shallowEqual';
 import { Model } from '@graphistry/falcor-model-rxjs';
 import { PostMessageDataSource } from '@graphistry/falcor-socket-datasource';
 import { $ref, $atom, $value, $invalidate } from '@graphistry/falcor-json-graph';
-import fetchDataUntilSettled from '@graphistry/falcor-react-redux/lib/utils/fetchDataUntilSettled';
+import { $$observable, Subject, Scheduler, Observable, AsyncSubject, ReplaySubject } from './rxjs';
 
 /**
  * @class Graphistry
  * @classdesc This object wraps a HTML IFrame of a Graphistry Visualization in order
  * to provide an API for interacting with the graph.
  * @extends Observable
+ * @see {@link https://github.com/ReactiveX/rxjs/blob/master/doc/observable.md}
  */
 class Graphistry extends Observable {
     static view = null;
@@ -80,6 +76,23 @@ class Graphistry extends Observable {
         return observable;
     }
 
+    static _getIds(componentType, name, dataType, values = []) {
+        const { view } = this;
+        return new this(view
+            .call(`componentsByType['${componentType}'].rows.filter`, [name, dataType, values], ['_index'])
+            .takeLast(1)
+            .map(({ json = {} }) => {
+                const { componentsByType = {} } = json;
+                const { [componentType]: componentsForType = {} } = componentsByType;
+                const { rows = {} } = componentsForType;
+                return Array
+                    .from(rows.filter || [])
+                    .filter(Boolean).map(({ _index }) => _index);
+            })
+            .toPromise()
+        );
+    }
+
     /**
      * Add columns to the current graph visuzliation's dataset
      * @method Graphistry.addColumns
@@ -103,18 +116,9 @@ class Graphistry extends Observable {
         return new this(this
             .from(columns)
             .concatMap((column) => view.call('columns.add', column))
-            .takeLast(1)
-            .mergeMap(() => fetchDataUntilSettled({
-                falcor: view, fragment: ({ columns = [] } = {}) => `{
-                    columns: {
-                        length, [0...${columns.length || 0}]: {
-                            name, dataType, identifier, componentType
-                        }
-                    }
-                }`
-            }))
-            .takeLast(1)
-            .map(({ data }) => data.toJSON())
+            .map(({ json: { columns }}) => columns).filter(Boolean)
+            .map((columns) => columns[columns.length - 1].toJSON())
+            .toArray()
             .toPromise()
         );
     }
@@ -462,7 +466,7 @@ class Graphistry extends Observable {
     }
 
     /**
-     * Center the view of the graph
+     * Read the workbook ID
      * @method Graphistry.getCurrentWorkbook
      * @static
      * @param {function} [cb] - Callback function of type callback(error, result)
@@ -471,9 +475,12 @@ class Graphistry extends Observable {
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
      *         window.g = g;
-     *         return g.getCurrentWorkbook(function (err, obj){ alert('id: ' + obj.id); });
+     *         console.log('getting workbook id');
+     *         return g.getCurrentWorkbook();
      *     })
-     *     .subscribe();
+     *     .subscribe(function (workbook) {
+     *         alert('id: ' + workbook.id)
+     *     });
      */
     static getCurrentWorkbook() {
         const { workbook } = this;
@@ -530,7 +537,13 @@ class Graphistry extends Observable {
      * exclusion and filter panel
      * @return {Promise} The result of the callback
      * @example
-     * graphistry.addFilter('degree > 0');
+     * GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         console.log('Adding filter for "point:degree > 0"');
+     *         return g.addFilter('point:degree > 0');
+     *     })
+     *     .subscribe();
      */
     static addFilter(expr) {
 
@@ -542,14 +555,20 @@ class Graphistry extends Observable {
     }
 
     /**
-     * Add an to the visualization with the given expression
+     * Add an exclusion to the visualization with the given expression
      * @method Graphistry.addExclusion
      * @static
      * @param {string} expr - An expression using the same language as our in-tool
      * exclusion and filter panel
      * @return {Promise} The result of the callback
      * @example
-     * graphistry.addExclusion('degree > 0');
+     * GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         console.log('Adding exclusion for "point:degree > 0"');
+     *         return g.addExclusion('point:degree > 0');
+     *     })
+     *     .subscribe();
      */
     static addExclusion(expr) {
         const { view } = this;
@@ -560,7 +579,7 @@ class Graphistry extends Observable {
     }
 
     /**
-     * Add an to the visualization with the given expression
+     * Modify a settings value in the visualization
      * Key settings: showArrows, pruneOrphans, edgeOpacity, edgeSize, pointOpacity,
      * pointSize, labelOpacity, labelEnabled, labelPOI, zoom
      * @method Graphistry.updateSetting
@@ -610,7 +629,7 @@ class Graphistry extends Observable {
     }
 
     /**
-     * Add an to the visualization with the given expression
+     * Update the camera zoom level
      * @method Graphistry.updateZoom
      * @static
      * @param {string} level - Controls how far to zoom in or out.
@@ -622,68 +641,100 @@ class Graphistry extends Observable {
     }
 
     /**
-     * Subscribe to label events
-     * @method Graphistry.subscribeLabels
+     * Get or create an Observable stream of all label updates from the visualization.
+     * &lt;p>
+     * The Observable returned by this method emits inner Observables, where each
+     * inner Observable is tied to the lifetime of the label for which it was created.
+     * &lt;/p>&lt;p>
+     * For each label rendered in the visualization, the Observable returned by this
+     * method will create and emit a new inner Observable. The inner Observable will
+     * emit events when the label changes. For example, if the user clicks on the label,
+     * or the label changes position because of a pan/zoom, the inner Observable will
+     * emit an event.
+     * &lt;/p>&lt;p>
+     * The inner Observable for a label will complete if the label is removed from the screen.
+     * &lt;/p>&lt;p>
+     * @method Graphistry.labelUpdates
      * @static
-     * @param {subscriptions} subscriptions - A list of subscriptions that
-     * will subscribe to any label updates
-     * @return {Promise} The result of the callback
+     * @return {Observable&lt;Observable&lt;LabelEvent>>} An Observable of inner Observables, where each
+     * inner Observable represents the lifetime of a label in the visualization.
      */
-    static subscribeLabels({ onChange, onExit }) {
-
-        const labelsStream = this.labelsStream || (this.labelsStream = this
+    static labelUpdates() {
+        return this.labelsStream || (this.labelsStream = this
             .fromEvent(window, 'message')
-            .filter(({ data }) => data &amp;&amp; data.type === 'labels-update')
-            .map(({ data } = {}) => data.labels || [])
-            .scan((sources, labels) => {
+            .filter(({ data } = {}) => data &amp;&amp; data.type === 'labels-update')
+            .map(({ data }) => data.labels || [])
+            .multicast(() => new ReplaySubject(1))
+            .let((connectable) => connectable.connect() &amp;&amp; connectable.refCount())
+            .scan(({ sources, prevLabelsById }, labels) => {
 
-                const { labelsById, newSources } = labels.reduce((memo, label) => {
+                const updates = [], newSources = [];
+                const labelsById = Object.create(null);
+                const nextSources = Object.create(null);
+                let idx = -1, len = labels.length, label;
 
+                while (++idx &lt; len) {
+                    let source;
+                    label = labels[idx];
                     const { id } = label;
-                    const { labelsById, newSources } = memo;
-
-                    const source = (id in sources) &amp;&amp;
-                        sources[id] || new ReplaySubject(1);
 
                     if (id in sources) {
+                        source = sources[id];
                         delete sources[id];
+                        if (!shallowEqual(prevLabelsById[id], label)) {
+                            updates.push({ ...label, tag: 'updated' });
+                        }
+                    } else {
+                        newSources.push(source = new ReplaySubject(1));
+                        updates.push({ ...label, tag: 'added' });
+                        source.key = id;
                     }
 
                     labelsById[id] = label;
-                    newSources[id] = source;
-
-                    return memo;
-                },  { labelsById: {}, newSources: Object.create(null) });
+                    nextSources[id] = source;
+                }
 
                 for (const id in sources) {
                     sources[id].complete();
                 }
 
-                for (const id in newSources) {
-                    newSources[id].next(labelsById[id]);
+                idx = -1;
+                len = updates.length;
+                while (++idx &lt; len) {
+                    label = updates[idx];
+                    nextSources[label.id].next(label);
                 }
 
-                return newSources;
-            }, Object.create(null))
-            .multicast(() => new ReplaySubject(1))
-            .let((connectable) => {
-                connectable.connect();
-                return connectable.refCount();
+                return {
+                    newSources,
+                    sources: nextSources,
+                    prevLabelsById: labelsById
+                };
+            }, {
+                newSources: [],
+                sources: Object.create(null),
+                prevLabelsById: Object.create(null),
             })
+            .mergeMap(({ newSources }) => newSources)
         );
+    }
 
-        return labelsStream.mergeMap(
-                (sources) => Object.keys(sources),
-                (sources, id) => sources[id]
-            )
-            .mergeMap((group) => group
-                .do(({ id, type, pageX, pageY, size }) => onChange &amp;&amp; onChange(
-                    id, type, pageX, pageY, size
-                ))
-                .takeLast(1)
-                .do(({ id, type }) => onExit &amp;&amp; onExit(id, type))
-            )
-            .subscribe();
+    /**
+     * Subscribe to label change and exit events
+     * @method Graphistry.subscribeLabels
+     * @static
+     * @param {subscriptions} subscriptions - A list of subscriptions that
+     * will subscribe to any label updates
+     * @return {Subscription} The result of the callback
+     */
+    static subscribeLabels({ onChange, onExit }) {
+        return this.labelUpdates().mergeMap((group) => group
+            // .auditTime(0, Scheduler.animationFrame)
+            .do((event) => onChange &amp;&amp; onChange(event))
+            .takeLast(1)
+            .do((event) => onExit &amp;&amp; onExit(event))
+        )
+        .subscribe();
     }
 }
 
@@ -796,32 +847,6 @@ function GraphistryJS(iFrame) {
     });
 }
 
-import 'rxjs/add/operator/do';
-import 'rxjs/add/operator/let';
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/last';
-import 'rxjs/add/operator/take';
-import 'rxjs/add/operator/scan';
-import 'rxjs/add/operator/takeLast';
-import 'rxjs/add/operator/merge';
-import 'rxjs/add/operator/concat';
-import 'rxjs/add/operator/filter';
-import 'rxjs/add/operator/finally';
-import 'rxjs/add/operator/mergeMap';
-import 'rxjs/add/operator/concatMap';
-import 'rxjs/add/operator/multicast';
-import 'rxjs/add/operator/toPromise';
-import 'rxjs/add/operator/takeUntil';
-
-import 'rxjs/add/observable/of';
-import 'rxjs/add/observable/from';
-import 'rxjs/add/observable/defer';
-import 'rxjs/add/observable/timer';
-import 'rxjs/add/observable/merge';
-import 'rxjs/add/observable/concat';
-import 'rxjs/add/observable/fromEvent';
-import 'rxjs/add/observable/bindCallback';
-
 Graphistry = wrapStaticObservableMethods(Observable, Graphistry);
 
 export { GraphistryJS };
@@ -840,6 +865,65 @@ function wrapStaticObservableMethods(Observable, Graphistry) {
     Graphistry.bindNodeCallback = (...args) => (...args2) => new Graphistry(Observable.bindNodeCallback(...args)(...args2));
     return Graphistry;
 }
+
+/**
+ * A LabelEvent is dispatched by the inner Observables emitted by the labelUpdates() Observable.
+ * A LabelEvent is generated for each label update in the visualization.
+ * @typedef {Object} LabelEvent
+ * @property {number} id - the integer ID for the element the label describes
+ * @property {String} tag - a string that describes the update kind, either 'added' or 'updated'
+ * @property {String} type - the graph component type for the element the label describes, either 'edge' or 'point'
+ * @property {number} size - the size in pixels of the element the label describes. This is 0 for edges, and the diameter for points
+ * @property {number} pageX - the pageX of the element the label describes
+ * @property {number} pageY - the pageY of the element the label describes
+ * @property {boolean} selected - a boolean that describes whether element the label describes is selected
+ * @property {boolean} highlight - a boolean that describes whether element the label describes is highlighted
+ */
+
+/**
+ * @constructor Observable
+ * @see {@link https://github.com/ReactiveX/rxjs/blob/master/doc/observable.md}
+ */
+
+ /**
+ * The subscribe method triggers the execution of the Observable, causing the values within to be pushed to a callback. An Observable is like a pipe of water that is closed. When subscribe is called, we open the valve and the values within are pushed at us.  These values can be received using either callbacks or an {@link Observer} object.
+ * @name subscribe
+ * @memberof Observable.prototype
+ * @function
+ * @arg {?Observable~nextCallback} next a callback that accepts the next value in the stream of values
+ * @arg {?Observable~errorCallback} error a callback that accepts an error that occurred while evaluating the operation underlying the {@link Observable} stream
+ * @arg {?Observable~completeCallback} completed a callback that is invoked when the {@link Observable} stream has ended, and the {@link Observable~nextCallback} will not receive any more values
+ * @return {Subscription}
+ */
+
+/**
+ * This callback accepts a value that was emitted while evaluating the operation underlying the {@link Observable} stream.
+ * @callback Observable~nextCallback
+ * @param {Object} value the value that was emitted while evaluating the operation underlying the {@link Observable}
+ */
+
+/**
+ * This callback accepts an error that occurred while evaluating the operation underlying the {@link Observable} stream. When this callback is invoked, the {@link Observable} stream ends and no more values will be received by the {@link Observable~nextCallback}.
+ * @callback Observable~errorCallback
+ * @param {Error} error the error that occurred while evaluating the operation underlying the {@link Observable}
+ */
+
+ /**
+ * This callback is invoked when the {@link Observable} stream ends. When this callback is invoked the {@link Observable} stream has ended, and therefore the {@link Observable~nextCallback} will not receive any more values.
+ * @callback Observable~completeCallback
+ */
+
+/**
+ * @constructor Subscription
+ * @see {@link https://github.com/ReactiveX/rxjs/blob/master/doc/subscription.md}
+ */
+
+/**
+ * When this method is called on the Subscription, the Observable that created the Subscription will stop sending values to the callbacks passed when the Subscription was created.
+ * @name unsubscribe
+ * @method
+ * @memberof Subscription.prototype
+ */
 </code></pre>
         </article>
     </section>
@@ -850,13 +934,13 @@ function wrapStaticObservableMethods(Observable, Graphistry) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Graphistry.html">Graphistry</a></li></ul><h3>Global</h3><ul><li><a href="global.html#GraphistryJS">GraphistryJS</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Graphistry.html">Graphistry</a></li><li><a href="Observable.html">Observable</a></li><li><a href="Subscription.html">Subscription</a></li></ul><h3>Global</h3><ul><li><a href="global.html#GraphistryJS">GraphistryJS</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Mon Mar 13 2017 16:24:47 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Thu Mar 16 2017 01:59:11 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>

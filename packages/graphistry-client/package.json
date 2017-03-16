@@ -8,9 +8,9 @@
     "clean": "rimraf lib && mkdirp lib",
     "docs": "jsdoc -c conf.json -R ./README.md -d docs",
     "build-node": "babel src --out-dir lib",
-    "build-dev": "cross-env NODE_ENV=development webpack --hide-modules --config ./webpack.config.js",
-    "build-prod": "cross-env NODE_ENV=production webpack --hide-modules --config ./webpack.config.js",
-    "build": "npm --silent run clean && npm-run-all -p build-dev build-prod build-node",
+    "build-dev": "cross-env NODE_ENV=development webpack --json --config ./webpack.config.js > ./lib/graphistryJS-stats.json",
+    "build-prod": "cross-env NODE_ENV=production webpack --json --config ./webpack.config.js > ./lib/graphistryJS.min-stats.json",
+    "build": "npm run clean && npm run build-node && npm run build-dev && npm run build-prod ",
     "predocs": "npm run clean:docs",
     "preserve:docs": "npm run docs",
     "serve:docs": "http-server -o -p 9000 -c-1 ./docs"
@@ -18,29 +18,26 @@
   "author": "Graphistry, Inc <https://graphistry.com>",
   "license": "Apache-2.0",
   "dependencies": {
-    "@graphistry/falcor": "~2.8.1",
     "@graphistry/falcor-json-graph": "~2.8.0",
-    "@graphistry/falcor-model-rxjs": "~2.8.1",
-    "@graphistry/falcor-path-syntax": "~2.8.0",
-    "@graphistry/falcor-react-redux": "^2.8.1",
-    "@graphistry/falcor-socket-datasource": "~2.8.3",
+    "@graphistry/falcor-model-rxjs": "~2.8.4",
+    "@graphistry/falcor-socket-datasource": "~2.8.4",
     "http-server": "^0.9.0",
+    "recompose": "~0.22.0",
     "rxjs": "~5.2.0"
   },
   "devDependencies": {
-    "babel-cli": "~6.23.0",
-    "babel-loader": "~6.3.2",
+    "babel-cli": "~6.24.0",
+    "babel-loader": "~6.4.0",
     "babel-plugin-transform-runtime": "~6.23.0",
     "babel-plugin-version-inline": "~1.0.0",
-    "babel-preset-es2015": "~6.22.0",
+    "babel-preset-es2015": "~6.24.0",
     "babel-preset-stage-0": "~6.22.0",
-    "cross-env": "~3.1.4",
+    "cross-env": "~3.2.4",
     "jsdoc": "~3.4.3",
     "jsdoc-babel": "0.3.0",
-    "npm-run-all": "~4.0.2",
-    "optimize-js-plugin": "0.0.4",
+    "progress-bar-webpack-plugin": "~1.9.3",
     "webpack": "~2.2.1",
-    "webpack-closure-compiler": "~2.1.4",
-    "webpack-visualizer-plugin": "~0.1.10"
+    "webpack-bundle-analyzer": "~2.3.1",
+    "webpack-closure-compiler": "~2.1.4"
   }
 }
