@@ -134,7 +134,7 @@ function createGraph(pivots) {
 // in each row, order each node into columns based on degree and lexicographic order. Then,
 // for each row indexed by r, for each column indexed by c, set the node's x to be rFudge * r, and set the node's y to be cFudge * (max(|c|) - |c| + c) (for centering)
 // by default, create a graph that has aspect 1:√(max(|c|)), going from top to bottom.
-export function stackedBushyGraph(graph, fudgeX = 1, fudgeY = -Math.sqrt(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity)))), spacerY = Math.sign(fudgeY) * Math.sqrt(Math.abs(fudgeY))) {
+export function stackedBushyGraph(graph, fudgeX = 1, fudgeY = -2 * Math.sqrt(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity)))), spacerY = Math.sign(fudgeY) * 3 * Math.sqrt(Math.abs(fudgeY))) {
     const nodeRows = edgesToRows(graph.data.graph);
     const nodeDegrees = graphDegrees(graph.data.graph);
     const columnCounts = rowColumnCounts(nodeRows);
@@ -189,7 +189,7 @@ export function rowsToColumns(nodeRows, columnCounts, nodeDegrees) {
 // {nodeName: Int}, {nodeName: Int}, Int, Int -> {nodeName: {x: Int}, {y: Int}}
 export function mergeRowsColumnsToXY(rows, columns, fudgeX, fudgeY, spacerY) {
     return _.mapObject(rows, (rowIdx, node) => (
-        {x: fudgeX * columns[node], y: fudgeY * (rowIdx - (rowIdx & 1)) + spacerY * (rowIdx & 1) }
+        {x: fudgeX * columns[node], y: (rowIdx > 0 ? fudgeY * (rowIdx - (rowIdx & 1)) + spacerY * (rowIdx & 1) : -2 * spacerY) }
                                                 ));
 }
 

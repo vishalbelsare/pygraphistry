@@ -39,7 +39,7 @@ const undecoratedLabels = [{node: n1},
                            {node: n5},
                            {node: n6},
                            {node: n7}];
-const decoratedLabels = [{node: n1, x: 1, y: 0},
+const decoratedLabels = [{node: n1, x: 1, y: -2},
                          {node: n2, x: 1, y: 1},
                          {node: n3, x: 1, y: 8},
                          {node: n4, x: 0, y: 5},
@@ -53,7 +53,7 @@ const rowColumns = {[n1]: 1, [n2]: 1, [n3]: 1, [n4]: 0, [n5]: 1, [n6]: 1, [n7]: 
 const fudgeX = 1;
 const fudgeY = 2;
 const spacerY = 1;
-const xys = {[n1]: {x: 1, y: 0},
+const xys = {[n1]: {x: 1, y: -2},
              [n2]: {x: 1, y: 1},
              [n3]: {x: 1, y: 8},
              [n4]: {x: 0, y: 5},
