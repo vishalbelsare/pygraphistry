@@ -24,62 +24,66 @@ export function columns(dataframe, columnsByComponentType) {
 
     const { point: pointColumns, edge: edgeColumns } = allColumnsByType;
 
-    for (const columnName in pointColumns) {
+    if (pointColumns) {
+        for (const columnName in pointColumns) {
 
-        const column = pointColumns[columnName];
-        const attribute = columnName.indexOf('point:') === 0 ? columnName : `point:${columnName}`;
+            const column = pointColumns[columnName];
+            const attribute = columnName.indexOf('point:') === 0 ? columnName : `point:${columnName}`;
 
-        if (edgeColumns.hasOwnProperty(columnName)) {
+            if (edgeColumns && edgeColumns.hasOwnProperty(columnName)) {
 
-            const edgeColumn = edgeColumns[columnName];
-            const edgeAttribute = columnName.indexOf('edge:') === 0 ? columnName : `edge:${columnName}`;
+                const edgeColumn = edgeColumns[columnName];
+                const edgeAttribute = columnName.indexOf('edge:') === 0 ? columnName : `edge:${columnName}`;
 
-            columns[attribute] = {
-                attribute,
-                name: columnName,
-                dataType: column.type,
-                identifier: attribute,
-                componentType: 'point',
-                isPrivate: dataframe.isAttributeNamePrivate(columnName),
-                isInternal: dataframe.isAttributeNameInternal(columnName)
-            };
+                columns[attribute] = {
+                    attribute,
+                    name: columnName,
+                    dataType: column.type,
+                    identifier: attribute,
+                    componentType: 'point',
+                    isPrivate: dataframe.isAttributeNamePrivate(columnName),
+                    isInternal: dataframe.isAttributeNameInternal(columnName)
+                };
 
-            columns[edgeAttribute] = {
-                name: columnName,
-                attribute: edgeAttribute,
-                dataType: edgeColumn.type,
-                identifier: edgeAttribute,
-                componentType: 'edge',
-                isPrivate: dataframe.isAttributeNamePrivate(columnName),
-                isInternal: dataframe.isAttributeNameInternal(columnName)
-            };
+                columns[edgeAttribute] = {
+                    name: columnName,
+                    attribute: edgeAttribute,
+                    dataType: edgeColumn.type,
+                    identifier: edgeAttribute,
+                    componentType: 'edge',
+                    isPrivate: dataframe.isAttributeNamePrivate(columnName),
+                    isInternal: dataframe.isAttributeNameInternal(columnName)
+                };
 
-        } else if (!columns.hasOwnProperty(columnName)) {
-            columns[attribute] = {
-                attribute,
-                name: columnName,
-                dataType: column.type,
-                identifier: attribute,
-                componentType: 'point',
-                isPrivate: dataframe.isAttributeNamePrivate(columnName),
-                isInternal: dataframe.isAttributeNameInternal(columnName)
-            };
+            } else if (!columns.hasOwnProperty(columnName)) {
+                columns[attribute] = {
+                    attribute,
+                    name: columnName,
+                    dataType: column.type,
+                    identifier: attribute,
+                    componentType: 'point',
+                    isPrivate: dataframe.isAttributeNamePrivate(columnName),
+                    isInternal: dataframe.isAttributeNameInternal(columnName)
+                };
+            }
         }
     }
 
-    for (const columnName in edgeColumns) {
-        const column = edgeColumns[columnName];
-        const attribute = columnName.indexOf('edge:') === 0 ? columnName : `edge:${columnName}`;
-        if (!columns.hasOwnProperty(columnName)) {
-            columns[attribute] = {
-                attribute,
-                name: columnName,
-                dataType: column.type,
-                identifier: attribute,
-                componentType: 'edge',
-                isPrivate: dataframe.isAttributeNamePrivate(columnName),
-                isInternal: dataframe.isAttributeNameInternal(columnName)
-            };
+    if (edgeColumns) {
+        for (const columnName in edgeColumns) {
+            const column = edgeColumns[columnName];
+            const attribute = columnName.indexOf('edge:') === 0 ? columnName : `edge:${columnName}`;
+            if (!columns.hasOwnProperty(columnName)) {
+                columns[attribute] = {
+                    attribute,
+                    name: columnName,
+                    dataType: column.type,
+                    identifier: attribute,
+                    componentType: 'edge',
+                    isPrivate: dataframe.isAttributeNamePrivate(columnName),
+                    isInternal: dataframe.isAttributeNameInternal(columnName)
+                };
+            }
         }
     }
 

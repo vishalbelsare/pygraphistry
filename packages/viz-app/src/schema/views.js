@@ -91,30 +91,25 @@ export function views(path, base) {
                 view.inspector.rows = undefined;
                 view.componentsByType = undefined;
 
-                const workbookId = workbook.id;
                 const viewId = view.id;
+                const workbookId = workbook.id;
+                const columnIndex = view.columns && view.columns.length || 0;
                 const viewPath = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
-                const columns = appendColumn({ view, componentType, name, values, dataType });
+                const column = appendColumn({ view, componentType, name, values, dataType });
 
-                return columns.reduce((values, column = {}, index) => values.concat(
-                    Object.keys(column).map((key) => $value(
-                        colPath(index, key), column[key]
-                    ))),
-                    [
-                        $invalidate(`${viewPath}.componentsByType`),
-                        $invalidate(`${viewPath}.labelsByType`),
-                        $invalidate(`${viewPath}.inspector.rows`),
-                        $value(colPath('length'), columns.length)
-                    ]
-                );
-
-                function colPath(...keys) {
-                    return [
-                        'workbooksById', workbookId,
-                            'viewsById', viewId,
-                              'columns', ...keys
-                    ];
+                if (!column) {
+                    return [];
                 }
+
+                return [
+                    $invalidate(`${viewPath}.labelsByType`),
+                    $invalidate(`${viewPath}.inspector.rows`),
+                    $invalidate(`${viewPath}.componentsByType`),
+                    $value(`${viewPath}.columns.length`, columnIndex + 1),
+                    ...Object.keys(column).map((key) => $value(
+                        `${viewPath}.columns[${columnIndex}]['${key}']`, column[key]
+                    ))
+                ];
             });
         }
 
