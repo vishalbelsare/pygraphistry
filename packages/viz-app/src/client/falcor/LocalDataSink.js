@@ -21,9 +21,6 @@ export class LocalDataSink extends PostMessageDataSink {
             ),
             (jsonGraphEnv, { source }) => ({ source, jsonGraphEnv })
         )
-        .takeUntil(Observable
-            .fromEvent(window, 'message')
-            .filter(({ data }) => data && data.type === 'initialized'))
         .subscribe(({ source, jsonGraphEnv }) => {
             console.log('viz-app sending init message');
             source.postMessage({
