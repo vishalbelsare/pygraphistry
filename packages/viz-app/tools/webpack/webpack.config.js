@@ -64,9 +64,9 @@ function makeWebpackConfig({
                 // /node_modules\/lodash/,
                 /node_modules\/underscore/,
                 /node_modules\/pegjs-util\/PEGUtil\.js/,
-                /\@graphistry\/falcor\/dist/,
-                /\@graphistry\/falcor-query-syntax\/lib\/paths\-parser\.js$/,
-                /\@graphistry\/falcor-query-syntax\/lib\/route\-parser\.js$/
+                /node_modules\/\@graphistry\/falcor\/dist\/falcor.all.min.js/,
+                /node_modules\/\@graphistry\/falcor-query-syntax\/lib\/paths\-parser\.js$/,
+                /node_modules\/\@graphistry\/falcor-query-syntax\/lib\/route\-parser\.js$/
             ],
             rules: [
                 { test: /\.proto$/, loader: 'proto-loader' },

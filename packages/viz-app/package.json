@@ -24,7 +24,9 @@
     "clean:client": "better-npm-run clean:client",
     "clean:server": "better-npm-run clean:server",
     "clean:coverage": "better-npm-run clean:coverage",
-    "coveralls": "better-npm-run coveralls && npm run test:clean"
+    "coveralls": "better-npm-run coveralls && npm run test:clean",
+    "analyze:server": "webpack-bundle-analyzer -m server ./www/server-stats.json ./www",
+    "analyze:client": "webpack-bundle-analyzer -m server ./www/client-stats.json ./www/public"
   },
   "betterScripts": {
     "start:dev": {
@@ -85,7 +87,7 @@
       "command": "rimraf ./www/*.js ./www/*.map ./www/*.hot-update.json"
     },
     "clean:client": {
-      "command": "rimraf ./www/*.js ./www/public/**/*.js ./www/public/**/*.hot-update.json ./www/public/**/*.css ./www/public/**/*.map ./www/public/**/*.json ./www/public/**/*.eot ./www/public/**/*.svg ./www/public/**/*.ttf ./www/public/**/*.woff ./www/public/**/*.woff2"
+      "command": "rimraf ./www/public/**/*.js ./www/public/**/*.hot-update.json ./www/public/**/*.css ./www/public/**/*.map ./www/public/**/*.json ./www/public/**/*.eot ./www/public/**/*.svg ./www/public/**/*.ttf ./www/public/**/*.woff ./www/public/**/*.woff2"
     },
     "clean:coverage": {
       "command": "rimraf ./coverage"

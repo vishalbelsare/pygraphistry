@@ -22,7 +22,6 @@ const CSSModules = true;
 // Register vendors here
 const vendor = [
 
-    'ace',
     'brace',
     'chalk',
     'debug',
@@ -64,6 +63,7 @@ const vendor = [
 
     '@graphistry/falcor',
     '@graphistry/falcor-router',
+    '@graphistry/falcor-model-rxjs',
     '@graphistry/falcor-json-graph',
     '@graphistry/falcor-path-syntax',
     '@graphistry/falcor-path-utils',

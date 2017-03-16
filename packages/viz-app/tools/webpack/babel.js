@@ -46,6 +46,10 @@ function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
         'react-bootstrap': {
             'transform': 'react-bootstrap/lib/${member}',
             'preventFullImport': true
+        },
+        'react-virtualized': {
+            'transform': 'react-virtualized/dist/commonjs/${member}/${member}',
+            'preventFullImport': true
         }
     };
     // const imports = vendor.reduce((opts, dependency) => {
