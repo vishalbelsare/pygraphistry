@@ -13,6 +13,7 @@ describe('Models', function() {
 
 describe('Services', function() {
     require('./services/simpleFileSystemStore');
+    require('./services/uploadGraph');
 });
 
 describe('HttpConnector', function() {
