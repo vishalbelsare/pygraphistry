@@ -13,8 +13,8 @@ let Label = container({
     renderLoading: false,
     fragment: (fragment, { pinned, showFull } = {}) => {
         return (false && !pinned && !showFull) &&
-            `{ type, index, title }` ||
-            `{ type, index, title, columns }`;
+            `{ type, index, title, globalIndex }` ||
+            `{ type, index, title, globalIndex, columns }`;
     },
     dispatchers: {
         onFilter: addFilter,

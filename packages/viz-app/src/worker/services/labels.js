@@ -1,4 +1,5 @@
 import sanitizeHTML from 'sanitize-html';
+import DataframeMask from 'viz-app/worker/simulator/DataframeMask';
 import { valueSignifiesUndefined } from 'viz-app/worker/simulator/dataTypes';
 import { intToHex, bindings as paletteBindings } from 'viz-app/worker/simulator/palettes';
 
@@ -47,8 +48,20 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
     }
 
     const titleColumnName = '_title';
+    const indexColumnName = '_index';
     const columnNames = dataframe.publicColumnNamesByType(labelType);
-    const rows = dataframe.getRows(labelIndexes, labelType, columnNames);
+
+    // Unbase mask from local filtered coordinate system to global coordinate system
+    const unbasedMasks = new DataframeMask(
+        dataframe,
+        labelType === 'point' ? labelIndexes : undefined,
+        labelType === 'edge' ? labelIndexes : undefined,
+        dataframe.lastMasks
+    );
+
+    const rows = unbasedMasks.mapIndexesByType(labelType, (index) => {
+        return dataframe.getRowAt(index, labelType, columnNames, true);
+    });
 
     const { dataTypesByColumnName, colorMappedByColumnName } = (columnNames || [])
         .reduce((memo, columnName) => {
@@ -80,21 +93,23 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
 
             let value = row[columnName];
 
-            if (columnName !== titleColumnName && !(
-                valueSignifiesUndefined(value))) {
-
-                const key = columnName;
-                const dataType = dataTypesByColumnName[columnName];
-                const displayName = colorMappedByColumnName.hasOwnProperty(columnName) ?
-                    intToHex(paletteBindings[value]) :
-                    undefined;
-
-                if (dataType === 'string') {
-                    value = decodeAndSanitize('' + value);
-                }
-
-                columns.push({ key, value, displayName, dataType });
+            if (columnName === titleColumnName ||
+                columnName === indexColumnName ||
+                valueSignifiesUndefined(value)) {
+                return columns;
             }
+
+            const key = columnName;
+            const dataType = dataTypesByColumnName[columnName];
+            const displayName = colorMappedByColumnName.hasOwnProperty(columnName) ?
+                intToHex(paletteBindings[value]) :
+                undefined;
+
+            if (dataType === 'string') {
+                value = decodeAndSanitize('' + value);
+            }
+
+            columns.push({ key, value, displayName, dataType });
 
             return columns;
         }, [])
@@ -106,9 +121,12 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
 
         return {
             workbook, view, label: {
-                type: labelType, index: labelIndexes[index], data: {
-                    title, columns
-                }
+                type: labelType,
+                index: labelIndexes[index],
+                data: {
+                    title, columns,
+                    globalIndex: row._index
+                },
             }
         };
     });

@@ -21,21 +21,19 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
         Observable.defer(() => Gestures.move())
             .startWith({})
             .catch(() => Observable.empty())
+            .auditTime(0, Scheduler.animationFrame)
             .distinctUntilChanged((a, b) => (
                 a.clientX === b.clientX &&
                 a.clientY === b.clientY
             )),
-        hitmapUpdates,
-        cameraChanges.startWith({}),
-        // Observable.defer(() => typeof document === 'undefined' ? Observable
-        //           .empty() : Observable
-        //           .fromEvent(window, 'resize'))
-        //           .debounceTime(100).delay(50).startWith(null),
+        cameraChanges
+            .merge(hitmapUpdates)
+            .auditTime(0, Scheduler.animationFrame)
+            .startWith({}),
         (props, { clientX = 0, clientY = 0 }) => ({
             ...props, mouseX: clientX, mouseY: clientY,
         })
     )
-    .auditTime(0, Scheduler.animationFrame)
     .withLatestFrom(
         pointSizes.map(({ buffer }) => new Uint8Array(buffer)),
         pointColors.map(({ buffer }) => new Uint8Array(buffer)),
@@ -89,7 +87,7 @@ class Labels extends React.Component {
                 continue;
             }
 
-            const { type, index } = label;
+            const { type, index, globalIndex } = label;
             const worldCoords = (type === 'edge') ?
                 label === selection ?
                         getEdgeLabelPos(renderState, renderingScheduler, index)
@@ -107,8 +105,8 @@ class Labels extends React.Component {
             updatesToSend.push({
                 pageX: x,
                 pageY: y,
-                id: index,
-                type, size
+                type, size,
+                id: globalIndex
             });
 
             const child = children[labelIndex];
