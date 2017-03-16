@@ -95,8 +95,8 @@ const WithPointsAndSizes = mapPropsStream((props) => props
         (props) => props
     )
     .withLatestFrom(
-        pointSizes.map(({ buffer }) => new Uint8Array(buffer)).startWith(new Uint8Array(0)),
-        curPoints.map(({ buffer }) => new Float32Array(buffer)).startWith(new Float32Array(0)),
+        pointSizes.map(({ buffer }) => new Uint8Array(buffer)),
+        curPoints.map(({ buffer }) => new Float32Array(buffer)),
         (props, sizes, points) => ({ ...props, sizes, points })
     )
 );

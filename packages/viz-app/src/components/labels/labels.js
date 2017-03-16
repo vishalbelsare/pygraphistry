@@ -52,10 +52,10 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
         (!curr.highlight || curr.highlight.type !== 'edge')
     )))
     .withLatestFrom(
-        pointSizes.map(({ buffer }) => new Uint8Array(buffer)).startWith(new Uint8Array(0)),
-        pointColors.map(({ buffer }) => new Uint8Array(buffer)).startWith(new Uint8Array(0)),
-        edgeColors.map(({ buffer }) => new Uint8Array(buffer)).startWith(new Uint8Array(0)),
-        curPoints.map(({ buffer }) => new Float32Array(buffer)).startWith(new Float32Array(0)),
+        pointSizes.map(({ buffer }) => new Uint8Array(buffer)),
+        pointColors.map(({ buffer }) => new Uint8Array(buffer)),
+        edgeColors.map(({ buffer }) => new Uint8Array(buffer)),
+        curPoints.map(({ buffer }) => new Float32Array(buffer)),
         (props, sizes, pointColors, edgeColors, points) => ({
             ...props, sizes, pointColors, edgeColors, points
         })
