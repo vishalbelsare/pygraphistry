@@ -28,11 +28,14 @@
 
             #labels {
                 position: absolute;
+                transform-style: preserve-3d;
             }
             .label {
                 position: absolute;
                 pointer-events: none;
                 box-sizing: border-box;
+                backface-visibility: hidden;
+                transform-style: preserve-3d;
                 border: 1px solid rgba(255, 0, 0, 0.5);
                 background-color: rgba(0, 255, 50, 0.5);
             }
@@ -115,7 +118,12 @@
                 }
                 window.g.updateSetting('labelPOI', false);
                 subscription = window.g.subscribeLabels({
-                    onChange: function (id, entityType, x, y, size) {
+                    onChange: function (event) {
+                        var x = event.pageX;
+                        var y = event.pageY;
+                        var id = event.id;
+                        var size = event.size;
+                        var entityType = event.type;
                         var elt = cache[entityType][id];
                         if (!elt) {
                             elt = document.createElement('div');
@@ -130,17 +138,18 @@
                         var border = 1;
                         var radius = Math.floor(size * 0.5);
 
-                        elt.style['top'] = y + 'px';
-                        elt.style['left'] = x + 'px';
                         elt.style['width'] = size - border + 'px';
                         elt.style['height'] = size - border + 'px';
+                        elt.style['transform'] = 'translate3d(' + x + 'px, ' + y + 'px' + ', 0)';
 
                         elt.style['margin-top'] = (border * 2) - radius + 'px';
                         elt.style['margin-left'] = (border * 2) - radius + 'px';
                         elt.style['border-radius'] = size + 'px';
                     },
-                    onExit: function (id, entityType) {
-                        const element = cache[entityType][id];
+                    onExit: function (event) {
+                        var id = event.id;
+                        var entityType = event.type;
+                        var element = cache[entityType][id];
                         if (element && element.parentNode === labels) {
                             labels.removeChild(element);
                         }
