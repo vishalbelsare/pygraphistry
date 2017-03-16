@@ -11,6 +11,7 @@ const serverWebpackConfig = makeWebpackConfig({
     type: 'server',
     environment: process.env.NODE_ENV,
     output: {
+        publicPath: '',
         libraryTarget: 'commonjs2',
         path: path.join(process.cwd(), './www'),
     }
@@ -62,7 +63,7 @@ serverWebpackConfig.plugins.push(
     }),
     new FaviconsWebpackPlugin({
         emitStats: true,
-        prefix: '/public/favicons/',
+        prefix: 'public/icons/',
         statsFilename: 'favicon-assets.json',
         logo: path.resolve(process.cwd(), './src/assets/img/logo_g.png'),
     }),

@@ -36,7 +36,11 @@ export default function template({
         <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no' />
         <meta http-equiv='X-UA-Compatible' content='IE=edge' />
         <meta http-equiv='Content-Language' content='en' />${
-            iconsHTML.join('\n')
+            iconsHTML
+                // strip out 'public/' because favicons webpack plugin
+                // doesn't have an option to set a publicPath
+                .map((str) => str.replace(/public\//, ''))
+                .join('\n')
         }
         ${base && `<base href="${base}">` || ''}
         ${head.title.toString()}
