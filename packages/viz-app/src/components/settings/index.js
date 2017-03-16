@@ -34,7 +34,7 @@ export function ControlsList({ name, children = [], ...props } = {}) {
     return (
         <Grid fluid style={{ padding: 0 }}>
         {name &&
-            <Row>
+            <Row style={{ margin: 0 }}>
                 <Col xs={12} sm={12} md={12} lg={12}>
                     <h5 style={{ marginTop: 0 }}>{name}</h5>
                 </Col>

@@ -553,7 +553,7 @@ class Graphistry extends Observable {
     /**
      * Modify a settings value in the visualization
      * Key settings: showArrows, pruneOrphans, edgeOpacity, edgeSize, pointOpacity,
-     * pointSize, labelOpacity, labelEnabled, labelPOI, zoom
+     * pointSize, labelOpacity, labelEnabled, labelPOI, labelHighlightEnabled, zoom
      * @method Graphistry.updateSetting
      * @static
      * @param {string} name - the name of the setting to change
@@ -584,6 +584,7 @@ class Graphistry extends Observable {
             'labelOpacity': ['view', 'scene.labels.opacity'],
             'labelEnabled': ['view', 'scene.labels.enabled'],
             'labelPOI': ['view', 'scene.labels.poiEnabled'],
+            'labelHighlightEnabled': ['view', 'scene.labels.highlightEnabled'],
             'labelColor': ['view', 'scene.labels.foreground.color'],
             'labelBackground': ['view', 'scene.labels.background.color'],
 

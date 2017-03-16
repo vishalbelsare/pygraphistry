@@ -25,8 +25,9 @@ let Label = container({
 let Labels = ({ simulating,
                 selectLabel,
                 labelMouseMove,
+                enabled, opacity,
                 sceneSelectionType,
-                enabled, poiEnabled, opacity,
+                poiEnabled, highlightEnabled,
                 foreground: { color: color } = {},
                 background: { color: background } = {},
                 encodings,
@@ -56,7 +57,7 @@ let Labels = ({ simulating,
             type !== highlight.type ||
             index !== highlight.index
         ));
-        if (sceneSelectionType || simulating) {
+        if (!highlightEnabled || sceneSelectionType || simulating) {
             highlight = undefined;
         } else {
             labels.push(highlight);
@@ -70,6 +71,7 @@ let Labels = ({ simulating,
                          selection={selection}
                          simulating={simulating}
                          poiEnabled={poiEnabled}
+                         highlightEnabled={highlightEnabled}
                          {...props}>
         {enabled && labels.filter(Boolean).map((label) => {
             const key = label === selection ? 'selection' :
@@ -97,8 +99,8 @@ let Labels = ({ simulating,
 Labels = container({
     renderLoading: false,
     fragment: ({ edge = [], point = [], settings } = {}) => `{
-        id, name, timeZone,
-        opacity, enabled, poiEnabled,
+        id, name, opacity, timeZone,
+        enabled, poiEnabled, highlightEnabled,
         renderer: {
             background: { color }
         },

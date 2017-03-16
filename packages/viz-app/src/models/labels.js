@@ -12,8 +12,10 @@ export function labels(view) {
             id: 'labels',
             name: 'Labels',
             edge: [], point: [],
-            opacity: 1, enabled: true,
-            timeZone: '', poiEnabled: true,
+            timeZone: '', opacity: 1,
+            enabled: true,
+            poiEnabled: true,
+            highlightEnabled: true,
             foreground: { color: new Color('#fff') },
             background: { color: new Color('#2e2e2e').alpha(1.0) },
             renderer: $ref(`${view}.scene.renderer`),
@@ -30,7 +32,7 @@ export function labels(view) {
             options: {
                 id: 'label-options',
                 name: '',
-                length: 4, ...[{
+                length: 5, ...[{
                     id: 'text-color',
                     type: 'color',
                     name: 'Text Color',
@@ -55,9 +57,14 @@ export function labels(view) {
                     name: 'Show Labels',
                     value: $ref(`${view}.labels.enabled`)
                 }, {
+                    id: 'show-label-highlight',
+                    type: 'bool',
+                    name: 'Show Label on Hover',
+                    value: $ref(`${view}.labels.highlightEnabled`)
+                }, {
                     id: 'show-points-of-interest',
                     type: 'bool',
-                    name: 'Show Points of Interest',
+                    name: 'Points of Interest',
                     value: $ref(`${view}.labels.poiEnabled`)
                 }]
             }

@@ -32,11 +32,10 @@ const sceneUpdates = cameraChanges
     .map(() => Scheduler.animationFrame.now());
 
 const keysThatCanCauseRenders = [
-    'enabled',
-    'highlight', 'selection',
-    'simulating', 'poiEnabled',
-    'sceneUpdateTime', 'simulationWidth',
-    'simulationHeight', 'sceneSelectionType',
+    'simulationWidth', 'simulationHeight',
+    'highlight', 'selection', 'simulating',
+    'sceneUpdateTime', 'sceneSelectionType',
+    'enabled', 'poiEnabled',
 ];
 
 const WithPointsAndMousePosition = mapPropsStream((props) => props
@@ -49,7 +48,7 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
     .distinctUntilChanged((prev, curr) => (
         keysThatCanCauseRenders.every((key) => prev[key] === curr[key]) && (
         (prev.mouseX !== curr.mouseX || prev.mouseY !== curr.mouseY) &&
-        (!curr.highlight || curr.highlight.type !== 'edge')
+        (!curr.highlightEnabled || !curr.highlight || curr.highlight.type !== 'edge')
     )))
     .withLatestFrom(
         pointSizes.map(({ buffer }) => new Uint8Array(buffer)),

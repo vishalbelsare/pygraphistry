@@ -74,15 +74,15 @@ class Scene extends React.Component {
             const { renderState, renderingScheduler } = state;
             if (!dispatch || !renderState || !renderingScheduler) { return; }
             const { camera } = renderState;
-            const { simulating, selection = {} } = props;
             const { simulationWidth, simulationHeight } = this;
+            const { simulating, highlightEnabled, selection = {} } = props;
             dispatch({
                 event,
                 selectionMask: selection.mask,
                 selectionType: selection.type,
                 simulationWidth, simulationHeight,
                 camera, simulating, renderState,
-                renderingScheduler
+                renderingScheduler, highlightEnabled
             });
         };
         events.forEach((eventName) => {

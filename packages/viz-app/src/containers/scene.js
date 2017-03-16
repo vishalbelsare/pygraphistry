@@ -30,6 +30,7 @@ let Scene = ({
                     onTouchStart={sceneTouchStart}
                     simulationWidth={simulationWidth}
                     simulationHeight={simulationHeight}
+                    highlightEnabled={labels && labels.highlightEnabled}
                     {...props}>
         <Renderer key='renderer'
                   data={renderer}

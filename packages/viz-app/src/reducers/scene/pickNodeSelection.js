@@ -86,15 +86,17 @@ function filterDistinctPointsAndElements(pointA, pointB) {
         elementA.idx === elementB.idx );
 }
 
-function toValuesAndInvalidations({ type, falcor, element }) {
+function toValuesAndInvalidations({ type, falcor, element, highlightEnabled }) {
     return {
         falcor, ...(element.type !== 'none' ?
-            selectionValuesAndInvalidations(type, element, falcor.getPath()) :
+            selectionValuesAndInvalidations(
+                type, element, falcor.getPath(), highlightEnabled
+            ) :
             deselectionValuesAndInvalidations(type, element))
     };
 }
 
-function selectionValuesAndInvalidations(gesture, { idx, type }, path) {
+function selectionValuesAndInvalidations(gesture, { idx, type }, path, highlightEnabled) {
     const inverseType = type === 'point' ? 'edge' : 'point';
     const value = {
         highlight: {
@@ -112,7 +114,7 @@ function selectionValuesAndInvalidations(gesture, { idx, type }, path) {
             [type]: $atom([idx]),
             [inverseType]: $atom([])
         };
-    } else {
+    } else if (highlightEnabled) {
         value.labels = {
             highlight: $ref(path.concat('labelsByType', type, idx))
         };
