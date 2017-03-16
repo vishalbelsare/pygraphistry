@@ -1,5 +1,6 @@
 {
     "signal": "SIGHUP",
+    "verbose": true,
     "watch": [
         "index.js",
         "tools/webpack/",
