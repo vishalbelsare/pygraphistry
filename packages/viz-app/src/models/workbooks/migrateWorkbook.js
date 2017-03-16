@@ -1,21 +1,18 @@
-import { simpleflake } from 'simpleflakes';
-import { migrateViews } from './migrateViews';
-import { migrateDatasets } from './migrateDatasets';
+import migrateV0 from './v0';
+import migrateV1 from './v1';
+import { latestWorkbookVersion } from './index';
 
 const converters = {
-    '0': (workbook, options) => {
-        if (!workbook.id) {
-            workbook.id = simpleflake().toJSON();
-        }
-        return migrateDatasets(migrateViews(workbook), options)
-    },
-    '1': (workbook) => workbook,
-}
+    '0': migrateV0,
+    '1': migrateV1,
+};
 
 export function migrateWorkbook(workbook, options) {
     const wbVersion = workbook.version || 0;
     if (wbVersion in converters) {
-        return converters[wbVersion](workbook, options)
+        workbook = converters[wbVersion](workbook, options);
+        workbook.version = latestWorkbookVersion;
+        return workbook;
     } else {
         throw new Error('Unknown workbook version, cannot migrate', wbVersion);
     }

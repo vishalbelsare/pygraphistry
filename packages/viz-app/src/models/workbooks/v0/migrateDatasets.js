@@ -1,4 +1,4 @@
-import { dataset as createDataset } from './';
+import { dataset as createDataset } from 'viz-app/models/workbooks';
 
 export function migrateDatasets(workbook, options = {}) {
 

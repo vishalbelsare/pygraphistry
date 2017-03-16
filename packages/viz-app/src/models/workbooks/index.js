@@ -9,14 +9,13 @@ import {
     pathValue as $value
 } from '@graphistry/falcor-json-graph';
 
-export * from './migrateViews';
-export * from './migrateDatasets';
 export * from './migrateWorkbook';
+export const latestWorkbookVersion = 1;
 
 export function workbook(dataset, workbookId = simpleflake().toJSON()) {
     const workbook = `workbooksById['${workbookId}']`;
     return {
-        version: 1,
+        version: latestWorkbookVersion,
         id: workbookId,
         title: '',
         contentName: '',
@@ -59,7 +58,10 @@ export function serializeWorkbook(workbook) {
     const whiteListed = _.pick(workbook, wbFields);
 
     whiteListed.viewsById = _.mapObject(workbook.viewsById, view => {
-        return _.omit(view, 'nBody', 'session', 'columns', 'componentsByType', 'labelsByType');
+        return _.omit(view,
+            'nBody', 'toolbars', 'session',
+            'columns', 'labelsByType', 'componentsByType'
+        );
     });
 
     return whiteListed;
