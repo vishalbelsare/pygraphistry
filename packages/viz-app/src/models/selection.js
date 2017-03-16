@@ -19,6 +19,7 @@ export function selection(view) {
             mask: null,
             label: null,
             darken: true,
+            cursor: 'auto',
             histogramsById: {},
             controls: [{
                 selected: false,

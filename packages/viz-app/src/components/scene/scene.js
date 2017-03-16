@@ -28,7 +28,7 @@ import RenderingScheduler from './rendering-scheduler';
 import { init as initRenderer } from './renderer';
 import { setupRotate, setupCenter, setupScroll, setupZoomButton } from './interaction';
 
-const events = ['mouseMove', 'touchStart'];
+const events = ['onMouseMove', 'onTouchStart', 'onShiftDown'];
 let globalVboUpdates, globalVboVersions, globalAutoPlayed;
 let globalRenderer, globalRenderState, globalRenderingScheduler;
 
@@ -68,24 +68,32 @@ class Scene extends React.Component {
             }
             return !!camera;
         };
+        const makeEventHandler = (eventName) => this[eventName] = (event) => {
+            const { props, state } = this;
+            const dispatch = props[eventName];
+            const { renderState, renderingScheduler } = state;
+            if (!dispatch || !renderState || !renderingScheduler) { return; }
+            const { camera } = renderState;
+            const { simulating, selection = {} } = props;
+            const { simulationWidth, simulationHeight } = this;
+            dispatch({
+                event,
+                selectionMask: selection.mask,
+                selectionType: selection.type,
+                simulationWidth, simulationHeight,
+                camera, simulating, renderState,
+                renderingScheduler
+            });
+        };
         events.forEach((eventName) => {
-            this[eventName] = (event) => {
-                const { props, state } = this;
-                const dispatch = props[eventName];
-                const { renderState, renderingScheduler } = state;
-                if (!dispatch || !renderState || !renderingScheduler) { return; }
-                const { camera } = renderState;
-                const { simulating, selection = {} } = props;
-                const { simulationWidth, simulationHeight } = this;
-                dispatch({
-                    event,
-                    selectionMask: selection.mask,
-                    selectionType: selection.type,
-                    simulationWidth, simulationHeight,
-                    camera, simulating, renderState,
-                    renderingScheduler
-                });
-            };
+            const handler = makeEventHandler(eventName);
+            if (eventName === 'onShiftDown') {
+                this[eventName] = (event) => {
+                    if (!event.repeat && event.key === 'Shift') {
+                        handler(event);
+                    }
+                }
+            }
         });
     }
     getChildContext() {
@@ -126,12 +134,7 @@ class Scene extends React.Component {
         this.onResize = undefined;
         this.assignRef = undefined;
         const { renderSubscription } = this.state;
-        // const { renderer, renderingScheduler } = this.state;
-        // const { resizeSubscription, renderSubscription } = this.state;
-        // renderer && renderer.unsubscribe();
-        // resizeSubscription && resizeSubscription.unsubscribe();
         renderSubscription && renderSubscription.unsubscribe();
-        // renderingScheduler && renderingScheduler.unsubscribe();
         events.forEach((eventName) => this[eventName] = undefined);
     }
     render() {
@@ -143,9 +146,10 @@ class Scene extends React.Component {
             <div id='simulation-container'
                  ref={this.assignRef}
                  style={this.props.style}
-                 onMouseMove={this.mouseMove}
-                 onMouseDown={this.touchStart}
-                 onTouchStart={this.touchStart}>
+                 onKeyDown={this.onShiftDown}
+                 onMouseMove={this.onMouseMove}
+                 onMouseDown={this.onTouchStart}
+                 onTouchStart={this.onTouchStart}>
                 {children}
                 {(  (edges && edges.elements !== undefined) ||
                     (points && points.elements !== undefined)) &&
@@ -297,7 +301,6 @@ class Scene extends React.Component {
             vboVersionsSource,
             hasSourceListeners,
             renderSubscription,
-            // resizeSubscription,
             renderingScheduler,
             cameraChangesSource,
         } = state;
@@ -310,7 +313,6 @@ class Scene extends React.Component {
         hasSourceListeners = true;
 
         renderSubscription.unsubscribe();
-        // resizeSubscription.unsubscribe();
 
         if (hasDOMListeners === false) {
 
@@ -376,20 +378,11 @@ class Scene extends React.Component {
         .ignoreElements()
         .subscribe({});
 
-        // resizeSubscription = Observable.defer(() => typeof document === 'undefined' ? Observable
-        //     .empty() : Observable
-        //     .fromEvent(window, 'resize'))
-        //     .debounceTime(100)
-        //     .delay(50)
-        //     .catch(() => Observable.empty())
-        //     .subscribe(this.onResize);
-
         this.setState({
             scrollSource,
             hasDOMListeners,
             hasSourceListeners,
             renderSubscription,
-            // resizeSubscription,
             cameraChangesSource
         });
     }

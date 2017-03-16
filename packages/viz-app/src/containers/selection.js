@@ -11,7 +11,7 @@ let Selection = ({ mask = {}, ...props }) => {
 Selection = container({
     renderLoading: true,
     fragment: ({ edge = [], point = [] } = {}) => `{
-        mask, type, edge, point, darken
+        mask, type, edge, cursor, point, darken
     }`
 })(Selection);
 

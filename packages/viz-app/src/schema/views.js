@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import * as Scheduler from 'rxjs/scheduler/async';
 import { getHandler, setHandler } from 'viz-app/router';
-import { $value, $invalidate } from '@graphistry/falcor-json-graph';
+import { $atom, $value, $invalidate } from '@graphistry/falcor-json-graph';
 
 export function views(path, base) {
     return function views({ tickLayout,
@@ -123,7 +123,13 @@ export function views(path, base) {
             const viewIds = [].concat(path[3]);
             return moveSelectedNodes({
                 workbookIds, viewIds, coords: { x, y }
-            });
+            })
+            .map(({ workbook, view, points }) => $value(
+                `workbooksById['${workbook.id}']` +
+                    `.viewsById['${view.id}']` +
+                    `.selection.point`,
+                $atom(points)
+            ));
         }
     }
 }

@@ -8,6 +8,7 @@ import { Scene as SceneComponent } from 'viz-app/components/scene';
 
 let Scene = ({
         selectLabel,
+        sceneShiftDown,
         sceneMouseMove,
         sceneTouchStart,
         simulationWidth,
@@ -24,8 +25,9 @@ let Scene = ({
                     edges={renderer.edges}
                     simulating={simulating}
                     points={renderer.points}
-                    mouseMove={sceneMouseMove}
-                    touchStart={sceneTouchStart}
+                    onShiftDown={sceneShiftDown}
+                    onMouseMove={sceneMouseMove}
+                    onTouchStart={sceneTouchStart}
                     simulationWidth={simulationWidth}
                     simulationHeight={simulationHeight}
                     {...props}>
@@ -41,6 +43,7 @@ let Scene = ({
                    simulationHeight={simulationHeight}
                    onSelectedPointTouchStart={onSelectedPointTouchStart}
                    onSelectionMaskTouchStart={onSelectionMaskTouchStart}
+                   highlightedEdge={highlight && highlight.edge && highlight.edge[0]}
                    highlightedPoint={highlight && highlight.point && highlight.point[0]}/>
         <Labels key='labels'
                 data={labels}

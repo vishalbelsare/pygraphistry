@@ -1,6 +1,6 @@
-import { SCENE_TOUCH_START } from 'viz-app/actions/scene';
 import { createSubject, SceneGestures } from '../support';
 import { $atom, $value } from '@graphistry/falcor-json-graph';
+import { SCENE_TOUCH_START } from 'viz-app/actions/scene';
 
 export function drawNodeSelection(actions) {
 
@@ -35,11 +35,13 @@ export function drawNodeSelection(actions) {
     return drawnNodeSelections.map(toValuesAndInvalidations);
 }
 
-function toValuesAndInvalidations({ rect, falcor, pointIndexes }) {
+export function toValuesAndInvalidations({ rect, falcor, pointIndexes }) {
     let values;
     if (!pointIndexes) {
         values = [
-            $value(`selection.mask`, $atom(rect))
+            $value(`selection.type`, 'select'),
+            $value(`selection.mask`, $atom(rect)),
+            $value(`selection.cursor`, 'down')
         ];
     } else {
         values = [{ json: {
@@ -47,6 +49,7 @@ function toValuesAndInvalidations({ rect, falcor, pointIndexes }) {
                          point: $atom([]) },
             selection: { mask: null,
                          type: null,
+                         cursor: 'auto',
                          edge: $atom([]),
                          point: $atom(pointIndexes),
                          controls: { 0: { selected: false }}}

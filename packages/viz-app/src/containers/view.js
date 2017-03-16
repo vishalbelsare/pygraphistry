@@ -10,6 +10,7 @@ import { Expressions } from 'viz-app/containers/expressions';
 import { selectToolbarItem } from 'viz-app/actions/toolbar';
 
 import {
+    sceneShiftDown,
     sceneMouseMove,
     sceneTouchStart,
     onSelectedPointTouchStart,
@@ -28,6 +29,7 @@ const rightDockVisibleStyle = { opacity: 1, boxShadow: `none`, overflow: `visibl
 let View = ({
     session,
     selectLabel,
+    sceneShiftDown,
     sceneMouseMove,
     sceneTouchStart,
     selectToolbarItem,
@@ -60,6 +62,7 @@ let View = ({
                                simulationWidth={width}
                                simulationHeight={height}
                                selectLabel={selectLabel}
+                               sceneShiftDown={sceneShiftDown}
                                sceneMouseMove={sceneMouseMove}
                                sceneTouchStart={sceneTouchStart}
                                selectToolbarItem={selectToolbarItem}
@@ -84,7 +87,7 @@ let View = ({
                                rowHeight={30}
                                colHeaderWidth={48}
                                rowHeaderHeight={32}
-                               height={Math.max(height - 50, 0) || 0}
+                               height={Math.max(height - 60, 0) || 0}
                                width={width} isOpen={isBottomPanelOpen}
                                style={{ width, height: height || 0 }}
                                selectInspectorRow={selectInspectorRow}/>
@@ -116,6 +119,7 @@ View = container({
     }`,
     dispatchers: {
         selectLabel,
+        sceneShiftDown,
         sceneMouseMove,
         sceneTouchStart,
         selectToolbarItem,

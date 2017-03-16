@@ -7,7 +7,8 @@ import * as Scheduler from 'rxjs/scheduler/animationFrame';
 import {
     curPoints,
     pointSizes,
-    cameraChanges
+    cameraChanges,
+    hitmapUpdates
 } from 'viz-app/client/legacy';
 
 import compose from 'recompose/compose';
@@ -26,10 +27,7 @@ function SelectionArea({ mask, renderState, onMouseDown, onTouchStart }) {
     return (
         <div onMouseDown={onMouseDown}
              onTouchStart={onTouchStart}
-             className={classNames({
-                 [styles['draggable']]: true,
-                 [styles['selection-area']]: true
-             })}
+             className={styles['selection-area']}
              style={{
                  width: (br.x - tl.x) || 0,
                  height: (br.y - tl.y) || 0,
@@ -41,7 +39,7 @@ function SelectionArea({ mask, renderState, onMouseDown, onTouchStart }) {
     );
 }
 
-function HighlightPoint({ index, sizes, points, renderState, onPointSelected }) {
+function HighlightPoint({ index, sizes, points, renderState, selectedPoints, onPointSelected }) {
 
     if (index === undefined) {
         return null;
@@ -60,14 +58,15 @@ function HighlightPoint({ index, sizes, points, renderState, onPointSelected }) 
         scalingFactor * sizes[index], 50)) / camera.pixelRatio;
 
     const hitArea = Math.max(50, size * 2);
+    const selected = selectedPoints && ~selectedPoints.indexOf(index);
 
     return (
-        <div className={classNames({
-                [styles['draggable']]: isDraggable,
-                [styles['selection-point']]: true,
-             })}
-             onMouseDown={onPointSelected}
+        <div onMouseDown={onPointSelected}
              onTouchStart={onPointSelected}
+             className={classNames({
+                 [styles['selection-point']]: true,
+                 [styles['is-selected']]: !!selected,
+             })}
              style={{
                  width: `${hitArea}px`,
                  height: `${hitArea}px`,
@@ -89,16 +88,10 @@ function HighlightPoint({ index, sizes, points, renderState, onPointSelected }) 
 
 const WithPointsAndSizes = mapPropsStream((props) => props
     .combineLatest(
-        // pointSizes.map(({ buffer }) => new Uint8Array(buffer)),
-        // curPoints.map(({ buffer }) => new Float32Array(buffer)),
         cameraChanges
+            .merge(hitmapUpdates)
             .auditTime(0, Scheduler.animationFrame)
             .startWith({}),
-        // Observable.defer(() => typeof document === 'undefined' ? Observable
-        //           .empty() : Observable
-        //           .fromEvent(window, 'resize'))
-        //           .debounceTime(100)
-        //           .delay(50).startWith(null),
         (props) => props
     )
     .withLatestFrom(
@@ -108,18 +101,28 @@ const WithPointsAndSizes = mapPropsStream((props) => props
     )
 );
 
+const selectionContainerStyle = {
+    top: 0, left: 0,
+    bottom: 0, right: 0,
+    position: `absolute`,
+    background: `rgba(0,0,0,0)`
+};
+
 const Selection = compose(
     getContext({
         renderState: PropTypes.object,
         renderingScheduler: PropTypes.object,
     }),
     WithPointsAndSizes
-)(({ mask,
+)(({ cursor,
+     mask, type,
      simulating,
      sizes, points,
      simulationWidth,
      simulationHeight,
+     highlightedEdge,
      highlightedPoint,
+     edge: edgeIndexes = [],
      point: pointIndexes = [],
      onSelectedPointTouchStart,
      onSelectionMaskTouchStart,
@@ -146,22 +149,34 @@ const Selection = compose(
     onPointTouchStart.dispatch = onSelectedPointTouchStart;
     onPointTouchStart.renderingScheduler = renderingScheduler;
 
+    if (!type) {
+        cursor = 'auto';
+    }
+
+    if (highlightedEdge !== undefined &&
+        highlightedPoint === undefined &&
+        edgeIndexes && edgeIndexes.indexOf(highlightedEdge) === -1) {
+        cursor = 'edge';
+    }
+
     return (
-        <div style={{
-            top: 0, left: 0,
-            width: 0, height: 0,
-            position: `absolute`,
-            background: `transparent` }}>
+        <div style={selectionContainerStyle}
+             className={classNames({
+                 [styles['cursor-' + cursor]]: true,
+                 [styles['selection-container']]: true,
+             })}>
             <HighlightPoint key='highlight-point'
                             index={highlightedPoint}
                             renderState={renderState}
                             sizes={sizes} points={points}
+                            selectedPoints={pointIndexes}
                             simulationWidth={simulationWidth}
                             simulationHeight={simulationHeight}
                             onPointSelected={onPointTouchStart}/>
             <SelectionArea mask={mask}
                            key='selection-mask'
                            renderState={renderState}
+                           sizes={sizes} points={points}
                            onMouseDown={onMaskTouchStart}
                            onTouchStart={onMaskTouchStart}
                            simulationWidth={simulationWidth}

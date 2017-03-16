@@ -37,7 +37,8 @@ export function toValuesAndInvalidations({ rect, falcor, refreshMask }) {
         values: [
             $value(`selection.type`, rect ? 'window' : null),
             $value(`selection.mask`, rect ? { ...rect } : null),
-            $value(`selection.controls[1].selected`, !!rect)
+            $value(`selection.cursor`, refreshMask ? 'auto' : 'down'),
+            $value(`selection.controls[1].selected`, !!rect),
         ],
         invalidations: !refreshMask ? undefined : [
             `inspector.rows`,

@@ -46,7 +46,7 @@ export function selection(path, base) {
         }, {
             set: setValues,
             route: `${base}['highlight', 'selection'][
-                'type', 'edge', 'label', 'point', 'darken'
+                'type', 'edge', 'label', 'cursor', 'point', 'darken'
             ]`
         }, {
             get: getValues,

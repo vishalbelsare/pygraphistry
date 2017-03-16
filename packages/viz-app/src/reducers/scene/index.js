@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import { moveCamera } from './moveCamera';
+import * as Scheduler from 'rxjs/scheduler/async';
 import { moveNodeSelection } from './moveNodeSelection';
 import { moveSelectionMask } from './moveSelectionMask';
 import { pickNodeSelection } from './pickNodeSelection';
@@ -25,13 +26,15 @@ export function scene(action$, store) {
 }
 
 function commitReducerResults({ falcor, values, invalidations }) {
+    let obs = Observable.of(0);
     if (falcor) {
         if (invalidations && invalidations.length) {
-            falcor.invalidate(...invalidations);
+            obs = obs.combineLatest(Observable
+                .defer(() => falcor.invalidate(...invalidations)));
         }
         if (values && values.length) {
-            return falcor.set(...values);
+            obs = obs.combineLatest(falcor.set(...values));
         }
     }
-    return Observable.never();
+    return obs;
 }

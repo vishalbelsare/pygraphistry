@@ -260,14 +260,16 @@ function toggleLayoutSettings({ falcor, selected }) {
 function toggleSelectNodes({ falcor, selected }) {
     if (selected) {
         return falcor.set(
+            $value(`selection.cursor`, 'auto'),
             $value(`selection['mask', 'type']`, null),
             $value(`selection.controls[0].selected`, false)
         );
     } else {
-        falcor.invalidate(`inspector.rows`, `selection.histogramsById`);
+        // falcor.invalidate(`inspector.rows`, `selection.histogramsById`);
         return falcor.set(
             $value(`selection.mask`, null),
             $value(`selection.type`, 'select'),
+            $value(`selection.cursor`, 'down'),
             $value(`selection.controls[0].selected`, true),
             $value(`selection.controls[1].selected`, false),
         );
@@ -278,12 +280,14 @@ function toggleWindowNodes({ falcor, selected }) {
     if (selected) {
         falcor.invalidate(`inspector.rows`, `selection.histogramsById`);
         return falcor.set(
+            $value(`selection.cursor`, 'auto'),
             $value(`selection['mask', 'type']`, null),
             $value(`selection.controls[1].selected`, false)
         );
     } else {
         return falcor.set(
             $value(`selection.type`, 'window'),
+            $value(`selection.cursor`, 'down'),
             $value(`selection.controls[1].selected`, true),
             $value(`selection.controls[0].selected`, false),
             $value(`histograms.controls[0].selected`, true),

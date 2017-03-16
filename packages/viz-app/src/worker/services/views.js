@@ -43,7 +43,7 @@ export function moveSelectedNodes(loadViewsById) {
             const { point: points } = selection;
 
             if (!nBody || !points || points.length <= 0) {
-                return Observable.empty();
+                return Observable.of({ workbook, view, points: [] });
             }
 
             return Observable
@@ -54,7 +54,7 @@ export function moveSelectedNodes(loadViewsById) {
                         server.updateVboSubject.next(true);
                     }
                 })
-                .ignoreElements()
+                .mapTo({ workbook, view, points })
         });
     }
 }
