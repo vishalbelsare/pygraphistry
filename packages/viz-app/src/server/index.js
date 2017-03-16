@@ -30,13 +30,6 @@ reportWorkerActivity({ config, isWorkerActive })
 // The Express router that handles all incoming requests
 const serverRouter = Router();
 
-try {
-    const authenticate = authenticateMiddleware();
-    serverRouter.use('/', authenticate);
-} catch(authMiddlewareError) {
-    logger.fatal(authMiddlewareError, 'An error occured loading the Express.js authentication middleware. Because this could compromise security, server will now terminate.');
-    setActiveStatus(authMiddlewareError);
-}
 
 try {
     const selectWorkerRouter = configureWorkers(config, setActiveStatus);
