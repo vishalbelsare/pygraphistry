@@ -74,7 +74,7 @@ class Labels extends React.Component {
         let camera, canvas, matrix,
             pointSize, pixelRatio, scalingFactor;
         let { mouseX, mouseY, onLabelsUpdated,
-              highlight = null, selection = null,
+              simulating = false, highlight = null, selection = null,
               renderer, renderState = null, renderingScheduler = null,
               labels = [], sizes = [], pointColors = [], edgeColors = [], points = [], children = []
         } = this.props;
@@ -152,13 +152,13 @@ class Labels extends React.Component {
             }
         }
 
-        onLabelsUpdated && onLabelsUpdated(updatesToSend);
+        onLabelsUpdated && onLabelsUpdated(updatesToSend, simulating, scalingFactor);
 
         return (
             <div className={classNames({
                 [styles['labels-container']]: true,
-                [styles['labels-container-dark']]: isDark(Color(renderer.background.color).rgb()),
-                [styles['labels-zoomed-in']]: scalingFactor > 2})}>
+                [styles['labels-zoomed-in']]: simulating || scalingFactor > 2,
+                [styles['labels-container-dark']]: isDark(Color(renderer.background.color).rgb())})}>
                 {childrenToRender}
             </div>
         );

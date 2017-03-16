@@ -87,7 +87,9 @@ function getSimulationCanvas(document, simulation) {
     );
 }
 
-function onLabelsUpdated(labels) {
-    parent.postMessage({ type: 'labels-update', labels }, '*');
+function onLabelsUpdated(labels, simulating, semanticZoomLevel) {
+    parent.postMessage({
+        type: 'labels-update', labels, simulating, semanticZoomLevel
+    }, '*');
 }
 

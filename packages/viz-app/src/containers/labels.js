@@ -57,7 +57,7 @@ let Labels = ({ simulating,
             index !== highlight.index
         ));
         if (sceneSelectionType || simulating) {
-            highlight = undefined
+            highlight = undefined;
         } else {
             labels.push(highlight);
         }
@@ -68,6 +68,7 @@ let Labels = ({ simulating,
                          enabled={enabled}
                          highlight={highlight}
                          selection={selection}
+                         simulating={simulating}
                          poiEnabled={poiEnabled}
                          {...props}>
         {enabled && labels.filter(Boolean).map((label) => {
