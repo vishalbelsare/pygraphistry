@@ -28,7 +28,7 @@
   },
   "betterScripts": {
     "start:dev": {
-      "command": "nodemon ./index.js '{\"LOG_LEVEL\": \"WARN\" }' | ./node_modules/.bin/bunyan -o short",
+      "command": "nodemon ./index.js '{\"LOG_LEVEL\": \"INFO\" }' | ./node_modules/.bin/bunyan -o short",
       "env": {
         "NODE_ENV": "development"
       }

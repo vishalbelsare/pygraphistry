@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { VError, WError } from 'verror';
 import { createLogger } from '@graphistry/common/logger';
 const logger = createLogger('viz-app:server:workerRouter');
+import { authenticateMiddleware } from './authentication';
+
 
 import configureEtlWorker from './etl';
 import configureVizWorker from './viz';
@@ -11,11 +13,18 @@ function configureWorkers(config, activeCB) {
     let workerName, workerRouter, appRouter = Router();
     const allowMultipleVizConnections = !!config.ALLOW_MULTIPLE_VIZ_CONNECTIONS;
 
-    appRouter.use('/healthcheck', healthcheckHandler);
-    appRouter.use('/etl/healthcheck', healthcheckHandler);
-    appRouter.use('/graph/healthcheck', healthcheckHandler);
-    appRouter.use('/etl', selectWorkerRouter('etl', configureEtlWorker), requestErrorHandler);
-    appRouter.use('/graph/graph.html', selectWorkerRouter('viz', configureVizWorker), requestErrorHandler);
+    try {
+        var authenticate = authenticateMiddleware();
+    } catch(authMiddlewareError) {
+        logger.fatal(authMiddlewareError, 'An error occured loading the Express.js authentication middleware. Because this could compromise security, server will now terminate.');
+        activeCB(authMiddlewareError);
+    }
+
+    appRouter.use('/healthcheck', authenticate, healthcheckHandler);
+    appRouter.use('/etl/healthcheck', authenticate, healthcheckHandler);
+    appRouter.use('/graph/healthcheck', authenticate, healthcheckHandler);
+    appRouter.use('/etl', selectWorkerRouter('etl', configureEtlWorker, false), requestErrorHandler);
+    appRouter.use('/graph/graph.html', authenticate, selectWorkerRouter('viz', configureVizWorker, true), requestErrorHandler);
     appRouter.use((req, res, next) => {
         if (!workerRouter) {
             logger.warn(`Error trying to find the current worker router in 'workerStatus'. Ignoring request, and telling Express let the next maching middleware/route handle it.`);
@@ -26,7 +35,7 @@ function configureWorkers(config, activeCB) {
 
     return appRouter;
 
-    function selectWorkerRouter(configureName, configureWorker) {
+    function selectWorkerRouter(configureName, configureWorker, requireAuthentication = true) {
         return function innerSelectWorkerRouter(req, res, next) {
 
             if (workerRouter) {
@@ -44,7 +53,16 @@ function configureWorkers(config, activeCB) {
 
             if (workerName !== configureName) {
                 workerName = configureName;
-                workerRouter = configureWorker(config, activeCB, req.app.io);
+
+                if(requireAuthentication) {
+                    const authenticatedRouter = Router();
+                    authenticatedRouter.use(authenticate);
+                    authenticatedRouter.use(configureWorker(config, activeCB, req.app.io));
+
+                    workerRouter = authenticatedRouter;
+                } else {
+                    workerRouter = configureWorker(config, activeCB, req.app.io);
+                }
             }
 
             // Tell Express to continue processing this request, and pass it to the

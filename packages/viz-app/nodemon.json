@@ -1,11 +1,14 @@
 {
+    "signal": "SIGHUP",
+    "verbose": true,
     "watch": [
         "index.js",
         "tools/webpack/",
         "!tools/webpack/webpack.server.babel.js",
         "!tools/webpack/webpack.test.babel.js",
-        "src/server/**/*",
         "config.js",
-        "config/*.json"
+        "config/*.json",
+        "package.json",
+        "nodemon.json"
     ]
 }

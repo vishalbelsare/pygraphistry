@@ -42,7 +42,7 @@ app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
 // Log all requests as the first action
 app.use(function(req, res, next) {
-    logger.trace({req, res}, 'HTTP request received by Express.js');
+    logger.info({req, res}, 'HTTP request received by Express.js');
     next();
 });
 
@@ -65,6 +65,7 @@ if (process.env.NODE_ENV === 'development' && config.ENVIRONMENT === 'local') {
     const SERVER_STATS = require('./www/server-assets.json');
     app.use(require(`./www/${SERVER_STATS.server.js}`).default);
 }
+
 
 if (port) {
     io.listen(app.listen(port, host, function (err) {

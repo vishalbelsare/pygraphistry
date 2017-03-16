@@ -11,11 +11,18 @@ const defaultUserId = 0;
 
 
 export function authenticateMiddleware() {
-    if(!conf.get('authentication.passwordHash')) {
-        log.warn(`Authentication disabled because "authentication.passwordHash" is not set in your config. Anybody will be able to access this service without restriction.`);
+    const authorizedUsername = conf.get('authentication.username');
 
-        return noAuthMiddleware;
+    if(!conf.get('authentication.passwordHash')) {
+        log.warn(`Authentication disabled because "authentication.passwordHash" is not set in your config. Clients will not be prompted for a username and password, and all requests will be allowed. Requests will have their 'username' property set to the default values of "${authorizedUsername}".`);
+
+        return (req, res, next) => {
+            req.user = { username: authorizedUsername, userId: defaultUserId };
+            next();
+        };
     } else {
+        log.info(`Authentication enabled. Restricting access to user "${authorizedUsername}"`);
+        
         passport.use(new BasicStrategy(checkLoginCredentials));
         return passport.authenticate('basic', { session: false });
     }
