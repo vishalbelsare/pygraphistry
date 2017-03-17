@@ -47,7 +47,6 @@ function loadWorkbook(workbooksById, config, s3Cache) {
     }
 }
 
-
 function makeWorkbookURL(workbookId) {
     return url.parse(encodeS3URI(path.join('Workbooks', workbookId, 'workbook.json')));
 }

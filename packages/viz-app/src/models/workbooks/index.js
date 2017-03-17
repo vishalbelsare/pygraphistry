@@ -54,13 +54,12 @@ export function workbook(dataset, workbookId = simpleflake().toJSON()) {
 }
 
 export function serializeWorkbook(workbook) {
-    const wbFields = ['id', 'title', 'contentName', 'fullscreen', 'datasets', 'views', 'controls'];
+    const wbFields = ['id', 'title', 'version', 'contentName', 'fullscreen', 'datasets', 'views', 'controls'];
     const whiteListed = _.pick(workbook, wbFields);
 
     whiteListed.viewsById = _.mapObject(workbook.viewsById, view => {
         return _.omit(view,
-            'nBody', 'toolbars', 'session',
-            'columns', 'labelsByType', 'componentsByType'
+            'nBody', 'session', 'columns', 'labelsByType', 'histogramsById', 'componentsByType'
         );
     });
 
