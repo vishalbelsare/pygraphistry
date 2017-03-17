@@ -67,7 +67,7 @@ export class ColumnPicker extends React.Component {
         //str
         const values =
             this.props.value
-                .map(({identifier}) => _.findIndex(options, (o) => o.identifier === identifier))
+                .map(({identifier}) => options.findIndex((o) => o.identifier === identifier))
                 .join(',');
 
 
