@@ -59,7 +59,7 @@ export function serializeWorkbook(workbook) {
 
     whiteListed.viewsById = _.mapObject(workbook.viewsById, view => {
         return _.omit(view,
-            'nBody', 'session', 'columns', 'labelsByType', 'histogramsById', 'componentsByType'
+            'nBody', 'session', 'columns', 'labelsByType', 'componentsByType'
         );
     });
 
