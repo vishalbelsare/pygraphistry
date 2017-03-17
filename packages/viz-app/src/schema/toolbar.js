@@ -10,7 +10,7 @@ export function toolbar(path, base) {
 
         return [{
             returns: 'Reference',
-            get: getToolbar(base),
+            get: getToolbar,
             route: `${base}['toolbar']`
         }, {
             get: getValues,
@@ -33,40 +33,16 @@ export function toolbar(path, base) {
     }
 }
 
-function getToolbar() {
-    return function(path, args) {
-        function mkPath(id) {
-            return path.slice(0, -1).concat(['toolbars', [id]]);
-        }
-
-        let res = mkPath('stable');
-
-        // if (isSet(this.request.query.beta)) {
-        //     res = mkPath('beta');
-        // } else if (isSet(this.request.query.static)) {
-        //     res = mkPath('static');
-        // } else {
-        //     res = mkPath('stable');
-        // }
-
-        return [$value(path, $ref(res))];
-    }
-}
-
-function isSet(param) {
-    if (typeof param === 'string') {
-        switch(param.toLowerCase().trim()) {
-            case "true":
-            case "yes":
-            case "1":
-                return true;
-            case "false":
-            case "no":
-            case "0":
-                return false;
-            default: return Boolean(param);
-        }
-    } else {
-        return false;
-    }
+function getToolbar(path) {
+    const workbookIds = [].concat(path[1]);
+    const viewIds = [].concat(path[3]);
+    return workbookIds.reduce((values, workbookId) => {
+        return viewIds.reduce((values, viewId) => {
+            const basePath = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
+            return values.concat($value(
+                `${basePath}.toolbar`,
+                $ref(`${basePath}.toolbars.stable`)
+            ));
+        }, values);
+    }, []);
 }
