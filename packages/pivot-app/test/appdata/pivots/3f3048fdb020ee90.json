@@ -15,9 +15,9 @@
             "fileName"
         ],
         "http-expand$$$pRef": [
-            "3f302c64dda2536f"
+            "3f38219a14695687"
         ],
-        "http-expand$$$endpoint": "http://localhost:3000/pivot/echo?site={site}&host=user12&host=user13&host=user14&host=user15",
+        "http-expand$$$endpoint": "http://localhost:3000/pivot/echo?site={domain}&host=user12&host=user13&host=user14&host=user15",
         "http-expand$$$jq": "[ . as \\$x | .host[] | {\"user\": ., \"site\": \\$x.site, \"origin\": \"Blue Coat\"} ]"
     },
     "pivotTemplate": "http-expand"

@@ -6,6 +6,8 @@ import { PARAMETERS } from './common.js';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
+import { demoEncodings } from './common.js';
+
 
 export const HTTP_EXPAND = new HttpPivot({
     id: 'http-expand',
@@ -42,12 +44,6 @@ export const HTTP_EXPAND = new HttpPivot({
             });
 
     },
-    encodings: {
-        point: {
-            pointColor: (node) => {
-                node.pointColor = stringhash(node.type) % 12;
-            }
-        }
-    }
+    encodings: demoEncodings
 });
 

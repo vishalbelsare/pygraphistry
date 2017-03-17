@@ -6,6 +6,8 @@ import { PARAMETERS } from './common.js';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
+import { demoEncodings } from './common.js';
+
 
 export const HTTP_SEARCH = new HttpPivot({
     id: 'http-search',
@@ -30,11 +32,5 @@ export const HTTP_SEARCH = new HttpPivot({
         return [url];
     },
     parameters: PARAMETERS,
-    encodings: {
-        point: {
-            pointColor: (node) => {
-                node.pointColor = stringhash(node.type) % 12;
-            }
-        }
-    }
+    encodings: demoEncodings
 });

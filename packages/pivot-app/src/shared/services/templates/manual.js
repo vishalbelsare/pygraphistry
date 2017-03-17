@@ -9,6 +9,7 @@ import { flattenJson } from '../support/flattenJson.js';
 import logger from '../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
+import { demoEncodings } from './http/common.js';
 
 
 class ManualPivot extends PivotTemplate {
@@ -116,11 +117,5 @@ export const MANUAL = new ManualPivot({
             options: [],
         }
     ],
-    encodings: {
-        point: {
-            pointColor: (node) => {
-                node.pointColor = stringhash(node.type) % 12;
-            }
-        }
-    }
+    encodings: demoEncodings
 });
