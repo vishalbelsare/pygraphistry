@@ -18,7 +18,7 @@ class Graphistry extends Observable {
     static iFrame = null;
 
     /**
-     * Create Graphistry Observable by extending observable's methods
+     * Create Graphistry {@link Observable} by extending observable's methods
      * @param {Object} source - The source observable.
      */
     constructor(source) {
@@ -35,12 +35,11 @@ class Graphistry extends Observable {
     }
 
     /**
-     * Creates a new Observable with this as the source, and the passed
+     * Creates a new {@link Observable} with this as the source, and the passed
      * operator as the new Observable's operator.
      * @method Graphistry~lift
-     * @param {Operator} operator - the operator defining the operation to take on the
-     * observable
-     * @return {Observable} a new observable with the operator applied
+     * @param {Operator} operator - the operator defining the operation to apply to the {@link Observable}
+     * @return {@link Observable} a new {@link Observable} with the operator applied
      */
     lift(operator) {
         const observable = new Graphistry(this);
@@ -69,7 +68,7 @@ class Graphistry extends Observable {
      * Add columns to the current graph visuzliation's dataset
      * @method Graphistry.addColumns
      * @params {...Arrays} columns - One of more columns to be appended to the dataset
-     * @return {Promise} A promise to return the result of the callback
+     * @return {Graphistry<Array<Column>>} A {@link Graphistry} {@link Observable} that emits an Array of the new columns
      * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function(g) {
@@ -103,7 +102,7 @@ class Graphistry extends Observable {
      * @param {Attribute} [attribute] - name of data column, e.g., 'degree'
      * @param {Variant} [variation] - If there are more bins than colors, use 'categorical' to repeat colors and 'continuous' to interpolate
      * @param {Array} [colors] - array of color name or hex codes
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      *  GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -126,7 +125,7 @@ class Graphistry extends Observable {
      * Reset color to value at page load
      * @method Graphistry.resetColor
      * @param {GraphType} [graphType] - 'point' or 'edge'
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      *  GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -153,7 +152,7 @@ class Graphistry extends Observable {
      * @method Graphistry.encodeIcons
      * @param {GraphType} [graphType] - 'point' or 'edge'
      * @param {Attribute} [attribute] - name of data column, e.g., 'icon'
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      *  GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -176,7 +175,7 @@ class Graphistry extends Observable {
      * Reset icons to value at page load
      * @method Graphistry.resetIcons
      * @param {GraphType} [graphType] - 'point' or 'edge'
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      *  GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -204,7 +203,7 @@ class Graphistry extends Observable {
      * @method Graphistry.encodeSize
      * @param {GraphType} [graphType] - 'point'
      * @param {Attribute} [attribute] - name of data column, e.g., 'degree'
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      *  GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -228,7 +227,7 @@ class Graphistry extends Observable {
      * Reset size to value at page load
      * @method Graphistry.resetSize
      * @param {GraphType} [graphType] - 'point'
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      *  GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -252,7 +251,7 @@ class Graphistry extends Observable {
      * @method Graphistry.toggleLeftPanel
      * @param {string} [panel] - Name of panel: filters, exclusions, scene, labels, layout
      * @param {boolean} [turnOn] - Whether to make panel visible, or turn all off
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      *  GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -298,7 +297,7 @@ class Graphistry extends Observable {
      * Toggle inspector panel
      * @method Graphistry.toggleInspector
      * @param {boolean} [turnOn] - Whether to make panel visible
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      *  GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -332,7 +331,7 @@ class Graphistry extends Observable {
      * Toggle histogram panel
      * @method Graphistry.toggleHistograms
      * @param {boolean} [turnOn] - Whether to make panel visible
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      *  GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -364,7 +363,7 @@ class Graphistry extends Observable {
     /**
      * Close the filters panel
      * @method Graphistry.closeFilters
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -389,7 +388,7 @@ class Graphistry extends Observable {
      * @method Graphistry.tickClustering
      * @static
      * @param {number} ticks - The number of ticks to run
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -423,7 +422,7 @@ class Graphistry extends Observable {
      * @static
      * @param {number} percentile - Controls sensitivity to outliers
      * @param {function} [cb] - Callback function of type callback(error, result)
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -442,7 +441,7 @@ class Graphistry extends Observable {
      * @method Graphistry.getCurrentWorkbook
      * @static
      * @param {function} [cb] - Callback function of type callback(error, result)
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -466,7 +465,7 @@ class Graphistry extends Observable {
      * of the visualization, including active filters and exclusions
      * @method Graphistry.saveWorkbook
      * @static
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -490,7 +489,7 @@ class Graphistry extends Observable {
      * @method Graphistry.toogleToolbar
      * @static
      * @param {boolean} show - Set to true to show toolbar, and false to hide toolbar.
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      *
      * <button onclick="window.graphistry.toggleToolbar(false)">Hide toolbar</button>
@@ -507,7 +506,7 @@ class Graphistry extends Observable {
      * @static
      * @param {string} expr - An expression using the same language as our in-tool
      * exclusion and filter panel
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -532,7 +531,7 @@ class Graphistry extends Observable {
      * @static
      * @param {string} expr - An expression using the same language as our in-tool
      * exclusion and filter panel
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      * @example
      * GraphistryJS(document.getElementById('viz'))
      *     .flatMap(function (g) {
@@ -558,7 +557,7 @@ class Graphistry extends Observable {
      * @static
      * @param {string} name - the name of the setting to change
      * @param {string} val - the value to set the setting to.
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      */
     static updateSetting(name, val) {
 
@@ -607,30 +606,51 @@ class Graphistry extends Observable {
      * @static
      * @param {string} level - Controls how far to zoom in or out.
      * @param {string} val - the value to set the setting to.
-     * @return {Promise} The result of the callback
+     * @return {@link Graphistry} A {@link Graphistry} {@link Observable} that emits the result of the operation
      */
     static updateZoom(level) {
         return this.updateSetting('zoom', level);
     }
 
     /**
-     * Get or create an Observable stream of all label updates from the visualization.
+     * Get or create an {@link Observable} stream of all label updates from the visualization.
      * <p>
-     * The Observable returned by this method emits inner Observables, where each
-     * inner Observable is tied to the lifetime of the label for which it was created.
+     * The {@link Observable} returned by this method emits inner Observables, where each
+     * inner {@link Observable} is tied to the lifetime of the label for which it was created.
      * </p><p>
-     * For each label rendered in the visualization, the Observable returned by this
-     * method will create and emit a new inner Observable. The inner Observable will
+     * For each label rendered in the visualization, the {@link Observable} returned by this
+     * method will create and emit a new inner {@link Observable}. The inner {@link Observable} will
      * emit events when the label changes. For example, if the user clicks on the label,
-     * or the label changes position because of a pan/zoom, the inner Observable will
+     * or the label changes position because of a pan/zoom, the inner {@link Observable} will
      * emit an event.
      * </p><p>
-     * The inner Observable for a label will complete if the label is removed from the screen.
+     * The inner {@link Observable} for a label will complete if the label is removed from the screen.
      * </p><p>
      * @method Graphistry.labelUpdates
      * @static
-     * @return {Observable<Observable<LabelEvent>>} An Observable of inner Observables, where each
-     * inner Observable represents the lifetime of a label in the visualization.
+     * @return {Observable<Observable<LabelEvent>>} An {@link Observable} of inner {Observables}, where each
+     * inner {@link Observable} represents the lifetime of a label in the visualization.
+     * @example
+     * GraphistryJS(document.getElementById('viz'))
+     *     .flatMap(function (g) {
+     *         window.g = g;
+     *         console.log('Listening for label updates');
+     *         return g.labelUpdates();
+     *     })
+     *     .flatMap(function (labelUpdates) {
+     *         return labelUpdates
+     *             .do(function ({ id, tag, pageX, pageY }) {
+     *                 // prints messages like
+     *                 // > 'Label 13 added at (200, 340)'
+     *                 // > 'Label 74 updated at (750, 100)'
+     *                 console.log(`Label ${id} ${tag} at (${pageX}, ${pageY})`);
+     *             })
+     *             .takeLast(1)
+     *             .do(function ({ id, pageX, pageY }) {
+     *                 console.log(`Label ${id} removed at (${pageX}, ${pageY})`);
+     *             });
+     *     })
+     *     .subscribe();
      */
     static labelUpdates() {
         return this.labelsStream || (this.labelsStream = this
@@ -702,9 +722,8 @@ class Graphistry extends Observable {
      * Subscribe to label change and exit events
      * @method Graphistry.subscribeLabels
      * @static
-     * @param {subscriptions} subscriptions - A list of subscriptions that
-     * will subscribe to any label updates
-     * @return {Subscription} The result of the callback
+     * @param {Object} - An Object with `onChange` and `onExit` callbacks
+     * @return {Subscription} A {@link Subscription} that can be used to stop reacting to label updates
      */
     static subscribeLabels({ onChange, onExit }) {
         return this.labelUpdates().mergeMap((group) => group
@@ -720,7 +739,7 @@ class Graphistry extends Observable {
  * Function that creates a Graphistry Wrapped IFrame
  * @func GraphistryJS
  * @param {Object} IFrame - An IFrame that incudes a Graphistry visualization.
- * @return {Graphistry}
+ * @return {@link Graphistry}
  * @example
  *
  * <iframe id="viz" src="http://127.0.0.1:10000/graph/graph.html?dataset=Miserables" />
@@ -845,7 +864,7 @@ function wrapStaticObservableMethods(Observable, Graphistry) {
 }
 
 /**
- * A LabelEvent is dispatched by the inner Observables emitted by the labelUpdates() Observable.
+ * A LabelEvent is dispatched by the inner Observables emitted by the labelUpdates() {@link Observable}.
  * A LabelEvent is generated for each label update in the visualization.
  * @typedef {Object} LabelEvent
  * @property {number} id - the integer ID for the element the label describes
@@ -866,7 +885,7 @@ function wrapStaticObservableMethods(Observable, Graphistry) {
  */
 
  /**
- * The subscribe method triggers the execution of the Observable, causing the values within to be pushed to a callback. An Observable is like a pipe of water that is closed. When subscribe is called, we open the valve and the values within are pushed at us.  These values can be received using either callbacks or an {@link Observer} object.
+ * The subscribe method triggers the execution of the {@link Observable}, causing the values within to be pushed to a callback. An {@link Observable} is like a pipe of water that is closed. When subscribe is called, we open the valve and the values within are pushed at us.  These values can be received using either callbacks or an {@link Observer} object.
  * @name subscribe
  * @memberof Observable.prototype
  * @function
@@ -899,7 +918,7 @@ function wrapStaticObservableMethods(Observable, Graphistry) {
  */
 
 /**
- * When this method is called on the Subscription, the Observable that created the Subscription will stop sending values to the callbacks passed when the Subscription was created.
+ * When this method is called on the Subscription, the {@link Observable} that created the Subscription will stop sending values to the callbacks passed when the Subscription was created.
  * @name unsubscribe
  * @method
  * @memberof Subscription.prototype
