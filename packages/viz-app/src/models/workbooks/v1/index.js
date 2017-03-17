@@ -5,10 +5,11 @@ export default function migrateV1(workbook, options) {
     const { viewsById = {} } = workbook;
     for (const viewId in viewsById) {
         const view = viewsById[viewId];
+        const viewRoute = `workbooksById['${workbook.id}'].viewsById['${viewId}']`;
         viewsById[viewId] = {
             ...view,
             ...toolbar(workbook.id, viewId),
-            labels: { ...labels(view).labels, ...view.labels }
+            labels: { ...labels(viewRoute).labels, ...view.labels }
         };
     }
     return workbook;
