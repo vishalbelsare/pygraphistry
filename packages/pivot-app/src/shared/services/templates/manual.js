@@ -1,6 +1,5 @@
 import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
-import stringhash from 'string-hash';
 import { VError } from 'verror'
 
 import { shapeSplunkResults } from '../shapeSplunkResults.js';

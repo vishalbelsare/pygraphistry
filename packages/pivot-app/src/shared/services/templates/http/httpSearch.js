@@ -1,4 +1,3 @@
-import stringhash from 'string-hash';
 import template from 'string-template';
 
 import { HttpPivot } from './httpPivot';
@@ -15,7 +14,7 @@ export const HTTP_SEARCH = new HttpPivot({
     tags: ['Demo', 'Splunk'],
     attributes: [ ],
     connections: [ ],    
-    toUrls: function ({ endpoint, nodes, attributes }) {
+    toUrls: function ({ endpoint }) {
 
         const url = template(endpoint, {
             endpoint, 

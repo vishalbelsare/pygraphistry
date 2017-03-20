@@ -1,4 +1,3 @@
-import stringhash from 'string-hash';
 import template from 'string-template';
 
 import { HttpPivot } from './httpPivot';
