@@ -39,7 +39,11 @@ class ManualPivot extends PivotTemplate {
             params,
             pivotParameters: pivot.pivotParameters
         });
-        const { events } = params;
+        const { events, nodes, attributes } = params;
+
+        //TODO why isn't this in falcor?
+        this.connections = nodes ? nodes.value : [];
+        this.attributes = attributes ? attributes.value : [];
 
         const a = Observable.of('')
             .map(() => {
