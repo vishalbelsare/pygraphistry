@@ -20,9 +20,11 @@
         "http-expand$$$endpoint": "https://www.virustotal.com/vtapi/v2/ip-address/report?ip={ip}&apikey=b0f1ce2eede797d3a485be09b86990570fd0ec47ac6cf8057624b126836d89df",
         "http-expand$$$jq": "[ . as \\$x | .resolutions[] | {\"origin\": \"Virus Total\", \"base\": \\$x, \"owner\": \\$x.as_owner, \"country\": \\$x.country, \"domain\": .hostname, \"ip\": \"176.123.8.76\"} ]",
         "http-expand$$$nodes": [
-            "domain",
-            "origin",
-            "ip"
+            "ip",
+            "domain"
+        ],
+        "http-expand$$$attributes": [
+            "origin"
         ]
     },
     "pivotTemplate": "http-expand"

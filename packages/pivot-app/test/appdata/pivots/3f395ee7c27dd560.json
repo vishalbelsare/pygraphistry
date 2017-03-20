@@ -1,0 +1,31 @@
+{
+    "id": "3f395ee7c27dd560",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [
+            "module",
+            "level",
+            "err.message",
+            "time",
+            "metadata.dataset",
+            "err.stackArray{}.file",
+            "err.stackArray{}.function",
+            "msg",
+            "fileName"
+        ],
+        "manual-data$$$events": "[{\"origin\": \"Blue Coat\",\n  \"domain\": \"hw1I3gvj.ru\",\n  \"alert\": \"Blocked download attempt\",\n  \"URL\": \"http://176.123.8.75/2EA5955AE20C7B680EB7A3254F442CBD\",\n  \"ip\": \"176.123.8.76\",\n  \"agent\": \"Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)\",\n  \"host\": \"host12\"\n},\n{\"origin\": \"Blue Coat\",\n  \"domain\": \"oa505txzz.ru\",\n  \"alert\": \"Blocked download attempt\",  \n  \"URL\": \"http://176.123.8.83/2EA5955AE20C7B680EB7A3254F442CBD\",\n  \"ip\": \"176.123.8.76\",\n  \"agent\": \"Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)\",\n  \"host\": \"host14\"\n}]",
+        "manual-data$$$attributes": [
+            "origin"
+        ],
+        "manual-data$$$nodes": [
+            "domain",
+            "alert",
+            "URL",
+            "ip",
+            "agent",
+            "host"
+        ]
+    },
+    "pivotTemplate": "manual-data"
+}
