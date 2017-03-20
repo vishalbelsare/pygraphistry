@@ -5,7 +5,6 @@ import {
     Alert,
     Button,
     Tooltip, 
-    Glyphicon, 
     OverlayTrigger
 } from 'react-bootstrap';
 
@@ -31,8 +30,6 @@ export default function Investigation({
                             graphInvestigation({investigationId: id, length: pivots.length}
                         )}>
                     Run All
-                   { ' ' }
-                    <Glyphicon glyph="play" style={{fontSize: '8px'}}/>
                 </Button>
             </OverlayTrigger>
             { status && !status.ok ?
