@@ -24,10 +24,6 @@ export const HTTP_EXPAND = new HttpPivot({
     toUrls: function ({ endpoint = '', nodes, attributes, pRef }, pivotCache) {
 
         const refVal = pRef ? pRef.value : '';
-
-        //update dropdown optionlists
-        this.connections = nodes ? nodes.value : [];
-        this.attributes = attributes ? attributes.value : [];
         
         const pivots = refVal instanceof Array ? refVal : [refVal];
         const events = pivots.map((refVal) => pivotCache[refVal].events);

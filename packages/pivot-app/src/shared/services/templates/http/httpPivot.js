@@ -39,7 +39,12 @@ export class HttpPivot extends PivotTemplate {
             params,
             pivotParameters: pivot.pivotParameters
         })
-        const { jq } = params;
+        const { jq, nodes, attributes } = params;
+
+        //update dropdown optionlists; TODO should be in caller
+        this.connections = nodes ? nodes.value : [];
+        this.attributes = attributes ? attributes.value : [];
+
 
         log.trace('searchAndShape http: jq', {jq});
 

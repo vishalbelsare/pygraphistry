@@ -17,10 +17,6 @@ export const HTTP_SEARCH = new HttpPivot({
     connections: [ ],    
     toUrls: function ({ endpoint, nodes, attributes }) {
 
-        //update dropdown optionlists
-        this.connections = nodes ? nodes.value : [];
-        this.attributes = attributes ? attributes.value : [];
-
         const url = template(endpoint, {
             endpoint, 
             nodes: this.connections,
