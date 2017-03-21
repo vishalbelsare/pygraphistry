@@ -62,7 +62,7 @@ describe('httpPivot', function () {
 				pivot: {
 					id: 'x',
 					enabled: true, 
-					pivotParameters: {'x$$$jq': '. | [{x: 1}, {x: 3}]'}					
+					pivotParameters: {'x$$$jq': '. | [{"x": 1}, {"x": 3}]'}					
 				}, 
 				pivotCache: {}})
 			.subscribe(({pivot, ...rest}) => {

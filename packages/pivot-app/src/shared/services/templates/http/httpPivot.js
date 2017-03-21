@@ -1,6 +1,6 @@
 import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
-import { run } from 'node-jq';
+import { jqSafe } from '../../support/jq';
 import { VError } from 'verror'
 
 import { shapeSplunkResults } from '../../shapeSplunkResults.js';
@@ -62,8 +62,7 @@ export class HttpPivot extends PivotTemplate {
                 log.info('searchAndShape http: url', {url});
                 return this.connector.search(url)                    
                     .switchMap(([response]) => {
-                        return Observable
-                            .fromPromise(run(jq || '.', response.body, { input: 'string', output: 'json'}))
+                        return jqSafe(response.body, jq || '.')
                             .catch((e) => {
                                 return Observable.throw(
                                     new VError({

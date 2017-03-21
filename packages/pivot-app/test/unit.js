@@ -29,4 +29,5 @@ describe('OtherPivots', function () {
 
 describe('Support', function() {
     require('./services/support/flattenJson');
+    require('./services/support/jq');
 });
