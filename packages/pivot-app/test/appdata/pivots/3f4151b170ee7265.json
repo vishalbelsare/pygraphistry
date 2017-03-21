@@ -1,0 +1,21 @@
+{
+    "id": "3f4151b170ee7265",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [
+            "module",
+            "level",
+            "err.message",
+            "time",
+            "metadata.dataset",
+            "err.stackArray{}.file",
+            "err.stackArray{}.function",
+            "msg",
+            "fileName"
+        ],
+        "http-search$$$endpoint": "https://api.shodan.io/shodan/host/search?query=product%3Aredis&page=0&key=uHU4GrMuwWJTwkiVeHykzUJVhhah5Bwv",
+        "http-search$$$jq": ".matches"
+    },
+    "pivotTemplate": "http-search"
+}
