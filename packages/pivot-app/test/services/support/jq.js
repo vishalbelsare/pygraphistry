@@ -1,12 +1,9 @@
 import { assert } from 'chai';
 import { readFileSync } from 'fs';
 import { EOL } from 'os';
+import { resolve, } from 'path';
 
 import { jq, jqSafe } from '../../../src/shared/services/support/jq';
-
-
-const contents = readFileSync('blah.json', 'utf8');
-const json = JSON.parse(contents);
 
 
 function jqCompare(done, expected, str, transform, opts, f = jq) {
@@ -85,9 +82,12 @@ describe('jq', function () {
 	
 	it('Big file', (done) => {
 
-		const str = readFileSync('blah.json', 'utf8');
+		const contents = readFileSync(resolve(__dirname, 'blah.json'), 'utf8');
+		const json = JSON.parse(contents);
+
+		const str = contents;
 		const transform = '.matches';
-		const expected = JSON.parse(str).matches;
+		const expected = json.matches;
 
 		jqCompare(done, expected, str, transform);
 	});

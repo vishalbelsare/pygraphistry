@@ -63,9 +63,7 @@ export function jqSafe(str, transform = '.', args = []) {
 	if (transform.indexOf('import') > -1 || transform.indexOf('include') > -1) {
 		return Observable.throw(new Error('Include and import terms not allowed'));
 	} else {
-		const v =  jq(str, transform, args);
-		console.log('v obs?', v instanceof Observable);
-		return v;
+		return jq(str, transform, args);
 	}
 }
 
