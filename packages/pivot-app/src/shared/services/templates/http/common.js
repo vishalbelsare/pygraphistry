@@ -158,6 +158,9 @@ export const demoEncodings = {
         },
         pointSizes: function(node) {
             node.pointSize = SIZES[node.type];
+            if (node.pointSize === undefined) {
+                node.pointSize = 0.5;
+            }
         },
         pointIcon: function (node) {
             node.pointIcon = ICONS[node.type];

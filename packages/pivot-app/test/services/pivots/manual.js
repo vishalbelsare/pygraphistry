@@ -5,10 +5,39 @@ import { Observable } from 'rxjs';
 import request from 'request';
 const get = Observable.bindNodeCallback(request.get.bind(request));
 
-import { MANUAL } from '../../../src/shared/services/templates/manual';
+import { ManualPivot } from '../../../src/shared/services/templates/manual';
 
 
 describe('manualPivot', function () {
+
+
+    const MANUAL = new ManualPivot({
+        id: 'manual-data',
+        name: 'Enter data',
+        tags: ['Demo', 'Splunk'],
+        attributes: [ ],
+        connections: [ ],    
+        parameters: [
+            {
+                name: 'events',
+                inputType: 'textarea',
+                label: 'Events (json)'
+            },
+            {
+                name: 'nodes',
+                inputType: 'multi',
+                label: 'Nodes:',
+                options: [],
+            },
+            {
+                name: 'attributes',
+                inputType: 'multi',
+                label: 'Attributes:',
+                options: [],
+            }
+        ]
+    });
+
 
     it('simple object', (done) => {
         MANUAL.searchAndShape({
@@ -29,11 +58,11 @@ describe('manualPivot', function () {
                          { ...base2, destination: 'a', edgeType: 'EventID->z.0'},
                          { ...base2, destination: 'b', edgeType: 'EventID->z.1'}]);
                     assert.deepEqual(pivot.results.labels,
-                        [{ ...base, node: 'x:0', type: 'EventID', pointColor: 4 },
-                         { node: 1, type: 'x', pointColor: 5 },
-                         { node: 'aa', type: 'y', pointColor: 4 },
-                         { node: 'a', type: 'z.0', pointColor: 1 },
-                         { node: 'b', type: 'z.1', pointColor: 4 }
+                        [{ ...base, node: 'x:0', type: 'EventID'},
+                         { node: 1, type: 'x'},
+                         { node: 'aa', type: 'y'},
+                         { node: 'a', type: 'z.0'},
+                         { node: 'b', type: 'z.1' }
                          ]);
                     done();
                 }, (e) => done(new Error(e)));
@@ -55,10 +84,10 @@ describe('manualPivot', function () {
                         [{ ...base, x:1, destination: 1, 'source': 'x:0'},
                          { ...base, x:3, destination: 3, 'source': 'x:1'}]);
                     assert.deepEqual(pivot.results.labels,
-                        [{ x: 1, node: 'x:0', type: 'EventID', pointColor: 4 },
-                         { node: 1, type: 'x', pointColor: 5 },
-                         { x: 3, node: 'x:1', type: 'EventID', pointColor: 4 },
-                         { node: 3, type: 'x', pointColor: 5 } ]);
+                        [{ x: 1, node: 'x:0', type: 'EventID' },
+                         { node: 1, type: 'x'},
+                         { x: 3, node: 'x:1', type: 'EventID' },
+                         { node: 3, type: 'x'} ]);
                     done();
                 }, (e) => done(new Error(e)));
     });
@@ -78,10 +107,10 @@ describe('manualPivot', function () {
                         [{x:1, destination: 1, 'source': 'aa', edgeType: 'EventID->x', _pivotId: 'x'},
                          {x:3, destination: 3, 'source': 'bb', edgeType: 'EventID->x', _pivotId: 'x'}]);
                     assert.deepEqual(pivot.results.labels,
-                        [{ x: 1, node: 'aa', type: 'EventID', pointColor: 4 },
-                         { node: 1, type: 'x', pointColor: 5 },
-                         { x: 3, node: 'bb', type: 'EventID', pointColor: 4 },
-                         { node: 3, type: 'x', pointColor: 5 } ]);
+                        [{ x: 1, node: 'aa', type: 'EventID'},
+                         { node: 1, type: 'x' },
+                         { x: 3, node: 'bb', type: 'EventID'},
+                         { node: 3, type: 'x' } ]);
                     done();
                 }, (e) => done(new Error(e)));
     });

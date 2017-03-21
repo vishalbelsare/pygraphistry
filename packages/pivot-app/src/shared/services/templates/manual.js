@@ -11,7 +11,7 @@ const log = logger.createLogger(__filename);
 import { demoEncodings } from './http/common.js';
 
 
-class ManualPivot extends PivotTemplate {
+export class ManualPivot extends PivotTemplate {
     constructor( pivotDescription ) {
         super(pivotDescription);
 
