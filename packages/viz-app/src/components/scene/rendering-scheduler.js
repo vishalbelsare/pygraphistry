@@ -432,7 +432,7 @@ RenderingScheduler.prototype.expandMidEdgeEndpoints = function(numEdges, numRend
 
 //[ srcIdx, dstIdx, ... ] -> { bundleLens: Uint32Array, bundleEntry: Uint32Array }
 // Identify multiedges: For each edge, # multiedges in its group, and its index in that list
-// ~20ms on a big graph
+// ~50ms-100ms on a big graph
 function computeEdgeBundles (logicalEdges) {
 
     const numEdges = logicalEdges.length / 2;
@@ -440,34 +440,27 @@ function computeEdgeBundles (logicalEdges) {
     const numInBundle = new Uint32Array(numEdges);
     const bundleEntry = new Uint32Array(numEdges);
 
-    //sorted by srcIdx, so we find bundles of srcIdx->dstIdx
-    let prevSrcIdx;
-    let prevDstIdx;
-    let bundleLen;
-    let edgeNum;
+    //TODO this is data that could have been sent from the server, and stable between filters
+    // or locally avoidable if the array was sorted
+    const src2dstCounts = {};
     for (let edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
-
         const srcPointIdx = logicalEdges[2 * edgeIndex];
         const dstPointIdx = logicalEdges[2 * edgeIndex + 1];
+        const dstCounts = src2dstCounts[srcPointIdx] = src2dstCounts[srcPointIdx] || {};
+        dstCounts[dstPointIdx] = (dstCounts[dstPointIdx]||0) + 1;
+    }
 
-        if ( (srcPointIdx != prevSrcIdx) || (dstPointIdx != prevDstIdx) ) {
-            prevSrcIdx = srcPointIdx;
-            prevDstIdx = dstPointIdx;
-            edgeNum = 0;         
+    const src2dstCountsRolling = {};
+    for (let edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
+        const srcPointIdx = logicalEdges[2 * edgeIndex];
+        const dstPointIdx = logicalEdges[2 * edgeIndex + 1];
+        const dstCounts = src2dstCountsRolling[srcPointIdx] = src2dstCountsRolling[srcPointIdx] || {};
+        const bundleIndex = dstCounts[dstPointIdx] = (dstCounts[dstPointIdx]||0) + 1;
 
-            bundleLen = 0;
-            while( (edgeIndex + bundleLen < numEdges) &&
-                   (srcPointIdx === logicalEdges[2 * (edgeIndex + bundleLen)]) && 
-                   (dstPointIdx === logicalEdges[2 * (edgeIndex + bundleLen) + 1]) ) {
-                bundleLen++;
-            }
-        } else {
-            edgeNum++;
-        }
+        const bundleLen = src2dstCounts[srcPointIdx][dstPointIdx];
 
         numInBundle[edgeIndex] = bundleLen;
-        bundleEntry[edgeIndex] = edgeNum;
-
+        bundleEntry[edgeIndex] = bundleIndex;
     }
 
     return { numInBundle, bundleEntry };
@@ -550,11 +543,12 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
 
     const { numInBundle, bundleEntry } = computeEdgeBundles(logicalEdges);
 
-
-    //~100ms on a big graph
+    //~50-100ms on a big graph
     const cosArray = new Float32Array(numRenderedSplits * numEdges);
     const sinArray = new Float32Array(numRenderedSplits * numEdges);    
     const edgeCache = updateEdgeCache({numEdges, numInBundle, bundleEntry, edgeHeight, numRenderedSplits, cosArray, sinArray});
+    
+    //~50-100ms on a big graph
     for (let edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
 
         /////////////
