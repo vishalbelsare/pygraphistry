@@ -488,6 +488,42 @@ function setMidEdge (edgeIdx, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPoin
 
 
 
+
+//For edge bundles of same size, memoize height geometry per edge
+//  -- also fill in cosArray, sinArray (for examplars)
+//TODO memoize across calls by preserving cosArray/sinArray
+function updateEdgeCache ({numEdges, numInBundle, bundleEntry, edgeHeight, numRenderedSplits, cosArray, sinArray}) {
+
+    const edgeCache = {};
+
+    for (let edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
+
+        const bundleLen = numInBundle[edgeIndex];
+        const edgeNum = bundleEntry[edgeIndex];
+       
+        if (!edgeCache[bundleLen]) {
+            edgeCache[bundleLen] = [];
+        }
+        if (!edgeCache[bundleLen][edgeNum]) {
+            const curveArrayOffset = edgeIndex * numRenderedSplits;
+            const moduloHeight = edgeHeight * (1.0 + 2 * edgeNum/bundleLen);
+            const unitRadius = (1 + Math.pow(moduloHeight, 2)) / (2 * moduloHeight);
+            const theta = Math.asin((1 / unitRadius)) * 2;
+            const thetaStep = -theta / (numRenderedSplits + 1);
+            for (let midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
+                const curTheta = thetaStep * (midPointIdx + 1);
+                cosArray[curveArrayOffset + midPointIdx] = Math.cos(curTheta);
+                sinArray[curveArrayOffset + midPointIdx] = Math.sin(curTheta);
+            }
+            edgeCache[bundleLen][edgeNum] = { moduloHeight, unitRadius, curveArrayOffset };        
+        }
+
+    }
+
+    return edgeCache;
+}
+
+
 // RenderState
 // {logicalEdges: Uint32Array, curPoints: Float32Array, edgeHeights: Float32Array, ?midSpringsPos: Float32Array}
 //  * int * float
@@ -515,17 +551,13 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
     const { numInBundle, bundleEntry } = computeEdgeBundles(logicalEdges);
 
 
-    const t0 = Date.now();
-
-
-    //~300ms on a big graph
+    //~100ms on a big graph
     const cosArray = new Float32Array(numRenderedSplits * numEdges);
     const sinArray = new Float32Array(numRenderedSplits * numEdges);    
-    for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
+    const edgeCache = updateEdgeCache({numEdges, numInBundle, bundleEntry, edgeHeight, numRenderedSplits, cosArray, sinArray});
+    for (let edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
 
         /////////////
-
-        const curveArrayOffset = edgeIndex * numRenderedSplits;
 
         const srcPointIdx = logicalEdges[2 * edgeIndex];
         const dstPointIdx = logicalEdges[2 * edgeIndex + 1];
@@ -538,17 +570,11 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
         const bundleLen = numInBundle[edgeIndex];
 
         /////////////
+    
+        const { moduloHeight, unitRadius, curveArrayOffset } = edgeCache[bundleLen][edgeNum];
 
-        const moduloHeight = edgeHeight * (1.0 + 2 * edgeNum/bundleLen);
-        const unitRadius = (1 + Math.pow(moduloHeight, 2)) / (2 * moduloHeight);
-        const theta = Math.asin((1 / unitRadius)) * 2;
-        const thetaStep = -theta / (numRenderedSplits + 1);
+        /////////////
 
-        for (let midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
-            const curTheta = thetaStep * (midPointIdx + 1);
-            cosArray[curveArrayOffset + midPointIdx] = Math.cos(curTheta);
-            sinArray[curveArrayOffset + midPointIdx] = Math.sin(curTheta);
-        }
 
         const edgeLength =
             srcPointIdx === dstPointIdx ? 1.0
@@ -580,9 +606,6 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
         setMidEdge(edgeIndex, numRenderedSplits,  prevPointX, prevPointY, dstPointX, dstPointY, midEdgeStride, midSpringsPos);    
 
     }
-
-    console.log("tesselate", Date.now() - t0, 'ms');
-
 
     return {
         midSpringsPos: midSpringsPos,
