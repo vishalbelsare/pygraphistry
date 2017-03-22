@@ -430,147 +430,159 @@ RenderingScheduler.prototype.expandMidEdgeEndpoints = function(numEdges, numRend
 };
 
 
+//[ srcIdx, dstIdx, ... ] -> { bundleLens: Uint32Array, bundleEntry: Uint32Array }
+// Identify multiedges: For each edge, # multiedges in its group, and its index in that list
+// ~20ms on a big graph
+function computeEdgeBundles (logicalEdges) {
+
+    const numEdges = logicalEdges.length / 2;
+
+    const numInBundle = new Uint32Array(numEdges);
+    const bundleEntry = new Uint32Array(numEdges);
+
+    //sorted by srcIdx, so we find bundles of srcIdx->dstIdx
+    let prevSrcIdx;
+    let prevDstIdx;
+    let bundleLen;
+    let edgeNum;
+    for (let edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
+
+        const srcPointIdx = logicalEdges[2 * edgeIndex];
+        const dstPointIdx = logicalEdges[2 * edgeIndex + 1];
+
+        if ( (srcPointIdx != prevSrcIdx) || (dstPointIdx != prevDstIdx) ) {
+            prevSrcIdx = srcPointIdx;
+            prevDstIdx = dstPointIdx;
+            edgeNum = 0;         
+
+            bundleLen = 0;
+            while( (edgeIndex + bundleLen < numEdges) &&
+                   (srcPointIdx === logicalEdges[2 * (edgeIndex + bundleLen)]) && 
+                   (dstPointIdx === logicalEdges[2 * (edgeIndex + bundleLen) + 1]) ) {
+                bundleLen++;
+            }
+        } else {
+            edgeNum++;
+        }
+
+        numInBundle[edgeIndex] = bundleLen;
+        bundleEntry[edgeIndex] = edgeNum;
+
+    }
+
+    return { numInBundle, bundleEntry };
+
+}
+
+
+
+function setMidEdge (edgeIdx, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPointX, dstMidPointY, midEdgeStride, midSpringsPos) {
+    var midEdgeStartIdx = edgeIdx * midEdgeStride;
+    var index = midEdgeStartIdx + (midEdgeIdx * 4);
+    midSpringsPos[index] = srcMidPointX;
+    midSpringsPos[index + 1] = srcMidPointY;
+    midSpringsPos[index + 2] = dstMidPointX;
+    midSpringsPos[index + 3] = dstMidPointY;
+};
+
+
+
+
 // RenderState
 // {logicalEdges: Uint32Array, curPoints: Float32Array, edgeHeights: Float32Array, ?midSpringsPos: Float32Array}
 //  * int * float
 //  -> {midSpringsPos: Float32Array, midSpringsStarts: Float32Array, midSpringsEnds: Float32Array}
 RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferSnapshots, numRenderedSplits, edgeHeight) {
-    var logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
-    var curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
 
-    var numEdges = logicalEdges.length / 2;
+    const logicalEdges = new Uint32Array(bufferSnapshots.logicalEdges.buffer);
+    const curPoints = new Float32Array(bufferSnapshots.curPoints.buffer);
 
-    var numVertices = (2 * numEdges) * (numRenderedSplits + 1);
+    const numEdges = logicalEdges.length / 2;
+
+    const numVertices = (2 * numEdges) * (numRenderedSplits + 1);
 
     bufferSnapshots.midSpringsPos = this.getTypedArray('midSpringsPos', Float32Array, numVertices * 2);
 
-    var midSpringsPos = bufferSnapshots.midSpringsPos;
-    var midEdgesPerEdge = numRenderedSplits + 1;
-    var midEdgeStride = 4 * midEdgesPerEdge;
+    const midSpringsPos = bufferSnapshots.midSpringsPos;
+    const midEdgesPerEdge = numRenderedSplits + 1;
+    const midEdgeStride = 4 * midEdgesPerEdge;
 
-    var setMidEdge = function (edgeIdx, midEdgeIdx, srcMidPointX, srcMidPointY, dstMidPointX, dstMidPointY) {
-        var midEdgeStartIdx = edgeIdx * midEdgeStride;
-        var index = midEdgeStartIdx + (midEdgeIdx * 4);
-        midSpringsPos[index] = srcMidPointX;
-        midSpringsPos[index + 1] = srcMidPointY;
-        midSpringsPos[index + 2] = dstMidPointX;
-        midSpringsPos[index + 3] = dstMidPointY;
-    };
 
     //for each midEdge, start x/y & end x/y
-    var midSpringsEndpoints = this.expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints);
+    const midSpringsEndpoints = this.expandMidEdgeEndpoints(numEdges, numRenderedSplits, logicalEdges, curPoints);
 
-    //TODO have server pre-compute real heights, and use them here
-    //var edgeHeights = renderState.hostBuffersCache.edgeHeights;
-    var srcPointIdx;
-    var dstPointIdx;
-    var srcPointX;
-    var srcPointY;
-    var dstPointX;
-    var dstPointY;
-    // var cosArray = new Float32Array(numRenderedSplits);
-    // var sinArray = new Float32Array(numRenderedSplits);
-    var heightCounter = 0;
-    var prevSrcIdx = -1;
-    var prevDstIdx = -1;
-    var edgeSeqLen = 1;
 
-    var valueCache = {};
-    var getFromCache = function (h, e) {
-        if (!valueCache[h]) {
-            return undefined;
-        }
-        return valueCache[h][e];
-    };
-    var putInCache = function (h, e, val) {
-        valueCache[h] = valueCache[h] || {};
-        valueCache[h][e] = val;
-    };
+    const { numInBundle, bundleEntry } = computeEdgeBundles(logicalEdges);
 
-    for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex += 1) {
 
-        srcPointIdx = logicalEdges[2 * edgeIndex];
-        dstPointIdx = logicalEdges[2 * edgeIndex + 1];
-        srcPointX = curPoints[2 * srcPointIdx];
-        srcPointY = curPoints[2 * srcPointIdx + 1];
-        dstPointX = curPoints[2 * dstPointIdx];
-        dstPointY = curPoints[2 * dstPointIdx + 1];
+    const t0 = Date.now();
 
-        heightCounter = 0;
 
-        edgeSeqLen = 0;
-        while(srcPointIdx === logicalEdges[2 * (edgeIndex + edgeSeqLen)]){
-            edgeSeqLen++;
+    //~300ms on a big graph
+    const cosArray = new Float32Array(numRenderedSplits * numEdges);
+    const sinArray = new Float32Array(numRenderedSplits * numEdges);    
+    for (var edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
+
+        /////////////
+
+        const curveArrayOffset = edgeIndex * numRenderedSplits;
+
+        const srcPointIdx = logicalEdges[2 * edgeIndex];
+        const dstPointIdx = logicalEdges[2 * edgeIndex + 1];
+        const srcPointX = curPoints[2 * srcPointIdx];
+        const srcPointY = curPoints[2 * srcPointIdx + 1];
+        const dstPointX = curPoints[2 * dstPointIdx];
+        const dstPointY = curPoints[2 * dstPointIdx + 1];
+
+        const edgeNum = bundleEntry[edgeIndex];
+        const bundleLen = numInBundle[edgeIndex];
+
+        /////////////
+
+        const moduloHeight = edgeHeight * (1.0 + 2 * edgeNum/bundleLen);
+        const unitRadius = (1 + Math.pow(moduloHeight, 2)) / (2 * moduloHeight);
+        const theta = Math.asin((1 / unitRadius)) * 2;
+        const thetaStep = -theta / (numRenderedSplits + 1);
+
+        for (let midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
+            const curTheta = thetaStep * (midPointIdx + 1);
+            cosArray[curveArrayOffset + midPointIdx] = Math.cos(curTheta);
+            sinArray[curveArrayOffset + midPointIdx] = Math.sin(curTheta);
         }
 
-        prevSrcIdx = srcPointIdx;
-        prevDstIdx = dstPointIdx;
-
-        var moduloHeight, unitRadius, cosArray, sinArray, midPointIdx;
-        var cachedObj = getFromCache(heightCounter, edgeSeqLen);
-        if (!cachedObj) {
-            // We haven't seen this combo of heightCounter and edgeSeqLen yet.
-            moduloHeight = edgeHeight * (1.0 + 2 * heightCounter/edgeSeqLen);
-            unitRadius = (1 + Math.pow(moduloHeight, 2)) / (2 * moduloHeight);
-            var theta = Math.asin((1 / unitRadius)) * 2;
-            var thetaStep = -theta / (numRenderedSplits + 1);
-
-            var curTheta;
-            cosArray = new Float32Array(numRenderedSplits);
-            sinArray = new Float32Array(numRenderedSplits);
-            for (midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
-                curTheta = thetaStep * (midPointIdx + 1);
-                cosArray[midPointIdx] = Math.cos(curTheta);
-                sinArray[midPointIdx] = Math.sin(curTheta);
-            }
-
-            cachedObj = {
-                moduloHeight: moduloHeight,
-                unitRadius: unitRadius,
-                theta: theta,
-                thetaStep: thetaStep,
-                cosArray: cosArray,
-                sinArray: sinArray
-            };
-            putInCache(heightCounter, edgeSeqLen, cachedObj);
-        }
-
-        moduloHeight = cachedObj.moduloHeight;
-        unitRadius = cachedObj.unitRadius;
-        cosArray = cachedObj.cosArray;
-        sinArray = cachedObj.sinArray;
-
-        var edgeLength =
+        const edgeLength =
             srcPointIdx === dstPointIdx ? 1.0
             : Math.sqrt(Math.pow((dstPointX - srcPointX), 2) + Math.pow((dstPointY - srcPointY), 2));
 
-        var height = moduloHeight * (edgeLength / 2);
-        var edgeDirectionX = (srcPointX -  dstPointX) / edgeLength;
-        var edgeDirectionY = (srcPointY -  dstPointY) / edgeLength;
-        var radius = unitRadius * (edgeLength / 2);
-        var midPointX = (srcPointX + dstPointX) / 2;
-        var midPointY = (srcPointY + dstPointY) / 2;
-        var centerPointX = midPointX + (radius - height) * (-1 * edgeDirectionY);
-        var centerPointY = midPointY + (radius - height) * (edgeDirectionX);
-        var startRadiusX = srcPointIdx === dstPointIdx ? 1.0 : (srcPointX - centerPointX);
-        var startRadiusY = srcPointIdx === dstPointIdx ? 1.0 : (srcPointY - centerPointY);
+        const height = moduloHeight * (edgeLength / 2);
+        const edgeDirectionX = (srcPointX -  dstPointX) / edgeLength;
+        const edgeDirectionY = (srcPointY -  dstPointY) / edgeLength;
+        const radius = unitRadius * (edgeLength / 2);
+        const midPointX = (srcPointX + dstPointX) / 2;
+        const midPointY = (srcPointY + dstPointY) / 2;
+        const centerPointX = midPointX + (radius - height) * (-1 * edgeDirectionY);
+        const centerPointY = midPointY + (radius - height) * (edgeDirectionX);
+        const startRadiusX = srcPointIdx === dstPointIdx ? 1.0 : (srcPointX - centerPointX);
+        const startRadiusY = srcPointIdx === dstPointIdx ? 1.0 : (srcPointY - centerPointY);
 
-        var prevPointX = srcPointX;
-        var prevPointY = srcPointY;
-        var nextPointX;
-        var nextPointY;
-        for (midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
-            var cos = cosArray[midPointIdx];
-            var sin = sinArray[midPointIdx];
-            nextPointX = centerPointX + (cos * startRadiusX) - (sin * startRadiusY);
-            nextPointY = centerPointY + (sin * startRadiusX) + (cos * startRadiusY);
-            setMidEdge(edgeIndex, midPointIdx, prevPointX, prevPointY, nextPointX, nextPointY);
+        let prevPointX = srcPointX;
+        let prevPointY = srcPointY;
+
+        for (let midPointIdx = 0; midPointIdx < numRenderedSplits; midPointIdx++) {
+            const cos = cosArray[curveArrayOffset + midPointIdx];
+            const sin = sinArray[curveArrayOffset + midPointIdx];
+            const nextPointX = centerPointX + (cos * startRadiusX) - (sin * startRadiusY);
+            const nextPointY = centerPointY + (sin * startRadiusX) + (cos * startRadiusY);
+            setMidEdge(edgeIndex, midPointIdx, prevPointX, prevPointY, nextPointX, nextPointY, midEdgeStride, midSpringsPos);
             prevPointX = nextPointX;
             prevPointY = nextPointY;
         }
-        setMidEdge(edgeIndex, numRenderedSplits,  prevPointX, prevPointY, dstPointX, dstPointY);
+        setMidEdge(edgeIndex, numRenderedSplits,  prevPointX, prevPointY, dstPointX, dstPointY, midEdgeStride, midSpringsPos);    
 
     }
+
+    console.log("tesselate", Date.now() - t0, 'ms');
+
 
     return {
         midSpringsPos: midSpringsPos,
