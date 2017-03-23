@@ -116,6 +116,7 @@
     text-align: right;
     padding: 0px !important;
     transition: background-color 0.1s ease;
+	height: 15px;
 }
 
 /*.pivot-footer:hover {
@@ -218,7 +219,7 @@
     & > div > div:nth-child(2):not(:hover) {
         border-width: 0;
         background-color: transparent;
-        border-bottom: 1px dotted #aaaaaa;
+       // border-bottom: 1px dotted #aaaaaa;
     }
 }
 
@@ -325,8 +326,10 @@
 
 :global(.Pane1 .panel-footer) {
     background-color: #c2d4de !important;
-    padding: 1px 15px !important;
+    padding: 0px 15px !important;
     transition: background-color 0.1s ease;
+	height: 15px !important;
+	font-size: 10px;
 }
 
 /*:global(.Pane1 .panel-footer:hover) {
@@ -406,9 +409,7 @@
 }
 
 :global(.Pane1 .Select-control:hover) {
-    border-top: none !important;
-    border-left: none !important;
-    border-right: none !important;
+    border: none !important;
     background-color: #F9F9F9 !important;
 }
 
@@ -456,7 +457,7 @@ color: #333 !important;
 }
 
 :global(.panel-body b) {
-    font-weight: 100 !important;
+    font-weight: 400 !important;
     font-size: 10px;
     margin-left: 17px;
 
@@ -477,7 +478,15 @@ color: #333 !important;
 }
 
 :global(.btn-block) {
-    margin-bottom: 80px;
+    margin-bottom: 100px;
+	//background-image: repeating-linear-gradient(45deg, #ccc, #ccc 10px, #dbdbdb 10px, #dbdbdb 20px); //striped bg image
+	border: 1px dashed #CCCCCC !important;
+	background-color: #F6F6F6 !important;
+	transition: background-color 0.5s ease;
+	height: 40px;
+}
+:global(.btn-block:hover) {
+	background-color: #EAEAEA !important;
 }
 
 :global(pivot-result-summaries) {
@@ -500,3 +509,20 @@ color: #333 !important;
 	width: 60px !important;
 	height: 60px !important;
 }
+
+:global(.form-control){
+	 font-size: 11px;
+    height: 30px;
+    margin-top: 5px;
+	margin-right: 10px;
+}
+
+:global(.panel-body .Select){
+	margin-left: 10px;
+    margin-right: 9px;
+    font-size: 11px;
+}
+
+/*:global(.btn-warning){
+	background-image: repeating-linear-gradient(45deg, #ccc, #ccc 30px, #dbdbdb 30px, #dbdbdb 60px);
+}*/
