@@ -455,7 +455,7 @@ function computeEdgeBundles (logicalEdges) {
         const srcPointIdx = logicalEdges[2 * edgeIndex];
         const dstPointIdx = logicalEdges[2 * edgeIndex + 1];
         const dstCounts = src2dstCountsRolling[srcPointIdx] = src2dstCountsRolling[srcPointIdx] || {};
-        const bundleIndex = dstCounts[dstPointIdx] = (dstCounts[dstPointIdx]||0) + 1;
+        const bundleIndex = dstCounts[dstPointIdx] = (dstCounts[dstPointIdx] + 1) || 0;
 
         const bundleLen = src2dstCounts[srcPointIdx][dstPointIdx];
 
