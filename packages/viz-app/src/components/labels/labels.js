@@ -13,6 +13,7 @@ import * as Scheduler from 'rxjs/scheduler/animationFrame';
 
 import compose from 'recompose/compose';
 import getContext from 'recompose/getContext';
+import shallowEqual from 'recompose/shallowEqual';
 import mapPropsStream from 'recompose/mapPropsStream';
 import { Label, isDark } from './label';
 
@@ -32,10 +33,10 @@ const sceneUpdates = cameraChanges
     .map(() => Scheduler.animationFrame.now());
 
 const keysThatCanCauseRenders = [
+    'labels', 'highlight', 'selection',
+    'simulating', 'enabled', 'poiEnabled',
     'simulationWidth', 'simulationHeight',
-    'highlight', 'selection', 'simulating',
     'sceneUpdateTime', 'sceneSelectionType',
-    'enabled', 'poiEnabled',
 ];
 
 const WithPointsAndMousePosition = mapPropsStream((props) => props
@@ -46,7 +47,7 @@ const WithPointsAndMousePosition = mapPropsStream((props) => props
         ...props, sceneUpdateTime, mouseX: clientX, mouseY: clientY,
     }))
     .distinctUntilChanged((prev, curr) => (
-        keysThatCanCauseRenders.every((key) => prev[key] === curr[key]) && (
+        keysThatCanCauseRenders.every((key) => shallowEqual(prev[key], curr[key])) && (
         (prev.mouseX !== curr.mouseX || prev.mouseY !== curr.mouseY) &&
         (!curr.highlightEnabled || !curr.highlight || curr.highlight.type !== 'edge')
     )))

@@ -1,4 +1,5 @@
 import Color from 'color';
+import { toProps } from '@graphistry/falcor';
 import { Settings } from 'viz-app/containers/settings';
 import { container } from '@graphistry/falcor-react-redux';
 import {
@@ -67,38 +68,34 @@ let Labels = ({ simulating,
     return (
         <LabelsComponent labels={labels}
                          enabled={enabled}
-                         highlight={highlight}
-                         selection={selection}
                          simulating={simulating}
                          poiEnabled={poiEnabled}
+                         highlight={toProps(highlight)}
+                         selection={toProps(selection)}
                          highlightEnabled={highlightEnabled}
                          {...props}>
-        {enabled && labels.filter(Boolean).map((label) => {
-            const key = label === selection ? 'selection' :
-                        label === highlight ? 'highlight' : label.globalIndex;
-            return (
-                <Label data={label}
-                       color={color}
-                       opacity={opacity}
-                       key={`label-${key}`}
-                       encodings={encodings}
-                       simulating={simulating}
-                       background={background}
-                       pinned={label === selection}
-                       onLabelSelected={selectLabel}
-                       onLabelMouseMove={labelMouseMove}
-                       hasHighlightedLabel={!!highlight}
-                       sceneSelectionType={sceneSelectionType}
-                       showFull={label === highlight || label === selection}/>
-           );
-        }) || []}
+        {enabled && labels.filter(Boolean).map((label) => (
+            <Label data={label}
+                   color={color}
+                   opacity={opacity}
+                   key={`label-${label.globalIndex}`}
+                   encodings={encodings}
+                   simulating={simulating}
+                   background={background}
+                   pinned={label === selection}
+                   onLabelSelected={selectLabel}
+                   onLabelMouseMove={labelMouseMove}
+                   hasHighlightedLabel={!!highlight}
+                   sceneSelectionType={sceneSelectionType}
+                   showFull={label === highlight || label === selection}/>
+       )) || []}
         </LabelsComponent>
     );
 };
 
 Labels = container({
     renderLoading: false,
-    fragment: ({ edge = [], point = [], settings } = {}) => `{
+    fragment: ({ point = [], settings, highlight, selection } = {}) => `{
         id, name, opacity, timeZone,
         enabled, poiEnabled, highlightEnabled,
         renderer: {
@@ -106,14 +103,9 @@ Labels = container({
         },
         ['background', 'foreground']: { color },
         ...${ Settings.fragment({ settings }) },
-        ['highlight', 'selection']: ${
-            Label.fragment()
-        },
-        point: {
-            length, [0...${point.length || 0}]: ${
-                Label.fragment()
-            }
-        },
+        point: ${ Label.fragments(point) },
+        highlight: ${ Label.fragment(highlight) },
+        selection: ${ Label.fragment(selection) },
         encodings: {
             point: { color, size, icon },
             edge: { color, icon }
