@@ -21,7 +21,7 @@ export default function Investigation({
 
     return (
         <div className={styles.pivots}>
-			<div className={styles.description}><strong>Investigation Description</strong><br></br><br></br>Welcome to the botnet investigation demo, this is a generic investigation description, we need to implement an editable section here.<br></br><br></br></div>
+			{/*<div className={styles.description}><strong>Investigation Description</strong><br></br><br></br>Welcome to the botnet investigation demo, this is a generic investigation description, we need to implement an editable section here.<br></br><br></br></div>
 			<div className={styles.layoutSwitcher}>
 				<strong>Layout Type</strong><br></br><br></br>
 					<OverlayTrigger placement="bottom" overlay={
@@ -41,7 +41,7 @@ export default function Investigation({
 						</Button>
 					</OverlayTrigger>	
 				<br></br><br></br>
-			</div>
+			</div>	initial code for investigation description & layout switcher, need dynamic implementing for both */}
 			<div className={styles.rule}></div>
             <OverlayTrigger placement="bottom" overlay={
                     <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>

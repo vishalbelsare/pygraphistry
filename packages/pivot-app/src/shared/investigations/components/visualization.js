@@ -1,43 +1,36 @@
-import { ThreeBounce } from 'better-react-spinkit';
-import { Col, Row, Grid, Image } from 'react-bootstrap';
+import { Col, Row, Grid, Image, Glyphicon } from 'react-bootstrap';
 import { GraphistryIframe } from './graphistry-iframe';
 import styles from './investigations.less';
 
 
 export default function VisualizationPanel({ investigation }) {
     const loadingGraph = (
-        <span>
-            Loading graph <ThreeBounce size={10}/>
-        </span>
+        <div className={styles.visLoader}>
+            <span className='Select-loading'/>
+        </div>
     );
 
     const runPivot = (
         <span>
-            To get started, create and run a pivot!
+            Run a pivot to get started <Glyphicon glyph="flash" style={{color: '#E5582F'}}/>
         </span>
     );
 
     const placeholder = (
         <div className={styles['placeholder-wrapper']}>
              <div className={styles['placeholder-logo']}>
-                <Grid>
-                    <Row>
-                        <Col>
-                            <Image src="/pivot/img/logo.png" responsive />
-                        </Col>
-                    </Row><Row>
-                        <Col>
-                            <div className={styles['placeholder-message']}>
-                                {
+				<Image src="/pivot/img/dark_logo.png" responsive />
+				 <br></br>
+            </div>
+			<div className={styles['placeholder-message']}>
+				<div className={styles['placeholder-message-inside']}>
+                               	{
                                     (investigation.status && investigation.status.etling) ? 
                                         loadingGraph : 
                                         runPivot
                                 }
-                            </div>
-                        </Col>
-                    </Row>
-                </Grid>
-            </div>
+				</div>	
+          	</div>
         </div>
     );
 
