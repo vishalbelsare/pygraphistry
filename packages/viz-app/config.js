@@ -27,11 +27,21 @@ function loadConfigFiles() {
     }
 
     const validConfigFiles = configFiles.filter(function(configFilePath) {
-        if(!fs.existsSync(configFilePath)) {
-            console.error(`Warning: config file "${configFilePath}" does not exist, and will be omitted from config file loading.`);
-            return false;
-        } else {
+        try {
+            if(!fs.existsSync(configFilePath)) {
+                console.error(`Warning: config file "${configFilePath}" does not exist, and will be omitted from config file loading.`);
+                return false;
+            }
+
+            if(!fs.statSync(configFilePath).isFile()) {
+                console.error(`Warning: config file "${configFilePath}" is not a regular file. Ignoring.`);
+                return false;
+            }
+
             return true;
+        } catch(e) {
+            console.error(`Warning: could not read config file "${configFilePath}" due to the error: ${e.toString()}`);
+            return false;
         }
     })
 
