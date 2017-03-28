@@ -112,7 +112,8 @@
     "textures",
     "www",
     "index.js",
-    "config.js"
+    "config.js",
+    "config-schema.js"
   ],
   "author": "",
   "license": "ISC",
