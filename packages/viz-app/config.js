@@ -84,7 +84,7 @@ function loadConfigFiles() {
         configFiles = glob.sync(defaultConfigPath);
     }
 
-    let validConfigFiles = configFiles.filter(function(configFilePath) {
+    const validConfigFiles = configFiles.filter(function(configFilePath) {
         if(!fs.existsSync(configFilePath)) {
             console.error(`Warning: config file "${configFilePath}" does not exist, and will be omitted from config file loading.`);
             return false;
