@@ -1,5 +1,8 @@
 // The node-convict configuration schema for viz-app
 
+const config = require('@graphistry/config')();
+
+
 module.exports = {
     env: {
         doc: 'The applicaton environment.',

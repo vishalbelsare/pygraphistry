@@ -5,7 +5,6 @@ const fs = require('fs');
 const path = require('path');
 const glob = require('glob');
 const convict = require('convict');
-const config = require('@graphistry/config')();
 
 const configSchema = require('./config-schema.js');
 
