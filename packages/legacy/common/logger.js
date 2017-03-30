@@ -71,7 +71,7 @@ const headersToRedact = [
 function redactedReqSerializer(req) {
     const serializedReq = bunyan.stdSerializers.req(req);
 
-    if(serializedStandard.headers) {
+    if(serializedReq.headers) {
         serializedReq.headers = _.omit(serializedReq.headers, headersToRedact);
     }
 
