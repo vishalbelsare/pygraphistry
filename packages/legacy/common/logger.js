@@ -60,6 +60,25 @@ function errSerializer(e) {
 }
 
 
+// A list of HTTP request headers to omit when logging an HTTP request.
+const headersToRedact = [
+    // When using HTTP Basic Authentication, this header has the username & password
+    'authorization'
+];
+
+// Serialize HTTP request objects. This simply wraps Bunyan's built-in `req` serializer, but removes
+// sensitive HTTP headers. This ensures we don't accidentally write passwords, etc. to log files.
+function redactedReqSerializer(req) {
+    const serializedReq = bunyan.stdSerializers.req(req);
+
+    if(serializedStandard.headers) {
+        serializedReq.headers = _.omit(serializedReq.headers, headersToRedact);
+    }
+
+    return serializedReq;
+}
+
+
 function BrowserConsoleStream() {
     this.levelToConsole = {
         'trace': 'debug',
@@ -108,7 +127,8 @@ BrowserConsoleStream.prototype.write = function (rec) {
 
 function createServerLogger() {
     var serializers = _.extend({}, bunyan.stdSerializers, {
-        err: errSerializer
+        err: errSerializer,
+        req: redactedReqSerializer
     });
 
     // Always starts with a stream that writes fatal errors to STDERR
