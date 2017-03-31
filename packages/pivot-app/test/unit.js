@@ -13,4 +13,16 @@ describe('Models', function() {
 
 describe('Services', function() {
     require('./services/simpleFileSystemStore');
+    require('./services/uploadGraph');
+});
+
+describe('HttpConnector', function() {
+    require('./services/http/connector');
+    require('./services/http/pivot');
+    require('./services/http/search');
+    require('./services/http/expand');
+});
+
+describe('Support', function() {
+    require('./services/support/flattenJson');
 });

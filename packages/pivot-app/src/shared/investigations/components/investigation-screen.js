@@ -27,8 +27,8 @@ export default function InvestigationScreen({
     return (
         <div className={styles['investigation-all']}>
             <div className={styles['investigation-split']}>
-                <SplitPane pane1Style={{overflowY: 'auto'}} split="vertical" minSize={0} defaultSize={375}>
-                    <div>
+                <SplitPane split="vertical" minSize={0} defaultSize={375}>
+                    <div style={{height: '100%'}}>                        
                         <InvestigationHeader 
                             key={`investigation-header:${activeInvestigation.id}`}
                             investigations={investigations}

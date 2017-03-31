@@ -136,6 +136,12 @@ function setupRoutes(modules, getDataSource) {
         res.status(health.clear.success ? 200 : 500).json({...health.clear});
     });
 
+    //useful for testing
+    expressApp.get(`${mountPoint}/echo`, function(req, res) {
+        log.info('echo', { ...(req.query||{}) });
+        res.status(200).json(req.query);
+    });
+
     expressApp.get(`${mountPoint}/`, (req, res) => res.redirect(`${mountPoint}/home`));
     expressApp.get('*', (req, res) => res.status(404).send('Not found'));
 
