@@ -1,4 +1,4 @@
-import { Col, Row, Grid, Image, Glyphicon } from 'react-bootstrap';
+import { Image, Glyphicon } from 'react-bootstrap';
 import { GraphistryIframe } from './graphistry-iframe';
 import styles from './investigations.less';
 
@@ -18,19 +18,17 @@ export default function VisualizationPanel({ investigation }) {
 
     const placeholder = (
         <div className={styles['placeholder-wrapper']}>
-             <div className={styles['placeholder-logo']}>
+            <div className={styles['placeholder-logo']}>
 				<Image src="/pivot/img/dark_logo.png" responsive />
-				 <br></br>
+			<br></br>
             </div>
 			<div className={styles['placeholder-message']}>
-				<div className={styles['placeholder-message-inside']}>
-                               	{
+				<div className={styles['placeholder-message-inside']}>{
                                     (investigation.status && investigation.status.etling) ? 
                                         loadingGraph : 
-                                        runPivot
-                                }
-				</div>	
-          	</div>
+                                        runPivot}
+				</div>
+			</div>
         </div>
     );
 
