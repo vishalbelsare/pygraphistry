@@ -4,6 +4,7 @@ import { Investigation } from 'pivot-shared/investigations';
 import { container } from '@graphistry/falcor-react-redux';
 
 import {
+    saveLayout,
     splicePivot,
     insertPivot,
     searchPivot,
@@ -21,13 +22,13 @@ import {
 
 export const investigationContainer = container({
     fragment: ({ pivots } = {}) => `{
-        id, name, status, eventTable, modifiedOn, description, tags, url,
+        id, name, status, eventTable, modifiedOn, description, tags, url, layout,
         pivots: ${
             Pivot.fragments(pivots)
         }
     }`,
-    mapFragment: ({ id, name, pivots, status, eventTable } = {}) => ({
-        id, name, pivots, status, eventTable
+    mapFragment: ({ id, name, pivots, status, eventTable, layout } = {}) => ({
+        id, name, pivots, status, eventTable, layout
     }),
     dispatchers: {
         splicePivot,
@@ -53,6 +54,7 @@ export const investigationScreenContainer = container({
         user, ...user
     }),
     dispatchers: {
+        saveLayout,
         createInvestigation,
         copyInvestigation,
         saveInvestigation

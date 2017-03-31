@@ -5,6 +5,7 @@ import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
 import VError from 'verror';
+import { layouts } from './layouts.js';
 
 import logger from '../../shared/logger.js';
 const log = logger.createLogger(__filename);
@@ -202,14 +203,9 @@ export function decorateGraphLabelsWithXY(labels, xy) {
         });
 }
 
-function fixedPositionLayout(layoutType) {
-    const layouts = {"stackedBushyGraph": stackedBushyGraph};
-    if(layouts[layoutType]) {
-        return layouts[layoutType];
-    }
-    log.warn(layoutType, "No available layout");
-    return (x => x);
-}
+const shapers = {stackedBushyGraph: stackedBushyGraph,
+                 atlasbarnes: ((x) => x),
+                 weirdRandomSquare: ((x) => x)};
 
 function makeEventTable({pivots}) {
     function fieldSummary(mergedData, field) {
@@ -261,8 +257,6 @@ function makeEventTable({pivots}) {
 
 export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersById,
                              investigationIds}) {
-    const layoutType = "stackedBushyGraph";
-    const layoutControls = {"stackedBushyGraph": "lockedAtlasBarnesY"};
     return loadInvestigationsById({investigationIds})
         .mergeMap(
             ({app, investigation}) =>
@@ -272,7 +266,7 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                         .map(({ pivot }) => pivot)
                         .toArray()
                         .map(createGraph)
-                        .map((g) => fixedPositionLayout(layoutType)(g)),
+                        .map((g) => shapers[investigation.layout](g)),
                     ({user}, {pivots, data}) => ({user, pivots, data})
                 )
                 .switchMap(({user, data, pivots}) => {
@@ -287,7 +281,7 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                 .do(({user, dataset, data, pivots}) => {
                     investigation.eventTable = makeEventTable({data, pivots});
                     if (dataset) {
-                        investigation.url = `${user.vizService}&dataset=${dataset}${layoutType ? ('&controls=' + layoutControls[layoutType]) : ''}`;
+                        investigation.url = `${user.vizService}&dataset=${dataset}&controls=${layouts.find((e) => (e.id === investigation.layout)).controls}`;
                         investigation.status = {
                             ok: true,
                             etling: false,
