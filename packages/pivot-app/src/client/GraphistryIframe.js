@@ -1,7 +1,7 @@
 import React from 'react';
 
 import styles from './styles.less';
-import GraphistryJS from '@graphistry/graphistry-client';
+import { GraphistryJS } from '@graphistry/graphistry-client';
 
 import logger from '../shared/logger.js';
 const log = logger.createLogger(__filename);
@@ -12,14 +12,14 @@ export class GraphistryIframe extends React.Component {
         this.iframeRefHandler = this.iframeRefHandler.bind(this);
     }
 
-    iframeRefHandler (maybeIframe) {        
+    iframeRefHandler (maybeIframe) {
         if (maybeIframe) {
             //mounted
             const iframe = maybeIframe;
             GraphistryJS(iframe)
                 .do((g) => g.encodeIcons('point', 'pointIcon'))
                 .subscribe(
-                    () => undefined, 
+                    () => undefined,
                     (e) => log.error(e));
         } else {
             //unmounted
