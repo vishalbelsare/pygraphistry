@@ -4,6 +4,7 @@ import {
 
 import { Observable } from 'rxjs';
 import {
+    SAVE_LAYOUT,
     SEARCH_PIVOT,
     INSERT_PIVOT,
     SPLICE_PIVOT,
@@ -14,6 +15,7 @@ import {
 import { combineEpics } from 'redux-observable';
 
 export const investigation = combineEpics(
+    saveLayout,
     searchPivot,
     insertPivot,
     splicePivot,
@@ -21,6 +23,15 @@ export const investigation = combineEpics(
     dismissAlert,
     togglePivots
 );
+
+function saveLayout(action$) {
+    return action$
+        .ofType(SAVE_LAYOUT)
+        .switchMap(({ layoutType, falcor }) =>
+                 falcor.set($value(['activeInvestigation', 'layout'], layoutType))
+                 )
+        .ignoreElements();
+}
 
 function graphInvestigation(action$) {
     return action$

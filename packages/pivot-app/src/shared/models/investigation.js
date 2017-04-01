@@ -16,6 +16,7 @@ function defaults(index) {
         description: '',
         tags: [],
         modifiedOn: Date.now(),
+        layout: "stackedBushyGraph",
         pivots: []
     };
 }
