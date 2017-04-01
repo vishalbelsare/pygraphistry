@@ -3,7 +3,8 @@
     "id": "3f3003becdea3b11",
     "description": "",
     "tags": [],
-    "modifiedOn": 1489783782711,
+    "modifiedOn": 1491015759434,
+    "layout": "stackedBushyGraph",
     "pivots": [
         "3f3003becd92a0ba",
         "3f38219a14695687",

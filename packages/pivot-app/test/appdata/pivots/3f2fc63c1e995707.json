@@ -1,6 +1,6 @@
 {
     "id": "3f2fc63c1e995707",
-    "enabled": true,
+    "enabled": false,
     "pivotParameters": {
         "search-splunk-plain$$$query": "error",
         "search-splunk-plain$$$fields": [

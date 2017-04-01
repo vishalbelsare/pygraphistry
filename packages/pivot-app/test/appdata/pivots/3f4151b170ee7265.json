@@ -15,7 +15,18 @@
             "fileName"
         ],
         "http-search$$$endpoint": "https://api.shodan.io/shodan/host/search?query=product%3Aredis&page=0&key=uHU4GrMuwWJTwkiVeHykzUJVhhah5Bwv",
-        "http-search$$$jq": ".matches"
+        "http-search$$$jq": ".matches",
+        "http-search$$$nodes": [
+            "hash",
+            "asn",
+            "data",
+            "domains.0",
+            "isp",
+            "version",
+            "link",
+            "hostnames.0"
+        ],
+        "http-search$$$attributes": []
     },
     "pivotTemplate": "http-search"
 }

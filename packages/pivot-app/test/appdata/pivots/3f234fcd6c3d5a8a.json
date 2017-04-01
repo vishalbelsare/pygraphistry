@@ -15,7 +15,6 @@
             "fileName"
         ],
         "http-expand$$$pRef": [
-            "3f22f0c5cbf227b9",
             "3f22f188ba9e8e11"
         ],
         "http-expand$$$endpoint": "http://localhost:3000/pivot/echo?ip={ip}&nodes={nodes}",

@@ -17,8 +17,8 @@
         "http-expand$$$pRef": [
             "3f38219a14695687"
         ],
-        "http-expand$$$endpoint": "http://localhost:3000/pivot/echo?site={domain}&host=host12&host=host13&host=host14&host=host15",
-        "http-expand$$$jq": "[ . as \\$x | .host[] | {\"host\": ., \"site\": \\$x.site, \"origin\": \"Blue Coat\"} ]",
+        "http-expand$$$endpoint": "http://localhost:3000/pivot/echo?domain={domain}&host=host12&host=host13&host=host14&host=host15",
+        "http-expand$$$jq": ". as $x | [.host[] |  {\"host\": ., \"domain\": $x.domain} ]",
         "http-expand$$$nodes": [
             "domain",
             "host",

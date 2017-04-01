@@ -15,7 +15,10 @@
             "fileName"
         ],
         "http-search$$$endpoint": "http://localhost:3000/pivot/echo?x=1&x=2",
-        "http-search$$$jq": ". | [{ip: .x[0]}, {ip: .x[1]}]"
+        "http-search$$$jq": ". | [{\"ip\": .x[0]}, {\"ip\": .x[1]}]",
+        "http-search$$$nodes": [
+            "ip"
+        ]
     },
     "pivotTemplate": "http-search"
 }
