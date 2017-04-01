@@ -27,11 +27,16 @@
 	    }
     }
 
-
     //accordion weirdness
     :global(.panel-group) {
         margin: 0px;
     }
+
+    & :global(.panel-heading) {
+        padding-left: 9px;
+        padding-right: 9px;
+    }
+
     :global(.panel-body) {
         padding: 0;
         & > div {
@@ -87,6 +92,10 @@
         }
     }
 
+    & :global(.Select-arrow-zone) {
+        padding-right: 7px;
+    }
+
     & :global(.Select-control) {
         font-size: 12px;
         height: 30px !important;
@@ -105,6 +114,8 @@
     }
 
     & :global(.Select-control .Select-value) {
+        padding-top: 1px;
+        padding-left: 0px;
         height: 30px !important;
         border: none !important;
         font-weight: 900 !important;
@@ -126,16 +137,14 @@
     }
 }
 
+.pivot-disabled :global(.panel-footer) {
+    color: #999 !important;
+    background-color: #ccc !important;
+}
+
 .pivot-footer {
-
-	.pivot-row.pivot-disabled & {
-		opacity: @disabled-opacity;
-	}
-
 	display: flex;
     cursor: pointer;
-    background-color: #c2d4de;
-    color: #7FA1B4;
     font-size: 1.5em;
     text-align: right;
     padding: 0px !important;
@@ -261,7 +270,7 @@
     display: flex;
 }
 
-.pivot-text-param, .pivot-textarea-param, .pivot-combo-param {  
+.pivot-text-param, .pivot-textarea-param, .pivot-combo-param {
     label {
     	order: 1;
     	margin-top: 10px;

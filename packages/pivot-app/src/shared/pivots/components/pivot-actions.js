@@ -28,13 +28,13 @@ export default function PivotActions({
                     <Tooltip id={`tooltipActionPlay_${index}`}>Run step</Tooltip>
                 } key={`${index}: entityRowActionPlay_${index}`}>
                     <Button onClick={() => searchPivot({ index, pivotId, investigationId })} disabled={status.searching}>
-                        <Glyphicon glyph={status.searching ? "hourglass" : "play"}/>
+                        <Glyphicon className='fa-fw' glyph={status.searching ? "hourglass" : "play"}/>
                     </Button>
                 </OverlayTrigger>
                 <OverlayTrigger placement="top" overlay={
                     <Tooltip id={`tooltipActionAdd_${index}`}>Insert new step after</Tooltip>
                 } key={`${index}: entityRowActionAdd_${index}`}>
-                    <Button onClick={() => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
+                    <Button onClick={() => insertPivot({index})}><Glyphicon className='fa-fw' glyph="plus-sign" /></Button>
                 </OverlayTrigger>
             </ButtonGroup>
         {
@@ -47,7 +47,7 @@ export default function PivotActions({
                         </Popover>
                     } key={`${index}: entityRowAction_${index}`}>
                         <Button bsStyle="danger">
-                            <Glyphicon glyph="warning-sign" />
+                            <Glyphicon className='fa-fw' glyph="warning-sign" />
                         </Button>
                     </OverlayTrigger>
                 </ButtonGroup>
@@ -60,7 +60,7 @@ export default function PivotActions({
                         </Popover>
                     } key={`${index}: entityRowAction_${index}`}>
                         <Button bsStyle="info">
-                            <Glyphicon glyph="info-sign" />
+                            <Glyphicon className='fa-fw' glyph="info-sign" />
                         </Button>
                     </OverlayTrigger>
                 </ButtonGroup>
