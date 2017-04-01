@@ -54,7 +54,7 @@ export const appContainer = container({
 export const mainScreenContainer = container({
     renderLoading: false,
     fragment: ({ templates, investigations } = {}) => `{
-        id, name,
+        id, name, activeScreen,
         templates: ${
             Template.fragments(templates)
         },
