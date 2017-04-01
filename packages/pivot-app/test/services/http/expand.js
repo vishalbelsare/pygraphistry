@@ -6,24 +6,6 @@ import { HTTP_EXPAND } from '../../../src/shared/services/templates/http/httpExp
 
 describe('HttpExpand', function () {
 
-    let server;
-    beforeEach(function() {
-        const expressApp = express();       
-        expressApp.get('/echo', function(req, res) {
-            res.status(200).json(req.query);
-        });
-        expressApp.get('/timeout', () => {});
-        expressApp.get('/404', (req, res) => res.status(404).json({}));
-        server = expressApp.listen(3000);       
-    });
-
-    afterEach(function () {
-        server.close();
-    });
-
-
-    ////////////////////////////////
-
     it('constant', function (done) {    
         assert.deepEqual(
             HTTP_EXPAND.toUrls(

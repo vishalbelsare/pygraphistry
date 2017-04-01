@@ -8,6 +8,7 @@ const get = Observable.bindNodeCallback(request.get.bind(request));
 import { defaultHttpConnector } from '../../../src/shared/services/connectors/http';
 import { HttpPivot } from '../../../src/shared/services/templates/http/httpPivot';
 
+const PORT = 3001;
 
 describe('httpPivot', function () {
 
@@ -20,7 +21,7 @@ describe('httpPivot', function () {
 	    });
 	    expressApp.get('/timeout', () => {});
 	    expressApp.get('/404', (req, res) => res.status(404).json({}));
-	    server = expressApp.listen(3000);	    
+	    server = expressApp.listen(PORT);	    
 	});
 
 	afterEach(function () {
@@ -31,7 +32,7 @@ describe('httpPivot', function () {
 	////////////////////////////////
 
 	it('testEcho', (done) => {
-		get('http://localhost:3000/echo?x=1')
+		get(`http://localhost:${PORT}/echo?x=1`)
 			.subscribe(
 				([response]) => { 
 					assert.deepEqual(JSON.parse(response.body), {x: '1'})
@@ -52,7 +53,7 @@ describe('httpPivot', function () {
 	it('constant', (done) => {
 		const pivot = new HttpPivot({
 			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
-			toUrls: () => ['http://localhost:3000/echo?x=1'],
+			toUrls: () => [`http://localhost:${PORT}/echo?x=1`],
 			parameters: [],
 			encodings: {}
 		});
@@ -61,7 +62,7 @@ describe('httpPivot', function () {
 				pivot: {
 					id: 'x',
 					enabled: true, 
-					pivotParameters: {'x$$$jq': '. | [{x: 1}, {x: 3}]'}					
+					pivotParameters: {'x$$$jq': '. | [{"x": 1}, {"x": 3}]'}					
 				}, 
 				pivotCache: {}})
 			.subscribe(({pivot, ...rest}) => {
@@ -81,7 +82,7 @@ describe('httpPivot', function () {
 	it('fromData', (done) => {
 		const pivot = new HttpPivot({
 			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
-			toUrls: () => ['http://localhost:3000/echo?x=5&x=10'],
+			toUrls: () => [`http://localhost:${PORT}/echo?x=5&x=10`],
 			parameters: [],
 			encodings: {}
 		});
@@ -110,7 +111,7 @@ describe('httpPivot', function () {
 	it('userEventID', (done) => {
 		const pivot = new HttpPivot({
 			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
-			toUrls: () => ['http://localhost:3000/echo?x=5&x=10'],
+			toUrls: () => [`http://localhost:${PORT}/echo?x=5&x=10`],
 			parameters: [],
 			encodings: {}
 		});
@@ -139,7 +140,7 @@ describe('httpPivot', function () {
 	it('no includes', (done) => {
 		const pivot = new HttpPivot({
 			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
-			toUrls: () => ['http://localhost:3000/echo?x=1'],
+			toUrls: () => [`http://localhost:${PORT}/echo?x=1`],
 			parameters: [],
 			encodings: {}
 		});
@@ -157,6 +158,37 @@ describe('httpPivot', function () {
 					if (e && (e.name === 'JqSandboxException')) done();
 					else done(new Error({msg: "Excepted sandbox exception"}));
 				});
+	});
+
+	it('search multiple events', (done) => {
+		const pivot = new HttpPivot({
+			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
+			toUrls: () => 
+				[`http://localhost:${PORT}/echo?x=a`, 
+				 `http://localhost:${PORT}/echo?x=b`],
+			parameters: [],
+			encodings: {}
+		});
+		pivot.searchAndShape({
+				app: {}, 
+				pivot: {
+					id: 'x',
+					enabled: true, 
+					pivotParameters: {'x$$$jq': '.'}					
+				}, 
+				pivotCache: {}})
+			.subscribe(({pivot, ...rest}) => {
+					assert.deepEqual(pivot.events, [{x: "a", EventID:'x:0'}, {x: "b", EventID:'x:1'}]);
+					assert.deepEqual(pivot.results.graph, 
+						[{x: "a", destination: "a", 'source': 'x:0', edgeType: 'EventID->x', _pivotId: 'x'},
+						 {x: "b", destination: "b", 'source': 'x:1', edgeType: 'EventID->x', _pivotId: 'x'}]);
+					assert.deepEqual(pivot.results.labels,
+						[{ x: "a", node: 'x:0', type: 'EventID' },
+					     { node: "a", type: 'x' },
+					     { x: "b", node: 'x:1', type: 'EventID' },
+					     { node: "b", type: 'x' } ]);				
+					done();
+				}, (e) => done(e));
 	});
 
 });

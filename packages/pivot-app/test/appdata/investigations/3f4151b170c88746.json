@@ -1,0 +1,11 @@
+{
+    "name": "shodan",
+    "id": "3f4151b170c88746",
+    "description": "",
+    "tags": [],
+    "modifiedOn": 1491015018533,
+    "layout": "stackedBushyGraph",
+    "pivots": [
+        "3f4151b170ee7265"
+    ]
+}

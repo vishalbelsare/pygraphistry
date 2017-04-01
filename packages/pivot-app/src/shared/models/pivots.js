@@ -22,7 +22,7 @@ function defaults(pivotTemplate = 'search-splunk-plain') {
 
     return {
         id: simpleflake().toJSON(),
-        enabled: false,
+        enabled: true,
         pivotParameters,
         pivotTemplate,
     };

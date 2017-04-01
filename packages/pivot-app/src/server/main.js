@@ -128,8 +128,7 @@ function setupRoutes(modules, getDataSource) {
         });
 
     });
-    expressApp.use(`${mountPoint}`, router);
-
+    
     expressApp.get(`${mountPoint}/healthcheck`, function(req, res) {
         const health = healthcheck();
         log.info({...health, req, res}, 'healthcheck');
@@ -143,6 +142,8 @@ function setupRoutes(modules, getDataSource) {
     });
 
     expressApp.get(`${mountPoint}/`, (req, res) => res.redirect(`${mountPoint}/home`));
+
+    expressApp.use(`${mountPoint}`, router);
     expressApp.get('*', (req, res) => res.status(404).send('Not found'));
 
 }

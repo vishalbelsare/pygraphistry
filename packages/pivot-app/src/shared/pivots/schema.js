@@ -74,8 +74,7 @@ function captureErrorAndNotifyClient(pivotIds) {
         };
 
         return Observable.from([
-            $pathValue(`pivotsById['${pivotIds}']['status']`, status),
-            $pathValue(`pivotsById['${pivotIds}']['enabled']`, false),
+            $pathValue(`pivotsById['${pivotIds}']['status']`, status)
         ]);
     }
 }

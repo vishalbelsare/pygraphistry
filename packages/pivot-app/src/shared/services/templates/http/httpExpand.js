@@ -1,10 +1,11 @@
-import stringhash from 'string-hash';
 import template from 'string-template';
 
 import { HttpPivot } from './httpPivot';
 import { PARAMETERS } from './common.js';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
+
+import { demoEncodings } from './common.js';
 
 
 export const HTTP_EXPAND = new HttpPivot({
@@ -22,10 +23,6 @@ export const HTTP_EXPAND = new HttpPivot({
     toUrls: function ({ endpoint = '', nodes, attributes, pRef }, pivotCache) {
 
         const refVal = pRef ? pRef.value : '';
-
-        //update dropdown optionlists
-        this.connections = nodes ? nodes.value : [];
-        this.attributes = attributes ? attributes.value : [];
         
         const pivots = refVal instanceof Array ? refVal : [refVal];
         const events = pivots.map((refVal) => pivotCache[refVal].events);
@@ -42,12 +39,6 @@ export const HTTP_EXPAND = new HttpPivot({
             });
 
     },
-    encodings: {
-        point: {
-            pointColor: (node) => {
-                node.pointColor = stringhash(node.type) % 12;
-            }
-        }
-    }
+    encodings: demoEncodings
 });
 
