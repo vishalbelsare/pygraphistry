@@ -46,6 +46,7 @@ export const investigationContainer = container({
 export const investigationScreenContainer = container({
     renderLoading: false,
     fragment: ({ templates, investigations, activeInvestigation } = {}) => `{
+        activeScreen,
         templates: ${ Template.fragments(templates) },
         investigations: ${ Investigation.fragments(investigations) },
         activeInvestigation: ${ Investigation.fragment(activeInvestigation) }

@@ -15,7 +15,7 @@ export const connectorContainer = container({
 export const connectorScreenContainer = container({
     renderLoading: false,
     fragment: ({ connectors } = {}) => `{
-        id, name, connectors: ${
+        id, name, activeScreen, connectors: ${
             Connector.fragments(connectors)
         }
     }`

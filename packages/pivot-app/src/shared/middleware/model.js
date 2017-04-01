@@ -1,11 +1,13 @@
 import { Model } from '@graphistry/falcor';
 import { ref as $ref } from '@graphistry/falcor-json-graph';
+import logger from '../../shared/logger.js';
+const log = logger.createLogger(__filename);
 
 
 const initialModels = {
-    '/connectors': (req) => getInitialModel(req, 'connectors'),
-    '/home': (req) => getInitialModel(req, 'home'),
-    '/investigation': (req) => getInitialModel(req, 'investigation')
+    'connectors': (req) => getInitialModel(req, 'connectors'),
+    'home': (req) => getInitialModel(req, 'home'),
+    'investigation': (req) => getInitialModel(req, 'investigation')
 }
 
 function getInitialModel(req, screenName) {
@@ -19,7 +21,8 @@ function getInitialModel(req, screenName) {
         }
     };
 
-    const investigationId = req.path.split('/')[1];
+
+    let { investigationId } = req.params;
     if (investigationId !== undefined && investigationId !== '') {
         const investigationRef = $ref(
             `investigationsById['${investigationId}']`
@@ -33,7 +36,7 @@ function getInitialModel(req, screenName) {
 
 export function falcorModelFactory(getDataSource) {
     return function getFalcorModel(req) {
-        const getModel = initialModels[req.baseUrl] || initialModels['/home'];
+        const getModel = initialModels[req.params.activeScreen] || initialModels['home'];
 
         return new Model({
             cache: getModel(req),
