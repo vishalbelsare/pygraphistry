@@ -11,6 +11,8 @@ ARG REV_NAME
 
 COPY ./wholly-innocuous/files/npm/rc /root/.npmrc
 
+RUN apt-get update && apt-get install -y jq
+
 RUN npm install && \
     npm run build && \
     if [ ${TEST_BUILD} = false ]; then npm prune --production; fi

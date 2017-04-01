@@ -13,7 +13,8 @@ export default function InvestigationScreen({
     createInvestigation,
     copyInvestigation,
     saveInvestigation,
-    user
+    user,
+    saveLayout
 }) {
 
     const { tags: activeTags = [] } = activeInvestigation || {};
@@ -38,6 +39,7 @@ export default function InvestigationScreen({
                             copyInvestigation={copyInvestigation}
                             saveInvestigation={saveInvestigation}
                             user={user}
+                            saveLayout={saveLayout}
                         />
                         <Investigation
                             key={`investigation:${activeInvestigation.id}`}

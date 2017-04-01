@@ -29,7 +29,7 @@ export default withSchema((QL, { get, set }, services) => {
 
     return QL`{
         eventTable: ${ readOnlyHandler },
-        ['id', 'name', 'tags', 'url', 'status', 'description', 'modifiedOn']: ${
+        ['id', 'name', 'tags', 'url', 'status', 'description', 'modifiedOn', 'layout']: ${
             readWriteHandler
         },
         pivots: {
