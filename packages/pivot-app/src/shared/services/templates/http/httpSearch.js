@@ -1,10 +1,11 @@
-import stringhash from 'string-hash';
 import template from 'string-template';
 
 import { HttpPivot } from './httpPivot';
 import { PARAMETERS } from './common.js';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
+
+import { demoEncodings } from './common.js';
 
 
 export const HTTP_SEARCH = new HttpPivot({
@@ -13,11 +14,7 @@ export const HTTP_SEARCH = new HttpPivot({
     tags: ['Demo', 'Splunk'],
     attributes: [ ],
     connections: [ ],    
-    toUrls: function ({ endpoint, nodes, attributes }) {
-
-        //update dropdown optionlists
-        this.connections = nodes ? nodes.value : [];
-        this.attributes = attributes ? attributes.value : [];
+    toUrls: function ({ endpoint }) {
 
         const url = template(endpoint, {
             endpoint, 
@@ -30,11 +27,5 @@ export const HTTP_SEARCH = new HttpPivot({
         return [url];
     },
     parameters: PARAMETERS,
-    encodings: {
-        point: {
-            pointColor: (node) => {
-                node.pointColor = stringhash(node.type) % 12;
-            }
-        }
-    }
+    encodings: demoEncodings
 });

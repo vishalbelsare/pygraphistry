@@ -1,5 +1,5 @@
 {
-    "id": "3f22f0c5cbf227b9",
+    "id": "3f4151b170ee7265",
     "enabled": true,
     "pivotParameters": {
         "search-splunk-plain$$$query": "error",
@@ -14,11 +14,19 @@
             "msg",
             "fileName"
         ],
-        "http-search$$$endpoint": "http://localhost:3000/pivot/echo?x=1&x=2",
-        "http-search$$$jq": ". | [{\"ip\": .x[0]}, {\"ip\": .x[1]}]",
+        "http-search$$$endpoint": "https://api.shodan.io/shodan/host/search?query=product%3Aredis&page=0&key=uHU4GrMuwWJTwkiVeHykzUJVhhah5Bwv",
+        "http-search$$$jq": ".matches",
         "http-search$$$nodes": [
-            "ip"
-        ]
+            "hash",
+            "asn",
+            "data",
+            "domains.0",
+            "isp",
+            "version",
+            "link",
+            "hostnames.0"
+        ],
+        "http-search$$$attributes": []
     },
     "pivotTemplate": "http-search"
 }

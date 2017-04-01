@@ -1,0 +1,15 @@
+{
+    "name": "C2 Recreation",
+    "id": "3f3003becdea3b11",
+    "description": "",
+    "tags": [],
+    "modifiedOn": 1491015759434,
+    "layout": "stackedBushyGraph",
+    "pivots": [
+        "3f3003becd92a0ba",
+        "3f38219a14695687",
+        "3f395ee7c27dd560",
+        "3f3048fdb020ee90",
+        "3f3069a4e4fa81f2"
+    ]
+}

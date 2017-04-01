@@ -1,6 +1,6 @@
 {
-    "id": "3f22f0c5cbf227b9",
-    "enabled": true,
+    "id": "3f2fc63c1e995707",
+    "enabled": false,
     "pivotParameters": {
         "search-splunk-plain$$$query": "error",
         "search-splunk-plain$$$fields": [
@@ -14,11 +14,7 @@
             "msg",
             "fileName"
         ],
-        "http-search$$$endpoint": "http://localhost:3000/pivot/echo?x=1&x=2",
-        "http-search$$$jq": ". | [{\"ip\": .x[0]}, {\"ip\": .x[1]}]",
-        "http-search$$$nodes": [
-            "ip"
-        ]
+        "manual-data$$$events": "{\"x\": 1,\n \"arr\": [0, {\"y\": 2}]}"
     },
-    "pivotTemplate": "http-search"
+    "pivotTemplate": "manual-data"
 }

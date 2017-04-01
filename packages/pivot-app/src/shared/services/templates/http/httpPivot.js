@@ -1,6 +1,6 @@
 import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
-import { run } from 'node-jq';
+import { jqSafe } from '../../support/jq';
 import { VError } from 'verror'
 
 import { shapeSplunkResults } from '../../shapeSplunkResults.js';
@@ -39,7 +39,12 @@ export class HttpPivot extends PivotTemplate {
             params,
             pivotParameters: pivot.pivotParameters
         })
-        const { jq } = params;
+        const { jq, nodes, attributes } = params;
+
+        //update dropdown optionlists; TODO should be in caller
+        this.connections = nodes ? nodes.value : [];
+        this.attributes = attributes ? attributes.value : [];
+
 
         log.trace('searchAndShape http: jq', {jq});
 
@@ -51,13 +56,13 @@ export class HttpPivot extends PivotTemplate {
             }, 'JQ include and imports disallowed', { jq }));
         }
 
+        let eventCounter = 0;    
         const df = Observable.from(this.toUrls(params, pivotCache))
             .flatMap((url) => {
                 log.info('searchAndShape http: url', {url});
                 return this.connector.search(url)                    
                     .switchMap(([response]) => {
-                        return Observable
-                            .fromPromise(run(jq || '.', response.body, { input: 'string', output: 'json'}))
+                        return jqSafe(response.body, jq || '.')
                             .catch((e) => {
                                 return Observable.throw(
                                     new VError({
@@ -76,8 +81,9 @@ export class HttpPivot extends PivotTemplate {
                         if (rows.length) {
                             if (!('EventID' in rows[0])) {
                                 for (let i = 0; i < rows.length; i++) {
-                                    rows[i].EventID = pivot.id + ':' + i;
+                                    rows[i].EventID = pivot.id + ':' + (eventCounter + i);
                                 }
+                                eventCounter += rows.length;
                             }                    
                         }
                         return new DataFrame(rows);

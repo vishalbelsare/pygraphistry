@@ -1,5 +1,5 @@
 {
-    "id": "3f234fcd6c3d5a8a",
+    "id": "3f3048fdb020ee90",
     "enabled": true,
     "pivotParameters": {
         "search-splunk-plain$$$query": "error",
@@ -15,10 +15,18 @@
             "fileName"
         ],
         "http-expand$$$pRef": [
-            "3f22f188ba9e8e11"
+            "3f38219a14695687"
         ],
-        "http-expand$$$endpoint": "http://localhost:3000/pivot/echo?ip={ip}&nodes={nodes}",
-        "http-expand$$$jq": "."
+        "http-expand$$$endpoint": "http://localhost:3000/pivot/echo?domain={domain}&host=host12&host=host13&host=host14&host=host15",
+        "http-expand$$$jq": ". as $x | [.host[] |  {\"host\": ., \"domain\": $x.domain} ]",
+        "http-expand$$$nodes": [
+            "domain",
+            "host",
+            "site"
+        ],
+        "http-expand$$$attributes": [
+            "origin"
+        ]
     },
     "pivotTemplate": "http-expand"
 }

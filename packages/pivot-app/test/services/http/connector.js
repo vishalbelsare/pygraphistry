@@ -7,6 +7,7 @@ const get = Observable.bindNodeCallback(request.get.bind(request));
 
 import { HttpConnector, defaultHttpConnector } from '../../../src/shared/services/connectors/http';
 
+const PORT = 3002;
 
 describe('HttpConnector', function () {
 
@@ -21,15 +22,16 @@ describe('HttpConnector', function () {
 
 
     let server;
+    let expressApp;
 	beforeEach(function() {
 
-		const expressApp = express();		
+		expressApp = express();		
 	    expressApp.get('/echo', function(req, res) {
 	        res.status(200).json(req.query);
 	    });
 	    expressApp.get('/timeout', () => {});
 	    expressApp.get('/404', (req, res) => res.status(404).json({}));
-	    server = expressApp.listen(3000);	    
+	    server = expressApp.listen(PORT);	    
 	});
 
 	afterEach(function () {
@@ -40,7 +42,7 @@ describe('HttpConnector', function () {
 	////////////////////////////////
 
 	it('testEcho', (done) => {
-		get('http://localhost:3000/echo?x=1')
+		get(`http://localhost:${PORT}/echo?x=1`)
 			.subscribe(
 				([response]) => { 
 					assert.deepEqual(JSON.parse(response.body), {x: '1'})
@@ -50,7 +52,7 @@ describe('HttpConnector', function () {
 	
 	it('search', (done) => {
 		defaultHttpConnector
-			.search('http://localhost:3000/echo?x=1')
+			.search(`http://localhost:${PORT}/echo?x=1`)
 			.subscribe(
 				([response]) => { 
 					assert.deepEqual(JSON.parse(response.body), {x: '1'})
@@ -60,7 +62,7 @@ describe('HttpConnector', function () {
 
 	it('timeout', (done) => {
 		defaultHttpConnector
-			.search('http://localhost:3000/timeout')
+			.search(`http://localhost:${PORT}/timeout`)
 			.subscribe(
 				() => done(new Error('expected timeout')),
 				(e) => e && e.name === 'Timeout' ? done() 
@@ -69,7 +71,7 @@ describe('HttpConnector', function () {
 
 	it('404', (done) => {
 		defaultHttpConnector
-			.search('http://localhost:3000/404')
+			.search(`http://localhost:${PORT}/404`)
 			.subscribe(
 				() => done(new Error('expected 404')),
 				(e) => e && e.name === 'HttpStatusError' ? done() 
