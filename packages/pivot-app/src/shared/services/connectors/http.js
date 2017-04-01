@@ -31,12 +31,20 @@ class HttpConnector extends Connector {
             })
             .do(([response]) => {
                 log.trace(response);
-                if (!response || response.statusCode !== 200) {
-                    const info = { url, statusCode: (response||{}).statusCode };
+                const statusCode = (response||{}).statusCode;
+                if (statusCode === 401) {
+                    throw new VError({
+                            name: 'HttpStatusError',
+                            info: {url},
+                        }, 'Unauthorized error for URL', {url});
+
+                } else if (statusCode !== 200) {
+                    const info = { url, statusCode };
                     throw new VError({
                             name: 'HttpStatusError',
                             info: info,
-                        }, 'URL gave an unexpected response code', info);
+                        }, 'URL gave an unexpected response code: ' 
+                            + (statusCode || 'none available'), info);
                 }
             })            
             .timeoutWith(this.timeout_s * 1000, Observable.throw(new VError({
