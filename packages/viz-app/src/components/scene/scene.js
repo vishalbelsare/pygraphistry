@@ -139,8 +139,7 @@ class Scene extends React.Component {
     }
     render() {
         const { edges, points, release, children } = this.props;
-        const releaseString = release.buildNumber ? `${release.tag}, build #${release.buildNumber}`
-                                                  : `${release.tag}`;
+        const releaseString = release.buildNumber ? `v${release.buildNumber}` : '';
 
         return (
             <div id='simulation-container'
