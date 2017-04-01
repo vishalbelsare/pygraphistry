@@ -16,7 +16,7 @@ export function configureStore() {
 
     const enhancer = __DEV__ ?
         compose(
-            applyMiddleware(epicsMiddleware, require('redux-logger')()),
+            applyMiddleware(epicsMiddleware, require('redux-logger')({ collapsed: true })),
             DevTools.instrument()
         ) :
         applyMiddleware(epicsMiddleware);
