@@ -10,6 +10,7 @@ import { textureHandler, colorTexture } from './texture';
 import { createLogger } from '@graphistry/common/logger';
 
 const logger = createLogger('viz-app:server:viz');
+import { maybeTagServer } from '../support/tagSession';
 
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
@@ -74,6 +75,8 @@ function configureVizWorker(config, activeCB, io) {
     app.get(`/graph/graph.html`, (req, res) => {
 
         activeCB(null, true);
+        maybeTagServer(req);
+
 
         let { query: { workbook: workbookId } = {} } = req;
 
