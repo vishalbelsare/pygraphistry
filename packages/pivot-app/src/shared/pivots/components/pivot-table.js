@@ -11,11 +11,11 @@ class PivotPanel extends React.Component {
   }
 
   render() {
-      const { pivot, id, index, pivots, templates, togglePivots, searchPivot, 
+      const { pivot, id, index, pivots, templates, togglePivots, searchPivot,
           splicePivot, insertPivot } = this.props;
       return (
-          <Panel 
-              collapsible 
+          <Panel
+              collapsible
               expanded={this.state.open}
               header={
                   <PivotRowHeader
@@ -65,7 +65,7 @@ export default function PivotTable({
             <div>
             {
                 pivots.map((pivot, index) => (
-                    <PivotPanel 
+                    <PivotPanel
                         id={id}
                         index={index}
                         key={index}

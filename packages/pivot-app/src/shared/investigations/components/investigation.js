@@ -1,5 +1,5 @@
 import { PivotTable } from 'pivot-shared/pivots';
-import styles from './investigations.less';
+import styles from './investigation.less';
 
 import {
     Alert,
@@ -39,18 +39,20 @@ export default function Investigation({
 								>
 							Investigation Tree
 						</Button>
-					</OverlayTrigger>	
+					</OverlayTrigger>
 				<br></br><br></br>
 			</div>	initial code for investigation description & layout switcher, need dynamic implementing for both */}
-			<div className={styles.rule}></div>
             <OverlayTrigger placement="bottom" overlay={
                     <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
                 }>
                 <Button bsStyle={bStyle}
                         className={styles['play-all']}
                         onClick={() =>
-                            graphInvestigation({investigationId: id, length: pivots.length}
-                        )}>
+                            graphInvestigation({
+                                investigationId: id,
+                                length: pivots.filter(({ enabled }) => enabled).length
+                            })
+                        }>
                     Run All
                 </Button>
             </OverlayTrigger>

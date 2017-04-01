@@ -40,13 +40,18 @@ function graphInvestigation(action$) {
         .mergeMap((actionsById) => actionsById.switchMap(
             ({ investigationId, falcor, length }) => {
                 return Observable
-                .range(0, length)
-                .concatMap((index) => {
-                    return Observable.from(falcor.set($value(['pivots', [index],'status'], { searching: true, ok: true })))
-                    .concat(falcor.call(['pivots', [index], 'searchPivot'], [investigationId]));
-                })
-                .concat(falcor.set($value(['status'], { etling: true, ok: true })))
-                .concat(falcor.call(`graph`))
+                    .range(0, length)
+                    .concatMap((index) => Observable.merge(
+                        falcor.set($value(`pivots[${index}].status`, { searching: true, ok: true })),
+                        falcor.call(`pivots[${index}].searchPivot`, [investigationId])
+                    ))
+                    .concat(Observable.merge(
+                        falcor.call(`graph`),
+                        falcor.set(
+                            $value(['status'], { etling: true, ok: true }),
+                            $value(['pivots', { length }, 'status'], { searching: false, ok: true })
+                        )
+                    ));
             }
         ))
         .ignoreElements();
@@ -70,13 +75,17 @@ function searchPivot(action$) {
         .ofType(SEARCH_PIVOT)
         .groupBy(({ investigationId }) => investigationId)
         .mergeMap((actionsById) => actionsById.switchMap(
-            ({ investigationId, falcor, index }) => {
-                return Observable.from(falcor.set($value(`pivots['${index}']['enabled']`, true)))
-                // TODO Use pivot id instead of index
-                .concat(falcor.set($value(['pivots', [index], 'status'], { searching: true, ok: true })))
-                .concat(falcor.call(['pivots', index, 'searchPivot'], [investigationId]))
-                .concat(falcor.set($value(['status'], { etling: true, ok: true })))
-                .concat(falcor.set($value(['url'], null)))
+            ({ investigationId, pivotId, falcor }) => {
+                const { topLevelModel } = falcor._root;
+                return topLevelModel.set(
+                    $value(`pivotsById['${pivotId}'].enabled`, true),
+                    $value(`pivotsById['${pivotId}'].status`, { searching: true, ok: true })
+                )
+                .concat(topLevelModel.call(`pivotsById['${pivotId}'].searchPivot`, [investigationId]))
+                .concat(falcor.set(
+                    $value(['url'], null),
+                    $value(['status'], { etling: true, ok: true })
+                ))
                 .concat(falcor.call(`graph`));
             }
         ))
@@ -112,13 +121,12 @@ function insertPivot(action$) {
 function togglePivots(action$) {
     return action$
         .ofType(TOGGLE_PIVOTS)
-        .mergeMap(({ falcor, indices, enabled, investigationId }) => {
-            const topLevelModel = falcor._root.topLevelModel;
-            return topLevelModel.set(
-                $value(['investigationsById', investigationId, 'status'], { msgStyle: 'warning', ok: true })
-            ).concat(falcor.set(
-                $value(['pivots', indices, 'enabled'], enabled)
-            ));
+        .mergeMap(({ falcor, indices, enabled }) => {
+            return falcor.set(
+                $value(`status`, { msgStyle: 'warning', ok: true }),
+                $value(['pivots', indices, 'enabled'], enabled),
+                $value(['pivots', indices, 'status'], { ok: true })
+            );
         })
         .ignoreElements();
 }

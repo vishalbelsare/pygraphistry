@@ -1,7 +1,7 @@
 import _ from 'underscore';
 import SplitPane from 'react-split-pane';
 import Visualization from './visualization';
-import styles from './investigations.less';
+import styles from './investigation-screen.less';
 import { Investigation, InvestigationHeader } from 'pivot-shared/investigations';
 
 
@@ -28,9 +28,9 @@ export default function InvestigationScreen({
     return (
         <div className={styles['investigation-all']}>
             <div className={styles['investigation-split']}>
-                <SplitPane pane1Style={{overflowY: 'auto'}} split="vertical" minSize={0} defaultSize={300}>
-                    <div>
-                        <InvestigationHeader 
+                <SplitPane split='vertical' minSize={300} defaultSize={300}>
+                    <div style={{ height: `100%` }}>
+                        <InvestigationHeader
                             key={`investigation-header:${activeInvestigation.id}`}
                             investigations={investigations}
                             activeInvestigation={activeInvestigation}

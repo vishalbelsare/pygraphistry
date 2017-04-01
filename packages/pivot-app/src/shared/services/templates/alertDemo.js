@@ -148,7 +148,7 @@ export const expandFireeyeDemo = new SplunkPivot({
         {
             name: 'fields',
             inputType: 'multi',
-            label: 'Expand on',
+            label: 'Expand on:',
             options: FIELDS.map(x => ({id:x, name:x})),
         }
 
@@ -181,7 +181,7 @@ export const expandBlueCoatDemo = new SplunkPivot({
         {
             name: 'fields',
             inputType: 'multi',
-            label: 'Expand on',
+            label: 'Expand on:',
             options: FIELDS.map(x => ({id:x, name:x})),
         }
     ],
@@ -213,7 +213,7 @@ export const expandFirewallDemo = new SplunkPivot({
         {
             name: 'fields',
             inputType: 'multi',
-            label: 'Expand on',
+            label: 'Expand on:',
             options: FIELDS.map(x => ({id:x, name:x})),
         }
     ],
@@ -245,7 +245,7 @@ export const expandIDSDemo = new SplunkPivot({
         {
             name: 'fields',
             inputType: 'multi',
-            label: 'Expand on',
+            label: 'Expand on:',
             options: FIELDS.map(x => ({id:x, name:x})),
         }
     ],

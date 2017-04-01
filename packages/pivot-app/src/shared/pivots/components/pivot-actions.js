@@ -5,7 +5,11 @@ import {
     Glyphicon, OverlayTrigger
 } from 'react-bootstrap';
 
-export default function PivotActions({ index, investigationId, splicePivot, searchPivot, insertPivot, status, numRows }) {
+export default function PivotActions({
+    status, numRows, index,
+    pivotId, investigationId,
+    splicePivot, searchPivot, insertPivot
+}) {
 
     if (!status) {
         return null;
@@ -17,45 +21,45 @@ export default function PivotActions({ index, investigationId, splicePivot, sear
             <OverlayTrigger placement="top" overlay={
                 <Tooltip id={`tooltipActionDelete_${index}`}>Delete step</Tooltip>
             } key={`${index}: entityRowActionDelete_${index}`}>
-                <Button bsSize='small' disabled={index === 0 && numRows === 1} onClick={() => splicePivot({ index })}><Glyphicon glyph="trash" /></Button>
+                <Button bsSize='xsmall' disabled={index === 0 && numRows === 1} onClick={() => splicePivot({ index })}><Glyphicon glyph="trash" /></Button>
             </OverlayTrigger>
-            <ButtonGroup style={{float: 'right'}}>
+            <ButtonGroup bsSize='xsmall' style={{float: 'right'}}>
                 <OverlayTrigger placement="top" overlay={
                     <Tooltip id={`tooltipActionPlay_${index}`}>Run step</Tooltip>
                 } key={`${index}: entityRowActionPlay_${index}`}>
-                    <Button bsSize='small' onClick={() => searchPivot({ index, investigationId })} disabled={status.searching}>
+                    <Button onClick={() => searchPivot({ index, pivotId, investigationId })} disabled={status.searching}>
                         <Glyphicon glyph={status.searching ? "hourglass" : "play"}/>
                     </Button>
                 </OverlayTrigger>
                 <OverlayTrigger placement="top" overlay={
                     <Tooltip id={`tooltipActionAdd_${index}`}>Insert new step after</Tooltip>
                 } key={`${index}: entityRowActionAdd_${index}`}>
-                    <Button bsSize='small' onClick={() => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
+                    <Button onClick={() => insertPivot({index})}><Glyphicon glyph="plus-sign" /></Button>
                 </OverlayTrigger>
             </ButtonGroup>
         {
             status.ok ? null
                 :
-                <ButtonGroup style={{marginLeft: '0.7em'}}>
+                <ButtonGroup bsSize='xsmall' style={{marginLeft: '0.7em'}}>
                     <OverlayTrigger placement="top" trigger="click" rootClose overlay={
                         <Popover id={`tooltipActionError_${index}`} title={status.title} className={styles['pivot-error-tooltip']}>
                             <span style={{color: 'red'}}>{status.message}</span>
                         </Popover>
                     } key={`${index}: entityRowAction_${index}`}>
-                        <Button bsSize='small' bsStyle="danger">
+                        <Button bsStyle="danger">
                             <Glyphicon glyph="warning-sign" />
                         </Button>
                     </OverlayTrigger>
                 </ButtonGroup>
         }{
             status.info === true ?
-                <ButtonGroup style={{marginLeft: '0.7em'}}>
+                <ButtonGroup bsSize='xsmall' style={{marginLeft: '0.7em'}}>
                     <OverlayTrigger placement="top" trigger="click" rootClose overlay={
                         <Popover id={`tooltipActionInfo_${index}`} title={status.title} className={styles['pivot-info-tooltip']}>
                             <span>{ status.message }</span>
                         </Popover>
                     } key={`${index}: entityRowAction_${index}`}>
-                        <Button bsSize='small' bsStyle="info">
+                        <Button bsStyle="info">
                             <Glyphicon glyph="info-sign" />
                         </Button>
                     </OverlayTrigger>

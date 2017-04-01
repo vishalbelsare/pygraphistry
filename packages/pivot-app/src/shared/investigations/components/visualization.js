@@ -1,6 +1,6 @@
 import { Image, Glyphicon } from 'react-bootstrap';
 import { GraphistryIframe } from './graphistry-iframe';
-import styles from './investigations.less';
+import styles from './visualization-styles.less';
 
 
 export default function VisualizationPanel({ investigation }) {
@@ -24,8 +24,8 @@ export default function VisualizationPanel({ investigation }) {
             </div>
 			<div className={styles['placeholder-message']}>
 				<div className={styles['placeholder-message-inside']}>{
-                                    (investigation.status && investigation.status.etling) ? 
-                                        loadingGraph : 
+                                    (investigation.status && investigation.status.etling) ?
+                                        loadingGraph :
                                         runPivot}
 				</div>
 			</div>

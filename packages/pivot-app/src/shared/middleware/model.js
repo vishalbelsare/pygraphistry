@@ -22,7 +22,7 @@ function getInitialModel(req, screenName) {
     };
 
 
-    let { investigationId } = req.params;
+    const { investigationId } = req.params;
     if (investigationId !== undefined && investigationId !== '') {
         const investigationRef = $ref(
             `investigationsById['${investigationId}']`
@@ -36,7 +36,7 @@ function getInitialModel(req, screenName) {
 
 export function falcorModelFactory(getDataSource) {
     return function getFalcorModel(req) {
-        const getModel = initialModels[req.params.activeScreen] || initialModels['home'];
+        const getModel = initialModels[req.params.activeScreen] || initialModels.home;
 
         return new Model({
             cache: getModel(req),

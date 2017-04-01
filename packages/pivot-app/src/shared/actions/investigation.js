@@ -6,9 +6,9 @@ export const DISMISS_ALERT = 'dismiss-alert';
 export const TOGGLE_PIVOTS = 'toggle-pivots';
 export const SAVE_LAYOUT = 'save-layout';
 
-export const searchPivot = ({ index, investigationId }) => {
+export const searchPivot = ({ index, pivotId, investigationId }) => {
     return ({
-        investigationId, index, type: SEARCH_PIVOT
+        investigationId, pivotId, index, type: SEARCH_PIVOT
     });
 };
 
