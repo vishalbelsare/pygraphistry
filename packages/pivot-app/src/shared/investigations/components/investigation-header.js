@@ -7,12 +7,14 @@ import {
     OverlayTrigger,
     Tooltip
 } from 'react-bootstrap';
+import { layouts } from '../../services/layouts.js';
 import Select from 'react-select'
 
 export default function InvestigationHeader({activeInvestigation, user, investigations = [], saveInvestigation,
-    createInvestigation, copyInvestigation, selectInvestigation
+    createInvestigation, copyInvestigation, selectInvestigation, saveLayout
 }) {
     const { id } = activeInvestigation;
+    const { layout } = activeInvestigation;
     return (
                 <Navbar className={styles['investigation-header']} inverse fixedTop fluid>
                     <Navbar.Form style={{width: '60%', padding: '0'}} pullLeft>
@@ -48,6 +50,16 @@ export default function InvestigationHeader({activeInvestigation, user, investig
                             </NavItem>
                         </OverlayTrigger>
                     </Nav>
+                    <Navbar.Form style={{color: 'magenta', width: '100%', padding: '0'}} pullLeft>
+                        <Select
+                            name="layout-selector"
+                            clearable={false}
+                            value={layout || "weird default"}
+                            options={layouts.map((lay) => ({value: lay.id, label: lay.friendlyName}))}
+                            onChange={(lay) => saveLayout({layoutType: lay.value})}
+                            pullLeft
+                        />
+                    </Navbar.Form>
                 </Navbar>
     )
 }

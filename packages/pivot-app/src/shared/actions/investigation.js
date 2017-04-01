@@ -4,6 +4,7 @@ export const INSERT_PIVOT = 'insert-pivot';
 export const GRAPH_INVESTIGATION = 'graph-investigation';
 export const DISMISS_ALERT = 'dismiss-alert';
 export const TOGGLE_PIVOTS = 'toggle-pivots';
+export const SAVE_LAYOUT = 'save-layout';
 
 export const searchPivot = ({ index, investigationId }) => {
     return ({
@@ -41,5 +42,12 @@ export function togglePivots({ indices, enabled, investigationId }) {
         type: TOGGLE_PIVOTS,
         indices,
         enabled,
+    });
+}
+
+export function saveLayout({ layoutType }) {
+    return ({
+        type: SAVE_LAYOUT,
+        layoutType
     });
 }
