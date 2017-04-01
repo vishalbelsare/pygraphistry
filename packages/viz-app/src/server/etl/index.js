@@ -1,5 +1,7 @@
 import { VError } from 'verror';
 import { Router } from 'express';
+import { maybeTagServer } from '../support/tagSession';
+
 var sprintf     = require('sprintf-js').sprintf;
 var bodyParser  = require('body-parser');
 var multer      = require('multer');
@@ -31,6 +33,8 @@ function etlWorker(config, activeCB) {
 
     app.post('/etl', JSONParser, formParser, (req, res, next) => {
         activeCB(null, true);
+        maybeTagServer(req);
+
         etlRequestHandler(req, res, next).subscribe({
             error: activeCB,
             complete: activeCB.bind(null, null, false)
