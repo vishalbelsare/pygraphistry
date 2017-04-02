@@ -28,8 +28,8 @@ function saveLayout(action$) {
     return action$
         .ofType(SAVE_LAYOUT)
         .switchMap(({ layoutType, falcor }) =>
-                 falcor.set($value(['activeInvestigation', 'layout'], layoutType))
-                 )
+            falcor.set($value('layout', layoutType))
+        )
         .ignoreElements();
 }
 

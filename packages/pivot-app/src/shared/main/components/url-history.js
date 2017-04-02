@@ -24,6 +24,9 @@ export default class UrlHistory extends React.Component {
 
     _getPath(activeScreen, activeInvestigation) {
         if (activeScreen === 'investigation') {
+            if (activeInvestigation.id === undefined) {
+                return undefined;
+            }
             return `/pivot/${activeScreen}/${activeInvestigation.id}`
         } else {
             return `/pivot/${activeScreen || 'home'}`;
@@ -62,7 +65,7 @@ export default class UrlHistory extends React.Component {
         const { activeScreen, activeInvestigation } = this.props;
         const pathname = this._getPath(activeScreen, activeInvestigation);
 
-        if (history.location.pathname !== pathname) {
+        if (pathname !== undefined && history.location.pathname !== pathname) {
             log.debug(`Pushing new path ${pathname}`);
 
             history.push({

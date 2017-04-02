@@ -1,6 +1,6 @@
 import{ Button } from 'react-bootstrap';
-import InvestigationTags from './investigation-tags';
 import mainStyles from '../../styles.less';
+import InvestigationTags from './investigation-tags';
 import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
 
 import logger from 'pivot-shared/logger.js';
@@ -12,12 +12,12 @@ export default function InvestigationTable({
     selectInvestigation, copyInvestigation,
 }) {
 
-    function tagsFormatter(tags = [], row, xs, index) {
+    function tagsFormatter(tags = [], row) {
         const tagsArray = tags.map((tag, i) => ({id: i, text: tag}));
         return (
             <div>
                 <InvestigationTags tags={tagsArray}
-                                   investigationId={index}
+                                   investigationId={row.id}
                                    setInvestigationParams={setInvestigationParams}/>
             </div>
         );

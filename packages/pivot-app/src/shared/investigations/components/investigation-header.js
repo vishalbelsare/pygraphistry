@@ -7,11 +7,10 @@ import {
     Glyphicon, OverlayTrigger, Tooltip
 } from 'react-bootstrap';
 
-export default function InvestigationHeader({activeInvestigation, user, investigations = [], saveInvestigation,
+export default function InvestigationHeader({
+    id, user, layout, children, investigations = [], saveInvestigation,
     createInvestigation, copyInvestigation, selectInvestigation, saveLayout
 }) {
-    const { id } = activeInvestigation;
-    const { layout } = activeInvestigation;
     return (
         <Grid fluid className={styles['investigation-header']}>
             <Row className={`${styles['investigation-header-row']} ${styles['investigation-header-nav']}`}>
@@ -67,64 +66,12 @@ export default function InvestigationHeader({activeInvestigation, user, investig
                     />
                 </Col>
             </Row>
+            {children && children.length &&
+            <Row className={styles['investigation-header-row']}>
+                <Col xs={12} sm={12} md={12} lg={12}>
+                    {children}
+                </Col>
+            </Row> || undefined}
         </Grid>
     );
 }
-/*
-export default function InvestigationHeader({activeInvestigation, user, investigations = [], saveInvestigation,
-    createInvestigation, copyInvestigation, selectInvestigation, saveLayout
-}) {
-    const { id } = activeInvestigation;
-    const { layout } = activeInvestigation;
-    return (
-        <div className={styles['investigation-header']}>
-            <Navbar className={styles['investigation-header-navbar']} fluid inverse fixedTop collapseOnSelect>
-                <Navbar.Header>
-                    <Navbar.Form pullLeft style={{ width: '60%' }}>
-                        <Select
-                            name="investigation-selector"
-                            clearable={false}
-                            value={id}
-                            options={investigations.map((investigation) => ({value: investigation.id, label: investigation.name }))}
-                            onChange={(selection) => selectInvestigation(selection.value)}
-                        />
-                    </Navbar.Form>
-                    <Navbar.Toggle />
-                </Navbar.Header>
-                <Navbar.Collapse>
-                    <Nav pullRight>
-                        <OverlayTrigger placement="bottom" overlay={
-                            <Tooltip id={`createInvestigationTooltip`}>Create New Investigation</Tooltip>
-                        }>
-                            <NavItem eventKey={4} onSelect={() => createInvestigation(user.id)}>
-                                <Glyphicon glyph="plus" />
-                            </NavItem>
-                        </OverlayTrigger>
-                        <OverlayTrigger placement="bottom" overlay={
-                            <Tooltip id={`copyInvestigationTooltip`}>Copy Investigation</Tooltip>
-                        }>
-                            <NavItem eventKey={5} onSelect={() => copyInvestigation(id)}>
-                                <Glyphicon glyph="duplicate" />
-                            </NavItem>
-                        </OverlayTrigger>
-                        <OverlayTrigger placement="bottom" overlay={
-                            <Tooltip id={`saveInvestigationTooltip`}>Save Investigation</Tooltip>
-                        }>
-                            <NavItem eventKey={6} onSelect={() => saveInvestigation(id)}>
-                                <Glyphicon glyph="floppy-disk" />
-                            </NavItem>
-                        </OverlayTrigger>
-                    </Nav>
-                </Navbar.Collapse>
-            </Navbar>
-            <Select
-                name="layout-selector"
-                clearable={false}
-                value={layout || "weird default"}
-                options={layouts.map((lay) => ({value: lay.id, label: lay.friendlyName}))}
-                onChange={(lay) => saveLayout({layoutType: lay.value})}
-            />
-        </div>
-    );
-}
-*/

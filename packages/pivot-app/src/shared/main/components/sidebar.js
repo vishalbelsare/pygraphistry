@@ -20,6 +20,7 @@ function NavButton({activeScreen, switchScreen, tip, screen, faIcon}) {
 }
 
 export default function Sidebar(props) {
+    const { switchScreen } = props;
     return (
         <div className={classNames({
                 sidebar: true,
@@ -27,7 +28,7 @@ export default function Sidebar(props) {
             })}
              data-color="blue" id="left-nav">
 
-            <div className={styles.logo}>
+            <div onClick={() => switchScreen('home')} className={styles.logo}>
                 <div>
                     <img src="/pivot/img/logo.png"/>
                 </div>

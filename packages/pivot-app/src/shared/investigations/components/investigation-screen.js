@@ -2,19 +2,17 @@ import _ from 'underscore';
 import SplitPane from 'react-split-pane';
 import Visualization from './visualization';
 import styles from './investigation-screen.less';
-import { Investigation, InvestigationHeader } from 'pivot-shared/investigations';
+import { Investigation } from 'pivot-shared/investigations';
 
 
 export default function InvestigationScreen({
     templates = [],
     investigations = [],
     activeInvestigation = {},
+    copyInvestigation,
     selectInvestigation,
     createInvestigation,
-    copyInvestigation,
-    saveInvestigation,
-    user,
-    saveLayout
+    user
 }) {
 
     const { tags: activeTags = [] } = activeInvestigation || {};
@@ -29,26 +27,16 @@ export default function InvestigationScreen({
         <div className={styles['investigation-all']}>
             <div className={styles['investigation-split']}>
                 <SplitPane split='vertical' minSize={300} defaultSize={300}>
-                    <div style={{ height: `100%` }}>
-                        <InvestigationHeader
-                            key={`investigation-header:${activeInvestigation.id}`}
-                            investigations={investigations}
-                            activeInvestigation={activeInvestigation}
-                            selectInvestigation={selectInvestigation}
-                            createInvestigation={createInvestigation}
-                            copyInvestigation={copyInvestigation}
-                            saveInvestigation={saveInvestigation}
-                            user={user}
-                            saveLayout={saveLayout}
-                        />
-                        <Investigation
-                            key={`investigation:${activeInvestigation.id}`}
-                            data={activeInvestigation}
-                            investigations={investigations}
-                            templates={relevantTemplates}
-                            selectInvestigation={selectInvestigation}
-                        />
-                    </div>
+                    <Investigation
+                        key={`investigation:${activeInvestigation.id}`}
+                        user={user}
+                        data={activeInvestigation}
+                        templates={relevantTemplates}
+                        investigations={investigations}
+                        copyInvestigation={copyInvestigation}
+                        selectInvestigation={selectInvestigation}
+                        createInvestigation={createInvestigation}
+                    />
                     { activeInvestigation.status &&
                         <Visualization investigation={activeInvestigation}/>
                         || undefined

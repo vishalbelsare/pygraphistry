@@ -4,36 +4,37 @@
     width: 100%;
     height: 100%;
     overflow: auto;
-    padding-top: 10px;
+    padding-top: 0px;
     padding-left: 15px;
     padding-right: 15px;
-    padding-bottom: 80px;
+    padding-bottom: 120px;
 
-    .play-all {
-		width: ~"calc(100%)";
-	    border-radius: 0.3em;
-	    border: 0px;
-	    border: 1px solid #CCCCCC;
-        height: 25px;
-        p {font-size: 5px;}
-        transition: background-color 0.3s ease;
-	}
-
-:global(.alert) {
+    :global(.alert) {
 	    z-index: 100;
 	    width: 100%;
 		font-size: 11px;
 		font-weight: 100 !important;
-	strong {
-		font-weight: 400 !important;
-	}
+    	strong {
+    		font-weight: 400 !important;
+    	}
 	}
 
 	.layoutButton
 	{
 		width: 49%;
 	}
+}
 
+.play-all {
+    height: 25px;
+    width: ~"calc(100%)";
+    margin-top: 7px;
+    border-radius: 0.3em;
+    border: 1px solid #CCCCCC;
+    transition: background-color 0.3s ease;
+    p {
+        font-size: 5px;
+    }
 }
 
 .rule {
