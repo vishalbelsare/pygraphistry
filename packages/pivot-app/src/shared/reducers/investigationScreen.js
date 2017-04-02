@@ -13,13 +13,27 @@ import {
 
 export const investigationScreen = combineEpics(
     createInvestigation, selectInvestigation, setInvestigationParams,
-    saveInvestigation, copyInvestigation, deleteInvestigations
+    saveInvestigation, cloneInvestigation, deleteInvestigations
 );
 
 function createInvestigation(action$) {
     return action$
         .ofType(CREATE_INVESTIGATION)
-        .mergeMap(({falcor}) => falcor.call('createInvestigation'))
+        .mergeMap(({falcor}) => falcor.call('createInvestigation', []))
+        .ignoreElements();
+}
+
+function cloneInvestigation(action$) {
+    return action$
+        .ofType(COPY_INVESTIGATION)
+        .mergeMap(({falcor, id}) => falcor.call('cloneInvestigations', [id]))
+        .ignoreElements();
+}
+
+function deleteInvestigations(action$) {
+    return action$
+        .ofType(DELETE_INVESTIGATIONS)
+        .mergeMap(({falcor, investigationIds}) => falcor.call('removeInvestigations', [investigationIds]))
         .ignoreElements();
 }
 
@@ -60,26 +74,5 @@ function saveInvestigation(action$) {
             const topLevelModel = falcor._root.topLevelModel;
             return Observable.from(topLevelModel.call(['investigationsById', [id], 'save']))
         })
-        .ignoreElements();
-}
-
-function copyInvestigation(action$) {
-    return action$
-        .ofType(COPY_INVESTIGATION)
-        .mergeMap(({falcor, id}) => {
-            const topLevelModel = falcor._root.topLevelModel;
-            return Observable.from(topLevelModel.call(['investigationsById', [id], 'clone']))
-        })
-        .ignoreElements();
-}
-
-function deleteInvestigations(action$) {
-    return action$
-        .ofType(DELETE_INVESTIGATIONS)
-        .mergeMap(({falcor, investigationIds}) =>
-            Observable.from(
-                falcor.call('removeInvestigations', [investigationIds])
-            )
-        )
         .ignoreElements();
 }

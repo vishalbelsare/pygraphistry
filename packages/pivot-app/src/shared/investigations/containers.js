@@ -31,13 +31,13 @@ export const investigationContainer = container({
         id, name, pivots, status, eventTable, layout
     }),
     dispatchers: {
+        saveLayout,
         splicePivot,
         insertPivot,
         searchPivot,
         dismissAlert,
         togglePivots,
         saveInvestigation,
-        copyInvestigation,
         graphInvestigation,
     }
 });
@@ -55,9 +55,7 @@ export const investigationScreenContainer = container({
         user, ...user
     }),
     dispatchers: {
-        saveLayout,
-        createInvestigation,
         copyInvestigation,
-        saveInvestigation
+        createInvestigation
     }
 });
