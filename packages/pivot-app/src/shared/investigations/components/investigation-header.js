@@ -13,7 +13,7 @@ export default function InvestigationHeader({
 }) {
     return (
         <Grid fluid className={styles['investigation-header']}>
-            <Row className={`${styles['investigation-header-row']} ${styles['investigation-header-nav']}`}>
+            <Row style={{ height: 41 }} className={`${styles['investigation-header-row']} ${styles['investigation-header-nav']}`}>
                 <Col className={styles['investigation-header-col']} xs={8} sm={8} md={8} lg={8}>
                     <Select
                         name='investigation-selector'
@@ -55,7 +55,7 @@ export default function InvestigationHeader({
                     </ButtonGroup>
                 </Col>
             </Row>
-            <Row className={styles['investigation-header-row']}>
+            <Row style={{ display: 'none' }} className={styles['investigation-header-row']}>
                 <Col xs={12} sm={12} md={12} lg={12}>
                     <Select
                         name="layout-selector"
