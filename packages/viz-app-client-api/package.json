@@ -19,8 +19,8 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@graphistry/falcor-json-graph": "~2.8.0",
-    "@graphistry/falcor-model-rxjs": "~2.8.4",
-    "@graphistry/falcor-socket-datasource": "~2.8.4",
+    "@graphistry/falcor-model-rxjs": "~2.8.5",
+    "@graphistry/falcor-socket-datasource": "~2.8.5",
     "http-server": "^0.9.0",
     "recompose": "~0.22.0",
     "rxjs": "~5.2.0"
