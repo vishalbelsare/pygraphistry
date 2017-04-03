@@ -2,40 +2,41 @@ import logger from '../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
 
-export const OVERRIDE_WHITELIST = ['placeholder', 'options', 'isVisible'];
+export const PARAM_OVERRIDE_WHITELIST = ['placeholder', 'options', 'isVisible'];
 
 
 export class PivotTemplate {
-    constructor({ id, name, tags, parameters }) {
+    constructor({ id, name, tags = [], parameters = []}) {
         this.id = id;
         this.name = name;
         this.tags = tags;
         this.parameters = parameters;
+        this.initializeParameters(id, parameters);
+    }
+
+    initializeParameters(id, parameters) {
         this.pivotParametersUI = this.addTemplateNamespace(id, parameters);
-        this.pivotParameterKeys = Object.keys(this.pivotParametersUI)
+        this.pivotParameterKeys = Object.keys(this.pivotParametersUI)        
     }
 
 
+    //Selective, managed form of prototype chaining
     derive(settings) {
         if (!('id' in settings) || !('name' in settings)) {
             throw new Error(`Expected fields 'id' and 'name' for system template 
                 ${JSON.stringify(settings)}`);
         }
 
-        const template = {};
+        const template = {
+            id: settings.id,
+            name: settings.name
+        };        
         template.__proto__ = this;
-        /*
-        for (let fld in this) {
-            template[fld] = this[fld];
-        } 
-        */   
+        template.initializeParameters(template.id, template.parameters);
 
-        //order sensitive
-        template.override('name', settings['name']);
-        template.override('id', settings['id']);
-
+        template.override('parameters', settings['parameters'] || []);
         for (let fld in settings) {
-            if (!(fld in ['id', 'name'])) {
+            if (['id', 'name', 'parameters', 'template'].indexOf(fld) === -1) {
                 template.override(fld, settings[fld]);
             }
         }
@@ -49,27 +50,26 @@ export class PivotTemplate {
     //  parameters: cannot add new param; can only override param settings in whitelist
     override(k, v) {
         switch (k) {
-            case 'name':
-                this.name = v;
-                return;
-            case 'id':
-                //TODO how do we guarantee a stable & unique across runs?
-                this.id = v;
-                this.pivotParametersUI = this.addTemplateNamespace(this.id, this.parameters);
-                return;
             case 'parameters':                
                 v
                     .map((parameter) => ({id: this.tagTemplateNamespace(this.id, parameter.name), ...parameter}))
                     .forEach((parameter) => {
-                        if (parameter.id in this.pivotParametersUI) {
-                            for (let setting in parameter) {
-                                if (setting in OVERRIDE_WHITELIST) {
-                                    this.pivotParametersUI[parameter.id].value = parameter[setting];
-                                }
-                            }
-                        } else {
-                            throw new Error(`Unknown parameter ${parameter.name} for pivot ${this.id} (${this.name})`);
+                        if (!(parameter.id in this.pivotParametersUI)) {
+                            throw new Error(`Unknown parameter ${parameter.name} 
+                                for pivot ${this.id} (${this.name})`);
                         }
+                        Object.keys(parameter)
+                            .filter((fld) => ['id', 'name', 'template'].indexOf(fld) === -1)
+                            .map( (fld) => {
+                                if (PARAM_OVERRIDE_WHITELIST.indexOf(fld) === -1) {
+                                    throw new Error(`Overriding template field ${setting} not allowed 
+                                        for pivot ${this.id} (${this.name})`);
+                                }
+                                return fld;
+                            })
+                            .map((fld) => {
+                                this.pivotParametersUI[parameter.id][fld] = parameter[fld];
+                            })
                     });
                 return;
             case 'tags':
@@ -78,7 +78,7 @@ export class PivotTemplate {
                 this[k] = v;
                 return;
             default:
-                log.error(`Trying to override unknown template field ${k} ${v}
+                throw new Error(`Trying to override unknown template field ${k} = ${v}
                     when deriving ${this.id} (${this.name})`);                
         }
     }

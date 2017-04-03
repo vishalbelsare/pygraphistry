@@ -23,7 +23,8 @@ describe('HttpConnector', function() {
     require('./services/http/expand');
 });
 
-describe('OtherPivots', function () {
+describe('Pivots', function () {
+    require('./services/pivots/template');
     require('./services/pivots/manual');
 })
 

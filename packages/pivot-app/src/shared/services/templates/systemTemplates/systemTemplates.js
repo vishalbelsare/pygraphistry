@@ -1,5 +1,3 @@
-import { OVERRIDE_WHITELIST } from '../template.js';
-
 import { HTTP_EXPAND } from '../http/httpExpand.js';
 import { HTTP_SEARCH } from '../http/httpSearch.js';
 import { MANUAL } from '../manual.js';
