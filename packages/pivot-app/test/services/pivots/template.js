@@ -25,26 +25,29 @@ function checkPtParams (pt, id, name, param2) {
 }
 
 
+const ptSimple = new PivotTemplate({id: 'x', name: 'y'});
+const ptParams = new PivotTemplate({id: 'x', name: 'y', parameters: [
+            { name: 'fld1', inputType: 'textarea' },
+            { name: 'fld2', inputType: 'textarea' } ]});
+        
 
 describe('pivot.template', function () {
 
     it('simple', (done) => {
-        const pt = new PivotTemplate({id: 'x', name: 'y'});
+        const pt = ptSimple;
         checkPtSimple(pt, 'x', 'y');
         done();
     });
 
     it('params', (done) => {        
-        const pt = new PivotTemplate({id: 'x', name: 'y', parameters: [
-            { name: 'fld1', inputType: 'textarea' },
-            { name: 'fld2', inputType: 'textarea' } ]});
+        const pt = ptParams;
         checkPtParams(pt, 'x', 'y', 
             { id: 'x$$$fld2', name: 'fld2', inputType: 'textarea'});
         done();
     });
 
     it('derive simple', (done) => {
-        const pt = new PivotTemplate({id: 'x', name: 'y'});
+        const pt = ptSimple;
         const pt2 = pt.derive({
             id: 'x2',
             name: 'y2'
@@ -55,9 +58,7 @@ describe('pivot.template', function () {
     });
 
     it('derive params', (done) => {        
-        const pt = new PivotTemplate({id: 'x', name: 'y', parameters: [
-            { name: 'fld1', inputType: 'textarea' },
-            { name: 'fld2', inputType: 'textarea' } ]});
+        const pt = ptParams;
         const pt2 = pt.derive({
             id: 'x2',
             name: 'y2', parameters: [ {name: 'fld2', placeholder: 'zz'} ]
@@ -68,5 +69,35 @@ describe('pivot.template', function () {
             { id: 'x2$$$fld2', name: 'fld2', inputType: 'textarea', placeholder: 'zz' });
         done();
     });
+
+    it('catch incomplete derivation', (done) => {
+        try {
+            const pt = ptSimple;
+            pt.derive({});
+        } catch (e) {
+            return done();
+        }
+        return done(new Error('Expected exception'));
+    });
+
+    it('catch overriding non-existent param', (done) => {
+        try {
+            const pt = ptParams;
+            pt.derive({id: 'x2', name: 'y2', params: [{name: 'fld3', placeholder: 'zz'}]});
+        } catch (e) {
+            return done();
+        }
+        return done(new Error('Expected exception'));
+    });
+    it('catch overriding non-whitelisted param setting', (done) => {
+        try {
+            const pt = ptParams;
+            pt.derive({id: 'x2', name: 'y2', params: [{name: 'fld2', id: 'zz'}]});
+        } catch (e) {
+            return done();
+        }
+        return done(new Error('Expected exception'));
+    });
+
 
 });
