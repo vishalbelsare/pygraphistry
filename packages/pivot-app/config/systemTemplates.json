@@ -1,0 +1,29 @@
+{
+	"systemTemplates": {
+		"pivots": [
+			{
+				"name": "Expand with VirusTotal",
+				"id": "http-expand-vt",
+				"template": "http-expand",
+				"parameters": [
+					{
+						"name": "endpoint",
+						"placeholder": "??"
+					}, 
+					{
+						"name": "jq",
+						"placeholder": "??"
+					}, 
+					{
+						"name": "nodes",
+						"options": []
+					}, 
+					{
+						"name": "attributes",
+						"options": []
+					}
+				]
+			}
+		]
+	}
+}
