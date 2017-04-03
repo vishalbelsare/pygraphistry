@@ -16,6 +16,6 @@ export function deriveTemplate(templateID, settings) {
 			for deriving template ${(settings||{}).id}`);
 	}
 
-	return baseTemplates[templateID].derive(settings);
+	return baseTemplates[templateID].clone(settings);
 
 }

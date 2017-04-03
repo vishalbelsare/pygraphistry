@@ -7,36 +7,30 @@ export const PARAM_OVERRIDE_WHITELIST = ['placeholder', 'options', 'isVisible'];
 
 export class PivotTemplate {
     constructor({ id, name, tags = [], parameters = []}) {
+
+        if (!id || !name) {
+            throw new Error(`Pivot template expects fields 'id' and 'name', got '${id}' and '${name}'`);
+        }
+
         this.id = id;
         this.name = name;
         this.tags = tags;
         this.parameters = parameters;
-        this.initializeParameters(id, parameters);
-    }
-
-    initializeParameters(id, parameters) {
         this.pivotParametersUI = this.addTemplateNamespace(id, parameters);
         this.pivotParameterKeys = Object.keys(this.pivotParametersUI)        
     }
+    
+    //Clone, with selective, managed overriding of (untrusted) settings
+    clone(settings) {
 
-
-    //Selective, managed form of prototype chaining
-    derive(settings) {
-        if (!('id' in settings) || !('name' in settings)) {
-            throw new Error(`Expected fields 'id' and 'name' for system template 
-                ${JSON.stringify(settings)}`);
-        }
-
-        const template = {
+        const template = new PivotTemplate({
             id: settings.id,
-            name: settings.name
-        };        
-        template.__proto__ = this;
-        template.initializeParameters(template.id, template.parameters);
+            name: settings.name,
+            parameters: this.parameters,            
+        });
 
-        template.override('parameters', settings['parameters'] || []);
         for (let fld in settings) {
-            if (['id', 'name', 'parameters', 'template'].indexOf(fld) === -1) {
+            if (['id', 'name', 'template'].indexOf(fld) === -1) {
                 template.override(fld, settings[fld]);
             }
         }
@@ -46,7 +40,6 @@ export class PivotTemplate {
 
 
     //User may derive a new template by overriding:
-    //  name, id <-- order sensitive, and before rest of parameters
     //  parameters: cannot add new param; can only override param settings in whitelist
     override(k, v) {
         switch (k) {

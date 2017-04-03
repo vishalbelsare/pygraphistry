@@ -23,6 +23,18 @@ export class HttpPivot extends PivotTemplate {
         this.connector = connector || defaultHttpConnector;
     }
 
+    //Clone, with selective, managed overriding of (untrusted) settings
+    clone (settings) {
+        const template = super.clone(settings);
+        ['toUrls', 'connector']
+            .forEach((fld) => 
+                template[fld] = this[fld]);
+        ['connections', 'encodings', 'atttributes']
+            .forEach((fld) =>
+                template[fld] = fld in settings ? settings[fld] : this[fld]);
+        return template;
+    }
+
     searchAndShape({ app, pivot, pivotCache }) {
 
         pivot.template = this;

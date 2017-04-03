@@ -48,7 +48,7 @@ describe('pivot.template', function () {
 
     it('derive simple', (done) => {
         const pt = ptSimple;
-        const pt2 = pt.derive({
+        const pt2 = pt.clone({
             id: 'x2',
             name: 'y2'
         });
@@ -59,7 +59,7 @@ describe('pivot.template', function () {
 
     it('derive params', (done) => {        
         const pt = ptParams;
-        const pt2 = pt.derive({
+        const pt2 = pt.clone({
             id: 'x2',
             name: 'y2', parameters: [ {name: 'fld2', placeholder: 'zz'} ]
         });
@@ -73,7 +73,7 @@ describe('pivot.template', function () {
     it('catch incomplete derivation', (done) => {
         try {
             const pt = ptSimple;
-            pt.derive({});
+            pt.clone({});
         } catch (e) {
             return done();
         }
@@ -83,7 +83,7 @@ describe('pivot.template', function () {
     it('catch overriding non-existent param', (done) => {
         try {
             const pt = ptParams;
-            pt.derive({id: 'x2', name: 'y2', params: [{name: 'fld3', placeholder: 'zz'}]});
+            pt.clone({id: 'x2', name: 'y2', params: [{name: 'fld3', placeholder: 'zz'}]});
         } catch (e) {
             return done();
         }
@@ -92,7 +92,7 @@ describe('pivot.template', function () {
     it('catch overriding non-whitelisted param setting', (done) => {
         try {
             const pt = ptParams;
-            pt.derive({id: 'x2', name: 'y2', params: [{name: 'fld2', id: 'zz'}]});
+            pt.clone({id: 'x2', name: 'y2', params: [{name: 'fld2', id: 'zz'}]});
         } catch (e) {
             return done();
         }
