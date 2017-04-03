@@ -2,6 +2,8 @@ import logger from '../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
 
+//Explicit to make user error reporting more fail-fast
+export const FIELD_OVERRIDE_WHITELIST = ['id', 'name', 'parameters', 'tags'];
 export const PARAM_OVERRIDE_WHITELIST = ['placeholder', 'options', 'isVisible'];
 
 
@@ -21,59 +23,46 @@ export class PivotTemplate {
     }
     
     //Clone, with selective, managed overriding of (untrusted) settings
-    clone(settings) {
+    clone(settings = {}) {        
+
+        Object.keys(settings)
+            .filter((fld) => FIELD_OVERRIDE_WHITELIST.indexOf(fld) === -1)
+            .map((fld) => { 
+                throw new Error(`Unexpected setting override of '${fld}' 
+                    for '${settings.id}' (${settings.name})`); 
+            });
 
         const template = new PivotTemplate({
             id: settings.id,
             name: settings.name,
-            parameters: this.parameters,            
+            parameters: this.parameters,
+            tags: settings.tags || this.tags
         });
 
-        for (let fld in settings) {
-            if (['id', 'name', 'template'].indexOf(fld) === -1) {
-                template.override(fld, settings[fld]);
-            }
-        }
+        if ('parameters' in settings) {
+            settings.parameters
+                .map((parameter) => ({id: template.tagTemplateNamespace(template.id, parameter.name), ...parameter}))
+                .forEach((parameter) => {
+                    if (!(parameter.id in template.pivotParametersUI)) {
+                        throw new Error(`Unknown parameter ${parameter.name} 
+                            for pivot ${template.id} (${template.name})`);
+                    }
+                    Object.keys(parameter)
+                        .filter((fld) => ['id', 'name', 'template'].indexOf(fld) === -1)
+                        .map( (fld) => {
+                            if (PARAM_OVERRIDE_WHITELIST.indexOf(fld) === -1) {
+                                throw new Error(`Overriding template field ${setting} not allowed 
+                                    for pivot ${template.id} (${template.name})`);
+                            }
+                            return fld;
+                        })
+                        .map((fld) => {
+                            template.pivotParametersUI[parameter.id][fld] = parameter[fld];
+                        })
+                });
+        }        
 
         return template;
-    }
-
-
-    //User may derive a new template by overriding:
-    //  parameters: cannot add new param; can only override param settings in whitelist
-    override(k, v) {
-        switch (k) {
-            case 'parameters':                
-                v
-                    .map((parameter) => ({id: this.tagTemplateNamespace(this.id, parameter.name), ...parameter}))
-                    .forEach((parameter) => {
-                        if (!(parameter.id in this.pivotParametersUI)) {
-                            throw new Error(`Unknown parameter ${parameter.name} 
-                                for pivot ${this.id} (${this.name})`);
-                        }
-                        Object.keys(parameter)
-                            .filter((fld) => ['id', 'name', 'template'].indexOf(fld) === -1)
-                            .map( (fld) => {
-                                if (PARAM_OVERRIDE_WHITELIST.indexOf(fld) === -1) {
-                                    throw new Error(`Overriding template field ${setting} not allowed 
-                                        for pivot ${this.id} (${this.name})`);
-                                }
-                                return fld;
-                            })
-                            .map((fld) => {
-                                this.pivotParametersUI[parameter.id][fld] = parameter[fld];
-                            })
-                    });
-                return;
-            case 'tags':
-            case 'nodes':
-            case 'attributes':
-                this[k] = v;
-                return;
-            default:
-                throw new Error(`Trying to override unknown template field ${k} = ${v}
-                    when deriving ${this.id} (${this.name})`);                
-        }
     }
 
     tagTemplateNamespace(id, name) {
