@@ -16,6 +16,11 @@ export const HTTP_EXPAND = new HttpPivot({
     connections: [ ],    
     parameters:
         [{
+            name: 'instructions',
+            inputType: 'label',
+            isVisible: false
+        },
+        {
             name: 'pRef',
             inputType: 'pivotCombo',
             label: 'Any event in:',

@@ -26,6 +26,11 @@ export const HTTP_SEARCH = new HttpPivot({
 
         return [url];
     },
-    parameters: PARAMETERS,
+    parameters: 
+        [{
+            name: 'instructions',
+            inputType: 'label',
+            isVisible: false
+        }].concat(PARAMETERS),
     encodings: demoEncodings
 });

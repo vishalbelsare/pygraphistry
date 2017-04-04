@@ -4,7 +4,7 @@ const log = logger.createLogger(__filename);
 
 //Explicit to make user error reporting more fail-fast
 export const FIELD_OVERRIDE_WHITELIST = ['id', 'name', 'parameters', 'tags'];
-export const PARAM_OVERRIDE_WHITELIST = ['placeholder', 'options', 'isVisible'];
+export const PARAM_OVERRIDE_WHITELIST = ['placeholder', 'options', 'isVisible', 'label'];
 
 
 export class PivotTemplate {
@@ -51,7 +51,7 @@ export class PivotTemplate {
                         .filter((fld) => ['id', 'name'].indexOf(fld) === -1)
                         .map( (fld) => {
                             if (PARAM_OVERRIDE_WHITELIST.indexOf(fld) === -1) {
-                                throw new Error(`Overriding template field ${setting} not allowed 
+                                throw new Error(`Overriding template field ${fld} not allowed 
                                     for pivot ${template.id} (${template.name})`);
                             }
                             return fld;

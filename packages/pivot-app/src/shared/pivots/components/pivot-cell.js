@@ -11,7 +11,8 @@ const componentsByInputType = {
     combo: ComboCell,
     multi: MultiCell,
     daterange: DateRange,
-    pivotCombo: PivotCombo
+    pivotCombo: PivotCombo,
+    label: Label
 };
 
 export default function PivotCell({ paramUI, ...props }) {
@@ -23,6 +24,14 @@ export default function PivotCell({ paramUI, ...props }) {
         return null;
     } 
     return <div className={styles['pivot-cell']}><Component paramUI={paramUI} {...props}/></div>
+}
+
+function Label({ id, paramKey, paramValue, paramUI, handlers }) {
+    return (
+        <div className={styles['pivot-label-param']}>
+            <p>{ paramUI.label }</p>
+        </div>
+     );
 }
 
 function TextCell({ id, paramKey, paramValue, paramUI, handlers }) {

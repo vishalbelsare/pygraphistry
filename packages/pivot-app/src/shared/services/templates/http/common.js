@@ -4,6 +4,11 @@ const log = logger.createLogger(__filename);
 
 export const PARAMETERS = [
     {
+        name: 'instructions',
+        inputType: 'label',
+        isVisible: false
+    },
+    {
         name: 'endpoint',
         inputType: 'text',
         label: 'URL:',

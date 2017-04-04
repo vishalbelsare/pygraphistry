@@ -5,11 +5,16 @@
 				"name": "Expand with VirusTotal",
 				"id": "http-expand-vt",
 				"template": "http-expand",
-				"parameters": [					
+				"parameters": [		
+					{
+						"name": "instructions",
+						"label": "Lookup \"ip\" values",
+						"isVisible": true
+					},			
 					{
 						"name": "endpoint",
 						"placeholder": "https://www.virustotal.com/vtapi/v2/ip-address/report?ip={ip}&apikey=b0f1ce2eede797d3a485be09b86990570fd0ec47ac6cf8057624b126836d89df",
-						"isVisible": false,
+						"isVisible": false
 					}, 
 					{
 						"name": "jq",
