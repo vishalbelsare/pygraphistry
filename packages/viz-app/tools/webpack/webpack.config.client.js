@@ -6,6 +6,7 @@ const makeWebpackConfig = require('./webpack.config');
 const isDev = process.env.NODE_ENV !== 'production';
 const clientWebpackConfig = makeWebpackConfig({
     type: 'client',
+    statsPath: '..',
     environment: process.env.NODE_ENV,
     output: {
         publicPath: '',
