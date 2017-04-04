@@ -48,7 +48,7 @@ export class PivotTemplate {
                             for pivot ${template.id} (${template.name})`);
                     }
                     Object.keys(parameter)
-                        .filter((fld) => ['id', 'name', 'template'].indexOf(fld) === -1)
+                        .filter((fld) => ['id', 'name'].indexOf(fld) === -1)
                         .map( (fld) => {
                             if (PARAM_OVERRIDE_WHITELIST.indexOf(fld) === -1) {
                                 throw new Error(`Overriding template field ${setting} not allowed 
@@ -58,7 +58,7 @@ export class PivotTemplate {
                         })
                         .map((fld) => {
                             template.pivotParametersUI[parameter.id][fld] = parameter[fld];
-                        })
+                        });
                 });
         }        
 
