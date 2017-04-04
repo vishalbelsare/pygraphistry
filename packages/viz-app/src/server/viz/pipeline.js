@@ -24,43 +24,14 @@ function configureVGraphPipeline(config, s3DatasetCache) {
                 ({ workbook, view }) => maskDataframe({ view }),
                 ({ workbook }, { view }) => ({ workbook, view })
             )
-            .let(updateSession({
-                status: 'init',
-                progress: 100 * 9/10,
-                message: 'Loading graph'
-            }))
-            .mergeMap(({ view }) => {
+            .mergeMap(({ workbook, view }) => {
                 const { nBody } = view;
                 const { interactionsLoop } = nBody;
                 logger.trace('loaded nBody vGraph');
-                return interactionsLoop.mapTo(view);
+                return interactionsLoop.mapTo({ workbook, view });
             });
     }
 }
 
 export { configureVGraphPipeline };
 export default configureVGraphPipeline;
-
-// function updateSession() {
-//     return function(source = Observable.of({})) {
-//         return source.mergeMap(() => [0], (args) => args);
-//     }
-// }
-
-// function sendSessionUpdate(sendUpdate, _view, session) {
-//     session = session || _view;
-//     return function letSendSessionUpdate(source = Observable.of({})) {
-//         return source.mergeMap(
-//             ({ workbook, view }) => {
-//                 _view = view || _view;
-//                 _view.session = session;
-//                 const workbookPath = workbook ? `workbooksById['${workbook.id}']` : 'workbooks.open';
-//                 const viewPath = `${workbookPath}.viewsById['${_view.id}']`;
-//                 return sendUpdate({
-//                     paths: [`${viewPath}.session['status', 'message', 'progress']`]
-//                 }).takeLast(1);
-//             },
-//             (args) => args
-//         );
-//     }
-// }

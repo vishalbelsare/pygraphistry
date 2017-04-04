@@ -46,9 +46,6 @@ app.use(function(req, res, next) {
     next();
 });
 
-
-let serverMiddleware;
-
 // Run express as webpack dev server
 if (process.env.NODE_ENV === 'development' && config.ENVIRONMENT === 'local') {
     global.__DEV__ = true;
@@ -65,7 +62,6 @@ if (process.env.NODE_ENV === 'development' && config.ENVIRONMENT === 'local') {
     const SERVER_STATS = require('./www/server-assets.json');
     app.use(require(`./www/${SERVER_STATS.server.js}`).default);
 }
-
 
 if (port) {
     io.listen(app.listen(port, host, function (err) {

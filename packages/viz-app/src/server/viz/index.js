@@ -120,24 +120,26 @@ function configureVizWorker(config, activeCB, io) {
             establishVizConnection,
             loadAndRunVisualization,
             loadAndRenderHTML.take(1),
-            ({ socket, vizServer }, view) => ({ view, socket, vizServer })
+            ({ socket, vizServer }, { workbook, view }) => ({ workbook, view, socket, vizServer })
         )
         // On the first event, hook up the VizServer and the interactions Subject.
         // Let all the other events pass through. TODO: deprecate put this in the
         // graph compute pipeline!
         .publish((updates) => updates.skip(1).merge(
-            updates.take(1).map(({ view, socket, vizServer }) => {
-                const { nBody } = view;
-                nBody.server = vizServer;
-                const { interactions } = nBody;
-                vizServer.updateSession = sendSessionUpdate.bind(null, sendUpdate, view);
-                vizServer.animationStep = { interact(x) { interactions.next(x); } };
-                // TODO: refactor server-viz to remove dependency on stateful shared Subjects
-                logger.trace('ticked graph');
-                vizServer.graph.next(nBody);
-                vizServer.renderConfig.next(nBody.scene);
-                return { view, socket, vizServer };
-            })
+            updates.take(1)
+                .let(sendPostVGraphLoadedUpdate(sendUpdate, updateSession))
+                .map(({ workbook, view, socket, vizServer }) => {
+                    const { nBody } = view;
+                    nBody.server = vizServer;
+                    const { interactions } = nBody;
+                    vizServer.updateSession = sendSessionUpdate.bind(null, sendUpdate, view);
+                    vizServer.animationStep = { interact(x) { interactions.next(x); } };
+                    // TODO: refactor server-viz to remove dependency on stateful shared Subjects
+                    logger.trace('ticked graph');
+                    vizServer.graph.next(nBody);
+                    vizServer.renderConfig.next(nBody.scene);
+                    return { view, socket, vizServer };
+                })
         ))
         // legacy: pump the `nBody` into the vizServer VBO loop
         .do(({ view, vizServer }) => vizServer.ticksMulti.next(view.nBody))
@@ -168,3 +170,32 @@ function sendSessionUpdate(sendUpdate, _view, session) {
     }
 }
 
+function sendPostVGraphLoadedUpdate(sendUpdate, updateSession) {
+    return function letSendPostVGraphLoadedUpdate(source) {
+        return source
+            .mergeMap(
+                ({ workbook, view }) => {
+                    const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+                    return sendUpdate({
+                        invalidated: [
+                            `${viewPath}.labelsByType`,
+                            `${viewPath}.inspector.rows`,
+                            `${viewPath}.componentsByType`,
+                        ],
+                        paths: [
+                            `${viewPath}.columns.length`,
+                            `${viewPath}.histograms.length`,
+                            `${viewPath}.inspector.tabs.length`,
+                            `${viewPath}.scene.renderer['edges', 'points'].elements`
+                        ]
+                    }).takeLast(1)
+                },
+                (args) => args
+            )
+            .let(updateSession({
+                status: 'init',
+                progress: 100 * 9/10,
+                message: 'Loading graph'
+            }))
+    }
+}
