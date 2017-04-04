@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const HappyPack = require('happypack');
+const StatsPlugin = require('stats-webpack-plugin');
 const AssetsPlugin = require('assets-webpack-plugin');
 const WriteFilePlugin = require('write-file-webpack-plugin');
 const BabiliWebpackPlugin = require('babili-webpack-plugin');
@@ -20,6 +21,7 @@ module.exports = makeWebpackConfig;
 function makeWebpackConfig({
     output = {},
     type = 'client',
+    statsPath = '.',
     environment = 'production',
     numCPUs = require('os').cpus().length || 4
 } = {}) {
@@ -38,7 +40,7 @@ function makeWebpackConfig({
         context: path.join(process.cwd()),
         target: type === 'client' ? 'web' : 'node',
         devtool: isDev ? 'source-map' : 'hidden-source-map',
-        stats: { assets: true, colors: true, chunks: true },
+        stats: { assets: false, colors: true, chunks: false, warnings: true },
         output: Object.assign({
             publicPath: '',
             // Don't use chunkhash in development it will increase compilation time
@@ -145,6 +147,11 @@ function makeWebpackConfig({
                 __SERVER__: JSON.stringify(type === 'server'),
                 __DISABLE_SSR__: JSON.stringify(false),
             })),
+            // See http://webpack.github.io/analyse/
+            new StatsPlugin(
+                `${statsPath}/${type}-stats.json`,
+                { chuckModules: true, chucks: true, timings: true }
+            )
         ]
     };
 
