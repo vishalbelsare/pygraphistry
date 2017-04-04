@@ -19,6 +19,9 @@ export default function PivotCell({ paramUI, ...props }) {
     if (!Component) {
         throw new Error('Unknown pivot cell type:' + paramUI.inputType);
     }
+    if ('isVisible' in paramUI && !paramUI.isVisible) {
+        return null;
+    } 
     return <div className={styles['pivot-cell']}><Component paramUI={paramUI} {...props}/></div>
 }
 
