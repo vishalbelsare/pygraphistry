@@ -5,18 +5,26 @@
 				"name": "Expand with VirusTotal",
 				"id": "http-expand-vt",
 				"template": "http-expand",
-				"parameters": [
+				"parameters": [					
 					{
 						"name": "endpoint",
-						"placeholder": "??"
+						"placeholder": "https://www.virustotal.com/vtapi/v2/ip-address/report?ip={ip}&apikey=b0f1ce2eede797d3a485be09b86990570fd0ec47ac6cf8057624b126836d89df",
+						"isVisible": false,
 					}, 
 					{
 						"name": "jq",
-						"placeholder": "??"
+						"placeholder": "({asn: .asn, as_owner: .as_owner}) as $nodes | ({response_code: .response_code, verbose_msg: .verbose_msg, country: .country}) as $attrs | ([.resolutions[] | . + $attrs]) + .detected_downloaded_samples + .detected_urls + [$attrs] + [$nodes]",
+						"isVisible": false
 					}, 
 					{
 						"name": "nodes",
-						"options": []
+						"options": [
+							{"value": "asn", "label": "asn"},
+							{"value": "as_owner", "label": "as_owner"},
+							{"value": "hostname", "label": "hostname"},
+							{"value": "country", "label": "country"},
+							{"value": "sha256", "label": "sha256"},
+							{"value": "url", "label": "url"}]
 					}, 
 					{
 						"name": "attributes",
