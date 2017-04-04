@@ -24,14 +24,25 @@ export class HttpPivot extends PivotTemplate {
     }
 
     //Clone, with selective, managed overriding of (untrusted) settings
-    clone (settings) {
+    clone ({ toUrls, nodes, encodings, attributes, connector, ...settings}) {
+        if (toUrls || connector) {
+            throw new Error(`Cannot override toUrls and connector 
+                when ${settings.id} (${settings.name}) extending HttpPivot`);
+        }
+
         const template = super.clone(settings);
         ['toUrls', 'connector']
             .forEach((fld) => 
                 template[fld] = this[fld]);
-        ['connections', 'encodings', 'atttributes']
-            .forEach((fld) =>
-                template[fld] = fld in settings ? settings[fld] : this[fld]);
+        
+        //TODO refactor connections -> nodes everywhere
+        template.connections = nodes || this.connections;
+        template.encodings = encodings || this.encodings;
+        template.attributes = attributes || this.attributes;
+
+        template.searchAndShape = this.searchAndShape;
+        template.clone = this.clone;
+
         return template;
     }
 
