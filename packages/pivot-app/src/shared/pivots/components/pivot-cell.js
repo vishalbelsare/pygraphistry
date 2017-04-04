@@ -20,10 +20,10 @@ export default function PivotCell({ paramUI, ...props }) {
     if (!Component) {
         throw new Error('Unknown pivot cell type:' + paramUI.inputType);
     }
-    if ('isVisible' in paramUI && !paramUI.isVisible) {
-        return null;
-    } 
-    return <div className={styles['pivot-cell']}><Component paramUI={paramUI} {...props}/></div>
+    return <div className={styles['pivot-cell']} 
+        style={'isVisible' in paramUI && !paramUI.isVisible ? {display: 'none'} : {}}>
+        <Component paramUI={paramUI} {...props}/>
+    </div>
 }
 
 function Label({ id, paramKey, paramValue, paramUI, handlers }) {
