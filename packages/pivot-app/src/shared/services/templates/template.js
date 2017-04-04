@@ -4,7 +4,7 @@ const log = logger.createLogger(__filename);
 
 //Explicit to make user error reporting more fail-fast
 export const FIELD_OVERRIDE_WHITELIST = ['id', 'name', 'parameters', 'tags'];
-export const PARAM_OVERRIDE_WHITELIST = ['placeholder', 'options', 'isVisible', 'label'];
+export const PARAM_OVERRIDE_WHITELIST = ['placeholder', 'options', 'isVisible', 'label', 'defaultValue'];
 
 
 export class PivotTemplate {
