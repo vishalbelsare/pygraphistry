@@ -32,8 +32,9 @@ export class HttpPivot extends PivotTemplate {
 
         const template = super.clone(settings);
         ['toUrls', 'connector']
-            .forEach((fld) => 
-                template[fld] = this[fld]);
+            .forEach((fld) => {
+                template[fld] = this[fld];
+            });
         
         //TODO refactor connections -> nodes everywhere
         template.connections = nodes || this.connections;

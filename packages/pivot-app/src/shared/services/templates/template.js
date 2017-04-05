@@ -56,7 +56,7 @@ export class PivotTemplate {
                             }
                             return fld;
                         })
-                        .map((fld) => {
+                        .forEach((fld) => {
                             template.pivotParametersUI[parameter.id][fld] = parameter[fld];
                         });
                 });

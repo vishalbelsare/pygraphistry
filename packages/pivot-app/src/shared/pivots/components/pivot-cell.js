@@ -26,7 +26,7 @@ export default function PivotCell({ paramUI, ...props }) {
     </div>
 }
 
-function Label({ id, paramKey, paramValue, paramUI, handlers }) {
+function Label({ paramUI }) {
     return (
         <div className={styles['pivot-label-param']}>
             <p>{ paramUI.label }</p>
