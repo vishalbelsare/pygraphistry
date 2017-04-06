@@ -19,26 +19,20 @@ export function pivotStore(loadApp, pathPrefix, loadTemplatesById, pivotsByIdCac
 
     return {
         loadPivotsById: (({pivotIds}) =>
-            store.loadById(pivotIds) //fill in default pivotParameters from template
+            store.loadById(pivotIds) //Fill in default pivotParameters from template
                 .mergeMap(
                     ({ pivot }) => loadTemplatesById({
                         templateIds: [pivot.pivotTemplate.value[1]]
                     }),
-                    ({ pivot }, { template }) => ({ pivot, template }))
-                .map(({pivot: {pivotParameters, ...pivot}, template}) => {                    
-                    return {
-                        pivot: {
-                            ...pivot, 
-                            pivotParameters:  {
-                                ...Object.entries(template.pivotParametersUI.value)
-                                    .reduce((result, [key, value]) => {
-                                        result[key] = value.defaultValue;
-                                        return result
-                                    }, {}),
-                                ...pivotParameters
-                            }
+                    (pivot, { template }) => ({ pivot, template }))
+                .map(({pivot, template}) => {                    
+                    // Must reuse original pivot object
+                    for (let fld in template.pivotParametersUI.value) {
+                        if (!(fld in pivot.pivot.pivotParameters)) {
+                            pivot.pivot.pivotParameters[fld] = template.pivotParametersUI.value[fld].defaultValue;
                         }
-                    };
+                    }
+                    return pivot;
                 })
         ),
         unloadPivotsById: (({pivotIds}) =>
