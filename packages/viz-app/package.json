@@ -122,7 +122,7 @@
   },
   "homepage": "https://github.com/graphistry/viz-app#readme",
   "dependencies": {
-    "@graphistry/common": "3.0.2",
+    "@graphistry/common": "3.1.0",
     "@graphistry/config": "3.0.4",
     "@graphistry/dijkstra": "2.0.0",
     "@graphistry/falcor": "~2.9.0",
