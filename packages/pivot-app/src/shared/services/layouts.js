@@ -1,14 +1,14 @@
 export const layouts = [
                         {id: "stackedBushyGraph",
                          controls: "lockedAtlasBarnesY",
-                         friendlyName: "investigation tree",
+                         friendlyName: "Investigation Layout",
                         },
                         {id: "atlasbarnes",
                          controls: "atlasbarnes",
-                         friendlyName: "round graph",
+                         friendlyName: "Force Directed Layout",
                         },
-                        {id: "weirdRandomSquare",
+                        {id: "insideout",
                          controls: "lockedAtlasBarnesXY",
-                         friendlyName: "weird random square",
+                         friendlyName: "Network Map Layout"
                         },
                         ];

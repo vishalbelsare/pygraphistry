@@ -55,13 +55,13 @@ export default function InvestigationHeader({
                     </ButtonGroup>
                 </Col>
             </Row>
-            <Row style={{ display: 'none' }} className={styles['investigation-header-row']}>
-                <Col xs={12} sm={12} md={12} lg={12}>
+            <Row className={styles['investigation-header-row']}>
+                <Col xs={12} sm={12} md={12} lg={12} className={styles['layout-picker']}>
                     <Select
                         name="layout-selector"
                         clearable={false}
-                        value={layout || "weird default"}
-                        options={layouts.map((lay) => ({value: lay.id, label: lay.friendlyName}))}
+                        value={layout}
+                        options={layouts.filter((lay) => lay.id != 'insideout').map((lay) => ({value: lay.id, label: lay.friendlyName, className: lay.id}))}
                         onChange={(lay) => saveLayout({layoutType: lay.value})}
                     />
                 </Col>
