@@ -8,10 +8,8 @@ const log = logger.createLogger(__filename);
 
 const templatesMap = listTemplates();
 
-
-
-export function searchPivot({ loadPivotsById, loadTemplatesById, pivotIds, loadInvestigationsById, investigationId }) {
-    return loadPivotsById ({ pivotIds })
+export function searchPivot({ loadPivotsById, pivotIds, loadInvestigationsById, investigationId }) {
+    return loadPivotsById({ pivotIds: pivotIds })
         .mergeMap(({app, pivot}) => {
 
             const template = templatesMap[pivot.pivotTemplate.value[1]];
@@ -20,11 +18,9 @@ export function searchPivot({ loadPivotsById, loadTemplatesById, pivotIds, loadI
 
                 // Load other pivots in investigation
                 const pivotIds = investigation.pivots.map(({value}) => value[1]);
-                const context = 
-                    loadPivotsById({ pivotIds })
-                        .map(({ pivot }) => {
-                            return pivot;
-                        }).toArray();
+                const context = loadPivotsById({ pivotIds }).map(({ pivot }) => {
+                    return pivot;
+                }).toArray();
 
                 return context.flatMap((pivots) => {
 
