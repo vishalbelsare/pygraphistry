@@ -2,7 +2,7 @@ import VError from 'verror';
 import { Observable } from 'rxjs';
 import { withSchema } from '@graphistry/falcor-react-schema';
 import { logErrorWithCode } from 'pivot-shared/util';
-import { $pathValue } from '@graphistry/falcor-json-graph';
+import { $pathValue, $ref, $value } from '@graphistry/falcor-json-graph';
 
 import logger from 'pivot-shared/logger.js';
 const log = logger.createLogger(__filename);
@@ -22,49 +22,47 @@ export default withSchema((QL, { get, set }, services) => {
     };
 
     const paramHandler = {
+        get: get(function({ pivotIds }) {
+            return loadPivotsById.call(this, { pivotIds })
+                .mergeMap(({ pivot }) => loadTemplatesById({
+                        templateIds: [pivot.pivotTemplate.value[1]]
+                    }),
+                    ({ pivot }, { template }) => ({ pivot, template }))
+                .map(({ pivot, template }) => {
+                    const merged = {
+                        ...pivot, 
+                        pivotParameters:  {
+                            ...pivot.pivotParamters,
+                            ...Object.entries(template.pivotParametersUI.value)
+                                .reduce((result, [key, value]) => {
+                                    result[key] = 
+                                        pivot.pivotParameters[key] !== undefined ? pivot.pivotParameters[key] 
+                                            : value.defaultValue;
+                                    return result
+                                }, {})
+                        }
+                    };
+                    console.log('======', pivot); 
+                    console.log('------', template);                    
+                    console.log('------', merged);
+                    return pivot;
+                });
+        })
+    };
+
+    const paramHandler2 = {
         set: readWriteHandler.set,
         get: function (...args) {
             return get(loadPivotsById).apply(this, args)
-                .mergeMap(({value,path}, i) => {
+                .map(({value,path}, i) => {                    
                     if (value === undefined) {                        
                         const field = path.slice(-1)[0];                        
-                        const template = 
-                            path.slice(0,-2)
-                                .concat(['pivotTemplate', 'pivotParametersUI', field]);
-                        return get(loadPivotsById).apply(this, [template])
-                            //.map({value} => ({path, value}))
-                            .mergeMap((v) => {
+                        const redirection = `pivotsById["${path[1]}"].pivotTemplate.pivotParametersUI["${field}"]`;
+                        console.log('redirecting', path, '->', redirection);
 
-                                /*
-                                { original: 
-                                   [ 'pivotsById',
-                                     '3f2fc63c1e995707',
-                                     'pivotParameters',
-                                     'manual-data$$$attributes' ],
-                                  'redirecting to': 
-                                   [ 'pivotsById',
-                                     '3f2fc63c1e995707',
-                                     'pivotTemplate',
-                                     'pivotParametersUI',
-                                     'manual-data$$$attributes' ],
-                                  'got path': [ 'pivotsById', '3f2fc63c1e995707', 'pivotTemplate' ],
-                                  'got value': { '$type': 'ref', value: [ 'templatesById', 'manual-data' ] } }
-                                */
-                                console.log('==== handling unknown param', field, {
-                                    'original': path, 'redirecting to': template,
-                                    'got path': v.path,
-                                    'got value': v.value,
-                                });
-
-                                //----Trying to access the ref differently.. [ [ 'templatesById', 'manual-data' ] ]
-                                console.log('----Trying to access the ref differently..', [v.value.value]);
-                                return get(loadTemplatesById).apply(this, [v.value.value])
-                                    .map((v) => {
-                                        console.log('--- and got: ', v);
-                                    });                         
-                            });
+                        return {path, value: $ref(redirection)};
                     } else {
-                        return Observable.of(value);
+                        return {value,path};
                     }
                 });
         }
