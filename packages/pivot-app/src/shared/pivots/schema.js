@@ -9,7 +9,7 @@ const log = logger.createLogger(__filename);
 
 export default withSchema((QL, { get, set }, services) => {
 
-    const { loadPivotsById, loadTemplatesById } = services;
+    const { loadPivotsById } = services;
     const readOnlyHandler = {
         get: get(loadPivotsById)
     };
