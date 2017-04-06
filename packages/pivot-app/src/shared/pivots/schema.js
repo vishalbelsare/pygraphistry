@@ -21,35 +21,6 @@ export default withSchema((QL, { get, set }, services) => {
         })
     };
 
-    //Initialize  pivot parameter value to template defaultValue
-    const paramHandler = {
-        set: readWriteHandler.set,
-        get: get(function({ pivotIds }) {
-            return loadPivotsById.call(this, { pivotIds })
-                .mergeMap(
-                    ({ pivot }) => loadTemplatesById({
-                        templateIds: [pivot.pivotTemplate.value[1]]
-                    }),
-                    ({ pivot }, { template }) => ({ pivot, template }))
-                .map(({pivot: {pivotParameters, ...pivot}, template}) => {
-                    return {
-                        pivot: {
-                            ...pivot, 
-                            pivotParameters:  {
-                                ...Object.entries(template.pivotParametersUI.value)
-                                    .reduce((result, [key, value]) => {
-                                        result[key] = value.defaultValue;
-                                        return result
-                                    }, {}),
-                                ...pivotParameters
-                            }
-                        }
-                    };
-                });
-        })
-    };
-
-
     const searchPivotHandler = {
         call: searchPivotCallRoute(services)
     };
@@ -63,7 +34,7 @@ export default withSchema((QL, { get, set }, services) => {
         },
         pivotParameters: {
             [{ keys }]: ${
-                paramHandler
+                readWriteHandler
             }
         },
         searchPivot: ${
