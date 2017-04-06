@@ -72,12 +72,12 @@ export default withSchema((QL, { get, set }, services) => {
     }`;
 });
 
-function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPivot }) {
+function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, loadTemplatesById, searchPivot }) {
     return function(path, args) {
         const pivotIds = path[1];
         const investigationId = args[0];
 
-        return searchPivot({ loadInvestigationsById, loadPivotsById, pivotIds, investigationId })
+        return searchPivot({ loadInvestigationsById, loadPivotsById, loadTemplatesById, pivotIds, investigationId })
             .mergeMap(({ pivot }) => {
                 return [
                     $pathValue(`pivotsById['${pivot.id}']['resultCount']`, pivot.resultCount),
