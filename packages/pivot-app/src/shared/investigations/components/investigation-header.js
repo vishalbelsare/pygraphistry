@@ -61,7 +61,7 @@ export default function InvestigationHeader({
                         name="layout-selector"
                         clearable={false}
                         value={layout}
-                        options={layouts.filter((lay) => lay.id != 'insideout').map((lay) => ({value: lay.id, label: lay.friendlyName, className: lay.id}))}
+                        options={layouts.filter((lay) => lay.id !== 'insideout').map((lay) => ({value: lay.id, label: lay.friendlyName, className: lay.id}))}
                         onChange={(lay) => saveLayout({layoutType: lay.value})}
                     />
                 </Col>
