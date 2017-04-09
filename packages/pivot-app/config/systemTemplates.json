@@ -5,7 +5,15 @@
 				"name": "Expand URL with VirusTotal",
 				"id": "http-expand-vt-url",
 				"template": "http-expand",
-				"parameters": [		
+				"parameters": [
+					{
+				        "name": "apikey",
+				        "inputType": "text",
+				        "label": "API Key:",
+				        "placeholder": "Your API key",
+				        "defaultValue": "b0f1ce2eede797d3a485be09b86990570fd0ec47ac6cf8057624b126836d89df",
+				        "isVisible": false
+				    },
 					{
 						"name": "instructions",
 						"label": "Lookup \"url\" values",
@@ -13,7 +21,7 @@
 					},			
 					{
 						"name": "endpoint",
-						"defaultValue": "https://www.virustotal.com/vtapi/v2/url/report?resource={url}&apikey=b0f1ce2eede797d3a485be09b86990570fd0ec47ac6cf8057624b126836d89df",
+						"defaultValue": "https://www.virustotal.com/vtapi/v2/url/report?resource={url}&apikey={apikey}",
 						"isVisible": true
 					}, 
 					{
@@ -39,7 +47,15 @@
 				"name": "Expand IP with VirusTotal",
 				"id": "http-expand-vt",
 				"template": "http-expand",
-				"parameters": [		
+				"parameters": [
+					{
+				        "name": "apikey",
+				        "inputType": "text",
+				        "label": "API Key:",
+				        "placeholder": "Your API key",
+				        "defaultValue": "b0f1ce2eede797d3a485be09b86990570fd0ec47ac6cf8057624b126836d89df",
+				        "isVisible": false
+				    },		
 					{
 						"name": "instructions",
 						"label": "Lookup \"ip\" values",
@@ -47,7 +63,7 @@
 					},			
 					{
 						"name": "endpoint",
-						"defaultValue": "https://www.virustotal.com/vtapi/v2/ip-address/report?ip={ip}&apikey=b0f1ce2eede797d3a485be09b86990570fd0ec47ac6cf8057624b126836d89df",
+						"defaultValue": "https://www.virustotal.com/vtapi/v2/ip-address/report?ip={ip}&apikey={apikey}",
 						"isVisible": true
 					}, 
 					{
