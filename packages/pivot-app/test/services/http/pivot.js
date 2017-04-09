@@ -28,6 +28,22 @@ describe('httpPivot', function () {
 		server.close();
 	});
 
+	////////////////////////////////
+
+	const httpSingleX = new HttpPivot({
+		id: 'x', name: 'y', tags: [], attributes: [], connections: [],
+		toUrls: () => [{url: `http://localhost:${PORT}/echo?x=1`}],
+		parameters: [],
+		encodings: {}
+	});
+
+	const httpDoubleX = new HttpPivot({
+		id: 'x', name: 'y', tags: [], attributes: [], connections: [],
+		toUrls: () => [{url: `http://localhost:${PORT}/echo?x=5&x=10`}],
+		parameters: [],
+		encodings: {}
+	});
+
 
 	////////////////////////////////
 
@@ -51,12 +67,7 @@ describe('httpPivot', function () {
 	});
 
 	it('constant', (done) => {
-		const pivot = new HttpPivot({
-			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
-			toUrls: () => [`http://localhost:${PORT}/echo?x=1`],
-			parameters: [],
-			encodings: {}
-		});
+		const pivot = httpSingleX;
 		pivot.searchAndShape({
 				app: {}, 
 				pivot: {
@@ -80,12 +91,7 @@ describe('httpPivot', function () {
 	});
 
 	it('fromData', (done) => {
-		const pivot = new HttpPivot({
-			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
-			toUrls: () => [`http://localhost:${PORT}/echo?x=5&x=10`],
-			parameters: [],
-			encodings: {}
-		});
+		const pivot = httpDoubleX;
 		pivot.searchAndShape({
 				app: {}, 
 				pivot: {
@@ -108,13 +114,9 @@ describe('httpPivot', function () {
 				}, (e) => done(new Error(e)));
 	});
 
+
 	it('userEventID', (done) => {
-		const pivot = new HttpPivot({
-			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
-			toUrls: () => [`http://localhost:${PORT}/echo?x=5&x=10`],
-			parameters: [],
-			encodings: {}
-		});
+		const pivot = httpDoubleX;
 		pivot.searchAndShape({
 				app: {}, 
 				pivot: {
@@ -138,12 +140,7 @@ describe('httpPivot', function () {
 	});
 
 	it('no includes', (done) => {
-		const pivot = new HttpPivot({
-			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
-			toUrls: () => [`http://localhost:${PORT}/echo?x=1`],
-			parameters: [],
-			encodings: {}
-		});
+		const pivot = httpSingleX;
 		pivot.searchAndShape({
 				app: {}, 
 				pivot: {
@@ -164,8 +161,8 @@ describe('httpPivot', function () {
 		const pivot = new HttpPivot({
 			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
 			toUrls: () => 
-				[`http://localhost:${PORT}/echo?x=a`, 
-				 `http://localhost:${PORT}/echo?x=b`],
+				[{url: `http://localhost:${PORT}/echo?x=a`}, 
+				 {url: `http://localhost:${PORT}/echo?x=b`}],
 			parameters: [],
 			encodings: {}
 		});

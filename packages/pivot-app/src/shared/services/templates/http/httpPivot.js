@@ -1,3 +1,4 @@
+import template from 'string-template';
 import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
 import { jqSafe } from '../../support/jq';
@@ -71,11 +72,11 @@ export class HttpPivot extends PivotTemplate {
 
         let eventCounter = 0;    
         const df = Observable.from(this.toUrls(params, pivotCache))
-            .flatMap((url) => {
+            .flatMap(({ url, params }) => {
                 log.info('searchAndShape http: url', {url});
                 return this.connector.search(url)                    
                     .switchMap(([response]) => {
-                        return jqSafe(response.body, jq || '.')
+                        return jqSafe(response.body, template(jq || '.', params))
                             .catch((e) => {
                                 return Observable.throw(
                                     new VError({

@@ -31,14 +31,10 @@ export const HTTP_EXPAND = new HttpPivot({
         const events = pivots.map((refVal) => pivotCache[refVal].events);
         return [].concat.apply([], events)
             .map((row, i) => {
-                const url = template(endpoint, {
-                    ...row,
-                    endpoint, 
-                    nodes: this.connections,
-                    attributes: this.attributes
-                });
-                log.debug('row endpoint', url, i ,row);
-                return url;
+                const params = row;
+                const url = template(endpoint, params);
+                log.debug('row endpoint', url, i, row);
+                return { url, params };
             });
 
     },
