@@ -18,8 +18,8 @@ export function pivotStore(loadApp, pathPrefix, loadTemplatesById, pivotsByIdCac
     });
 
     return {
-        loadPivotsById: (({pivotIds}) =>
-            store.loadById(pivotIds) //Fill in default pivotParameters from template
+        loadPivotsById: (({pivotIds}) => {
+            return store.loadById(pivotIds) //Fill in default pivotParameters from template
                 .mergeMap(
                     ({ pivot }) => loadTemplatesById({
                         templateIds: [pivot.pivotTemplate.value[1]]
@@ -34,6 +34,7 @@ export function pivotStore(loadApp, pathPrefix, loadTemplatesById, pivotsByIdCac
                     }
                     return pivot;
                 })
+            }
         ),
         unloadPivotsById: (({pivotIds}) =>
             store.unloadById(pivotIds)
