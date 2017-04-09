@@ -31,7 +31,7 @@ function dfUnion(dfA, dfB) {
         }
     });
 
-    return cA.restructure(cols).union(cB.restructure(cols));
+    return dfA.restructure(cols).union(dfB.restructure(cols));
 }
 
 
