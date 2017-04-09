@@ -2,7 +2,41 @@
 	"systemTemplates": {
 		"pivots": [
 			{
-				"name": "Expand with VirusTotal",
+				"name": "Expand URL with VirusTotal",
+				"id": "http-expand-vt-url",
+				"template": "http-expand",
+				"parameters": [		
+					{
+						"name": "instructions",
+						"label": "Lookup \"url\" values",
+						"isVisible": true
+					},			
+					{
+						"name": "endpoint",
+						"defaultValue": "https://www.virustotal.com/vtapi/v2/url/report?resource={url}&apikey=b0f1ce2eede797d3a485be09b86990570fd0ec47ac6cf8057624b126836d89df",
+						"isVisible": true
+					}, 
+					{
+						"name": "jq",
+						"defaultValue": "({url: \"{url}\", source: \"VirusTotal\"}) as $root   | ({}) as $nodes   | ({scan_id:  .scan_id, resource: .resource, response_code: .response_code, scan_date: .scan_date, permalink: .permalink, verbose_msg: .verbose_msg, filescan_id: .filescan_id, positives: .positives, total: .total}) as $attrs   | ([.scans[] | . + $root + {field: \"scans\"}])  + [$attrs + $nodes + $root]",
+						"isVisible": true
+					}, 
+					{
+						"name": "nodes",
+						"options": [
+							{"id": "detected", "name": "detected"},
+							{"id": "url", "name": "url"}
+						],
+						"defaultValue": [ "detected", "url" ]
+					}, 
+					{
+						"name": "attributes",
+						"options": []
+					}
+				]
+			},			
+			{
+				"name": "Expand IP with VirusTotal",
 				"id": "http-expand-vt",
 				"template": "http-expand",
 				"parameters": [		
