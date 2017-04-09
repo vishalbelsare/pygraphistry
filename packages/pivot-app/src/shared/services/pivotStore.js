@@ -27,7 +27,7 @@ export function pivotStore(loadApp, pathPrefix, loadTemplatesById, pivotsByIdCac
                     (pivot, { template }) => ({ pivot, template }))
                 .map(({pivot, template}) => {                    
                     // Must reuse original pivot object
-                    for (let fld in template.pivotParametersUI.value) {
+                    for (const fld in template.pivotParametersUI.value) {
                         if (!(fld in pivot.pivot.pivotParameters)) {
                             pivot.pivot.pivotParameters[fld] = template.pivotParametersUI.value[fld].defaultValue;
                         }
