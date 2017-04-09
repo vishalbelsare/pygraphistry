@@ -18,12 +18,21 @@
 					}, 
 					{
 						"name": "jq",
-						"defaultValue": "({asn: .asn, as_owner: .as_owner}) as $nodes | ({response_code: .response_code, verbose_msg: .verbose_msg, country: .country}) as $attrs | ([.resolutions[] | . + $attrs]) + .detected_downloaded_samples + .detected_urls + [$attrs] + [$nodes]",
+						"defaultValue": "({ip: \"{ip}\", source: \"VirusTotal\"}) as $root  | ({asn: .asn, as_owner: .as_owner}) as $nodes  | ({response_code: .response_code, verbose_msg: .verbose_msg, country: .country}) as $attrs  | ([.resolutions[] | . + $root + {field: \"resolutions\"}])  + ([.detected_downloaded_samples[] | . + $root + {field: \"detected_downloaded_samples\"}])  + ([.detected_urls[] + $root + {field: \"detected_urls\"}])  + [$attrs + $nodes + $root]",
 						"isVisible": true
 					}, 
 					{
 						"name": "nodes",
-						"defaultValue": [ "asn", "as_owner", "hostname", "country", "sha256", "url" ]
+						"options": [
+							{"id": "asn", "name": "asn"},
+							{"id": "as_owner", "name": "as_owner"},
+							{"id": "hostname", "name": "hostname"},
+							{"id": "country", "name": "country"},
+							{"id": "sha256", "name": "sha256"},
+							{"id": "url", "name": "url"},
+							{"id": "ip", "name": "ip"}
+						],
+						"defaultValue": [ "asn", "as_owner", "hostname", "country", "sha256", "url", "ip" ]
 					}, 
 					{
 						"name": "attributes",
