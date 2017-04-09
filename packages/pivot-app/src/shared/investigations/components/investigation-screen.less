@@ -1,0 +1,201 @@
+@split-margin: 15px;
+.investigation-all {
+
+    height: 100%;
+
+    .investigation-split {
+        position: relative;
+        height: 100%;
+        background-color: #F6F6F6;
+
+        :global {
+            /* react-split-pane styles */
+            .Resizer {
+                opacity: 1;
+                z-index: 101;
+                background: #ccc;
+                box-sizing: border-box;
+                background-clip: padding-box;
+            }
+
+             .Resizer.horizontal {
+                width: 100%;
+                height: 11px;
+                margin: -5px 0;
+                cursor: row-resize;
+                border-top: 5px solid rgba(0, 0, 0, 0);
+                border-bottom: 5px solid rgba(0, 0, 0, 0);
+            }
+
+            // 1px #ccc with +/- 12px hit region
+            .Resizer.vertical {
+                width: 0px;
+                margin: 0 -6px;
+                padding: 0 0 0 1px;
+                cursor: col-resize;
+                border-left: 5px solid rgba(0, 0, 0, 0);
+                border-right: 5px solid rgba(0, 0, 0, 0);
+            }
+        }
+
+        :global(.Pane1) {
+            box-shadow: rgba(0, 0, 0, 0.05) 7px 41px 10px;
+            z-index: 100;
+        }
+    }
+}
+
+.investigation-all .investigation-split {
+
+    :global(.Pane1 .panel-body) {
+            padding: 0px !important;
+    }
+
+    :global(.Pane1 .panel-footer) {
+        color: #7FA1B4;
+        background-color: #c2d4de;
+        padding: 0px 12px !important;
+        transition: background-color 0.1s ease;
+        height: 15px !important;
+        font-size: 10px;
+    }
+
+    :global(.Pane1 .panel-default) {
+        margin-bottom: 15px !important;
+        border: none !important;
+    }
+
+    :global(.Pane1 .panel-heading) {
+        background-color: #ffffff !important;
+    }
+
+    :global(.Pane1 .panel-body) {
+        border: none !important;
+    }
+
+    :global(.Pane1 .btn-toolbar) {
+        padding: 0px !important;
+        :global(.btn) {
+            padding: 5px 10px !important;
+            border-width: 0px !important;
+            border-radius: 0px !important;
+            // border-top: 1px solid #efefef !important;
+        }
+    }
+
+    :global(.Pane1 .fa-2x) {
+        font-size: 1em !important;
+    }
+
+    :global(.Pane1 .rc-switch-inner) {
+        display: none !important;
+    }
+
+    :global(.Pane1 .rc-switch) {
+        margin-top: -4px;
+        transform: scale(0.7);
+        vertical-align: middle;
+    }
+
+    :global(.Pane1 .btn) {
+        font-size: 9px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        font-weight: 700 !important;
+    }
+
+    :global(.Pane1 .navbar-left) {
+        margin-left: -15px !important;
+    }
+
+
+    :global(.Pane1 .Select-control) {
+        height: 30px !important;
+        transition: background-color 0.1s ease;
+        :global(.Select-input) {
+            height: 30px !important;
+        }
+    }
+
+    :global(.Pane1 .Select-control:hover) {
+        background-color: #F9F9F9 !important;
+    }
+
+    :global(.Pane1 .panel-heading) {
+        font-weight: 600;
+        font-size: 10px;
+        padding-top: 0px;
+        padding-bottom: 0px;
+    }
+
+    :global(.Pane1 .panel-default) {
+        border: 1px solid #CCCCCC !important;
+    }
+
+    :global(.Pane1 .panel-default .panel-default) {
+        border: none !important;
+        margin-top: 5px;
+        margin-bottom: 0px !important;
+        padding-bottom: 5px !important;
+    }
+
+    :global(.btn-block) {
+        margin-bottom: 15px;
+        //background-image: repeating-linear-gradient(45deg, #ccc, #ccc 10px, #dbdbdb 10px, #dbdbdb 20px); //striped bg image
+        border: 1px dashed #CCCCCC !important;
+        background-color: #F6F6F6 !important;
+        transition: background-color 0.5s ease;
+        height: 40px;
+    }
+    :global(.btn-block:hover) {
+        background-color: #EAEAEA !important;
+    }
+
+
+    :global(.panel-body label) {
+        font-weight: 300 !important;
+        font-size: 10px;
+        margin-left: 12px;
+    }
+
+    :global(.panel-body b) {
+        font-weight: 400 !important;
+        font-size: 10px;
+        margin-left: 17px;
+
+    }
+
+    :global(.pivot-result-summaries) {
+        border: none !important;
+    }
+
+    :global(.Pane1 input) {
+        font-size: 10px !important;
+    }
+
+    :global(.media-heading){
+        font-size: 14px !important;
+    }
+
+    :global(.panel-body h2){
+        font-size: 16px !important;
+    }
+
+    :global(.img-circle){
+        width: 60px !important;
+        height: 60px !important;
+    }
+
+    :global(.form-control) {
+         font-size: 11px;
+        height: 30px;
+        margin-top: 5px;
+        margin-right: 10px;
+    }
+
+    :global(.panel-body .Select) {
+        margin-left: 10px;
+        margin-right: 9px;
+        font-size: 11px;
+    }
+}

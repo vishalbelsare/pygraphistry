@@ -24,7 +24,6 @@ export default withSchema((QL, { get, set }, services) => {
     const insertPivotHandler = { call: insertPivotCallRoute(services) };
     const splicePivotHandler = { call: splicePivotCallRoute(services) };
     const saveInvestigationHandler = { call: saveCallRoute(services) };
-    const cloneInvestigationHandler = { call: cloneCallRoute(services) };
     const graphInvestigationHandler = { call: graphCallRoute(services) };
 
     return QL`{
@@ -37,7 +36,6 @@ export default withSchema((QL, { get, set }, services) => {
             [{ integers }]: ${ readOnlyHandler }
         },
         save: ${ saveInvestigationHandler },
-        clone: ${ cloneInvestigationHandler },
         graph: ${ graphInvestigationHandler },
         insertPivot: ${ insertPivotHandler },
         splicePivot: ${ splicePivotHandler }
@@ -123,24 +121,6 @@ function saveCallRoute({ loadInvestigationsById, saveInvestigationsById, persist
                 $pathValue(`investigationsById['${investigationIds}'].modifiedOn`, investigation.modifiedOn),
                 $pathValue(`investigationsById['${investigationIds}'].status`, { ok: false, saved: true, msgStyle: 'success', message: 'Investigation Saved!'})
             ])
-            .catch(captureErrorAndNotifyClient(investigationIds));
-    }
-}
-
-function cloneCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById,
-                          unloadInvestigationsById, unloadPivotsById, cloneInvestigationsById }) {
-    return function(path) {
-        const investigationIds = path[1];
-        return cloneInvestigationsById({loadInvestigationsById, loadPivotsById,
-                                        unloadInvestigationsById, unloadPivotsById,
-                                        loadUsersById, investigationIds})
-            .mergeMap(({ user, numInvestigations }) => {
-                return [
-                    $pathValue(`['usersById'][${user.id}]['investigations'].length`, numInvestigations),
-                    $pathValue(`['usersById'][${user.id}].activeInvestigation`, user.activeInvestigation),
-                    // $invalidation(`['usersById'][${user.id}]['investigations']['${numInvestigations - 1}']`)
-                ];
-            })
             .catch(captureErrorAndNotifyClient(investigationIds));
     }
 }

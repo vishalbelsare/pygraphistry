@@ -1,6 +1,7 @@
-import { PivotRow, PivotRowHeader } from 'pivot-shared/pivots';
 import styles from './pivots.less';
+import classNames from 'classnames';
 import { Panel, Button } from 'react-bootstrap';
+import { PivotRow, PivotRowHeader } from 'pivot-shared/pivots';
 
 class PivotPanel extends React.Component {
   constructor(...args) {
@@ -11,12 +12,15 @@ class PivotPanel extends React.Component {
   }
 
   render() {
-      const { pivot, id, index, pivots, templates, togglePivots, searchPivot, 
+      const { pivot, id, index, pivots, templates, togglePivots, searchPivot,
           splicePivot, insertPivot } = this.props;
       return (
-          <Panel 
-              collapsible 
+          <Panel
+              collapsible
               expanded={this.state.open}
+              className={classNames({
+                  [styles['pivot-disabled']]: !pivot.enabled
+              })}
               header={
                   <PivotRowHeader
                       data={pivot}
@@ -30,7 +34,7 @@ class PivotPanel extends React.Component {
               footer={
                   <span className={styles['pivot-footer']}>
                       <i style={{float: 'right', width: '100%', textAlign: 'right'}}
-                          className={`fa fa-fw fa-caret-${this.state.open ? 'up' : 'left'}`}
+                          className={`fa fa-fw fa-caret-${this.state.open ? 'up' : 'down'}`}
                           onClick={(() => this.setState({open: !this.state.open}))}
                       />
                   </span>
@@ -65,7 +69,7 @@ export default function PivotTable({
             <div>
             {
                 pivots.map((pivot, index) => (
-                    <PivotPanel 
+                    <PivotPanel
                         id={id}
                         index={index}
                         key={index}

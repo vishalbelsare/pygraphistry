@@ -189,9 +189,14 @@ export function rowsToColumns(nodeRows, columnCounts, nodeDegrees) {
 
 // {nodeName: Int}, {nodeName: Int}, Int, Int -> {nodeName: {x: Int}, {y: Int}}
 export function mergeRowsColumnsToXY(rows, columns, fudgeX, fudgeY, spacerY) {
-    return _.mapObject(rows, (rowIdx, node) => (
-        {x: fudgeX * columns[node], y: (rowIdx > 0 ? fudgeY * (rowIdx - (rowIdx & 1)) + spacerY * (rowIdx & 1) : -2 * spacerY) }
-                                                ));
+    return _.mapObject(rows,
+                       (rowIdx, node) =>
+                       ({
+                           x: fudgeX * columns[node],
+                           y: (rowIdx > 0
+                               ? fudgeY * (rowIdx - (rowIdx & 1)) + spacerY * (rowIdx & 1)
+                               : -2 * spacerY)
+                       }));
 }
 
 // [{idField: n}] -> () // [{idField: n, x: Int, y: Int}]

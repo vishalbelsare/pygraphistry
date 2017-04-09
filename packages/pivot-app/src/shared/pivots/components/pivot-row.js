@@ -1,3 +1,4 @@
+import className from 'classnames';
 import PivotCell from './pivot-cell';
 import PivotActions from './pivot-actions';
 import EntitySummaries from './entity-summaries';
@@ -16,8 +17,8 @@ class PivotPanel extends Panel {
         const icon = expanded ? 'fa fa-fw fa-minus' : 'fa fa-fw fa-plus';
         return (
             <span className={styles['pivot-expander']}>
-                <i style={{float: 'right'}} className={`${icon}`} />
                 <span style={{padding: '0.25em'}}> { header } </span>
+                <i style={{float: 'right'}} className={`${icon}`} />
             </span>
         )
     }
@@ -26,8 +27,8 @@ class PivotPanel extends Panel {
         const header = this.makeHeader(this.props.header, this.state.open);
         return (
             <Panel collapsible
-                {...this.props} 
-                header={header} 
+                {...this.props}
+                header={header}
                 expanded={this.state.open}
                 onSelect={() => this.setState({ open: !this.state.open })}
             />
@@ -71,19 +72,19 @@ function ResultSummaryPanel({id, enabled, resultSummary, resultCount}) {
     return (
         <PivotPanel header={"Result Summary"} eventKey='3'>
             <div className={styles['pivot-expander-body']}>
-                {resultCount > 0 ?
-                        <div className={`${styles['pivot-result-summaries']} ${styles['result-count-' + (enabled ? 'on' : 'off')]}`}>
-                        {
-                            resultSummary &&
-                                <EntitySummaries id={id} resultSummary={resultSummary}/>
-                                || null
-                        }
-                    </div>
-                        : resultCount === -1 ? <b>{ 'Run query to select events' }</b> : <b>{ 'No events found!' }</b> } 
+            {resultCount > 0 ?
+                <div className={`${styles['pivot-result-summaries']} ${styles['result-count-' + (enabled ? 'on' : 'off')]}`}>
+                {
+                    resultSummary &&
+                        <EntitySummaries id={id} resultSummary={resultSummary}/>
+                        || null
+                }
+                </div>
+                : resultCount === -1 ? <b>{ 'Run query to select events' }</b> : <b>{ 'No events found!' }</b> }
 
 
-                    </div>
-                </PivotPanel>
+            </div>
+        </PivotPanel>
     )
 }
 
@@ -98,18 +99,21 @@ export default function PivotRow({
     const handlers = {searchPivot, togglePivots, setPivotAttributes, splicePivot, insertPivot};
 
     return (
-        <div id={"pivotRow" + id} className={`${styles['pivot-row']} ${styles['pivot-checked-' + Boolean(enabled)]}`}>
+        <div id={"pivotRow" + id} className={className({
+            [styles['pivot-row']]: true,
+            [styles['pivot-disabled']]: !enabled
+        })}>
             <PanelGroup>
-                <ParameterPanel 
-                    id={id} 
-                    pivotTemplate={pivotTemplate} 
-                    pivots={pivots} 
-                    handlers={handlers} 
+                <ParameterPanel
+                    id={id}
+                    pivotTemplate={pivotTemplate}
+                    pivots={pivots}
+                    handlers={handlers}
                     rowIndex={rowIndex}
                     pivotParameters={pivotParameters}
                 />
                 { /*
-                        //TODO implement output query 
+                        //TODO implement output query
                 <QueryOutputPanel/>
                 */
                 }
@@ -122,10 +126,11 @@ export default function PivotRow({
                 />
             </PanelGroup>
             <div className={styles['pivot-icons']}>
-                <PivotActions 
-                    investigationId={investigationId} 
-                    index={rowIndex} 
-                    resultCount={resultCount} 
+                <PivotActions
+                    pivotId={id}
+                    investigationId={investigationId}
+                    index={rowIndex}
+                    resultCount={resultCount}
                     searchPivot={searchPivot}
                     insertPivot={insertPivot}
                     splicePivot={splicePivot}
