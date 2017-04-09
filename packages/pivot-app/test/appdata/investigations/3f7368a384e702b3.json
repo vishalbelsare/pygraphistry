@@ -1,9 +1,9 @@
 {
-    "name": "Custom HTTP pivot: Virus Total",
+    "name": "Custom HTTP pivot: VirusTotal",
     "id": "3f7368a384e702b3",
     "description": "",
     "tags": [],
-    "modifiedOn": 1491723358703,
+    "modifiedOn": 1491724949988,
     "layout": "stackedBushyGraph",
     "pivots": [
         "3f7368a383d624e0",
