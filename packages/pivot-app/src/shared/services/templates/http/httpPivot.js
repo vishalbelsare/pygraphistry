@@ -111,8 +111,8 @@ export class HttpPivot extends PivotTemplate {
                 app,
                 pivot: {
                     ...pivot,
-                    connections: nodes || [],
-                    attributes: attributes || [],
+                    connections: (nodes && nodes.value ? nodes.value : nodes) || [],
+                    attributes: (attributes && attributes.value ? attributes.value : attributes) || [],
                     df: df,
                     resultCount: df.count(),//really want shaped..
                     template: this,

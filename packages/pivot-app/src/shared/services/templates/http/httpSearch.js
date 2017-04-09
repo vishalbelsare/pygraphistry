@@ -12,8 +12,6 @@ export const HTTP_SEARCH = new HttpPivot({
     id: 'http-search',
     name: 'Search through a URL',
     tags: ['Demo', 'Splunk'],
-    attributes: [ ],
-    connections: [ ],    
     toUrls: function ({ endpoint }) {
 
         const params = { };
