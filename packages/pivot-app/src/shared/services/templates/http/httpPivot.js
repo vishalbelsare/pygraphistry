@@ -12,6 +12,30 @@ import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
 
+//dfUnion is glitchy when cols mismatch, fill with NAs
+// ?df * ?df -> ?df
+function dfUnion(dfA, dfB) {
+
+    log.info('=========== union of', dfA, dfB);
+
+
+    if (!dfA) { return dfB; }
+    if (!dfB) { return dfA; }
+
+    const cA = dfA.listColumns();
+    const cB = dfB.listColumns();
+    const cols = cA.slice();
+    cB.forEach((col) =>  {
+        if (cols.indexOf(col) === -1) {
+            cols.push(col);
+        }
+    });
+
+    return cA.restructure(cols).union(cB.restructure(cols));
+}
+
+
+
 export class HttpPivot extends PivotTemplate {
     constructor( pivotDescription ) {
         super(pivotDescription);
@@ -102,10 +126,29 @@ export class HttpPivot extends PivotTemplate {
                         }
                         return new DataFrame(rows);
                     })
-                    .do((df) => log.trace('searchAndShape http', {url, rows: df.count()}));
+                    .do((df) => log.debug('searchAndShape http raw', {df, url, rows: df.count()}))
+                    .do((df) => log.debug('------searchAndShape http cols', df.listColumns()))
+                    .map((df) => ({df}))
+                    .catch((e) => Observable.of({e: e ? e : new Error('GenericHttpGetException')}));
+
             })
-            .reduce((acc, df) => acc ? acc.union(df) : df)
-            .last();
+            .do(({df, e}) => log.debug('searchAndShape http caught', 
+                df ? {rows: df.count()} : {e}))
+            .reduce((acc, {df, e}) => ({
+                    df: dfUnion(acc.df, df),
+                    e: e ? acc.e.concat([e]) : acc.e
+                }),
+                {df: undefined, e: []})
+            .last()
+            .flatMap(({df, e}) => {
+                if (e.length && (e.length === urls.length)) {
+                    log.error(`All urls failed (out of ${urls.length})`);
+                    return Observable.throw(e);
+                } else {
+                    e.forEach(({e}) => { log.warn('Some but not all urls failed:', e); });
+                    return Observable.from([df]);
+                }
+            })
 
         return df.map((df) => ({
                 app,
@@ -114,9 +157,9 @@ export class HttpPivot extends PivotTemplate {
                     connections: (nodes && nodes.value ? nodes.value : nodes) || [],
                     attributes: (attributes && attributes.value ? attributes.value : attributes) || [],
                     df: df,
-                    resultCount: df.count(),//really want shaped..
+                    resultCount: df ? df.count() : 0,//really want shaped..
                     template: this,
-                    events: df.toCollection(),
+                    events: df ? df.toCollection() : [],
                     results: {
                         graph: [],
                         labels: []
