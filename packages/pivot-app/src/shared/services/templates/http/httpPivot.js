@@ -15,16 +15,14 @@ export class HttpPivot extends PivotTemplate {
     constructor( pivotDescription ) {
         super(pivotDescription);
 
-        const { toUrls, connections, encodings, attributes, connector } = pivotDescription;
+        const { toUrls, encodings, connector } = pivotDescription;
         this.toUrls = toUrls;
-        this.connections = connections;
         this.encodings = encodings;
-        this.attributes = attributes;
         this.connector = connector || defaultHttpConnector;
     }
 
     //Clone, with selective, managed overriding of (untrusted) settings
-    clone ({ toUrls, nodes, encodings, attributes, connector, ...settings}) {
+    clone ({ toUrls, encodings, connector, ...settings}) {
         if (toUrls || connector) {
             throw new Error(`Cannot override toUrls and connector 
                 when ${settings.id} (${settings.name}) extending HttpPivot`);
@@ -36,10 +34,7 @@ export class HttpPivot extends PivotTemplate {
                 template[fld] = this[fld];
             });
         
-        //TODO refactor connections -> nodes everywhere
-        template.connections = nodes || this.connections;
         template.encodings = encodings || this.encodings;
-        template.attributes = attributes || this.attributes;
 
         template.searchAndShape = this.searchAndShape;
         template.clone = this.clone;
@@ -49,8 +44,6 @@ export class HttpPivot extends PivotTemplate {
 
     searchAndShape({ app, pivot, pivotCache }) {
 
-        pivot.template = this;
-
         //TODO why isn't this in the caller?
         if (!pivot.enabled) {
             pivot.resultSummary = {};
@@ -59,17 +52,13 @@ export class HttpPivot extends PivotTemplate {
         }
 
         const params = this.stripTemplateNamespace(pivot.pivotParameters);
-        log.info({
+        log.info('http searchAndShape', {
             params,
             pivotParameters: pivot.pivotParameters
         })
         const { jq, nodes, attributes } = params;
 
-        //update dropdown optionlists; TODO should be in caller
-        this.connections = nodes ? nodes.value : [];
-        this.attributes = attributes ? attributes.value : [];
-
-
+        
         log.trace('searchAndShape http: jq', {jq});
 
         if ((jq||'').match(/\|.*(include|import)\s/)) {
@@ -121,6 +110,8 @@ export class HttpPivot extends PivotTemplate {
                 app,
                 pivot: {
                     ...pivot,
+                    connections: nodes || [],
+                    attributes: attributes || [],
                     df: df,
                     resultCount: df.count(),//really want shaped..
                     template: this,

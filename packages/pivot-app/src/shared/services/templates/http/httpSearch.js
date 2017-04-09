@@ -16,11 +16,8 @@ export const HTTP_SEARCH = new HttpPivot({
     connections: [ ],    
     toUrls: function ({ endpoint }) {
 
-        const url = template(endpoint, {
-            endpoint, 
-            nodes: this.connections,
-            attributes: this.attributes
-        });
+        const params = { };
+        const url = template(endpoint, params);
 
         log.debug('url', url);
 

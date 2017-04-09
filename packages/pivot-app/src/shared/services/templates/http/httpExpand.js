@@ -12,8 +12,6 @@ export const HTTP_EXPAND = new HttpPivot({
     id: 'http-expand',
     name: 'Expand with a URL',    
     tags: ['Demo', 'Splunk'],
-    attributes: [ ],
-    connections: [ ],    
     parameters:
         [{
             name: 'instructions',

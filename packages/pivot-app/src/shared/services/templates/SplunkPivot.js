@@ -40,6 +40,8 @@ export class SplunkPivot extends PivotTemplate {
                     pivot.events = events;
                     pivot.splunkSearchId = searchId;
                     pivot.isPartial = isPartial;
+                    pivot.connections = this.connections;
+                    pivot.attributes = this.attributes;
                     pivotCache[pivot.id] = {
                         results: pivot.results,
                         query: searchQuery,

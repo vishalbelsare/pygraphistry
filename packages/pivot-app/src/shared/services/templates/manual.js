@@ -40,10 +40,6 @@ export class ManualPivot extends PivotTemplate {
         });
         const { events, nodes, attributes } = params;
 
-        //TODO why isn't this in falcor?
-        this.connections = nodes ? nodes.value : [];
-        this.attributes = attributes ? attributes.value : [];
-
         const a = Observable.of('')
             .map(() => {
                 try {
@@ -76,6 +72,8 @@ export class ManualPivot extends PivotTemplate {
                     df: df,
                     resultCount: df.count(),//really want shaped..
                     template: this,
+                    connections: nodes ? nodes.value : [],
+                    attributes: attributes ? attributes.value : [],
                     events: df.toCollection(),
                     results: {
                         graph: [],
