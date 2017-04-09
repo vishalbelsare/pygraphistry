@@ -25,7 +25,7 @@ function dfUnion(dfA, dfB) {
     const cA = dfA.listColumns();
     const cB = dfB.listColumns();
     const cols = cA.slice();
-    cB.forEach((col) =>  {
+    cB.forEach((col) => {
         if (cols.indexOf(col) === -1) {
             cols.push(col);
         }

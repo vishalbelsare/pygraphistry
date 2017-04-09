@@ -24,7 +24,7 @@ export const HTTP_EXPAND = new HttpPivot({
         }].concat(PARAMETERS),
     toUrls: function (params, pivotCache) {
 
-        const { endpoint = '', nodes, attributes, pRef } = params;
+        const { endpoint = '', pRef } = params;
 
         const refVal = pRef ? pRef.value : '';
         

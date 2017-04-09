@@ -12,7 +12,7 @@ describe('HttpSearch', function () {
 	it('simple', (done) => {	
 		assert.deepEqual(
 			HTTP_SEARCH.toUrls({endpoint: 'http://www.google.com'}),
-			[{url: 'http://www.google.com', params: {}}]);
+			[{url: 'http://www.google.com', params: {endpoint: 'http://www.google.com'}}]);
 		done();
 	});
 

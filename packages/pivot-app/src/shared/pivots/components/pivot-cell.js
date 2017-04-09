@@ -5,7 +5,7 @@ import DateRangePickerWrapper from './TimeRangeWidget/TimeRangeWidget.js';
 import styles from './pivots.less';
 
 
-export const componentsByInputType = {
+const componentsByInputType = {
     text: TextCell,
     textarea: TextareaCell,
     combo: ComboCell,

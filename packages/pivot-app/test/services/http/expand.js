@@ -12,8 +12,8 @@ describe('HttpExpand', function () {
                 {endpoint: 'http://www.google.com', pRef: {value: 0}},
                 [{events: [{x: 1}, {x: 3}]}, {events: []}, {events: []}]),
             [
-                {url: 'http://www.google.com', params: {x: 1}}, 
-                {url: 'http://www.google.com', params: {x: 3}}]);
+                {url: 'http://www.google.com', params: {x: 1, endpoint: 'http://www.google.com', pRef: 0}}, 
+                {url: 'http://www.google.com', params: {x: 3, endpoint: 'http://www.google.com', pRef: 0}}]);
         done();
     });
     
@@ -22,8 +22,8 @@ describe('HttpExpand', function () {
             HTTP_EXPAND.toUrls(
                 {endpoint: 'http://www.google.com/?v={x}', pRef: {value: 0}},
                 [{events: [{x: 1}, {x: 3}]}, {events: []}, {events: []}]),
-            [{url: 'http://www.google.com/?v=1', params: {x: 1}}, 
-             {url: 'http://www.google.com/?v=3', params: {x: 3}}]);
+            [{url: 'http://www.google.com/?v=1', params: {x: 1, endpoint: 'http://www.google.com/?v={x}', pRef: 0}}, 
+             {url: 'http://www.google.com/?v=3', params: {x: 3, endpoint: 'http://www.google.com/?v={x}', pRef: 0}}]);
         done();
     });
 
@@ -32,7 +32,7 @@ describe('HttpExpand', function () {
             HTTP_EXPAND.toUrls(
                 {endpoint: 'http://www.google.com/?v={y}', pRef: {value: 1}},
                 [{events: [{x: 1}, {x: 3}]}, {events: [{y: 'z'}]}, {events: []}]),
-            [{url: 'http://www.google.com/?v=z', params: {y: 'z'}}]);
+            [{url: 'http://www.google.com/?v=z', params: {y: 'z', endpoint: 'http://www.google.com/?v={y}', pRef: 1}}]);
         done();
     });
 

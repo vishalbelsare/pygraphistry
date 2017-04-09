@@ -1,12 +1,13 @@
 import logger from '../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
-import { componentsByInputType as pivotKinds } from '../../pivots/components/pivot-cell'
-
 
 //Explicit to make user error reporting more fail-fast
 export const FIELD_OVERRIDE_WHITELIST = ['id', 'name', 'parameters', 'tags'];
 export const PARAM_OVERRIDE_WHITELIST = ['placeholder', 'options', 'isVisible', 'label', 'defaultValue'];
+export const PIVOT_KINDS = 
+    ['text', 'textarea', 'combo', 'multi', 'daterange', 'pivotCombo', 'label']
+    .reduce((o,fld) => { o[fld] = true; return o; }, {});
 
 
 export class PivotTemplate {
@@ -22,7 +23,7 @@ export class PivotTemplate {
                     got "${param.name}", "${param.inputType}"
                     for pivot ${id} ("${name}")`);
             }
-            if (!(param.inputType in pivotKinds)) {
+            if (!(param.inputType in PIVOT_KINDS)) {
                 throw new Error(`Pivot parameter "${param.name}"
                     has unknown inputType value "${param.inputType}"
                     for pivot ${id} ("${name}")`);
@@ -78,7 +79,7 @@ export class PivotTemplate {
                 .filter((parameter) => !newParametersDict[parameter.name])
 
                 .map((parameter) => ({id: template.tagTemplateNamespace(template.id, parameter.name), ...parameter}))                
-                .map((parameter) => {
+                .forEach((parameter) => {
                     Object.keys(parameter)
                         .filter((fld) => ['id', 'name'].indexOf(fld) === -1)
                         .map( (fld) => {
