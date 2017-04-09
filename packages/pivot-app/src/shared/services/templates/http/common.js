@@ -34,7 +34,23 @@ export const PARAMETERS = [
     }
 ];
 
-
+//?{name -> str U [ str ] U {value: str} U {value: [ str ]}} -> {name -> str}
+export function flattenParams(params = {}) {
+    return Object.keys(params)
+        .reduce(
+            (o, k) => {
+                const unwrapped = 
+                    (params[k] instanceof Object) && ('value' in params[k]) ? 
+                        params[k].value 
+                        : params[k];
+                const flattened =
+                    unwrapped instanceof Array ?
+                        unwrapped.map((s) => `"${s}"`).join(',')
+                        : unwrapped;
+                o[k] = flattened;
+                return o;
+            }, {});
+}
 
 
 
@@ -149,8 +165,6 @@ const ICONS = {
     'Search': 'search',
         'origin': 'table'
 };
-
-
 
 
 export const demoEncodings = {

@@ -1,25 +1,26 @@
-import template from 'string-template';
-
+import { template } from '../../support/template';
 import { HttpPivot } from './httpPivot';
 import { PARAMETERS } from './common.js';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
-import { demoEncodings } from './common.js';
+import { demoEncodings, flattenParams } from './common.js';
 
 
 export const HTTP_SEARCH = new HttpPivot({
     id: 'http-search',
     name: 'Search through a URL',
     tags: ['Demo', 'Splunk'],
-    toUrls: function ({ endpoint }) {
+    toUrls: function (params) {
 
-        const params = { };
-        const url = template(endpoint, params);
+        const { endpoint } = params;
+
+        const urlParams = flattenParams(params);
+        const url = template(endpoint, urlParams);
 
         log.debug('url', url);
 
-        return [ { url, params } ];
+        return [ { url, params: urlParams } ];
     },
     parameters: 
         [{

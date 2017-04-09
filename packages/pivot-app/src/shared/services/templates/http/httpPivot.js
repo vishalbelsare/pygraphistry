@@ -1,4 +1,4 @@
-import template from 'string-template';
+import { template } from '../../support/template';
 import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
 import { jqSafe } from '../../support/jq';
@@ -94,14 +94,33 @@ export class HttpPivot extends PivotTemplate {
             }, 'JQ include and imports disallowed', { jq }));
         }
 
+        let urls;
+        try {
+            urls = this.toUrls(params, pivotCache)
+        } catch (e) {
+            return Observable.throw(new VError({
+                name: 'UrlGeneratorError',
+                cause: e,
+                info: { params, pivotCache },
+                }, 'Failed to generate urls', params));
+        }
+
         let eventCounter = 0;    
-        const df = Observable.from(this.toUrls(params, pivotCache))
-            .flatMap(({ url, params }) => {
+        const df = Observable.from(urls)
+            .flatMap((maybeUrl) => {
+
+                if (maybeUrl instanceof Error) {
+                    log.error('HTTP GET received an Error url', maybeUrl);
+                    return Observable.of({e: maybeUrl});
+                }
+
+                const { url, params } = maybeUrl;
                 log.info('searchAndShape http: url', {url});
                 return this.connector.search(url)                    
                     .switchMap(([response]) => {
                         return jqSafe(response.body, template(jq || '.', params))
                             .catch((e) => {
+                                log.error('jq error', {url, jq, e});
                                 return Observable.throw(
                                     new VError({
                                         name: 'JqRuntimeError',
