@@ -16,4 +16,20 @@ describe('HttpSearch', function () {
 		done();
 	});
 
+	it('pivot params', (done) => {
+		assert.deepEqual(
+			HTTP_SEARCH.toUrls({endpoint: 'http://www.google.com/?f={x}', x: 'aa'}),
+			[{url: 'http://www.google.com/?f=aa', params: {endpoint: 'http://www.google.com/?f={x}', x: 'aa'}}]);
+		done();
+	});
+
+	it('exn when missing pivot params', (done) => {
+		try {
+			HTTP_SEARCH.toUrls({endpoint: 'http://www.google.com/?f={x}'});
+			done('Expected exn');
+		} catch (e) {
+			done();
+		}
+	});
+
 });
