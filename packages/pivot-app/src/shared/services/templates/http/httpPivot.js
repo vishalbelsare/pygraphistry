@@ -16,9 +16,6 @@ const log = logger.createLogger(__filename);
 // ?df * ?df -> ?df
 function dfUnion(dfA, dfB) {
 
-    log.info('=========== union of', dfA, dfB);
-
-
     if (!dfA) { return dfB; }
     if (!dfB) { return dfA; }
 
@@ -77,7 +74,7 @@ export class HttpPivot extends PivotTemplate {
         }
 
         const params = this.stripTemplateNamespace(pivot.pivotParameters);
-        log.info('http searchAndShape', {
+        log.debug('http searchAndShape', {
             params,
             pivotParameters: pivot.pivotParameters
         })
@@ -115,7 +112,7 @@ export class HttpPivot extends PivotTemplate {
                 }
 
                 const { url, params } = maybeUrl;
-                log.info('searchAndShape http: url', {url});
+                log.debug('searchAndShape http: url', {url});
                 return this.connector.search(url)                    
                     .switchMap(([response]) => {
                         return jqSafe(response.body, template(jq || '.', params))
@@ -145,14 +142,10 @@ export class HttpPivot extends PivotTemplate {
                         }
                         return new DataFrame(rows);
                     })
-                    .do((df) => log.debug('searchAndShape http raw', {df, url, rows: df.count()}))
-                    .do((df) => log.debug('------searchAndShape http cols', df.listColumns()))
                     .map((df) => ({df}))
                     .catch((e) => Observable.of({e: e ? e : new Error('GenericHttpGetException')}));
 
             })
-            .do(({df, e}) => log.debug('searchAndShape http caught', 
-                df ? {rows: df.count()} : {e}))
             .reduce((acc, {df, e}) => ({
                     df: dfUnion(acc.df, df),
                     e: e ? acc.e.concat([e]) : acc.e
@@ -192,8 +185,8 @@ export class HttpPivot extends PivotTemplate {
                 }
                 log.info('results', pivot.resultCount);
                 pivotCache[pivot.id] = { params, results: pivot.results };
-            })
-            .do(() => log.trace('searchAndShape http'));
+                log.trace('searchAndShape out pivot', pivot);
+            });
     }
 
 }
