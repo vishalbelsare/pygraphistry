@@ -31,7 +31,7 @@ const ptParams = new PivotTemplate({id: 'x', name: 'y', parameters: [
             { name: 'fld2', inputType: 'textarea' } ]});
         
 
-describe('pivot.template', function () {
+describe('Pivot template', function () {
 
     it('simple', (done) => {
         const pt = ptSimple;
@@ -97,6 +97,146 @@ describe('pivot.template', function () {
             return done();
         }
         return done(new Error('Expected exception'));
+    });
+
+});
+
+describe('Pivot template cloning', function () {
+
+    it('Exn for missing constructor params (undef)', (done) => {
+        try {
+            const pt = ptSimple;
+            const clone = pt.clone();
+            done('Expected exn');
+        } catch (e) {
+            done();
+        }
+    });
+
+    it('Exn for missing constructor params (basic empty)', (done) => {
+        try {
+            const pt = ptSimple;
+            const clone = pt.clone({});
+            done('Expected exn');
+        } catch (e) {
+            done();
+        }
+    });
+
+    it('basic simple renaming', (done) => {
+        const pt = ptSimple;
+        const clone = pt.clone({id: 'foo', name: 'bar', tags: ['x']});
+        checkPtSimple(pt, 'x', 'y');
+        checkPtSimple(clone, 'foo', 'bar');
+        assert.deepEqual(clone.tags, ['x']);
+        done();
+    });
+
+    it('exn on illegal field override', (done) => {
+        try {
+            const pt = ptSimple;
+            const clone = pt.clone({fake: 'field'});        
+            done('Expected exn');
+        } catch (e) {
+            done();
+        }
+    });
+
+    it('param inheritance', (done) => {
+        const pt = ptParams;
+        const clone = pt.clone({id: 'foo', name: 'bar', })
+        checkPtParams(pt, 'x', 'y', 
+            { id: 'x$$$fld2', name: 'fld2', inputType: 'textarea'});
+        checkPtParams(clone, 'foo', 'bar', 
+            { id: 'foo$$$fld2', name: 'fld2', inputType: 'textarea'});
+        done();
+    });
+
+    it('param override', (done) => {
+        const pt = ptParams;
+        const clone = pt.clone({
+            id: 'foo', name: 'bar', 
+            parameters: [
+                {name: 'fld2', 
+                 defaultValue: 'zzz', label: 'fff', isVisible: true}
+            ]});
+        checkPtParams(pt, 'x', 'y', 
+            { id: 'x$$$fld2', name: 'fld2', inputType: 'textarea'});
+        checkPtParams(clone, 'foo', 'bar', 
+            { id: 'foo$$$fld2', name: 'fld2', inputType: 'textarea',
+              defaultValue: 'zzz', label: 'fff', isVisible: true});
+        done();
+    });
+
+    if('param addition', (done) => {
+        const pt = ptParams;
+        const clone = pt.clone({
+            id: 'foo', name: 'bar', 
+            parameters: [
+                {name: 'fld3',
+                 inputType: 'textarea', 
+                 defaultValue: 'zzz', label: 'fff', isVisible: true}
+            ]});
+
+        checkPtParams(pt, 'x', 'y', 
+            { id: 'x$$$fld2', name: 'fld2', inputType: 'textarea'});
+
+        assert.deepEqual(clone.id, 'foo');
+        assert.deepEqual(clone.name, 'bar');
+        assert.deepEqual(clone.pivotParametersUI, {
+            ['foo$$$fld1']: { id: 'foo$$$fld1', name: 'fld1', inputType: 'textarea' },
+            ['foo$$$fld2']: { id: 'foo$$$fld2', name: 'fld2', inputType: 'textarea' },
+            ['foo$$$fld3']: { id: 'foo$$$fld3', name: 'fld3', inputType: 'textarea',
+                  defaultValue: 'zzz', label: 'fff', isVisible: true}
+        });
+        assert.deepEqual(pt.pivotParameterKeys, ['foo$$$fld1', 'foo$$$fld2', 'foo$$$fld3']);
+
+        done();
+
+
+    });
+
+    it('exn for illegal param override', (done) => {
+        try {
+            const pt = ptParams;
+            const clone = pt.clone({
+                id: 'foo', name: 'bar', 
+                parameters: [
+                    {name: 'fld2', 
+                     fake: 'blah'}
+                ]});
+            done('Expected exn');
+        } catch (e) {
+            done();
+        }
+    });
+
+    it('exn for illegal param addition: unknown inputType', (done) => {
+        try {
+            const pt = ptParams;
+            const clone = pt.clone({
+                id: 'foo', name: 'bar', 
+                parameters: [
+                    {name: 'fld3', inputType: 'fake'}
+                ]});
+            done('Expected exn');
+        } catch (e) {
+            done();
+        }
+    });
+
+    it('exn for illegal param addition: missing name', (done) => {
+        try {
+            const pt = ptParams;
+            const clone = pt.clone({
+                id: 'foo', name: 'bar', 
+                parameters: [
+                    {inputType: 'textarea'}
+                ]});
+            done('Expected exn');
+        } catch (e) {
+            done();
+        }
     });
 
 
