@@ -10,6 +10,7 @@ export function toolbar(workbookId, viewId) {
                 visible: true,
                 length: 6,
                 0: {
+                    id: 'camera',
                     name: 'Camera',
                     items: {
                         length: 3,
@@ -19,14 +20,7 @@ export function toolbar(workbookId, viewId) {
                     }
                 },
                 1: {
-                    name: 'Workbook',
-                    items: {
-                        length: 2,
-                        0: $ref(`${workbook}.controls[0]`),
-                        1: $ref(`${workbook}.controls[1]`),
-                    }
-                },
-                2: {
+                    id: 'graph',
                     name: 'Graph',
                     items: {
                         length: 4,
@@ -36,7 +30,8 @@ export function toolbar(workbookId, viewId) {
                         3: $ref(`${view}.layout.controls[0]`)
                     }
                 },
-                3: {
+                2: {
+                    id: 'interact',
                     name: 'Interact',
                     items: {
                         length: 2,
@@ -44,21 +39,32 @@ export function toolbar(workbookId, viewId) {
                         1: $ref(`${view}.selection.controls[1]`)
                     }
                 },
+                3: {
+                    id: 'query',
+                    name: 'Query',
+                    items: {
+                        length: 2,
+                        0: $ref(`${view}.filters.controls[0]`),
+                        1: $ref(`${view}.exclusions.controls[0]`)
+                    }
+                },
                 4: {
+                    id: 'inspect',
                     name: 'Inspect',
                     items: {
-                        length: 4,
+                        length: 2,
                         0: $ref(`${view}.histograms.controls[0]`),
-                        1: $ref(`${view}.inspector.controls[0]`),
-                        2: $ref(`${view}.filters.controls[0]`),
-                        3: $ref(`${view}.exclusions.controls[0]`)
+                        1: $ref(`${view}.inspector.controls[0]`)
                     }
                 },
                 5: {
-                    name: 'Persist',
+                    id: 'workbook',
+                    name: 'Workbook',
                     items: {
-                        length: 1,
-                        0: $ref(`${workbook}.controls[3]`),
+                        length: 3,
+                        0: $ref(`${workbook}.controls[0]`),
+                        1: $ref(`${workbook}.controls[1]`),
+                        2: $ref(`${workbook}.controls[3]`),
                     }
                 }
             },
@@ -67,6 +73,7 @@ export function toolbar(workbookId, viewId) {
                 visible: true,
                 length: 4,
                 0: {
+                    id: 'graph',
                     name: 'Graph',
                     items: {
                         length: 4,
@@ -77,6 +84,7 @@ export function toolbar(workbookId, viewId) {
                     }
                 },
                 1: {
+                    id: 'interact',
                     name: 'Interact',
                     items: {
                         length: 2,
@@ -85,6 +93,7 @@ export function toolbar(workbookId, viewId) {
                     }
                 },
                 2: {
+                    id: 'query',
                     name: 'Query',
                     items: {
                         length: 2,
@@ -93,6 +102,7 @@ export function toolbar(workbookId, viewId) {
                     }
                 },
                 3: {
+                    id: 'inspect',
                     name: 'Inspect',
                     items: {
                         length: 2,

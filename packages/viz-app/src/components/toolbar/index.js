@@ -18,22 +18,27 @@ export function ButtonList({ children, visible, ...props }) {
 
     return (
         <ListGroup className={styles['button-list']} {...props}>
-        {children.map((child) => (
-            <ListGroupItem key={child.key} style={{
-                padding: `2px 0px`,
-                background: `transparent`,
-                borderColor: `rgba(0,0,0,0)` }}>
+        {children.map((child) => [
+            <ListGroupItem key={child.key} className={classNames({
+                [styles[child.key]]: true,
+                [styles['button-list-items-container']]: true
+            })}>
                 {child}
-            </ListGroupItem>
-        ))}
+            </ListGroupItem>,
+            ' '
+        ])}
         </ListGroup>
     );
 }
 
-export function ButtonListItems({ name, children, popover, ...props }) {
+export function ButtonListItems({ id, name, children, popover, ...props }) {
     return (
-        <ButtonToolbar style={{ marginLeft: 0 }} {...props}>
-            <ButtonGroup vertical>
+        <ButtonToolbar data-group-name={name}
+                       className={classNames({
+                           [styles[id]]: true,
+                           [styles['button-list-items']]: true
+                       })} {...props}>
+            <ButtonGroup vertical={id === 'camera'}>
                 {children}
             </ButtonGroup>
         </ButtonToolbar>
@@ -46,15 +51,17 @@ function ButtonListItemTooltip(name) {
     );
 }
 
-export function ButtonListItem({ onItemSelected, popover, ...props }) {
+export function ButtonListItem({ onItemSelected, popover, groupId, ...props }) {
 
     let overlayRef, buttonWithOverlay;
     const { id, name, type, selected } = props;
+    const placement = (groupId === 'camera') ||
+                      (window && window.innerWidth < 330) ? 'right' : 'bottom';
 
     if (type === undefined || !selected) {
         buttonWithOverlay = (
             <OverlayTrigger defaultOverlayShown={false}
-                            trigger={['hover']} placement='right'
+                            trigger={['hover']} placement={placement}
                             overlay={ButtonListItemTooltip(name)}>
                 <Button id={id}
                         active={selected}
@@ -88,7 +95,7 @@ export function ButtonListItem({ onItemSelected, popover, ...props }) {
                 <Overlay show={selected}
                          rootClose={true}
                          shouldUpdatePosition={true}
-                         animation={true} placement='right'
+                         animation={true} placement={placement}
                          onHide={() => onItemSelected(props)}
                          target={() => ReactDOM.findDOMNode(overlayRef)}>
                     {popover}

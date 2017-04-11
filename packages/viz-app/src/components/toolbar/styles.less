@@ -3,29 +3,69 @@
 @import '~viz-app/vars.less';
 
 .button-list {
+    font-size: 0px;
     position: absolute;
     z-index: @menu-z;
     top: 3px;
     left: 5px;
+
+    & * {
+        font-size: 14px;
+        line-height: 100%;
+    }
 
     :global(body.hide-chrome) & {
         display: none;
     }
 }
 
-.button-list-item-container {
-    padding: 0;
+.button-list-items-container {
+    padding: 2px 0px;
+    background: transparent;
+    border-color: rgba(0,0,0,0);
+}
+
+.button-list-items {
+    margin: 0;
+    :global(.btn-group) {
+        margin: 0;
+    }
 }
 
 .button-list-item {
     width: 100%;
     padding: 6px;
+    display: block;
     color: @dark-grey;
     float: none !important;
+    margin-left: 0 !important;
     & span {
+        top: 0;
+        left: 0;
         width: 100%;
+        height: 100%;
+        position: absolute;
         display: inline-block;
         vertical-align: middle;
+    }
+    :global(.btn-group) > &:first-child:not(:last-child),
+    :global(.btn-group) > &:first-child:not(:last-child):not(.dropdown-toggle) {
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+    :global(.btn-group) > &+& {
+        margin-top: -1px !important;
+    }
+    :global(.btn-group) > &:not(:first-child):not(:last-child) {
+        border-radius: 0 !important;
+    }
+    :global(.btn-group) > &:last-child:not(:first-child) {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 4px;
+        border-bottom-left-radius: 4px;
     }
     &:focus {
         color: @dark-grey !important;
@@ -110,43 +150,18 @@
     }
 }
 .toggle-select-nodes {
-    .fa();
-    .fa-stack();
-    height: 2.9em;
-    padding-top: 4px;
-    font-size: 75%;
     &:before {
-        // .fa();
+        .fa();
         .fa-fw();
-        .fa-stack-2x();
-        font-awesome: square-o;
-    }
-    &:after {
-        // .fa();
-        .fa-fw();
-        .fa-stack-1x();
-        font-awesome: arrows;
+        font-awesome: mouse-pointer;
     }
 }
 .toggle-window-nodes {
-    height: 2.25em;
-    &:before, &:after {
-        content: '';
+    &:before {
         .fa();
         .fa-fw();
-        border-style: dashed;
-        border-width: 0.1em;
+        font-awesome: square-o;
     }
-    &:before {
-        border-color: transparent;
-    }
-     &:after {
-        position: absolute;
-        top: 25%;
-        left: 25%;
-        width: 50%;
-        height: 50%;
-     }
 }
 .toggle-histograms {
     &:before {
@@ -230,5 +245,132 @@
         .fa();
         .fa-fw();
         font-awesome: share-square;
+    }
+}
+
+@media (min-width: 330px) {
+
+    .button-list {
+        top: 0px !important;
+        left: 0px !important;
+        width: 100%;
+        height: 41px;
+        line-height: 100%;
+        text-align: justify;
+        background-color: white;
+        border-bottom: 1px solid #ccc;
+        &:after {
+            content: '';
+            width: 100%;
+            display: inline-block;
+        }
+    }
+
+    .button-list-items-container {
+        &+& {
+            margin-left: -1px;
+        }
+        &.toolbar-items-graph, &.toolbar-items-interact,
+        &.toolbar-items-query, &.toolbar-items-workbook,
+        &.toolbar-items-inspect {
+            margin: 0;
+            height: 100%;
+            border-width: 0;
+            padding: 0 !important;
+            display: inline-block;
+        }
+    }
+
+    .toolbar-items-camera {
+        top: 43px;
+        left: 5px;
+        position: fixed;
+    }
+
+    .button-list-items {
+        margin: 0;
+        &.camera {
+            margin: 0;
+        }
+        &.graph, &.interact, &.query, &.workbook, &.inspect {
+            margin: 0;
+            :global(.btn-group) {
+                margin: 0;
+                float: none;
+            }
+            :global(.btn-toolbar+.btn-toolbar),
+            :global(.btn-group+.btn-group),
+            :global(.btn-group) > .button-list-item+.button-list-item {
+                margin-top: 0px !important;
+                margin-left: -1px !important;
+            }
+            &:before {
+                margin: 0;
+                display: block;
+                text-align: center;
+                font-variant: small-caps;
+                text-transform: lowercase;
+                content: attr(data-group-name);
+            }
+            .button-list-item {
+                padding: 0;
+                width: 26px;
+                height: 26px;
+                line-height: 26px;
+                border-bottom: none;
+                display: inline-block;
+                border-top-left-radius: 0 !important;
+                border-top-right-radius: 0 !important;
+                border-bottom-left-radius: 0 !important;
+                border-bottom-right-radius: 0 !important;
+
+                &:first-child:not(:last-child) {
+                    border-left: none !important;
+                }
+
+                &:last-child:not(:first-child) {
+                    border-right: none !important;
+                }
+
+                &:before {
+                    top: 50%;
+                    left: 50%;
+                    margin-top: -7px;
+                    margin-left: -9px;
+                    position: absolute;
+                }
+            }
+        }
+    }
+}
+
+@media (min-width: 568px) {
+    .button-list-items {
+        &.graph, &.interact, &.query, &.workbook, &.inspect {
+            &:before {
+                margin-right: 3px;
+                text-align: right;
+                display: inline-block;
+            }
+            .button-list-item {
+                width: 26px;
+                height: 40px;
+                line-height: 40px;
+                border-top: none;
+            }
+        }
+        &.graph:before {
+            margin-left: 5px;
+        }
+    }
+}
+
+@media (min-width: 750px) {
+    .button-list-items {
+        &.graph, &.interact, &.query, &.workbook, &.inspect {
+            .button-list-item {
+                width: 40px;
+            }
+        }
     }
 }
