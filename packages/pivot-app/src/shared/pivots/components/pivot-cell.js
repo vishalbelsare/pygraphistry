@@ -11,7 +11,8 @@ const componentsByInputType = {
     combo: ComboCell,
     multi: MultiCell,
     daterange: DateRange,
-    pivotCombo: PivotCombo
+    pivotCombo: PivotCombo,
+    label: Label
 };
 
 export default function PivotCell({ paramUI, ...props }) {
@@ -19,7 +20,18 @@ export default function PivotCell({ paramUI, ...props }) {
     if (!Component) {
         throw new Error('Unknown pivot cell type:' + paramUI.inputType);
     }
-    return <div className={styles['pivot-cell']}><Component paramUI={paramUI} {...props}/></div>
+    return <div className={styles['pivot-cell']} 
+        style={'isVisible' in paramUI && !paramUI.isVisible ? {display: 'none'} : {}}>
+        <Component paramUI={paramUI} {...props}/>
+    </div>
+}
+
+function Label({ paramUI }) {
+    return (
+        <div className={styles['pivot-label-param']}>
+            <p>{ paramUI.label }</p>
+        </div>
+     );
 }
 
 function TextCell({ id, paramKey, paramValue, paramUI, handlers }) {

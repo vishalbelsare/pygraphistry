@@ -40,6 +40,20 @@ const conf = convict({
             env: 'USERNAME'
         }
     },
+    systemTemplates: {
+        pivots: {
+            doc: `JSON list of pivots: 
+                [{template, name, id, tags: [String], 
+                    parameters: [{name, inputType, label, placeholder}]}],
+                    nodes: ?[String],
+                    attributes: ?[String],
+                    encodings: ?{size/icon/color:{<name>: <value>}}]`,
+            format: Array,
+            default: [],
+            arg: 'pivots',
+            env: 'GRAPHISTRY_PIVOTS'
+        }
+    },
     pivotApp: {
         dataDir: {
             doc: 'Directory to store investigation files',

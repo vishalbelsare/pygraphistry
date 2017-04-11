@@ -82,7 +82,7 @@ describe('jq', function () {
 	
 	it('Big file', (done) => {
 
-		const contents = readFileSync(resolve(__dirname, 'blah.json'), 'utf8');
+		const contents = readFileSync(resolve(__dirname, 'shodanSample.json'), 'utf8');
 		const json = JSON.parse(contents);
 
 		const str = contents;

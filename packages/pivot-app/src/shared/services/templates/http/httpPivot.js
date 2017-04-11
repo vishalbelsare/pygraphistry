@@ -1,3 +1,4 @@
+import { template } from '../../support/template';
 import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
 import { jqSafe } from '../../support/jq';
@@ -11,21 +12,59 @@ import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
 
+//dfUnion is glitchy when cols mismatch, fill with NAs
+// ?df * ?df -> ?df
+function dfUnion(dfA, dfB) {
+
+    if (!dfA) { return dfB; }
+    if (!dfB) { return dfA; }
+
+    const cA = dfA.listColumns();
+    const cB = dfB.listColumns();
+    const cols = cA.slice();
+    cB.forEach((col) => {
+        if (cols.indexOf(col) === -1) {
+            cols.push(col);
+        }
+    });
+
+    return dfA.restructure(cols).union(dfB.restructure(cols));
+}
+
+
+
 export class HttpPivot extends PivotTemplate {
     constructor( pivotDescription ) {
         super(pivotDescription);
 
-        const { toUrls, connections, encodings, attributes, connector } = pivotDescription;
+        const { toUrls, encodings, connector } = pivotDescription;
         this.toUrls = toUrls;
-        this.connections = connections;
         this.encodings = encodings;
-        this.attributes = attributes;
         this.connector = connector || defaultHttpConnector;
     }
 
-    searchAndShape({ app, pivot, pivotCache }) {
+    //Clone, with selective, managed overriding of (untrusted) settings
+    clone ({ toUrls, encodings, connector, ...settings}) {
+        if (toUrls || connector) {
+            throw new Error(`Cannot override toUrls and connector 
+                when ${settings.id} (${settings.name}) extending HttpPivot`);
+        }
 
-        pivot.template = this;
+        const template = super.clone(settings);
+        ['toUrls', 'connector']
+            .forEach((fld) => {
+                template[fld] = this[fld];
+            });
+        
+        template.encodings = encodings || this.encodings;
+
+        template.searchAndShape = this.searchAndShape;
+        template.clone = this.clone;
+
+        return template;
+    }
+
+    searchAndShape({ app, pivot, pivotCache }) {
 
         //TODO why isn't this in the caller?
         if (!pivot.enabled) {
@@ -35,17 +74,13 @@ export class HttpPivot extends PivotTemplate {
         }
 
         const params = this.stripTemplateNamespace(pivot.pivotParameters);
-        log.info({
+        log.debug('http searchAndShape', {
             params,
             pivotParameters: pivot.pivotParameters
         })
         const { jq, nodes, attributes } = params;
 
-        //update dropdown optionlists; TODO should be in caller
-        this.connections = nodes ? nodes.value : [];
-        this.attributes = attributes ? attributes.value : [];
-
-
+        
         log.trace('searchAndShape http: jq', {jq});
 
         if ((jq||'').match(/\|.*(include|import)\s/)) {
@@ -56,14 +91,33 @@ export class HttpPivot extends PivotTemplate {
             }, 'JQ include and imports disallowed', { jq }));
         }
 
+        let urls;
+        try {
+            urls = this.toUrls(params, pivotCache)
+        } catch (e) {
+            return Observable.throw(new VError({
+                name: 'UrlGeneratorError',
+                cause: e,
+                info: { params, pivotCache },
+                }, 'Failed to generate urls', params));
+        }
+
         let eventCounter = 0;    
-        const df = Observable.from(this.toUrls(params, pivotCache))
-            .flatMap((url) => {
-                log.info('searchAndShape http: url', {url});
+        const df = Observable.from(urls)
+            .flatMap((maybeUrl) => {
+
+                if (maybeUrl instanceof Error) {
+                    log.error('HTTP GET received an Error url', maybeUrl);
+                    return Observable.of({e: maybeUrl});
+                }
+
+                const { url, params } = maybeUrl;
+                log.debug('searchAndShape http: url', {url});
                 return this.connector.search(url)                    
                     .switchMap(([response]) => {
-                        return jqSafe(response.body, jq || '.')
+                        return jqSafe(response.body, template(jq || '.', params))
                             .catch((e) => {
+                                log.error('jq error', {url, jq, e});
                                 return Observable.throw(
                                     new VError({
                                         name: 'JqRuntimeError',
@@ -88,19 +142,36 @@ export class HttpPivot extends PivotTemplate {
                         }
                         return new DataFrame(rows);
                     })
-                    .do((df) => log.trace('searchAndShape http', {url, rows: df.count()}));
+                    .map((df) => ({df}))
+                    .catch((e) => Observable.of({e: e ? e : new Error('GenericHttpGetException')}));
+
             })
-            .reduce((acc, df) => acc ? acc.union(df) : df)
-            .last();
+            .reduce((acc, {df, e}) => ({
+                    df: dfUnion(acc.df, df),
+                    e: e ? acc.e.concat([e]) : acc.e
+                }),
+                {df: undefined, e: []})
+            .last()
+            .flatMap(({df, e}) => {
+                if (e.length && (e.length === urls.length)) {
+                    log.error(`All urls failed (out of ${urls.length})`);
+                    return Observable.throw(e);
+                } else {
+                    e.forEach(({e}) => { log.warn('Some but not all urls failed:', e); });
+                    return Observable.from([df]);
+                }
+            })
 
         return df.map((df) => ({
                 app,
                 pivot: {
                     ...pivot,
+                    connections: (nodes && nodes.value ? nodes.value : nodes) || [],
+                    attributes: (attributes && attributes.value ? attributes.value : attributes) || [],
                     df: df,
-                    resultCount: df.count(),//really want shaped..
+                    resultCount: df ? df.count() : 0,//really want shaped..
                     template: this,
-                    events: df.toCollection(),
+                    events: df ? df.toCollection() : [],
                     results: {
                         graph: [],
                         labels: []
@@ -114,8 +185,8 @@ export class HttpPivot extends PivotTemplate {
                 }
                 log.info('results', pivot.resultCount);
                 pivotCache[pivot.id] = { params, results: pivot.results };
-            })
-            .do(() => log.trace('searchAndShape http'));
+                log.trace('searchAndShape out pivot', pivot);
+            });
     }
 
 }

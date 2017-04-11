@@ -1,0 +1,95 @@
+{
+	"systemTemplates": {
+		"pivots": [
+			{
+				"name": "Expand URL with VirusTotal",
+				"id": "http-expand-vt-url",
+				"template": "http-expand",
+				"parameters": [
+					{
+				        "name": "apikey",
+				        "inputType": "text",
+				        "label": "API Key:",
+				        "placeholder": "Your API key",
+				        "defaultValue": "b0f1ce2eede797d3a485be09b86990570fd0ec47ac6cf8057624b126836d89df",
+				        "isVisible": false
+				    },
+					{
+						"name": "instructions",
+						"label": "Lookup \"url\" values",
+						"isVisible": true
+					},			
+					{
+						"name": "endpoint",
+						"defaultValue": "https://www.virustotal.com/vtapi/v2/url/report?resource={url}&apikey={apikey}",
+						"isVisible": true
+					}, 
+					{
+						"name": "jq",
+						"defaultValue": "({url: \"{url}\", source: \"VirusTotal\"}) as $root   | ({}) as $nodes   | ({scan_id:  .scan_id, resource: .resource, response_code: .response_code, scan_date: .scan_date, permalink: .permalink, verbose_msg: .verbose_msg, filescan_id: .filescan_id, positives: .positives, total: .total}) as $attrs   | ([.scans[] | . + $root + {field: \"scans\"}])  + [$attrs + $nodes + $root]",
+						"isVisible": true
+					}, 
+					{
+						"name": "nodes",
+						"options": [
+							{"id": "detected", "name": "detected"},
+							{"id": "url", "name": "url"}
+						],
+						"defaultValue": [ "detected", "url" ]
+					}, 
+					{
+						"name": "attributes",
+						"options": []
+					}
+				]
+			},			
+			{
+				"name": "Expand IP with VirusTotal",
+				"id": "http-expand-vt",
+				"template": "http-expand",
+				"parameters": [
+					{
+				        "name": "apikey",
+				        "inputType": "text",
+				        "label": "API Key:",
+				        "placeholder": "Your API key",
+				        "defaultValue": "b0f1ce2eede797d3a485be09b86990570fd0ec47ac6cf8057624b126836d89df",
+				        "isVisible": false
+				    },		
+					{
+						"name": "instructions",
+						"label": "Lookup \"ip\" values",
+						"isVisible": true
+					},			
+					{
+						"name": "endpoint",
+						"defaultValue": "https://www.virustotal.com/vtapi/v2/ip-address/report?ip={ip}&apikey={apikey}",
+						"isVisible": true
+					}, 
+					{
+						"name": "jq",
+						"defaultValue": "({ip: \"{ip}\", source: \"VirusTotal\"}) as $root  | ({asn: .asn, as_owner: .as_owner}) as $nodes  | ({response_code: .response_code, verbose_msg: .verbose_msg, country: .country}) as $attrs  | ([.resolutions[] | . + $root + {field: \"resolutions\"}])  + ([.detected_downloaded_samples[] | . + $root + {field: \"detected_downloaded_samples\"}])  + ([.detected_urls[] + $root + {field: \"detected_urls\"}])  + [$attrs + $nodes + $root]",
+						"isVisible": true
+					}, 
+					{
+						"name": "nodes",
+						"options": [
+							{"id": "asn", "name": "asn"},
+							{"id": "as_owner", "name": "as_owner"},
+							{"id": "hostname", "name": "hostname"},
+							{"id": "country", "name": "country"},
+							{"id": "sha256", "name": "sha256"},
+							{"id": "url", "name": "url"},
+							{"id": "ip", "name": "ip"}
+						],
+						"defaultValue": [ "asn", "as_owner", "hostname", "country", "sha256", "url", "ip" ]
+					}, 
+					{
+						"name": "attributes",
+						"options": []
+					}
+				]
+			}
+		]
+	}
+}

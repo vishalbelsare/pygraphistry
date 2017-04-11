@@ -97,8 +97,7 @@ function extractAllNodes(connections) {
 }
 
 function shapeHyperGraph({ app, pivot } ) {
-    const { events, template } = pivot;
-    const { attributes, connections } = template;
+    const { events, attributes, connections } = pivot;
     const isStar = extractAllNodes(connections);
 
     const edges = [];

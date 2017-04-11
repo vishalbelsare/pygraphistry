@@ -75,7 +75,7 @@ function init(testUser) {
         unloadPivotsById,
         persistPivotsById,
         unlinkPivotsById,
-    } = pivotStore(loadApp, pivotPath);
+    } = pivotStore(loadApp, pivotPath, loadTemplatesById);
 
 
     const { loadConnectorsById } = connectorStore(loadApp);

@@ -7,7 +7,7 @@ import logger from '../logger.js';
 const log = logger.createLogger(__filename);
 
 
-export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
+export function pivotStore(loadApp, pathPrefix, loadTemplatesById, pivotsByIdCache = {}) {
     const store = new SimpleFileSystemStore({
         loadApp,
         pathPrefix,
@@ -18,8 +18,23 @@ export function pivotStore(loadApp, pathPrefix, pivotsByIdCache = {}) {
     });
 
     return {
-        loadPivotsById: (({pivotIds}) =>
-            store.loadById(pivotIds)
+        loadPivotsById: (({pivotIds}) => {
+            return store.loadById(pivotIds) //Fill in default pivotParameters from template
+                .mergeMap(
+                    ({ pivot }) => loadTemplatesById({
+                        templateIds: [pivot.pivotTemplate.value[1]]
+                    }),
+                    (pivot, { template }) => ({ pivot, template }))
+                .map(({pivot, template}) => {                    
+                    // Must reuse original pivot object
+                    for (const fld in template.pivotParametersUI.value) {
+                        if (!(fld in pivot.pivot.pivotParameters)) {
+                            pivot.pivot.pivotParameters[fld] = template.pivotParametersUI.value[fld].defaultValue;
+                        }
+                    }
+                    return pivot;
+                })
+            }
         ),
         unloadPivotsById: (({pivotIds}) =>
             store.unloadById(pivotIds)

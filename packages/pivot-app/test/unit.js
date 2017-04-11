@@ -14,6 +14,7 @@ describe('Models', function() {
 describe('Services', function() {
     require('./services/simpleFileSystemStore');
     require('./services/uploadGraph');
+    require('./services/pivotStore');
 });
 
 describe('HttpConnector', function() {
@@ -23,11 +24,13 @@ describe('HttpConnector', function() {
     require('./services/http/expand');
 });
 
-describe('OtherPivots', function () {
+describe('Pivots', function () {
+    require('./services/pivots/template');
     require('./services/pivots/manual');
 })
 
 describe('Support', function() {
     require('./services/support/flattenJson');
+    require('./services/support/template');
     require('./services/support/jq');
 });

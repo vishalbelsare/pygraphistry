@@ -1,0 +1,33 @@
+{
+    "id": "3f737213a25303ad",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [
+            "module",
+            "level",
+            "err.message",
+            "time",
+            "metadata.dataset",
+            "err.stackArray{}.file",
+            "err.stackArray{}.function",
+            "msg",
+            "fileName"
+        ],
+        "http-expand-vt$$$pRef": [
+            "3f3003becd92a0ba"
+        ],
+        "http-expand-vt$$$endpoint": "https://www.virustotal.com/vtapi/v2/ip-address/report?ip={ip}&apikey=b0f1ce2eede797d3a485be09b86990570fd0ec47ac6cf8057624b126836d89df",
+        "http-expand-vt$$$jq": "({ip: \"{ip}\", source: \"VirusTotal\"}) as $root  | ({asn: .asn, as_owner: .as_owner}) as $nodes  | ({response_code: .response_code, verbose_msg: .verbose_msg, country: .country}) as $attrs  | ([.resolutions[] | . + $root + {field: \"resolutions\"}])  + ([.detected_downloaded_samples[] | . + $root + {field: \"detected_downloaded_samples\"}])  + ([.detected_urls[] + $root + {field: \"detected_urls\"}])  + [$attrs + $nodes + $root]",
+        "http-expand-vt$$$nodes": [
+            "asn",
+            "as_owner",
+            "hostname",
+            "country",
+            "sha256",
+            "url",
+            "ip"
+        ]
+    },
+    "pivotTemplate": "http-expand-vt"
+}
