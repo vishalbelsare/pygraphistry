@@ -9,8 +9,11 @@ const debug        = require('debug')('graphistry:StreamGL:client');
 const _            = require('underscore');
 
 import {
-    Observable, Subject,
-    BehaviorSubject, ReplaySubject
+    Subject,
+    Observable,
+    Subscription,
+    ReplaySubject,
+    BehaviorSubject
 } from 'rxjs';
 
 /**
@@ -158,6 +161,7 @@ function handleVboUpdates (socket, uri, renderState, sceneModel, renderer) {
     const vboVersions = new BehaviorSubject(previousVersions);
 
     socket.on('vbo_update', (data, handshake) => {
+
         debug('0. socket vbo update');
 
         const thisStep = {step: vboUpdateStep++, data: data.step};
@@ -201,17 +205,25 @@ function handleVboUpdates (socket, uri, renderState, sceneModel, renderer) {
                     if (lastNumEdges !== numEdges) {
                         values.push({
                             value: lastNumEdges = numEdges,
-                            path: ['renderer', 'edges', 'elements']
+                            path: ['scene', 'renderer', 'edges', 'elements']
                         });
                     }
                     if (lastNumPoints !== numPoints) {
                         values.push({
                             value: lastNumPoints = numPoints,
-                            path: ['renderer', 'points', 'elements']
+                            path: ['scene', 'renderer', 'points', 'elements']
                         });
                     }
-                    return !values.length ? Observable.empty() :
-                        sceneModel.withoutDataSource().set(...values);
+                    return Observable.merge(
+                        sceneModel._root.topLevelModel.set({ json: {
+                            workbooks: { open: { views: { current: { session: {
+                                message: null, status: 'default', progress: 100
+                            }}}}}
+                        }}),
+                        !values.length ?
+                            Observable.empty() :
+                            sceneModel.withoutDataSource().set(...values)
+                    );
                 })
                 .subscribe({
                     error(err) {

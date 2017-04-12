@@ -182,8 +182,9 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture, app) 
 
     clientReady.subscribe(logger.debug.bind(logger, 'CLIENT STATUS'), log.makeRxErrorHandler(logger, 'clientReady'));
 
-    clientReady.debounceTime(200)
+    clientReady
         .filter(Boolean)
+        .debounceTime(200)
         .filter(() => this.updateSession)
         .switchMap(() => this.updateSession({
             message: null,
