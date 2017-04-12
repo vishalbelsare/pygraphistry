@@ -71,6 +71,7 @@ let View = ({
                                simulationWidth={width}
                                simulationHeight={height}
                                selectLabel={selectLabel}
+                               toolbarHeight={toolbarHeight-1}
                                sceneShiftDown={sceneShiftDown}
                                sceneMouseMove={sceneMouseMove}
                                sceneTouchStart={sceneTouchStart}

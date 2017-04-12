@@ -33,7 +33,7 @@ const sceneUpdates = cameraChanges
     .map(() => Scheduler.animationFrame.now());
 
 const keysThatCanCauseRenders = [
-    'color', 'background',
+    'color', 'background', 'toolbarHeight',
     'labels', 'highlight', 'selection',
     'simulating', 'enabled', 'poiEnabled',
     'simulationWidth', 'simulationHeight',
@@ -74,7 +74,7 @@ class Labels extends React.Component {
 
         let camera, canvas, matrix,
             pointSize, pixelRatio, scalingFactor;
-        let { mouseX, mouseY, onLabelsUpdated,
+        let { mouseX, mouseY, onLabelsUpdated, toolbarHeight,
               simulating = false, highlight = null, selection = null,
               renderer, renderState = null, renderingScheduler = null,
               labels = [], sizes = [], pointColors = [], edgeColors = [], points = [], children = []
@@ -125,7 +125,7 @@ class Labels extends React.Component {
             updatesToSend.push({
                 type, size,
                 id: globalIndex,
-                pageX: x, pageY: y,
+                pageX: x, pageY: y + toolbarHeight,
                 selected: label === selection,
                 highlight: label === highlight
             });

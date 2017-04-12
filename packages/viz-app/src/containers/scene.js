@@ -18,6 +18,7 @@ const SceneOptionToggle = withControlContainer(({ id, name, props, value = false
 let Scene = ({
         settings,
         selectLabel,
+        toolbarHeight,
         sceneShiftDown,
         sceneMouseMove,
         sceneTouchStart,
@@ -66,6 +67,7 @@ let Scene = ({
                 data={labels}
                 simulating={simulating}
                 selectLabel={selectLabel}
+                toolbarHeight={toolbarHeight}
                 simulationWidth={simulationWidth}
                 simulationHeight={simulationHeight}
                 sceneSelectionType={selection.type}/>
