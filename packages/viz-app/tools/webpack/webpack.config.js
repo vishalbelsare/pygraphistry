@@ -39,7 +39,7 @@ function makeWebpackConfig({
         cache: isDev,
         context: path.join(process.cwd()),
         target: type === 'client' ? 'web' : 'node',
-        devtool: isDev ? 'source-map' : 'hidden-source-map',
+        devtool: isDev ? 'source-map' : 'nosources-source-map',
         stats: { assets: false, colors: true, chunks: false, warnings: true },
         output: Object.assign({
             publicPath: '',
