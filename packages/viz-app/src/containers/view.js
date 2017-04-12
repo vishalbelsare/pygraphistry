@@ -1,4 +1,6 @@
+import React, { PropTypes } from 'react';
 import SplitPane from 'react-split-pane';
+import getContext from 'recompose/getContext';
 import { AutoSizer } from 'react-virtualized';
 import { Scene } from 'viz-app/containers/scene';
 import { Panel } from 'viz-app/containers/panel';
@@ -21,14 +23,15 @@ import { selectLabel } from 'viz-app/actions/labels';
 import { selectInspectorRow } from 'viz-app/actions/inspector';
 
 const viewStyle = { position: `absolute`, width: `100%`, height: `100%` };
-const containerStyleFull = { ...viewStyle, position: `relative`, overflow: 'hidden' };
-const containerStyleWithToolbar = { ...viewStyle, ...containerStyleFull, top: 41, height: `calc(100% - 41px)` };
-const containerVisibleStyle = { ...containerStyleFull, overflow: 'visible', flex: '1 1 auto' };
+const containerStyle = { ...viewStyle, position: `relative`, overflow: 'hidden' };
+const containerVisibleStyle = { ...containerStyle, overflow: 'visible', flex: '1 1 auto' };
 const rightDockHiddenStyle = { opacity: 1, boxShadow: `none`, overflow: `visible`, background: `transparent` };
 const rightDockVisibleStyle = { opacity: 1, boxShadow: `none`, overflow: `visible`, background: `transparent` };
 
 let View = ({
     session,
+    info = true,
+    menu = true,
     selectLabel,
     sceneShiftDown,
     sceneMouseMove,
@@ -44,68 +47,71 @@ let View = ({
     const isLeftPanelOpen = left && left.id !== undefined;
     const isRightPanelOpen = right && right.id !== undefined;
     const isBottomPanelOpen = bottom && bottom.id !== undefined;
-    const containerStyle = (window && window.innerWidth < 330) ? containerStyleFull : containerStyleWithToolbar;
+    const toolbarHeight = !menu || !toolbar || !toolbar.visible || (
+                           window && window.innerWidth < 330) ? 0 : 41;
     return (
-        // <SplitPane allowResize={false} split='horizontal' size='0px'>
-        <div style={viewStyle}>
-            <div style={containerStyle}>
-                <SplitPane allowResize={isBottomPanelOpen}
-                           split='horizontal' primary='second'
-                           minSize={0} paneStyle={containerStyleFull}
-                           defaultSize={isBottomPanelOpen ? `${(1 - (1/Math.sqrt(2)))*100}%` : '0%'}>
-                    <SplitPane allowResize={isRightPanelOpen}
-                               split='vertical' primary='second'
-                               minSize={0} paneStyle={containerVisibleStyle}
-                               defaultSize={isRightPanelOpen ? `20%` : '0%'}>
-                        <div style={containerVisibleStyle}>
-                            <AutoSizer>
-                            {({ width, height }) => (
-                            <Scene key='scene'
-                                   data={scene}
-                                   simulationWidth={width}
-                                   simulationHeight={height}
-                                   selectLabel={selectLabel}
-                                   sceneShiftDown={sceneShiftDown}
-                                   sceneMouseMove={sceneMouseMove}
-                                   sceneTouchStart={sceneTouchStart}
-                                   selectToolbarItem={selectToolbarItem}
-                                   style={{ ...viewStyle, width, height }}
-                                   onSelectedPointTouchStart={onSelectedPointTouchStart}
-                                   onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
-                            )}
-                            </AutoSizer>
-                        </div>
-                        <div style={containerVisibleStyle}>
-                            <Session data={session}/>
-                            <Panel side='right' data={right} key='right-panel' isOpen={isRightPanelOpen}/>
-                        </div>
-                    </SplitPane>
-                    <div style={{ ...containerVisibleStyle, flex: '1 1 auto' }}>
+        <SplitPane split='horizontal' allowResize={false}
+                   style={viewStyle} size={`${toolbarHeight}px`}>
+            <Toolbar key='toolbar' menu={menu} data={toolbar} selectToolbarItem={selectToolbarItem}>
+                <Panel key='left-panel' side='left' data={left} isOpen={isLeftPanelOpen}/>
+            </Toolbar>
+            <SplitPane allowResize={isBottomPanelOpen}
+                       split='horizontal' primary='second'
+                       minSize={0} paneStyle={containerStyle}
+                       defaultSize={isBottomPanelOpen ? `${(1 - (1/Math.sqrt(2)))*100}%` : '0%'}>
+                <SplitPane allowResize={isRightPanelOpen}
+                           split='vertical' primary='second'
+                           minSize={0} paneStyle={containerVisibleStyle}
+                           defaultSize={isRightPanelOpen ? `20%` : '0%'}>
+                    <div style={containerVisibleStyle}>
                         <AutoSizer>
-                        {({ width, height = 0 }) => (
-                            <Panel side='bottom'
-                                   data={bottom}
-                                   key='bottom-panel'
-                                   colWidth={150}
-                                   rowHeight={30}
-                                   colHeaderWidth={48}
-                                   rowHeaderHeight={32}
-                                   height={Math.max(height - 60, 0) || 0}
-                                   width={width} isOpen={isBottomPanelOpen}
-                                   style={{ width, height: height || 0 }}
-                                   selectInspectorRow={selectInspectorRow}/>
+                        {({ width, height }) => (
+                        <Scene key='scene'
+                               data={scene}
+                               simulationWidth={width}
+                               simulationHeight={height}
+                               selectLabel={selectLabel}
+                               sceneShiftDown={sceneShiftDown}
+                               sceneMouseMove={sceneMouseMove}
+                               sceneTouchStart={sceneTouchStart}
+                               selectToolbarItem={selectToolbarItem}
+                               style={{ ...viewStyle, width, height }}
+                               onSelectedPointTouchStart={onSelectedPointTouchStart}
+                               onSelectionMaskTouchStart={onSelectionMaskTouchStart}/>
                         )}
                         </AutoSizer>
                     </div>
+                    <div style={containerVisibleStyle}>
+                        <Session data={session}/>
+                        <Panel side='right' data={right} key='right-panel' isOpen={isRightPanelOpen}/>
+                    </div>
                 </SplitPane>
-            </div>
-            <Toolbar key='toolbar' data={toolbar} selectToolbarItem={selectToolbarItem}>
-                <Panel key='left-panel' side='left' data={left} isOpen={isLeftPanelOpen}/>
-            </Toolbar>
-        </div>
-        // </SplitPane>
+                <div style={{ ...containerVisibleStyle, flex: '1 1 auto' }}>
+                    <AutoSizer>
+                    {({ width, height = 0 }) => (
+                        <Panel side='bottom'
+                               data={bottom}
+                               key='bottom-panel'
+                               colWidth={150}
+                               rowHeight={30}
+                               colHeaderWidth={48}
+                               rowHeaderHeight={32}
+                               height={Math.max(height - 60, 0) || 0}
+                               width={width} isOpen={isBottomPanelOpen}
+                               style={{ width, height: height || 0 }}
+                               selectInspectorRow={selectInspectorRow}/>
+                    )}
+                    </AutoSizer>
+                </div>
+            </SplitPane>
+        </SplitPane>
     );
 };
+
+View = getContext({
+    info: PropTypes.bool,
+    menu: PropTypes.bool,
+})(View);
 
 View = container({
     renderLoading: true,

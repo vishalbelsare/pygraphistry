@@ -5,6 +5,7 @@ import { Subject } from 'rxjs/Subject';
 import { Observable } from 'rxjs/Observable';
 import { Subscription } from 'rxjs/Subscription';
 import { ReplaySubject } from 'rxjs/ReplaySubject';
+import { Control as SettingsControl } from 'viz-app/containers/settings';
 import {
     pointSizes,
     pointColors,
@@ -138,7 +139,9 @@ class Scene extends React.Component {
         events.forEach((eventName) => this[eventName] = undefined);
     }
     render() {
+        const { info = true, menu = true } = this.props;
         const { edges, points, release, children } = this.props;
+        const { labelPOIOption, pruneIsolatedOption } = this.props;
         const releaseString = release.buildNumber ? `v${release.buildNumber}` : '';
 
         return (
@@ -150,34 +153,36 @@ class Scene extends React.Component {
                  onMouseDown={this.onTouchStart}
                  onTouchStart={this.onTouchStart}>
                 {children}
-                {(  (edges && edges.elements !== undefined) ||
-                    (points && points.elements !== undefined)) &&
-                    <table className={styles['meter']}
-                           onMouseOver={this.hideOnMouseOver}
-                           onMouseOut={this.showOnMouseOut}>
+                {(info || menu) &&
+                <div className={styles['top-level-scene-info']}>
+                    {info &&
+                    <table className={styles['meter']}>
                         <tbody>
                             <tr>
                                 <td className={styles['meter-label']}>
                                     nodes
                                 </td>
-                                <td className={styles['meter-value']}>{
-                                    points && points.elements || 0
-                                }</td>
+                                <td className={styles['meter-value']}>
+                                    {points && points.elements || 0}
+                                </td>
                             </tr>
                             <tr>
                                 <td className={styles['meter-label']}>
                                     edges
                                 </td>
-                                <td className={styles['meter-value']}>{
-                                    edges && edges.elements || 0
-                                }</td>
+                                <td className={styles['meter-value']}>
+                                    {edges && edges.elements || 0}
+                                </td>
                             </tr>
                         </tbody>
-                    </table>
-                }
-                <div className={styles['logo-container']}
-                     onMouseOver={this.hideOnMouseOver}
-                     onMouseOut={this.showOnMouseOut}>
+                    </table> || undefined }
+                    { menu &&
+                    <div className={styles['top-level-controls']}>
+                        <div>{pruneIsolatedOption}</div>
+                        <div>{labelPOIOption}</div>
+                    </div> || undefined }
+                </div> || undefined }
+                <div className={styles['logo-container']}>
                     <img draggable='false' src='img/logo_white_horiz.png'/>
                     <div className={styles['logo-version']}
                          onMouseDown={this.stopEventPropagation}
@@ -188,12 +193,6 @@ class Scene extends React.Component {
                 </div>
             </div>
         );
-    }
-    hideOnMouseOver({ currentTarget }) {
-        // currentTarget.style.opacity = 0;
-    }
-    showOnMouseOut({ currentTarget }) {
-        // currentTarget.style.opacity = 1;
     }
     stopEventPropagation(e) {
         e.stopPropagation();
@@ -389,6 +388,8 @@ class Scene extends React.Component {
 
 Scene = compose(
     getContext({
+        info: PropTypes.bool,
+        menu: PropTypes.bool,
         play: PropTypes.number,
         socket: PropTypes.object,
         falcor: PropTypes.object,

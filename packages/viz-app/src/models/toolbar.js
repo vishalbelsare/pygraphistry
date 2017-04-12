@@ -67,50 +67,7 @@ export function toolbar(workbookId, viewId) {
                         2: $ref(`${workbook}.controls[3]`),
                     }
                 }
-            },
-            horizontal: {
-                id: 'horizontal',
-                visible: true,
-                length: 4,
-                0: {
-                    id: 'graph',
-                    name: 'Graph',
-                    items: {
-                        length: 4,
-                        0: $ref(`${view}.scene.controls[0]`),
-                        1: $ref(`${view}.scene.controls[1]`),
-                        2: $ref(`${view}.labels.controls[0]`),
-                        3: $ref(`${view}.layout.controls[0]`)
-                    }
-                },
-                1: {
-                    id: 'interact',
-                    name: 'Interact',
-                    items: {
-                        length: 2,
-                        0: $ref(`${view}.selection.controls[0]`),
-                        1: $ref(`${view}.selection.controls[1]`)
-                    }
-                },
-                2: {
-                    id: 'query',
-                    name: 'Query',
-                    items: {
-                        length: 2,
-                        0: $ref(`${view}.filters.controls[0]`),
-                        1: $ref(`${view}.exclusions.controls[0]`)
-                    }
-                },
-                3: {
-                    id: 'inspect',
-                    name: 'Inspect',
-                    items: {
-                        length: 2,
-                        0: $ref(`${view}.histograms.controls[0]`),
-                        1: $ref(`${view}.inspector.controls[0]`)
-                    }
-                }
-            },
+            }
         },
     };
 }

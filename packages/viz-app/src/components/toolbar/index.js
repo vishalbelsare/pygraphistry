@@ -10,9 +10,9 @@ import {
     ListGroup, ListGroupItem
 } from 'react-bootstrap';
 
-export function ButtonList({ children, visible, ...props }) {
+export function ButtonList({ children, visible, menu = true, ...props }) {
 
-    if (!visible) {
+    if (!visible || !menu) {
         return null;
     }
 
