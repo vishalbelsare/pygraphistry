@@ -10,10 +10,11 @@ import { Observable } from 'rxjs/Observable';
 
 const util = require('../util.js');
 const weaklycc = require('../weaklycc.js');
-const palettes = require('../palettes.js');
-const encodingsUtil = require('../encodings.js');
 // const clientNotification = require('../clientNotification.js');
-const ComputedColumnSpec = require('../ComputedColumnSpec.js');
+
+import * as palettes from '../palettes';
+import * as encodingsUtil from '../encodings';
+import ComputedColumnSpec from '../ComputedColumnSpec';
 
 const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/libs/VGraphLoader.js');
