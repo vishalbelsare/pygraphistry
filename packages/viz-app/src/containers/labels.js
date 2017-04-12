@@ -69,21 +69,23 @@ let Labels = ({ simulating,
         <LabelsComponent color={color}
                          labels={labels}
                          enabled={enabled}
+                         highlight={highlight}
+                         selection={selection}
                          simulating={simulating}
                          poiEnabled={poiEnabled}
                          background={background}
-                         highlight={toProps(highlight)}
-                         selection={toProps(selection)}
                          highlightEnabled={highlightEnabled}
+                         highlightKey={getLabelKey(highlight)}
+                         selectionKey={getLabelKey(selection)}
                          {...props}>
         {enabled && labels.filter(Boolean).map((label) => (
             <Label data={label}
                    color={color}
                    opacity={opacity}
-                   key={`label-${label.globalIndex}`}
                    encodings={encodings}
                    simulating={simulating}
                    background={background}
+                   key={getLabelKey(label)}
                    pinned={label === selection}
                    onLabelSelected={selectLabel}
                    onLabelMouseMove={labelMouseMove}
@@ -94,6 +96,10 @@ let Labels = ({ simulating,
         </LabelsComponent>
     );
 };
+
+function getLabelKey(label) {
+    return label && `label-${label.type}-${label.globalIndex}` || 'no-label';
+}
 
 Labels = container({
     renderLoading: false,

@@ -34,8 +34,8 @@ const sceneUpdates = cameraChanges
 
 const keysThatCanCauseRenders = [
     'color', 'background', 'toolbarHeight',
-    'labels', 'highlight', 'selection',
-    'simulating', 'enabled', 'poiEnabled',
+    'labels', 'highlightKey', 'selectionKey',
+    'enabled', 'poiEnabled', 'simulating',
     'simulationWidth', 'simulationHeight',
     'sceneUpdateTime', 'sceneSelectionType',
 ];
@@ -111,7 +111,7 @@ class Labels extends React.Component {
             const worldCoords = (type === 'edge') ?
                 label === selection ?
                         getEdgeLabelPos(renderState, renderingScheduler, index)
-                    :   camera.canvas2WorldCoords(mouseX, mouseY, canvas, matrix)
+                    :   camera.canvas2WorldCoords(mouseX, mouseY - toolbarHeight, canvas, matrix)
                 :   { x: points[2 * index], y: points[2 * index + 1] };
 
             if (!worldCoords) {
