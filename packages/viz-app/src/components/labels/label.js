@@ -94,6 +94,7 @@ export class Label extends React.Component {
 
         background = showFull || pinned ? new Color(background).alpha(1).rgbaString() : background;
 
+        const noData = Boolean(!columns || !columns.length);
         const arrowStyle = { 'borderBottomColor': background };
         const contentStyle = { color, background, maxWidth: `none` };
         const iconClass = getIconClass({ encodings, type, columns });
@@ -102,6 +103,7 @@ export class Label extends React.Component {
             <div style={props.style} className={classNames({
                      [styles['label']]: true,
                      [styles['on']]: showFull,
+                     [styles['noData']]: noData,
                      [styles['clicked']]: pinned,
                  })}>
                 <PointIcon type={type}
@@ -130,7 +132,7 @@ export class Label extends React.Component {
                                     onExclude={onExclude}
                                     onMouseDown={this.onLabelSelected}
                                     onTouchStart={this.onLabelSelected}/>
-                        {(showFull || pinned) &&
+                        {!noData && (showFull || pinned) &&
                         <LabelContents type={type}
                                        color={color}
                                        title={title}
@@ -281,7 +283,8 @@ function LabelTitle ({ type, color, iconClass, title, icon, pinned, showFull, on
             <span onMouseDown={stopPropagationIfAnchor}
                   className={styles['label-title-text']}>
                   <Icon iconClass={iconClass}/>
-                  <span dangerouslySetInnerHTML={titleHTML} style={{ display: 'inline-block' }}/>
+                  <span dangerouslySetInnerHTML={titleHTML}
+                        style={pinned && { display: 'inline-block' } || undefined}/>
             </span>
         </div>
     );

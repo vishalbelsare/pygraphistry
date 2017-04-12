@@ -36,12 +36,22 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
     const labelBufferName = `${labelType}Labels`;
     const hasPrecomputedLabels = dataframe.hasHostBuffer(labelBufferName);
 
+    // Unbase mask from local filtered coordinate system to global coordinate system
+    const unbasedMasks = new DataframeMask(
+        dataframe,
+        labelType === 'point' ? labelIndexes : undefined,
+        labelType === 'edge' ? labelIndexes : undefined,
+        dataframe.lastMasks
+    );
+
     if (hasPrecomputedLabels) {
-        return labelIndexes.map((labelIndex) => ({
+        return unbasedMasks.mapIndexesByType(labelType, (globalIndex, index) => ({
             workbook, view, label: {
-                type: labelType, index: labelIndex, data: {
-                    formatted: dataframe
-                        .getCell(labelIndex, 'hostBuffer', labelBufferName)
+                type: labelType,
+                index: labelIndexes[index],
+                data: {
+                    columns: [], globalIndex,
+                    title: dataframe.getCell(globalIndex, 'hostBuffer', labelBufferName, true)
                 }
             }
         }));
@@ -50,14 +60,6 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
     const titleColumnName = '_title';
     const indexColumnName = '_index';
     const columnNames = dataframe.publicColumnNamesByType(labelType);
-
-    // Unbase mask from local filtered coordinate system to global coordinate system
-    const unbasedMasks = new DataframeMask(
-        dataframe,
-        labelType === 'point' ? labelIndexes : undefined,
-        labelType === 'edge' ? labelIndexes : undefined,
-        dataframe.lastMasks
-    );
 
     const rows = unbasedMasks.mapIndexesByType(labelType, (index) => {
         return dataframe.getRowAt(index, labelType, columnNames, true);

@@ -28,7 +28,7 @@ export function scene(path, base) {
                         r: color.red(), g: color.green(),
                         b: color.blue(), a: color.alpha()
                     }});
-                    return tickLayout({ view }).concat(Observable.of({
+                    return tickLayout({ view, layout: false }).concat(Observable.of({
                         path, value: color
                     }));
                 }
@@ -45,25 +45,25 @@ export function scene(path, base) {
             set: setSimulating,
             route: `${base}['scene'].simulating`
         }, {
+            returns: `Number`,
             get: getValues,
-            route: `${base}['scene'].renderer[{keys}]`,
-            returns: `Number`
+            route: `${base}['scene'].renderer[{keys}]`
         }, {
             set: setValues,
             route: `${base}['scene'].renderer['showArrows']`
         }, {
+            returns: `Number`,
             get: getValues,
-            route: `${base}['scene'].renderer['edges', 'points'][{keys}]`,
-            returns: `Number`
+            route: `${base}['scene'].renderer['edges', 'points'][{keys}]`
         }, {
+            returns: `Number`,
             set: setValues,
-            route: `${base}['scene'].renderer['edges', 'points']['scaling', 'opacity']`,
-            returns: `Number`
+            route: `${base}['scene'].renderer['edges', 'points']['scaling', 'opacity']`
         }, {
+            returns: `Color`,
             get: getValues,
             set: setColors,
-            route: `${base}['scene'].renderer['background', 'foreground'].color`,
-            returns: `Color`
+            route: `${base}['scene'].renderer['background', 'foreground'].color`
         }, {
             returns: `*`,
             get: getValues,
@@ -76,16 +76,20 @@ export function scene(path, base) {
         }, {
             returns: `*`,
             get: getValues,
-            route: `${base}['scene'].settings[{keys}]`,
+            route: `${base}['scene'].settings[{keys}]`
         }, {
             returns: `*`,
             get: getValues,
-            route: `${base}['scene'].settings[{keys}][{keys}]`,
+            route: `${base}['scene'].settings[{keys}][{keys}]`
+        }, {
+            returns: `*`,
+            get: getValues,
+            route: `${base}['scene'].options[{keys}][{keys}]`
         }, {
             returns: `*`,
             get: getValues,
             set: setValues,
-            route: `${base}['scene'].settings[{keys}][{keys}][{keys}]`,
+            route: `${base}['scene'].options[{keys}][{keys}][{keys}]`
         }];
     }
 }

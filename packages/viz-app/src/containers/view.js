@@ -1,4 +1,6 @@
+import React, { PropTypes } from 'react';
 import SplitPane from 'react-split-pane';
+import getContext from 'recompose/getContext';
 import { AutoSizer } from 'react-virtualized';
 import { Scene } from 'viz-app/containers/scene';
 import { Panel } from 'viz-app/containers/panel';
@@ -28,6 +30,8 @@ const rightDockVisibleStyle = { opacity: 1, boxShadow: `none`, overflow: `visibl
 
 let View = ({
     session,
+    info = true,
+    menu = true,
     selectLabel,
     sceneShiftDown,
     sceneMouseMove,
@@ -43,9 +47,14 @@ let View = ({
     const isLeftPanelOpen = left && left.id !== undefined;
     const isRightPanelOpen = right && right.id !== undefined;
     const isBottomPanelOpen = bottom && bottom.id !== undefined;
+    const toolbarHeight = !menu || !toolbar || !toolbar.visible || (
+                           window && window.innerWidth < 330) ? 0 : 41;
     return (
-        // <SplitPane allowResize={false} split='horizontal' size='0px'>
-        <div style={viewStyle}>
+        <SplitPane split='horizontal' allowResize={false}
+                   style={viewStyle} size={`${toolbarHeight}px`}>
+            <Toolbar key='toolbar' menu={menu} data={toolbar} selectToolbarItem={selectToolbarItem}>
+                <Panel key='left-panel' side='left' data={left} isOpen={isLeftPanelOpen}/>
+            </Toolbar>
             <SplitPane allowResize={isBottomPanelOpen}
                        split='horizontal' primary='second'
                        minSize={0} paneStyle={containerStyle}
@@ -62,6 +71,7 @@ let View = ({
                                simulationWidth={width}
                                simulationHeight={height}
                                selectLabel={selectLabel}
+                               toolbarHeight={toolbarHeight-1}
                                sceneShiftDown={sceneShiftDown}
                                sceneMouseMove={sceneMouseMove}
                                sceneTouchStart={sceneTouchStart}
@@ -95,13 +105,14 @@ let View = ({
                     </AutoSizer>
                 </div>
             </SplitPane>
-            <Toolbar key='toolbar' data={toolbar} selectToolbarItem={selectToolbarItem}>
-                <Panel key='left-panel' side='left' data={left} isOpen={isLeftPanelOpen}/>
-            </Toolbar>
-        </div>
-        // </SplitPane>
+        </SplitPane>
     );
 };
+
+View = getContext({
+    info: PropTypes.bool,
+    menu: PropTypes.bool,
+})(View);
 
 View = container({
     renderLoading: true,

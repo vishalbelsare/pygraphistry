@@ -118,6 +118,10 @@
 
     width: 100%;
 
+    .label.on.clicked & {
+        min-width: 8em;
+    }
+
     .label-title-close {
         float: right;
         opacity: 0.65;
@@ -158,11 +162,15 @@
             vertical-align: middle;
         }
 
-        .label:not(.on) &, .label.on:not(.clicked) & {
+        .label:not(.on) & {
+            padding-bottom: 5px;
+        }
+
+        .label:not(.on) &,
+        .label.on:not(.clicked) & {
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
-            padding-bottom: 5px;
         }
 
         .label-title-icon-encoded {

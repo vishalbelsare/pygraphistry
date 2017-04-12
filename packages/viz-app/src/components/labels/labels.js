@@ -33,8 +33,9 @@ const sceneUpdates = cameraChanges
     .map(() => Scheduler.animationFrame.now());
 
 const keysThatCanCauseRenders = [
-    'labels', 'highlight', 'selection',
-    'simulating', 'enabled', 'poiEnabled',
+    'color', 'background', 'toolbarHeight',
+    'labels', 'highlightKey', 'selectionKey',
+    'enabled', 'poiEnabled', 'simulating',
     'simulationWidth', 'simulationHeight',
     'sceneUpdateTime', 'sceneSelectionType',
 ];
@@ -73,7 +74,7 @@ class Labels extends React.Component {
 
         let camera, canvas, matrix,
             pointSize, pixelRatio, scalingFactor;
-        let { mouseX, mouseY, onLabelsUpdated,
+        let { mouseX, mouseY, onLabelsUpdated, toolbarHeight,
               simulating = false, highlight = null, selection = null,
               renderer, renderState = null, renderingScheduler = null,
               labels = [], sizes = [], pointColors = [], edgeColors = [], points = [], children = []
@@ -110,7 +111,7 @@ class Labels extends React.Component {
             const worldCoords = (type === 'edge') ?
                 label === selection ?
                         getEdgeLabelPos(renderState, renderingScheduler, index)
-                    :   camera.canvas2WorldCoords(mouseX, mouseY, canvas, matrix)
+                    :   camera.canvas2WorldCoords(mouseX, mouseY - toolbarHeight, canvas, matrix)
                 :   { x: points[2 * index], y: points[2 * index + 1] };
 
             if (!worldCoords) {
@@ -124,7 +125,7 @@ class Labels extends React.Component {
             updatesToSend.push({
                 type, size,
                 id: globalIndex,
-                pageX: x, pageY: y,
+                pageX: x, pageY: y + toolbarHeight,
                 selected: label === selection,
                 highlight: label === highlight
             });

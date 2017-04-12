@@ -11,9 +11,9 @@
     mv "~2"
     safe-json-stringify "~1"
 
-"@graphistry/common@3.0.2":
-  version "3.0.2"
-  resolved "https://registry.yarnpkg.com/@graphistry/common/-/common-3.0.2.tgz#bee957f445bff1d7ba2e9157bbb2106319094497"
+"@graphistry/common@3.1.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@graphistry/common/-/common-3.1.0.tgz#036545a68802527e184d22e4e7e073d588db2ecd"
   dependencies:
     "@graphistry/bunyan" "1.8.4"
     "@graphistry/config" "3.0.1"
@@ -8833,12 +8833,12 @@ socket.io-client@socketio/socket.io-client:
     component-bind "1.0.0"
     component-emitter "1.2.1"
     debug "2.3.3"
-    engine.io-client "2.0.2"
+    engine.io-client "2.0.0"
     has-binary "0.1.7"
     indexof "0.0.1"
     object-component "0.0.3"
     parseuri "0.0.5"
-    socket.io-parser "2.3.2"
+    socket.io-parser "2.3.1"
     to-array "0.1.4"
 
 socket.io-parser@2.3.1:
@@ -8876,10 +8876,10 @@ socket.io@socketio/socket.io:
   resolved "https://codeload.github.com/socketio/socket.io/tar.gz/f1b39a6b1d0f30c4dce63a6b2a2aa9d839483285"
   dependencies:
     debug "2.3.3"
-    engine.io "2.0.2"
+    engine.io "2.0.0"
     has-binary "0.1.7"
     object-assign "4.1.0"
-    socket.io-adapter "~1.1.0"
+    socket.io-adapter "0.5.0"
     socket.io-client socketio/socket.io-client
     socket.io-parser "2.3.1"
 

@@ -2,7 +2,6 @@ import React from 'react'
 import { container } from '@graphistry/falcor-react-redux';
 import {
     Slider,
-    TextInput,
     ToggleButton,
     ColorPicker,
     SettingsList,
@@ -16,7 +15,6 @@ const controlsById = {
 };
 
 const controlsByType = {
-    'text': TextInput,
     'bool': ToggleButton,
     'color': ColorPicker,
     'discrete': Slider,
@@ -74,12 +72,15 @@ Options = container({
     })
 })(Options);
 
-Control = container({
+const withControlContainer = container({
     renderLoading: true,
     fragment: () => `{ id, name, type, props, value: {${null}} }`,
     dispatchers: {
         setValue: setControlValue
     }
-})(Control);
+});
 
+Control = withControlContainer(Control);
+
+export { withControlContainer };
 export { Settings, Options, Control };

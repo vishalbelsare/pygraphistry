@@ -10,7 +10,7 @@ import {
 } from '@graphistry/falcor-json-graph';
 
 export * from './migrateWorkbook';
-export const latestWorkbookVersion = 1;
+export const latestWorkbookVersion = 2;
 
 export function workbook(dataset, workbookId = simpleflake().toJSON()) {
     const workbook = `workbooksById['${workbookId}']`;

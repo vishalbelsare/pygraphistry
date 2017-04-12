@@ -19,6 +19,7 @@ export function setupLegacyInterop(document, options) {
     let {
         socket,
         handleVboUpdates,
+        info = true, menu = true,
         top, left, right, bottom,
         play, opacity, pixelRatio,
         ['mix-blend-mode']: mixBlendMode = undefined,
@@ -58,7 +59,9 @@ export function setupLegacyInterop(document, options) {
     marqueeActive.next(false);
 
     return hoistStatics(withContext(
-        { play: PropTypes.number,
+        { info: PropTypes.bool,
+          menu: PropTypes.bool,
+          play: PropTypes.number,
           socket: PropTypes.object,
           pixelRatio: PropTypes.number,
           simulation: PropTypes.object,
@@ -66,7 +69,9 @@ export function setupLegacyInterop(document, options) {
           simCameraBounds: PropTypes.object,
           handleVboUpdates:   PropTypes.func,
           simBackgroundImage: PropTypes.string }, () => (
-        { play,
+        { info,
+          menu,
+          play,
           socket,
           pixelRatio,
           simulation,

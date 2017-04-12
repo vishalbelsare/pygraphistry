@@ -1,13 +1,24 @@
+import { Row } from 'react-bootstrap';
 import { toProps } from '@graphistry/falcor';
 import { Labels } from 'viz-app/containers/labels';
 import { Renderer } from 'viz-app/containers/renderer';
-import { Settings } from 'viz-app/containers/settings';
 import { container } from '@graphistry/falcor-react-redux';
 import { Selection } from 'viz-app/containers/selection';
 import { Scene as SceneComponent } from 'viz-app/components/scene';
+import { Settings, withControlContainer } from 'viz-app/containers/settings';
+
+const SceneOptionToggle = withControlContainer(({ id, name, props, value = false, setValue, ...rest }) => (
+    <label>
+        <input type='checkbox' checked={value} id={`${id}-input`}
+               onChange={({ target }) => setValue({ id, ...rest, value: value = target.checked })}/>
+        {name}
+    </label>
+));
 
 let Scene = ({
+        settings,
         selectLabel,
+        toolbarHeight,
         sceneShiftDown,
         sceneMouseMove,
         sceneTouchStart,
@@ -31,6 +42,12 @@ let Scene = ({
                     simulationWidth={simulationWidth}
                     simulationHeight={simulationHeight}
                     highlightEnabled={labels && labels.highlightEnabled}
+                    pruneIsolatedOption={
+                        <SceneOptionToggle data={settings && settings[0] && settings[0][3]}/>
+                    }
+                    labelPOIOption={
+                        <SceneOptionToggle data={labels && labels.settings && labels.settings[0] && labels.settings[0][4]}/>
+                    }
                     {...props}>
         <Renderer key='renderer'
                   data={renderer}
@@ -50,6 +67,7 @@ let Scene = ({
                 data={labels}
                 simulating={simulating}
                 selectLabel={selectLabel}
+                toolbarHeight={toolbarHeight}
                 simulationWidth={simulationWidth}
                 simulationHeight={simulationHeight}
                 sceneSelectionType={selection.type}/>
@@ -63,6 +81,9 @@ Scene = container({
         release: { tag, buildNumber },
         ... ${ Settings.fragment(scene) },
         labels: ${ Labels.fragment(scene.labels) },
+        labels: { settings: { 0: { 4: ${
+            SceneOptionToggle.fragment()
+        }}}},
         renderer: ${ Renderer.fragment(scene.renderer) },
         highlight: ${ Selection.fragment(scene.highlight) },
         selection: ${ Selection.fragment(scene.selection) }

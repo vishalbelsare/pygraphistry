@@ -55,39 +55,28 @@ export function Slider({
     }
     return (
         <Row className={styles['control-row']}>
-            <Col xs={6} sm={6} md={6} lg={6} className={styles['control-label']}>
-                <span>{name}</span>
-            </Col>
-            <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
-                <RcSlider key={`${id}-slider`}
-                          min={props.min} max={props.max}
-                          step={props.step} defaultValue={value}
-                          tipFormatter={tipFormatter}
-                          tipTransitionName='rc-slider-tooltip-zoom-down'
-                          onChange={(newState) => setValue({
-                              id, type, ...rest,
-                              value: value = scales[scale].invert(newState)
-                          })}
-                          {...rest}/>
-            </Col>
-        </Row>
-    );
-}
-
-export function TextInput({
-    id, name, type, props,
-    value = '', setValue, ...rest } = {}) {
-    return (
-        <Row className={styles['control-row']}>
-            <Col xs={6} sm={6} md={6} lg={6} className={styles['control-label']}>
-                <span>{name}</span>
-            </Col>
-            <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
-                <input key={`${id}-input`} type='text' defaultValue={value}
-                       onChange={(ev) => setValue({
-                           id, type, ...rest, value: value = ev.target.value
-                       })}
-                       {...rest}/>
+            <Col xs={12} sm={12} md={12} lg={12}>
+                <Grid fluid>
+                    <Row>
+                        <Col xs={7} sm={7} md={7} lg={7} className={styles['control-label']}>
+                            <span>{name}</span>
+                        </Col>
+                    </Row>
+                    <Row className={styles['slider-row']}>
+                        <Col xs={12} sm={12} md={12} lg={12}>
+                            <RcSlider key={`${id}-slider`}
+                                      min={props.min} max={props.max}
+                                      step={props.step} defaultValue={value}
+                                      tipFormatter={tipFormatter}
+                                      tipTransitionName='rc-slider-tooltip-zoom-down'
+                                      onChange={(newState) => setValue({
+                                          id, type, ...rest,
+                                          value: value = scales[scale].invert(newState)
+                                      })}
+                                      {...rest}/>
+                        </Col>
+                    </Row>
+                </Grid>
             </Col>
         </Row>
     );
@@ -98,10 +87,10 @@ export function ToggleButton({
     value = false, setValue, ...rest } = {}) {
     return (
         <Row className={styles['control-row']}>
-            <Col xs={6} sm={6} md={6} lg={6} className={styles['control-label']}>
+            <Col xs={7} sm={7} md={7} lg={7} className={styles['control-label']}>
                 <span>{name}</span>
             </Col>
-            <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
+            <Col xs={5} sm={5} md={5} lg={5} className={styles['control']}>
                 <RcSwitch key={`${id}-toggle`}
                           checked={value}
                           checkedChildren={'On'}
@@ -120,10 +109,10 @@ export function ColorPicker({
     value = new Color(value);
     return (
         <Row className={styles['control-row']}>
-            <Col xs={6} sm={6} md={6} lg={6} className={styles['control-label']}>
+            <Col xs={7} sm={7} md={7} lg={7} className={styles['control-label']}>
                 <span>{name}</span>
             </Col>
-            <Col xs={6} sm={6} md={6} lg={6} className={styles['control']}>
+            <Col xs={5} sm={5} md={5} lg={5} className={styles['control']}>
                 <RcColorPicker key={`${id}-colors`}
                                animation='slide-up'
                                color={value.hexString()}

@@ -17,7 +17,7 @@ const serverWebpackConfig = makeWebpackConfig({
     }
 });
 
-// serverWebpackConfig.devtool = isDev ? 'cheap-module-eval-source-map' : 'cheap-module-source-map';
+serverWebpackConfig.devtool = isDev ? 'cheap-module-eval-source-map' : 'source-map';
 serverWebpackConfig.devServer = {
     outputPath: path.join(process.cwd(), './www')
 };

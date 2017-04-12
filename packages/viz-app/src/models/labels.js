@@ -64,7 +64,7 @@ export function labels(view) {
                 }, {
                     id: 'show-points-of-interest',
                     type: 'bool',
-                    name: 'Points of Interest',
+                    name: 'Show Points of Interest',
                     value: $ref(`${view}.labels.poiEnabled`)
                 }]
             }

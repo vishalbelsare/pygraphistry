@@ -24,7 +24,7 @@ export function toolbar(path, base) {
         }, {
             returns: '*',
             get: getValues,
-            route: `${base}['toolbars']['beta', 'iFrame', 'static', 'stable'][{integers}].name`
+            route: `${base}['toolbars']['beta', 'iFrame', 'static', 'stable'][{integers}]['id', 'name']`
         }, {
             returns: '*',
             get: getValues,

@@ -41,23 +41,45 @@ export function scene(view, sceneID = 'default') {
                 type: 'settings'
             }],
             settings: [{
-                id: 'canvas',
-                name: 'Canvas',
-                length: 2, ...[{
+                id: 'scene',
+                length: 8,
+                ...[
+                    $ref(`${view}.scene.options['background-color']`),
+                    $ref(`${view}.scene.options['point-colors']`),
+                    $ref(`${view}.scene.options['show-arrows']`),
+                    $ref(`${view}.scene.options['prune-orphans']`),
+                    $ref(`${view}.scene.options['point-size']`),
+                    $ref(`${view}.scene.options['edge-size']`),
+                    $ref(`${view}.scene.options['point-opacity']`),
+                    $ref(`${view}.scene.options['edge-opacity']`),
+                ]
+            }],
+            options: {
+                'point-colors': {
                     id: 'point-colors',
                     type: 'color',
-                    name: 'Point Colors',
+                    name: 'Override Point Colors',
                     value: $ref(`${view}.scene.renderer.foreground.color`),
-                }, {
+                },
+                'background-color': {
                     id: 'background-color',
                     type: 'color',
                     name: 'Background Color',
                     value: $ref(`${view}.scene.renderer.background.color`),
-                }]
-            }, {
-                id: 'appearance',
-                name: 'Appearance',
-                length: 6, ...[{
+                },
+                'show-arrows': {
+                    id: 'show-arrows',
+                    type: 'bool',
+                    name: 'Show Arrows',
+                    value: $ref(`${view}.scene.renderer.showArrows`),
+                },
+                'prune-orphans': {
+                    id: 'prune-orphans',
+                    type: 'bool',
+                    name: 'Prune Isolated Nodes',
+                    value: $ref(`${view}.pruneOrphans`),
+                },
+                'point-size': {
                     id: 'point-size',
                     type: 'discrete',
                     name: 'Point Size',
@@ -66,7 +88,8 @@ export function scene(view, sceneID = 'default') {
                         step: 1, scale: 'log'
                     },
                     value: $ref(`${view}.scene.renderer.points.scaling`),
-                }, {
+                },
+                'edge-size': {
                     id: 'edge-size',
                     type: 'discrete',
                     name: 'Edge Size',
@@ -75,7 +98,8 @@ export function scene(view, sceneID = 'default') {
                         step: 1, scale: 'log'
                     },
                     value: $ref(`${view}.scene.renderer.edges.scaling`),
-                }, {
+                },
+                'point-opacity': {
                     id: 'point-opacity',
                     type: 'discrete',
                     name: 'Point Opacity',
@@ -84,7 +108,8 @@ export function scene(view, sceneID = 'default') {
                         step: 1, scale: 'percent'
                     },
                     value: $ref(`${view}.scene.renderer.points.opacity`),
-                }, {
+                },
+                'edge-opacity': {
                     id: 'edge-opacity',
                     type: 'discrete',
                     name: 'Edge Opacity',
@@ -93,18 +118,8 @@ export function scene(view, sceneID = 'default') {
                         step: 1, scale: 'percent'
                     },
                     value: $ref(`${view}.scene.renderer.edges.opacity`),
-                }, {
-                    id: 'show-arrows',
-                    type: 'bool',
-                    name: 'Show Arrows',
-                    value: $ref(`${view}.scene.renderer.showArrows`),
-                }, {
-                    id: 'prune-orphans',
-                    type: 'bool',
-                    name: 'Prune Isolated Nodes',
-                    value: $ref(`${view}.pruneOrphans`),
-                }]
-            }]
+                }
+            }
         }
     };
 }

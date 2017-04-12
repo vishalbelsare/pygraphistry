@@ -10,6 +10,7 @@ export function toolbar(workbookId, viewId) {
                 visible: true,
                 length: 6,
                 0: {
+                    id: 'camera',
                     name: 'Camera',
                     items: {
                         length: 3,
@@ -19,14 +20,7 @@ export function toolbar(workbookId, viewId) {
                     }
                 },
                 1: {
-                    name: 'Workbook',
-                    items: {
-                        length: 2,
-                        0: $ref(`${workbook}.controls[0]`),
-                        1: $ref(`${workbook}.controls[1]`),
-                    }
-                },
-                2: {
+                    id: 'graph',
                     name: 'Graph',
                     items: {
                         length: 4,
@@ -34,57 +28,19 @@ export function toolbar(workbookId, viewId) {
                         1: $ref(`${view}.scene.controls[1]`),
                         2: $ref(`${view}.labels.controls[0]`),
                         3: $ref(`${view}.layout.controls[0]`)
+                    }
+                },
+                2: {
+                    id: 'interact',
+                    name: 'Interact',
+                    items: {
+                        length: 2,
+                        0: $ref(`${view}.selection.controls[0]`),
+                        1: $ref(`${view}.selection.controls[1]`)
                     }
                 },
                 3: {
-                    name: 'Interact',
-                    items: {
-                        length: 2,
-                        0: $ref(`${view}.selection.controls[0]`),
-                        1: $ref(`${view}.selection.controls[1]`)
-                    }
-                },
-                4: {
-                    name: 'Inspect',
-                    items: {
-                        length: 4,
-                        0: $ref(`${view}.histograms.controls[0]`),
-                        1: $ref(`${view}.inspector.controls[0]`),
-                        2: $ref(`${view}.filters.controls[0]`),
-                        3: $ref(`${view}.exclusions.controls[0]`)
-                    }
-                },
-                5: {
-                    name: 'Persist',
-                    items: {
-                        length: 1,
-                        0: $ref(`${workbook}.controls[3]`),
-                    }
-                }
-            },
-            horizontal: {
-                id: 'horizontal',
-                visible: true,
-                length: 4,
-                0: {
-                    name: 'Graph',
-                    items: {
-                        length: 4,
-                        0: $ref(`${view}.scene.controls[0]`),
-                        1: $ref(`${view}.scene.controls[1]`),
-                        2: $ref(`${view}.labels.controls[0]`),
-                        3: $ref(`${view}.layout.controls[0]`)
-                    }
-                },
-                1: {
-                    name: 'Interact',
-                    items: {
-                        length: 2,
-                        0: $ref(`${view}.selection.controls[0]`),
-                        1: $ref(`${view}.selection.controls[1]`)
-                    }
-                },
-                2: {
+                    id: 'query',
                     name: 'Query',
                     items: {
                         length: 2,
@@ -92,15 +48,26 @@ export function toolbar(workbookId, viewId) {
                         1: $ref(`${view}.exclusions.controls[0]`)
                     }
                 },
-                3: {
+                4: {
+                    id: 'inspect',
                     name: 'Inspect',
                     items: {
                         length: 2,
                         0: $ref(`${view}.histograms.controls[0]`),
                         1: $ref(`${view}.inspector.controls[0]`)
                     }
+                },
+                5: {
+                    id: 'workbook',
+                    name: 'Workbook',
+                    items: {
+                        length: 3,
+                        0: $ref(`${workbook}.controls[0]`),
+                        1: $ref(`${workbook}.controls[1]`),
+                        2: $ref(`${workbook}.controls[3]`),
+                    }
                 }
-            },
+            }
         },
     };
 }

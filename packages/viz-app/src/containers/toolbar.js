@@ -13,7 +13,7 @@ let Toolbar = ({ children, toolbar = [], selectToolbarItem, ...props } = {}) => 
         {toolbar.map((items, index) => (
             <ToolbarItems data={items}
                           popover={children}
-                          key={`toolbar-items-${index}`}
+                          key={`toolbar-items-${items.id}`}
                           selectToolbarItem={selectToolbarItem}/>
         ))}
         </ButtonList>
@@ -33,11 +33,11 @@ Toolbar = container({
     })
 })(Toolbar);
 
-let ToolbarItems = ({ name, popover, items = [], selectToolbarItem, ...props } = {}) => {
+let ToolbarItems = ({ id, name, popover, items = [], selectToolbarItem, ...props } = {}) => {
     return (
-        <ButtonListItems name={name} {...props}>
+        <ButtonListItems id={id} name={name} {...props}>
         {items.map((item, index) => (
-            <ToolbarItem data={item} popover={popover}
+            <ToolbarItem data={item} popover={popover} groupId={id}
                          key={`${index}: toolbar-item-${item.id}`}
                          selectToolbarItem={selectToolbarItem}/>
         ))}
@@ -48,7 +48,7 @@ let ToolbarItems = ({ name, popover, items = [], selectToolbarItem, ...props } =
 ToolbarItems = container({
     renderLoading: false,
     fragment: ({ items } = {}) => `{
-        name, items: ${
+        id, name, items: ${
             ToolbarItem.fragments(items)
         }
     }`
