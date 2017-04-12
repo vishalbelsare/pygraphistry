@@ -33,6 +33,7 @@ const sceneUpdates = cameraChanges
     .map(() => Scheduler.animationFrame.now());
 
 const keysThatCanCauseRenders = [
+    'color', 'background',
     'labels', 'highlight', 'selection',
     'simulating', 'enabled', 'poiEnabled',
     'simulationWidth', 'simulationHeight',

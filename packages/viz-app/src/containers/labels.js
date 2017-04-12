@@ -66,10 +66,12 @@ let Labels = ({ simulating,
     }
 
     return (
-        <LabelsComponent labels={labels}
+        <LabelsComponent color={color}
+                         labels={labels}
                          enabled={enabled}
                          simulating={simulating}
                          poiEnabled={poiEnabled}
+                         background={background}
                          highlight={toProps(highlight)}
                          selection={toProps(selection)}
                          highlightEnabled={highlightEnabled}
