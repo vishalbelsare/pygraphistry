@@ -103,7 +103,6 @@ export class Label extends React.Component {
             <div style={props.style} className={classNames({
                      [styles['label']]: true,
                      [styles['on']]: showFull,
-                     [styles['noData']]: noData,
                      [styles['clicked']]: pinned,
                  })}>
                 <PointIcon type={type}
