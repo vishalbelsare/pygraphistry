@@ -265,7 +265,7 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         vg[vector.dest].push(vector);
     });
 
-    return vg;
+    return { vg, sortedLabels, unsortedEdges: edges };
 }
 
 function decodeVGraph(buffer) {

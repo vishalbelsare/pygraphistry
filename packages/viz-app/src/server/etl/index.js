@@ -78,9 +78,18 @@ function etlRequestHandler(req, res, next) {
         // Add 'viztoken' to returned results
         .map((info) => ({ ...info, viztoken: apiKey.makeVizToken(params.key, info.name) }))
         .do((info) => {
-            return res.send({ success: true, dataset: info.name, viztoken: info.viztoken });
+            const result = {
+                success: true,
+                dataset: info.name,
+                viztoken: info.viztoken
+            };
+            if (params.echo) {
+                sortedLabels && (result.labels = info.sortedLabels);
+                unsortedEdges && (result.edges = info.unsortedEdges);
+            }
+            return res.status(200).send(result);
         })
-        .concatMap((info) => {
+        .concatMap(({ sortedLabels, unsortedEdges, ...info }) => {
             return notifySlackAndSplunk({...info, ...params}).ignoreElements();
         });
 
@@ -103,7 +112,7 @@ function getETLHandler(params) {
 
 function getETLParams(query) {
     const {
-        key,
+        key, echo,
         apiversion = '0',
         usertag = 'unknown',
         agent = 'unknown',
@@ -112,7 +121,12 @@ function getETLParams(query) {
 
     const apiVersionParsed =  parseInt(apiversion) || 0;
 
-    return { key, apiVersion: apiVersionParsed, usertag, agent, agentVersion: agentversion };
+    return {
+        key, agent, usertag,
+        echo: echo !== undefined,
+        agentVersion: agentversion,
+        apiVersion: apiVersionParsed,
+    };
 }
 
 
