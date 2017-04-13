@@ -38,19 +38,31 @@ export function setupRotate(target, camera) {
 
 export function setupScroll(target, canvas, camera) {
 
-    function isLabelElement(node) {
+    function hasClass(node, className) {
+        return node.nodeType === 1 && node.classList && node.classList.contains(className);
+    }
+
+    function findNode(_node, className) {
+        let node = _node;
         do {
-            if (node.nodeType === 1 && node.classList &&
-                node.classList.contains(labelStyles['label-contents'])) {
-                return true;
+            if (hasClass(node, className)) {
+                return node;
             }
         } while ((node = node['parentNode']) && node.nodeType !== 9);
-        return false;
+        return null;
+    }
+
+    function isSelectedLabelContents(_node) {
+        let node = _node;
+        return (node = findNode(node, labelStyles['label-contents'])) &&
+               (node = findNode(node, labelStyles['label']))
+               ? hasClass(node, labelStyles['clicked'])
+               : false;
     }
 
     return Observable
         .fromEvent(target, 'wheel')
-        .filter(({ target }) => !isLabelElement(target))
+        .filter(({ target }) => !isSelectedLabelContents(target))
         .do((wheelEvent) => wheelEvent.preventDefault())
         .map((event) => {
             // Calculate the zoom factor as the log of the WheelEvent's deltaY
