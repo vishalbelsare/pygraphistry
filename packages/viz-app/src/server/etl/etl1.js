@@ -19,7 +19,7 @@ var logger   = Log.createLogger('etlworker:etl1');
 var tmpCache = new Cache(config.LOCAL_DATASET_CACHE_DIR, config.LOCAL_DATASET_CACHE);
 
 function validateUpload(msg) {
-    const { name, graph, bindings } = msg;
+    const { name, graph, labels, bindings } = msg;
     if (Object.keys(msg).length === 0) {
         return Observable.throw(new Error('JSON file must have fields name, graph, and bindings: may be due to a missing or invalid JSON file'));
     } else if(!name) {
@@ -29,11 +29,13 @@ function validateUpload(msg) {
     } else if (!bindings) {
         return Observable.throw(new Error('Bindings attribute is not defined'));
     } else {
-        const { sourceField, destinationField } = bindings;
+        const { idField, sourceField, destinationField } = bindings;
         if (!sourceField) {
             return Observable.throw(new Error('sourceField binding is not defined'));
         } else if(!destinationField) {
             return Observable.throw(new Error('destinationField binding is not defined'));
+        } else if (labels && labels.length > 0 && !idField) {
+            return Observable.throw(new Error('idField binding is not defined'));
         }
     }
     return Observable.of(msg);
@@ -45,7 +47,7 @@ function etl(msg) {
     var name = decodeURIComponent(msg.name);
     logger.debug('ETL for', msg.name);
 
-    var vg = vgraph.fromEdgeList(
+    var { vg, sortedLabels, unsortedEdges } = vgraph.fromEdgeList(
         msg.graph,
         msg.labels,
         msg.bindings.sourceField,
@@ -61,7 +63,7 @@ function etl(msg) {
     logger.info('VGraph created with', vg.vertexCount, 'nodes and', vg.edgeCount, 'edges');
 
     return publish(vg, name).then(function () {
-        return {name: name, nodeCount: vg.vertexCount, edgeCount: vg.edgeCount};
+        return {name, sortedLabels, unsortedEdges, nodeCount: vg.vertexCount, edgeCount: vg.edgeCount};
     });
 }
 
