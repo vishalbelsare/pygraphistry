@@ -205,24 +205,24 @@ function handleVboUpdates (socket, uri, renderState, sceneModel, renderer) {
                     if (lastNumEdges !== numEdges) {
                         values.push({
                             value: lastNumEdges = numEdges,
-                            path: ['scene', 'renderer', 'edges', 'elements']
+                            path: ['renderer', 'edges', 'elements']
                         });
                     }
                     if (lastNumPoints !== numPoints) {
                         values.push({
                             value: lastNumPoints = numPoints,
-                            path: ['scene', 'renderer', 'points', 'elements']
+                            path: ['renderer', 'points', 'elements']
                         });
                     }
                     return Observable.merge(
-                        sceneModel._root.topLevelModel.set({ json: {
+                        !values.length ?
+                            Observable.empty() :
+                            sceneModel.withoutDataSource().set(...values),
+                        sceneModel._root.topLevelModel.withoutDataSource().set({ json: {
                             workbooks: { open: { views: { current: { session: {
                                 message: null, status: 'default', progress: 100
                             }}}}}
-                        }}),
-                        !values.length ?
-                            Observable.empty() :
-                            sceneModel.withoutDataSource().set(...values)
+                        }})
                     );
                 })
                 .subscribe({
