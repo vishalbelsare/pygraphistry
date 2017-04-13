@@ -87,7 +87,7 @@ function etlRequestHandler(req, res, next) {
                 sortedLabels && (result.labels = info.sortedLabels);
                 unsortedEdges && (result.edges = info.unsortedEdges);
             }
-            return res.status(200).send(result);
+            return res.send(result);
         })
         .concatMap(({ sortedLabels, unsortedEdges, ...info }) => {
             return notifySlackAndSplunk({...info, ...params}).ignoreElements();
