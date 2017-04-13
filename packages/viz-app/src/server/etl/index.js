@@ -77,21 +77,17 @@ function etlRequestHandler(req, res, next) {
         .single()
         // Add 'viztoken' to returned results
         .map((info) => ({ ...info, viztoken: apiKey.makeVizToken(params.key, info.name) }))
-        .do((info) => {
-            const result = {
-                success: true,
-                dataset: info.name,
-                viztoken: info.viztoken
-            };
-            if (params.echo) {
-                sortedLabels && (result.labels = info.sortedLabels);
-                unsortedEdges && (result.edges = info.unsortedEdges);
-            }
-            return res.send(result);
-        })
-        .concatMap(({ sortedLabels, unsortedEdges, ...info }) => {
-            return notifySlackAndSplunk({...info, ...params}).ignoreElements();
-        });
+        .do((info) => res.send({
+            success: true,
+            dataset: info.name,
+            viztoken: info.viztoken,
+            ...(!params.echo ? {} : {
+                edges: info.unsortedEdges,
+                labels: info.sortedLabels
+            })
+        }))
+        .mergeMap((info) => notifySlackAndSplunk({...info, ...params}))
+        .ignoreElements()
 
     return requestPipeline;
 }
