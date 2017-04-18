@@ -4,15 +4,6 @@ import { categoryToColorInt, intToHex } from '../services/support/palette.js';
 import logger from '../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
-//Do not make these nodes in '*' mode
-const SKIP = {
-
-    'AdmissionEndDate': true,
-    'AdmissionStartDate': true,
-    'LabDateTime': true,
-    'LabValue': true,
-    'LabUnits': true
-};
 
 function summarizeOutput ({ results: { labels }}) {
 
@@ -109,7 +100,7 @@ function shapeHyperGraph({ app, pivot } ) {
         const fields =
             isStar ?
             _.filter(Object.keys(row), function (field) {
-                return !SKIP[field] && (field.toLowerCase() !== 'eventid');
+                return (field.toLowerCase() !== 'eventid');
             })
             : _.filter(connections, function (field) { return row[field]; });
         const attribs = (attributes || []).concat(fields);
