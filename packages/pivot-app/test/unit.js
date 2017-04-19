@@ -33,4 +33,10 @@ describe('Support', function() {
     require('./services/support/flattenJson');
     require('./services/support/template');
     require('./services/support/jq');
+    require('./services/support/mergeByKey');
+});
+
+describe('Shaping', function() {
+    require('./services/shape/df');
+    require('./services/shape/graph');
 });
