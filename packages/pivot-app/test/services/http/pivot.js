@@ -79,8 +79,8 @@ describe('httpPivot', function () {
 			.subscribe(({pivot, ...rest}) => {
 					assert.deepEqual(pivot.events, [{x: 1, EventID:'x:0'}, {x: 3, EventID:'x:1'}]);
 					assert.deepEqual(pivot.results.graph, 
-						[{x:1, destination: 1, 'source': 'x:0', edgeType: 'EventID->x', _pivotId: 'x'},
-						 {x:3, destination: 3, 'source': 'x:1', edgeType: 'EventID->x', _pivotId: 'x'}]);
+						[{x:1, destination: 1, 'source': 'x:0', edgeType: 'EventID->x'},
+						 {x:3, destination: 3, 'source': 'x:1', edgeType: 'EventID->x'}]);
 					assert.deepEqual(pivot.results.labels,
 						[{ x: 1, node: 'x:0', type: 'EventID' },
 					     { node: 1, type: 'x' },
@@ -103,8 +103,8 @@ describe('httpPivot', function () {
 			.subscribe(({pivot, ...rest}) => {
 					assert.deepEqual(pivot.events, [{x: "5", EventID:'x:0'}, {x: "10", EventID:'x:1'}]);
 					assert.deepEqual(pivot.results.graph, 
-						[{x: "5", destination: "5", 'source': 'x:0', edgeType: 'EventID->x', _pivotId: 'x'},
-						 {x: "10", destination: "10", 'source': 'x:1', edgeType: 'EventID->x', _pivotId: 'x'}]);
+						[{x: "5", destination: "5", 'source': 'x:0', edgeType: 'EventID->x'},
+						 {x: "10", destination: "10", 'source': 'x:1', edgeType: 'EventID->x'}]);
 					assert.deepEqual(pivot.results.labels,
 						[{ x: "5", node: 'x:0', type: 'EventID' },
 					     { node: "5", type: 'x' },
@@ -128,8 +128,8 @@ describe('httpPivot', function () {
 			.subscribe(({pivot, ...rest}) => {
 					assert.deepEqual(pivot.events, [{x: "5", EventID:'aa'}, {x: "10", EventID:'bb'}]);
 					assert.deepEqual(pivot.results.graph, 
-						[{x: "5", destination: "5", 'source': 'aa', edgeType: 'EventID->x', _pivotId: 'x'},
-						 {x: "10", destination: "10", 'source': 'bb', edgeType: 'EventID->x', _pivotId: 'x'}]);
+						[{x: "5", destination: "5", 'source': 'aa', edgeType: 'EventID->x'},
+						 {x: "10", destination: "10", 'source': 'bb', edgeType: 'EventID->x'}]);
 					assert.deepEqual(pivot.results.labels,
 						[{ x: "5", node: 'aa', type: 'EventID' },
 					     { node: "5", type: 'x' },
@@ -177,8 +177,8 @@ describe('httpPivot', function () {
 			.subscribe(({pivot, ...rest}) => {
 					assert.deepEqual(pivot.events, [{x: "a", EventID:'x:0'}, {x: "b", EventID:'x:1'}]);
 					assert.deepEqual(pivot.results.graph, 
-						[{x: "a", destination: "a", 'source': 'x:0', edgeType: 'EventID->x', _pivotId: 'x'},
-						 {x: "b", destination: "b", 'source': 'x:1', edgeType: 'EventID->x', _pivotId: 'x'}]);
+						[{x: "a", destination: "a", 'source': 'x:0', edgeType: 'EventID->x'},
+						 {x: "b", destination: "b", 'source': 'x:1', edgeType: 'EventID->x'}]);
 					assert.deepEqual(pivot.results.labels,
 						[{ x: "a", node: 'x:0', type: 'EventID' },
 					     { node: "a", type: 'x' },
