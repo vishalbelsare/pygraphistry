@@ -11,7 +11,12 @@ function NavButton({activeScreen, switchScreen, tip, screen, faIcon}) {
                     overlay={
                         <Tooltip id={`sidebar-${screen}`}>{tip}</Tooltip>
                     }>
-                <a onClick={() => switchScreen(screen)}>
+                <a href={`/pivot/${screen}`}
+                   onClick={(e) => {
+                       e.preventDefault();
+                       switchScreen(screen);
+                   }}
+                >
                     <i className={`fa ${faIcon}`}></i>
                 </a>
             </OverlayTrigger>
@@ -28,7 +33,13 @@ export default function Sidebar(props) {
             })}
              data-color="blue" id="left-nav">
 
-            <div onClick={() => switchScreen('home')} className={styles.logo}>
+            <div href={`/pivot/home`}
+                onClick={(e) => {
+                    e.preventDefault();
+                    switchScreen('home');
+                }}
+                className={styles.logo}
+            >
                 <div>
                     <img src="/pivot/img/logo.png"/>
                 </div>
