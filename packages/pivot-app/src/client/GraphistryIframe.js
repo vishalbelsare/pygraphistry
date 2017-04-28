@@ -16,8 +16,10 @@ export class GraphistryIframe extends React.Component {
         if (maybeIframe) {
             //mounted
             const iframe = maybeIframe;
+            const { layoutTweaks } = this.props;
             GraphistryJS(iframe)
                 .do((g) => g.encodeIcons('point', 'pointIcon'))
+                .do((g) => layoutTweaks.forEach(([fn,...params]) => g[fn](...params)) )
                 .subscribe(
                     () => undefined,
                     (e) => log.error(e));
