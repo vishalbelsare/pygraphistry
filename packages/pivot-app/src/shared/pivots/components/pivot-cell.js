@@ -2,6 +2,7 @@ import _ from 'underscore';
 import Select from 'react-select';
 import ComboSelector from './combo-selector';
 import DateRangePickerWrapper from './TimeRangeWidget/TimeRangeWidget.js';
+import DateTimeRangePickerWrapper from './DateTimeRangePicker/DateTimeRangePicker.js';
 import styles from './pivots.less';
 
 
@@ -20,7 +21,7 @@ export default function PivotCell({ paramUI, ...props }) {
     if (!Component) {
         throw new Error('Unknown pivot cell type:' + paramUI.inputType);
     }
-    return <div className={styles['pivot-cell']} 
+    return <div className={styles['pivot-cell']}
         style={'isVisible' in paramUI && !paramUI.isVisible ? {display: 'none'} : {}}>
         <Component paramUI={paramUI} {...props}/>
     </div>
@@ -156,7 +157,7 @@ function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
 function DateRange({ id, paramKey, paramValue, paramUI, handlers }) {
     return (
         <div className={styles['pivot-date-range-param']} key={`pcell-${id}-${paramKey}`}>
-            <DateRangePickerWrapper
+            <DateTimeRangePickerWrapper
                 paramUI={paramUI}
                 paramValue={paramValue}
                 paramKey={paramKey}

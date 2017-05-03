@@ -72,6 +72,7 @@
     "react-sanfona": "0.1.0",
     "react-select": "1.0.0-rc.2",
     "react-tag-input": "4.6.1",
+    "react-time-input": "0.0.14",
     "recompose": "0.22.0",
     "redux": "3.6.0",
     "redux-observable": "0.14.1",
