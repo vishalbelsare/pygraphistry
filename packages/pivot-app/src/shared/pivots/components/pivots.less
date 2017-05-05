@@ -158,6 +158,11 @@
     font-size: 1.00em;
     line-height: 1.1em;
 
+    span {
+        display: block;
+        cursor: pointer;
+    }
+
 	.pivot-expander-open,
 	.pivot-expander-closed {
 		display: none;
@@ -188,6 +193,13 @@
 	}
 
 	.pivot-params { }
+    .pivot-description {
+        padding: 0 10px;
+        textarea {
+            padding: 3px 6px;
+            min-height: 40px;
+        }
+    }
 
 	.pivot-result-summaries {
         width: 100%;

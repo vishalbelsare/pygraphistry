@@ -1,12 +1,13 @@
 import Select from 'react-select';
 import { layouts } from '../../services/layouts';
 import styles from './investigation-details.less';
+import { DescriptionFormControl } from 'pivot-shared/components';
 import {
     Col, Panel, ControlLabel,
     Form, FormGroup, FormControl
 } from 'react-bootstrap';
 
-export function InvestigationDetails({ layout, saveLayout, description = '' }) {
+export function InvestigationDetails({ layout, saveLayout, $falcor, description = '' }) {
     return (
         <Panel collapsible
                className={styles['investigation-details']}
@@ -21,10 +22,8 @@ export function InvestigationDetails({ layout, saveLayout, description = '' }) {
             <form>
                 <FormGroup controlId='investigation-description'>
                     <ControlLabel>Description</ControlLabel>
-                    <FormControl placeholder=''
-                                 componentClass='textarea'
-                                 defaultValue={description}
-                                 style={{resize: 'vertical'}}/>
+                    <DescriptionFormControl $falcor={$falcor}
+                                            description={description}/>
                 </FormGroup>
                 <Form componentClass='fieldset' horizontal>
                     <FormGroup controlId='investigation-layout'>

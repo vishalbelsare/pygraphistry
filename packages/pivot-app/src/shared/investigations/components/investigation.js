@@ -11,7 +11,7 @@ import {
 
 export default function Investigation({
     id, user, layout, status, description,
-    pivots = [], templates, investigations,
+    $falcor, pivots = [], templates, investigations,
     searchPivot, insertPivot, splicePivot, togglePivots, saveLayout, dismissAlert,
     graphInvestigation, copyInvestigation, selectInvestigation, createInvestigation, saveInvestigation
 }) {
@@ -36,6 +36,7 @@ export default function Investigation({
                 selectInvestigation={selectInvestigation}
                 createInvestigation={createInvestigation}>
                 <InvestigationDetails layout={layout}
+                                      $falcor={$falcor}
                                       saveLayout={saveLayout}
                                       description={description}/>
                 <div>

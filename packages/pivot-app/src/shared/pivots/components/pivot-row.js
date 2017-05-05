@@ -4,22 +4,23 @@ import PivotActions from './pivot-actions';
 import EntitySummaries from './entity-summaries';
 import styles from './pivots.less';
 import { PanelGroup, Panel } from 'react-bootstrap';
+import { DescriptionFormControl } from 'pivot-shared/components';
 
 class PivotPanel extends Panel {
-    constructor(...args) {
-        super(...args)
-        this.state = {
-            open: true
-        };
+    constructor(props, context) {
+        super(props, context)
+        this.state = { open: props.defaultExpanded !== false };
     }
 
     makeHeader(header, expanded) {
         const icon = expanded ? 'fa fa-fw fa-minus' : 'fa fa-fw fa-plus';
         return (
-            <span className={styles['pivot-expander']}>
-                <span style={{padding: '0.25em'}}> { header } </span>
-                <i style={{float: 'right'}} className={`${icon}`} />
-            </span>
+            <p className={styles['pivot-expander']}>
+                <span style={{padding: '0.25em'}}>
+                    { header }
+                    <i style={{float: 'right'}} className={`${icon}`} />
+                </span>
+            </p>
         )
     }
 
@@ -36,10 +37,22 @@ class PivotPanel extends Panel {
     }
 }
 
-function ParameterPanel({id, pivotTemplate, pivotParameters, pivots, handlers, rowIndex}) {
+function DescriptionPanel({ id, $falcor, description, ...props }) {
+    return (
+        <PivotPanel header='Pivot Description' {...props}>
+            <div className={styles['pivot-expander-body']}>
+                <div className={styles['pivot-description']}>
+                    <DescriptionFormControl $falcor={$falcor} description={description}/>
+                </div>
+            </div>
+        </PivotPanel>
+    );
+}
+
+function ParameterPanel({id, pivotTemplate, pivotParameters, pivots, handlers, rowIndex, ...props}) {
     const previousPivots = pivots.slice(0, rowIndex);
     return (
-        <PivotPanel header={'Parameters'} eventKey='1' >
+        <PivotPanel header='Parameters' {...props}>
             <div className={styles['pivot-expander-body']}>
                 <div className={styles['pivot-params']}>
                     {
@@ -68,9 +81,9 @@ function ParameterPanel({id, pivotTemplate, pivotParameters, pivots, handlers, r
     //)
 //}
 
-function ResultSummaryPanel({id, enabled, resultSummary, resultCount}) {
+function ResultSummaryPanel({id, enabled, resultSummary, resultCount, ...props}) {
     return (
-        <PivotPanel header={"Result Summary"} eventKey='3'>
+        <PivotPanel header='Result Summary' {...props}>
             <div className={styles['pivot-expander-body']}>
             {resultCount > 0 ?
                 <div className={`${styles['pivot-result-summaries']} ${styles['result-count-' + (enabled ? 'on' : 'off')]}`}>
@@ -89,8 +102,8 @@ function ResultSummaryPanel({id, enabled, resultSummary, resultCount}) {
 }
 
 export default function PivotRow({
-    id, investigationId, status,
-    enabled, resultCount, resultSummary,
+    id, $falcor, investigationId, status,
+    enabled, description, resultCount, resultSummary,
     pivotParameters, pivotTemplate,
     searchPivot, togglePivots, setPivotAttributes,
     splicePivot, insertPivot, pivots, rowIndex
@@ -104,12 +117,19 @@ export default function PivotRow({
             [styles['pivot-disabled']]: !enabled
         })}>
             <PanelGroup>
+                <DescriptionPanel id={id}
+                                  eventKey='1'
+                                  $falcor={$falcor}
+                                  description={description}
+                                  defaultExpanded={false}/>
                 <ParameterPanel
                     id={id}
+                    eventKey='2'
                     pivotTemplate={pivotTemplate}
                     pivots={pivots}
                     handlers={handlers}
                     rowIndex={rowIndex}
+                    defaultExpanded={true}
                     pivotParameters={pivotParameters}
                 />
                 { /*
@@ -119,10 +139,11 @@ export default function PivotRow({
                 }
                 <ResultSummaryPanel
                     id={id}
+                    eventKey='3'
                     enabled={enabled}
                     resultSummary={resultSummary}
                     resultCount={resultCount}
-                    rowIndex={rowIndex}
+                    defaultExpanded={true}
                 />
             </PanelGroup>
             <div className={styles['pivot-icons']}>
