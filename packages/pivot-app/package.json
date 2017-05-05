@@ -46,6 +46,7 @@
     "colorbrewer": "1.0.0",
     "compression": "1.6.2",
     "convict": "2.0.0",
+    "create-react-class": "~15.5.2",
     "dataframe-js": "1.2.2",
     "express": "4.14.0",
     "falcor-express": "0.1.4",
