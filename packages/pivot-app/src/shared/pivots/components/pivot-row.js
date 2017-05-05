@@ -37,7 +37,7 @@ class PivotPanel extends Panel {
     }
 }
 
-function DescriptionPanel({ id, $falcor, description, ...props }) {
+function DescriptionPanel({ $falcor, description, ...props }) {
     return (
         <PivotPanel header='Pivot Description' {...props}>
             <div className={styles['pivot-expander-body']}>
@@ -117,8 +117,7 @@ export default function PivotRow({
             [styles['pivot-disabled']]: !enabled
         })}>
             <PanelGroup>
-                <DescriptionPanel id={id}
-                                  eventKey='1'
+                <DescriptionPanel eventKey='1'
                                   $falcor={$falcor}
                                   description={description}
                                   defaultExpanded={false}/>

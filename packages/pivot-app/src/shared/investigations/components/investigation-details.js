@@ -4,7 +4,7 @@ import styles from './investigation-details.less';
 import { DescriptionFormControl } from 'pivot-shared/components';
 import {
     Col, Panel, ControlLabel,
-    Form, FormGroup, FormControl
+    Form, FormGroup//, FormControl
 } from 'react-bootstrap';
 
 export function InvestigationDetails({ layout, saveLayout, $falcor, description = '' }) {
