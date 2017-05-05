@@ -1012,7 +1012,7 @@ babel-plugin-transform-strict-mode@^6.18.0, babel-plugin-transform-strict-mode@^
     babel-runtime "^6.22.0"
     babel-types "^6.22.0"
 
-babel-polyfill@^6.13.0, babel-polyfill@^6.16.0:
+babel-polyfill@^6.13.0, babel-polyfill@^6.16.0, babel-polyfill@^6.23.0:
   version "6.23.0"
   resolved "https://registry.yarnpkg.com/babel-polyfill/-/babel-polyfill-6.23.0.tgz#8364ca62df8eafb830499f699177466c3b03499d"
   dependencies:
@@ -2313,14 +2313,14 @@ dashdash@^1.12.0:
   dependencies:
     assert-plus "^1.0.0"
 
-dataframe-js@1.1.2:
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/dataframe-js/-/dataframe-js-1.1.2.tgz#e9f70a9aadc93ea14449f54dbb35b1afdecb5bd1"
+dataframe-js@1.2.2:
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/dataframe-js/-/dataframe-js-1.2.2.tgz#a142da44872b86159e6a592d83879f6724cd0990"
   dependencies:
-    babel-polyfill "^6.13.0"
+    babel-polyfill "^6.23.0"
     d3-dsv "^1.0.3"
     d3-request "^1.0.2"
-    es7-checktypes-decorator "^0.1.3"
+    es7-checktypes-decorator "^0.1.7"
 
 date-now@^0.1.4:
   version "0.1.4"
@@ -2753,7 +2753,7 @@ es6-weak-map@^2.0.1:
     es6-iterator "^2.0.1"
     es6-symbol "^3.1.1"
 
-es7-checktypes-decorator@^0.1.3:
+es7-checktypes-decorator@^0.1.7:
   version "0.1.7"
   resolved "https://registry.yarnpkg.com/es7-checktypes-decorator/-/es7-checktypes-decorator-0.1.7.tgz#208ff138e0ae8331e1be4632ccb2fe54f25da227"
   dependencies:
@@ -6991,7 +6991,13 @@ rx@~2.3.24:
   version "2.3.25"
   resolved "https://registry.yarnpkg.com/rx/-/rx-2.3.25.tgz#2f7c0550532777b41fa692bb790a7886eaff9731"
 
-rxjs@5.3.0, rxjs@~5.3.0:
+rxjs@^5.3.1:
+  version "5.3.1"
+  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.3.1.tgz#9ecc9e722247e4f4490d30a878577a3740fd0cb7"
+  dependencies:
+    symbol-observable "^1.0.1"
+
+rxjs@~5.3.0:
   version "5.3.0"
   resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.3.0.tgz#d88ccbdd46af290cbdb97d5d8055e52453fabe2d"
   dependencies:
