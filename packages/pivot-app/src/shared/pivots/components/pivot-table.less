@@ -1,0 +1,138 @@
+@import '../../vars.less';
+
+.pivot-table {
+
+    margin-top: 10px;
+    color: @pivot-table-fg;
+    background-color: #F6F6F6; //aqua
+
+    .pivot-cell + .pivot-cell {
+        margin-top: 0.5em;
+    }
+
+    :global {
+        .panel-body {
+            padding: 0px !important;
+        }
+
+        .panel-footer {
+            color: #7FA1B4;
+            border-top: none;
+            background-color: #c2d4de;
+            padding: 0px 12px !important;
+            transition: background-color 0.1s ease;
+            height: 15px !important;
+            font-size: 10px;
+        }
+
+        .panel-default {
+            margin-bottom: 15px !important;
+            border: none !important;
+        }
+
+        .panel-heading {
+            background-color: #ffffff !important;
+        }
+
+        .panel-body {
+            border: none !important;
+        }
+
+        .fa-2x {
+            font-size: 1em !important;
+        }
+
+        .rc-switch-inner {
+            display: none !important;
+        }
+
+        .rc-switch {
+            margin-top: -4px;
+            transform: scale(0.7);
+            vertical-align: middle;
+        }
+
+        .navbar-left {
+            margin-left: -15px !important;
+        }
+
+        .panel-heading {
+            font-weight: 600;
+            font-size: 10px;
+            padding-top: 0px;
+            padding-bottom: 0px;
+        }
+
+        // .panel-default {
+        //     border: 1px solid #CCCCCC !important;
+        // }
+
+        .panel-default .panel-default {
+            border: none !important;
+            margin-top: 5px;
+            margin-bottom: 0px !important;
+            padding-bottom: 5px !important;
+        }
+
+        .btn-block {
+            margin-bottom: 15px;
+            //background-image: repeating-linear-gradient(45deg, #ccc, #ccc 10px, #dbdbdb 10px, #dbdbdb 20px); //striped bg image
+            border: 1px dashed #CCCCCC !important;
+            background-color: #F6F6F6 !important;
+            transition: background-color 0.5s ease;
+            height: 40px;
+        }
+
+        .btn-block:hover {
+            background-color: #EAEAEA !important;
+        }
+
+        .panel-body label {
+            font-weight: 300 !important;
+            font-size: 10px;
+            margin-left: 12px;
+        }
+
+        .panel-body b {
+            font-weight: 400 !important;
+            font-size: 10px;
+            margin-left: 17px;
+        }
+
+        .pivot-result-summaries {
+            border: none !important;
+        }
+
+        input, textarea {
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 10px !important;
+        }
+
+        .media-heading {
+            font-size: 14px !important;
+        }
+
+        .panel-body h2 {
+            font-size: 16px !important;
+        }
+
+        .img-circle {
+            width: 60px !important;
+            height: 60px !important;
+        }
+
+        .form-control {
+             font-size: 11px;
+            height: 30px;
+            margin-top: 5px;
+            margin-right: 10px;
+        }
+
+        .panel-body .Select {
+            margin-left: 10px;
+            margin-right: 9px;
+            font-size: 11px;
+        }
+    }
+}

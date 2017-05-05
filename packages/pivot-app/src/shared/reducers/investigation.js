@@ -27,9 +27,10 @@ export const investigation = combineEpics(
 function saveLayout(action$) {
     return action$
         .ofType(SAVE_LAYOUT)
-        .switchMap(({ layoutType, falcor }) =>
-            falcor.set($value('layout', layoutType))
-        )
+        .switchMap(({ layoutType, falcor }) => falcor.set(
+            $value('layout', layoutType),
+            $value(`status`, { msgStyle: 'warning', ok: true })
+        ))
         .ignoreElements();
 }
 
