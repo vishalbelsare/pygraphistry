@@ -1,4 +1,5 @@
 import styles from './pivots.less';
+import pivotTableStyles from './pivot-table.less';
 import classNames from 'classnames';
 import { Panel, Button } from 'react-bootstrap';
 import { PivotRow, PivotRowHeader } from 'pivot-shared/pivots';
@@ -65,7 +66,7 @@ export default function PivotTable({
 }) {
 
     return (
-        <div className={styles['pivot-table']}>
+        <div className={pivotTableStyles['pivot-table']}>
             <div>
             {
                 pivots.map((pivot, index) => (

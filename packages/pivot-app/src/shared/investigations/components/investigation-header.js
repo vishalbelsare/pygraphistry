@@ -1,6 +1,5 @@
-import Select from 'react-select'
+import Select from 'react-select';
 import styles from './investigation-header.less';
-import { layouts } from '../../services/layouts';
 import {
     Grid, Row, Col,
     Button, ButtonGroup,
@@ -55,23 +54,12 @@ export default function InvestigationHeader({
                     </ButtonGroup>
                 </Col>
             </Row>
-            <Row className={styles['investigation-header-row']}>
-                <Col xs={12} sm={12} md={12} lg={12} className={styles['layout-picker']}>
-                    <Select
-                        name="layout-selector"
-                        clearable={false}
-                        value={layout}
-                        options={layouts.filter((lay) => lay.id !== 'insideout').map((lay) => ({value: lay.id, label: lay.friendlyName, className: lay.id}))}
-                        onChange={(lay) => saveLayout({layoutType: lay.value})}
-                    />
-                </Col>
-            </Row>
-            {children && children.length &&
-            <Row className={styles['investigation-header-row']}>
+            {children && children.length && children.map((child, index) => (child &&
+            <Row key={`row-${index}`} className={styles['investigation-header-row']}>
                 <Col xs={12} sm={12} md={12} lg={12}>
-                    {children}
+                    {child}
                 </Col>
-            </Row> || undefined}
+            </Row> || undefined)) || undefined}
         </Grid>
     );
 }

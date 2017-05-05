@@ -1,22 +1,68 @@
 @import '../../vars.less';
 
-.pivots {
+.investigation-pane {
     width: 100%;
-    height: ~"calc(100% - 85px)";
-    overflow: auto;
-    padding-top: 0px;
+    height: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: column;
+
+    :global {
+        .alert {
+            width: 100%;
+            z-index: 100;
+            // font-size: 11px;
+            font-weight: 100;
+            margin-bottom: 10px;
+            strong {
+                font-weight: 400;
+            }
+        }
+        .btn-toolbar {
+            padding: 0px !important;
+            .btn {
+                padding: 5px 10px !important;
+                border-width: 0px !important;
+                border-radius: 0px !important;
+                // border-top: 1px solid #efefef !important;
+            }
+        }
+        .btn {
+            font-size: 9px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            font-weight: 700 !important;
+        }
+        .Select-control {
+            height: 30px;
+            transition: background-color 0.1s ease;
+            .Select-input {
+                height: 30px;
+            }
+        }
+        .Select-control:hover {
+            background-color: #F9F9F9 !important;
+        }
+        .Select-menu-outer {
+            margin-top: 0px;
+        }
+    }
+}
+
+.investigation-header, .investigation-footer {
+    flex-shrink: 0;
+}
+
+.investigation-pivots, .investigation-footer {
+    width: 100%;
     padding-left: 15px;
     padding-right: 15px;
+}
 
-    :global(.alert) {
-	    z-index: 100;
-	    width: 100%;
-		font-size: 11px;
-		font-weight: 100 !important;
-    	strong {
-    		font-weight: 400 !important;
-    	}
-	}
+.investigation-pivots {
+    flex: 1;
+    overflow: auto;
+    padding-top: 0px;
 
 	.layoutButton
 	{
@@ -32,6 +78,12 @@
     border-radius: 0.3em;
     border: 1px solid #CCCCCC;
     transition: background-color 0.3s ease;
+
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+
     p {
         font-size: 5px;
     }

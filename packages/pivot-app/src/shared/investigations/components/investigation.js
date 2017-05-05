@@ -1,7 +1,7 @@
 import styles from './investigation.less';
 import { PivotTable } from 'pivot-shared/pivots';
 import { InvestigationHeader } from 'pivot-shared/investigations';
-
+import { InvestigationDetails } from './investigation-details';
 import {
     Alert,
     Button,
@@ -10,7 +10,7 @@ import {
 } from 'react-bootstrap';
 
 export default function Investigation({
-    id, user, layout, status,
+    id, user, layout, status, description,
     pivots = [], templates, investigations,
     searchPivot, insertPivot, splicePivot, togglePivots, saveLayout, dismissAlert,
     graphInvestigation, copyInvestigation, selectInvestigation, createInvestigation, saveInvestigation
@@ -23,7 +23,7 @@ export default function Investigation({
     }
 
     return (
-        <div style={{height: `100%`}}>
+        <div className={styles['investigation-pane']}>
             <InvestigationHeader
                 key={`investigation-header:${id}`}
                 id={id}
@@ -35,28 +35,33 @@ export default function Investigation({
                 saveInvestigation={saveInvestigation}
                 selectInvestigation={selectInvestigation}
                 createInvestigation={createInvestigation}>
-                <OverlayTrigger placement="bottom" overlay={
-                        <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
-                    }>
-                    <Button bsStyle={bStyle}
-                            className={styles['play-all']}
-                            onClick={() =>
-                                graphInvestigation({
-                                    investigationId: id,
-                                    length: pivots.filter(({ enabled }) => enabled).length
-                                })
-                            }>
-                        Run All
-                    </Button>
-                </OverlayTrigger>
-                { status && !status.ok ?
-                    <Alert bsStyle={status.msgStyle || 'danger'} className={styles.alert} onDismiss={dismissAlert}>
-                        <strong> {status.message} </strong>
-                    </Alert>
-                    : null
-                }
+                <InvestigationDetails layout={layout}
+                                      saveLayout={saveLayout}
+                                      description={description}/>
+                <div>
+                    <OverlayTrigger placement="bottom" overlay={
+                            <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
+                        }>
+                        <Button bsStyle={bStyle}
+                                className={styles['play-all']}
+                                onClick={() =>
+                                    graphInvestigation({
+                                        investigationId: id,
+                                        length: pivots.filter(({ enabled }) => enabled).length
+                                    })
+                                }>
+                            Run All
+                        </Button>
+                    </OverlayTrigger>
+                    { status && !status.ok ?
+                        <Alert bsStyle={status.msgStyle || 'danger'} className={styles.alert} onDismiss={dismissAlert}>
+                            <strong> {status.message} </strong>
+                        </Alert>
+                        : null
+                    }
+                </div>
             </InvestigationHeader>
-            <div className={styles.pivots}>
+            <div className={styles['investigation-pivots']}>
                 {/*<div className={styles.description}><strong>Investigation Description</strong><br></br><br></br>Welcome to the botnet investigation demo, this is a generic investigation description, we need to implement an editable section here.<br></br><br></br></div>
                 <div className={styles.layoutSwitcher}>
                     <strong>Layout Type</strong><br></br><br></br>
@@ -90,6 +95,8 @@ export default function Investigation({
                             togglePivots={togglePivots}
                             saveInvestigation={saveInvestigation}
                             />
+            </div>
+            <div className={styles['investigation-footer']}>
                 <div className={styles.rule}></div>
                 <div className={styles.copyright}><strong>© Graphistry Inc. 2017</strong></div>
                 <div className={styles.copyrightDetail}>Build 1.0<br></br><br></br></div>
