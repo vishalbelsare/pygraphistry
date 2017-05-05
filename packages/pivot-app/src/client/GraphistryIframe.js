@@ -18,9 +18,10 @@ export class GraphistryIframe extends React.Component {
     }
 
     iframeRefHandler (maybeIframe) {
+        this.iFrame = maybeIframe;
         this.loadSubscription.unsubscribe();
         // iFrame is mounted
-        if (this.iFrame = maybeIframe) {
+        if (maybeIframe) {
             this.subscribeClientAPI(this.iFrame);
             this.loadSubscription = Observable
                 .fromEvent(maybeIframe, 'load')

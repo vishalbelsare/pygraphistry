@@ -2,9 +2,8 @@ import Select from 'react-select';
 import { layouts } from '../../services/layouts';
 import styles from './investigation-details.less';
 import {
-    Grid, Row, Col,
-    Form, Panel, Button, ButtonGroup,
-    FormGroup, FormControl, ControlLabel
+    Col, Panel, ControlLabel,
+    Form, FormGroup, FormControl
 } from 'react-bootstrap';
 
 export function InvestigationDetails({ layout, saveLayout, description = '' }) {

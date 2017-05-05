@@ -7,8 +7,8 @@ import {
 } from 'react-bootstrap';
 
 export default function InvestigationHeader({
-    id, user, layout, children, investigations = [], saveInvestigation,
-    createInvestigation, copyInvestigation, selectInvestigation, saveLayout
+    id, user, children, investigations = [], saveInvestigation,
+    createInvestigation, copyInvestigation, selectInvestigation
 }) {
     return (
         <Grid fluid className={styles['investigation-header']}>
