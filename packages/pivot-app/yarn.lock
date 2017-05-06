@@ -44,9 +44,9 @@
     babel-plugin-transform-runtime "~6.23.0"
     pegjs "0.10.0"
 
-"@graphistry/falcor-react-redux@^2.9.1":
-  version "2.9.1"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-react-redux/-/falcor-react-redux-2.9.1.tgz#96a5114858cfe1d39cd967b1804a6c60604fdfc3"
+"@graphistry/falcor-react-redux@^2.9.2":
+  version "2.9.2"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-react-redux/-/falcor-react-redux-2.9.2.tgz#e3f9f9af9f9fd2e544e55099cd158d4dcf2bd840"
   dependencies:
     "@graphistry/falcor" "^2.9.1"
     "@graphistry/falcor-json-graph" "^2.8.0"

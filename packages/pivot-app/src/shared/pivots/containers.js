@@ -26,8 +26,9 @@ export const pivotContainer = container({
             }
         }`;
     },
-    mapFragment: (pivot = {}) => {
+    mapFragment: (pivot = {}, props, $falcor) => {
         return {
+            $falcor,
             id: pivot.id,
             status: pivot.status,
             enabled: pivot.enabled,
