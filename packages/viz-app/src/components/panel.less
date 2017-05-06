@@ -2,6 +2,16 @@
 
 .panel-left {
     z-index: @menus-z;
+    &:global(.popover.right>.arrow) {
+        border-right-color: #fff;
+    }
+    &:global(.popover.bottom>.arrow) {
+        top: -10px;
+        border-bottom-color: #fff;
+        &:after {
+            border-bottom-color: #f7f7f7;
+        }
+    }
     :global(.popover-content) {
         padding-left: 0;
         padding-right: 0;

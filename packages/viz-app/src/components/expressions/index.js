@@ -53,7 +53,7 @@ export function ExpressionsList({
     return (
         <Popover title={name}
                  id={`${id}-popover`}
-                 style={{ ...style, padding: 0, width: `400px`, minWidth: `400px` }}
+                 style={{ ...style, width: `400px`, minWidth: `400px` }}
                  {...props}>
             <Grid fluid style={{ ...style, overflowY: 'auto', maxHeight: 300, padding: 0 }}>
                 {children}
