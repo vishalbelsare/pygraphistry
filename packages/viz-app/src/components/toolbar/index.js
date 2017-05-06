@@ -10,14 +10,14 @@ import {
     ListGroup, ListGroupItem
 } from 'react-bootstrap';
 
-export function ButtonList({ children, visible, menu = true, ...props }) {
+export function ButtonList({ children, visible, menu = true }) {
 
     if (!visible || !menu) {
         return null;
     }
 
     return (
-        <ListGroup className={styles['button-list']} {...props}>
+        <ListGroup className={styles['button-list']}>
         {children.map((child) => [
             <ListGroupItem key={child.key} className={classNames({
                 [styles[child.key]]: true,
@@ -31,13 +31,13 @@ export function ButtonList({ children, visible, menu = true, ...props }) {
     );
 }
 
-export function ButtonListItems({ id, name, children, popover, ...props }) {
+export function ButtonListItems({ id, name, children }) {
     return (
         <ButtonToolbar data-group-name={name}
                        className={classNames({
                            [styles[id]]: true,
                            [styles['button-list-items']]: true
-                       })} {...props}>
+                       })}>
             <ButtonGroup vertical={id === 'camera'}>
                 {children}
             </ButtonGroup>
@@ -65,7 +65,6 @@ export function ButtonListItem({ onItemSelected, popover, groupId, ...props }) {
                             overlay={ButtonListItemTooltip(name)}>
                 <Button id={id}
                         active={selected}
-                        href='javascript:void(0)'
                         onClick={(e) => e.preventDefault() || onItemSelected(props)}
                         className={classNames({
                              [styles[id]]: true,
@@ -82,7 +81,6 @@ export function ButtonListItem({ onItemSelected, popover, groupId, ...props }) {
         buttonWithOverlay = (
             <Button id={id}
                     active={selected}
-                    href='javascript:void(0)'
                     onClick={(e) => e.preventDefault() || onItemSelected(props)}
                     className={classNames({
                          [styles[id]]: true,
@@ -94,6 +92,7 @@ export function ButtonListItem({ onItemSelected, popover, groupId, ...props }) {
                 <span ref={(ref) => overlayRef = ref}/>
                 <Overlay show={selected}
                          rootClose={true}
+                         containerPadding={10}
                          shouldUpdatePosition={true}
                          animation={true} placement={placement}
                          onHide={() => onItemSelected(props)}
