@@ -1,3 +1,4 @@
+import { VError } from 'verror'
 import { simpleflake } from 'simpleflakes';
 import _ from 'underscore';
 import { categoryToColorInt, intToHex } from '../services/support/palette.js';
@@ -5,7 +6,7 @@ import logger from '../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
 
-function summarizeOutput ({ results: { labels }}) {
+function summarizeOutput ({ labels }) {
 
     //{ typeName -> int }
     const entityTypes = {};
@@ -40,17 +41,18 @@ function summarizeOutput ({ results: { labels }}) {
     return entitySummary;
 }
 
+
 function encodeGraph({ app, pivot }) {
 
     const { encodings } = pivot.template;
-    const { labels, graph: edges } = pivot.results;
+    const { nodes, edges } = pivot.results;
 
+    
+    //TODO make node, edge encoding calls functional
     if (encodings && encodings.point) {
-        //nodeLabels = encodings.point.encode(nodeLabels);
-        labels.map(
+        nodes.map(
             (node) => (
                 Object.keys(encodings.point).map(
-                    // TODO make encodings functional
                     (key) => { // eslint-disable-line array-callback-return
                         encodings.point[key](node);
                     }
@@ -63,22 +65,26 @@ function encodeGraph({ app, pivot }) {
         edges.map(
             (edge) => (
                 Object.keys(encodings.edge).map(
-                    // TODO make encodings functional
                     (key) => { // eslint-disable-line array-callback-return
                         encodings.edge[key](edge);
                     }
                 )
             )
         );
-    }
+    }    
 
-    pivot.results = {
-        graph: edges,
-        labels: labels
-    };
-    pivot.resultSummary = summarizeOutput(pivot);
+    const out = ({ 
+        app, 
+        pivot: {
+            ...pivot,
+            results: {
+                graph: edges,
+                labels: nodes
+            },
+            resultSummary: summarizeOutput({labels: nodes})
+         }});
 
-    return ({ app, pivot });
+    return out;
 }
 
 function extractAllNodes(connections) {
@@ -87,8 +93,14 @@ function extractAllNodes(connections) {
             || (connections.indexOf('*') !== -1)
 }
 
+// Convert events into a hypergraph
+//   -- hypernodes: generate EventID if none available
+//   -- if generic nodes/edges, merge in
 function shapeHyperGraph({ app, pivot } ) {
-    const { events, attributes, connections } = pivot;
+    const { 
+        events = [], 
+        graph: { nodes: pivotNodes = [], edges: pivotEdges = [] } = {}, 
+        attributes, connections } = pivot;
     const isStar = extractAllNodes(connections);
 
     const edges = [];
@@ -130,12 +142,24 @@ function shapeHyperGraph({ app, pivot } ) {
 
     }
 
-    pivot.results = {
-        graph: edges,
-        labels: nodeLabels,
-    };
+    const combinedNodes = nodeLabels.concat(pivotNodes)
+        .filter(({type}) => 
+                isStar 
+                || (connections.indexOf(type) > -1));
 
-    return ({ app, pivot });
+    //TODO filter by global lookup of nodes
+    //  (for case where just edges here, and enriched nodes from earlier)
+    const combinedEdges = edges.concat(pivotEdges);
+
+
+    return ({ app, 
+        pivot: {
+            ...pivot,
+            results: {
+                edges: combinedEdges,
+                nodes: combinedNodes
+            } 
+    }});
 }
 
 export function shapeSplunkResults({ app, pivot }) {
