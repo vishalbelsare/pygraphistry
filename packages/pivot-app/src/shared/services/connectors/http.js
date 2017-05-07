@@ -2,6 +2,7 @@ import { Observable } from 'rxjs';
 import { VError } from 'verror'
 import request from 'request';
 const get = Observable.bindNodeCallback(request.get.bind(request));
+const post = Observable.bindNodeCallback(request.post.bind(request));
 
 import logger from '../../../shared/logger.js';
 import { Connector } from './connector.js';
@@ -15,12 +16,15 @@ class HttpConnector extends Connector {
         this.timeout_s = timeout_s;
     }
 
-    search (url) {
+    search (url, { method = 'GET', body, headers = {} } = { } ) {
 
-        log.info('HttpConnector get', url);
+        log.info(`HttpConnector ${method}`, url, body);
 
-        return get(url)
-            .catch((e) => {
+        const req = 
+            method === 'GET' ? get({url, headers})
+                : post({url, body, headers});
+
+        return req.catch((e) => {
                 return Observable.throw(
                     new VError({
                         name: 'HttpConnectorGet',

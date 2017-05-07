@@ -10,16 +10,37 @@ export const PARAMETERS = [
     },
     {
         name: 'endpoint',
-        inputType: 'text',
+        inputType: 'textarea',
         label: 'URL:',
         placeholder: 'http://'
     },
     {
+        name: 'method',
+        label: 'method',
+        inputType: 'combo',
+        options: [
+            {value: 'GET', label: 'GET'},
+            {value: 'POST', label: 'POST'}
+        ]
+    },
+    {
+        name: 'headers',
+        label: 'headers',
+        inputType: 'multi',
+        options: []
+    },    
+    {
+        name: 'body',
+        inputType: 'textarea',
+        label: 'body',
+        placeholder: ''
+    },    
+    {
         name: 'jq',
-        inputType: 'text',
+        inputType: 'textarea',
         label: 'Postprocess with jq:',
         placeholder: '.'
-    },
+    },    
     {
         name: 'outputType',
         label: 'shape',

@@ -101,6 +101,31 @@ function outputToResult (mode = 'table', pivot, eventCounter, data) {
 }
 
 
+//["k:v", ...] U {value: ["k:v", ...]} => {"k": "v", ...}
+function formatHeaders(headers=[]) {
+    log.debug('headers', headers);
+    const unpacked = headers.value ? headers.value : headers;
+    return unpacked.reduce(
+        (out, str) => {
+
+            const split = str.indexOf(":");
+            if (split === -1) {
+                throw new VError({
+                    name: 'InvalidParameter',
+                    cause: new Error('InvalidParameter'),
+                    info: { header: str }
+                }, `Headers should be of form "key:value", received "${str}"`);
+            }
+
+            const k = str.slice(0, split);
+            const v = str.slice(split + 1);
+            return {...out, [k]: v};
+
+        },
+        {});
+}
+
+
 export class HttpPivot extends PivotTemplate {
     constructor( pivotDescription ) {
         super(pivotDescription);
@@ -146,7 +171,7 @@ export class HttpPivot extends PivotTemplate {
             params,
             pivotParameters: pivot.pivotParameters
         })
-        const { jq, nodes, attributes, outputType } = params;
+        const { jq, nodes, attributes, outputType, method, headers } = params;
 
         
         log.trace('searchAndShape http: jq', {jq});
@@ -179,9 +204,9 @@ export class HttpPivot extends PivotTemplate {
                     return Observable.of({e: maybeUrl});
                 }
 
-                const { url, params } = maybeUrl;
-                log.debug('searchAndShape http: url', {url});
-                return this.connector.search(url)                    
+                const { url, body, params } = maybeUrl;
+                log.debug('searchAndShape http: url', {url, headers: formatHeaders(headers)});                
+                return this.connector.search(url, { method, body, headers: formatHeaders(headers) })                    
                     .switchMap(([response]) => {
                         log.debug('response', (response||{}).body);
                         return jqSafe(response.body, template(jq || '.', params))

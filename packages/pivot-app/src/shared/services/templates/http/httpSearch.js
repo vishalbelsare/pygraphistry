@@ -13,14 +13,18 @@ export const HTTP_SEARCH = new HttpPivot({
     tags: ['Demo', 'Splunk'],
     toUrls: function (params) {
 
-        const { endpoint } = params;
+        const { endpoint, body, method = 'GET' } = params;
 
         const urlParams = flattenParams(params);
         const url = template(endpoint, urlParams);
+        const bodyConcrete =
+            method === 'POST' ? template(body, urlParams)
+            : undefined;
+
 
         log.debug('url', url);
 
-        return [ { url, params: urlParams } ];
+        return [ { url, params: urlParams, body: bodyConcrete } ];
     },
     parameters: 
         [{
