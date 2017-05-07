@@ -145,6 +145,7 @@ function shapeHyperGraph({ app, pivot } ) {
     const combinedNodes = nodeLabels.concat(pivotNodes)
         .filter(({type}) => 
                 isStar 
+                || type === 'EventID'
                 || (connections.indexOf(type) > -1));
 
     //TODO filter by global lookup of nodes
