@@ -24,6 +24,13 @@ export const PARAMETERS = [
         ]
     },
     {
+        name: 'timeout',
+        inputType: 'number',
+        label: 'timeout (s):',
+        placeholder: '10',
+        defaultValue: 10
+    },
+    {
         name: 'headers',
         label: 'headers',
         inputType: 'multi',

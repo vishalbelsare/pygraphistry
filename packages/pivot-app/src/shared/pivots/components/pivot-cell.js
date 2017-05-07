@@ -7,6 +7,7 @@ import styles from './pivots.less';
 
 const componentsByInputType = {
     text: TextCell,
+    number: TextCell,
     textarea: TextareaCell,
     combo: ComboCell,
     multi: MultiCell,

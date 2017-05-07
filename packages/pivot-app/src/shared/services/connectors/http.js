@@ -16,9 +16,10 @@ class HttpConnector extends Connector {
         this.timeout_s = timeout_s;
     }
 
-    search (url, { method = 'GET', body, headers = {} } = { } ) {
+    search (url, { method = 'GET', timeout, body, headers = {} } = { } ) {
 
         log.info(`HttpConnector ${method}`, url, body);
+        log.debug('Using timeout: ', (timeout || this.timeout_s) * 1000);
 
         const req = 
             method === 'GET' ? get({url, headers})
@@ -51,7 +52,7 @@ class HttpConnector extends Connector {
                             + (statusCode || 'none available'), info);
                 }
             })            
-            .timeoutWith(this.timeout_s * 1000, Observable.throw(new VError({
+            .timeoutWith((timeout || this.timeout_s) * 1000, Observable.throw(new VError({
                     name: 'Timeout',
                     info: `Max wait: ${this.timeout_s} seconds`
                 }, 'URL took too long to respond')));

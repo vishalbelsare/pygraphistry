@@ -125,6 +125,27 @@ function formatHeaders(headers=[]) {
         {});
 }
 
+// param -> undefined U number ; InvalidParameter
+// Pulls out timeout in seconds
+function formatTimeout(timeS) {
+
+    const unwrapped = (timeS instanceof Object) && ('value' in timeS) ? timeS.value : timeS;
+    if (unwrapped === undefined) {
+        return undefined;
+    }
+
+    const coerced = +(unwrapped);
+    if (coerced > 0) {
+        return Math.ceil(coerced);
+    } else {
+        throw new VError({
+            name: 'InvalidParameter',
+            cause: new Error('InvalidParameter'),
+            info: { time: unwrapped }
+        }, `Timeout should be a number (seconds) like "10", received "${unwrapped}"`);
+    }
+}
+
 
 export class HttpPivot extends PivotTemplate {
     constructor( pivotDescription ) {
@@ -171,9 +192,11 @@ export class HttpPivot extends PivotTemplate {
             params,
             pivotParameters: pivot.pivotParameters
         })
-        const { jq, nodes, attributes, outputType, method, headers } = params;
+        const { jq, nodes, attributes, outputType, method, headers, timeout } = params;
 
-        
+        const headersProcessed = formatHeaders(headers);
+        const timeoutProcessed = formatTimeout(timeout);
+
         log.trace('searchAndShape http: jq', {jq});
 
         if ((jq||'').match(/\|.*(include|import)\s/)) {
@@ -205,8 +228,8 @@ export class HttpPivot extends PivotTemplate {
                 }
 
                 const { url, body, params } = maybeUrl;
-                log.debug('searchAndShape http: url', {url, headers: formatHeaders(headers)});                
-                return this.connector.search(url, { method, body, headers: formatHeaders(headers) })                    
+                log.debug('searchAndShape http: url', { url, headersProcessed, timeoutProcessed });                
+                return this.connector.search(url, { method, body, headers: headersProcessed, timeout: timeoutProcessed })                    
                     .switchMap(([response]) => {
                         log.debug('response', (response||{}).body);
                         return jqSafe(response.body, template(jq || '.', params))
