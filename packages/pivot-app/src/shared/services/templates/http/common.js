@@ -21,6 +21,15 @@ export const PARAMETERS = [
         placeholder: '.'
     },
     {
+        name: 'outputType',
+        label: 'shape',
+        inputType: 'combo',
+        options: [
+            {value: 'table', label: 'table'},
+            {value: 'graph', label: 'graph'}
+        ]
+    },
+    {
         name: 'nodes',
         inputType: 'multi',
         label: 'Nodes:',

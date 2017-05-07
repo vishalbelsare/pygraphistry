@@ -188,4 +188,39 @@ describe('httpPivot', function () {
 				}, (e) => done(e));
 	});
 
+	it('graph', (done) => {
+		const pivot = new HttpPivot({
+			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
+			toUrls: () => 
+				[{url: `http://localhost:${PORT}/echo?x=a`}],
+			parameters: [],
+			encodings: {}
+		});
+		pivot.searchAndShape({
+				app: {}, 
+				pivot: {
+					id: 'x',
+					enabled: true, 
+					pivotParameters: {
+						'x$$$jq': `. | {edges: [ {source: "x", destination: "y", x: 1 }, {source: "y", destination: "z", x: 3 }] }`,
+						'x$$$outputType': 'graph'
+					}					
+				}, 
+				pivotCache: {}})
+			.subscribe(({pivot, ...rest}) => {
+					assert.deepEqual(pivot.events, []);
+					assert.deepEqual(pivot.graph.edges, [
+						{source: 'x', destination: 'y', x: 1},
+						{source: 'y', destination: 'z', x: 3}
+					]);
+					assert.deepEqual(pivot.results.graph, 
+						[
+						{source: 'x', destination: 'y', x: 1},
+						{source: 'y', destination: 'z', x: 3}
+					]);
+					assert.deepEqual(pivot.results.labels, []);				
+					done();
+				}, (e) => done(e));
+	});
+
 });
