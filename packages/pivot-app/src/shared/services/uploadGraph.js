@@ -283,10 +283,18 @@ function makeEventTable({pivots}) {
         fieldSummaries[field] = fieldSummary(mergedData, field)
     });
 
-    const table = mergedData.groupBy('EventID')
-        .aggregate((group) => group.toCollection()[0])
-        .toArray('aggregation');
-
+    let table;
+    try {
+        table = mergedData.groupBy('EventID')
+            .aggregate((group) => group.toCollection()[0])
+            .toArray('aggregation');
+    } catch (e) {
+        if (e.name === 'NoSuchColumnError') {
+            table = [];
+        } else {
+            throw e;
+        }
+    }
     return {
         fieldSummaries: fieldSummaries,
         table: table
