@@ -133,7 +133,8 @@ function shapeHyperGraph({ app, pivot } ) {
                         {
                             'destination': row[field],
                             'source': eventID,
-                            'edgeType': ('EventID->' + field)
+                            'edgeType': ('EventID->' + field),
+                            'edgeTitle': `${eventID}->${row[field]}`
                         }
                     )
                 );
