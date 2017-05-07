@@ -73,7 +73,8 @@ function encodeGraph({ app, pivot }) {
         );
     }    
 
-    const out = ({ 
+
+    return { 
         app, 
         pivot: {
             ...pivot,
@@ -82,9 +83,8 @@ function encodeGraph({ app, pivot }) {
                 labels: nodes
             },
             resultSummary: summarizeOutput({labels: nodes})
-         }});
-
-    return out;
+         }
+     };
 }
 
 function extractAllNodes(connections) {
