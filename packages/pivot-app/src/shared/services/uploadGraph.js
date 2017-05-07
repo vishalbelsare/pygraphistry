@@ -89,41 +89,49 @@ export const bindings = {
     "idField": "node"
 }
 
+function synthesizeMissingNodes(edges, nodes) {
+    
+    const inNodes = {};
+    nodes.forEach((node) => inNodes[node[bindings.idField]] = true);
+
+    const inEdges = {};
+    edges.forEach((edge) => {
+        inEdges[edge[bindings.sourceField]] = true;
+        inEdges[edge[bindings.destinationField]] = true;
+    });
+
+    return Object.keys(inEdges)
+        .filter((id) => !(id in inNodes))
+        .map((id) => ({[bindings.idField]: id}));
+}
+
 function createGraph(pivots) {
     const name = `PivotApp/${simpleflake().toJSON()}`;
     const type = "edgelist";
+
+    const visiblePivots = pivots.filter((pivot) => pivot.results && pivot.enabled);
+
     const mergedPivots = {
-        graph:[],
-        labels: []
+        graph: [].concat.apply([],
+            visiblePivots.map( 
+                (pivot, index) => 
+                    pivot.results.graph.map(
+                        (edge) => ({...edge, 'Pivot': index})))),
+        labels: [].concat.apply([], 
+            visiblePivots.map( 
+                (pivot, index) => 
+                    pivot.results.labels))
     };
 
-    pivots.forEach((pivot, index) => {
-        if (pivot.results && pivot.enabled) {
-            // Set attribute for pivot number
-            const graph = pivot.results.graph.map((edge) => Object.assign({}, edge, {'Pivot': index}));
-            mergedPivots.graph = [...mergedPivots.graph, ...graph]
-            mergedPivots.labels = [...mergedPivots.labels, ...pivot.results.labels];
-        }
-    });
+    const mergedNodes = 
+        _.values(_.groupBy(mergedPivots.labels, bindings.idField))
+        .map(group => group.reduce( (acc, v) => ({...acc, ...v}), {} ));        
 
-    // Hack for demo.
-    const edges = mergedPivots.graph;
-    const seen = {};
-    const dedupEdges = edges.filter(({source, destination}) => {
-        const isFiltered = seen.hasOwnProperty(JSON.stringify({source, destination})) ?
-            false :
-            seen[JSON.stringify({source, destination})] = true
-        return isFiltered;
-    })
-    mergedPivots.graph = dedupEdges;
-    mergedPivots.labels = _.map(
-        _.groupBy(mergedPivots.labels, label => label.node),
-        group => group[0]
-    );
+    const missingNodes = synthesizeMissingNodes(mergedPivots.graph, mergedNodes, bindings);
 
     const uploadData = {
         graph: mergedPivots.graph,
-        labels: mergedPivots.labels,
+        labels: mergedNodes.concat(missingNodes),
         name, type, bindings
     };
 
@@ -155,7 +163,7 @@ export function edgesToRows(edges) {
         {node: e[bindings.sourceField], row: e.Pivot * 2},
         {node: e[bindings.destinationField], row: e.Pivot * 2 + 1}
                                                        ]),"shallow");
-    const leastEdgeRows = _.mapObject(_.groupBy(allEdgeRows, 'node'),
+    const leastEdgeRows = _.mapObject(_.groupBy(allEdgeRows, bindings.idField),
                                       (allRows) => _.min(_.pluck(allRows, 'row')));
     return leastEdgeRows;
 }
