@@ -27,8 +27,8 @@ export const investigationContainer = container({
             Pivot.fragments(pivots)
         }
     }`,
-    mapFragment: ({ id, name, pivots, status, eventTable, layout } = {}) => ({
-        id, name, pivots, status, eventTable, layout
+    mapFragment: ({ id, name, pivots, status, eventTable, layout, description } = {}, props, $falcor) => ({
+        id, name, pivots, status, eventTable, layout, description, $falcor
     }),
     dispatchers: {
         saveLayout,

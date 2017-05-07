@@ -85,6 +85,7 @@ function getQuery(key) {
 export const bindings = {
     "sourceField": "source",
     "destinationField": "destination",
+    "typeField": "type",
     "idField": "node"
 }
 
@@ -135,11 +136,12 @@ function createGraph(pivots) {
 // in each row, order each node into columns based on degree and lexicographic order. Then,
 // for each row indexed by r, for each column indexed by c, set the node's x to be rFudge * r, and set the node's y to be cFudge * (max(|c|) - |c| + c) (for centering)
 // by default, create a graph that has aspect 1:√(max(|c|)), going from top to bottom.
-export function stackedBushyGraph(graph, fudgeX = 1, fudgeY = -2 * Math.sqrt(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity)))), spacerY = Math.sign(fudgeY) * 3 * Math.sqrt(Math.abs(fudgeY))) {
+export function stackedBushyGraph(graph, fudgeX = 100, fudgeY = -15 * Math.pow(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity))), 0.5), spacerY = fudgeY, minLineLength = 5, maxLineLength = 100, pivotWrappedLineHeight=5) {
     const nodeRows = edgesToRows(graph.data.graph);
     const nodeDegrees = graphDegrees(graph.data.graph);
     const columnCounts = rowColumnCounts(nodeRows);
-    const nodeColumns = rowsToColumns(nodeRows, columnCounts, nodeDegrees);
+    const types = nodeTypes(graph.data.labels);
+    const nodeColumns = rowsToColumns(nodeRows, columnCounts, nodeDegrees, minLineLength, maxLineLength, pivotWrappedLineHeight, types);
     const nodeXYs = mergeRowsColumnsToXY(nodeRows, nodeColumns, fudgeX, fudgeY, spacerY);
 
     decorateGraphLabelsWithXY(graph.data.labels, nodeXYs);
@@ -165,6 +167,11 @@ export function graphDegrees(edges) {
     return _.countBy(sources.concat(destinations), _.identity);
 }
 
+// labels -> {node: type}
+export function nodeTypes(labels) {
+    return labels.reduce((h, label) => { h[label[bindings.idField]] = label[bindings.typeField]; return h}, {});
+}
+
 // {nodeName: Int} -> {"Int": Int}
 export function rowColumnCounts(rows) {
     return _.countBy(_.values(rows), _.identity);
@@ -175,15 +182,33 @@ export function nonuniqueInvert(h) {
     return _.mapObject(_.groupBy(_.pairs(h), ([,v]) => v), (v) => _.map(v, ([k,]) => k));
 }
 
-// {nodeName: Int}, {"Int": Int}, {nodeName: Int} -> {nodeName: Int}
-export function rowsToColumns(nodeRows, columnCounts, nodeDegrees) {
+// IO {nodeName: Int}, {"Int": Int}, {nodeName: Int}, Int, Int, Real -> {nodeName: Int}
+export function rowsToColumns(nodeRows, columnCounts, nodeDegrees, minLineLength, maxLineLength, pivotWrappedLineHeight, types) {
     const maxColumn = _.max(_.values(columnCounts));
     const orderedRows = _.mapObject(nonuniqueInvert(nodeRows),
                                     (nodes) => nodes.sort((a,b) => (nodeDegrees[b] - nodeDegrees[a]) || (a > b ? 1 : -1)));
     const nodeColumns = {};
-    _.each(orderedRows, (row) => { _.each(row, (node, idx) => {
-        nodeColumns[node] = (maxColumn - row.length)/2 + idx
-    })});
+    _.each(orderedRows, (row, rowNumber) => {
+        // For each row, see if `row` is longer than `maxLineLength`, and if splitting `row` by `types`[`node`] would not make every split row shorter than `minLineLength`.
+        // If so, DESTRUCTIVELY UPDATE nodeRows to place nodes in `row` into rows from `rowNumber` to `rowNumber` + `pivotWrappedLineHeight` / |splits|.
+        // After revising rows, place nodes in each (potentially new) row into columns.
+        const tooLong = row.length > maxLineLength;
+        const splits = _.sortBy(_.values(_.groupBy(row, (n) => types[n])), (r) => -r.length);
+        const nowTooShort = splits.every((split) => split.length < minLineLength);
+        const useSplits = tooLong && !nowTooShort;
+        const newRows = (useSplits ? splits : [row]);
+        const linewrappedNewRows = _.flatten(newRows.map((r) => {
+                    const bestLineLength = _.max(_.range(maxLineLength / 2 , maxLineLength * 2), (linelength) => (1 + ((r.length - 1) % linelength)) / linelength);
+                    return _.values(_.groupBy(r, (n,i) => Math.trunc(i / bestLineLength)));
+                }), "shallow");
+        linewrappedNewRows.forEach((newRow, i) => {
+            const newRowNumber = rowNumber + (i / (linewrappedNewRows.length - 0.999) * pivotWrappedLineHeight);
+            newRow.forEach((node, idx) => {
+                nodeRows[node] = newRowNumber;
+                nodeColumns[node] = ((maxColumn - 0.999) / (newRow.length - 0.999)) * idx;
+            });
+        });
+    });
     return nodeColumns;
 }
 
@@ -194,7 +219,7 @@ export function mergeRowsColumnsToXY(rows, columns, fudgeX, fudgeY, spacerY) {
                        ({
                            x: fudgeX * columns[node],
                            y: (rowIdx > 0
-                               ? fudgeY * (rowIdx - (rowIdx & 1)) + spacerY * (rowIdx & 1)
+                               ? (fudgeY + spacerY) * (rowIdx - (rowIdx & 1)) + spacerY * (rowIdx & 1)
                                : -2 * spacerY)
                        }));
 }

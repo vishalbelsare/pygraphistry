@@ -1,5 +1,6 @@
 import { Image, Glyphicon } from 'react-bootstrap';
 import { GraphistryIframe } from './graphistry-iframe';
+import { uiTweaks } from '../../services/layouts.js';
 import styles from './visualization-styles.less';
 
 
@@ -34,7 +35,7 @@ export default function VisualizationPanel({ investigation }) {
 
     return (
         investigation.url ?
-            <GraphistryIframe src={investigation.url} />
+            <GraphistryIframe src={investigation.url} layoutTweaks={ uiTweaks[investigation.layout] } />
             : placeholder
     );
 }

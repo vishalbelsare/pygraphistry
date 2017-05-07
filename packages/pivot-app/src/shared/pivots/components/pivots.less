@@ -1,17 +1,5 @@
 @import '../../vars.less';
 
-.pivot-table {
-    margin-top: 10px;
-    color: @pivot-table-fg;
-    background-color: #F6F6F6; //aqua
-
-    .pivot-cell + .pivot-cell {
-    	margin-top: 0.5em;
-    }
-}
-
-
-
 @disabled-opacity: 0.5;
 
 .pivot-row {
@@ -105,6 +93,7 @@
         border-radius: 0px !important;
         background-color: #fff !important;
         border-color: transparent !important;
+        border-top-right-radius: 3px !important;
         &:hover {
             border: none !important;
             border-radius: 0px !important;
@@ -123,6 +112,7 @@
         border-radius: 0px !important;
         background-color: #FFF !important;
         border-color: transparent !important;
+        border-top-right-radius: 3px !important;
         &:hover {
             border: none !important;
             border-radius: 0px !important;
@@ -168,6 +158,11 @@
     font-size: 1.00em;
     line-height: 1.1em;
 
+    span {
+        display: block;
+        cursor: pointer;
+    }
+
 	.pivot-expander-open,
 	.pivot-expander-closed {
 		display: none;
@@ -198,6 +193,13 @@
 	}
 
 	.pivot-params { }
+    .pivot-description {
+        padding: 0 10px;
+        textarea {
+            padding: 3px 6px;
+            min-height: 40px;
+        }
+    }
 
 	.pivot-result-summaries {
         width: 100%;
