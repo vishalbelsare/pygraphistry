@@ -4,6 +4,9 @@ import ComboSelector from './combo-selector';
 import DateRangePickerWrapper from './TimeRangeWidget/TimeRangeWidget.js';
 import styles from './pivots.less';
 
+import logger from 'pivot-shared/logger.js';
+const log = logger.createLogger(__filename);
+
 
 const componentsByInputType = {
     text: TextCell,
@@ -131,6 +134,20 @@ function ComboCell({ id, paramKey, paramValue, paramUI, handlers }) {
 }
 
 function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
+
+    log.debug('MultiCell val', paramValue);
+    log.debug('MultiCell ui', paramUI);
+
+    console.log('here', paramValue, paramUI);
+
+    const rawOptions = paramUI.options || [];
+    const options = rawOptions.concat(
+            (paramValue||[])
+                .filter((value) => 
+                    rawOptions.filter((opt) => opt.id === value).length === 0)
+                .map((value) =>
+                    ({id: value, name: value})));
+
     return (
         <div key={`pcell-${id}-${paramKey}`}
             className={styles['pivot-multi-param']}>
@@ -141,7 +158,7 @@ function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
                     labelKey="name"
                     valueKey="id"
                     value={paramValue}
-                    options={paramUI.options}
+                    options={options}
                     multi={true}
                     joinValues={true}
                     onChange={ (selected) =>
