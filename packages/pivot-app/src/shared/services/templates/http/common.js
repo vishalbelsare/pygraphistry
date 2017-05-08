@@ -202,7 +202,7 @@ export const demoEncodings = {
         pointColor: function(node) {
             node.pointColor = COLORS[node.type];
             if (node.pointColor === undefined) {
-                node.pointColor = stringhash(node.type) % 12;
+                node.pointColor = stringhash(node.type || 'n/a') % 12;
             }
         },
         pointSizes: function(node) {
