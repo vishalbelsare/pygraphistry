@@ -10,6 +10,7 @@ const log = logger.createLogger(__filename);
 
 const componentsByInputType = {
     text: TextCell,
+    number: TextCell,
     textarea: TextareaCell,
     combo: ComboCell,
     multi: MultiCell,
