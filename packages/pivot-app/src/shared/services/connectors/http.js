@@ -36,6 +36,14 @@ class HttpConnector extends Connector {
             .do(([response]) => {
                 log.trace(response);
                 const statusCode = (response||{}).statusCode;
+                if (statusCode !== 200) {
+                    log.error({msg: 'error', statusCode, 
+                        method,
+                        headers,
+                        requestBody: body,
+                        responseBody: (response||{}).body});                    
+
+                }
                 if (statusCode === 401) {
                     throw new VError({
                             name: 'HttpStatusError',
