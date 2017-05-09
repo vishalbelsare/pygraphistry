@@ -33,9 +33,9 @@ Toolbar = container({
     })
 })(Toolbar);
 
-let ToolbarItems = ({ id, name, popover, items = [], selectToolbarItem, ...props } = {}) => {
+let ToolbarItems = ({ id, name, popover, items = [], selectToolbarItem } = {}) => {
     return (
-        <ButtonListItems id={id} name={name} {...props}>
+        <ButtonListItems id={id} name={name}>
         {items.map((item, index) => (
             <ToolbarItem data={item} popover={popover} groupId={id}
                          key={`${index}: toolbar-item-${item.id}`}

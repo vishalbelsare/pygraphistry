@@ -2,6 +2,7 @@ import d3Scale from 'd3-scale';
 import styles from './styles.less';
 import React from 'react';
 import Color from 'color';
+import ReactDOM from 'react-dom';
 import RcSwitch from 'rc-switch';
 import RcColorPicker from 'rc-color-picker';
 import RcSlider from '@graphistry/rc-slider';
@@ -106,20 +107,25 @@ export function ToggleButton({
 export function ColorPicker({
     id, name, type, props,
     value = 0, setValue, ...rest } = {}) {
-    value = new Color(value);
+    let rowRef, val = new Color(value);
     return (
-        <Row className={styles['control-row']}>
+        <Row className={styles['control-row']} ref={(r) => rowRef = r}>
             <Col xs={7} sm={7} md={7} lg={7} className={styles['control-label']}>
                 <span>{name}</span>
             </Col>
             <Col xs={5} sm={5} md={5} lg={5} className={styles['control']}>
                 <RcColorPicker key={`${id}-colors`}
                                animation='slide-up'
-                               color={value.hexString()}
-                               alpha={value.alpha() * 100}
+                               color={val.hexString()}
+                               alpha={val.alpha() * 100}
+                               // Fun hack to force the color-picker panel to be a
+                               // child of this DOM tree, so that it plays nice w/
+                               // react-bootstrap's rootClose Overlay behavior. No
+                               // idea why they called the prop getCalendarContainer though.
+                               getCalendarContainer={() => ReactDOM.findDOMNode(rowRef)}
                                onChange={({ color, alpha }) => setValue({
                                    id, type, ...rest,
-                                   value: (value = new Color(color)
+                                   value: (val = new Color(color)
                                        .alpha(alpha * .01))
                                        .rgbaString()
                                })}/>

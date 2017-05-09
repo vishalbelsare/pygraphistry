@@ -70,10 +70,8 @@ function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
         plugins.push('react-hot-loader/babel');
     } else {
         plugins.push(
-            // The Babel 'jsx' helper method this plugin uses gets
-            // deoptimized by v8, since it does argument reassignment.
-            // This is no good in a React render() call tree.
-            'transform-react-inline-elements',
+            // Don't use this plugin: it breaks FF31, used by InQTel
+            // 'transform-react-inline-elements'
             'transform-react-constant-elements'
         );
     }
