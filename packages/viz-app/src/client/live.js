@@ -4,7 +4,7 @@ import { handleVboUpdates } from './streamgl-vbos';
 import Socket from 'socket.io-client/lib/socket';
 import * as Scheduler from 'rxjs/scheduler/async';
 import { Model } from '@graphistry/falcor-model-rxjs';
-import { LocalDataSink, RemoteDataSource } from './falcor';
+import { LocalDataSink, RemoteDataSource, whitelistClientAPIRoutes } from './falcor';
 
 const whiteListedQueryParams = [
     'bg', 'view', 'type', 'scene', 'device',
@@ -55,7 +55,7 @@ function congfigureLive(options) {
     socket.binaryType = 'arraybuffer';
     socket.io.engine.binaryType = 'arraybuffer';
     model._source = new RemoteDataSource(socket, model);
-    model.sink = new LocalDataSink(model.asDataSource());
+    model.sink = new LocalDataSink(whitelistClientAPIRoutes(model));
 
     const socketIoEmit = socket.emit;
     socket.emit = function emitWithoutCompression() {

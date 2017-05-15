@@ -134,7 +134,7 @@ function makeWebpackConfig({
             new webpack.NoEmitOnErrorsPlugin(),
             new ProgressBarPlugin({ clear: false, }),
             new webpack.ProvidePlugin({ React: 'react' }),
-            new webpack.IgnorePlugin(/^\.\/locale$/, [/moment$/]),
+            new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
             new AssetsPlugin({
                 filename: `${type}-assets.json`,
                 path: path.join(process.cwd(), './www')

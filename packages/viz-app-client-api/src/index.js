@@ -114,7 +114,7 @@ class Graphistry extends Observable {
     static encodeColor(graphType, attribute, variation, colors) {
         const { view } = this;
         return new this(view.set(
-            $value(`histograms.encodings.${graphType}.color`,
+            $value(`encodings.${graphType}.color`,
                 {   reset: false, variation, name: 'user_' + Math.random(),
                     encodingType: 'color', colors, graphType, attribute }))
             .map(({ json }) => json.toJSON())
@@ -138,7 +138,7 @@ class Graphistry extends Observable {
     static resetColor(graphType) {
         const { view } = this;
         return new this(view.set(
-            $value(`histograms.encodings.${graphType}.color`,
+            $value(`encodings.${graphType}.color`,
                 {   reset: true, encodingType: 'color' }))
             .map(({ json }) => json.toJSON())
             .toPromise());
@@ -164,7 +164,7 @@ class Graphistry extends Observable {
     static encodeIcons(graphType, attribute) {
         const { view } = this;
         return new this(view.set(
-            $value(`histograms.encodings.${graphType}.icon`,
+            $value(`encodings.${graphType}.icon`,
                 {   reset: false, name: 'user_' + Math.random(),
                     encodingType: 'icon', graphType, attribute }))
             .map(({ json }) => json.toJSON())
@@ -188,7 +188,7 @@ class Graphistry extends Observable {
     static resetIcons(graphType) {
         const { view } = this;
         return new this(view.set(
-            $value(`histograms.encodings.${graphType}.icon`,
+            $value(`encodings.${graphType}.icon`,
                 {   reset: true, encodingType: 'icon' }))
             .map(({ json }) => json.toJSON())
             .toPromise());
@@ -215,7 +215,7 @@ class Graphistry extends Observable {
     static encodeSize(graphType, attribute) {
         const { view } = this;
         return new this(view.set(
-            $value(`histograms.encodings.${graphType}.size`,
+            $value(`encodings.${graphType}.size`,
                 {   reset: false, name: 'user_' + Math.random(),
                     encodingType: 'size', graphType, attribute }))
             .map(({ json }) => json.toJSON())
@@ -240,7 +240,7 @@ class Graphistry extends Observable {
     static resetSize(graphType) {
         const { view } = this;
         return new this(view.set(
-            $value(`histograms.encodings.${graphType}.size`,
+            $value(`encodings.${graphType}.size`,
                 {   reset: true, encodingType: 'size' }))
             .map(({ json }) => json.toJSON())
             .toPromise());
@@ -319,7 +319,6 @@ class Graphistry extends Observable {
         } else {
             return new this(view.set(
                 $value(`inspector.controls[0].selected`, true),
-                $value(`timebar.controls[0].selected`, false),
                 $value(`panels.bottom`, $ref(view._path.concat(`inspector`)))
             )
             .map(({ json }) => json.toJSON())
@@ -576,16 +575,16 @@ class Graphistry extends Observable {
             'pointSize':    ['view', 'scene.renderer.points.scaling'],
 
             //models/camera.js
-            'zoom': ['view', 'scene.camera.zoom'],
-            'center': ['view', 'scene.camera.center["x", "y", "z"]'],
+            'zoom': ['view', 'camera.zoom'],
+            'center': ['view', 'camera.center["x", "y", "z"]'],
 
             //models/label.js
-            'labelOpacity': ['view', 'scene.labels.opacity'],
-            'labelEnabled': ['view', 'scene.labels.enabled'],
-            'labelPOI': ['view', 'scene.labels.poiEnabled'],
-            'labelHighlightEnabled': ['view', 'scene.labels.highlightEnabled'],
-            'labelColor': ['view', 'scene.labels.foreground.color'],
-            'labelBackground': ['view', 'scene.labels.background.color'],
+            'labelOpacity': ['view', 'labels.opacity'],
+            'labelEnabled': ['view', 'labels.enabled'],
+            'labelPOI': ['view', 'labels.poiEnabled'],
+            'labelHighlightEnabled': ['view', 'labels.highlightEnabled'],
+            'labelColor': ['view', 'labels.foreground.color'],
+            'labelBackground': ['view', 'labels.background.color'],
 
             //models/layout.js => viz-worker/simulator/layout.config.js:
             'precisionVsSpeed': ['view', 'layout.options.tau']
@@ -738,11 +737,11 @@ class Graphistry extends Observable {
 /**
  * Function that creates a Graphistry Wrapped IFrame
  * @func GraphistryJS
- * @param {Object} IFrame - An IFrame that incudes a Graphistry visualization.
+ * @param {Object} IFrame - An IFrame that hosts a Graphistry visualization.
  * @return {@link Graphistry}
  * @example
  *
- * <iframe id="viz" src="http://127.0.0.1:10000/graph/graph.html?dataset=Miserables" />
+ * <iframe id="viz" src="https://labs.graphistry.com/graph/graph.html?dataset=Miserables" />
  * <script>
  * document.addEventListener("DOMContentLoaded", function () {
  *
@@ -776,72 +775,53 @@ function GraphistryJS(iFrame) {
         throw new Error('No iframe provided to Graphistry');
     }
 
-    const model = new Model({
-        recycleJSON: true,
-        scheduler: Scheduler.async,
-        allowFromWhenceYouCame: true
-    });
+    return Graphistry
+        .fromEvent(iFrame, 'load', ({ target }) => target)
+        .startWith(iFrame) // say hello first and on each load
+        .map((target) => target.contentWindow)
+        .do((target) => target && target.postMessage && (
+            console.log(`Graphistry API: connecting to client`) ||
+            target.postMessage({
+                type: 'ready', agent: 'graphistryjs'
+            }, '*'))
+        )
+        .switchMap(
+            (target) => Graphistry
+                .fromEvent(window, 'message')
+                .filter(({ data }) => data && data.type === 'init' && data.cache),
+            (target, { cache }) => ({ target, cache })
+        )
+        .switchMap(({ target, cache }) => {
 
-    model._source = new PostMessageDataSource(
-        window, iFrame.contentWindow, model
-    );
+            const model = new Model({
+                cache,
+                recycleJSON: true,
+                scheduler: Scheduler.async,
+                allowFromWhenceYouCame: true
+            });
 
-    class InstalledGraphistry extends Graphistry {
-        static model = model;
-        static iFrame = iFrame;
-        lift(operator) {
-            const observable = new InstalledGraphistry(this);
-            observable.operator = operator;
-            return observable;
-        }
-    }
+            model._source = new PostMessageDataSource(window, target, model, '*');
 
-    InstalledGraphistry = wrapStaticObservableMethods(Observable, InstalledGraphistry);
-
-    return InstalledGraphistry.defer(() => {
-
-        const initEvent = Observable
-            .fromEvent(window, 'message')
-            .filter(({ data }) => data && data.type === 'init')
-            .do(({ data }) => model.setCache(data.cache))
-            .mergeMap(
-                ({ data }) => model.get(`workbooks.open.views.current.id`),
-                ({ data, source }, { json }) => {
-
-                    const workbook = json.workbooks.open;
-                    const view = workbook.views.current;
-
-                    InstalledGraphistry.workbook = model.deref(workbook);
-                    InstalledGraphistry.view = model.deref(view);
-
-                    console.log(`initialized with view '${view.id}'`);
-                    console.log('parent sending initialized message');
-
-                    source.postMessage({
-                        type: 'initialized',
-                        agent: 'graphistryjs',
-                        version: __VERSION__
-                    }, '*');
-
-                    return InstalledGraphistry;
+            class InstalledGraphistry extends Graphistry {
+                static model = model;
+                lift(operator) {
+                    const observable = new InstalledGraphistry(this);
+                    observable.operator = operator;
+                    return observable;
                 }
-            )
-            .take(1)
-            .multicast(new AsyncSubject());
+            }
 
-        initEvent.connect();
+            InstalledGraphistry = wrapStaticObservableMethods(Observable, InstalledGraphistry);
 
-        console.log('parent sending ready message');
-
-        // trigger hello if missed initial one
-        iFrame.contentWindow.postMessage({
-            type: 'ready',
-            agent: 'graphistryjs',
-            version: __VERSION__
-        }, '*');
-
-        return initEvent;
-    });
+            return model.get(`workbooks.open.views.current.id`).map(({ json }) => {
+                InstalledGraphistry.workbook = model.deref(json.workbooks.open);
+                InstalledGraphistry.view = model.deref(json.workbooks.open.views.current);
+                console.log(`Graphistry API: connected to client`);
+                return InstalledGraphistry;
+            });
+        })
+        .multicast(() => new ReplaySubject(1))
+        .refCount();
 }
 
 Graphistry = wrapStaticObservableMethods(Observable, Graphistry);

@@ -27,7 +27,7 @@ function configureFalcorRouter(services, env = { bufferTime: 10, streaming: fals
 export { configureFalcorRouter };
 export default configureFalcorRouter;
 
-function createAppRouter(env, routes) {
+export function createAppRouter(env, routes) {
     const AppRouterBase = FalcorRouter.createClass(routes, env);
     return class AppRouter extends AppRouterBase {
         constructor(request = {}, requestConfig = {}) {
