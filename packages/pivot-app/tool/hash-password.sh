@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+### Alternatively: docker run --rm node:alpine sh -c 'npm install --global bcrypt-cli && bcrypt-cli "seekrits" 10'
+
 plaintext_password=''
 bcrypt_rounds=12
 
