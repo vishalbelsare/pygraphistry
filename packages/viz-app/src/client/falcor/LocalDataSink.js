@@ -2,33 +2,27 @@ import { Observable } from 'rxjs/Observable';
 import { PostMessageDataSink } from '@graphistry/falcor-socket-datasource';
 
 export class LocalDataSink extends PostMessageDataSink {
-    constructor(dataSource, ...args) {
-
-        super(() => dataSource, ...args);
-
-        dataSource.get([
-            ['workbooks', 'length'],
-            ['workbooks', 'open', ['id', 'title']],
-            ['workbooks', 'open', 'views', 'length'],
-            ['workbooks', 'open', 'views', 'current', ['id', 'title']]
-        ])
-        .mergeMap(
-            (jsonGraphEnv) => Observable.merge(
-                Observable.of({ source: parent }),
-                Observable
-                    .fromEvent(window, 'message')
-                    .filter(({ data }) => data && data.type === 'ready')
-            ),
-            (jsonGraphEnv, { source }) => ({ source, jsonGraphEnv })
-        )
-        .subscribe(({ source, jsonGraphEnv }) => {
-            console.log('viz-app sending init message');
-            source.postMessage({
-                type: 'init',
-                cache: jsonGraphEnv,
-                agent: 'graphistryjs',
-                version: __VERSION__
-            }, '*');
-        });
+    constructor(getDataSource, ...args) {
+        super(getDataSource, ...args);
+        console.log(`Graphistry client: ready for API connection`);
+        Observable
+            .fromEvent(window, 'message')
+            .filter(({ data }) => data && data.type === 'ready')
+            .filter(({ data }) => data.agent === 'graphistryjs')
+            .mergeMapTo(
+                getDataSource().get([
+                    ['workbooks', 'open', 'id'],
+                    ['workbooks', 'open', 'views', 'current', 'id']
+                ]),
+                ({ source }, cache) => ({ source, cache })
+            )
+            .startWith({ source: parent }) // say hello first
+            .subscribe(({ source, cache }) => {
+                source && source.postMessage && source.postMessage({
+                    cache, type: 'init',
+                    agent: 'graphistryjs',
+                    version: __VERSION__
+                }, '*');
+            });
     }
 }
