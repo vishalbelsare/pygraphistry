@@ -76,7 +76,7 @@ class Labels extends React.Component {
             pointSize, pixelRatio, scalingFactor;
         let { mouseX, mouseY, onLabelsUpdated, toolbarHeight,
               simulating = false, highlight = null, selection = null,
-              renderer, renderState = null, renderingScheduler = null,
+              renderer = {}, renderState = null, renderingScheduler = null,
               labels = [], sizes = [], pointColors = [], edgeColors = [], points = [], children = []
         } = this.props;
 
@@ -159,7 +159,7 @@ class Labels extends React.Component {
             <div className={classNames({
                 [styles['labels-container']]: true,
                 [styles['labels-zoomed-in']]: simulating || scalingFactor > 2,
-                [styles['labels-container-dark']]: isDark(Color(renderer.background.color).rgb())})}>
+                [styles['labels-container-dark']]: isDark(Color((renderer.background || {}).color).rgb())})}>
                 {childrenToRender}
             </div>
         );
