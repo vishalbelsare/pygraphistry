@@ -68,7 +68,6 @@
                 ['pointSize', 0.5],
                 ['pointSize', 1.0],
                 ['pointSize', 3.0],
-                ['labelOpacity', 0.5], ['labelOpacity', 1],
                 ['labelEnabled', true], ['labelEnabled', false],
                 ['labelHighlightEnabled', true], ['labelHighlightEnabled', false],
                 ['labelPOI', true], ['labelPOI', false],
@@ -117,7 +116,7 @@
                     cache = { point: {}, edge: {} };
                     subscription.unsubscribe();
                 }
-                window.g.updateSetting('labelPOI', false);
+                window.g.updateSetting('labelEnabled', false);
                 subscription = window.g.subscribeLabels({
                     onChange: function (event) {
                         var x = event.pageX;
@@ -146,6 +145,14 @@
                         elt.style['margin-top'] = (border * 2) - radius + 'px';
                         elt.style['margin-left'] = (border * 2) - radius + 'px';
                         elt.style['border-radius'] = size + 'px';
+
+                        elt.style['border'] = event.selected ?
+                            '2px solid rgba(255, 0, 0, 1)' :
+                            '1px solid rgba(255, 0, 0, 0.5)';
+
+                        elt.style['background-color'] = event.highlight ?
+                            'rgba(0, 50, 255, 0.5)' :
+                            'rgba(0, 255, 50, 0.5)';
                     },
                     onExit: function (event) {
                         var id = event.id;
@@ -160,7 +167,7 @@
             } else if (subscription) {
                 labels.innerHTML = '';
                 cache = { point: {}, edge: {} };
-                window.g.updateSetting('labelPOI', true);
+                window.g.updateSetting('labelEnabled', true);
                 subscription.unsubscribe();
                 subscription = null;
             }
