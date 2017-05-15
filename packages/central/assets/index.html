@@ -2,9 +2,51 @@
 <head>
 <link href="css/main.css" rel="stylesheet" type="text/css">
 <link href='//fonts.googleapis.com/css?family=Nunito:300' rel='stylesheet' type='text/css'>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-<script>
+</head>
+<body>
 
+<div class="banner">
+    <img src="img/logo.png" style="width: 300px;" />
+    <div style="font-size:0.5em; font-weight: bold">LABS DEMOS</div>
+
+    <div style="font-size:0.5em">
+        <a href="mailto:info@graphistry.com">email</a> for tool preview
+    </div>
+</div>
+
+<div class="content">
+    <div class="regions">
+        <div class="off">
+            <span class="name">nyc</span>
+            <span class="status">offline</span>
+        </div>
+        <div class="cali">
+            <b>local</b>
+            <div style="font-size: 0.5em; padding-top: 0.3em; text-align: center; line-height: 1.8em">
+                <a class="dataset-link" data-dataset="Twitter">Twitter criminal botnet</a>
+                <br/>
+                <a class="dataset-link" data-dataset="Miserables">Characters crossing paths in <i>Les Misérables</i></a>
+                <br/>
+                <a class="dataset-link" data-dataset="Biogrid">BioGRID Protein Interactions</a>
+                <br/>
+                <a class="dataset-link" data-dataset="Facebook">Facebook friendships</a>
+
+                <div id="ping" style="position: absolute; padding-left: 6em; padding-top: 0.2em; font-size: 0.8em"></div>
+            </div>
+
+        </div>
+        <div class="off">
+            <span class="name">tokyo</span>
+            <span class="status">offline</span>
+        </div>
+        <div class="off">
+            <span class="name">singapore</span>
+            <span class="status">offline</span>
+        </div>
+    </div>
+</div>
+<script src="jquery-2.1.3.min.js"></script>
+<script>
 
 var SUBTITLE = '<p><a href="mailto:info@graphistry.com">Email</a> us for a tool preview</p>';
 
@@ -130,51 +172,5 @@ $(document).ready(function () {
     mkLinks();
 });
 </script>
-
-
-</head>
-<body>
-
-<div class="banner">
-    <img src="img/logo.png" style="width: 300px;" />
-    <div style="font-size:0.5em; font-weight: bold">LABS DEMOS</div>
-
-    <div style="font-size:0.5em">
-        <a href="mailto:info@graphistry.com">email</a> for tool preview
-    </div>
-</div>
-
-<div class="content">
-    <div class="regions">
-        <div class="off">
-            <span class="name">nyc</span>
-            <span class="status">offline</span>
-        </div>
-        <div class="cali">
-            <b>local</b>
-            <div style="font-size: 0.5em; padding-top: 0.3em; text-align: center; line-height: 1.8em">
-                <a class="dataset-link" data-dataset="Twitter">Twitter criminal botnet</a>
-                <br/>
-                <a class="dataset-link" data-dataset="Miserables">Characters crossing paths in <i>Les Misérables</i></a>
-                <br/>
-                <a class="dataset-link" data-dataset="Biogrid">BioGRID Protein Interactions</a>
-                <br/>
-                <a class="dataset-link" data-dataset="Facebook">Facebook friendships</a>
-
-                <div id="ping" style="position: absolute; padding-left: 6em; padding-top: 0.2em; font-size: 0.8em"></div>
-            </div>
-
-        </div>
-        <div class="off">
-            <span class="name">tokyo</span>
-            <span class="status">offline</span>
-        </div>
-        <div class="off">
-            <span class="name">singapore</span>
-            <span class="status">offline</span>
-        </div>
-    </div>
-</div>
-
 </body>
 </html>
