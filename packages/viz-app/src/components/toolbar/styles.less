@@ -2,6 +2,7 @@
 
 @import '~viz-app/vars.less';
 
+// Whole container
 .button-list {
     font-size: 0px;
     position: absolute;
@@ -19,12 +20,15 @@
     }
 }
 
+// Comtainer of old vertical buttons
 .button-list-items-container {
     padding: 2px 0px;
     background: transparent;
     border-color: rgba(0,0,0,0);
+	text-align: center;
 }
 
+// Each seperate container "graph" etc. but also includes container for vertical items as well..
 .button-list-items {
     margin: 0;
     :global(.btn-group) {
@@ -32,7 +36,29 @@
     }
 }
 
+:global(.btn-group-vertical .btn-default) {
+	background-color: transparent !important;
+}
+
+:global(.btn-group-vertical .button-list-items) {
+	border-right: 1px solid red;
+}
+
+:global(.btn-group-vertical) {
+	margin-top: 5px;
+}
+
+.button-list-items span {
+	color: white;
+}
+
+.button-list .button-list-items {
+	background-color: transparent !important;
+}
+
+// Individual buttons
 .button-list-item {
+	border: none !important;
     width: 100%;
     padding: 6px;
     display: block;
@@ -56,6 +82,7 @@
         border-top-right-radius: 4px;
         border-bottom-right-radius: 0;
         border-bottom-left-radius: 0;
+		border: none !important;
     }
     :global(.btn-group) > &+& {
         margin-top: -1px !important;
@@ -70,13 +97,11 @@
         border-bottom-left-radius: 4px;
     }
     &:focus {
-        z-index: initial !important;
         color: @dark-grey !important;
-        outline-style: none !important;
-        border-color: #cccccc !important;
-        background-color: #ffffff !important;
+        z-index: initial !important;
+        border-color: #fff !important;
         &:hover {
-            color: #333 !important;
+            color: #fff !important;
             border-color: #adadad !important;
             background-color: #e6e6e6 !important;
             &:active {
@@ -334,7 +359,7 @@
                 }
 
                 &:last-child:not(:first-child) {
-                    border-right: none !important;
+					          border-right: 1px solid #ccc !important;
                 }
 
                 &:before {
@@ -349,16 +374,17 @@
     }
 }
 
-@media (min-width: 568px) {
+@media (min-width: 670px) {
     .button-list-items {
         &.graph, &.interact, &.query, &.workbook, &.inspect {
             &:before {
-                margin-right: 3px;
                 text-align: right;
                 display: inline-block;
+                margin-left: 10px;
+                margin-right: 0px;
             }
             .button-list-item {
-                width: 26px;
+                width: 30px;
                 height: 40px;
                 line-height: 40px;
                 border-top: none;
@@ -369,17 +395,20 @@
             }
         }
         &.graph:before {
-            margin-left: 5px;
+            margin-left: 10px;
+            margin-right: 0px; 
         }
     }
 }
 
-@media (min-width: 750px) {
+@media (min-width: 800px) {
     .button-list-items {
         &.graph, &.interact, &.query, &.workbook, &.inspect {
             .button-list-item {
                 width: 40px;
+                font-size: 14px;
             }
         }
     }
 }
+
