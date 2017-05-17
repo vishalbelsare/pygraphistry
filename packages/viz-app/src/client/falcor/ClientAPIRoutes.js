@@ -82,7 +82,7 @@ const withClientAPIRoutes = withSchema((QL, { get, set }, services) => {
                                 }
                             }
                         },
-                        layout: { options: { tau: ${ writeOnly } } },
+                        layout: { options: { [{keys}]: { value: ${ writeOnly } } } },
                         labels: {
                             ['background', 'foreground']: { color: ${ writeOnly } },
                             ['opacity', 'enabled', 'poiEnabled', 'highlightEnabled']: ${
