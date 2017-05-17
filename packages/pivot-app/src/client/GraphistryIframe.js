@@ -2,7 +2,7 @@ import React from 'react';
 
 import styles from './styles.less';
 import { Subscription } from 'rxjs/Subscription';
-import { GraphistryJS } from '@graphistry/graphistry-client';
+import { GraphistryJS } from '@graphistry/client-api';
 
 import logger from '../shared/logger.js';
 const log = logger.createLogger(__filename);
