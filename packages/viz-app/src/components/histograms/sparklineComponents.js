@@ -22,7 +22,7 @@ const IconLegendIndicatorTooltip = (
 
 function SizeLegendIndicator ({ sizeValue, ...props }) {
     return !sizeValue ? null : (
-        <span class='label label-default'>
+        <span>
             <OverlayTrigger placement='top'
                             delayShow={tooltipShowDelay}
                             overlay={SizeLegendIndicatorTooltip}>
@@ -42,7 +42,7 @@ SizeLegendIndicator.propTypes = { sizeValue: React.PropTypes.array };
 
 function YAxisLegendIndicator ({ yAxisValue = 'none', ...props }) {
     return yAxisValue == 'none' ? null : (
-        <span class='label label-default'>
+        <span>
             <OverlayTrigger placement='top'
                             delayShow={tooltipShowDelay}
                             overlay={YAxisLegendIndicatorTooltip}>
@@ -62,7 +62,7 @@ YAxisLegendIndicator.propTypes = { yAxisValue: React.PropTypes.string };
 
 function IconLegendIndicator ({ iconValue, ...props }) {
     return !iconValue ? null : (
-        <span class='label label-default'>
+        <span>
             <OverlayTrigger placement='top'
                             delayShow={tooltipShowDelay}
                             overlay={IconLegendIndicatorTooltip}>
