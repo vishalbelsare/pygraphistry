@@ -8,6 +8,7 @@ const convict = require('./config');
 const express = require('express');
 const helmet = require('helmet');
 const chalk = require('chalk');
+const cors = require('cors');
 const path = require('path');
 const hpp = require('hpp');
 const fs = require('fs');
@@ -35,6 +36,9 @@ app.use(compression());
 
 // Parse cookies
 app.use(cookieParser());
+
+// Enable CORS for ETL
+app.use(cors({ origin: '*' }));
 
 // Tell Express to trust reverse-proxy connections from localhost, linklocal, and private IP ranges.
 // This allows Express to expose the client's real IP and protocol, not the proxy's.

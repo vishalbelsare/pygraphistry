@@ -32,14 +32,14 @@
 .button-list-items {
     margin: 0;
     :global {
-        .btn-group {
+        .btn-group, .btn-group-vertical {
             margin: 0;
-        }
-        .btn-group-vertical {
-            margin-top: 5px;
             .btn-default {
                 background-color: transparent !important;
             }
+        }
+        .btn-group-vertical {
+            margin-top: 5px;
             .button-list-items {
                 border-right: 1px solid red;
             }
@@ -282,7 +282,7 @@
     }
 }
 
-@media (min-width: 330px) {
+@media (min-width: 334px) {
 
     .button-list {
         top: 0px !important;
@@ -301,23 +301,11 @@
     }
 
     .button-list-items-container {
-        // &+& {
-        //     margin-left: -1px;
-        // }
         border: none !important;
         border-right: 1px solid #ccc !important;
         &:first-child, &:last-child {
             border-right: none !important;
         }
-        // .button-list-items {
-        //     border-right: 1px solid #ccc !important;
-        // }
-        // &:first-child, &:last-child {
-        //     // border-left: 1px solid #ccc;
-        //     .button-list-items {
-        //         border-right: none !important;
-        //     }
-        // }
         &.toolbar-items-graph, &.toolbar-items-interact,
         &.toolbar-items-query, &.toolbar-items-workbook,
         &.toolbar-items-inspect {
