@@ -25,6 +25,8 @@
     "url": "git+https://github.com/graphistry/pivot-app.git"
   },
   "dependencies": {
+    "@graphistry/client-api": "^2.12.0",
+    "@graphistry/client-api-react": "^2.12.0",
     "@graphistry/falcor": "2.9.3",
     "@graphistry/falcor-json-graph": "2.8.0",
     "@graphistry/falcor-model-rxjs": "2.9.3",
@@ -36,7 +38,6 @@
     "@graphistry/falcor-router": "2.9.3",
     "@graphistry/falcor-router-saddle": "2.9.3",
     "@graphistry/falcor-socket-datasource": "2.9.3",
-    "@graphistry/graphistry-client": "^2.11.255",
     "@graphistry/react-split-pane": "0.1.61",
     "bcrypt": "1.0.2",
     "better-react-spinkit": "2.0.0-4",
