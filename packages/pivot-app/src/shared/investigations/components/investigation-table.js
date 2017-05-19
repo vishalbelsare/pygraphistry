@@ -25,11 +25,15 @@ export default function InvestigationTable({
 
     function nameFormatter(name, row) {
         return (
-            <a  href={`/pivot/investigation/${row.id}`}
-                onClick={(e) => {
-                    e.preventDefault();
-                    selectInvestigation(row.id);
-                    switchScreen('investigation')
+            <a href={`/pivot/investigation/${row.id}`}
+               onClick={(e) => {
+                   if (e.metaKey) {
+                       e.stopPropagation();
+                   } else {
+                       e.preventDefault();
+                       selectInvestigation(row.id);
+                       switchScreen('investigation')
+                   }
             }}>
                 { name }
             </a>

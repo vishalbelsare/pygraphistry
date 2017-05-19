@@ -13,8 +13,12 @@ function NavButton({activeScreen, switchScreen, tip, screen, faIcon}) {
                     }>
                 <a href={`/pivot/${screen}`}
                    onClick={(e) => {
-                       e.preventDefault();
-                       switchScreen(screen);
+                       if (e.metaKey) {
+                           e.stopPropagation();
+                       } else {
+                           e.preventDefault();
+                           switchScreen(screen);
+                       }
                    }}
                 >
                     <i className={`fa ${faIcon}`}></i>
@@ -35,8 +39,10 @@ export default function Sidebar(props) {
 
             <div href={`/pivot/home`}
                 onClick={(e) => {
-                    e.preventDefault();
-                    switchScreen('home');
+                    if (!e.metaKey) {
+                        e.preventDefault();
+                        switchScreen('home');
+                    }
                 }}
                 className={styles.logo}
             >
