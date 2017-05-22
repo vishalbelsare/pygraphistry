@@ -185,7 +185,7 @@ function getTemplatesForTab(templates = [], componentType) {
         return Array.from(templates).filter((template) => (
             template && !blacklist[template.name] &&
             template.componentType === componentType &&
-            !template.isInternal && template.name !== 'type'
+            template.isInternal === false && template.name !== 'type'
         ))
         .sort(sortTemplatesByName);
     }
