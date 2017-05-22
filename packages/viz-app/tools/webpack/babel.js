@@ -20,13 +20,8 @@ function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
             useBuiltIns: true,
             exclude: ['transform-regenerator'],
             targets: {
-                node: type === 'client' ? false : 'current',
-                browsers: type === 'client' ? [
-                    'Last 2 versions',
-                    'Firefox >= 35',
-                    'Chrome >= 50',
-                    'not ie <= 11',
-                ] : false
+                node: 'current',
+                browsers: 'Last 2 versions'
             }
         }],
         // ['es2015', { modules: false, loose: true }],
@@ -38,6 +33,15 @@ function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
         // }],
         'stage-0'
     ];
+
+    if (type === 'client') {
+        presets[0][1].targets.browsers = [
+            'Last 2 versions',
+            'Firefox >= 35',
+            'Chrome >= 50',
+            'not ie <= 11',
+        ];
+    }
 
     const imports = {
         // 'rxjs': {
