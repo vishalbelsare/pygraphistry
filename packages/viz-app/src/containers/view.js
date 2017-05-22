@@ -23,7 +23,7 @@ import { selectLabel } from 'viz-app/actions/labels';
 import { selectInspectorRow } from 'viz-app/actions/inspector';
 
 const viewStyle = { position: `absolute`, width: `100%`, height: `100%` };
-const containerStyle = { ...viewStyle, position: `relative`, overflow: 'hidden' };
+const containerStyle = { ...viewStyle, position: `relative`, overflow: 'visible' };
 const containerVisibleStyle = { ...containerStyle, overflow: 'visible', flex: '1 1 auto' };
 const rightDockHiddenStyle = { opacity: 1, boxShadow: `none`, overflow: `visible`, background: `transparent` };
 const rightDockVisibleStyle = { opacity: 1, boxShadow: `none`, overflow: `visible`, background: `transparent` };
