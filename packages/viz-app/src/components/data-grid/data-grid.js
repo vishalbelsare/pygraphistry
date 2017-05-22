@@ -18,8 +18,7 @@ const MemoizeStyleProps = mapPropsStream((props) => {
     const rowCellStyle = { minHeight: 'auto', minWidth: 'auto', lineHeight: 'auto' };
     const rowHeaderStyle = { height: 'auto', minWidth: 'auto', lineHeight: 'auto' };
     const scrollerStyle = { width: 'auto', height: 'auto' };
-    const theadStyle = { transform: `translate3d(0px, 0px, 0px)` };
-    const tfootStyle = { transform: `translate3d(0px, 0px, 0px)` };
+    const tableStyle = { transform: `translate3d(0px, 0px, 0px)` };
     const tbodyStyle = { transform: `translate3d(0px, 0px, 0px)` };
     const tableContainerStyle = { width: 'auto', height: 'auto', overflow: 'hidden', paddingTop: 0 };
 
@@ -32,8 +31,7 @@ const MemoizeStyleProps = mapPropsStream((props) => {
             rowHeight, colWidth,
             bodyWidth, bodyHeight,
             scrollTop, scrollLeft,
-            colHeaderX, colHeaderY,
-            rowHeaderX, rowHeaderY,
+            rowHeaderX, colHeaderY,
             colsPerPage, rowsPerPage,
             colHeaderWidth, rowHeaderHeight,
         } = props;
@@ -73,14 +71,15 @@ const MemoizeStyleProps = mapPropsStream((props) => {
         scrollerStyle.width = width;
         scrollerStyle.height = height;
 
-        tfootStyle.transform = `translate3d(${rowHeaderX}px, 0px, 0px)`;
-        tbodyStyle.transform = `translate3d(${bodyX}px, ${bodyY}px, 0px)`;
-        theadStyle.transform = `translate3d(${colHeaderX}px, 0px, 0px)`;
-        cornerStyle.transform = `translate3d(${colHeaderX}px, 0px, 0px)`;
+        colHeaderStyle.transform = `translate3d(0px, ${colHeaderY}px, 0px)`;
+        rowHeaderStyle.transform = `translate3d(${rowHeaderX}px, 0px, 0px)`;
+        cornerStyle.transform = `translate3d(${rowHeaderX}px, ${colHeaderY}px, 0px)`;
+
+        tableStyle.transform = `translate3d(${bodyX}px, ${bodyY}px, 0px)`;
+        tbodyStyle.transform = `translate3d(0px, ${rowHeaderHeight || 0}px, 0px)`;
 
         tableContainerStyle.width = bodyWidth || 'auto';
         tableContainerStyle.height = bodyHeight || 'auto';
-        tableContainerStyle.paddingTop = rowHeaderHeight || 0;
 
         props = Object.create(props);
 
@@ -91,8 +90,7 @@ const MemoizeStyleProps = mapPropsStream((props) => {
         props.rowCellStyle = { ...rowCellStyle };
         props.rowHeaderStyle = { ...rowHeaderStyle };
         props.scrollerStyle = { ...scrollerStyle };
-        props.theadStyle = { ...theadStyle };
-        props.tfootStyle = { ...tfootStyle };
+        props.tableStyle = { ...tableStyle };
         props.tbodyStyle = { ...tbodyStyle };
         props.tableContainerStyle = { ...tableContainerStyle };
 
@@ -129,7 +127,7 @@ function DataGrid(props) {
         colsPerPage, rowsPerPage,
         onRowSelect, onColHeaderSelect,
         scrollerStyle, tableContainerStyle,
-        theadStyle, tfootStyle, tbodyStyle
+        tableStyle, tbodyStyle
     } = props;
 
     let col, row, cell, cells, thead, tbody, colIndex = -1, rowIndex = -1;
@@ -160,8 +158,7 @@ function DataGrid(props) {
         while (++colIndex < colsPerPage) {
             col = startCol + colIndex;
             thead.push(
-                <th data-col-index={col}
-                    onClick={onColHeaderSelect}
+                <th onClick={onColHeaderSelect}
                     key={`grid-col-${col}-cell`}>
                     <div style={colCellStyle}>
                         <div style={colHeaderStyle}
@@ -186,8 +183,8 @@ function DataGrid(props) {
         if (renderRowHeaderCell) {
             cell = renderRowHeaderCell(row, props);
             cells.push(
-                <td style={theadStyle}
-                    key={`grid-row-${row}-cell`}>
+                <td key={`grid-row-${row}-cell`}
+                    className={styles['grid-head-cell']}>
                     <div style={rowCellStyle}>
                         <div className={styles['grid-head-row-cell-content']}>
                             {cell}
@@ -223,7 +220,7 @@ function DataGrid(props) {
         }
 
         tbody.push(
-            <tr key={`grid-row-${row}`} data-row-index={row} onClick={onRowSelect}>
+            <tr key={`grid-row-${row}`} onClick={onRowSelect}>
                 {cells}
             </tr>
         );
@@ -235,12 +232,12 @@ function DataGrid(props) {
                  onWheel={onWheel} onScroll={onScroll}
                  ref={setScrollPosition} style={scrollerStyle}>
                 <div style={tableContainerStyle}>
-                    <table className={styles['grid']}>
+                    <table className={styles['grid']} style={tableStyle}>
                         <tbody style={tbodyStyle}>
                             {tbody}
                         </tbody>
                         {/* specify <thead> as <tfoot> because tfoot creates a higher stacking context */}
-                        <tfoot style={tfootStyle}>
+                        <tfoot>
                             <tr>
                                 {thead}
                             </tr>

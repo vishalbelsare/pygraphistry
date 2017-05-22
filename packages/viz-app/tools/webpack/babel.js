@@ -14,17 +14,22 @@ function addBabelRules({ isDev, type, vendor, environment, threadPool }, appConf
 
 function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
     const presets = [
-        // ['env', {
-        //     loose: true,
-        //     modules: false,
-        //     useBuiltIns: true,
-        //     exclude: ['transform-regenerator'],
-        //     targets: {
-        //         node: type === 'client' ? false : 'current',
-        //         browsers: type === 'client' ? ['last 2 versions'] : false
-        //     }
-        // }],
-        ['es2015', { modules: false, loose: true }],
+        ['env', {
+            loose: true,
+            modules: false,
+            useBuiltIns: true,
+            exclude: ['transform-regenerator'],
+            targets: {
+                node: type === 'client' ? false : 'current',
+                browsers: type === 'client' ? [
+                    'Last 2 versions',
+                    'Firefox >= 35',
+                    'Chrome >= 50',
+                    'not ie <= 11',
+                ] : false
+            }
+        }],
+        // ['es2015', { modules: false, loose: true }],
         'react',
         // ['babili', {
         //     mangle: false,

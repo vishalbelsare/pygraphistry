@@ -21,30 +21,25 @@ function getViewport(props) {
     let bodyX = 0, bodyY = 0,
         startCol = 0, colsPerPage = Infinity,
         startRow = 0, rowsPerPage = Infinity,
-        colHeaderX = 0, colHeaderY = scrollTop,
-        rowHeaderY = 0, rowHeaderX = scrollLeft;
+        rowHeaderX = scrollLeft,
+        colHeaderY = scrollTop;
 
-    if (typeof width !== 'number') {
-        rowHeaderX = -scrollLeft;
-    } else {
+    if (typeof width === 'number') {
 
         startCol = Math.floor(scrollLeft / colWidth);
         colsPerPage = Math.max(0, Math.floor((width - colHeaderWidth) / colWidth));
 
         bodyX = startCol * colWidth;
-        colHeaderX = scrollLeft - (startCol * colWidth);
-        rowHeaderX = (startCol * colWidth) - scrollLeft;
+        rowHeaderX = scrollLeft - (startCol * colWidth);
     }
 
-    if (typeof height !== 'number') {
-        colHeaderY = -scrollTop;
-    } else {
+    if (typeof height === 'number') {
 
         startRow = Math.floor(scrollTop / rowHeight);
         rowsPerPage = Math.max(0, Math.floor((height - rowHeaderHeight) / rowHeight));
 
         bodyY = startRow * rowHeight;
-        colHeaderY = (startRow * rowHeight) - scrollTop;
+        colHeaderY = scrollTop - (startRow * rowHeight);
     }
 
     return {
@@ -52,8 +47,7 @@ function getViewport(props) {
         width, height,
         startCol, startRow,
         rowHeight, colWidth,
-        colHeaderX, colHeaderY,
-        rowHeaderX, rowHeaderY,
+        rowHeaderX, colHeaderY,
         colsPerPage, rowsPerPage,
         colHeaderWidth, rowHeaderHeight,
     };

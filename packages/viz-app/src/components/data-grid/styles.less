@@ -1,4 +1,5 @@
 .grid-scroller-container {
+    contain: layout;
     overflow: hidden;
     backface-visibility: hidden;
     transform: translate3d(0, 0, 0);
@@ -8,7 +9,11 @@
     overflow: auto;
 }
 
-.grid, .grid > thead, .grid > tbody, .grid > tfoot {
+.grid {
+    will-change: transform;
+}
+
+.grid, .grid > tbody {
     backface-visibility: hidden;
 }
 
@@ -26,6 +31,10 @@
     }
 }
 
+.grid-head-cell {
+    transform: translate3d(0,0,0);
+}
+
 /* table column header cell - fixed to the top */
 .grid-head-col-cell {
     top: 0;
@@ -37,7 +46,7 @@
     border-bottom: 2px solid #ccc;
 }
 
-/* table row header cell wrapper - fixed to the left */
+/* table row header cell content. Hidden so the corner cell width will grow as the grid is scrolled vertically */
 .grid-head-row-cell-content {
     position: static;
     visibility: hidden;
@@ -46,6 +55,7 @@
     border-right: 2px solid #ccc;
 }
 
+/* table row header cell wrapper - fixed to the left */
 .grid-head-row-cell-wrapper {
     top: 0;
     left: 0;
@@ -91,10 +101,6 @@
 
 .grid > tbody .grid-cell-even {
     background-color: white;
-}
-
-.grid > thead, .grid > tbody, .grid > tfoot {
-    will-change: transform;
 }
 
 .grid > thead th, .grid > tfoot th {

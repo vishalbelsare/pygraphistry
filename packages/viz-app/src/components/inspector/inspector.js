@@ -134,7 +134,6 @@ function renderColHeaderCell(colIndex, { cols, sortKey, sortOrder, entityType })
     return (
         <Button title={label}
                 block active={isSorting}
-                href='javascript:void(0)'
                 className={styles['inspector-header-cell']}>
             <i className={classNames({
                 'fa': true,
