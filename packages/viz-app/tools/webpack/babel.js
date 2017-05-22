@@ -14,17 +14,7 @@ function addBabelRules({ isDev, type, vendor, environment, threadPool }, appConf
 
 function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
     const presets = [
-        ['env', {
-            loose: true,
-            modules: false,
-            useBuiltIns: true,
-            exclude: ['transform-regenerator'],
-            targets: {
-                node: 'current',
-                browsers: 'Last 2 versions'
-            }
-        }],
-        // ['es2015', { modules: false, loose: true }],
+        ['es2015', { modules: false, loose: true }],
         'react',
         // ['babili', {
         //     mangle: false,
@@ -33,15 +23,6 @@ function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
         // }],
         'stage-0'
     ];
-
-    if (type === 'client') {
-        presets[0][1].targets.browsers = [
-            'Last 2 versions',
-            'Firefox >= 35',
-            'Chrome >= 50',
-            'not ie <= 11',
-        ];
-    }
 
     const imports = {
         // 'rxjs': {

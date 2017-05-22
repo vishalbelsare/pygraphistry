@@ -158,7 +158,8 @@ function DataGrid(props) {
         while (++colIndex < colsPerPage) {
             col = startCol + colIndex;
             thead.push(
-                <th onClick={onColHeaderSelect}
+                <th data-col-index={col}
+                    onClick={onColHeaderSelect}
                     key={`grid-col-${col}-cell`}>
                     <div style={colCellStyle}>
                         <div style={colHeaderStyle}
@@ -220,7 +221,7 @@ function DataGrid(props) {
         }
 
         tbody.push(
-            <tr key={`grid-row-${row}`} onClick={onRowSelect}>
+            <tr key={`grid-row-${row}`} data-row-index={row} onClick={onRowSelect}>
                 {cells}
             </tr>
         );

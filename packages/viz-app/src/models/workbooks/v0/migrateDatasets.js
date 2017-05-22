@@ -20,7 +20,7 @@ export function migrateDatasets(workbook, options = {}) {
             url: datasetId,
             name: datasetId,
             ... workbookDatasets[datasetId],
-        }, dataset.id);
+        }, datasetId);
     }
 
     if (datasetsList.length === 0) {
