@@ -54,8 +54,8 @@ function HighlightPoint({ index, sizes, points, renderState, selectedPoints, onP
                                          camera.getMatrix());
 
     // Clamp like in pointculled shader
-    const size = Math.max(5, Math.min(
-        scalingFactor * sizes[index], 50)) / camera.pixelRatio;
+    const size = (Math.max(5, Math.min(
+        scalingFactor * sizes[index], 50)) / camera.pixelRatio) || 0;
 
     const hitArea = Math.max(50, size * 2);
     const selected = selectedPoints && ~selectedPoints.indexOf(index);
