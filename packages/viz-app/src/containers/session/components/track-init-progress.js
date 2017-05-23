@@ -2,7 +2,9 @@ import { Observable } from 'rxjs/Observable';
 import mapPropsStream from 'recompose/mapPropsStream';
 import { Col, Row, Grid, ProgressBar } from 'react-bootstrap';
 
-export function TrackInitProgress(latencyThreshold = 12000, refreshThreshold = 8000) {
+// latencyThreshold = show "herding stray GPUs" message
+// latencyThreshold + refreshThreshold = show "something went wrong" message
+export function TrackInitProgress(latencyThreshold = 22000, refreshThreshold = 38000) {
     return mapPropsStream((props) => {
 
         function reload() {
