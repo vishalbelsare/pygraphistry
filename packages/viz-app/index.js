@@ -18,7 +18,10 @@ const config = _config();
 const port = convict.get('port');
 const host = convict.get('host');
 const logger = createLogger('viz-app');
-const io = app.io = new SocketIOServer({ serveClient: false });
+const io = app.io = new SocketIOServer({
+    serveClient: false,
+    upgradeTimeout: config.SOCKET_CLAIM_TIMEOUT * 1000
+});
 
 // Remove Express header.
 app.disable('x-powered-by');
