@@ -168,12 +168,13 @@
     rc-util "^3.2.1"
     warning "^3.0.0"
 
-"@graphistry/react-split-pane@0.1.61":
-  version "0.1.61"
-  resolved "https://registry.yarnpkg.com/@graphistry/react-split-pane/-/react-split-pane-0.1.61.tgz#2ce02fe0b8c36aa08960a8f64435055e204ddf8b"
+"@graphistry/react-split-pane@^0.1.63":
+  version "0.1.63"
+  resolved "https://registry.yarnpkg.com/@graphistry/react-split-pane/-/react-split-pane-0.1.63.tgz#d0fbfaf8a0000ce4469ace766443b9bfcbdf0719"
   dependencies:
-    inline-style-prefixer "^3.0.0"
-    react-style-proptype "^2.0.1"
+    inline-style-prefixer "^3.0.2"
+    prop-types "^15.5.8"
+    react-style-proptype "^3.0.0"
 
 JSONStream@^0.8.4:
   version "0.8.4"
@@ -1240,6 +1241,12 @@ babel-plugin-transform-react-jsx@^6.23.0, babel-plugin-transform-react-jsx@^6.24
     babel-helper-builder-react-jsx "^6.24.1"
     babel-plugin-syntax-jsx "^6.8.0"
     babel-runtime "^6.22.0"
+
+babel-plugin-transform-react-remove-prop-types@^0.4.5:
+  version "0.4.5"
+  resolved "https://registry.yarnpkg.com/babel-plugin-transform-react-remove-prop-types/-/babel-plugin-transform-react-remove-prop-types-0.4.5.tgz#79d1958437ae23d4fbc0b11d1a041498ddb23877"
+  dependencies:
+    babel-traverse "^6.24.1"
 
 babel-plugin-transform-regenerator@^6.22.0, babel-plugin-transform-regenerator@^6.24.1:
   version "6.24.1"
@@ -5079,9 +5086,9 @@ ini@~1.3.0:
   version "1.3.4"
   resolved "https://registry.yarnpkg.com/ini/-/ini-1.3.4.tgz#0537cb79daf59b59a1a517dff706c86ec039162e"
 
-inline-style-prefixer@^3.0.0:
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/inline-style-prefixer/-/inline-style-prefixer-3.0.3.tgz#eca9767080b29a8afcf13299fe6358e1f320bbeb"
+inline-style-prefixer@^3.0.2:
+  version "3.0.5"
+  resolved "https://registry.yarnpkg.com/inline-style-prefixer/-/inline-style-prefixer-3.0.5.tgz#0092881b3a2eadf1bd619dc43726557316f76042"
   dependencies:
     bowser "^1.6.0"
     css-in-js-utils "^1.0.3"
@@ -8162,9 +8169,11 @@ react-side-effect@^1.1.0:
     exenv "^1.2.1"
     shallowequal "^0.2.2"
 
-react-style-proptype@^2.0.1:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/react-style-proptype/-/react-style-proptype-2.0.2.tgz#b4687990ac256deed89ee5777a3c58de5ac7bd15"
+react-style-proptype@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/react-style-proptype/-/react-style-proptype-3.0.0.tgz#89e0b646f266c656abb0f0dd8202dbd5036c31e6"
+  dependencies:
+    prop-types "^15.5.4"
 
 react-virtualized@9.7.5:
   version "9.7.5"

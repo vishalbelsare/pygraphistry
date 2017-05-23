@@ -62,7 +62,15 @@ function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
         plugins.push(
             // Don't use this plugin: it breaks FF31, used by InQTel
             // 'transform-react-inline-elements'
-            'transform-react-constant-elements'
+            'transform-react-constant-elements',
+            ['transform-react-remove-prop-types', {
+                mode: 'remove',
+                removeImport: true,
+                additionalLibraries: [
+                    'prop-types',
+                    'react-immutable-proptypes'
+                ]
+            }]
         );
     }
 
@@ -81,7 +89,7 @@ function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
             // },
             {
                 loader: 'babel-loader',
-                exclude: /(node_modules(?!\/rxjs))/,
+                // exclude: /(node_modules(?!\/rxjs))/,
                 options: {
                     babelrc: false,
                     cacheDirectory: isDev,

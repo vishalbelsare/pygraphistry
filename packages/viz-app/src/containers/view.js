@@ -23,7 +23,7 @@ import { selectLabel } from 'viz-app/actions/labels';
 import { selectInspectorRow } from 'viz-app/actions/inspector';
 
 const fullWidth = { width: `100%` };
-const paneStyle = { ...fullWidth, position: `relative` };
+const paneStyle = { ...fullWidth, height: `100%`, position: `relative` };
 const rightPanelStyle = { ...paneStyle, overflow: 'visible' };
 
 let View = ({
@@ -58,7 +58,7 @@ let View = ({
                        split='horizontal' primary='second'
                        defaultSize={isBottomPanelOpen ? `${(1 - (1/Math.sqrt(2)))*100}%` : '0%'}>
                 <SplitPane minSize={0}
-                           pane1Style={paneStyle}
+                           paneStyle={paneStyle}
                            pane2Style={rightPanelStyle}
                            allowResize={isRightPanelOpen}
                            split='vertical' primary='second'
