@@ -203,6 +203,14 @@ function coerceSortKey(templates, sortKey) {
 }
 
 function sortTemplatesByName(a, b) {
+    if (a.isInternal && b.isInternal) {
+        return  a.name < b.name ? -1 :
+                a.name > b.name ?  1 : 0;
+    } else if (b.isInternal) {
+        return -1;
+    } else if (a.isInternal) {
+        return 1;
+    }
     return a.name < b.name ? -1 :
-           a.name > b.name ? 1 : 0;
+           a.name > b.name ?  1 : 0;
 }
