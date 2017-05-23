@@ -152,13 +152,14 @@ function configureVizWorker(config, activeCB, io) {
 export { configureVizWorker };
 export default configureVizWorker;
 
-function sendSessionUpdate(sendUpdate, _view, session) {
-    session = session || _view;
+function sendSessionUpdate(sendUpdate, view, session) {
+    let _view = view;
+    let _session = session || view;
     return function letSendSessionUpdate(source = Observable.of({})) {
         return source.mergeMap(
             ({ workbook, view }) => {
                 _view = view || _view;
-                _view.session = session;
+                _view.session = _session;
                 const workbookPath = workbook ? `workbooksById['${workbook.id}']` : 'workbooks.open';
                 const viewPath = `${workbookPath}.viewsById['${_view.id}']`;
                 return sendUpdate({
@@ -178,9 +179,9 @@ function sendPostVGraphLoadedUpdate(sendUpdate, updateSession) {
                     const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
                     return sendUpdate({
                         invalidated: [
-                            `${viewPath}.labelsByType`,
+                            `${viewPath}.columns.length`,
                             `${viewPath}.inspector.rows`,
-                            `${viewPath}.componentsByType`,
+                            `${viewPath}['labelsByType', 'componentsByType']`,
                         ],
                         paths: [
                             `${viewPath}.columns.length`,

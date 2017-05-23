@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, Scheduler } from 'rxjs';
 import { logger as commonLogger } from '@graphistry/common';
 import { fromPathsOrPathValues } from '@graphistry/falcor-path-syntax';
 const logger = commonLogger.createLogger('viz-app/worker/services/sendFalcorUpdate.js');
@@ -11,7 +11,7 @@ export function sendFalcorUpdate(getSocket, getDataSource) {
         const socket = getSocket();
         if (!socket) {
             logger.debug(`Attempted to send falcor update, but no socket connected yet.`);
-            return Observable.of(0);
+            return Observable.of(0, Scheduler.async);
         }
         const dataSource = getDataSource({ ...socket.handshake });
         _paths = fromPathsOrPathValues(_paths);
