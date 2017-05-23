@@ -9,7 +9,7 @@ export const Sparkline = ({ name, yScale, children, componentType,
                             id, width = `100%`, height = 50,
                             loading = false, filtered = false, colors = false,
                             isFilterEnabled = true, setEncoding, encodings,
-                            onClose, onYScaleChanged, onEncodingChanged }) => {
+                            onClose, onClearHighlight, onYScaleChanged, onEncodingChanged }) => {
     const { options } = encodings || {};
     return (
         <div className={classNames({
@@ -66,7 +66,9 @@ export const Sparkline = ({ name, yScale, children, componentType,
                     &#8203;{name || '\u00a0'}
                 </span>
             </div>
-            <div className={styles['histogram-picture']} style={{ width, height }}>
+            <div style={{ width, height }}
+                 onMouseLeave={onClearHighlight}
+                 className={styles['histogram-picture']}>
                 {children}
             </div>
         </div>

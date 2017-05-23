@@ -11,6 +11,7 @@ import {
     yScaleChanged,
 
     addHistogram,
+    clearHighlight,
     removeHistogram,
 } from 'viz-app/actions/histograms';
 
@@ -95,8 +96,8 @@ let Histogram = ({ range = [],
                    dataType, componentType,
                    id, name, yScale = 'none', encodings,
                    filter, global: _global = {}, masked = {},
-                   binTouchMove, binTouchStart, binTouchCancel,
-                   removeHistogram, yScaleChanged, setEncoding }) => {
+                   removeHistogram, yScaleChanged, setEncoding,
+                   clearHighlight, binTouchMove, binTouchStart, binTouchCancel }) => {
 
     const { [componentType]: encodingDescription = {} } = encodings || {};
     const { color: {
@@ -124,7 +125,8 @@ let Histogram = ({ range = [],
                    setEncoding={setEncoding}
                    isFilterEnabled={enabled}
                    componentType={componentType}
-                   onYScaleChanged={(value) => yScaleChanged({key: 'yScale', value})}>
+                   onYScaleChanged={(value) => yScaleChanged({key: 'yScale', value})}
+                   onClearHighlight={(event) => clearHighlight({ id, event, componentType })}>
         {globalBins.map((
             { values, count: globalCount }, binID, bins,
             binIsFiltered = filtered && !!(
@@ -167,6 +169,7 @@ Histogram = container({
         binTouchMove,
         binTouchStart,
         binTouchCancel,
+        clearHighlight,
         yScaleChanged
     }
 })(Histogram);

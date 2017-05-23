@@ -5,6 +5,7 @@ import { createSubject, SceneGestures } from './support';
 import { $ref, $atom, $value, $invalidate } from '@graphistry/falcor-json-graph';
 import {
     ADD_HISTOGRAM,
+    CLEAR_HIGHLIGHT,
     REMOVE_HISTOGRAM,
 
     BIN_TOUCH_MOVE,
@@ -21,7 +22,8 @@ export function histograms(action$, store) {
         updateHistogram(action$, store),
         removeHistogram(action$, store),
         filterBinsOnDrag(action$, store),
-        highlightHistogramBin(action$, store)
+        highlightHistogramBin(action$, store),
+        clearHistogramHighlight(action$, store)
     ).ignoreElements();
 }
 
@@ -54,9 +56,28 @@ function highlightHistogramBin(action$) {
         .ofType(BIN_TOUCH_MOVE)
         .filter(({ event }) => event.buttons === 0)
         .distinctUntilChanged(null, ({ binID }) => binID)
+        .takeUntil(action$.ofType(CLEAR_HIGHLIGHT)).repeat()
         .switchMap(({ binID, falcor }) => (
             falcor.call('highlightBin', [binID])
         ));
+}
+
+function clearHistogramHighlight(action$) {
+    return action$
+        .ofType(CLEAR_HIGHLIGHT)
+        .filter(({ event }) => event.buttons === 0)
+        .switchMap(({ falcor, componentType }) => {
+            const viewModel = falcor._clone({
+                _path: falcor.getPath().slice(0, 4)
+            });
+            return viewModel.set({ json: {
+                labels: { highlight: $atom(undefined) },
+                highlight: {
+                    darken: false,
+                    [componentType]: $atom([])
+                }
+            }})
+        });
 }
 
 function filterBinsOnDrag(actions) {

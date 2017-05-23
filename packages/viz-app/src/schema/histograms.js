@@ -332,7 +332,7 @@ export function histograms(path, base) {
                     workbook, view, histogram, maskedComponents
                 })
             )
-            .mergeMap(({ workbook, view, histogram, maskedComponents: masked }) => {
+            .mergeMap(({ workbook, view, histogram, maskedComponents: masked = {} }) => {
 
                 let darken = false;
                 const values = Object

@@ -1,5 +1,6 @@
 export const ADD_HISTOGRAM = 'add-histogram';
 export const REMOVE_HISTOGRAM = 'remove-histogram';
+export const CLEAR_HIGHLIGHT = 'clear-histogram-highlight';
 
 export const BIN_TOUCH_MOVE = 'histogram-bin-touch-move';
 export const BIN_TOUCH_START = 'histogram-bin-touch-start';
@@ -18,6 +19,10 @@ export const removeHistogram = (props) => ({
 
 export const binTouchMove = (props) => ({
     ...props, type: BIN_TOUCH_MOVE
+});
+
+export const clearHighlight = (props) => ({
+    ...props, type: CLEAR_HIGHLIGHT
 });
 
 export const binTouchStart = (props) => ({
