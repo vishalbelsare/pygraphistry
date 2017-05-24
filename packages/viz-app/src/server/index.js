@@ -65,6 +65,9 @@ function terminateServer(err) {
     const exitDelay = 5000;
 
     if(err) {
+        if (!(err instanceof Error)) {
+            err = new Error('' + err);
+        }
         // Template strings don't strip leading whitespace, hence the weird indentation here.
         let partingMessage = `
 ${'#'.repeat(80)}
