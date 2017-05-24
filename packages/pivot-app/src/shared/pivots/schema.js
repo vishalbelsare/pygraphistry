@@ -29,7 +29,7 @@ export default withSchema((QL, { get, set }, services) => {
         ['id', 'length', 'resultCount', 'resultSummary']: ${
             readOnlyHandler
         },
-        ['status', 'enabled', 'pivotTemplate']: ${
+        ['status', 'enabled', 'description', 'pivotTemplate']: ${
             readWriteHandler
         },
         pivotParameters: {

@@ -8,7 +8,7 @@ export const pivotContainer = container({
         const { pivotParameterKeys = [] } = pivotTemplate;
         if (pivotParameterKeys.length === 0) {
             return `{
-                id, status, enabled,
+                id, status, enabled, description,
                 resultCount, resultSummary,
                 pivotTemplate: ${
                     Template.fragment(pivotTemplate)
@@ -16,7 +16,7 @@ export const pivotContainer = container({
             }`
         }
         return `{
-            id, status, enabled,
+            id, status, enabled, description,
             resultCount, resultSummary,
             pivotParameters: {
                 ${ pivotParameterKeys }
@@ -26,11 +26,13 @@ export const pivotContainer = container({
             }
         }`;
     },
-    mapFragment: (pivot = {}) => {
+    mapFragment: (pivot = {}, props, $falcor) => {
         return {
+            $falcor,
             id: pivot.id,
             status: pivot.status,
             enabled: pivot.enabled,
+            description: pivot.description,
             resultCount: pivot.resultCount,
             resultSummary: pivot.resultSummary,
             pivotTemplate: pivot.pivotTemplate,

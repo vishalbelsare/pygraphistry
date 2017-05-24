@@ -39,27 +39,31 @@ const undecoratedLabels = [{node: n1},
                            {node: n5},
                            {node: n6},
                            {node: n7}];
-const decoratedLabels = [{node: n1, x: 1, y: -2},
-                         {node: n2, x: 1, y: 1},
-                         {node: n3, x: 1, y: 8},
-                         {node: n4, x: 0, y: 5},
-                         {node: n5, x: 1, y: 13},
-                         {node: n6, x: 1, y: 5},
-                         {node: n7, x: 2, y: 5}];
+const decoratedLabels = [{node: n1, x: 0, y: -2},
+                         {node: n2, x: 0, y: 30},
+                         {node: n3, x: 0, y: 120},
+                         {node: n4, x: 0, y: 90},
+                         {node: n5, x: 0, y: 210},
+                         {node: n6, x: 1, y: 90},
+                         {node: n7, x: 2, y: 90}];
 const rows = {[n1]: 0, [n2]: 1, [n3]: 4, [n4]: 3, [n5]: 7, [n6]: 3, [n7]: 3};
 const degrees = {[n1]: 1, [n2]: 4, [n3]: 1, [n4]: 3, [n5]: 1, [n6]: 1, [n7]: 1};
 const rowColumnCounts = {0: 1, 1: 1, 3: 3, 4: 1, 7: 1};
-const rowColumns = {[n1]: 1, [n2]: 1, [n3]: 1, [n4]: 0, [n5]: 1, [n6]: 1, [n7]: 2};
+const rowColumns = {[n1]: 0, [n2]: 0, [n3]: 0, [n4]: 0, [n5]: 0, [n6]: 1, [n7]: 2};
 const fudgeX = 1;
 const fudgeY = 2;
 const spacerY = 1;
-const xys = {[n1]: {x: 1, y: -2},
-             [n2]: {x: 1, y: 1},
-             [n3]: {x: 1, y: 8},
-             [n4]: {x: 0, y: 5},
-             [n5]: {x: 1, y: 13},
-             [n6]: {x: 1, y: 5},
-             [n7]: {x: 2, y: 5}};
+const xys = {[n1]: {x: 0, y: -2},
+             [n2]: {x: 0, y: 30},
+             [n3]: {x: 0, y: 120},
+             [n4]: {x: 0, y: 90},
+             [n5]: {x: 0, y: 210},
+             [n6]: {x: 1, y: 90},
+             [n7]: {x: 2, y: 90}};
+const minLineLength = 10;
+const maxLineLength = 100;
+const pivotWrappedLineHeight = 0.5;
+const types = {};
 const hugeDataStructure = {data: {graph: edges, labels: undecoratedLabels}};
 const hugeDecoratedDataStructure = {data: {graph: edges, labels: decoratedLabels}};
 
@@ -82,7 +86,7 @@ describe('rowColumnCounts', function() {
 
 describe('rowsToColumns', function() {
         it('should order nodes into columns by degree and then name', function() {
-                assert.deepEqual(uploadGraph.rowsToColumns(rows, rowColumnCounts, degrees), rowColumns);
+                assert.deepEqual(uploadGraph.rowsToColumns(rows, rowColumnCounts, degrees, minLineLength, maxLineLength, pivotWrappedLineHeight, types), rowColumns);
             });
     });
 
