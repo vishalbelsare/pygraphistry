@@ -86,9 +86,6 @@ function traverse (edgeList, root, label, depth, done, nodeToComponent) {
             done[src] = 1;
             nodeToComponent[src] = label;
             enqueueEdges(edgeList, label, src, nextLevel, done);
-            if (_.reduce(edgeList, function (accum, e) {return accum+e.length; }, 0) > 100000) {
-                throw new Error('Too much traversal at the current level; assuming super-nodes');
-            }
             traversed++;
         }
         if (nextLevel.length > 50000) {
@@ -120,62 +117,71 @@ module.exports = function weaklycc (numPoints, edges, depth) {
     // [ int ]
     var roots = computeRoots(numPoints, degrees);
 
-
     //{root: int, component: int, size: int}
     var components = [];
+    var label = 0;
+    var root = roots[0];
+    var componentSize = 0;
 
     var nodeToComponent = new Uint32Array(numPoints);
-    var done = new Uint32Array(numPoints);
 
     perf.startTiming('graph-viz:weaklycc:dfs');
-    var lastSize = degrees[roots[0]];
-    var threshold = Math.min(lastSize * 0.1, 1000);
-    var start = Date.now();
-    for (var i = 0; i < numPoints; i++) {
-        var root = roots[i];
-        if (!done[root]) {
-            if (lastSize < threshold) { // originally (true && lastSize < threshold), why true && ?
 
-                //skip first as likely super-node
-                var defaultLabel = components.length > 1 ? 1 : 0;
+    try {
+        if (_.reduce(edgeList, function (accum, e) {return accum+e.length; }, 0) > 100000) {
+            throw new Error('Too much traversal at the current level; assuming super-nodes');
+        }
+        var lastSize = degrees[roots[0]];
+        var threshold = Math.min(lastSize * 0.1, 1000);
+        var done = new Uint32Array(numPoints);
+        var startTime = process.hrtime();
+        for (var i = 0; i < numPoints; i++) {
+            root = roots[i];
+            if (!done[root]) {
+                if (lastSize < threshold) { // originally (true && lastSize < threshold), why true && ?
 
-                components[defaultLabel].size++;
-                done[root] = true;
-                nodeToComponent[root] = defaultLabel;
-            } else {
-                // This tries to fail gracefully under super-node conditions with lots of multi-edges.
-                // The alternative is a crash due to memory/heap exhaustion.
-                var label = components.length, componentSize = 0;
-                try {
-                    if (Date.now() - start > 2000) {
+                    //skip first as likely super-node
+                    var defaultLabel = components.length > 1 ? 1 : 0;
+
+                    components[defaultLabel].size++;
+                    done[root] = true;
+                    nodeToComponent[root] = defaultLabel;
+                } else {
+                    // This tries to fail gracefully under super-node conditions with lots of multi-edges.
+                    // The alternative is a crash due to memory/heap exhaustion.
+                    label = components.length;
+                    componentSize = 0;
+                    var [s, ns] = process.hrtime(startTime);
+                    var elapsed = (s * 1000 /* s -> ms */) +
+                                  (ns / 1000000 /* ns -> ms */);
+                    if (elapsed > 2000) {
                         logger.warn('weaklycc timeout');
                         throw new Error('too long');
                     }
                     componentSize = traverse(edgeList, root, label, depth, done, nodeToComponent);
                     components.push({root: root, component: label, size: componentSize});
                     lastSize = componentSize;
-                } catch (ignore) {
-                    // Make one last component out of all remaining nodes.
-                    componentSize = 0;
-                    for (var j=0; j<numPoints; j++) {
-                        if (nodeToComponent[j] === 0) {
-                            nodeToComponent[j] = label;
-                            componentSize++;
-                        } else if (nodeToComponent[j] === label) {
-                            // incomplete traverse effect
-                            componentSize++;
-                        }
-                    }
-                    components.push({root: root, component: label, size: componentSize});
-                    break;
-                }
 
-                //cut down for second component (first was a likely outlier)
-                if (components.length === 2) {
-                    threshold = Math.min(lastSize * 0.2, threshold);
+                    //cut down for second component (first was a likely outlier)
+                    if (components.length === 2) {
+                        threshold = Math.min(lastSize * 0.2, threshold);
+                    }
                 }
             }
         }
+    } catch (ignoreMe) {
+        // Make one last component out of all remaining nodes.
+        componentSize = 0;
+        for (var j=0; j<numPoints; j++) {
+            if (nodeToComponent[j] === 0) {
+                nodeToComponent[j] = label;
+                componentSize++;
+            } else if (nodeToComponent[j] === label) {
+                // incomplete traverse effect
+                componentSize++;
+            }
+        }
+        components.push({root: root, component: label, size: componentSize});
     }
 
     perf.endTiming('graph-viz:weaklycc:dfs');
