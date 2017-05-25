@@ -17,7 +17,7 @@ function configureVGraphPipeline(config, s3DatasetCache) {
             )
             .let(updateSession({
                 status: 'init',
-                progress: 100 * 8/10,
+                progress: 100 * 9/10,
                 message: 'Applying filters'
             }))
             .mergeMap(

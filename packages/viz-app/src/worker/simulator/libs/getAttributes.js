@@ -1,0 +1,227 @@
+import Color from 'color';
+import _ from 'underscore';
+import moment from 'moment';
+import { Observable, Scheduler } from 'rxjs';
+import { accessorForTargetType } from './VGraphLoader';
+
+const log         = require('@graphistry/common').logger;
+const logger      = log.createLogger('graph-viz', 'graph-viz/js/libs/VGraphLoader.js');
+
+const ProtoBuf = require('protobufjs/dist/protobuf-light');
+const protoBufDefinitions = ProtoBuf.loadJson(require('viz-app/vgraph/graph_vector.proto')).build();
+const VERTEX = protoBufDefinitions.VectorGraph.AttributeTarget.VERTEX;
+const EDGE   = protoBufDefinitions.VectorGraph.AttributeTarget.EDGE;
+
+/**
+ * Infer column types when possible. If vector type is datetime,
+ * asynchronously loop and normalize all time values to ints via moment.
+ *
+ * @param  vec               Decoded column vector
+ * @param  attributeMetadata Honestly I don't really know
+ *
+ * @return Observable<{ name: string, type: T, values: T[], target: EDGE | VERTEX }>
+ */
+function interpolateVectorType(vec, attributeMetadata, updateClient) {
+
+    const { name, values } = vec, sampleValue = values[0];
+    let obs = Observable.of(values), type = typeof sampleValue;
+
+    // Check if name is `color`
+    if ((/color/i).test(name)) {
+        if (type === 'number') {
+            if (sampleValue > 0 && sampleValue <= 0xFFFFFFFF) {
+                type = 'color';
+            }
+        } else if (type === 'string') {
+            try {
+                const c = new Color(sampleValue);
+                type = (c && typeof c.rgbaString() === 'string') && 'color' || type;
+            } catch (e) {}
+        }
+        if (type !== 'color') {
+            logger.debug('Failed to cast ' + name + ' as a color.');
+        }
+    }
+    // Check if name contains `time` or `date`
+    else if ((/time/i).test(name) || (/date/i).test(name)) {
+        logger.debug('Attempting to cast ' + name + ' to a moment object.');
+        const testMoment = castToMoment(sampleValue);
+        if (!testMoment.isValid()) {
+            logger.debug('Failed to cast ' + name + ' as a moment.');
+        } else {
+            type = 'date';
+            logger.debug('Successfully cast ' + name + ' as a moment.');
+            logger.debug('Casting all ' + name + ' values as moments.');
+            // Invalidate attributeMetadata aggregations that are value-based:
+            if (attributeMetadata &&
+                typeof attributeMetadata === 'object' &&
+                typeof attributeMetadata.aggregations === 'object') {
+                // See also ColumnAggregation's AggAliases and AggTypes:
+                attributeMetadata.aggregations = _.omit(attributeMetadata.aggregations, [
+                    'min', 'minValue', 'max', 'maxValue', 'avg', 'averageValue', 'sum',
+                    'std', 'standardDeviation', 'stddev', 'stdev', 'var', 'variance'
+                ]);
+            }
+            obs = listToItemRanges(values, 10000)
+                .concatMap((valuesSlice) => updateClient()
+                    .mergeMapTo(valuesSlice
+                        .map(dateAsNumber)
+                        .subscribeOn(Scheduler.async, 100)))
+                .toArray();
+        }
+    }
+    return obs.map((values) => ({ ...vec, type, values }));
+}
+
+
+/**
+ * @param {VectorGraph} vg
+ * @returns Observable<AttrObject[]>
+ */
+export function getAttributes0 (vg, metadata, updateClient) {
+    return Observable
+        .from(getVectors0(vg))
+        .filter(({ values }) => values.length > 0)
+        .let(updateClient)
+        .concatMap((vec) => interpolateVectorType(vec, null, updateClient))
+        .toArray();
+}
+
+/**
+ * @param {VectorGraph} vg
+ * @param {DataframeMetadata} metadata
+ * @returns Observable<{nodes: Object<AttrObject>, edges: Object<AttrObject>}>
+ */
+export function getAttributes1 (vg, metadata = {}, updateClient) {
+    return Observable
+        .from(getVectors1(vg))
+        .filter(({ values }) => values.length > 0)
+        .let(updateClient)
+        .map((vec) => {
+            const { name, target } = vec;
+            const typeAccessor = accessorForTargetType[target];
+            const typeMetadata = metadata && metadata[typeAccessor] && _.find(
+                metadata[typeAccessor], ({ attributes }) => attributes.hasOwnProperty(name)
+            ) || undefined;
+            return [vec, typeMetadata && typeMetadata.attributes[name] || undefined];
+        })
+        .concatMap(([vec, meta]) => interpolateVectorType(vec, meta, updateClient))
+        .reduce((memo, vec) => {
+            const attrs = memo[accessorForTargetType[vec.target]];
+            attrs[vec.name] = vec;
+            return memo;
+        }, { nodes: {}, edges: {} });
+}
+
+function listToItemRanges(list, itemsPerRange) {
+    return Observable
+        .from({ length: Math.ceil(list.length / itemsPerRange) })
+        .map((x, rangeIndex) => {
+            const rangeStart = rangeIndex * itemsPerRange;
+            const rangeCount = Math.min(itemsPerRange, list.length - rangeStart);
+            return Observable
+                .range(rangeStart, rangeCount)
+                .map((itemIndex) => list[itemIndex]);
+        });
+}
+
+function getVectors0 (vg) {
+    return vg.string_vectors.concat(vg.uint32_vectors,
+                                    vg.int32_vectors,
+                                    vg.double_vectors);
+}
+
+/**
+ * @param {VectorGraph} vg
+ * @returns {any[]}
+ */
+function getVectors1 (vg) {
+    return _.flatten([
+        vg.uint32_vectors, vg.int32_vectors, vg.int64_vectors,
+        vg.float_vectors, vg.double_vectors,
+        vg.string_vectors, vg.bool_vectors
+    ], false);
+}
+
+/**
+ * @param {AttrObject} v
+ * @param {DataframeMetadataByColumn} attributeMetadata
+ * @returns {string}
+ */
+function punnedTypeFromVector (v, attributeMetadata) {
+    let type = typeof(v.values[0]);
+
+    // Attempt to infer date types when possible
+    // Check if name contains time or date
+    if ((/time/i).test(v.name) || (/date/i).test(v.name)) {
+        logger.debug('Attempting to cast ' + v.name + ' to a moment object.');
+        const testMoment = castToMoment(v.values[0]);
+        const isValidMoment = testMoment.isValid();
+
+        if (isValidMoment) {
+            logger.debug('Successfully cast ' + v.name + ' as a moment.');
+            type = 'date';
+
+            const newValues = v.values.map(dateAsNumber);
+            v.values = newValues;
+
+            // Invalidate attributeMetadata aggregations that are value-based:
+            if (attributeMetadata !== undefined && attributeMetadata.aggregations !== undefined) {
+                // See also ColumnAggregation's AggAliases and AggTypes:
+                attributeMetadata.aggregations = _.omit(attributeMetadata.aggregations, [
+                    'min', 'minValue', 'max', 'maxValue', 'avg', 'averageValue', 'sum',
+                    'std', 'standardDeviation', 'stddev', 'stdev', 'var', 'variance'
+                ]);
+            }
+        } else {
+            logger.debug('Failed to cast ' + v.name + ' as a moment.');
+        }
+    }
+
+    if ((/color/i).test(v.name)) {
+        let isColorInAPalette = false;
+        const sampleValue = v.values[0];
+        if (type === 'number') {
+            if (sampleValue > 0 && sampleValue <= 0xFFFFFFFF) {
+                isColorInAPalette = true;
+            }
+        } else if (type === 'string') {
+            try {
+                const testColor = new Color(sampleValue);
+                isColorInAPalette = testColor !== undefined && testColor.rgbaString() !== undefined;
+            } catch (e) {
+                logger.debug('Failed to cast ' + v.name + ' as a color: ' + e.message);
+            }
+        }
+        if (isColorInAPalette) {
+            type = 'color';
+        } else {
+            logger.debug('Failed to cast ' + v.name + ' as a color.');
+        }
+    }
+    return type;
+}
+
+
+function castToMoment (value) {
+    let momentVal;
+    if (typeof(value) === 'number') {
+        // First attempt unix seconds constructor
+        momentVal = moment.unix(value);
+
+        // If not valid, or unreasonable year, try milliseconds constructor
+        if (!momentVal.isValid() || momentVal.year() > 5000 || momentVal.year() < 500) {
+            momentVal = moment(value);
+        }
+
+    } else {
+        momentVal = moment(value);
+    }
+
+    return momentVal;
+}
+
+function dateAsNumber (val) {
+    const date = castToMoment(val);
+    return date.valueOf(); // Represent date as a number
+}

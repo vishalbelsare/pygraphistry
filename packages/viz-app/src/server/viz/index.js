@@ -195,7 +195,7 @@ function sendPostVGraphLoadedUpdate(sendUpdate, updateSession) {
             )
             .let(updateSession({
                 status: 'init',
-                progress: 100 * 9/10,
+                progress: 100 * 10/10,
                 message: 'Loading graph'
             }))
     }
