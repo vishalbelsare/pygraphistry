@@ -1,3 +1,4 @@
+import Color from 'color';
 import styles from './styles.less';
 import { Gestures } from 'rxjs-gestures';
 import React, { PropTypes } from 'react';
@@ -47,6 +48,7 @@ class Scene extends React.Component {
             hasDOMListeners: false,
             hasVBOListeners: false,
             renderSubscription: new Subscription(),
+            bgDivStyle: { position: 'absolute', width: `100%`, height: `100%` }
         };
         this.simulationWidth = 0;
         this.simulationHeight = 0;
@@ -115,6 +117,11 @@ class Scene extends React.Component {
         if (!state.renderState && nextSceneID && currSceneID !== nextSceneID && (nextSceneID in scenes)) {
             this.setupRenderStateAndScheduler(nextProps, this.state);
         }
+        const { bgDivStyle } = state;
+        const backgroundColor = new Color(nextProps.backgroundColor).rgbaString();
+        if (bgDivStyle.backgroundColor !== backgroundColor) {
+            this.setState({ bgDivStyle: {...bgDivStyle, backgroundColor } });
+        }
     }
     componentDidMount() {
         // console.log('mounted scene');
@@ -139,6 +146,7 @@ class Scene extends React.Component {
         events.forEach((eventName) => this[eventName] = undefined);
     }
     render() {
+        const { bgDivStyle } = this.state;
         const { info = true, menu = true } = this.props;
         const { edges, points, release, children } = this.props;
         const { labelPOIOption, pruneIsolatedOption } = this.props;
@@ -152,6 +160,7 @@ class Scene extends React.Component {
                  onMouseMove={this.onMouseMove}
                  onMouseDown={this.onTouchStart}
                  onTouchStart={this.onTouchStart}>
+                <div style={bgDivStyle}/>
                 {children}
                 {(info || menu) &&
                 <div className={styles['top-level-scene-info']}>

@@ -1,4 +1,4 @@
-import Color from 'color';
+// import Color from 'color';
 import classNames from 'classnames';
 import React, { PropTypes } from 'react';
 
@@ -42,7 +42,6 @@ class Renderer extends React.Component {
         this.arrowItems = {};
         this.renderFast = undefined;
         this.renderPanZoom = undefined;
-        this.renderBGColor = undefined;
         this.renderResized = undefined;
         this.renderMouseOver = undefined;
         this.hasRenderedSelectionOnce = false;
@@ -72,7 +71,6 @@ class Renderer extends React.Component {
             !shallowEqual(currPoints, nextPoints) ||
             !shallowEqualOrFalcorEqual(currHighlight, nextHighlight) ||
             !shallowEqualOrFalcorEqual(currSelection, nextSelection) ||
-            !shallowEqualOrFalcorEqual(currBackground, nextBackground) ||
             !shallowEqual(restCurrProps, restNextProps)
         );
     }
@@ -109,7 +107,6 @@ class Renderer extends React.Component {
         this.arrowItems = undefined;
         this.renderFast = undefined;
         this.renderPanZoom = undefined;
-        this.renderBGColor = undefined;
         this.renderResized = undefined;
         this.renderMouseOver = undefined;
         this.assignContainerRef = undefined;
@@ -119,19 +116,11 @@ class Renderer extends React.Component {
 
         const { props, container } = this;
         const { renderState, renderingScheduler,
-                simulation, highlight, selection,
-                simBackgroundImage: backgroundImage = 'none' } = props;
+                simulation, highlight, selection } = props;
 
         if (renderState && renderingScheduler && container && simulation) {
 
-            let { renderFast, renderPanZoom, renderMouseOver, renderBGColor, renderResized } = this;
-
-            if (renderBGColor) {
-                renderBGColor = false;
-                renderingScheduler.renderScene('bgcolor', {
-                    trigger: 'renderSceneFast'
-                });
-            }
+            let { renderFast, renderPanZoom, renderMouseOver, renderResized } = this;
 
             if (renderPanZoom) {
                 renderPanZoom = false;
@@ -187,7 +176,6 @@ class Renderer extends React.Component {
 
             this.renderFast = renderFast;
             this.renderPanZoom = renderPanZoom;
-            this.renderBGColor = renderBGColor;
             this.renderResized = renderResized;
             this.renderMouseOver = renderMouseOver;
         }
@@ -199,8 +187,7 @@ class Renderer extends React.Component {
                     height:`100%`,
                     top: 0, left: 0,
                     right: 0, bottom: 0,
-                    position:`absolute`,
-                    backgroundImage
+                    position:`absolute`
                 }}/>
         );
     }
@@ -218,7 +205,6 @@ class Renderer extends React.Component {
             points: currPoints = {},
             highlight: currHighlight = {},
             selection: currSelection = {},
-            background: currBackground = {},
             simulating: currSimulating = true,
             showArrows: currShowArrows = true,
             simulationWidth: currSimWidth = 0,
@@ -231,7 +217,6 @@ class Renderer extends React.Component {
             points: nextPoints = currPoints,
             highlight: nextHighlight = currHighlight,
             selection: nextSelection = currSelection,
-            background: nextBackground = currBackground,
             simulating: nextSimulating = currSimulating,
             showArrows: nextShowArrows = currShowArrows,
             simulationWidth: nextSimWidth = currSimWidth,
@@ -239,7 +224,6 @@ class Renderer extends React.Component {
         } = nextProps;
 
         let { renderFast,
-              renderBGColor,
               renderResized,
               renderPanZoom,
               renderMouseOver,
@@ -253,13 +237,11 @@ class Renderer extends React.Component {
             nextSimWidth, nextSimHeight,
             currHighlight, nextHighlight,
             currSelection, nextSelection,
-            currBackground, nextBackground,
             currShowArrows, nextShowArrows,
             currSimulating, nextSimulating,
             renderState, renderingScheduler
         };
 
-        renderBGColor = this.updateBackground(updateArg) || renderBGColor;
         renderPanZoom = this.updateNumElements(updateArg) || renderPanZoom;
         renderPanZoom = this.updateShowArrows(updateArg) || renderPanZoom;
         renderPanZoom = this.updateEdgeScaling(updateArg) || renderPanZoom;
@@ -269,7 +251,7 @@ class Renderer extends React.Component {
         renderPanZoom = this.updateCameraCenterAndZoom(updateArg) || renderPanZoom;
         renderPanZoom = this.updateSimulating(updateArg) || renderPanZoom && !nextSimulating;
         renderMouseOver = this.updateSceneHighlight(updateArg) || renderMouseOver && !nextSimulating;
-        renderResized = this.updateSceneDimensions(updateArg) && !renderMouseOver && !nextSimulating && !renderPanZoom && !renderBGColor;
+        renderResized = this.updateSceneDimensions(updateArg) && !renderMouseOver && !nextSimulating && !renderPanZoom;
 
         if (hasRenderedSelectionOnce === true) {
             renderMouseOver = this.updateSceneSelection(updateArg) || renderMouseOver && !nextSimulating;
@@ -280,7 +262,7 @@ class Renderer extends React.Component {
                               (renderMouseOver);
         }
 
-        if (renderPanZoom || renderBGColor || renderResized) {
+        if (renderPanZoom || renderResized) {
             if (typeof renderFast === 'number') {
                 clearTimeout(renderFast);
                 renderFast = undefined;
@@ -300,7 +282,6 @@ class Renderer extends React.Component {
 
         this.renderFast = renderFast;
         this.renderPanZoom = renderPanZoom;
-        this.renderBGColor = renderBGColor;
         this.renderResized = renderResized;
         this.renderMouseOver = renderMouseOver;
     }
@@ -406,20 +387,6 @@ class Renderer extends React.Component {
                     delete deleteFromMap[itemName];
                 }
             });
-            return true;
-        }
-        return false;
-    }
-    updateBackground({
-        currBackground, nextBackground,
-        renderState, renderingScheduler
-    }) {
-        if (!shallowEqualOrFalcorEqual(currBackground, nextBackground)) {
-            renderState.options.clearColor = [
-                new Color(nextBackground.color).rgbaArray().map((x, i) =>
-                    i === 3 ? x : x / 255
-                )
-            ];
             return true;
         }
         return false;

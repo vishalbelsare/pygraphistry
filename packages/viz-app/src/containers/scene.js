@@ -42,6 +42,7 @@ let Scene = ({
                     simulationWidth={simulationWidth}
                     simulationHeight={simulationHeight}
                     highlightEnabled={labels && labels.highlightEnabled}
+                    backgroundColor={renderer && renderer.background && renderer.background.color || '#323238'}
                     pruneIsolatedOption={
                         <SceneOptionToggle data={settings && settings[0] && settings[0][3]}/>
                     }

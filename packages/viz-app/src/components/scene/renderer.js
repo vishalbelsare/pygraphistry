@@ -524,7 +524,6 @@ export function init(config, canvas, urlParams) {
             'blendFuncSeparate': true,
             'blendEquationSeparate': true,
             'depthFunc': true,
-            'clearColor': true,
             'lineWidth': true
         };
 
@@ -1089,11 +1088,8 @@ export function init(config, canvas, urlParams) {
 
         if (!clearedFBOs[renderTarget]) {
             debug('  clearing render target', renderTarget);
-
-            const clearColor = ((itemDef.glOptions || {}).clearColor || options.clearColor)[0];
-            gl.clearColor(...clearColor);
+            gl.clearColor(0, 0, 0, 0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
             clearedFBOs[renderTarget] = true;
         }
 
