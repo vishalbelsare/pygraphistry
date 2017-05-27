@@ -1,14 +1,12 @@
 ## Api Key Generation
 
-### Usage
+### Usage: Public
 
 #### Process
 
 * Create a key
-* Send to receipient & record that you did
-* Specify key in notebook
-* Test
-
+* Record account info
+* Send to receipient
 
 #### Create a key
 
@@ -18,23 +16,36 @@ http://staging.graphistry.com/api/encrypt?text=foo@bar.comSEECANARYVALUEINSIDECO
 
 Note: must include suffix corresponding to “SEECANARYVALUEINSIDECONFIGJSON” (canary)
 
-#### Send to receipient & record that you did
+#### Record who/when and maybe a comment if interesting
 
-* Warn them not to upload private data
-* Record who/when: https://docs.google.com/spreadsheets/d/1U65IeJQXWdBKfLlLXaKl9s31iNP_w-bbh-YkPkkh3-g/edit#gid=0
+https://docs.google.com/spreadsheets/d/1U65IeJQXWdBKfLlLXaKl9s31iNP_w-bbh-YkPkkh3-g/edit#gid=0
+
+#### Send to receipient
+
 * Eventually, we need to setup our TOS (clickthrough agreement)
 
 ```
 Hi ZZZZZ,
 
-Certainly, here is an API key for you: ZZZZZZ
+Certainly, see below for API information. As you progress, we are piloting our developer embedding API and our full visual platform with database connectors, so those may be of interest as well.
 
-We have a tutorial on https://github.com/graphistry/pygraphistry. I will follow up with an invite to our Slack channel. Feel free to ask any questions, share comments/feedback or report problems via Slack: our team loves helping out. Out of curiosity, what kind of data are interested in visualizing?
+Out of curiousity, what do you plan to explore?
 
-One more thing: You are sending data to us when you create a visualization. Since our public cloud is in alpha, we are not yet providing security or privacy guarantees.
+Happy graphing,
 
-Happy graphing!
+YYY
+
+===
+
+API key for our public GPU cloud (please do not send sensitive data):
+zzzzz
+
+Library, documentation, & examples: https://github.com/graphistry/pygraphistry
+
+Slack channel: Invite incoming; quickest place for ideas & help from our team
 ```
+
+### Usage: Code
 
 #### Specify key in notebook
 
