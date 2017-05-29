@@ -136,11 +136,6 @@ function ComboCell({ id, paramKey, paramValue, paramUI, handlers }) {
 
 function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
 
-    log.debug('MultiCell val', paramValue);
-    log.debug('MultiCell ui', paramUI);
-
-    console.log('here', paramValue, paramUI);
-
     const rawOptions = paramUI.options || [];
     const options = rawOptions.concat(
             (paramValue||[])
