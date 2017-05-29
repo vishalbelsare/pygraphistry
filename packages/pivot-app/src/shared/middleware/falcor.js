@@ -82,7 +82,7 @@ function wrapRouteHandler(route, handler) {
 
         return Observable
             .defer(() => originalHandler.apply(this, args) || [])
-            .timeout(200000)
+            .timeout(20000)
             .map(mapObjectsToAtoms)
             .do(({ path, value }) => {
                 if (value === undefined) {
