@@ -34,7 +34,7 @@ describe('shapeSplunkResults', function() {
 		const pivot = { events: [{'EventID': 'xx', 'y': 'z'}] };
 		const expected = {
 			graph: [
-				{'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z'}
+				{'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
 			], 
 			labels: [
 				{'node': 'xx', 'type': 'EventID', 'y': 'z'}, 
@@ -87,7 +87,7 @@ describe('shapeSplunkResults', function() {
 		};
 		const expected = { 
 			graph: [
-				{'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z'},
+				{'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'},
 				{source: 'x', destination: 'y'}
 			], 
 			labels: [
