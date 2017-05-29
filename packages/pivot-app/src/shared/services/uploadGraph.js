@@ -92,7 +92,7 @@ export const bindings = {
 function synthesizeMissingNodes(edges, nodes) {
     
     const inNodes = {};
-    nodes.forEach((node) => inNodes[node[bindings.idField]] = true);
+    nodes.forEach((node) => { inNodes[node[bindings.idField]] = true });
 
     const inEdges = {};
     edges.forEach((edge) => {
@@ -119,7 +119,7 @@ function createGraph(pivots) {
                         (edge) => ({...edge, 'Pivot': index})))),
         labels: [].concat.apply([], 
             visiblePivots.map( 
-                (pivot, index) => 
+                (pivot) => 
                     pivot.results.labels))
     };
 

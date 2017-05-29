@@ -13,6 +13,6 @@ export function dfUnion(dfA, dfB) {
 
     return new DataFrame(arrA.concat(arrB));
 
-};
+}
 
 

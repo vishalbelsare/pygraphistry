@@ -6,7 +6,7 @@ export function mergeByKey(a, key) {
 	const groups = 
 		a.reduce((groups, o) => {
 				const id = o[key];
-				if (!(key in o) || id===undefined || !((id + '').length)) {
+				if (!(key in o) || id===undefined || !(String(id).length)) {
 					return groups;
 				}				
 				const group = groups[id] = groups[id] || [];

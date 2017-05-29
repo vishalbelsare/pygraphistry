@@ -1,4 +1,3 @@
-import { VError } from 'verror'
 import { simpleflake } from 'simpleflakes';
 import _ from 'underscore';
 import { categoryToColorInt, intToHex } from '../services/support/palette.js';

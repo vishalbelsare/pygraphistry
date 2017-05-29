@@ -69,7 +69,8 @@ function checkAndFormatGraph (data) {
 //   If a table, add a unique event ID to rows to help hyper transform
 function outputToResult (mode = 'table', pivot, eventCounter, data) {    
     switch (mode) {
-        case 'table':
+        case 'table': 
+        {
             log.trace('searchAndShape response', data);
             const rows = 
                 data instanceof Array 
@@ -86,6 +87,7 @@ function outputToResult (mode = 'table', pivot, eventCounter, data) {
                 mode,            
                 table: new DataFrame(rows)
             };
+        }
         case 'graph':
             return {
                 mode,
@@ -134,7 +136,7 @@ function formatTimeout(timeS) {
         return undefined;
     }
 
-    const coerced = +(unwrapped);
+    const coerced = Number(unwrapped);
     if (coerced > 0) {
         return Math.ceil(coerced);
     } else {
