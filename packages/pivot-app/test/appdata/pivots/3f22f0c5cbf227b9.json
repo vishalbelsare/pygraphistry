@@ -18,7 +18,10 @@
         "http-search$$$jq": ". | [{\"ip\": .x[0]}, {\"ip\": .x[1]}]",
         "http-search$$$nodes": [
             "ip"
-        ]
+        ],
+        "http-search$$$method": "GET",
+        "http-search$$$timeout": 10,
+        "http-search$$$outputType": "table"
     },
     "pivotTemplate": "http-search"
 }

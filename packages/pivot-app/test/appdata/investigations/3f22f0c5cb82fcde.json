@@ -3,12 +3,11 @@
     "id": "3f22f0c5cb82fcde",
     "description": "",
     "tags": [],
-    "modifiedOn": 1491014647631,
+    "modifiedOn": 1496100880413,
     "layout": "stackedBushyGraph",
     "pivots": [
         "3f22f0c5cbf227b9",
         "3f22f188ba9e8e11",
-        "3f234fcd6c3d5a8a",
         "3f2fc63c1e995707"
     ]
 }
