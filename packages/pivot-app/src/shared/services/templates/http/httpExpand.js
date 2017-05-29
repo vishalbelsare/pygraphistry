@@ -40,7 +40,11 @@ export const HTTP_EXPAND = new HttpPivot({
                         method === 'POST' ? template(body, urlParams)
                         : undefined;                    
                     log.debug('row endpoint', url, i, row);
-                    return { url, params: urlParams, body: bodyConcrete };
+                    return { 
+                        url, 
+                        params: urlParams, 
+                        ...(method === 'POST' ? { body: bodyConcrete } : {})
+                    };
                 } catch (e) {
                     return e;
                 }

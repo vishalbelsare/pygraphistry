@@ -24,7 +24,11 @@ export const HTTP_SEARCH = new HttpPivot({
 
         log.debug('url', url);
 
-        return [ { url, params: urlParams, body: bodyConcrete } ];
+        return [ { 
+            url, 
+            params: urlParams, 
+            ...(method === 'POST'? { body: bodyConcrete } : {})
+        }];
     },
     parameters: 
         [{
