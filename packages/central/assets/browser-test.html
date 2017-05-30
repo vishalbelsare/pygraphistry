@@ -59,6 +59,12 @@
         tbody.appendChild(testResultRow.apply(null, ['WebGL'].concat(testWebGL())));
         tbody.appendChild(testResultRow.apply(null, ['WebSockets'].concat(testHasWebSockets())));
         tbody.appendChild(testResultRow.apply(null, ['Binary WebSockets'].concat(testHasBinarySockets())));
+
+        var binaryXHRPendingRow = tbody.appendChild(testResultRow('Binary XMLHttpRequest', 'testing', 'testing'));
+        testHasBinaryXHR(function(detected, enabled) {
+            tbody.replaceChild(testResultRow('Binary XMLHttpRequest', detected, enabled), binaryXHRPendingRow);
+        });
+
         function testResultRow(description, detected, enabled) {
             var args = [description, detected, enabled];
             return args.reduce(function(tr, arg) {
@@ -108,6 +114,33 @@
         function testHasWebSockets() {
             var detected = 'WebSocket' in window || 'MozWebSocket' in window || false;
             return [detected, detected];
+        }
+        function testHasBinaryXHR(cb) {
+            var xhr;
+            var enabled = false;
+            var detected = ('XMLHttpRequest' in window) &&
+                           ('ArrayBuffer' in window) && (
+                           (xhr = new window.XMLHttpRequest()) &&
+                           (typeof xhr.responseType !== 'undefined')) || false;
+            if (detected) {
+                var done = false;
+                xhr.onreadystatechange = function () {
+                    if (this.readyState === 4 && !done && (done = true)) {
+                        try {
+                            enabled = !!(this.response && this.response instanceof ArrayBuffer);
+                        } catch (e) {}
+                        xhr.onreadystatechange = null;
+                        cb(detected, enabled);
+                    }
+                };
+                try {
+                    xhr.open('GET', '/assets/favicon.ico?' + Math.random().toString(36).substr(2, 5), true);
+                    xhr.responseType = 'arraybuffer';
+                    xhr.send();
+                    return;
+                } catch (e) {}
+            }
+            return cb(detected, enabled);
         }
         function testHasBinarySockets() {
             var detected = false;
