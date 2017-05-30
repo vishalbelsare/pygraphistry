@@ -17,7 +17,10 @@
         "http-expand$$$pRef": [
             "3f22f0c5cbf227b9"
         ],
-        "http-expand$$$endpoint": "http://localhost:3000/pivot/echo?ip={ip}&nodes={nodes}"
+        "http-expand$$$endpoint": "http://localhost:3000/pivot/echo?ip={ip}&nodes={ip}",
+        "http-expand$$$method": "GET",
+        "http-expand$$$timeout": 10,
+        "http-expand$$$outputType": "table"
     },
     "pivotTemplate": "http-expand"
 }

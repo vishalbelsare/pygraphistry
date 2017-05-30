@@ -9,28 +9,144 @@ import { flattenJson } from '../../support/flattenJson.js';
 import { PivotTemplate } from '../template.js';
 import { defaultHttpConnector } from '../../connectors/http';
 import logger from '../../../../shared/logger.js';
+import { dfUnion } from '../../shape/df.js';
+import { graphUnion } from '../../shape/graph.js';
+
 const log = logger.createLogger(__filename);
 
 
-//dfUnion is glitchy when cols mismatch, fill with NAs
-// ?df * ?df -> ?df
-function dfUnion(dfA, dfB) {
+function checkAndFormatGraph (data) {
+    const { nodes = [], edges = [] } = data;
+            
+    const validEdges = edges
+        .filter((edge) => ('source' in edge) && ('destination' in edge))
+        .map(flattenJson);
 
-    if (!dfA) { return dfB; }
-    if (!dfB) { return dfA; }
+    if (!('edges' in data)) {
+        throw new VError({
+            name: 'MissingEdges',
+            cause: new Error('MissingEdges')
+        }, `Transformed result missing field "edges"`); 
+    }
+    if (!(edges instanceof Array)) {
+        throw new VError({
+            name: 'EdgesTypeError',
+            cause: new Error('EdgesTypeError')
+        }, `Edges should be an array`); 
+    }
+    if (edges.length && !validEdges.length) {
+        throw new VError({
+            name: 'MissingEdgeIDs',
+            cause: new Error('MissingEdgeIDs')
+        }, `Pivot returned ${edges.length} edges but all are missing fields "source" or "destination"`);
+    }
 
-    const cA = dfA.listColumns();
-    const cB = dfB.listColumns();
-    const cols = cA.slice();
-    cB.forEach((col) => {
-        if (cols.indexOf(col) === -1) {
-            cols.push(col);
-        }
-    });
+    const validNodes = nodes
+        .filter((node) => 'node' in node)
+        .map(flattenJson);
+    if (nodes && !(nodes instanceof Array)) {
+        throw new VError({
+            name: 'NodesTypeError',
+            cause: new Error('NodesTypeError')
+        }, `Nodes should be an array`);
+    }
+    if (nodes.length && !validNodes.length) {
+        throw new VError({
+            name: 'MissingNodeIDs',
+            cause: new Error('MissingNodeIDs')
+        }, `Pivot returned ${nodes.length} nodes but none have id field "node"`);
+    }
 
-    return dfA.restructure(cols).union(dfB.restructure(cols));
+    return {
+        nodes: validNodes,
+        edges: validEdges
+    }
 }
 
+// ('table' | 'graph') * { id } * int * json
+//  -> {mode, table: [ { EventID, ... } ] | graph: { nodes: [{node, ...}], edges: [{source, destination}]}}
+// Turn json into a flat table or a graph
+//   If a table, add a unique event ID to rows to help hyper transform
+function outputToResult (mode = 'table', pivot, eventCounter, data) {    
+    switch (mode) {
+        case 'table': 
+        {
+            log.trace('searchAndShape response', data);
+            const rows = 
+                data instanceof Array 
+                    ? data.map(flattenJson) 
+                    : [flattenJson(data)];
+            if (rows.length) {
+                if (!('EventID' in rows[0])) {
+                    for (let i = 0; i < rows.length; i++) {
+                        rows[i].EventID = pivot.id + ':' + (eventCounter + i);
+                    }
+                }                    
+            }
+            return {
+                mode,            
+                table: new DataFrame(rows)
+            };
+        }
+        case 'graph':
+            return {
+                mode,
+                graph: checkAndFormatGraph(data)
+            };
+        default:
+            throw new VError({
+                name: 'InvalidParameter',
+                cause: new Error('InvalidParameter'),
+                info: { mode },
+            }, `Output type should be "table" or "graph", received "${mode}"`);
+    }
+}
+
+
+//["k:v", ...] U {value: ["k:v", ...]} => {"k": "v", ...}
+function formatHeaders(headers=[]) {
+    log.debug('headers', headers);
+    const unpacked = headers.value ? headers.value : headers;
+    return unpacked.reduce(
+        (out, str) => {
+
+            const split = str.indexOf(":");
+            if (split === -1) {
+                throw new VError({
+                    name: 'InvalidParameter',
+                    cause: new Error('InvalidParameter'),
+                    info: { header: str }
+                }, `Headers should be of form "key:value", received "${str}"`);
+            }
+
+            const k = str.slice(0, split);
+            const v = str.slice(split + 1);
+            return {...out, [k]: v};
+
+        },
+        {});
+}
+
+// param -> undefined U number ; InvalidParameter
+// Pulls out timeout in seconds
+function formatTimeout(timeS) {
+
+    const unwrapped = (timeS instanceof Object) && ('value' in timeS) ? timeS.value : timeS;
+    if (unwrapped === undefined) {
+        return undefined;
+    }
+
+    const coerced = Number(unwrapped);
+    if (coerced > 0) {
+        return Math.ceil(coerced);
+    } else {
+        throw new VError({
+            name: 'InvalidParameter',
+            cause: new Error('InvalidParameter'),
+            info: { time: unwrapped }
+        }, `Timeout should be a number (seconds) like "10", received "${unwrapped}"`);
+    }
+}
 
 
 export class HttpPivot extends PivotTemplate {
@@ -78,9 +194,11 @@ export class HttpPivot extends PivotTemplate {
             params,
             pivotParameters: pivot.pivotParameters
         })
-        const { jq, nodes, attributes } = params;
+        const { jq, nodes, attributes, outputType, method, headers, timeout } = params;
 
-        
+        const headersProcessed = formatHeaders(headers);
+        const timeoutProcessed = formatTimeout(timeout);
+
         log.trace('searchAndShape http: jq', {jq});
 
         if ((jq||'').match(/\|.*(include|import)\s/)) {
@@ -103,7 +221,7 @@ export class HttpPivot extends PivotTemplate {
         }
 
         let eventCounter = 0;    
-        const df = Observable.from(urls)
+        const out = Observable.from(urls)
             .flatMap((maybeUrl) => {
 
                 if (maybeUrl instanceof Error) {
@@ -111,11 +229,13 @@ export class HttpPivot extends PivotTemplate {
                     return Observable.of({e: maybeUrl});
                 }
 
-                const { url, params } = maybeUrl;
-                log.debug('searchAndShape http: url', {url});
-                return this.connector.search(url)                    
+                const { url, body, params } = maybeUrl;
+                log.debug('searchAndShape http: url', { url, headersProcessed, timeoutProcessed });                
+                return this.connector.search(url, { method, body, headers: headersProcessed, timeout: timeoutProcessed })                    
                     .switchMap(([response]) => {
+                        log.debug('response', (response||{}).body);
                         return jqSafe(response.body, template(jq || '.', params))
+                            .do((response) => log.debug('jq response', response))
                             .catch((e) => {
                                 log.error('jq error', {url, jq, e});
                                 return Observable.throw(
@@ -126,52 +246,49 @@ export class HttpPivot extends PivotTemplate {
                                     }, 'Failed to run jq post process', { url, jq }));
                             })
                     })
-                    .map((response) => {                        
-                        log.trace('searchAndShape response', response);
-                        const rows = 
-                            response instanceof Array 
-                                ? response.map(flattenJson) 
-                                : [flattenJson(response)];
-                        if (rows.length) {
-                            if (!('EventID' in rows[0])) {
-                                for (let i = 0; i < rows.length; i++) {
-                                    rows[i].EventID = pivot.id + ':' + (eventCounter + i);
-                                }
-                                eventCounter += rows.length;
-                            }                    
+                    .map((response) =>
+                        outputToResult(outputType, pivot, eventCounter, response))
+                    .do(({table, graph}) => {
+                        log.debug('transformed output', {table, graph});
+                        if (table) {
+                            eventCounter += table.count();
                         }
-                        return new DataFrame(rows);
                     })
-                    .map((df) => ({df}))
                     .catch((e) => Observable.of({e: e ? e : new Error('GenericHttpGetException')}));
 
             })
-            .reduce((acc, {df, e}) => ({
-                    df: dfUnion(acc.df, df),
+            .reduce((acc, {table, graph, e}) => ({
+                    table: dfUnion(acc.table, table),
+                    graph: graphUnion(acc.graph, graph),
                     e: e ? acc.e.concat([e]) : acc.e
                 }),
-                {df: undefined, e: []})
+                {table: undefined, graph: undefined, e: []})
             .last()
-            .flatMap(({df, e}) => {
+            .flatMap(({table, graph, e}) => {
                 if (e.length && (e.length === urls.length)) {
                     log.error(`All urls failed (out of ${urls.length})`);
                     return Observable.throw(e);
                 } else {
                     e.forEach(({e}) => { log.warn('Some but not all urls failed:', e); });
-                    return Observable.from([df]);
+                    return Observable.from([{table, graph}]);
                 }
             })
 
-        return df.map((df) => ({
+        return out.map(({table, graph}) => ({
                 app,
                 pivot: {
                     ...pivot,
                     connections: (nodes && nodes.value ? nodes.value : nodes) || [],
                     attributes: (attributes && attributes.value ? attributes.value : attributes) || [],
-                    df: df,
-                    resultCount: df ? df.count() : 0,//really want shaped..
+                    resultCount: 
+                        //really want shaped..
+                        table ? table.count() 
+                            : graph ? (graph.nodes||[]).length + (graph.edges||[]).length
+                            : 0,
                     template: this,
-                    events: df ? df.toCollection() : [],
+                    df: table || new DataFrame([[]]),
+                    events: table ? table.toCollection() : [],
+                    graph: graph,
                     results: {
                         graph: [],
                         labels: []
@@ -180,6 +297,7 @@ export class HttpPivot extends PivotTemplate {
             }))
             .map(shapeSplunkResults)
             .do(({pivot: realPivot}) => {
+                log.debug('shaped results', realPivot.results);
                 for (const i in realPivot) {
                     pivot[i] = realPivot[i];
                 }

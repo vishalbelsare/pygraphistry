@@ -43,9 +43,10 @@ export function searchPivot({ loadPivotsById, pivotIds, loadInvestigationsById, 
                         })
                         .catch((e) =>
                                 Observable.throw(
-                                    new VError.WError({
+                                    e instanceof VError ? Observable.throw(e)
+                                    : new VError.WError({
                                         name:'Failed search',
-                                        cause:e,
+                                        cause:e instanceof Error ? e : new Error(e),
                                     }, 'Search failed for pivot: "%s"', pivot.id)
                                 )
                         );
