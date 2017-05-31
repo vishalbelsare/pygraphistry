@@ -79,10 +79,13 @@ function handleVizAppRequest(req, res) {
         showSplashScreen = false;
 
     if (splashAfter !== undefined) {
-        if (typeof (splashAfter = parseInt(splashAfter, 10)) !== 'number') {
+        if (splashAfter === true || splashAfter === 'true') {
             showSplashScreen = true;
-        } else {
-            showSplashScreen = (Date.now() / 1000) - 20 >= splashAfter;
+        } else if (splashAfter === false || splashAfter === 'false') {
+            showSplashScreen = false;
+        } else if (typeof (splashAfter = parseInt(splashAfter, 10)) === 'number') {
+            showSplashScreen = (splashAfter === splashAfter) &&
+                               (Date.now() / 1000) - 20 >= splashAfter;
         }
     }
 
