@@ -13,7 +13,7 @@ export default function VisualizationPanel({ investigation }) {
 
     const runPivot = (
         <span>
-            Run a pivot to get started <Glyphicon glyph="flash" style={{color: '#E5582F'}}/>
+            Run a pivot to get started <Glyphicon glyph="flash" style={{color: '#1FBE76'}}/>
         </span>
     );
 
