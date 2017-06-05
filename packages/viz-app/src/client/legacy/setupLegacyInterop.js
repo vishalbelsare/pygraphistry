@@ -7,7 +7,7 @@ import {
     selectedEdgeIndexes, selectedPointIndexes
 } from 'viz-app/client/legacy';
 
-import { PropTypes } from 'react';
+import PropTypes from 'prop-types';
 import { Observable, Subject } from 'rxjs';
 import withContext from 'recompose/withContext';
 import hoistStatics from 'recompose/hoistStatics';

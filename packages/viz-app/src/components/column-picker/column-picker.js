@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import Select from 'react-select';
 import styles from './styles.less';
 import classNames from 'classnames';
@@ -23,12 +24,12 @@ function sortOptions (templates) {
 }
 
 const propTypes = {
-    id: React.PropTypes.string,//.isRequired,
-    name: React.PropTypes.string,
-    options: React.PropTypes.array,//.isRequired,
-    value: React.PropTypes.array,//.isRequired,
-    allowCreate: React.PropTypes.bool,
-    onChange: React.PropTypes.func
+    id: PropTypes.string,//.isRequired,
+    name: PropTypes.string,
+    options: PropTypes.array,//.isRequired,
+    value: PropTypes.array,//.isRequired,
+    allowCreate: PropTypes.bool,
+    onChange: PropTypes.func
 };
 
 export class ColumnPicker extends React.Component {

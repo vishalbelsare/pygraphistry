@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import styles from './styles.less';
 import classNames from 'classnames';
 import { Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
@@ -38,7 +39,7 @@ function SizeLegendIndicator ({ sizeValue, ...props }) {
         </span>
     );
 }
-SizeLegendIndicator.propTypes = { sizeValue: React.PropTypes.array };
+SizeLegendIndicator.propTypes = { sizeValue: PropTypes.array };
 
 function YAxisLegendIndicator ({ yAxisValue = 'none', ...props }) {
     return yAxisValue == 'none' ? null : (
@@ -58,7 +59,7 @@ function YAxisLegendIndicator ({ yAxisValue = 'none', ...props }) {
         </span>
     );
 }
-YAxisLegendIndicator.propTypes = { yAxisValue: React.PropTypes.string };
+YAxisLegendIndicator.propTypes = { yAxisValue: PropTypes.string };
 
 function IconLegendIndicator ({ iconValue, ...props }) {
     return !iconValue ? null : (

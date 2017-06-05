@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import RcSwitch from 'rc-switch';
 import Select from 'react-select';
 import styles from './styles.less';
@@ -6,17 +7,17 @@ import classNames from 'classnames';
 import { Modal, Button, OverlayTrigger, Tooltip, Popover } from 'react-bootstrap';
 
 const propTypes = {
-    id: React.PropTypes.string,
-    attribute: React.PropTypes.string,
-    componentType: React.PropTypes.string,
-    name: React.PropTypes.string,
-    sizeValue: React.PropTypes.array,
-    yAxisValue: React.PropTypes.string,
-    showModal: React.PropTypes.bool,
-    encodings: React.PropTypes.object,
-    onYAxisChange: React.PropTypes.func,
-    setEncoding: React.PropTypes.func,
-    options: React.PropTypes.object
+    id: PropTypes.string,
+    attribute: PropTypes.string,
+    componentType: PropTypes.string,
+    name: PropTypes.string,
+    sizeValue: PropTypes.array,
+    yAxisValue: PropTypes.string,
+    showModal: PropTypes.bool,
+    encodings: PropTypes.object,
+    onYAxisChange: PropTypes.func,
+    setEncoding: PropTypes.func,
+    options: PropTypes.object
 };
 
 

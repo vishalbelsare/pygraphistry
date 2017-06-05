@@ -1,4 +1,4 @@
-import { PropTypes } from 'react';
+import PropTypes from 'prop-types';
 import getContext from 'recompose/getContext';
 import hoistStatics from 'recompose/hoistStatics';
 import { container } from '@graphistry/falcor-react-redux';
