@@ -1,8 +1,6 @@
 import passport from 'passport';
 import { BasicStrategy } from 'passport-http';
 import { compare } from 'bcrypt';
-import conf from '../../config';
-
 import { createLogger } from '@graphistry/common/logger';
 const log = createLogger('viz-app:authenticate');
 
@@ -10,11 +8,11 @@ const log = createLogger('viz-app:authenticate');
 const defaultUserId = 0;
 
 
-export function authenticateMiddleware() {
+export function authenticateMiddleware(conf) {
     const authorizedUsername = conf.get('authentication.username');
 
     if(!conf.get('authentication.passwordHash')) {
-        log.warn(`Authentication disabled because "authentication.passwordHash" is not set in your config. Clients will not be prompted for a username and password, and all requests will be allowed. Requests will have their 'username' property set to the default values of "${authorizedUsername}".`);
+        log.info(`Authentication disabled because "authentication.passwordHash" is not set in your config. Clients will not be prompted for a username and password, and all requests will be allowed. Requests will have their 'username' property set to the default values of "${authorizedUsername}".`);
 
         return (req, res, next) => {
             req.user = { username: authorizedUsername, userId: defaultUserId };
@@ -22,15 +20,15 @@ export function authenticateMiddleware() {
         };
     } else {
         log.info(`Authentication enabled. Restricting access to user "${authorizedUsername}"`);
-        
-        passport.use(new BasicStrategy(checkLoginCredentials));
+
+        passport.use(new BasicStrategy(checkLoginCredentials.bind(null, conf)));
         return passport.authenticate('basic', { session: false });
     }
 }
 
 
 // Called by the Passport strategy to check if a given username+password is valid
-function checkLoginCredentials(providedUsername, providedPassword, authResultsCb) {
+function checkLoginCredentials(conf, providedUsername, providedPassword, authResultsCb) {
     const authorizedUsername = conf.get('authentication.username');
     const authorizedPassword = conf.get('authentication.passwordHash');
 
@@ -62,12 +60,11 @@ function checkLoginCredentials(providedUsername, providedPassword, authResultsCb
     );
 }
 
-
-// Middleware that allows all requests, setting the `req.user` field to default values
-function noAuthMiddleware(req, res, next) {
-    req.user = {
-        username: conf.get('authentication.username'),
-        userId: defaultUserId
-    };
-    return next();
-}
+// // Middleware that allows all requests, setting the `req.user` field to default values
+// function noAuthMiddleware(req, res, next) {
+//     req.user = {
+//         username: conf.get('authentication.username'),
+//         userId: defaultUserId
+//     };
+//     return next();
+// }

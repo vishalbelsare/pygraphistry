@@ -8,13 +8,13 @@ import { authenticateMiddleware } from './authentication';
 import configureEtlWorker from './etl';
 import configureVizWorker from './viz';
 
-function configureWorkers(config, activeCB) {
+function configureWorkers(config, convict, activeCB) {
 
     let workerName, workerRouter, appRouter = Router();
     const allowMultipleVizConnections = !!config.ALLOW_MULTIPLE_VIZ_CONNECTIONS;
 
     try {
-        var authenticate = authenticateMiddleware();
+        var authenticate = authenticateMiddleware(convict);
     } catch(authMiddlewareError) {
         logger.fatal(authMiddlewareError, 'An error occured loading the Express.js authentication middleware. Because this could compromise security, server will now terminate.');
         activeCB(authMiddlewareError);

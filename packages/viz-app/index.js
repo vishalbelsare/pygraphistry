@@ -23,6 +23,8 @@ const io = app.io = new SocketIOServer({
     upgradeTimeout: config.SOCKET_CLAIM_TIMEOUT * 1000
 });
 
+global.__graphistry_convict_conf__ = app.convict = convict;
+
 // Remove Express header.
 app.disable('x-powered-by');
 

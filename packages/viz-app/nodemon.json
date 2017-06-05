@@ -7,6 +7,7 @@
         "!tools/webpack/webpack.server.babel.js",
         "!tools/webpack/webpack.test.babel.js",
         "config.js",
+        "config-schema.js",
         "config/*.json",
         "package.json",
         "nodemon.json"

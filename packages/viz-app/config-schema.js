@@ -2,7 +2,6 @@
 
 const config = require('@graphistry/config')();
 
-
 module.exports = {
     env: {
         doc: 'The applicaton environment.',
@@ -22,6 +21,22 @@ module.exports = {
         default: config.VIZ_LISTEN_PORT,
         arg: 'port',
         env: 'PORT'
+    },
+    s3: {
+        access: {
+            doc: 'The S3 access token',
+            format: String,
+            default: config.S3_ACCESS,
+            arg: 's3-access',
+            env: 'S3_ACCESS'
+        },
+        secret: {
+            doc: 'The S3 access secret',
+            format: String,
+            default: config.S3_SECRET,
+            arg: 's3-secret',
+            env: 'S3_SECRET'
+        }
     },
     log: {
         level: {
