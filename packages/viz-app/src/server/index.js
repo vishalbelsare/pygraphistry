@@ -1,7 +1,7 @@
 import { VError } from 'verror';
 import { Router } from 'express';
 import configureWorkers from './workers';
-import _config from '@graphistry/config';
+import createConfig from '@graphistry/config';
 import { createLogger } from '@graphistry/common/logger';
 import { authenticateMiddleware } from './authentication';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
@@ -16,7 +16,26 @@ if (process.env.NODE_ENV !== 'production') {
     require('./hot-server.js');
 }
 
-const config = _config();
+let config = createConfig();
+let convict = global.__graphistry_convict_conf__;
+
+// If running locally, allow overriding the s3 credentials via node-convict config
+if (config.ENVIRONMENT === 'local') {
+    let s3_access = config.S3_ACCESS;
+    let s3_secret = config.S3_SECRET;
+    try {
+        s3_access = convict.get('s3.access') || config.S3_ACCESS;
+        s3_secret = convict.get('s3.secret') || config.S3_SECRET;
+    } catch (e) {
+        s3_access = config.S3_ACCESS;
+        s3_secret = config.S3_SECRET;
+    }
+
+    if (s3_access !== config.S3_ACCESS || s3_secret !== config.S3_SECRET) {
+        config = createConfig({ S3_ACCESS: s3_access, S3_SECRET: s3_secret });
+    }
+}
+
 const logger = createLogger('viz-app:server');
 const isWorkerActive = new BehaviorSubject(false);
 const exitOnDisconnect = !config.ALLOW_MULTIPLE_VIZ_CONNECTIONS;
@@ -32,7 +51,7 @@ const serverRouter = Router();
 
 
 try {
-    const selectWorkerRouter = configureWorkers(config, setActiveStatus);
+    const selectWorkerRouter = configureWorkers(config, convict, setActiveStatus);
     serverRouter.use('/', selectWorkerRouter);
 } catch(selectWorkerMiddlewareError) {
     logger.fatal(selectWorkerMiddlewareError, 'An error occured loading the Express.js "select worker" middleware (in viz-app/src/server/workers.js).');
