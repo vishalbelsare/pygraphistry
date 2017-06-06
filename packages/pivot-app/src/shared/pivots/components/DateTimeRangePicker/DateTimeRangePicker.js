@@ -1,12 +1,8 @@
 import React from 'react'
 import moment from 'moment';
-import { DateRangePicker } from 'react-dates';
-import {
-    HORIZONTAL_ORIENTATION,
-} from 'react-dates/constants';
+import { DateTimePicker } from './DateTimePicker';
 
-
-class DateTimeRangePickerWrapper extends React.Component {
+class DateTimeRangePicker extends React.Component {
     constructor(props) {
         super(props);
 
@@ -30,7 +26,8 @@ class DateTimeRangePickerWrapper extends React.Component {
         this.state = state;
         this.today = moment();
 
-        this.onDatesChange = this.onDatesChange.bind(this);
+        this.onStartDateTimeChange = this.onStartDateTimeChange.bind(this);
+        this.onEndDateTimeChange = this.onEndDateTimeChange.bind(this);
         this.onFocusChange = this.onFocusChange.bind(this);
         this.isOutsideRange = this.isOutsideRange.bind(this);
     }
@@ -48,45 +45,69 @@ class DateTimeRangePickerWrapper extends React.Component {
         }
     }
 
-    onDatesChange({ startDate, endDate }) {
-        this.setState({ startDate, endDate });
+
+    onStartDateTimeChange({startDate}) {
+        this.setState({ startDate });
 
         const { setPivotAttributes, paramKey } = this.props;
 
         setPivotAttributes({
             [`pivotParameters.${paramKey}`]: {
-                startDate: startDate && startDate.toJSON() || null,
-                endDate: endDate && endDate.toJSON() || null,
+                startDate: startDate && startDate.toJSON() || null
             }
         });
     }
 
-    onFocusChange(focusedInput) {
-        this.setState({ focusedInput });
+
+    onEndDateTimeChange({endDate}) {
+        this.setState({ endDate });
+
+        const { setPivotAttributes, paramKey } = this.props;
+
+        setPivotAttributes({
+            [`pivotParameters.${paramKey}`]: {
+                endDate: endDate && endDate.toJSON() || null
+            }
+        });
     }
+
 
     isOutsideRange(a) {
         return !(a.isBefore(this.today) || a.isSame(this.today, 'day'));
     }
 
+
+    onFocusChange(focusedInput) {
+        this.setState({ focusedInput });
+    }
+
+
     render() {
         const { focusedInput, startDate, endDate } = this.state;
         return (
-            <div>
-                <SingleDatePicker
-                    {...this.props}
-                    onDatesChange={this.onDatesChange}
-                    onFocusChange={this.onFocusChange}
-                    focused={false}
-                    keepOpenOnDateSelect={true}
-                    date={startDate}
-                    orientation={HORIZONTAL_ORIENTATION}
-                    isOutsideRange={this.isOutsideRange}
-                    initialVisibleMonth={() => endDate.clone().subtract(1, 'months')}
-                />
-            </div>
+            <DateTimePicker
+                {...this.props}
+                date={startDate}
+                onDateTimeChange={this.onStartDateTimeChange}
+                focused={false}
+                isOutsideRange={this.isOutsideRange}
+            />
         );
+
+        //         <SingleDatePicker
+        //            {...this.props}
+        //             onDatesChange={this.onDatesChange}
+        //             onFocusChange={this.onFocusChange}
+        //             focused={false}
+        //             keepOpenOnDateSelect={true}
+        //             date={startDate}
+        //             orientation={HORIZONTAL_ORIENTATION}
+        //             isOutsideRange={this.isOutsideRange}
+        //             initialVisibleMonth={() => endDate.clone().subtract(1, 'months')}
+        //         />
+            // </div>
     }
 }
 
-export default DateTimeRangePickerWrapper;
+
+export default DateTimeRangePicker;

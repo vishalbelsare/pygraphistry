@@ -1,8 +1,7 @@
 import _ from 'underscore';
 import Select from 'react-select';
 import ComboSelector from './combo-selector';
-import DateRangePickerWrapper from './TimeRangeWidget/TimeRangeWidget.js';
-import DateTimeRangePickerWrapper from './DateTimeRangePicker/DateTimeRangePicker.js';
+import DateTimeRangePicker from './DateTimeRangePicker/DateTimeRangePicker.js';
 import styles from './pivots.less';
 
 
@@ -157,7 +156,7 @@ function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
 function DateRange({ id, paramKey, paramValue, paramUI, handlers }) {
     return (
         <div className={styles['pivot-date-range-param']} key={`pcell-${id}-${paramKey}`}>
-            <DateTimeRangePickerWrapper
+            <DateTimeRangePicker
                 paramUI={paramUI}
                 paramValue={paramValue}
                 paramKey={paramKey}
