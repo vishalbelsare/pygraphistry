@@ -143,66 +143,6 @@ function getVectors1 (vg) {
     ], false);
 }
 
-/**
- * @param {AttrObject} v
- * @param {DataframeMetadataByColumn} attributeMetadata
- * @returns {string}
- */
-function punnedTypeFromVector (v, attributeMetadata) {
-    let type = typeof(v.values[0]);
-
-    // Attempt to infer date types when possible
-    // Check if name contains time or date
-    if ((/time/i).test(v.name) || (/date/i).test(v.name)) {
-        logger.debug('Attempting to cast ' + v.name + ' to a moment object.');
-        const testMoment = castToMoment(v.values[0]);
-        const isValidMoment = testMoment.isValid();
-
-        if (isValidMoment) {
-            logger.debug('Successfully cast ' + v.name + ' as a moment.');
-            type = 'date';
-
-            const newValues = v.values.map(dateAsNumber);
-            v.values = newValues;
-
-            // Invalidate attributeMetadata aggregations that are value-based:
-            if (attributeMetadata !== undefined && attributeMetadata.aggregations !== undefined) {
-                // See also ColumnAggregation's AggAliases and AggTypes:
-                attributeMetadata.aggregations = _.omit(attributeMetadata.aggregations, [
-                    'min', 'minValue', 'max', 'maxValue', 'avg', 'averageValue', 'sum',
-                    'std', 'standardDeviation', 'stddev', 'stdev', 'var', 'variance'
-                ]);
-            }
-        } else {
-            logger.debug('Failed to cast ' + v.name + ' as a moment.');
-        }
-    }
-
-    if ((/color/i).test(v.name)) {
-        let isColorInAPalette = false;
-        const sampleValue = v.values[0];
-        if (type === 'number') {
-            if (sampleValue > 0 && sampleValue <= 0xFFFFFFFF) {
-                isColorInAPalette = true;
-            }
-        } else if (type === 'string') {
-            try {
-                const testColor = new Color(sampleValue);
-                isColorInAPalette = testColor !== undefined && testColor.rgbaString() !== undefined;
-            } catch (e) {
-                logger.debug('Failed to cast ' + v.name + ' as a color: ' + e.message);
-            }
-        }
-        if (isColorInAPalette) {
-            type = 'color';
-        } else {
-            logger.debug('Failed to cast ' + v.name + ' as a color.');
-        }
-    }
-    return type;
-}
-
-
 function castToMoment (value) {
     let momentVal;
     if (typeof(value) === 'number') {
