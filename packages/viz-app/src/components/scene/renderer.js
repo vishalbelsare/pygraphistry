@@ -357,7 +357,7 @@ export function init(config, canvas, urlParams) {
     function createContext(state, pixelRatio) {
         const canvas = state.canvas;
         const aa = pixelRatio <= 1; // Disable AA on retina display
-        const glOptions = {antialias: aa, premultipliedAlpha: false};
+        const glOptions = {antialias: aa, premultipliedAlpha: true};
         let gl = canvas.getContext('webgl', glOptions);
         if (gl === null) {
             gl = canvas.getContext('experimental-webgl', glOptions);
