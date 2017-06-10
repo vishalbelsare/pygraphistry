@@ -256,6 +256,7 @@
 
 
 .pivot-text-param,
+.pivot-timerange-param,
 .pivot-textarea-param,
 .pivot-label-param,
 .pivot-combo-param, .pivot-combo-param :global(.form-inline),
@@ -268,24 +269,32 @@
 }
 
 .pivot-text-param,
+.pivot-timerange-param,
 .pivot-textarea-param,
 .pivot-label-param,
 .pivot-combo-param :global(.form-group) {
     display: flex;
 }
 
-.pivot-text-param, .pivot-textarea-param, .pivot-combo-param {
+
+
+.pivot-timerange-param, .pivot-text-param, .pivot-textarea-param, .pivot-combo-param {
     label {
     	order: 1;
     	margin-top: 10px;
     }
-    input, select, textarea {
+    input, select, textarea, & > div {
     	order: 2;
     	flex-grow: 1;
-        border-radius: 10px;
-        border: 1px solid #ddd;
         padding: 0.5em;
         margin-left: 1em;
+    }
+
+    &.pivot-text-param, &.pivot-textarea-param, &.pivot-combo-param {
+        input, select, textarea {
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
     }
 }
 

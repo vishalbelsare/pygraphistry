@@ -85,6 +85,12 @@ export const searchSplunk = new SplunkPivot({
             label: 'Entities:',
             options: GRAPHISTRY_SPLUNK_FIELDS.map(x => ({id:x, name:x})),
             defaultValue: GRAPHISTRY_SPLUNK_FIELDS
+        },
+        {
+            name: 'time',
+            label: 'Time',            
+            inputType: 'daterange',
+            default: moment.duration(2, 'day').toJSON()
         }
     ],
     toSplunk: function (args) {
@@ -179,6 +185,7 @@ export const searchGraphviz = new SplunkPivot({
         },
         {
             name: 'time',
+            label: 'Time',
             inputType: 'daterange',
             default: moment.duration(2, 'day').toJSON()
         }

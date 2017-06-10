@@ -157,6 +157,7 @@ function DateRange({ id, paramKey, paramValue, paramUI, handlers }) {
     return (
         <div className={styles['pivot-date-range-param']} key={`pcell-${id}-${paramKey}`}>
             <DateTimeRangePicker
+                baseid={id}
                 paramUI={paramUI}
                 paramValue={paramValue}
                 paramKey={paramKey}
