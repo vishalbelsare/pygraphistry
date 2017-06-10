@@ -2,6 +2,7 @@ import { Observable } from 'rxjs';
 import { VError } from 'verror'
 import request from 'request';
 const get = Observable.bindNodeCallback(request.get.bind(request));
+const post = Observable.bindNodeCallback(request.post.bind(request));
 
 import logger from '../../../shared/logger.js';
 import { Connector } from './connector.js';
@@ -15,12 +16,16 @@ class HttpConnector extends Connector {
         this.timeout_s = timeout_s;
     }
 
-    search (url) {
+    search (url, { method = 'GET', timeout, body, headers = {} } = { } ) {
 
-        log.info('HttpConnector get', url);
+        log.info(`HttpConnector ${method}`, url, body);
+        log.debug('Using timeout: ', (timeout || this.timeout_s) * 1000);
 
-        return get(url)
-            .catch((e) => {
+        const req = 
+            method === 'GET' ? get({url, headers})
+                : post({url, body, headers});
+
+        return req.catch((e) => {
                 return Observable.throw(
                     new VError({
                         name: 'HttpConnectorGet',
@@ -32,6 +37,14 @@ class HttpConnector extends Connector {
             .do(([response]) => {
                 log.trace(response);
                 const statusCode = (response||{}).statusCode;
+                if (statusCode !== 200) {
+                    log.error({msg: 'error', statusCode, 
+                        method,
+                        headers,
+                        requestBody: body,
+                        responseBody: (response||{}).body});                    
+
+                }
                 if (statusCode === 401) {
                     throw new VError({
                             name: 'HttpStatusError',
@@ -47,7 +60,7 @@ class HttpConnector extends Connector {
                             + (statusCode || 'none available'), info);
                 }
             })            
-            .timeoutWith(this.timeout_s * 1000, Observable.throw(new VError({
+            .timeoutWith((timeout || this.timeout_s) * 1000, Observable.throw(new VError({
                     name: 'Timeout',
                     info: `Max wait: ${this.timeout_s} seconds`
                 }, 'URL took too long to respond')));

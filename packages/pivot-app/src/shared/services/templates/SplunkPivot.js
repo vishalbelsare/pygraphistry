@@ -48,7 +48,10 @@ export class SplunkPivot extends PivotTemplate {
                         splunkSearchId: pivot.splunkSearchId
                     };
                 })
-                .map(() => shapeSplunkResults({app, pivot}));
+                .map(() => shapeSplunkResults({app, pivot}))
+                .do(({pivot: pivotShaped}) => {
+                    pivot.results = pivotShaped.results;
+                });
         }
     }
 

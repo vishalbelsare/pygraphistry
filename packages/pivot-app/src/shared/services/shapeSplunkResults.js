@@ -4,17 +4,8 @@ import { categoryToColorInt, intToHex } from '../services/support/palette.js';
 import logger from '../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
-//Do not make these nodes in '*' mode
-const SKIP = {
 
-    'AdmissionEndDate': true,
-    'AdmissionStartDate': true,
-    'LabDateTime': true,
-    'LabValue': true,
-    'LabUnits': true
-};
-
-function summarizeOutput ({ results: { labels }}) {
+function summarizeOutput ({ labels }) {
 
     //{ typeName -> int }
     const entityTypes = {};
@@ -49,17 +40,18 @@ function summarizeOutput ({ results: { labels }}) {
     return entitySummary;
 }
 
+
 function encodeGraph({ app, pivot }) {
 
     const { encodings } = pivot.template;
-    const { labels, graph: edges } = pivot.results;
+    const { nodes, edges } = pivot.results;
 
+    
+    //TODO make node, edge encoding calls functional
     if (encodings && encodings.point) {
-        //nodeLabels = encodings.point.encode(nodeLabels);
-        labels.map(
+        nodes.map(
             (node) => (
                 Object.keys(encodings.point).map(
-                    // TODO make encodings functional
                     (key) => { // eslint-disable-line array-callback-return
                         encodings.point[key](node);
                     }
@@ -72,22 +64,26 @@ function encodeGraph({ app, pivot }) {
         edges.map(
             (edge) => (
                 Object.keys(encodings.edge).map(
-                    // TODO make encodings functional
                     (key) => { // eslint-disable-line array-callback-return
                         encodings.edge[key](edge);
                     }
                 )
             )
         );
-    }
+    }    
 
-    pivot.results = {
-        graph: edges,
-        labels: labels
-    };
-    pivot.resultSummary = summarizeOutput(pivot);
 
-    return ({ app, pivot });
+    return { 
+        app, 
+        pivot: {
+            ...pivot,
+            results: {
+                graph: edges,
+                labels: nodes
+            },
+            resultSummary: summarizeOutput({labels: nodes})
+         }
+     };
 }
 
 function extractAllNodes(connections) {
@@ -96,8 +92,14 @@ function extractAllNodes(connections) {
             || (connections.indexOf('*') !== -1)
 }
 
+// Convert events into a hypergraph
+//   -- hypernodes: generate EventID if none available
+//   -- if generic nodes/edges, merge in
 function shapeHyperGraph({ app, pivot } ) {
-    const { events, attributes, connections } = pivot;
+    const { 
+        events = [], 
+        graph: { nodes: pivotNodes = [], edges: pivotEdges = [] } = {}, 
+        attributes, connections } = pivot;
     const isStar = extractAllNodes(connections);
 
     const edges = [];
@@ -109,7 +111,7 @@ function shapeHyperGraph({ app, pivot } ) {
         const fields =
             isStar ?
             _.filter(Object.keys(row), function (field) {
-                return !SKIP[field] && (field.toLowerCase() !== 'eventid');
+                return (field.toLowerCase() !== 'eventid');
             })
             : _.filter(connections, function (field) { return row[field]; });
         const attribs = (attributes || []).concat(fields);
@@ -131,7 +133,7 @@ function shapeHyperGraph({ app, pivot } ) {
                             'destination': row[field],
                             'source': eventID,
                             'edgeType': ('EventID->' + field),
-                            '_pivotId': pivot.id
+                            'edgeTitle': `${eventID}->${row[field]}`
                         }
                     )
                 );
@@ -140,12 +142,25 @@ function shapeHyperGraph({ app, pivot } ) {
 
     }
 
-    pivot.results = {
-        graph: edges,
-        labels: nodeLabels,
-    };
+    const combinedNodes = nodeLabels.concat(pivotNodes)
+        .filter(({type}) => 
+                isStar 
+                || type === 'EventID'
+                || (connections.indexOf(type) > -1));
 
-    return ({ app, pivot });
+    //TODO filter by global lookup of nodes
+    //  (for case where just edges here, and enriched nodes from earlier)
+    const combinedEdges = edges.concat(pivotEdges);
+
+
+    return ({ app, 
+        pivot: {
+            ...pivot,
+            results: {
+                edges: combinedEdges,
+                nodes: combinedNodes
+            } 
+    }});
 }
 
 export function shapeSplunkResults({ app, pivot }) {

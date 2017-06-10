@@ -10,15 +10,52 @@ export const PARAMETERS = [
     },
     {
         name: 'endpoint',
-        inputType: 'text',
+        inputType: 'textarea',
         label: 'URL:',
         placeholder: 'http://'
     },
     {
+        name: 'method',
+        label: 'method',
+        inputType: 'combo',
+        options: [
+            {value: 'GET', label: 'GET'},
+            {value: 'POST', label: 'POST'}
+        ]
+    },
+    {
+        name: 'timeout',
+        inputType: 'number',
+        label: 'timeout (s):',
+        placeholder: '10',
+        defaultValue: 10
+    },
+    {
+        name: 'headers',
+        label: 'headers',
+        inputType: 'multi',
+        options: []
+    },    
+    {
+        name: 'body',
+        inputType: 'textarea',
+        label: 'body',
+        placeholder: ''
+    },    
+    {
         name: 'jq',
-        inputType: 'text',
+        inputType: 'textarea',
         label: 'Postprocess with jq:',
         placeholder: '.'
+    },    
+    {
+        name: 'outputType',
+        label: 'shape',
+        inputType: 'combo',
+        options: [
+            {value: 'table', label: 'table'},
+            {value: 'graph', label: 'graph'}
+        ]
     },
     {
         name: 'nodes',
@@ -172,7 +209,7 @@ export const demoEncodings = {
         pointColor: function(node) {
             node.pointColor = COLORS[node.type];
             if (node.pointColor === undefined) {
-                node.pointColor = stringhash(node.type) % 12;
+                node.pointColor = stringhash(node.type || 'n/a') % 12;
             }
         },
         pointSizes: function(node) {

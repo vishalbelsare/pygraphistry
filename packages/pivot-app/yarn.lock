@@ -13,13 +13,33 @@
     react-addons-update "^0.14.0 || <15.4.0"
     react-dom "^0.14.0 || <15.4.0"
 
-"@graphistry/falcor-json-graph@2.8.0", "@graphistry/falcor-json-graph@^2.8.0":
+"@graphistry/client-api-react@^2.12.0":
+  version "2.12.2"
+  resolved "https://registry.yarnpkg.com/@graphistry/client-api-react/-/client-api-react-2.12.2.tgz#8a8d830aafddd97af706a47409f775265ebae61c"
+  dependencies:
+    "@graphistry/client-api" "^2.12.2"
+    prop-types "^15.5.10"
+    react "^15.5.4"
+    recompose "^0.23.4"
+
+"@graphistry/client-api@^2.12.0", "@graphistry/client-api@^2.12.2":
+  version "2.12.2"
+  resolved "https://registry.yarnpkg.com/@graphistry/client-api/-/client-api-2.12.2.tgz#28be14bc992ae8f1843e154b9d6cdc357a72c81a"
+  dependencies:
+    "@graphistry/falcor-json-graph" "~2.8.0"
+    "@graphistry/falcor-model-rxjs" "~2.9.3"
+    "@graphistry/falcor-socket-datasource" "~2.9.3"
+    recompose "~0.23.4"
+    rxjs "~5.4.0"
+    symbol-observable "~1.0.4"
+
+"@graphistry/falcor-json-graph@2.8.0", "@graphistry/falcor-json-graph@^2.8.0", "@graphistry/falcor-json-graph@~2.8.0":
   version "2.8.0"
   resolved "https://registry.yarnpkg.com/@graphistry/falcor-json-graph/-/falcor-json-graph-2.8.0.tgz#935bb3ebdd73b4c68613fa71b091904d4e04a654"
   dependencies:
     "@graphistry/falcor-path-syntax" "^2.8.0"
 
-"@graphistry/falcor-model-rxjs@2.9.3", "@graphistry/falcor-model-rxjs@^2.9.3":
+"@graphistry/falcor-model-rxjs@2.9.3", "@graphistry/falcor-model-rxjs@~2.9.3":
   version "2.9.3"
   resolved "https://registry.yarnpkg.com/@graphistry/falcor-model-rxjs/-/falcor-model-rxjs-2.9.3.tgz#2d79f8bb62fa00dd0c9d9af22ac574352ed7159a"
   dependencies:
@@ -94,7 +114,7 @@
     "@graphistry/falcor-path-utils" "^2.9.1"
     rxjs "~5.4.0"
 
-"@graphistry/falcor-socket-datasource@2.9.3", "@graphistry/falcor-socket-datasource@^2.9.3":
+"@graphistry/falcor-socket-datasource@2.9.3", "@graphistry/falcor-socket-datasource@~2.9.3":
   version "2.9.3"
   resolved "https://registry.yarnpkg.com/@graphistry/falcor-socket-datasource/-/falcor-socket-datasource-2.9.3.tgz#928b42891bbe46c27d21d2a93df27a7b68cc1ed3"
   dependencies:
@@ -108,24 +128,13 @@
     "@graphistry/falcor-path-utils" "^2.9.1"
     symbol-observable "1.0.4"
 
-"@graphistry/graphistry-client@^2.11.255":
-  version "2.11.255"
-  resolved "https://registry.yarnpkg.com/@graphistry/graphistry-client/-/graphistry-client-2.11.255.tgz#4d8b4c3fb3f9571f2ebb0486266fde49dd88e395"
+"@graphistry/react-split-pane@^0.1.63":
+  version "0.1.63"
+  resolved "https://registry.yarnpkg.com/@graphistry/react-split-pane/-/react-split-pane-0.1.63.tgz#d0fbfaf8a0000ce4469ace766443b9bfcbdf0719"
   dependencies:
-    "@graphistry/falcor-json-graph" "2.8.0"
-    "@graphistry/falcor-model-rxjs" "^2.9.3"
-    "@graphistry/falcor-socket-datasource" "^2.9.3"
-    http-server "~0.10.0"
-    recompose "~0.23.4"
-    rxjs "^5.4.0"
-    uuid "~3.0.1"
-
-"@graphistry/react-split-pane@0.1.61":
-  version "0.1.61"
-  resolved "https://registry.yarnpkg.com/@graphistry/react-split-pane/-/react-split-pane-0.1.61.tgz#2ce02fe0b8c36aa08960a8f64435055e204ddf8b"
-  dependencies:
-    inline-style-prefixer "^3.0.0"
-    react-style-proptype "^2.0.1"
+    inline-style-prefixer "^3.0.2"
+    prop-types "^15.5.8"
+    react-style-proptype "^3.0.0"
 
 abbrev@1:
   version "1.1.0"
@@ -362,7 +371,7 @@ async@^0.9.0, async@~0.9.0:
   version "0.9.0"
   resolved "https://registry.yarnpkg.com/async/-/async-0.9.0.tgz#ac3613b1da9bed1b47510bb4651b8931e47146c7"
 
-async@^1.3.0, async@^1.5.0, async@^1.5.2:
+async@^1.3.0, async@^1.5.0:
   version "1.5.2"
   resolved "https://registry.yarnpkg.com/async/-/async-1.5.2.tgz#ec6a61ae56480c0c3cb241c95618e20892f9672a"
 
@@ -1964,10 +1973,6 @@ core-util-is@1.0.2, core-util-is@~1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
 
-corser@~2.0.0:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/corser/-/corser-2.0.1.tgz#8eda252ecaab5840dcd975ceb90d9370c819ff87"
-
 cosmiconfig@^2.1.0, cosmiconfig@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/cosmiconfig/-/cosmiconfig-2.1.1.tgz#817f2c2039347a1e9bf7d090c0923e53f749ca82"
@@ -2378,13 +2383,13 @@ debug@2.6.1:
   dependencies:
     ms "0.7.2"
 
-debug@2.6.4, debug@^2.1.1, debug@^2.2.0, debug@^2.3.3, debug@~2.6.4:
+debug@2.6.4, debug@~2.6.4:
   version "2.6.4"
   resolved "https://registry.yarnpkg.com/debug/-/debug-2.6.4.tgz#7586a9b3c39741c0282ae33445c4e8ac74734fe0"
   dependencies:
     ms "0.7.3"
 
-debug@~2.6.6:
+debug@^2.1.1, debug@^2.2.0, debug@^2.3.3, debug@~2.6.6:
   version "2.6.6"
   resolved "https://registry.yarnpkg.com/debug/-/debug-2.6.6.tgz#a9fa6fbe9ca43cf1e79f73b75c0189cbb7d6db5a"
   dependencies:
@@ -2568,15 +2573,6 @@ ecc-jsbn@~0.1.1:
   resolved "https://registry.yarnpkg.com/ecc-jsbn/-/ecc-jsbn-0.1.1.tgz#0fc73a9ed5f0d53c38193398523ef7e543777505"
   dependencies:
     jsbn "~0.1.0"
-
-ecstatic@^2.0.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/ecstatic/-/ecstatic-2.1.0.tgz#477a4a6b25cecb112f697dbd2c7fa354154ea6be"
-  dependencies:
-    he "^0.5.0"
-    mime "^1.2.11"
-    minimist "^1.1.0"
-    url-join "^1.0.0"
 
 ee-first@1.1.1:
   version "1.1.1"
@@ -2988,10 +2984,6 @@ event-emitter@~0.3.5:
   dependencies:
     d "1"
     es5-ext "~0.10.14"
-
-eventemitter3@1.x.x:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-1.2.0.tgz#1c86991d816ad1e504750e73874224ecf3bec508"
 
 events@^1.0.0:
   version "1.1.1"
@@ -3672,10 +3664,6 @@ hawk@~3.1.3:
     hoek "2.x.x"
     sntp "1.x.x"
 
-he@^0.5.0:
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/he/-/he-0.5.0.tgz#2c05ffaef90b68e860f3fd2b54ef580989277ee2"
-
 hex-rgba@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/hex-rgba/-/hex-rgba-1.0.1.tgz#dd79a764c660f0d5613021766b80c9b06d973b1d"
@@ -3755,26 +3743,6 @@ http-errors@~1.6.1:
     inherits "2.0.3"
     setprototypeof "1.0.3"
     statuses ">= 1.3.1 < 2"
-
-http-proxy@^1.8.1:
-  version "1.16.2"
-  resolved "https://registry.yarnpkg.com/http-proxy/-/http-proxy-1.16.2.tgz#06dff292952bf64dbe8471fa9df73066d4f37742"
-  dependencies:
-    eventemitter3 "1.x.x"
-    requires-port "1.x.x"
-
-http-server@~0.10.0:
-  version "0.10.0"
-  resolved "https://registry.yarnpkg.com/http-server/-/http-server-0.10.0.tgz#b2a446b16a9db87ed3c622ba9beb1b085b1234a7"
-  dependencies:
-    colors "1.0.3"
-    corser "~2.0.0"
-    ecstatic "^2.0.0"
-    http-proxy "^1.8.1"
-    opener "~1.4.0"
-    optimist "0.6.x"
-    portfinder "^1.0.13"
-    union "~0.4.3"
 
 http-signature@~0.10.0:
   version "0.10.1"
@@ -3879,9 +3847,9 @@ ini@~1.3.0:
   version "1.3.4"
   resolved "https://registry.yarnpkg.com/ini/-/ini-1.3.4.tgz#0537cb79daf59b59a1a517dff706c86ec039162e"
 
-inline-style-prefixer@^3.0.0:
-  version "3.0.2"
-  resolved "https://registry.yarnpkg.com/inline-style-prefixer/-/inline-style-prefixer-3.0.2.tgz#989865e0c5de7a946acbea71e16e02741efe0dd7"
+inline-style-prefixer@^3.0.2:
+  version "3.0.5"
+  resolved "https://registry.yarnpkg.com/inline-style-prefixer/-/inline-style-prefixer-3.0.5.tgz#0092881b3a2eadf1bd619dc43726557316f76042"
   dependencies:
     bowser "^1.6.0"
     css-in-js-utils "^1.0.3"
@@ -4662,7 +4630,7 @@ longest@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/longest/-/longest-1.0.1.tgz#30a0b2da38f73770e8294a0d22e6625ed77d0097"
 
-loose-envify@^1.0.0, loose-envify@^1.1.0, loose-envify@^1.2.0:
+loose-envify@^1.0.0, loose-envify@^1.1.0, loose-envify@^1.2.0, loose-envify@^1.3.1:
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/loose-envify/-/loose-envify-1.3.1.tgz#d1a8ad33fa9ce0e713d65fdd0ac8b748d478c848"
   dependencies:
@@ -4819,7 +4787,7 @@ minimist@0.0.8, minimist@~0.0.1:
   version "0.0.8"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-0.0.8.tgz#857fcabfc3397d2625b8228262e86aa7a011b05d"
 
-minimist@1.2.0, minimist@^1.1.0, minimist@^1.1.3, minimist@^1.2.0:
+minimist@1.2.0, minimist@^1.1.3, minimist@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.0.tgz#a35008b20f41383eec1fb914f4cd5df79a264284"
 
@@ -4829,7 +4797,7 @@ mkdirp@0.5.0:
   dependencies:
     minimist "0.0.8"
 
-mkdirp@0.5.1, mkdirp@0.5.x, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp@~0.5.0, mkdirp@~0.5.1:
+mkdirp@0.5.1, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp@~0.5.0, mkdirp@~0.5.1:
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.5.1.tgz#30057438eac6cf7f8c4767f38648d6697d75c903"
   dependencies:
@@ -5212,11 +5180,7 @@ onetime@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/onetime/-/onetime-1.1.0.tgz#a1f7838f8314c516f05ecefcbc4ccfe04b4ed789"
 
-opener@~1.4.0:
-  version "1.4.3"
-  resolved "https://registry.yarnpkg.com/opener/-/opener-1.4.3.tgz#5c6da2c5d7e5831e8ffa3964950f8d6674ac90b8"
-
-optimist@0.6.1, optimist@0.6.x, optimist@^0.6.1, optimist@~0.6.0:
+optimist@0.6.1, optimist@^0.6.1, optimist@~0.6.0:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/optimist/-/optimist-0.6.1.tgz#da3ea74686fa21a19a111c326e90eb15a0196686"
   dependencies:
@@ -5521,14 +5485,6 @@ pngjs@^3.0.0:
 pop-iterate@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/pop-iterate/-/pop-iterate-1.0.1.tgz#ceacfdab4abf353d7a0f2aaa2c1fc7b3f9413ba3"
-
-portfinder@^1.0.13:
-  version "1.0.13"
-  resolved "https://registry.yarnpkg.com/portfinder/-/portfinder-1.0.13.tgz#bb32ecd87c27104ae6ee44b5a3ccbf0ebb1aede9"
-  dependencies:
-    async "^1.5.2"
-    debug "^2.2.0"
-    mkdirp "0.5.x"
 
 postcss-apply@0.4.0:
   version "0.4.0"
@@ -6285,6 +6241,13 @@ promise@^7.0.3, promise@^7.1.1:
   dependencies:
     asap "~2.0.3"
 
+prop-types@^15.5.10, prop-types@^15.5.4, prop-types@^15.5.7, prop-types@^15.5.8:
+  version "15.5.10"
+  resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.5.10.tgz#2797dfc3126182e3a95e3dfbb2e893ddd7456154"
+  dependencies:
+    fbjs "^0.8.9"
+    loose-envify "^1.3.1"
+
 proxy-addr@~1.1.2:
   version "1.1.4"
   resolved "https://registry.yarnpkg.com/proxy-addr/-/proxy-addr-1.1.4.tgz#27e545f6960a44a627d9b44467e35c1b6b4ce2f3"
@@ -6341,10 +6304,6 @@ qs@6.2.0:
 qs@6.4.0:
   version "6.4.0"
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.4.0.tgz#13e26d28ad6b0ffaa91312cd3bf708ed351e7233"
-
-qs@~2.3.3:
-  version "2.3.3"
-  resolved "https://registry.yarnpkg.com/qs/-/qs-2.3.3.tgz#e9e85adbe75da0bbe4c8e0476a086290f863b404"
 
 qs@~2.4.0:
   version "2.4.2"
@@ -6582,9 +6541,11 @@ react-select@1.0.0-rc.2:
     classnames "^2.2.4"
     react-input-autosize "^1.1.0"
 
-react-style-proptype@^2.0.1:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/react-style-proptype/-/react-style-proptype-2.0.2.tgz#b4687990ac256deed89ee5777a3c58de5ac7bd15"
+react-style-proptype@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/react-style-proptype/-/react-style-proptype-3.0.0.tgz#89e0b646f266c656abb0f0dd8202dbd5036c31e6"
+  dependencies:
+    prop-types "^15.5.4"
 
 react-tag-input@4.6.1:
   version "4.6.1"
@@ -6608,6 +6569,15 @@ react@^0.14.0, "react@^0.14.0 || <15.4.0":
   dependencies:
     envify "^3.0.0"
     fbjs "^0.6.1"
+
+react@^15.5.4:
+  version "15.5.4"
+  resolved "https://registry.yarnpkg.com/react/-/react-15.5.4.tgz#fa83eb01506ab237cdc1c8c3b1cea8de012bf047"
+  dependencies:
+    fbjs "^0.8.9"
+    loose-envify "^1.1.0"
+    object-assign "^4.1.0"
+    prop-types "^15.5.7"
 
 read-cache@^1.0.0:
   version "1.0.0"
@@ -6741,7 +6711,7 @@ recompose@0.22.0, recompose@~0.22.0:
     hoist-non-react-statics "^1.0.0"
     symbol-observable "^1.0.4"
 
-recompose@~0.23.4:
+recompose@^0.23.4, recompose@~0.23.4:
   version "0.23.4"
   resolved "https://registry.yarnpkg.com/recompose/-/recompose-0.23.4.tgz#af09e4e08424effa449c9b793037166f7b30644a"
   dependencies:
@@ -6992,10 +6962,6 @@ require-uncached@^1.0.2:
     caller-path "^0.1.0"
     resolve-from "^1.0.0"
 
-requires-port@1.x.x:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/requires-port/-/requires-port-1.0.0.tgz#925d2601d39ac485e091cf0da5c6e694dc3dcaff"
-
 resize-img@^1.1.0:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/resize-img/-/resize-img-1.1.2.tgz#fad650faf3ef2c53ea63112bc272d95e9d92550e"
@@ -7088,7 +7054,7 @@ rx@~2.3.24:
   version "2.3.25"
   resolved "https://registry.yarnpkg.com/rx/-/rx-2.3.25.tgz#2f7c0550532777b41fa692bb790a7886eaff9731"
 
-rxjs@5.4.0, rxjs@^5.4.0, rxjs@~5.4.0:
+rxjs@5.4.0, rxjs@~5.4.0:
   version "5.4.0"
   resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.4.0.tgz#a7db14ab157f9d7aac6a56e655e7a3860d39bf26"
   dependencies:
@@ -7641,7 +7607,7 @@ svgo@^0.7.0:
     sax "~1.2.1"
     whet.extend "~0.9.9"
 
-symbol-observable@1.0.4, symbol-observable@^1.0.1, symbol-observable@^1.0.2, symbol-observable@^1.0.4:
+symbol-observable@1.0.4, symbol-observable@^1.0.1, symbol-observable@^1.0.2, symbol-observable@^1.0.4, symbol-observable@~1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/symbol-observable/-/symbol-observable-1.0.4.tgz#29bf615d4aa7121bdd898b22d4b3f9bc4e2aa03d"
 
@@ -7857,12 +7823,6 @@ underscore@~1.5.2:
   version "1.5.2"
   resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.5.2.tgz#1335c5e4f5e6d33bbb4b006ba8c86a00f556de08"
 
-union@~0.4.3:
-  version "0.4.6"
-  resolved "https://registry.yarnpkg.com/union/-/union-0.4.6.tgz#198fbdaeba254e788b0efcb630bc11f24a2959e0"
-  dependencies:
-    qs "~2.3.3"
-
 uniq@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/uniq/-/uniq-1.0.1.tgz#b31c5ae8254844a3a8281541ce2b04b865a734ff"
@@ -7891,10 +7851,6 @@ units-css@^0.4.0:
 unpipe@1.0.0, unpipe@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/unpipe/-/unpipe-1.0.0.tgz#b2bf4ee8514aae6165b4817829d21b2ef49904ec"
-
-url-join@^1.0.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/url-join/-/url-join-1.1.0.tgz#741c6c2f4596c4830d6718460920d0c92202dc78"
 
 url-loader@0.5.7:
   version "0.5.7"

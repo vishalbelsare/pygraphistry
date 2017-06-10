@@ -24,7 +24,7 @@ export const HTTP_EXPAND = new HttpPivot({
         }].concat(PARAMETERS),
     toUrls: function (params, pivotCache) {
 
-        const { endpoint = '', pRef } = params;
+        const { endpoint = '', pRef, body, method = 'GET' } = params;
 
         const refVal = pRef ? pRef.value : '';
         
@@ -36,8 +36,15 @@ export const HTTP_EXPAND = new HttpPivot({
                 try {
                     const urlParams = {...row, ...flattenParams(params) };
                     const url = template(endpoint, urlParams);
+                    const bodyConcrete =
+                        method === 'POST' ? template(body, urlParams)
+                        : undefined;                    
                     log.debug('row endpoint', url, i, row);
-                    return { url, params: urlParams };
+                    return { 
+                        url, 
+                        params: urlParams, 
+                        ...(method === 'POST' ? { body: bodyConcrete } : {})
+                    };
                 } catch (e) {
                     return e;
                 }

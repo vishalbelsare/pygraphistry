@@ -1,0 +1,11 @@
+{
+    "name": "blazegraph pivot2",
+    "id": "3fbce855d93f4368",
+    "description": "",
+    "tags": [],
+    "modifiedOn": 1494203900862,
+    "layout": "atlasbarnes",
+    "pivots": [
+        "3fbce855d93a90b9"
+    ]
+}
