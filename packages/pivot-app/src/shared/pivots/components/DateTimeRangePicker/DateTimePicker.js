@@ -1,15 +1,15 @@
 import moment from 'moment';
 import { SingleDatePicker } from 'react-dates';
-
+import { HORIZONTAL_ORIENTATION } from 'react-dates/constants';
 import React from 'react';
 import ReactDom from 'react-dom';
-import { TimePickerWrapper, FORMAT } from './TimePickerWrapper.js';
+import TimePicker from 'time-input';
 import TimezonePicker from 'react-bootstrap-timezone-picker';
 
-import {
-    HORIZONTAL_ORIENTATION,
-} from 'react-dates/constants';
+import styles from '../pivots.less';
 
+
+export const FORMAT = "hh:mm:ss a";
 
 export default class DateTimePicker extends React.Component {
 
@@ -59,10 +59,12 @@ export default class DateTimePicker extends React.Component {
                 renderCalendarInfo={ () => <span
                         onClick={ (event) => event.stopPropagation() }
                     >
-                        <TimePickerWrapper 
-                            value={ this.state.time }
-                            onChange={ ({ time }) => this.setState({ time }) }
-                        />
+                        <span className={styles['pivot-timepicker']} >
+                            <TimePicker 
+                                value={ this.state.time.format(FORMAT) }
+                                onChange={ (time) =>  this.setState({ time: moment(time, FORMAT) }) }
+                            />
+                        </span>
                         <TimezonePicker
                           absolute={false}
                           value={ this.state.timezone }
