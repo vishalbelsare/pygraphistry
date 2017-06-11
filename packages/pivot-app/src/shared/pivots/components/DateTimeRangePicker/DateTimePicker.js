@@ -19,7 +19,6 @@ export default class DateTimePicker extends React.Component {
         this.state = {
             focused: false,
 
-            time: props.defaultTime,
             timezone: "America/Los_Angeles"
         };
     }
@@ -27,7 +26,7 @@ export default class DateTimePicker extends React.Component {
 
     render () {
         
-        const { baseid, placeholder, date } = this.props;
+        const { baseid, placeholder, date, time } = this.props;
         
         return (<div>
             <SingleDatePicker
@@ -51,8 +50,8 @@ export default class DateTimePicker extends React.Component {
                     const hasDate = date | false;
                     if (hasDate) {
                         const dateFormatted = date.format(moment.localeData().longDateFormat('L'));
-                        const time = this.state.time.format(FORMAT);
-                        return `[${dateFormatted} ${time}]`;
+                        const timeFormatted = time.format(FORMAT);
+                        return `[${dateFormatted} ${timeFormatted}]`;
                     } else {
                         return `[${placeholder}]`;
                     }
@@ -64,8 +63,8 @@ export default class DateTimePicker extends React.Component {
                         <div className={styles['pivot-timepicker-container']}>
                             <span className={styles['pivot-timepicker']} >
                                 <TimePicker 
-                                    value={ this.state.time.format(FORMAT) }
-                                    onChange={ (time) =>  this.setState({ time: moment(time, FORMAT) }) }
+                                    value={ time.format(FORMAT) }
+                                    onChange={ (time) =>  this.props.onValueChange({ time: moment(time, FORMAT) }) }
                                 />
                             </span>
                             <TimezonePicker
