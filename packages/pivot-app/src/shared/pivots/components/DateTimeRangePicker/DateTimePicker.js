@@ -16,24 +16,20 @@ export default class DateTimePicker extends React.Component {
     constructor(props, context) {
         super(props, context);
 
-        this.state = {
-            focused: false,
-
-            timezone: "America/Los_Angeles"
-        };
+        this.state = { focused: false };
     }
 
 
     render () {
         
-        const { baseid, placeholder, date, time } = this.props;
+        const { baseid, placeholder, date, time, timezone, onValueChange } = this.props;
         
         return (<div>
             <SingleDatePicker
                 id={`sdp_${baseid}`}      
 
                 date={date}
-                onDateChange={ date => this.props.onValueChange({ date }) }
+                onDateChange={ date => onValueChange({ date }) }
                 
                 focused={ this.state.focused }
                 onFocusChange={ ({ focused }) => this.setState({ focused }) }
@@ -64,14 +60,14 @@ export default class DateTimePicker extends React.Component {
                             <span className={styles['pivot-timepicker']} >
                                 <TimePicker 
                                     value={ time.format(FORMAT) }
-                                    onChange={ (time) =>  this.props.onValueChange({ time: moment(time, FORMAT) }) }
+                                    onChange={ (time) =>  onValueChange({ time: moment(time, FORMAT) }) }
                                 />
                             </span>
                             <TimezonePicker
                               absolute={true}
-                              value={ this.state.timezone }
+                              value={ timezone }
                               placeholder="Select timezone..."
-                              onChange={ (timezone) => this.setState({ timezone }) }
+                              onChange={ (timezone) => onValueChange({ timezone }) }
                             />
                         </div>
                     </span> 
