@@ -8,8 +8,8 @@ export default function DateTimeRangePicker ({ paramUI, baseid }) {
     return (<div className={styles['pivot-timerange-param']}>
         <label>{ paramUI.label }</label>
         <div>
-            <DateTimePicker baseid={baseid+"from"} placeholder={"From"}></DateTimePicker> 
-            <DateTimePicker baseid={baseid+"to"} placeholder={"To"}></DateTimePicker>
+            <DateTimePicker baseid={baseid+"from"} placeholder={"default"}></DateTimePicker> 
+            <DateTimePicker baseid={baseid+"to"} placeholder={"default"}></DateTimePicker>
         </div>
     </div>);
 }

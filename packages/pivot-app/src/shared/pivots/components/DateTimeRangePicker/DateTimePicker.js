@@ -34,6 +34,14 @@ export default class DateTimePicker extends React.Component {
                 showDefaultInputIcon={true}
                 withPortal={true}
 
+                displayFormat={ () => {
+                    const hasDate = this.state.date | false;
+                    const hasTime = this.state.time | false;
+                    return hasDate || hasTime ? 
+                        moment.localeData().longDateFormat('L') 
+                        : `[${placeholder}]`;
+                } }
+
                 placeholder={ placeholder }
             />);
     }
