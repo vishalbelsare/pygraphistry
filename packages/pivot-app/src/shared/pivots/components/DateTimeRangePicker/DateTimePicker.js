@@ -5,6 +5,7 @@ import React from 'react';
 import ReactDom from 'react-dom';
 import TimePicker from 'time-input';
 import TimezonePicker from 'react-bootstrap-timezone-picker';
+import classNames from 'classnames';
 
 import styles from '../pivots.less';
 
@@ -24,7 +25,11 @@ export default class DateTimePicker extends React.Component {
         
         const { baseid, placeholder, date, time, timezone, onValueChange } = this.props;
         
-        return (<div>
+        return (<div className={classNames({
+                    [styles['pivot-datetimepicker-container']]: true,
+                    [styles['is-default']]: !date
+                })}
+            >
             <SingleDatePicker
                 id={`sdp_${baseid}`}      
 
@@ -43,7 +48,7 @@ export default class DateTimePicker extends React.Component {
                 hideKeyboardShortcutsPanel={true}
 
                 displayFormat={ () => {
-                    const hasDate = date | false;
+                    const hasDate = !!date;
                     if (hasDate) {
                         const dateFormatted = date.format(moment.localeData().longDateFormat('L'));
                         const timeFormatted = time.format(FORMAT);

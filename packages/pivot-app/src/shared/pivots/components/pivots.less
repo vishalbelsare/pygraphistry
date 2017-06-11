@@ -365,6 +365,32 @@
     margin: 1em !important;
 }
 
+
+.pivot-datetimepicker-container {
+    display: inline-block;
+
+    :global(.SingleDatePickerInput__calendar-icon) {
+        padding-right: 0;
+    }
+
+    :global(.SingleDatePickerInput__clear-date--hide) {
+        display: none; //normally 'hidden' and thus takes space
+    }
+
+    &.is-default {
+        :global(.SingleDatePickerInput) {
+            opacity: 0.65;
+            &:hover {
+                opacity: 1.0;                
+            }
+        }
+    }
+    &:not(.is-default) {
+
+    }    
+
+}
+
 .pivot-timepicker-container {
     display: flex;
     flex-direction: row;
@@ -373,7 +399,7 @@
     margin-right: 18px;
     & > :not(.pivot-timepicker) {
         flex-grow: 1;        
-    }    
+    }
 }
 
 
