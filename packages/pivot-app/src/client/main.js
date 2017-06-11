@@ -6,6 +6,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-bootstrap-table/dist/react-bootstrap-table.min.css';
 import 'react-select/dist/react-select.css';
 import 'react-dates/lib/css/_datepicker.css';
+import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
 import 'font-awesome/css/font-awesome.css';
 
 import setObservableConfig from 'recompose/setObservableConfig';

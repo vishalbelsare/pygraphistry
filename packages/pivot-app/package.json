@@ -70,6 +70,7 @@
     "react-addons-shallow-compare": "15.4.2",
     "react-bootstrap": "0.30.3",
     "react-bootstrap-table": "2.7.1",
+    "react-bootstrap-timezone-picker": "1.0.11",
     "react-dates": "12.1.2",
     "react-dom": "15.4.1",
     "react-fontawesome": "1.5.0",

@@ -4,6 +4,7 @@ import { SingleDatePicker } from 'react-dates';
 import React from 'react';
 import ReactDom from 'react-dom';
 import { TimePickerWrapper, FORMAT } from './TimePickerWrapper.js';
+import TimezonePicker from 'react-bootstrap-timezone-picker';
 
 import {
     HORIZONTAL_ORIENTATION,
@@ -19,7 +20,7 @@ export default class DateTimePicker extends React.Component {
             focused: false,
             date: null, // momentPropTypes.momentObj or null
             time: moment("12:00:00 AM", "hh:mm:ss a"),
-            timezone: null
+            timezone: "America/Los_Angeles"
         };
     }
 
@@ -55,10 +56,20 @@ export default class DateTimePicker extends React.Component {
                     }
                 } }
 
-                renderCalendarInfo={ () => <TimePickerWrapper 
-                        value={ this.state.time }
-                        onChange={ ({ time }) => this.setState({ time }) }
-                    /> }
+                renderCalendarInfo={ () => <span
+                        onClick={ (event) => event.stopPropagation() }
+                    >
+                        <TimePickerWrapper 
+                            value={ this.state.time }
+                            onChange={ ({ time }) => this.setState({ time }) }
+                        />
+                        <TimezonePicker
+                          absolute={false}
+                          value={ this.state.timezone }
+                          placeholder="Select timezone..."
+                          onChange={ (timezone) => this.setState({ timezone }) }
+                        />
+                    </span> }
 
                 placeholder={ placeholder }
             />            

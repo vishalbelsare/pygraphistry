@@ -16,10 +16,7 @@ export class TimePickerWrapper extends React.Component {
 
         const { value, onChange } = this.props;
 
-        return (<span 
-                className={styles['pivot-timepicker']}
-                onClick={ (event) => event.stopPropagation() }
-            >
+        return (<span className={styles['pivot-timepicker']} >
             <TimePicker 
                 value={ value.format(FORMAT) }
                 onChange={ (time) =>  onChange({ time: moment(time, FORMAT) }) }
