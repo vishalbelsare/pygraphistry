@@ -269,16 +269,13 @@
 }
 
 .pivot-text-param,
-.pivot-timerange-param,
 .pivot-textarea-param,
 .pivot-label-param,
 .pivot-combo-param :global(.form-group) {
     display: flex;
 }
 
-
-
-.pivot-timerange-param, .pivot-text-param, .pivot-textarea-param, .pivot-combo-param {
+.pivot-text-param, .pivot-textarea-param, .pivot-combo-param {
     label {
     	order: 1;
     	margin-top: 10px;
@@ -367,3 +364,39 @@
 .splunk-query {
     margin: 1em !important;
 }
+
+.pivot-timepicker-container {
+    display: flex;
+    flex-direction: row;
+    margin-bottom: 18px;
+    margin-left: 18px;
+    margin-right: 18px;
+    & > :not(.pivot-timepicker) {
+        flex-grow: 1;        
+    }    
+}
+
+
+:global(.SingleDatePickerInput) {
+    border: none !important;
+    & > * {
+        padding-top: 0;
+        margin-right: 0;
+    }
+    :global(.DateInput) {
+        width: inherit;
+    }
+}
+
+:global(.TimeInput) {
+    display: inline-block;
+    :global(.TimeInput-input) {
+        width: 90px;
+        height: 34px;
+        margin-right: 18px;
+
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+}    

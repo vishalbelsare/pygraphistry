@@ -19,7 +19,7 @@ export default class DateTimePicker extends React.Component {
         this.state = {
             focused: false,
             date: null, // momentPropTypes.momentObj or null
-            time: moment("12:00:00 AM", "hh:mm:ss a"),
+            time: props.defaultTime,
             timezone: "America/Los_Angeles"
         };
     }
@@ -44,6 +44,7 @@ export default class DateTimePicker extends React.Component {
                 showDefaultInputIcon={true}
                 withPortal={true}
                 keepOpenOnDateSelect
+                hideKeyboardShortcutsPanel={true}
 
                 displayFormat={ () => {
                     const hasDate = this.state.date | false;
@@ -59,19 +60,22 @@ export default class DateTimePicker extends React.Component {
                 renderCalendarInfo={ () => <span
                         onClick={ (event) => event.stopPropagation() }
                     >
-                        <span className={styles['pivot-timepicker']} >
-                            <TimePicker 
-                                value={ this.state.time.format(FORMAT) }
-                                onChange={ (time) =>  this.setState({ time: moment(time, FORMAT) }) }
+                        <div className={styles['pivot-timepicker-container']}>
+                            <span className={styles['pivot-timepicker']} >
+                                <TimePicker 
+                                    value={ this.state.time.format(FORMAT) }
+                                    onChange={ (time) =>  this.setState({ time: moment(time, FORMAT) }) }
+                                />
+                            </span>
+                            <TimezonePicker
+                              absolute={true}
+                              value={ this.state.timezone }
+                              placeholder="Select timezone..."
+                              onChange={ (timezone) => this.setState({ timezone }) }
                             />
-                        </span>
-                        <TimezonePicker
-                          absolute={false}
-                          value={ this.state.timezone }
-                          placeholder="Select timezone..."
-                          onChange={ (timezone) => this.setState({ timezone }) }
-                        />
-                    </span> }
+                        </div>
+                    </span> 
+                }
 
                 placeholder={ placeholder }
             />            
