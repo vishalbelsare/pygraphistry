@@ -18,22 +18,23 @@ export default class DateTimePicker extends React.Component {
 
         this.state = {
             focused: false,
-            date: null, // momentPropTypes.momentObj or null
+
             time: props.defaultTime,
             timezone: "America/Los_Angeles"
         };
     }
 
+
     render () {
         
-        const { baseid, placeholder } = this.props;
+        const { baseid, placeholder, date } = this.props;
         
         return (<div>
             <SingleDatePicker
                 id={`sdp_${baseid}`}      
 
-                date={this.state.date}
-                onDateChange={date => this.setState({ date })}
+                date={date}
+                onDateChange={ date => this.props.onValueChange({ date }) }
                 
                 focused={ this.state.focused }
                 onFocusChange={ ({ focused }) => this.setState({ focused }) }
@@ -47,11 +48,11 @@ export default class DateTimePicker extends React.Component {
                 hideKeyboardShortcutsPanel={true}
 
                 displayFormat={ () => {
-                    const hasDate = this.state.date | false;
+                    const hasDate = date | false;
                     if (hasDate) {
-                        const date = this.state.date.format(moment.localeData().longDateFormat('L'));
+                        const dateFormatted = date.format(moment.localeData().longDateFormat('L'));
                         const time = this.state.time.format(FORMAT);
-                        return `[${date} ${time}]`;
+                        return `[${dateFormatted} ${time}]`;
                     } else {
                         return `[${placeholder}]`;
                     }
