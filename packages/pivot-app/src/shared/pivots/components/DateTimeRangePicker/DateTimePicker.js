@@ -29,7 +29,7 @@ export default class DateTimePicker extends React.Component {
                 onFocusChange={ ({ focused }) => this.setState({ focused }) }
                 
                 isOutsideRange={ () => false }
-                showClearDates={ true }
+                showClearDate={ true }
                 orientation={HORIZONTAL_ORIENTATION}
                 showDefaultInputIcon={true}
                 withPortal={true}
