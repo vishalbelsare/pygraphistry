@@ -89,7 +89,7 @@ const FIELDS = [
 
 export const searchAlertDemo = new SplunkPivot({
     id: 'search-splunk-alert-botnet-demo',
-    name: 'Search Bootnet (all)',
+    name: 'Search Botnet (all)',
     tags: ['Demo'],
     parameters: [
         {
@@ -97,6 +97,12 @@ export const searchAlertDemo = new SplunkPivot({
             inputType: 'text',
             label: 'Query:',
             placeholder: 'Conficker'
+        },
+        {
+            name: 'time',
+            label: 'Time',            
+            inputType: 'daterange',
+            default: { from: null, to: null }
         }
     ],
     toSplunk: function (args) {
@@ -121,6 +127,12 @@ export const searchFireeyeDemo = new SplunkPivot({
             inputType: 'text',
             label: 'EventId:',
             placeholder: 'BRO8ZA4A'
+        },
+        {
+            name: 'time',
+            label: 'Time',            
+            inputType: 'daterange',
+            default: { from: null, to: null }
         }
     ],
     connections: FIREEYE_FIELDS,
@@ -137,7 +149,7 @@ export const searchFireeyeDemo = new SplunkPivot({
 
 export const expandFireeyeDemo = new SplunkPivot({
     id: 'expand-fireeye-botnet-demo',
-    name: 'Expand with Fire Eye',
+    name: 'Expand with FireEye',
     tags: ['Demo'],
     parameters: [
         {
@@ -150,8 +162,13 @@ export const expandFireeyeDemo = new SplunkPivot({
             inputType: 'multi',
             label: 'Expand on:',
             options: FIELDS.map(x => ({id:x, name:x})),
+        },
+        {
+            name: 'time',
+            label: 'Time',            
+            inputType: 'daterange',
+            default: { from: null, to: null }
         }
-
     ],
     connections: FIREEYE_FIELDS,
     encodings: alertDemoEncodings,
@@ -183,6 +200,12 @@ export const expandBlueCoatDemo = new SplunkPivot({
             inputType: 'multi',
             label: 'Expand on:',
             options: FIELDS.map(x => ({id:x, name:x})),
+        },
+        {
+            name: 'time',
+            label: 'Time',            
+            inputType: 'daterange',
+            default: { from: null, to: null }
         }
     ],
     connections: [ 'Fire Eye URL', 'External IPs' ],
@@ -215,6 +238,12 @@ export const expandFirewallDemo = new SplunkPivot({
             inputType: 'multi',
             label: 'Expand on:',
             options: FIELDS.map(x => ({id:x, name:x})),
+        },
+        {
+            name: 'time',
+            label: 'Time',            
+            inputType: 'daterange',
+            default: { from: null, to: null }
         }
     ],
     connections: [ 'External IPs', 'Internal IPs' ],
@@ -247,7 +276,14 @@ export const expandIDSDemo = new SplunkPivot({
             inputType: 'multi',
             label: 'Expand on:',
             options: FIELDS.map(x => ({id:x, name:x})),
+        },
+        {
+            name: 'time',
+            label: 'Time',            
+            inputType: 'daterange',
+            default: { from: null, to: null }
         }
+
     ],
     connections: [ 'Internal IPs', 'Message' ],
     encodings: alertDemoEncodings,
