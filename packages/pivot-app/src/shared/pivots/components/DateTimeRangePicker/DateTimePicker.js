@@ -2,7 +2,6 @@ import moment from 'moment';
 import { SingleDatePicker } from 'react-dates';
 import { HORIZONTAL_ORIENTATION } from 'react-dates/constants';
 import React from 'react';
-import ReactDom from 'react-dom';
 import TimePicker from 'time-input';
 import TimezonePicker from 'react-bootstrap-timezone-picker';
 import classNames from 'classnames';
@@ -67,7 +66,7 @@ export default class DateTimePicker extends React.Component {
                 hideKeyboardShortcutsPanel={true}
 
                 displayFormat={ () => {
-                    const hasDate = !!date;
+                    const hasDate = Boolean(date);
                     if (hasDate) {
                         const dateFormatted = moment(date).format(moment.localeData().longDateFormat('L'));
                         const timeFormatted = moment(time).format(FORMAT);
@@ -84,7 +83,7 @@ export default class DateTimePicker extends React.Component {
                             <span className={styles['pivot-timepicker']} >
                                 <TimePicker 
                                     value={ timeParser.unpickle(time) }
-                                    onChange={ (time) =>  onValueChange({ time: timeParser.pickle(time) }) }
+                                    onChange={ (time) => onValueChange({ time: timeParser.pickle(time) }) }
                                 />
                             </span>
                             <TimezonePicker
@@ -102,6 +101,4 @@ export default class DateTimePicker extends React.Component {
         </div>);
     }
 
-};
-
-
+}
