@@ -90,14 +90,17 @@ export const searchSplunk = new SplunkPivot({
             name: 'time',
             label: 'Time',            
             inputType: 'daterange',
-            default: moment.duration(2, 'day').toJSON()
+            default: { from: null, to: null }
         }
     ],
     toSplunk: function (args) {
         this.connections = args.fields.value;
         const query = `search ${args.query} ${this.constructFieldString()} | head 1000`;
 
-        return { searchQuery: query };
+        return { 
+            searchQuery: query,
+            searchParams: this.dayRangeToSplunkParams(args.time.value) 
+        };
     },
     encodings: {
         point: {
@@ -187,7 +190,10 @@ export const searchGraphviz = new SplunkPivot({
             name: 'time',
             label: 'Time',
             inputType: 'daterange',
-            default: moment.duration(2, 'day').toJSON()
+            default: {
+                from: null,
+                to: null
+            }
         }
     ],
     toSplunk: function (args) {
@@ -201,7 +207,7 @@ export const searchGraphviz = new SplunkPivot({
 
         return {
             searchQuery: query,
-            searchParams: this.dayRangeToSplunkParams(args.time.value),
+            searchParams: this.dayRangeToSplunkParams(args.time.value)
         };
     },
     encodings: {
