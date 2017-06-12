@@ -12,6 +12,25 @@ import styles from '../pivots.less';
 
 export const FORMAT = "hh:mm:ss a";
 
+const dateParser = {
+    pickle: function (date) {
+        return date ? date.toJSON() : null;
+    },
+    unpickle: function (json) {
+        return json ? moment(json) : moment();
+    }
+};
+
+const timeParser = {
+    pickle: function (time) {
+        return time ? moment(time, FORMAT).toJSON() : null;
+    },
+    unpickle: function (json) {
+        return moment(json).format(FORMAT);
+    }
+};
+
+
 export default class DateTimePicker extends React.Component {
 
     constructor(props, context) {
@@ -33,8 +52,8 @@ export default class DateTimePicker extends React.Component {
             <SingleDatePicker
                 id={`sdp_${baseid}`}      
 
-                date={date}
-                onDateChange={ date => onValueChange({ date }) }
+                date={ dateParser.unpickle(date) }
+                onDateChange={ date => onValueChange({ date: dateParser.pickle(date) }) }
                 
                 focused={ this.state.focused }
                 onFocusChange={ ({ focused }) => this.setState({ focused }) }
@@ -50,8 +69,8 @@ export default class DateTimePicker extends React.Component {
                 displayFormat={ () => {
                     const hasDate = !!date;
                     if (hasDate) {
-                        const dateFormatted = date.format(moment.localeData().longDateFormat('L'));
-                        const timeFormatted = time.format(FORMAT);
+                        const dateFormatted = moment(date).format(moment.localeData().longDateFormat('L'));
+                        const timeFormatted = moment(time).format(FORMAT);
                         return `[${dateFormatted} ${timeFormatted}]`;
                     } else {
                         return `[${placeholder}]`;
@@ -64,8 +83,8 @@ export default class DateTimePicker extends React.Component {
                         <div className={styles['pivot-timepicker-container']}>
                             <span className={styles['pivot-timepicker']} >
                                 <TimePicker 
-                                    value={ time.format(FORMAT) }
-                                    onChange={ (time) =>  onValueChange({ time: moment(time, FORMAT) }) }
+                                    value={ timeParser.unpickle(time) }
+                                    onChange={ (time) =>  onValueChange({ time: timeParser.pickle(time) }) }
                                 />
                             </span>
                             <TimezonePicker

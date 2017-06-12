@@ -19,14 +19,13 @@ export default function DateTimeRangePicker ({ paramUI, paramKey, paramValue, se
         }); 
     }
 
-    function getTimeProps(dir) {
+    function getTimeProps(dir, defaultTime) {
 
         const base = paramValue && paramValue[dir] ? paramValue[dir] : {};
 
         return {
-            date: typeof(base.date) === "string" ? moment(base.date) : (base.date || null),
-            time: typeof(base.time) === "string" ? moment(base.time) 
-                    : base.time || moment(dir === 'from' ? "12:00:00 AM" : "11:59:59 PM", "hh:mm:ss a"),
+            date: base.date,
+            time: base.time || defaultTime,
             timezone: base.timezone || "America/Los_Angeles"
         };
     }
@@ -36,12 +35,12 @@ export default function DateTimeRangePicker ({ paramUI, paramKey, paramValue, se
         <div>
             <DateTimePicker
                 onValueChange={ (update) => updatePivotParameters('from', update) } 
-                {...getTimeProps('from')}
+                {...getTimeProps('from', moment("12:00:00 AM", "hh:mm:ss a").toJSON())}
                 baseid={baseid+"from"} 
                 placeholder={"default from"} />
             <DateTimePicker
                 onValueChange={ (update) => updatePivotParameters('to', update) } 
-                {...getTimeProps('to')}
+                {...getTimeProps('to', moment("11:59:59 PM", "hh:mm:ss a").toJSON())}
                 baseid={baseid+"to"} 
                 placeholder={"default to"} />
         </div>
