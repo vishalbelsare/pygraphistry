@@ -1,7 +1,6 @@
 import { SplunkPivot } from './SplunkPivot';
 import stringhash from 'string-hash';
 import logger from '../../logger.js';
-import moment from 'moment';
 
 const log = logger.createLogger(__filename);
 
