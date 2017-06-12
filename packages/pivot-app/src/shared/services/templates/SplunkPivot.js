@@ -55,22 +55,29 @@ export class SplunkPivot extends PivotTemplate {
         }
     }
 
-    dayRangeToSplunkParams({ startDate, endDate }) {
-        if(!(startDate || endDate)) {
-            log.warn('Got undefined day range, cannot convert to Splunk params');
-            return undefined;
-        }
+    //{ from: ?{ date: ?moment.json, time: ?moment.json }, to: ?{ date: ?moment.json, time: ?moment.json } }
+    // -> ?{ earliest_time: utc int, latest_time: utc int }
+    dayRangeToSplunkParams({ from, to }) {
 
-        const dateRange = {};
 
-        if(startDate) {
-            dateRange.earliest_time = moment(startDate).unix();
-        }
-        if(endDate) {
-            dateRange.latest_time = moment(endDate).unix();
-        }
+        const flattenTime = function ({ date, time, timezone }, defaultTime) {
+            const dateStr = moment(date).format('L');
+            const timeStr = time === null || time === undefined ? defaultTime 
+                : (moment(time).format('H:m:s'));
+            const combined = moment(`${dateStr} ${timeStr}`, 'L H:m:s').unix();
+            return combined;
+        };
 
-        return dateRange;
+        const out = !from && !to ? undefined
+            : {
+                ...(from && from.date ? {earliest_time: flattenTime(from, '0:0:0')} : {}),
+                ...(to && to.date ? {latest_time: flattenTime(to, '23:59:59')} : {})
+            };
+
+        log.debug('Date range', { from, to }, '->', out);
+
+        return out;
+        
     }
 
     //Assumes previous pivots have populated pivotCache
