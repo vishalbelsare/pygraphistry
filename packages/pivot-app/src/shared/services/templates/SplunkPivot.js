@@ -1,6 +1,6 @@
 import _ from 'underscore';
 import { Observable } from 'rxjs';
-import moment from 'moment';
+import moment from 'moment-timezone';
 import { PivotTemplate } from './template.js';
 import { splunkConnector0 } from '../connectors';
 import { shapeSplunkResults } from '../shapeSplunkResults.js';
@@ -55,7 +55,8 @@ export class SplunkPivot extends PivotTemplate {
         }
     }
 
-    //{ from: ?{ date: ?moment.json, time: ?moment.json }, to: ?{ date: ?moment.json, time: ?moment.json } }
+    //{ from: ?{ date: ?moment.json, time: ?moment.json, timezone: ?moment.json }, 
+    //  to: ?{ date: ?moment.json, time: ?moment.json, timezone: moment.json } }
     // -> ?{ earliest_time: utc int, latest_time: utc int }
     dayRangeToSplunkParams(params) {        
 
@@ -67,8 +68,9 @@ export class SplunkPivot extends PivotTemplate {
             const dateStr = moment(date).format('L');
             const timeStr = time === null || time === undefined ? defaultTime 
                 : (moment(time).format('H:m:s'));
-            const combined = moment(`${dateStr} ${timeStr}`, 'L H:m:s').unix();
-            return combined;
+            return moment.tz(
+                dateStr + timeStr, 'L H:m:s',
+                timezone || "America/Los_Angeles").unix();
         };
 
         const out = !(from && from.date) && !(to && to.date) ? undefined

@@ -1,20 +1,21 @@
 import express from 'express';
 import { assert } from 'chai';
-import moment from 'moment';
+import moment from 'moment-timezone';
 
 import { SplunkPivot } from '../../../src/shared/services/templates/SplunkPivot';
 import { searchSplunk } from '../../../src/shared/services/templates/misc';
 
 
-const date = moment('06/10/2017', 'L');
+const date = moment.tz('06/10/2017', 'L', "America/Los_Angeles");
 const dateJSON = date.toJSON();
 
-const time = moment('13:04:05', 'H:m:s');
+const time = moment.tz('13:04:05', 'H:m:s', "America/Los_Angeles");
 const timeJSON = time.toJSON();
 
-const dateTimeUnix = moment('06/10/2017 13:04:05', 'L H:m:s').unix();
-const fromDateUnix = moment('06/10/2017 0:0:0', 'L H:m:s').unix()
-const toDateUnix = moment('06/10/2017 23:59:59', 'L H:m:s').unix()
+const dateTimeUnix = moment.tz('06/10/2017 13:04:05', 'L H:m:s', "America/Los_Angeles").unix();
+const fromDateTimeGuyanaUnix = moment.tz('06/10/2017 13:04:05', 'L H:m:s', "America/Guyana").unix();    
+const fromDateUnix = moment.tz('06/10/2017 0:0:0', 'L H:m:s', "America/Los_Angeles").unix();
+const toDateUnix = moment.tz('06/10/2017 23:59:59', 'L H:m:s', "America/Los_Angeles").unix();
 
 
 describe('Splunk:dayRangeToSplunkParams', function () {
@@ -36,25 +37,31 @@ describe('Splunk:dayRangeToSplunkParams', function () {
         compare({from: {time: 'zz'}, to: {time: 'zz'}}, undefined);
     });
 
-    it('from date and default time', () => {
+    it('from date and default time and default timezone', () => {
         compare(
             {from: { date: dateJSON } },
             { earliest_time: fromDateUnix });
     });
 
-    it('from date & explicit time', () => {
+    it('from date & explicit time and default timezone', () => {
         compare(
             {from: { date: dateJSON, time: timeJSON } },
             { earliest_time: dateTimeUnix });
     });
 
-    it('to date and default time', () => {
+    it('from date & explicit time and explicit timezone', () => {
+        compare(
+            {from: { date: dateJSON, time: timeJSON, timezone: 'America/Guyana' } },
+            { earliest_time: fromDateTimeGuyanaUnix });
+    });    
+
+    it('to date and default time and default timezone', () => {
         compare(
             {to: { date: dateJSON } },
             {latest_time: toDateUnix });
     });
 
-    it('to date & explicit time', () => {
+    it('to date & explicit time and default timezone', () => {
         compare(
             {to: { date: dateJSON, time: timeJSON } },
             {latest_time: dateTimeUnix });
