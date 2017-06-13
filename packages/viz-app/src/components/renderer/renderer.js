@@ -137,12 +137,14 @@ class Renderer extends React.Component {
             if (renderMouseOver) {
                 renderMouseOver = false;
                 let { edge: selectionEdges, point: selectionPoints } = selection;
-                const { edge: highlightEdges, point: highlightPoints, darken = false } = highlight;
+                let { edge: highlightEdges, point: highlightPoints, darken = false } = highlight;
                 if (darken && !(
                     selectionEdges && selectionEdges.length) && !(
                     selectionPoints && selectionPoints.length)) {
                     selectionEdges = highlightEdges;
                     selectionPoints = highlightPoints;
+                    highlightEdges = undefined;
+                    highlightPoints = undefined;
                 }
                 const mouseoverTask = {
                     trigger: 'mouseOverEdgeHighlight',

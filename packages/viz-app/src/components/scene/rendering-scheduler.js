@@ -493,7 +493,7 @@ function updateEdgeCache ({numEdges, numInBundle, bundleEntry, edgeHeight, numRe
 
         const bundleLen = numInBundle[edgeIndex];
         const edgeNum = bundleEntry[edgeIndex];
-       
+
         if (!edgeCache[bundleLen]) {
             edgeCache[bundleLen] = [];
         }
@@ -508,7 +508,7 @@ function updateEdgeCache ({numEdges, numInBundle, bundleEntry, edgeHeight, numRe
                 cosArray[curveArrayOffset + midPointIdx] = Math.cos(curTheta);
                 sinArray[curveArrayOffset + midPointIdx] = Math.sin(curTheta);
             }
-            edgeCache[bundleLen][edgeNum] = { moduloHeight, unitRadius, curveArrayOffset };        
+            edgeCache[bundleLen][edgeNum] = { moduloHeight, unitRadius, curveArrayOffset };
         }
 
     }
@@ -545,9 +545,9 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
 
     //~50-100ms on a big graph
     const cosArray = new Float32Array(numRenderedSplits * numEdges);
-    const sinArray = new Float32Array(numRenderedSplits * numEdges);    
+    const sinArray = new Float32Array(numRenderedSplits * numEdges);
     const edgeCache = updateEdgeCache({numEdges, numInBundle, bundleEntry, edgeHeight, numRenderedSplits, cosArray, sinArray});
-    
+
     //~50-100ms on a big graph
     for (let edgeIndex = 0; edgeIndex < numEdges; edgeIndex++) {
 
@@ -564,7 +564,7 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
         const bundleLen = numInBundle[edgeIndex];
 
         /////////////
-    
+
         const { moduloHeight, unitRadius, curveArrayOffset } = edgeCache[bundleLen][edgeNum];
 
         /////////////
@@ -597,7 +597,7 @@ RenderingScheduler.prototype.expandLogicalEdges = function (renderState, bufferS
             prevPointX = nextPointX;
             prevPointY = nextPointY;
         }
-        setMidEdge(edgeIndex, numRenderedSplits,  prevPointX, prevPointY, dstPointX, dstPointY, midEdgeStride, midSpringsPos);    
+        setMidEdge(edgeIndex, numRenderedSplits,  prevPointX, prevPointY, dstPointX, dstPointY, midEdgeStride, midSpringsPos);
 
     }
 
@@ -1192,6 +1192,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
 
     renderer.setNumElements(renderState, 'edgehighlight', highlightedEdgeIndices.length * 2 * numMidEdges);
     renderer.setNumElements(renderState, 'pointhighlight', highlightedNodeIndices.length);
+    renderer.setNumElements(renderState, 'pointhighlightoutline', highlightedNodeIndices.length);
     renderer.setNumElements(renderState, 'arrowhighlight', highlightedEdgeIndices.length * 3);
 
     if (initialHighlightLengths > 0) {
@@ -1255,6 +1256,7 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
 
     renderer.setNumElements(renderState, 'edgeselected', selectedEdgeIndices.length * 2 * numMidEdges);
     renderer.setNumElements(renderState, 'pointselected', selectedNodeIndices.length);
+    renderer.setNumElements(renderState, 'pointselectedoutline', selectedNodeIndices.length);
     renderer.setNumElements(renderState, 'arrowselected', selectedEdgeIndices.length * 3);
 
     if (initialSelectedLengths > 0) {

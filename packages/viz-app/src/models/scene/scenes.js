@@ -21,21 +21,7 @@ for (const itemName in items) {
     }
 }
 
-const gis = {
-    'id': 'gis',
-    'camera': camera2D,
-    'options': createDefaultOptions,
-    'clientMidEdgeInterpolation': false,
-    //'numRenderedSplits':7 ,
-    'render': [
-        'pointpicking',  'pointsampling', 'uberdemoedges', 'edgepicking',
-        'arrowculled', 'arrowhighlight', 'arrowselected', 'uberpointculled',
-        'edgehighlight', 'edgeselected', 'fullscreen', 'fullscreenDummy',
-        'fullscreenDark', 'pointhighlight', 'pointselected'
-    ]
-};
-
-const scene = {
+const defaultSceneConfig = {
     'id': 'default',
     'camera': camera2D,
     'options': createDefaultOptions,
@@ -43,51 +29,22 @@ const scene = {
     'clientMidEdgeInterpolation': true,
     'arcHeight': 0.2,
     'render': [
-        'pointpicking',  'pointsampling', 'pointoutlinetexture',
-        'pointculledtexture', 'midedgeculled', 'edgepicking', 'arrowculled',
+        'pointpicking',  'pointsampling',
+        'midedgeculled', 'edgepicking', 'arrowculled',
         'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
-        'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy',
-        'fullscreenDark', 'pointhighlight', 'pointselected'
-    ]
-};
-
-const transparent = {
-    'id': 'transparent',
-    'camera': camera2D,
-    'options': createTransparentOptions,
-    'numRenderedSplits': 8,
-    'clientMidEdgeInterpolation': true,
-    'arcHeight': 0.2,
-    'render': [
-        'pointpicking',  'pointsampling', 'pointoutlinetexture',
-        'pointculledtexture', 'midedgeculled', 'edgepicking', 'arrowculled',
-        'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
-        'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy',
-        'fullscreenDark', 'pointhighlight', 'pointselected'
-    ]
-};
-
-const netflowStraight = {
-    'id': 'netflowStraight',
-    'camera': camera2D,
-    'options': createDefaultOptions,
-    'numRenderedSplits': 0,
-    'clientMidEdgeInterpolation': true,
-    'render': [
-        'pointpicking',  'pointsampling', 'pointoutlinetexture',
-        'pointculledtexture', 'midedgeculled', 'edgepicking', 'arrowculled',
-        'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
-        'pointoutline', 'pointculled', 'fullscreen', 'fullscreenDummy',
-        'fullscreenDark', 'pointhighlight', 'pointselected'
+        'pointculledoutline', 'pointculled',
+        'fullscreen', 'fullscreenDummy', 'fullscreenDark',
+        'pointselectedoutline', 'pointselected',
+        'pointhighlightoutline', 'pointhighlight',
     ]
 };
 
 export const scenes = {
-    'gis': generateScene(gis, items, models, programs, textures),
-    'default': generateScene(scene, items, models, programs, textures),
-    'transparent': generateScene(transparent, items, models, programs, textures),
-    'netflowStraight': generateScene(netflowStraight, items, models, programs, textures)
-};
+    'gis': generateScene(defaultSceneConfig, items, models, programs, textures),
+    'default': generateScene(defaultSceneConfig, items, models, programs, textures),
+    'transparent': generateScene(defaultSceneConfig, items, models, programs, textures),
+    'netflowStraight': generateScene(defaultSceneConfig, items, models, programs, textures),
+}
 
 function generateScene(scene, items, models, programs, textures) {
 
@@ -206,13 +163,6 @@ function createDefaultOptions() {
         'depthFunc': [['LEQUAL']],
         'clearColor': [[51/255, 51/255, 57/255, 1.0]],
         'lineWidth': [[1]]
-    };
-}
-
-function createTransparentOptions() {
-    return {
-        ...createDefaultOptions(),
-        clearColor: [[51/255, 51/255, 57/255, 0.0]]
     };
 }
 

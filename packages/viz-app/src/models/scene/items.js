@@ -68,7 +68,7 @@ export const items = {
         'glOptions': {}
     },
     'edgeselected' : {
-        'program': 'midedgeculled',
+        'program': 'edgeselected',
         'triggers': ['highlightDark'],
         'bindings': {
             'curPos': ['selectedMidSpringsPos', 'curPos'],
@@ -77,10 +77,13 @@ export const items = {
             'endPos': ['selectedMidSpringsEnds', 'endPos']
         },
         'otherBuffers': {
-            'selectedLogicalEdges': ['selectedEdgeIndexes', 'curIdx'],
+            'logicalEdges': ['logicalEdges', 'curIdx'],
+            'forwardsEdgeToUnsortedEdge': ['forwardsEdgeToUnsortedEdge', 'forwardsEdgeToUnsortedEdge'],
+            'edgeColor': ['selectedMidEdgesColors', 'midEdgeColor'],
+            'startPos': ['selectedMidSpringsStarts', 'startPos'],
+            'endPos': ['selectedMidSpringsEnds', 'endPos']
         },
         'uniforms': {
-            'edgeOpacity': { 'uniformType': '1f', 'defaultValues': [1.0] },
             'isOpaque': { 'uniformType': '1f', 'defaultValues': [0.0] }
         },
         'drawType': 'LINES',
@@ -192,18 +195,43 @@ export const items = {
         'drawType': 'POINTS',
         'glOptions': {},
     },
-    'pointselected': {
+    'pointculledoutline': {
         'program': 'pointculled',
+        'triggers': ['renderSceneFull'],
+        'bindings': {
+            'curPos':       ['curPoints', 'curPos'],
+            'pointSize':    ['pointSizes', 'pointSize'],
+            'pointColor':   ['pointColors', 'pointColor']
+        },
+        'uniforms': { ...pointCulledUniforms, ...{
+            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH]}
+        }},
+        'drawType': 'POINTS',
+        'glOptions': {},
+    },
+    'pointselected': {
+        'program': 'pointselected',
         'triggers': ['highlightDark'],
         'bindings': {
             'curPos':       ['selectedCurPoints', 'curPos'],
             'pointSize':    ['selectedPointSizes', 'pointSize'],
             'pointColor':   ['selectedPointColors', 'pointColor'],
         },
-        'otherBuffers': {
-            'selectedLogicalPoints': ['selectedPointIndexes', 'curIdx'],
-        },
         'uniforms': pointCulledUniforms,
+        'drawType': 'POINTS',
+        'glOptions': {},
+    },
+    'pointselectedoutline': {
+        'program': 'pointselected',
+        'triggers': ['highlightDark'],
+        'bindings': {
+            'curPos':       ['selectedCurPoints', 'curPos'],
+            'pointSize':    ['selectedPointSizes', 'pointSize'],
+            'pointColor':   ['selectedPointColors', 'pointColor'],
+        },
+        'uniforms': { ...pointCulledUniforms, ...{
+            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH]}
+        }},
         'drawType': 'POINTS',
         'glOptions': {},
     },
@@ -221,6 +249,20 @@ export const items = {
         'uniforms': pointCulledUniforms,
         'drawType': 'POINTS',
         'glOptions': {}
+    },
+    'pointhighlightoutline': {
+        'program': 'pointhighlight',
+        'triggers': ['highlight', 'highlightDark'],
+        'bindings': {
+            'curPos':       ['highlightedPointsPos', 'curPos'],
+            'pointSize':    ['highlightedPointsSizes', 'pointSize'],
+            'pointColor':   ['highlightedPointsColors', 'pointColor'],
+        },
+        'uniforms': { ...pointCulledUniforms, ...{
+            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH]}
+        }},
+        'drawType': 'POINTS',
+        'glOptions': {},
     },
     'uberpointculled': {
         'program': 'pointculled',
@@ -254,20 +296,6 @@ export const items = {
         'glOptions': {'clearColor': [[1, 1, 1, 0.0]] },
         'renderTarget': 'pointTexture',
         'readTarget': true,
-    },
-    'pointoutline': {
-        'program': 'pointculled',
-        'triggers': ['renderSceneFull'],
-        'bindings': {
-            'curPos':       ['curPoints', 'curPos'],
-            'pointSize':    ['pointSizes', 'pointSize'],
-            'pointColor':   ['pointColors', 'pointColor']
-        },
-        'uniforms': { ...pointCulledUniforms, ...{
-            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH]}
-        }},
-        'drawType': 'POINTS',
-        'glOptions': {},
     },
     'pointoutlinetexture': {
         'program': 'pointculled',

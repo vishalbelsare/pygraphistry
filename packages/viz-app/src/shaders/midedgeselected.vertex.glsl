@@ -14,7 +14,6 @@ attribute vec2 endPos;
 attribute vec4 edgeColor;
 varying vec4 eColor;
 
-uniform float edgeOpacity;
 uniform float isOpaque; //map non-transparent to 1.0
 
 void main(void) {
@@ -35,6 +34,6 @@ void main(void) {
         ? (alpha > 0.10
             ? vec4(edgeColor.g, edgeColor.b, edgeColor.a, 1.0)
             : vec4(0.0,0.0,0.0,0.0))
-        : vec4(edgeColor.xyz, edgeOpacity * alpha);
+        : vec4(edgeColor.xyz, alpha);
     gl_Position = pos;
 }
