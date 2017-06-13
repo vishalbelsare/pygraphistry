@@ -157,6 +157,7 @@ describe('httpPivot', function () {
 				});
 	});
 
+	/*
 	it('search multiple events', (done) => {
 		const pivot = new HttpPivot({
 			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
@@ -187,7 +188,8 @@ describe('httpPivot', function () {
 					done();
 				}, (e) => done(e));
 	});
-
+	*/
+	
 	it('graph', (done) => {
 		const pivot = new HttpPivot({
 			id: 'x', name: 'y', tags: [], attributes: [], connections: [],
