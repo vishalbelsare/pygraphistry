@@ -1,7 +1,6 @@
 import { SplunkPivot } from './SplunkPivot';
 import stringhash from 'string-hash';
 import logger from '../../logger.js';
-import moment from 'moment';
 
 const log = logger.createLogger(__filename);
 
@@ -85,13 +84,22 @@ export const searchSplunk = new SplunkPivot({
             label: 'Entities:',
             options: GRAPHISTRY_SPLUNK_FIELDS.map(x => ({id:x, name:x})),
             defaultValue: GRAPHISTRY_SPLUNK_FIELDS
+        },
+        {
+            name: 'time',
+            label: 'Time',            
+            inputType: 'daterange',
+            default: { from: null, to: null }
         }
     ],
     toSplunk: function (args) {
         this.connections = args.fields.value;
         const query = `search ${args.query} ${this.constructFieldString()} | head 1000`;
 
-        return { searchQuery: query };
+        return { 
+            searchQuery: query,
+            searchParams: this.dayRangeToSplunkParams(args.time.value) 
+        };
     },
     encodings: {
         point: {
@@ -179,8 +187,12 @@ export const searchGraphviz = new SplunkPivot({
         },
         {
             name: 'time',
+            label: 'Time',
             inputType: 'daterange',
-            default: moment.duration(2, 'day').toJSON()
+            default: {
+                from: null,
+                to: null
+            }
         }
     ],
     toSplunk: function (args) {
@@ -194,7 +206,7 @@ export const searchGraphviz = new SplunkPivot({
 
         return {
             searchQuery: query,
-            searchParams: this.dayRangeToSplunkParams(args.time.value),
+            searchParams: this.dayRangeToSplunkParams(args.time.value)
         };
     },
     encodings: {

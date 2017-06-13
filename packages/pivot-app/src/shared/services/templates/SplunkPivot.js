@@ -1,6 +1,6 @@
 import _ from 'underscore';
 import { Observable } from 'rxjs';
-import moment from 'moment';
+import moment from 'moment-timezone';
 import { PivotTemplate } from './template.js';
 import { splunkConnector0 } from '../connectors';
 import { shapeSplunkResults } from '../shapeSplunkResults.js';
@@ -55,19 +55,35 @@ export class SplunkPivot extends PivotTemplate {
         }
     }
 
-    dayRangeToSplunkParams({ startDate, endDate }) {
-        if (startDate && endDate) {
-            const startDay = moment(startDate).startOf('day');
-            const endDay = moment(endDate).startOf('day');
+    //{ from: ?{ date: ?moment.json, time: ?moment.json, timezone: ?moment.json }, 
+    //  to: ?{ date: ?moment.json, time: ?moment.json, timezone: moment.json } }
+    // -> ?{ earliest_time: utc int, latest_time: utc int }
+    // time received in utc
+    dayRangeToSplunkParams(params) {        
 
-            return {
-                'earliest_time': startDay.unix(),
-                'latest_time': endDay.unix(),
+        if (!params) { return undefined; }
+
+        const { from, to } = params;
+
+        const flattenTime = function ({ date, time, timezone }, defaultTime) {
+            const tz = timezone || "America/Los_Angeles";
+            const dateStr = moment(date).utc().format('L');
+            const timeStr = time === null || time === undefined ? defaultTime 
+                : moment(time).utc().format('H:m:s');
+            const out = moment.tz(dateStr + timeStr, 'L H:m:s', tz).unix();
+            return out;
+        };
+
+        const out = !(from && from.date) && !(to && to.date) ? undefined
+            : {
+                ...(from && from.date ? {earliest_time: flattenTime(from, '0:0:0')} : {}),
+                ...(to && to.date ? {latest_time: flattenTime(to, '23:59:59')} : {})
             };
-        } else {
-            log.warn('Got undefined day range, cannot convert to Splunk params');
-            return undefined;
-        }
+
+        log.debug('Date range', { from, to }, '->', out);
+
+        return out;
+        
     }
 
     //Assumes previous pivots have populated pivotCache

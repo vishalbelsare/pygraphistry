@@ -5,8 +5,8 @@ import 'rc-switch/assets/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-bootstrap-table/dist/react-bootstrap-table.min.css';
 import 'react-select/dist/react-select.css';
-import 'pivot-shared/pivots/components/TimeRangeWidget/variables.scss';
-import 'pivot-shared/pivots/components/TimeRangeWidget/styles.scss';
+import 'react-dates/lib/css/_datepicker.css';
+import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
 import 'font-awesome/css/font-awesome.css';
 
 import setObservableConfig from 'recompose/setObservableConfig';

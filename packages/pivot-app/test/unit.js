@@ -28,6 +28,7 @@ describe('HttpConnector', function() {
 describe('Pivots', function () {
     require('./services/pivots/template');
     require('./services/pivots/manual');
+    require('./services/pivots/splunk');
 })
 
 describe('Support', function() {
