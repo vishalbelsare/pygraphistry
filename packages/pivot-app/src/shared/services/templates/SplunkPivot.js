@@ -70,7 +70,7 @@ export class SplunkPivot extends PivotTemplate {
             const dateStr = moment(date).utc().format('L');
             const timeStr = time === null || time === undefined ? defaultTime 
                 : moment(time).utc().format('H:m:s');
-            const out = moment.tz(dateStr + timeStr, 'L H:m:s', tz).unix();
+            const out = moment.tz(`${dateStr} ${timeStr}`, 'L H:m:s', tz).unix();
             return out;
         };
 
