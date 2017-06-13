@@ -58,6 +58,7 @@ export class SplunkPivot extends PivotTemplate {
     //{ from: ?{ date: ?moment.json, time: ?moment.json, timezone: ?moment.json }, 
     //  to: ?{ date: ?moment.json, time: ?moment.json, timezone: moment.json } }
     // -> ?{ earliest_time: utc int, latest_time: utc int }
+    // time received in utc
     dayRangeToSplunkParams(params) {        
 
         if (!params) { return undefined; }
@@ -65,12 +66,12 @@ export class SplunkPivot extends PivotTemplate {
         const { from, to } = params;
 
         const flattenTime = function ({ date, time, timezone }, defaultTime) {
-            const dateStr = moment(date).format('L');
+            const tz = timezone || "America/Los_Angeles";
+            const dateStr = moment(date).utc().format('L');
             const timeStr = time === null || time === undefined ? defaultTime 
-                : (moment(time).format('H:m:s'));
-            return moment.tz(
-                dateStr + timeStr, 'L H:m:s',
-                timezone || "America/Los_Angeles").unix();
+                : moment(time).utc().format('H:m:s');
+            const out = moment.tz(dateStr + timeStr, 'L H:m:s', tz).unix();
+            return out;
         };
 
         const out = !(from && from.date) && !(to && to.date) ? undefined

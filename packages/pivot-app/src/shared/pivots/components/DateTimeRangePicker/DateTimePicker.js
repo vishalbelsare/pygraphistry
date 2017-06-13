@@ -22,10 +22,10 @@ const dateParser = {
 
 const timeParser = {
     pickle: function (time) {
-        return time ? moment(time, FORMAT).toJSON() : null;
+        return time ? moment.utc(time, FORMAT).toJSON() : null;
     },
     unpickle: function (json) {
-        return moment(json).format(FORMAT);
+        return moment.utc(json).format(FORMAT);
     }
 };
 
@@ -68,8 +68,8 @@ export default class DateTimePicker extends React.Component {
                 displayFormat={ () => {
                     const hasDate = Boolean(date);
                     if (hasDate) {
-                        const dateFormatted = moment(date).format(moment.localeData().longDateFormat('L'));
-                        const timeFormatted = moment(time).format(FORMAT);
+                        const dateFormatted = moment(date).utc().format(moment.localeData().longDateFormat('L'));
+                        const timeFormatted = moment(time).utc().format(FORMAT);
                         return `[${dateFormatted} ${timeFormatted}]`;
                     } else {
                         return `[${placeholder}]`;

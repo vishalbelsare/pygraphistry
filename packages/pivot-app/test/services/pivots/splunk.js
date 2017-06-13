@@ -6,10 +6,10 @@ import { SplunkPivot } from '../../../src/shared/services/templates/SplunkPivot'
 import { searchSplunk } from '../../../src/shared/services/templates/misc';
 
 
-const date = moment.tz('06/10/2017', 'L', "America/Los_Angeles");
+const date = moment.utc('06/10/2017', 'L');
 const dateJSON = date.toJSON();
 
-const time = moment.tz('13:04:05', 'H:m:s', "America/Los_Angeles");
+const time = moment.utc('13:04:05', 'H:m:s');
 const timeJSON = time.toJSON();
 
 const dateTimeUnix = moment.tz('06/10/2017 13:04:05', 'L H:m:s', "America/Los_Angeles").unix();
