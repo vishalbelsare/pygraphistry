@@ -43,19 +43,11 @@
     background-color: rgba(0, 0, 0, 0);
     will-change: width, height, transform;
 
-    &:hover {
-        .selection-point-center {
-            border: 1px solid black; /* rgba(0, 0, 0, 0.8); */
-            background-color: rgba(255, 255, 255, 0.25);
-        }
-    }
-
     .selection-point-center {
         top: 0;
         left: 0;
         position: absolute;
         backface-visibility: hidden;
-        border: 1px solid black; /* rgba(0, 0, 0, 0.6); */
         will-change: width, height, border-radius;
     }
 }

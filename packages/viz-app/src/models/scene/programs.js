@@ -1,13 +1,4 @@
 export const programs = {
-    'edgeculled': {
-        'sources': {
-            'vertex': require('viz-app/shaders/edgeculled.vertex.glsl'),
-            'fragment': require('viz-app/shaders/edgeculled.fragment.glsl')
-        },
-        'attributes': ['edgeColor', 'curPos'],
-        'camera': 'mvp',
-        'uniforms': ['edgeOpacity']
-    },
     'edgehighlight': {
         'sources': {
             'vertex': require('viz-app/shaders/edgehighlighted.vertex.glsl'),
@@ -62,6 +53,15 @@ export const programs = {
         'camera': 'mvp',
         'uniforms': ['edgeOpacity', 'isOpaque']
     },
+    'edgeselected': {
+        'sources': {
+            'vertex': require('viz-app/shaders/midedgeselected.vertex.glsl'),
+            'fragment': require('viz-app/shaders/midedgeculled.fragment.glsl')
+        },
+        'attributes': ['curPos', 'edgeColor', 'startPos', 'endPos'],
+        'camera': 'mvp',
+        'uniforms': ['isOpaque']
+    },
     'pointculled': {
         'sources': {
             'vertex': require('viz-app/shaders/pointculled.vertex.glsl'),
@@ -74,7 +74,16 @@ export const programs = {
     'pointhighlight': {
         'sources': {
             'vertex': require('viz-app/shaders/pointhighlighted.vertex.glsl'),
-            'fragment': require('viz-app/shaders/pointhighlighted.fragment.glsl')
+            'fragment': require('viz-app/shaders/pointculled.fragment.glsl')
+        },
+        'attributes': ['curPos', 'pointSize', 'pointColor'],
+        'camera': 'mvp',
+        'uniforms': ['fog', 'stroke', 'zoomScalingFactor', 'maxPointSize', 'minPointSize', 'pointOpacity']
+    },
+    'pointselected': {
+        'sources': {
+            'vertex': require('viz-app/shaders/pointselected.vertex.glsl'),
+            'fragment': require('viz-app/shaders/pointculled.fragment.glsl')
         },
         'attributes': ['curPos', 'pointSize', 'pointColor'],
         'camera': 'mvp',

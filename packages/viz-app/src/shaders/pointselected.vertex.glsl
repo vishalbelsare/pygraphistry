@@ -20,11 +20,11 @@ uniform float pointOpacity;
 
 void main(void) {
     if (stroke > 0.0) {
-        vColor = vec4(0.5 * pointColor.xyz, pointOpacity);
+        vColor = vec4(0.5 * pointColor.xyz, 1.0);
         gl_PointSize = clamp(zoomScalingFactor * pointSize, minPointSize, maxPointSize);
         strokeRatio = 1.0 - ((stroke + 1.0) / gl_PointSize);
     } else {
-        vColor = vec4(pointColor.xyz, pointOpacity);
+        vColor = vec4(pointColor.xyz, 1.0);
         gl_PointSize = stroke + clamp(zoomScalingFactor * pointSize, minPointSize, maxPointSize);
         strokeRatio = (stroke / gl_PointSize);
     }
