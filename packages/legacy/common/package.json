@@ -1,6 +1,6 @@
 {
   "name": "@graphistry/common",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "main": "index.js",
   "description": "",
   "scripts": {
@@ -19,7 +19,7 @@
   "dependencies": {
     "@graphistry/bunyan": "1.8.4",
     "chalk": "~1.0.0",
-    "@graphistry/config": "3.0.1",
+    "@graphistry/config": "3.0.5",
     "fs-tools": "~0.2.0",
     "q": "~1.1.0",
     "underscore": "~1.8.3",
