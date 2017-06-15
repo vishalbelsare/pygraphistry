@@ -24,7 +24,8 @@ export function filters(view, defaultFilter = {}) {
                 selected: false,
                 id: 'toggle-filters',
                 name: 'Filters',
-                type: 'settings'
+                type: 'settings',
+                items: $ref(`${view}.filters`)
             }]
         }
     };

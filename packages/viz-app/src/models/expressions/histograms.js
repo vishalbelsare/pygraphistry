@@ -21,6 +21,7 @@ export function histograms(view) {
                 selected: false,
                 id: 'toggle-histograms',
                 name: 'Histograms',
+                items: $ref(`${view}.histograms`)
             }],
             encodings: $ref(`${view}.encodings`),
         }

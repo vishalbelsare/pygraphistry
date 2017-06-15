@@ -41,7 +41,7 @@ export function setLayoutControl(loadViewsById) {
 
 function getCurrentDataset(workbook, options) {
 
-    const { datasets } = workbook;
+    const datasets = workbook.datasets || (workbook.datasets = []);
 
     let datasetsIndex = -1;
     const datasetsLen = datasets.length;

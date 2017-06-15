@@ -56,9 +56,10 @@ ToolbarItems = container({
 
 let ToolbarItem = container({
     renderLoading: false,
-    fragment: () => `{ id, name, type, selected }`,
+    fragment: () => `{ id, name, type, selected, items: { length } }`,
     mapFragment: (item, { selectToolbarItem }) => ({
-        ...item, onItemSelected: selectToolbarItem
+        ...item, onItemSelected: selectToolbarItem,
+        badgeCount: item && item.items && item.items.length || 0
     })
 })(ButtonListItem);
 

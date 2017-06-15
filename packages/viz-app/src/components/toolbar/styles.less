@@ -20,7 +20,7 @@
     }
 }
 
-// Comtainer of old vertical buttons
+// Container of old vertical buttons
 .button-list-items-container {
     padding: 2px 0px;
     background: transparent;
@@ -65,7 +65,7 @@
     outline-style: none;
     float: none !important;
     margin-left: 0 !important;
-    > span {
+    .overlay-hit-area {
         top: 0;
         left: 0;
         width: 115%;
@@ -74,6 +74,16 @@
         outline-style: none;
         display: inline-block;
         vertical-align: middle;
+    }
+    :global(.badge) {
+        top: -1em;
+        right: 10%;
+        color: #333;
+        font-size: 8px;
+        min-width: auto;
+        padding-left: 0;
+        padding-right: 0;
+        background-color: transparent;
     }
     :global(.btn-group) > &:first-child:not(:last-child),
     :global(.btn-group) > &:first-child:not(:last-child):not(.dropdown-toggle) {
@@ -409,9 +419,12 @@
                 height: 40px;
                 line-height: 40px;
                 border-top: none;
-                > span {
+                .overlay-hit-area {
                     width: 100%;
                     height: 115%;
+                }
+                :global(.badge) {
+                    right: 20%;
                 }
             }
         }

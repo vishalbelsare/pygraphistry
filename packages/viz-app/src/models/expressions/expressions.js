@@ -17,8 +17,6 @@ export function expressions(view) {
 
     const defaultFilter = expression('LIMIT 800000');
     defaultFilter.expressionType = 'filter';
-    defaultFilter.readOnly = true;
-    defaultFilter.level = 'system';
 
     return {
         // ...sets(workbookId, viewId),

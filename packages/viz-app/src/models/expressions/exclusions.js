@@ -16,7 +16,8 @@ export function exclusions(view) {
                 selected: false,
                 id: 'toggle-exclusions',
                 name: 'Exclusions',
-                type: 'settings'
+                type: 'settings',
+                items: $ref(`${view}.exclusions`)
             }]
         }
     }

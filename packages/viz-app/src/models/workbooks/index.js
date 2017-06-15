@@ -10,7 +10,7 @@ import {
 } from '@graphistry/falcor-json-graph';
 
 export * from './migrateWorkbook';
-export const latestWorkbookVersion = 2;
+export const latestWorkbookVersion = 3;
 
 export function workbook(dataset, workbookId = simpleflake().toJSON()) {
     const workbook = `workbooksById['${workbookId}']`;
@@ -54,13 +54,22 @@ export function workbook(dataset, workbookId = simpleflake().toJSON()) {
 }
 
 export function serializeWorkbook(workbook) {
-    const wbFields = ['id', 'title', 'version', 'contentName', 'fullscreen', 'datasets', 'views', 'controls'];
+    const wbFields = ['id', 'title', 'version', 'contentName', 'fullscreen', 'views', 'controls'];
     const whiteListed = _.pick(workbook, wbFields);
 
     whiteListed.viewsById = _.mapObject(workbook.viewsById, view => {
-        return _.omit(view,
+        const serialiedView = _.omit(view,
             'nBody', 'session', 'columns', 'labelsByType', 'componentsByType'
         );
+        const { histograms } = serialiedView;
+        for (let i = -1, n = histograms.length; ++i < n;) {
+            histograms[i] = undefined;
+        }
+        serialiedView.histogramsById = {};
+        serialiedView.histograms.length = 0;
+        serialiedView.scene.renderer.edges.elements = 0;
+        serialiedView.scene.renderer.points.elements = 0;
+        return serialiedView;
     });
 
     return whiteListed;

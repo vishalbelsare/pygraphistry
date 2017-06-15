@@ -4,7 +4,7 @@ import styles from './styles.less';
 import classNames from 'classnames';
 
 import {
-    Overlay,
+    Badge, Overlay,
     Button, Tooltip, OverlayTrigger,
     ButtonGroup, ButtonToolbar,
     ListGroup, ListGroupItem
@@ -51,7 +51,7 @@ function ButtonListItemTooltip(name) {
     );
 }
 
-export function ButtonListItem({ onItemSelected, popover, groupId, ...props }) {
+export function ButtonListItem({ onItemSelected, popover, groupId, badgeCount = 0, ...props }) {
 
     let overlayRef, buttonWithOverlay;
     const { id, name, type, selected } = props;
@@ -68,12 +68,13 @@ export function ButtonListItem({ onItemSelected, popover, groupId, ...props }) {
                         onClick={(e) => e.preventDefault() || onItemSelected(props)}
                         className={classNames({
                              [styles[id]]: true,
-                             fa: true,
+                             // fa: true,
                              'fa-fw': true,
                              [styles['selected']]: selected,
                              [styles['button-list-item']]: true
                         })}>
-                    <span ref={(ref) => overlayRef = ref}/>
+                    {badgeCount && <Badge pullRight>{badgeCount}</Badge> || undefined}
+                    <span className={styles['overlay-hit-area']} ref={(ref) => overlayRef = ref}/>
                 </Button>
             </OverlayTrigger>
         );
@@ -84,12 +85,13 @@ export function ButtonListItem({ onItemSelected, popover, groupId, ...props }) {
                     onClick={(e) => e.preventDefault() || onItemSelected(props)}
                     className={classNames({
                          [styles[id]]: true,
-                         fa: true,
+                         // fa: true,
                          'fa-fw': true,
                          [styles['selected']]: selected,
                          [styles['button-list-item']]: true
                     })}>
-                <span ref={(ref) => overlayRef = ref}/>
+                {badgeCount && <Badge pullRight>{badgeCount}</Badge> || undefined}
+                <span className={styles['overlay-hit-area']} ref={(ref) => overlayRef = ref}/>
                 <Overlay show={selected}
                          rootClose={true}
                          containerPadding={10}
