@@ -21,9 +21,12 @@ class HttpConnector extends Connector {
         log.info(`HttpConnector ${method}`, url, body);
         log.debug('Using timeout: ', (timeout || this.timeout_s) * 1000);
 
+        const reqBase = {url, headers, gzip: true};
         const req = 
-            method === 'GET' ? get({url, headers})
-                : post({url, body, headers});
+            method === 'GET' ? get(reqBase)
+                : post({...reqBase, body});
+
+        const t0 = Date.now();
 
         return req.catch((e) => {
                 return Observable.throw(
@@ -35,6 +38,7 @@ class HttpConnector extends Connector {
                 );
             })
             .do(([response]) => {
+                log.info('Download time', Date.now() - t0, 'ms');
                 log.trace(response);
                 const statusCode = (response||{}).statusCode;
                 if (statusCode !== 200) {

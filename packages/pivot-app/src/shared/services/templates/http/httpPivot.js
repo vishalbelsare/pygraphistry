@@ -233,7 +233,7 @@ export class HttpPivot extends PivotTemplate {
                 log.debug('searchAndShape http: url', { url, headersProcessed, timeoutProcessed });                
                 return this.connector.search(url, { method, body, headers: headersProcessed, timeout: timeoutProcessed })                    
                     .switchMap(([response]) => {
-                        log.debug('response', (response||{}).body);
+                        log.debug('response', JSON.stringify((response||{}).body).slice(0,1000));
                         return jqSafe(response.body, template(jq || '.', params))
                             .do((response) => log.debug('jq response', response))
                             .catch((e) => {
