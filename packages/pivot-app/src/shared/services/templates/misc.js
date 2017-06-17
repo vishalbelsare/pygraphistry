@@ -98,7 +98,7 @@ export const searchSplunk = new SplunkPivot({
 
         return { 
             searchQuery: query,
-            searchParams: this.dayRangeToSplunkParams(args.time.value) 
+            searchParams: this.dayRangeToSplunkParams((args.time||{}).value) 
         };
     },
     encodings: {
