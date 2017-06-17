@@ -2,12 +2,13 @@ import Select from 'react-select';
 import { layouts } from '../../services/layouts';
 import styles from './investigation-details.less';
 import { DescriptionFormControl } from 'pivot-shared/components';
+import { DateTimeRangePicker } from 'pivot-shared/components/DateTimeRangePicker/DateTimeRangePicker.js';
 import {
     Col, Panel, ControlLabel,
     Form, FormGroup//, FormControl
 } from 'react-bootstrap';
 
-export function InvestigationDetails({ layout, saveLayout, $falcor, description = '' }) {
+export function InvestigationDetails({ layout, saveLayout, $falcor, description = '', time = {} }) {
     return (
         <Panel collapsible
                className={styles['investigation-details']}
@@ -20,6 +21,14 @@ export function InvestigationDetails({ layout, saveLayout, $falcor, description 
                    </p>
                }>
             <form>
+                <FormGroup>
+                    <DateTimeRangePicker 
+                        label="Time"
+                        range={time}
+                        baseid="global_time"
+                        onChange={(time)=> $falcor.set({ json: { time }}).progressively()}
+                    />
+                </FormGroup>            
                 <FormGroup controlId='investigation-description'>
                     <ControlLabel>Description</ControlLabel>
                     <DescriptionFormControl $falcor={$falcor}
