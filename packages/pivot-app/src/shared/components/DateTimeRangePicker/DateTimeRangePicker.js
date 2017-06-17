@@ -50,12 +50,12 @@ const DateTimeRangePicker = withTime(({ label, range = {}, baseid, onChange }) =
         <label>{ label }</label>
         <div>
             <DateTimePicker
-                onValueChange={ (update) => onChange({dir: 'from', val: update}) } 
+                onValueChange={ (val) => onChange({dir: 'from', val }) } 
                 {...getTimeProps('from', moment("12:00:00 AM", "hh:mm:ss a").toJSON())}
                 baseid={baseid+"from"} 
                 placeholder={"default from"} />
             <DateTimePicker
-                onValueChange={ (update) => onChange({dir: 'to', val: update}) } 
+                onValueChange={ (val) => onChange({dir: 'to', val }) } 
                 {...getTimeProps('to', moment("11:59:59 PM", "hh:mm:ss a").toJSON())}
                 baseid={baseid+"to"} 
                 placeholder={"default to"} />
