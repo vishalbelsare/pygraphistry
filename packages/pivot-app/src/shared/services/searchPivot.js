@@ -29,7 +29,7 @@ export function searchPivot({ loadPivotsById, pivotIds, loadInvestigationsById, 
                         return result;
                     }, {});
 
-                    return template.searchAndShape({app, pivot, pivotCache})
+                    return template.searchAndShape({app, pivot, pivotCache, time: investigation.time})
                         .do(({pivot}) => {
                             pivot.status = {ok: true, searching: false};
                             if (pivot.isPartial) {

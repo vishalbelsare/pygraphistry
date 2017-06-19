@@ -5,15 +5,20 @@ import moment from 'moment-timezone';
 import { SplunkPivot } from '../../../src/shared/services/templates/SplunkPivot';
 import { searchSplunk } from '../../../src/shared/services/templates/misc';
 
+const timezoneV = "America/Los_Angeles";
+const timezoneGuyanaV = "America/Guyana";
+const timeV = "13:04:05";
+const dateV = "06/10/2017"
+const dateTimeV = `${dateV} ${timeV}`;
 
-const date = moment.utc('06/10/2017', 'L');
+const date = moment.utc(dateV, 'L');
 const dateJSON = date.toJSON();
 
-const time = moment.utc('13:04:05', 'H:m:s');
+const time = moment.utc(timeV, 'H:m:s');
 const timeJSON = time.toJSON();
 
-const dateTimeUnix = moment.tz('06/10/2017 13:04:05', 'L H:m:s', "America/Los_Angeles").unix();
-const fromDateTimeGuyanaUnix = moment.tz('06/10/2017 13:04:05', 'L H:m:s', "America/Guyana").unix();    
+const dateTimeUnix = moment.tz(dateTimeV, 'L H:m:s', timezoneV).unix();
+const fromDateTimeGuyanaUnix = moment.tz(dateTimeV, 'L H:m:s', timezoneGuyanaV).unix();    
 const fromDateUnix = moment.tz('06/10/2017 0:0:0', 'L H:m:s', "America/Los_Angeles").unix();
 const toDateUnix = moment.tz('06/10/2017 23:59:59', 'L H:m:s', "America/Los_Angeles").unix();
 
@@ -27,6 +32,10 @@ describe('Splunk:dayRangeToSplunkParams', function () {
 
     function compare (param, val) {
         assert.deepEqual(pivot.dayRangeToSplunkParams(param), val);
+    }
+
+    function compareGlobal (param, globalParam, val) {
+        assert.deepEqual(pivot.dayRangeToSplunkParams(param, globalParam), val);
     }
 
     it('undefined', () => {
@@ -71,6 +80,21 @@ describe('Splunk:dayRangeToSplunkParams', function () {
         compare(
             {from: { date: dateJSON }, to: { date: dateJSON } },
             {earliest_time: fromDateUnix, latest_time: toDateUnix });
+    });
+
+    it('global to & from', () => {
+        compareGlobal(
+            undefined,
+            {from: { date: dateJSON }, to: { date: dateJSON } },
+            {earliest_time: fromDateUnix, latest_time: toDateUnix });
+    });
+
+    it('global to with local override', () => {
+        compareGlobal(
+            {from:  { date: dateJSON, time: timeJSON, timezone: 'America/Los_Angeles' }, 
+             to:    { date: dateJSON, time: timeJSON, timezone: 'America/Los_Angeles' } },
+            {from: { date: 1, time: 1, timezone: 1}, to: { date: 1, time: 1, timezone: 1}},
+            {earliest_time: dateTimeUnix, latest_time: dateTimeUnix });
     });
 
 });     

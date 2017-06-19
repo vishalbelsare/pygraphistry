@@ -92,13 +92,15 @@ export const searchSplunk = new SplunkPivot({
             default: { from: null, to: null }
         }
     ],
-    toSplunk: function (args) {
+    toSplunk: function (args, pivotCache = {}, { time } = {}) {
+
+
         this.connections = args.fields.value;
         const query = `search ${args.query} ${this.constructFieldString()} | head 1000`;
 
         return { 
             searchQuery: query,
-            searchParams: this.dayRangeToSplunkParams((args.time||{}).value) 
+            searchParams: this.dayRangeToSplunkParams((args.time||{}).value, time) 
         };
     },
     encodings: {
@@ -195,7 +197,7 @@ export const searchGraphviz = new SplunkPivot({
             }
         }
     ],
-    toSplunk: function (args) {
+    toSplunk: function (args, pivotCache = {}, { time }) {
         const q = args.query;
         const l = args.level;
         const query = `search (host=staging* OR host=labs*) source="/var/log/graphistry-json/*.log" ${q} level >= ${l}
@@ -206,7 +208,7 @@ export const searchGraphviz = new SplunkPivot({
 
         return {
             searchQuery: query,
-            searchParams: this.dayRangeToSplunkParams(args.time.value)
+            searchParams: this.dayRangeToSplunkParams(args.time.value, time)
         };
     },
     encodings: {
