@@ -11,9 +11,9 @@
     mv "~2"
     safe-json-stringify "~1"
 
-"@graphistry/client-api@^2.12.0":
-  version "2.12.2"
-  resolved "https://registry.yarnpkg.com/@graphistry/client-api/-/client-api-2.12.2.tgz#28be14bc992ae8f1843e154b9d6cdc357a72c81a"
+"@graphistry/client-api@~2.12.3":
+  version "2.12.3"
+  resolved "https://registry.yarnpkg.com/@graphistry/client-api/-/client-api-2.12.3.tgz#11f08ed24a1411d89ef78bf0ee0b2129888377c5"
   dependencies:
     "@graphistry/falcor-json-graph" "~2.8.0"
     "@graphistry/falcor-model-rxjs" "~2.9.3"
@@ -22,29 +22,21 @@
     rxjs "~5.4.0"
     symbol-observable "~1.0.4"
 
-"@graphistry/common@3.1.0":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@graphistry/common/-/common-3.1.0.tgz#036545a68802527e184d22e4e7e073d588db2ecd"
+"@graphistry/common@3.1.1":
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/@graphistry/common/-/common-3.1.1.tgz#81a3779419ab80840d72acb54a9582555dbafc4c"
   dependencies:
     "@graphistry/bunyan" "1.8.4"
-    "@graphistry/config" "3.0.1"
+    "@graphistry/config" "3.0.5"
     chalk "~1.0.0"
     fs-tools "~0.2.0"
     q "~1.1.0"
     request "~2.54.0"
     underscore "~1.8.3"
 
-"@graphistry/config@3.0.1":
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/@graphistry/config/-/config-3.0.1.tgz#e4cfc2fde895d626a5e315350f3320f163ccb0b1"
-  dependencies:
-    aws-sdk "~2.6.9"
-    debug "~2.2.0"
-    lodash "~4.16.4"
-
-"@graphistry/config@3.0.4":
-  version "3.0.4"
-  resolved "https://registry.yarnpkg.com/@graphistry/config/-/config-3.0.4.tgz#cd834677df456870f9055e0a8394688b502f0abd"
+"@graphistry/config@3.0.5":
+  version "3.0.5"
+  resolved "https://registry.yarnpkg.com/@graphistry/config/-/config-3.0.5.tgz#caad6c5a8f383ac8a4d35cba9b76de68591eb27c"
   dependencies:
     aws-sdk "~2.6.9"
     debug "~2.2.0"
@@ -56,99 +48,116 @@
   dependencies:
     heap "~0.2.6"
 
-"@graphistry/falcor-json-graph@2.8.0", "@graphistry/falcor-json-graph@^2.8.0", "@graphistry/falcor-json-graph@~2.8.0":
+"@graphistry/falcor-json-graph@2.8.0", "@graphistry/falcor-json-graph@~2.8.0":
   version "2.8.0"
   resolved "https://registry.yarnpkg.com/@graphistry/falcor-json-graph/-/falcor-json-graph-2.8.0.tgz#935bb3ebdd73b4c68613fa71b091904d4e04a654"
   dependencies:
     "@graphistry/falcor-path-syntax" "^2.8.0"
 
-"@graphistry/falcor-model-rxjs@2.9.3", "@graphistry/falcor-model-rxjs@~2.9.3":
-  version "2.9.3"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-model-rxjs/-/falcor-model-rxjs-2.9.3.tgz#2d79f8bb62fa00dd0c9d9af22ac574352ed7159a"
+"@graphistry/falcor-json-graph@^2.9.4":
+  version "2.9.4"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-json-graph/-/falcor-json-graph-2.9.4.tgz#2f57256b8f750f28c147e8f06866e983c2f5ee13"
   dependencies:
-    "@graphistry/falcor" "^2.9.3"
-    "@graphistry/falcor-path-syntax" "^2.8.0"
-    babel-plugin-transform-runtime "~6.23.0"
+    "@graphistry/falcor-path-syntax" "^2.9.4"
+
+"@graphistry/falcor-model-rxjs@~2.9.3", "@graphistry/falcor-model-rxjs@~2.9.4":
+  version "2.9.4"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-model-rxjs/-/falcor-model-rxjs-2.9.4.tgz#472746810565b7bf3bbbff2d93538ae7d5e0b18d"
+  dependencies:
+    "@graphistry/falcor" "^2.9.4"
+    "@graphistry/falcor-path-syntax" "^2.9.4"
+    babel-runtime "~6.23.0"
     rxjs "~5.4.0"
 
 "@graphistry/falcor-path-syntax@2.8.0", "@graphistry/falcor-path-syntax@^2.8.0":
   version "2.8.0"
   resolved "https://registry.yarnpkg.com/@graphistry/falcor-path-syntax/-/falcor-path-syntax-2.8.0.tgz#72db2b1ab684cffaa43ebbc97fd478f505962bb2"
 
-"@graphistry/falcor-path-utils@2.9.1", "@graphistry/falcor-path-utils@^2.9.1":
-  version "2.9.1"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-path-utils/-/falcor-path-utils-2.9.1.tgz#5576bc1b792a4c1b4ee6a433c94bee66f2271972"
+"@graphistry/falcor-path-syntax@^2.9.4":
+  version "2.9.4"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-path-syntax/-/falcor-path-syntax-2.9.4.tgz#92b95d36bf5587634577f9b7f119a4372ba692a0"
 
-"@graphistry/falcor-query-syntax@2.9.3", "@graphistry/falcor-query-syntax@^2.9.3":
-  version "2.9.3"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-query-syntax/-/falcor-query-syntax-2.9.3.tgz#bf429ef48c01003d4946a34263f50e0b6ee5e1ff"
+"@graphistry/falcor-path-utils@^2.9.4", "@graphistry/falcor-path-utils@~2.9.4":
+  version "2.9.4"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-path-utils/-/falcor-path-utils-2.9.4.tgz#50e4b154ff35a2f27bdb25a2585627b6626aa425"
+
+"@graphistry/falcor-query-syntax@^2.9.4", "@graphistry/falcor-query-syntax@~2.9.4":
+  version "2.9.4"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-query-syntax/-/falcor-query-syntax-2.9.4.tgz#98a295d1c1761efa551ebdbaddbd563a534f65b1"
   dependencies:
-    "@graphistry/falcor-path-utils" "^2.9.1"
-    babel-plugin-transform-runtime "~6.23.0"
+    "@graphistry/falcor-path-utils" "^2.9.4"
+    babel-runtime "~6.23.0"
     pegjs "0.10.0"
 
-"@graphistry/falcor-react-redux@2.9.3":
-  version "2.9.3"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-react-redux/-/falcor-react-redux-2.9.3.tgz#628c09a3db6dba3498e4184e4c14007610c4ad67"
+"@graphistry/falcor-react-redux@~2.9.4":
+  version "2.9.4"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-react-redux/-/falcor-react-redux-2.9.4.tgz#a354e1cd0b3eff35d49b872dbb94f8f8995c81d4"
   dependencies:
-    "@graphistry/falcor" "^2.9.3"
-    "@graphistry/falcor-json-graph" "^2.8.0"
-    "@graphistry/falcor-path-syntax" "^2.8.0"
-    "@graphistry/falcor-path-utils" "^2.9.1"
-    "@graphistry/falcor-query-syntax" "^2.9.3"
-    babel-plugin-transform-runtime "~6.23.0"
-    babel-preset-react "~6.23.0"
+    "@graphistry/falcor" "^2.9.4"
+    "@graphistry/falcor-json-graph" "^2.9.4"
+    "@graphistry/falcor-path-syntax" "^2.9.4"
+    "@graphistry/falcor-path-utils" "^2.9.4"
+    "@graphistry/falcor-query-syntax" "^2.9.4"
+    babel-runtime "~6.23.0"
     hoist-non-react-statics "~1.2.0"
     invariant "~2.2.2"
     pegjs-util "~1.4.1"
-    react "~15.4.2"
+    react "~15.5.4"
     react-redux "~5.0.1"
-    recompose "~0.22.0"
+    recompose "~0.23.4"
     redux "~3.6.0"
     warning "~3.0.0"
 
-"@graphistry/falcor-react-schema@2.9.3":
-  version "2.9.3"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-react-schema/-/falcor-react-schema-2.9.3.tgz#a4e87ef57fc3fa6e7e06760338f9496c574f66c6"
+"@graphistry/falcor-react-schema@~2.9.4":
+  version "2.9.4"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-react-schema/-/falcor-react-schema-2.9.4.tgz#c2282c72294dd823a75ac007b125ced180712cee"
   dependencies:
-    "@graphistry/falcor" "^2.9.3"
-    "@graphistry/falcor-json-graph" "^2.8.0"
-    "@graphistry/falcor-path-utils" "^2.9.1"
-    "@graphistry/falcor-query-syntax" "^2.9.3"
-    babel-plugin-transform-runtime "~6.23.0"
-    babel-preset-react "~6.23.0"
+    "@graphistry/falcor" "^2.9.4"
+    "@graphistry/falcor-json-graph" "^2.9.4"
+    "@graphistry/falcor-path-utils" "^2.9.4"
+    "@graphistry/falcor-query-syntax" "^2.9.4"
+    babel-runtime "~6.23.0"
     invariant "~2.2.2"
     pegjs-util "~1.4.1"
-    react "~15.4.2"
-    recompose "~0.22.0"
+    react "~15.5.4"
+    recompose "~0.23.4"
     rxjs "~5.4.0"
 
-"@graphistry/falcor-router-saddle@2.9.3":
-  version "2.9.3"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-router-saddle/-/falcor-router-saddle-2.9.3.tgz#12a67e7d6fb84fefbbd552c0da2d3fae8dfc7a42"
+"@graphistry/falcor-router-saddle@~2.9.4":
+  version "2.9.4"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-router-saddle/-/falcor-router-saddle-2.9.4.tgz#c08e0a8e2ee2784062258f4e8933ed91279ccaf2"
   dependencies:
+    babel-runtime "~6.23.0"
     rxjs "~5.4.0"
 
-"@graphistry/falcor-router@2.9.3":
-  version "2.9.3"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor-router/-/falcor-router-2.9.3.tgz#a10b6208599ca2eab0bfe5271417c1c894908fd5"
+"@graphistry/falcor-router@~2.9.4":
+  version "2.9.4"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-router/-/falcor-router-2.9.4.tgz#96ef4b8a6d0e5c92c9b32a2207f1bd2c7e59b52e"
   dependencies:
-    "@graphistry/falcor-path-syntax" "^2.8.0"
-    "@graphistry/falcor-path-utils" "^2.9.1"
+    "@graphistry/falcor-path-syntax" "^2.9.4"
+    "@graphistry/falcor-path-utils" "^2.9.4"
+    babel-runtime "~6.23.0"
     rxjs "~5.4.0"
 
-"@graphistry/falcor-socket-datasource@2.9.3", "@graphistry/falcor-socket-datasource@~2.9.3":
+"@graphistry/falcor-socket-datasource@~2.9.3":
   version "2.9.3"
   resolved "https://registry.yarnpkg.com/@graphistry/falcor-socket-datasource/-/falcor-socket-datasource-2.9.3.tgz#928b42891bbe46c27d21d2a93df27a7b68cc1ed3"
   dependencies:
     babel-plugin-transform-runtime "~6.23.0"
     uuid "~3.0.1"
 
-"@graphistry/falcor@2.9.3", "@graphistry/falcor@^2.9.3":
-  version "2.9.3"
-  resolved "https://registry.yarnpkg.com/@graphistry/falcor/-/falcor-2.9.3.tgz#db810bcf0a2b60b4d2ace3cf2f85812005734e77"
+"@graphistry/falcor-socket-datasource@~2.9.4":
+  version "2.9.4"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor-socket-datasource/-/falcor-socket-datasource-2.9.4.tgz#ffee4bdc5b688375a1d8dd96a6d6b09788747d3f"
   dependencies:
-    "@graphistry/falcor-path-utils" "^2.9.1"
+    babel-runtime "~6.23.0"
+    uuid "~3.0.1"
+
+"@graphistry/falcor@^2.9.4", "@graphistry/falcor@~2.9.4":
+  version "2.9.4"
+  resolved "https://registry.yarnpkg.com/@graphistry/falcor/-/falcor-2.9.4.tgz#aaa7c8c5af96a6d0b12ab9721d606ff0bfb77b35"
+  dependencies:
+    "@graphistry/falcor-path-utils" "^2.9.4"
     symbol-observable "1.0.4"
 
 "@graphistry/node-pigz@2.0.0":
@@ -1234,7 +1243,7 @@ babel-plugin-transform-react-jsx-source@^6.22.0:
     babel-plugin-syntax-jsx "^6.8.0"
     babel-runtime "^6.22.0"
 
-babel-plugin-transform-react-jsx@^6.23.0, babel-plugin-transform-react-jsx@^6.24.1:
+babel-plugin-transform-react-jsx@^6.24.1:
   version "6.24.1"
   resolved "https://registry.yarnpkg.com/babel-plugin-transform-react-jsx/-/babel-plugin-transform-react-jsx-6.24.1.tgz#840a028e7df460dfc3a2d29f0c0d91f6376e66a3"
   dependencies:
@@ -1409,17 +1418,6 @@ babel-preset-react@6.24.1:
     babel-plugin-transform-react-jsx-source "^6.22.0"
     babel-preset-flow "^6.23.0"
 
-babel-preset-react@~6.23.0:
-  version "6.23.0"
-  resolved "https://registry.yarnpkg.com/babel-preset-react/-/babel-preset-react-6.23.0.tgz#eb7cee4de98a3f94502c28565332da9819455195"
-  dependencies:
-    babel-plugin-syntax-jsx "^6.3.13"
-    babel-plugin-transform-react-display-name "^6.23.0"
-    babel-plugin-transform-react-jsx "^6.23.0"
-    babel-plugin-transform-react-jsx-self "^6.22.0"
-    babel-plugin-transform-react-jsx-source "^6.22.0"
-    babel-preset-flow "^6.23.0"
-
 babel-preset-stage-0@6.24.1:
   version "6.24.1"
   resolved "https://registry.yarnpkg.com/babel-preset-stage-0/-/babel-preset-stage-0-6.24.1.tgz#5642d15042f91384d7e5af8bc88b1db95b039e6a"
@@ -1467,7 +1465,7 @@ babel-register@^6.24.1:
     mkdirp "^0.5.1"
     source-map-support "^0.4.2"
 
-babel-runtime@6.23.0, babel-runtime@6.x, babel-runtime@^6.0.0, babel-runtime@^6.11.6, babel-runtime@^6.18.0, babel-runtime@^6.22.0:
+babel-runtime@6.23.0, babel-runtime@6.x, babel-runtime@^6.0.0, babel-runtime@^6.11.6, babel-runtime@^6.18.0, babel-runtime@^6.22.0, babel-runtime@~6.23.0:
   version "6.23.0"
   resolved "https://registry.yarnpkg.com/babel-runtime/-/babel-runtime-6.23.0.tgz#0a9489f144de70efb3ce4300accdb329e2fc543b"
   dependencies:
@@ -2553,7 +2551,7 @@ create-hmac@^1.1.0, create-hmac@^1.1.2:
     create-hash "^1.1.0"
     inherits "^2.0.1"
 
-create-react-class@15.5.3, create-react-class@^15.5.1, create-react-class@^15.5.2:
+create-react-class@^15.5.1, create-react-class@^15.5.2, create-react-class@~15.5.3:
   version "15.5.3"
   resolved "https://registry.yarnpkg.com/create-react-class/-/create-react-class-15.5.3.tgz#fb0f7cae79339e9a179e194ef466efa3923820fe"
   dependencies:
@@ -6888,11 +6886,11 @@ oauth-sign@~0.8.1:
   version "0.8.2"
   resolved "https://registry.yarnpkg.com/oauth-sign/-/oauth-sign-0.8.2.tgz#46a6ab7f0aead8deae9ec0565780b7d4efeb9d43"
 
-object-assign@4.1.0, object-assign@^4:
+object-assign@4.1.0, object-assign@^4, object-assign@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/object-assign/-/object-assign-4.1.0.tgz#7a3b3d0e98063d43f4c03f2e8ae6cd51a86883a0"
 
-object-assign@4.x, object-assign@^4.0.0, object-assign@^4.0.1, object-assign@^4.1.0, object-assign@^4.1.1, object-assign@~4.1.1:
+object-assign@4.x, object-assign@^4.0.0, object-assign@^4.0.1, object-assign@^4.1.1, object-assign@~4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/object-assign/-/object-assign-4.1.1.tgz#2109adc7965887cfc05cbbd442cac8bfbb360863"
 
@@ -7789,6 +7787,13 @@ prop-types@^15.0.0, prop-types@^15.5.4, prop-types@^15.5.6, prop-types@^15.5.7, 
   dependencies:
     fbjs "^0.8.9"
 
+prop-types@~15.5.10:
+  version "15.5.10"
+  resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.5.10.tgz#2797dfc3126182e3a95e3dfbb2e893ddd7456154"
+  dependencies:
+    fbjs "^0.8.9"
+    loose-envify "^1.3.1"
+
 proto-loader@0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/proto-loader/-/proto-loader-0.2.0.tgz#d06fdd1ad31fbe60fccd89484d9e54da1e9e3532"
@@ -8185,7 +8190,7 @@ react-virtualized@9.7.5:
     loose-envify "^1.3.0"
     prop-types "^15.5.4"
 
-react@15.5.4, react@^15.0.1:
+react@15.5.4, react@^15.0.1, react@~15.5.4:
   version "15.5.4"
   resolved "https://registry.yarnpkg.com/react/-/react-15.5.4.tgz#fa83eb01506ab237cdc1c8c3b1cea8de012bf047"
   dependencies:
@@ -8193,14 +8198,6 @@ react@15.5.4, react@^15.0.1:
     loose-envify "^1.1.0"
     object-assign "^4.1.0"
     prop-types "^15.5.7"
-
-react@~15.4.2:
-  version "15.4.2"
-  resolved "https://registry.yarnpkg.com/react/-/react-15.4.2.tgz#41f7991b26185392ba9bae96c8889e7e018397ef"
-  dependencies:
-    fbjs "^0.8.4"
-    loose-envify "^1.1.0"
-    object-assign "^4.1.0"
 
 read-all-stream@^3.0.0:
   version "3.1.0"
@@ -8313,15 +8310,6 @@ rechoir@^0.6.2:
 recompose@0.23.4, recompose@~0.23.4:
   version "0.23.4"
   resolved "https://registry.yarnpkg.com/recompose/-/recompose-0.23.4.tgz#af09e4e08424effa449c9b793037166f7b30644a"
-  dependencies:
-    change-emitter "^0.1.2"
-    fbjs "^0.8.1"
-    hoist-non-react-statics "^1.0.0"
-    symbol-observable "^1.0.4"
-
-recompose@~0.22.0:
-  version "0.22.0"
-  resolved "https://registry.yarnpkg.com/recompose/-/recompose-0.22.0.tgz#f099d18385882ca41d9eec891718dadddc3204ef"
   dependencies:
     change-emitter "^0.1.2"
     fbjs "^0.8.1"
@@ -8703,11 +8691,11 @@ sanitize-html@1.14.1:
     regexp-quote "0.0.0"
     xtend "^4.0.0"
 
-sax@1.1.5, sax@>=0.6.0:
+sax@1.1.5:
   version "1.1.5"
   resolved "https://registry.yarnpkg.com/sax/-/sax-1.1.5.tgz#1da50a8d00cdecd59405659f5ff85349fe773743"
 
-sax@~1.2.1:
+sax@>=0.6.0, sax@~1.2.1:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/sax/-/sax-1.2.2.tgz#fd8631a23bc7826bef5d871bdb87378c95647828"
 

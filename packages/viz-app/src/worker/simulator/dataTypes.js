@@ -29,6 +29,19 @@ function fastRoughStringCompare (a, b) {
     return (a<b ? -1 : (a>b ? 1 : 0));
 }
 
+function safeNumberCompare(a, b) {
+    // Note: we're intentionally reversing the order of NaNs
+    // when sorting ascending/descending. When ascending,
+    // we want NaN's at the bottom. When descending,
+    // we want NaN's at the top.
+    // If we change this, make returns [1] and [2] to -1 and 1 respectively.
+    return a !== a
+         ? b !== b ? 0       // both are NaN
+                   : 1       // a is NaN, b is number [1]
+         : b !== b ?-1       // b is NaN, a is number [2]
+                   : a - b;  // both are numbers
+}
+
 function wrappedLocaleCompare (a, b) {
     if (isASCII(a) && isASCII(b)) {
         return fastRoughStringCompare(a, b);
@@ -129,7 +142,7 @@ export function comparatorForDataType(dataType) {
     switch (dataType) {
         case 'number':
         case 'integer':
-            return (a, b) => a - b;
+            return safeNumberCompare;
         case 'string':
             return (a, b) => wrappedLocaleCompare(a,b);
         case 'date':
