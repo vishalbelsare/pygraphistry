@@ -8,6 +8,9 @@ import {
     Form, FormGroup//, FormControl
 } from 'react-bootstrap';
 
+import logger from 'pivot-shared/logger.js';
+const log = logger.createLogger(__filename);
+
 export function InvestigationDetails({ layout, saveLayout, $falcor, description = '', time = {} }) {
     return (
         <Panel collapsible
@@ -26,7 +29,11 @@ export function InvestigationDetails({ layout, saveLayout, $falcor, description 
                         label="Time"
                         range={time}
                         baseid="global_time"
-                        onChange={(time)=> $falcor.set({ json: { time }}).progressively()}
+                        onChange={(time)=> {
+                            $falcor.set({ json: { time }}).progressively()
+                                .subscribe(()=>{}, log.error)
+                        }
+                        }
                     />
                 </FormGroup>            
                 <FormGroup controlId='investigation-description'>
