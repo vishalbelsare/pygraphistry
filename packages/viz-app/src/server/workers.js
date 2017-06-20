@@ -10,7 +10,7 @@ import configureVizWorker from './viz';
 
 function configureWorkers(config, convict, activeCB) {
 
-    let workerName, workerRouter, appRouter = Router();
+    let workerName, workerRouter, workerRouterStartTime, appRouter = Router();
     const allowMultipleVizConnections = !!config.ALLOW_MULTIPLE_VIZ_CONNECTIONS;
 
     try {
@@ -44,7 +44,9 @@ function configureWorkers(config, convict, activeCB) {
                         {info: { httpStatus: 409 }},
                         'This viz-app worker is already in use by another client'
                     );
-                    logger.warn({req, res, err: inUseError}, "A client tried to connect to this worker, but it's currently in use with an existing client. Will reject the request with an error response.");
+                    logger.warn({req, res, err: inUseError, 
+                        workerRouterStartTime, workerRouterLongevityMS: Date.now() - workerRouterStartTime}, 
+                        "A client tried to connect to this worker, but it's currently in use with an existing client. Will reject the request with an error response.");
                     // Pass the error to Express, so an error handling middleware can take care
                     // of notifying the client.
                     return next(inUseError);
@@ -63,6 +65,7 @@ function configureWorkers(config, convict, activeCB) {
                 } else {
                     workerRouter = configureWorker(config, activeCB, req.app.io);
                 }
+                workerRouterStartTime = Date.now();
             }
 
             // Tell Express to continue processing this request, and pass it to the
