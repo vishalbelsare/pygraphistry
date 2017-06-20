@@ -3,14 +3,19 @@ import { VError, WError } from 'verror';
 import { createLogger } from '@graphistry/common/logger';
 const logger = createLogger('viz-app:server:workerRouter');
 import { authenticateMiddleware } from './authentication';
+import { HealthChecker } from './HealthChecker';
 
 
 import configureEtlWorker from './etl';
 import configureVizWorker from './viz';
 
+
+
+const healthcheck = HealthChecker();
+
 function configureWorkers(config, convict, activeCB) {
 
-    let workerName, workerRouter, appRouter = Router();
+    let workerName, workerRouter, workerRouterStartTime, appRouter = Router();
     const allowMultipleVizConnections = !!config.ALLOW_MULTIPLE_VIZ_CONNECTIONS;
 
     try {
@@ -18,6 +23,16 @@ function configureWorkers(config, convict, activeCB) {
     } catch(authMiddlewareError) {
         logger.fatal(authMiddlewareError, 'An error occured loading the Express.js authentication middleware. Because this could compromise security, server will now terminate.');
         activeCB(authMiddlewareError);
+    }
+
+
+    function healthcheckHandler(req, res, next) {
+        const health = healthcheck();
+        logger.info({health, req, res}, 'healthcheck');
+        res.status(health.clear.success ? 200 : 500).json(
+            {...health.clear, 
+                claimed: !!workerRouter, 
+                durationMS: workerRouterStartTime ? Date.now() - workerRouterStartTime : undefined });
     }
 
     appRouter.use('/healthcheck', authenticate, healthcheckHandler);
@@ -44,7 +59,9 @@ function configureWorkers(config, convict, activeCB) {
                         {info: { httpStatus: 409 }},
                         'This viz-app worker is already in use by another client'
                     );
-                    logger.warn({req, res, err: inUseError}, "A client tried to connect to this worker, but it's currently in use with an existing client. Will reject the request with an error response.");
+                    logger.warn({req, res, err: inUseError, 
+                        workerRouterStartTime, workerRouterLongevityMS: Date.now() - workerRouterStartTime}, 
+                        "A client tried to connect to this worker, but it's currently in use with an existing client. Will reject the request with an error response.");
                     // Pass the error to Express, so an error handling middleware can take care
                     // of notifying the client.
                     return next(inUseError);
@@ -63,6 +80,7 @@ function configureWorkers(config, convict, activeCB) {
                 } else {
                     workerRouter = configureWorker(config, activeCB, req.app.io);
                 }
+                workerRouterStartTime = Date.now();
             }
 
             // Tell Express to continue processing this request, and pass it to the
@@ -77,13 +95,6 @@ function configureWorkers(config, convict, activeCB) {
 export { configureWorkers };
 export default configureWorkers;
 
-import { HealthChecker } from './HealthChecker';
-const healthcheck = HealthChecker();
-function healthcheckHandler(req, res, next) {
-    const health = healthcheck();
-    logger.info({health, req, res}, 'healthcheck');
-    res.status(health.clear.success ? 200 : 500).json(health.clear);
-}
 
 // eslint-disable-next-line no-unused-vars
 function requestErrorHandler(err, req, res, next) {
