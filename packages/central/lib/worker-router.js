@@ -122,9 +122,18 @@ function checkIfWorkerUnassigned(workerNfo) {
 }
 
 
+function workerToId (workerNfo) {
+    return workerNfo.hostname + ':' + workerNfo.port;
+}
+
+
 function markWorkerAsAssigned(workerNfo) {
-    const workerId = workerNfo.hostname + ':' + workerNfo.port;
+    const workerId = workerToId(workerNfo);
     workerLastAssigned[workerId] = new Date();
+}
+
+function compareWorkerAssignedLT(workerNfo1, workerNfo2) {
+    return workerLastAssigned[workerToId(workerNfo1)] < workerLastAssigned[workerToId(workerNfo2)];
 }
 
 
@@ -145,7 +154,11 @@ export function pickWorker() {
                     return { hostname: worker.ip, port: worker.port, timestamp: worker.updated };
                 })
                 .filter((workerNfo) => checkIfWorkerUnassigned(workerNfo))
-                .take(1)
+                .scan((leastRecentlyAssigned, workerNfo) => 
+                    !leastRecentlyAssigned ? workerNfo
+                    : compareWorkerAssignedLT(workerNfo, leastRecentlyAssigned) ? workerNfo
+                    : leastRecentlyAssigned)
+                .takeLast(1)
                 .single()
                 .do((workerNfo) => {
                     markWorkerAsAssigned(workerNfo);
