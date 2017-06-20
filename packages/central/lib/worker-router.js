@@ -145,7 +145,11 @@ export function pickWorker() {
                     return { hostname: worker.ip, port: worker.port, timestamp: worker.updated };
                 })
                 .filter((workerNfo) => checkIfWorkerUnassigned(workerNfo))
-                .take(1)
+                .scan((leastRecentlyAssigned, workerNfo) => 
+                    !leastRecentlyAssigned ? workerNfo
+                    : (new Date(workerNfo.timestamp)) < (new Date(leastRecentlyAssigned.timestamp)) ? workerNfo
+                    : leastRecentlyAssigned)
+                .takeLast(1)
                 .single()
                 .do((workerNfo) => {
                     markWorkerAsAssigned(workerNfo);
