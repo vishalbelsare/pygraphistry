@@ -133,7 +133,7 @@ function markWorkerAsAssigned(workerNfo) {
 }
 
 function compareWorkerAssignedLT(workerNfo1, workerNfo2) {
-    return workerLastAssigned(workerToId(workerNfo1)) < workerLastAssigned(workerToId(workerNfo2));
+    return workerLastAssigned[workerToId(workerNfo1)] < workerLastAssigned[workerToId(workerNfo2)];
 }
 
 
