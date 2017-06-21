@@ -1,5 +1,6 @@
 import moment from 'moment';
 import mapPropsStream from 'recompose/mapPropsStream';
+import { $atom } from '@graphistry/falcor-json-graph';
 import createEventHandler from 'recompose/createEventHandler';
 
 
@@ -8,9 +9,9 @@ import styles from '../../pivots/components/pivots.less';
 
 
 const withTime = mapPropsStream((props) => {
-    const { handler: onChangeInternal, stream: changes } = createEventHandler();
+    const { handler: onChange, stream: changes } = createEventHandler();
 
-    return props.switchMap(({ range = {}, onChange, ...props }) => {
+    return props.switchMap(({ $falcor, getKey, range = {}, ...props }) => {
         const ranges = 
             changes
                 .scan((acc, {dir, val}) => ({ 
@@ -21,13 +22,14 @@ const withTime = mapPropsStream((props) => {
                     }), 
                     range);
         return ranges
-            .merge(
-                ranges
-                    .debounceTime(200)
-                    .do((range) => onChange(range)) //TODO make work on $falcor
-                    .filter(() => false))
-            .map((range) => ({ range, onChange: onChangeInternal, ...props }))
-            .startWith({ range, onChange: onChangeInternal, ...props })
+            //.debounceTime(200)
+            .switchMap(
+                (time) => $falcor.set({ 
+                    json: { 
+                        [(getKey && getKey('time')) || 'time']: $atom(time) 
+                    }}).progressively(),
+                (range) => ({ range, onChange: onChange, ...props }))
+            .startWith({ range, onChange: onChange, ...props })
     });
 
 });

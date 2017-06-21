@@ -26,14 +26,10 @@ export function InvestigationDetails({ layout, saveLayout, $falcor, description 
             <form>
                 <FormGroup>
                     <DateTimeRangePicker 
+                        $falcor={$falcor}
                         label="Time"
                         range={time}
-                        baseid="global_time"
-                        onChange={(time)=> {
-                            $falcor.set({ json: { time }}).progressively()
-                                .subscribe(()=>{}, log.error)
-                        }
-                        }
+                        baseid="global_time"                        
                     />
                 </FormGroup>            
                 <FormGroup controlId='investigation-description'>

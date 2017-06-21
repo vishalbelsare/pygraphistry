@@ -49,7 +49,7 @@ function DescriptionPanel({ $falcor, description, ...props }) {
     );
 }
 
-function ParameterPanel({id, pivotTemplate, pivotParameters, pivots, handlers, rowIndex, ...props}) {
+function ParameterPanel({$falcor, id, pivotTemplate, pivotParameters, pivots, handlers, rowIndex, ...props}) {
     const previousPivots = pivots.slice(0, rowIndex);
     return (
         <PivotPanel header='Parameters' {...props}>
@@ -59,6 +59,7 @@ function ParameterPanel({id, pivotTemplate, pivotParameters, pivots, handlers, r
                         pivotTemplate && pivotTemplate.pivotParameterKeys && pivotTemplate.pivotParametersUI &&
                             pivotTemplate.pivotParameterKeys.map((key, index) =>
                                 <PivotCell id={id}
+                                    $falcor={$falcor.deref(pivotParameters)}
                                     paramKey={key}
                                     handlers={handlers}
                                     key={`${id}:${key}:${index}`}
@@ -122,6 +123,7 @@ export default function PivotRow({
                                   description={description}
                                   defaultExpanded={false}/>
                 <ParameterPanel
+                    $falcor={$falcor}
                     id={id}
                     eventKey='2'
                     pivotTemplate={pivotTemplate}
