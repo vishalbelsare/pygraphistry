@@ -208,7 +208,7 @@ export const searchGraphviz = new SplunkPivot({
 
         return {
             searchQuery: query,
-            searchParams: this.dayRangeToSplunkParams(args.time.value, time)
+            searchParams: this.dayRangeToSplunkParams((args.time||{}).value, time)
         };
     },
     encodings: {
