@@ -88,7 +88,7 @@ export default class DateTimePicker extends React.Component {
                             </span>                            
                             <TimezonePicker
                               absolute={true}
-                              value={ timezone }
+                              defaultValue={ timezone }
                               placeholder="Select timezone..."
                               onChange={ (timezone) => onValueChange({ timezone }) }
                             />
