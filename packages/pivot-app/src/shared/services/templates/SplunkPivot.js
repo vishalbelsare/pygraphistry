@@ -85,7 +85,7 @@ export class SplunkPivot extends PivotTemplate {
             }
         };
 
-        if (!mergedTime.from.date && !mergedTime.to.date) { return; }
+        if (!mergedTime.from.date && !mergedTime.to.date) { return undefined; }
 
         const flattenTime = function ({ date, time, timezone }, defaultTime) {
             const tz = timezone || "America/Los_Angeles";
