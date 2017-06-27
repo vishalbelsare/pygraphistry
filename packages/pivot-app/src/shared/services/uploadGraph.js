@@ -235,6 +235,9 @@ export function mergeRowsColumnsToXY(rows, columns, fudgeX, fudgeY, spacerY) {
 // [{idField: n}] -> () // [{idField: n, x: Int, y: Int}]
 export function decorateGraphLabelsWithXY(labels, xy) {
     const i = bindings.idField;
+    log.trace(labels, "decorate labels");
+    log.trace(xy, "decorate xy");
+    log.trace(i, "bindings.idField");
     _.each(labels, function(label) {
             label.x = xy[label[i]].x;
             label.y = xy[label[i]].y;
