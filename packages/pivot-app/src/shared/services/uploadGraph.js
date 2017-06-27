@@ -111,6 +111,8 @@ function createGraph(pivots) {
 
     const visiblePivots = pivots.filter((pivot) => pivot.results && pivot.enabled);
 
+    log.trace({ visiblePivots }, "visiblePivots");
+
     const mergedPivots = {
         graph: [].concat.apply([],
             visiblePivots.map( 
