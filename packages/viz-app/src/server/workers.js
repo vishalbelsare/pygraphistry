@@ -38,8 +38,8 @@ function configureWorkers(config, convict, activeCB) {
     appRouter.use('/healthcheck', authenticate, healthcheckHandler);
     appRouter.use('/etl/healthcheck', authenticate, healthcheckHandler);
     appRouter.use('/graph/healthcheck', authenticate, healthcheckHandler);
-    appRouter.use('/etl', selectWorkerRouter('etl', configureEtlWorker, false), requestErrorHandler);
-    appRouter.use('/graph/graph.html', authenticate, selectWorkerRouter('viz', configureVizWorker, true), requestErrorHandler);
+    appRouter.post('/etl', selectWorkerRouter('etl', configureEtlWorker, false), requestErrorHandler);
+    appRouter.get('/graph/graph.html', authenticate, selectWorkerRouter('viz', configureVizWorker, true), requestErrorHandler);
     appRouter.use((req, res, next) => {
         if (!workerRouter) {
             logger.warn(`Error trying to find the current worker router in 'workerStatus'. Ignoring request, and telling Express let the next maching middleware/route handle it.`);
