@@ -111,6 +111,8 @@ function createGraph(pivots) {
 
     const visiblePivots = pivots.filter((pivot) => pivot.results && pivot.enabled);
 
+    log.trace({ visiblePivots }, "visiblePivots");
+
     const mergedPivots = {
         graph: [].concat.apply([],
             visiblePivots.map( 
@@ -145,6 +147,8 @@ function createGraph(pivots) {
 // for each row indexed by r, for each column indexed by c, set the node's x to be rFudge * r, and set the node's y to be cFudge * (max(|c|) - |c| + c) (for centering)
 // by default, create a graph that has aspect 1:√(max(|c|)), going from top to bottom.
 export function stackedBushyGraph(graph, fudgeX = 100, fudgeY = -15 * Math.pow(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity))), 0.5), spacerY = fudgeY, minLineLength = 5, maxLineLength = 100, pivotWrappedLineHeight=5) {
+    log.trace({stackedBushyGraphInputs: graph.data}, "This is what we're making into a stacked bushy graph");
+
     const nodeRows = edgesToRows(graph.data.graph);
     const nodeDegrees = graphDegrees(graph.data.graph);
     const columnCounts = rowColumnCounts(nodeRows);
