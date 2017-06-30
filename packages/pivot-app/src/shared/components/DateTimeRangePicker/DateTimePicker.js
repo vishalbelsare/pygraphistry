@@ -6,7 +6,7 @@ import TimePicker from 'time-input';
 import TimezonePicker from 'react-bootstrap-timezone-picker';
 import classNames from 'classnames';
 
-import styles from '../pivots.less';
+import styles from '../../pivots/components/pivots.less';
 
 
 export const FORMAT = "hh:mm:ss a";
@@ -88,7 +88,7 @@ export default class DateTimePicker extends React.Component {
                             </span>                            
                             <TimezonePicker
                               absolute={true}
-                              value={ timezone }
+                              defaultValue={ timezone }
                               placeholder="Select timezone..."
                               onChange={ (timezone) => onValueChange({ timezone }) }
                             />

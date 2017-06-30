@@ -10,7 +10,7 @@ import {
 } from 'react-bootstrap';
 
 export default function Investigation({
-    id, user, layout, status, description,
+    id, user, layout, status, description, time,
     $falcor, pivots = [], templates, investigations,
     searchPivot, insertPivot, splicePivot, togglePivots, saveLayout, dismissAlert,
     graphInvestigation, copyInvestigation, selectInvestigation, createInvestigation, saveInvestigation
@@ -38,7 +38,8 @@ export default function Investigation({
                 <InvestigationDetails layout={layout}
                                       $falcor={$falcor}
                                       saveLayout={saveLayout}
-                                      description={description}/>
+                                      description={description}
+                                      time={time}/>
                 <div>
                     <OverlayTrigger placement="bottom" overlay={
                             <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>

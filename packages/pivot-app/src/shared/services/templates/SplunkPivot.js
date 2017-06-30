@@ -20,10 +20,10 @@ export class SplunkPivot extends PivotTemplate {
         this.connector = splunkConnector0;
     }
 
-    searchAndShape({ app, pivot, pivotCache }) {
+    searchAndShape({ app, pivot, pivotCache, time }) {
 
         const args = this.stripTemplateNamespace(pivot.pivotParameters);
-        const {searchQuery, searchParams} = this.toSplunk(args, pivotCache);
+        const {searchQuery, searchParams} = this.toSplunk(args, pivotCache, { time });
         log.trace({pivotParameters: pivot.pivotParameters, args}, 'Pivot parameters');
         pivot.template = this;
 
@@ -57,13 +57,35 @@ export class SplunkPivot extends PivotTemplate {
 
     //{ from: ?{ date: ?moment.json, time: ?moment.json, timezone: ?moment.json }, 
     //  to: ?{ date: ?moment.json, time: ?moment.json, timezone: moment.json } }
+    // * { from: ?{ date: ?moment.json, time: ?moment.json, timezone: ?moment.json }, 
+    //  to: ?{ date: ?moment.json, time: ?moment.json, timezone: moment.json } }
     // -> ?{ earliest_time: utc int, latest_time: utc int }
     // time received in utc
-    dayRangeToSplunkParams(params) {        
+    dayRangeToSplunkParams(maybePivotTime, maybeGlobalTime) {      
 
-        if (!params) { return undefined; }
+        const pivotTime = {
+            from: (maybePivotTime||{}).from || {}, 
+            to: (maybePivotTime||{}).to || {}
+        };
+        const globalTime = {
+            from: (maybeGlobalTime||{}).from || {}, 
+            to: (maybeGlobalTime||{}).to || {}
+        };
 
-        const { from, to } = params;
+        const mergedTime = {
+            from: {                
+                date: pivotTime.from.date || globalTime.from.date,
+                time: pivotTime.from.time || globalTime.from.time,
+                timezone: pivotTime.from.timezone || globalTime.from.timezone
+            },
+            to: {
+                date: pivotTime.to.date || globalTime.to.date,
+                time: pivotTime.to.time || globalTime.to.time,
+                timezone: pivotTime.to.timezone || globalTime.to.timezone
+            }
+        };
+
+        if (!mergedTime.from.date && !mergedTime.to.date) { return undefined; }
 
         const flattenTime = function ({ date, time, timezone }, defaultTime) {
             const tz = timezone || "America/Los_Angeles";
@@ -74,14 +96,13 @@ export class SplunkPivot extends PivotTemplate {
             return out;
         };
 
-        const out = !(from && from.date) && !(to && to.date) ? undefined
-            : {
-                ...(from && from.date ? {earliest_time: flattenTime(from, '0:0:0')} : {}),
-                ...(to && to.date ? {latest_time: flattenTime(to, '23:59:59')} : {})
+        const out = {
+                ...(mergedTime.from.date ? {earliest_time: flattenTime(mergedTime.from, '0:0:0')} : {}),
+                ...(mergedTime.to.date ? {latest_time: flattenTime(mergedTime.to, '23:59:59')} : {})
             };
 
-        log.debug('Date range', { from, to }, '->', out);
-
+        log.trace('Date range', pivotTime, globalTime, '->', mergedTime, '->', out);
+        
         return out;
         
     }
