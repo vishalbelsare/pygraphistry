@@ -45,6 +45,25 @@ describe('shapeSplunkResults', function() {
 		compareGraph(pivot, expected, done);
 	});
 
+	it('hypergraph skips nulls', function (done) {
+
+		const pivot = { events: [{'EventID': 'xx', 'y': 'z', 'a': null, 'b': undefined}] };
+		const expected = {
+			graph: [
+				{'source': 'xx', 'destination': 'z', 
+				 'a': null, 'b': undefined,
+				 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
+			], 
+			labels: [
+				{'node': 'xx', 'type': 'EventID', 'y': 'z', 'a': null, 'b': undefined}, 
+				{'node': 'z', 'type': 'y'}
+			]
+		};
+
+		compareGraph(pivot, expected, done);
+
+	});
+
 	it('graph empty', (done) => {
 
 		const pivot = { graph: { nodes: [], edges: [] } };
