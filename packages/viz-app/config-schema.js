@@ -59,6 +59,22 @@ module.exports = {
             default: false,
             arg: 'log-source',
             env: 'LOG_SOURCE'
+        },
+        heartbeat: {
+            central: {
+                doc: 'Heartbeat interval in milliseconds for central server; 0 means disabled. (Setting currently ignored.)',
+                format: Number,
+                default: 0,
+                arg: 'heartbeat-central',
+                env: 'HEARTBEAT_CENTRAL'
+            },
+            worker: {
+                doc: 'Heartbeat interval in milliseconds for each worker; 0 means disabled',
+                format: Number,
+                default: 30000,
+                arg: 'heartbeat-worker',
+                env: 'HEARTBEAT_WORKER'
+            }
         }
     },
     authentication: {

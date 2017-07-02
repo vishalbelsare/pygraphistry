@@ -26,13 +26,29 @@ function configureWorkers(config, convict, activeCB) {
     }
 
 
-    function healthcheckHandler(req, res, next) {
+
+    function healthcheckStatus () {
         const health = healthcheck();
-        logger.info({health, req, res}, 'healthcheck');
-        res.status(health.clear.success ? 200 : 500).json(
-            {...health.clear, 
-                claimed: !!workerRouter, 
-                durationMS: workerRouterStartTime ? Date.now() - workerRouterStartTime : undefined });
+        const clear = { 
+            ...health.clear,
+            claimed: !!workerRouter, 
+            durationMS: workerRouterStartTime ? Date.now() - workerRouterStartTime : undefined 
+        };
+        return { health, clear };
+    }
+
+    function healthcheckHandler(req, res, next) {
+        const { health, clear } = healthcheckStatus();
+        logger.info({health, clear, req, res}, 'healthcheck');
+        res.status(clear.success ? 200 : 500).json(clear);
+    }
+
+    if (convict.get('log.heartbeat.worker')) {
+        setInterval(
+            () => { logger.info(healthcheckStatus(), 'workerHealthcheckPoll'); },
+            convict.get('log.heartbeat.worker'));
+    } else {
+        logger.info('No worker heartbeat, not enabling');
     }
 
     appRouter.use('/healthcheck', authenticate, healthcheckHandler);
