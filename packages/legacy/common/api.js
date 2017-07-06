@@ -25,6 +25,11 @@ function encrypt (cleartext) {
     return cipher.update(cleartext, 'utf8', 'hex') + cipher.final('hex');
 }
 
+// cleartext -> ciphertext
+// Add the canary before calling encrypt().
+function provision (cleartext) {
+    return encrypt(cleartext + config.API.CANARY);
+}
 
 // ciphertext ->  plaintext, throws Error("Missing canary")
 // return decrypted (& strip canary). if canary missing, throw error, else remove.
@@ -80,6 +85,16 @@ function init (app) {
             nextEta - now);
     });
 
+    app.get('/api/internal/provision', function(req, res) {
+        logger.info('provisioning', req.query.text);
+        try {
+            res.json({success: true, encrypted: provision(req.query.text)});
+        } catch (err) {
+            logger.error(err, 'encrypter');
+            res.json({success: false, error: 'failed to encrypt'});
+        }
+    });
+    
     // https://.../api/decrypt?text=... => {decrypted: string} + {error: string}
     // allow at most 1 req per second
     // allow unsecure local
