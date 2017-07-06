@@ -1,0 +1,11 @@
+{
+    "extends": "./tsconfig",
+    "include": ["../lib/esm/src/**/*"],
+    "exclude": ["../lib/esm/src/**/__tests__/*"],
+    "compilerOptions": {
+        "module": "es2015",
+        "target": "ES5",
+        "outDir": "../lib/esm",
+        "downlevelIteration": true
+    }
+}

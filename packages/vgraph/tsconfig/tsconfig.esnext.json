@@ -1,0 +1,10 @@
+{
+    "extends": "./tsconfig",
+    "include": ["../lib/esnext/src/**/*"],
+    "exclude": ["../lib/esnext/src/**/__tests__/*"],
+    "compilerOptions": {
+        "module": "es2015",
+        "target": "ESNEXT",
+        "outDir": "../lib/esnext"
+    }
+}

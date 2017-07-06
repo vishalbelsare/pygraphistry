@@ -1,0 +1,11 @@
+{
+    "extends": "./tsconfig",
+    "include": ["../lib/cjs/src/**/*"],
+    "exclude": ["../lib/cjs/src/**/__tests__/*"],
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "ES5",
+        "outDir": "../lib/cjs",
+        "downlevelIteration": true
+    }
+}

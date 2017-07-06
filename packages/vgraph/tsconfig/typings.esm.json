@@ -1,0 +1,8 @@
+{
+    "extends": "./tsconfig.esm",
+    "exclude": ["../src/**/*.js"],
+    "compilerOptions": {
+        "allowJs": false,
+        "declaration": true
+    }
+}

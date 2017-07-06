@@ -1,0 +1,8 @@
+{
+    "extends": "./tsconfig.es6",
+    "exclude": ["../src/**/*.js"],
+    "compilerOptions": {
+        "allowJs": false,
+        "declaration": true
+    }
+}

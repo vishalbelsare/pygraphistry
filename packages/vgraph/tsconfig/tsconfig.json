@@ -1,0 +1,27 @@
+{
+    "include": ["../src/**/*"],
+    "exclude": ["../node_modules"],
+    "formatCodeOptions": {
+        "tabSize": 4,
+        "indentSize": 4
+    },
+    "compilerOptions": {
+        "allowJs": true,
+        "removeComments": false,
+        "preserveConstEnums": true,
+        "sourceMap": true,
+        "declaration": false,
+        "importHelpers": true,
+        "noEmitHelpers": true,
+        "noImplicitAny": false,
+        "noImplicitThis": true,
+        "strictNullChecks": false,
+        "noImplicitReturns": true,
+        "experimentalDecorators": true,
+        "forceConsistentCasingInFileNames": true,
+        "moduleResolution": "node",
+        "types" : ["node", "long", "jest"],
+        "lib": ["dom", "esnext"],
+        "target": "ESNEXT"
+    }
+}
