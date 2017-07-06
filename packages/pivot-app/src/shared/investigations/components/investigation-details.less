@@ -2,6 +2,10 @@
 
 @form-row-height: 25px;
 
+.time-label {
+	text-align: center;
+ }
+
 .investigation-details {
     border: none;
     margin-top: 0;
@@ -67,9 +71,11 @@
                     margin-top: 0 !important;
                     height: @form-row-height;
                     transition: background-color 0.1s ease;
+					background-color: white !important;
                     .Select-input, .Select-value {
                         height: @form-row-height !important;
                         line-height: @form-row-height !important;
+						background-color: white !important;
                     }
                 }
             }
@@ -79,12 +85,17 @@
 
 .layout-picker {
     font-size: 10px;
+	margin-bottom: 6px;
     :global {
         .Select-control {
-            background-color: @pivot-table-bg;
+			background-color: #fff !important;
         }
+		.Select-value {
+			background-color: #fff !important;
+		}
         .Select-menu-outer .Select-option,
         .Select-value .Select-value-label {
+			background-color: #fff !important;
             padding: 0;
             font-size: 10px;
             height: @form-row-height !important;
@@ -117,4 +128,9 @@
             }
         }
     }
+}
+
+:global(.Select-value .stackedBushyGraph) {
+	background-color: #fff !important;
+	//background-color: cadetblue;
 }

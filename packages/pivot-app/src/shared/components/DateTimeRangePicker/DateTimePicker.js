@@ -60,7 +60,7 @@ export default class DateTimePicker extends React.Component {
                 isOutsideRange={ () => false }
                 showClearDate={ true }
                 orientation={HORIZONTAL_ORIENTATION}
-                showDefaultInputIcon={true}
+                showDefaultInputIcon={false}
                 withPortal={true}
                 keepOpenOnDateSelect
                 hideKeyboardShortcutsPanel={true}

@@ -2,6 +2,10 @@ import moment from 'moment';
 import mapPropsStream from 'recompose/mapPropsStream';
 import { $atom } from '@graphistry/falcor-json-graph';
 import createEventHandler from 'recompose/createEventHandler';
+import {
+    Col, Panel, ControlLabel,
+    Form, FormGroup//, FormControl
+} from 'react-bootstrap';
 
 
 import DateTimePicker from './DateTimePicker.js';
@@ -51,16 +55,24 @@ const DateTimeRangePicker = withTime(({ label, range = {}, baseid, onChange }) =
     return (<div className={styles['pivot-timerange-param']}>
         <label>{ label }</label>
         <div>
-            <DateTimePicker
+			<Col xs={3} componentClass={ControlLabel}>Start Date:</Col>
+			<Col xs={9}>
+			<DateTimePicker
                 onValueChange={ (val) => onChange({dir: 'from', val }) } 
                 {...getTimeProps('from', moment("12:00:00 AM", "hh:mm:ss a").toJSON())}
                 baseid={baseid+"from"} 
-                placeholder={"default from"} />
-            <DateTimePicker
+                placeholder={"start date"} />
+			</Col>
+				<br></br>
+			<Col xs={3} componentClass={ControlLabel}>End Date:</Col>
+			<Col xs={9}>
+			<DateTimePicker
                 onValueChange={ (val) => onChange({dir: 'to', val }) } 
                 {...getTimeProps('to', moment("11:59:59 PM", "hh:mm:ss a").toJSON())}
                 baseid={baseid+"to"} 
-                placeholder={"default to"} />
+                placeholder={"end date"} />
+			</Col>
+			<br></br><br></br>
         </div>
     </div>);
 });
