@@ -916,16 +916,10 @@ export function init(config, canvas, urlParams) {
 
     function setupFullscreenBuffer(state) {
 
-        // Disable flipping texture if browser is safari.
-        // TODO: Figure out exactly what causes this. NPOT Textures?
-        if (navigator.userAgent.indexOf('Safari') !== -1 && navigator.userAgent.indexOf('Chrome') === -1) {
-            setUniform(state, 'flipTexture', 0.0);
-        }
-
         const fullscreenBuffer = new Float32Array([
-                1.0, 1.0, -1.0, 1.0, -1.0, -1.0,
-                -1.0, -1.0, 1.0, -1.0, 1.0, 1.0
-            ]);
+            1.0, 1.0, -1.0, 1.0, -1.0, -1.0,
+            -1.0, -1.0, 1.0, -1.0, 1.0, 1.0
+        ]);
 
         const numFullscreenElements = 6;
 
