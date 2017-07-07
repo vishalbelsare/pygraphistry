@@ -4,9 +4,7 @@ const AWS = require('aws-sdk');
 const { Observable } = require('rxjs');
 const { Client: MapD } = require('rxjs-mapd');
 const Cache = require('@graphistry/common/cache');
-const { loadVGraph } = require('./lib/cjs/vgraph');
-const { convertVGraph } = require('./lib/cjs/csv');
-const { createDB, createTable } = require('./lib/cjs/mapd');
+const { loadVGraph, convertVGraph, createDB, createTable } = require('./lib/cjs');
 
 const graphistryDir = `/tmp/graphistry`;
 const graphistryDataDir = `${graphistryDir}/data_cache`;

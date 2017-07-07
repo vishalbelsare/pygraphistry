@@ -20,8 +20,7 @@ export function createDB(opts: CreateDBOptions) {
         path.join(mapdDir, '../startmapd'), [
             `--no-frontend`,
             `--non-interactive`,
-            `--data`, mapdDataDir,
-            `--cpu`
+            `--data`, mapdDataDir
         ],
         'startmapd',
         { cwd: mapdDir, detached: true, ignoreErrors: true }

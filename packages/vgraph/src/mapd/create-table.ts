@@ -16,8 +16,7 @@ export interface CreateTableOptions {
 }
 
 export function createTable({ client, table, csvFileName }: CreateTableOptions) {
-    debugger;
-    // import_table(session: string, table_name: string, file_name: string, copy_params: TCopyParams, callback: TNodeCallback<void>): void;
+
     const tColumnTypes = [
         ...table.bool_vectors,
         ...table.float_vectors,
@@ -27,7 +26,7 @@ export function createTable({ client, table, csvFileName }: CreateTableOptions) 
         ...table.string_vectors,
         ...table.uint32_vectors,
     ].map(vecToTColumnType);
-    
+
     return client
             .mapd_createTable(table.name, tColumnTypes, TTableType.DELIMITED)
         .flatMapTo(client

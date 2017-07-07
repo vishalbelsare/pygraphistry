@@ -3,6 +3,7 @@
   "version": "1.0.1",
   "description": "",
   "main": "lib/cjs/index.js",
+  "module": "lib/es6/index.js",
   "jsnext:main": "lib/es6/index.js",
   "scripts": {
     "demo": "node ./examples/index.js",
@@ -45,8 +46,23 @@
     "lint": "tslint --fix --type-check --project ./tsconfig/tslint.tsconfig.json  --config ./tsconfig/tslint.json \"src/index.ts\"",
     "publish-release": "./publish.sh"
   },
-  "author": "",
+  "author": "Graphistry, Inc",
   "license": "ISC",
+  "homepage": "https://github.com/graphistry/vgraph-to-mapd#readme",
+  "bugs": {
+    "url": "https://github.com/graphistry/vgraph-to-mapd/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:graphistry/vgraph-to-mapd.git"
+  },
+  "files": [
+    "src",
+    "lib",
+    "tsconfig",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "dependencies": {
     "@graphistry/common": "^3.1.0",
     "aws-sdk": "~2.81.0",
