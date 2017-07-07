@@ -10,8 +10,7 @@ var logger      = Log.createLogger('etlworker:vgraph');
 
 //TODO: Lines 60-261 instances of console should be changed to pipe output to client
 
-var ProtoBuf = require('protobufjs/dist/protobuf-light');
-var protoBufDefinitions = ProtoBuf.loadJson(require('viz-app/vgraph/graph_vector.proto')).build();
+import { VectorGraph } from '@graphistry/vgraph-to-mapd/lib/cjs/vgraph';
 
 var defaults = {
     double: NaN,
@@ -24,17 +23,17 @@ function makeVector(name, type, target) {
     var vector;
 
     if (type === 'double') {
-        vector = new protoBufDefinitions.VectorGraph.DoubleAttributeVector();
+        vector = new VectorGraph.DoubleAttributeVector();
         vector.dest = 'double_vectors';
         vector.transform = parseFloat;
     } else if (type === 'integer') {
-        vector = new protoBufDefinitions.VectorGraph.Int32AttributeVector();
+        vector = new VectorGraph.Int32AttributeVector();
         vector.dest = 'int32_vectors';
         vector.transform = function (x) {
             return parseInt(x) || 0;
         };
     } else {
-        vector = new protoBufDefinitions.VectorGraph.StringAttributeVector();
+        vector = new VectorGraph.StringAttributeVector();
         vector.dest = 'string_vectors';
         vector.transform = function (x) {
             return String(x).trim();
@@ -151,7 +150,7 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
     // -> bool
     function addEdge(node0, node1) {
 
-        var e = new protoBufDefinitions.VectorGraph.Edge();
+        var e = new VectorGraph.Edge();
         e.src = node2Idx[node0];
         e.dst = node2Idx[node1];
         edges.push(e);
@@ -198,8 +197,8 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         logger.info('Nodes have no idField' , idField);
         return undefined;
     }
-    var evectors = getAttributeVectors(eheader, protoBufDefinitions.VectorGraph.AttributeTarget.EDGE);
-    var nvectors = getAttributeVectors(nheader, protoBufDefinitions.VectorGraph.AttributeTarget.VERTEX);
+    var evectors = getAttributeVectors(eheader, VectorGraph.AttributeTarget.EDGE);
+    var nvectors = getAttributeVectors(nheader, VectorGraph.AttributeTarget.VERTEX);
 
     logger.trace('Loading', elist.length, 'edges...');
     _.each(elist, function (entry) {
@@ -249,10 +248,10 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
     });
 
     logger.trace('Encoding protobuf...');
-    var vg = new protoBufDefinitions.VectorGraph();
+    var vg = new VectorGraph();
     vg.version = 0;
     vg.name = name;
-    vg.type = protoBufDefinitions.VectorGraph.GraphType.DIRECTED;
+    vg.type = VectorGraph.GraphType.DIRECTED;
     vg.vertexCount = nodeCount;
     vg.edgeCount = edges.length;
     vg.edges = edges;
@@ -269,7 +268,7 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
 }
 
 function decodeVGraph(buffer) {
-    return protoBufDefinitions.VectorGraph.decode(buffer);
+    return VectorGraph.decode(buffer);
 }
 
 export { fromEdgeList, decodeVGraph };
