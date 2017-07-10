@@ -263,7 +263,13 @@
 .pivot-multi-param,
 .pivot-date-range-param {
 	width: 100%;
+	//background-color: blue;
 }
+
+.pivot-date-range-param .SingleDatePicker {
+	background-color: red;
+}
+
 .pivot-combo-param :global(.form-inline .form-group) {
 	width: 100% !important;
 }
@@ -392,18 +398,27 @@
 }
 
 .pivot-timepicker-container {
+	//background-color: blue;
     display: flex;
     flex-direction: row;
     margin-bottom: 18px;
-    margin-left: 18px;
-    margin-right: 18px;
+    margin-left: 0px;
+    margin-right: 0px;
     & > :not(.pivot-timepicker) {
         flex-grow: 1;        
     }
 }
 
 
+:global(.pivot-date-range-param) {
+	border: 1px solid red;
+    :global(.SingleDatePicker) {
+        background-color: yellow !important;
+    }
+}
+
 :global(.SingleDatePickerInput) {
+	//background-color: blue !important;
     border: none !important;
     & > * {
         padding-top: 0;
@@ -425,4 +440,21 @@
         white-space: nowrap;
         overflow: hidden;
     }
-}    
+}   
+
+.pivot-date-range-param :global(.SingleDatePicker) {
+    background-color: #cccccc !important;
+	margin: 0px;
+	
+}
+
+.pivot-date-range-param :global(label) {
+	margin: 0px !important;
+	padding: 0px;
+	padding-left: 11px !important;
+	padding-top: 9px;
+}
+
+.pivot-date-range-param :global(.col-xs-9) {
+	margin-bottom: 7px;
+}

@@ -168,14 +168,13 @@ function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
 
 function DateRange({ $falcor, id, paramKey, paramValue, paramUI }) {
     return (
-        <div className={styles['pivot-date-range-param']} key={`pcell-${id}-${paramKey}`}>
-            <DateTimeRangePicker
+			<div className={styles['pivot-date-range-param']} key={`pcell-${id}-${paramKey}`}>
+            <div className={styles['pivotDate']}><DateTimeRangePicker
                 getKey={ () => paramKey }
                 $falcor={$falcor}
                 baseid={id}
-                label={paramUI.label}
                 range={paramValue}
-            />
+            /></div>
         </div>
     );
 }
