@@ -71,7 +71,6 @@ function makeWebpackConfig({
                 /node_modules\/\@graphistry\/falcor-query-syntax\/lib\/route\-parser\.js$/
             ],
             rules: [
-                { test: /\.proto$/, loader: 'proto-loader' },
                 { test: /\.glsl$/, loader: 'webpack-glsl-loader' },
                 { test: /\.pegjs$/, loader: 'pegjs-loader?cache=true&optimize=size' },
                 {

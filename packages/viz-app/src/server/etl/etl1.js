@@ -1,6 +1,8 @@
 'use strict';
 
 import { Observable } from 'rxjs';
+import { VectorGraph } from '@graphistry/vgraph-to-mapd/lib/cjs/vgraph';
+
 var VError = require('verror');
 
 var urllib   = require('url');
@@ -71,7 +73,7 @@ function etl(msg) {
 // VGraph * String -> Promise[String]
 function publish(vg, name) {
     var metadata = {name: name};
-    var binData = vg.encode().toBuffer();
+    var binData = VectorGraph.encode(vg).finish();
 
     function cacheLocally() {
         // Wait a couple of seconds to make sure our cache has a

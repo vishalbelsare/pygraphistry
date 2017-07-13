@@ -21,11 +21,10 @@ const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/libs/VGraphLoader.js');
 const perf        = require('@graphistry/common').perfStats.createPerfMonitor();
 
-const ProtoBuf = require('protobufjs/dist/protobuf-light');
-const protoBufDefinitions = ProtoBuf.loadJson(require('viz-app/vgraph/graph_vector.proto')).build();
+import { VectorGraph } from '@graphistry/vgraph-to-mapd/lib/cjs/vgraph';
 
-const VERTEX = protoBufDefinitions.VectorGraph.AttributeTarget.VERTEX;
-const EDGE   = protoBufDefinitions.VectorGraph.AttributeTarget.EDGE;
+const VERTEX = VectorGraph.AttributeTarget.VERTEX;
+const EDGE   = VectorGraph.AttributeTarget.EDGE;
 
 /** Indicates which GraphComponentType the data associates. */
 const ColumnVectorTargets = [VERTEX, EDGE];
@@ -513,7 +512,7 @@ function load (graph, dataset, config, s3Cache, updateSession) {
         message: 'Decoding dataset'
     })()
     .mergeMap(() => {
-        const vg = protoBufDefinitions.VectorGraph.decode(dataset.body);
+        const vg = VectorGraph.decode(dataset.body);
         logger.trace('attaching vgraph to simulator');
         graph.simulator.vgraph = vg;
         return decodersByVersion[vg.version](graph, vg, dataset.metadata, updateSession);

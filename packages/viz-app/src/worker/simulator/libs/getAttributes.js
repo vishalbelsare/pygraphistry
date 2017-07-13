@@ -7,11 +7,6 @@ import { accessorForTargetType } from './VGraphLoader';
 const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/libs/VGraphLoader.js');
 
-const ProtoBuf = require('protobufjs/dist/protobuf-light');
-const protoBufDefinitions = ProtoBuf.loadJson(require('viz-app/vgraph/graph_vector.proto')).build();
-const VERTEX = protoBufDefinitions.VectorGraph.AttributeTarget.VERTEX;
-const EDGE   = protoBufDefinitions.VectorGraph.AttributeTarget.EDGE;
-
 /**
  * Infer column types when possible. If vector type is datetime,
  * asynchronously loop and normalize all time values to ints via moment.
@@ -19,7 +14,7 @@ const EDGE   = protoBufDefinitions.VectorGraph.AttributeTarget.EDGE;
  * @param  vec               Decoded column vector
  * @param  attributeMetadata Honestly I don't really know
  *
- * @return Observable<{ name: string, type: T, values: T[], target: EDGE | VERTEX }>
+ * @return Observable<{ name: string, type: T, values: T[], target: VectorGraph.AttributeTarget }>
  */
 function interpolateVectorType(vec, attributeMetadata, updateClient) {
 
