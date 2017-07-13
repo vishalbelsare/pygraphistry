@@ -29,7 +29,7 @@ export function InvestigationDetails({ layout, saveLayout, $falcor, description 
                     <DescriptionFormControl $falcor={$falcor}
                                             description={description}/>
                 </FormGroup>
-                <Form>
+                
                     <FormGroup controlId='investigation-layout'>
                         <Col xs={4} componentClass={ControlLabel}>
                             Graph Layout:
@@ -57,7 +57,7 @@ export function InvestigationDetails({ layout, saveLayout, $falcor, description 
                         </Col>
                     </FormGroup>
                 */}
-                </Form>
+                
 				<FormGroup controlId='time-picker'>
                 <FormGroup>
                     <DateTimeRangePicker 
