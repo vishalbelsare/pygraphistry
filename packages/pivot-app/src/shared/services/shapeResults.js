@@ -163,6 +163,6 @@ function shapeHyperGraph({ app, pivot } ) {
     }});
 }
 
-export function shapeSplunkResults({ app, pivot }) {
+export function shapeResults({ app, pivot }) {
     return encodeGraph(shapeHyperGraph({ app, pivot }));
 }

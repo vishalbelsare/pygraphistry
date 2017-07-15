@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { jqSafe } from '../../support/jq';
 import { VError } from 'verror'
 
-import { shapeSplunkResults } from '../../shapeSplunkResults.js';
+import { shapeResults } from '../../shapeResults.js';
 import { flattenJson } from '../../support/flattenJson.js';
 import { PivotTemplate } from '../template.js';
 import { defaultHttpConnector } from '../../connectors/http';
@@ -295,7 +295,7 @@ export class HttpPivot extends PivotTemplate {
                     }
                 }
             }))
-            .map(shapeSplunkResults)
+            .map(shapeResults)
             .do(({pivot: realPivot}) => {
                 log.debug('shaped results', realPivot.results);
                 for (const i in realPivot) {

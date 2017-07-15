@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import moment from 'moment-timezone';
 import { PivotTemplate } from '../template.js';
 import { splunkConnector0 } from '../../connectors';
-import { shapeSplunkResults } from '../../shapeSplunkResults.js';
+import { shapeResults } from '../../shapeResults.js';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
@@ -48,7 +48,7 @@ export class SplunkPivot extends PivotTemplate {
                         splunkSearchId: pivot.splunkSearchId
                     };
                 })
-                .map(() => shapeSplunkResults({app, pivot}))
+                .map(() => shapeResults({app, pivot}))
                 .do(({pivot: pivotShaped}) => {
                     pivot.results = pivotShaped.results;
                 });

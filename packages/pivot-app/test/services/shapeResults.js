@@ -1,11 +1,11 @@
 import { assert } from 'chai';
 
-import { shapeSplunkResults } from '../../src/shared/services/shapeSplunkResults';
+import { shapeResults } from '../../src/shared/services/shapeResults';
 
 
 function compareGraph(pivot, expectedResults, done) {
 
-		const out = shapeSplunkResults({ 
+		const out = shapeResults({ 
 			pivot: {
 				...pivot,
 				template: pivot.template || {}
@@ -19,7 +19,7 @@ function compareGraph(pivot, expectedResults, done) {
 }
 
 
-describe('shapeSplunkResults', function() {
+describe('shapeResults', function() {
 
 	it('hypergraph empty', (done) => {
 

@@ -15,7 +15,7 @@ describe('Services', function() {
     require('./services/simpleFileSystemStore');
     require('./services/uploadGraph');
     require('./services/pivotStore');
-    require('./services/shapeSplunkResults');
+    require('./services/shapeResults');
 });
 
 describe('HttpConnector', function() {

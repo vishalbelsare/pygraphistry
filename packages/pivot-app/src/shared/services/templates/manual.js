@@ -2,7 +2,7 @@ import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
 import { VError } from 'verror'
 
-import { shapeSplunkResults } from '../shapeSplunkResults.js';
+import { shapeResults } from '../shapeResults.js';
 import { PivotTemplate } from './template.js';
 import { flattenJson } from '../support/flattenJson.js';
 import logger from '../../../shared/logger.js';
@@ -81,7 +81,7 @@ export class ManualPivot extends PivotTemplate {
                     }
                 }
             }))
-            .map(shapeSplunkResults)
+            .map(shapeResults)
             .do(({pivot: realPivot}) => {
                 for (const i in realPivot) {
                     pivot[i] = realPivot[i];
