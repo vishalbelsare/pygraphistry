@@ -3,7 +3,7 @@ import { assert } from 'chai';
 import moment from 'moment-timezone';
 
 import { SplunkPivot } from '../../../src/shared/services/templates/splunk/splunkPivot';
-import { searchSplunk } from '../../../src/shared/services/templates/splunk/demos/misc';
+import { searchSplunk } from '../../../src/shared/services/templates/splunk/search';
 
 const timezoneV = "America/Los_Angeles";
 const timezoneGuyanaV = "America/Guyana";
