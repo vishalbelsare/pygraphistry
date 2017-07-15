@@ -2,10 +2,7 @@ import moment from 'moment';
 import mapPropsStream from 'recompose/mapPropsStream';
 import { $atom } from '@graphistry/falcor-json-graph';
 import createEventHandler from 'recompose/createEventHandler';
-import {
-    Col, Panel, ControlLabel,
-    Form, FormGroup//, FormControl
-} from 'react-bootstrap';
+import { Col, ControlLabel } from 'react-bootstrap';
 
 
 import DateTimePicker from './DateTimePicker.js';
