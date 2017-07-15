@@ -1,5 +1,5 @@
-import { SplunkPivot } from './SplunkPivot.js';
-import logger from '../../logger.js';
+import { SplunkPivot } from '../splunkPivot.js';
+import logger from '../../../../logger.js';
 const log = logger.createLogger(__filename);
 
 

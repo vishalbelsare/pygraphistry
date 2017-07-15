@@ -1,10 +1,10 @@
 import _ from 'underscore';
 import { Observable } from 'rxjs';
 import moment from 'moment-timezone';
-import { PivotTemplate } from './template.js';
-import { splunkConnector0 } from '../connectors';
-import { shapeSplunkResults } from '../shapeSplunkResults.js';
-import logger from '../../../shared/logger.js';
+import { PivotTemplate } from '../template.js';
+import { splunkConnector0 } from '../../connectors';
+import { shapeSplunkResults } from '../../shapeSplunkResults.js';
+import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
 

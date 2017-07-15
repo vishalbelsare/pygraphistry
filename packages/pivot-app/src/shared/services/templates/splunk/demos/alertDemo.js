@@ -1,6 +1,6 @@
-import { SplunkPivot } from './SplunkPivot';
+import { SplunkPivot } from '../splunkPivot';
 import stringhash from 'string-hash';
-import logger from '../../logger';
+import logger from '../../../../logger';
 const log = logger.createLogger(__filename);
 
 
