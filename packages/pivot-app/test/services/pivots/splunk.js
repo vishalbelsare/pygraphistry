@@ -2,8 +2,8 @@ import express from 'express';
 import { assert } from 'chai';
 import moment from 'moment-timezone';
 
-import { SplunkPivot } from '../../../src/shared/services/templates/SplunkPivot';
-import { searchSplunk } from '../../../src/shared/services/templates/misc';
+import { SplunkPivot } from '../../../src/shared/services/templates/splunk/splunkPivot';
+import { searchSplunk } from '../../../src/shared/services/templates/splunk/demos/misc';
 
 const timezoneV = "America/Los_Angeles";
 const timezoneGuyanaV = "America/Guyana";
