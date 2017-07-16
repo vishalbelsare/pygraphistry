@@ -125,7 +125,7 @@ function shapeHyperGraph({ app, pivot } ) {
         for (let j = 0; j < fields.length; j++) {
             const field = fields[j];
 
-            if (field in row) {
+            if (field in row && (row[field] !== undefined) && (row[field] !== null)) {
                 nodeLabels.push({'node': row[field], type: field});
                 edges.push(
                     Object.assign({}, _.pick(row, attribs),
