@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Docs : Graphistry API information for cross-language use, e.g., REST">
+	<link rel="stylesheet" type="text/css" media="screen" href="../../css/bootstrap.css">
+
+    <title>Docs</title>
+  </head>
+
+  <body>
+
+<nav class="navbar navbar-default navbar-fixed-top navbar-inverse">
+  <div class="container-fluid">
+    <div class="navbar-left">
+	<img style="max-height:30px; margin-top: 10px; margin-left:30px;" src="../../images/logo.png">
+    </div>
+	<div class="navbar-left"><a style="color:#E6E6E6;" class="navbar-text" href="#">Graphistry</a>
+	<a style="margin-top: 18px; margin-left: 40px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Server Status: Active</a>
+	<a style="margin-top: 18px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Location: USA</a>		
+</div>  
+    <div class="collapse navbar-collapse" id="myNavbar">
+      <ul class="nav navbar-nav">
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+<!--        <li><a href="../index.html">Dashboard</a></li>-->
+        <li class="active"><a href="../../setup_home.html">Getting Started</a></li>
+        <li><a style="margin-right:30px;" href="../../docs.html">Docs</a></li>
+		<li><button style="margin-top:8px; margin-right:30px;" type="button" class="btn btn-info">Launch</button></li>   
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="jumbotron">
+  <div class="container text-center">
+	  <p style="font-size:21px;"><br><br>Notebook Setup</p><p style="margin-left:200px; margin-right:200px;">
+In this tutorial, we're going to use Pygraphistry to create and visualize our first graph, then move on to more advanced techniques like creating a graph from any CSV, modifying graph properties, and looking at some in-tool analytics strategies.</p>      
+
+	<div class="row">	
+		<div style="text-align: right; margin: 10px; float: none; display: inline-block; border-radius: 5px; border: none; border-color:#E6E6E6; padding:20px; "class="col-sm-3">
+			<a href="../notebook/notebook.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">1. Installation</p></a>
+			<a href="../notebook/notebook_1.html" style="color:white;"><p style="font-weight: 600; font-size: 12px;">2. My First Graph</p></a>
+			<a href="../notebook/notebook_2.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">3. Graph any CSV</p></a>
+			<a href="../notebook/notebook_3.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">4. In-Tool Tutorial</p></a>
+			<a href="../notebook/notebook_4.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">5. Advanced Configuration</p></a>
+		
+		</div>
+		<div style="text-align: left; margin: 10px; float: none; display: inline-block; border-radius: 5px; border: none; border-color:#E6E6E6; padding:20px; "class="col-sm-5">
+			<p style="font-size: 12px; font-weight: 300;">Learn how to install Graphistry locally with Docker</p>
+			<p style="font-size: 12px; font-weight: 500;">Visualize our first graph using a Jupyter notebook</p>
+			<p style="font-size: 12px; font-weight: 300;">Learn about hypergraphs and upload any CSV to Graphistry</p>
+			<p style="font-size: 12px; font-weight: 300;">Discover all the tools available within our visualization</p>
+			<p style="font-size: 12px; font-weight: 300;">Learn how to connect to your favorite SEM system and other data sources</p>
+		
+		</div>
+</div>	
+  	
+	   </div> 
+</div>
+
+<div class="container-fluid bg-3 text-center">    
+	<p style="margin-top:80px;"><strong>Section 2. My First Graph</strong></p><br>
+	<br><br>
+	<p style="margin-left:200px; margin-right:200px;">
+Let's visualize relationships between the characters in Les Misérables. For this example, we'll choose Pandas to wrangle data and IGraph to run a community detection algorithm. You can view and download the IPython notebook containing this example.</p><br>      
+		<div style="margin-left:200px; margin-right:200px;" class="well"><p style="text-align:left;"><code>import pandas<br>
+links = pandas.read_csv('./lesmiserables.csv')</code><br></div>
+		
+	<br><p style="margin-top:0px;"><strong>Quick Visualization</strong></p><br>
+   <p style="margin-left:200px; margin-right:200px;">If you already have graph-like data, use this step. Otherwise, try the Hypergraph Transform<br><br>
+
+PyGraphistry can plot graphs directly from Pandas dataframes, IGraph graphs, or NetworkX graphs. Calling plot uploads the data to our visualization servers and return an URL to an embeddable webpage containing the visualization.<br><br>
+
+To define the graph, we bind source and destination to the columns indicating the start and end nodes of each edges:
+</p><br>
+		<div style="margin-left:200px; margin-right:200px;" class="well"><p style="text-align:left;"><code>import graphistry<br>
+graphistry.register(key='YOUR_API_KEY_HERE')<br><br>
+
+plotter = graphistry.bind(source="source", destination="target")<br>
+plotter.plot(links)</code><br></div>
+
+<br><p style="margin-top:0px;"><strong>Adding Labels</strong></p><br>
+   <p style="margin-left:200px; margin-right:200px;">Let's add labels to edges in order to show how many times each pair of characters met. We create a new column called label in edge table links that contains the text of the label and we bind edge_label to it.
+</p><br>
+		<div style="margin-left:200px; margin-right:200px;" class="well"><p style="text-align:left;"><code>links["label"] = links.value.map(lambda v: "#Meetings: %d" % v)<br>
+plotter = plotter.bind(edge_label="label")<br>
+plotter.plot(links)</code><br></div>
+		
+<br><p style="margin-top:0px;"><strong>Controlling Node Size and Color
+
+</strong></p><br>
+   <p style="margin-left:200px; margin-right:200px;">Let's size nodes based on their PageRank score and color them using their community. IGraph already has these algorithms implemented for us. If IGraph is not already installed, fetch it with pip install python-igraph. Warning: pip install igraph will install the wrong package!<br><br>
+
+We start by converting our edge dateframe into an IGraph. The plotter can do the conversion for us using the source and destination bindings. Then we create two new node attributes (pagerank & community).
+</p><br>
+		<div style="margin-left:200px; margin-right:200px;" class="well"><p style="text-align:left;"><code>ig = plotter.pandas2igraph(links)<br>
+ig.vs['pagerank'] = ig.pagerank()<br>
+ig.vs['community'] = ig.community_infomap().membership<br><br>
+
+plotter.bind(point_color='community', point_size='pagerank').plot(ig)</code><br></div>	
+	
+<br><p style="margin-top:0px;"><strong>Example Notebook:
+
+</strong></p><br>	
+	
+		<iframe width="90%"
+      height="1000"
+      frameborder="1"
+      style="background-color:#FFF" src="http://nbviewer.jupyter.org/github/graphistry/pygraphistry/blob/65b3b368dba5e447234fc354b079622eae36558f/demos/MiserablesDemo.ipynb">
+  <p>Your browser does not support iframes.</p>
+</iframe>		
+	
+	
+<br><br><br>	
+</div>
+	  
+  <div style="text-align: center;" class="row">
+    <a href="../notebook/notebook_2.html">
+	  <div style="float: none; display: inline-block; border-radius: 5px; border: solid 1px; border-color:#E6E6E6; padding-top: 25px; "class="col-sm-5">
+      <p>Next: Hypergraphs and Your Data</p><span style="font-size: 24px;" class="glyphicon glyphicon-menu-right" aria-hidden="true"></span><br>
+    </div>
+	</a>			  
+  </div><br><br><br><br>
+
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-3 col-sm-6 footerleft ">
+        <div class="logofooter"> <img style="max-height:40px; margin-top: 10px;" src="../images/logo.png"></div>
+        
+      </div>
+      <div class="col-md-2 col-sm-6 paddingtop-bottom">
+        <ul class="footer-ul">
+		  <li><a href="#"> Home </a></li>
+		  <li><a href="#"> Learn More </a></li>
+          <li><a href="#"> Setup Guide</a></li>
+          <li><a href="#"> UI Guide</a></li>
+        </ul>
+      </div>
+      <div class="col-md-3 col-sm-6 paddingtop-bottom">
+			<p style="color:#E6E6E6; font-size:12px;">1212 Broadway Floor 11, Oakland, CA 94612</p>
+        <p style="color:#E6E6E6; font-size:12px;">info@graphistry.com</p>	  
+      </div>
+      <div class="col-md-3 col-sm-6 paddingtop-bottom">
+        </div>
+      </div>
+    </div>
+</footer>
+<!--footer start from here-->
+
+<div class="copyright">
+  <div class="container">
+    <div class="col-md-6">
+      <p>© Graphistry Inc 2017</p>
+    </div>
+    <div class="col-md-6">
+      <ul class="bottom_ul">
+        <li><a href="#">graphistry.com</a></li>
+        <li><a href="#">About us</a></li>
+        <li><a href="#">Getting Started</a></li>
+        <li><a href="#">Docs</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
