@@ -105,13 +105,21 @@ function synthesizeMissingNodes(edges, nodes) {
         .map((id) => ({[bindings.idField]: id}));
 }
 
-function createGraph(pivots) {
+export function createGraph(pivots) {
     const name = `PivotApp/${simpleflake().toJSON()}`;
     const type = "edgelist";
 
     const visiblePivots = pivots.filter((pivot) => pivot.results && pivot.enabled);
 
     log.trace({ visiblePivots }, "visiblePivots");
+
+    // edgeNodes :: [ Node :: String ]
+    const edgeNodes = _.flatten(visiblePivots.map(p => p.results.graph).map(g => g.map(({[bindings.sourceField]: s, [bindings.destinationField]: d}) => [s, d])));
+
+    const explicitNodes = _.flatten(visiblePivots.map(({results: {labels}}) => labels).map(l => l.map(({[bindings.idField]: id}) => id)));
+
+    // isolatedNodes :: [ Node :: String ]
+    const isolatedNodes = _.difference(explicitNodes, edgeNodes); // O(n^2) 🙄
 
     const mergedPivots = {
         graph: [].concat.apply([],
@@ -121,8 +129,9 @@ function createGraph(pivots) {
                         (edge) => ({...edge, 'Pivot': index})))),
         labels: [].concat.apply([], 
             visiblePivots.map( 
-                (pivot) => 
-                    pivot.results.labels))
+                (pivot, index) =>
+                    pivot.results.labels.map(
+                        (label) => (isolatedNodes.includes(label[bindings.idField])) ? {...label, 'Pivot': index} : label)))
     };
 
     const mergedNodes = 
@@ -149,8 +158,8 @@ function createGraph(pivots) {
 export function stackedBushyGraph(graph, fudgeX = 100, fudgeY = -15 * Math.pow(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity))), 0.5), spacerY = fudgeY, minLineLength = 5, maxLineLength = 100, pivotWrappedLineHeight=5) {
     log.trace({stackedBushyGraphInputs: graph.data}, "This is what we're making into a stacked bushy graph");
 
-    const nodeRows = edgesToRows(graph.data.graph);
-    const nodeDegrees = graphDegrees(graph.data.graph);
+    const nodeRows = edgesToRows(graph.data.graph, graph.data.labels);
+    const nodeDegrees = graphDegrees(graph.data.graph, nodeRows);
     const columnCounts = rowColumnCounts(nodeRows);
     const types = nodeTypes(graph.data.labels);
     const nodeColumns = rowsToColumns(nodeRows, columnCounts, nodeDegrees, minLineLength, maxLineLength, pivotWrappedLineHeight, types);
@@ -162,21 +171,27 @@ export function stackedBushyGraph(graph, fudgeX = 100, fudgeY = -15 * Math.pow(_
 }
 
 // [{Pivot: Int, bindings.sourceField: nodeName, bindings.destinationField: nodeName}] -> {nodeName: Int}
-export function edgesToRows(edges) {
+export function edgesToRows(edges, nodes) {
     const allEdgeRows = _.flatten(_.map(edges, (e) => [
         {node: e[bindings.sourceField], row: e.Pivot * 2},
         {node: e[bindings.destinationField], row: e.Pivot * 2 + 1}
                                                        ]),"shallow");
     const leastEdgeRows = _.mapObject(_.groupBy(allEdgeRows, bindings.idField),
                                       (allRows) => _.min(_.pluck(allRows, 'row')));
+
+    const isolatedNodeRows = nodes.filter((n) => (n.Pivot !== undefined))
+        .map(({[bindings.idField]: id, 'Pivot': row}) => [id, row]);
+    isolatedNodeRows.forEach(function([id, row]) { leastEdgeRows[id] = row });
+
     return leastEdgeRows;
 }
 
 // [{bindings.sourceField: nodeName, bindings.destinationField: nodeName}] -> {nodeName: Int}
-export function graphDegrees(edges) {
+export function graphDegrees(edges, rows) {
     const sources = _.pluck(edges, bindings.sourceField);
     const destinations = _.pluck(edges, bindings.destinationField);
-    return _.countBy(sources.concat(destinations), _.identity);
+    const initiallyZeroDegrees = _.mapObject(rows, () => 0);
+    return _.extend(initiallyZeroDegrees, _.countBy(sources.concat(destinations), _.identity));
 }
 
 // labels -> {node: type}

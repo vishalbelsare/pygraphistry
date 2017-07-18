@@ -69,12 +69,12 @@ const hugeDecoratedDataStructure = {data: {graph: edges, labels: decoratedLabels
 
 describe('edgesToRows', function() {
         it('should pull out minimum rows from src/dest edges', function() {
-                assert.deepEqual(uploadGraph.edgesToRows(edges, fudgeY), rows);
+                assert.deepEqual(uploadGraph.edgesToRows(edges, undecoratedLabels), rows);
             }); });
 
 describe('graphDegrees', function() {
         it('should compute the degrees of a graph', function() {
-                assert.deepEqual(uploadGraph.graphDegrees(edges), degrees);
+                assert.deepEqual(uploadGraph.graphDegrees(edges, rows), degrees);
             });
     });
 
@@ -110,4 +110,49 @@ describe('stackedBushyGraph', function() {
         it('should decorate nodes with positions', function() {
                 assert.deepEqual(uploadGraph.stackedBushyGraph(hugeDataStructure, fudgeX, fudgeY, spacerY), hugeDecoratedDataStructure);
             });
+    });
+
+// 2. CreateGraph tests.
+
+const visiblePivotsSmall = [{id: "first", enabled: true,
+                             results: {graph: [{source: "a", destination: "b"}, {source: "a", destination: "c"}],
+                                       labels: [{node: "a"}, {node: "b"}, {node: "c"}]}},
+                            {id: "second", enabled: true,
+                             results: {graph: [],
+                                       labels: [{node: "d"}]}}];
+
+const idealGraphDataSmall = {graph: [{source: "a", destination: "b", Pivot: 0}, {source: "a", destination: "c", Pivot: 0}],
+                             labels: [{node: "a"}, {node: "b"}, {node: "c"}, {node: "d", Pivot: 1}],
+                             name: null, type: "edgelist", bindings: {sourceField: "source", destinationField: "destination", typeField: "type", idField: "node"}};
+
+const visiblePivotsLarge = [
+    {id: "1", enabled: true,
+     results: {graph: [{source: "a", destination: "b"}, {source: "a", destination: "c"}],
+               labels: [{node: "a"}, {node: "b"}, {node: "c"}]}},
+    {id: "2", enabled: true,
+     results: {graph: [],
+               labels: [{node: "d"}]}},
+    {id: "3", enabled: true,
+     results: {graph: [{source: "e", destination: "f"}],
+               labels: [{node: "e"}, {node: "f"}]}}
+];
+
+const idealGraphDataLarge = {graph: [{source: "a", destination: "b", Pivot: 0}, {source: "a", destination: "c", Pivot: 0}, {source: "e", destination: "f"}],
+                              labels: [{node: "a"}, {node: "b"}, {node: "c"}, {node: "d", Pivot: 1}, {node: "e"}, {node: "f"}],
+                              name: null, type: "edgelist", bindings: {sourceField: "source", destinationField: "destination", typeField: "type", idField: "node"}};
+
+describe('createGraph', function() {
+        it('should label isolated nodes with Pivot', function() {
+            const createdGraph = uploadGraph.createGraph(visiblePivotsSmall).data;
+            createdGraph.name = null;
+            assert.deepEqual(idealGraphDataSmall, createdGraph);
+        });
+        it('should not blow up stackedBushyGraph', function() {
+            uploadGraph.stackedBushyGraph(uploadGraph.createGraph(visiblePivotsSmall));
+        });
+        it('should work on forests', function() {
+            const createdGraph = uploadGraph.createGraph(visiblePivotsLarge).data;
+            createdGraph.name = null;
+            assert(createdGraph, idealGraphDataLarge);
+        });
     });
