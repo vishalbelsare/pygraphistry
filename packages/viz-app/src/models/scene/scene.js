@@ -14,6 +14,7 @@ export function scene(view, sceneID = 'default') {
 
             camera: $ref(`${view}.camera`),
             labels: $ref(`${view}.labels`),
+            axis: $ref(`${view}.axis`),
             release: $ref(`release.current`),
             highlight: $ref(`${view}.highlight`),
             selection: $ref(`${view}.selection`),

@@ -45,19 +45,6 @@ const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/viz-server.js');
 const perf        = require('@graphistry/common').perfStats.createPerfMonitor();
 
-try {
-    const memoryWatcher = require('memwatch-next');
-    if (memoryWatcher !== undefined) {
-        memoryWatcher.on('leak', (info) => {
-            logger.warn({'memory_leak': info});
-        });
-        memoryWatcher.on('stats', (stats) => {
-            logger.trace({'memory_stats': stats});
-        });
-    }
-} catch (e) {
-    logger.debug({message: 'memwatch unavailable', err: e});
-}
 
 /** GLOBALS ****************************************************/
 

@@ -5,6 +5,7 @@ import { app } from './app';
 import { views } from './views';
 import { scene } from './scene';
 import { labels } from './labels';
+import { axis } from './axis';
 import { layout } from './layout';
 import { camera } from './camera';
 import { toolbar } from './toolbar';
@@ -40,6 +41,7 @@ export function routes(services) {
         camera(['workbook', 'view'], `${view}`)(services),
 
         labels(['workbook', 'view'], `${view}`)(services),
+        axis(['workbook', 'view'], `${view}`)(services),
         layout(['workbook', 'view'], `${view}`)(services),
         session(['workbook', 'view'], `${view}`)(services),
         selection(['workbook', 'view'], `${view}`)(services),

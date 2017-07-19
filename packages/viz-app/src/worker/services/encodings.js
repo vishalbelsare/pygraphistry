@@ -2,7 +2,7 @@ import { getHistogramForAttribute } from './histograms.js';
 
 function encodingWithoutBinValues (encoding) {
     if (!encoding) return encoding || null;
-    const {binning: { valueToBin, ...restBinning}, ...restEncoding} = encoding;
+    const {binning: { valueToBin, ...restBinning} = {}, ...restEncoding} = encoding;
     return {binning: restBinning, ...restEncoding};
 }
 

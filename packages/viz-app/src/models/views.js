@@ -1,4 +1,5 @@
 import { scene } from './scene';
+import { axis } from './axis';
 import { camera } from './camera';
 import { legend } from './legend';
 import { toolbar } from './toolbar';
@@ -43,6 +44,7 @@ export function view(workbookId, sceneID = 'default', viewId = simpleflake().toJ
         ...camera(view),
         ...scene(view, sceneID),
         ...labels(view),
+        ...axis(view),
         ...layout(view),
         ...legend(view),
         ...encodings(view),

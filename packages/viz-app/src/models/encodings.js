@@ -14,7 +14,8 @@ export function encodings (view, preexistingEncodings = {}) {
             id: 'encodings',
             name: 'Encodings',
             point: {
-                color: null //variant
+                color: null, //variant
+                axis: null
             },
             edge: {
                 color: null //variant

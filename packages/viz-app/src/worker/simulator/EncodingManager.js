@@ -30,7 +30,8 @@ export default class EncodingManager {
                     opacity: null,
                     size: null,
                     weight: null,
-                    icon: null
+                    icon: null,
+                    axis: null
                 },
                 edge: {
                     color: null,

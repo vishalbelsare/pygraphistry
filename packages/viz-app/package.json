@@ -122,7 +122,7 @@
   },
   "homepage": "https://github.com/graphistry/viz-app#readme",
   "dependencies": {
-    "@graphistry/client-api": "~2.12.6",
+    "@graphistry/client-api": "~2.13.0",
     "@graphistry/common": "~3.2.4",
     "@graphistry/config": "3.0.6",
     "@graphistry/dijkstra": "2.0.0",
@@ -176,7 +176,6 @@
     "hpp": "0.2.2",
     "json-stable-stringify": "1.0.1",
     "lodash": "4.17.4",
-    "memwatch-next": "0.3.0",
     "mock-socket": "6.0.4",
     "moment": "2.18.1",
     "moment-timezone": "0.5.13",

@@ -240,7 +240,7 @@ export class EncodingPicker extends React.Component {
                                 ? options[componentType].color
                                     .filter( ({value}) =>
                                             value === encodings[componentType].color.name )[0]
-                                : []
+                                : {}
                         }
                         placeholder="Pick how to visualize"
                         options={ options[componentType].color }

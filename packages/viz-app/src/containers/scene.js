@@ -1,6 +1,7 @@
 import { Row } from 'react-bootstrap';
 import { toProps } from '@graphistry/falcor';
 import { Labels } from 'viz-app/containers/labels';
+import { Axis } from 'viz-app/containers/axis';
 import { Renderer } from 'viz-app/containers/renderer';
 import { container } from '@graphistry/falcor-react-redux';
 import { Selection } from 'viz-app/containers/selection';
@@ -26,7 +27,7 @@ let Scene = ({
         simulationHeight,
         onSelectedPointTouchStart,
         onSelectionMaskTouchStart,
-        id, simulating, labels = {},
+        id, simulating, labels = {}, axis = {},
         release = {}, renderer = {},
         selection = {}, highlight = {}, ...props } = {}) => (
     <SceneComponent key='scene'
@@ -64,6 +65,7 @@ let Scene = ({
                    onSelectionMaskTouchStart={onSelectionMaskTouchStart}
                    highlightedEdge={highlight && highlight.edge && highlight.edge[0]}
                    highlightedPoint={highlight && highlight.point && highlight.point[0]}/>
+        <Axis key='axis' data={axis} />
         <Labels key='labels'
                 data={labels}
                 simulating={simulating}
@@ -81,6 +83,7 @@ Scene = container({
         id, simulating,
         release: { tag, buildNumber },
         ... ${ Settings.fragment(scene) },
+        axis: ${ Axis.fragment(scene.axis) },
         labels: ${ Labels.fragment(scene.labels) },
         labels: { settings: { 0: { 4: ${
             SceneOptionToggle.fragment()
