@@ -36,96 +36,80 @@
 
 <div class="jumbotron">
   <div class="container text-center">
-	  <p style="font-size:21px;"><br><br>Filters & Exclusions</p>      
+	  <p style="font-size:21px;"><br><br>Histograms!</p>      
   </div>
 </div>
 
 
-<div class="container-fluid text-center"> <br><br><br><p><strong>Filters</strong></p><br>
-  <p style="margin-left:300px; margin-right:300px;">Using filters is a great way to prune down a large graph to just see elements that you are interested in exploring, in this example we'll look at how we casn use a filter to only look at the most highly connected characters within our Les Mis graph. </p> <br><br>
+<div class="container-fluid text-center"> <br><br><br><p><strong>Histograms</strong></p><br>
+  <p style="margin-left:300px; margin-right:300px;">The histogram panel is one of the most powerful tools in our UI, and though it might be intimidating at first, it’s actually quite simple. You can create a histogram that will look at any attribute of the elements in your graph, this helps you get an idea about how the data in your graph is divided. Lets look at an example… </p> <br><br>
 	
 	
 <br>
 	
   <div style="text-align: center;" class="row">
 	  	<div style="margin-left: 100px;" class="col-sm-5">
-	<img src="images/filters/2.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	<img src="images/histograms/1.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
 	</div>
-	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Filter Example</strong><br><br>
-	  <p>So if we want to create a filter for looking at only the most highly connected nodes, we need to choose which attribute we want to filter by, in this case we use the attribute <strong>Degree</strong> to describe the # of incoming and outgoing edges of a single node. Both nodes and edges have attributes so we'll use the selector <strong>point:</strong> instead of <strong>edge:</strong>. </p></div>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Create A Histogram</strong><br><br>
+	  <p>You can create a histogram that will look at any attribute of the elements in your graph, this helps you get an idea about how the data in your graph is divided. <br><br>
+
+For instance, if we wanted to look at <strong>point:degree</strong> we can see a representation of all the nodes in our graph, broken down into buckets based on their degree. We can see here that we have a lot of nodes with low connectivity and only a small amount of nodes with a very high connectivity.</p></div>
 	  
   </div>
 
   <div style="text-align: center;" class="row">
 		<div style="margin-left: 100px;" class="col-sm-5">
-	<img src="images/filters/3.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	<img src="images/histograms/2.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
 	</div>  
-	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>1. Select An Attribute</strong><br><br>
-	  <p>So let’s open the filter panel and find <strong>point:degree</strong>(node:attribute) to create a new filter  </p></div>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Select A Range To Create Filters</strong><br><br>
+	  <p>You can create filters on the fly using histograms, simply click one of the buckets, or click and drag multilpe buckets and see our visualization pare down to nodes with attributes within that range. Click the selected bucket range again to delete the filter.</p></div>
 	  
   </div>
 	
   <div style="text-align: center;" class="row">
 		<div style="margin-left: 100px;" class="col-sm-5">
-	<img src="images/filters/4.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	<img src="images/histograms/3.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
 	</div>  
-	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>2. Enter A Value </strong><br><br>
-	  <p>We want to only look at nodes with a degree value of over 15, we’ll set our filter value to…<br><br><strong>point:degree >= 15</strong> </p></div>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>We just created this cool filter! </strong><br><br>
+	  <p></p></div>
 	  
   </div>
 	
   <div style="text-align: center;" class="row">
 		<div style="margin-left: 100px;" class="col-sm-5">
-	<img src="images/filters/5.png" style="margin-left: 10px; max-width:480px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	<img src="images/histograms/4.png" style="margin-left: 10px; max-width:480px; margin-right:50px;" class="img-fluid" alt="Responsive image">
 	</div>  
-	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Result</strong><br><br>
-	  <p>Now we can see that we only have a handful of nodes, and we can recluster (using the play button) the graph to see connections.  </p></div>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Histogram Settings</strong><br><br>
+	  <p>Lets jump into this histograms’ advanced settings, so we can apply a color scheme for our graph. </p></div>
+	  
+  </div>
+	
+ <div style="text-align: center;" class="row">
+		<div style="margin-left: 100px;" class="col-sm-5">
+	<img src="images/histograms/5.png" style="margin-left: 10px; max-width:480px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	</div>  
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Applying A Color Profile</strong><br><br>
+	  <p>Say we wanted to be able to see from far away which elements in our graph have the most connections? In our histogram settings,  we can select a gradient color scheme, and now we can see our highly connected nodes in red, and our lowe connectivity nodes in blue.   </p></div>
 	  
   </div>	
 	
-	
-<br><br><hr><br><p><strong>Exclusions</strong></p><br>
-  <p style="margin-left:300px; margin-right:300px;">Exclusions work very similary to filters, except now we're choosing which elements of our graph we'd like to take out. In this example we'll exclude all of the highly connected nodes in our graph and see what remains. </p> <br><br>
-	
-	
-<br>	
-	
-	
-	  <div style="text-align: center;" class="row">
+ <div style="text-align: center;" class="row">
 		<div style="margin-left: 100px;" class="col-sm-5">
-	<img src="images/filters/exclusions/1.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
-	</div>  
-	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>1. Select An Attribute</strong><br><br>
-	  <p>So let’s open the exclusion panel and find <strong>point:degree</strong> again to create a new exclusion  </p></div>
-	  
-  </div>
-	
-  <div style="text-align: center;" class="row">
-		<div style="margin-left: 100px;" class="col-sm-5">
-	<img src="images/filters/exclusions/2.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
-	</div>  
-	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>2. Enter A Value </strong><br><br>
-	  <p>This time we want to take out all the nodes with a degree of connection higher than 5, so our value will be...<br><br><strong>point:degree >= 5</strong> </p></div>
-	  
-  </div>
-	
-  <div style="text-align: center;" class="row">
-		<div style="margin-left: 100px;" class="col-sm-5">
-	<img src="images/filters/exclusions/3.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	<img src="images/histograms/6.png" style="margin-left: 10px; max-width:480px; margin-right:50px;" class="img-fluid" alt="Responsive image">
 	</div>  
 	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Result</strong><br><br>
-	  <p>Now we can see all of the least connected nodes in our graph, as we've excluded all of the nodes with a degree of connection higher than 5.  </p></div>
+	  <p>We just used a histogram to apply a custom color scheme to an attribute we we’re interested in. Try playing with some different attribute histograms! </p></div>
 	  
   </div>	<br><br><br><br>
 	
   <div style="text-align: center;" class="row">
-    <a href="ui_histograms.html">
+    <a href="ui.html">
 	  <div style="float: none; display: inline-block; border-radius: 5px; border: solid 1px; border-color:#E6E6E6; padding-top: 25px; "class="col-sm-5">
-      <p>Next Up: Histograms!</p><span style="font-size: 24px;" class="glyphicon glyphicon-menu-right" aria-hidden="true"></span><br>
+      <p>Next Up: Big Graph Techniques</p><span style="font-size: 24px;" class="glyphicon glyphicon-menu-right" aria-hidden="true"></span><br>
     </div>
 	</a>			  
   </div><br><br>	
-	
 	
 <p style="margin-top:70px;"><strong>Looking or more information?</strong></p><br>
    <p style="margin-left:100px; margin-right:100px;">Download our in depth UI guide PDF to take you through all the details of the Graphistry tool suite.
