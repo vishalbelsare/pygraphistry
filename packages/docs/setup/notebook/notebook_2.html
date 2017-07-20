@@ -37,38 +37,42 @@
 <div class="jumbotron">
   <div class="container text-center">
 	  <p style="font-size:21px;"><br><br>Notebook Setup</p><p style="margin-left:200px; margin-right:200px;">
-In this tutorial, we're going to use Pygraphistry to create and visualize our first graph, then move on to more advanced techniques like creating a graph from any CSV, modifying graph properties, and looking at some in-tool analytics strategies.</p>      
+In this tutorial, we're going to use the PyGraphistry python library to create and visualize our first graph, then move on to more advanced techniques like creating a graph from any CSV, modifying visualization properties, and analyzing data from within the Graphistry visual environment.</p>      
 
 	<div class="row">	
 		<div style="text-align: right; margin: 10px; float: none; display: inline-block; border-radius: 5px; border: none; border-color:#E6E6E6; padding:20px; "class="col-sm-3">
-			<a href="../notebook/notebook.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">1. Installation</p></a>
-			<a href="../notebook/notebook_1.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">2. My First Graph</p></a>
-			<a href="../notebook/notebook_2.html" style="color:white;"><p style="font-weight: 600; font-size: 12px;">3. Graph any CSV</p></a>
+			<a href="../notebook/notebook.html" style="color:white;"><p style="font-weight: 600; font-size: 12px;">1. Installing PyGraphistry</p></a>
+			<a href="../notebook/notebook_1.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">2. Visualizing Existing Graphs</p></a>
+			<a href="../notebook/notebook_2.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">3. Graphing <u>any</u> CSV</p></a>
 			<a href="../notebook/notebook_3.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">4. In-Tool Tutorial</p></a>
 			<a href="../notebook/notebook_4.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">5. Advanced Configuration</p></a>
 		
 		</div>
 		<div style="text-align: left; margin: 10px; float: none; display: inline-block; border-radius: 5px; border: none; border-color:#E6E6E6; padding:20px; "class="col-sm-5">
-			<p style="font-size: 12px; font-weight: 300;">Learn how to install Graphistry locally with Docker</p>
+			<p style="font-size: 12px; font-weight: 500;">Installing Graphistry locally with Docker</p>
 			<p style="font-size: 12px; font-weight: 300;">Visualize our first graph using a Jupyter notebook</p>
-			<p style="font-size: 12px; font-weight: 500;">Learn about hypergraphs and upload any CSV to Graphistry</p>
+			<p style="font-size: 12px; font-weight: 300;">Learn about hypergraphs and upload any CSV to Graphistry</p>
 			<p style="font-size: 12px; font-weight: 300;">Discover all the tools available within our visualization</p>
-			<p style="font-size: 12px; font-weight: 300;">Learn how to connect to your favorite SEM system and other data sources</p>
+			<p style="font-size: 12px; font-weight: 300;">Learn how to connect to your favorite SIEM system and other data sources</p>
 		
 		</div>
-</div>	
+</div>			
   	
 	   </div> 
 </div>
 
 <div class="container-fluid bg-3 text-center">    
-	<p style="margin-top:80px;"><strong>Section 3. Graph Anything, Hypergraphs and Your Data</strong></p><br>
+	<p style="margin-top:80px;"><strong>Section 3. Graphing any CSV - Hypergraphs and Your Data</strong></p><br>
 	<br>
-	<p style="margin-left:200px; margin-right:200px;"> We can transform any csv into a graph using what we call a hypergraph transform, wherein we use the structure of the CSV table to create a graph of nodes, edges and properties. In this notebook example, we'll be uploading and analyzing a malware file report.<br><br>It reveals phenomena such as:
-<br><br>- The malware files cluster into several families
-<br>- The nodes central to a cluster reveal attributes specific to a strain of malware
-<br>- The nodes bordering a cluster reveal attributes that show up in a strain, but are unique to each instance in that strain
-<br>- Several families have attributes connecting them, suggesting they had the same authors</p><br>      
+	<p style="margin-left:200px; margin-right:200px;"> We can transform any CSV-like file into an insightful graph using a <i>hypergraph</i> transformation, wherein we use the structure of the CSV table to create a graph of nodes, edges and properties. The intuition is that every unique value in the datatable is turned into a node and every row (e.g., the event or sample) is also turned into a node, and connected to its value nodes. The resulting graph, when clustered, reveals the relationships between rows and cell values. In this notebook example, we'll be uploading and analyzing a malware file report	.</p>
+	
+<p style="margin-left:200px; margin-right:200px; text-align: left">Using the hypergraph transformation on the list of samples reveals phenomena such as:
+<ul style="margin-left:200px; margin-right:200px; text-align: left">
+<li>The malware files cluster into several families
+<li> Several malware families have attributes connecting them, suggesting they had the same authors
+<li>The nodes central to a cluster reveal attributes specific to a strain of malware
+<li> The nodes bordering a cluster reveal attributes that show up in a strain, but are unique to each instance in that strain
+</ul></p><br>      
 		
 	
 <br><p style="margin-top:0px;"><strong>Example Notebook:

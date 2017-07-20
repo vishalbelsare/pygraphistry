@@ -37,23 +37,23 @@
 <div class="jumbotron">
   <div class="container text-center">
 	  <p style="font-size:21px;"><br><br>Notebook Setup</p><p style="margin-left:200px; margin-right:200px;">
-In this tutorial, we're going to use Pygraphistry to create and visualize our first graph, then move on to more advanced techniques like creating a graph from any CSV, modifying graph properties, and looking at some in-tool analytics strategies.</p>      
+In this tutorial, we're going to use the PyGraphistry python library to create and visualize our first graph, then move on to more advanced techniques like creating a graph from any CSV, modifying visualization properties, and analyzing data from within the Graphistry visual environment.</p>      
 
 	<div class="row">	
 		<div style="text-align: right; margin: 10px; float: none; display: inline-block; border-radius: 5px; border: none; border-color:#E6E6E6; padding:20px; "class="col-sm-3">
-			<a href="../notebook/notebook.html" style="color:white;"><p style="font-weight: 600; font-size: 12px;">1. Installation</p></a>
-			<a href="../notebook/notebook_1.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">2. My First Graph</p></a>
-			<a href="../notebook/notebook_2.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">3. Graph any CSV</p></a>
+			<a href="../notebook/notebook.html" style="color:white;"><p style="font-weight: 600; font-size: 12px;">1. Installing PyGraphistry</p></a>
+			<a href="../notebook/notebook_1.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">2. Visualizing Existing Graphs</p></a>
+			<a href="../notebook/notebook_2.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">3. Graphing <u>any</u> CSV</p></a>
 			<a href="../notebook/notebook_3.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">4. In-Tool Tutorial</p></a>
 			<a href="../notebook/notebook_4.html" style="color:white;"><p style="font-weight: 200; font-size: 12px;">5. Advanced Configuration</p></a>
 		
 		</div>
 		<div style="text-align: left; margin: 10px; float: none; display: inline-block; border-radius: 5px; border: none; border-color:#E6E6E6; padding:20px; "class="col-sm-5">
-			<p style="font-size: 12px; font-weight: 500;">Learn how to install Graphistry locally with Docker</p>
+			<p style="font-size: 12px; font-weight: 500;">Installing Graphistry locally with Docker</p>
 			<p style="font-size: 12px; font-weight: 300;">Visualize our first graph using a Jupyter notebook</p>
 			<p style="font-size: 12px; font-weight: 300;">Learn about hypergraphs and upload any CSV to Graphistry</p>
 			<p style="font-size: 12px; font-weight: 300;">Discover all the tools available within our visualization</p>
-			<p style="font-size: 12px; font-weight: 300;">Learn how to connect to your favorite SEM system and other data sources</p>
+			<p style="font-size: 12px; font-weight: 300;">Learn how to connect to your favorite SIEM system and other data sources</p>
 		
 		</div>
 </div>	
@@ -62,29 +62,29 @@ In this tutorial, we're going to use Pygraphistry to create and visualize our fi
 </div>
 
 <div class="container-fluid bg-3 text-center">    
-	<p style="margin-top:80px;"><strong>Section 1. Installation</strong></p><br>
-	<p style="margin-left:200px; margin-right:200px;"> Lets begin by installing Pyrgaphistry, there are 2 easy ways to get up and running  quickly</p><code></code>	
+	<p style="margin-top:80px;"><strong>Section 1. Installing PyGraphistry</strong></p><br>
+	<p style="margin-left:200px; margin-right:200px;"> There are 2 easy ways to get up and running  quickly</p><code></code>	
 	
 	<div class="row">
     <div style="margin: 10px; float: none; display: inline-block; border-radius: 5px; padding:20px; "class="col-sm-5">
 	<div class="panel panel-default">
-  <div class="panel-heading"><h3 class="panel-title"><strong>Option 1:</strong></h3><p><br>PyGraphistry pip package for Python<br> or Jupyter Notebook users</p></div>
+  <div class="panel-heading"><h3 class="panel-title"><strong>Option 1:</strong></h3><p><br>Direct install from Python's pip package manager: Great for existing Python or Jupyter Notebook users</p></div>
   <div style="padding:30px; text-align:left;" class="panel-body">
-	  <p><strong>Dependencies for non-Docker installation <br>Python 2.7 or 3.4 (experimental).</strong><hr></p>
+	  <p><strong>Depends on <br>Python 2.7 or 3.4 (experimental).</strong><hr></p>
 	<p>1. If you already have Python, install IPython (Jupyter): <br><br><div class="well well-sm"><code>pip install "ipython[notebook]"</code></div></p>
 		<p>2. Launch notebook server:</p><div class="well well-sm"><code>ipython notebook</code></div>
-	<p>Once you have Jupyter notebooks, the simplest way to install PyGraphistry is with Python's pip package manager:</p><br>
-		<p>Pandas only:<div class="well well-sm"><code>pip install graphistry</code></div></p>
-		<p>Pandas, IGraph, and NetworkX:</p><div class="well well-sm"><code>pip install "graphistry[all]"</code></div> 
+	<p>3. Install PyGraphistry:</p><br>
+		<p>With Pandas only:<div class="well well-sm"><code>pip install graphistry</code></div></p>
+		<p>With Pandas, IGraph, and NetworkX:</p><div class="well well-sm"><code>pip install "graphistry[all]"</code></div> 
 	  
   </div>
 </div>
 </div>
     <div style="margin: 10px; float: none; display: inline-block; border-radius: 5px; padding:20px; "class="col-sm-5">
 <div class="panel panel-default">
-  <div class="panel-heading"><h3 class="panel-title"><strong>Option 2:</strong></h3><p><br> Full Docker container for PyGraphistry, Jupyter Notebook,<br> and Scipy/numpy/pandas</p></div>
+  <div class="panel-heading"><h3 class="panel-title"><strong>Option 2:</strong></h3><p><br> Install from a premade Docker container with PyGraphistry, Jupyter Notebook,<br> and Scipy/numpy/pandas</p></div>
   <div style="padding:30px; text-align:left;" class="panel-body">
-	  <p><strong>If you do not already have Jupyter Notebook, you can quickly start via our prebuilt Docker container:</strong></p><hr>
+<hr>
 	<p>1. Install Docker</p>
 	<p>2. Install and run the Jupyter Notebook + Graphistry container:<br></p><div class="well well-sm"><code>docker run -it --rm -p 8888:8888 graphistry/jupyter-notebook</code></div>
 	<p>If you would like to open data in the current folder <code>$PWD</code> or save results to the current folder <code>$PWD</code>, instead run:</p><br>
@@ -96,18 +96,20 @@ In this tutorial, we're going to use Pygraphistry to create and visualize our fi
 </div>		
 	</div>	
 	<p style="margin-top:0px;"><strong>API Key</strong></p><br>
-   <p style="margin-left:200px; margin-right:200px;">An API key gives each visualization access to our GPU cluster. We currently ask for API keys to make sure our servers are not melting :) To get your own, email pygraphistry@graphistry.com. Set your key after the import graphistry statement and you are good to go:
+   <p style="margin-left:200px; margin-right:200px;">An API key gives each visualization access to the GPU cluster. Please ask your adminstrator or email pygraphistry@graphistry.com for a key. Set your key after the import graphistry statement and you are good to go:
 </p><br>
 		<div style="margin-left:200px; margin-right:200px;" class="well"><p style="text-align:left;"><code>import graphistry<br>
-graphistry.register(key='Your key')</code><br></div>
-   <p style="margin-left:200px; margin-right:200px;">Optionally, for convenience, you may set your API key in your system environment and thereby skip the register step in all your notebooks. In your .profile or .bash_profile, add the following and reload your environment:</p><br>
+graphistry.register(key='Your key')<br/>
+#graphistry.register(key='Your key', protocol='http', server='your.server.com:80')
+</code><br></div>
+   <p style="margin-left:200px; margin-right:200px;">Optionally, for convenience, you may set your API key in your system environment and thereby skip the register step in all your notebooks. In your .profile or .bash_profile, add the following, reload your environment, and restart your notebook server:</p><br>
 <div style="margin-left:200px; margin-right:200px;" class="well"><p style="text-align:left;"><code>export GRAPHISTRY_API_KEY="Your key"</code></div><br><br><br>		
 	  
 	  
   <div style="text-align: center;" class="row">
     <a href="../notebook/notebook_1.html">
 	  <div style="float: none; display: inline-block; border-radius: 5px; border: solid 1px; border-color:#E6E6E6; padding-top: 25px; "class="col-sm-5">
-      <p>Next: My First Graph</p><span style="font-size: 24px;" class="glyphicon glyphicon-menu-right" aria-hidden="true"></span><br>
+      <p>Next: Visualizing Existing Graphs</p><span style="font-size: 24px;" class="glyphicon glyphicon-menu-right" aria-hidden="true"></span><br>
     </div>
 	</a>			  
   </div><br><br><br><br>
