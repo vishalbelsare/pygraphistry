@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Docs : Graphistry API information for cross-language use, e.g., REST">
+	<link rel="stylesheet" type="text/css" media="screen" href="css/bootstrap.css">
+
+    <title>Docs</title>
+  </head>
+
+  <body>
+
+<nav class="navbar navbar-default navbar-fixed-top navbar-inverse">
+  <div class="container-fluid">
+    <div class="navbar-left">
+	<img style="max-height:30px; margin-top: 10px; margin-left:30px;" src="images/logo.png">
+    </div>
+	<div class="navbar-left"><a style="color:#E6E6E6;" class="navbar-text" href="#">Graphistry</a>
+	<a style="margin-top: 18px; margin-left: 40px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Server Status: Active</a>
+	<a style="margin-top: 18px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Location: USA</a>		
+</div>  
+    <div class="collapse navbar-collapse" id="myNavbar">
+      <ul class="nav navbar-nav">
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+<!--        <li><a href="index.html">Dashboard</a></li>-->
+        <li class="active"><a href="setup_home.html">Getting Started</a></li>
+        <li><a style="margin-right:30px;" href="docs.html">Docs</a></li>
+		<li><button style="margin-top:8px; margin-right:30px;" type="button" class="btn btn-info">Launch</button></li>   
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="jumbotron">
+  <div class="container text-center">
+	  <p style="font-size:21px;"><br><br>Filters & Exclusions</p>      
+  </div>
+</div>
+
+
+<div class="container-fluid text-center"> <br><br><br><p><strong>Filters</strong></p><br>
+  <p style="margin-left:300px; margin-right:300px;">Using filters is a great way to prune down a large graph to just see elements that you are interested in exploring, in this example we'll look at how we casn use a filter to only look at the most highly connected characters within our Les Mis graph. </p> <br><br>
+	
+	
+<br>
+	
+  <div style="text-align: center;" class="row">
+	  	<div style="margin-left: 100px;" class="col-sm-5">
+	<img src="images/filters/2.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	</div>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Filter Example</strong><br><br>
+	  <p>So if we want to create a filter for looking at only the most highly connected nodes, we need to choose which attribute we want to filter by, in this case we use the attribute <strong>Degree</strong> to describe the # of incoming and outgoing edges of a single node. Both nodes and edges have attributes so we'll use the selector <strong>point:</strong> instead of <strong>edge:</strong>. </p></div>
+	  
+  </div>
+
+  <div style="text-align: center;" class="row">
+		<div style="margin-left: 100px;" class="col-sm-5">
+	<img src="images/filters/3.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	</div>  
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>1. Select An Attribute</strong><br><br>
+	  <p>So let’s open the filter panel and find <strong>point:degree</strong>(node:attribute) to create a new filter  </p></div>
+	  
+  </div>
+	
+  <div style="text-align: center;" class="row">
+		<div style="margin-left: 100px;" class="col-sm-5">
+	<img src="images/filters/4.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	</div>  
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>2. Enter A Value </strong><br><br>
+	  <p>We want to only look at nodes with a degree value of over 15, we’ll set our filter value to…<br><br><strong>point:degree >= 15</strong> </p></div>
+	  
+  </div>
+	
+  <div style="text-align: center;" class="row">
+		<div style="margin-left: 100px;" class="col-sm-5">
+	<img src="images/filters/5.png" style="margin-left: 10px; max-width:480px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	</div>  
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Result</strong><br><br>
+	  <p>Now we can see that we only have a handful of nodes, and we can recluster (using the play button) the graph to see connections.  </p></div>
+	  
+  </div>	
+	
+	
+<br><br><hr><br><p><strong>Exclusions</strong></p><br>
+  <p style="margin-left:300px; margin-right:300px;">Exclusions work very similary to filters, except now we're choosing which elements of our graph we'd like to take out. In this example we'll exclude all of the highly connected nodes in our graph and see what remains. </p> <br><br>
+	
+	
+<br>	
+	
+	
+	  <div style="text-align: center;" class="row">
+		<div style="margin-left: 100px;" class="col-sm-5">
+	<img src="images/filters/exclusions/1.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	</div>  
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>1. Select An Attribute</strong><br><br>
+	  <p>So let’s open the exclusion panel and find <strong>point:degree</strong> again to create a new exclusion  </p></div>
+	  
+  </div>
+	
+  <div style="text-align: center;" class="row">
+		<div style="margin-left: 100px;" class="col-sm-5">
+	<img src="images/filters/exclusions/2.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	</div>  
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>2. Enter A Value </strong><br><br>
+	  <p>This time we want to take out all the nodes with a degree of connection higher than 5, so our value will be...<br><br><strong>point:degree >= 5</strong> </p></div>
+	  
+  </div>
+	
+  <div style="text-align: center;" class="row">
+		<div style="margin-left: 100px;" class="col-sm-5">
+	<img src="images/filters/exclusions/3.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	</div>  
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Result</strong><br><br>
+	  <p>Now we can see all of the least connected nodes in our graph, as we've excluded all of the nodes with a degree of connection higher than 5.  </p></div>
+	  
+  </div>	
+	
+	
+	
+	
+<p style="margin-top:70px;"><strong>Looking or more information?</strong></p><br>
+   <p style="margin-left:100px; margin-right:100px;">Download our in depth UI guide PDF to take you through all the details of the Graphistry tool suite.
+</p><br>	
+  <div style="text-align: center;" class="row">
+    <a href="docs.html">
+	  <div style="float: none; display: inline-block; border-radius: 5px; border: solid 1px; border-color:#E6E6E6; padding-top: 25px; "class="col-sm-3">
+      <p>Download UI Guide PDF</p><br>
+    </div>
+	</a>			  
+  </div>			
+<br><br><br><br>	
+	
+</div><br>
+
+
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-3 col-sm-6 footerleft ">
+        <div class="logofooter"> <img style="max-height:40px; margin-top: 10px;" src="images/logo.png"></div>
+        
+      </div>
+      <div class="col-md-2 col-sm-6 paddingtop-bottom">
+        <ul class="footer-ul">
+		  <li><a href="#"> Home </a></li>
+		  <li><a href="#"> Learn More </a></li>
+          <li><a href="#"> Setup Guide</a></li>
+          <li><a href="#"> UI Guide</a></li>
+        </ul>
+      </div>
+      <div class="col-md-3 col-sm-6 paddingtop-bottom">
+			<p style="color:#E6E6E6; font-size:12px;">1212 Broadway Floor 11, Oakland, CA 94612</p>
+        <p style="color:#E6E6E6; font-size:12px;">info@graphistry.com</p>	  
+      </div>
+      <div class="col-md-3 col-sm-6 paddingtop-bottom">
+        </div>
+      </div>
+    </div>
+</footer>
+<!--footer start from here-->
+
+<div class="copyright">
+  <div class="container">
+    <div class="col-md-6">
+      <p>© Graphistry Inc 2017</p>
+    </div>
+    <div class="col-md-6">
+      <ul class="bottom_ul">
+        <li><a href="#">graphistry.com</a></li>
+        <li><a href="#">About us</a></li>
+        <li><a href="#">Getting Started</a></li>
+        <li><a href="#">Docs</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+	 
+
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
