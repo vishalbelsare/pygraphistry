@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Docs : Graphistry API information for cross-language use, e.g., REST">
+	<link rel="stylesheet" type="text/css" media="screen" href="../css/bootstrap.css">
+
+    <title>Docs</title>
+  </head>
+
+  <body>
+
+<nav class="navbar navbar-default navbar-fixed-top navbar-inverse">
+  <div class="container-fluid">
+    <div class="navbar-left">
+	<img style="max-height:30px; margin-top: 10px; margin-left:30px;" src="../images/logo.png">
+    </div>
+	<div class="navbar-left"><a style="color:#E6E6E6;" class="navbar-text" href="#">Graphistry</a>
+	<a style="margin-top: 18px; margin-left: 40px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Server Status: Active</a>
+	<a style="margin-top: 18px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Location: USA</a>	
+</div>  
+    <div class="collapse navbar-collapse" id="myNavbar">
+      <ul class="nav navbar-nav">
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+<!--        <li><a href="index.html">Dashboard</a></li>-->
+        <li><a href="../setup_home.html">Getting Started</a></li>
+        <li class="active"><a style="margin-right:30px;" href="../docs.html">Docs</a></li>
+		 <li><button style="margin-top:8px; margin-right:30px;" type="button" class="btn btn-info">Launch</button></li>  
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="row">
+    <div style="padding-left:150px; padding-top:50px; "class="col-sm-4">
+       <div style="color:black; font-size:12px;"><br><br>
+		   <p><strong>UI Guides</strong></p>
+		   <a href="../ui.html" style="color:black;"><p> -  UI Basics</p></a>
+		   <a href="../ui_basics.html" style="color:black;"><p> -  Filters & Exclusions</p></a>
+		   <a href="../ui_histograms.html" style="color:black;"><p> -  Histograms</p></a>
+		   <a style="color:grey;"><p> -  Tips & Tricks</p></a>
+		   <hr>
+		   <p><strong>Graphistry Setup</strong></p>
+		   <a href="../setup/admin.html" style="color:black;"><p> -  Admin Setup</p></a>	
+		   <a href="../setup/notebook/notebook.html" style="color:black;"><p> -  Notebook Setup Tutorial (PyGraphistry)</p></a>	
+		   <a href="../setup/developer.html" style="color:black;"><p> -  Developer Embedding Tutorial (React) </p></a>	
+		   <hr>
+           <p><strong>REST API's</strong></p>
+		   <a style="color:black;" href="docs_api.html"><p> -  REST API Documentation 0.9.2</p></a>
+		   <a href="docs_workbook_api.html" style="color:black;"><p> - Workbook REST API Documentation</p></a>
+		   <hr>
+		   <p><strong>Python Libraries (Notebooks & API)</strong></p>
+		   <a href="https://github.com/graphistry/pygraphistry" target="_blank" style="color:black;"><p> -  PyGraphistry Project</p></a>
+		   		   <a style="color:black;"><p style="text-decoration: underline;"><strong> - PyGraphistry API Docs</strong></p></a>
+		   		   		<a style="color:black;"><p class="tab"> -  Submodules </p></a>
+		   				<a style="color:black;"><p class="tab"> -  graphistry.plotter module </p></a>
+		   				<a style="color:black;"><p class="tab"> -  graphistry.pygraphistry module </p></a>
+		   				<a style="color:black;"><p class="tab"> -  Module contents </p></a>
+		   <a href="https://github.com/graphistry/pygraphistry/tree/master/demos" target="_blank" style="color:black;"><p> - Ipython & Jupyter Notebook Examples</p></a>
+		   <hr>
+		   <p><strong>Javascript Libraries</strong></p>
+		   <a style="color:black;"><p> -  Client-side Interactions API</p></a>
+		   <a style="color:black;"><p> --- API Docs</p></a>
+		   <a style="color:black;"><p> --- Examples</p></a>
+		   <a style="color:black;"><p> -  Embedded Visualization React Component</p></a>
+		   <a style="color:black;"><p> --- Examples</p></a><br>
+        </div>
+    </div>
+    <div style="padding-top:50px;" class="col-sm-7">
+		<br><br><h4>PyGraphistry API Docs</h4><br><br>
+		
+<!--Start of html from other site		-->		
+		
+		<div class="section" id="graphistry-package">
+<h4>graphistry package<a class="headerlink" href="#graphistry-package" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="submodules">
+<h5>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h5>
+</div>
+<div class="section" id="module-graphistry.plotter">
+<span id="graphistry-plotter-module"></span><h5>graphistry.plotter module<a class="headerlink" href="#module-graphistry.plotter" title="Permalink to this headline">¶</a></h5>
+<dl class="class">
+<dt id="graphistry.plotter.Plotter">
+<em class="property">class </em><code class="descclassname">graphistry.plotter.</code><code class="descname">Plotter</code><a class="headerlink" href="#graphistry.plotter.Plotter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">future.types.newobject.newobject</span></code></p>
+<p>Graph plotting class.</p>
+<p>Created using <code class="docutils literal"><span class="pre">Graphistry.bind()</span></code>.</p>
+<p>Chained calls successively add data and visual encodings, and end with a plot call.</p>
+<p>To streamline reuse and replayable notebooks, Plotter manipulations are immutable. Each chained call returns a new instance that derives from the previous one. The old plotter or the new one can then be used to create different graphs.</p>
+<p>The class supports convenience methods for mixing calls across Pandas, NetworkX, and IGraph.</p>
+<dl class="method">
+<dt id="graphistry.plotter.Plotter.bind">
+<code class="descname">bind</code><span class="sig-paren">(</span><em>source=None</em>, <em>destination=None</em>, <em>node=None</em>, <em>edge_title=None</em>, <em>edge_label=None</em>, <em>edge_color=None</em>, <em>edge_weight=None</em>, <em>point_title=None</em>, <em>point_label=None</em>, <em>point_color=None</em>, <em>point_size=None</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.plotter.Plotter.bind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Relate data attributes to graph structure and visual representation.</p>
+<p>To facilitate reuse and replayable notebooks, the binding call is chainable. Invocation does not effect the old binding: it instead returns a new Plotter instance with the new bindings added to the existing ones. Both the old and new bindings can then be used for different graphs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>source</strong> (<em>String.</em>) &#8211; Attribute containing an edge&#8217;s source ID</li>
+<li><strong>destination</strong> (<em>String.</em>) &#8211; Attribute containing an edge&#8217;s destination ID</li>
+<li><strong>node</strong> (<em>String.</em>) &#8211; Attribute containing a node&#8217;s ID</li>
+<li><strong>edge_title</strong> (<em>HtmlString.</em>) &#8211; Attribute overriding edge&#8217;s minimized label text. By default, the edge source and destination is used.</li>
+<li><strong>edge_label</strong> (<em>HtmlString.</em>) &#8211; Attribute overriding edge&#8217;s expanded label text. By default, scrollable list of attribute/value mappings.</li>
+<li><strong>edge_color</strong> (<em>String.</em>) &#8211; Attribute overriding edge&#8217;s color. <a class="reference external" href="https://graphistry.github.io/docs/legacy/api/0.9.2/api.html#extendedpalette">See palette definitions</a> for values. Based on Color Brewer.</li>
+<li><strong>edge_weight</strong> (<em>String.</em>) &#8211; Attribute overriding edge weight. Default is 1. Advanced layout controls will relayout edges based on this value.</li>
+<li><strong>point_title</strong> (<em>HtmlString.</em>) &#8211; Attribute overriding node&#8217;s minimized label text. By default, the node ID is used.</li>
+<li><strong>point_label</strong> (<em>HtmlString.</em>) &#8211; Attribute overriding node&#8217;s expanded label text. By default, scrollable list of attribute/value mappings.</li>
+<li><strong>point_color</strong> (<em>Integer.</em>) &#8211; <p>Attribute overriding node&#8217;s color. <a class="reference external" href="https://graphistry.github.io/docs/legacy/api/0.9.2/api.html#extendedpalette">See palette definitions</a> for values. Based on Color Brewer.</p>
+</li>
+<li><strong>point_size</strong> (<em>HtmlString.</em>) &#8211; Attribute overriding node&#8217;s size. By default, uses the node degree. The visualization will normalize point sizes and adjust dynamically using semantic zoom.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Plotter.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Plotter.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt><strong>Example: Minimal</strong></dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">graphistry</span><span class="o">.</span><span class="n">bind</span><span class="p">()</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="s">&#39;src&#39;</span><span class="p">,</span> <span class="n">destination</span><span class="o">=</span><span class="s">&#39;dst&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt><strong>Example: Node colors</strong></dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">graphistry</span><span class="o">.</span><span class="n">bind</span><span class="p">()</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="s">&#39;src&#39;</span><span class="p">,</span> <span class="n">destination</span><span class="o">=</span><span class="s">&#39;dst&#39;</span><span class="p">,</span>
+           <span class="n">node</span><span class="o">=</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">point_color</span><span class="o">=</span><span class="s">&#39;color&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt><strong>Example: Chaining</strong></dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">graphistry</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="s">&#39;src&#39;</span><span class="p">,</span> <span class="n">destination</span><span class="o">=</span><span class="s">&#39;dst&#39;</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="s">&#39;id&#39;</span><span class="p">)</span>
+
+<span class="n">g1</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">point_color</span><span class="o">=</span><span class="s">&#39;color1&#39;</span><span class="p">,</span> <span class="n">point_size</span><span class="o">=</span><span class="s">&#39;size1&#39;</span><span class="p">)</span>
+
+<span class="n">g</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">point_color</span><span class="o">=</span><span class="s">&#39;color1b&#39;</span><span class="p">)</span>
+
+<span class="n">g2a</span> <span class="o">=</span> <span class="n">g1</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">point_color</span><span class="o">=</span><span class="s">&#39;color2a&#39;</span><span class="p">)</span>
+<span class="n">g2b</span> <span class="o">=</span> <span class="n">g1</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">point_color</span><span class="o">=</span><span class="s">&#39;color2b&#39;</span><span class="p">,</span> <span class="n">point_size</span><span class="o">=</span><span class="s">&#39;size2b&#39;</span><span class="p">)</span>
+
+<span class="n">g3a</span> <span class="o">=</span> <span class="n">g2a</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">point_size</span><span class="o">=</span><span class="s">&#39;size3a&#39;</span><span class="p">)</span>
+<span class="n">g3b</span> <span class="o">=</span> <span class="n">g2b</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">point_size</span><span class="o">=</span><span class="s">&#39;size3b&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>In the above <strong>Chaining</strong> example, all bindings use src/dst/id. Colors and sizes bind to:</dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="n">g</span><span class="p">:</span> <span class="n">default</span><span class="o">/</span><span class="n">default</span>
+<span class="n">g1</span><span class="p">:</span> <span class="n">color1</span><span class="o">/</span><span class="n">size1</span>
+<span class="n">g2a</span><span class="p">:</span> <span class="n">color2a</span><span class="o">/</span><span class="n">size1</span>
+<span class="n">g2b</span><span class="p">:</span> <span class="n">color2b</span><span class="o">/</span><span class="n">size2b</span>
+<span class="n">g3a</span><span class="p">:</span> <span class="n">color2a</span><span class="o">/</span><span class="n">size3a</span>
+<span class="n">g3b</span><span class="p">:</span> <span class="n">color2b</span><span class="o">/</span><span class="n">size3b</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="graphistry.plotter.Plotter.edges">
+<code class="descname">edges</code><span class="sig-paren">(</span><em>edges</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.plotter.Plotter.edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specify edge list data and associated edge attribute values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>edges</strong> &#8211; Edges and their attributes.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Plotter.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Plotter.</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt><strong>Example</strong></dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s">&#39;src&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;dst&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]})</span>
+<span class="n">graphistry</span>
+    <span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="s">&#39;src&#39;</span><span class="p">,</span> <span class="n">destination</span><span class="o">=</span><span class="s">&#39;dst&#39;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="graphistry.plotter.Plotter.graph">
+<code class="descname">graph</code><span class="sig-paren">(</span><em>ig</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.plotter.Plotter.graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specify the node and edge data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ig</strong> (<em>NetworkX graph or an IGraph graph.</em>) &#8211; Graph with node and edge attributes.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Plotter.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Plotter.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="graphistry.plotter.Plotter.igraph2pandas">
+<code class="descname">igraph2pandas</code><span class="sig-paren">(</span><em>ig</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.plotter.Plotter.igraph2pandas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Under current bindings, transform an IGraph into a pandas edges dataframe and a nodes dataframe.</p>
+<dl class="docutils">
+<dt><strong>Example</strong></dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">graphistry</span><span class="o">.</span><span class="n">bind</span><span class="p">()</span>
+
+<span class="n">es</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s">&#39;src&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;dst&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]})</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="s">&#39;src&#39;</span><span class="p">,</span> <span class="n">destination</span><span class="o">=</span><span class="s">&#39;dst&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">es</span><span class="p">)</span>
+
+<span class="n">ig</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">pandas2igraph</span><span class="p">(</span><span class="n">es</span><span class="p">)</span>
+<span class="n">ig</span><span class="o">.</span><span class="n">vs</span><span class="p">[</span><span class="s">&#39;community&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ig</span><span class="o">.</span><span class="n">community_infomap</span><span class="p">()</span><span class="o">.</span><span class="n">membership</span>
+
+<span class="p">(</span><span class="n">es2</span><span class="p">,</span> <span class="n">vs2</span><span class="p">)</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">igraph2pandas</span><span class="p">(</span><span class="n">ig</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">vs2</span><span class="p">)</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">point_color</span><span class="o">=</span><span class="s">&#39;community&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="graphistry.plotter.Plotter.networkx2pandas">
+<code class="descname">networkx2pandas</code><span class="sig-paren">(</span><em>g</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.plotter.Plotter.networkx2pandas" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="graphistry.plotter.Plotter.nodes">
+<code class="descname">nodes</code><span class="sig-paren">(</span><em>nodes</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.plotter.Plotter.nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specify the set of nodes and associated data.</p>
+<p>Must include any nodes referenced in the edge list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nodes</strong> &#8211; Nodes and their attributes.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Plotter.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Plotter.</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt><strong>Example</strong></dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+
+<span class="n">es</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s">&#39;src&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;dst&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]})</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">graphistry</span>
+    <span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="s">&#39;src&#39;</span><span class="p">,</span> <span class="n">destination</span><span class="o">=</span><span class="s">&#39;dst&#39;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">es</span><span class="p">)</span>
+
+<span class="n">vs</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s">&#39;v&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;lbl&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">]})</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">node</span><span class="o">=</span><span class="s">&#39;v&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">vs</span><span class="p">)</span>
+
+<span class="n">g</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="graphistry.plotter.Plotter.pandas2igraph">
+<code class="descname">pandas2igraph</code><span class="sig-paren">(</span><em>edges</em>, <em>directed=True</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.plotter.Plotter.pandas2igraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a pandas edge dataframe to an IGraph graph.</p>
+<p>Uses current bindings. Defaults to treating edges as directed.</p>
+<dl class="docutils">
+<dt><strong>Example</strong></dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">graphistry</span><span class="o">.</span><span class="n">bind</span><span class="p">()</span>
+
+<span class="n">es</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s">&#39;src&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;dst&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]})</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="s">&#39;src&#39;</span><span class="p">,</span> <span class="n">destination</span><span class="o">=</span><span class="s">&#39;dst&#39;</span><span class="p">)</span>
+
+<span class="n">ig</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">pandas2igraph</span><span class="p">(</span><span class="n">es</span><span class="p">)</span>
+<span class="n">ig</span><span class="o">.</span><span class="n">vs</span><span class="p">[</span><span class="s">&#39;community&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ig</span><span class="o">.</span><span class="n">community_infomap</span><span class="p">()</span><span class="o">.</span><span class="n">membership</span>
+<span class="n">g</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">point_color</span><span class="o">=</span><span class="s">&#39;community&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ig</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="graphistry.plotter.Plotter.plot">
+<code class="descname">plot</code><span class="sig-paren">(</span><em>graph=None</em>, <em>nodes=None</em>, <em>name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.plotter.Plotter.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upload data to the Graphistry server and show as an iframe of it.</p>
+<p>name, Uses the currently bound schema structure and visual encodings.
+Optional parameters override the current bindings.</p>
+<p>When used in a notebook environment, will also show an iframe of the visualization.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>graph</strong> (<em>Pandas dataframe, NetworkX graph, or IGraph graph.</em>) &#8211; Edge table or graph.</li>
+<li><strong>nodes</strong> (<em>Pandas dataframe.</em>) &#8211; Nodes table.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt><strong>Example: Simple</strong></dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">es</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s">&#39;src&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;dst&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]})</span>
+<span class="n">graphistry</span>
+    <span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="s">&#39;src&#39;</span><span class="p">,</span> <span class="n">destination</span><span class="o">=</span><span class="s">&#39;dst&#39;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">es</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd>
+<dt><strong>Example: Shorthand</strong></dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">es</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s">&#39;src&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;dst&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]})</span>
+<span class="n">graphistry</span>
+    <span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="s">&#39;src&#39;</span><span class="p">,</span> <span class="n">destination</span><span class="o">=</span><span class="s">&#39;dst&#39;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">es</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="graphistry.plotter.Plotter.settings">
+<code class="descname">settings</code><span class="sig-paren">(</span><em>height=None</em>, <em>url_params={}</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.plotter.Plotter.settings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specify iframe height and add URL parameter dictionary.</p>
+<p>The library takes care of URI component encoding for the dictionary.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>height</strong> (<em>Integer.</em>) &#8211; Height in pixels.</li>
+<li><strong>url_params</strong> (<em>Dictionary</em>) &#8211; Dictionary of querystring parameters to append to the URL.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-graphistry.pygraphistry">
+<span id="graphistry-pygraphistry-module"></span><h5>graphistry.pygraphistry module<a class="headerlink" href="#module-graphistry.pygraphistry" title="Permalink to this headline">¶</a></h5>
+<p>Top-level import of class PyGraphistry as &#8220;Graphistry&#8221;. Used to connect to the Graphistry server and then create a base plotter.</p>
+<dl class="class">
+<dt id="graphistry.pygraphistry.NumpyJSONEncoder">
+<em class="property">class </em><code class="descclassname">graphistry.pygraphistry.</code><code class="descname">NumpyJSONEncoder</code><span class="sig-paren">(</span><em>skipkeys=False</em>, <em>ensure_ascii=True</em>, <em>check_circular=True</em>, <em>allow_nan=True</em>, <em>sort_keys=False</em>, <em>indent=None</em>, <em>separators=None</em>, <em>encoding='utf-8'</em>, <em>default=None</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.NumpyJSONEncoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">json.encoder.JSONEncoder</span></code></p>
+<dl class="method">
+<dt id="graphistry.pygraphistry.NumpyJSONEncoder.default">
+<code class="descname">default</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.NumpyJSONEncoder.default" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="graphistry.pygraphistry.PyGraphistry">
+<em class="property">class </em><code class="descclassname">graphistry.pygraphistry.</code><code class="descname">PyGraphistry</code><a class="headerlink" href="#graphistry.pygraphistry.PyGraphistry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">future.types.newobject.newobject</span></code></p>
+<dl class="staticmethod">
+<dt id="graphistry.pygraphistry.PyGraphistry.api_key">
+<em class="property">static </em><code class="descname">api_key</code><span class="sig-paren">(</span><em>value=None</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.PyGraphistry.api_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set or get the API key.
+Also set via environment variable GRAPHISTRY_API_KEY.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="graphistry.pygraphistry.PyGraphistry.api_version">
+<em class="property">static </em><code class="descname">api_version</code><span class="sig-paren">(</span><em>value=None</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.PyGraphistry.api_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set or get the API version (1 or 2).
+Also set via environment variable GRAPHISTRY_API_VERSION.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="graphistry.pygraphistry.PyGraphistry.authenticate">
+<em class="property">static </em><code class="descname">authenticate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.PyGraphistry.authenticate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Authenticate via already provided configuration.
+This is called once automatically per session when uploading and rendering a visualization.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="graphistry.pygraphistry.PyGraphistry.bind">
+<em class="property">static </em><code class="descname">bind</code><span class="sig-paren">(</span><em>node=None</em>, <em>source=None</em>, <em>destination=None</em>, <em>edge_title=None</em>, <em>edge_label=None</em>, <em>edge_color=None</em>, <em>edge_weight=None</em>, <em>point_title=None</em>, <em>point_label=None</em>, <em>point_color=None</em>, <em>point_size=None</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.PyGraphistry.bind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a base plotter.</p>
+<p>Typically called at start of a program. For parameters, see <code class="docutils literal"><span class="pre">plotter.bind()</span></code> .</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Plotter.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Plotter.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<blockquote>
+<div><div class="highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">graphistry</span><span class="o">.</span><span class="n">bind</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="graphistry.pygraphistry.PyGraphistry.certificate_validation">
+<em class="property">static </em><code class="descname">certificate_validation</code><span class="sig-paren">(</span><em>value=None</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.PyGraphistry.certificate_validation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable/Disable SSL certificate validation (True, False).
+Also set via environment variable GRAPHISTRY_CERTIFICATE_VALIDATION.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="graphistry.pygraphistry.PyGraphistry.edges">
+<em class="property">static </em><code class="descname">edges</code><span class="sig-paren">(</span><em>edges</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.PyGraphistry.edges" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="graphistry.pygraphistry.PyGraphistry.graph">
+<em class="property">static </em><code class="descname">graph</code><span class="sig-paren">(</span><em>ig</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.PyGraphistry.graph" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="graphistry.pygraphistry.PyGraphistry.nodes">
+<em class="property">static </em><code class="descname">nodes</code><span class="sig-paren">(</span><em>nodes</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.PyGraphistry.nodes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="graphistry.pygraphistry.PyGraphistry.protocol">
+<em class="property">static </em><code class="descname">protocol</code><span class="sig-paren">(</span><em>value=None</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.PyGraphistry.protocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set or get the protocol (&#8216;http&#8217; or &#8216;https&#8217;).
+Set automatically when using a server alias.
+Also set via environment variable GRAPHISTRY_PROTOCOL.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="graphistry.pygraphistry.PyGraphistry.register">
+<em class="property">static </em><code class="descname">register</code><span class="sig-paren">(</span><em>key=None</em>, <em>server=None</em>, <em>protocol=None</em>, <em>api=None</em>, <em>certificate_validation=None</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.PyGraphistry.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>API key registration and server selection</p>
+<p>Changing the key effects all derived Plotter instances.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>key</strong> (<em>String.</em>) &#8211; API key.</li>
+<li><strong>server</strong> (<em>Optional string.</em>) &#8211; URL of the visualization server.</li>
+<li><strong>protocol</strong> (<em>Optional string.</em>) &#8211; Protocol used to contact visualization server</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">None.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">None.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt><strong>Example: Standard</strong></dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">graphistry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s">&quot;my api key&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt><strong>Example: Developer</strong></dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">graphistry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s">&#39;my api key&#39;</span><span class="p">,</span> <span class="n">server</span><span class="o">=</span><span class="s">&#39;staging&#39;</span><span class="p">,</span> <span class="n">protocol</span><span class="o">=</span><span class="s">&#39;https&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt><strong>Example: Through environment variable</strong></dt>
+<dd><dl class="first docutils">
+<dt>::</dt>
+<dd>export GRAPHISTRY_API_KEY = &#8216;my api key&#8217;</dd>
+</dl>
+<dl class="last docutils">
+<dt>::</dt>
+<dd>import graphistry
+graphistry.register()</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="graphistry.pygraphistry.PyGraphistry.server">
+<em class="property">static </em><code class="descname">server</code><span class="sig-paren">(</span><em>value=None</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.PyGraphistry.server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the hostname of the server or set the server using hostname or aliases.
+Supported aliases: &#8216;localhost&#8217;, &#8216;staging&#8217;, &#8216;labs&#8217;.
+Also set via environment variable GRAPHISTRY_HOSTNAME.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="graphistry.pygraphistry.PyGraphistry.settings">
+<em class="property">static </em><code class="descname">settings</code><span class="sig-paren">(</span><em>height=None</em>, <em>url_params={}</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.PyGraphistry.settings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="graphistry.pygraphistry.bind">
+<code class="descclassname">graphistry.pygraphistry.</code><code class="descname">bind</code><span class="sig-paren">(</span><em>node=None</em>, <em>source=None</em>, <em>destination=None</em>, <em>edge_title=None</em>, <em>edge_label=None</em>, <em>edge_color=None</em>, <em>edge_weight=None</em>, <em>point_title=None</em>, <em>point_label=None</em>, <em>point_color=None</em>, <em>point_size=None</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.bind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a base plotter.</p>
+<p>Typically called at start of a program. For parameters, see <code class="docutils literal"><span class="pre">plotter.bind()</span></code> .</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Plotter.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Plotter.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<blockquote>
+<div><div class="highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">graphistry</span><span class="o">.</span><span class="n">bind</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="graphistry.pygraphistry.edges">
+<code class="descclassname">graphistry.pygraphistry.</code><code class="descname">edges</code><span class="sig-paren">(</span><em>edges</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.edges" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="graphistry.pygraphistry.graph">
+<code class="descclassname">graphistry.pygraphistry.</code><code class="descname">graph</code><span class="sig-paren">(</span><em>ig</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.graph" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="graphistry.pygraphistry.nodes">
+<code class="descclassname">graphistry.pygraphistry.</code><code class="descname">nodes</code><span class="sig-paren">(</span><em>nodes</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.nodes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="graphistry.pygraphistry.register">
+<code class="descclassname">graphistry.pygraphistry.</code><code class="descname">register</code><span class="sig-paren">(</span><em>key=None</em>, <em>server=None</em>, <em>protocol=None</em>, <em>api=None</em>, <em>certificate_validation=None</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>API key registration and server selection</p>
+<p>Changing the key effects all derived Plotter instances.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>key</strong> (<em>String.</em>) &#8211; API key.</li>
+<li><strong>server</strong> (<em>Optional string.</em>) &#8211; URL of the visualization server.</li>
+<li><strong>protocol</strong> (<em>Optional string.</em>) &#8211; Protocol used to contact visualization server</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">None.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">None.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt><strong>Example: Standard</strong></dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">graphistry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s">&quot;my api key&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt><strong>Example: Developer</strong></dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">graphistry</span>
+<span class="n">graphistry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s">&#39;my api key&#39;</span><span class="p">,</span> <span class="n">server</span><span class="o">=</span><span class="s">&#39;staging&#39;</span><span class="p">,</span> <span class="n">protocol</span><span class="o">=</span><span class="s">&#39;https&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt><strong>Example: Through environment variable</strong></dt>
+<dd><dl class="first docutils">
+<dt>::</dt>
+<dd>export GRAPHISTRY_API_KEY = &#8216;my api key&#8217;</dd>
+</dl>
+<dl class="last docutils">
+<dt>::</dt>
+<dd>import graphistry
+graphistry.register()</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="graphistry.pygraphistry.settings">
+<code class="descclassname">graphistry.pygraphistry.</code><code class="descname">settings</code><span class="sig-paren">(</span><em>height=None</em>, <em>url_params={}</em><span class="sig-paren">)</span><a class="headerlink" href="#graphistry.pygraphistry.settings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-graphistry">
+<span id="module-contents"></span><h5>Module contents<a class="headerlink" href="#module-graphistry" title="Permalink to this headline">¶</a></h5>
+</div>
+</div> 
+		
+<!--End of html from other site		-->
+			
+<a id="link">link</a>	
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+    </div>
+	<div class="col-sm-1">
+</div>	
+	  </div>	
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-3 col-sm-6 footerleft ">
+        <div class="logofooter"> <img style="max-height:40px; margin-top: 10px;" src="../images/logo.png"></div>
+        
+      </div>
+      <div class="col-md-2 col-sm-6 paddingtop-bottom">
+        <ul class="footer-ul">
+		  <li><a href="#"> Home </a></li>
+		  <li><a href="#"> Learn More </a></li>
+          <li><a href="#"> Setup Guide</a></li>
+          <li><a href="#"> UI Guide</a></li>
+        </ul>
+      </div>
+      <div class="col-md-3 col-sm-6 paddingtop-bottom">
+			<p style="color:#E6E6E6; font-size:12px;">1212 Broadway Floor 11, Oakland, CA 94612</p>
+        <p style="color:#E6E6E6; font-size:12px;">info@graphistry.com</p>	  
+      </div>
+      <div class="col-md-3 col-sm-6 paddingtop-bottom">
+        </div>
+      </div>
+    </div>
+</footer>
+<!--footer start from here-->
+
+<div class="copyright">
+  <div class="container">
+    <div class="col-md-6">
+      <p>© Graphistry Inc 2017</p>
+    </div>
+    <div class="col-md-6">
+      <ul class="bottom_ul">
+        <li><a href="#">graphistry.com</a></li>
+        <li><a href="#">About us</a></li>
+        <li><a href="#">Getting Started</a></li>
+        <li><a href="#">Docs</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+

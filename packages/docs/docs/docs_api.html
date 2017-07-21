@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Docs : Graphistry API information for cross-language use, e.g., REST">
+	<link rel="stylesheet" type="text/css" media="screen" href="../css/bootstrap.css">
+
+    <title>Docs</title>
+  </head>
+
+  <body>
+
+<nav class="navbar navbar-default navbar-fixed-top navbar-inverse">
+  <div class="container-fluid">
+    <div class="navbar-left">
+	<img style="max-height:30px; margin-top: 10px; margin-left:30px;" src="../images/logo.png">
+    </div>
+	<div class="navbar-left"><a style="color:#E6E6E6;" class="navbar-text" href="#">Graphistry</a>
+	<a style="margin-top: 18px; margin-left: 40px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Server Status: Active</a>
+	<a style="margin-top: 18px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Location: USA</a>	
+</div>  
+    <div class="collapse navbar-collapse" id="myNavbar">
+      <ul class="nav navbar-nav">
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+<!--        <li><a href="index.html">Dashboard</a></li>-->
+        <li><a href="../setup_home.html">Getting Started</a></li>
+        <li class="active"><a style="margin-right:30px;" href="../docs.html">Docs</a></li>
+		 <li><button style="margin-top:8px; margin-right:30px;" type="button" class="btn btn-info">Launch</button></li>  
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="row">
+    <div style="padding-left:150px; padding-top:50px; "class="col-sm-4">
+       <div style="color:black; font-size:12px;"><br><br>
+		   <p><strong>UI Guides</strong></p>
+		   <a href="../ui.html" style="color:black;"><p> -  UI Basics</p></a>
+		   <a href="../ui_basics.html" style="color:black;"><p> -  Filters & Exclusions</p></a>
+		   <a href="../ui_histograms.html" style="color:black;"><p> -  Histograms</p></a>
+		   <a style="color:grey;"><p> -  Tips & Tricks</p></a>
+		   <hr>
+		   <p><strong>Graphistry Setup</strong></p>
+		   <a href="../setup/admin.html" style="color:black;"><p> -  Admin Setup</p></a>	
+		   <a href="../setup/notebook/notebook.html" style="color:black;"><p> -  Notebook Setup Tutorial (PyGraphistry)</p></a>	
+		   <a href="../setup/developer.html" style="color:black;"><p> -  Developer Embedding Tutorial (React) </p></a>	
+		   <hr>
+           <p><strong>REST API's</strong></p>
+		   <a style="color:black;" href="#link"><p style="text-decoration: underline;"><strong> -  REST API Documentation 0.9.2</strong></p></a>
+		   		<p class="tab"><strong>About</strong> </p>
+		   				<a style="color:black;"><p class="tab"> -  Introduction </p></a>
+		   <hr>
+		   		<p class="tab"><strong>Embed Visualizations</strong> </p>
+		   				<a style="color:black;"><p class="tab"> -  HTML </p></a>
+		   				<a style="color:black;"><p class="tab"> -  URL Options </p></a>
+		   				<a style="color:black;"><p class="tab"> -  Iframe CSS Style Tips </p></a>
+		   <hr>
+		   		<p class="tab"><strong>Upload Data</strong> </p>
+		   				<a style="color:black;"><p class="tab"> -  JSON Format </p></a>
+		   				<a style="color:black;"><p class="tab"> -  Edge Attributes </p></a>
+		   				<a style="color:black;"><p class="tab"> -  Node Attributes </p></a>
+		   				<a style="color:black;"><p class="tab"> -  Extended Color Pallates </p></a>
+		   				<a style="color:black;"><p class="tab"> -  REST JSON API </p></a>
+		   				<a style="color:black;"><p class="tab"> -  Curl Example </p></a>
+		   <hr>
+		   		<p class="tab"><strong>Language Bindings</strong> </p>
+		   				<a style="color:black;"><p class="tab"> -  Scal: Spark & GraphX </p></a>
+		   				<a style="color:black;"><p class="tab"> -  NodeJS </p></a>
+		   				<a style="color:black;"><p class="tab"> -  Python </p></a>
+		   <hr>
+		   		<p class="tab"><strong>Integrate</strong> </p>
+		   				<a style="color:black;"><p class="tab"> -  Splunk </p></a>
+		   				<a style="color:black;"><p class="tab"> -  Zepplin Spark Notebooks </p></a>
+		   				<a style="color:black;"><p class="tab"> -  Ipython & Jupyter Notebooks </p></a>
+		   <hr>
+		   <a href="docs_workbook_api.html" style="color:black;"><p> - Workbook REST API Documentation</p></a><br>
+		   <hr>
+		   <p><strong>Python Libraries (Notebooks & API)</strong></p>
+		   <a href="https://github.com/graphistry/pygraphistry" target="_blank" style="color:black;"><p> -  PyGraphistry Project</p></a>
+		   <a href="docs_pyAPI.html" style="color:black;"><p> - PyGraphistry API Docs</p></a>
+		   <a href="https://github.com/graphistry/pygraphistry/tree/master/demos" target="_blank" style="color:black;"><p> - Ipython & Jupyter Notebook Examples</p></a>
+		   <hr>
+		   <p><strong>Javascript Libraries</strong></p>
+		   <a style="color:black;"><p> -  Client-side Interactions API</p></a>
+		   <a style="color:black;"><p> --- API Docs</p></a>
+		   <a style="color:black;"><p> --- Examples</p></a>
+		   <a style="color:black;"><p> -  Embedded Visualization React Component</p></a>
+		   <a style="color:black;"><p> --- Examples</p></a><br>
+        </div>
+    </div>
+    <div style="padding-top:50px;" class="col-sm-7">
+		<br><br><h4>REST API Documentation 0.9.2n</h4><br>
+		
+		<!--start of auto gen docs-->
+		<div class="container-fluid">
+      <div class="row">
+     
+          <a name="about"></a>
+          <h4 class="page-header">About</h4>
+          <a name="introduction"></a>
+          <h2 class="sub-header">Introduction</h2>
+          <div>
+
+              <p>Upload your graph and then visually explore it:
+
+              <p><b>For Analysts</b>: visually upload your data using Splunk or programmatically from your scripts and notebooks. Get back a url, or in visual environments, see and interact with the result immediately.
+
+              <p><b>For Developers</b>: upload a graph through our REST API or copy them to your own servers, and then embed an iframe that links to it. Customize using URL parameters.
+
+              <p>We support several formats. For programmatic use, our API supports a simple JSON format and fast protobufs. For additional formats such as CSV, use an integration such as Splunk to convert it. In both cases, graphs are described by two dataframes: a table of edges with optional data and style attributes, and a table of nodes also with optional data and style attributes.
+
+
+
+          </div>
+
+          <a name="embed"></a>
+          <h1 class="page-header">Embed Visualizations</h1>
+          <a name="html"></a>
+          <h2 class="sub-header">HTML</h2>
+          <p><b>WARNING: Do not publicly share or embed live visualization sessions. </b> Every live visualization is backed by a session on a GPU server. Instead, share exported (offline) snapshots.
+
+            Given a dataset name or URL, such as <code>Miserables</code>:
+            <ul>
+              <li>
+                URL:
+                <code>https://labs.graphistry.com/graph/graph.html?dataset=Miserables</code>
+              </li>
+              <li>
+                HTML:
+                <code>&lt;iframe src="https://labs.graphistry.com/graph/graph.html?dataset=Miserables"&gt;&lt;/iframe&gt;</code>
+              </li>
+            </ul>
+
+            <p>When providing a protobuf URL instead of a name, take care to URI encode it.
+
+            <p>Our most popular configuration is:
+<pre>&lt;iframe
+  src="https://labs.graphistry.com/graph/graph.html?dataset=Miserables"
+  style="border: 1px solid black; width: 100%; height: 100%; min-height: 400px"
+&gt;&lt;/iframe&gt;</pre>
+
+
+          <a name="urloptions"></a>
+          <h2 class="sub-header">URL options</h2>
+            <p>Add parameters to the end of the URL to manipulate the visualizations. For additional inputs or outputs, please email <a href="mailto:tips@graphistry.com">tips@graphistry.com</a>.</p>
+
+            <h3>Hide menus</h3>
+            <p>Add <code>...&amp;menu=false</code> to disable the toolbar/menus.</p>
+
+            <h3>Show graph size</h3>
+            <p>Add <code>...&amp;info=true</code> to show graph size.</p>
+
+            <h3>Override background color</h3>
+            <p>Add <code>...&amp;bg=%23FFFFFF</code> to turn the background color white, corresponding to hex color code <code>#FFFFFF</code>. Replace <code>FFFFFF</code> with any other 6-character hex color code. (The prefix <code>%23</code> is the url-encoded representation of <code>#</code>.)</p>
+
+            <h3>Stop or control initial auto-layout duration</h3>
+            <p>Add <code>...&amp;play=<em>1000</em></code>, to run auto-layout for <em>1000</em> milliseconds on page-load. To prevent auto-layout, define initial <code>x</code> and <code>y</code> positions as graph attributes (or by forking within a laid out visualization) and set <code>play</code> to 0.</p>
+
+            <h3>Control the viewport</h3>
+            <p>The following parameters are mainly informative and used by tools like <em>export</em> to record and adjust the viewing bounds for publication.
+                They may be adjusted textually but we recommend panning and zooming and then re-exporting to achieve this functionality.</p>
+            <ul>
+                <li><code>...&amp;left=<em>-1.0</em></code> (floating point) controls the left-most coordinate as a fraction of the visualization's full layout.</li>
+                <li><code>...&amp;right=<em>1.0</em></code> (floating point) controls the right-most coordinate.</li>
+                <li><code>...&amp;top=<em>-1.0</em></code> (floating point) controls the top coordinate.</li>
+                <li><code>...&amp;bottom=<em>1.0</em></code> (floating point) controls the bottom coordinate.</li>
+            </ul>
+
+
+          <a name="iframestyle"></a>
+          <h2 class="sub-header">IFrame CSS style tips</h2>
+          <p>Control the HTML style by adding style attributes: <code>&lt;iframe style="border: 1px solid black; width: 100%; height: 80%; min-height: 400px" src=... </code>
+
+            <h3>Control the border:</h3>
+            <code>border: 1px solid black</code>
+
+            <h3>Control the size:</h3>
+            <code>width: 100%; height: 80%; min-height: 400px</code>
+
+
+          <a name="upload"></a>
+          <h1 class="page-header">Upload Data</h1>
+
+          <a name="jsonformat"></a>
+          <h2 class="sub-header">JSON Format</h2>
+          <p>The JSON file specifies a list of graph nodes, a list of edges, and the style. Each node and edge may provide user-defined data fields, and our system provides several optional predefined ones.</p>
+
+<h3>samplegraph.json:</h3>
+<pre>
+{
+    "name": "myUniqueGraphName",
+    "type": "edgelist",
+    "bindings": {
+        "sourceField": "src",
+        "destinationField": "dst",
+        "idField": "node"
+    },
+    "graph": [
+      {"src": "myNode1", "dst": "myNode2",
+       "myEdgeField1": "I'm an edge!", "myCount": 7},
+      {"src": "myNode2", "dst": "myNode3",
+        "myEdgeField1": "I'm also an edge!", "myCount": 200}
+    ],
+    "labels": [
+      {"node": "myNode1",
+       "myNodeField1": "I'm a node!",
+       "pointColor": 5},
+      {"node": "myNode2",
+       "myNodeField1": "I'm a node too!",
+       "pointColor": 4},
+      {"node": "myNode3",
+       "myNodeField1": "I'm a node three!",
+       "pointColor": 4}
+    ]
+}
+</pre>
+
+        <a name="edgeattributes"></a>
+        <h2>Edge Attributes</h2>
+            <ul>
+                <li><code>src</code>: string or number</li>
+                <li><code>dst</code>: string or number</li>
+                <li><code>edgeTitle</code>: html string <span class="optional"></span></li>
+                <li><code>edgeLabel</code>: html string <span class="optional"></span></li>
+                <li><code>edgeWeight</code>: float <span class="optional"></span></li>
+            </ul>
+
+        <a name="nodeattributes"></a>
+        <h2>Node Attributes</h2>
+
+            <ul id="labels-container">
+                <li><code>node</code>: string or number</li>
+                <li><code>pointTitle</code>: html <span class="optional"></span></li>
+                <li><code>pointLabel</code>: html <span class="optional"></span></li>
+                <li><code>pointSize</code>: float <span class="optional"></span></li>
+                <li><code>pointColor</code>: int 0-11
+
+                    <div class="legend-bars">
+                        <span class="legend-label"></span>
+                        <span class="tick tick1">0</span>
+                        <span class="tick tick2">1</span>
+                        <span class="tick tick3">2</span>
+                        <span class="tick tick4">3</span>
+                        <span class="tick tick5">4</span>
+                        <span class="tick tick6">5</span>
+                        <span class="tick tick7">6</span>
+                        <span class="tick tick8">7</span>
+                        <span class="tick tick9">8</span>
+                        <span class="tick tick10">9</span>
+                        <span class="tick tick11">10</span>
+                        <span class="tick tick12">11</span>
+                    </div>
+                </li>
+            </ul>
+
+          <a name="extendedpalette"></a>
+          <h2>Extended Color Palette</h2>
+
+          <p>See <a href="palette.html">extended color list</a>:</p>
+
+          <div>
+          <iframe src="palette.html" style="width: 100%; height: 75%; border: 1px solid #CCC"></iframe>
+          </div>
+
+
+
+          <a name="restapi"></a>
+          <h2 class="sub-header">REST JSON API</h2>
+          <p>Send a POST request to <code>https://labs.graphistry.com/etl?key=....</code> with your graph in our JSON format. Graphs provide unique names which you can then pass to the HTML viewer's URL.</p>
+
+          <a name="curlexample"></a>
+          <h2 class="sub-header">Curl example</h2>
+
+            <p>Command: <code>curl -H "Content-type: application/json" -X POST -d @samplegraph.json https://labs.graphistry.com/etl?key=YOUR_API_KEY_HERE</code>
+
+            <p>Response: <code>{"success":true,"dataset":"myUniqueGraphName"}</code>
+
+            <p>View: <a href="https://labs.graphistry.com/graph/graph.html?datasetname=myUniqueGraphName">https://labs.graphistry.com/graph/graph.html?datasetname=myUniqueGraphName</a>
+
+
+          <a name="bindings"></a>
+          <h1 class="page-header">Language Bindings</h1>
+          Contact info@graphistry.com for current versions of the below.
+          <h2 class="sub-header">Scala: Spark &amp; GraphX</h2>
+          Contact info@graphistry.com for a sample Zeppelin notebook.
+          <h2 class="sub-header">NodeJS</h2>
+
+
+<b>Stub</b>
+<pre>
+var request = require('request');
+
+//jsonGraph * (err? -> ())? -> ()
+function upload (data, cb) {
+    cb = cb || function (err, data) {
+        if (err) {
+            return console.error('exn', err);
+        } else {
+            return console.log('url: https://labs.graphistry.com/graph/graph.html?dataset=' + data.dataset);
+        }
+    };
+    
+    var options = {
+        uri: 'https://labs.graphistry.com/etl?key=' + YOUR_API_KEY_HERE,
+        method: 'POST',
+        json: data
+    };
+
+    request(options,
+        function (err, resp, body) {
+            return cb(err, body);
+        });
+}
+</pre>
+
+          <a name="python"></a>
+          <h2 class="sub-header">Python</h2>
+
+          <p>Our bindings integrate with <a href="http://pandas.pydata.org/">Pandas</a> dataframes, <a href="http://igraph.org/">igraph</a> and <a href="https://networkx.github.io/">NetworkX</a> algorithms, the <a href="https://pip.pypa.io">pip</a> package manager, and notebooks such as <a href="https://jupyter.org/">Juypter</a> (IPython). The basic idea is to provide a dataframe of edges, optionally a dataframe of nodes, and bindings between dataframe columns and visual attributes. The library will upload the dataframes to the visualization server and return the url to an embeddable interactive webpage. New node and edge attributes can be computed using python, pandas, networkx, and igraph.</p>
+
+          <p>For convenience, attribute bindings are chainable immutable objects. This streamlines creating a graph as a variant of the previous one. Bindings are defined and overriden using method <code>bind</code>.</p>
+
+          <h3>Install</h3>
+<pre>
+pip install "graphistry[all]"
+</pre>
+
+          <h3>Run (Minimal)</h3>
+          Given edgelist dataframe <code>df</code> with columns <code>user</code> and <code>sku</code>, call:
+<pre>
+import pandas
+import graphistry
+graphistry.register(key='email pygraphistry@graphistry.com for a key')
+
+df = pandas.DataFrame([[0,1,5],[0,2,10]], columns=['user','sku','count'])
+g = graphistry.bind(source='user', destination='sku')
+g = g.graph(df)
+g.plot()
+</pre>
+
+
+          <h3>Edges dataframe</h3>
+            <p>The edges dataframe has the same required and optional columns as in the <a href="#edgeattributes">JSON edge format</a>.
+
+            <p>Define edge attribute bindings with method <code>bind(source=<i>attr_name</i>, destination=<i>attr_name</i>, ...)</code>, and load the actual data with call <code>plot(graph=<i>my_edges_dataframe</i>)</code>. Optionally, change the column bindings by overriding these keyword parameters:
+              <code>source</code>,
+              <code>destination</code>,
+              <code>edge_title</code>,
+              <code>edge_label</code>
+              <code>edge_weight</code>.
+            </p>
+            Ex:
+<pre>
+g = g.bind(edge_title='count')
+g.plot()
+</pre>
+
+          <h3>Nodes dataframe</h3>
+          <p>The optional nodes dataframe has the same required and optional columns as in the <a href="#nodeattributes">JSON node format</a>. If the nodes dataframe is not provided, it will be inferred from the edge dataframe's sources and destinations. Specify node attribute bindings with method <code>bind(node=<i>attr_name</i>, ...)</code>, and load the actual node data with call <code>plot(nodes=<i>my_nodes_dataframe</i>)</code>.
+
+          <p>Optionally, change the column bindings by overriding these keyword parameters:
+            <code>point_title</code>,
+            <code>point_label</code>,
+            <code>point_size</code>,
+            <code>point_color</code>.
+          </p>
+          Ex:
+<pre>
+labels = pandas.DataFrame([[0,100],[1,100],[2,30]], columns=['nodeid','cost'])
+labeled_g = g.bind(node='nodeid', point_size='cost').nodes(labels)
+labeled_g.plot()
+</pre>
+
+          <h3>Combining pandas with igraph</h3>
+          <p>Graphs can be moved from pandas into igraph for analysis and then back to pandas for plotting. Helpfully, attribute bindings will be remembered.
+
+<p>Ex: Convert pandas dataframe to igraph graph, compute properties, and directly plot:
+<pre>
+ig = g.pandas2igraph(df)
+ig.vs['pagerank'] = ig.pagerank()
+ig.vs['community'] = ig.community_infomap().membership
+g = g.bind(point_color='community', point_size='pagerank')
+g.plot(ig)
+</pre>
+
+The dataframe can be recovered as well:
+
+<pre>
+(i_edges, i_nodes) = g.igraph2pandas(ig)
+g.plot(graph=i_edges, nodes=i_nodes)
+</pre>
+
+
+
+          <a name="integrate"></a>
+          <h1 class="page-header">Integrate</h1>
+          Contact info@graphistry.com for current versions of the below.
+          <h2 class="sub-header">Splunk</h2>
+          <h2 class="sub-header">Zepplin Spark Notebooks</h2>
+          <h2 class="sub-header">IPython &amp; Juypter Notebooks</h2>
+
+          <h3>Install</h3>
+Install Juypter (IPython):
+<pre>
+pip install "ipython[notebook]"
+</pre>
+Then, follow the <a href="#python">Python instructions</a><br><br><br><br><br><br><br><br><br><br><br><br><br><br>.
+
+
+
+        </div>
+      </div>
+    </div>
+
+		
+		<!--end of auto gen docs-->
+
+
+
+
+
+		
+		<br><br><br><br><br><br><br><br><br><br><br><br>
+    </div>
+	<div class="col-sm-1">
+</div>	
+	  </div>	
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-3 col-sm-6 footerleft ">
+        <div class="logofooter"> <img style="max-height:40px; margin-top: 10px;" src="../images/logo.png"></div>
+        
+      </div>
+      <div class="col-md-2 col-sm-6 paddingtop-bottom">
+        <ul class="footer-ul">
+		  <li><a href="#"> Home </a></li>
+		  <li><a href="#"> Learn More </a></li>
+          <li><a href="#"> Setup Guide</a></li>
+          <li><a href="#"> UI Guide</a></li>
+        </ul>
+      </div>
+      <div class="col-md-3 col-sm-6 paddingtop-bottom">
+			<p style="color:#E6E6E6; font-size:12px;">1212 Broadway Floor 11, Oakland, CA 94612</p>
+        <p style="color:#E6E6E6; font-size:12px;">info@graphistry.com</p>	  
+      </div>
+      <div class="col-md-3 col-sm-6 paddingtop-bottom">
+        </div>
+      </div>
+    </div>
+</footer>
+<!--footer start from here-->
+
+<div class="copyright">
+  <div class="container">
+    <div class="col-md-6">
+      <p>© Graphistry Inc 2017</p>
+    </div>
+    <div class="col-md-6">
+      <ul class="bottom_ul">
+        <li><a href="#">graphistry.com</a></li>
+        <li><a href="#">About us</a></li>
+        <li><a href="#">Getting Started</a></li>
+        <li><a href="#">Docs</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+

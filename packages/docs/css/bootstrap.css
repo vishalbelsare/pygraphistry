@@ -6827,16 +6827,16 @@ table {
 }
 
 th, td {
-  text-align: center;
+  text-align: left;
   padding: 1rem 0.75rem;
 }
 
 th, td {
-  border-right: 1px solid #e1e1e1;
+  border: 1px solid #e1e1e1;
 }
 
 tr:last-of-type,
 td:last-of-type {
-  border-right: none;
-  border-bottom: none;
 }
+
+.tab { margin-left: 30px; }
