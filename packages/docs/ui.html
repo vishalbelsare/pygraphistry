@@ -36,19 +36,19 @@
 
 <div class="jumbotron">
   <div class="container text-center">
-	  <p style="font-size:21px;"><br><br>UI Guide</p>      
+	  <p style="font-size:21px;"><br><br>UI Guide & Advanced Links</p>      
   </div>
 </div>
 
 
 <div class="container-fluid text-center">    
-  <p style="margin-top:60px;"><strong>Let's take a look at the Graphistry UI...</strong></p><br><p style="margin-left:200px; margin-right:200px;">The Graphistry user interface provides analysts a powerful toolsuite to work with massive scale graphs. Filtering, sorting, data selection and manipulation can all be done on the fly, giving you a new way to explore your network data, this page will go over the basic components and links to more in-depth usage tutorials and walkthroughs. Happy Graphing! </p> <br><br>
+  <p style="margin-top:60px;"><strong>Let's take a look at the Graphistry UI...</strong></p><br><p style="margin-left:200px; margin-right:200px;">The Graphistry user interface provides analyst powertools for working with massive graphs. Filter, cluster, drilldown, compare, color, and manipulate data on the fly, giving you a new way to explore your network data.</p> <br><br>
 	
 
   <div style="text-align: center;" class="row">
 	<img src="images/ui_callouts.png" style="max-width:1000px; margin-right:50px;" class="img-fluid" alt="Responsive image">	  
   </div><br>
-	<p style="margin-top:60px;"><strong>Toolbar Overview</strong></p><br><p style="margin-left:200px; margin-right:200px;">The UI toolbar is home to a large suite of powerful tools you can use to manipulate and explore your graph. The toolbar is broken down into 5 major sections: <strong>Graph Tools</strong> directly manipulate the graph visualizations appearance and behavior, <strong>Selection Tools</strong> are how you select and move around graph elements, <strong>Query Tools</strong> allow you to create filters and exclusions quickly, <strong>Inspection Tools</strong> open and close the data inspection panels, and <strong>Workbook Tools</strong> let you go fullscreen, or save your current graph. </p> <br><br><br><br>
+	<p style="margin-top:60px;"><strong>Toolbar Overview</strong></p><br><p style="margin-left:200px; margin-right:200px;">The UI toolbar is home to a large suite of powertools for manipulating and exploring your graph. The toolbar is broken down into 5 major sections: <strong>Graph Tools</strong> directly manipulate the graph visualization's appearance and behavior, <strong>Selection Tools</strong> select/inspect and move graph elements, <strong>Query Tools</strong> quickly filter and exclude and show the current values, <strong>Inspection Tools</strong> open and close the various data inspection panels, and <strong>Workbook Tools</strong> take you fullscreen, open in a new tab, and save your current graph. </p> <br><br><br><br>
 	
 	
   <div style="text-align: center;" class="row">
@@ -59,8 +59,12 @@
 	  	<div style="margin-left: 100px;" class="col-sm-5">
 	<img src="images/Screen%20Shot%202017-07-20%20at%204.34.06%20PM.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
 	</div>
-	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Graph Visualization</strong><br><br>
-	  <p>Explore your graph in the visualization panel, click a node to see its details and click and drag to move a single or group of nodes. Here you’ll also find some quick toggles for seeing labels, and pruning isolated node (unconnected data points)</p></div>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Graph Visualization </strong><i><br/>main panel	 </i><br><br>
+	  <p>Explore your graph data in the main visualization panel:
+	  <ul>
+	   <li><b>Inspect &amp; Move</b>: Click a node to see its details, and click again and drag to move a single or group of nodes.</li> 
+	   <li><b>Drill</b>: When a label is click-opened, click on the various attributes to add filters or exclusions for them.</li>
+	   <li><b>Clean</b>: At the bottom left of the panel, quickly toggle whether to show labels and icons, and prune isolated node (unconnected data points)</li></ul></p></div>
 	  
   </div>
 	
@@ -68,8 +72,15 @@
 	  	<div style="margin-left: 100px;" class="col-sm-5">
 	<img src="images/Screen%20Shot%202017-07-20%20at%204.35.28%20PM.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
 	</div>
-	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Histograms</strong><br><br>
-		  <p>Here, see all of your data organized by it’s attributes, create new histograms for any attribute you’d like, and apply custom color schemes for each!</p><br><br><a href="ui_histograms.html"><button class="btn btn-info">How To Use Histograms</button></a></div>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Histograms</strong><br><i>right panel</i><br><br>
+		  <p>Analyze and manipulate all of your data columns:
+		  <ul>
+		  <li><b>Chart & analyze</b>: Create histogram summaries for any node or edge attribute</li>
+		  <li><b>Filter</b>: Click-drag an attribute to only see the selected range of values</li>
+		  <li><b>Color</b>: Paint the main graph visualization based on an attribute's values and a color palette of your choice to understand where the values occur</li>
+		  <li><b>Size</b>: Control node size based on attribute values to understand what is important</li>
+		 </ul>
+		 	</p><a href="ui_histograms.html"><button class="btn btn-info">More: Histograms and encodings deep dive</button></a></div>
 	  
   </div>
 
@@ -77,14 +88,18 @@
 		<div style="margin-left: 100px;" class="col-sm-5">
 	<img src="images/Screen%20Shot%202017-07-20%20at%204.37.13%20PM.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
 	</div>  
-	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Data Inspector</strong><br><br>
-	  <p>Explore your data in the classic format, use the data brush tool to highlight elements in the graph and see them populated here! </p></div>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Data Inspector</strong><br><i>bottom panel</i><br><br>
+	  <p>Explore your data with the underlying data tables.
+	  <ul>
+	  <li><b>Classic</b>: Search, sort, and navigate</li>
+	  <li><b>Visualize</b>: Click any row to find it in the graph</li>
+	  <li><b>Inspect visual regions</b>: Use the data brush tool to highlight regions of the graph and see the selection's values populated here! </p></div>
 	  
   </div>	
 	
 	
 	<br><br><br><br>
-	<p style="margin-top:60px;"><strong>UI Walkthoughs</strong></p><br><p style="margin-left:200px; margin-right:200px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi turpis velit, elementum sed urna a, gravida ultricies ipsum. Phasellus id ante maximus, dapibus lectus a, consectetur odio. Maecenas enim lorem, interdum at egestas rhoncus, commodo vel mi. Sed metus odio, pellentesque posuere blandit ac, vestibulum at magna. </p> <br><br><br>
+	<p style="margin-top:60px;"><strong>UI Deep Dives</strong></p><br><p style="margin-left:200px; margin-right:200px;"></p> <br><br><br>
 	
 	
   <div style="text-align: center;" class="row">	
@@ -92,7 +107,7 @@
 	  <div style="text-align:left; margin: 10px;   float: none; display: inline-block; border-radius: 5px; border: solid 1px; border-color:#E6E6E6; padding:20px; "class="col-sm-3">
 	  	  	
       <p><strong>Filters & Exclusions</strong></p>
-	  <p style="font-size:12px;">Learn how to use filters and exclusions to create focus in our graphs.</p><br>	<br>  
+	  <p style="font-size:12px;">Drilldowns & data cleaning</p><br>	
 	  <img src="images/icons/filter.png" class="img-responsive" style="width:100%;" alt="Image">	  
     </div>
 	</a>	 
@@ -100,7 +115,7 @@
 	  <div style="text-align:left; margin: 10px;   float: none; display: inline-block; border-radius: 5px; border: solid 1px; border-color:#E6E6E6; padding:20px; "class="col-sm-3">
 	  	  	
       <p><strong>Histograms!</strong></p>
-	  <p style="font-size:12px;">Learn how to use the histogram panel to do advanced filtering and apply color profiles to graphs.</p><br>	  
+	  <p style="font-size:12px;">Advanced filtering and coloring</p><br>	  
 	  <img src="images/icons/histo.png" class="img-responsive" style="width:100%;">	  
     </div>
 	</a>	
@@ -108,7 +123,7 @@
 	  <div style="text-align:left; margin: 10px;   float: none; display: inline-block; border-radius: 5px; border: solid 1px; border-color:#E6E6E6; padding:20px; "class="col-sm-3">
       	  	
       <p><strong>Big Graph Techniques</strong></p>
-	  <p style="font-size:12px;">Learn how to work with massive scale graphs, and some tips and tricks you can use to find insights in large data sets.</p><br>	  
+	  <p style="font-size:12px;">Tips & tricks</p><br>	  
 	  <img src="images/icons/3.png" class="img-responsive" style="width:100%;" alt="Image">	  
     </div>
 	</a>		  
