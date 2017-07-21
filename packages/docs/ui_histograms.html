@@ -42,7 +42,7 @@
 
 
 <div class="container-fluid text-center"> <br><br><br><p><strong>Histograms</strong></p><br>
-  <p style="margin-left:300px; margin-right:300px;">The histogram panel is one of the most powerful tools in our UI, and though it might be intimidating at first, it’s actually quite simple. You can create a histogram that will look at any attribute of the elements in your graph, this helps you get an idea about how the data in your graph is divided. Lets look at an example… </p> <br><br>
+  <p style="margin-left:300px; margin-right:300px;">The histogram panel is one of Graphistry's most insightful, convenient, and powerful tools. Though it might be non-obvious at first, it quickly becomes a mainstay. With it, you can create a histogram for any attribute of the elements in your graph, and use it to quickly understand that data and then manipulate the rest of the system using it. Let's look at an example… </p> <br><br>
 	
 	
 <br>
@@ -51,10 +51,10 @@
 	  	<div style="margin-left: 100px;" class="col-sm-5">
 	<img src="images/histograms/1.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
 	</div>
-	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Create A Histogram</strong><br><br>
-	  <p>You can create a histogram that will look at any attribute of the elements in your graph, this helps you get an idea about how the data in your graph is divided. <br><br>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Create a Histogram</strong><br><br>
+	  <p>A histogram provides a look at how any attribute of the elements in a graph is distributed. <br><br>
 
-For instance, if we wanted to look at <strong>point:degree</strong> we can see a representation of all the nodes in our graph, broken down into buckets based on their degree. We can see here that we have a lot of nodes with low connectivity and only a small amount of nodes with a very high connectivity.</p></div>
+For instance, to understand the <strong>point:degree</strong> values, we first add a histogram of it by using the dropdown.  The dropdown adds a chart that represents all the nodes in the graph binned by their degree. In the example, the chart shows many nodes have low connectivity, and only a few nodes have a high level of connectivity.</p></div>
 	  
   </div>
 
@@ -63,7 +63,7 @@ For instance, if we wanted to look at <strong>point:degree</strong> we can see a
 	<img src="images/histograms/2.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
 	</div>  
 	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Select A Range To Create Filters</strong><br><br>
-	  <p>You can create filters on the fly using histograms, simply click one of the buckets, or click and drag multilpe buckets and see our visualization pare down to nodes with attributes within that range. Click the selected bucket range again to delete the filter.</p></div>
+	  <p>You can filter the graph on-the-fly by manipulating a histogram. Simply click one of the bins, or click and drag across multiple bins. The visualization will pare down to nodes with attributes within that range. Click the selected bin range again to delete the filter.</p></div>
 	  
   </div>
 	
@@ -71,8 +71,8 @@ For instance, if we wanted to look at <strong>point:degree</strong> we can see a
 		<div style="margin-left: 100px;" class="col-sm-5">
 	<img src="images/histograms/3.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
 	</div>  
-	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>We just created this cool filter! </strong><br><br>
-	  <p></p></div>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>We Just Created a Cool Filter! </strong><br><br>
+	  <p>The filter panel is a convenient place to see and manipulate the set of active filters in detail, and includes the filters created through the histogram panel. </p></div>
 	  
   </div>
 	
@@ -80,7 +80,7 @@ For instance, if we wanted to look at <strong>point:degree</strong> we can see a
 		<div style="margin-left: 100px;" class="col-sm-5">
 	<img src="images/histograms/4.png" style="margin-left: 10px; max-width:480px; margin-right:50px;" class="img-fluid" alt="Responsive image">
 	</div>  
-	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Histogram Settings</strong><br><br>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Histogram Settings Control the Graph</strong><br><br>
 	  <p>Lets jump into this histograms’ advanced settings, so we can apply a color scheme for our graph. </p></div>
 	  
   </div>
@@ -89,8 +89,13 @@ For instance, if we wanted to look at <strong>point:degree</strong> we can see a
 		<div style="margin-left: 100px;" class="col-sm-5">
 	<img src="images/histograms/5.png" style="margin-left: 10px; max-width:480px; margin-right:50px;" class="img-fluid" alt="Responsive image">
 	</div>  
-	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Applying A Color Profile</strong><br><br>
-	  <p>Say we wanted to be able to see from far away which elements in our graph have the most connections? In our histogram settings,  we can select a gradient color scheme, and now we can see our highly connected nodes in red, and our lowe connectivity nodes in blue.   </p></div>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Applying a Color Profile</strong><br><br>
+	  <p>Say we wanted to be able to see from far away which elements in our graph have the most connections? In our histogram settings,  we can select a gradient color scheme, and now we can see our highly connected nodes in red, and our low connectivity nodes in blue.
+	  <ul>
+	  <li><b>Gradient palettes</b>: Values are interpolated by blending nearby palette colors, similar to a heatmap. Pick when you want to compare numeric values, such as for the earliest time, or the biggest size.</li>
+	  <li><b>Categorical palettes</b>: Values are assigned exact palette colors in a round-robin order. Pick when you want to compare distinct things, such as different kinds of alerts or communities.</li>
+	  </ul>
+	  </p></div>
 	  
   </div>	
 	
