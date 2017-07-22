@@ -5,7 +5,7 @@ import { DescriptionFormControl } from 'pivot-shared/components';
 import { DateTimeRangePicker } from 'pivot-shared/components/DateTimeRangePicker/DateTimeRangePicker.js';
 import {
     Col, Panel, ControlLabel,
-    Form, FormGroup//, FormControl
+    FormGroup//, FormControl
 } from 'react-bootstrap';
 
 import logger from 'pivot-shared/logger.js';

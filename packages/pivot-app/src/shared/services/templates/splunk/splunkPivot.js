@@ -1,22 +1,26 @@
 import _ from 'underscore';
 import { Observable } from 'rxjs';
 import moment from 'moment-timezone';
-import { PivotTemplate } from '../template.js';
-import { splunkConnector0 } from '../../connectors';
-import { shapeResults } from '../../shapeResults.js';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
+
+import { PivotTemplate } from '../template.js';
+import { splunkConnector0 } from '../../connectors';
+import { shapeResults } from '../../shapeResults.js';
+import { splunkFieldsBlacklist, splunkEntitiesBlacklist, splunkAttributesBlacklist } from './settings.js';
 
 export class SplunkPivot extends PivotTemplate {
     constructor( pivotDescription ) {
         super(pivotDescription);
 
-        const { toSplunk, connections, encodings, attributes } = pivotDescription;
+        const { toSplunk, connections, encodings, attributes, connectionsBlacklist, attributesBlacklist } = pivotDescription;
         this.toSplunk = toSplunk;
         this.connections = connections;
+        this.connectionsBlacklist = connectionsBlacklist || splunkEntitiesBlacklist;
         this.encodings = encodings;
         this.attributes = attributes;
+        this.attributesBlacklist = attributesBlacklist || splunkAttributesBlacklist;
         this.connector = splunkConnector0;
     }
 
@@ -41,7 +45,11 @@ export class SplunkPivot extends PivotTemplate {
                     pivot.splunkSearchId = searchId;
                     pivot.isPartial = isPartial;
                     pivot.connections = this.connections;
+                    pivot.connectionsBlacklist = 
+                        this.connections && this.connections.length ? [] : this.connectionsBlacklist;
                     pivot.attributes = this.attributes;
+                    pivot.attributesBlacklist = 
+                        this.attributes && this.attributes.length ? [] : this.attributesBlacklist;
                     pivotCache[pivot.id] = {
                         results: pivot.results,
                         query: searchQuery,
@@ -113,16 +121,26 @@ export class SplunkPivot extends PivotTemplate {
         return buildLookup(text, pivotCache);
     }
 
-    constructFieldString() {
-        const fields = (this.connections || []).concat(this.attributes || []);
-        if (fields.length > 0) {
-            return `| rename _cd as EventID
-                    | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
-                    | fields "c_time" as time, "EventID", "${fields.join('","')}" | fields - _*`;
-        } else { // If there are no fields, load all
-            return `| rename _cd as EventID
-                    | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
-                    | rename "c_time" as time | fields * | fields - _*`;
+    constructFieldString() {        
+        const base = `
+            | fields *
+            | rename _cd as EventID
+            | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
+            | rename c_time as time`;
+        
+        if (this.attributes && this.attributes.length > 0) {
+            const fields = 
+                ["time", "EventID"]
+                    .concat(this.connections || [])
+                    .concat(this.attributes || []);
+            return `
+                ${base} 
+                | fields ${ fields.join(',') }`;
+        } else {
+            //all fields
+            return `
+                ${base} 
+                | fields - ${splunkFieldsBlacklist.join(' ')}`;
         }
     }
 }

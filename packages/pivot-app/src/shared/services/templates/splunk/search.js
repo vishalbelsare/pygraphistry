@@ -1,8 +1,10 @@
-import { SplunkPivot } from './splunkPivot.js';
 import stringhash from 'string-hash';
 import logger from '../../../logger.js';
-
 const log = logger.createLogger(__filename);
+
+
+import { SplunkPivot } from './splunkPivot.js';
+import { splunkDesiredAttributes } from './settings.js';
 
 
 export const searchSplunk = new SplunkPivot({
@@ -21,14 +23,14 @@ export const searchSplunk = new SplunkPivot({
             name: 'fields',
             inputType: 'multi',
             label: 'Entities:',
-            options: [].map(x => ({id:x, name:x})),
+            options: splunkDesiredAttributes.map(x => ({id:x, name:x})),
             defaultValue: []
         },
         {
             name: 'attributes',
             inputType: 'multi',
             label: 'Attributes:',
-            options: [],
+            options: splunkDesiredAttributes.map(x => ({id:x, name:x}))
         },        
         {
             name: 'time',
@@ -39,10 +41,13 @@ export const searchSplunk = new SplunkPivot({
     ],
     toSplunk: function (args, pivotCache = {}, { time } = {}) {
 
+        this.connections = args.fields.value;        
 
-        this.connections = args.fields.value;
-        const query = `search ${args.query} ${this.constructFieldString()} | head 1000`;
-
+        const query = `
+            search ${args.query} 
+            ${this.constructFieldString()}
+            ${ (args.query||'').indexOf(' head ') === -1 ? ' | head 1000 ' : ''}`;
+ 
         return { 
             searchQuery: query,
             searchParams: this.dayRangeToSplunkParams((args.time||{}).value, time) 

@@ -99,22 +99,33 @@ function shapeHyperGraph({ app, pivot } ) {
     const { 
         events = [], 
         graph: { nodes: pivotNodes = [], edges: pivotEdges = [] } = {}, 
-        attributes, connections } = pivot;
+        attributes = [], attributesBlacklist = [], 
+        connections = [], connectionsBlacklist = [] } = pivot;
     const isStar = extractAllNodes(connections);
 
     const edges = [];
     const nodeLabels = [];
+    
     for(let i = 0; i < events.length; i++) {
         const row = events[i];
         const eventID = row.EventID || simpleflake().toJSON();
 
-        const fields =
-            isStar ?
-            _.filter(Object.keys(row), function (field) {
-                return (field.toLowerCase() !== 'eventid');
-            })
-            : _.filter(connections, function (field) { return row[field]; });
-        const attribs = (attributes || []).concat(fields);
+        //TODO partially evaluate outside of loop
+        const entityTypes =
+            Object.keys(row)
+                .filter((field) => field !== 'EventID')
+                .filter((field) => isStar || connections.indexOf(field) > -1)
+                .filter((field) => row[field] !== undefined)
+                .filter((field) => connectionsBlacklist.indexOf(field) === -1);
+
+        const attribs = 
+            Object.keys(row)
+                .filter((field) => row[field] !== undefined)
+                .filter((field) => 
+                    field === 'EventID'
+                    || !attributes.length
+                    || attributes.indexOf(field) > -1)
+                .filter((field) => attributesBlacklist.indexOf(field) === -1);
 
         nodeLabels.push(
             Object.assign({},
@@ -122,8 +133,8 @@ function shapeHyperGraph({ app, pivot } ) {
                 {'node': eventID, type:'EventID'}));
 
 
-        for (let j = 0; j < fields.length; j++) {
-            const field = fields[j];
+        for (let j = 0; j < entityTypes.length; j++) {
+            const field = entityTypes[j];
 
             if (field in row && (row[field] !== undefined) && (row[field] !== null)) {
                 nodeLabels.push({'node': row[field], type: field});

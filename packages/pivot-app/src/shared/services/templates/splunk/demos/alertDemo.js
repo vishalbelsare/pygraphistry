@@ -1,7 +1,10 @@
-import { SplunkPivot } from '../splunkPivot';
 import stringhash from 'string-hash';
 import logger from '../../../../logger';
 const log = logger.createLogger(__filename);
+
+import { SplunkPivot } from '../splunkPivot';
+import { splunkAttributesBlacklist } from '../settings.js';
+
 
 
 const splunkIndices = {
@@ -51,6 +54,11 @@ const ALERT_DEMO_NODE_ICONS = {
     'EventID': 'exclamation-circle',
     'Search': 'search'
 };
+
+
+const badFields = [];
+for (let i = 0; i < 30; i++) { badFields.push('field' + i); }
+const attributesBlacklist = splunkAttributesBlacklist.concat(badFields);
 
 const alertDemoEncodings = {
     point: {
@@ -136,6 +144,7 @@ export const searchFireeyeDemo = new SplunkPivot({
         }
     ],
     connections: FIREEYE_FIELDS,
+    attributesBlacklist: attributesBlacklist,    
     encodings: alertDemoEncodings,
     toSplunk: function (args) {
         const query = `search EventID=${args.event} ${splunkIndices.FIREEYE} ${this.constructFieldString()}`;
@@ -171,6 +180,7 @@ export const expandFireeyeDemo = new SplunkPivot({
         }
     ],
     connections: FIREEYE_FIELDS,
+    attributesBlacklist: attributesBlacklist,    
     encodings: alertDemoEncodings,
     toSplunk: function (args, pivotCache) {
         const refPivot = args.ref.value;
@@ -209,6 +219,7 @@ export const expandBlueCoatDemo = new SplunkPivot({
         }
     ],
     connections: [ 'Fire Eye URL', 'External IPs' ],
+    attributesBlacklist: attributesBlacklist,    
     encodings: alertDemoEncodings,
     toSplunk: function (args, pivotCache) {
         const refPivot = args.pivotRef.value[0];
@@ -247,6 +258,7 @@ export const expandFirewallDemo = new SplunkPivot({
         }
     ],
     connections: [ 'External IPs', 'Internal IPs' ],
+    attributesBlacklist: attributesBlacklist,    
     encodings: alertDemoEncodings,
     toSplunk: function (args, pivotCache) {
         const refPivot = args.pRef.value[0];
@@ -286,6 +298,7 @@ export const expandIDSDemo = new SplunkPivot({
 
     ],
     connections: [ 'Internal IPs', 'Message' ],
+    attributesBlacklist: attributesBlacklist,    
     encodings: alertDemoEncodings,
     toSplunk: function (args, pivotCache) {
         const refPivot = args.pRef.value[0];
