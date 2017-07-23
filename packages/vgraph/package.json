@@ -78,8 +78,7 @@
     "sanitize-html": "^1.14.1",
     "shm-typed-array": "^0.0.10",
     "spawn-rx": "^2.0.11",
-    "tslib": "^1.7.1",
-    "zlib": "^1.0.5"
+    "tslib": "^1.7.1"
   },
   "devDependencies": {
     "@types/jest": "~20.0.1",
@@ -92,6 +91,7 @@
     "conventional-github-releaser": "^1.1.11",
     "conventional-recommended-bump": "^1.0.0",
     "cz-conventional-changelog": "^2.0.0",
+    "husky": "~0.14.3",
     "jest": "^20.0.4",
     "jest-environment-node-debug": "^2.0.0",
     "json": "^9.0.6",
