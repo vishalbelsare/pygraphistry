@@ -1,3 +1,17 @@
+## Install
+
+1. npm install
+2. npm run build
+
+## Commit
+
+1. Make branch and do changes
+2. npm run commit (follow instructions)
+3. Push to github; squash and marge into master when done
+4. Publish: npm run publish-release
+5. Update any dependents, namely, viz-app
+
+
 ## load, manipulate, and serialize our VGraph protobuf format
 
 - exports the [compiled protobuf code](https://github.com/graphistry/vgraph-to-mapd/blob/master/src/vgraph/vgraph.js) for encoding/decoding VGraphs
