@@ -78,8 +78,7 @@
     "sanitize-html": "^1.14.1",
     "shm-typed-array": "^0.0.10",
     "spawn-rx": "^2.0.11",
-    "tslib": "^1.7.1",
-    "zlib": "^1.0.5"
+    "tslib": "^1.7.1"
   },
   "devDependencies": {
     "@types/jest": "~20.0.1",
