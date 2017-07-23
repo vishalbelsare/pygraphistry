@@ -1,3 +1,13 @@
+<a name="1.1.2"></a>
+## [1.1.2](https://github.com/graphistry/vgraph-to-mapd/compare/v1.1.1...v1.1.2) (2017-07-23)
+
+
+### Bug Fixes
+
+* **zlib:** remove zlib dependency in favor of node's impl ([7887570](https://github.com/graphistry/vgraph-to-mapd/commit/7887570))
+
+
+
 <a name="1.1.1"></a>
 ## [1.1.1](https://github.com/graphistry/vgraph-to-mapd/compare/v1.1.0...v1.1.1) (2017-07-07)
 
