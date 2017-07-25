@@ -119,10 +119,24 @@ const conf = convict({
         host: {
             doc: 'The hostname of the Splunk Server',
             format: String,
-            default: undefined,
+            default: 'localhost',
             arg: 'splunk-host',
             env: 'SPLUNK_HOST'
         },
+        port: {
+            doc: 'Splunk API port', 
+            format: Number,
+            default: 8089,
+            arg: 'splunk-port',
+            env: 'SPLUNK_PORT'
+        },   
+        scheme: {
+            doc: 'Splunk protocol',
+            format: ['http', 'https'],
+            default: 'https',
+            arg: 'splunk-scheme',
+            env: 'SPLUNK_SCHEME' 
+        },           
         jobCacheTimeout: {
             doc: 'Time (in seconds) during which Splunk caches the query results. Set to -1 to disable caching altogether',
             format: Number,

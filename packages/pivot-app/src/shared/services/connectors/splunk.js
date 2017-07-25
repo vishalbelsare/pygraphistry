@@ -17,9 +17,11 @@ class SplunkConnector extends Connector {
             host: config.host,
             username:  config.username,
             password: config.password,
+            scheme: config.scheme,
+            port: config.port
         });
 
-        const metadata = { splunkHostName: config.host, splunkUser: config.user };
+        const metadata = { splunkHostName: config.host, splunkUser: config.username };
         this.log = logger.createLogger(__filename).child(metadata);
 
         this.slogin = Observable.bindNodeCallback(this.service.login.bind(this.service));
@@ -185,4 +187,6 @@ export const splunkConnector0 = new SplunkConnector({
     host: conf.get('splunk.host'),
     username: conf.get('splunk.user'),
     password: conf.get('splunk.key'),
+    scheme: conf.get('splunk.scheme'),
+    port: conf.get('splunk.port')
 });
