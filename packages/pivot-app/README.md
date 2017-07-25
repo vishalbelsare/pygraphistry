@@ -4,7 +4,7 @@
 
 ### Prerequisites
 
-* Node 6.x.x
+* Node 6.x.x (Production is LTS Boron, the node:boron-slim container)
 * NPM 3.x.x
 
 ### Setup
