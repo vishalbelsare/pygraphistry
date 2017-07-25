@@ -48,10 +48,7 @@ function graphInvestigation(action$) {
                     ))
                     .concat(Observable.merge(
                         falcor.call(`graph`),
-                        falcor.set(
-                            $value(['status'], { etling: true, ok: true }),
-                            $value(['pivots', { length }, 'status'], { searching: false, ok: true })
-                        )
+                        falcor.set($value(['status'], { etling: true, ok: true }))
                     ));
             }
         ))

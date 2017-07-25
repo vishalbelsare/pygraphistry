@@ -1,5 +1,6 @@
 import VError from 'verror';
 import { Observable } from 'rxjs';
+import { ErrorObservable } from 'rxjs/observable/ErrorObservable';
 import { withSchema } from '@graphistry/falcor-react-schema';
 import { logErrorWithCode } from 'pivot-shared/util';
 import { $pathValue } from '@graphistry/falcor-json-graph';
@@ -61,20 +62,37 @@ function searchPivotCallRoute({ loadInvestigationsById, loadPivotsById, searchPi
     }
 }
 
+
+
 function captureErrorAndNotifyClient(pivotIds) {
-    return function(e) {
-        const errorCode = logErrorWithCode(log, e);
-        const cause = VError.cause(e);
+
+    const captureErrorAndNotifyClientFlat = function (e) {
+        const exn = e instanceof Error ? e : new Error(e);
+        const errorCode = logErrorWithCode(log, exn);
+        const cause = VError.cause(exn);
         const status = {
             ok: false,
             searching: false,
             code: errorCode,
-            message: `${cause && cause.message || e.message} (code: ${errorCode})`,
+            message: `${cause && cause.message || exn.message} (code: ${errorCode})`,
             title: 'Error running pivot!'
         };
 
         return Observable.from([
             $pathValue(`pivotsById['${pivotIds}']['status']`, status)
-        ]);
-    }
+        ]);   
+    };
+
+
+    return function (e) {
+        if (e instanceof ErrorObservable) {
+            return e
+                .catch((e) => Observable.of(e))
+                .switchMap((e) => captureErrorAndNotifyClientFlat(e))
+        } else {
+            return captureErrorAndNotifyClientFlat(e);
+        }
+    };
+
 }
+

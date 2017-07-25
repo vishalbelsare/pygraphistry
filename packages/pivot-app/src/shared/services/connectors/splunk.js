@@ -94,7 +94,7 @@ class SplunkConnector extends Connector {
                 return Observable.throw(
                     new VError(
                         {name: 'SplunkSearchError', info: searchInfo},
-                         this.extractSplunkErrorMsg(splunkErr)
+                         `Splunk returned an error: ${this.extractSplunkErrorMsg(splunkErr)}`
                      )
                 )
             });
@@ -131,7 +131,7 @@ class SplunkConnector extends Connector {
                 return Observable.throw(
                     new VError(
                         {name: 'SplunkReadResultError', info: searchInfo},
-                        this.extractSplunkErrorMsg(splunkErr)
+                        `Splunk returned an error: ${this.extractSplunkErrorMsg(splunkErr)}`
                     )
                 )
             });
@@ -141,7 +141,7 @@ class SplunkConnector extends Connector {
         // Generate a hash for the query so we can look it up in splunk
         const hash = conf.get('splunk.jobCacheTimeout') > 0 ? objectHash.MD5({q: query, p: searchParamOverrides})
                                                             : Date.now();
-        const jobId = `pivot-app::${hash}`;
+        const jobId = `pivotapp${hash}`;
 
         // Set the splunk search parameters
         const searchParams = {
