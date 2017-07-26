@@ -51,10 +51,10 @@
            <p><strong>REST API's</strong></p>
 		   <a style="color:black;" href="docs_api.html"><p> -  REST API Documentation 0.9.2</p></a><hr>
 		   <a style="color:black;"><p style="text-decoration: underline;"><strong> - Workbook REST API Documentation</strong></p></a>
-		   		   		<a style="color:black;"><p class="tab"> -  Overview </p></a>
-		   				<a style="color:black;"><p class="tab"> -  Upload a Workbook </p></a>
-		   				<a style="color:black;"><p class="tab"> -  Download a Workbook </p></a>
-		   				<a style="color:black;"><p class="tab"> -  Modify a Workbook </p></a>
+		   		   		<a href="#overview" style="color:black;"><p class="tab"> -  Overview </p></a>
+		   				<a href="#upload" style="color:black;"><p class="tab"> -  Upload a Workbook </p></a>
+		   				<a href="#download" style="color:black;"><p class="tab"> -  Download a Workbook </p></a>
+		   				<a href="#modify" style="color:black;"><p class="tab"> -  Modify a Workbook </p></a>
 		   <hr>
 		   <p><strong>Python Libraries (Notebooks & API)</strong></p>
 		   <a href="https://github.com/graphistry/pygraphistry" target="_blank" style="color:black;"><p> -  PyGraphistry Project</p></a>
@@ -70,12 +70,12 @@
         </div>
     </div>
     <div style="padding-top:50px;" class="col-sm-7">
-		<br><br><h4>Workbook REST API Documentation</h4><br><br>
+		<br><br><h4 id="overview">Workbook REST API Documentation</h4><br><br>
 		
 	<h4>Overview</h4><hr>
-		<p>All Graphistry REST API endpoints use JSON for encoding data. The server will include a<code>Content-Type: application/json</code> header with all responses. Clients should likewise send the same header in their request, if they are sending data (e.g., in a <code>POST</code> request. <br><br>Examples will use <code>staging.graphistry.com</code> as the server. Replace it with your own server's address when running the examples, if you're using your own server. <br><br><br><br></p>
+		<p>All Graphistry REST API endpoints use JSON for encoding data. The server will include a<code>Content-Type: application/json</code> header with all responses. Clients should likewise send the same header in their request, if they are sending data (e.g., in a <code>POST</code> request. <br><br>Examples will use <code>staging.graphistry.com</code> as the server. Replace it with your own server's address when running the examples, if you're using your own server. </p>
 			
-	<h4>Uploading A Notebook</h4><hr>	
+	<h4 id="upload" style="padding-top:60px">Uploading A Notebook</h4><hr>	
 	<div class="well well-sm">POST /workbook</div>	
 	<p>This endpoint accepts workbook data, and stores it so that it can later be loaded in a visualization.</p><br>
 	<p><i><strong>Note:</strong> If a workbook with the same ID as the uploaded workbook already exists on the server, it will be overwritten with the newly uploaded workbook.</i></p>	<br>
@@ -124,9 +124,9 @@
 	<div class="well well-sm">{"success":true,"workbook":"3dd9faab9f69f02f","view":"/graph/graph.html?workbook=3dd9faab9f69f02f"}
 </div>	
 	<p><i><strong>Note: </strong> the view field, which we'll use to open a visualization for the workbook.</i></p><br>
-	<h6>3. In a web browser, open</h6> <code>http://staging.graphistry.com/graph/graph.html?workbook=3dd9faab9f69f02f</code><br><br><br><br><br>
+	<h6>3. In a web browser, open</h6> <code>http://staging.graphistry.com/graph/graph.html?workbook=3dd9faab9f69f02f</code><br>
 		
-	<h4>Download a Notebook</h4><hr>
+	<h4 id="download" style="padding-top:60px;">Download a Notebook</h4><hr>
 	<div class="well well-sm">GET /workbook/:workbook</div>
 	<p>Fetch a previously created/uploaded workbook and return it as JSON data.</p>
 	<p><code>:workbook</code>  is the ID of the workbook you wish to download.</p><br>
@@ -164,8 +164,8 @@
 	<h6>1. In a terminal, Run:</h6>
 	<div class="well well-sm">curl 'http://staging.graphistry.com/workbook/3dd9faab9f69f02f' > ./downloaded-workbook.json`</div>
 	<p><strong>2. </strong>The server will respond with the workbook's contents (as JSON-encoded data), which <code>curl</code> will save to <code>downloaded-workbook.json</code>.</p>
-	<p><strong>3. </strong>You can modify the workbook locally, examine it's contents (for example, with the <code>jq</code> utility), and optionally upload the modified workbook back to the server.</p><br>
-	<h4>Modify a Notebook</h4><hr>	
+	<p><strong>3. </strong>You can modify the workbook locally, examine it's contents (for example, with the <code>jq</code> utility), and optionally upload the modified workbook back to the server.</p>
+	<h4 id="modify" style="padding-top:60px;">Modify a Notebook</h4><hr>	
 	<p>The Graphistry REST API does not have a dedicated "modify a workbook" endpoint. Instead, you can combine the "download" and "upload" endpoints to accomplish the same thing.</p><br>
 	<p>First, download the workbook you wish to modify. Make the desired modifications to the workbook file locally, ensuring that you do not modify the <code>id</code> field of the workbook.</p><br>
 	<p>Then, upload the modified workbook file to the server. Because the uploaded workbook has the same ID as the existing workbook, the uploaded workbook will overwrite the existing workbook on the server.</p>
