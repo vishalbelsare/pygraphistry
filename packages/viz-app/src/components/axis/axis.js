@@ -53,7 +53,7 @@ class AxisReact extends React.Component {
 
                 return (<div key={`key_${i}`} style={{
                     'width': 'calc(100% - 200px)',
-                    'borderTop': '1px dotted red',
+                    'borderTop': '1px dotted #C5C5C5',
                     'position': 'absolute',
                     'margin': 0,
                     'padding': 0,
@@ -61,11 +61,11 @@ class AxisReact extends React.Component {
                     'top': `${Math.round(y)}px`        
                 }}>
                    <span style={{
-                        borderLeft: '1px dotted red',
-                        borderRight: '1px dotted red',
-                        borderBottom: '1px dotted red',
+                        borderLeft: '1px dotted #C5C5C5',
+                        borderRight: '1px dotted #C5C5C5',
+                        borderBottom: '1px dotted #C5C5C5',
                         padding: '0 0.5em 0.5em 0.5em',
-                        color: 'red',
+                        color: '#C5C5C5',
                         fontWeight: 'bold'
                    }}>{label}</span>
                 </div>);
