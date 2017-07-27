@@ -52,12 +52,12 @@ class AxisReact extends React.Component {
                 const { x, y } = camera.canvasCoords(0, labelY, canvas, matrix);        
 
                 return (<div key={`key_${i}`} style={{
-                    'width': 'calc(100% - 200px)',
+                    'width': 'calc(100% - 20px)',
                     'borderTop': '1px dotted #C5C5C5',
                     'position': 'absolute',
                     'margin': 0,
                     'padding': 0,
-                    'left': '100px',
+                    'left': '10px',
                     'top': `${Math.round(y)}px`        
                 }}>
                    <span style={{
