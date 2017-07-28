@@ -35,7 +35,7 @@ export default function VisualizationPanel({ investigation }) {
 
     return (
         investigation.url ?
-            <GraphistryIframe src={investigation.url} layoutTweaks={ uiTweaks[investigation.layout] } />
+            <GraphistryIframe src={investigation.url} layoutTweaks={ uiTweaks[investigation.layout] } axes={ investigation.axes } />
             : placeholder
     );
 }

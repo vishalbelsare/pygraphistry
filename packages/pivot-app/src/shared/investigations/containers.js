@@ -22,13 +22,13 @@ import {
 
 export const investigationContainer = container({
     fragment: ({ pivots } = {}) => `{
-        id, name, status, eventTable, modifiedOn, description, time, tags, url, layout,
+        id, name, status, eventTable, modifiedOn, description, time, tags, url, layout, axes,
         pivots: ${
             Pivot.fragments(pivots)
         }
     }`,
-    mapFragment: ({ id, name, pivots, status, eventTable, layout, description, time } = {}, props, $falcor) => ({
-        id, name, pivots, status, eventTable, layout, description, time, $falcor
+    mapFragment: ({ id, name, pivots, status, eventTable, layout, axes, description, time } = {}, props, $falcor) => ({
+        id, name, pivots, status, eventTable, layout, axes, description, time, $falcor
     }),
     dispatchers: {
         saveLayout,

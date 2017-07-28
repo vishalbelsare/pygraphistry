@@ -28,7 +28,7 @@ export default withSchema((QL, { get, set }, services) => {
 
     return QL`{
         eventTable: ${ readOnlyHandler },
-        ['id', 'name', 'tags', 'url', 'status', 'description', 'time', 'modifiedOn', 'layout']: ${
+        ['id', 'name', 'tags', 'url', 'status', 'description', 'time', 'modifiedOn', 'layout', 'axes']: ${
             readWriteHandler
         },
         pivots: {
@@ -102,6 +102,7 @@ function graphCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById,
             .mergeMap(({ investigation }) => {
                 return [
                     $pathValue(`investigationsById['${investigationIds}'].url`, investigation.url),
+                    $pathValue(`investigationsById['${investigationIds}'].axes`, investigation.axes),
                     $pathValue(`investigationsById['${investigationIds}'].status`, investigation.status),
                     $pathValue(`investigationsById['${investigationIds}'].eventTable`, investigation.eventTable)
                 ];

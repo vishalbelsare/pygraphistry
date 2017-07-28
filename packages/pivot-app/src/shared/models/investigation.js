@@ -24,6 +24,7 @@ function defaults(index) {
 function initialSoftState(pivots) {
     return {
         url: null,
+        axes: [],
         status: {ok: true, etling: false},
         eventTable: {},
         pivots: pivots.map((pivotId) =>

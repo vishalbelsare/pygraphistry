@@ -40,6 +40,12 @@ const conf = convict({
             env: 'USERNAME'
         }
     },
+    features: {
+        axes: {
+            format: Boolean,
+            default: true
+        }
+    },
     systemTemplates: {
         pivots: {
             doc: `JSON list of pivots: 

@@ -82,6 +82,7 @@ function searchPivot(action$) {
                 .concat(topLevelModel.call(`pivotsById['${pivotId}'].searchPivot`, [investigationId]))
                 .concat(falcor.set(
                     $value(['url'], null),
+                    $value(['axes'], []),
                     $value(['status'], { etling: true, ok: true })
                 ))
                 .concat(falcor.call(`graph`));

@@ -7,6 +7,8 @@ import request from 'request';
 import VError from 'verror';
 import { layouts } from './layouts.js';
 
+import conf from '../../server/config.js';
+
 import logger from '../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
@@ -155,17 +157,22 @@ export function createGraph(pivots) {
 // in each row, order each node into columns based on degree and lexicographic order. Then,
 // for each row indexed by r, for each column indexed by c, set the node's x to be rFudge * r, and set the node's y to be cFudge * (max(|c|) - |c| + c) (for centering)
 // by default, create a graph that has aspect 1:√(max(|c|)), going from top to bottom.
-export function stackedBushyGraph(graph, fudgeX = 100, fudgeY = -15 * Math.pow(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity))), 0.5), spacerY = fudgeY, minLineLength = 5, maxLineLength = 100, pivotWrappedLineHeight=5) {
+export function stackedBushyGraph(graph, fudgeX = 100, fudgeY = -100 * Math.pow(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity))), 0.5), spacerY = fudgeY, minLineLength = 5, maxLineLength = 100, pivotWrappedLineHeight=5) {
     log.trace({stackedBushyGraphInputs: graph.data}, "This is what we're making into a stacked bushy graph");
 
     const nodeRows = edgesToRows(graph.data.graph, graph.data.labels);
     const nodeDegrees = graphDegrees(graph.data.graph, nodeRows);
     const columnCounts = rowColumnCounts(nodeRows);
     const types = nodeTypes(graph.data.labels);
+    log.debug({nodeRows});
     const nodeColumns = rowsToColumns(nodeRows, columnCounts, nodeDegrees, minLineLength, maxLineLength, pivotWrappedLineHeight, types);
+    log.debug({nodeRows});
     const nodeXYs = mergeRowsColumnsToXY(nodeRows, nodeColumns, fudgeX, fudgeY, spacerY);
+    const axes = generateAxes(nodeRows, fudgeY, spacerY);
 
     decorateGraphLabelsWithXY(graph.data.labels, nodeXYs);
+
+    graph.data.axes = axes;
 
     return graph;
 }
@@ -229,7 +236,7 @@ export function rowsToColumns(nodeRows, columnCounts, nodeDegrees, minLineLength
                     return _.values(_.groupBy(r, (n,i) => Math.trunc(i / bestLineLength)));
                 }), "shallow");
         linewrappedNewRows.forEach((newRow, i) => {
-            const newRowNumber = rowNumber + (i / (linewrappedNewRows.length - 0.999) * pivotWrappedLineHeight);
+            const newRowNumber = rowNumber * 1 + (i / (linewrappedNewRows.length - 0.999) * pivotWrappedLineHeight);
             newRow.forEach((node, idx) => {
                 nodeRows[node] = newRowNumber;
                 nodeColumns[node] = ((maxColumn - 0.999) / (newRow.length - 0.999)) * idx;
@@ -258,6 +265,16 @@ export function decorateGraphLabelsWithXY(labels, xy) {
             label.x = xy[label[i]].x;
             label.y = xy[label[i]].y;
         });
+}
+
+export function generateAxes(rows, fudgeY, spacerY) {
+    // v1: axes just for each major pivot.
+    log.debug({rows});
+    const pivotRows = Object.values(rows); // This includes, because of rowsToColumns()'s line-splitting, real numbers.
+    const uniquePivotIntegers = _.uniq(pivotRows.map((r) => ((r / 2) | 0)));
+    const axes = uniquePivotIntegers.map((i) => ({label: `Pivot ${i + 1}`, y: (i > 0 ? (fudgeY + spacerY) * i * 2 : -2 * spacerY)}));
+
+    return conf.get("features.axes") ? axes : [];
 }
 
 const shapers = {stackedBushyGraph: stackedBushyGraph,
@@ -347,6 +364,7 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                     investigation.eventTable = makeEventTable({data, pivots});
                     if (dataset) {
                         investigation.url = `${user.vizService}&dataset=${dataset}&controls=${layouts.find((e) => (e.id === investigation.layout)).controls}`;
+                        investigation.axes = data.axes;
                         investigation.status = {
                             ok: true,
                             etling: false,

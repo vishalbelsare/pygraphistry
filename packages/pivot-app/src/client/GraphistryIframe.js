@@ -33,6 +33,7 @@ export class GraphistryIframe extends React.Component {
             this.apiSubscription = GraphistryJS(iFrame)
                 .do((g) => g.encodeIcons('point', 'pointIcon'))
                 .do((g) => (this.props.layoutTweaks || []).forEach(([fn,...params]) => g[fn](...params)) )
+                .do((g) => g.encodeAxis(this.props.axes))
                 .subscribe(
                     () => undefined,
                     (e) => log.error(e));
