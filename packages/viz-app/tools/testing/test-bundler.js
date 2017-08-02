@@ -12,3 +12,7 @@ global.assert = chai.assert;
 
 const context = require.context('../../src', true, /-test\.jsx?$/);
 context.keys().forEach(context);
+
+describe('vgraph', function () {
+	require('../../tests/src/server/etl/vgraph.js');
+});

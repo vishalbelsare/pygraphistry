@@ -11,12 +11,14 @@ var logger      = Log.createLogger('etlworker:vgraph');
 //TODO: Lines 60-261 instances of console should be changed to pipe output to client
 
 import { VectorGraph } from '@graphistry/vgraph-to-mapd/lib/cjs/vgraph';
+import { _isSafeNumber } from '@graphistry/falcor-path-utils/lib/toPaths.js';
 
 var defaults = {
     double: NaN,
     integer: 0x7FFFFFFF,
     string: '\0'
 };
+
 
 // String * String -> Vector
 function makeVector(name, type, target) {
@@ -73,7 +75,7 @@ function inferType(samples) {
         return 'empty';
     }
     if (_.all(samples, function (val) { return !isNaN(val); })) {
-        if (_.all(samples, function (val) { return val === +val && val === (val|0); })) {
+        if (_.all(samples, _isSafeNumber)) {
             return 'integer';
         } else {
             return 'double';
@@ -83,6 +85,63 @@ function inferType(samples) {
     }
 }
 
+function confirmType(typeName, table, key) {
+
+    //confirm bottom, else try to raise
+    let inferredType = undefined;
+    if (typeName === 'empty' || !table.length) {
+        let isUndefined = true;
+        for (let row = 0; row < table.length; row++) {
+            if (defined(table[row][key])) {
+                isUndefined = false;
+                inferredType = inferType([table[row][key]]);
+                break;
+            }
+        }
+        if (isUndefined) {
+            return 'empty';
+        }
+    } else {
+        inferredType = typeName;
+    }
+
+
+    if (inferredType === 'string') {
+        for (let row = 0; row < table.length; row++) {
+            const v = table[row][key];
+            if (v !== undefined && v !== null) {
+                if (isNaN(v)) {
+                    return 'string';
+                }
+            }
+        }        
+        return confirmType('integer', table, key); //integer call always completes
+    }
+
+    //raise numbers if needed
+    let isInteger = true;    
+    let isPopulated = false;
+    for (let row = 0; row < table.length; row++) {
+        const v = table[row][key];
+        if (v !== undefined && v !== null) {
+            isPopulated = true;
+            if (isNaN(v)) {
+                return 'string';
+            }
+            if (!_isSafeNumber(v)) {
+                isInteger = false;
+            }
+        }
+    }
+
+    if (!isPopulated) { return 'empty'; }
+
+    return isInteger ? 'integer' : 'double';
+
+}
+
+
+
 function getHeader(table) {
     var res = {};
 
@@ -91,7 +150,7 @@ function getHeader(table) {
     _.each(table, function (row) {
         _.each(_.keys(row), function (key) {
 
-            var data = res[key] || {count: 0, samples: [], type: undefined};
+            var data = res[key] || { count: 0, samples: [], type: undefined, key };
             var val = row[key];
             if (defined(val)) {
                 data.count++;
@@ -106,7 +165,7 @@ function getHeader(table) {
 
     return _.object(_.map(res, function (data, name) {
         data.freq = data.count / total;
-        data.type = inferType(data.samples);
+        data.type = confirmType(inferType(data.samples), table, data.key);
         return [name, data];
     }));
 }
@@ -134,11 +193,11 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
     // 'a * 'a -> bool
     // return true if dupe
     var warnsLeftNull = 100;
-    var isBadEdge = function (src, dst) {
+    var isBadEdge = function (src, dst, entry) {
 
         if (src === undefined || dst === undefined || src === null || dst === null) {
             if (warnsLeftNull-- > 0) {
-                logger.info('Edge %s <-> %s has null field', src, dst);
+                logger.info('Edge %s <-> %s has null field', src, dst, entry);
             }
             return true;
         }
@@ -206,7 +265,7 @@ function fromEdgeList(elist, nlabels, srcField, dstField, idField,  name) {
         var node1 = entry[dstField];
         addNode(node0);
         addNode(node1);
-        if (!isBadEdge(node0, node1)) {
+        if (!isBadEdge(node0, node1, entry)) {
             //must happen after addNode
             addEdge(node0, node1);
 
@@ -271,4 +330,4 @@ function decodeVGraph(buffer) {
     return VectorGraph.decode(buffer);
 }
 
-export { fromEdgeList, decodeVGraph };
+export { fromEdgeList, decodeVGraph, confirmType };

@@ -2,6 +2,8 @@
 
 const webpack = require('webpack');
 const { versions } = require('./defines');
+const path = require('path');
+const isDev = true;
 
 module.exports = {
   devtool: 'inline-source-map',

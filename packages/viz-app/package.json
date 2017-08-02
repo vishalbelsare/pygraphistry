@@ -252,7 +252,7 @@
     "copy-webpack-plugin": "4.0.1",
     "coveralls": "2.13.1",
     "css-loader": "0.28.1",
-    "enzyme": "2.8.2",
+    "enzyme": "2.8.0",
     "eslint": "3.19.0",
     "eslint-config-airbnb": "15.0.0",
     "eslint-loader": "1.7.1",
