@@ -24,6 +24,9 @@ const healthcheck = HealthChecker();
 import { Server as httpServer } from 'http';
 import express from 'express';
 
+// Path to the static assets to serve from the Graphistry docs-update module
+import { docsUpdateAssetPath } from '@graphistry/docs-update';
+
 // Path to static assets served by central
 const assets = resolve(__dirname, '../assets');
 
@@ -43,6 +46,10 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
 
     apiKey.init(app);
 
+    // Block access to any "package.json" files, and "/index.js"
+    app.all(/.*\/package.json$/, (req, res, next) => res.sendStatus(404));
+    app.all('/index.js', (req, res, next) => res.sendStatus(404));
+
 
     //TODO worker info
     app.get('/central/healthcheck', function(req, res) {
@@ -58,7 +65,10 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
     app.all('/etl', handleWorkerRequest);
     app.all('/etlvgraph', handleWorkerRequest);
 
-    // Default '/' static assets
+    // The 'docs-update' module provides the main static content we serve
+    app.use('/', express.static(docsUpdateAssetPath));
+
+    // If docs-update doesn't contain an asset, fallback to trying central's asset folder
     app.use('/graphistry', express.static(assets));
     app.use('/', express.static(assets));
 

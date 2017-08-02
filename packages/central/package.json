@@ -16,6 +16,7 @@
   "dependencies": {
     "@graphistry/common": "3.2.3",
     "@graphistry/config": "~3.0.4",
+    "@graphistry/docs-update": "latest",
     "babel-runtime": "~6.11.6",
     "body-parser": "~1.15.2",
     "express": "~4.12.3",
