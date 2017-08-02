@@ -165,13 +165,16 @@ function renderCell(colIndex, rowIndex, { cols, rows, startCol, startRow, loadin
                 </p>
             );
         }
-        if (value != null && value !== '') {
-            value = '' + value;
+
+        if (value != null && value !== '') {            
+            value = col.dataType === 'date' ? value : ('' + value);
             dataType = col.dataType;
         }
     }
 
+    const displayString = defaultFormat(value, dataType);
+
     return dataType === 'color' && value ?
         <span><ColorPill color={value}/> {value}</span> :
-        <span title={value} dangerouslySetInnerHTML={{ __html: value }}/>;
+        <span title={value} dangerouslySetInnerHTML={{ __html: displayString }}/>;
 }
