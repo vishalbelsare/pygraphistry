@@ -66,6 +66,7 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
     app.all('/etlvgraph', handleWorkerRequest);
 
     // The 'docs-update' module provides the main static content we serve
+    app.use('/graphistry', express.static(docsUpdateAssetPath));
     app.use('/', express.static(docsUpdateAssetPath));
 
     // If docs-update doesn't contain an asset, fallback to trying central's asset folder
