@@ -19,7 +19,8 @@ For staging with downstream deps,  locally `npm publish` an *alpha* channel vers
 ## Landing & Publishing
 
 
-* Gitflow: Convential Commits on a branch, PRs, then squash & merge
-* To publish, use the jenkins job via Build with Parameters: http://deploy.graphistry.com/job/Build%20and%20push%20config%20package/ 
-* Downstream deps will pick it up on their next build; you likely need to manually kick them off, especially central and vizapp
-
+1. Gitflow: Convential Commits on a branch, PRs, then squash & merge
+2. Publish @graphistry/config to npm: use the jenkins job via Build with Parameters: http://deploy.graphistry.com/job/Build%20and%20push%20config%20package/ 
+3. Downstream deps:
+  * central: manually trigger jenkins job  http://deploy.graphistry.com/job/Build%20and%20push%20central%20npm%20packages/
+  * viz-app: update `vizapp/packages/vizapp/package.json`'s  `@graphistry/config` version  to published version and manually trigger jenkins job: http://deploy.graphistry.com/job/Build%20and%20push%20central%20npm%20packages/ 
