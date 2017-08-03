@@ -20,120 +20,149 @@
 	<div class="navbar-left"><a style="color:#E6E6E6;" class="navbar-text" href="#">Graphistry</a>
 <!--	<a style="margin-top: 18px; margin-left: 40px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Server Status: Active</a>
 	<a style="margin-top: 18px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Location: USA</a>		-->
-</div>  
+</div>
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav">
       </ul>
       <ul class="nav navbar-nav navbar-right">
 <!--        <li><a href="index.html">Dashboard</a></li>-->
-        <li class="active"><a href="../setup_home.html">Getting Started</a></li>
-        <li><a style="margin-right:30px;" href="docs.html">Docs</a></li>
-		<li><!--<button style="margin-top:8px; margin-right:30px;" type="button" class="btn btn-info">Launch</button>--></li>   
+        <li class="active"><a href="../index.html">Getting Started</a></li>
+        <li><a style="margin-right:30px;" href="../docs.html">Docs</a></li>
+		<li><!--<button style="margin-top:8px; margin-right:30px;" type="button" class="btn btn-info">Launch</button>--></li>
       </ul>
     </div>
   </div>
 </nav>
-	 
+
 
 <div class="jumbotron">
   <div class="container text-center">
-	  <p style="font-size:21px;"><br><br>Admin Setup</p>      
+	  <p style="font-size:21px;"><br><br>Admin Setup</p>
   </div>
 </div>
 
 
-<div class="container-fluid bg-3 text-center">    
-  <p style="margin-top:80px;"><strong>Installation Instructions</strong></p><br>
-   <p style="margin-left:200px; margin-right:200px;">These are instructions to get a single-node setup of Graphistry up and running, on an Ubuntu/RedHat box that you have provisioned. You should have received this inside a package of:
-	   <br><br></p><div style="margin-left:200px; margin-right:200px; text-align: left;" class="well"><code>
-- instructions.md (these instructions)<br>
-	   - certs.txt (how to generate certs)<br>
-	   - containers.lxc.gz (the Docker containers with the relevant code)<br>
-	   - load.sh (loads containers for use)<br>
-	   - launch.sh (run the server)<br>
-	</code></div>
-	
-  <p style="margin-top:80px;"><strong>Instructions.md</strong></p>
-	<p style="margin-left:200px; margin-right:200px;">Everything you need to get your instance up and running is inluded in your instructions.md markdown file, which can also be found on Github <a href="https://github.com/graphistry/deploy/blob/master/dockerfiles/instructions.md">HERE</a></p>	
-	
-</div><br><hr>
-	  
+<div class="container-fluid bg-3 text-center">
 
-	  
-	  
+
+
+
+
 	<div style="text-align: center;" class="row">
-    <div style="margin: 10px; float: none; display: inline-block; border-radius: 5px; padding:20px; "class="col-sm-18">
+    <div style="margin: 10px; width: 70em; float: none; display: inline-block; border-radius: 5px; padding:20px; " class="col-sm-18">
 	<div class="panel panel-default">
-  <div class="panel-heading"><h3 class="panel-title"><strong><br>Recommended Deployment Configurations
 
-</strong></h3><p style="text-align:center"><br>See below for supported client and server software/hardware configurations. In short:</p></div>
   <div style="padding:30px; text-align:left;" class="panel-body">
-	  <p style="text-align: left; margin-left: 30px;">
+      <!--Start of html from other site		-->
 
-<p>· <strong>Client:</strong> Chrome/Firefox from the last 3 years, WebGL on, and 100KB/s download ability<br>
-	  · <strong>Server:</strong> x86 Linux server with 4+ CPU cores, 16+ GB CPU RAM, and 1+ Nvidia GPUs with 4+ GB RAM each<br><br></p><hr></p>
-	<h4 style="text-align: center;">Client</h4><br>
-		<p style="text-align: center;">The intuition is that a user can work with Graphistry if their environment supports Youtube, and even better, Netflix.<br>
+      <h1 id="installation-instructions">Installation Instructions</h1>
+      <p>These are instructions to get a single-node setup of Graphistry up and running, on an Ubuntu/RedHat box that you have provisioned. You should have received this inside a package of:</p>
+      <ul>
+      <li><em>instructions.md</em> (these instructions)</li>
+      <li><em>certs.txt</em> (how to generate certs)</li>
+      <li><em>containers.lxc.gz</em> (the Docker containers with the relevant code)</li>
+      <li><em>load.sh</em> (loads containers for use)</li>
+      <li><em>launch.sh</em> (run the server)</li>
+      </ul>
+      <h3 id="what-will-we-be-doing-">What Will We Be Doing?</h3>
+      <p>First, we will be preparing a machine to run Docker containers that can take advantage of the machine&#39;s GPU. This is a one-time task.<br>Second, we will be loading a few containers onto that machine that, in the ensemble, run Graphistry.</p>
+      <h3 id="how-long-should-this-take-">How Long Should This Take?</h3>
+      <p>Preparing a machine to run Docker containers should take around an hour (provisioning, finding a new version of Ubuntu/RedHat, running the scripts).<br>Loading new versions of the containers onto the machine should take a minute or two, and the launch script should take ten seconds or so.</p>
+      <h2 id="1-prerequisites-and-supported-hardware">1 Prerequisites And Supported Hardware</h2>
+      <p>You will need a box:</p>
+      <ul>
+      <li>connected to the Internet,</li>
+      <li>connected to a box running an Ansible playbook, also connected to the Internet.</li>
+      <li>with a GPU that can run Cuda 7.5,</li>
+      <li>with the Docker engine installed,</li>
+      <li>and optionally with the nvidia-docker standalone installation.</li>
+      </ul>
+      <p>Currently, the only supported and tested configuration are</p>
+      <ul>
+      <li>Ubuntu 14.04 Trusty LTS or RedHat Enterprise Linux (RHEL) 7.3</li>
+      <li>NVIDIA Grid K2 (g2.2xlarge on AWS EC2) or NVIDIA Tesla K40/K80.</li>
+      </ul>
+      <h2 id="2-prepare-the-machine">2 Prepare The Machine</h2>
+      <h4 id="set-up-nvidia-docker-with-our-process-option-a-">Set up Nvidia-Docker With Our Process (Option A)</h4>
+      <ol>
+      <li>Checkout the infrastructure repository at <a href="https://github.com/graphistry/infrastructure/">https://github.com/graphistry/infrastructure/</a>.</li>
+      <li>Run through the setup at <a href="https://github.com/graphistry/infrastructure/tree/master/nvidia-docker-host">https://github.com/graphistry/infrastructure/tree/master/nvidia-docker-rhel</a>.</li>
+      </ol>
+      <p>If the script runs through, your machine will have passed a test of using Docker to run GPU computation (matrix multiplication in this case).</p>
+      <h3 id="set-up-nvidia-docker-manually-option-b-">Set up Nvidia-Docker Manually (Option B)</h3>
+      <ol>
+      <li>(Use your process to set up nvidia-docker.)</li>
+      <li><p>Verify that your process succeeds by pulling down the <code style="font-family: Hack;">nvidia/cuda:7.5-devel</code> image and running</p>
+      <pre class="editor-colors lang-text"><div class="line"><span class="syntax--text syntax--plain"><span>&nbsp;</span><span class="syntax--meta syntax--paragraph syntax--text"><span>nvidia-docker&nbsp;run&nbsp;--rm&nbsp;nvidia/cuda:7.5-devel&nbsp;nvidia-smi</span></span></span></div></pre></li>
+      <li><p>To verify that the <a href="https://github.com/graphistry/cljs">cljs</a> tests pass, run</p>
+      <pre class="editor-colors lang-text"><div class="line"><span class="syntax--text syntax--plain"><span>&nbsp;</span><span class="syntax--meta syntax--paragraph syntax--text"><span>nvidia-docker&nbsp;run&nbsp;--rm&nbsp;graphistry/cljs:1.1&nbsp;npm&nbsp;test</span></span></span></div></pre></li>
+      </ol>
+      <h2 id="3-set-up-graphistry">3 Set Up Graphistry</h2>
+      <ol>
+      <li>Unpack the package of files into a directory, and run <code style="font-family: Hack;">load.sh</code> . This should load the airgapped Graphistry deploy into your local Docker engine.</li>
+      <li>Graphistry can terminate SSL, but by default will not. Follow the instructions in certs.txt for making certs, and for subsequent runtime parameters during launch, if you intend for Graphistry itself to terminate SSL.</li>
+      </ol>
+      <h2 id="4-start-the-graphistry-services">4 Start The Graphistry Services</h2>
+      <p>Once the containers are loaded, the app can be started (or restarted) with</p>
+      <pre class="editor-colors lang-bash"><div class="line"><span class="syntax--source syntax--shell"><span>./launch.sh</span></span></div></pre>
+      <h3 id="stop-or-restart-the-graphistry-services">Stop or Restart The Graphistry Services</h3>
+      <p>Run <code style="font-family: Hack;">docker stop graphistry_httpd</code> or <code style="font-family: Hack;">docker restart graphistry_httpd</code>.</p>
+      <h3 id="verify-that-graphistry-is-running">Verify That Graphistry is Running</h3>
+      <p>When you have launched the app, you should be able to point your browser to that machine via HTTP and receive a page with four links on it, each of which take you to a visualization of a different data set.</p>
+      <h3 id="extra-use-jupyter-notebooks-with-pygraphsitry">Extra: Use Jupyter Notebooks With PyGraphsitry</h3>
+      <p>These are public images, available on DockerHub, built on the Jupyter notebooks with pygraphistry installed, with several demo notebooks. Run</p>
+      <pre class="editor-colors lang-text"><div class="line"><span class="syntax--text syntax--plain"><span class="syntax--meta syntax--paragraph syntax--text"><span>docker&nbsp;run&nbsp;-p&nbsp;8888:8888&nbsp;&nbsp;--restart=unless-stopped&nbsp;--name&nbsp;graphistry_notebook&nbsp;-d&nbsp;graphistry/jupyter-notebook:1.6</span></span></span></div></pre><h1 id="configuration-and-maintenance">Configuration and Maintenance</h1>
+      <h2 id="view-the-logs">View the Logs</h2>
+      <p>Logs are mounted in the working directory of where you run launch.sh.</p>
+      <p>There are client logs, in clients/, server logs, in graphistry-json/, other assorted logs in central-app/ and worker/. Logs are in JSON. We recommend using <a href="https://github.com/trentm/node-bunyan">Bunyan</a> to print logs in a more readable format. For instance, you can use</p>
+      <pre class="editor-colors lang-text"><div class="line"><span class="syntax--text syntax--plain"><span class="syntax--meta syntax--paragraph syntax--text"><span>bunyan&nbsp;-o&nbsp;short&nbsp;&lt;&nbsp;logfile</span></span></span></div></pre><p>If you want debug logs, launch with the <code style="font-family: Hack;">GRAPHISTRY_APP_CONFIG</code> environment variable having a key in its JSON hash of <code style="font-family: Hack;">LOG_LEVEL</code> set to <code style="font-family: Hack;">DEBUG</code>; i.e.</p>
+      <pre class="editor-colors lang-text"><div class="line"><span class="syntax--text syntax--plain"><span class="syntax--meta syntax--paragraph syntax--text"><span>GRAPHISTRY_APP_CONFIG=&#39;{&quot;LOG_LEVEL&quot;:&quot;DEBUG&quot;}&#39;&nbsp;./launch.sh</span></span></span></div></pre><h2 id="workbooks-persistence">Workbooks Persistence</h2>
+      <p>By default, the launch script will make a directory in its directory, <code style="font-family: Hack;">workbook_cache</code>, for all loaded workbooks.</p>
+      <p>If you make a new directory for each release that you deploy, and you are running an airgapped Graphistry, you may want to keep around the workbooks that you have previously made.</p>
+      <p>Please use the <code style="font-family: Hack;">GRAPHISTRY_WORKBOOK_CACHE</code> environment variable to set this to a directory of your choosing:</p>
+      <pre class="editor-colors lang-text"><div class="line"><span class="syntax--text syntax--plain"><span class="syntax--meta syntax--paragraph syntax--text"><span>GRAPHISTRY_WORKBOOK_CACHE=/var/graphistry/workbooks&nbsp;GRAPHISTRY_APP_CONFIG=&#39;{&quot;LOG_LEVEL&quot;:&quot;INFO&quot;}&#39;&nbsp;./launch.sh`</span></span></span></div></pre><h2 id="dataset-persistence">Dataset Persistence</h2>
+      <p>By default, the launch script will make a directory in its directory, <code style="font-family: Hack;">data_cache</code>, for all loaded datasets.</p>
+      <p>If you make a new directory for each release that you deploy, and you are running an airgapped Graphistry, you may want to keep around the datasets that you have previously loaded.</p>
+      <p>Please use the <code style="font-family: Hack;">GRAPHISTRY_DATA_CACHE</code> environment variable to set this to a directory of your choosing:</p>
+      <pre class="editor-colors lang-text"><div class="line"><span class="syntax--text syntax--plain"><span class="syntax--meta syntax--paragraph syntax--text"><span>GRAPHISTRY_DATA_CACHE=/tmp/graphistry-data-cache&nbsp;./launch.sh</span></span></span></div></pre><h2 id="read-process-discard-for-datasets">Read-Process-Discard for Datasets</h2>
+      <p>Your datasets live in two places: in the Node process memory and in the <code style="font-family: Hack;">data_cache</code> directory. They are not written anywhere else.</p>
+      <p>If you would like to launch Graphistry so as to never write a dataset or workbook to disk, please first ensure that your machine has virtual memory turned off, to avoid swapping memory out to disk. (This is often a common requirement at an installation, and we defer to best practices therein.)</p>
+      <p>Please set the <code style="font-family: Hack;">GRAPHISTRY_DATA_CACHE</code> environment variable to some subdirectory of <code style="font-family: Hack;">/run/shm</code> (on Ubuntu 14.04 LTS) or <code style="font-family: Hack;">/dev/shm</code> (on RHEL 7.2).</p>
+      <p>This will ensure that Graphistry will never write your datasets to disk.</p>
+      <h3 id="garbage-collection">Garbage Collection</h3>
+      <p>For the discard part of read/process/discard, passing</p>
+      <pre class="editor-colors lang-text"><div class="line"><span class="syntax--text syntax--plain"><span class="syntax--meta syntax--paragraph syntax--text"><span>GRAPHISTRY_APP_CONFIG=&#39;{&quot;READ_PROCESS_DISCARD&quot;:true}&#39;</span></span></span></div></pre><p>to <code style="font-family: Hack;">launch.sh</code> causes datasets to be deleted immediately after the start of processing.<br>(If this is on, refreshing a page with a visualization will be an error, because that dataset will have been discarded.)</p>
+      <h2 id="software-updates">Software Updates</h2>
+      <p>New versions of Graphistry will be provided as an updated bundle containers. Each such bundle will contain a <code style="font-family: Hack;">load.sh</code> and <code style="font-family: Hack;">launch.sh</code> script to load the new containers in Docker and start the graphistry services, respectively.</p>
 
-			The Graphistry client runs in standard browser configurations:<br><br></p><div style="text-align: center;" class="well well-sm"><p><strong>Browser:</strong><br> Chrome and Firefox from the last 3 years, and users regularly report success with other browsers like Safari.</p></div>
-		<div style="text-align: center;" class="well well-sm"><p><strong>WebGL:</strong><br> WebGL 1.0 is required. This started shipping ~5 years ago, and most client devices, including phones and tablets, support it.</p></div>
-		<div style="text-align: center;" class="well well-sm"><p><strong>Network:</strong><br>100KB+/s download speeds, and we recommend 1MB/s if graphs with > 100K nodes and edges.</p></div>	
-		<div style="text-align: center;" class="well well-sm"><p><strong>Operating System:</strong><br>All.</p></div>
-		<hr>
-	<br><h4 style="text-align: center;">Server Software: Cloud, OS, Docker, Avoiding Root Users</h4><br>	
-
-		<div style="text-align: left;" class="well well-sm"><p style="text-align:left"><strong>Cloud</strong><br> Graphistry runs on-premise and has been tested with Amazon EC2 and Microsoft Azure.<br><br>
-
-Tested AWS Instances<br><br>
-
-· G2.2<br>
-· G2.8<br>
-· P2<br>
-Tested Azure Instances<br><br>
-
-See the hardware provisioning section to pick the right configuration for you.</p></div>
-		
-		<div style="text-align: left;" class="well well-sm"><p style="text-align:left"><strong>OS & Docker</strong><br> We recommend:<br><br>
-
-· Ubuntu AAA<br>
-· RedHat BBB<br><br>
-Both support nvidia-docker.<br></p></div>	
-
-		<div style="text-align: left;" class="well well-sm"><p style="text-align:left"><strong>OS & Docker</strong><br> We recommend:<br><br>
-
-· Ubuntu AAA<br>
-· RedHat BBB<br><br>
-Both support nvidia-docker.<br></p></div>			
-		
-		
-		
-		
+      <!--End of html from other site		-->
   </div>
 </div>
 </div>
-	</div>	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
+	</div>
+
+
+
+
+
+</div>
+
+
+
+
+
 	  <br>
-	  
-	  
+
+
   <div style="text-align: center;" class="row">
     <a href="notebook/notebook.html">
 	  <div style="float: none; display: inline-block; border-radius: 5px; border: solid 1px; border-color:#E6E6E6; padding-top: 25px; "class="col-sm-5">
       <p>Next:Learn how to use Graphistry in a notebook</p><span style="font-size: 24px;" class="glyphicon glyphicon-menu-right" aria-hidden="true"></span><br>
     </div>
-	</a>			  
-  </div>			
-<br><br><br><br>	  
-	  
+	</a>
+  </div>
+<br><br><br><br>
+
 
 
 <footer>
@@ -141,7 +170,7 @@ Both support nvidia-docker.<br></p></div>
     <div class="row">
       <div class="col-md-3 col-sm-6 footerleft ">
         <div class="logofooter"> <img style="max-height:40px; margin-top: 10px;" src="../images/logo.png"></div>
-        
+
       </div>
       <div class="col-md-2 col-sm-6 paddingtop-bottom">
         <ul class="footer-ul">
@@ -153,7 +182,7 @@ Both support nvidia-docker.<br></p></div>
       </div>
       <div class="col-md-3 col-sm-6 paddingtop-bottom">
 			<p style="color:#E6E6E6; font-size:12px;">1212 Broadway Floor 11, Oakland, CA 94612</p>
-        <p style="color:#E6E6E6; font-size:12px;">info@graphistry.com</p>	  
+        <p style="color:#E6E6E6; font-size:12px;">info@graphistry.com</p>
       </div>
       <div class="col-md-3 col-sm-6 paddingtop-bottom">
         </div>
@@ -180,13 +209,3 @@ Both support nvidia-docker.<br></p></div>
 
   </body>
 </html>
-
-
-
-
-
-
-
-
-
-
