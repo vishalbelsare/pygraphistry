@@ -7,12 +7,15 @@ The content of this repo is used as the content of the root `/` path of a runnin
 
 ## Developing
 
-To publish the latest updates from this repo:
+Currently, this repo is all static files. For any individual document, check the source repo for relevant build instructions and copy the static file into here.
 
-1. Ensure all changes have been committed and the working directory is clean.
-2. Run `npm version patch` to increment this module's version number.
-    - This is needed so that the updated module can be published without conflicting with an existing published version).
-3. Run `npm publish` to upload the current version to npm.
-    - Ensure you have write access to the `@graphistry` npm organization, and are logged in to npm in your `npm` CLI tool.
-4. Rebuild the `httpd` Docker container and deploy it
-    - The `httpd` container runs `central`. By rebuilding it, it will install a fresh copy of `central` which will, in turn, install the latest version of this module as a dependency.
+
+## Publish & Stage
+
+The latest published document npm package is automatically served by npm. To publish:
+
+1. To publish the latest updates from this repo, specify the branch (or master) for this Jenkins job:
+
+http://deploy.graphistry.com/job/Build%20and%20publish%20docs/build?delay=0sec
+
+2. There is no step 2
