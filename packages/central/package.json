@@ -2,7 +2,7 @@
   "name": "@graphistry/central",
   "main": "dist/server.js",
   "description": "central",
-  "version": "4.0.28",
+  "version": "4.1.0",
   "scripts": {
     "start": "node ./bin/central",
     "build": "npm run clean && babel lib -d dist --source-maps --presets node6-es6 --plugins transform-runtime",
@@ -16,6 +16,7 @@
   "dependencies": {
     "@graphistry/common": "3.2.3",
     "@graphistry/config": "~3.0.4",
+    "@graphistry/docs-update": "latest",
     "babel-runtime": "~6.11.6",
     "body-parser": "~1.15.2",
     "express": "~4.12.3",
