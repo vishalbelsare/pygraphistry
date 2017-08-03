@@ -1,0 +1,22 @@
+{
+  "name": "@graphistry/docs-update",
+  "version": "1.0.5",
+  "description": "Graphistry's app landing page and documentation",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/graphistry/docs-update.git"
+  },
+  "author": "Graphistry, Inc. <code.public+npm@graphistry.com> (https://graphistry.com/)",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/graphistry/docs-update/issues"
+  },
+  "homepage": "https://github.com/graphistry/docs-update#readme"
+}
