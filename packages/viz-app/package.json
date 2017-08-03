@@ -124,7 +124,7 @@
   "dependencies": {
     "@graphistry/client-api": "~2.13.0",
     "@graphistry/common": "~3.2.4",
-    "@graphistry/config": "3.0.6",
+    "@graphistry/config": "3.0.7",
     "@graphistry/dijkstra": "2.0.0",
     "@graphistry/falcor": "~2.9.6",
     "@graphistry/falcor-json-graph": "~2.9.6",
