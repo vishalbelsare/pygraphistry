@@ -157,8 +157,11 @@ export function createGraph(pivots) {
 // in each row, order each node into columns based on degree and lexicographic order. Then,
 // for each row indexed by r, for each column indexed by c, set the node's x to be rFudge * r, and set the node's y to be cFudge * (max(|c|) - |c| + c) (for centering)
 // by default, create a graph that has aspect 1:√(max(|c|)), going from top to bottom.
-export function stackedBushyGraph(graph, fudgeX = 100, fudgeY = -100 * Math.pow(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity))), 0.5), spacerY = fudgeY, minLineLength = 5, maxLineLength = 100, pivotWrappedLineHeight=5) {
+export function stackedBushyGraph(graph, fudgeX = 100, fudgeY = -100 * Math.pow(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity))), 0.5), spacerY = fudgeY, minLineLength = 5, maxLineLength = 100, pivotWrappedLineHeight=0.25) {
     log.trace({stackedBushyGraphInputs: graph.data}, "This is what we're making into a stacked bushy graph");
+    if(pivotWrappedLineHeight > 0.5) {
+        log.warn("Line-wrapped nodes are over half the line height!");
+    }
 
     const nodeRows = edgesToRows(graph.data.graph, graph.data.labels);
     const nodeDegrees = graphDegrees(graph.data.graph, nodeRows);
@@ -224,7 +227,7 @@ export function rowsToColumns(nodeRows, columnCounts, nodeDegrees, minLineLength
     const nodeColumns = {};
     _.each(orderedRows, (row, rowNumber) => {
         // For each row, see if `row` is longer than `maxLineLength`, and if splitting `row` by `types`[`node`] would not make every split row shorter than `minLineLength`.
-        // If so, DESTRUCTIVELY UPDATE nodeRows to place nodes in `row` into rows from `rowNumber` to `rowNumber` + `pivotWrappedLineHeight` / |splits|.
+        // If so, DESTRUCTIVELY UPDATE nodeRows to place nodes in `row` into rows from `rowNumber` to `rowNumber` + `pivotWrappedLineHeight` * splitId / |splits|.
         // After revising rows, place nodes in each (potentially new) row into columns.
         const tooLong = row.length > maxLineLength;
         const splits = _.sortBy(_.values(_.groupBy(row, (n) => types[n])), (r) => -r.length);
