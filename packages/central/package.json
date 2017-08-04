@@ -14,8 +14,8 @@
     "graphistry-central": "./bin/central"
   },
   "dependencies": {
-    "@graphistry/common": "3.2.3",
-    "@graphistry/config": "~3.0.4",
+    "@graphistry/common": "3.2.5",
+    "@graphistry/config": "~3.0.7",
     "@graphistry/docs-update": "latest",
     "babel-runtime": "~6.11.6",
     "body-parser": "~1.15.2",
