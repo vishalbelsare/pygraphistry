@@ -1,5 +1,6 @@
 import { VError } from 'verror';
 import { Router } from 'express';
+import stringify from 'json-stable-stringify';
 import configureWorkers from './workers';
 import createConfig from '@graphistry/config';
 import { createLogger } from '@graphistry/common/logger';
@@ -85,7 +86,7 @@ function terminateServer(err) {
 
     if(err) {
         if (!(err instanceof Error)) {
-            err = new Error('' + err);
+            err = new Error(stringify(err));
         }
         // Template strings don't strip leading whitespace, hence the weird indentation here.
         let partingMessage = `
