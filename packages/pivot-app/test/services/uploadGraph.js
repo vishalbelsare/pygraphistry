@@ -40,12 +40,12 @@ const undecoratedLabels = [{node: n1},
                            {node: n6},
                            {node: n7}];
 const decoratedLabels = [{node: n1, x: 0, y: -2},
-                         {node: n2, x: 0, y: 30},
-                         {node: n3, x: 0, y: 120},
-                         {node: n4, x: 0, y: 90},
-                         {node: n5, x: 0, y: 210},
-                         {node: n6, x: 1, y: 90},
-                         {node: n7, x: 2, y: 90}];
+                         {node: n2, x: 0, y: 1},
+                         {node: n3, x: 0, y: 12},
+                         {node: n4, x: 0, y: 7},
+                         {node: n5, x: 0, y: 19},
+                         {node: n6, x: 1, y: 7},
+                         {node: n7, x: 2, y: 7}];
 const rows = {[n1]: 0, [n2]: 1, [n3]: 4, [n4]: 3, [n5]: 7, [n6]: 3, [n7]: 3};
 const degrees = {[n1]: 1, [n2]: 4, [n3]: 1, [n4]: 3, [n5]: 1, [n6]: 1, [n7]: 1};
 const rowColumnCounts = {0: 1, 1: 1, 3: 3, 4: 1, 7: 1};
@@ -54,18 +54,19 @@ const fudgeX = 1;
 const fudgeY = 2;
 const spacerY = 1;
 const xys = {[n1]: {x: 0, y: -2},
-             [n2]: {x: 0, y: 30},
-             [n3]: {x: 0, y: 120},
-             [n4]: {x: 0, y: 90},
-             [n5]: {x: 0, y: 210},
-             [n6]: {x: 1, y: 90},
-             [n7]: {x: 2, y: 90}};
+             [n2]: {x: 0, y: 1},
+             [n3]: {x: 0, y: 12},
+             [n4]: {x: 0, y: 7},
+             [n5]: {x: 0, y: 19},
+             [n6]: {x: 1, y: 7},
+             [n7]: {x: 2, y: 7}};
 const minLineLength = 10;
 const maxLineLength = 100;
 const pivotWrappedLineHeight = 0.5;
 const types = {};
+const axes = [{label: "Pivot 1", y: -fudgeY}, {label: "Pivot 2", y: (fudgeY + spacerY) * 2 * (2 - 1)}, {label: "Pivot 3", y: (fudgeY + spacerY) * 2 * (3 - 1)}, {label: "Pivot 4", y: (fudgeY + spacerY) * 2 * (4 - 1)}];
 const hugeDataStructure = {data: {graph: edges, labels: undecoratedLabels}};
-const hugeDecoratedDataStructure = {data: {graph: edges, labels: decoratedLabels}};
+const hugeDecoratedDataStructure = {data: {axes, graph: edges, labels: decoratedLabels}};
 
 describe('edgesToRows', function() {
         it('should pull out minimum rows from src/dest edges', function() {

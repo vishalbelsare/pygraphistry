@@ -239,7 +239,7 @@ export function rowsToColumns(nodeRows, columnCounts, nodeDegrees, minLineLength
                     return _.values(_.groupBy(r, (n,i) => Math.trunc(i / bestLineLength)));
                 }), "shallow");
         linewrappedNewRows.forEach((newRow, i) => {
-            const newRowNumber = rowNumber * 1 + (i / (linewrappedNewRows.length - 0.999) * pivotWrappedLineHeight);
+            const newRowNumber = Number(rowNumber) + (i / (linewrappedNewRows.length - 0.999) * pivotWrappedLineHeight);
             newRow.forEach((node, idx) => {
                 nodeRows[node] = newRowNumber;
                 nodeColumns[node] = ((maxColumn - 0.999) / (newRow.length - 0.999)) * idx;
@@ -274,7 +274,7 @@ export function generateAxes(rows, fudgeY, spacerY) {
     // v1: axes just for each major pivot.
     log.debug({rows});
     const pivotRows = Object.values(rows); // This includes, because of rowsToColumns()'s line-splitting, real numbers.
-    const uniquePivotIntegers = _.uniq(pivotRows.map((r) => ((r / 2) | 0)));
+    const uniquePivotIntegers = _.uniq(pivotRows.map((r) => ((r / 2) | 0))).sort((a,b) => a-b);
     const axes = uniquePivotIntegers.map((i) => ({label: `Pivot ${i + 1}`, y: (i > 0 ? (fudgeY + spacerY) * i * 2 : -2 * spacerY)}));
 
     return conf.get("features.axes") ? axes : [];
