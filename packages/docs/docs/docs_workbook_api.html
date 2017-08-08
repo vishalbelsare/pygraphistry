@@ -19,8 +19,8 @@
     </div>
 	<div class="navbar-left"><a style="color:#E6E6E6;" class="navbar-text" href="#">Graphistry</a>
 <!--	<a style="margin-top: 18px; margin-left: 40px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Server Status: Active</a>
-	<a style="margin-top: 18px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Location: USA</a>-->	
-</div>  
+	<a style="margin-top: 18px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Location: USA</a>-->
+</div>
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav">
       </ul>
@@ -28,7 +28,7 @@
 <!--        <li><a href="index.html">Dashboard</a></li>-->
         <li><a href="../index.html">Getting Started</a></li>
         <li class="active"><a style="margin-right:30px;" href="../docs.html">Docs</a></li>
-		 <li><!--<button style="margin-top:8px; margin-right:30px;" type="button" class="btn btn-info">Launch</button>--></li>  
+		 <li><!--<button style="margin-top:8px; margin-right:30px;" type="button" class="btn btn-info">Launch</button>--></li>
       </ul>
     </div>
   </div>
@@ -44,8 +44,8 @@
 		   <a href="../ui_tips.html"style="color:black;"><p> -  Tips & Tricks</p></a>
 		   <hr>
 		   <p><strong>Graphistry Setup</strong></p>
-		   <a href="../setup/admin.html" style="color:black;"><p> -  Admin Setup</p></a>	
-		   <a href="../setup/notebook/notebook.html" style="color:black;"><p> -  Notebook Setup Tutorial (PyGraphistry)</p></a>	
+		   <a href="../setup/admin.html" style="color:black;"><p> -  Admin Setup</p></a>
+		   <a href="../setup/notebook/notebook.html" style="color:black;"><p> -  Notebook Setup Tutorial (PyGraphistry)</p></a>
 		   <hr>
            <p><strong>REST API's</strong></p>
 		   <a style="color:black;" href="docs_api.html"><p> -  REST API Documentation 0.9.2</p></a><hr>
@@ -60,25 +60,24 @@
 		   <a href="docs_pyAPI.html" style="color:black;"><p> - PyGraphistry API Docs</p></a>
 		   <a href="https://github.com/graphistry/pygraphistry/tree/master/demos" target="_blank" style="color:black;"><p> - Ipython & Jupyter Notebook Examples</p></a>
 		   <hr>
-		   <p><strong>Javascript Libraries</strong></p>
-		   <a style="color:black;"><p> -  Client-side Interactions API</p></a>
-		   <a style="color:black;"><p> --- API Docs</p></a>
-		   <a style="color:black;"><p> --- Examples</p></a>
-		   <a style="color:black;"><p> -  Embedded Visualization React Component</p></a>
-		   <a style="color:black;"><p> --- Examples</p></a><br>
+       <p><strong>Javascript Libraries</strong></p>
+       <a style="color:black;" href="graphistry-js/client-api/docs/index.html"><p> - GraphistryJS API Docs</p></a>
+       <a style="color:black;" href="graphistry-js/client-api/examples/index.html"><p> - GraphistryJS Examples</p></a>
+       <a style="color:black;" href="graphistry-js/client-api-react/examples/index.html"><p> - GraphistryJS React Component</p></a>
+       <br>
         </div>
     </div>
     <div style="padding-top:50px;" class="col-sm-7">
 		<br><br><h4 id="overview">Workbook REST API Documentation</h4><br><br>
-		
+
 	<h4>Overview</h4><hr>
 		<p>All Graphistry REST API endpoints use JSON for encoding data. The server will include a<code>Content-Type: application/json</code> header with all responses. Clients should likewise send the same header in their request, if they are sending data (e.g., in a <code>POST</code> request. <br><br>Examples will use <code>staging.graphistry.com</code> as the server. Replace it with your own server's address when running the examples, if you're using your own server. </p>
-			
-	<h4 id="upload" style="padding-top:60px">Uploading A Notebook</h4><hr>	
-	<div class="well well-sm">POST /workbook</div>	
+
+	<h4 id="upload" style="padding-top:60px">Uploading A Notebook</h4><hr>
+	<div class="well well-sm">POST /workbook</div>
 	<p>This endpoint accepts workbook data, and stores it so that it can later be loaded in a visualization.</p><br>
 	<p><i><strong>Note:</strong> If a workbook with the same ID as the uploaded workbook already exists on the server, it will be overwritten with the newly uploaded workbook.</i></p>	<br>
-	<h5>Parameters:</h5>	
+	<h5>Parameters:</h5>
 	<p>The workbook JSON data, encoded as application/json, in the request body.</p><br>
 	<h5>Response</h5>
 	<p>An HTTP 201 response on success, or an error code (most likely 400 or 500) on failure. The response body contains a JSON payload (<code>Content-Type: application/json</code>with the following fields.</p><br>
@@ -118,13 +117,13 @@
 	<p>The example uses <code>curl</code> to upload a workbook file named <code>workbook.json</code> in the current directory, then loads that workbook into a visualization.</p><br>
 	<h6>1. In a terminal, run:</h6>
 	<div class="well well-sm">curl -L -X POST -H "Content-Type: application/json" --data @workbook.json http://staging.graphistry.com/workbook`
-</div>	
+</div>
 	<h6>2. The server will respond with:</h6>
 	<div class="well well-sm">{"success":true,"workbook":"3dd9faab9f69f02f","view":"/graph/graph.html?workbook=3dd9faab9f69f02f"}
-</div>	
+</div>
 	<p><i><strong>Note: </strong> the view field, which we'll use to open a visualization for the workbook.</i></p><br>
 	<h6>3. In a web browser, open</h6> <code>http://staging.graphistry.com/graph/graph.html?workbook=3dd9faab9f69f02f</code><br>
-		
+
 	<h4 id="download" style="padding-top:60px;">Download a Notebook</h4><hr>
 	<div class="well well-sm">GET /workbook/:workbook</div>
 	<p>Fetch a previously created/uploaded workbook and return it as JSON data.</p>
@@ -156,33 +155,33 @@
 		</tr>
 		</tbody>
 		</table><br><br>
-	<p><i><strong>Note: </strong>Since a successful call returns the workbook JSON without modification, the <code>success</code> and <code>error</code> fields will not be present in a successful response. You should examine the response code to determine if the call succeeded or failed, then examine the response body of failed calls to find more information on the error.</i></p>	
-	<p>The most likely reason a call to this endpoint would fail is that the workbook being requested does not exist on the server (either in the server's local storage or, if enabled, AWS S3 storage).</p><br>	
+	<p><i><strong>Note: </strong>Since a successful call returns the workbook JSON without modification, the <code>success</code> and <code>error</code> fields will not be present in a successful response. You should examine the response code to determine if the call succeeded or failed, then examine the response body of failed calls to find more information on the error.</i></p>
+	<p>The most likely reason a call to this endpoint would fail is that the workbook being requested does not exist on the server (either in the server's local storage or, if enabled, AWS S3 storage).</p><br>
 	<h5>Example</h5>
 	<p>This example assumes we have previously uploaded a workbook with ID <code>3dd9faab9f69f02f</code> . It uses <code>curl</code> to fetch that workbook at save it to the current directory as <code>downloaded-workbook.json</code> </p><br>
 	<h6>1. In a terminal, Run:</h6>
 	<div class="well well-sm">curl 'http://staging.graphistry.com/workbook/3dd9faab9f69f02f' > ./downloaded-workbook.json`</div>
 	<p><strong>2. </strong>The server will respond with the workbook's contents (as JSON-encoded data), which <code>curl</code> will save to <code>downloaded-workbook.json</code>.</p>
 	<p><strong>3. </strong>You can modify the workbook locally, examine it's contents (for example, with the <code>jq</code> utility), and optionally upload the modified workbook back to the server.</p>
-	<h4 id="modify" style="padding-top:60px;">Modify a Notebook</h4><hr>	
+	<h4 id="modify" style="padding-top:60px;">Modify a Notebook</h4><hr>
 	<p>The Graphistry REST API does not have a dedicated "modify a workbook" endpoint. Instead, you can combine the "download" and "upload" endpoints to accomplish the same thing.</p><br>
 	<p>First, download the workbook you wish to modify. Make the desired modifications to the workbook file locally, ensuring that you do not modify the <code>id</code> field of the workbook.</p><br>
 	<p>Then, upload the modified workbook file to the server. Because the uploaded workbook has the same ID as the existing workbook, the uploaded workbook will overwrite the existing workbook on the server.</p>
-		
-		
+
+
 
 <br><br><br><br><br><br><br><br><br><br><br><br>
     </div>
 	<div class="col-sm-1">
-</div>	
-	  </div>	
+</div>
+	  </div>
 
 <footer>
   <div class="container">
     <div class="row">
       <div class="col-md-3 col-sm-6 footerleft ">
         <div class="logofooter"> <img style="max-height:40px; margin-top: 10px;" src="../images/logo.png"></div>
-        
+
       </div>
       <div class="col-md-2 col-sm-6 paddingtop-bottom">
         <ul class="footer-ul">
@@ -194,7 +193,7 @@
       </div>
       <div class="col-md-3 col-sm-6 paddingtop-bottom">
 			<p style="color:#E6E6E6; font-size:12px;">1212 Broadway Floor 11, Oakland, CA 94612</p>
-        <p style="color:#E6E6E6; font-size:12px;">info@graphistry.com</p>	  
+        <p style="color:#E6E6E6; font-size:12px;">info@graphistry.com</p>
       </div>
       <div class="col-md-3 col-sm-6 paddingtop-bottom">
         </div>
