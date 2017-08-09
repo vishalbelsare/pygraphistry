@@ -19,7 +19,7 @@ export const uiTweaks = {
     stackedBushyGraph: [
                         ['updateSetting', 'edgeOpacity', 0.30],
                         ['updateSetting', 'showArrows', false],
-                        ['updateSetting', 'labelPOI', false],
+                        ['updateSetting', 'labelPOI', true],
                         ['updateSetting', 'pointSize', 1],
                         ],
 };
