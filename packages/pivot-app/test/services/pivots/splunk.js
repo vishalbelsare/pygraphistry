@@ -23,6 +23,12 @@ const fromDateUnix = moment.tz('06/10/2017 0:0:0', 'L H:m:s', "America/Los_Angel
 const toDateUnix = moment.tz('06/10/2017 23:59:59', 'L H:m:s', "America/Los_Angeles").unix();
 
 
+const dateTimeStr = moment(dateTimeUnix * 1000).format();
+const fromDateTimeGuyanaStr = moment(fromDateTimeGuyanaUnix * 1000).format();
+const fromDateStr = moment(fromDateUnix * 1000).format();
+const toDateStr = moment(toDateUnix * 1000).format();
+
+
 describe('Splunk:dayRangeToSplunkParams', function () {
 
     let pivot;
@@ -49,44 +55,44 @@ describe('Splunk:dayRangeToSplunkParams', function () {
     it('from date and default time and default timezone', () => {
         compare(
             {from: { date: dateJSON } },
-            { earliest_time: fromDateUnix });
+            { earliest_time: fromDateStr });
     });
 
     it('from date & explicit time and default timezone', () => {
         compare(
             {from: { date: dateJSON, time: timeJSON } },
-            { earliest_time: dateTimeUnix });
+            { earliest_time: dateTimeStr });
     });
 
     it('from date & explicit time and explicit timezone', () => {
         compare(
             {from: { date: dateJSON, time: timeJSON, timezone: 'America/Guyana' } },
-            { earliest_time: fromDateTimeGuyanaUnix });
+            { earliest_time: fromDateTimeGuyanaStr });
     });    
 
     it('to date and default time and default timezone', () => {
         compare(
             {to: { date: dateJSON } },
-            {latest_time: toDateUnix });
+            {latest_time: toDateStr });
     });
 
     it('to date & explicit time and default timezone', () => {
         compare(
             {to: { date: dateJSON, time: timeJSON } },
-            {latest_time: dateTimeUnix });
+            {latest_time: dateTimeStr });
     });
 
     it('to & from together', () => {
         compare(
             {from: { date: dateJSON }, to: { date: dateJSON } },
-            {earliest_time: fromDateUnix, latest_time: toDateUnix });
+            {earliest_time: fromDateStr, latest_time: toDateStr });
     });
 
     it('global to & from', () => {
         compareGlobal(
             undefined,
             {from: { date: dateJSON }, to: { date: dateJSON } },
-            {earliest_time: fromDateUnix, latest_time: toDateUnix });
+            {earliest_time: fromDateStr, latest_time: toDateStr });
     });
 
     it('global to with local override', () => {
@@ -94,7 +100,7 @@ describe('Splunk:dayRangeToSplunkParams', function () {
             {from:  { date: dateJSON, time: timeJSON, timezone: 'America/Los_Angeles' }, 
              to:    { date: dateJSON, time: timeJSON, timezone: 'America/Los_Angeles' } },
             {from: { date: 1, time: 1, timezone: 1}, to: { date: 1, time: 1, timezone: 1}},
-            {earliest_time: dateTimeUnix, latest_time: dateTimeUnix });
+            {earliest_time: dateTimeStr, latest_time: dateTimeStr });
     });
 
 });     
