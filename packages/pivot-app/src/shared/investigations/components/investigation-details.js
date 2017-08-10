@@ -14,6 +14,7 @@ const log = logger.createLogger(__filename);
 export function InvestigationDetails({ layout, saveLayout, $falcor, description = '', time = {} }) {
     return (
         <Panel collapsible
+               defaultExpanded={true}
                className={styles['investigation-details']}
                header={
                    <p className={styles['investigation-details-header']}>
