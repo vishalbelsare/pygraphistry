@@ -42,6 +42,10 @@ function safeNumberCompare(a, b) {
                    : a - b;  // both are numbers
 }
 
+function safeToDateObject(v) {
+    return v instanceof Date ? v : new Date(v);
+}
+
 function wrappedLocaleCompare (a, b) {
     if (isASCII(a) && isASCII(b)) {
         return fastRoughStringCompare(a, b);
@@ -95,9 +99,9 @@ export function keyMakerForDataType(dataType) {
         case 'string':
             return (value) => value;
         case 'date':
-            return (value) => value.toDateString();
+            return (value) => safeToDateObject(value).toDateString();
         case 'datetime':
-            return (value) => value.toISOString();
+            return (value) => safeToDateObject(value).toISOString();
         case 'object':
             return (value) => value === null ? value.toString() : JSON.stringify(value);
         case 'array':
@@ -119,7 +123,7 @@ export function isCompatible(dataType, value) {
             return _.isString(value);
         case 'date':
         case 'datetime':
-            return _.isDate(value);
+            return _.isDate(value) || _.isDate(safeToDateObject(value));
         case 'object':
             return _.isObject(value);
         case 'array':
@@ -142,12 +146,11 @@ export function comparatorForDataType(dataType) {
     switch (dataType) {
         case 'number':
         case 'integer':
+        case 'date':
+        case 'datetime':
             return safeNumberCompare;
         case 'string':
             return (a, b) => wrappedLocaleCompare(a,b);
-        case 'date':
-        case 'datetime':
-            return (a, b) => a.getTime() - b.getTime();
         default:
             return undefined;
     }
