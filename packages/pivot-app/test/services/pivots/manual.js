@@ -53,10 +53,10 @@ describe('manualPivot', function () {
                     assert.deepEqual(pivot.events, [base]);
                     const base2 = {...base, source: 'x:0'};
                     assert.deepEqual(pivot.results.graph, 
-                        [{ ...base2, destination: 1, edgeType: 'EventID->x', edgeTitle: 'x:0->1'},
-                         { ...base2, destination: 'aa', edgeType: 'EventID->y', edgeTitle: 'x:0->aa'},
-                         { ...base2, destination: 'a', edgeType: 'EventID->z.0', edgeTitle: 'x:0->a'},
-                         { ...base2, destination: 'b', edgeType: 'EventID->z.1', edgeTitle: 'x:0->b'}]);
+                        [{ ...base2, edge: 'x:0:x', destination: 1, edgeType: 'EventID->x', edgeTitle: 'x:0->1'},
+                         { ...base2, edge: 'x:0:y', destination: 'aa', edgeType: 'EventID->y', edgeTitle: 'x:0->aa'},
+                         { ...base2, edge: 'x:0:z.0', destination: 'a', edgeType: 'EventID->z.0', edgeTitle: 'x:0->a'},
+                         { ...base2, edge: 'x:0:z.1', destination: 'b', edgeType: 'EventID->z.1', edgeTitle: 'x:0->b'}]);
                     assert.deepEqual(pivot.results.labels,
                         [{ ...base, node: 'x:0', type: 'EventID'},
                          { node: 1, type: 'x'},
@@ -81,8 +81,8 @@ describe('manualPivot', function () {
                     assert.deepEqual(pivot.events, [{x: 1, EventID:'x:0'}, {x: 3, EventID:'x:1'}]);
                     const base = {edgeType: 'EventID->x'};
                     assert.deepEqual(pivot.results.graph, 
-                        [{ ...base, EventID: 'x:0', x:1, destination: 1, 'source': 'x:0', edgeTitle: 'x:0->1'},
-                         { ...base, EventID: 'x:1', x:3, destination: 3, 'source': 'x:1', edgeTitle: 'x:1->3'}]);
+                        [{ ...base, edge: 'x:0:x', EventID: 'x:0', x:1, destination: 1, 'source': 'x:0', edgeTitle: 'x:0->1'},
+                         { ...base, edge: 'x:1:x', EventID: 'x:1', x:3, destination: 3, 'source': 'x:1', edgeTitle: 'x:1->3'}]);
                     assert.deepEqual(pivot.results.labels,
                         [{ EventID: 'x:0', x: 1, node: 'x:0', type: 'EventID' },
                          { node: 1, type: 'x'},
@@ -104,8 +104,8 @@ describe('manualPivot', function () {
             .subscribe(({pivot, ...rest}) => {
                     assert.deepEqual(pivot.events, [{x: 1, EventID:'aa'}, {x: 3, EventID:'bb'}]);
                     assert.deepEqual(pivot.results.graph, 
-                        [{EventID: 'aa', x:1, destination: 1, 'source': 'aa', edgeType: 'EventID->x', edgeTitle: 'aa->1'},
-                         {EventID: 'bb', x:3, destination: 3, 'source': 'bb', edgeType: 'EventID->x', edgeTitle: 'bb->3'}]);
+                        [{edge: 'aa:x', EventID: 'aa', x:1, destination: 1, 'source': 'aa', edgeType: 'EventID->x', edgeTitle: 'aa->1'},
+                         {edge: 'bb:x', EventID: 'bb', x:3, destination: 3, 'source': 'bb', edgeType: 'EventID->x', edgeTitle: 'bb->3'}]);
                     assert.deepEqual(pivot.results.labels,
                         [{ EventID: 'aa', x: 1, node: 'aa', type: 'EventID'},
                          { node: 1, type: 'x' },

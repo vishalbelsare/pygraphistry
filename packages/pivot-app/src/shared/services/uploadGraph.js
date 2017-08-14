@@ -8,6 +8,7 @@ import VError from 'verror';
 import { layouts } from './layouts.js';
 
 import conf from '../../server/config.js';
+import { graphUnion, sortNodesInplaceByPivotAndID, sortEdgesInplaceByPivotAndID} from './shape/graph.js';
 
 import logger from '../../shared/logger.js';
 const log = logger.createLogger(__filename);
@@ -88,7 +89,8 @@ export const bindings = {
     "sourceField": "source",
     "destinationField": "destination",
     "typeField": "type",
-    "idField": "node"
+    "idField": "node",
+    "idEdgeField": "edge"    
 }
 
 function synthesizeMissingNodes(edges, nodes) {
@@ -115,40 +117,30 @@ export function createGraph(pivots) {
 
     log.trace({ visiblePivots }, "visiblePivots");
 
-    // edgeNodes :: [ Node :: String ]
-    const edgeNodes = _.flatten(visiblePivots.map(p => p.results.graph).map(g => g.map(({[bindings.sourceField]: s, [bindings.destinationField]: d}) => [s, d])));
+    const {nodes, edges} =
+        pivots.reduce(
+            ({nodes, edges}, {enabled, results: {graph, labels} = {} }, index) =>
+                !enabled ? {nodes, edges}
+                : graphUnion(                    
+                    {nodes: labels.map((node) => ({'Pivot': index, ...node})),
+                     edges: graph.map((edge) => ({'Pivot': index, ...edge})) },
+                    {nodes, edges}, //don't clobber earlier Pivot #
+                    bindings.idField,
+                    bindings.idEdgeField),
+            {nodes: [], edges: []});
 
-    const explicitNodes = _.flatten(visiblePivots.map(({results: {labels}}) => labels).map(l => l.map(({[bindings.idField]: id}) => id)));
+    sortNodesInplaceByPivotAndID(nodes);
+    sortEdgesInplaceByPivotAndID(edges);
 
-    // isolatedNodes :: [ Node :: String ]
-    const isolatedNodes = _.difference(explicitNodes, edgeNodes); // O(n^2) 🙄
-
-    const mergedPivots = {
-        graph: [].concat.apply([],
-            visiblePivots.map( 
-                (pivot, index) => 
-                    pivot.results.graph.map(
-                        (edge) => ({...edge, 'Pivot': index})))),
-        labels: [].concat.apply([], 
-            visiblePivots.map( 
-                (pivot, index) =>
-                    pivot.results.labels.map(
-                        (label) => (isolatedNodes.includes(label[bindings.idField])) ? {...label, 'Pivot': index} : label)))
-    };
-
-    const mergedNodes = 
-        _.values(_.groupBy(mergedPivots.labels, bindings.idField))
-        .map(group => group.reduce( (acc, v) => ({...acc, ...v}), {} ));        
-
-    const missingNodes = synthesizeMissingNodes(mergedPivots.graph, mergedNodes, bindings);
+    const missingNodes = synthesizeMissingNodes(edges, nodes, bindings);
 
     const uploadData = {
-        graph: mergedPivots.graph,
-        labels: mergedNodes.concat(missingNodes),
+        graph: edges,
+        labels: nodes.concat(missingNodes),
         name, type, bindings
     };
 
-    return { pivots, data:uploadData };
+    return { pivots, data: uploadData };
 }
 
 // {data: {bindings: {sourceField: s, destinationField: d, idField: i}, graph: [{Pivot: pivotId, s: n1, d: n2}], labels: [{i: nName, __x: x, y: y__}]}, pivots: ...}
@@ -189,8 +181,8 @@ export function edgesToRows(edges, nodes) {
     const leastEdgeRows = _.mapObject(_.groupBy(allEdgeRows, bindings.idField),
                                       (allRows) => _.min(_.pluck(allRows, 'row')));
 
-    const isolatedNodeRows = nodes.filter((n) => (n.Pivot !== undefined))
-        .map(({[bindings.idField]: id, 'Pivot': row}) => [id, row]);
+    const isolatedNodeRows = nodes.filter((n) => (!(n.node in leastEdgeRows)))
+        .map(({[bindings.idField]: id, 'Pivot': row}) => [id, 2 * row]);
     isolatedNodeRows.forEach(function([id, row]) { leastEdgeRows[id] = row });
 
     return leastEdgeRows;

@@ -92,6 +92,7 @@ function extractAllNodes(connections) {
             || (connections.indexOf('*') !== -1)
 }
 
+
 // Convert events into a hypergraph
 //   -- hypernodes: generate EventID if none available
 //   -- if generic nodes/edges, merge in
@@ -105,6 +106,8 @@ function shapeHyperGraph({ app, pivot } ) {
 
     const edges = [];
     const nodeLabels = [];
+
+    const foundEntities = {};
     
     for(let i = 0; i < events.length; i++) {
         const row = events[i];
@@ -137,12 +140,16 @@ function shapeHyperGraph({ app, pivot } ) {
             const field = entityTypes[j];
 
             if (field in row && (row[field] !== undefined) && (row[field] !== null)) {
-                nodeLabels.push({'node': row[field], type: field});
+                if (!foundEntities[row[field]]) {
+                    nodeLabels.push({'node': row[field], type: field});
+                    foundEntities[row[field]] = true;                
+                }
                 edges.push(
                     Object.assign({}, _.pick(row, attribs),
                         {
                             'destination': row[field],
                             'source': eventID,
+                            'edge': eventID + ':' + field,
                             'edgeType': ('EventID->' + field),
                             'edgeTitle': `${eventID}->${row[field]}`
                         }
@@ -161,8 +168,11 @@ function shapeHyperGraph({ app, pivot } ) {
 
     //TODO filter by global lookup of nodes
     //  (for case where just edges here, and enriched nodes from earlier)
-    const combinedEdges = edges.concat(pivotEdges);
-
+    const combinedEdges = edges
+        .concat(pivotEdges
+            .map((edge, i) => 'edge' in edge ? 
+                edge 
+                : {...edge, 'edge': `edge_${pivot.id}_${i}`}));
 
     return ({ app, 
         pivot: {

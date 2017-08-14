@@ -116,15 +116,15 @@ describe('stackedBushyGraph', function() {
 // 2. CreateGraph tests.
 
 const visiblePivotsSmall = [{id: "first", enabled: true,
-                             results: {graph: [{source: "a", destination: "b"}, {source: "a", destination: "c"}],
+                             results: {graph: [{source: "a", destination: "b", edge: 'edge_0_0'}, {source: "a", destination: "c", edge: 'edge_0_1'}],
                                        labels: [{node: "a"}, {node: "b"}, {node: "c"}]}},
                             {id: "second", enabled: true,
                              results: {graph: [],
                                        labels: [{node: "d"}]}}];
 
-const idealGraphDataSmall = {graph: [{source: "a", destination: "b", Pivot: 0}, {source: "a", destination: "c", Pivot: 0}],
-                             labels: [{node: "a"}, {node: "b"}, {node: "c"}, {node: "d", Pivot: 1}],
-                             name: null, type: "edgelist", bindings: {sourceField: "source", destinationField: "destination", typeField: "type", idField: "node"}};
+const idealGraphDataSmall = {graph: [{source: "a", destination: "b", Pivot: 0, edge: 'edge_0_0'}, {source: "a", destination: "c", Pivot: 0, edge: 'edge_0_1'}],
+                             labels: [{node: "a", Pivot: 0}, {node: "b", Pivot: 0}, {node: "c", Pivot: 0}, {node: "d", Pivot: 1}],
+                             name: null, type: "edgelist", bindings: {idEdgeField: 'edge', sourceField: "source", destinationField: "destination", typeField: "type", idField: "node"}};
 
 const visiblePivotsLarge = [
     {id: "1", enabled: true,
@@ -140,7 +140,7 @@ const visiblePivotsLarge = [
 
 const idealGraphDataLarge = {graph: [{source: "a", destination: "b", Pivot: 0}, {source: "a", destination: "c", Pivot: 0}, {source: "e", destination: "f"}],
                               labels: [{node: "a"}, {node: "b"}, {node: "c"}, {node: "d", Pivot: 1}, {node: "e"}, {node: "f"}],
-                              name: null, type: "edgelist", bindings: {sourceField: "source", destinationField: "destination", typeField: "type", idField: "node"}};
+                              name: null, type: "edgelist", bindings: {idEdgeField: 'edge', sourceField: "source", destinationField: "destination", typeField: "type", idField: "node"}};
 
 describe('createGraph', function() {
         it('should label isolated nodes with Pivot', function() {

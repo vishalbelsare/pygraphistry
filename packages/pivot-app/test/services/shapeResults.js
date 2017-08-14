@@ -34,7 +34,7 @@ describe('shapeResults', function() {
         const pivot = { events: [{'EventID': 'xx', 'y': 'z'}] };
         const expected = {
             graph: [
-                {'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
+                {edge: 'xx:y', 'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
             ], 
             labels: [
                 {'node': 'xx', 'EventID': 'xx', 'type': 'EventID', 'y': 'z'}, 
@@ -45,6 +45,62 @@ describe('shapeResults', function() {
         compareGraph(pivot, expected, done);
     });
 
+    it('hypergraph handles multiple non-overlapping events', function (done) {
+
+        const pivot = {events: [
+            {'EventID': 'xx', 'y': 'z'},
+            {'EventID': 'yy', 'y': 'r', 'a': 1}
+            ]};
+        const expected = {
+            graph: [
+                {'EventID': 'xx', 'source': 'xx', 'destination': 'z', 
+                 'edge': 'xx:y', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'},
+                {'EventID': 'yy', 'source': 'yy', 'destination': 'r', 
+                 'edge': 'yy:y', 'edgeType': 'EventID->y', 'y':'r', 'a': 1, 'edgeTitle': 'yy->r'},                 
+                {'EventID': 'yy', 'source': 'yy', 'destination': 1, 
+                 'edge': 'yy:a', 'edgeType': 'EventID->a', 'y':'r', 'a': 1, 'edgeTitle': 'yy->1'}
+            ],
+            labels: [
+                {'node': 'xx', 'EventID': 'xx', 'type': 'EventID', 'y': 'z'},
+                {'node': 'z', 'type': 'y'},
+                {'node': 'yy', 'EventID': 'yy', 'type': 'EventID', 'y': 'r', 'a': 1},
+                {'node': 'r', 'type': 'y'},
+                {'node': 1, 'type': 'a'}
+            ]
+        }
+
+        compareGraph(pivot, expected, done);
+
+    });
+
+    it('hypergraph handles multiple overlapping events', function (done) {
+
+        const pivot = {events: [
+            {'EventID': 'xx', 'y': 'z'},
+            {'EventID': 'yy', 'y': 'z', 'a': 1}
+            ]};
+        const expected = {
+            graph: [
+                {'EventID': 'xx', 'source': 'xx', 'destination': 'z', 
+                 'edge': 'xx:y', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'},
+                {'EventID': 'yy', 'source': 'yy', 'destination': 'z', 
+                 'edge': 'yy:y', 'edgeType': 'EventID->y', 'y':'z', 'a': 1, 'edgeTitle': 'yy->z'},                 
+                {'EventID': 'yy', 'source': 'yy', 'destination': 1, 
+                 'edge': 'yy:a', 'edgeType': 'EventID->a', 'y':'z', 'a': 1, 'edgeTitle': 'yy->1'}
+            ],
+            labels: [
+                {'node': 'xx', 'EventID': 'xx', 'type': 'EventID', 'y': 'z'},
+                {'node': 'z', 'type': 'y'},
+                {'node': 'yy', 'EventID': 'yy', 'type': 'EventID', 'y': 'z', 'a': 1},
+                {'node': 1, 'type': 'a'}
+            ]
+        }
+
+        compareGraph(pivot, expected, done);
+
+    });
+
+
     it('hypergraph skips nulls', function (done) {
 
         const pivot = { events: [{'EventID': 'xx', 'y': 'z', 'a': null, 'b': undefined}] };
@@ -52,7 +108,7 @@ describe('shapeResults', function() {
             graph: [
                 {'source': 'xx', 'destination': 'z', 
                  'a': null,
-                 'EventID': 'xx', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
+                 'edge': 'xx:y', 'EventID': 'xx', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
             ], 
             labels: [
                 {'node': 'xx', 'EventID': 'xx', 'type': 'EventID', 'y': 'z', 'a': null}, 
@@ -82,15 +138,27 @@ describe('shapeResults', function() {
 
     it('graph only edges', (done) => {
 
-        const pivot = { graph: { nodes: [], edges: [ {source: 'x', destination: 'y'} ]}};
+        const pivot = { graph: { nodes: [], edges: [ {source: 'x', destination: 'y', 'edge': 'myedge'} ]}};
         const expected = { labels: [], graph: pivot.graph.edges };
 
         compareGraph(pivot, expected, done);
     });
 
+
+    it('graph synthesizes edge ids', (done) => {
+
+        const pivot = {id: 'myPivot', graph: { nodes: [], edges: [ {source: 'x', destination: 'y'}, {source: 'x', destination: 'z'} ]}};
+        const expected = { labels: [], graph: [ 
+            {source: 'x', destination: 'y', edge: 'edge_myPivot_0'}, 
+            {source: 'x', destination: 'z', edge: 'edge_myPivot_1'} ] };
+
+        compareGraph(pivot, expected, done);
+    });
+
+
     it('graph nodes+edges', (done) => {
 
-        const pivot = { graph: { nodes: [ { node: 'x', a: 'b'} ], edges: [ { source: 'x', destination: 'y'} ]}};
+        const pivot = { graph: { nodes: [ { node: 'x', a: 'b'} ], edges: [ { source: 'x', destination: 'y', 'edge': 'myedge'} ]}};
         const expected = { labels: pivot.graph.nodes, graph: pivot.graph.edges };
 
         compareGraph(pivot, expected, done);
@@ -101,13 +169,13 @@ describe('shapeResults', function() {
         const pivot = {
             graph: {
                 nodes: [ {node: 'x', a: 'b'} ], 
-                edges: [ {source: 'x', destination: 'y'} ]},
+                edges: [ {source: 'x', destination: 'y', 'edge': 'myedge'} ]},
             events: [ {'EventID': 'xx', 'y': 'z'} ]
         };
         const expected = { 
             graph: [
-                {'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'},
-                {source: 'x', destination: 'y'}
+                {edge: 'xx:y', 'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'},
+                {edge: 'myedge', source: 'x', destination: 'y'}
             ], 
             labels: [
                 {'EventID': 'xx', 'node': 'xx', 'type': 'EventID', 'y': 'z'}, 
@@ -133,7 +201,7 @@ describe('shapeResults', function() {
                 };
                 const expected = {
                     graph: [
-                        {'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
+                        {'edge': 'xx:y', 'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
                     ], 
                     labels: [
                         {'EventID': 'xx', 'node': 'xx', 'type': 'EventID', 'y': 'z'}, 
@@ -153,7 +221,7 @@ describe('shapeResults', function() {
                 };
                 const expected = {
                     graph: [
-                        {'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
+                        {'edge': 'xx:y', 'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
                     ], 
                     labels: [
                         {'EventID': 'xx', 'node': 'xx', 'type': 'EventID', 'y': 'z'}, 
@@ -176,7 +244,7 @@ describe('shapeResults', function() {
                 };
                 const expected = {
                     graph: [
-                        {'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
+                        {'edge': 'xx:y', 'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
                     ], 
                     labels: [
                         {'EventID': 'xx', 'node': 'xx', 'type': 'EventID', 'y': 'z'}, 
@@ -196,7 +264,7 @@ describe('shapeResults', function() {
                 };
                 const expected = {
                     graph: [
-                        {'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'edgeTitle': 'xx->z'}
+                        {'edge': 'xx:y', 'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'edgeTitle': 'xx->z'}
                     ], 
                     labels: [
                         {'EventID': 'xx', 'node': 'xx', 'type': 'EventID'}, 
@@ -222,7 +290,7 @@ describe('shapeResults', function() {
                 };
                 const expected = {
                     graph: [
-                        {'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
+                        {'edge': 'xx:y', 'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
                     ], 
                     labels: [
                         {'EventID': 'xx', 'node': 'xx', 'type': 'EventID', 'y': 'z'}, 
@@ -241,7 +309,7 @@ describe('shapeResults', function() {
                 };
                 const expected = {
                     graph: [
-                        {'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z', 'a': 'b', 'c': 'd'}
+                        {'edge': 'xx:y', 'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z', 'a': 'b', 'c': 'd'}
                     ], 
                     labels: [
                         {'EventID': 'xx', 'node': 'xx', 'type': 'EventID', 'y': 'z', 'a': 'b', 'c': 'd'}, 
@@ -264,7 +332,7 @@ describe('shapeResults', function() {
                 };
                 const expected = {
                     graph: [
-                        {'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
+                        {'edge': 'xx:y', 'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'y':'z', 'edgeTitle': 'xx->z'}
                     ], 
                     labels: [
                         {'EventID': 'xx', 'node': 'xx', 'type': 'EventID', 'y': 'z'}, 
