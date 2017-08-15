@@ -20,6 +20,5 @@ export const uiTweaks = {
                         ['updateSetting', 'edgeOpacity', 0.30],
                         ['updateSetting', 'showArrows', false],
                         ['updateSetting', 'labelPOI', true],
-                        ['updateSetting', 'pointSize', 1],
                         ],
 };

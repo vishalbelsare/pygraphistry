@@ -28,18 +28,18 @@ const ALERT_DEMO_NODE_COLORS = {
 };
 
 const ALERT_DEMO_NODE_SIZES = {
-    'Host':1.0,
-    'Internal IPs':1.5,
-    'Fire Eye Source IP': 10.1,
-    'External IPs':1.5,
-    'User':0.5,
+    'Host': 9.9,
+    'Internal IPs': 9.9,
+    'Fire Eye Source IP': 9.9,
+    'External IPs': 9.9,
+    'User': 9.9,
     //    'AV Alert Name':5.1,
-    'Fire Eye MD5':10.1,
+    'Fire Eye MD5': 9.9,
     //'Fire Eye Alert Name':10.1,
-    'Fire Eye URL':2.1,
-    'Message': 7.1,
+    'Fire Eye URL': 9.9,
+    'Message': 9.9,
     'EventID':0.1,
-    'Search': 1,
+    'Search': 9.9,
 };
 
 

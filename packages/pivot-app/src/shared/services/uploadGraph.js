@@ -149,7 +149,7 @@ export function createGraph(pivots) {
 // in each row, order each node into columns based on degree and lexicographic order. Then,
 // for each row indexed by r, for each column indexed by c, set the node's x to be rFudge * r, and set the node's y to be cFudge * (max(|c|) - |c| + c) (for centering)
 // by default, create a graph that has aspect 1:√(max(|c|)), going from top to bottom.
-export function stackedBushyGraph(graph, fudgeX = 100, fudgeY = -100 * Math.pow(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity))), 0.5), spacerY = fudgeY, minLineLength = 5, maxLineLength = 100, pivotWrappedLineHeight=0.25) {
+export function stackedBushyGraph(graph, fudgeX = 100, fudgeY = -30 * Math.pow(_.max(_.values(_.countBy(_.pluck(graph.data.graph, 'Pivot'), _.identity))), 0.5), spacerY = fudgeY, minLineLength = 5, maxLineLength = 100, pivotWrappedLineHeight=0.25) {
     log.trace({stackedBushyGraphInputs: graph.data}, "This is what we're making into a stacked bushy graph");
     if(pivotWrappedLineHeight > 0.5) {
         log.warn("Line-wrapped nodes are over half the line height!");
