@@ -100,7 +100,7 @@ export function setupCenter(toggleCenter, curPoints, camera) {
                 const bbox = getBoundingBox(points);
                 debug('Bounding box: ', bbox);
                 const { top, left, right, bottom } = bbox;
-                camera.centerOn(left, right, bottom * -1, top * -1);
+                camera.centerOn(left, right, bottom * -1, (top - 30) * -1);
                 return camera;
             });
         });
