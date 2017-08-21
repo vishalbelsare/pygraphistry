@@ -19,6 +19,7 @@ export function setupLegacyInterop(document, options) {
     let {
         socket,
         handleVboUpdates,
+        logo: showLogo = true,
         info = true, menu = true,
         top, left, right, bottom,
         play, opacity, pixelRatio,
@@ -63,6 +64,7 @@ export function setupLegacyInterop(document, options) {
           menu: PropTypes.bool,
           play: PropTypes.number,
           socket: PropTypes.object,
+          showLogo: PropTypes.bool,
           pixelRatio: PropTypes.number,
           simulation: PropTypes.object,
           onLabelsUpdated: PropTypes.func,
@@ -73,6 +75,7 @@ export function setupLegacyInterop(document, options) {
           menu,
           play,
           socket,
+          showLogo,
           pixelRatio,
           simulation,
           onLabelsUpdated,

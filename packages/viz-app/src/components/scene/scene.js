@@ -147,9 +147,9 @@ class Scene extends React.Component {
     }
     render() {
         const { bgDivStyle } = this.state;
-        const { info = true, menu = true } = this.props;
         const { edges, points, release, children } = this.props;
         const { labelPOIOption, pruneIsolatedOption } = this.props;
+        const { info = true, menu = true, showLogo = true } = this.props;
         const releaseString = release.buildNumber ? `v${release.buildNumber}` : '';
 
         return (
@@ -192,7 +192,8 @@ class Scene extends React.Component {
                     </div> || undefined }
                 </div> || undefined }
                 <div className={styles['logo-container']}>
-                    <img draggable='false' src='img/logo_white_horiz.png'/>
+                    { showLogo &&
+                        <img draggable='false' src='img/logo_white_horiz.png'/> || undefined }
                     <div className={styles['logo-version']}
                          onMouseDown={this.stopEventPropagation}
                          onMouseOver={this.stopEventPropagation}
@@ -401,6 +402,7 @@ Scene = compose(
         menu: PropTypes.bool,
         play: PropTypes.number,
         socket: PropTypes.object,
+        showLogo: PropTypes.bool,
         falcor: PropTypes.object,
         pixelRatio: PropTypes.number,
         simulation: PropTypes.object,
