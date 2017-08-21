@@ -144,10 +144,12 @@ Camera2d.prototype.setPosition = function (args) {
 };
 
 Camera2d.prototype.centerOn = function(left, right, top, bottom) {
-    // Add 10% for margins
-    var nwidth = (right - left) * 1.1;
-    var nheight = (bottom - top) * 1.1;
+    var nwidth = (right - left) * 1.1; // Add 10% horizontal margins
+    var nheight = (bottom - top) * 1.2; // Add 20% vertical margins
+    // adjust the x axis by -5% to accommodate 10% margin
     left -= nwidth * 0.05;
+    // adjust the y axis by -5% as if we only added a 10% vertical margin,
+    // so we have an extra 10% of space at the bottom for POI labels
     top -= nheight * 0.05;
     var aspectRatio = this.width / this.height;
 
