@@ -5,6 +5,9 @@ import { Observable, Scheduler } from 'rxjs';
 import { accessorForTargetType } from './VGraphLoader';
 import { dateToUTCGenerator } from './dateToUTCGenerator';
 
+// Suppress moment deprecation warnings
+moment.suppressDeprecationWarnings = true;
+
 const log         = require('@graphistry/common').logger;
 const logger      = log.createLogger('graph-viz', 'graph-viz/js/libs/VGraphLoader.js');
 
@@ -62,7 +65,7 @@ function interpolateVectorType(vec, attributeMetadata, updateClient) {
             obs = listToItemRanges(values, 50000)
                 .concatMap((valuesSlice) => updateClient()
                     .mergeMapTo(valuesSlice
-                        .map(dateToUTCGenerator(sampleValue))                        
+                        .map(dateToUTCGenerator(sampleValue))
                         .subscribeOn(Scheduler.async, 10)))
                 .toArray();
         }
