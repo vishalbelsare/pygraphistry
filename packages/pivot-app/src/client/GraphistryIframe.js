@@ -34,6 +34,7 @@ export class GraphistryIframe extends React.Component {
                 .do((g) => g.encodeIcons('point', 'pointIcon'))
                 .do((g) => (this.props.layoutTweaks || []).forEach(([fn,...params]) => g[fn](...params)) )
                 .do((g) => g.encodeAxis(this.props.axes))
+                .do((g) => this.props.edgeOpacity !== undefined ? g.updateSetting('edgeOpacity', this.props.edgeOpacity) : true)
                 .subscribe(
                     () => undefined,
                     (e) => log.error(e));

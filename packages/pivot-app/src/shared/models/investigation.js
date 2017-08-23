@@ -25,6 +25,7 @@ function initialSoftState(pivots) {
     return {
         url: null,
         axes: [],
+        edgeOpacity: 1,
         status: {ok: true, etling: false},
         eventTable: {},
         pivots: pivots.map((pivotId) =>

@@ -83,6 +83,7 @@ function searchPivot(action$) {
                 .concat(falcor.set(
                     $value(['url'], null),
                     $value(['axes'], []),
+                    $value(['edgeOpacity'], 1),
                     $value(['status'], { etling: true, ok: true })
                 ))
                 .concat(falcor.call(`graph`));

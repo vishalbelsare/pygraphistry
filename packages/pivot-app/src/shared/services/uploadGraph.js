@@ -164,10 +164,12 @@ export function stackedBushyGraph(graph, fudgeX = 100, fudgeY = -30 * Math.pow(_
     log.debug({nodeRows});
     const nodeXYs = mergeRowsColumnsToXY(nodeRows, nodeColumns, fudgeX, fudgeY, spacerY);
     const axes = generateAxes(nodeRows, fudgeY, spacerY);
+    const edgeOpacity = generateEdgeOpacity(nodeDegrees);
 
     decorateGraphLabelsWithXY(graph.data.labels, nodeXYs);
 
     graph.data.axes = axes;
+    graph.data.edgeOpacity = edgeOpacity;
 
     return graph;
 }
@@ -260,6 +262,11 @@ export function decorateGraphLabelsWithXY(labels, xy) {
             label.x = xy[label[i]].x;
             label.y = xy[label[i]].y;
         });
+}
+
+export function generateEdgeOpacity(nodeDegrees) {
+    const edgeCount = Object.values(nodeDegrees).length;
+    return 2.0 / Math.log10(100 + edgeCount);
 }
 
 export function generateAxes(rows, fudgeY, spacerY) {
@@ -360,6 +367,7 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                     if (dataset) {
                         investigation.url = `${user.vizService}&dataset=${dataset}&controls=${layouts.find((e) => (e.id === investigation.layout)).controls}`;
                         investigation.axes = data.axes;
+                        investigation.edgeOpacity = data.edgeOpacity;
                         investigation.status = {
                             ok: true,
                             etling: false,

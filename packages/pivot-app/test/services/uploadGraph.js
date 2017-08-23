@@ -65,8 +65,9 @@ const maxLineLength = 100;
 const pivotWrappedLineHeight = 0.5;
 const types = {};
 const axes = [{label: "Pivot 1", y: -fudgeY}, {label: "Pivot 2", y: (fudgeY + spacerY) * 2 * (2 - 1)}, {label: "Pivot 3", y: (fudgeY + spacerY) * 2 * (3 - 1)}, {label: "Pivot 4", y: (fudgeY + spacerY) * 2 * (4 - 1)}];
+const edgeOpacity = 2.0 / Math.log10(100 + Object.values(xys).length);
 const hugeDataStructure = {data: {graph: edges, labels: undecoratedLabels}};
-const hugeDecoratedDataStructure = {data: {axes, graph: edges, labels: decoratedLabels}};
+const hugeDecoratedDataStructure = {data: {axes, edgeOpacity, graph: edges, labels: decoratedLabels}};
 
 describe('edgesToRows', function() {
         it('should pull out minimum rows from src/dest edges', function() {
