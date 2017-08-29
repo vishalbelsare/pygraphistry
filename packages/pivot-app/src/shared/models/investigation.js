@@ -26,6 +26,8 @@ function initialSoftState(pivots) {
         url: null,
         axes: [],
         edgeOpacity: 1,
+        datasetType: 'vgraph',
+        datasetName: '',
         status: {ok: true, etling: false},
         eventTable: {},
         pivots: pivots.map((pivotId) =>

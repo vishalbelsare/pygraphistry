@@ -22,13 +22,13 @@ import {
 
 export const investigationContainer = container({
     fragment: ({ pivots } = {}) => `{
-        id, name, status, eventTable, modifiedOn, description, time, tags, url, layout, axes, edgeOpacity,
+        id, name, status, datasetType, datasetName, eventTable, controls, modifiedOn, description, time, tags, url, layout, axes, edgeOpacity,
         pivots: ${
             Pivot.fragments(pivots)
         }
     }`,
-    mapFragment: ({ id, name, pivots, status, eventTable, layout, axes, edgeOpacity, description, time } = {}, props, $falcor) => ({
-        id, name, pivots, status, eventTable, layout, axes, edgeOpacity, description, time, $falcor
+    mapFragment: ({ id, name, pivots, status, datasetName, datasetType, controls, eventTable, layout, axes, edgeOpacity, description, time } = {}, props, $falcor) => ({
+        id, name, pivots, status, datasetName, datasetType, controls, eventTable, layout, axes, edgeOpacity, description, time, $falcor
     }),
     dispatchers: {
         saveLayout,
@@ -47,6 +47,7 @@ export const investigationScreenContainer = container({
     renderLoading: false,
     fragment: ({ templates, investigations, activeInvestigation } = {}) => `{
         activeScreen,
+        graphistryHost,
         templates: ${ Template.fragments(templates) },
         investigations: ${ Investigation.fragments(investigations) },
         activeInvestigation: ${ Investigation.fragment(activeInvestigation) }
