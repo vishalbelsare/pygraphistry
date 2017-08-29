@@ -8,6 +8,7 @@ import 'react-select/dist/react-select.css';
 import 'react-dates/lib/css/_datepicker.css';
 import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
 import 'font-awesome/css/font-awesome.css';
+import '@graphistry/client-api-react/assets/index.css';
 
 import setObservableConfig from 'recompose/setObservableConfig';
 import rxjsObservableConfig from 'recompose/rxjsObservableConfig';
