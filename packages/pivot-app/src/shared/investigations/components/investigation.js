@@ -64,28 +64,6 @@ export default function Investigation({
                 </div>
             </InvestigationHeader>
             <div className={styles['investigation-pivots']}>
-                {/*<div className={styles.description}><strong>Investigation Description</strong><br></br><br></br>Welcome to the botnet investigation demo, this is a generic investigation description, we need to implement an editable section here.<br></br><br></br></div>
-                <div className={styles.layoutSwitcher}>
-                    <strong>Layout Type</strong><br></br><br></br>
-                        <OverlayTrigger placement="bottom" overlay={
-                        <Tooltip id={`tooltip-play-all`}>The force directed layout is great for seeing clusters and patterns within your data, it creates a physical simulation of the entities in your graph, and arranges them based on proximity and gravity</Tooltip>
-                    }>
-                            <Button className={styles['layoutButton']}>
-                                Force Directed
-                            </Button>
-                        </OverlayTrigger>
-                    <span>  </span>
-                        <OverlayTrigger placement="bottom" overlay={
-                        <Tooltip id={`tooltip-play-all`}>The investigation tree layout lets you visualize your data how its imported via each pivot in your template, this is great for gaining insight into which elements were imported by which pivot</Tooltip>
-                    }>
-                            <Button className={styles['layoutButton']}
-                                    >
-                                Investigation Tree
-                            </Button>
-                        </OverlayTrigger>
-                    <br></br><br></br>
-                </div>    initial code for investigation description & layout switcher, need dynamic implementing for both */}
-
                 <PivotTable id={id}
                             pivots={pivots}
                             status={status}
