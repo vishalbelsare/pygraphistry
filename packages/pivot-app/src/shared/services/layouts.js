@@ -14,11 +14,11 @@ export const layouts = [
                         ];
 
 export const uiTweaks = {
-    atlasbarnes: [],
-    insideout: [],
-    stackedBushyGraph: [
-                        ['updateSetting', 'edgeOpacity', 0.30],
-                        ['updateSetting', 'showArrows', false],
-                        ['updateSetting', 'labelPOI', true],
-                        ],
+    atlasbarnes: {},
+    insideout: {},
+    stackedBushyGraph: {
+        edgeOpacity: 0.30,
+        showArrows: false,
+        showPointsOfInterest: true,
+    },
 };

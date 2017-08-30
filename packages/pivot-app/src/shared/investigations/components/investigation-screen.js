@@ -25,6 +25,22 @@ export default function InvestigationScreen({
             ) :
             templates;
 
+    let showLoadingIndicator = true;
+    let { graphistryHost = `` } = user;
+    let loadingMessage = `Loading Visualization`;
+    let { status: uploadStatus } = activeInvestigation;
+    let { axes, controls, datasetName, datasetType } = activeInvestigation;
+
+    if (uploadStatus && (uploadStatus.searching || uploadStatus.etling)) {
+        datasetName = datasetType = ``;
+        loadingMessage = uploadStatus.searching ?
+            `Running Pivots` :
+            `Uploading Results` ;
+    } else if (!datasetName || !datasetType) {
+        showLoadingIndicator = false;
+        loadingMessage = `Run a Pivot to get started`;
+    }
+
     return (
         <div className={styles['investigation-all']}>
             <div className={styles['investigation-split']}>
@@ -40,21 +56,20 @@ export default function InvestigationScreen({
                         createInvestigation={createInvestigation}
                     />
                     <Graphistry
-                        graphistryHost={user.graphistryHost}
                         className={iframeStyle.iframe}
-                        vizClassName={iframeStyle.iframe} 
-                        allowFullScreen={true}
-                        showToolbar={true} 
-                        showSplashScreen = {false} 
-                        layoutTweaks={ uiTweaks[activeInvestigation.layout] }
-                        axes={ activeInvestigation.axes }
-                        dataset={activeInvestigation.datasetName}
-                        type={activeInvestigation.datasetType}
-                        controls={activeInvestigation.controls}
-                        backgroundColor="#eeeeee"
+                        vizClassName={iframeStyle.iframe}
+                        {...uiTweaks[activeInvestigation.layout] || {}}
+                        showLogo={false}
                         showIcons={true}
-                        loading={ !!activeInvestigation.datasetName }
-                        loadingMessage="Run your pivots on the left!"
+                        showToolbar={true}
+                        backgroundColor='#eeeeee'
+                        axes={axes}
+                        controls={controls}
+                        type={datasetType}
+                        dataset={datasetName}
+                        graphistryHost={graphistryHost}
+                        loadingMessage={loadingMessage}
+                        showLoadingIndicator={showLoadingIndicator}
                     />
                </SplitPane>
             </div>
