@@ -26,10 +26,11 @@ export default function InvestigationScreen({
             templates;
 
     let showLoadingIndicator = true;
-    let { graphistryHost = `` } = user;
+    const { graphistryHost = `` } = user;
     let loadingMessage = `Loading Visualization`;
-    let { status: uploadStatus } = activeInvestigation;
-    let { axes, controls, datasetName, datasetType } = activeInvestigation;
+    const { status: uploadStatus } = activeInvestigation;
+    const { axes, controls } = activeInvestigation;
+    let { datasetName, datasetType } = activeInvestigation;
 
     if (uploadStatus && (uploadStatus.searching || uploadStatus.etling)) {
         datasetName = datasetType = ``;
