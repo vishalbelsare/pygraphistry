@@ -20,5 +20,6 @@ export const uiTweaks = {
         edgeOpacity: 0.30,
         showArrows: false,
         showPointsOfInterest: true,
+        play: 0,
     },
 };
