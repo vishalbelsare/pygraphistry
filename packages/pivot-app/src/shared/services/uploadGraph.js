@@ -143,6 +143,44 @@ export function createGraph(pivots) {
     return { pivots, data: uploadData };
 }
 
+// V0.
+// For all nodes n, set a ternary to labels[n[bindings.idField]].typeField ~ /Internal/ | /External/.
+// Internal is 1xx level, External is 5xx level, Neither is 3xx.
+// For each ternary t, for each type, r = t.level + typeidx * 100 / |types|; for each node, ϕ = nodeidx * 360 / |nodes|.
+export function insideOut(graph) {
+    const zoneTypenodes = {};
+    const idField = bindings.idField;
+    const typeField = bindings.typeField;
+    const isInternal = ((s) => s[typeField].match(/Internal/));
+    const isExternal = ((s) => s[typeField].match(/External/));
+    graph.data.labels.forEach((n) => {
+        const zoneIdx = isInternal(n) ? "I" : (isExternal(n) ? "E" : "N");
+        if(zoneTypenodes[zoneIdx] === undefined) { zoneTypenodes[zoneIdx] = {}; }
+        const zone = zoneTypenodes[zoneIdx];
+        const typeIdx = n[typeField];
+        if(zone[typeIdx] === undefined) { zone[typeIdx] = []; }
+        const zoneType = zone[typeIdx];
+        zoneType.push(n);
+    });
+
+    const xys = {};
+    Object.keys(zoneTypenodes).forEach((zone) => {
+        Object.keys(zoneTypenodes[zone]).sort().forEach((type, typeIdx) => {
+            zoneTypenodes[zone][type].forEach((node, nodeIdx) => {
+                const r = (zone === "I" ? 100 : (zone === "N" ? 300 : 500)) + typeIdx * 100.0 / Object.keys(zoneTypenodes[zone]).length;
+                const ϕ = nodeIdx * Math.PI * 2 / zoneTypenodes[zone][type].length;
+                xys[node[bindings.idField]] = {x: r * Math.cos(ϕ), y: r * Math.sin(ϕ)};
+                });
+            });
+        });
+
+    decorateGraphLabelsWithXY(graph.data.labels, xys);
+
+    graph.data.edgeOpacity = generateEdgeOpacity(graph.data.graph);
+    return graph;
+}
+
+
 // {data: {bindings: {sourceField: s, destinationField: d, idField: i}, graph: [{Pivot: pivotId, s: n1, d: n2}], labels: [{i: nName, __x: x, y: y__}]}, pivots: ...}
 // Take a graph, and add x/y coordinates to render it into a "stacked bushy graph".
 // More formally: for all {Pivot: id, s: n1, d: n2} in graph, put n1 into the smallest row id*2, and n2 into the smallest row id*2+1. Then,
@@ -281,6 +319,7 @@ export function generateAxes(rows, fudgeY, spacerY) {
 
 const shapers = {stackedBushyGraph: stackedBushyGraph,
                  atlasbarnes: ((x) => x),
+                 insideout: insideOut,
                  weirdRandomSquare: ((x) => x)};
 
 function makeEventTable({pivots}) {
