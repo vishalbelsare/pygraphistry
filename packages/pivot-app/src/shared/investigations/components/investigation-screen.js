@@ -67,7 +67,7 @@ export default function InvestigationScreen({
                         controls={controls}
                         type={datasetType}
                         dataset={datasetName}
-                        graphistryHost={graphistryHost}
+                        graphistryHost={graphistryHost || ''}
                         loadingMessage={loadingMessage}
                         showLoadingIndicator={showLoadingIndicator}
                         workbook={activeInvestigation.id}
