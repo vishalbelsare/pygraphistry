@@ -17,7 +17,6 @@ export const uiTweaks = {
     atlasbarnes: {},
     insideout: {},
     stackedBushyGraph: {
-        edgeOpacity: 0.30,
         showArrows: false,
         showPointsOfInterest: true,
         play: 0,
