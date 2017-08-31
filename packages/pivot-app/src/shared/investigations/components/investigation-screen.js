@@ -5,7 +5,7 @@ import { Investigation } from 'pivot-shared/investigations';
 
 import { Graphistry } from '@graphistry/client-api-react';
 import { uiTweaks } from '../../services/layouts.js';
-import iframeStyle from './visualization-styles.less';
+import iframeStyle from './iframe-style.less';
 
 export default function InvestigationScreen({
     templates = [],
