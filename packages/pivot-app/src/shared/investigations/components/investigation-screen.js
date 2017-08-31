@@ -72,7 +72,7 @@ export default function InvestigationScreen({
                         loadingMessage={loadingMessage}
                         showLoadingIndicator={showLoadingIndicator}
                         workbook={activeInvestigation.id}
-                        edgeOpacity={0.3}
+                        edgeOpacity={activeInvestigation.edgeOpacity}
                     />
                </SplitPane>
             </div>
