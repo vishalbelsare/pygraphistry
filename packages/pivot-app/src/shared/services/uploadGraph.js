@@ -169,7 +169,7 @@ export function insideOut(graph) {
             zoneTypenodes[zone][type].forEach((node, nodeIdx) => {
                 const r = (zone === "I" ? 100 : (zone === "N" ? 300 : 500)) + typeIdx * 100.0 / Object.keys(zoneTypenodes[zone]).length;
                 const ϕ = nodeIdx * Math.PI * 2 / zoneTypenodes[zone][type].length;
-                xys[node[bindings.idField]] = {x: r * Math.cos(ϕ), y: r * Math.sin(ϕ)};
+                xys[node[idField]] = {x: r * Math.cos(ϕ), y: r * Math.sin(ϕ)};
                 });
             });
         });
