@@ -172,7 +172,7 @@ export default function Kernel (name, argNames, argTypes, file, clContext) {
         // TODO: Consider acquires and releases of buffers.
 
         const queue = clContext.queue;
-        logger.trace({kernelName: that.name}, 'Enqueuing kernel %s', that.name);
+        logger.trace({kernelName: that.name, workItems, workGroupSize}, 'Enqueuing kernel %s', that.name);
         const start = process.hrtime();
         ocl.enqueueNDRangeKernel(queue, kernel, 1, null, workItems, workGroupSize || null);
         if (synchronous) {

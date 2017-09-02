@@ -9,6 +9,7 @@ var _     = require('underscore'),
 import LayoutAlgo from '../layoutAlgo';
 import _config from '@graphistry/config';
 const config = _config();
+const convict = global.__graphistry_convict_conf__;
 
 var argsType = {
     THREADS_BOUND: cljs.types.define,
@@ -562,18 +563,15 @@ function getNumWorkitemsByHardware(deviceProps) {
             calculateForces: [8, 1],
         }
     } else if (deviceProps.NAME.indexOf('GeForce GT 650M') != -1 ||
-        deviceProps.NAME.indexOf('GeForce GT 750M') != -1) {
+               deviceProps.NAME.indexOf('GeForce GT 750M') != -1) {
         sizes.buildTree[0] = 1;
         sizes.computeSums[0] = 1;
-    } else if (deviceProps.NAME.indexOf('Iris Pro') != -1) {
-        sizes.computeSums[0] = 6;
-        sizes.sort[0] = 8;
     } else if (deviceProps.NAME.indexOf('Iris') != -1) {
         sizes.computeSums[0] = 6;
         sizes.sort[0] = 8;
-    } else if (deviceProps.NAME.indexOf('M290X') != -1) {
+    } else if (deviceProps.NAME.indexOf('M290X') != -1 ||
+               deviceProps.NAME.indexOf('AMD Radeon Pro 560') != -1) {
         sizes.buildTree[0] = 1;
-        sizes.computeSums[0] = 1;
         sizes.computeSums[0] = 1; //6;
         sizes.sort[0] = 1; //8;
     } else if (deviceProps.NAME.indexOf('K520') != -1) {
@@ -654,21 +652,27 @@ var computeSizes = function (simulator, warpsize, numPoints) {
 };
 
 var getWarpsize = function (deviceProps) {
+
     logger.trace({deviceProps});
-    const { TYPE, VENDOR } = deviceProps;
-    const vendor = VENDOR.toLowerCase();
-    const type = TYPE.toLowerCase();
-    var warpsize = 1; // Always correct
-    if (config.GPU_OPTIONS && config.GPU_OPTIONS.WARPSIZE) {
+    let warpsize = 1; // Always correct
+
+    if (convict && convict.has('device.warp_size')) {
+        warpsize = convict.get('device.warp_size');
+    } else if (config.GPU_OPTIONS && config.GPU_OPTIONS.WARPSIZE) {
         warpsize = config.GPU_OPTIONS.WARPSIZE;
-    } else if (type === 'cpu') {
-        warpsize = 1;
-    } else if (vendor.indexOf('intel') != -1) {
-        warpsize = 16;
-    } else if (vendor.indexOf('nvidia') != -1) {
-        warpsize = 32;
-    } else if (vendor.indexOf('amd') != -1) {
-        warpsize = 64;
+    } else {
+        const { TYPE, VENDOR } = deviceProps;
+        const vendor = VENDOR.toLowerCase();
+        const type = TYPE.toLowerCase();
+        if (type === 'cpu') {
+            warpsize = 1;
+        } else if (vendor.indexOf('intel') != -1) {
+            warpsize = 16;
+        } else if (vendor.indexOf('nvidia') != -1) {
+            warpsize = 32;
+        } else if (vendor.indexOf('amd') != -1) {
+            warpsize = 64;
+        }
     }
     logger.trace({warpsize}, `Warpsize: ${warpsize}`);
     return warpsize;
