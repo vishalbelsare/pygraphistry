@@ -1,15 +1,11 @@
 import { v1 as neo4j } from 'neo4j-driver';
 import { Observable } from 'rxjs';
+import VError from 'verror';
 
 import conf from '../../../server/config.js';
 import logger from '../../../shared/logger.js';
 import { Connector } from './connector.js';
 
-
-
-import { DataFrame } from 'dataframe-js';
-import objectHash from 'object-hash';
-import VError from 'verror';
 
 export function toGraph(records) {
     const nodes = [];
@@ -26,7 +22,7 @@ export function toGraph(records) {
                 : undefined;
                 
             if ('type' in v) {
-                item.type = v['type'];
+                item.type = v.type;
             } else if (v.labels && v.labels.length) {
                 item.type = v.labels[0];
             }            
@@ -45,7 +41,7 @@ export function toGraph(records) {
                 });
             }
             if (v.properties) {
-                for (var i in v.properties) {
+                for (const i in v.properties) {
                     if (v.properties[i] && v.properties[i].constructor.name === 'Integer') {
                         item[i] = v.properties[i].toNumber();   
                     } else {
@@ -94,15 +90,9 @@ class Neo4jConnector extends Connector {
 
     }
 
-    search(query, searchParamOverrides = {}) {
+    search(query) {
 
         this.log.info('Running neo4j query', query);
-
-        // Set the splunk search parameters
-        const searchParams = {
-            ...Neo4jConnector.searchParamDefaults,
-            ...searchParamOverrides
-        };
 
         return Observable.of(1)
             .switchMap(() => {

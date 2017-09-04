@@ -1,4 +1,3 @@
-import _ from 'underscore';
 import { Observable } from 'rxjs';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
