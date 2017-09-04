@@ -31,7 +31,7 @@ export function toGraph(records) {
                 item.type = v.labels[0];
             }            
             if (v.constructor.name === 'Node') {            
-                item.id = v.identity.toString();
+                item.node = v.identity.toString();
                 item.pointTitle = maybeTitle === undefined ? item.id : maybeTitle;
                 nodes.push(item);                
             } else {
