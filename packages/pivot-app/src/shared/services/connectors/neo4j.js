@@ -117,8 +117,6 @@ class Neo4jConnector extends Connector {
             })
             .map((records) => {
                 const { nodes, edges } = toGraph(records);
-                this.log.info('nodes', nodes);
-                this.log.info('edges', edges);
                 return {
                     resultCount: nodes.length + edges.length,
                     isPartial: false,

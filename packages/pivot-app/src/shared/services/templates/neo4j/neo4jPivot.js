@@ -53,7 +53,6 @@ export class Neo4jPivot extends PivotTemplate {
                 .map(() => shapeResults({app, pivot}))
                 .do(({pivot: pivotShaped}) => {
                     pivot.results = pivotShaped.results;
-                    log.info('neo4jpivot out', pivot);
                 });
         }
     }
