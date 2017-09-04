@@ -11,13 +11,12 @@ import { DataFrame } from 'dataframe-js';
 import objectHash from 'object-hash';
 import VError from 'verror';
 
-function toGraph(records) {
-    var nodes = [];
-    var edges = [];
-    console.log('---- GOT', records);
+export function toGraph(records) {
+    const nodes = [];
+    const edges = [];
     records.records.forEach(function (record) {
         record.forEach(function (v) {
-            var item = {}; 
+            const item = {}; 
             
             const maybeTitle =
                 v.properties ?
