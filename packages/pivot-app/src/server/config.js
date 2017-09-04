@@ -107,6 +107,29 @@ const conf = convict({
             env: 'GRAPHISTRY_HOST'
         }
     },
+    neo4j: {
+        bolt: {
+            doc: `Neo4j BOLT endpoint, e.g., bolt://...:24786`,
+            format: String,
+            default: undefined,
+            arg: 'neo4j-bolt',
+            env: 'NEO4J_BOLT'
+        },
+        user: {
+            doc: 'Neo4j user name',
+            format: String,
+            default: undefined,
+            arg: 'neo4j-user',
+            env: 'NEO4J_USER'
+        },
+        password: {
+            doc: 'Neo4j password',
+            format: String,
+            default: undefined,
+            arg: 'neo4j-password',
+            env: 'NEO4j_PASSWORD'
+        }
+    },
     splunk: {
         key: {
             doc: 'Splunk password',
