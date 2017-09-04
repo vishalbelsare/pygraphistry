@@ -11,8 +11,6 @@ import { shapeResults } from '../../shapeResults.js';
 export class Neo4jPivot extends PivotTemplate {
     constructor( pivotDescription ) {
 
-        log.info('=== MAKING Neo4j Pivot');
-
         super(pivotDescription);
 
         const { toNeo4j, connections, encodings, attributes } = pivotDescription;
@@ -24,8 +22,6 @@ export class Neo4jPivot extends PivotTemplate {
     }
 
     searchAndShape({ app, pivot, pivotCache }) {
-
-        log.info('=== SearchAndShape Neo4j Pivot');
 
         const args = this.stripTemplateNamespace(pivot.pivotParameters);
         const query = this.toNeo4j(args, pivotCache);

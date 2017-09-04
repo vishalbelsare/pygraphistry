@@ -67,7 +67,6 @@ class Neo4jConnector extends Connector {
         this.driver = neo4j.driver(
             config.bolt,
             neo4j.auth.basic(config.user, config.password));
-
         
         const metadata = { neo4jServer: config.bolt, neo4jUser: config.user };
         this.log = logger.createLogger(__filename).child(metadata);        
@@ -97,7 +96,7 @@ class Neo4jConnector extends Connector {
 
     search(query, searchParamOverrides = {}) {
 
-        this.log.info('neo4j connector start')
+        this.log.info('Running neo4j query', query);
 
         // Set the splunk search parameters
         const searchParams = {
@@ -106,12 +105,10 @@ class Neo4jConnector extends Connector {
         };
 
         return Observable.of(1)
-            .do(() => this.log.info('neo4j connector observable start'))
             .switchMap(() => {
                 const session = this.driver.session();
                 return Observable
                     .fromPromise(session.run(query))
-                    .do((v) => console.info('raw query out', v))
                     .timeout(30000)
                     .finally(() => session.close());
             })

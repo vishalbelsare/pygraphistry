@@ -20,11 +20,7 @@ export const searchNeo4j = new Neo4jPivot({
         }
     ],
     toNeo4j: function (args) {
-
-        log.info('=== toNeo4j ');
-
         return args.query || ''; 
-
     },
     encodings: {
         point: {
