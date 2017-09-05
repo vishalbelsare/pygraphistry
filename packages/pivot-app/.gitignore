@@ -12,4 +12,3 @@ test_results
 config/graphistryInternal.json
 test/scratch
 config/z-*
-test/appdata/*
