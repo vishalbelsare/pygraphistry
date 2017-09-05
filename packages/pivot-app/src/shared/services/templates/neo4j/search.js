@@ -1,9 +1,9 @@
-import stringhash from 'string-hash';
 import logger from '../../../logger.js';
 const log = logger.createLogger(__filename);
 
 
 import { Neo4jPivot } from './neo4jPivot.js';
+import { encodings } from './settings.js';
 
 
 export const searchNeo4j = new Neo4jPivot({
@@ -22,11 +22,5 @@ export const searchNeo4j = new Neo4jPivot({
     toNeo4j: function (args) {
         return args.query || ''; 
     },
-    encodings: {
-        point: {
-            pointColor: (node) => {
-                node.pointColor = stringhash(node.type || '') % 12;
-            }
-        }
-    }
+    encodings
 });
