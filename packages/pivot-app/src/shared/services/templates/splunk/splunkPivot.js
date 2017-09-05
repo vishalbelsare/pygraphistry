@@ -50,14 +50,14 @@ export class SplunkPivot extends PivotTemplate {
                     pivot.attributes = this.attributes;
                     pivot.attributesBlacklist = 
                         this.attributes && this.attributes.length ? [] : this.attributesBlacklist;
-                    pivotCache[pivot.id] = {
-                        results: pivot.results,
-                        query: searchQuery,
-                        splunkSearchId: pivot.splunkSearchId
-                    };
                 })
                 .map(() => shapeResults({app, pivot}))
                 .do(({pivot: pivotShaped}) => {
+                    pivotCache[pivot.id] = {
+                        results: pivotShaped.results,
+                        query: searchQuery,
+                        splunkSearchId: pivot.splunkSearchId
+                    };
                     pivot.results = pivotShaped.results;
                 });
         }

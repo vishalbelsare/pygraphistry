@@ -40,13 +40,13 @@ export class Neo4jPivot extends PivotTemplate {
                     pivot.isPartial = isPartial;
                     pivot.connections = this.connections;
                     pivot.attributes = this.attributes;
-                    pivotCache[pivot.id] = {
-                        results: pivot.results,
-                        query: query
-                    };
                 })
                 .map(() => shapeResults({app, pivot}))
                 .do(({pivot: pivotShaped}) => {
+                    pivotCache[pivot.id] = {
+                        results: pivotShaped.results,
+                        query: query
+                    };
                     pivot.results = pivotShaped.results;
                 });
         }
