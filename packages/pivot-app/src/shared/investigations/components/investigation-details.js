@@ -42,7 +42,7 @@ export function InvestigationDetails({ layout, saveLayout, $falcor, description 
                                 name='layout-selector'
                                 className={styles['layout-picker']}
                                 onChange={({ value }) => saveLayout({layoutType: value})}
-                                options={layouts.filter(({ id }) => id !== 'insideout').map(({ id, friendlyName }) => ({
+                                options={layouts.map(({ id, friendlyName }) => ({
                                     value: id, className: id, label: friendlyName
                                 }))}
                             />
