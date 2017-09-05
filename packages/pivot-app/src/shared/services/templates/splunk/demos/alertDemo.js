@@ -113,17 +113,66 @@ export const searchAlertDemo = new SplunkPivot({
             default: { from: null, to: null }
         }
     ],
-    toSplunk: function (args) {
+    toSplunk: function (args, pivotCache = {}, { time } = {}) {
         const query = `search ${splunkIndices.ALL} ${args.query}`;
 
         return {
             searchQuery: query,
-            searchParams: {earliest_time: '-1y'},
+            searchParams: this.dayRangeToSplunkParams((args.time||{}).value, time)
         };
     },
     encodings: alertDemoEncodings
 });
 
+
+//===================
+
+function makeSearchIndex (indexName) {
+    return function (args, pivotCache = {}, { time } = {}) {
+        const query = `search EventID=${args.event} ${splunkIndices[indexName]} ${this.constructFieldString()}`;
+
+        return {
+            searchQuery: query,
+            searchParams: this.dayRangeToSplunkParams((args.time||{}).value, time)
+        };
+    }; 
+}
+
+function makeExpandIndex (indexName) {
+    return function (args, pivotCache = {}, { time } = {}) {
+        const refPivot = args.ref.value;
+        const rawSearch =
+            `[{{${refPivot}}}] -[${args.fields.value.join(', ')}]-> [${splunkIndices[indexName]}]`;
+        const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
+
+        return {
+            searchQuery: query,
+            searchParams: this.dayRangeToSplunkParams((args.time||{}).value, time)
+        };
+    };
+}
+
+const EXPAND_PARAMS = [
+        {
+            name: 'ref',
+            inputType: 'pivotCombo',
+            label: 'Any field in:',
+        },
+        {
+            name: 'fields',
+            inputType: 'multi',
+            label: 'Expand on:',
+            options: FIELDS.map(x => ({id:x, name:x})),
+        },
+        {
+            name: 'time',
+            label: 'Time',            
+            inputType: 'daterange',
+            default: { from: null, to: null }
+        }
+    ];
+
+//===================
 
 export const searchFireeyeDemo = new SplunkPivot({
     id: 'search-splunk-fireeye-botnet-demo',
@@ -146,169 +195,49 @@ export const searchFireeyeDemo = new SplunkPivot({
     connections: FIREEYE_FIELDS,
     attributesBlacklist: attributesBlacklist,    
     encodings: alertDemoEncodings,
-    toSplunk: function (args) {
-        const query = `search EventID=${args.event} ${splunkIndices.FIREEYE} ${this.constructFieldString()}`;
-
-        return {
-            searchQuery: query,
-            searchParams: {earliest_time: '-1y'},
-        };
-    }
+    toSplunk: makeSearchIndex('FIREEYE')
 });
 
 export const expandFireeyeDemo = new SplunkPivot({
     id: 'expand-fireeye-botnet-demo',
     name: 'Expand with FireEye',
     tags: ['Demo'],
-    parameters: [
-        {
-            name: 'ref',
-            inputType: 'pivotCombo',
-            label: 'Any field in:',
-        },
-        {
-            name: 'fields',
-            inputType: 'multi',
-            label: 'Expand on:',
-            options: FIELDS.map(x => ({id:x, name:x})),
-        },
-        {
-            name: 'time',
-            label: 'Time',            
-            inputType: 'daterange',
-            default: { from: null, to: null }
-        }
-    ],
+    parameters: EXPAND_PARAMS,
     connections: FIREEYE_FIELDS,
     attributesBlacklist: attributesBlacklist,    
     encodings: alertDemoEncodings,
-    toSplunk: function (args, pivotCache) {
-        const refPivot = args.ref.value;
-        const rawSearch =
-            `[{{${refPivot}}}] -[${args.fields.value.join(', ')}]-> [${splunkIndices.FIREEYE}]`;
-        const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
-
-        return {
-            searchQuery: query,
-            searchParams: {earliest_time: '-1y'},
-        };
-    },
+    toSplunk: makeExpandIndex('FIREEYE')
 });
 
 export const expandBlueCoatDemo = new SplunkPivot({
     id: 'expand-bluecoat-botnet-demo',
     name: 'Expand with Blue Coat',
     tags: ['Demo'],
-    parameters: [
-        {
-            name: 'pivotRef',
-            inputType: 'pivotCombo',
-            label: 'Any URL in:',
-        },
-        {
-            name: 'fields',
-            inputType: 'multi',
-            label: 'Expand on:',
-            options: FIELDS.map(x => ({id:x, name:x})),
-        },
-        {
-            name: 'time',
-            label: 'Time',            
-            inputType: 'daterange',
-            default: { from: null, to: null }
-        }
-    ],
+    parameters: EXPAND_PARAMS,
     connections: [ 'Fire Eye URL', 'External IPs' ],
     attributesBlacklist: attributesBlacklist,    
     encodings: alertDemoEncodings,
-    toSplunk: function (args, pivotCache) {
-        const refPivot = args.pivotRef.value[0];
-        const rawSearch =
-            `[{{${refPivot}}}] -[${args.fields.value.join(', ')}]-> [${splunkIndices.BLUECOAT}]`;
-        const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
-
-        return {
-            searchQuery: query,
-            searchParams: {earliest_time: '-1y'},
-        };
-    }
+    toSplunk: makeExpandIndex('BLUECOAT')
 });
 
 export const expandFirewallDemo = new SplunkPivot({
     id: 'expand-firewall-botnet-demo',
     name: 'Expand with Firewall',
     tags: ['Demo'],
-    parameters: [
-        {
-            name: 'pRef',
-            inputType: 'pivotCombo',
-            label: 'Any IP in:',
-        },
-        {
-            name: 'fields',
-            inputType: 'multi',
-            label: 'Expand on:',
-            options: FIELDS.map(x => ({id:x, name:x})),
-        },
-        {
-            name: 'time',
-            label: 'Time',            
-            inputType: 'daterange',
-            default: { from: null, to: null }
-        }
-    ],
+    parameters: EXPAND_PARAMS,
     connections: [ 'External IPs', 'Internal IPs' ],
     attributesBlacklist: attributesBlacklist,    
     encodings: alertDemoEncodings,
-    toSplunk: function (args, pivotCache) {
-        const refPivot = args.pRef.value[0];
-        const rawSearch =
-            `[{{${refPivot}}}] -[${args.fields.value.join(', ')}]-> [${splunkIndices.FIREWALL}]`;
-        const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
-
-        return {
-            searchQuery: query,
-            searchParams: {earliest_time: '-1y'},
-        };
-    }
+    toSplunk: makeExpandIndex('FIREWALL')
 });
 
 export const expandIDSDemo = new SplunkPivot({
     id: 'expand-ids-botnet-demo',
     name: 'Expand with IDS/IPS',
     tags: ['Demo'],
-    parameters: [
-        {
-            name: 'pRef',
-            inputType: 'pivotCombo',
-            label: 'Any IP in:',
-        },
-        {
-            name: 'fields',
-            inputType: 'multi',
-            label: 'Expand on:',
-            options: FIELDS.map(x => ({id:x, name:x})),
-        },
-        {
-            name: 'time',
-            label: 'Time',            
-            inputType: 'daterange',
-            default: { from: null, to: null }
-        }
-
-    ],
+    parameters: EXPAND_PARAMS,
     connections: [ 'Internal IPs', 'Message' ],
     attributesBlacklist: attributesBlacklist,    
     encodings: alertDemoEncodings,
-    toSplunk: function (args, pivotCache) {
-        const refPivot = args.pRef.value[0];
-        const rawSearch =
-            `[{{${refPivot}}}] -[${args.fields.value.join(', ')}]-> [${splunkIndices.IDS}]`;
-        const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
-
-        return {
-            searchQuery: query,
-            searchParams: {earliest_time: '-1y'},
-        };
-    }
+    toSplunk: makeExpandIndex('IDS')
 });
