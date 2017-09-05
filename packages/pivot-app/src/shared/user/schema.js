@@ -36,7 +36,7 @@ export default withSchema((QL, { get, set }, services) => {
     const removeInvestigationsHandler = { call: removeInvestigationsCallRoute(services) };
 
     return QL`{
-        ['id', 'name']: ${
+        ['id', 'name', 'graphistryHost']: ${
             readOnlyHandler
         },
         activeScreen: ${

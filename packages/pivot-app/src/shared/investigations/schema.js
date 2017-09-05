@@ -28,7 +28,7 @@ export default withSchema((QL, { get, set }, services) => {
 
     return QL`{
         eventTable: ${ readOnlyHandler },
-        ['id', 'name', 'tags', 'url', 'status', 'description', 'time', 'modifiedOn', 'layout', 'axes', 'edgeOpacity']: ${
+        ['id', 'name', 'tags', 'url', 'datasetName', 'datasetType', 'controls', 'status', 'description', 'time', 'modifiedOn', 'layout', 'axes', 'edgeOpacity']: ${
             readWriteHandler
         },
         pivots: {
@@ -105,6 +105,9 @@ function graphCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById,
                     $pathValue(`investigationsById['${investigationIds}'].axes`, investigation.axes),
                     $pathValue(`investigationsById['${investigationIds}'].edgeOpacity`, investigation.edgeOpacity),
                     $pathValue(`investigationsById['${investigationIds}'].status`, investigation.status),
+                    $pathValue(`investigationsById['${investigationIds}'].controls`, investigation.controls),
+                    $pathValue(`investigationsById['${investigationIds}'].datasetName`, investigation.datasetName),
+                    $pathValue(`investigationsById['${investigationIds}'].datasetType`, investigation.datasetType),
                     $pathValue(`investigationsById['${investigationIds}'].eventTable`, investigation.eventTable)
                 ];
             })

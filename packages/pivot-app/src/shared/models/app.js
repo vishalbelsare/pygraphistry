@@ -31,6 +31,7 @@ export function makeTestUser(investigations, templates, connectors, apiKey, grap
         apiKey: apiKey,
         vizService: `${graphistryHost}${suffix}`,
         etlService: `${graphistryHost}/etl`,
+        graphistryHost: graphistryHost
     };
 }
 

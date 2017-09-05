@@ -404,7 +404,10 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                 .do(({user, dataset, data, pivots}) => {
                     investigation.eventTable = makeEventTable({data, pivots});
                     if (dataset) {
-                        investigation.url = `${user.vizService}&dataset=${dataset}&controls=${layouts.find((e) => (e.id === investigation.layout)).controls}`;
+                        investigation.controls = layouts.find((e) => (e.id === investigation.layout)).controls
+                        investigation.url = `${user.vizService}&dataset=${dataset}&controls=${investigation.controls}`;
+                        investigation.datasetName = dataset;
+                        investigation.datasetType = 'vgraph';
                         investigation.axes = data.axes;
                         investigation.edgeOpacity = data.edgeOpacity;
                         investigation.status = {
