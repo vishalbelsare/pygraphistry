@@ -119,7 +119,7 @@ export function createGraph(pivots) {
 
     const {nodes, edges} =
         pivots.reduce(
-            ({nodes, edges}, {enabled, results: {graph, labels} = {} }, index) =>
+            ({nodes, edges}, {enabled, results: {graph = [], labels = []} = {} }, index) =>
                 !enabled ? {nodes, edges}
                 : graphUnion(                    
                     {nodes: labels.map((node) => ({'Pivot': index, ...node})),
