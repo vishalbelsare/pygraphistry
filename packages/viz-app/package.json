@@ -7,7 +7,7 @@
     "start": "better-npm-run start:prod",
     "debug": "better-npm-run start:debug",
     "start:dev": "npm run clean:all && better-npm-run start:dev",
-    "start:cpu-dev": "better-npm-run start:dev-cpu",
+    "start:cpu-dev": "npm run clean:all && better-npm-run start:dev-cpu",
     "start:debug": "npm run build:dev && npm run debug",
     "start:production": "npm run build && npm run start",
     "build": "npm run build:client && npm run build:server",
