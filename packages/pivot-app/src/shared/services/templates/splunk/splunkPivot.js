@@ -1,4 +1,3 @@
-import _ from 'underscore';
 import { Observable } from 'rxjs';
 import moment from 'moment-timezone';
 import logger from '../../../../shared/logger.js';
@@ -9,6 +8,7 @@ import { PivotTemplate } from '../template.js';
 import { splunkConnector0 } from '../../connectors';
 import { shapeResults } from '../../shapeResults.js';
 import { splunkFieldsBlacklist, splunkEntitiesBlacklist, splunkAttributesBlacklist } from './settings.js';
+import { expandArrow } from './expandHelper.js';
 
 export class SplunkPivot extends PivotTemplate {
     constructor( pivotDescription ) {
@@ -119,7 +119,7 @@ export class SplunkPivot extends PivotTemplate {
     //Assumes previous pivots have populated pivotCache
     expandTemplate(text, pivotCache) {
         log.debug({toExpand: text}, 'Expanding');
-        return buildLookup(text, pivotCache);
+        return expandArrow(text, pivotCache);
     }
 
     constructFieldString() {        
@@ -146,32 +146,4 @@ export class SplunkPivot extends PivotTemplate {
     }
 }
 
-function buildLookup(text, pivotCache) {
 
-    //Special casing of [search] -[field]-> [source]
-    //   search can be "{{pivot###}}""
-    //   field can be  "field1, field2,field3, ..."
-    //   source is any search
-    const hit = text.match(/\[{{(.*)}}] *-\[(.*)]-> *\[(.*)]/);
-    if (hit) {
-        const search = hit[1];
-        const fields = hit[2].split(',')
-            .map(s => s.trim())
-            .map(s => s[0] === '"' ? s.slice(1,-1).trim() : s);
-        const source = hit[3];
-
-        log.trace({search, fields, source}, 'Looking at');
-        let match = '';
-        for (let i = 0; i < fields.length; i++) {
-            const field = fields[i];
-            const vals = _.uniq(_.map(pivotCache[search].events, function (row) {
-                return row[field];
-            }));
-            const fieldMatch = `"${ field }"="${ vals.join(`" OR "${ field }"="`) }"`;
-            match = match + (match ? ' OR ' : '') + fieldMatch;
-        }
-        return `${ source } ${ match } | head 10000 `;
-    } else {
-        return undefined;
-    }
-}

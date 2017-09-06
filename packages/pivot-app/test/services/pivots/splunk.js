@@ -29,6 +29,8 @@ const fromDateStr = moment(fromDateUnix * 1000).format();
 const toDateStr = moment(toDateUnix * 1000).format();
 
 
+require('./splunk/expandHelper.js');
+
 describe('Splunk:dayRangeToSplunkParams', function () {
 
     let pivot;
