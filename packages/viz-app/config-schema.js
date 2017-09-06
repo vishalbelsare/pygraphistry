@@ -38,6 +38,22 @@ module.exports = {
             env: 'S3_SECRET'
         }
     },
+    device: {
+        type: {
+            doc: 'The device to use',
+            format: ['cpu', 'gpu', 'any'],
+            default: 'any',
+            arg: 'device-type',
+            env: 'DEVICE_TYPE'
+        },
+        warp_size: {
+            doc: 'The number of threads per core. For GPUs, this is the number of compute units divided by the number of stream processors.',
+            format: Number,
+            default: (config.GPU_OPTIONS && config.GPU_OPTIONS.WARPSIZE) || 1 /* 1 is always at least correct */,
+            arg: 'warp-size',
+            env: 'WARP_SIZE'
+        }
+    },
     log: {
         level: {
             doc: `Log levels - ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']`,
