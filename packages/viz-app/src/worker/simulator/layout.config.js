@@ -118,6 +118,7 @@ function atlasControls(algo) {
     };
 
     return {
+        controlsName: 'atlasbarnes',
         simulator: SimCL,
         layoutAlgorithms: [
             {
@@ -141,17 +142,20 @@ function atlasControls(algo) {
 }
 
 function lockedAtlasControlsXY(aC) {
-    return lockedAtlasControlsX(lockedAtlasControlsY(aC));
+    return {
+        ...lockedAtlasControlsX(lockedAtlasControlsY(aC)),
+        controlsName: 'lockedAtlasBarnesXY'
+    };
 }
 
 function lockedAtlasControlsX(aC) {
     aC.layoutAlgorithms[0].params.lockedX = new BoolParam('Locked X coordinates', true);
-    return aC;
+    return { ...aC, controlsName: 'lockedAtlasBarnesX' };
 }
 
 function lockedAtlasControlsY(aC) {
     aC.layoutAlgorithms[0].params.lockedY = new BoolParam('Locked Y coordinates', true);
-    return aC;
+    return { ...aC, controlsName: 'lockedAtlasBarnesY' };
 }
 
 export var controls = {
@@ -223,6 +227,27 @@ export function fromClient(controls, simControls) {
         }));
         return [algoName, cfg];
     }));
+}
+
+export function overrideLayoutOptionParams(controls, viewLayoutOptions) {
+    let layoutOptions = null;
+    switch (controls.controlsName) {
+        case 'lockedAtlasBarnesX':
+            layoutOptions = Array.from(viewLayoutOptions).filter((option) => option.id === 'lockedX');
+            break;
+        case 'lockedAtlasBarnesY':
+            layoutOptions = Array.from(viewLayoutOptions).filter((option) => option.id === 'lockedY');
+            break;
+        case 'atlasbarnes':
+        case 'lockedAtlasBarnesXY':
+            layoutOptions = Array.from(viewLayoutOptions).filter((option) => option.id === 'lockedX' || option.id === 'lockedY');
+            break;
+    }
+    if (layoutOptions) {
+        layoutOptions.forEach((option) =>
+            option.value = controls.controlsName !== 'atlasbarnes');
+    }
+    return viewLayoutOptions;
 }
 
 // export {

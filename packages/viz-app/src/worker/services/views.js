@@ -2,7 +2,10 @@ import Color from 'color';
 import { Observable } from 'rxjs/Observable';
 import { view as createView } from 'viz-app/models/views';
 import { ref as $ref, atom as $atom } from '@graphistry/falcor-json-graph';
-import { toClient as fromLayoutAlgorithms } from '../simulator/layout.config';
+import {
+    overrideLayoutOptionParams,
+    toClient as fromLayoutAlgorithms
+} from '../simulator/layout.config';
 
 export function loadViews(loadDatasetNBody, loadWorkbooksById) {
     return function loadViewsById({ workbookIds, viewIds, options = {} }) {
@@ -92,38 +95,42 @@ function assignViewToWorkbook(workbook, view) {
 function assignNBodyToView(workbook, nBody, view) {
 
     const { scene, layout, layout: { options }} = view;
-    const { simulator: { controls: { layoutAlgorithms } }} = nBody;
+    const { simulator: { controls, controls: { layoutAlgorithms } }} = nBody;
 
-    nBody.view = view;
-    view.nBody = nBody;
+    if (!view.nBody) {
+        nBody.view = view;
+        view.nBody = nBody;
 
-    let background = nBody.bg;
+        let background = nBody.bg;
 
-    if (typeof background !== 'undefined') {
-        try {
-            background = new Color(background);
-        } catch (e) {
+        if (typeof background !== 'undefined') {
+            try {
+                background = new Color(background);
+            } catch (e) {
+                background = scene.renderer.background.color;
+            }
+        } else {
             background = scene.renderer.background.color;
         }
-    } else {
-        background = scene.renderer.background.color;
-    }
 
-    scene.simulating = false;
-    scene.renderer.background.color = background;
+        scene.simulating = false;
+        scene.renderer.background.color = background;
 
-    if (options.length === 0) {
-        const optionsPath = `workbooksById['${workbook.id}']
-                            .viewsById['${view.id}']
-                            .layout.options`;
-        layout.options = ([]
-            .concat(fromLayoutAlgorithms(layoutAlgorithms))
-            .reduce((options, { name, params }) => {
-                options.name = name;
-                options.id = name.toLowerCase();
-                return { ...options, ...toControls(optionsPath, params) };
-            }, options)
-        );
+        if (options.length === 0) {
+            const optionsPath = `workbooksById['${workbook.id}']
+                                .viewsById['${view.id}']
+                                .layout.options`;
+            layout.options = ([]
+                .concat(fromLayoutAlgorithms(layoutAlgorithms))
+                .reduce((options, { name, params }) => {
+                    options.name = name;
+                    options.id = name.toLowerCase();
+                    return { ...options, ...toControls(optionsPath, params) };
+                }, options)
+            );
+        } else {
+            layout.options = overrideLayoutOptionParams(controls, layout.options);
+        }
     }
 
     return view;
