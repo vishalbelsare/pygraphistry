@@ -82,8 +82,8 @@ class AxisReact extends React.Component {
                                 'top': `${Math.round(yMax)}px`
                             }}>
                                 <svg key={`key_${i}`} xmlns="http://www.w3.org/2000/svg" viewBox={`${xMin} ${yMax} ${w} ${h}`}>
-                                    <g stroke="#c5c5c5">
-                                        <circle cx={xCenter} cy={yCenter} r={w / 2} strokeWidth="1" strokeLinecap="round" strokeDasharray="1, 2" fillOpacity="0"></circle>
+                                    <g stroke="#aaaaaa">
+                                        <circle cx={xCenter} cy={yCenter} r={w / 2} strokeWidth="1" strokeLinecap="round" strokeDasharray={label ? "1, 3" : "1, 6"} fillOpacity="0"></circle>
                                     </g>
                                 </svg>
                                 <div className={styles['roundlabel']}>{label}</div>
