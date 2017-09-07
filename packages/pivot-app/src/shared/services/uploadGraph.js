@@ -164,19 +164,25 @@ export function insideOut(graph) {
     });
 
     const xys = {};
+    const subaxes = {};
     Object.keys(zoneTypenodes).forEach((zone) => {
         Object.keys(zoneTypenodes[zone]).sort().forEach((type, typeIdx) => {
             zoneTypenodes[zone][type].forEach((node, nodeIdx) => {
                 const r = (zone === "I" ? 100 : (zone === "N" ? 300 : 500)) + typeIdx * 100.0 / Object.keys(zoneTypenodes[zone]).length;
                 const ϕ = nodeIdx * Math.PI * 2 / zoneTypenodes[zone][type].length;
                 xys[node[idField]] = {x: r * Math.cos(ϕ), y: r * Math.sin(ϕ)};
+                subaxes[r] = {r};
                 });
             });
         });
+    subaxes[100] = {r: 100, label: "inside"};
+    subaxes[300] = {r: 300, label: "communication"};
+    subaxes[500] = {r: 500, label: "outside"};
 
     decorateGraphLabelsWithXY(graph.data.labels, xys);
 
     graph.data.edgeOpacity = generateEdgeOpacity(graph.data.graph);
+    graph.data.axes = Object.values(subaxes);
     return graph;
 }
 
