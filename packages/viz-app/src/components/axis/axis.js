@@ -50,8 +50,6 @@ class AxisReact extends React.Component {
         return (<div>{
             axis.map(({label, y: labelY, r: labelR}, i) => {
 
-                    console.log({label, labelY, labelR, i});
-
                 if (labelY === undefined && labelR === undefined) {
                     return (<div className={`${styles['fullscreen']} ${styles['error']}`} >Please report this graph as an error</div>);
                 } else if (labelR === undefined) {
