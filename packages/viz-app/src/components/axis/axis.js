@@ -7,6 +7,7 @@ import getContext from 'recompose/getContext';
 
 import { pointSizes, cameraChanges, hitmapUpdates } from 'viz-app/client/legacy';
 
+import styles from './styles.less';
 
 
 const cameraUpdates = cameraChanges
@@ -47,29 +48,50 @@ class AxisReact extends React.Component {
 
 
         return (<div>{
-            axis.map(({label, y: labelY}, i) => {
+            axis.map(({label, y: labelY, r: labelR}, i) => {
 
-                const { x, y } = camera.canvasCoords(0, labelY, canvas, matrix);        
+                    console.log({label, labelY, labelR, i});
 
-                return (<div key={`key_${i}`} style={{
-                    'width': 'calc(100% - 20px)',
-                    'borderTop': '1px dotted #C5C5C5',
-                    'position': 'absolute',
-                    'margin': 0,
-                    'padding': 0,
-                    'left': '10px',
-                    'top': `${Math.round(y)}px`        
-                }}>
-                   <span style={{
-                        borderLeft: '1px dotted #C5C5C5',
-                        borderRight: '1px dotted #C5C5C5',
-                        borderBottom: '1px dotted #C5C5C5',
-                        padding: '0 0.5em 0.5em 0.5em',
-                        color: '#C5C5C5',
-                        fontWeight: 'bold'
-                   }}>{label}</span>
-                </div>);
+                if (labelY === undefined && labelR === undefined) {
+                    return (<div className={`${styles['fullscreen']} ${styles['error']}`} >Please report this graph as an error</div>);
+                } else if (labelR === undefined) {
+                    const { x, y } = camera.canvasCoords(0, labelY, canvas, matrix);
 
+                    return (
+                        <div key={`key_${i}`} className={styles['straightline']} style={{
+                            'top': `${Math.round(y)}px`
+                            }}>
+                            <span className={styles['straightlabel']}>
+                                {label}
+                            </span>
+                        </div>
+                    );
+                } else { // labelY === undefined
+                    const {x: xMin, y: yMin} = camera.canvasCoords(-labelR, -labelR, canvas, matrix);
+                    const {x: xMax, y: yMax} = camera.canvasCoords( labelR,  labelR, canvas, matrix);
+
+                    const w = xMax - xMin;
+                    const h = yMin - yMax;
+                    const xCenter = (xMin + xMax) / 2;
+                    const yCenter = (yMin + yMax) / 2;
+
+                    return (
+                        <div className={styles['fullscreen']} >
+                            <div className={styles['roundbox']} style={{
+                                'height': `${Math.round(h)}px`,
+                                'width': `${Math.round(w)}px`,
+                                'left': `${Math.round(xMin)}px`,
+                                'top': `${Math.round(yMax)}px`
+                            }}>
+                                <svg key={`key_${i}`} xmlns="http://www.w3.org/2000/svg" viewBox={`${xMin} ${yMax} ${w} ${h}`}>
+                                    <g stroke="#c5c5c5">
+                                        <circle cx={xCenter} cy={yCenter} r={w / 2} strokeWidth="1" strokeLinecap="round" strokeDasharray="1, 2" fillOpacity="0"></circle>
+                                    </g>
+                                </svg>
+                                <div className={styles['roundlabel']}>{label}</div>
+                            </div>
+                        </div>);
+                };
             })
         }</div>);
 
