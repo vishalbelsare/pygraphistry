@@ -56,7 +56,7 @@ const DateTimeRangePicker = withTime(({ label, range = {}, baseid, onChange }) =
 			<Col xs={9}>
 			<DateTimePicker
                 onValueChange={ (val) => onChange({dir: 'from', val }) } 
-                {...getTimeProps('from', moment("12:00:00 AM", "hh:mm:ss a").toJSON())}
+                {...getTimeProps('from', moment.utc("12:00:00 AM", "hh:mm:ss a").toJSON())}
                 baseid={baseid+"from"} 
                 placeholder={"start date"} />
 			</Col>
@@ -65,7 +65,7 @@ const DateTimeRangePicker = withTime(({ label, range = {}, baseid, onChange }) =
 			<Col xs={9}>
 			<DateTimePicker
                 onValueChange={ (val) => onChange({dir: 'to', val }) } 
-                {...getTimeProps('to', moment("11:59:59 PM", "hh:mm:ss a").toJSON())}
+                {...getTimeProps('to', moment.utc("11:59:59 PM", "hh:mm:ss a").toJSON())}
                 baseid={baseid+"to"} 
                 placeholder={"end date"} />
 			</Col>
