@@ -1,10 +1,11 @@
 import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
-import { VError } from 'verror'
 
 import { shapeResults } from '../shapeResults.js';
 import { PivotTemplate } from './template.js';
 import { flattenJson } from '../support/flattenJson.js';
+import { template } from '../support/template';
+import { jqSafe } from '../support/jq';
 import logger from '../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
@@ -34,35 +35,29 @@ export class ManualPivot extends PivotTemplate {
         }
 
         const params = this.stripTemplateNamespace(pivot.pivotParameters);
-        log.info({
+        log.info('manual pivot', {
             params,
             pivotParameters: pivot.pivotParameters
         });
-        const { events, nodes, attributes } = params;
+        const { jq = '.', events, nodes, attributes } = params;
 
-        const a = Observable.of('')
-            .map(() => {
-                try {
-                    const json = JSON.parse(events);
-                    const rows = json instanceof Array 
-                        ? json.map(flattenJson) 
-                        : [flattenJson(json)];
-                    if (rows.length) {
-                        if (!('EventID' in rows[0])) {
-                            for (let i = 0; i < rows.length; i++) {
-                                rows[i].EventID = pivot.id + ':' + i;
-                            }
-                        }                    
-                    }
-                    return rows;
-                } catch (e) {
-                    throw new VError({
-                            name: 'JsonParseError',
-                            cause: e,
-                            info: { e },
-                        }, 'Failed to parse JSON', { events });
+        const a = 
+            Observable.defer(() => jqSafe(events, template(jq, params)))            
+            .map( (json) => {
+                log.debug('==== JQ TRANSFORMED JSON', json);
+                const rows = json instanceof Array 
+                    ? json.map(flattenJson) 
+                    : [flattenJson(json)];
+                if (rows.length) {
+                    if (!('EventID' in rows[0])) {
+                        for (let i = 0; i < rows.length; i++) {
+                            rows[i].EventID = pivot.id + ':' + i;
+                        }
+                    }                    
                 }
-            })
+                return rows;
+            });
+
         return a
             .map((rows) => new DataFrame(rows))
             .map((df) => ({
@@ -86,7 +81,7 @@ export class ManualPivot extends PivotTemplate {
                 for (const i in realPivot) {
                     pivot[i] = realPivot[i];
                 }
-                log.info('results', pivot.results);
+                log.debug('results', pivot.results);
                 pivotCache[pivot.id] = { params, results: pivot.results };
             })
             .do(() => log.trace('searchAndShape manual'));
@@ -104,6 +99,12 @@ export const MANUAL = new ManualPivot({
             name: 'events',
             inputType: 'textarea',
             label: 'Events (json)'
+        },
+        {
+            name: 'jq',
+            inputType: 'textarea',
+            label: 'Postprocess with jq:',
+            placeholder: '.'
         },
         {
             name: 'nodes',

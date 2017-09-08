@@ -51,7 +51,7 @@ export function jq(str, transform = '.', args = []) {
             const cmd = (args instanceof Array ? args : [ args ]).concat(transform);
             create(str, cmd, subscriber);
         } catch (e) {
-            subscriber.onError(new Error({msg: 'Failed to call', e: e}));            
+            subscriber.error(new Error({msg: 'Failed to call', e: e}));            
         }   
     })
     .take(1);

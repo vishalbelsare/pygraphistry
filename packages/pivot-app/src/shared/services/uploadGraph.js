@@ -203,9 +203,7 @@ export function stackedBushyGraph(graph, fudgeX = 250, fudgeY = -250 * Math.pow(
     const nodeDegrees = graphDegrees(graph.data.graph, nodeRows);
     const columnCounts = rowColumnCounts(nodeRows);
     const types = nodeTypes(graph.data.labels);
-    log.debug({nodeRows});
     const nodeColumns = rowsToColumns(nodeRows, columnCounts, nodeDegrees, minLineLength, maxLineLength, pivotWrappedLineHeight, types);
-    log.debug({nodeRows});
     const nodeXYs = mergeRowsColumnsToXY(nodeRows, nodeColumns, fudgeX, fudgeY, spacerY);
     const axes = generateAxes(nodeRows, fudgeY, spacerY);
     const edgeOpacity = generateEdgeOpacity(nodeDegrees);
@@ -315,7 +313,6 @@ export function generateEdgeOpacity(nodeDegrees) {
 
 export function generateAxes(rows, fudgeY, spacerY) {
     // v1: axes just for each major pivot.
-    log.debug({rows});
     const pivotRows = Object.values(rows); // This includes, because of rowsToColumns()'s line-splitting, real numbers.
     const uniquePivotIntegers = _.uniq(pivotRows.map((r) => ((r / 2) | 0))).sort((a,b) => a-b);
     const axes = uniquePivotIntegers.map((i) => ({label: `Pivot ${i + 1}`, y: (i > 0 ? (fudgeY + spacerY) * i * 2 : -2 * spacerY)}));

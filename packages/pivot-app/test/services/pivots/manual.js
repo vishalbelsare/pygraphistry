@@ -92,6 +92,31 @@ describe('manualPivot', function () {
                 }, (e) => done(new Error(e)));
     });
 
+    it('jq', (done) => {
+        MANUAL.searchAndShape({
+                app: {}, 
+                pivot: {
+                    id: 'x',
+                    enabled: true, 
+                    pivotParameters: {
+                        'manual-data$$$events': '{"x": 1}',
+                        'manual-data$$$jq': `. | {"x": .x, "y": 2}`
+                    }                   
+                }, 
+                pivotCache: {}})
+            .subscribe(({pivot, ...rest}) => {
+                    assert.deepEqual(pivot.events, [{x: 1, y: 2, EventID:'x:0'}]);
+                    assert.deepEqual(pivot.results.graph, 
+                        [{ edgeType: 'EventID->x', edge: 'x:0:x', EventID: 'x:0', x:1, y:2, destination: 1, 'source': 'x:0', edgeTitle: 'x:0->1'},
+                         { edgeType: 'EventID->y', edge: 'x:0:y', EventID: 'x:0', x:1, y:2, destination: 2, 'source': 'x:0', edgeTitle: 'x:0->2'}]);
+                    assert.deepEqual(pivot.results.labels,
+                        [{ EventID: 'x:0', x: 1, y: 2, node: 'x:0', type: 'EventID' },
+                         { node: 1, type: 'x'},
+                         { node: 2, type: 'y'} ]);
+                    done();
+                }, (e) => done(new Error(e)));
+    });    
+
     it('valid array with EventIDs', (done) => {
         MANUAL.searchAndShape({
                 app: {}, 
@@ -124,12 +149,10 @@ describe('manualPivot', function () {
                     pivotParameters: {'manual-data$$$events': 'zz'}                   
                 }, 
                 pivotCache: {}})
+            .catch(() => Observable.of('ok'))
             .subscribe(
-                ({pivot, ...rest}) => done(new Error("Expected parse error")),
-                (e) => {
-                    if (e.name === 'JsonParseError') done();
-                    else done(new Error(e))
-                });
+                (res) => res === 'ok' ? done() : done(new Error({res, msg: "Expected parse error"})),
+                (e) => done(new Error(e)));
     });
 
 });
