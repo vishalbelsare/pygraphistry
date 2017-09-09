@@ -184,7 +184,6 @@
     "lodash": "4.17.4",
     "mock-socket": "6.0.4",
     "moment": "2.18.1",
-    "moment-timezone": "0.5.13",
     "mongodb": "2.2.26",
     "multer": "1.3.0",
     "node-opencl": "0.4.5",
