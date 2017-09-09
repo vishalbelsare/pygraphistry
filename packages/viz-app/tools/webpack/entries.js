@@ -7,7 +7,7 @@ function addEntries({ type, isDev, vendor }, appConfig) {
     if (type === 'client' && isDev) {
         appConfig.entry[type].unshift(
             'react-hot-loader/patch',
-            'webpack-hot-middleware/client?reload=true'
+            'webpack-hot-middleware/client'
         );
     }
 

@@ -1,7 +1,8 @@
 import Color from 'color';
 import styles from './styles.less';
 import classNames from 'classnames';
-import React, { PropTypes } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { defaultFormat } from 'viz-app/formatters';
 import { Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import { ColorPill } from 'viz-app/components/color-pill/colorPill';

@@ -1,6 +1,7 @@
 // import Color from 'color';
 import classNames from 'classnames';
-import React, { PropTypes } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 
 import { Observable } from 'rxjs/Observable';
 import { Subscription } from 'rxjs/Subscription';

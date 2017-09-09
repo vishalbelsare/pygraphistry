@@ -1,5 +1,5 @@
 import 'babel-polyfill';
-import '@graphistry/rc-slider/assets/index.css';
+import 'rc-slider/assets/index.css';
 import 'rc-switch/assets/index.css';
 import 'rc-color-picker/assets/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';

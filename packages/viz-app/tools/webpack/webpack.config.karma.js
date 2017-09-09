@@ -12,6 +12,8 @@ delete karmaWebpackConfig.name;
 delete karmaWebpackConfig.entry;
 delete karmaWebpackConfig.output;
 
+karmaWebpackConfig.devtool = 'inline-source-map';
+
 // Required for enzyme to work properly
 karmaWebpackConfig.externals = {
     cheerio: 'window',

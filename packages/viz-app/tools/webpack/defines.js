@@ -60,6 +60,7 @@ const vendor = [
     'rc-switch',
     'rc-color-picker',
     '@graphistry/rc-slider',
+    '@graphistry/react-select',
 
     '@graphistry/falcor',
     '@graphistry/falcor-router',

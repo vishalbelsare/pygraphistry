@@ -1,7 +1,8 @@
 import Color from 'color';
 import styles from './styles.less';
 import classNames from 'classnames';
-import React, { PropTypes } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { Gestures } from 'rxjs-gestures';
 import { Observable } from 'rxjs/Observable';
 import {

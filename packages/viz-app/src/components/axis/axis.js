@@ -1,4 +1,5 @@
-import React, { PropTypes } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import * as Scheduler from 'rxjs/scheduler/animationFrame';
 import shallowEqual from 'recompose/shallowEqual';
 import mapPropsStream from 'recompose/mapPropsStream';

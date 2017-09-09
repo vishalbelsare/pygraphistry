@@ -35,18 +35,16 @@ function makeWebpackConfig({
     };
     const baseConfig = {
         amd: false,
+        bail: true,
         name: type,
         cache: isDev,
         context: path.join(process.cwd()),
         target: type === 'client' ? 'web' : 'node',
-        devtool: isDev ? 'inline-source-map' : 'nosources-source-map',
+        devtool: isDev ? 'source-map' : 'nosources-source-map',
         stats: {
             assets: false,  chunks: false,
             colors: true, warnings: true, performance: true,
-            warningsFilter: [
-                /moment/,
-                /source-map-support/
-            ]
+            warningsFilter: [ /moment/, /source-map-support/ ]
         },
         output: Object.assign({
             publicPath: '',
@@ -61,6 +59,7 @@ function makeWebpackConfig({
                 // Required for enzyme to work properly
                 'sinon': 'sinon/pkg/sinon',
                 'viz-app': path.resolve(process.cwd(), './src'),
+                'rc-slider': '@graphistry/rc-slider',
                 'react-split-pane': '@graphistry/react-split-pane',
                 'moment': path.resolve(process.cwd(), './node_modules/moment/min/moment.min.js'),
                 '@graphistry/falcor': path.resolve(process.cwd(), isDev ?
@@ -169,7 +168,7 @@ function makeWebpackConfig({
             new webpack.DefinePlugin(Object.assign({}, versions, {
                 __CLIENT__: JSON.stringify(type === 'client'),
                 __SERVER__: JSON.stringify(type === 'server'),
-                __DISABLE_SSR__: JSON.stringify(false),
+                __DISABLE_SSR__: JSON.stringify(false)
             })),
             // See http://webpack.github.io/analyse/
             new StatsPlugin(
