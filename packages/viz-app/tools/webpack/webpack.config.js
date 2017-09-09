@@ -39,8 +39,15 @@ function makeWebpackConfig({
         cache: isDev,
         context: path.join(process.cwd()),
         target: type === 'client' ? 'web' : 'node',
-        devtool: isDev ? 'source-map' : 'nosources-source-map',
-        stats: { assets: false, colors: true, chunks: false, warnings: true },
+        devtool: isDev ? 'inline-source-map' : 'nosources-source-map',
+        stats: {
+            assets: false,  chunks: false,
+            colors: true, warnings: true, performance: true,
+            warningsFilter: [
+                /moment/,
+                /source-map-support/
+            ]
+        },
         output: Object.assign({
             publicPath: '',
             // Don't use chunkhash in development it will increase compilation time
