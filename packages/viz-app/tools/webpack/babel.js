@@ -68,6 +68,14 @@ function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
                 removeImport: true,
                 additionalLibraries: [
                     'prop-types',
+                    'react-ace',
+                    'react-dock',
+                    'react-select',
+                    'redbox-react',
+                    'react-overlays',
+                    'react-bootstrap',
+                    'react-split-pane',
+                    'react-virtualized',
                     'react-immutable-proptypes'
                 ]
             }]
