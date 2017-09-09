@@ -23,7 +23,6 @@ const CSSModules = true;
 const vendor = [
 
     'brace',
-    'chalk',
     'debug',
     'lodash',
     'recompose',

@@ -4,7 +4,6 @@ const HappyPack = require('happypack');
 const StatsPlugin = require('stats-webpack-plugin');
 const AssetsPlugin = require('assets-webpack-plugin');
 const WriteFilePlugin = require('write-file-webpack-plugin');
-const BabiliWebpackPlugin = require('babili-webpack-plugin');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 const ClosureCompilerPlugin = require('webpack-closure-compiler');
 
@@ -181,12 +180,6 @@ function makeWebpackConfig({
     if (isDev) {
         baseConfig.plugins.push(new WriteFilePlugin({ log: false }));
     } else {
-        // baseConfig.plugins.push(new BabiliWebpackPlugin({
-        //     eval: false,
-        //     mangle: true,
-        //     deadcode: true,
-        //     topLevel: false,
-        // }));
         baseConfig.plugins.push(new ClosureCompilerPlugin({
             concurrency: numCPUs,
             compiler: {
