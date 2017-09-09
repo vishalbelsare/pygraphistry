@@ -81,7 +81,7 @@ const MemoizeStyleProps = mapPropsStream((props) => {
         tableContainerStyle.width = bodyWidth || 'auto';
         tableContainerStyle.height = bodyHeight || 'auto';
 
-        props = Object.create(props);
+        props = { ...props };
 
         props.cornerStyle = { ...cornerStyle };
         props.cellStyle = { ...cellStyle };
