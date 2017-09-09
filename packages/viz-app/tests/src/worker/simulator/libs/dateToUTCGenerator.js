@@ -1,4 +1,4 @@
-import { dateToUTCGenerator } from'../../../../../src/worker/simulator/libs/dateToUTCGenerator';
+import { dateToUTCGenerator } from 'viz-app/worker/simulator/libs/dateToUTCGenerator';
 
 
 const timeUTCInt = 1501647415407;

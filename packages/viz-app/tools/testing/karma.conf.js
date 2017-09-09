@@ -1,7 +1,9 @@
 'use strict'; // eslint-disable-line
 
 const path = require('path');
-const webpackConfig = require('../webpack/webpack.test.babel');
+const coverageDir = path.join(process.cwd(), './coverage');
+const junitCoverageDir = path.join(coverageDir, './junit');
+const webpackConfig = require('../webpack/webpack.config.karma');
 
 module.exports = (config) => {
   config.set({
@@ -11,7 +13,10 @@ module.exports = (config) => {
 
     frameworks: ['mocha'],
 
-    files: ['./test-bundler.js'],
+    files: [
+      '../../node_modules/babel-polyfill/dist/polyfill.js',
+      './test-bundler.js'
+    ],
 
     preprocessors: {
       './test-bundler.js': ['webpack', 'sourcemap'],
@@ -23,13 +28,18 @@ module.exports = (config) => {
 
     // Make Webpack bundle generation quiet
     webpackMiddleware: {
+      quiet: true,
       noInfo: true,
       stats: 'errors-only',
     },
 
+    junitReporter: {
+      outputDir: junitCoverageDir
+    },
+
     // Set the format of reporter
     coverageReporter: {
-      dir: path.join(process.cwd(), './coverage'),
+      dir: coverageDir,
       reporters: [
         { type: 'html', subdir: 'html' },
         { type: 'lcov', subdir: 'lcov' },

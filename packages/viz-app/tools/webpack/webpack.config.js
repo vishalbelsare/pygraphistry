@@ -58,6 +58,8 @@ function makeWebpackConfig({
             modules: ['src', 'node_modules'],
             extensions: ['.js', '.jsx', '.json'],
             alias: {
+                // Required for enzyme to work properly
+                'sinon': 'sinon/pkg/sinon',
                 'viz-app': path.resolve(process.cwd(), './src'),
                 'react-split-pane': '@graphistry/react-split-pane',
                 'moment': path.resolve(process.cwd(), './node_modules/moment/min/moment.min.js'),
@@ -70,7 +72,8 @@ function makeWebpackConfig({
         module: {
             noParse: [
                 /node_modules\/brace/,
-                // /node_modules\/lodash/,
+                // The sinon library doesn't like being run through babel
+                /node_modules\/sinon/,
                 /node_modules\/underscore/,
                 /node_modules\/pegjs-util\/PEGUtil\.js/,
                 /node_modules\/\@graphistry\/falcor\/dist\/falcor.all.min.js/,
@@ -80,6 +83,21 @@ function makeWebpackConfig({
             rules: [
                 { test: /\.glsl$/, loader: 'webpack-glsl-loader' },
                 { test: /\.pegjs$/, loader: 'pegjs-loader?cache=true&optimize=size' },
+                {
+                    /**
+                     * sinon.js--aliased for enzyme--expects/requires global vars.
+                     * imports-loader allows for global vars to be injected into the module.
+                     * See https://github.com/webpack/webpack/issues/304
+                     */
+                    test: /sinon\/pkg\/sinon\.js/,
+                    use: [{
+                        loader: 'imports-loader',
+                        options: {
+                            define: false,
+                            require: false
+                        }
+                    }]
+                },
                 {
                     test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
                     use: [{
