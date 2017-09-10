@@ -1,3 +1,7 @@
+if (process.env.NODE_ENV === 'development') {
+    require('source-map-support');
+}
+
 import 'babel-polyfill';
 import 'rc-slider/assets/index.css';
 import 'rc-switch/assets/index.css';

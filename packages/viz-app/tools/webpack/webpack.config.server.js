@@ -57,7 +57,6 @@ serverWebpackConfig.plugins.push(
     new webpack.BannerPlugin({
         raw: true,
         entryOnly: true,
-        // banner: `require('raf').polyfill();`
         banner: isDev ?                                             `require('raf').polyfill();` :
         `require('source-map-support').install({environment:'node'});require('raf').polyfill();`
     }),
