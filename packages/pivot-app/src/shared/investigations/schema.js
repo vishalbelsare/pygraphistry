@@ -100,10 +100,11 @@ function graphCallRoute({ loadInvestigationsById, loadPivotsById, loadUsersById,
 
         return uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersById, investigationIds})
             .mergeMap(({ investigation }) => {
+                const { edgeOpacity = 1 } = investigation;
                 return [
                     $pathValue(`investigationsById['${investigationIds}'].url`, investigation.url),
                     $pathValue(`investigationsById['${investigationIds}'].axes`, investigation.axes),
-                    $pathValue(`investigationsById['${investigationIds}'].edgeOpacity`, investigation.edgeOpacity),
+                    $pathValue(`investigationsById['${investigationIds}'].edgeOpacity`, edgeOpacity),
                     $pathValue(`investigationsById['${investigationIds}'].status`, investigation.status),
                     $pathValue(`investigationsById['${investigationIds}'].controls`, investigation.controls),
                     $pathValue(`investigationsById['${investigationIds}'].datasetName`, investigation.datasetName),
