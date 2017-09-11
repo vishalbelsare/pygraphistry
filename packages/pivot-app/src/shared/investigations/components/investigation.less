@@ -8,6 +8,32 @@
     flex-direction: column;
 
     :global {
+        select, textarea,
+        .SingleDatePicker,
+        .SingleDatePicker .SingleDatePickerInput,
+        .SingleDatePicker .SingleDatePickerInput .DateInput {
+            border-radius: @control-border-radius;
+        }
+        select.form-control,
+        input[type="text"].form-control,
+        .investigation-details .Select-control,
+        .investigation-details .Select-control .Select-input,
+        .SingleDatePicker,
+        .SingleDatePicker .SingleDatePickerInput,
+        .SingleDatePicker .SingleDatePickerInput .DateInput,
+        .SingleDatePicker .SingleDatePickerInput .DateInput .DateInput__display-text {
+            height: 27px;
+        }
+        .form-group {
+            margin-top: 7px;
+            margin-bottom: 0;
+        }
+        .form-horizontal .control-label {
+            margin-bottom: 2px;
+            padding-left: 11px;
+            padding-right: 0;
+            white-space: nowrap;
+        }
         .alert {
             width: 100%;
             z-index: 100;
@@ -34,15 +60,11 @@
             font-weight: 700 !important;
         }
         .Select-control {
-            height: 30px;
             transition: background-color 0.1s ease;
-            .Select-input {
-                height: 30px;
-            }
         }
-        .Select-control:hover {
-            background-color: #F9F9F9 !important;
-        }
+        // .Select-control:hover {
+        //     background-color: #F9F9F9 !important;
+        // }
         .Select-menu-outer {
             margin-top: 0px;
         }
@@ -98,11 +120,6 @@
 	font-size: 11px;
 }
 
-.layoutSwitcher{
-	width: 100%;
-	font-size: 11px;
-}
-
 .copyright {
 	font-size: 10px;
 	float: left;
@@ -116,7 +133,4 @@
 
 .myInvestigation {
 	font-size: 11px;
-}
-
-.visLoader {
 }

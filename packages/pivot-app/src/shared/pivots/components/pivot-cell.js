@@ -1,180 +1,237 @@
-import _ from 'underscore';
+import { Observable } from 'rxjs';
 import Select from 'react-select';
-import ComboSelector from './combo-selector';
-import { DateTimeRangePicker } from 'pivot-shared/components/DateTimeRangePicker/DateTimeRangePicker.js';
 import styles from './pivots.less';
+import mapPropsStream from 'recompose/mapPropsStream';
+import createEventHandler from 'recompose/createEventHandler';
+import { DateTimeRangePicker } from 'pivot-shared/components';
+import { Col, FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
 
 import logger from 'pivot-shared/logger.js';
 const log = logger.createLogger(__filename);
 
+const allPivotsIdValue = 'all-pivots';
+const cellLabelCols = {
+    // xs: 3,
+    sm: 3,
+    md: 3,
+    lg: 3
+};
+const cellContentCols = {
+    // xs: 9, xsOffset: 0,
+    sm: 9, smOffset: 0,
+    md: 9, mdOffset: 0,
+    lg: 9, lgOffset: 0
+};
+const cellFullCols = {
+    style: { textAlign: 'left' },
+    // xs: cellLabelCols.xs + cellContentCols.xs + cellContentCols.xsOffset,
+    sm: cellLabelCols.sm + cellContentCols.sm + cellContentCols.smOffset,
+    md: cellLabelCols.md + cellContentCols.md + cellContentCols.mdOffset,
+    lg: cellLabelCols.lg + cellContentCols.lg + cellContentCols.lgOffset,
+};
+
+const createPivotCellOnChangeContainer = (changeHandler) => mapPropsStream((propsStream) => {
+    const { handler: onChange, stream: changes } = createEventHandler();
+    return propsStream.switchMap((props) => {
+        const { handlers = {} } = props;
+        const { setPivotAttributes } = handlers;
+        return (!props.paramKey || !setPivotAttributes
+            ? Observable.empty()
+            : changes.do(changeHandler(props, setPivotAttributes))
+        )
+        .ignoreElements()
+        .startWith(props)
+        .mapTo({ ...props, onChange });
+    });
+});
+
+const setPivotCellAttributes = createPivotCellOnChangeContainer(
+    ({ paramKey }, setPivotAttributes) => (event) =>
+        event.preventDefault && event.preventDefault() || setPivotAttributes({
+            [`pivotParameters.${paramKey}`]: event.target.value
+        })
+);
+
+const setPivotCellMultiAttributes = createPivotCellOnChangeContainer(
+    ({ paramKey }, setPivotAttributes) => (values) =>
+        setPivotAttributes({
+            [`pivotParameters.${paramKey}`]: values.map(({ id }) => id)
+        })
+);
+
+const setPivotComboAttributes = createPivotCellOnChangeContainer(
+    ({ paramKey, previousPivots }, setPivotAttributes) => (event) =>
+        event.preventDefault && event.preventDefault() || setPivotAttributes({
+            [`pivotParameters.${paramKey}`]: event.target.value === allPivotsIdValue
+                ? previousPivots.map(({ id }) => id)
+                : previousPivots.map(({ id }) => id)
+                    .filter((id) => id === event.target.value)
+                    .slice(0, 1)
+        })
+);
 
 const componentsByInputType = {
-    text: TextCell,
-    number: TextCell,
-    textarea: TextareaCell,
-    combo: ComboCell,
-    multi: MultiCell,
+    label: Label,
     daterange: DateRange,
-    pivotCombo: PivotCombo,
-    label: Label
+    text: setPivotCellAttributes(TextCell),
+    number: setPivotCellAttributes(TextCell),
+    textarea: setPivotCellAttributes(TextareaCell),
+    combo: setPivotCellAttributes(ComboCell),
+    multi: setPivotCellMultiAttributes(MultiCell),
+    pivotCombo: setPivotComboAttributes(PivotCombo),
 };
 
 export default function PivotCell({ paramUI, ...props }) {
-    const Component = componentsByInputType[paramUI.inputType];
-    if (!Component) {
-        throw new Error('Unknown pivot cell type:' + paramUI.inputType);
-    }
-    return <div className={styles['pivot-cell']}
-        style={'isVisible' in paramUI && !paramUI.isVisible ? {display: 'none'} : {}}>
-        <Component paramUI={paramUI} {...props}/>
-    </div>
+    const PivotCellComponent = componentsByInputType[paramUI.inputType];
+    const shouldNotRender = !PivotCellComponent || ('isVisible' in paramUI && !paramUI.isVisible);
+    return shouldNotRender ? null : (
+        <PivotCellComponent paramUI={paramUI} {...props}/>
+    );
 }
 
-function Label({ paramUI }) {
+function Label({ id, paramUI, paramKey }) {
     return (
-        <div className={styles['pivot-label-param']}>
-            <p>{ paramUI.label }</p>
-        </div>
+        <FormGroup className={styles['pivot-label-param']}
+                   controlId={`pivot-label-param-${id}-${paramKey}`}>
+            <Col componentClass={ControlLabel} {...cellFullCols}>
+                {paramUI.label}
+            </Col>
+        </FormGroup>
      );
 }
 
-function TextCell({ id, paramKey, paramValue, paramUI, handlers }) {
-     return (
-         <div className={styles['pivot-text-param']} key={`pcell-${id}-${paramKey}`}>
-            <label>{ paramUI.label }</label>
-            <input
-                type='th'
-                defaultValue={paramValue}
-                placeholder={paramUI.placeholder}
-                readOnly={false}
-                disabled={false}
-                onChange={ev => ev.preventDefault() ||
-                    handlers.setPivotAttributes({
-                        [`pivotParameters.${paramKey}`]: ev.target.value
-                    })
-                }
-            />
-        </div>
-     );
+
+function TextCell({ id, paramKey, paramValue, paramUI, onChange }) {
+    return (
+        <FormGroup className={styles['pivot-text-param']}
+                   controlId={`pivot-text-param-${id}-${paramKey}`}>
+            <Col componentClass={ControlLabel} {...cellLabelCols}>
+                {paramUI.label}
+            </Col>
+            <Col {...cellContentCols}>
+                <FormControl type='text'
+                             onChange={onChange}
+                             componentClass='input'
+                             defaultValue={paramValue}
+                             placeholder={paramUI.placeholder}/>
+            </Col>
+        </FormGroup>
+    );
 }
 
-function TextareaCell({ id, paramKey, paramValue, paramUI, handlers }) {
-     return (
-         <div className={styles['pivot-textarea-param']} key={`pcell-${id}-${paramKey}`}>
-            <label>{ paramUI.label }</label>
-            <textarea
-                type='th'
-                defaultValue={paramValue}
-                placeholder={paramUI.placeholder}
-                readOnly={false}
-                disabled={false}
-                onChange={ev => ev.preventDefault() ||
-                    handlers.setPivotAttributes({
-                        [`pivotParameters.${paramKey}`]: ev.target.value
-                    })
-                }
-            />
-        </div>
-     );
+function TextareaCell({ id, paramKey, paramValue, paramUI, onChange }) {
+    return (
+        <FormGroup className={styles['pivot-textarea-param']}
+                   controlId={`pivot-textarea-param-${id}-${paramKey}`}>
+            <Col componentClass={ControlLabel} {...cellLabelCols}>
+                {paramUI.label}
+            </Col>
+            <Col {...cellFullCols}>
+                <FormControl onChange={onChange}
+                             componentClass='textarea'
+                             defaultValue={paramValue}
+                             placeholder={paramUI.placeholder}/>
+            </Col>
+        </FormGroup>
+    );
 }
 
 // The combo box compenents only handles string values. We stringify the default value
 // and the list of options and parse then back when updating the falcor model.
-function PivotCombo({ id, paramKey, paramValue, paramUI, previousPivots, handlers }) {
-    let options =
-        [
-            {
-                value: JSON.stringify(previousPivots.map(({ id }) => id)),
-                label: previousPivots.length > 1 ? 'All Pivots': 'Pivot 1'
-            }
-        ];
+function PivotCombo({ id, paramKey, paramValue, paramUI, previousPivots, onChange }) {
 
-    if (previousPivots.length > 1) {
-        options = options.concat(
-            previousPivots.map((pivot, index) =>
-                ({
-                    value: JSON.stringify([ pivot.id ]),
-                    label: `Pivot ${index + 1}`
-                })
-            )
-        );
+    let selectedPivotId, options;
+    if (previousPivots.length <= 0) {
+        selectedPivotId = allPivotsIdValue;
+        options = [{ value: allPivotsIdValue, label: 'All Pivots' }];
+    } else {
+        selectedPivotId = paramValue && paramValue[0] || '';
+        options = previousPivots.map(({ id, pivotTemplate }, index) => ({
+            value: id, label: `Pivot ${index + 1} (${pivotTemplate.name})`
+        }));
     }
-
-    // Wrap setPivotAttributes to parse back the selected item.
-    const originalSPA = handlers.setPivotAttributes;
-    const stringifiedSPA = (params, investId) => {
-        return originalSPA(
-            _.mapObject(params, stringifiedArray => JSON.parse(stringifiedArray)
-            ), investId
-        );
-    };
 
     return (
         <ComboCell id={id}
+                   onChange={onChange}
                    paramKey={paramKey}
-                   paramValue={JSON.stringify(paramValue)}
-                   paramUI={{ options, ...paramUI }}
-                   handlers={{ setPivotAttributes: stringifiedSPA }}
-                   />
+                   paramValue={selectedPivotId}
+                   paramUI={{ options, ...paramUI }}/>
     );
 }
 
-function ComboCell({ id, paramKey, paramValue, paramUI, handlers }) {
+function ComboCell({ id, paramKey, paramValue, paramUI, onChange }) {
+    if (!paramValue && paramUI.options && paramUI.options[0]) {
+        setTimeout(() => onChange({ target: { value: paramUI.options[0].value }}));
+    }
     return (
-        <div className={styles['pivot-combo-param']} key={`pcell-${id}-${paramKey}`}>
-            <ComboSelector pivotId={id}
-                           fldKey={paramKey}
-                           paramUI={paramUI}
-                           fldValue={paramValue}
-                           options={paramUI.options}
-                           key={`pcell-${id}-${paramKey}`}
-                           setPivotAttributes={handlers.setPivotAttributes}
-            />
-        </div>
+        <FormGroup className={styles['pivot-select-param']}
+                   controlId={`pivot-select-param-${id}-${paramKey}`}>
+            <Col componentClass={ControlLabel} {...cellLabelCols}>
+                {paramUI.label}
+            </Col>
+            <Col {...cellContentCols}>
+                <FormControl value={paramValue}
+                             onChange={onChange}
+                             componentClass='select'
+                             placeholder={paramUI.placeholder}>
+                {(paramUI.options || []).map(({ value, label }, index) => (
+                    <option value={value} key={`select-option-${id}-${paramKey}-${index}`}>
+                        {label}
+                    </option>
+                ))}
+                </FormControl>
+            </Col>
+        </FormGroup>
     );
 }
 
-function MultiCell({ id, paramKey, paramValue, paramUI, handlers }) {
+function MultiCell({ id, paramKey, paramValue, paramUI, onChange }) {
 
-    const rawOptions = paramUI.options || [];
-    const options = rawOptions.concat(
-            (paramValue||[])
-                .filter((value) => 
-                    rawOptions.filter((opt) => opt.id === value).length === 0)
-                .map((value) =>
-                    ({id: value, name: value})));
+    const options = paramUI.options || [];
+    const optionIds = options.reduce((ids, { id }) => ({
+        ...ids, [id]: true
+    }), {});
+
+    const multiOptions = options.concat(
+        (paramValue || [])
+            .filter((id) => !optionIds.hasOwnProperty(id))
+            .map((id) => ({ id, name: id }))
+    );
 
     return (
-        <div key={`pcell-${id}-${paramKey}`}
-            className={styles['pivot-multi-param']}>
-            <label>{ paramUI.label }</label>
-            <Select.Creatable id={`selector-${id}-${paramKey}`}
-                    name={`selector-${id}-${paramKey}`}
-                    clearable={true}
-                    labelKey="name"
-                    valueKey="id"
-                    value={paramValue}
-                    options={options}
-                    multi={true}
-                    joinValues={true}
-                    onChange={ (selected) =>
-                        handlers.setPivotAttributes({
-                            [`pivotParameters.${paramKey}`]: _.pluck(selected, 'id')
-                        })
-                    }/>
-            </div>
-    )
+        <FormGroup className={styles['pivot-multi-param']}
+                   controlId={`pivot-multi-param-${id}-${paramKey}`}>
+            <Col componentClass={ControlLabel} {...cellLabelCols}>
+                {paramUI.label}
+            </Col>
+            <Col {...cellFullCols}>
+                <Select.Creatable multi={true}
+                                  clearable={true}
+                                  joinValues={true}
+                                  value={paramValue}
+                                  onChange={onChange}
+                                  options={multiOptions}
+                                  labelKey='name' valueKey='id'
+                                  name={`multi-select-${id}-${paramKey}`}/>
+            </Col>
+        </FormGroup>
+    );
 }
+
+const dateRangeTimePickerProps = { className: styles['pivot-date-range-param'] };
 
 function DateRange({ $falcor, id, paramKey, paramValue }) {
     return (
-			<div className={styles['pivot-date-range-param']} key={`pcell-${id}-${paramKey}`}>
-            <div className={styles.pivotDate}><DateTimeRangePicker
-                getKey={ () => paramKey }
-                $falcor={$falcor}
-                baseid={id}
-                range={paramValue}
-            /></div>
-        </div>
+        <DateTimeRangePicker baseid={id}
+                             $falcor={$falcor}
+                             timeKey={paramKey}
+                             range={paramValue}
+                             labelColumns={cellLabelCols}
+                             contentColumns={cellContentCols}
+                             toProps={dateRangeTimePickerProps}
+                             fromProps={dateRangeTimePickerProps}
+                             className={styles['pivot-date-range-param']}
+                             controlId={`pivot-date-range-param-${id}-${paramKey}`}/>
     );
 }

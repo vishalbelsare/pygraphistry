@@ -1,9 +1,9 @@
-import className from 'classnames';
+import classNames from 'classnames';
 import PivotCell from './pivot-cell';
 import PivotActions from './pivot-actions';
 import EntitySummaries from './entity-summaries';
 import styles from './pivots.less';
-import { PanelGroup, Panel } from 'react-bootstrap';
+import { Form, Panel, PanelGroup } from 'react-bootstrap';
 import { DescriptionFormControl } from 'pivot-shared/components';
 
 class PivotPanel extends Panel {
@@ -49,27 +49,26 @@ function DescriptionPanel({ $falcor, description, ...props }) {
     );
 }
 
-function ParameterPanel({$falcor, id, pivotTemplate, pivotParameters, pivots, handlers, rowIndex, ...props}) {
+function ParameterPanel({ $falcor, id, pivotTemplate, pivotParameters, pivots, handlers, rowIndex, ...props}) {
     const previousPivots = pivots.slice(0, rowIndex);
+    const { pivotParametersUI, pivotParameterKeys } = pivotTemplate;
     return (
         <PivotPanel header='Parameters' {...props}>
-            <div className={styles['pivot-expander-body']}>
-                <div className={styles['pivot-params']}>
-                    {
-                        pivotTemplate && pivotTemplate.pivotParameterKeys && pivotTemplate.pivotParametersUI &&
-                            pivotTemplate.pivotParameterKeys.map((key, index) =>
-                                <PivotCell id={id}
-                                    $falcor={$falcor.deref(pivotParameters)}
-                                    paramKey={key}
-                                    handlers={handlers}
-                                    key={`${id}:${key}:${index}`}
-                                    previousPivots={previousPivots}
-                                    paramValue={pivotParameters[key]}
-                                    paramUI={pivotTemplate.pivotParametersUI[key]}/>
-                            )
-                    }
-                </div>
-            </div>
+            <Form horizontal className={classNames({
+                'container-fluid': true,
+                [styles['pivot-expander-body']]: true
+            })}>
+            {pivotTemplate && pivotParametersUI && (pivotParameterKeys || []).map((key, index) => (
+                <PivotCell id={id}
+                           paramKey={key}
+                           handlers={handlers}
+                           previousPivots={previousPivots}
+                           paramUI={pivotParametersUI[key]}
+                           paramValue={pivotParameters[key]}
+                           $falcor={$falcor.deref(pivotParameters)}
+                           key={`pivot-cell-${id}-${key}-${index}`}/>
+            ))}
+            </Form>
         </PivotPanel>
     )
 }
@@ -84,7 +83,7 @@ function ParameterPanel({$falcor, id, pivotTemplate, pivotParameters, pivots, ha
 
 function ResultSummaryPanel({id, enabled, resultSummary, resultCount, ...props}) {
     return (
-        <PivotPanel header='Result Summary' {...props}>
+        <PivotPanel header='Events Summary' {...props}>
             <div className={styles['pivot-expander-body']}>
             {resultCount > 0 ?
                 <div className={`${styles['pivot-result-summaries']} ${styles['result-count-' + (enabled ? 'on' : 'off')]}`}>
@@ -94,7 +93,7 @@ function ResultSummaryPanel({id, enabled, resultSummary, resultCount, ...props})
                         || null
                 }
                 </div>
-                : resultCount === -1 ? <b>{ 'Run query to select events' }</b> : <b>{ 'No events found!' }</b> }
+                : resultCount === -1 ? <b>{ 'Run this pivot to generate events' }</b> : <b>{ 'No events found!' }</b> }
 
 
             </div>
@@ -113,7 +112,7 @@ export default function PivotRow({
     const handlers = {searchPivot, togglePivots, setPivotAttributes, splicePivot, insertPivot};
 
     return (
-        <div id={"pivotRow" + id} className={className({
+        <div id={"pivotRow" + id} className={classNames({
             [styles['pivot-row']]: true,
             [styles['pivot-disabled']]: !enabled
         })}>
@@ -142,8 +141,8 @@ export default function PivotRow({
                     id={id}
                     eventKey='3'
                     enabled={enabled}
-                    resultSummary={resultSummary}
                     resultCount={resultCount}
+                    resultSummary={resultSummary}
                     defaultExpanded={true}
                 />
             </PanelGroup>
