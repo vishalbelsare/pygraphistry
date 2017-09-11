@@ -1,77 +1,86 @@
 import moment from 'moment';
+import DateTimePicker from './DateTimePicker';
 import mapPropsStream from 'recompose/mapPropsStream';
 import { $atom } from '@graphistry/falcor-json-graph';
 import createEventHandler from 'recompose/createEventHandler';
-import { Col, ControlLabel } from 'react-bootstrap';
+import { Col, Row, ControlLabel, FormGroup } from 'react-bootstrap';
 
+const timePickerPlaceholder = 'Select a date';
+const defaultToTime = moment.utc("11:59:59 PM", "hh:mm:ss a").toJSON();
+const defaultFromTime = moment.utc("12:00:00 AM", "hh:mm:ss a").toJSON();
 
-import DateTimePicker from './DateTimePicker.js';
-import styles from '../../pivots/components/pivots.less';
+function getTimeProps(range, baseid, dir, defaultTime) {
 
+    const base = range[dir] || {};
 
-const withTime = mapPropsStream((props) => {
-    const { handler: onChange, stream: changes } = createEventHandler();
+    return {
+        date: base.date,
+        time: base.time || defaultTime,
+        baseid: `${baseid}_${dir || ''}`,
+        placeholder: timePickerPlaceholder,
+        timezone: base.timezone || "America/Los_Angeles"
+    };
+}
 
-    return props.switchMap(({ $falcor, getKey, range = {}, ...props }) => {
-        const ranges = 
-            changes
-                .scan((acc, {dir, val}) => ({ 
-                        ...acc, 
-                        [dir]: { 
-                            ...(acc[dir]||{}), 
-                            ...val }
-                    }), 
-                    range);
-        return ranges
-            //.debounceTime(200)
-            .switchMap(
-                (time) => $falcor.set({ 
-                    json: { 
-                        [(getKey && getKey('time')) || 'time']: $atom(time) 
-                    }}).progressively(),
-                (range) => ({ range, onChange: onChange, ...props }))
-            .startWith({ range, onChange: onChange, ...props })
-    });
+export const withTimeRanges = mapPropsStream((propsStream) => {
 
+    const { handler: onToChange, stream: toChanges } = createEventHandler();
+    const { handler: onFromChange, stream: fromChanges } = createEventHandler();
+
+    const changes = toChanges.merge(fromChanges);
+    const handleToChange = (val) => onToChange({ val, dir: 'to' });
+    const handleFromChange = (val) => onFromChange({ val, dir: 'from' });
+
+    return propsStream.switchMap(
+        ({ $falcor, baseid, range = {}, timeKey = 'time', ...props }) => {
+            const ranges = changes.scan((acc, { dir, val }) => ({
+                ...acc, [dir]: { ...acc[dir], ...val }
+            }), range);
+            const rangesCommitted = ranges.switchMap(
+                (range) => $falcor.set({ json: {
+                    [timeKey]: $atom(range)
+                }}).progressively(),
+                (range, { json }) => json[timeKey]
+            );
+            return rangesCommitted.startWith(range).map((range) => ({
+                ...props,
+                toProps: {
+                    ...getTimeProps(range, baseid, 'to', defaultToTime),
+                    ...props.toProps, onValueChange: handleToChange,
+                },
+                fromProps: {
+                    ...getTimeProps(range, baseid, 'from', defaultFromTime),
+                    ...props.fromProps, onValueChange: handleFromChange,
+                }
+            }));
+        });
 });
 
+const defaultLabelColumns = { xs: 4, sm: 4, md: 4, lg: 4 };
+const defaultContentColumns = { xs: 8, sm: 8, md: 8, lg: 8 };
 
-const DateTimeRangePicker = withTime(({ label, range = {}, baseid, onChange }) => {
-
-    function getTimeProps(dir, defaultTime) {
-
-        const base = range[dir] || {};
-
-        return {
-            date: base.date,
-            time: base.time || defaultTime,
-            timezone: base.timezone || "America/Los_Angeles"
-        };
-    }
-
-    return (<div className={styles['pivot-timerange-param']}>
-        <label>{ label }</label>
-        <div>
-			<Col xs={3} componentClass={ControlLabel}>Start Date:</Col>
-			<Col xs={9}>
-			<DateTimePicker
-                onValueChange={ (val) => onChange({dir: 'from', val }) } 
-                {...getTimeProps('from', moment.utc("12:00:00 AM", "hh:mm:ss a").toJSON())}
-                baseid={baseid+"from"} 
-                placeholder={"start date"} />
-			</Col>
-				<br></br>
-			<Col xs={3} componentClass={ControlLabel}>End Date:</Col>
-			<Col xs={9}>
-			<DateTimePicker
-                onValueChange={ (val) => onChange({dir: 'to', val }) } 
-                {...getTimeProps('to', moment.utc("11:59:59 PM", "hh:mm:ss a").toJSON())}
-                baseid={baseid+"to"} 
-                placeholder={"end date"} />
-			</Col>
-			<br></br><br></br>
-        </div>
-    </div>);
+export const DateTimeRangePicker = withTimeRanges(function DateTimeRange({
+    label, fromProps, toProps,
+    labelColumns = defaultLabelColumns,
+    contentColumns = defaultContentColumns,
+    ...formGroupProps
+}) {
+    return (
+        <FormGroup {...formGroupProps}>
+        {label === null || label === undefined || label === '' ? undefined :
+            <Row>
+                <Col componentClass={ControlLabel} {...labelColumns}>
+                    { label }
+                </Col>
+            </Row>}
+            <Col componentClass={ControlLabel} {...labelColumns}>
+                Start Date:
+            </Col>
+            <Col componentClass={DateTimePicker} {...fromProps} {...contentColumns}/>
+            <Col componentClass={ControlLabel} {...labelColumns}>
+                End Date:
+            </Col>
+            <Col componentClass={DateTimePicker} {...toProps} {...contentColumns}/>
+        </FormGroup>
+    );
 });
-
-export { withTime, DateTimeRangePicker };

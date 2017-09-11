@@ -9,6 +9,9 @@ import {
     OverlayTrigger
 } from 'react-bootstrap';
 
+const tooltipDelayShow = 750;
+const tooltipRunAll = <Tooltip id='tooltip-play-all'>Run and visualize all pivots</Tooltip>;
+
 export default function Investigation({
     id, user, layout, status, description, time,
     $falcor, pivots = [], templates, investigations,
@@ -41,9 +44,7 @@ export default function Investigation({
                                       description={description}
                                       time={time}/>
                 <div>
-                    <OverlayTrigger placement="bottom" overlay={
-                            <Tooltip id={`tooltip-play-all`}>Run all steps</Tooltip>
-                        }>
+                    <OverlayTrigger placement="bottom" delayShow={tooltipDelayShow} overlay={tooltipRunAll}>
                         <Button bsStyle={bStyle}
                                 className={styles['play-all']}
                                 onClick={() =>
@@ -52,7 +53,7 @@ export default function Investigation({
                                         length: pivots.filter(({ enabled }) => enabled).length
                                     })
                                 }>
-                            Run All
+                            Run All Pivots
                         </Button>
                     </OverlayTrigger>
                     { status && !status.ok ?

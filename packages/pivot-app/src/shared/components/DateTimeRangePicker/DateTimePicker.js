@@ -29,7 +29,6 @@ const timeParser = {
     }
 };
 
-
 export default class DateTimePicker extends React.Component {
 
     constructor(props, context) {
@@ -40,23 +39,23 @@ export default class DateTimePicker extends React.Component {
 
 
     render () {
-        
-        const { baseid, placeholder, date, time, timezone, onValueChange } = this.props;
-        
-        return (<div className={classNames({
-                    [styles['pivot-datetimepicker-container']]: true,
-                    [styles['is-default']]: !date
-                })}
-            >
+
+        const { baseid, className, placeholder, date, time, timezone, onValueChange } = this.props;
+
+        return (
+            <div className={`${className || ''} ${classNames({
+                [styles['pivot-datetimepicker-container']]: true,
+                [styles['is-default']]: !date
+            })}`}>
             <SingleDatePicker
-                id={`sdp_${baseid}`}      
+                id={`sdp_${baseid}`}
 
                 date={ dateParser.unpickle(date) }
                 onDateChange={ date => onValueChange({ date: dateParser.pickle(date) }) }
-                
+
                 focused={ this.state.focused }
                 onFocusChange={ ({ focused }) => this.setState({ focused }) }
-                
+
                 isOutsideRange={ () => false }
                 showClearDate={ true }
                 orientation={HORIZONTAL_ORIENTATION}
@@ -81,11 +80,11 @@ export default class DateTimePicker extends React.Component {
                     >
                         <div className={styles['pivot-timepicker-container']}>
                             <span className={styles['pivot-timepicker']} >
-                                <TimePicker 
+                                <TimePicker
                                     value={ timeParser.unpickle(time) }
                                     onChange={ (time) => onValueChange({ time: timeParser.pickle(time) }) }
                                 />
-                            </span>                            
+                            </span>
                             <TimezonePicker
                               absolute={true}
                               defaultValue={ timezone }
@@ -93,12 +92,14 @@ export default class DateTimePicker extends React.Component {
                               onChange={ (timezone) => onValueChange({ timezone }) }
                             />
                         </div>
-                    </span> 
+                    </span>
                 }
 
                 placeholder={ placeholder }
-            />            
-        </div>);
+            />
+            </div>
+        );
     }
-
 }
+
+export { DateTimePicker };

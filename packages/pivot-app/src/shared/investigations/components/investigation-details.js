@@ -1,15 +1,38 @@
 import Select from 'react-select';
 import { layouts } from '../../services/layouts';
 import styles from './investigation-details.less';
-import { DescriptionFormControl } from 'pivot-shared/components';
-import { DateTimeRangePicker } from 'pivot-shared/components/DateTimeRangePicker/DateTimeRangePicker.js';
+import {
+    DateTimeRangePicker,
+    DescriptionFormControl
+} from 'pivot-shared/components';
 import {
     Col, Panel, ControlLabel,
-    FormGroup//, FormControl
+    Form, FormGroup//, FormControl
 } from 'react-bootstrap';
 
 import logger from 'pivot-shared/logger.js';
 const log = logger.createLogger(__filename);
+
+const cellLabelCols = {
+    // xs: 3,
+    sm: 3,
+    md: 3,
+    lg: 3
+};
+const cellContentCols = {
+    // xs: 9,
+    sm: 9,
+    md: 9,
+    lg: 9
+};
+const cellFullCols = {
+    // xs: cellLabelCols.xs + cellContentCols.xs,
+    sm: cellLabelCols.sm + cellContentCols.sm,
+    md: cellLabelCols.md + cellContentCols.md,
+    lg: cellLabelCols.lg + cellContentCols.lg
+};
+
+const dateRangeTimePickerProps = { className: styles['global-time-picker'] };
 
 export function InvestigationDetails({ layout, saveLayout, $falcor, description = '', time = {} }) {
     return (
@@ -24,41 +47,43 @@ export function InvestigationDetails({ layout, saveLayout, $falcor, description 
                         </span>
                    </p>
                }>
-            <form>
+            <Form horizontal>
                 <FormGroup controlId='investigation-description'>
-                    <ControlLabel>Description</ControlLabel>
-                    <DescriptionFormControl $falcor={$falcor}
-                                            description={description}/>
+                    <Col componentClass={ControlLabel} {...cellLabelCols}>
+                        Description:
+                    </Col>
+                    <Col {...cellFullCols}>
+                        <DescriptionFormControl $falcor={$falcor} description={description}/>
+                    </Col>
                 </FormGroup>
-
-                    <FormGroup controlId='investigation-layout'>
-                        <Col xs={4} componentClass={ControlLabel}>
-                            Graph Layout:
-                        </Col>
-                        <Col xs={8}>
-                            <Select
-                                value={layout}
-                                clearable={false}
-                                name='layout-selector'
-                                className={styles['layout-picker']}
-                                onChange={({ value }) => saveLayout({layoutType: value})}
-                                options={layouts.map(({ id, friendlyName }) => ({
-                                    value: id, className: id, label: friendlyName
-                                }))}
-                            />
-                        </Col>
-                    </FormGroup>
-                <FormGroup controlId='time-picker'>
-                <FormGroup>
-                    <DateTimeRangePicker
-                        $falcor={$falcor}
-                        range={time}
-                        baseid="global_time"
-                    />
+                <FormGroup controlId='investigation-layout'>
+                    <Col componentClass={ControlLabel} {...cellLabelCols}>
+                        Graph Layout:
+                    </Col>
+                    <Col {...cellContentCols}>
+                        <Select
+                            value={layout}
+                            clearable={false}
+                            name='layout-selector'
+                            className={styles['layout-picker']}
+                            onChange={({ value }) => saveLayout({layoutType: value})}
+                            options={layouts.map(({ id, friendlyName }) => ({
+                                value: id, className: id, label: friendlyName
+                            }))}
+                        />
+                    </Col>
                 </FormGroup>
-                </FormGroup>
-                <Col><span><br></br><br></br></span></Col>
-            </form>
+                <DateTimeRangePicker range={time}
+                                     timeKey='time'
+                                     $falcor={$falcor}
+                                     baseid='global_time'
+                                     labelColumns={cellLabelCols}
+                                     contentColumns={cellContentCols}
+                                     toProps={dateRangeTimePickerProps}
+                                     fromProps={dateRangeTimePickerProps}
+                                     controlId='investigation-time-picker'
+                                     className={styles['investigation-date-range']}/>
+            </Form>
         </Panel>
     );
 }

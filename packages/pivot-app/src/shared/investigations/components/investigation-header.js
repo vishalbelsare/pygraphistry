@@ -16,6 +16,7 @@ export default function InvestigationHeader({
                 <Col className={styles['investigation-header-col']} xs={8} sm={8} md={8} lg={8}>
                     <Select
                         name='investigation-selector'
+                        className={styles['investigation-selector']}
                         clearable={false}
                         value={id}
                         options={investigations.map((investigation) => ({value: investigation.id, label: investigation.name }))}

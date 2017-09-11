@@ -67,18 +67,24 @@
     z-index: 100; // >> have to set the z index or it exist behind alot of investigation header elements
 
     color: @pivot-table-fg;
+}
 
-    :global(.Select-control) {
-        font-size: 12px;
-        margin-top: 4px !important;
-        border: transparent !important;
-    }
-
-    :global(.Select-value) {
-        border: none !important;
-        font-weight: 900 !important;
-        line-height: 30px !important;
-        background-color: #F6F6F6;
+.investigation-selector {
+    :global {
+        .Select-control, .Select-value, .Select-input {
+            height: 30px;
+        }
+        .Select-control {
+            font-size: 12px;
+            margin-top: 5px !important;
+            border: transparent !important;
+        }
+        .Select-value {
+            border: none !important;
+            font-weight: 900 !important;
+            line-height: 30px !important;
+            background-color: #F6F6F6;
+        }
     }
 }
 

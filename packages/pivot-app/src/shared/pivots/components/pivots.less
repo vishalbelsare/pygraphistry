@@ -15,20 +15,31 @@
 	    }
     }
 
-    //accordion weirdness
-    :global(.panel-group) {
-        margin: 0px;
-    }
+    :global {
 
-    & :global(.panel-heading) {
-        padding-left: 9px;
-        padding-right: 9px;
-    }
+        .Select-control {
+            height: 30px;
+        }
 
-    :global(.panel-body) {
-        padding: 0;
-        & > div {
-            margin: 0em;
+        .Select-multi-value-wrapper > .Select-input {
+            height: 29px;
+        }
+
+        //accordion weirdness
+        .panel-group {
+            margin: 0px;
+        }
+
+        .panel-heading {
+            padding-left: 7px;
+            padding-right: 7px;
+        }
+
+        .panel-body {
+            padding: 0;
+            & > div {
+                margin: 0em;
+            }
         }
     }
 }
@@ -80,50 +91,59 @@
         }
     }
 
-    & :global(.Select-arrow-zone) {
-        padding-right: 7px;
-    }
+    :global {
 
-    & :global(.Select-control) {
-        font-size: 12px;
-        height: 30px !important;
-        border: none !important;
-        margin-top: 0px !important;
-        line-height: 29px !important;
-        border-radius: 0px !important;
-        background-color: #fff !important;
-        border-color: transparent !important;
-        border-top-right-radius: 3px !important;
-        &:hover {
+        .Select-control,
+        .Select-control .Select-input,
+        .Select-control .Select-value {
+            height: 30px;
+        }
+
+        .Select-arrow-zone {
+            padding-right: 7px;
+        }
+
+        .Select-option {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
+        .Select-control {
+            font-size: 12px;
+            height: 30px !important;
             border: none !important;
+            margin-top: 0px !important;
+            line-height: 29px !important;
             border-radius: 0px !important;
             background-color: #fff !important;
             border-color: transparent !important;
+            border-top-right-radius: @control-border-radius !important;
+            &:hover {
+                border: none !important;
+                border-radius: 0px !important;
+                background-color: #fff !important;
+                border-color: transparent !important;
+            }
         }
-    }
 
-    & :global(.Select-control .Select-value) {
-        padding-top: 1px;
-        padding-left: 0px;
-        height: 30px !important;
-        border: none !important;
-        font-weight: 900 !important;
-        line-height: 29px !important;
-        border-radius: 0px !important;
-        background-color: #FFF !important;
-        border-color: transparent !important;
-        border-top-right-radius: 3px !important;
-        &:hover {
+        .Select-control .Select-value {
+            padding-top: 1px;
+            padding-left: 0px;
+            height: 30px !important;
             border: none !important;
+            font-weight: 900 !important;
+            line-height: 29px !important;
             border-radius: 0px !important;
             background-color: #FFF !important;
             border-color: transparent !important;
+            border-top-right-radius: @control-border-radius !important;
+            &:hover {
+                border: none !important;
+                border-radius: 0px !important;
+                background-color: #FFF !important;
+                border-color: transparent !important;
+            }
         }
-    }
-
-    :global(.Select-option) {
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
     }
 }
 
@@ -142,9 +162,6 @@
 	height: 15px;
 }
 
-/*.pivot-footer:hover {
-    background-color: #B1C8D5;
-}*/
 
 .pivot-expander {
 
@@ -178,23 +195,21 @@
 
 .pivot-expander-body {
 
+    padding-top: 0;
+    padding-left: 11px;
+    padding-right: 11px;
+    padding-bottom: 2px;
+    border-radius: 10px;
     background-color: #fff;
-	border-radius: 10px;
-    border-top-left-radius: 0;
+	border-top-left-radius: 0;
     border-top-right-radius: 0;
-
 
 	.pivot-row.pivot-disabled & {
 		opacity: @disabled-opacity;
 	}
 
-	& > * {
-		margin: 5px;
-	}
-
-	.pivot-params { }
     .pivot-description {
-        padding: 0 10px;
+        margin-top: 5px;
         textarea {
             padding: 3px 6px;
             min-height: 40px;
@@ -233,7 +248,7 @@
 .pivot-icons {
     white-space: nowrap;
     padding-left: 0px !important;
-    border-top: 1px solid #efefef;
+    border-top: 1px solid transparent;
 }
 
 .pivot-type-selector-container {
@@ -253,50 +268,38 @@
        // border-bottom: 1px dotted #aaaaaa;
     }
 }
-
-
-.pivot-text-param,
-.pivot-timerange-param,
-.pivot-textarea-param,
-.pivot-label-param,
-.pivot-combo-param, .pivot-combo-param :global(.form-inline),
-.pivot-multi-param,
-.pivot-date-range-param {
-	width: 100%;
-	//background-color: blue;
+.pivot-textarea-param textarea {
+    resize: vertical;
 }
 
-.pivot-date-range-param .SingleDatePicker {
-	background-color: red;
+.pivot-multi-param, .pivot-textarea-param {
+    margin-top: 0px !important;
+}
+
+.pivot-text-param,
+.pivot-label-param,
+.pivot-combo-param,
+.pivot-multi-param,
+.pivot-textarea-param,
+.pivot-timerange-param,
+.pivot-date-range-param {
 }
 
 .pivot-combo-param :global(.form-inline .form-group) {
-	width: 100% !important;
-}
-
-.pivot-text-param,
-.pivot-textarea-param,
-.pivot-label-param,
-.pivot-combo-param :global(.form-group) {
-    display: flex;
+    margin-bottom: 0;
 }
 
 .pivot-text-param, .pivot-textarea-param, .pivot-combo-param {
     label {
     	order: 1;
-    	margin-top: 10px;
     }
     input, select, textarea, & > div {
     	order: 2;
-    	flex-grow: 1;
-        padding: 0.5em;
-        margin-left: 1em;
     }
-
     &.pivot-text-param, &.pivot-textarea-param, &.pivot-combo-param {
         input, select, textarea {
-            border-radius: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #ccc;
+            border-radius: @control-border-radius;
         }
     }
 }
@@ -315,9 +318,8 @@
 	    margin: 0 0 0 5px;
 	    padding: 0 0 0 0;
 	    border: 1px solid #D3D3D3;
-        border-radius: 5px;
+        border-radius: @control-border-radius;
 	}
-
 
 	.pivot-entity-pill {
 	    display: block;
@@ -360,11 +362,19 @@
 
 }
 
+.run-insert-button-group {
+    float: right !important;
+}
 
+.status-button-group {
+    margin-left: 0.7em;
+}
 
-.pivot-info-tooltip,
+.pivot-info-tooltip {}
 .pivot-error-tooltip {
-
+    .message {
+        color: red;
+    }
 }
 
 .splunk-query {
@@ -373,53 +383,58 @@
 
 
 .pivot-datetimepicker-container {
-    display: inline-block;
 
-    :global(.SingleDatePickerInput__calendar-icon) {
-        padding-right: 0;
-    }
-
-    :global(.SingleDatePickerInput__clear-date--hide) {
-        display: none; //normally 'hidden' and thus takes space
+    :global {
+        .SingleDatePicker {
+            display: block;
+            margin-left: 0;
+            margin-right: 0;
+        }
+        .SingleDatePickerInput {
+            display: flex;
+        }
+        .SingleDatePicker .DateInput {
+            flex-grow: 1;
+        }
+        .SingleDatePickerInput__calendar-icon {
+            padding-right: 0;
+        }
+        .SingleDatePickerInput__clear-date--hide {
+            display: none; //normally 'hidden' and thus takes space
+        }
     }
 
     &.is-default {
-        :global(.SingleDatePickerInput) {
-            opacity: 0.65;
-            &:hover {
-                opacity: 1.0;                
+        :global {
+            .SingleDatePickerInput .DateInput .DateInput__display-text {
+                color: #999 !important;
+            }
+            .SingleDatePickerInput .DateInput .DateInput__display-text--focused {
+                color: #2e2e2e !important;
+            }
+        }
+        &:hover {
+            :global {
+                .SingleDatePickerInput .DateInput .DateInput__display-text {
+                    color: #2e2e2e !important;
+                }
             }
         }
     }
-    &:not(.is-default) {
-
-    }    
-
 }
 
 .pivot-timepicker-container {
-	//background-color: blue;
     display: flex;
     flex-direction: row;
     margin-bottom: 18px;
     margin-left: 0px;
     margin-right: 0px;
     & > :not(.pivot-timepicker) {
-        flex-grow: 1;        
-    }
-}
-
-
-:global(.pivot-date-range-param) {
-	border: 1px solid red;
-    :global(.SingleDatePicker) {
-        background-color: yellow !important;
+        flex-grow: 1;
     }
 }
 
 :global(.SingleDatePickerInput) {
-	//background-color: blue !important;
-    border: none !important;
     & > * {
         padding-top: 0;
         margin-right: 0;
@@ -440,21 +455,4 @@
         white-space: nowrap;
         overflow: hidden;
     }
-}   
-
-.pivot-date-range-param :global(.SingleDatePicker) {
-    background-color: #cccccc !important;
-	margin: 0px;
-	
-}
-
-.pivot-date-range-param :global(label) {
-	margin: 0px !important;
-	padding: 0px;
-	padding-left: 11px !important;
-	padding-top: 9px;
-}
-
-.pivot-date-range-param :global(.col-xs-9) {
-	margin-bottom: 7px;
 }
