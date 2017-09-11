@@ -5,10 +5,11 @@ import Color from 'color';
 import ReactDOM from 'react-dom';
 import RcSwitch from 'rc-switch';
 import RcColorPicker from 'rc-color-picker';
-import RcSlider from '@graphistry/rc-slider';
 import { Popover } from 'react-bootstrap';
 import { FormControl } from 'react-bootstrap';
 import { Grid, Row, Col } from 'react-bootstrap';
+import RcSliderBase, { createSliderWithTooltip } from 'rc-slider/lib';
+const RcSlider = createSliderWithTooltip(RcSliderBase);
 
 const scales = {
     log: d3Scale.log().domain([.1, 10]).range([1, 100]),
@@ -68,8 +69,9 @@ export function Slider({
                             <RcSlider key={`${id}-slider`}
                                       min={props.min} max={props.max}
                                       step={props.step} defaultValue={value}
-                                      tipFormatter={tipFormatter}
-                                      tipTransitionName='rc-slider-tooltip-zoom-down'
+                                      tipFormatter={tipFormatter} tipProps={{
+                                          animation: 'zoom-down'
+                                      }}
                                       onChange={(newState) => setValue({
                                           id, type, ...rest,
                                           value: value = scales[scale].invert(newState)

@@ -6,6 +6,7 @@ module.exports = addStyleLoaders;
 
 function addStyleLoaders({ type, isDev, threadPool, CSSModules, environment }, appConfig) {
 
+    const createCSSSourceMaps = !isDev && type === 'client';
     let rules = [
         {
             test: /\.css$/,
@@ -14,8 +15,11 @@ function addStyleLoaders({ type, isDev, threadPool, CSSModules, environment }, a
         {
             test: /\.less$/,
             use: [
-                cssLoader(type, isDev, CSSModules),
-                'postcss-loader',
+                cssLoader(type, isDev, CSSModules, createCSSSourceMaps),
+                {
+                    loader: 'postcss-loader',
+                    options: { sourceMap: createCSSSourceMaps }
+                },
                 'happypack/loader?id=less',
             ]
         }
@@ -44,21 +48,19 @@ function addStyleLoaders({ type, isDev, threadPool, CSSModules, environment }, a
         id: 'css',
         verbose: false,
         threadPool: threadPool,
-        cacheContext: { env: environment },
-        loaders: [cssLoader(type, isDev, false)],
+        loaders: [cssLoader(type, isDev, false, createCSSSourceMaps)],
     }));
 
     appConfig.plugins.push(new HappyPack({
         id: 'less',
         verbose: false,
         threadPool: threadPool,
-        cacheContext: { env: environment },
         loaders: [{
             loader: 'less-loader',
             options: {
-              sourceMap: false,
               outputStyle: 'expanded',
               sourceMapContents: !isDev,
+              sourceMap: createCSSSourceMaps,
             },
         }],
     }));
@@ -66,16 +68,13 @@ function addStyleLoaders({ type, isDev, threadPool, CSSModules, environment }, a
     return appConfig;
 }
 
-function cssLoader(type, isDev, CSSModules) {
+function cssLoader(type, isDev, CSSModules, createCSSSourceMaps) {
     return {
         loader: `css-loader${type === 'client' ? '' : '/locals'}`,
         options: {
             minimize: !isDev,
             modules: CSSModules,
-            sourceMap: false,
-            // this breaks file-loader URLS in dev mode,
-            // disabling for now since css sourcemaps are a nice-to-have
-            // sourceMap: type === 'client',
+            sourceMap: createCSSSourceMaps,
             context: path.join(process.cwd(), './src'),
             localIdentName: isDev ? '[name]__[local].[hash:base64:5]' : '[hash:base64:5]',
         }

@@ -4,8 +4,7 @@
     "watch": [
         "index.js",
         "tools/webpack/",
-        "!tools/webpack/webpack.server.babel.js",
-        "!tools/webpack/webpack.test.babel.js",
+        "!tools/webpack/webpack.config.karma.js",
         "config.js",
         "config-schema.js",
         "config/*.json",

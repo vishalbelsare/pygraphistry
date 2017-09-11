@@ -23,7 +23,6 @@ const CSSModules = true;
 const vendor = [
 
     'brace',
-    'chalk',
     'debug',
     'lodash',
     'recompose',
@@ -60,6 +59,7 @@ const vendor = [
     'rc-switch',
     'rc-color-picker',
     '@graphistry/rc-slider',
+    '@graphistry/react-select',
 
     '@graphistry/falcor',
     '@graphistry/falcor-router',

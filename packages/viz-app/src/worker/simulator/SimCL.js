@@ -3,7 +3,6 @@
 const _ = require('underscore');
 const Q = require('q');
 const sprintf = require('sprintf-js').sprintf;
-const dijkstra = require('@graphistry/dijkstra');
 const util = require('./util.js');
 import MoveNodes from './moveNodes.js';
 import MoveNodesByIds from './moveNodesByIds.js';

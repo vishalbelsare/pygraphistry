@@ -1,4 +1,4 @@
-import moment from 'moment-timezone';
+import moment from 'moment';
 
 export function castToMoment (value) {
     let momentVal;

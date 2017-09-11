@@ -4,7 +4,6 @@ const HappyPack = require('happypack');
 const StatsPlugin = require('stats-webpack-plugin');
 const AssetsPlugin = require('assets-webpack-plugin');
 const WriteFilePlugin = require('write-file-webpack-plugin');
-const BabiliWebpackPlugin = require('babili-webpack-plugin');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 const ClosureCompilerPlugin = require('webpack-closure-compiler');
 
@@ -35,12 +34,17 @@ function makeWebpackConfig({
     };
     const baseConfig = {
         amd: false,
+        bail: true,
         name: type,
         cache: isDev,
         context: path.join(process.cwd()),
         target: type === 'client' ? 'web' : 'node',
         devtool: isDev ? 'source-map' : 'nosources-source-map',
-        stats: { assets: false, colors: true, chunks: false, warnings: true },
+        stats: {
+            assets: false,  chunks: false,
+            colors: true, warnings: true, performance: true,
+            warningsFilter: [ /moment/, /source-map-support/ ]
+        },
         output: Object.assign({
             publicPath: '',
             // Don't use chunkhash in development it will increase compilation time
@@ -51,7 +55,10 @@ function makeWebpackConfig({
             modules: ['src', 'node_modules'],
             extensions: ['.js', '.jsx', '.json'],
             alias: {
+                // Required for enzyme to work properly
+                'sinon': 'sinon/pkg/sinon',
                 'viz-app': path.resolve(process.cwd(), './src'),
+                'rc-slider': '@graphistry/rc-slider',
                 'react-split-pane': '@graphistry/react-split-pane',
                 'moment': path.resolve(process.cwd(), './node_modules/moment/min/moment.min.js'),
                 '@graphistry/falcor': path.resolve(process.cwd(), isDev ?
@@ -63,7 +70,8 @@ function makeWebpackConfig({
         module: {
             noParse: [
                 /node_modules\/brace/,
-                // /node_modules\/lodash/,
+                // The sinon library doesn't like being run through babel
+                /node_modules\/sinon/,
                 /node_modules\/underscore/,
                 /node_modules\/pegjs-util\/PEGUtil\.js/,
                 /node_modules\/\@graphistry\/falcor\/dist\/falcor.all.min.js/,
@@ -73,6 +81,21 @@ function makeWebpackConfig({
             rules: [
                 { test: /\.glsl$/, loader: 'webpack-glsl-loader' },
                 { test: /\.pegjs$/, loader: 'pegjs-loader?cache=true&optimize=size' },
+                {
+                    /**
+                     * sinon.js--aliased for enzyme--expects/requires global vars.
+                     * imports-loader allows for global vars to be injected into the module.
+                     * See https://github.com/webpack/webpack/issues/304
+                     */
+                    test: /sinon\/pkg\/sinon\.js/,
+                    use: [{
+                        loader: 'imports-loader',
+                        options: {
+                            define: false,
+                            require: false
+                        }
+                    }]
+                },
                 {
                     test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
                     use: [{
@@ -144,7 +167,7 @@ function makeWebpackConfig({
             new webpack.DefinePlugin(Object.assign({}, versions, {
                 __CLIENT__: JSON.stringify(type === 'client'),
                 __SERVER__: JSON.stringify(type === 'server'),
-                __DISABLE_SSR__: JSON.stringify(false),
+                __DISABLE_SSR__: JSON.stringify(false)
             })),
             // See http://webpack.github.io/analyse/
             new StatsPlugin(
@@ -157,12 +180,6 @@ function makeWebpackConfig({
     if (isDev) {
         baseConfig.plugins.push(new WriteFilePlugin({ log: false }));
     } else {
-        // baseConfig.plugins.push(new BabiliWebpackPlugin({
-        //     eval: false,
-        //     mangle: true,
-        //     deadcode: true,
-        //     topLevel: false,
-        // }));
         baseConfig.plugins.push(new ClosureCompilerPlugin({
             concurrency: numCPUs,
             compiler: {

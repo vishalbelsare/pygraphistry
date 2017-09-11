@@ -1,6 +1,7 @@
 import styles from './styles.less';
 import classNames from 'classnames';
-import React, { PropTypes } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { Observable } from 'rxjs/Observable';
 import * as Scheduler from 'rxjs/scheduler/animationFrame';
 

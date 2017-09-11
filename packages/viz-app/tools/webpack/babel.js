@@ -16,40 +16,23 @@ function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
     const presets = [
         ['es2015', { modules: false, loose: true }],
         'react',
-        // ['babili', {
-        //     mangle: false,
-        //     deadcode: true,
-        //     evaluate: true,
-        // }],
         'stage-0'
     ];
 
     const imports = {
-        // 'rxjs': {
-        //     'transform': 'rxjs/${member}',
-        //     'preventFullImport': false
-        // },
         'lodash': {
-            'transform': 'lodash/${member}',
-            'preventFullImport': true
+            'preventFullImport': true,
+            'transform': 'lodash/${member}'
         },
         'react-bootstrap': {
-            'transform': 'react-bootstrap/lib/${member}',
-            'preventFullImport': true
+            'preventFullImport': true,
+            'transform': 'react-bootstrap/lib/${member}'
         },
         'react-virtualized': {
-            'transform': 'react-virtualized/dist/commonjs/${member}/${member}',
-            'preventFullImport': true
+            'preventFullImport': true,
+            'transform': 'react-virtualized/dist/commonjs/${member}/${member}'
         }
     };
-    // const imports = vendor.reduce((opts, dependency) => {
-    //     opts[dependency] = {
-    //         'transform': dependency + '/${member}';
-    //         // 'transform': 'react-bootstrap/lib/${member}',
-    //         'preventFullImport': false
-    //     };
-    //     return opts;
-    // }, {});
 
     const plugins = [
         'transform-runtime',
@@ -68,6 +51,14 @@ function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
                 removeImport: true,
                 additionalLibraries: [
                     'prop-types',
+                    'react-ace',
+                    'react-dock',
+                    'react-select',
+                    'redbox-react',
+                    'react-overlays',
+                    'react-bootstrap',
+                    'react-split-pane',
+                    'react-virtualized',
                     'react-immutable-proptypes'
                 ]
             }]
@@ -78,18 +69,10 @@ function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
         id: 'js',
         verbose: false,
         threadPool: threadPool,
-        cacheContext: { env: environment },
         loaders: [
-            // {
-            //     test: /\.jsx?$/,
-            //     enforce: 'pre',
-            //     exclude: /node_modules/,
-            //     loader: 'eslint-loader',
-            //     options: { quiet: true, failOnError: false, },
-            // },
+            'cache-loader',
             {
                 loader: 'babel-loader',
-                // exclude: /(node_modules(?!\/rxjs))/,
                 options: {
                     babelrc: false,
                     cacheDirectory: isDev,

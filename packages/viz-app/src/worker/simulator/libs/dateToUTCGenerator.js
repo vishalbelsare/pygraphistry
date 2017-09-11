@@ -1,5 +1,8 @@
 import moment from 'moment';
 
+// Suppress moment deprecation warnings
+moment.suppressDeprecationWarnings = true;
+
 function validMVal (momentVal) {
     return momentVal.isValid() && momentVal.year() < 5000 && momentVal.year() > -5000;
 }
@@ -17,14 +20,14 @@ export function dateToUTCGenerator (sample) {
             };
         } else {
             return function (value) { return moment(value).valueOf(); }
-        }    
+        }
     } else {
         if (!isNaN((new Date(sample)).getTime())) {
             return function (value) {
                 const v = (new Date(value)).getTime();
                 return !isNaN(v) ? v : moment(value).valueOf();
             }
-        } else {        
+        } else {
             const format = moment(sample).creationData().format;
             return function (value) {
                 const mVal = moment(value, format);

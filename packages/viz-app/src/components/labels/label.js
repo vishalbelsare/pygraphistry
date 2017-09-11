@@ -1,7 +1,8 @@
 import Color from 'color';
 import styles from './styles.less';
 import classNames from 'classnames';
-import React, { PropTypes } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { defaultFormat } from 'viz-app/formatters';
 import { Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import { ColorPill } from 'viz-app/components/color-pill/colorPill';
@@ -158,11 +159,13 @@ function PointIcon({ iconClass, pointColor, pointRgb, iconSize, type }) {
         return null;
     }
 
+    const c = iconSize / 50;
+
     return (
         <div style={{ transform: `${
-                `scale(${iconSize / 50})`} ${
-                `translate3d(0, 0, 0)` /* force hardware acceleration */} ${
-                `perspective(1000px)` /* force sub-pixel font rendering when scaled*/}`
+                `scale3d(${c},${c},${c})`} ${
+                `translate3d(-100%, 0, 0)` /* force hardware acceleration */} ${
+                `perspective(0px)` /* force sub-pixel font rendering when scaled */}`
             }}
              className={ classNames({
                  [styles['point-icon-container']]: true,
