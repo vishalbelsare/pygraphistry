@@ -17,7 +17,8 @@ function defaults(index) {
         tags: [],
         modifiedOn: Date.now(),
         layout: "stackedBushyGraph",
-        pivots: []
+        pivots: [],
+        time: {}
     };
 }
 
@@ -44,6 +45,7 @@ export function createInvestigationModel(serializedInvestigation, index) {
     };
 
     normalizedInvestigation.tags = atomify(normalizedInvestigation.tags);
+    normalizedInvestigation.time = atomify(normalizedInvestigation.time);
 
     return {
         ...normalizedInvestigation,
@@ -56,6 +58,7 @@ export function serializeInvestigationModel(investigation) {
 
     hardState.pivots = hardState.pivots.map(pivotRef => pivotRef.value[1]);
     hardState.tags = deatomify(hardState.tags);
+    hardState.time = deatomify(hardState.time);
 
     return hardState;
 }
@@ -71,7 +74,7 @@ export function cloneInvestigationModel(investigation, clonedPivots) {
             .reduce((result, [key, value]) => {
                 if (pivotRefs.indexOf(key) >= 0) {
                     value.value = value.value.map((val) => newPivotIds[oldPivotIds.indexOf(val)]);
-                } 
+                }
                 result[key] = value
                 return result;
             }, {})
