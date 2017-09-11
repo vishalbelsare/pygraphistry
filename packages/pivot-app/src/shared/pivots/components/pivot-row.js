@@ -93,7 +93,7 @@ function ResultSummaryPanel({id, enabled, resultSummary, resultCount, ...props})
                         || null
                 }
                 </div>
-                : resultCount === -1 ? <b>{ 'Run this Pivot to generate events' }</b> : <b>{ 'No events found!' }</b> }
+                : resultCount === -1 ? <b>{ 'Run this pivot to generate events' }</b> : <b>{ 'No events found!' }</b> }
 
 
             </div>
