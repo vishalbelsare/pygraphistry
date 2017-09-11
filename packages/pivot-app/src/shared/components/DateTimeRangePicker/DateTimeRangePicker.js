@@ -5,9 +5,9 @@ import { $atom } from '@graphistry/falcor-json-graph';
 import createEventHandler from 'recompose/createEventHandler';
 import { Col, Row, ControlLabel, FormGroup } from 'react-bootstrap';
 
+const defaultToTime = '11:59:59 PM';
+const defaultFromTime = '12:00:00 AM';
 const timePickerPlaceholder = 'Select a date';
-const defaultToTime = moment.utc("11:59:59 PM", "hh:mm:ss a").toJSON();
-const defaultFromTime = moment.utc("12:00:00 AM", "hh:mm:ss a").toJSON();
 
 function getTimeProps(range, baseid, dir, defaultTime) {
 
@@ -15,10 +15,10 @@ function getTimeProps(range, baseid, dir, defaultTime) {
 
     return {
         date: base.date,
-        time: base.time || defaultTime,
         baseid: `${baseid}_${dir || ''}`,
         placeholder: timePickerPlaceholder,
-        timezone: base.timezone || "America/Los_Angeles"
+        timezone: base.timezone || "America/Los_Angeles",
+        time: base.time || moment.utc(defaultTime, "hh:mm:ss a").toJSON(),
     };
 }
 
