@@ -18,7 +18,6 @@ export const uiTweaks = {
     insideout: {
         showArrows: false,
         showPointsOfInterest: true,
-        play: 0,
     },
     stackedBushyGraph: {
         showArrows: false,
