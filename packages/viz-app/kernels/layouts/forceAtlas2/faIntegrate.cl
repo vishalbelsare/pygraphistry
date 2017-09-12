@@ -29,7 +29,7 @@ __kernel void faIntegrate (
 
     float2 newPosition = inputPositions[n1Idx] + delta;
 
-    float radiusMultiplier = IS_LOCKED_R(flags) * (length(newPosition) - length(inputPositions[n1Idx])) + (1 - IS_LOCKED_R(flags)) * 1;
+    float radiusMultiplier = IS_LOCKED_R(flags) * (length(inputPositions[n1Idx]) / length(newPosition)) + (1 - IS_LOCKED_R(flags)) * 1;
 
     outputPositions[n1Idx] = newPosition * radiusMultiplier;
     return;
