@@ -195,7 +195,7 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
     LayoutAlgo.prototype.setPhysics.call(this, cfg)
 
     // These should correspond to the flags defined in forceAtlas2Common.h
-    var flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog', 'lockedX', 'lockedY'];
+    var flagNames = ['preventOverlap', 'strongGravity', 'dissuadeHubs', 'linLog', 'lockedX', 'lockedY', 'lockedR'];
 
     // Adjusts the bit vector for flags used in ForceAtlas2. See flag definitions in
     // ForceAtlas2Common.h
