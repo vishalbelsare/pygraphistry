@@ -8,7 +8,7 @@ export const layouts = [
                          friendlyName: "Force Directed"// Layout"
                         },
                         {id: "insideout",
-                         controls: "lockedAtlasBarnesXY",
+                         controls: "lockedAtlasBarnesR",
                          friendlyName: "Network Map"// Layout"
                         },
                         ];
