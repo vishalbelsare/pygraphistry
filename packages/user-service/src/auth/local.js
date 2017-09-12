@@ -1,3 +1,4 @@
+require('dotenv').config();
 const moment = require('moment');
 const jwt = require('jsonwebtoken');
 const SECRET = process.env.GRAPHISTRY_SECRET;

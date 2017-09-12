@@ -1,5 +1,5 @@
 require('dotenv').config();
 const { router } = require('microrouter');
-const routes = require('./routes');
+const routes = require('./routing');
 
 module.exports = router.apply(this, routes);

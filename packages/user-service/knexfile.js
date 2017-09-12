@@ -8,7 +8,7 @@ const {
   DBNAME
 } = process.env;
 
-module.exports = {
+const configurations = {
   TEST: {
     client: 'postgresql',
     connection: `postgresql://${DBUSER}:${DBPASSWORD}@${DBHOST}:${DBPORT}/${DBNAME}-TEST`,
@@ -36,5 +36,6 @@ module.exports = {
       tableName: 'knex_migrations'
     }
   }
-
 };
+
+module.exports = env => configurations[env.toUpperCase()]
