@@ -1,3 +1,4 @@
+const path = require('path');
 const HappyPack = require('happypack')
 
 module.exports = addBabelRules;
@@ -70,12 +71,16 @@ function happyBabelPlugin(isDev, type, vendor, environment, threadPool) {
         verbose: false,
         threadPool: threadPool,
         loaders: [
-            'cache-loader',
+            {
+                loader: 'cache-loader',
+                options: {
+                    cacheDirectory: path.resolve(process.cwd(), `./node_modules/.cache/cache-loader/${environment}`)
+                }
+            },
             {
                 loader: 'babel-loader',
                 options: {
                     babelrc: false,
-                    cacheDirectory: isDev,
                     presets: presets,
                     plugins: plugins,
               },
