@@ -1,8 +1,8 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 
-cd $(dirname $0)/../ > /dev/null
+cd $(dirname "$0")/../ > /dev/null
 
-if [[ ! -d $WHOLLY_INOCCUOUS ]]; then
+if [[ ! -d "$WHOLLY_INOCCUOUS" ]]; then
 	echo "error: no secrets found!"
 	echo "please set a WHOLLY_INOCCUOUS env var to the path of the wholly-innocuous directory"
 	exit 1
@@ -25,7 +25,7 @@ docker build -f build/dockerfiles/Dockerfile-build \
 	--build-arg BUILD_TAG=${BUILD_TAG} \
 	--build-arg COMMIT_ID=${COMMIT_ID} \
 	--build-arg BRANCH_NAME=${BRANCH_NAME} \
-	--build-arg NPMRC="$(cat $WHOLLY_INOCCUOUS/files/npm/rc)" \
+	--build-arg NPMRC=$(cat "$WHOLLY_INOCCUOUS/files/npm/rc") \
 	-t ${CONTAINER_NAME}:${BUILD_TAG} .
 
 echo "build $CONTAINER_NAME finished"

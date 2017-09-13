@@ -1,6 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 
-cd $(dirname $0) > /dev/null
+cd $(dirname "$0") > /dev/null
 
 BUILD_TAG=${1:-test-dev}
 CONTAINER_NAME=${2:-graphistry/viz-app}
