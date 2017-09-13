@@ -31,13 +31,15 @@
     "start:dev": {
       "command": "nodemon ./index.js '{\"LOG_LEVEL\": \"INFO\" }' | ./node_modules/.bin/bunyan -o short",
       "env": {
-        "NODE_ENV": "development"
+        "NODE_ENV": "development",
+        "IS_NODEMON_WATCHING": true
       }
     },
     "start:dev-cpu": {
       "command": "nodemon ./index.js '{\"VIZ_LISTEN_ADDRESS\": \"0.0.0.0\", \"LOG_LEVEL\": \"DEBUG\", \"GPU_OPTIONS\": { \"device\":\"Core\", \"WARPSIZE\": 4, \"SIZES\": { \"toBarnesLayout\": [4, 1], \"boundBox\": [4, 1], \"buildTree\": [4, 1], \"computeSums\": [4, 1], \"sort\": [1, 1], \"edgeForces\": [1, 1], \"segReduce\": [4, 1], \"calculateForces\": [4, 1] } } }'",
       "env": {
-        "NODE_ENV": "development"
+        "NODE_ENV": "development",
+        "IS_NODEMON_WATCHING": true
       }
     },
     "start:debug": {
