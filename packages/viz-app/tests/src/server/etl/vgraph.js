@@ -1,6 +1,4 @@
-var vgraph = require('../../../../src/server/etl/vgraph.js');
-
-console.log('vgraph', vgraph);
+var vgraph = require('viz-app/server/etl/vgraph.js');
 
 const { confirmType } = vgraph;
 
