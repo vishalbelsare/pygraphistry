@@ -5,6 +5,8 @@ import Socket from 'socket.io-client/lib/socket';
 import * as Scheduler from 'rxjs/scheduler/async';
 import { Model } from '@graphistry/falcor-model-rxjs';
 import { LocalDataSink, RemoteDataSource, whitelistClientAPIRoutes } from './falcor';
+import { createLogger } from '@graphistry/common/logger';
+const logger = createLogger(__filename);
 
 const whiteListedQueryParams = [
     'bg', 'view', 'type', 'scene', 'device',
@@ -16,8 +18,8 @@ function congfigureLive(options) {
 
     const buildDate = (new Date(__BUILDDATE__)).toLocaleString();
     const buildNum = __BUILDNUMBER__ === undefined ? 'Local build' : `Build #${__BUILDNUMBER__}`;
-    console.info(`[VizApp] ${buildNum} of ${__GITBRANCH__}@${__GITCOMMIT__} (on ${buildDate})`);
-    console.info(`Connecting to ${window.graphistryPath || 'local'}`);
+    logger.trace(`[VizApp] ${buildNum} of ${__GITBRANCH__}@${__GITCOMMIT__} (on ${buildDate})`);
+    logger.trace(`Connecting to ${window.graphistryPath || 'local'}`);
 
     if (window.graphistryClientId) {
         const splunkSearch = `search (host=staging* OR host=labs*) (level=60 OR level=50 OR level=40) source="/var/log/graphistry-json/*.log" metadata.userInfo.cid="${window.graphistryClientId}"`;
@@ -28,9 +30,9 @@ function congfigureLive(options) {
             'latest': ''
         };
         const paramString = Object.entries(params).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&');
-        console.info(`Access splunk logs for this session at https://splunk.graphistry.com:3000/en-US/app/search/search?${paramString}`);
+        logger.trace(`Access splunk logs for this session at https://splunk.graphistry.com:3000/en-US/app/search/search?${paramString}`);
     } else {
-        console.info('window does not have property graphistryClientId');
+        logger.warn('window does not have property graphistryClientId');
     }
 
     const model = new Model({

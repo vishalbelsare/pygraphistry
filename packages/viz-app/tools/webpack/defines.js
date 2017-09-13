@@ -4,8 +4,8 @@ const graphistryConfig = require('@graphistry/config')();
 
 const buildDate = Date.now();
 const buildNumber = process.env.BUILD_NUMBER || 'dev';
-const commitId = child_process.execSync('git rev-parse --short HEAD').toString().trim();
-const revName = child_process.execSync('git name-rev --name-only HEAD').toString().trim();
+const commitId = process.env.COMMIT_ID || child_process.execSync('git rev-parse --short HEAD').toString().trim();
+const revName = process.env.BRANCH_NAME || child_process.execSync('git name-rev --name-only HEAD').toString().trim();
 
 const versions = {
     __BUILDDATE__: `${buildDate}`,

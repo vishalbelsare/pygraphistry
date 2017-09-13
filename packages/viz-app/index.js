@@ -63,8 +63,8 @@ if (process.env.NODE_ENV === 'development' && config.ENVIRONMENT === 'local') {
     const serverWebpackConfig = require('./tools/webpack/webpack.config.server');
     const compiler = webpack([clientWebpackConfig, serverWebpackConfig]);
     app.use(require('webpack-universal-middleware')(compiler, {
-        webpackDevMiddleware: { quiet: true, serverSideRender: true },
-        reporter: { observe(compiler) { return logger.info.bind(logger); } }
+        webpackDevMiddleware: { serverSideRender: true },
+        reporter: require('./src/webpack-dev-reporter')({ logger, logWarnings: false }),
     }));
 } else {
     const SERVER_STATS = require('./www/server-assets.json');

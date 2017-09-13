@@ -25,6 +25,7 @@ function makeWebpackConfig({
     numCPUs = require('os').cpus().length || 4
 } = {}) {
     const isDev = environment !== 'production';
+    const isNodemonWatching = process.env.IS_NODEMON_WATCHING;
     const threadPool = HappyPack.ThreadPool({ size: numCPUs });
     const options = {
         type, isDev,
@@ -152,9 +153,10 @@ function makeWebpackConfig({
                 },
             ],
         },
-        plugins: [
+        plugins: (isNodemonWatching ? [] : [
+            new ProgressBarPlugin({ clear: false })
+        ]).concat([
             new webpack.NoEmitOnErrorsPlugin(),
-            new ProgressBarPlugin({ clear: false, }),
             new webpack.ProvidePlugin({ React: 'react' }),
             new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
             new AssetsPlugin({
@@ -174,8 +176,9 @@ function makeWebpackConfig({
                 `${statsPath}/${type}-stats.json`,
                 { chuckModules: true, chucks: true, timings: true }
             )
-        ]
+        ])
     };
+
 
     if (isDev) {
         baseConfig.plugins.push(new WriteFilePlugin({ log: false }));
