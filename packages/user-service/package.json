@@ -7,8 +7,7 @@
     "start": "pm2 start micro --name 'user-service' -- ./src/index.js",
     "dev": "NODE_ENV=DEVELOPMENT micro src/index.js",
     "restart": "pm2 restart user-service",
-    "start:dev": "micro src/index.js",
-    "test": "NODE_ENV=TEST jest",
+    "test": "NODE_ENV=TEST jest --verbose --watchAll",
     "migrate:make": "knex migrate:make",
     "migrate:latest": "knex migrate:latest"
   },
@@ -27,11 +26,8 @@
   },
   "devDependencies": {
     "chai": "^4.1.2",
-    "chai-http": "^3.0.0",
     "jest": "^21.0.1",
-    "microrouter-test-server": "^1.0.1",
     "request": "^2.81.0",
-    "sqlite3": "^3.1.10",
     "test-listen": "^1.0.2"
   }
 }
