@@ -34,6 +34,7 @@ module.exports = (config) => {
     },
 
     junitReporter: {
+      outputFile: 'report.xml',
       outputDir: junitCoverageDir
     },
 

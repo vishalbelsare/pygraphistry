@@ -1,0 +1,15 @@
+**/*
+!src
+!tests
+!tools
+!config
+!kernels
+!textures
+!browserslist
+
+!package.json
+
+!index.js
+!config.js
+!config.schema.js
+!postcss.config.js
