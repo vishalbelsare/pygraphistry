@@ -41,13 +41,13 @@ export function layout(path, base) {
             route: `${base}['layout'].settings[{keys}]`
         }, {
             get: getValues,
-            route: `${base}['layout'].options[{keys}]`
-        }, {
-            get: getValues,
             route: `${base}['layout'].options[{keys}][{keys}]`
         }, {
+            get: getValues,
+            route: `${base}['layout'].options[{keys}][{keys}][{keys}]`
+        }, {
             set: setLayoutOptionValues,
-            route: `${base}['layout'].options[{keys}].value`
+            route: `${base}['layout'].options[{keys}][{keys}].value`
         }];
     }
 }

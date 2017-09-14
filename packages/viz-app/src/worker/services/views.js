@@ -1,7 +1,7 @@
 import Color from 'color';
 import { Observable } from 'rxjs/Observable';
 import { view as createView } from 'viz-app/models/views';
-import { ref as $ref, atom as $atom } from '@graphistry/falcor-json-graph';
+import { $ref, $atom } from '@graphistry/falcor-json-graph';
 import {
     overrideLayoutOptionParams,
     toClient as fromLayoutAlgorithms
@@ -94,8 +94,8 @@ function assignViewToWorkbook(workbook, view) {
 
 function assignNBodyToView(workbook, nBody, view) {
 
-    const { scene, layout, layout: { options }} = view;
-    const { simulator: { controls, controls: { layoutAlgorithms } }} = nBody;
+    const { scene, layout } = view;
+    const { simulator: { controls }} = nBody;
 
     if (!view.nBody) {
         nBody.view = view;
@@ -116,21 +116,15 @@ function assignNBodyToView(workbook, nBody, view) {
         scene.simulating = false;
         scene.renderer.background.color = background;
 
-        if (options.length === 0) {
-            const optionsPath = `workbooksById['${workbook.id}']
-                                .viewsById['${view.id}']
-                                .layout.options`;
-            layout.options = ([]
-                .concat(fromLayoutAlgorithms(layoutAlgorithms))
-                .reduce((options, { name, params }) => {
-                    options.name = name;
-                    options.id = name.toLowerCase();
-                    return { ...options, ...toControls(optionsPath, params) };
-                }, options)
-            );
-        } else {
-            layout.options = overrideLayoutOptionParams(controls, layout.options);
-        }
+        const { controlsName } = controls;
+        const layoutAlgorithms = fromLayoutAlgorithms(controls.layoutAlgorithms);
+
+        layout.settings = layoutAlgorithms.map(({ name }) =>
+            $ref(`workbooksById['${workbook.id
+                  }'].viewsById['${view.id
+              }'].layout.options['${name.toLowerCase()}']`));
+
+        layout.options = mergeLayoutControlsAndOptions(controlsName, layoutAlgorithms, layout.options || []);
     }
 
     return view;
@@ -142,21 +136,57 @@ const controlLeafKeys = {
     name: true, value: true
 };
 
-function toControls(options, params) {
-    return params.reduce((controls, control, index) => {
+function mergeLayoutControlsAndOptions(controlsName, layoutAlgorithms, viewLayoutOptions) {
 
-        const { type, value } = control;
-        const id = control.id || control.name;
-        const name = control.displayName || control.name;
-        const props = Object.keys(control).filter((name) => !(
-                name in controlLeafKeys
-            ))
-            .reduce((props, key) => ((
-                props[key] = control[key]) &&
-                props || props), {});
+    function reduceToMapById(map, val) {
+        if (val && typeof val === 'object') {
+            map[val.id || val.name] = val;
+        }
+        return map;
+    }
 
-        controls[index] = { id, name, type, props, value };
+    const isLockedRControls = controlsName === 'lockedAtlasBarnesR';
+    const isLockedXYControls = controlsName === 'lockedAtlasBarnesXY';
+    const isLockedXControls = isLockedXYControls || controlsName === 'lockedAtlasBarnesX';
+    const isLockedYControls = isLockedXYControls || controlsName === 'lockedAtlasBarnesY';
 
-        return controls;
-    }, { length: params.length });
+    return layoutAlgorithms.reduce((options, layoutAlgorithm) => {
+
+        const { name: layoutAlgoName, params: layoutAlgoParams } = layoutAlgorithm;
+        const layoutAlgoId = layoutAlgoName.toLowerCase();
+        const layoutOptionsById = Array.from(
+            (layoutAlgoId in viewLayoutOptions)
+                ? viewLayoutOptions[layoutAlgoId]
+                : 'length' in viewLayoutOptions
+                    ? viewLayoutOptions
+                    : []
+        ).reduce(reduceToMapById, Object.create(null));
+
+        options[layoutAlgoId] = layoutAlgoParams.reduce((layoutOptions, control) => {
+            let option, { type, value, name, displayName, id = name } = control;
+            if (!(option = layoutOptionsById[id])) {
+                option = {
+                    id, type,
+                    name: displayName || name,
+                    props: Object
+                        .keys(control)
+                        .filter((x) => !(x in controlLeafKeys))
+                        .reduce((xs, x) => (xs[x] = control[x]) && xs || xs, Object.create(null))
+                };
+            } else if (id === 'lockedR') {
+                value = isLockedRControls;
+            } else if (id === 'lockedX') {
+                value = isLockedXControls;
+            } else if (id === 'lockedY') {
+                value = isLockedYControls;
+            } else {
+                value = option.value;
+            }
+            option.value = value;
+            layoutOptions[layoutOptions.length++] = option;
+            return layoutOptions;
+        }, { length: 0, id: layoutAlgoId, name: layoutAlgoName });
+
+        return options;
+    }, {});
 }

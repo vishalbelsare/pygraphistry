@@ -114,8 +114,7 @@ function atlasControls(algo) {
         dissuadeHubs: new BoolParam('Dissuade Hubs', false),
         linLog: new BoolParam('Strong Separation (LinLog)', false),
         lockedX: new BoolParam('Locked X coordinates', false),
-        lockedY: new BoolParam('Locked Y coordinates', false),
-        lockedR: new BoolParam('Locked radius', false)
+        lockedY: new BoolParam('Locked Y coordinates', false)
     };
 
     return {
@@ -234,27 +233,6 @@ export function fromClient(controls, simControls) {
         }));
         return [algoName, cfg];
     }));
-}
-
-export function overrideLayoutOptionParams(controls, viewLayoutOptions) {
-    let layoutOptions = null;
-    switch (controls.controlsName) {
-        case 'lockedAtlasBarnesX':
-            layoutOptions = Array.from(viewLayoutOptions).filter((option) => option.id === 'lockedX');
-            break;
-        case 'lockedAtlasBarnesY':
-            layoutOptions = Array.from(viewLayoutOptions).filter((option) => option.id === 'lockedY');
-            break;
-        case 'atlasbarnes':
-        case 'lockedAtlasBarnesXY':
-            layoutOptions = Array.from(viewLayoutOptions).filter((option) => option.id === 'lockedX' || option.id === 'lockedY');
-            break;
-    }
-    if (layoutOptions) {
-        layoutOptions.forEach((option) =>
-            option.value = controls.controlsName !== 'atlasbarnes');
-    }
-    return viewLayoutOptions;
 }
 
 // export {
