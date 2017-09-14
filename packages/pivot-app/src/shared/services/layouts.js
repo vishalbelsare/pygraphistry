@@ -8,7 +8,7 @@ export const layouts = [
                          friendlyName: "Force Directed"// Layout"
                         },
                         {id: "insideout",
-                         controls: "lockedAtlasBarnesXY",
+                         controls: "lockedAtlasBarnesR",
                          friendlyName: "Network Map"// Layout"
                         },
                         ];
@@ -18,7 +18,6 @@ export const uiTweaks = {
     insideout: {
         showArrows: false,
         showPointsOfInterest: true,
-        play: 0,
     },
     stackedBushyGraph: {
         showArrows: false,
