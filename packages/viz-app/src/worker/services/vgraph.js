@@ -60,7 +60,6 @@ function loadAndUnpackVGraph(config, s3Cache, updateSession) {
 function loadVGraphJSON(nBody, { metadata: dataset, body: buffer }, config, s3Cache) {
     const json = JSON.parse(buffer.toString('utf8'));
     const datasource = json.datasources[0];
-    console.error('JSON-META: ' + JSON.stringify(json));
     nBody.dataset = {
         ...dataset,
         ...json, type: 'vgraph',
@@ -82,9 +81,19 @@ function loadDataFrameAndUpdateBuffers({ view }) {
     dataframe.loadDegrees(outDegrees, inDegrees);
     dataframe.loadEdgeDestinations(unsortedEdges);
 
-    if (options && options.length) {
-        Array.from(options).forEach((control) => {
-            if (control && control.props) {
+    layoutAlgorithms.forEach((algo) => {
+        const layoutAlgoName = algo.algoName;
+        Array.from(
+            layoutAlgoName in options
+                ? options[layoutAlgoName]
+                : 'length' in options
+                    ? options
+                    : []
+            )
+            .filter((control) => control &&
+                                 control.props &&
+                                 control.props.algoName === layoutAlgoName)
+            .forEach((control) => {
                 const { id, value, props: { algoName }} = control;
                 nBody.updateSettings({
                     simControls: {
@@ -93,9 +102,8 @@ function loadDataFrameAndUpdateBuffers({ view }) {
                         }
                     }
                 });
-            }
-        });
-    }
+            });
+    });
 
     // Tell all layout algorithms to load buffers from dataframe, now that
     // we're about to enable ticking

@@ -158,12 +158,18 @@ function lockedAtlasControlsY(aC) {
     return { ...aC, controlsName: 'lockedAtlasBarnesY' };
 }
 
+function lockedAtlasControlsR(aC) {
+    aC.layoutAlgorithms[0].params.lockedR = new BoolParam('Locked radius', true);
+    return { ...aC, controlsName: 'lockedAtlasBarnesR' };
+}
+
 export var controls = {
     'default':      [atlasControls(ForceAtlas2)],
     //'gis':         [uberControls],
     'lockedAtlasBarnesXY': [lockedAtlasControlsXY(atlasControls(ForceAtlas2))],
     'lockedAtlasBarnesX': [lockedAtlasControlsX(atlasControls(ForceAtlas2))],
     'lockedAtlasBarnesY': [lockedAtlasControlsY(atlasControls(ForceAtlas2))],
+    'lockedAtlasBarnesR': [lockedAtlasControlsR(atlasControls(ForceAtlas2))],
     'atlasbarnes':  [atlasControls(ForceAtlas2)]
 };
 
@@ -227,27 +233,6 @@ export function fromClient(controls, simControls) {
         }));
         return [algoName, cfg];
     }));
-}
-
-export function overrideLayoutOptionParams(controls, viewLayoutOptions) {
-    let layoutOptions = null;
-    switch (controls.controlsName) {
-        case 'lockedAtlasBarnesX':
-            layoutOptions = Array.from(viewLayoutOptions).filter((option) => option.id === 'lockedX');
-            break;
-        case 'lockedAtlasBarnesY':
-            layoutOptions = Array.from(viewLayoutOptions).filter((option) => option.id === 'lockedY');
-            break;
-        case 'atlasbarnes':
-        case 'lockedAtlasBarnesXY':
-            layoutOptions = Array.from(viewLayoutOptions).filter((option) => option.id === 'lockedX' || option.id === 'lockedY');
-            break;
-    }
-    if (layoutOptions) {
-        layoutOptions.forEach((option) =>
-            option.value = controls.controlsName !== 'atlasbarnes');
-    }
-    return viewLayoutOptions;
 }
 
 // export {

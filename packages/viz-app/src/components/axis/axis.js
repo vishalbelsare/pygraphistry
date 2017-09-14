@@ -38,11 +38,11 @@ class AxisReact extends React.Component {
 
     	const { renderState: { camera, canvas }, sizes = [], encodings } = this.props;
 
-        const axis = 
+        const axis =
             encodings && encodings.point && encodings.point.axis && encodings.point.axis.rows
             || [];
 
-    	
+
         const pixelRatio = camera.pixelRatio;
         const scalingFactor = camera.semanticZoom(sizes.length || 0);
         const matrix = camera.getMatrix();
@@ -75,14 +75,15 @@ class AxisReact extends React.Component {
                     const yCenter = (yMin + yMax) / 2;
 
                     return (
-                        <div className={styles['fullscreen']} >
+                        <div key={`key_${i}`}
+                             className={styles['fullscreen']}>
                             <div className={styles['roundbox']} style={{
                                 'height': `${Math.round(h)}px`,
                                 'width': `${Math.round(w)}px`,
                                 'left': `${Math.round(xMin)}px`,
                                 'top': `${Math.round(yMax)}px`
                             }}>
-                                <svg key={`key_${i}`} xmlns="http://www.w3.org/2000/svg" viewBox={`${xMin} ${yMax} ${w} ${h}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox={`${xMin} ${yMax} ${w} ${h}`}>
                                     <g stroke="#aaaaaa">
                                         <circle cx={xCenter} cy={yCenter} r={w / 2} strokeWidth="1" strokeLinecap="round" strokeDasharray={label ? "1, 3" : "1, 6"} fillOpacity="0"></circle>
                                     </g>
@@ -95,9 +96,9 @@ class AxisReact extends React.Component {
         }</div>);
 
     }
-    
 
-}	
+
+}
 
 
 const WithCamera = mapPropsStream((props) => props

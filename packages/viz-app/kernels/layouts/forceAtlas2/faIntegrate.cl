@@ -27,6 +27,10 @@ __kernel void faIntegrate (
     debug4("Speed (%d) %f max: %f\n", n1Idx, speed, maxSpeed);
     debug4("Delta (%d) %f\t%f\n", n1Idx, delta.x, delta.y);
 
-    outputPositions[n1Idx] = inputPositions[n1Idx] + delta;
+    float2 newPosition = inputPositions[n1Idx] + delta;
+
+    float radiusMultiplier = IS_LOCKED_R(flags) * (length(inputPositions[n1Idx]) / length(newPosition)) + (1 - IS_LOCKED_R(flags)) * 1;
+
+    outputPositions[n1Idx] = newPosition * radiusMultiplier;
     return;
 }
