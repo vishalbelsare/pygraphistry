@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 const chai = require('chai');
 const should = chai.should();
 const routes = require('../../src/routing');
@@ -23,15 +24,17 @@ describe('Route integration test', () => {
   afterAll(async done => {
     await server.close();
     const knex = getConnection();
-    knex.migrate.rollback()
+    knex.migrate
+      .rollback()
       .then(() => knex.destroy())
       .then(() => done());
-  })
+  });
 
   beforeEach(async done => {
     cookiejar = rp.jar();
     const knex = getConnection();
-    return knex.migrate.rollback()
+    return knex.migrate
+      .rollback()
       .then(() => knex.migrate.latest())
       .then(() => knex.seed.run())
       .then(() => knex.destroy())
@@ -60,10 +63,9 @@ describe('Route integration test', () => {
         json: true,
         body: { username: 'myk', password: 'graphs4lyfe' },
         resolveWithFullResponse: true
-      })
+      });
 
-      const setCookieHeaders = loginResponse
-        .headers['set-cookie']
+      const setCookieHeaders = loginResponse.headers['set-cookie']
         .map(Cookie.parse)
         .forEach(cookie => cookiejar.setCookie(cookie, url));
 
@@ -79,9 +81,7 @@ describe('Route integration test', () => {
       expect(currentUser.password).toBe(undefined);
     });
 
-    it('returns null if nobody is logged in', () => {
-
-    });
+    it('returns null if nobody is logged in', () => {});
   });
 
   describe('GET /:id', async () => {
@@ -99,7 +99,7 @@ describe('Route integration test', () => {
         method: 'put',
         uri: `${url}/1`,
         json: true,
-        body: { username: 'mykola' },
+        body: { username: 'mykola' }
       });
 
       expect(initialRequest.id).toBe(1);
@@ -109,7 +109,7 @@ describe('Route integration test', () => {
 
       expect(updatedUser.id).toBe(1);
       expect(updatedUser.username).toBe('mykola');
-    })
+    });
   });
 
   describe('POST /login', async () => {
@@ -120,7 +120,7 @@ describe('Route integration test', () => {
         json: true,
         body: { username: 'myk', password: 'graphs4lyfe' },
         resolveWithFullResponse: true
-      })
+      });
 
       expect(loginResponse.statusCode).toBe(200);
       expect(loginResponse.headers['set-cookie'].length).toBe(1);
@@ -148,12 +148,8 @@ describe('Route integration test', () => {
   });
 
   describe('POST /logout', async () => {
-    it('should clear the auth token from the response', () => {
+    it('should clear the auth token from the response', () => {});
 
-    });
-
-    it('should remove the user session from the session store', () => {
-
-    });
+    it('should remove the user session from the session store', () => {});
   });
 });
