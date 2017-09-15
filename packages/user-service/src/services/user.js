@@ -17,7 +17,7 @@ const getUserByUsername = username => new Promise((resolve, reject) => {
   const knex = getDatabaseConnection();
 
   knex('users')
-    .where({username})
+    .where({ username })
     .first()
     .then(user => knex.destroy() && resolve(user))
     .catch(e => knex.destroy && reject(e));
@@ -25,7 +25,7 @@ const getUserByUsername = username => new Promise((resolve, reject) => {
 
 const getUserById = id => new Promise((resolve, reject) => {
   const knex = getDatabaseConnection();
-
+  // TODO: can we do prepared statements with knex?
   return knex('users')
     .where({ id: parseInt(id) })
     .returning(['id', 'username', 'admin'])
@@ -35,7 +35,7 @@ const getUserById = id => new Promise((resolve, reject) => {
       if (!result) {
         throw new Error("No user found with id " + id);
       }
-      return resolve(result)
+      return resolve(result);
     })
     .catch(e => knex.destroy() && reject(e));
 });
