@@ -570,6 +570,7 @@ function getNumWorkitemsByHardware(deviceProps) {
         sizes.computeSums[0] = 6;
         sizes.sort[0] = 8;
     } else if (deviceProps.NAME.indexOf('M290X') != -1 ||
+	       deviceProps.NAME.indexOf('AMD Radeon Pro 455') != -1 ||
                deviceProps.NAME.indexOf('AMD Radeon Pro 560') != -1) {
         sizes.buildTree[0] = 1;
         sizes.computeSums[0] = 1; //6;
