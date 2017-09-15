@@ -3,7 +3,7 @@ import logger from '../../../../logger';
 const log = logger.createLogger(__filename);
 
 import { SplunkPivot } from '../splunkPivot';
-import { splunkAttributesBlacklist } from '../settings.js';
+import { attributesBlacklist as splunkAttributesBlacklist } from '../settings.js';
 
 
 

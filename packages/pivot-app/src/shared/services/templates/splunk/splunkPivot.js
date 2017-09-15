@@ -7,7 +7,7 @@ const log = logger.createLogger(__filename);
 import { PivotTemplate } from '../template.js';
 import { splunkConnector0 } from '../../connectors';
 import { shapeResults } from '../../shapeResults.js';
-import { splunkFieldsBlacklist, splunkEntitiesBlacklist, splunkAttributesBlacklist } from './settings.js';
+import { fieldsBlacklist, entitiesBlacklist, attributesBlacklist as attributesBlacklistSettings } from './settings.js';
 import { expandArrow } from './expandHelper.js';
 
 export class SplunkPivot extends PivotTemplate {
@@ -17,10 +17,10 @@ export class SplunkPivot extends PivotTemplate {
         const { toSplunk, connections, encodings, attributes, connectionsBlacklist, attributesBlacklist } = pivotDescription;
         this.toSplunk = toSplunk;
         this.connections = connections;
-        this.connectionsBlacklist = connectionsBlacklist || splunkEntitiesBlacklist;
+        this.connectionsBlacklist = connectionsBlacklist || entitiesBlacklist;
         this.encodings = encodings;
         this.attributes = attributes;
-        this.attributesBlacklist = attributesBlacklist || splunkAttributesBlacklist;
+        this.attributesBlacklist = attributesBlacklist || attributesBlacklistSettings;
         this.connector = splunkConnector0;
     }
 
@@ -117,9 +117,10 @@ export class SplunkPivot extends PivotTemplate {
     }
 
     //Assumes previous pivots have populated pivotCache
-    expandTemplate(text, pivotCache) {
+    //DEPRECATED, USE expand::expand()
+    expandTemplate(text, pivotCache, colMatch, matchAttributes) {
         log.debug({toExpand: text}, 'Expanding');
-        return expandArrow(text, pivotCache);
+        return expandArrow(text, pivotCache, colMatch, matchAttributes);
     }
 
     constructFieldString() {        
@@ -141,7 +142,7 @@ export class SplunkPivot extends PivotTemplate {
             //all fields
             return `
                 ${base} 
-                | fields - ${splunkFieldsBlacklist.join(' ')}`;
+                | fields - ${fieldsBlacklist.join(' ')}`;
         }
     }
 }

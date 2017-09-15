@@ -1,10 +1,9 @@
-import stringhash from 'string-hash';
 import logger from '../../../logger.js';
 const log = logger.createLogger(__filename);
 
 
 import { SplunkPivot } from './splunkPivot.js';
-import { splunkDesiredAttributes } from './settings.js';
+import { desiredAttributes, encodings } from './settings.js';
 
 
 export const searchSplunk = new SplunkPivot({
@@ -23,14 +22,14 @@ export const searchSplunk = new SplunkPivot({
             name: 'fields',
             inputType: 'multi',
             label: 'Entities:',
-            options: splunkDesiredAttributes.map(x => ({id:x, name:x})),
+            options: desiredAttributes.map(x => ({id:x, name:x})),
             defaultValue: []
         },
         {
             name: 'attributes',
             inputType: 'multi',
             label: 'Attributes:',
-            options: splunkDesiredAttributes.map(x => ({id:x, name:x}))
+            options: desiredAttributes.map(x => ({id:x, name:x}))
         },        
         {
             name: 'time',
@@ -53,11 +52,5 @@ export const searchSplunk = new SplunkPivot({
             searchParams: this.dayRangeToSplunkParams((args.time||{}).value, time) 
         };
     },
-    encodings: {
-        point: {
-            pointColor: (node) => {
-                node.pointColor = stringhash(node.type) % 12;
-            }
-        }
-    }
+    encodings
 });

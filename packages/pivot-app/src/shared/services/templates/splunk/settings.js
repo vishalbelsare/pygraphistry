@@ -1,29 +1,78 @@
-//http://docs.splunk.com/Documentation/Splunk/6.6.2/Data/Aboutdefaultfields
-export const splunkDefaultFields = [
+//import stringhash from 'string-hash';
 
-    '_raw', '_time', '_indextime', '_cd',
+import { colTypes, desiredEntities } from './vendors/index.js';
 
-    'host', 'index', 'linecount', 'punct', 'source', 'sourcetype', 'splunk_server', 'timestamp',
+import { colorShorthands, typeColors as typesToColors } from './colors.js';
 
-    'date_hour', 'date_mday', 'date_minute', 'date_month', 'date_second', 'date_wday', 'date_year', 'date_zone',
+export * from './vendors/index.js';
 
-    //undocumented
-    '_bkt', '_indextime', '_kv', '_serial', '_si', '_sourcetype', '_title',
-    'dvc', 'file', 'eventtype', 'splunk_server_group'
+export const typesToSizes = {		
+	'alert': 9.9,
+	'event': 2.0,
+	'file': 9.9,
+	'geo': 9.9,
+	'hash': 9.9,
+	'id': 9.9,
+	'ip': 9.9,
+	'mac': 9.9,
+	'tag': 9.9,
+	'url': 9.9,
+	'user': 9.9
+};
 
-];
+export const typesToIcons = {
+	'alert': 'bell',
+	'event': 'exclamation-circle',
+	'file': 'file',
+	'geo': 'globe',
+	'hash': 'hashtag',
+	'id': 'barcode',
+	'ip': 'laptop',
+	'mac': 'laptop',
+	'tag': 'tag',
+	'url': 'globe',
+	'user': 'user'
+};
 
+export const typeColors = 
+	desiredEntities.reduce((acc, col) => {		
+			acc[col] = typesToColors[colTypes[col]];
+			if (acc[col] === undefined) {
+				acc[col] = colorShorthands.gray;
+			}
+			return acc;
+		}, {});
+export const typeSizes = 
+	desiredEntities.reduce((acc, col) => {		
+			acc[col] = typesToSizes[colTypes[col]];
+			if (acc[col] === undefined) {
+				acc[col] = 2;
+			}
+			return acc;
+		}, {});
+export const typeIcons = 
+	desiredEntities.reduce((acc, col) => {		
+			acc[col] = typesToIcons[colTypes[col]];
+			return acc;
+		}, {});
 
-//TODO make configurable
-export const splunkDesiredAttributes = [
-    '_time', '_indextime', '_raw', 'host', 'index', 'source', 'file', 'sourcetype', 'date_zone'
-];
-//subset of attributes
-export const splunkDesiredEntities = [
-	'host', 'index', 'source'
-];
-
-
-export const splunkFieldsBlacklist = splunkDefaultFields.filter(x => splunkDesiredAttributes.indexOf(x) === -1);
-export const splunkAttributesBlacklist = splunkDefaultFields.filter(x => splunkDesiredAttributes.indexOf(x) === -1);
-export const splunkEntitiesBlacklist = splunkDefaultFields.filter(x => splunkDesiredEntities.indexOf(x) === -1);
+export const encodings = {
+    point: {
+        pointColor: (node) => {
+            node.pointColor = typeColors[node.type];
+            if (node.pointColor === undefined) {
+                //node.pointColor = stringhash(node.type) % 12;
+                node.pointColor = colorShorthands.gray;
+            }
+        },
+        pointSizes: function(node) {
+            node.pointSize = typeSizes[node.type];
+            if (node.pointSize === undefined) {
+                node.pointSize = 2.0;
+            }
+        },
+        pointIcon: function (node) {
+            node.pointIcon = typeIcons[node.type];
+        }
+    }
+}

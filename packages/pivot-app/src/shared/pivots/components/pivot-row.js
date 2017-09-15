@@ -50,8 +50,8 @@ function DescriptionPanel({ $falcor, description, ...props }) {
 }
 
 function ParameterPanel({ $falcor, id, pivotTemplate, pivotParameters, pivots, handlers, rowIndex, ...props}) {
-    const previousPivots = pivots.slice(0, rowIndex);
-    const { pivotParametersUI, pivotParameterKeys } = pivotTemplate;
+    const previousPivots = (pivots || []).slice(0, rowIndex);
+    const { pivotParametersUI, pivotParameterKeys } = pivotTemplate || {};
     return (
         <PivotPanel header='Parameters' {...props}>
             <Form horizontal className={classNames({

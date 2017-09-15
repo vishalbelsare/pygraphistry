@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import Select from 'react-select';
+import RcSwitch from 'rc-switch';
 import styles from './pivots.less';
 import mapPropsStream from 'recompose/mapPropsStream';
 import createEventHandler from 'recompose/createEventHandler';
@@ -18,16 +19,16 @@ const cellLabelCols = {
 };
 const cellContentCols = {
     // xs: 9, xsOffset: 0,
-    sm: 9, smOffset: 0,
-    md: 9, mdOffset: 0,
-    lg: 9, lgOffset: 0
+    sm: 9,
+    md: 9,
+    lg: 9,
 };
 const cellFullCols = {
     style: { textAlign: 'left' },
-    // xs: cellLabelCols.xs + cellContentCols.xs + cellContentCols.xsOffset,
-    sm: cellLabelCols.sm + cellContentCols.sm + cellContentCols.smOffset,
-    md: cellLabelCols.md + cellContentCols.md + cellContentCols.mdOffset,
-    lg: cellLabelCols.lg + cellContentCols.lg + cellContentCols.lgOffset,
+    // xs: cellLabelCols.xs + cellContentCols.xs,
+    sm: cellLabelCols.sm + cellContentCols.sm,
+    md: cellLabelCols.md + cellContentCols.md,
+    lg: cellLabelCols.lg + cellContentCols.lg,
 };
 
 const createPivotCellOnChangeContainer = (changeHandler) => mapPropsStream((propsStream) => {
@@ -72,6 +73,7 @@ const setPivotComboAttributes = createPivotCellOnChangeContainer(
 
 const componentsByInputType = {
     label: Label,
+    bool: BoolCell,
     daterange: DateRange,
     text: setPivotCellAttributes(TextCell),
     number: setPivotCellAttributes(TextCell),
@@ -140,15 +142,21 @@ function TextareaCell({ id, paramKey, paramValue, paramUI, onChange }) {
 // and the list of options and parse then back when updating the falcor model.
 function PivotCombo({ id, paramKey, paramValue, paramUI, previousPivots, onChange }) {
 
-    let selectedPivotId, options;
-    if (previousPivots.length <= 0) {
-        selectedPivotId = allPivotsIdValue;
-        options = [{ value: allPivotsIdValue, label: 'All Pivots' }];
+    let options, selectedPivotId;
+    if (!paramValue || !paramValue[0]) {
+        selectedPivotId = '';
+    } else if (paramValue.length === 1) {
+        selectedPivotId = paramValue[0];
     } else {
-        selectedPivotId = paramValue && paramValue[0] || '';
-        options = previousPivots.map(({ id, pivotTemplate }, index) => ({
-            value: id, label: `Pivot ${index + 1} (${pivotTemplate.name})`
-        }));
+        selectedPivotId = allPivotsIdValue;
+    }
+
+    options = (previousPivots || []).map(({ id, pivotTemplate }, index) => ({
+        value: id, label: `Pivot ${index + 1} (${pivotTemplate.name})`
+    }));
+
+    if (options.length > 1) {
+        options = [{ value: allPivotsIdValue, label: 'All Pivots' }, ...options];
     }
 
     return (
@@ -181,6 +189,20 @@ function ComboCell({ id, paramKey, paramValue, paramUI, onChange }) {
                     </option>
                 ))}
                 </FormControl>
+            </Col>
+        </FormGroup>
+    );
+}
+
+function BoolCell({ id, paramKey, paramValue, paramUI, onChange }) {
+    return (
+        <FormGroup className={styles['pivot-bool-param']}
+                   controlId={`pivot-bool-param-${id}-${paramKey}`}>
+            <Col {...cellFullCols}>
+                <RcSwitch onChange={onChange}
+                          defaultChecked={paramValue}
+                          checkedChildren={paramUI.label}
+                          unCheckedChildren={paramUI.label}/>
             </Col>
         </FormGroup>
     );

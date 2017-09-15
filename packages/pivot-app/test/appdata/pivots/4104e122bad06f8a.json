@@ -1,0 +1,20 @@
+{
+    "id": "4104e122bad06f8a",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [],
+        "expand-splunk-plain$$$ref": [
+            "40ff607091cb3846"
+        ],
+        "expand-splunk-plain$$$filter": "vendor=\"Palo Alto Networks\"  index=jerry-7sept ",
+        "expand-splunk-plain$$$pivotFields": [
+            "src",
+            "smac"
+        ],
+        "expand-splunk-plain$$$matchAttributes": false,
+        "expand-splunk-plain$$$colMatch": false,
+        "expand-splunk-plain$$$fields": []
+    },
+    "pivotTemplate": "expand-splunk-plain"
+}

@@ -1,0 +1,9 @@
+{
+    "id": "40ff607091cb3846",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "index=jerry-7sept externalId=3831559",
+        "search-splunk-plain$$$fields": []
+    },
+    "pivotTemplate": "search-splunk-plain"
+}

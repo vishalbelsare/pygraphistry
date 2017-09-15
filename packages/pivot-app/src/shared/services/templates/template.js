@@ -6,7 +6,7 @@ const log = logger.createLogger(__filename);
 export const FIELD_OVERRIDE_WHITELIST = ['id', 'name', 'parameters', 'tags'];
 export const PARAM_OVERRIDE_WHITELIST = ['placeholder', 'options', 'isVisible', 'label', 'defaultValue'];
 export const PIVOT_KINDS = 
-    ['text', 'number', 'textarea', 'combo', 'multi', 'daterange', 'pivotCombo', 'label']
+    ['bool', 'text', 'number', 'textarea', 'combo', 'multi', 'daterange', 'pivotCombo', 'label']
     .reduce((o,fld) => { o[fld] = true; return o; }, {});
 
 

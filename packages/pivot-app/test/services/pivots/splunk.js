@@ -4,6 +4,10 @@ import moment from 'moment-timezone';
 
 import { SplunkPivot } from '../../../src/shared/services/templates/splunk/splunkPivot';
 import { searchSplunk } from '../../../src/shared/services/templates/splunk/search';
+import { 
+    colTypes, typeColors, typeSizes, typeIcons,
+    typesToSizes, typesToIcons } from '../../../src/shared/services/templates/splunk/settings';
+import { colorShorthands, typeColorsAliases } from '../../../src/shared/services/templates/splunk/colors';
 
 const timezoneV = "America/Los_Angeles";
 const timezoneGuyanaV = "America/Guyana";
@@ -30,6 +34,7 @@ const toDateStr = moment(toDateUnix * 1000).format();
 
 
 require('./splunk/expandHelper.js');
+require('./splunk/expand.js');
 
 describe('Splunk:dayRangeToSplunkParams', function () {
 
@@ -127,6 +132,32 @@ describe('Splunk:toSplunk', function () {
                     from: { date: dateJSON, time: timeJSON },
                     to: { date: dateJSON, time: timeJSON }
                 } } });
+    });
+
+});
+
+describe('Splunk:Encodings', function () {
+
+    it('combines types', function () {
+        assert.deepEqual(colTypes['dmac'], 'mac');
+    });
+
+    it('combines colors', function () {
+        assert.deepEqual(
+            typeColors['dmac'], 
+            colorShorthands[typeColorsAliases['mac']]);
+    });
+
+    it('combines sizes', function () {
+        assert.deepEqual(
+            typeSizes['dmac'],
+            typesToSizes['mac']);
+    });
+
+    it('combines icons', function () {
+        assert.deepEqual(
+            typeIcons['dmac'],
+            typesToIcons['mac']);
     });
 
 });

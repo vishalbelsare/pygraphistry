@@ -1,0 +1,27 @@
+{
+    "id": "40ff8bcddff38b40",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "index=jerry-7sept product!=\"Web MPS\" | head 10",
+        "search-splunk-plain$$$fields": [],
+        "expand-splunk-plain$$$ref": [
+            "40ff607091cb3846"
+        ],
+        "expand-splunk-plain$$$filter": " index=jerry-7sept ",
+        "expand-splunk-plain$$$pivotFields": [
+            "rule",
+            "threat_name",
+            "devicePayloadId",
+            "dest",
+            "dest_mac",
+            "externalId",
+            "fileHash",
+            "filePath",
+            "fname"
+        ],
+        "expand-splunk-plain$$$matchAttributes": false,
+        "expand-splunk-plain$$$colMatch": false,
+        "expand-splunk-plain$$$fields": []
+    },
+    "pivotTemplate": "expand-splunk-plain"
+}
