@@ -1,7 +1,7 @@
-const getConfig = require('../../knexfile');
+const configOptions = require('../../knexfile');
 const Knex = require('knex');
 
 module.exports = (env = process.env.NODE_ENV) => {
-  const config = getConfig(env);
+  const config = configOptions[env];
   return Knex(config);
 }

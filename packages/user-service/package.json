@@ -7,9 +7,13 @@
     "start": "pm2 start micro --name 'user-service' -- ./src/index.js",
     "dev": "NODE_ENV=DEVELOPMENT micro src/index.js",
     "restart": "pm2 restart user-service",
-    "test": "NODE_ENV=TEST jest --verbose --watchAll",
-    "migrate:make": "knex migrate:make",
-    "migrate:latest": "knex migrate:latest"
+    "test": "NODE_ENV=TEST jest --watchAll",
+    "test:coverage": "NODE_ENV=TEST jest --coverage",
+    "migrate:make": "NODE_ENV=DEVELOPMENT knex migrate:make",
+    "migrate:latest": "NODE_ENV=DEVELOPMENT knex migrate:latest",
+    "migrate:rollback": "NODE_ENV=DEVELOPMENT knex migrate:rollback",
+    "seed:make": "NODE_ENV=DEVELOPMENT knex seed:make",
+    "seed:run": "NODE_ENV=DEVELOPMENT knex seed:run"
   },
   "author": "@mykola",
   "license": "ISC",
@@ -19,6 +23,9 @@
     "jsonwebtoken": "^8.0.0",
     "knex": "^0.13.0",
     "micro": "^8.0.4",
+    "micro-cookie-session": "^2.0.0-beta.1",
+    "micro-cors": "0.0.4",
+    "micro-visualize": "^3.0.1",
     "microrouter": "^2.2.2",
     "moment": "^2.18.1",
     "pg": "^7.3.0",
@@ -27,7 +34,9 @@
   "devDependencies": {
     "chai": "^4.1.2",
     "jest": "^21.0.1",
+    "prettier": "^1.7.0",
     "request": "^2.81.0",
-    "test-listen": "^1.0.2"
+    "test-listen": "^1.0.2",
+    "tough-cookie": "^2.3.2"
   }
 }

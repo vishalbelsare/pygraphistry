@@ -38,4 +38,4 @@ const configurations = {
   }
 };
 
-module.exports = env => configurations[env.toUpperCase()]
+module.exports = configurations;

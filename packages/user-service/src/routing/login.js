@@ -1,13 +1,21 @@
 const { send, json } = require('micro');
-const db = require('../database');
+const { getUserByUsername, passwordIsValid } = require('../services/user');
+const { login } = require('../services/session');
+const auth = require('../auth/local');
 
-module.exports = async (req, res) => {
+const visualize = require('micro-visualize');
+const microCors = require('micro-cors')
+const cors = microCors({ allowMethods: ['POST'] })
+const Cookie = require('tough-cookie').Cookie;
+
+module.exports = visualize(cors(async (req, res) => {
   const {username, password} = await json(req);
-  const user = await db.login(username, password);
-  if (user) {
-    delete user.password;
-    send(res, 200, user);
-  } else {
-    send(res, 400, 'invalid login');
-  }
-}
+  try {
+    const token = await login(username, password);
+    res.setHeader('Set-Cookie', `session=${token}; HttpOnly;`);
+
+    send(res, 200);   
+  } catch (e) {
+    send(res, 400, e.message);
+  }  
+}), process.env.NODE_ENV === "DEVELOPMENT" ? "dev" : "");
