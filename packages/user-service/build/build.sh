@@ -1,13 +1,11 @@
 #!/bin/bash -ex
 
-cd $(dirname "$0") > /dev/null
+cd $(dirname "$0")/../ > /dev/null
 
-BUILD_TAG=${1:-test-dev}
-CONTAINER_NAME=${2:-graphistry/user-service}
-
-echo "viz-app test.sh args:"
+echo "user-service test.sh args:"
 echo "	build: $BUILD_TAG"
+echo "	container name: $CONTAINER_NAME"
 
-docker build -f build/dockerfiles/Dockerfile-build \
-	--build-arg NODE_ENV=${NODE_ENV} \
+docker build \
+	-f build/dockerfiles/Dockerfile-build \
 	-t ${CONTAINER_NAME}:${BUILD_TAG} .
