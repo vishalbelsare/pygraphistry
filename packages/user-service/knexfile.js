@@ -9,15 +9,7 @@ const {
 } = process.env;
 
 const configurations = {
-  TEST: {
-    client: 'postgresql',
-    connection: `postgresql://${DBUSER}:${DBPASSWORD}@${DBHOST}:${DBPORT}/${DBNAME}-TEST`,
-    migrations: {
-      tableName: 'knex_migrations'
-    }
-  },
-
-  DEVELOPMENT: {
+  test: {
     client: 'postgresql',
     connection: `postgresql://${DBUSER}:${DBPASSWORD}@${DBHOST}:${DBPORT}/${DBNAME}`,
     migrations: {
@@ -25,7 +17,15 @@ const configurations = {
     }
   },
 
-  PRODUCTION: {
+  development: {
+    client: 'postgresql',
+    connection: `postgresql://${DBUSER}:${DBPASSWORD}@${DBHOST}:${DBPORT}/${DBNAME}`,
+    migrations: {
+      tableName: 'knex_migrations'
+    }
+  },
+
+  production: {
     client: 'postgresql',
     connection: `postgresql://${DBUSER}:${DBPASSWORD}@${DBHOST}:${DBPORT}/${DBNAME}`,
     pool: {

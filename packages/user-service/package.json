@@ -1,20 +1,20 @@
 {
-  "name": "graphistry-user-service",
+  "name": "@graphistry/user-service",
   "version": "0.0.1",
   "description": "CRUD for users",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "start": "pm2 start micro --name 'user-service' -- ./src/index.js",
-    "dev": "NODE_ENV=DEVELOPMENT micro src/index.js",
+    "dev": "NODE_ENV=development micro src/index.js",
     "restart": "pm2 restart user-service",
-    "test": "NODE_ENV=TEST jest --watchAll",
-    "test:coverage": "NODE_ENV=TEST jest --coverage",
-    "test:ci": "NODE_ENV=TEST jest --ci",
-    "migrate:make": "NODE_ENV=DEVELOPMENT knex migrate:make",
-    "migrate:latest": "NODE_ENV=DEVELOPMENT knex migrate:latest",
-    "migrate:rollback": "NODE_ENV=DEVELOPMENT knex migrate:rollback",
-    "seed:make": "NODE_ENV=DEVELOPMENT knex seed:make",
-    "seed:run": "NODE_ENV=DEVELOPMENT knex seed:run"
+    "test": "NODE_ENV=test DBNAME=graphistry-test jest --watchAll",
+    "test:coverage": "NODE_ENV=test DBNAME=graphistry-test jest --coverage",
+    "test:ci": "jest --ci",
+    "migrate:make": "NODE_ENV=development knex migrate:make",
+    "migrate:latest": "NODE_ENV=development knex migrate:latest",
+    "migrate:rollback": "NODE_ENV=development knex migrate:rollback",
+    "seed:make": "NODE_ENV=development knex seed:make",
+    "seed:run": "NODE_ENV=development knex seed:run"
   },
   "jest": {
     "testResultsProcessor": "jest-junit"
