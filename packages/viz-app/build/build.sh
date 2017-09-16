@@ -8,17 +8,13 @@ if [[ ! -d "$WHOLLY_INOCCUOUS" ]]; then
 	exit 1
 fi
 
-BUILD_TAG=${1:-test-dev}
-NODE_ENV=${NODE_ENV:-development}
-CONTAINER_NAME=${2:-graphistry/viz-app}
-COMMIT_ID=${3:-$(git rev-parse --short HEAD)}
-BRANCH_NAME=${4:-$(git name-rev --name-only HEAD)}
-
 echo "viz-app build.sh args:"
 echo "	build: $BUILD_TAG"
 echo "	commit id: $COMMIT_ID"
 echo "	branch name: $BRANCH_NAME"
 echo "	container name: $CONTAINER_NAME"
+
+NODE_ENV=${NODE_ENV:-development}
 
 docker build -f build/dockerfiles/Dockerfile-build \
 	--build-arg NODE_ENV=${NODE_ENV} \
