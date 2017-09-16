@@ -66,31 +66,22 @@ class AxisReact extends React.Component {
                         </div>
                     );
                 } else { // labelY === undefined
-                    const {x: xMin, y: yMin} = camera.canvasCoords(-labelR, -labelR, canvas, matrix);
-                    const {x: xMax, y: yMax} = camera.canvasCoords( labelR,  labelR, canvas, matrix);
+                    const {x: xMin, y: yMin} = camera.canvasCoords(-labelR, +labelR, canvas, matrix);
+                    const {x: xMax, y: yMax} = camera.canvasCoords(+labelR, -labelR, canvas, matrix);
 
                     const w = xMax - xMin;
-                    const h = yMin - yMax;
-                    const xCenter = (xMin + xMax) / 2;
-                    const yCenter = (yMin + yMax) / 2;
 
                     return (
-                        <div key={`key_${i}`}
-                             className={styles['fullscreen']}>
-                            <div className={styles['roundbox']} style={{
-                                'height': `${Math.round(h)}px`,
-                                'width': `${Math.round(w)}px`,
-                                'left': `${Math.round(xMin)}px`,
-                                'top': `${Math.round(yMax)}px`
-                            }}>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox={`${xMin} ${yMax} ${w} ${h}`}>
-                                    <g stroke="#aaaaaa">
-                                        <circle cx={xCenter} cy={yCenter} r={w / 2} strokeWidth="1" strokeLinecap="round" strokeDasharray={label ? "1, 3" : "1, 6"} fillOpacity="0"></circle>
-                                    </g>
-                                </svg>
-                                <div className={styles['roundlabel']}>{label}</div>
+                        <div className={styles['fullscreen']} key={`key_${labelR}`} >
+                            <div className={styles['roundbox']} style={{'transform': `translate3d(${Math.round(xMin)}px, ${Math.round(yMin)}px, 0)`}}>
+                                <div style={{'border': "1px solid rgba(255,0,0,0.5)", 'borderRadius': '50%', 'position': "absolute", 'height': `${Math.round(w)}px`, 'width': `${Math.round(w)}px`}}>
+                                    <div className={styles['roundlabel']}>
+                                        {label}
+                                    </div>
+                                </div>
                             </div>
-                        </div>);
+                        </div>
+                    );
                 };
             })
         }</div>);
