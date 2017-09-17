@@ -1,0 +1,15 @@
+FROM node:alpine
+
+RUN apk add --no-cache postgresql-client
+
+ARG DEPS
+
+WORKDIR /user-service
+
+RUN echo $DEPS > ./package.json
+
+RUN npm install
+
+COPY . .
+
+CMD ["sh", "-c", "echo 'user-service says, \"howdy partner!\"'"]
