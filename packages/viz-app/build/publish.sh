@@ -1,25 +1,17 @@
 #!/bin/bash -ex
 
+# silently cd into this shell script's directory
 cd $(dirname "$0") > /dev/null
 
-BUILD_TAG=${1:-test-dev}
-CONTAINER_NAME=${2:-graphistry/viz-app}
-COMMIT_ID=${3:-$(git rev-parse --short HEAD)}
-BRANCH_NAME=${4:-$(git name-rev --name-only HEAD)}
+NODE_ENV=production
 
-echo "viz-app test.sh args:"
-echo "	build: $BUILD_TAG"
-echo "	commit id: $COMMIT_ID"
-echo "	branch name: $BRANCH_NAME"
-echo "	container name: $CONTAINER_NAME"
+sh ./build.sh
 
-sh ./build.sh ${BUILD_TAG} ${CONTAINER_NAME} ${COMMIT_ID} ${BRANCH_NAME}
-
-TEST_CONTAINER_NAME=viz-app-${BUILD_TAG}
-
-docker run --rm ${CONTAINER_NAME}:${BUILD_TAG} \
-	npm run build && \
-	echo "viz-app version: $(npm view . version)"
-	# npm publish
+docker run --rm \
+    -e NODE_ENV=${NODE_ENV} \
+    -e COMMIT_ID=${COMMIT_ID} \
+    -e BRANCH_NAME=${BRANCH_NAME} \
+    ${CONTAINER_NAME}:${BUILD_TAG} \
+    npm run build && npm publish
 
 echo "publish $CONTAINER_NAME finished"
