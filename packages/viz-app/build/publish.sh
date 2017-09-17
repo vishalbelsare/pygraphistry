@@ -5,7 +5,7 @@ cd $(dirname "$0") > /dev/null
 
 NODE_ENV=production
 
-sh ./build.sh
+./build.sh
 
 docker run --rm \
     -e NODE_ENV=${NODE_ENV} \

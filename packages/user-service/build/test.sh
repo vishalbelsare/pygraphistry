@@ -1,5 +1,6 @@
 #!/bin/bash -ex
 
+# silently cd into this shell script's directory
 cd $(dirname "$0") > /dev/null
 
 NODE_ENV=test
@@ -20,7 +21,7 @@ while [[ ! $(docker exec $PG_NAME psql -c "select 'the database is up'" $PG_PARA
     sleep 5
 done
 
-sh ./build.sh
+./build.sh
 
 docker run --rm \
     --link=${PG_NAME}:pg \

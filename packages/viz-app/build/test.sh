@@ -5,7 +5,7 @@ cd $(dirname "$0") > /dev/null
 
 NODE_ENV=test
 
-sh ./build.sh
+./build.sh
 
 docker run --rm \
     -v "${PWD}/test-results":/viz-app/coverage/junit \
