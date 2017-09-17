@@ -12,6 +12,6 @@ docker run --rm \
     -e COMMIT_ID=${COMMIT_ID} \
     -e BRANCH_NAME=${BRANCH_NAME} \
     ${CONTAINER_NAME}:${BUILD_TAG} \
-    npm run build && npm publish
+    sh -c "npm run build && npm publish ."
 
 echo "publish $CONTAINER_NAME finished"
