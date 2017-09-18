@@ -16,7 +16,7 @@ export function isDateTimeColumn(name, type) {
            doesNameIndicateDateColumn(name);
 }
 
-export function dateTimeVectorMapping({ vector, encoder, format, type }) {
+export function dateTimeVectorMapping({ format, type }) {
     return { format: format || '', type: 'timestamp' };
 }
 

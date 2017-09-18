@@ -1,6 +1,5 @@
-import * as path from 'path';
+import { Observable } from 'rxjs';
 import { VectorGraph } from '../vgraph';
-import { Observable, Subscription } from 'rxjs';
 import { isDateTimeColumn, dateTimeVectorMapping } from '../types';
 import { isColorColumn, isColorPaletteColumn, colorVectorMapping } from '../types';
 
@@ -13,7 +12,7 @@ export interface PartitionOptions {
 export interface TableMetadata {
     name: string;
     count: number;
-    attributes: AttributesMetadata,
+    attributes: AttributesMetadata;
     encodings: {
         [encodingName: string]: {
             attributes: string[]
@@ -22,7 +21,7 @@ export interface TableMetadata {
 }
 
 export interface AttributesMetadata {
-    [columnName: string]: AttributeMetadata
+    [columnName: string]: AttributeMetadata;
 }
 
 export interface AttributeMetadata {

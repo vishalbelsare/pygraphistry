@@ -1,9 +1,8 @@
 {
-    "extends": "./tsconfig.cjs",
+    "extends": "./tsconfig",
     "exclude": ["../src/**/*.js"],
     "compilerOptions": {
         "allowJs": false,
-        "declaration": true,
-        "typeRoots": ["../src/"]
+        "declaration": true
     }
 }

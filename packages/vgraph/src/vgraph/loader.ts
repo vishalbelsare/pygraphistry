@@ -36,13 +36,19 @@ export interface LoaderOptions extends DownloadOptions {
     name?: string;
 }
 
+export interface LoaderResults extends LoaderOptions {
+    buffer: Buffer;
+    loaded: boolean;
+}
+
 export function loadVGraph(options: LoaderOptions) {
     return Observable
         .of({ ...options, loaded: false })
         .expand(({ type, loaded, ...opts }) =>
             loaded === true
                 ? Observable.empty()
-                : downloadDataset(opts).map(vDecoders[type])
+                : downloadDataset(opts)
+                    .map<any, LoaderResults>(vDecoders[type])
         )
         .takeLast(1);
 }
@@ -60,7 +66,7 @@ function decodeVGraph({ buffer, opts }) {
 function decodeJSONMeta({ buffer, opts }) {
     const meta = JSON.parse(buffer.toString('utf8'));
     return {
-        ...opts, ...meta,
+        ...opts, ...meta, buffer,
         dataset: meta.datasources[0].url,
         nodes: meta.nodes[0], edges: meta.edges[0],
         type: meta.type || 'vgraph', loaded: false,
@@ -73,10 +79,10 @@ function downloadDataset(opts: DownloadOptions) {
     const [getOptions, loadLastModified, loadDocument] = dProtocols[protocol];
     const { transport, documentURL, lastModifiedURL } = getOptions(url, opts);
 
-    return loadLastModified(transport, lastModifiedURL)
+    return (loadLastModified(transport, lastModifiedURL) as Observable<number>)
         .catch(() => Observable.of(errorLoadingLastModified))
         .flatMap((lastModified) => Observable
-            .from(opts.cache.get(
+            .from<Buffer>(opts.cache.get(
                 url,
                 lastModified === errorLoadingLastModified
                     ? new Date(0)
@@ -91,7 +97,7 @@ function downloadDataset(opts: DownloadOptions) {
                         ? Observable.of(null)
                         : opts.cache.put(url, document),
                     (document) => document
-                )
+                ) as Observable<Buffer>
             )
         )
         .expand(unzipIfCompressed)
@@ -119,13 +125,13 @@ function getOptionsWWW(url, opts) {
     };
 }
 
-function loadLastModifiedS3(transport, url) {
+function loadLastModifiedS3(transport, url): Observable<number> {
     return Observable
         .bindNodeCallback(transport.headObject)
         .bind(transport)(url).pluck('LastModified');
 }
 
-function loadLastModifiedWWW(transport, url) {
+function loadLastModifiedWWW(transport, url): Observable<number> {
     return Observable
         .bindCallback(transport.request)
         .bind(transport)({ ...url, method: 'HEAD' })
@@ -151,9 +157,9 @@ function loadDatasetWWW(transport, url) {
 }
 
 // If body is gzipped, decompress transparently
-function unzipIfCompressed(buffer) {
+function unzipIfCompressed(buffer: Buffer): Observable<Buffer> {
     if (buffer.readUInt16BE(0) === 0x1f8b) {
-        return Observable.bindNodeCallback(gunzip)(buffer);
+        return Observable.bindNodeCallback<Buffer>(gunzip)(buffer);
     } else {
         return Observable.empty();
     }

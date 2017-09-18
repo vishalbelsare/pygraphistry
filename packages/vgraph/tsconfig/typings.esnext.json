@@ -1,8 +1,0 @@
-{
-    "extends": "./tsconfig.esnext",
-    "exclude": ["../src/**/*.js"],
-    "compilerOptions": {
-        "allowJs": false,
-        "declaration": true
-    }
-}

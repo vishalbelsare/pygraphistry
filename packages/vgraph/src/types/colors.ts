@@ -1,38 +1,39 @@
-import * as brewer from 'colorbrewer';
-import { VectorGraph } from '../vgraph';
-import * as Vector from 'linear-layout-vector';
+import * as Pbf from 'pbf';
+import { VectorGraph } from '../pbf/vgraph';
+import * as color_brewer from 'colorbrewer';
+import * as LinearLayoutVector from 'linear-layout-vector';
 import { parseCSSColor as parseCSS } from 'csscolorparser';
-const { UInt32AttributeVector, StringAttributeVector, Int32AttributeVector } = VectorGraph;
 
-const brewerPaired12 = brewer.Paired[12];
+const brewerPaired12 = color_brewer.Paired[12];
 const brewerPaired12Length = brewerPaired12.length;
 const PairedRepeat = new Array(10000 * brewerPaired12Length);
 for (let i = -1, n = PairedRepeat.length; ++i < n;) {
     PairedRepeat[i] = brewerPaired12[i % brewerPaired12Length];
 }
 
-const intToColorIndex = new Vector();
+const intToColorIndex = new LinearLayoutVector();
 const colorsByIndex = [
     'Paired', 'Blues', 'BrBG', 'BuGn', 'BuPu', 'Dark2', 'GnBu', 'Greens', 'Greys', 'OrRd', 'Oranges',
     'PRGn', 'Accent', 'Pastel1', 'Pastel2', 'PiYG', 'PuBu', 'PuBuGn', 'PuOr', 'PuRd', 'Purples',
     'RdBu', 'RdGy', 'RdPu', 'RdYlBu', 'RdYlGn', 'Reds', 'Set1', 'Set2', 'Set3', 'Spectral',
     'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'PairedRepeat'
 ]
-.map((name) => brewer[name]).filter(Boolean)
+.map((name) => color_brewer[name])
+.filter(Boolean)
 .concat({ 0: PairedRepeat }) // Add PairedRepeat
-.reduce((colors, palette) => colors.concat(
-    Object
-        .keys(palette)
-        .map(parseInt).filter(x => x === x)
-        .sort((a, b) => b - a).map((dim, i) => {
-            const _colors = palette[dim];
-            const idx = colors.length + i;
-            intToColorIndex.insert(idx);
-            intToColorIndex.setItemSize(idx, _colors.length);
-            return _colors;
-        })
-    ), []
-);
+.reduce((colors, palette) => colors.concat(Object
+    .keys(palette)
+    .map(parseInt)
+    .filter(x => x === x) // filter out NaNs
+    .sort((a, b) => b - a) // sort ascending
+    .map((dim, i) => {
+        const indexes = palette[dim];
+        const idx = colors.length + i;
+        intToColorIndex.insert(idx);
+        intToColorIndex.setItemSize(idx, indexes.length);
+        return indexes;
+    })
+), []);
 
 const [doesNameIndicateColorColumn] = [
     /color/i
@@ -54,15 +55,22 @@ export function isColorPaletteColumn(values: number[]) {
     return min > -1 && min < colorsByIndex.length;
 }
 
-export function colorVectorMapping({ vector, encoder, format, type }) {
-    if (encoder === StringAttributeVector) {
+export function colorVectorMapping({ type, format, bytes, attributeVectorName }) {
+    if (attributeVectorName === 'StringAttributeVector') {
         type = 'color';
         format = format || 'css';
     } else if (
-        (encoder === Int32AttributeVector || encoder === UInt32AttributeVector) &&
-        (format === 'palette' || isColorPaletteColumn(vector.values))) {
-        type = 'color';
-        format = 'palette';
+        attributeVectorName === 'Int32AttributeVector' ||
+        attributeVectorName === 'UInt32AttributeVector') {
+        if (format === 'palette') {
+            type = 'color';
+            format = 'palette';
+        } else if (isColorPaletteColumn(
+            VectorGraph[attributeVectorName]
+                .read(new Pbf(bytes)).values)) {
+            type = 'color';
+            format = 'palette';
+        }
     }
     return { type, format };
 }
