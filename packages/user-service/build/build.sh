@@ -1,11 +1,9 @@
 #!/bin/bash -ex
 
+# silently cd into the user-service project directory
 cd $(dirname "$0")/../ > /dev/null
 
-echo "user-service test.sh args:"
-echo "	build: $BUILD_TAG"
-echo "	container name: $CONTAINER_NAME"
-
 docker build \
-	-f build/dockerfiles/Dockerfile-build \
-	-t ${CONTAINER_NAME}:${BUILD_TAG} .
+    -f build/Dockerfile-build \
+    --build-arg DEPS="$(cat package.json | jq -r '{dependencies, devDependencies}')" \
+    -t ${CONTAINER_NAME}:${BUILD_TAG} .

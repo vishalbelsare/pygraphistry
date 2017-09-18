@@ -1,0 +1,15 @@
+FROM graphistry/baseapp
+
+WORKDIR /viz-app
+
+ARG DEPS
+ARG NPMRC
+
+RUN echo "$NPMRC" >> /root/.npmrc && \
+    echo "$DEPS" > ./package.json
+
+RUN npm install
+
+COPY . .
+
+CMD ["sh", "-c", "echo 'viz-app says, \"hello, friend!\"'"]

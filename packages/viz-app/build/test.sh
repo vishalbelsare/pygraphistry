@@ -1,18 +1,18 @@
 #!/bin/bash -ex
 
+# silently cd into this shell script's directory
 cd $(dirname "$0") > /dev/null
 
-echo "viz-app test.sh args:"
-echo "	build: $BUILD_TAG"
-echo "	commit id: $COMMIT_ID"
-echo "	branch name: $BRANCH_NAME"
-echo "	container name: $CONTAINER_NAME"
+NODE_ENV=test
 
-sh ./build.sh
+./build.sh
 
 docker run --rm \
-	-v "${PWD}/test-results":/viz-app/coverage/junit \
-	${CONTAINER_NAME}:${BUILD_TAG} \
-	npm run test:ci
+    -v "${PWD}/test-results":/viz-app/coverage/junit \
+    -e NODE_ENV=${NODE_ENV} \
+    -e COMMIT_ID=${COMMIT_ID} \
+    -e BRANCH_NAME=${BRANCH_NAME} \
+    ${CONTAINER_NAME}:${BUILD_TAG} \
+    npm run test:ci
 
 echo "test $CONTAINER_NAME finished"

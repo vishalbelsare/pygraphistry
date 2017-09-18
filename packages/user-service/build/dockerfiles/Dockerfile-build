@@ -1,8 +1,0 @@
-FROM graphistry/baseapp
-
-COPY . /user-service
-WORKDIR /user-service
-
-RUN npm install
-
-CMD ["sh", "-c", "echo 'user-service says, \"hello, user!\"'"]
