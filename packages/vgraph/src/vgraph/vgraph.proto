@@ -1,0 +1,96 @@
+message VectorGraph {
+  enum GraphType {
+    UNDIRECTED = 0;
+    DIRECTED = 1;
+  }
+  required uint32 version = 1;
+  optional string name = 2;
+  required GraphType type = 3;
+  required uint32 vertexCount = 4;
+  required uint32 edgeCount = 5;
+
+  message Edge {
+    required uint32 src = 1;
+    required uint32 dst = 2;
+  }
+  repeated Edge edges = 6;
+
+  enum AttributeTarget {
+   VERTEX = 0;
+   EDGE = 1;
+  }
+
+  message UInt32AttributeVector {
+    optional string name = 1;
+    optional AttributeTarget target = 2;
+    repeated uint32 values = 3 [packed=true];
+    optional string type = 4;
+    optional string format = 5;
+  }
+  message Int32AttributeVector {
+    optional string name = 1;
+    optional AttributeTarget target = 2;
+    repeated int32 values = 3 [packed=true];
+    optional string type = 4;
+    optional string format = 5;
+  } 
+  message Int64AttributeVector {
+    optional string name = 1;
+    optional AttributeTarget target = 2;
+    repeated int64 values = 3 [packed=true];
+    optional string type = 4;
+    optional string format = 5;
+  }
+  message FloatAttributeVector {
+    optional string name = 1;
+    optional AttributeTarget target = 2;
+    repeated float values = 3 [packed=true];
+    optional string type = 4;
+    optional string format = 5;
+  }
+  message DoubleAttributeVector {
+    optional string name = 1;
+    optional AttributeTarget target = 2;
+    repeated double values = 3 [packed=true];
+    optional string type = 4;
+    optional string format = 5;
+  }
+  message StringAttributeVector {
+    optional string name = 1;
+    optional AttributeTarget target = 2;
+    repeated string values = 3;
+    optional string type = 4;
+    optional string format = 5;
+  }
+  message BoolAttributeVector {
+    optional string name = 1;
+    optional AttributeTarget target = 2;
+    repeated bool values = 3 [packed=true];
+    optional string type = 4;
+    optional string format = 5;
+  }
+
+  repeated UInt32AttributeVector uint32_vectors = 7;
+  repeated DoubleAttributeVector double_vectors = 8;
+  repeated StringAttributeVector string_vectors = 9;
+  repeated Int32AttributeVector int32_vectors = 10;
+  repeated Int64AttributeVector int64_vectors = 11;
+  repeated FloatAttributeVector float_vectors = 12;
+  repeated BoolAttributeVector bool_vectors = 13;
+
+  message Mapping {
+    required string name = 1;
+    required AttributeTarget target = 2;
+    required string type = 3;
+    required string format = 4;
+  }
+
+  message Bindings {
+    optional string idField = 1;
+    optional string sourceField = 2;
+    optional string destinationField = 3;
+    repeated Mapping mappings = 4;
+  }
+
+  optional Bindings bindings = 14;
+}
