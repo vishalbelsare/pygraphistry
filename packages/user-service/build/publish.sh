@@ -9,7 +9,6 @@ NODE_ENV=production
 
 docker run --rm \
     -e NODE_ENV=${NODE_ENV} \
-    ${CONTAINER_NAME}:${BUILD_TAG} \
-    sh -c "npm install"
+    ${CONTAINER_NAME}:${BUILD_TAG}
 
 echo "publish $CONTAINER_NAME finished"
