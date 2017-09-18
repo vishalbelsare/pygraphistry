@@ -11,5 +11,5 @@
 
 !index.js
 !config.js
-!config.schema.js
+!config-schema.js
 !postcss.config.js

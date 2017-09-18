@@ -1,21 +1,41 @@
 #!/bin/bash -ex
 
+# silently cd into this shell script's directory
 cd $(dirname "$0") > /dev/null
 
-BUILD_TAG=${1:-test-dev}
-CONTAINER_NAME=${2:-graphistry/user-service}
+NODE_ENV=test
+PG_NAME=${PG_NAME}-${BUILD_TAG}
+PG_PARAMS="postgresql://${PG_USER}:${PG_PASS}@${PG_NAME}:${PG_PORT}/${DB_NAME}"
 
-echo "viz-app test.sh args:"
-echo "	build: $BUILD_TAG"
+docker run -d \
+    --name ${PG_NAME} \
+    --net ${GRAPHISTRY_NETWORK} \
+    -e POSTGRES_DB=${DB_NAME} \
+    -e POSTGRES_USER=${PG_USER} \
+    -e POSTGRES_PASSWORD=${PG_PASS} \
+    postgres:9-alpine
 
-sh ./build.sh ${BUILD_TAG} ${CONTAINER_NAME}
+sleep 5
 
-TEST_CONTAINER_NAME=user-service-${BUILD_TAG}
+while [[ ! $(docker exec $PG_NAME psql -c "select 'the database is up'" $PG_PARAMS) ]]; do
+    sleep 5
+done
 
-docker run -v "${PWD}/test-results":/user-service/coverage/junit \
-	--name ${TEST_CONTAINER_NAME} ${CONTAINER_NAME}:${BUILD_TAG} \
-		npm run test:ci
-  
-docker rm ${TEST_CONTAINER_NAME}
+./build.sh
+
+docker run --rm \
+    --link=${PG_NAME}:pg \
+    --net ${GRAPHISTRY_NETWORK} \
+    -v "${PWD}/test-results":/user-service/coverage/junit \
+    -e NODE_ENV=${NODE_ENV} \
+    -e GRAPHISTRY_SECRET=ASecretString \
+    -e DBPORT=${PG_PORT} -e DBHOST=${PG_NAME} \
+    -e DBNAME=${DB_NAME} -e DBUSER=${PG_USER} -e DBPASSWORD=${PG_PASS} \
+    ${CONTAINER_NAME}:${BUILD_TAG} \
+        npm run test:ci
+
+docker stop ${PG_NAME}
+docker network disconnect ${GRAPHISTRY_NETWORK} ${PG_NAME}
+docker rm ${PG_NAME}
 
 echo "test $CONTAINER_NAME finished"

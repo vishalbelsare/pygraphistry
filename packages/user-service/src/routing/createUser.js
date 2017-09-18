@@ -11,9 +11,9 @@ module.exports = visualize(cors(async (req, res) => {
     const salt = bcrypt.genSaltSync();
     const hash = bcrypt.hashSync(password, salt);
     const user = await createUser(username, hash);
-    
+
     send(res, 200, user);
   } catch (e) {
     send(res, 500, {error: e.message});
   }
-}), process.env.NODE_ENV === "DEVELOPMENT" ? "dev" : "");
+}), process.env.NODE_ENV === "development" ? "dev" : "");

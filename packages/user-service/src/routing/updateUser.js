@@ -13,4 +13,4 @@ module.exports = visualize(cors(async (req, res) => {
   } catch (e) {
     send(res, 400, {error: e.message});
   }
-}), process.env.NODE_ENV === "DEVELOPMENT" ? "dev" : "");
+}), process.env.NODE_ENV === "development" ? "dev" : "");
