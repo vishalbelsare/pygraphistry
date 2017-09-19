@@ -1,4 +1,4 @@
-FROM node:boron-slim
+FROM node:8.5.0-slim
 
 WORKDIR /user-service
 
