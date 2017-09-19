@@ -13,13 +13,13 @@ const tooltipDelayShow = 750;
 const tooltipRunAll = <Tooltip id='tooltip-play-all'>Run and visualize all pivots</Tooltip>;
 
 export default function Investigation({
-    id, user, layout, status, description, time,
+    id, user, layout, status = {}, description, time,
     $falcor, pivots = [], templates, investigations,
     searchPivot, insertPivot, splicePivot, togglePivots, saveLayout, dismissAlert,
     graphInvestigation, copyInvestigation, selectInvestigation, createInvestigation, saveInvestigation
 }) {
 
-    const bStyle = (status && status.msgStyle) ? status.msgStyle : 'default';
+    const bStyle = status.msgStyle || 'default';
 
     if (status.saved) {
         setTimeout(dismissAlert, 3000)
@@ -56,7 +56,7 @@ export default function Investigation({
                             Run All Pivots
                         </Button>
                     </OverlayTrigger>
-                    { status && !status.ok ?
+                    { !status.ok ?
                         <Alert bsStyle={status.msgStyle || 'danger'} className={styles.alert} onDismiss={dismissAlert}>
                             <strong> {status.message} </strong>
                         </Alert>
