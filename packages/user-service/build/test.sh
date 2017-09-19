@@ -28,7 +28,6 @@ docker run --rm \
     --net ${GRAPHISTRY_NETWORK} \
     -v "${PWD}/test-results":/user-service/coverage/junit \
     -e NODE_ENV=${NODE_ENV} \
-    -e GRAPHISTRY_SECRET=ASecretString \
     -e DBPORT=${PG_PORT} -e DBHOST=${PG_NAME} \
     -e DBNAME=${DB_NAME} -e DBUSER=${PG_USER} -e DBPASSWORD=${PG_PASS} \
     ${CONTAINER_NAME}:${BUILD_TAG} \
