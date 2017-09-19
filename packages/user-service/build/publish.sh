@@ -3,9 +3,7 @@
 # silently cd into this shell script's directory
 cd $(dirname "$0") > /dev/null
 
-BUILD_TAG=graphistry/user-service:build
-MAJORMINOR=`jq -r .version package.json | cut -d '.' -f 1,2`
-VERSION=${MAJORMINOR}.${BUILD_NUMBER}
+VERSION= $(jq -r .version package.json)
 ARTIFACTS="build node_modules src migrations seeds knexfile.js package.json"
 
 ##########################################
