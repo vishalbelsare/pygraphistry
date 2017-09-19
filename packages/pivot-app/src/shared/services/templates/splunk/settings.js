@@ -73,6 +73,9 @@ export const encodings = {
         },
         pointIcon: function (node) {
             node.pointIcon = typeIcons[node.type];
+        },
+        pointCanonicalType: (node) => {
+            node.canonicalType = colTypes[node.type]
         }
     }
 }
