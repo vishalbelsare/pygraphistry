@@ -558,5 +558,34 @@ export const models = {
             'stride': 0,
             'normalize': true
         }
-    }
+    },
+    'radialAxes': {
+        'pos': {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'FLOAT',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 2,
+            'offset': 0,
+            'stride': 5 * Float32Array.BYTES_PER_ELEMENT,
+            'normalize': false
+        },
+        'center': {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'FLOAT',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 2,
+            'offset': 8,
+            'stride': 5 * Float32Array.BYTES_PER_ELEMENT,
+            'normalize': false
+        },
+        'radius': {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'FLOAT',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 1,
+            'offset': 16,
+            'stride': 5 * Float32Array.BYTES_PER_ELEMENT,
+            'normalize': false
+        }
+    },
 };

@@ -1,23 +1,20 @@
-.fullscreen {
-    position: absolute;
-    overflow: hidden;
-    left: 0;
+.axis {
     top: 0;
-    width: 100%;
-    height: 100%;
+    left: 0;
     margin: 0;
     padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: absolute;
 }
 
 .error { color: red }
 
 .straightline {
+    position: absolute;
     width: calc(100% - 20px);
     border-top: 1px dotted #c5c5c5;
-    position: absolute;
-    margin: 0;
-    padding: 0;
-    left: 10px;
 }
 
 .straightlabel {
@@ -28,15 +25,12 @@
     font-weight: bold;
 }
 
-.roundbox {
+.radial-axis {
+    opacity: 0.5;
     position: absolute;
-    margin: 0;
-    padding: 0;
+    text-align: center;
 }
 
-.roundlabel {
-    position: absolute;
-    padding-left: 50%;
-    top: 0%;
-    opacity: 0.5;
+.radial-axis-label {
+    font-size: 12px;
 }

@@ -1,29 +1,20 @@
 import { container } from '@graphistry/falcor-react-redux';
-
-import { labelMouseMove } from 'viz-app/actions/labels';
 import { Axis as AxisComponent } from 'viz-app/components/axis';
 
-
-const AxisReact = ({
-                labelMouseMove,
-                renderer,
-                encodings,
-                ...props }) => {
-
-
-    return (<AxisComponent encodings={encodings} />);
-};
-
-
+const emptyArr = [];
 const Axis = container({
     renderLoading: false,
-    fragment: ({ settings } = {}) => `{
-        id, name,
+    fragment: () => `{
         encodings: {
             point: { axis }
         }
     }`,
-    dispatchers: { labelMouseMove, }
-})(AxisReact);
+    mapFragment: ({ encodings }) => ({
+        axis: encodings &&
+              encodings.point &&
+              encodings.point.axis &&
+              encodings.point.axis.rows || emptyArr
+    })
+})(AxisComponent);
 
 export { Axis }

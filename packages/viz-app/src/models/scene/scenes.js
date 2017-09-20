@@ -32,6 +32,7 @@ const defaultSceneConfig = {
         'pointpicking',  'pointsampling',
         'midedgeculled', 'edgepicking', 'arrowculled',
         'arrowhighlight', 'edgehighlight', 'arrowselected', 'edgeselected',
+        'radialaxes',
         'pointculledoutline', 'pointculled',
         'fullscreen', 'fullscreenDummy', 'fullscreenDark',
         'pointselectedoutline', 'pointselected',
@@ -108,7 +109,7 @@ function generateScene(scene, items, models, programs, textures) {
                 }
 
                 cBuffers[modelName] = true;
-                cModels[modelName] = { [attributeName]: buffer };
+                cModels[modelName] = { ...cModels[modelName], [attributeName]: buffer };
             }
 
             for (const bindingName in otherBuffers) {
@@ -123,7 +124,7 @@ function generateScene(scene, items, models, programs, textures) {
                 }
 
                 cBuffers[modelName] = true;
-                cModels[modelName] = { [attributeName]: buffer };
+                cModels[modelName] = { ...cModels[modelName], [attributeName]: buffer };
             }
 
             if (renderTarget) {

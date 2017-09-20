@@ -3,7 +3,9 @@
 import _ from 'underscore';
 import { Camera2d } from './camera';
 import { Observable, Subscription, ReplaySubject } from 'rxjs';
-const debug = require('debug')('graphistry:StreamGL:renderer');
+import * as _debug from 'debug';
+const debug = _debug('graphistry:StreamGL:renderer');
+const debugRenderItem = _debug('graphistry:StreamGL:renderer:renderItem');
 
 ////////////////////////////////////////////////////////////////////////////////
 // Exports
@@ -826,15 +828,18 @@ export function init(config, canvas, urlParams) {
 
         const { edgeScaling, pointScaling } = camera;
 
+        // TODO: Actually get number of nodes from the server
         const numVertices = state.numElements.pointculled || 0;
 
         // Set zoomScalingFactor uniform if it exists.
         _.each(uniforms, (map) => {
 
             if ('zoomScalingFactor' in map) {
-                // TODO: Actually get number of nodes from the server
-                const scalingFactor = camera.semanticZoom(numVertices);
-                map['zoomScalingFactor'] = scalingFactor;
+                map['zoomScalingFactor'] = camera.semanticZoom(numVertices);
+            }
+
+            if ('edgeZoomScalingFactor' in map) {
+                map['edgeZoomScalingFactor'] = camera.semanticZoomEdges(numVertices);
             }
 
             if ('maxScreenSize' in map) {
@@ -986,12 +991,6 @@ export function init(config, canvas, urlParams) {
         const texturesToRead = [];
 
         sortedItems.forEach((item) => {
-            // const numElementsForItem = state.numElements[item];
-            // if (typeof numElementsForItem === 'undefined' || numElementsForItem === 0) {
-            //     debug('Not rendering item "%s" because it doesn\'t have a non-zero numElements',
-            //         item);
-            //     return;
-            // }
             const texture = renderItem(state, config, camera, gl, options, ext,
                                      programs, buffers, clearedFBOs, item);
             if (texture) {
@@ -1067,7 +1066,7 @@ export function init(config, canvas, urlParams) {
         const numElements = state.numElements[item];
         const renderTarget = itemDef.renderTarget === 'CANVAS' ? null : itemDef.renderTarget;
 
-        debug('Rendering item "%s" (%d elements)', item, numElements);
+        debugRenderItem('Rendering item "%s" (%d elements)', item, numElements);
 
         const textureToRead = (renderTarget !== null && itemDef.readTarget) ? renderTarget : undefined;
 
@@ -1081,7 +1080,7 @@ export function init(config, canvas, urlParams) {
 
 
         if (!clearedFBOs[renderTarget]) {
-            debug('  clearing render target', renderTarget);
+            debugRenderItem('  clearing render target', renderTarget);
             gl.clearColor(0, 0, 0, 0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             clearedFBOs[renderTarget] = true;
@@ -1091,7 +1090,7 @@ export function init(config, canvas, urlParams) {
         // would be bound and drawn. This way we capture the side effects of attempting
         // to render an item, while still skipping what we can.
         if (typeof numElements === 'undefined' || numElements === 0) {
-            debug('Not rendering item "%s" because it doesn\'t have a non-zero numElements',
+            debugRenderItem('Not rendering item "%s" because it doesn\'t have a non-zero numElements',
                 item);
             return textureToRead;
         }
@@ -1110,7 +1109,7 @@ export function init(config, canvas, urlParams) {
             },
             buffers, config.models);
 
-        debug('Done binding, drawing now...');
+        debugRenderItem('Done binding, drawing now...');
         if (itemDef.index) {
             gl.drawElements(gl[itemDef.drawType], numElements, gl.UNSIGNED_INT, 0);
         } else {
@@ -1189,36 +1188,3 @@ export function init(config, canvas, urlParams) {
         return _.uniq(_.flatten(activeIndexModesLists));
     }
 }
-
-
-
-// // Polyfill to get requestAnimationFrame cross browser.
-// // Falls back to setTimeout. Based on https://gist.github.com/paulirish/1579671
-// {
-//     let lastTime = 0;
-//     const vendors = ['ms', 'moz', 'webkit', 'o'];
-//     for (let x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
-//         window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
-//         window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] ||
-//                                       window[vendors[x]+'CancelRequestAnimationFrame'];
-//     }
-
-//     if (!window.requestAnimationFrame) {
-//         console.warn('requestAnimationFrame not supported, falling back on setTimeout');
-//         window.requestAnimationFrame = function(callback) {
-//             const currTime = Date.now();
-//             const timeToCall = Math.max(0, 16 - (currTime - lastTime));
-//             lastTime = currTime + timeToCall;
-//             return window.setTimeout(() => {
-//                 callback(currTime + timeToCall);
-//             }, timeToCall);
-//         };
-//     }
-
-//     if (!window.cancelAnimationFrame) {
-//         console.warn('cancelAnimationFrame not supported, falling back on clearTimeout');
-//         window.cancelAnimationFrame = function(id) {
-//             clearTimeout(id);
-//         };
-//     }
-// }

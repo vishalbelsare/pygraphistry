@@ -44,6 +44,22 @@ export const items = {
         'drawType': 'LINES',
         'glOptions': {}
     },
+    'radialaxes': {
+        'program': 'radialaxes',
+        'triggers': ['renderSceneFast', 'renderSceneFull'],
+        'bindings': {
+            'aPos': ['radialAxes', 'pos'],
+            'aCenter': ['radialAxes', 'center'],
+            'aRadius': ['radialAxes', 'radius']
+        },
+        'uniforms': {
+            'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH * .5]},
+            'maxCanvasSize': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'maxScreenSize': { 'uniformType': '1f', 'defaultValues': [1.0] },
+            'edgeZoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
+        },
+        'drawType': 'TRIANGLES'
+    },
     'midedgeculled' : {
         'program': 'midedgeculled',
         'triggers': ['renderSceneFull'],

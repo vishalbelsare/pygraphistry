@@ -25,16 +25,16 @@ import compose from 'recompose/compose';
 import getContext from 'recompose/getContext';
 import shallowEqual from 'recompose/shallowEqual';
 
-function checkEqualityIfFalcorVersionAvailable (a, b, defaultValue = false) {
-    if (a.$__version !== undefined && b.$__version !== undefined) {
+function checkEqualityIfFalcorVersionAvailable (a, b, defaultValue) {
+    if (a && b && a.$__version !== undefined && b.$__version !== undefined) {
         return a.$__version === b.$__version;
     }
     return defaultValue;
 }
 
-function shallowEqualOrFalcorEqual (a, b) {
+function shallowEqualOrFalcorEqual (a, b, defaultValue) {
     // Default to shallow equal, if not true, check falcor version number
-    return shallowEqual(a, b) || checkEqualityIfFalcorVersionAvailable(a, b);
+    return shallowEqual(a, b) || checkEqualityIfFalcorVersionAvailable(a, b, defaultValue);
 }
 
 class Renderer extends React.Component {
@@ -54,6 +54,7 @@ class Renderer extends React.Component {
         const currProps = this.props;
 
         const {
+            axis: currAxes,
             background: currBackground,
             edges: currEdges, points: currPoints,
             highlight: currHighlight, selection: currSelection,
@@ -61,6 +62,7 @@ class Renderer extends React.Component {
         } = currProps;
 
         const {
+            axis: nextAxes,
             background: nextBackground,
             edges: nextEdges, points: nextPoints,
             highlight: nextHighlight, selection: nextSelection,
@@ -70,6 +72,7 @@ class Renderer extends React.Component {
         return (
             !shallowEqual(currEdges, nextEdges) ||
             !shallowEqual(currPoints, nextPoints) ||
+            !shallowEqualOrFalcorEqual(currAxes, nextAxes, true) ||
             !shallowEqualOrFalcorEqual(currHighlight, nextHighlight) ||
             !shallowEqualOrFalcorEqual(currSelection, nextSelection) ||
             !shallowEqual(restCurrProps, restNextProps)
@@ -203,6 +206,7 @@ class Renderer extends React.Component {
         }
 
         const {
+            axis: currAxes,
             edges: currEdges = {},
             camera: currCamera = {},
             points: currPoints = {},
@@ -215,6 +219,7 @@ class Renderer extends React.Component {
         } = currProps;
 
         const {
+            axis: nextAxes,
             edges: nextEdges = currEdges,
             camera: nextCamera = currCamera,
             points: nextPoints = currPoints,
@@ -233,6 +238,7 @@ class Renderer extends React.Component {
               hasRenderedSelectionOnce } = this;
 
         const updateArg = {
+            currAxes, nextAxes,
             currEdges, currPoints,
             nextEdges, nextPoints,
             currCamera, nextCamera,
@@ -245,6 +251,7 @@ class Renderer extends React.Component {
             renderState, renderingScheduler
         };
 
+        renderPanZoom = this.updateRadialAxes(updateArg) || renderPanZoom;
         renderPanZoom = this.updateNumElements(updateArg) || renderPanZoom;
         renderPanZoom = this.updateShowArrows(updateArg) || renderPanZoom;
         renderPanZoom = this.updateEdgeScaling(updateArg) || renderPanZoom;
@@ -293,6 +300,16 @@ class Renderer extends React.Component {
         nextSimWidth, nextSimHeight,
     }) {
         return (currSimWidth !== nextSimWidth) || (currSimHeight !== nextSimHeight);
+    }
+    updateRadialAxes({
+        currAxes, nextAxes,
+        renderState, renderingScheduler
+    }) {
+        if (!shallowEqual(currAxes, nextAxes)) {
+            renderingScheduler.loadRadialAxes(nextAxes);
+            return true;
+        }
+        return false;
     }
     updateNumElements({
         currEdges, currPoints,

@@ -5,10 +5,11 @@ import { Renderer as RendererComponent } from 'viz-app/components/renderer';
 
 let Renderer = ({
     highlight = {}, selection = {}, background = {},
-    edges = {}, points = {}, camera = {}, ...props
+    axis = {}, edges = {}, points = {}, camera = {}, ...props
 } = {}) => {
     return (
         <RendererComponent
+            axis={toProps(axis)}
             edges={toProps(edges)}
             points={toProps(points)}
             camera={toProps(camera)}

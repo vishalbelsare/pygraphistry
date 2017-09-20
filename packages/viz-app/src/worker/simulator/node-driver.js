@@ -194,7 +194,9 @@ function fetchNumElements (counts, renderConfig) {
                         });
                     if (serversideModelBindings.length !== 0) {
                         aServersideModelName = serversideModelBindings[0][0];
+                        return [item, aServersideModelName ? counts[aServersideModelName].num : 0];
                     }
+                    return [];
                 }
                 return [item, aServersideModelName ? counts[aServersideModelName].num : 0];
             }));

@@ -187,15 +187,16 @@ Camera2d.prototype.resize = function(width, height, pixelRatio) {
 function toRadian (deg) { return deg * Math.PI / 180; }
 
 
-Camera2d.prototype.getMatrix = function() {
+Camera2d.prototype.getMatrix = function(_center) {
+    var center = _center || this.center;
     var projectionMatrix = mat4.create(); //new J3DIMatrix4();
 
     // Choose arbitrary near and far planes (0, 20)
     // We purposely swap and negate the top and bottom arguments so that the matrix follows
     // HTML-style coordinates (top-left corner at 0,0) vs. than GL coordinates (bottom-left 0,0)
     mat4.ortho(projectionMatrix,
-               this.center.x - (this.width / 2), this.center.x + (this.width / 2),
-               -this.center.y - (this.height / 2), -this.center.y + (this.height / 2),
+               center.x - (this.width  / 2),  center.x + (this.width  / 2),
+              -center.y - (this.height / 2), -center.y + (this.height / 2),
                this.nearPlane, this.farPlane);
 
 

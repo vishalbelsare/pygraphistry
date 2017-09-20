@@ -16,6 +16,8 @@ const SceneOptionToggle = withControlContainer(({ id, name, props, value = false
     </label>
 ));
 
+const emptyArray = [];
+
 let Scene = ({
         settings,
         selectLabel,
@@ -27,8 +29,8 @@ let Scene = ({
         simulationHeight,
         onSelectedPointTouchStart,
         onSelectionMaskTouchStart,
-        id, simulating, labels = {}, axis = {},
-        release = {}, renderer = {},
+        id, simulating, labels = {},
+        axis = {}, release = {}, renderer = {},
         selection = {}, highlight = {}, ...props } = {}) => (
     <SceneComponent key='scene'
                     sceneID={id}
@@ -55,7 +57,13 @@ let Scene = ({
                   data={renderer}
                   simulating={simulating}
                   simulationWidth={simulationWidth}
-                  simulationHeight={simulationHeight}/>
+                  simulationHeight={simulationHeight}
+                  axis={axis &&
+                        axis.encodings &&
+                        axis.encodings.point &&
+                        axis.encodings.point.axis &&
+                        axis.encodings.point.axis.rows || emptyArray}/>
+        <Axis key='axis' data={axis} />
         <Selection key='selection'
                    data={selection}
                    simulating={simulating}
@@ -65,7 +73,6 @@ let Scene = ({
                    onSelectionMaskTouchStart={onSelectionMaskTouchStart}
                    highlightedEdge={highlight && highlight.edge && highlight.edge[0]}
                    highlightedPoint={highlight && highlight.point && highlight.point[0]}/>
-        <Axis key='axis' data={axis} />
         <Labels key='labels'
                 data={labels}
                 simulating={simulating}

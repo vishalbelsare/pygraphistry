@@ -17,6 +17,15 @@ export const programs = {
         'camera': 'mvp',
         'uniforms': ['zoomScalingFactor', 'maxPointSize', 'maxScreenSize', 'maxCanvasSize', 'edgeOpacity']
     },
+    'radialaxes': {
+        'sources': {
+            'vertex': require('viz-app/shaders/radial-axis.vertex.glsl'),
+            'fragment': require('viz-app/shaders/radial-axis.fragment.glsl')
+        },
+        'attributes': ['aPos', 'aCenter', 'aRadius'],
+        'camera': 'mvp',
+        'uniforms': []
+    },
     'arrowhighlight': {
         'sources': {
             'vertex': require('viz-app/shaders/arrowhighlighted.vertex.glsl'),

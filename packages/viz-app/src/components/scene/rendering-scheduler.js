@@ -35,7 +35,7 @@ function RenderingScheduler(renderState, renderer,
 
     /* Rendering queue */
     var renderTasks = new Subject();
-    var renderQueue = {};
+    var renderQueue = Object.create(null);
     var renderingPaused = true; // False when the animation loop is running.
 
     var fullBufferNameList = config.buffers.concat(
@@ -142,26 +142,6 @@ function RenderingScheduler(renderState, renderer,
         }).subscribe({})
     );
 
-    // Setup resize handler, which tells renderer to resize textures
-    // and the scheduler to rerun picking/populate textures. Split into fast/slow tasks
-    // const resizes = Observable.fromEvent(window, 'resize').share();
-
-    // this.add(resizes
-    //     .debounceTime(100)
-    //     .delay(50)
-    //     .do(() => renderer.resizeCanvas(this.renderState))
-    //     .subscribe({})
-    // );
-
-    // TODO: We really only need to refresh picking and fullscreen cached texture
-    // this.add(resizes
-    //     .debounceTime(500)
-    //     .do(() => this.renderScene('resizeRerender', {
-    //         trigger: 'renderSceneFull'
-    //     }))
-    //     .subscribe({})
-    // );
-
     /*
      * Helpers to start/stop the rendering loop within an animation frame. The rendering loop
      * stops when idle for a second and starts again at the next render update.
@@ -180,8 +160,10 @@ function RenderingScheduler(renderState, renderer,
         const loop = () => {
             var nextFrameId = window.requestAnimationFrame(loop);
 
+            let renderTaskNames = Object.keys(renderQueue);
+
             // Nothing to render
-            if (_.keys(renderQueue).length === 0) {
+            if (renderTaskNames.length === 0) {
 
                 // TODO: Generalize this
                 if (!quietSignaled) {
@@ -208,80 +190,83 @@ function RenderingScheduler(renderState, renderer,
 
             // Handle "slow effects request"
             // TODO: Handle this naturally, instead of hack here
-            var tagsWithRenderFull = _.filter(_.keys(renderQueue), (key) => {
-                var task = renderQueue[key];
-                return (task.trigger === 'renderSceneFull');
-            });
+            var handledSpecialTasks = false;
+            var tagsWithRenderFull = renderTaskNames.filter((key) =>
+                    renderQueue[key].trigger === 'renderSceneFull');
 
             if (tagsWithRenderFull.length > 0) {
                 // TODO: Generalize this code block
                 shouldUpdateRenderTime = true;
                 this.appSnapshot.fullScreenBufferDirty = true;
                 if (quietSignaled) {
-
                     this.renderSlowEffects();
+                    handledSpecialTasks = true;
                     this.appSnapshot.vboUpdated = false;
-                    _.each(tagsWithRenderFull, (tag) => {
-                        delete renderQueue[tag];
-                    });
+                    for (let i = -1, n = tagsWithRenderFull.length; ++i < n;) {
+                        delete renderQueue[tagsWithRenderFull[i]];
+                    }
                 }
-
             }
 
             // Move points overlay
             // Takes precedence over mouseover interactions, and will skip mouseover
             // interactions
-            if (_.keys(renderQueue).indexOf('movePointsOverlay') > -1) {
-
+            if ('movePointsOverlay' in renderQueue) {
                 if (!this.appSnapshot.fullScreenBufferDirty) {
                     shouldUpdateRenderTime = true;
                     this.renderMovePointsOverlay(renderQueue.movePointsOverlay);
                 }
-
+                handledSpecialTasks = true;
+                delete renderQueue.mouseOver;
                 delete renderQueue.movePointsOverlay;
-                if (renderQueue.mouseOver) {
-                    delete renderQueue.mouseOver;
-                }
             }
-
-
             // Mouseover
             // TODO: Generalize this as a separate category?
-            if (_.keys(renderQueue).indexOf('mouseOver') > -1) {
+            else if ('mouseOver' in renderQueue) {
                 // Only handle mouseovers if the fullscreen buffer
                 // from rendering all edges (full scene) is clean
                 if (!this.appSnapshot.fullScreenBufferDirty) {
                     shouldUpdateRenderTime = true;
                     this.renderMouseoverEffects(renderQueue.mouseOver);
                 }
+                handledSpecialTasks = true;
                 delete renderQueue.mouseOver;
             }
 
-            // Rest render queue
-            if (_.keys(renderQueue).length > 0) {
+            handledSpecialTasks && (renderTaskNames = Object.keys(renderQueue));
+
+            // Rest of render queue
+            if (renderTaskNames.length > 0) {
+
+                let isRenderingToScreen = false;
 
                 // TODO: Generalize this into tag description (or allow to check renderconfig)
                 // Alternatively, generalize when we fix the fullScreenBuffer.
-                var isRenderingToScreen = _.filter(_.keys(renderQueue),
-                    name => name.indexOf('picking') === -1
-                ).length > 0;
-
-                // TODO: Generalize this code block
-                if (isRenderingToScreen) {
-                    shouldUpdateRenderTime = true;
-                    this.appSnapshot.fullScreenBufferDirty = true;
-                    if (quietSignaled) {
-                        isAnimating.onNext(true);
-                        quietSignaled = false;
+                for (let i = -1, n = renderTaskNames.length; ++i < n;) {
+                    const taskName = renderTaskNames[i];
+                    // TODO: Generalize this code block
+                    if (!~taskName.indexOf('picking')) {
+                        isRenderingToScreen = true;
+                        shouldUpdateRenderTime = true;
+                        this.appSnapshot.fullScreenBufferDirty = true;
+                        if (quietSignaled) {
+                            isAnimating.onNext(true);
+                            quietSignaled = false;
+                        }
+                        break;
                     }
                 }
 
-                renderer.setCamera(this.renderState);
-                _.each(renderQueue, (renderTask, tag) => {
-                    renderer.render(this.renderState, tag, renderTask.trigger, renderTask.items,
+                const renderState = this.renderState;
+                renderer.setCamera(renderState);
+
+                for (let i = -1, n = renderTaskNames.length; ++i < n;) {
+                    const taskName = renderTaskNames[i];
+                    const renderTask = renderQueue[taskName];
+                    renderer.render(renderState, taskName, renderTask.trigger, renderTask.items,
                                     renderTask.readPixels, renderTask.callback);
-                });
-                renderQueue = {};
+                }
+                renderQueue = Object.create(null);
 
                 // If anything is selected, we need to do the copy to texture + darken
                 // TODO: Investigate performance of this.
@@ -303,7 +288,6 @@ function RenderingScheduler(renderState, renderer,
                     this.lastMouseoverTask.data.highlight.nodeIndices = tmpHighlightNodeIndices;
                     this.lastMouseoverTask.data.highlight.edgeIndices = tmpHighlightEdgeIndices;
                 }
-
             }
         }
 
@@ -736,14 +720,39 @@ RenderingScheduler.prototype.populateArrowBuffers = function (maybeIterable, mid
     }
 };
 
+function colorRGBInterpolator(color1, color2, lambda) {
+    var r, g, b;
+    r = color1.r * (1 - lambda) + color2.r * (lambda);
+    g = color1.g * (1 - lambda) + color2.g * (lambda);
+    b = color1.b * (1 - lambda) + color2.b * (lambda);
+    return {
+        r: r,
+        g: g,
+        b: b
+    };
+};
+
+// Convert from HSV to RGB Int
+function convertColor2RGBInt(color) {
+    return (color.r << 0) + (color.g << 8) + (color.b << 16);
+};
+
+// Convert from RGB Int to HSV
+function convertRGBInt2Color(rgbInt) {
+    return {
+        r: rgbInt & 0xFF,
+        g: (rgbInt >> 8) & 0xFF,
+        b: (rgbInt >> 16) & 0xFF
+    };
+};
+
 RenderingScheduler.prototype.getMidEdgeColors = function (bufferSnapshot, numEdges, numRenderedSplits) {
     var midEdgeColors, edges, edgeColors, srcColorInt, srcColor,
         dstColorInt, dstColor, edgeIndex, midEdgeIndex, numSegments, lambda,
-        colorHSVInterpolator, convertRGBInt2Color, convertColor2RGBInt, interpolatedColorInt;
+        interpolatedColorInt;
 
     var numMidEdgeColors = numEdges * (numRenderedSplits + 1);
 
-    var interpolatedColor = {};
     srcColor = {};
     dstColor = {};
 
@@ -764,59 +773,6 @@ RenderingScheduler.prototype.getMidEdgeColors = function (bufferSnapshot, numEdg
         }
         return cache[src][dst];
     };
-
-
-    // Interpolate colors in the HSV color space.
-    colorHSVInterpolator = function (color1, color2, lambda) {
-        var color1HSV, color2HSV, h, s, v;
-        color1HSV = color1.hsv();
-        color2HSV = color2.hsv();
-        var h1 = color1HSV.h;
-        var h2 = color2HSV.h;
-        var maxCCW = h1 - h2;
-        var maxCW =  (h2 + 360) - h1;
-        var hueStep;
-        if (maxCW > maxCCW) {
-            //hueStep = higherHue - lowerHue;
-            //hueStep = h2 - h1;
-            hueStep = h2 - h1;
-        } else {
-            //hueStep = higherHue - lowerHue;
-            hueStep = (360 + h2) - h1;
-        }
-        h = (h1 + (hueStep * (lambda))) % 360;
-        //h = color1HSV.h * (1 - lambda) + color2HSV.h * (lambda);
-        s = color1HSV.s * (1 - lambda) + color2HSV.s * (lambda);
-        v = color1HSV.v * (1 - lambda) + color2HSV.v * (lambda);
-        return interpolatedColor.hsv([h, s, v]);
-    };
-
-    var colorRGBInterpolator = function (color1, color2, lambda) {
-        var r, g, b;
-        r = color1.r * (1 - lambda) + color2.r * (lambda);
-        g = color1.g * (1 - lambda) + color2.g * (lambda);
-        b = color1.b * (1 - lambda) + color2.b * (lambda);
-        return {
-            r: r,
-            g: g,
-            b: b
-        };
-    };
-
-    // Convert from HSV to RGB Int
-    convertColor2RGBInt = function (color) {
-        return (color.r << 0) + (color.g << 8) + (color.b << 16);
-    };
-
-    // Convert from RGB Int to HSV
-    convertRGBInt2Color= function (rgbInt) {
-        return {
-            r:rgbInt & 0xFF,
-            g:(rgbInt >> 8) & 0xFF,
-            b:(rgbInt >> 16) & 0xFF
-        };
-    };
-
 
     for (edgeIndex = 0; edgeIndex < numEdges/2; edgeIndex++) {
 
@@ -856,37 +812,27 @@ RenderingScheduler.prototype.makeArrows = function (bufferSnapshots, edgeMode, n
     var edgeColors = new Uint32Array(bufferSnapshots.edgeColors.buffer);
     var numEdges = logicalEdges.length / 2;
 
-
-
-
-
-
     if (!bufferSnapshots.arrowStartPos) {
-        // bufferSnapshots.arrowStartPos = new Float32Array(numEdges * 2 * 3);
         bufferSnapshots.arrowStartPos = this.getTypedArray('arrowStartPos', Float32Array, numEdges * 2 * 3);
     }
     var arrowStartPos = bufferSnapshots.arrowStartPos;
 
     if (!bufferSnapshots.arrowEndPos) {
-        // bufferSnapshots.arrowEndPos = new Float32Array(numEdges * 2 * 3);
         bufferSnapshots.arrowEndPos = this.getTypedArray('arrowEndPos', Float32Array, numEdges * 2 * 3);
     }
     var arrowEndPos = bufferSnapshots.arrowEndPos;
 
     if (!bufferSnapshots.arrowNormalDir) {
-        // bufferSnapshots.arrowNormalDir = new Float32Array(numEdges * 3);
         bufferSnapshots.arrowNormalDir = this.getTypedArray('arrowNormalDir', Float32Array, numEdges * 3);
     }
     var arrowNormalDir = bufferSnapshots.arrowNormalDir;
 
     if (!bufferSnapshots.arrowColors) {
-        // bufferSnapshots.arrowColors = new Uint32Array(numEdges * 3);
         bufferSnapshots.arrowColors = this.getTypedArray('arrowColors', Uint32Array, numEdges * 3);
     }
     var arrowColors = bufferSnapshots.arrowColors;
 
     if (!bufferSnapshots.arrowPointSizes) {
-        // bufferSnapshots.arrowPointSizes = new Uint8Array(numEdges * 3);
         bufferSnapshots.arrowPointSizes = this.getTypedArray('arrowPointSizes', Uint8Array, numEdges * 3);
     }
     var arrowPointSizes = bufferSnapshots.arrowPointSizes;
@@ -1049,18 +995,20 @@ RenderingScheduler.prototype.renderMovePointsOverlay = function (task) {
     buffers.selectedNodeSizes = new Uint8Array(movingNodeIndices.length);
     buffers.selectedNodeColors = new Uint32Array(movingNodeIndices.length);
 
+    let { selectedNodePositions, selectedNodeSizes, selectedNodeColors } = buffers;
+
     // Copy in node information
     _.each(movingNodeIndices, function (val, idx) {
-        buffers.selectedNodePositions[idx*2] = hostNodePositions[val*2];
-        buffers.selectedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
-        buffers.selectedNodeSizes[idx] = hostNodeSizes[val];
-        buffers.selectedNodeColors[idx] = hostNodeColors[val];
+        selectedNodePositions[idx*2] = hostNodePositions[val*2];
+        selectedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
+        selectedNodeSizes[idx] = hostNodeSizes[val];
+        selectedNodeColors[idx] = hostNodeColors[val];
     });
 
     // Updating positions given delta
-    for (var i = 0; i < buffers.selectedNodePositions.length / 2; i++) {
-        buffers.selectedNodePositions[i*2] += diff.x;
-        buffers.selectedNodePositions[i*2 + 1] += diff.y;
+    for (var i = 0, n = selectedNodePositions.length / 2; i < n; i++) {
+        selectedNodePositions[i*2] += diff.x;
+        selectedNodePositions[i*2 + 1] += diff.y;
     }
 
     renderer.loadBuffers(renderState, {
@@ -1208,6 +1156,8 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
         buffers.highlightedArrowPointColors = new Uint32Array(highlightedEdgeIndices.length * 3);
         buffers.highlightedArrowPointSizes = new Uint8Array(highlightedEdgeIndices.length * 3);
 
+        let { highlightedEdges, midSpringsPos, highlightedNodePositions, highlightedNodeSizes, highlightedNodeColors } = buffers;
+
         // Copy in data
         _.each(highlightedEdgeIndices, function (val, idx) {
             // The start at the first midedge corresponding to hovered edge
@@ -1215,18 +1165,18 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
             var highlightStartIdx = (idx * 4 * numMidEdges);
             for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx = midEdgeIdx + 1) {
                 var midEdgeStride = midEdgeIdx * 4;
-                buffers.highlightedEdges[highlightStartIdx + midEdgeStride] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride)];
-                buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
-                buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 2];
-                buffers.highlightedEdges[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 3];
+                highlightedEdges[highlightStartIdx + midEdgeStride] = midSpringsPos[edgeStartIdx + (midEdgeStride)];
+                highlightedEdges[highlightStartIdx + midEdgeStride + 1] = midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
+                highlightedEdges[highlightStartIdx + midEdgeStride + 2] = midSpringsPos[edgeStartIdx + (midEdgeStride) + 2];
+                highlightedEdges[highlightStartIdx + midEdgeStride + 3] = midSpringsPos[edgeStartIdx + (midEdgeStride) + 3];
             }
         });
 
         _.each(highlightedNodeIndices, function (val, idx) {
-            buffers.highlightedNodePositions[idx*2] = hostNodePositions[val*2];
-            buffers.highlightedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
-            buffers.highlightedNodeSizes[idx] = hostNodeSizes[val];
-            buffers.highlightedNodeColors[idx] = hostNodeColors[val];
+            highlightedNodePositions[idx*2] = hostNodePositions[val*2];
+            highlightedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
+            highlightedNodeSizes[idx] = hostNodeSizes[val];
+            highlightedNodeColors[idx] = hostNodeColors[val];
         });
 
         this.populateArrowBuffers(highlightedEdgeIndices, buffers.midSpringsPos, buffers.highlightedArrowStartPos,
@@ -1274,6 +1224,14 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
         buffers.selectedArrowPointColors = new Uint32Array(selectedEdgeIndices.length * 3);
         buffers.selectedArrowPointSizes = new Uint8Array(selectedEdgeIndices.length * 3);
 
+        let {
+            selectedEdges, selectedEdgeStarts,
+            selectedEdgeEnds, selectedEdgeColors,
+            midEdgesColors, midSpringsPos,
+            midSpringsStarts, midSpringsEnds,
+            selectedNodePositions, selectedNodeSizes, selectedNodeColors
+        } = buffers;
+
         // Copy in data
         _.each(selectedEdgeIndices, function (val, idx) {
             // The start at the first midedge corresponding to hovered edge
@@ -1283,32 +1241,32 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
             var highlightColorStartIdx = (idx * 2 * numMidEdges);
             for (var midEdgeIdx = 0; midEdgeIdx < numMidEdges; midEdgeIdx ++) {
                 var midEdgeStride = midEdgeIdx * 4;
-                buffers.selectedEdges[highlightStartIdx + midEdgeStride] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride)];
-                buffers.selectedEdges[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
-                buffers.selectedEdges[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 2];
-                buffers.selectedEdges[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsPos[edgeStartIdx + (midEdgeStride) + 3];
+                selectedEdges[highlightStartIdx + midEdgeStride] = midSpringsPos[edgeStartIdx + (midEdgeStride)];
+                selectedEdges[highlightStartIdx + midEdgeStride + 1] = midSpringsPos[edgeStartIdx + (midEdgeStride) + 1];
+                selectedEdges[highlightStartIdx + midEdgeStride + 2] = midSpringsPos[edgeStartIdx + (midEdgeStride) + 2];
+                selectedEdges[highlightStartIdx + midEdgeStride + 3] = midSpringsPos[edgeStartIdx + (midEdgeStride) + 3];
 
-                buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride)];
-                buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride) + 1];
-                buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride) + 2];
-                buffers.selectedEdgeStarts[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsStarts[edgeStartIdx + (midEdgeStride) + 3];
+                selectedEdgeStarts[highlightStartIdx + midEdgeStride] = midSpringsStarts[edgeStartIdx + (midEdgeStride)];
+                selectedEdgeStarts[highlightStartIdx + midEdgeStride + 1] = midSpringsStarts[edgeStartIdx + (midEdgeStride) + 1];
+                selectedEdgeStarts[highlightStartIdx + midEdgeStride + 2] = midSpringsStarts[edgeStartIdx + (midEdgeStride) + 2];
+                selectedEdgeStarts[highlightStartIdx + midEdgeStride + 3] = midSpringsStarts[edgeStartIdx + (midEdgeStride) + 3];
 
-                buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride)];
-                buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride + 1] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride) + 1];
-                buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride + 2] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride) + 2];
-                buffers.selectedEdgeEnds[highlightStartIdx + midEdgeStride + 3] = buffers.midSpringsEnds[edgeStartIdx + (midEdgeStride) + 3];
+                selectedEdgeEnds[highlightStartIdx + midEdgeStride] = midSpringsEnds[edgeStartIdx + (midEdgeStride)];
+                selectedEdgeEnds[highlightStartIdx + midEdgeStride + 1] = midSpringsEnds[edgeStartIdx + (midEdgeStride) + 1];
+                selectedEdgeEnds[highlightStartIdx + midEdgeStride + 2] = midSpringsEnds[edgeStartIdx + (midEdgeStride) + 2];
+                selectedEdgeEnds[highlightStartIdx + midEdgeStride + 3] = midSpringsEnds[edgeStartIdx + (midEdgeStride) + 3];
 
                 var midEdgeColorStride = midEdgeIdx * 2;
-                buffers.selectedEdgeColors[highlightColorStartIdx + midEdgeColorStride] = buffers.midEdgesColors[edgeColorStartIdx + midEdgeColorStride];
-                buffers.selectedEdgeColors[highlightColorStartIdx + midEdgeColorStride + 1] = buffers.midEdgesColors[edgeColorStartIdx + midEdgeColorStride + 1];
+                selectedEdgeColors[highlightColorStartIdx + midEdgeColorStride] = midEdgesColors[edgeColorStartIdx + midEdgeColorStride];
+                selectedEdgeColors[highlightColorStartIdx + midEdgeColorStride + 1] = midEdgesColors[edgeColorStartIdx + midEdgeColorStride + 1];
             }
         });
 
         _.each(selectedNodeIndices, function (val, idx) {
-            buffers.selectedNodePositions[idx*2] = hostNodePositions[val*2];
-            buffers.selectedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
-            buffers.selectedNodeSizes[idx] = hostNodeSizes[val];
-            buffers.selectedNodeColors[idx] = hostNodeColors[val];
+            selectedNodePositions[idx*2] = hostNodePositions[val*2];
+            selectedNodePositions[idx*2 + 1] = hostNodePositions[val*2 + 1];
+            selectedNodeSizes[idx] = hostNodeSizes[val];
+            selectedNodeColors[idx] = hostNodeColors[val];
         });
 
         this.populateArrowBuffers(selectedEdgeIndices, buffers.midSpringsPos, buffers.selectedArrowStartPos,
@@ -1343,6 +1301,37 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
     renderer.setCamera(renderState);
     renderer.render(renderState, renderTrigger, renderTrigger);
 };
+
+RenderingScheduler.prototype.loadRadialAxes = function loadRadialAxes(axes) {
+    let { renderer, renderState } = this, { camera } = renderState;
+    let radialAxes = (axes || []).filter(({ r }) => typeof r === 'number');
+    let x = 0, y = 0, maxStrokeWidth = 10, numRadialAxes = radialAxes.length;
+    let radialAxesBuffer = this.getTypedArray('radialAxes', Float32Array, numRadialAxes * 3 * 5);
+    for (let j = -1, i = -1; ++i < numRadialAxes;) {
+
+        let r = radialAxes[i].r;
+
+        radialAxesBuffer[++j] = x - r - maxStrokeWidth;
+        radialAxesBuffer[++j] = y - r - maxStrokeWidth;
+        radialAxesBuffer[++j] = x;
+        radialAxesBuffer[++j] = y;
+        radialAxesBuffer[++j] = r;
+
+        radialAxesBuffer[++j] = x + (1 + Math.sqrt(2)) * (r + maxStrokeWidth);
+        radialAxesBuffer[++j] = y - r - maxStrokeWidth;
+        radialAxesBuffer[++j] = x;
+        radialAxesBuffer[++j] = y;
+        radialAxesBuffer[++j] = r;
+
+        radialAxesBuffer[++j] = x - r - maxStrokeWidth;
+        radialAxesBuffer[++j] = y + (1 + Math.sqrt(2)) * (r + maxStrokeWidth);
+        radialAxesBuffer[++j] = x;
+        radialAxesBuffer[++j] = y;
+        radialAxesBuffer[++j] = r;
+    }
+    renderer.loadBuffers(renderState, { radialAxes: radialAxesBuffer });
+    renderer.setNumElements(renderState, 'radialaxes', numRadialAxes * 3);
+}
 
 RenderingScheduler.prototype.renderMovePointsTemporaryPositions = function (diff, sel) {
     const task = {
