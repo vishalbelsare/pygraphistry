@@ -30,6 +30,7 @@ const getCurrentUser = session_id =>
       return reject(new Error(`No user exists with the id ${user_id}`));
     }
     delete user.password;
+    knex.destroy();
     resolve(user);
   });
 
