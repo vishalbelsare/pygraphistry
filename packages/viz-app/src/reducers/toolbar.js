@@ -39,6 +39,7 @@ const reducers = {
 function selectToolbarItem(action$, store) {
     return action$
         .ofType(SELECT_TOOLBAR_ITEM)
+        .throttleTime(10)
         .groupBy(({ id }) => id)
         .mergeMap((actionsById) => actionsById.switchMap(
             ({ id, ...props }) => reducers[id]({

@@ -27,8 +27,7 @@ function SizeLegendIndicator ({ sizeValue, ...props }) {
             <OverlayTrigger placement='top'
                             delayShow={tooltipShowDelay}
                             overlay={SizeLegendIndicatorTooltip}>
-                <Button className={styles['histogram-legend-pill']}
-                        bsSize='xsmall' href='javascript:void(0)' {...props}>
+                <Button className={styles['histogram-legend-pill']} bsSize='xsmall' {...props}>
                     <i className={classNames({
                         'fa': true, 'fa-dot-circle-o': true,
                         [styles['histogram-size-encoding-icon']]: true
@@ -39,7 +38,11 @@ function SizeLegendIndicator ({ sizeValue, ...props }) {
         </span>
     );
 }
-SizeLegendIndicator.propTypes = { sizeValue: PropTypes.array };
+SizeLegendIndicator.propTypes = {
+    sizeValue: PropTypes.oneOfType([
+        PropTypes.array, PropTypes.bool
+    ])
+};
 
 function YAxisLegendIndicator ({ yAxisValue = 'none', ...props }) {
     return yAxisValue == 'none' ? null : (
@@ -47,8 +50,7 @@ function YAxisLegendIndicator ({ yAxisValue = 'none', ...props }) {
             <OverlayTrigger placement='top'
                             delayShow={tooltipShowDelay}
                             overlay={YAxisLegendIndicatorTooltip}>
-                <Button className={styles['histogram-legend-pill']}
-                        bsSize='xsmall' href='javascript:void(0)' {...props}>
+                <Button className={styles['histogram-legend-pill']} bsSize='xsmall' {...props}>
                     <i className={classNames({
                         'fa': true, 'fa-signal': true,
                         [styles['histogram-size-encoding-icon']]: true
@@ -67,8 +69,7 @@ function IconLegendIndicator ({ iconValue, ...props }) {
             <OverlayTrigger placement='top'
                             delayShow={tooltipShowDelay}
                             overlay={IconLegendIndicatorTooltip}>
-                <Button className={styles['histogram-legend-pill']}
-                        bsSize='xsmall' href='javascript:void(0)' {...props}>
+                <Button className={styles['histogram-legend-pill']} bsSize='xsmall' {...props}>
                     <i className={classNames({
                         'fa': true, 'fa-map-pin': true,
                         [styles['histogram-size-encoding-icon']]: true

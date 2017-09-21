@@ -7,12 +7,14 @@ import { ButtonList,
          ButtonListItems
 } from 'viz-app/components/toolbar';
 
-let Toolbar = ({ children, toolbar = [], selectToolbarItem, ...props } = {}) => {
+let Toolbar = ({ renderPopover, popoverData, isPopoverOpen, toolbar = [], selectToolbarItem, ...props } = {}) => {
     return (
         <ButtonList {...props}>
         {toolbar.map((items, index) => (
             <ToolbarItems data={items}
-                          popover={children}
+                          popoverData={popoverData}
+                          renderPopover={renderPopover}
+                          isPopoverOpen={isPopoverOpen}
                           key={`toolbar-items-${items.id}`}
                           selectToolbarItem={selectToolbarItem}/>
         ))}
@@ -33,11 +35,15 @@ Toolbar = container({
     })
 })(Toolbar);
 
-let ToolbarItems = ({ id, name, popover, items = [], selectToolbarItem } = {}) => {
+let ToolbarItems = ({ id, name, renderPopover, popoverData, isPopoverOpen, items = [], selectToolbarItem } = {}) => {
     return (
         <ButtonListItems id={id} name={name}>
         {items.map((item, index) => (
-            <ToolbarItem data={item} popover={popover} groupId={id}
+            <ToolbarItem data={item}
+                         groupId={id}
+                         popoverData={popoverData}
+                         renderPopover={renderPopover}
+                         isPopoverOpen={isPopoverOpen}
                          key={`${index}: toolbar-item-${item.id}`}
                          selectToolbarItem={selectToolbarItem}/>
         ))}

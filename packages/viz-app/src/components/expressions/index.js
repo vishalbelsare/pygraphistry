@@ -136,9 +136,10 @@ export function ExpressionItem({
             <Col xs={4} md={4} lg={4} className={styles['expression-row']} style={{ padding: 0, transform: 'scale(0.9)' }}>
                 <Col xs={6} md={6} lg={6}>
                     <OverlayTrigger placement='top' overlay={expressionEnabledTooltip}>
-                        <RcSwitch checked={enabled}
+                        <RcSwitch defaultChecked={enabled}
                                   checkedChildren={'On'}
                                   unCheckedChildren={'Off'}
+                                  key={`expression-${id}-checked`}
                                   onChange={(newEnabled) => setExpressionEnabled({
                                       id, enabled: newEnabled
                                   })}/>
@@ -146,12 +147,8 @@ export function ExpressionItem({
                 </Col>
                 <Col xs={6} md={6} lg={6} style={{ paddingRight: 0 }}>
                     <OverlayTrigger placement='right' overlay={deleteExpressionTooltip}>
-                        <Button href='javascript:void(0)'
-                                className={classNames({
-                                    'fa': true,
-                                    'fa-close': true
-                                })}
-                                onClick={() => removeExpression({ id })}/>
+                        <Button onClick={() => removeExpression({ id })}
+                                className={classNames({ 'fa': true, 'fa-close': true })}/>
                     </OverlayTrigger>
                 </Col>
             </Col>

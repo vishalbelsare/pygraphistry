@@ -23,6 +23,11 @@ import {
 import { selectLabel } from 'viz-app/actions/labels';
 import { selectInspectorRow } from 'viz-app/actions/inspector';
 
+function renderLeftPanel({ data, isOpen }) {
+    return <Panel key='left-panel' side='left' data={data} isOpen={isOpen}/>
+}
+
+const emptyArray = [];
 const fullWidth = { width: `100%` };
 const paneStyle = { ...fullWidth, height: `100%`, position: `relative` };
 const rightPanelStyle = { ...paneStyle, overflow: 'visible' };
@@ -42,18 +47,24 @@ let View = ({
     onSelectedPointTouchStart,
     onSelectionMaskTouchStart
 } = {}) => {
-    const { left = [], right = [], bottom = [] } = panels;
+    const { left = emptyArray, right = emptyArray, bottom = emptyArray } = panels;
     const isLeftPanelOpen = left && left.id !== undefined;
     const isRightPanelOpen = right && right.id !== undefined;
     const isBottomPanelOpen = bottom && bottom.id !== undefined;
+    const toolbarWidth = (window ? window.innerHeight : 0) || 0;
     const toolbarHeight = !menu || !toolbar || !toolbar.visible || (
                            window && window.innerWidth < 330) ? 0 : 41;
     return (
         <SplitPane split='horizontal' allowResize={false}
                    style={fullWidth} paneStyle={paneStyle} size={`${toolbarHeight}px`}>
-            <Toolbar key='toolbar' menu={menu} data={toolbar} selectToolbarItem={selectToolbarItem}>
-                <Panel key='left-panel' side='left' data={left} isOpen={isLeftPanelOpen}/>
-            </Toolbar>
+            <Toolbar key='toolbar'
+                     menu={menu}
+                     data={toolbar}
+                     popoverData={left}
+                     toolbarHeight={toolbarHeight}
+                     renderPopover={renderLeftPanel}
+                     isPopoverOpen={isLeftPanelOpen}
+                     selectToolbarItem={selectToolbarItem}/>
             <SplitPane allowResize={isBottomPanelOpen}
                        minSize={0} paneStyle={paneStyle}
                        split='horizontal' primary='second'

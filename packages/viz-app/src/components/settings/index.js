@@ -95,7 +95,7 @@ export function ToggleButton({
             </Col>
             <Col xs={5} sm={5} md={5} lg={5} className={styles['control']}>
                 <RcSwitch key={`${id}-toggle`}
-                          checked={value}
+                          defaultChecked={value}
                           checkedChildren={'On'}
                           unCheckedChildren={'Off'}
                           onChange={(newState) => setValue({

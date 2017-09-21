@@ -3,6 +3,8 @@ import { Button, ButtonGroup } from 'react-bootstrap';
 import mapPropsStream from 'recompose/mapPropsStream';
 import createEventHandler from 'recompose/createEventHandler';
 
+function PD(e) { e && e.preventDefault && e.preventDefault() }
+
 const Paginate = mapPropsStream((props) => {
 
     const { handler: onNext, stream: nexts } = createEventHandler();
@@ -20,12 +22,13 @@ const Paginate = mapPropsStream((props) => {
         const { page = 1, pages = 1, boundaryLinks = false } = props;
         const events = selects.merge(!boundaryLinks &&
             Observable.empty() || Observable.merge(
-                firsts.mapTo({ to: 1 }), lasts.mapTo({ to: pages })
+                firsts.do(PD).mapTo({ to: 1 }),
+                lasts.do(PD).mapTo({ to: pages })
             ));
 
         return events
-            .merge(nexts.mapTo({ inc: 1 })
-            .merge(prevs.mapTo({ inc: -1})))
+            .merge(nexts.do(PD).mapTo({ inc: 1 })
+            .merge(prevs.do(PD).mapTo({ inc: -1})))
             .scan((page, { inc, to }) => !inc ? to || 1 :
                     Math.max(1, Math.min(pages, page + inc)),
                 page
@@ -77,8 +80,8 @@ function Pagination({ page = 1, pages = 0,
                                       { inc: (count === 1 ? -1 : 1) * (numButtons - 5) };
 
         buttons.push(
-            <Button key={`btn-${count}`}
-                    href='javascript:void(0)'
+            <Button componentClass='a'
+                    key={`btn-${count}`}
                     onClick={onSelect.bind(null, event)}
                     bsStyle={page === index && 'primary' || undefined}>
             {isEllipsisElement ? <i className='fa fa-fw fa-ellipsis-h'/> :
@@ -92,8 +95,8 @@ function Pagination({ page = 1, pages = 0,
     prev && buttons.unshift(
         <Button key={`btn-prev`}
                 onClick={onPrev}
-                disabled={page === 1}
-                href='javascript:void(0)'>
+                componentClass='a'
+                disabled={page === 1}>
             <i className='fa fa-fw fa-angle-left'/>
         </Button>
     );
@@ -101,8 +104,8 @@ function Pagination({ page = 1, pages = 0,
     next && buttons.push(
         <Button key={`btn-next`}
                 onClick={onNext}
-                disabled={page === pages}
-                href='javascript:void(0)'>
+                componentClass='a'
+                disabled={page === pages}>
             <i className='fa fa-fw fa-angle-right'/>
         </Button>
     );
@@ -112,7 +115,7 @@ function Pagination({ page = 1, pages = 0,
         buttons.unshift(
             <Button key={`btn-first`}
                     onClick={onFirst}
-                    href='javascript:void(0)'
+                    componentClass='a'
                     disabled={endIndex <= numButtons}>
                 <i className='fa fa-fw fa-angle-double-left'/>
             </Button>
@@ -121,7 +124,7 @@ function Pagination({ page = 1, pages = 0,
         buttons.push(
             <Button key={`btn-last`}
                     onClick={onLast}
-                    href='javascript:void(0)'
+                    componentClass='a'
                     disabled={endIndex == pages}>
                 <i className='fa fa-fw fa-angle-double-right'/>
             </Button>

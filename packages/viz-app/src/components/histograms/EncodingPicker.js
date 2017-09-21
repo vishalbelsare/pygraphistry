@@ -218,13 +218,11 @@ export class EncodingPicker extends React.Component {
                 trigger={['hover']} // <-- do this so react bootstrap doesn't complain about accessibility
                 style={{zIndex: 999999999}}
                 overlay={ <Tooltip id={`${props.id}_tooltip`}>Pick fields</Tooltip> }>
-                <Button href='javascript:void(0)'
-                    className={classNames({
+                <Button onClick={this.open} className={classNames({
                         'fa': true,
                         'fa-cog': true,
                         [styles['encoding-picker-button']]: true
-                    })}
-                    onClick={this.open} />
+                    })}/>
             </OverlayTrigger>
 
             <Modal show={this.state.showModal} onHide={this.close} style={{zIndex: 999999999}}>
