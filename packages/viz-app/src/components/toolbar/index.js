@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import styles from './styles.less';
 import classNames from 'classnames';
+import mapPropsStream from 'recompose/mapPropsStream';
+import createEventHandler from 'recompose/createEventHandler';
 
 import {
     Badge, Overlay,
@@ -51,7 +53,7 @@ function ButtonListItemTooltip(name) {
     );
 }
 
-export function ButtonListItem({ onItemSelected, popover, groupId, badgeCount = 0, ...props }) {
+export function ButtonListItem({ onItemSelected, renderPopover, popoverData, isPopoverOpen, groupId, badgeCount = 0, ...props }) {
 
     let overlayRef, buttonWithOverlay;
     const { id, name, type, selected } = props;
@@ -94,12 +96,13 @@ export function ButtonListItem({ onItemSelected, popover, groupId, badgeCount = 
                 <span className={styles['overlay-hit-area']} ref={(ref) => overlayRef = ref}/>
                 <Overlay show={selected}
                          rootClose={true}
+                         animation={false}
+                         placement={placement}
                          containerPadding={10}
                          shouldUpdatePosition={true}
-                         animation={true} placement={placement}
                          onHide={() => onItemSelected(props)}
                          target={() => ReactDOM.findDOMNode(overlayRef)}>
-                    {popover}
+                    {renderPopover({ data: popoverData, isOpen: isPopoverOpen })}
                 </Overlay>
             </Button>
         );
