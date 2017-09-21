@@ -50,7 +50,8 @@ export const items = {
         'bindings': {
             'aPos': ['radialAxes', 'pos'],
             'aCenter': ['radialAxes', 'center'],
-            'aRadius': ['radialAxes', 'radius']
+            'aRadius': ['radialAxes', 'radius'],
+            'aFlags': ['radialAxes', 'flags'],
         },
         'uniforms': {
             'stroke': { 'uniformType': '1f', 'defaultValues': [STROKE_WIDTH * .5]},

@@ -1305,29 +1305,42 @@ RenderingScheduler.prototype.renderMouseoverEffects = function (task) {
 RenderingScheduler.prototype.loadRadialAxes = function loadRadialAxes(axes) {
     let { renderer, renderState } = this, { camera } = renderState;
     let radialAxes = (axes || []).filter(({ r }) => typeof r === 'number');
+    const axisStyles = {
+        major: {r: 0.999, g: 0, b: 0, a: 0.5},
+        minor: {r: 0, g: 0.999, b: 0, a: 0.25},
+        space: {r: 0, g: 0, b: 0, a: 0.125},
+    };
     let x = 0, y = 0, maxStrokeWidth = 10, numRadialAxes = radialAxes.length;
-    let radialAxesBuffer = this.getTypedArray('radialAxes', Float32Array, numRadialAxes * 3 * 5);
+    let radialAxesBuffer = this.getTypedArray('radialAxes', Float32Array, numRadialAxes * 3 * 6);
     for (let j = -1, i = -1; ++i < numRadialAxes;) {
 
-        let r = radialAxes[i].r;
+        let axis = radialAxes[i];
+        let r = axis.r;
+        let isThin = axis.space;
+        let color = axisStyles[ axis.label ? 'major' : (axis.space ? 'space' : 'minor') ];
+        let flags = ((isThin ? 1 : 0) << 16) + (Math.floor(color.r * 16) << 12) + (Math.floor(color.g * 16) << 8) + (Math.floor(color.b * 16) << 4) + Math.floor(color.a * 16);
 
         radialAxesBuffer[++j] = x - r - maxStrokeWidth;
         radialAxesBuffer[++j] = y - r - maxStrokeWidth;
         radialAxesBuffer[++j] = x;
         radialAxesBuffer[++j] = y;
         radialAxesBuffer[++j] = r;
+        radialAxesBuffer[++j] = flags;
 
         radialAxesBuffer[++j] = x + (1 + Math.sqrt(2)) * (r + maxStrokeWidth);
         radialAxesBuffer[++j] = y - r - maxStrokeWidth;
         radialAxesBuffer[++j] = x;
         radialAxesBuffer[++j] = y;
         radialAxesBuffer[++j] = r;
+        radialAxesBuffer[++j] = flags;
 
         radialAxesBuffer[++j] = x - r - maxStrokeWidth;
         radialAxesBuffer[++j] = y + (1 + Math.sqrt(2)) * (r + maxStrokeWidth);
         radialAxesBuffer[++j] = x;
         radialAxesBuffer[++j] = y;
         radialAxesBuffer[++j] = r;
+        radialAxesBuffer[++j] = flags;
+
     }
     renderer.loadBuffers(renderState, { radialAxes: radialAxesBuffer });
     renderer.setNumElements(renderState, 'radialaxes', numRadialAxes * 3);

@@ -566,7 +566,7 @@ export const models = {
             'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 2,
             'offset': 0,
-            'stride': 5 * Float32Array.BYTES_PER_ELEMENT,
+            'stride': 6 * Float32Array.BYTES_PER_ELEMENT,
             'normalize': false
         },
         'center': {
@@ -575,7 +575,7 @@ export const models = {
             'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 2,
             'offset': 8,
-            'stride': 5 * Float32Array.BYTES_PER_ELEMENT,
+            'stride': 6 * Float32Array.BYTES_PER_ELEMENT,
             'normalize': false
         },
         'radius': {
@@ -584,8 +584,17 @@ export const models = {
             'hint': DrawOptions.DYNAMIC_DRAW,
             'count': 1,
             'offset': 16,
-            'stride': 5 * Float32Array.BYTES_PER_ELEMENT,
+            'stride': 6 * Float32Array.BYTES_PER_ELEMENT,
             'normalize': false
+        },
+        'flags': {
+            'datasource': VBODataSources.CLIENT,
+            'type': 'FLOAT',
+            'hint': DrawOptions.DYNAMIC_DRAW,
+            'count': 1,
+            'offset': 20,
+            'stride': 6 * Float32Array.BYTES_PER_ELEMENT,
+            'normalize': false            
         }
     },
 };
