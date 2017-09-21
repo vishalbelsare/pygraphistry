@@ -178,6 +178,8 @@ export function insideOut(graph) {
     subaxes[100] = {r: 100, label: "inside"};
     subaxes[300] = {r: 300, label: "communication"};
     subaxes[500] = {r: 500, label: "outside"};
+    subaxes[225] = {r: 225, space: true};
+    subaxes[425] = {r: 425, space: true};
 
     decorateGraphLabelsWithXY(graph.data.labels, xys);
 
