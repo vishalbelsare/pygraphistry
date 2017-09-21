@@ -136,9 +136,10 @@ export function ExpressionItem({
             <Col xs={4} md={4} lg={4} className={styles['expression-row']} style={{ padding: 0, transform: 'scale(0.9)' }}>
                 <Col xs={6} md={6} lg={6}>
                     <OverlayTrigger placement='top' overlay={expressionEnabledTooltip}>
-                        <RcSwitch checked={enabled}
+                        <RcSwitch defaultChecked={enabled}
                                   checkedChildren={'On'}
                                   unCheckedChildren={'Off'}
+                                  key={`expression-${id}-checked`}
                                   onChange={(newEnabled) => setExpressionEnabled({
                                       id, enabled: newEnabled
                                   })}/>
