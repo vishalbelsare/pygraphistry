@@ -48,7 +48,6 @@ export const Sparkline = ({ name, yScale, children, componentType,
                                     onYAxisChange={onYScaleChanged}
                                     id={`histogram-encodings-picker-${name}`}/>
                     <Button bsSize='xsmall'
-                            href='javascript:void(0)'
                             onClick={() => onClose({ id })}
                             className={classNames({
                                 [styles['histogram-close']]: true,

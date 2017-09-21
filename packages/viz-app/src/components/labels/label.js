@@ -242,8 +242,7 @@ function LabelTitle ({ type, color, iconClass, title, icon, pinned, showFull, on
         <div onMouseDown={onMouseDown}
              onTouchStart={onTouchStart}
              className={styles['label-title']}>
-            <a href='javascript:void(0)'
-               className={classNames({
+            <a className={classNames({
                    [styles['pinned']]: pinned,
                    [styles['label-title-close']]: true,
                })}>
@@ -263,8 +262,7 @@ function LabelTitle ({ type, color, iconClass, title, icon, pinned, showFull, on
                                     }"
                                 </Tooltip>
                             }>
-                <a href='javascript:void(0)'
-                   style={{ color, float: `right`, fontSize: `.9em` }}
+                <a style={{ color, float: `right`, fontSize: `.9em` }}
                    className={classNames({
                        [styles['pinned']]: pinned,
                        [styles['label-title-close']]: true,

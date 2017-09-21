@@ -77,7 +77,6 @@ export class ColumnPicker extends React.Component {
                             delayShow={350}
                             overlay={ColumnPickerTooltip}>
                 <Button onClick={this.open}
-                        href='javascript:void(0)'
                         style={this.props.style}>
                     <i className={classNames({
                            'fa': true,

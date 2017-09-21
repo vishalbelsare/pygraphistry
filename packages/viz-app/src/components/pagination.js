@@ -78,7 +78,6 @@ function Pagination({ page = 1, pages = 0,
 
         buttons.push(
             <Button key={`btn-${count}`}
-                    href='javascript:void(0)'
                     onClick={onSelect.bind(null, event)}
                     bsStyle={page === index && 'primary' || undefined}>
             {isEllipsisElement ? <i className='fa fa-fw fa-ellipsis-h'/> :
@@ -92,8 +91,7 @@ function Pagination({ page = 1, pages = 0,
     prev && buttons.unshift(
         <Button key={`btn-prev`}
                 onClick={onPrev}
-                disabled={page === 1}
-                href='javascript:void(0)'>
+                disabled={page === 1}>
             <i className='fa fa-fw fa-angle-left'/>
         </Button>
     );
@@ -101,8 +99,7 @@ function Pagination({ page = 1, pages = 0,
     next && buttons.push(
         <Button key={`btn-next`}
                 onClick={onNext}
-                disabled={page === pages}
-                href='javascript:void(0)'>
+                disabled={page === pages}>
             <i className='fa fa-fw fa-angle-right'/>
         </Button>
     );
@@ -112,7 +109,6 @@ function Pagination({ page = 1, pages = 0,
         buttons.unshift(
             <Button key={`btn-first`}
                     onClick={onFirst}
-                    href='javascript:void(0)'
                     disabled={endIndex <= numButtons}>
                 <i className='fa fa-fw fa-angle-double-left'/>
             </Button>
@@ -121,7 +117,6 @@ function Pagination({ page = 1, pages = 0,
         buttons.push(
             <Button key={`btn-last`}
                     onClick={onLast}
-                    href='javascript:void(0)'
                     disabled={endIndex == pages}>
                 <i className='fa fa-fw fa-angle-double-right'/>
             </Button>
