@@ -143,6 +143,70 @@ export function createGraph(pivots) {
     return { pivots, data: uploadData };
 }
 
+export function isPrivateIP(ip) {
+    // RFC 1918: 10/8, 172.16/12, 192.168/16
+    // TODO: use ipaddr.js
+    return ip.match(/^10[.][^.]+[.][^.]+[.][^.]+$|172[.](?:1[6-9]|2\d|3[01])[.][^.]+[.][^.]+$|192[.]168[.][^.]+[.][^.]+$/) !== null;
+}
+
+export function isIP(ip) {
+    // TODO: use ipaddr.js
+    return ip.match(/^\d+[.]\d+[.]\d+[.]\d+$/);
+}
+
+export function decorateInsideness(graph) {
+    const ontologyType = "canonicalType"; // comes from colTypes[] in src/shared/services/templates/splunk/vendors/splunk
+    // ontology type is one of %w[event file id ip mac url user]
+    const insidenessBuckets = ["inside", "outside", "inside->outside", "outside->inside", "mixed"];
+    // 1. Decorate nodes with IP-address names as either inside or outside.
+    const io = {};
+    graph.data.labels.forEach(({node: id}) => {
+        if(!io[id]) io[id] = {};
+        if(id && isIP(id)) {
+            io[id][isPrivateIP(id) ? 'i' : 'o'] = true
+        }});
+    // 2. All events that have attributes /^(dest|dst|src|source)/ that have an insideness
+    //    have a corresponding insideness which propagates to their attributes.
+    graph.data.labels.filter(({ canonicalType }) => canonicalType === 'event').forEach((e) => {
+        const ks = Object.keys(e);
+        const ks_srcs = ks.filter((k) => k.match(/^(?:src|source)/));
+        const ks_dsts = ks.filter((k) => k.match(/^(?:dst|dest)/));
+        const ks_srcios = ks_srcs.map((k) => Object.keys(io[e[k]] || {}));
+        const ks_dstios = ks_dsts.map((k) => Object.keys(io[e[k]] || {}));
+        const srcs = Array.prototype.concat(...ks_srcios);
+        const dsts = Array.prototype.concat(...ks_dstios);
+        const s_i = srcs.includes('i');
+        const s_o = srcs.includes('o');
+        const d_i = dsts.includes('i');
+        const d_o = dsts.includes('o');
+        if((s_i ^ s_o) && (d_i ^ d_o)) { // This only makes sense if the event has a src/dst from a known insideness
+            if((s_i && d_i) || (s_o && d_o)) {
+                const insideness = s_i ? "i" : "o";
+                Object.keys(e).forEach((k) => { if(io[e[k]]) { io[e[k]][insideness] = true } });
+            } else {
+                const insideness = s_i ? "io" : "oi";
+                Object.keys(e).forEach((k) => { if(io[e[k]]) { io[e[k]][insideness] = true } });
+            }
+        } else {
+            e.mixedInsideness = true; // Is this a warning? This graph is weird
+        }});
+    // 3. Decorate nodes in the graph accordingly.
+    graph.data.labels.forEach((n) => {
+        const nio = io[n.node];
+        if((nio.i || nio.io) && (nio.o || nio.oi)) {
+            n.canonicalInsideness = "mixed";
+        } else if(nio.io) {
+            n.canonicalInsideness = "inside->outside";
+        } else if(nio.oi) {
+            n.canonicalInsideness = "outside->inside";
+        } else if(nio.o) {
+            n.canonicalInsideness = "outside";
+        } else if(nio.i) {
+            n.canonicalInsideness = "inside";
+        }});
+    return graph;
+}
+
 // V0.
 // For all nodes n, set a ternary to labels[n[bindings.idField]].typeField ~ /Internal/ | /External/.
 // Internal is 1xx level, External is 5xx level, Neither is 3xx.
@@ -151,10 +215,8 @@ export function insideOut(graph) {
     const zoneTypenodes = {};
     const idField = bindings.idField;
     const typeField = bindings.typeField;
-    const isInternal = ((s) => s[typeField].match(/Internal/));
-    const isExternal = ((s) => s[typeField].match(/External/));
     graph.data.labels.forEach((n) => {
-        const zoneIdx = isInternal(n) ? "I" : (isExternal(n) ? "E" : "N");
+        const zoneIdx = n.canonicalInsideness || "";
         if(zoneTypenodes[zoneIdx] === undefined) { zoneTypenodes[zoneIdx] = {}; }
         const zone = zoneTypenodes[zoneIdx];
         const typeIdx = n[typeField];
@@ -165,21 +227,22 @@ export function insideOut(graph) {
 
     const xys = {};
     const subaxes = {};
+    const zonePositions = {"inside": 1000, "inside->outside": 1200, "mixed": 1600, "": 1700, "outside->inside": 1900, "outside": 2300};
+    subaxes[1400] = {r: 1400, label: "Perimeter"};
     Object.keys(zoneTypenodes).forEach((zone) => {
         Object.keys(zoneTypenodes[zone]).sort().forEach((type, typeIdx) => {
             zoneTypenodes[zone][type].forEach((node, nodeIdx) => {
-                const r = (zone === "I" ? 100 : (zone === "N" ? 300 : 500)) + typeIdx * 100.0 / Object.keys(zoneTypenodes[zone]).length;
+                const r = zonePositions[zone] + typeIdx * 100.0 / Object.keys(zoneTypenodes[zone]).length;
                 const ϕ = nodeIdx * Math.PI * 2 / zoneTypenodes[zone][type].length;
                 xys[node[idField]] = {x: r * Math.cos(ϕ), y: r * Math.sin(ϕ)};
                 subaxes[r] = {r};
                 });
             });
         });
-    subaxes[100] = {r: 100, label: "inside"};
-    subaxes[300] = {r: 300, label: "communication"};
-    subaxes[500] = {r: 500, label: "outside"};
-    subaxes[225] = {r: 225, space: true};
-    subaxes[425] = {r: 425, space: true};
+
+    //subaxes[100] = {r: 100, label: "inside"};
+    //subaxes[300] = {r: 300, label: "communication"};
+    //subaxes[500] = {r: 500, label: "outside"};
 
     decorateGraphLabelsWithXY(graph.data.labels, xys);
 
@@ -394,6 +457,7 @@ export function uploadGraph({loadInvestigationsById, loadPivotsById, loadUsersBy
                         .map(({ pivot }) => pivot)
                         .toArray()
                         .map(createGraph)
+                        .map(decorateInsideness)
                         .map((g) => shapers[investigation.layout](g)),
                     ({user}, {pivots, data}) => ({user, pivots, data})
                 )
