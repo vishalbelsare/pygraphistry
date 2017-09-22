@@ -181,11 +181,30 @@ export function decorateInsideness(graph) {
         const d_o = dsts.includes('o');
         if((s_i ^ s_o) && (d_i ^ d_o)) { // This only makes sense if the event has a src/dst from a known insideness
             if((s_i && d_i) || (s_o && d_o)) {
+                // Everything is either inside or outside.
                 const insideness = s_i ? "i" : "o";
                 Object.keys(e).forEach((k) => { if(io[e[k]]) { io[e[k]][insideness] = true } });
             } else {
-                const insideness = s_i ? "io" : "oi";
-                Object.keys(e).forEach((k) => { if(io[e[k]]) { io[e[k]][insideness] = true } });
+                // All the srcs go inside|outside, all the dsts go outside|inside, all the rest goes io|oi.
+                const reassigned_src_i = s_i ? "i" : "o";
+                const reassigned_src_keys = {};
+                const reassigned_dst_i = d_i ? "i" : "o";
+                const reassigned_dst_keys = {}
+                const remaining_insideness = s_i ? "io" : "oi";
+                ks_srcs.forEach(k => {
+                    if(io[e[k]]) {
+                        io[e[k]][reassigned_src_i] = true;
+                        reassigned_src_keys[e[k]] = true;
+                    }});
+                ks_dsts.forEach(k => {
+                    if(io[e[k]]) {
+                        io[e[k]][reassigned_dst_i] = true;
+                        reassigned_dst_keys[e[k]] = true;
+                    }});
+                Object.keys(e).forEach((k) => {
+                    if(io[e[k]] && !reassigned_src_keys[e[k]] && !reassigned_dst_keys[e[k]]) {
+                        io[e[k]][remaining_insideness] = true;
+                    }});
             }
         } else {
             e.mixedInsideness = true; // Is this a warning? This graph is weird
