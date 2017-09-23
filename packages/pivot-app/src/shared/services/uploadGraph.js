@@ -157,17 +157,18 @@ export function isIP(ip) {
 export function decorateInsideness(graph) {
     const ontologyType = "canonicalType"; // comes from colTypes[] in src/shared/services/templates/splunk/vendors/splunk
     // ontology type is one of %w[event file id ip mac url user]
-    const insidenessBuckets = ["inside", "outside", "inside->outside", "outside->inside", "mixed"];
     // 1. Decorate nodes with IP-address names as either inside or outside.
     const io = {};
     graph.data.labels.forEach(({node: id}) => {
-        if(!io[id]) io[id] = {};
+        if(!io[id]) {
+            io[id] = {};
+        }
         if(id && isIP(id)) {
             io[id][isPrivateIP(id) ? 'i' : 'o'] = true
         }});
     // 2. All events that have attributes /^(dest|dst|src|source)/ that have an insideness
     //    have a corresponding insideness which propagates to their attributes.
-    graph.data.labels.filter(({ canonicalType }) => canonicalType === 'event').forEach((e) => {
+    graph.data.labels.filter(({ [ontologyType]: canonicalType }) => canonicalType === 'event').forEach((e) => {
         const ks = Object.keys(e);
         const ks_srcs = ks.filter((k) => k.match(/^(?:src|source)/));
         const ks_dsts = ks.filter((k) => k.match(/^(?:dst|dest)/));
