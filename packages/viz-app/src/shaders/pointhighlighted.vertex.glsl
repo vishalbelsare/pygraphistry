@@ -11,7 +11,6 @@ varying vec4 vColor;
 varying float strokeRatio;
 
 uniform mat4 mvp;
-uniform float fog;
 uniform float stroke;
 uniform float zoomScalingFactor;
 uniform float maxPointSize;

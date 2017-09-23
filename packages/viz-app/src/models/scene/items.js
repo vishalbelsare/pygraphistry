@@ -5,7 +5,6 @@ const hitmapScale = textures.hitmap.uniforms.textureScalingFactor;
 const hitmapDownScale = textures.pointHitmapDownsampled.uniforms.textureScalingFactor;
 
 const pointCulledUniforms = {
-    'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
     'pointOpacity': { 'uniformType': '1f', 'defaultValues': [0.8] },
     'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
     'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
@@ -290,7 +289,6 @@ export const items = {
             'pointColor':   ['pointColors', 'pointColor'],
         },
         'uniforms': {
-            'fog': { 'uniformType': '1f', 'defaultValues': [10.0] },
             'pointOpacity': { 'uniformType': '1f', 'defaultValues': [0.4] },
             'stroke': { 'uniformType': '1f', 'defaultValues': [-STROKE_WIDTH] },
             'zoomScalingFactor': { 'uniformType': '1f', 'defaultValues': [1.0] },
