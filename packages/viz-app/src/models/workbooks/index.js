@@ -67,6 +67,7 @@ export function serializeWorkbook(workbook) {
         }
         serialiedView.histogramsById = {};
         serialiedView.histograms.length = 0;
+        serialiedView.selection.histogramsById = {};
         serialiedView.scene.renderer.edges.elements = 0;
         serialiedView.scene.renderer.points.elements = 0;
         return serialiedView;

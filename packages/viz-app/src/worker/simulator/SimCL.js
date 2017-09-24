@@ -823,27 +823,21 @@ function connectedEdges (simulator, nodeIndices) {
     // As far as I can tell this is not needed. Maybe for dataframe operations?
     const forwardsBuffers = simulator.dataframe.getHostBuffer('forwardsEdges');
     const backwardsBuffers = simulator.dataframe.getHostBuffer('backwardsEdges');
-    const forwardsEdgeStartEndIdxs = simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator');
-    const forwardsPermutation = forwardsBuffers.edgePermutation;
-
-    const setOfEdges = [];
-    const edgeHash = {};
+    const setOfEdges = [], edgeHash = [];
+    let edgesLen = -1;
 
     const addOutgoingEdgesToSet = (buffers) => {
         _.each(nodeIndices, (idx) => {
             const workItemId = buffers.srcToWorkItem[idx];
             const firstEdgeId = buffers.workItemsTyped[4*workItemId];
             const numEdges = buffers.workItemsTyped[4*workItemId + 1];
-            const start = forwardsEdgeStartEndIdxs[workItemId * 2];
-            const stop = forwardsEdgeStartEndIdxs[workItemId * 2 + 1];
-            // logger.warn({workItemId, firstEdgeId, numEdges, start, stop}, 'here');
             const permutation = buffers.edgePermutationInverseTyped;
 
             for (let i = 0; i < numEdges; i++) {
-                const edge = forwardsPermutation[permutation[firstEdgeId + i]];
+                const edge = permutation[firstEdgeId + i];
                 if (!edgeHash[edge]) {
-                    setOfEdges.push(edge);
                     edgeHash[edge] = true;
+                    setOfEdges[++edgesLen] = edge;
                 }
             }
         });
