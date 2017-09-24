@@ -121,172 +121,170 @@ function RenderingScheduler(renderState, renderer,
             .subscribe({})
     );
 
+    var PAUSE_RENDERING_DELAY = 500;
+
+    var lastRenderTime = 0;
+    var quietSignaled = false;
+    var quietRenderQueue = Object.create(null);
+
+    // Communication between render loops about whether to update lastRenderTime,
+    // or to check the delta against it to see if we should render slow effects.
+    var shouldUpdateRenderTime = true;
+
+    const loop = () => {
+
+        let renderTaskNames = Object.keys(renderQueue);
+
+        // Nothing to render
+        if (renderTaskNames.length === 0) {
+
+            // TODO: Generalize this
+            if (!quietSignaled) {
+                quietSignaled = true;
+                isAnimating.onNext(false);
+            }
+
+            if (shouldUpdateRenderTime) {
+                // Just update render time, leave delta checks for next loop
+                lastRenderTime = Date.now();
+                shouldUpdateRenderTime = false;
+            } else {
+                // Check time since last render. Based on duration, pause the rendering loop.
+                var timeDelta = Date.now() - lastRenderTime;
+                if (timeDelta > PAUSE_RENDERING_DELAY) {
+                    let tag;
+                    for (tag in quietRenderQueue) {
+                        renderQueue[tag] = quietRenderQueue[tag];
+                    }
+                    // A fun way to check whether the `quietRenderQueue` enumerated any elements.
+                    // - If not, pause the rendering loop.
+                    // - If so, loop around again to render slow things.
+                    if (tag === undefined) {
+                        return pauseRenderingLoop();
+                    }
+                    quietRenderQueue = Object.create(null);
+                }
+            }
+            return requestAnimationFrame(loop);
+        }
+
+        renderer.setCamera(renderState);
+
+        // Handle "slow effects request"
+        // TODO: Handle this naturally, instead of hack here
+        var handledSpecialTasks = false;
+        var tagsWithRenderFull = renderTaskNames.filter((key) =>
+                renderQueue[key].trigger === 'renderSceneFull');
+
+        if (tagsWithRenderFull.length > 0) {
+            // TODO: Generalize this code block
+            handledSpecialTasks = true;
+            shouldUpdateRenderTime = true;
+            this.appSnapshot.fullScreenBufferDirty = true;
+            if (quietSignaled) {
+                this.renderSlowEffects();
+                this.appSnapshot.vboUpdated = false;
+            }
+            for (let i = -1, n = tagsWithRenderFull.length; ++i < n;) {
+                const tag = tagsWithRenderFull[i];
+                !quietSignaled && (quietRenderQueue[tag] = renderQueue[tag]);
+                delete renderQueue[tag];
+            }
+        }
+
+        // Move points overlay
+        // Takes precedence over mouseover interactions, and will skip mouseover
+        // interactions
+        if ('movePointsOverlay' in renderQueue) {
+            if (!this.appSnapshot.fullScreenBufferDirty) {
+                shouldUpdateRenderTime = true;
+                this.renderMovePointsOverlay(renderQueue.movePointsOverlay);
+            }
+            handledSpecialTasks = true;
+            delete renderQueue.mouseOver;
+            delete renderQueue.movePointsOverlay;
+        }
+        // Mouseover
+        // TODO: Generalize this as a separate category?
+        else if ('mouseOver' in renderQueue) {
+            // Only handle mouseovers if the fullscreen buffer
+            // from rendering all edges (full scene) is clean
+            if (!this.appSnapshot.fullScreenBufferDirty) {
+                shouldUpdateRenderTime = true;
+                this.renderMouseoverEffects(renderQueue.mouseOver);
+            }
+            handledSpecialTasks = true;
+            delete renderQueue.mouseOver;
+        }
+
+        handledSpecialTasks && (renderTaskNames = Object.keys(renderQueue));
+
+        // Rest of render queue
+        if (renderTaskNames.length > 0) {
+
+            let isRenderingToScreen = false;
+
+            // TODO: Generalize this into tag description (or allow to check renderconfig)
+            // Alternatively, generalize when we fix the fullScreenBuffer.
+            for (let i = -1, n = renderTaskNames.length; ++i < n;) {
+                const taskName = renderTaskNames[i];
+                // TODO: Generalize this code block
+                if (taskName.indexOf('picking') === -1) {
+                    isRenderingToScreen = true;
+                    shouldUpdateRenderTime = true;
+                    this.appSnapshot.fullScreenBufferDirty = true;
+                    if (quietSignaled) {
+                        quietSignaled = false;
+                        isAnimating.onNext(true);
+                    }
+                    break;
+                }
+            }
+
+            for (let i = -1, n = renderTaskNames.length; ++i < n;) {
+                const taskName = renderTaskNames[i];
+                const renderTask = renderQueue[taskName];
+                delete renderQueue[taskName];
+                renderer.render(renderState, taskName, renderTask.trigger, renderTask.items,
+                                renderTask.readPixels, renderTask.callback);
+            }
+
+            // If anything is selected, we need to do the copy to texture + darken
+            // TODO: Investigate performance of this.
+            if (isRenderingToScreen && this.lastMouseoverTask && (
+                this.lastMouseoverTask.data.selected.nodeIndices.length +
+                this.lastMouseoverTask.data.selected.edgeIndices.length > 0)) {
+
+                renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
+                renderer.setupFullscreenBuffer(renderState);
+
+                // Temporarily reset the highlighted node and edge indicies.
+                // Without this, the highlights seem to be stuck in place.
+                var tmpHighlightNodeIndices = this.lastMouseoverTask.data.highlight.nodeIndices;
+                var tmpHighlightEdgeIndices = this.lastMouseoverTask.data.highlight.edgeIndices;
+                this.lastMouseoverTask.data.highlight.nodeIndices = [];
+                this.lastMouseoverTask.data.highlight.edgeIndices = [];
+
+                this.renderMouseoverEffects();
+                this.lastMouseoverTask.data.highlight.nodeIndices = tmpHighlightNodeIndices;
+                this.lastMouseoverTask.data.highlight.edgeIndices = tmpHighlightEdgeIndices;
+            }
+        }
+        requestAnimationFrame(loop);
+    }
+
     /*
      * Helpers to start/stop the rendering loop within an animation frame. The rendering loop
      * stops when idle for a second and starts again at the next render update.
      */
-    var startRenderingLoop = () => {
-        var PAUSE_RENDERING_DELAY = 500;
-
-        var nextFrameId;
-        var lastRenderTime = 0;
-        var quietSignaled = false;
-        var quietRenderQueue = Object.create(null);
-
-        // Communication between render loops about whether to update lastRenderTime,
-        // or to check the delta against it to see if we should render slow effects.
-        var shouldUpdateRenderTime = true;
-
-        const loop = () => {
-
-            let renderTaskNames = Object.keys(renderQueue);
-
-            // Nothing to render
-            if (renderTaskNames.length === 0) {
-
-                // TODO: Generalize this
-                if (!quietSignaled) {
-                    quietSignaled = true;
-                    isAnimating.onNext(false);
-                }
-
-                if (shouldUpdateRenderTime) {
-                    // Just update render time, leave delta checks for next loop
-                    lastRenderTime = Date.now();
-                    shouldUpdateRenderTime = false;
-                } else {
-                    // Check time since last render. Based on duration, pause the rendering loop.
-                    var timeDelta = Date.now() - lastRenderTime;
-                    if (timeDelta > PAUSE_RENDERING_DELAY) {
-                        let tag;
-                        for (tag in quietRenderQueue) {
-                            renderQueue[tag] = quietRenderQueue[tag];
-                        }
-                        // A fun way to check whether the `quietRenderQueue` enumerated any elements.
-                        // - If not, pause the rendering loop.
-                        // - If so, loop around again to render slow things.
-                        if (tag === undefined) {
-                            return pauseRenderingLoop(nextFrameId);
-                        }
-                        quietRenderQueue = Object.create(null);
-                    }
-                }
-                return nextFrameId = window.requestAnimationFrame(loop);
-            }
-
-            renderer.setCamera(renderState);
-
-            // Handle "slow effects request"
-            // TODO: Handle this naturally, instead of hack here
-            var handledSpecialTasks = false;
-            var tagsWithRenderFull = renderTaskNames.filter((key) =>
-                    renderQueue[key].trigger === 'renderSceneFull');
-
-            if (tagsWithRenderFull.length > 0) {
-                // TODO: Generalize this code block
-                handledSpecialTasks = true;
-                shouldUpdateRenderTime = true;
-                this.appSnapshot.fullScreenBufferDirty = true;
-                if (quietSignaled) {
-                    this.renderSlowEffects();
-                    this.appSnapshot.vboUpdated = false;
-                }
-                for (let i = -1, n = tagsWithRenderFull.length; ++i < n;) {
-                    const tag = tagsWithRenderFull[i];
-                    quietRenderQueue[tag] = renderQueue[tag];
-                    delete renderQueue[tag];
-                }
-            }
-
-            // Move points overlay
-            // Takes precedence over mouseover interactions, and will skip mouseover
-            // interactions
-            if ('movePointsOverlay' in renderQueue) {
-                if (!this.appSnapshot.fullScreenBufferDirty) {
-                    shouldUpdateRenderTime = true;
-                    this.renderMovePointsOverlay(renderQueue.movePointsOverlay);
-                }
-                handledSpecialTasks = true;
-                delete renderQueue.mouseOver;
-                delete renderQueue.movePointsOverlay;
-            }
-            // Mouseover
-            // TODO: Generalize this as a separate category?
-            else if ('mouseOver' in renderQueue) {
-                // Only handle mouseovers if the fullscreen buffer
-                // from rendering all edges (full scene) is clean
-                if (!this.appSnapshot.fullScreenBufferDirty) {
-                    shouldUpdateRenderTime = true;
-                    this.renderMouseoverEffects(renderQueue.mouseOver);
-                }
-                handledSpecialTasks = true;
-                delete renderQueue.mouseOver;
-            }
-
-            handledSpecialTasks && (renderTaskNames = Object.keys(renderQueue));
-
-            // Rest of render queue
-            if (renderTaskNames.length > 0) {
-
-                let isRenderingToScreen = false;
-
-                // TODO: Generalize this into tag description (or allow to check renderconfig)
-                // Alternatively, generalize when we fix the fullScreenBuffer.
-                for (let i = -1, n = renderTaskNames.length; ++i < n;) {
-                    const taskName = renderTaskNames[i];
-                    // TODO: Generalize this code block
-                    if (taskName.indexOf('picking') === -1) {
-                        isRenderingToScreen = true;
-                        shouldUpdateRenderTime = true;
-                        this.appSnapshot.fullScreenBufferDirty = true;
-                        if (quietSignaled) {
-                            quietSignaled = false;
-                            isAnimating.onNext(true);
-                        }
-                        break;
-                    }
-                }
-
-                for (let i = -1, n = renderTaskNames.length; ++i < n;) {
-                    const taskName = renderTaskNames[i];
-                    const renderTask = renderQueue[taskName];
-                    delete renderQueue[taskName];
-                    renderer.render(renderState, taskName, renderTask.trigger, renderTask.items,
-                                    renderTask.readPixels, renderTask.callback);
-                }
-
-                // If anything is selected, we need to do the copy to texture + darken
-                // TODO: Investigate performance of this.
-                if (isRenderingToScreen && this.lastMouseoverTask && (
-                    this.lastMouseoverTask.data.selected.nodeIndices.length +
-                    this.lastMouseoverTask.data.selected.edgeIndices.length > 0)) {
-
-                    renderer.copyCanvasToTexture(renderState, 'steadyStateTexture');
-                    renderer.setupFullscreenBuffer(renderState);
-
-                    // Temporarily reset the highlighted node and edge indicies.
-                    // Without this, the highlights seem to be stuck in place.
-                    var tmpHighlightNodeIndices = this.lastMouseoverTask.data.highlight.nodeIndices;
-                    var tmpHighlightEdgeIndices = this.lastMouseoverTask.data.highlight.edgeIndices;
-                    this.lastMouseoverTask.data.highlight.nodeIndices = [];
-                    this.lastMouseoverTask.data.highlight.edgeIndices = [];
-
-                    this.renderMouseoverEffects();
-                    this.lastMouseoverTask.data.highlight.nodeIndices = tmpHighlightNodeIndices;
-                    this.lastMouseoverTask.data.highlight.edgeIndices = tmpHighlightEdgeIndices;
-                }
-            }
-            nextFrameId = window.requestAnimationFrame(loop);
-        }
-
+    function startRenderingLoop() {
         debug('Starting rendering loop');
         renderingPaused = false;
-        nextFrameId = window.requestAnimationFrame(loop);
+        requestAnimationFrame(loop);
     }
 
-    function pauseRenderingLoop(nextFrameId) {
+    function pauseRenderingLoop() {
         debug('Pausing rendering loop');
-        cancelAnimationFrame(nextFrameId);
         renderingPaused = true;
     }
 
