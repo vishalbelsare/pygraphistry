@@ -11,6 +11,7 @@ docker run --rm \
     -e NODE_ENV=${NODE_ENV} \
     -e COMMIT_ID=${COMMIT_ID} \
     -e BRANCH_NAME=${BRANCH_NAME} \
+    -e BUILD_NUMBER=${BUILD_NUMBER} \
     ${CONTAINER_NAME}:${BUILD_TAG} \
     sh -c "npm run build && npm publish ."
 
