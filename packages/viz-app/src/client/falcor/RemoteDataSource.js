@@ -9,13 +9,18 @@ export class RemoteDataSource extends FalcorPubSubDataSource {
     falcorUpdateHandler({ paths, invalidated, jsonGraph }, handshake) {
         const { model } = this;
         if (model) {
+            const { _root: modelRoot } = model;
             if (invalidated && Array.isArray(invalidated) && invalidated.length) {
                 model.invalidate(...invalidated);
             }
             if (paths && jsonGraph) {
-                model._setJSONGs(model, [{ paths, jsonGraph }]);
-                model._root.onChangesCompleted &&
-                model._root.onChangesCompleted.call(model);
+                var changed = model._setJSONGs(
+                    model, [{ paths, jsonGraph }],
+                    modelRoot.errorSelector, modelRoot.comparator, false
+                )[2];
+                if (changed && modelRoot.onChangesCompleted) {
+                    modelRoot.onChangesCompleted.call(model);
+                }
             }
         }
         handshake && handshake();

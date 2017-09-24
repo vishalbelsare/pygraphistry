@@ -38,6 +38,7 @@ function congfigureLive(options) {
     const model = new Model({
         recycleJSON: true,
         scheduler: Scheduler.async,
+        comparator: rootComparator,
         allowFromWhenceYouCame: true,
         cache: window.__INITIAL_CACHE__ // eslint-disable-line no-underscore-dangle
     });
@@ -69,3 +70,49 @@ function congfigureLive(options) {
 
 export { congfigureLive };
 export default congfigureLive;
+
+function rootComparator(node, message) {
+    var cType = node && node.$type;
+    var mType = message && message.$type;
+    if (cType) {
+        // If the cache has a type, but the message is a primitive,
+        // the message might be the primitive response from the datasource.
+        // If so, return true, so we don't update the back-reference versions.
+        if (!mType) {
+            return node.value === message;
+        }
+        // If the message is older than the cache node, then isDistinct = false
+        else if (message.$timestamp < node.$timestamp) {
+            return true; // isDistinct = false
+        }
+        // If $expires is different, then isDistinct = true
+        else if (node.$expires !== message.$expires) {
+            return false; // isDistinct = true
+        }
+        // If they're both refs, compare their paths
+        else if (cType === 'ref' && mType === cType) {
+            var nRef = node.value;
+            var nLen = nRef.length;
+            var mRef = message.value;
+            // If their lengths are different, then isDistinct = true
+            if (nLen !== mRef.length) {
+                return false; // isDistinct = true
+            }
+            while (~--nLen) {
+                // If their paths are different, then isDistinct = true
+                if (nRef[nLen] !== mRef[nLen]) {
+                    return false; // isDistinct = true
+                }
+            }
+            return true; // isDistinct = false
+        }
+        // Otherwise they are the same if all the following fields are the same.
+        return cType === mType && node.value === message.value;
+    }
+    // If cache doesn't have a type but the message does, they must be different.
+    else if (mType) {
+        return false;
+    }
+    return node === message;
+}
+
