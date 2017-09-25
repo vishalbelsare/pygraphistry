@@ -12,7 +12,7 @@ import {
 
 // 0--1: the closer to 1, the more likely that unsampled points disappear
 const APPROX = 0.5;
-const MAX_LABELS = 20;
+const MAX_LABELS = 5;
 const TIME_BETWEEN_SAMPLES = 300; // ms
 
 export function pickPointsOfInterest(action$) {
