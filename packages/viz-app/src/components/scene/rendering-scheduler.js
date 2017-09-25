@@ -1275,8 +1275,8 @@ RenderingScheduler.prototype.loadRadialAxes = function loadRadialAxes(axes) {
     let { renderer, renderState } = this, { camera } = renderState;
     let radialAxes = (axes || []).filter(({ r }) => typeof r === 'number');
     const axisStyles = {
-        major: {r: 0.999, g: 0, b: 0, a: 0.5},
-        minor: {r: 0, g: 0.999, b: 0, a: 0.25},
+        major: {r: (89/256), g: (162/256), b: (255/256), a: 0.999},
+        minor: {r: 0, g: 0, b: 0, a: 0.1},
         space: {r: 0, g: 0, b: 0, a: 0.125},
     };
     let x = 0, y = 0, maxStrokeWidth = 10, numRadialAxes = radialAxes.length;
