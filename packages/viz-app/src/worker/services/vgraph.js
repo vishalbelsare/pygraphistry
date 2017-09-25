@@ -82,7 +82,7 @@ function loadDataFrameAndUpdateBuffers({ view }) {
     dataframe.loadEdgeDestinations(unsortedEdges);
 
     layoutAlgorithms.forEach((algo) => {
-        const layoutAlgoName = algo.algoName;
+        const layoutAlgoName = algo.algoName.toLowerCase();
         Array.from(
             layoutAlgoName in options
                 ? options[layoutAlgoName]
@@ -90,9 +90,7 @@ function loadDataFrameAndUpdateBuffers({ view }) {
                     ? options
                     : []
             )
-            .filter((control) => control &&
-                                 control.props &&
-                                 control.props.algoName === layoutAlgoName)
+            .filter(Boolean)
             .forEach((control) => {
                 const { id, value, props: { algoName }} = control;
                 nBody.updateSettings({
