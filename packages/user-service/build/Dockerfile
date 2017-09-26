@@ -6,4 +6,4 @@ ADD artifact.tar .
 
 ENV NODE_ENV=production
 
-CMD ["micro", "./src/index.js"]
+CMD ["node", "./node_modules/micro/bin/micro", "./src/index.js"]
