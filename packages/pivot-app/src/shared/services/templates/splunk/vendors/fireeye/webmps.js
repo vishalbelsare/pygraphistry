@@ -57,7 +57,29 @@ export const colTypes = { // alert, event, file, hash, id, ip, mac, url
 	'signature': 'alert'
 };
 
+export const refTypes = {
+	devicePayloadId: '?',
+	dmac: 'dst',
+	dvc_ip: 'device',
+	'ext_ref': '?',
+	'externalId': '?',
+	'fileHash': 'payload',
+	'filePath': 'payload',
+	'file_hash': 'payload',
+	'fname': 'payload',
+	'id': '?',
+	'infURL': '?',
+	'objURL': '?',
+	'smac': 'src',
+	'sproc': 'src',
+	'signature': 'payload'
+}
+
 export const product = "Web MPS";
+export const productIdentifier = {
+	product: "Web MPS",
+	vendor: "FireEye"
+};
 export const fieldsBlacklist = [];
 export const attributesBlacklist = _.range(0, 150).map((v) => `field${v}`);
 export const entitiesBlacklist = defaultFields.filter((v) => desiredEntities.indexOf(v) === -1);

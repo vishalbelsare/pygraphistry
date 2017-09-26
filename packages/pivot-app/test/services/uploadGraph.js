@@ -26,12 +26,12 @@ const n4 = 'd';
 const n5 = 'e';
 const n6 = 'f';
 const n7 = 'g';
-const edges = [{Pivot: 0, [s]: n1, [d]: n2},
-               {Pivot: 2, [s]: n3, [d]: n4},
-               {Pivot: 1, [s]: n2, [d]: n6},
-               {Pivot: 1, [s]: n2, [d]: n7},
-               {Pivot: 1, [s]: n2, [d]: n4},
-               {Pivot: 3, [s]: n4, [d]: n5}];
+const edges = [{Pivot: 0, [s]: n1, [d]: n2, edgeType: 'EventID->x'},
+               {Pivot: 2, [s]: n3, [d]: n4, edgeType: 'EventID->x'},
+               {Pivot: 1, [s]: n2, [d]: n6, edgeType: 'EventID->x'},
+               {Pivot: 1, [s]: n2, [d]: n7, edgeType: 'EventID->x'},
+               {Pivot: 1, [s]: n2, [d]: n4, edgeType: 'EventID->x'},
+               {Pivot: 3, [s]: n4, [d]: n5, edgeType: 'EventID->x'}];
 const undecoratedLabels = [{node: n1},
                            {node: n2},
                            {node: n3},

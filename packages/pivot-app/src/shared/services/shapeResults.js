@@ -1,6 +1,7 @@
 import { simpleflake } from 'simpleflakes';
 import _ from 'underscore';
 import { categoryToColorInt, intToHex } from '../services/support/palette.js';
+import { dedupeHyperedges, inference } from './shape/inference.js';
 import logger from '../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
@@ -41,6 +42,11 @@ function summarizeOutput ({ labels }) {
 }
 
 
+
+
+
+
+
 function encodeGraph({ app, pivot }) {
 
     const { encodings } = pivot.template;
@@ -77,10 +83,7 @@ function encodeGraph({ app, pivot }) {
         app, 
         pivot: {
             ...pivot,
-            results: {
-                graph: edges,
-                labels: nodes
-            },
+            results: { nodes, edges },
             resultSummary: summarizeOutput({labels: nodes})
          }
      };
@@ -96,6 +99,7 @@ function extractAllNodes(connections) {
 // Convert events into a hypergraph
 //   -- hypernodes: generate EventID if none available
 //   -- if generic nodes/edges, merge in
+//   -- track which columns are used
 function shapeHyperGraph({ app, pivot } ) {
     const { 
         events = [], 
@@ -107,7 +111,8 @@ function shapeHyperGraph({ app, pivot } ) {
     const edges = [];
     const nodeLabels = [];
 
-    const foundEntities = {};
+    const generatedEntities = {};    
+
     
     for(let i = 0; i < events.length; i++) {
         const row = events[i];
@@ -140,16 +145,26 @@ function shapeHyperGraph({ app, pivot } ) {
             const field = entityTypes[j];
 
             if (field in row && (row[field] !== undefined) && (row[field] !== null)) {
-                if (!foundEntities[row[field]]) {
-                    nodeLabels.push({'node': row[field], type: field});
-                    foundEntities[row[field]] = true;                
+                let entity = generatedEntities[row[field]];
+                if (!entity) {
+                    entity = {'node': row[field], type: field, cols: [field]};
+                    nodeLabels.push(entity);
+                    generatedEntities[row[field]] = entity;
+                } else {
+                    if (!entity.cols) {
+                        entity.cols = [];
+                    }
+                    if (entity.cols.indexOf(field) === -1) {
+                        entity.cols.push(field);
+                    }
                 }
                 edges.push(
                     Object.assign({}, _.pick(row, attribs),
                         {
                             'destination': row[field],
                             'source': eventID,
-                            'edge': eventID + ':' + field,
+                            'col': field,
+                            'edge': `${eventID}:${field}`,
                             'edgeType': ('EventID->' + field),
                             'edgeTitle': `${eventID}->${row[field]}`
                         }
@@ -184,6 +199,27 @@ function shapeHyperGraph({ app, pivot } ) {
     }});
 }
 
+
+
+//dedupe hyperedges w/ same src->reftype->dst and addd inference edges
+function globalInference({ app, pivot }) {
+
+    const { nodes = [], edges = [] } = pivot.results;
+
+    const dedupedHyperedges = dedupeHyperedges(edges);
+
+    const newEdges = inference({nodes, edges: dedupedHyperedges, encodings: pivot.template.encodings });
+
+   return ({ app, 
+        pivot: {
+            ...pivot,
+            results: {
+                graph: dedupedHyperedges.concat(newEdges),
+                labels: nodes
+            } 
+    }});
+}    
+
 export function shapeResults({ app, pivot }) {
-    return encodeGraph(shapeHyperGraph({ app, pivot }));
+    return globalInference(encodeGraph(shapeHyperGraph({ app, pivot })));
 }

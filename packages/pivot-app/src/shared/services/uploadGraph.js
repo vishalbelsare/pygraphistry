@@ -321,10 +321,14 @@ export function stackedBushyGraph(graph, fudgeX = 250, fudgeY = -250 * Math.pow(
 
 // [{Pivot: Int, bindings.sourceField: nodeName, bindings.destinationField: nodeName}] -> {nodeName: Int}
 export function edgesToRows(edges, nodes) {
-    const allEdgeRows = _.flatten(_.map(edges, (e) => [
-        {node: e[bindings.sourceField], row: e.Pivot * 2},
-        {node: e[bindings.destinationField], row: e.Pivot * 2 + 1}
-                                                       ]),"shallow");
+    const allEdgeRows = 
+        _.flatten(
+            edges
+                .filter((e) => e.edgeType && e.edgeType.indexOf('EventID->') === 0)
+                .map((e) => [
+                    {node: e[bindings.sourceField], row: e.Pivot * 2},
+                    {node: e[bindings.destinationField], row: e.Pivot * 2 + 1} ]),
+            "shallow");
     const leastEdgeRows = _.mapObject(_.groupBy(allEdgeRows, bindings.idField),
                                       (allRows) => _.min(_.pluck(allRows, 'row')));
 

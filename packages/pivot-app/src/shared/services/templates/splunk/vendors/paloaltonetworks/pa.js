@@ -37,8 +37,25 @@ export const colTypes = {
 	'threat_name': 'alert',
 	'url': 'url'
 };	
+export const refTypes = {
+	'client_ip': 'src',
+	'client_location': 'src',
+	'pcap_id': 'payload',
+	'rule': 'payload',
+	'server_location': 'dst',
+	'session_id': 'session',
+	'signature_id': 'payload',
+	'src_translated_ip': 'src',
+	'threat_name': 'payload',
+	'url': 'payload'
+};
 
 export const product = "Palo Alto Networks Firewall";
+export const productIdentifier = {
+	vendor_product: "Palo Alto Networks Firewall",
+	vendor: "Palo Alto Networks"
+};
+
 export const fieldsBlacklist = [];
 export const attributesBlacklist = [];
 export const entitiesBlacklist = defaultFields.filter((v) => desiredEntities.indexOf(v) === -1);
