@@ -146,12 +146,12 @@ export function createGraph(pivots) {
 export function isPrivateIP(ip) {
     // RFC 1918: 10/8, 172.16/12, 192.168/16
     // TODO: use ipaddr.js
-    return ip.match(/^10[.][^.]+[.][^.]+[.][^.]+$|172[.](?:1[6-9]|2\d|3[01])[.][^.]+[.][^.]+$|192[.]168[.][^.]+[.][^.]+$/) !== null;
+    return String(ip).match(/^10[.][^.]+[.][^.]+[.][^.]+$|172[.](?:1[6-9]|2\d|3[01])[.][^.]+[.][^.]+$|192[.]168[.][^.]+[.][^.]+$/) !== null;
 }
 
 export function isIP(ip) {
     // TODO: use ipaddr.js
-    return ip.match(/^\d+[.]\d+[.]\d+[.]\d+$/);
+    return String(ip).match(/^\d+[.]\d+[.]\d+[.]\d+$/);
 }
 
 export function decorateInsideness(graph) {

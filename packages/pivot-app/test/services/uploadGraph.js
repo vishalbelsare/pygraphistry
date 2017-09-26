@@ -158,3 +158,55 @@ describe('createGraph', function() {
             assert(createdGraph, idealGraphDataLarge);
         });
     });
+
+
+describe('helpers', function () {
+    
+    describe('isPrivateIP', function () {
+
+        it('matches 10.*', (done) => {
+            assert.deepEqual(uploadGraph.isPrivateIP('10.0.0.0'), true);
+            done();
+        });
+        
+        it('matches 172.16', (done) => {
+            assert.deepEqual(uploadGraph.isPrivateIP('172.16.0.0'), true);
+            done();
+        });
+
+        it('matches 192.168.*', (done) => {
+            assert.deepEqual(uploadGraph.isPrivateIP('192.168.0.0'), true);
+            done();
+        });
+
+        it('rejects non-local', (done) => {
+            assert.deepEqual(uploadGraph.isPrivateIP('100.0.0.0'), false);
+            done();
+        });
+
+        it('rejects non-strings', (done) => {
+            assert.deepEqual(uploadGraph.isPrivateIP(1), false);            
+            done();
+        });
+    });
+
+    describe('isIP', function () {
+
+        it('matches 10.0.0.1', (done) => {
+            assert.deepEqual(!!uploadGraph.isIP('10.0.0.0'), true);
+            done();
+        });
+
+        it('rejects 10.0.0', (done) => {
+            assert.deepEqual(!!uploadGraph.isIP('10.0.0'), false);
+            done();
+        });
+
+        it('rejects non-strings', (done) => {
+            assert.deepEqual(!!uploadGraph.isIP(1), false)
+            done();
+        });
+    });
+
+
+});
