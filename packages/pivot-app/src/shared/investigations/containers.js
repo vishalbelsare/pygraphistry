@@ -53,7 +53,9 @@ export const investigationScreenContainer = container({
         activeInvestigation: ${ Investigation.fragment(activeInvestigation) }
     }`,
     mapFragment: (user = {}) => ({
-        user, ...user
+        user, ...user,
+        investigations:(user &&
+                        user.investigations || []).filter(Boolean)
     }),
     dispatchers: {
         copyInvestigation,
