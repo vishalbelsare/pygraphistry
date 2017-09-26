@@ -4,7 +4,7 @@ import { PARAMETERS } from './common.js';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
-import { demoEncodings, flattenParams } from './common.js';
+import { encodings, flattenParams } from './common.js';
 
 
 export const HTTP_SEARCH = new HttpPivot({
@@ -36,5 +36,5 @@ export const HTTP_SEARCH = new HttpPivot({
             inputType: 'label',
             isVisible: false
         }].concat(PARAMETERS),
-    encodings: demoEncodings
+    encodings: encodings
 });
