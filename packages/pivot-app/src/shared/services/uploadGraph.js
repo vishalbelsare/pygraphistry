@@ -247,22 +247,40 @@ export function insideOut(graph) {
 
     const xys = {};
     const subaxes = {};
-    const zonePositions = {"inside": 1000, "inside->outside": 1200, "mixed": 1600, "": 1700, "outside->inside": 1900, "outside": 2300};
-    subaxes[1400] = {r: 1400, label: "Perimeter"};
-    Object.keys(zoneTypenodes).forEach((zone) => {
-        Object.keys(zoneTypenodes[zone]).sort().forEach((type, typeIdx) => {
+    const allOrderedZones = ["inside", "inside->outside", "mixed", "", "outside->inside", "outside"];
+    let currentRadius = 0;
+    let insideLatch = false;
+    let outsideLatch = false;
+    const spacerSeparator = 400;
+    const typeSeparator = 200;
+
+    allOrderedZones.forEach((zone, zoneIdx) => {
+        if(!zoneTypenodes[zone]) { return; }
+        if(zoneIdx === 0) { insideLatch = true; }
+        if(zoneIdx === 5) { outsideLatch = true; }
+        if(zoneIdx > 0) {
+            currentRadius += spacerSeparator;
+            if(insideLatch) {
+                subaxes[currentRadius] = {r: currentRadius, label: "Internal Network", internal: true};
+                insideLatch = null;
+            } else if(outsideLatch) {
+                subaxes[currentRadius] = {r: currentRadius, label: "External Communications", external: true};
+                outsideLatch = null;
+            } else {
+                subaxes[currentRadius] = {r: currentRadius, space: true};
+            }
+        }
+        currentRadius += spacerSeparator - typeSeparator;
+        Object.keys(zoneTypenodes[zone]).sort().forEach((type) => {
+            currentRadius += typeSeparator;
             zoneTypenodes[zone][type].forEach((node, nodeIdx) => {
-                const r = zonePositions[zone] + typeIdx * 100.0 / Object.keys(zoneTypenodes[zone]).length;
+                const r = currentRadius;
                 const ϕ = nodeIdx * Math.PI * 2 / zoneTypenodes[zone][type].length;
                 xys[node[idField]] = {x: r * Math.cos(ϕ), y: r * Math.sin(ϕ)};
                 subaxes[r] = {r};
                 });
             });
         });
-
-    //subaxes[100] = {r: 100, label: "inside"};
-    //subaxes[300] = {r: 300, label: "communication"};
-    //subaxes[500] = {r: 500, label: "outside"};
 
     decorateGraphLabelsWithXY(graph.data.labels, xys);
 
