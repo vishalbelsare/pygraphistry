@@ -16,12 +16,12 @@ export const layouts = [
 export const uiTweaks = {
     atlasbarnes: {},
     insideout: {
-        showArrows: false,
-        showPointsOfInterest: true,
+        defaultShowArrows: false,
+        defaultShowPointsOfInterest: true,
     },
     stackedBushyGraph: {
-        showArrows: false,
-        showPointsOfInterest: true,
+        defaultShowArrows: false,
+        defaultShowPointsOfInterest: true,
         play: 0,
     },
 };
