@@ -95,7 +95,7 @@ export function expand({pivotIds=[], pivotCache={}, fields=[], filter='', filter
 
     const post = filterPost && filterPost.length ? ` |  ${filterPost}` : '';
 
-    return `${filter} ${match} | head 10000${post}`;
+    return `${filter} ${match} | head 10000 ${post}`;
 
 }
 
