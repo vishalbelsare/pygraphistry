@@ -290,12 +290,55 @@ function LabelTitle ({ type, color, iconClass, title, icon, pinned, showFull, on
     );
 }
 
+const mostImportantKeys = [
+
+  "Source", "Destination",
+
+  "time", 
+  "Pivot", 
+
+  "src", "src_hostname", "src_ip", "src_mac", "src_port", "src_user",
+  "dest", "dest_hostname", "dest_ip", "dest_location", "dest_mac", "dest_port", "dest_user",
+  "user",
+
+  "type",
+  "edgeType",
+  "cols",
+  "vendor",
+  "product",
+  "externalId",
+
+  "msg",
+  "fname",
+  "filename",
+  "fileHash",  
+  "filePath",
+  "link",
+  "url",
+
+];
+
+const filterMostImportantKeys = (columns) => columns.filter(({ key }) => mostImportantKeys.includes(key));
+
+const canHaveImportantKeys = (columns) => !!columns.filter(({ key, value }) => (key === "type" && value === "EventID") || (key === "edgeType" && value.match(/^EventID->/)));
+
+const sortMostImportantKeys = (columns) => columns.sort(({ key: key1 }, { key: key2 }) => mostImportantKeys.indexOf(key1) - mostImportantKeys.indexOf(key2));
+
 function LabelContents ({ columns = [], title = '', ...props }) {
+    const mostImportantColumns = canHaveImportantKeys(columns) ? sortMostImportantKeys(filterMostImportantKeys(columns)) : [];
     return (
         <div onMouseDown={stopPropagation}
              className={styles['label-contents']}>
             <table>
                 <tbody>
+                {mostImportantColumns.map(({ key, ...column }, index) => (
+                    <LabelRow key={`${index}-${title}-important`}
+                              field={key} title={title} important={true}
+                              {...props} {...column} />
+                ))}
+                {
+                    mostImportantColumns.slice(0,1).map(c => (<tr key={"label-important-separator"} className={styles['important-separator']}><td></td><td></td></tr>))
+                }
                 {columns.map(({ key, ...column }, index) => (
                     <LabelRow key={`${index}-${title}`}
                               field={key} title={title}
@@ -320,6 +363,7 @@ function LabelRow ({ color,
                      title, type,
                      field, value,
                      onFilter, onExclude,
+                     important,
                      dataType, displayName }) {
 
     const filterOp = operatorForColumn('filter', dataType);
@@ -332,8 +376,8 @@ function LabelRow ({ color,
 
     return (
         <tr className={styles['label-pair']}>
-            <td className={styles['label-key']}>{field}</td>
-            <td className={styles['label-value']}>
+            <td className={important ? styles['label-key-important'] : styles['label-key']}>{field}</td>
+            <td className={important ? styles['label-value-important'] : styles['label-value']}>
                 <div className={styles['label-value-wrapper']}>
 
                     <span onMouseDown={stopPropagationIfAnchor}
