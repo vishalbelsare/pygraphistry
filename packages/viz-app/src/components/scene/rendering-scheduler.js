@@ -1275,7 +1275,8 @@ RenderingScheduler.prototype.loadRadialAxes = function loadRadialAxes(axes) {
     let { renderer, renderState } = this, { camera } = renderState;
     let radialAxes = (axes || []).filter(({ r }) => typeof r === 'number');
     const axisStyles = {
-        major: {r: (89/256), g: (162/256), b: (255/256), a: 0.999},
+        internal: {r: (89/256), g: (162/256), b: (255/256), a: 0.999},
+        external: {r: (255/256), g: (128/256), b: (64/256), a: 0.999},
         minor: {r: 0, g: 0, b: 0, a: 0.1},
         space: {r: 0, g: 0, b: 0, a: 0.125},
     };
@@ -1286,7 +1287,7 @@ RenderingScheduler.prototype.loadRadialAxes = function loadRadialAxes(axes) {
         let axis = radialAxes[i];
         let r = axis.r;
         let isThin = axis.space;
-        let color = axisStyles[ axis.label ? 'major' : (axis.space ? 'space' : 'minor') ];
+        let color = axisStyles[ axis.internal ? 'internal' : (axis.external ? 'external' : (axis.space ? 'space' : 'minor')) ];
         let flags = ((isThin ? 1 : 0) << 16) + (Math.floor(color.r * 16) << 12) + (Math.floor(color.g * 16) << 8) + (Math.floor(color.b * 16) << 4) + Math.floor(color.a * 16);
 
         radialAxesBuffer[++j] = x - r - maxStrokeWidth;

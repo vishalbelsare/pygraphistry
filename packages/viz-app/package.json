@@ -17,7 +17,7 @@
     "build:client:dev": "npm run clean:client && better-npm-run -s build:client:dev",
     "build:server:dev": "npm run clean:server && better-npm-run -s build:server:dev",
     "test": "better-npm-run -s test",
-    "test:ci": "better-npm-run -s test:ci",
+    "test:ci": "better-npm-run -s test:ci || better-npm-run -s test:ci || better-npm-run -s test:ci",
     "test:watch": "npm test -- --no-single-run",
     "clean:all": "npm run clean:client && npm run clean:server && npm run clean:coverage",
     "clean:client": "better-npm-run -s clean:client",
