@@ -3,6 +3,10 @@ import 'rxjs/add/observable/dom/ajax';
 import { Observable } from 'rxjs/Observable';
 import { ReplaySubject } from 'rxjs/ReplaySubject';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { createLogger } from '@graphistry/common/logger';
+import { $atom } from '@graphistry/falcor-json-graph';
+import shallowEqual  from 'recompose/shallowEqual';
+const logger = createLogger(__filename);
 
 export function handleVboUpdates(socket, uri, renderState, sceneModel, renderer) {
 
@@ -14,71 +18,72 @@ export function handleVboUpdates(socket, uri, renderState, sceneModel, renderer)
     const vboVersions = new BehaviorSubject({ buffers: {}, textures: {} });
     const allBufferNames = renderState.config.server.buffers;
     const allTextureNames = renderState.config.server.textures;
+    const setSessionStatus = sceneModel._root.topLevelModel.withoutDataSource().set({ json: {
+        workbooks: { open: { views: { current: { session: {
+            message: null, progress: 100, status: 'default'
+            // status: $atom('default', { $timestamp: Date.now() })
+        }}}}}
+    }}).ignoreElements();
 
     Observable.fromEvent(socket, 'vbo_update',
-        ({ step, textures, versions, elements, bufferByteLengths }, handshake) => ({
-            step, textures, versions, elements, bufferByteLengths, handshake, startTime: Date.now()
+        ({ textures, versions, elements, bufferByteLengths }, handshake) => ({
+            id: socket.io.engine.id, startTime: Date.now(),
+            textures, versions, elements, bufferByteLengths, handshake
     }))
     .scan(scanVersionChanges, { allBufferNames, allTextureNames, versions: { buffers: {}, textures: {} }})
-    .do(() => vboUpdates.next('start'))
-    .do(({ versions }) => vboVersions.next(versions))
+    .do(({ versions }) => vboUpdates.next('start') || vboVersions.next(versions))
     .do(({ buffers, textures }) => socket.emit('planned_binary_requests', { buffers, textures }))
-    .mergeMap(
-        (xs) => Observable.zip(
-            fetchTextures({ ...xs, uri, id: socket.io.engine.id })
-                .do(loadTextureBindings).toArray(),
-            fetchBuffers({ ...xs, uri, id: socket.io.engine.id })
-                .do(loadBufferBindings).toArray()
-                .mapTo(xs).do(setRendererNumElements),
-        ).take(1).defaultIfEmpty(null),
-        (xs) => xs
+    .mergeMap( // <-- todo: do we want to switchMap here?
+        (xs) => setSessionStatus.merge(Observable.zip(
+            fetchBuffers(xs.id, uri, xs.buffers, xs.bufferByteLengths),
+            fetchTextures(xs.id, uri, xs.textures, xs.textureByteLengths, xs.textureNFOs),
+            loadBindings
+        ).take(1).defaultIfEmpty(null)),
+        identity
     )
-    .do(({ startTime, handshake, elements }) => {
-        handshake(Date.now() - startTime);
-        vboUpdates.onNext('received');
+    .map(getNumElementsAndSocketHandshake)
+    .distinctUntilChanged(shallowEqual)
+    .switchMap(setRendererNumElements)
+    .catch((err) => {
+        logger.error('vboUpdate error', err, (err||{}).stack);
+        return Observable.empty();
     })
-    .switchMap(setModelNumElements)
-    .subscribe({
-        error(err) {
-            console.error('vboUpdate error', err, (err||{}).stack);
-        }
-    });
+    .repeat()
+    .subscribe({});
 
     socket.emit('begin_streaming');
 
     return { vboUpdates, vboVersions };
 
-    function loadBufferBindings({ startTime, elements, buffers, bufferBindings }) {
-        // //TODO may be able to move this early
-        // socket.emit('received_buffers', Date.now() - startTime);
-        // for (const itemName in elements) {
-        //     renderer.setNumElements(renderState, itemName, elements[itemName]);
-        // }
-        if (buffers.length) {
+    function identity(xs) { return xs; }
+    function loadBindings([buffers, bufferBindings], [textures, textureBindings]) {
+        if (buffers && buffers.length) {
             renderer.loadBuffers(renderState, bufferBindings);
         }
-    }
-
-    function loadTextureBindings({ textures, textureBindings }) {
-        if (textures.length) {
+        if (textures && textures.length) {
             renderer.loadTextures(renderState, textureBindings);
         }
     }
 
-    function setRendererNumElements({ startTime, elements }) {
+    function getNumElementsAndSocketHandshake({ startTime, handshake, elements, bufferByteLengths }) {
+        const elapsedTime = Date.now() - startTime;
         //TODO may be able to move this early
-        socket.emit('received_buffers', Date.now() - startTime);
+        socket.emit('received_buffers', elapsedTime);
         for (const itemName in elements) {
             renderer.setNumElements(renderState, itemName, elements[itemName]);
         }
+        handshake(elapsedTime);
+        vboUpdates.onNext('received');
+        return [
+/* numPoints */ elements.pointculled || elements.uberpointculled || 0,
+/* numEdges  */(elements.edgeculled  ||
+                elements.edgeculledindexed ||
+                elements.edgeculledindexedclient ||
+                bufferByteLengths.logicalEdges / 4 || 0) * 0.5
+        ];
     }
 
-    function setModelNumElements({ elements = {}, bufferByteLengths = {} }) {
-        const numPoints = elements.pointculled || elements.uberpointculled || 0;
-        const numEdges = (elements.edgeculled ||
-                          elements.edgeculledindexed ||
-                          elements.edgeculledindexedclient ||
-                          bufferByteLengths.logicalEdges / 4 || 0) * 0.5;
+    function setRendererNumElements([numPoints, numEdges]) {
         return sceneModel.withoutDataSource().set(
             { path: ['renderer', 'edges', 'elements'], value: numEdges },
             { path: ['renderer', 'points', 'elements'], value: numPoints }
@@ -109,49 +114,38 @@ function scanVersionChanges(memo, next) {
         ...memo, ...next,
         buffers, textures, textureNFOs,
         allBufferNames, allTextureNames, textureByteLengths,
-        versions: { buffers: { ...memo.versions.buffers, ...versions.buffers },
-                    textures: { ...memo.versions.textures, ...versions.textures } }
+        versions: {
+            buffers: { ...memo.versions.buffers, ...versions.buffers },
+            textures: { ...memo.versions.textures, ...versions.textures }
+        }
     }
 }
 
-function fetchBuffers(xs) {
-    const { id, uri, buffers, bufferByteLengths } = xs;
+function fetchBuffers(id, uri, buffers, bufferByteLengths) {
     return fetchResources(buffers, uri, 'vbo', 'buffer', id, bufferByteLengths)
-        .map((bufferBindings) => ({ ...xs, bufferBindings }));
+        .map((data) => [buffers, data]);
 }
 
-function fetchTextures(xs) {
-    const { id, uri, textures, textureNFOs, textureByteLengths } = xs;
+function fetchTextures(id, uri, textures, textureByteLengths, textureNFOs) {
     return fetchResources(textures, uri, 'texture', 'texture', id, textureByteLengths)
-        .map((textureData) => {
-            for (const name in textureData) {
-                textureData[name] = { ...textureNFOs[name], buffer: textureData[name] };
+        .map((data) => {
+            for (const name in data) {
+                data[name] = { ...textureNFOs[name], buffer: data[name] };
             }
-            return { ...xs, textureBindings: textureData };
-        })
-        // .map((textureData) => textures.reduce((textures, name) => ({
-        //     ...textures, [name]: { ...textureNFOs[name], buffer: textureData[name] }
-        // }), {}))
-        // .map((textureBindings) => ({ ...xs, textureBindings }));
+            return [textures, data];
+        });
 }
 
 function fetchResources(resources, uri, endpoint, type, id, byteLengths) {
-    return Observable.merge(...resources.map((name) =>
-            fetchResource(uri, endpoint, type, id, byteLengths, name)))
-        .map(([name, buffer]) => ({ [name]: buffer }))
+    return Observable
+        .merge(...resources.map((name) =>
+            fetchResource(uri, endpoint, type, id, byteLengths, name))
+        )
+        .reduce((xs, [name, buffer]) =>
+            (xs[name] = buffer) && xs || xs,
+            Object.create(null)
+        );
 }
-
-// function fetchResources(resources, uri, endpoint, type, id, byteLengths) {
-//     return Observable
-//         .combineLatest(resources.map((name) =>
-//             fetchResource(uri, endpoint, type, id, byteLengths, name)))
-//         .take(1).defaultIfEmpty([])
-//         .map((buffers) => buffers.reduce((xs, [name, buffer]) => {
-//             xs[name] = buffer;
-//             return xs;
-//         }, {}));
-//         // .reduce((xs, ys) => ({ ...xs, ...ys }), {});
-// }
 
 function fetchResource(uri, endpoint, type, id, byteLengths, name) {
     return Observable.ajax({

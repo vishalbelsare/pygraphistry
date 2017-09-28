@@ -171,12 +171,9 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture, app) 
 
     clientReady
         .debounceTime(200)
-        .filter(Boolean)
-        .filter(() => this.updateSession)
+        .filter((ready) => ready && this.updateSession)
         .switchMap(() => this.updateSession({
-            message: null,
-            status: 'init',
-            progress: 100 * 10/10
+            message: null, status: 'init', progress: 100 * 10/10
         })())
         .subscribe({});
 
@@ -211,27 +208,23 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture, app) 
             .flatMap((VBOs) => {
                 logger.trace({step: step}, '2. Waiting for client to finish previous');
                 return clientReady
-                    .filter(_.identity)
+                    .filter(Boolean)
                     .take(1)
                     .do(() => {
                         logger.trace({step: step}, '2b. Client ready, proceed and mark as processing.');
                         clientReady.onNext(false);
                     })
-                    .map(_.constant(VBOs));
+                    .mapTo(VBOs);
             })
-            .publish((source) => source.merge(source
-                .filter(() => this.updateSession)
-                .switchMap(() => this.updateSession({
-                    message: null,
-                    status: 'default',
-                    progress: 100 * 10/10,
-                })())
-                .ignoreElements()
-            ))
-            // .publish((source) => !this.updateSession ? source : source.merge(source
-            //     .let()
-            //     .ignoreElements())
-            // )
+            // .publish((source) => source.merge(source
+            //     .filter(() => this.updateSession)
+            //     .switchMap(() => this.updateSession({
+            //         message: null,
+            //         status: 'default',
+            //         progress: 100 * 10/10,
+            //     })())
+            //     .ignoreElements()
+            // ))
             .flatMap((VBOs) => {
                 logger.trace('3. tell client about availability');
 
@@ -310,7 +303,7 @@ VizServer.prototype.beginStreaming = function (renderConfig, colorTexture, app) 
                     })
                     .do(() => { logger.trace('8. next ready!'); });
             })
-            .map(_.constant(currentGraph));
+            .mapTo(currentGraph);
     })
     .subscribe(
         () => { logger.trace('9. LOOP ITERATED'); },
