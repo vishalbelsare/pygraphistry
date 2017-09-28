@@ -268,7 +268,7 @@ export function histograms(path, base) {
 
                 return Observable.of(
                     $value(`${viewPath}.session.status`, 'default'),
-                    $value(`${viewPath}.session.progress`, 100),
+                    $value(`${viewPath}.session.progress`, null),
                     $value(`${viewPath}.session.message`, 'Updating graph')
                 ).concat(maskDataframe({ view })
                     .subscribeOn(Scheduler.async, 100)

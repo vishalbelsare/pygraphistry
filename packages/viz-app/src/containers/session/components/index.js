@@ -6,13 +6,9 @@ const TimeoutProgressIndicator = TrackInitProgress()(ProgressIndicator);
 
 export function Session({ status = 'primary', message = '', progress = 100 }) {
 
-    if (typeof progress !== 'number') {
-        progress = 100;
-    }
-
     if (status === 'init') {
         status = progress === 100 ? 'success' : 'default';
-        if (message) {
+        if (message && typeof progress === 'number') {
             message = `${message} (${Math.round(progress)}%)`;
         }
     }
@@ -41,7 +37,7 @@ function ProgressIndicator({ className, style = {},
             <Label bsStyle={status} style={status === 'default' && defaultStatusStyle || statusStyle}>
                 {message}
             </Label>
-            {status === 'default' && (!!message &&
+            {status === 'default' && (progress !== 100 && !!message &&
                 <span className='Select-loading'/> ||
                 <i className={styles['vbo-loading'] + ' fa fa-bolt'}/>) ||
                 undefined

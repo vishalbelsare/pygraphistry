@@ -45,7 +45,7 @@ export function expressions(path, base) {
                 const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
                 return Observable.from(values.concat(
                         $value(`${viewPath}.session.status`, 'default'),
-                        $value(`${viewPath}.session.progress`, 100),
+                        $value(`${viewPath}.session.progress`, null),
                         $value(`${viewPath}.session.message`, 'Updating graph')
                     ))
                     .concat(maskDataframe({ view })
@@ -174,14 +174,14 @@ export function addExpressionHandler({
             return Observable
                 .from(pathValues.concat(
                     $value(`${viewPath}.session.status`, 'default'),
-                    $value(`${viewPath}.session.progress`, 100),
+                    $value(`${viewPath}.session.progress`, null),
                     $value(`${viewPath}.session.message`, 'Updating graph')
                 ))
                 .concat(maskDataframe({ view })
                     .subscribeOn(Scheduler.async, 100)
                     .mergeMap(() => invalidations.concat(
                         $value(`${viewPath}.session.status`, 'success'),
-                        $value(`${viewPath}.session.progress`, 100),
+                        $value(`${viewPath}.session.progress`, null),
                         $value(`${viewPath}.session.message`, null)
                     ))
                 );
@@ -281,14 +281,14 @@ export function removeExpressionHandler({
             return Observable
                 .from(pathValues.concat(
                     $value(`${viewPath}.session.status`, 'default'),
-                    $value(`${viewPath}.session.progress`, 100),
+                    $value(`${viewPath}.session.progress`, null),
                     $value(`${viewPath}.session.message`, 'Updating graph')
                 ))
                 .concat(maskDataframe({ view })
                     .subscribeOn(Scheduler.async, 100)
                     .mergeMap(() => invalidations.concat(
                         $value(`${viewPath}.session.status`, 'success'),
-                        $value(`${viewPath}.session.progress`, 100),
+                        $value(`${viewPath}.session.progress`, null),
                         $value(`${viewPath}.session.message`, null)
                     ))
                 );
