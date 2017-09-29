@@ -3,13 +3,16 @@ node_modules
 config.json
 npm-debug.log
 tests.log
-build
 dist
 tmp
+.tmp
+coverage
 www
 test_results
+test-results
 *.deleted
 config/graphistryInternal.json
 test/scratch
 config/z-*
+yarn.lock
 package-lock.json
