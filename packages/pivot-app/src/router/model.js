@@ -1,6 +1,6 @@
 import { Model } from '@graphistry/falcor';
 import { ref as $ref } from '@graphistry/falcor-json-graph';
-import logger from '../../shared/logger.js';
+import logger from 'pivot-shared/logger.js';
 const log = logger.createLogger(__filename);
 
 
@@ -12,7 +12,7 @@ const initialModels = {
 
 function getInitialModel(req, screenName) {
     const userId = req.user.userId;
-    const model = {
+    const cache = {
         currentUser: $ref(`usersById['${userId}']`),
         usersById: {
             [userId]: {
@@ -27,22 +27,24 @@ function getInitialModel(req, screenName) {
         const investigationRef = $ref(
             `investigationsById['${investigationId}']`
         );
-        model.usersById[userId].activeInvestigation = investigationRef;
+        cache.usersById[userId].activeInvestigation = investigationRef;
     }
 
-    return model;
+    return cache;
 }
 
 
-export function falcorModelFactory(getDataSource) {
+export function configureFalcorModelFactory(getDataSource) {
     return function getFalcorModel(req) {
-        const getModel = initialModels[req.params.activeScreen] || initialModels.home;
+        const getCache = initialModels[req.params.activeScreen] || initialModels.home;
 
         return new Model({
-            cache: getModel(req),
+            cache: getCache(req),
             source: getDataSource(req),
             recycleJSON: true,
             treatErrorsAsValues: true
         });
     }
 }
+
+export default configureFalcorModelFactory;

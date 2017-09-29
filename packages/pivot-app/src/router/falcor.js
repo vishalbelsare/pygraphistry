@@ -7,29 +7,44 @@ import { logErrorWithCode, mapObjectsToAtoms } from 'pivot-shared/util';
 import logger from 'pivot-shared/logger.js';
 const log = logger.createLogger(__filename);
 
-export function getDataSourceFactory(services) {
+function configureFalcorRouter(services, env = { bufferTime: 10, streaming: false }) {
 
-    const AppRouter = createAppRouter(App
-        .schema(services)
-        .toArray()
-        .map(wrapRouteHandlers)
+    let AppRouter = createAppRouter(
+        env,
+        App.schema(services).toArray().map(wrapRouteHandlers)
     );
 
-    return function getDataSource(request, _streaming = false) {
+    // Hot reload the Falcor Routes
+    if (module.hot) {
+        module.hot.accept('pivot-shared/main', () => {
+            const nextApp = require('pivot-shared/main').App; // eslint-disable-line global-require
+            AppRouter = createAppRouter(
+                env,
+                App.schema(services).toArray().map(wrapRouteHandlers)
+            );
+        });
+    }
+
+    return function getDataSource(request, reqConfig = { bufferTime: 10, streaming: false }) {
         if (!request.user) {
             throw new Error('Request is not tagged with a user (no auth middleware?)');
         }
-        return new AppRouter({
-            request, _streaming,
+        return new AppRouter(request, {
+            ...reqConfig,
             userId: request.user.userId
         });
     }
 }
 
-function createAppRouter(routes, options = { bufferTime: 10 }) {
-    return class AppRouter extends Router.createClass(routes, options) {
-        constructor(options = {}) {
-            super(options);
+export { configureFalcorRouter };
+export default configureFalcorRouter;
+
+function createAppRouter(env, routes) {
+    return class AppRouter extends Router.createClass(routes, env) {
+        constructor(request = {}, requestConfig = {}) {
+            super(requestConfig);
+            this.request = request;
+            const { debug, streaming, bufferTime, ...options } = requestConfig || {};
             for (const key in options) {
                 if (options.hasOwnProperty(key)) {
                     this[key] = options[key];
