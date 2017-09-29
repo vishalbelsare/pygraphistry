@@ -1,7 +1,7 @@
 import fs from 'fs';
 import glob from 'glob';
 import path from 'path';
-import { Observable } from 'rxjs';
+import { Observable, ReplaySubject } from 'rxjs';
 import { SimpleCacheService } from '.';
 import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
@@ -20,23 +20,20 @@ export class SimpleFileSystemStore {
         this.entityName = entityName;
         this.createModel = createModel;
         this.serializeModel = serializeModel;
-
-        this.entities$ = globAsObservable(path.resolve(pathPrefix, '*.json'))
-            .mergeMap(x => x)
-            .mergeMap(file => {
-                return readFileAsObservable(file).map(JSON.parse);
-            });
-
+        this.entities = {};
         this.cacheService = new SimpleCacheService({
-            loadApp: loadApp,
-            resultName: entityName,
-            createModel: createModel,
-            cache: cache,
-            loadById: ((entityId) =>
-                this.entities$
-                    .filter(entity => entity.id === entityId)
-                    .take(1)
-            ),
+            cache, loadApp, createModel, resultName: entityName,
+            loadById: (entityId) =>
+                this.entities[entityId] || (
+                this.entities[entityId] =
+                    globAsObservable(path.resolve(pathPrefix, `${entityId}.json`))
+                        .mergeAll().take(1).single()
+                        .catch(() => (this.entities[entityId] = undefined) || Observable.empty())
+                        .mergeMap((file) => readFileAsObservable(file))
+                        .map((fileContents) => JSON.parse(fileContents))
+                        .multicast(new ReplaySubject(1))
+                        .refCount()
+                )
         });
     }
 
@@ -68,6 +65,7 @@ export class SimpleFileSystemStore {
 
                 return writeFileAsObservable(this._getPath(entity), content)
                     .do(() => this.cacheService.evictFromCache(entity.id))
+                    .do(() => this.entities[entity.id] = undefined)
                     .map(() => res);
             })
             .do((res) => {
