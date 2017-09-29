@@ -10,6 +10,8 @@ import {
 import logger from '../logger.js';
 const log = logger.createLogger(__filename);
 
+const globAsObservable = Observable.bindNodeCallback(glob);
+const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
 
 export function investigationStore(loadApp, pathPrefix, investigationsByIdCache = {}) {
     const store = new SimpleFileSystemStore({
@@ -38,11 +40,10 @@ export function investigationStore(loadApp, pathPrefix, investigationsByIdCache 
 }
 
 export function listInvestigations(pathPrefix) {
-    const globAsObservable = Observable.bindNodeCallback(glob);
-    const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
-
     return globAsObservable(path.resolve(pathPrefix, '*.json'))
-        .mergeMap(x => x)
-        .mergeMap(file => readFileAsObservable(file).map(JSON.parse))
-        .toArray();
+        .mergeAll()
+        .mergeMap((file) => readFileAsObservable(file))
+        .map((fileContents) => JSON.parse(fileContents))
+        .toArray()
+        .do(() => log.info(`Read investigations from disk`));
 }

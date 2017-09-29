@@ -3,6 +3,9 @@ import { SimpleCacheService } from './support';
 import { createTemplateModel } from '../models';
 import * as templates from './templates';
 
+const { derivedTemplates, ...systemTemplates } = templates;
+const allTemplates = { ...systemTemplates, ...derivedTemplates };
+
 export function templateStore(loadApp) {
     const templatesMap = listTemplates();
 
@@ -30,7 +33,7 @@ export function templateStore(loadApp) {
 }
 
 export function listTemplates() {
-    return Object.values(templates || {})
+    return Object.values(allTemplates || {})
         .reduce(function(templatesById, template) {
             templatesById[template.id] = template;
             return templatesById;

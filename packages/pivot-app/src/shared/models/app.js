@@ -35,7 +35,7 @@ export function makeTestUser(investigations, templates, connectors, apiKey, grap
     };
 }
 
-export function createAppModel(testUser, id = simpleflake().toJSON()) {
+export function createAppModel(id = simpleflake().toJSON()) {
     return {
         id,
         title: 'Pivots',
@@ -43,9 +43,7 @@ export function createAppModel(testUser, id = simpleflake().toJSON()) {
         pivotsById: {},
         connectorsById: {},
         templatesById: {},
-        usersById: {
-            '0': testUser
-        },
+        usersById: {},
         currentUser: $ref(`usersById['0']`),
         serverStatus: {ok: true}
     };
