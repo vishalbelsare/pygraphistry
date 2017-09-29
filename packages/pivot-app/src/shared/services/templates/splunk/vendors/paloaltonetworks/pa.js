@@ -23,7 +23,7 @@ export const defaultFields = [
 export const desiredEntities = [ 
 	'client_ip', 'client_location',
 	'rule', 'server_location',
-	'src_translated_ip', 'threat_name'];
+	'threat_name'];
 export const desiredAttributes = defaultFields;
 export const colTypes = {
 	'client_ip': 'ip',
@@ -33,7 +33,6 @@ export const colTypes = {
 	'server_location': 'geo',
 	'session_id': 'id',
 	'signature_id': 'id',
-	'src_translated_ip': 'ip',
 	'threat_name': 'alert',
 	'url': 'url'
 };	
@@ -45,7 +44,6 @@ export const refTypes = {
 	'server_location': 'dst',
 	'session_id': 'session',
 	'signature_id': 'payload',
-	'src_translated_ip': 'src',
 	'threat_name': 'payload',
 	'url': 'payload'
 };

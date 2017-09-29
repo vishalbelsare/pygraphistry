@@ -50,7 +50,7 @@ function addNodeByVal(hash, k, vRaw) {
 
 // Use all fields if a field is "*", or fields empty
 // ... -> str
-export function expand({pivotIds=[], pivotCache={}, fields=[], filter='', colMatch=true, matchAttributes=true}) {
+export function expand({pivotIds=[], pivotCache={}, fields=[], filter='', filterPost='', colMatch=true, matchAttributes=true}) {
 
 
     log.info('EXPAND RECV', {colMatch, matchAttributes});
@@ -93,7 +93,9 @@ export function expand({pivotIds=[], pivotCache={}, fields=[], filter='', colMat
                 (acc, v) =>
                     (acc.length ? acc + ' OR ' : '') + `"${v}"`, '');
 
-    return `${filter} ${match} | head 10000 `;
+    const post = filterPost && filterPost.length ? ` |  ${filterPost}` : '';
+
+    return `${filter} ${match} | head 10000 ${post}`;
 
 }
 
@@ -114,6 +116,13 @@ export const expandSplunk = new SplunkPivot({
             inputType: 'textarea',
             label: 'Filter:',
             placeholder: 'index=*',
+            defaultValue: '',
+        },
+        {
+            name: 'filterPost',
+            inputType: 'textarea',
+            label: 'Filter (post):',
+            placeholder: 'head 10',
             defaultValue: '',
         },
         {
@@ -156,7 +165,7 @@ export const expandSplunk = new SplunkPivot({
         }
     ],
     toSplunk: function (
-            {ref, pivotFields = {value: []}, fields = {value: []}, filter = '', colMatch = false, matchAttributes = false},
+            {ref, pivotFields = {value: []}, fields = {value: []}, filter = '', filterPost = '', colMatch = false, matchAttributes = false},
             pivotCache = {}, { time } = {}) {
 
         log.info('PARAMS', colMatch, matchAttributes);
@@ -164,7 +173,7 @@ export const expandSplunk = new SplunkPivot({
         this.connections = fields.value;
 
         const expanded = expand({
-            pivotCache, filter, colMatch, matchAttributes,
+            pivotCache, filter, filterPost, colMatch, matchAttributes,
             pivotIds: ref.value || [],
             fields: pivotFields.value || []});
 
