@@ -1,0 +1,16 @@
+FROM node:8.5.0-alpine
+
+WORKDIR /pivot-app
+
+ARG DEPS
+ARG NPMRC
+
+RUN apk add --no-cache jq && \
+    echo "$DEPS" > ./package.json && \
+    echo "$NPMRC" >> /root/.npmrc
+
+RUN npm install
+
+COPY . .
+
+CMD ["sh", "-c", "echo 'pivot-app says, \"hiya, slugger!\"'"]

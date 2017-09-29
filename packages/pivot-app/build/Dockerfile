@@ -1,15 +1,10 @@
-FROM node:boron
-
-COPY . /pivot-app
+FROM node:8.5.0-slim
 
 WORKDIR /pivot-app
 
-ARG TEST_BUILD
-ARG BUILD_NUMBER
-ARG COMMIT_ID
-ARG REV_NAME
+ADD artifact.tar .
 
-COPY ./wholly-innocuous/files/npm/rc /root/.npmrc
+ENV NODE_ENV=production
 
 ENV JQ_VERSION='1.5'
 RUN wget --no-check-certificate https://raw.githubusercontent.com/stedolan/jq/master/sig/jq-release.key -O /tmp/jq-release.key && \
@@ -23,8 +18,6 @@ RUN wget --no-check-certificate https://raw.githubusercontent.com/stedolan/jq/ma
     rm -f /tmp/jq-linux64.asc && \
     rm -f /tmp/jq-linux64
 
-RUN npm install && \
-    npm run build && \
-    if [ ${TEST_BUILD} = false ]; then npm prune --production; fi
+RUN rm -rf /var/lib/apt/lists/*
 
-CMD npm start
+CMD ["node", "./index.js"]
