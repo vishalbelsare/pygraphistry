@@ -2,6 +2,7 @@ global.__SERVER__ = true;
 global._ = require('underscore');
 global.Rx = require('rxjs');
 global.Observable = Rx.Observable;
+global.__graphistry_convict_conf__ = require('../config');
 
 describe('Misc', function() {
     require('./misc/mochaSetup');

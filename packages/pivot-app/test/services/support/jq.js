@@ -77,15 +77,14 @@ describe('jq', function () {
 		const transform = '.|.|';
 
 		jqExpectError(done, str, transform);
-	});	
+	});
 
-	
+
 	it('Big file', (done) => {
 
-		const contents = readFileSync(resolve(__dirname, 'shodanSample.json'), 'utf8');
-		const json = JSON.parse(contents);
+		const json = require('./shodanSample.json');
 
-		const str = contents;
+		const str = JSON.stringify(json);
 		const transform = '.matches';
 		const expected = json.matches;
 
@@ -124,6 +123,6 @@ describe('jq', function () {
 
 		jqExpectError(done, str, transform, undefined, jqSafe);
 	});
-	
+
 
 });

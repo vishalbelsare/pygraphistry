@@ -1,14 +1,19 @@
 import { assert } from 'chai';
 import { Observable } from 'rxjs';
 
-import { loadAppFactory, userStore, templateStore, investigationStore, pivotStore } 
-    from '../../src/shared/services';
+import {
+    loadAppFactory, userStore,
+    listTemplates, templateStore,
+    listInvestigations, investigationStore,
+    listConnectors, pivotStore
+} from '../../src/shared/services';
+
 import { createAppModel, makeTestUser } from '../../src/shared/models';
 
 describe('PivotStore basic', function() {
-        
+
     let loadApp;
-    let loadTemplatesById;        
+    let loadTemplatesById;
     const loadPivotStore = function () {
         return pivotStore(loadApp, '.', loadTemplatesById);
     };
@@ -20,12 +25,16 @@ describe('PivotStore basic', function() {
         const connectors = [];
         ////////////////////////
 
+        const convict = global.__graphistry_convict_conf__;
 
         const testUser = makeTestUser(investigations, templates, connectors, '.', '.');
         const app = createAppModel(testUser);
         loadApp = loadAppFactory(app);
 
-        const { loadUsersById } = userStore(loadApp);
+        const { loadUsersById } = userStore({
+            convict, loadApp, listTemplates, listConnectors,
+            listInvestigations: () => Observable.of([])
+        });
         const tCache = templateStore(loadApp);
         loadTemplatesById = tCache.loadTemplatesById;
 
