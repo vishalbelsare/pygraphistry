@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 import moment from 'moment-timezone';
-import logger from '../../../../shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 
@@ -45,10 +45,10 @@ export class SplunkPivot extends PivotTemplate {
                     pivot.splunkSearchId = searchId;
                     pivot.isPartial = isPartial;
                     pivot.connections = this.connections;
-                    pivot.connectionsBlacklist = 
+                    pivot.connectionsBlacklist =
                         this.connections && this.connections.length ? [] : this.connectionsBlacklist;
                     pivot.attributes = this.attributes;
-                    pivot.attributesBlacklist = 
+                    pivot.attributesBlacklist =
                         this.attributes && this.attributes.length ? [] : this.attributesBlacklist;
                 })
                 .map(() => shapeResults({app, pivot}))
@@ -63,26 +63,26 @@ export class SplunkPivot extends PivotTemplate {
         }
     }
 
-    //{ from: ?{ date: ?moment.json, time: ?moment.json, timezone: ?moment.json }, 
+    //{ from: ?{ date: ?moment.json, time: ?moment.json, timezone: ?moment.json },
     //  to: ?{ date: ?moment.json, time: ?moment.json, timezone: moment.json } }
-    // * { from: ?{ date: ?moment.json, time: ?moment.json, timezone: ?moment.json }, 
+    // * { from: ?{ date: ?moment.json, time: ?moment.json, timezone: ?moment.json },
     //  to: ?{ date: ?moment.json, time: ?moment.json, timezone: moment.json } }
     // -> ?{ earliest_time: ISO8601 str, latest_time: ISO8601 str }
     // time received in utc
     // ISO8601 as YYYY-MM-DDTHH:mm:ssZ
-    dayRangeToSplunkParams(maybePivotTime, maybeGlobalTime) {      
+    dayRangeToSplunkParams(maybePivotTime, maybeGlobalTime) {
 
         const pivotTime = {
-            from: (maybePivotTime||{}).from || {}, 
+            from: (maybePivotTime||{}).from || {},
             to: (maybePivotTime||{}).to || {}
         };
         const globalTime = {
-            from: (maybeGlobalTime||{}).from || {}, 
+            from: (maybeGlobalTime||{}).from || {},
             to: (maybeGlobalTime||{}).to || {}
         };
 
         const mergedTime = {
-            from: {                
+            from: {
                 date: pivotTime.from.date || globalTime.from.date,
                 time: pivotTime.from.time || globalTime.from.time,
                 timezone: pivotTime.from.timezone || globalTime.from.timezone
@@ -99,9 +99,9 @@ export class SplunkPivot extends PivotTemplate {
         const flattenTime = function ({ date, time, timezone }, defaultTime) {
             const tz = timezone || "America/Los_Angeles";
             const dateStr = moment(date).utc().format('L');
-            const timeStr = time === null || time === undefined ? defaultTime 
+            const timeStr = time === null || time === undefined ? defaultTime
                 : moment(time).utc().format('H:m:s');
-            const s = moment.tz(`${dateStr} ${timeStr}`, 'L H:m:s', tz).unix();            
+            const s = moment.tz(`${dateStr} ${timeStr}`, 'L H:m:s', tz).unix();
             return moment.unix(s).format(); //
         };
 
@@ -111,9 +111,9 @@ export class SplunkPivot extends PivotTemplate {
             };
 
         log.trace('Date range', pivotTime, globalTime, '->', mergedTime, '->', out);
-        
+
         return out;
-        
+
     }
 
     //Assumes previous pivots have populated pivotCache
@@ -123,25 +123,25 @@ export class SplunkPivot extends PivotTemplate {
         return expandArrow(text, pivotCache, colMatch, matchAttributes);
     }
 
-    constructFieldString() {        
+    constructFieldString() {
         const base = `
             | fields *
             | rename _cd as EventID
             | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
             | rename c_time as time`;
-        
+
         if (this.attributes && this.attributes.length > 0) {
-            const fields = 
+            const fields =
                 ["time", "EventID"]
                     .concat(this.connections || [])
                     .concat(this.attributes || []);
             return `
-                ${base} 
+                ${base}
                 | fields ${ fields.join(',') }`;
         } else {
             //all fields
             return `
-                ${base} 
+                ${base}
                 | fields - ${fieldsBlacklist.join(' ')}`;
         }
     }

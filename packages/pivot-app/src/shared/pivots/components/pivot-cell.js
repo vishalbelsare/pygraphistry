@@ -7,7 +7,7 @@ import createEventHandler from 'recompose/createEventHandler';
 import { DateTimeRangePicker } from 'pivot-shared/components';
 import { Col, FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
 
-import logger from 'pivot-shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 const allPivotsIdValue = 'all-pivots';

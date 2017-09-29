@@ -1,4 +1,4 @@
-import logger from '../../../../shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 export { encodings } from '../splunk/settings.js';
@@ -37,19 +37,19 @@ export const PARAMETERS = [
         label: 'headers',
         inputType: 'multi',
         options: []
-    },    
+    },
     {
         name: 'body',
         inputType: 'textarea',
         label: 'body',
         placeholder: ''
-    },    
+    },
     {
         name: 'jq',
         inputType: 'textarea',
         label: 'Postprocess with jq:',
         placeholder: '.'
-    },    
+    },
     {
         name: 'outputType',
         label: 'shape',
@@ -78,9 +78,9 @@ export function flattenParams(params = {}) {
     return Object.keys(params)
         .reduce(
             (o, k) => {
-                const unwrapped = 
-                    (params[k] instanceof Object) && ('value' in params[k]) ? 
-                        params[k].value 
+                const unwrapped =
+                    (params[k] instanceof Object) && ('value' in params[k]) ?
+                        params[k].value
                         : params[k];
                 const flattened =
                     unwrapped instanceof Array ?

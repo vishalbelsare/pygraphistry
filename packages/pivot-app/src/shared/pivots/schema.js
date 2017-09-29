@@ -5,7 +5,7 @@ import { withSchema } from '@graphistry/falcor-react-schema';
 import { logErrorWithCode } from 'pivot-shared/util';
 import { $pathValue } from '@graphistry/falcor-json-graph';
 
-import logger from 'pivot-shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 export default withSchema((QL, { get, set }, services) => {
@@ -80,7 +80,7 @@ function captureErrorAndNotifyClient(pivotIds) {
 
         return Observable.from([
             $pathValue(`pivotsById['${pivotIds}']['status']`, status)
-        ]);   
+        ]);
     };
 
 

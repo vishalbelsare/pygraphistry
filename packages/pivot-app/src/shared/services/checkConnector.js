@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 import { listConnectors } from '.';
-import logger from '../logger.js';
+import logger from 'pivot-shared/logger';
 import VError from 'verror';
 
 const log = logger.createLogger(__filename);

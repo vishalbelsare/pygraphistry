@@ -7,7 +7,7 @@ import {
     createInvestigationModel,
     serializeInvestigationModel
 } from '../models';
-import logger from '../logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 const globAsObservable = Observable.bindNodeCallback(glob);

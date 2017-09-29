@@ -1,5 +1,5 @@
 import _ from 'underscore';
-import logger from '../logger.js';
+import logger from 'pivot-shared/logger';
 import { atomify } from './support';
 
 const log = logger.createLogger(__filename);

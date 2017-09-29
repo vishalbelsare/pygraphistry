@@ -1,6 +1,6 @@
 import { Model } from '@graphistry/falcor';
 import { ref as $ref } from '@graphistry/falcor-json-graph';
-import logger from 'pivot-shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 

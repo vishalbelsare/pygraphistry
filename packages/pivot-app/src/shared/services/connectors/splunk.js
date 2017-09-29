@@ -4,10 +4,10 @@ import _ from 'underscore';
 import splunkjs from 'splunk-sdk';
 import objectHash from 'object-hash';
 import VError from 'verror';
-import logger from '../../../shared/logger.js';
-import conf from '../../../server/config.js';
+import logger from 'pivot-shared/logger';
 import { Connector } from './connector.js';
 
+const conf = global.__graphistry_convict_conf__;
 
 class SplunkConnector extends Connector {
     constructor(config) {

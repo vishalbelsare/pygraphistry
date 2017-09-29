@@ -2,7 +2,7 @@ import passport from 'passport';
 import { BasicStrategy } from 'passport-http';
 import { compare } from 'bcrypt';
 
-import { createLogger } from 'pivot-shared/logger.js';
+import { createLogger } from 'pivot-shared/logger';
 const log = createLogger(__filename);
 
 // The userId to use for all users, until we get a more sophisticated account system

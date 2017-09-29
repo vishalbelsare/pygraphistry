@@ -1,6 +1,6 @@
 import * as connectors from './connectors';
 import { SimpleCacheService } from './support';
-import logger from '../logger.js';
+import logger from 'pivot-shared/logger';
 import { Observable } from 'rxjs';
 const log = logger.createLogger(__filename);
 

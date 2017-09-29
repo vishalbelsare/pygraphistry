@@ -5,7 +5,7 @@ import _ from 'underscore';
 import { simpleflake } from 'simpleflakes';
 import { atomify, deatomify } from './support';
 
-import logger from '../logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 

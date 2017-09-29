@@ -4,7 +4,7 @@ import Router from '@graphistry/falcor-router';
 import { $error, $pathValue } from '@graphistry/falcor-json-graph';
 import { logErrorWithCode, mapObjectsToAtoms } from 'pivot-shared/util';
 
-import logger from 'pivot-shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 function configureFalcorRouter(services, env = { bufferTime: 10, streaming: false }) {

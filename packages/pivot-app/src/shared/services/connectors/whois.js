@@ -3,7 +3,7 @@ import whois from 'node-whois';
 import { parseWhoIsData as parse } from 'parse-whois';
 import VError from 'verror';
 import { Connector } from './connector.js';
-import logger from '../../logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 

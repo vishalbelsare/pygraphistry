@@ -1,6 +1,6 @@
 import path from 'path';
 import _ from 'underscore';
-import logger from '../logger.js';
+import logger from 'pivot-shared/logger';
 import { ReplaySubject } from 'rxjs';
 const log = logger.createLogger(__filename);
 

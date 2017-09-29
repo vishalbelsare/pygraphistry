@@ -8,7 +8,7 @@ import { shapeResults } from '../../shapeResults.js';
 import { flattenJson } from '../../support/flattenJson.js';
 import { PivotTemplate } from '../template.js';
 import { defaultHttpConnector } from '../../connectors/http';
-import logger from '../../../../shared/logger.js';
+import logger from 'pivot-shared/logger';
 import { dfUnion } from '../../shape/df.js';
 import { graphUnion } from '../../shape/graph.js';
 
@@ -17,7 +17,7 @@ const log = logger.createLogger(__filename);
 
 function checkAndFormatGraph (data) {
     const { nodes = [], edges = [] } = data;
-            
+
     const validEdges = edges
         .filter((edge) => ('source' in edge) && ('destination' in edge))
         .map(flattenJson);
@@ -26,13 +26,13 @@ function checkAndFormatGraph (data) {
         throw new VError({
             name: 'MissingEdges',
             cause: new Error('MissingEdges')
-        }, `Transformed result missing field "edges"`); 
+        }, `Transformed result missing field "edges"`);
     }
     if (!(edges instanceof Array)) {
         throw new VError({
             name: 'EdgesTypeError',
             cause: new Error('EdgesTypeError')
-        }, `Edges should be an array`); 
+        }, `Edges should be an array`);
     }
     if (edges.length && !validEdges.length) {
         throw new VError({
@@ -67,24 +67,24 @@ function checkAndFormatGraph (data) {
 //  -> {mode, table: [ { EventID, ... } ] | graph: { nodes: [{node, ...}], edges: [{source, destination}]}}
 // Turn json into a flat table or a graph
 //   If a table, add a unique event ID to rows to help hyper transform
-function outputToResult (mode = 'table', pivot, eventCounter, data) {    
+function outputToResult (mode = 'table', pivot, eventCounter, data) {
     switch (mode) {
-        case 'table': 
+        case 'table':
         {
             log.trace('searchAndShape response', data);
-            const rows = 
-                data instanceof Array 
-                    ? data.map(flattenJson) 
+            const rows =
+                data instanceof Array
+                    ? data.map(flattenJson)
                     : [flattenJson(data)];
             if (rows.length) {
                 if (!('EventID' in rows[0])) {
                     for (let i = 0; i < rows.length; i++) {
                         rows[i].EventID = pivot.id + ':' + (eventCounter + i);
                     }
-                }                    
+                }
             }
             return {
-                mode,            
+                mode,
                 table: new DataFrame(rows)
             };
         }
@@ -162,7 +162,7 @@ export class HttpPivot extends PivotTemplate {
     //Clone, with selective, managed overriding of (untrusted) settings
     clone ({ toUrls, encodings, connector, ...settings}) {
         if (toUrls || connector) {
-            throw new Error(`Cannot override toUrls and connector 
+            throw new Error(`Cannot override toUrls and connector
                 when ${settings.id} (${settings.name}) extending HttpPivot`);
         }
 
@@ -171,7 +171,7 @@ export class HttpPivot extends PivotTemplate {
             .forEach((fld) => {
                 template[fld] = this[fld];
             });
-        
+
         template.encodings = encodings || this.encodings;
 
         template.searchAndShape = this.searchAndShape;
@@ -220,7 +220,7 @@ export class HttpPivot extends PivotTemplate {
                 }, 'Failed to generate urls', params));
         }
 
-        let eventCounter = 0;    
+        let eventCounter = 0;
         const out = Observable.from(urls)
             .flatMap((maybeUrl) => {
 
@@ -230,8 +230,8 @@ export class HttpPivot extends PivotTemplate {
                 }
 
                 const { url, body, params } = maybeUrl;
-                log.debug('searchAndShape http: url', { url, headersProcessed, timeoutProcessed });                
-                return this.connector.search(url, { method, body, headers: headersProcessed, timeout: timeoutProcessed })                    
+                log.debug('searchAndShape http: url', { url, headersProcessed, timeoutProcessed });
+                return this.connector.search(url, { method, body, headers: headersProcessed, timeout: timeoutProcessed })
                     .switchMap(([response]) => {
                         log.debug('response', JSON.stringify((response||{}).body).slice(0,1000));
                         return jqSafe(response.body, template(jq || '.', params))
@@ -280,9 +280,9 @@ export class HttpPivot extends PivotTemplate {
                     ...pivot,
                     connections: (nodes && nodes.value ? nodes.value : nodes) || [],
                     attributes: (attributes && attributes.value ? attributes.value : attributes) || [],
-                    resultCount: 
+                    resultCount:
                         //really want shaped..
-                        table ? table.count() 
+                        table ? table.count()
                             : graph ? (graph.nodes||[]).length + (graph.edges||[]).length
                             : 0,
                     template: this,

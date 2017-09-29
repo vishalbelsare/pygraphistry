@@ -1,11 +1,11 @@
-import logger from '../../../shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 
 //Explicit to make user error reporting more fail-fast
 export const FIELD_OVERRIDE_WHITELIST = ['id', 'name', 'parameters', 'tags'];
 export const PARAM_OVERRIDE_WHITELIST = ['placeholder', 'options', 'isVisible', 'label', 'defaultValue'];
-export const PIVOT_KINDS = 
+export const PIVOT_KINDS =
     ['bool', 'text', 'number', 'textarea', 'combo', 'multi', 'daterange', 'pivotCombo', 'label']
     .reduce((o,fld) => { o[fld] = true; return o; }, {});
 
@@ -17,9 +17,9 @@ export class PivotTemplate {
             throw new Error(`Pivot template expects fields 'id' and 'name', got '${id}' and '${name}'`);
         }
 
-        parameters.forEach((param) => {            
+        parameters.forEach((param) => {
             if (!param.name) {
-                throw new Error(`Pivot parameters must have fields name, inputType; 
+                throw new Error(`Pivot parameters must have fields name, inputType;
                     got "${param.name}", "${param.inputType}"
                     for pivot ${id} ("${name}")`);
             }
@@ -35,22 +35,22 @@ export class PivotTemplate {
         this.tags = tags;
         this.parameters = parameters;
         this.pivotParametersUI = this.addTemplateNamespace(id, parameters);
-        this.pivotParameterKeys = Object.keys(this.pivotParametersUI)        
+        this.pivotParameterKeys = Object.keys(this.pivotParametersUI)
     }
-    
+
     //Clone, with selective, managed overriding of (untrusted) settings
-    clone(settings = {}) {        
+    clone(settings = {}) {
 
         Object.keys(settings)
             .filter((fld) => FIELD_OVERRIDE_WHITELIST.indexOf(fld) === -1)
-            .map((fld) => { 
-                throw new Error(`Unexpected setting override of '${fld}' 
-                    for '${settings.id}' (${settings.name})`); 
+            .map((fld) => {
+                throw new Error(`Unexpected setting override of '${fld}'
+                    for '${settings.id}' (${settings.name})`);
             });
 
-        const newParameters = 
+        const newParameters =
             (settings.parameters||[]).filter((settingParam) =>
-                0 === this.parameters.filter((templateParam) => 
+                0 === this.parameters.filter((templateParam) =>
                     templateParam.name === settingParam.name).length);
 
         const template = new PivotTemplate({
@@ -69,16 +69,16 @@ export class PivotTemplate {
 
         if ('parameters' in settings) {
 
-            const newParametersDict = 
+            const newParametersDict =
                 newParameters
                     .reduce((acc, param) => { acc[param.name] = param; return acc; }, {});
 
-            settings.parameters             
+            settings.parameters
 
                 //Skip entirely new as they're already handled
                 .filter((parameter) => !newParametersDict[parameter.name])
 
-                .map((parameter) => ({id: template.tagTemplateNamespace(template.id, parameter.name), ...parameter}))                
+                .map((parameter) => ({id: template.tagTemplateNamespace(template.id, parameter.name), ...parameter}))
                 .forEach((parameter) => {
                     Object.keys(parameter)
                         .filter((fld) => ['id', 'name'].indexOf(fld) === -1)
@@ -94,7 +94,7 @@ export class PivotTemplate {
                             template.pivotParametersUI[parameter.id][fld] = parameter[fld];
                         });
                 });
-        }        
+        }
     }
 
     tagTemplateNamespace(id, name) {

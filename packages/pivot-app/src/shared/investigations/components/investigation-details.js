@@ -10,7 +10,7 @@ import {
     Form, FormGroup//, FormControl
 } from 'react-bootstrap';
 
-import logger from 'pivot-shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 const cellLabelCols = {

@@ -2,7 +2,7 @@ import { simpleflake } from 'simpleflakes';
 import { listTemplates } from '../services/loadTemplates.js'
 import _ from 'underscore';
 import { ref as $ref } from '@graphistry/falcor-json-graph';
-import logger from '../logger.js';
+import logger from 'pivot-shared/logger';
 import { atomify, deatomify } from './support';
 
 const log = logger.createLogger(__filename);

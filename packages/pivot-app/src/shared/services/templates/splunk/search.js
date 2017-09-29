@@ -1,4 +1,4 @@
-import logger from '../../../logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 
@@ -30,26 +30,26 @@ export const searchSplunk = new SplunkPivot({
             inputType: 'multi',
             label: 'Attributes:',
             options: desiredAttributes.map(x => ({id:x, name:x}))
-        },        
+        },
         {
             name: 'time',
-            label: 'Time',            
+            label: 'Time',
             inputType: 'daterange',
             default: { from: null, to: null }
         }
     ],
     toSplunk: function (args, pivotCache = {}, { time } = {}) {
 
-        this.connections = args.fields.value;        
+        this.connections = args.fields.value;
 
         const query = `
-            search ${args.query} 
+            search ${args.query}
             ${this.constructFieldString()}
             ${ (args.query||'').indexOf(' head ') === -1 ? ' | head 1000 ' : ''}`;
- 
-        return { 
+
+        return {
             searchQuery: query,
-            searchParams: this.dayRangeToSplunkParams((args.time||{}).value, time) 
+            searchParams: this.dayRangeToSplunkParams((args.time||{}).value, time)
         };
     },
     encodings
