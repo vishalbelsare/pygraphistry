@@ -4,7 +4,7 @@ import { PARAMETERS } from './common.js';
 import logger from '../../../../shared/logger.js';
 const log = logger.createLogger(__filename);
 
-import { demoEncodings, flattenParams } from './common.js';
+import { encodings, flattenParams } from './common.js';
 
 
 export const HTTP_EXPAND = new HttpPivot({
@@ -51,6 +51,6 @@ export const HTTP_EXPAND = new HttpPivot({
             });
 
     },
-    encodings: demoEncodings
+    encodings: encodings
 });
 
