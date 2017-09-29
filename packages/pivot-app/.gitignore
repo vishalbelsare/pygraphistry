@@ -9,10 +9,12 @@ tmp
 coverage
 www
 test_results
-test-results
 *.deleted
 config/graphistryInternal.json
 test/scratch
 config/z-*
 yarn.lock
 package-lock.json
+build/artifact.tar
+build/RELEASE
+build/test-results

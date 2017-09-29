@@ -5,7 +5,6 @@ const convict = require('./config');
 const express = require('express');
 const helmet = require('helmet');
 const mkdirp = require('mkdirp');
-const chalk = require('chalk');
 const path = require('path');
 const hpp = require('hpp');
 const fs = require('fs');
@@ -115,6 +114,5 @@ if (port) {
         }
     }));
 } else {
-    logger.error(`😭  Failed to start pivot-app:server`);
-    console.error(chalk.red('==> 😭  No PORT environment variable specified'));
+    logger.error(`😭  Failed to start pivot-app:server. No PORT environment variable specified`);
 }
