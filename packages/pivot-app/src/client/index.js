@@ -1,3 +1,7 @@
+if (process.env.NODE_ENV === 'development') {
+    require('source-map-support');
+}
+
 import 'react-tag-input/example/reactTags.css';
 import 'rc-switch/assets/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';

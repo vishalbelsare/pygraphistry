@@ -32,12 +32,7 @@ if (isDev) {
     clientWebpackConfig.plugins.push(
         // Prints more readable module names in the browser console on HMR updates
         new webpack.NamedModulesPlugin(),
-        new webpack.HotModuleReplacementPlugin({ multiStep: false }),
-        new webpack.BannerPlugin({
-            raw: true,
-            entryOnly: true,
-            banner: `require('source-map-support');`
-        })
+        new webpack.HotModuleReplacementPlugin({ multiStep: false })
     );
 } else {
     clientWebpackConfig.plugins.push(
