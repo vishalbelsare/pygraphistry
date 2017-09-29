@@ -25,10 +25,11 @@ export default function App({
                         selectInvestigation={selectInvestigation} />
             { serverStatus && !serverStatus.ok &&
                 <ErrorBanner serverStatus={serverStatus}/> }
-            <MainNav activeScreen={activeScreen} switchScreen={switchScreen}>
+            <MainNav key='nav' activeScreen={activeScreen} switchScreen={switchScreen}>
                 <ActiveScreen data={currentUser}
                               switchScreen={switchScreen}
-                              selectInvestigation={selectInvestigation}/>
+                              selectInvestigation={selectInvestigation}
+                              key={`${activeScreen}-screen-component`}/>
             </MainNav>
             {/* <DevTools/> */}
         </div>
