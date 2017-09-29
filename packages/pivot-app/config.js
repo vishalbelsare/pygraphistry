@@ -1,6 +1,6 @@
-import convict from 'convict';
-import path from 'path';
-import glob from 'glob';
+const path = require('path');
+const glob = require('glob');
+const convict = require('convict');
 
 
 // Define a schema
@@ -48,8 +48,8 @@ const conf = convict({
     },
     systemTemplates: {
         pivots: {
-            doc: `JSON list of pivots: 
-                [{template, name, id, tags: [String], 
+            doc: `JSON list of pivots:
+                [{template, name, id, tags: [String],
                     parameters: [{name, inputType, label, placeholder}]}],
                     nodes: ?[String],
                     attributes: ?[String],
@@ -61,6 +61,12 @@ const conf = convict({
         }
     },
     pivotApp: {
+        mountPoint: {
+            doc: 'Pivot-app mount point',
+            format: String,
+            default: '/pivot',
+            arg: 'pivot-mount-point'
+        },
         dataDir: {
             doc: 'Directory to store investigation files',
             format: String,
@@ -153,19 +159,19 @@ const conf = convict({
             env: 'SPLUNK_HOST'
         },
         port: {
-            doc: 'Splunk API port', 
+            doc: 'Splunk API port',
             format: Number,
             default: 8089,
             arg: 'splunk-port',
             env: 'SPLUNK_PORT'
-        },   
+        },
         scheme: {
             doc: 'Splunk protocol',
             format: ['http', 'https'],
             default: 'https',
             arg: 'splunk-scheme',
-            env: 'SPLUNK_SCHEME' 
-        },           
+            env: 'SPLUNK_SCHEME'
+        },
         jobCacheTimeout: {
             doc: 'Time (in seconds) during which Splunk caches the query results. Set to -1 to disable caching altogether',
             format: Number,
@@ -194,9 +200,11 @@ if (process.env.CONFIG_FILES) {
 }
 
 // eslint-disable-next-line no-console
-console.log(`Loading configuration from ${configFiles.join(", ")}`);
+console.log(`Loading node-convict configuration files: [\n  "${configFiles.join('",\n  "')}"\n]`);
 
 conf.loadFile(configFiles);
-conf.validate({strict: true});
+conf.validate({allowed: 'strict'});
 
 module.exports = conf;
+module.exports.conf = conf;
+module.exports.default = conf;
