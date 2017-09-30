@@ -9,7 +9,7 @@ import { jqSafe } from '../support/jq';
 import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
-import { demoEncodings } from './http/common.js';
+import { encodings } from './http/common.js';
 
 
 export class ManualPivot extends PivotTemplate {
@@ -119,5 +119,5 @@ export const MANUAL = new ManualPivot({
             options: [],
         }
     ],
-    encodings: demoEncodings
+    encodings: encodings
 });

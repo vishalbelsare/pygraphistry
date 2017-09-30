@@ -24,7 +24,7 @@ karmaWebpackConfig.externals = [
 ];
 
 karmaWebpackConfig.plugins.splice(7, 2); // splice out `StatsPlugin` and `WriteFilePlugin`
-karmaWebpackConfig.plugins.splice(4, 2,  // Splice out `AssetsPlugin` and `EnvironmentPlugin`
+karmaWebpackConfig.plugins.splice(4, 2,  // splice out `AssetsPlugin` and `EnvironmentPlugin`
     // set `NODE_ENV` to 'production' to make React shut up
     new webpack.EnvironmentPlugin({ NODE_ENV: 'production' }),
     new webpack.BannerPlugin({
@@ -33,5 +33,8 @@ karmaWebpackConfig.plugins.splice(4, 2,  // Splice out `AssetsPlugin` and `Envir
         banner: `require('source-map-support').install({environment:'node'});require('raf').polyfill();`
     }),
 );
+
+// splice out `GaugeProgressBarPlugin`
+karmaWebpackConfig.plugins.splice(0, 1);
 
 module.exports = karmaWebpackConfig;

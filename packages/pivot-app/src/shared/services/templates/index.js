@@ -1,5 +1,5 @@
 export * from './splunk/index.js'
-export * from './neo4j/index.js'
+// export * from './neo4j/index.js'
 export * from './blazegraph.js';
 export * from './http/httpSearch.js';
 export * from './http/httpExpand.js';
