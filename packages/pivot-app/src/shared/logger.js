@@ -75,7 +75,7 @@ if (__SERVER__) {
     try {
         logLevel = window.localStorage.debugLevel || 'info';
     } catch (e) {
-        console.warn('Cannot read localStorage to set LOG_LEVEL, defaulting to "info"');
+        console.info('Cannot read localStorage to set LOG_LEVEL, defaulting to "info"');
         logLevel = 'info';
     }
     parentLogger = createClientLogger({
