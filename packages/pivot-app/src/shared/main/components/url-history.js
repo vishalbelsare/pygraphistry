@@ -1,6 +1,6 @@
 import React from 'react';
 import createHistory from 'history/createBrowserHistory';
-import logger from 'pivot-shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 export default class UrlHistory extends React.Component {

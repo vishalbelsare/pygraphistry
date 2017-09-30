@@ -1,7 +1,7 @@
 import { template } from '../../support/template';
 import { HttpPivot } from './httpPivot';
 import { PARAMETERS } from './common.js';
-import logger from '../../../../shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 import { encodings, flattenParams } from './common.js';
@@ -9,7 +9,7 @@ import { encodings, flattenParams } from './common.js';
 
 export const HTTP_EXPAND = new HttpPivot({
     id: 'http-expand',
-    name: 'Expand with a URL',    
+    name: 'Expand with a URL',
     tags: ['Demo', 'Splunk'],
     parameters:
         [{
@@ -27,7 +27,7 @@ export const HTTP_EXPAND = new HttpPivot({
         const { endpoint = '', pRef, body, method = 'GET' } = params;
 
         const refVal = pRef ? pRef.value : '';
-        
+
         const pivots = refVal instanceof Array ? refVal : [refVal];
         const events = pivots.map((refVal) => pivotCache[refVal].events);
 
@@ -38,11 +38,11 @@ export const HTTP_EXPAND = new HttpPivot({
                     const url = template(endpoint, urlParams);
                     const bodyConcrete =
                         method === 'POST' ? template(body, urlParams)
-                        : undefined;                    
+                        : undefined;
                     log.debug('row endpoint', url, i, row);
-                    return { 
-                        url, 
-                        params: urlParams, 
+                    return {
+                        url,
+                        params: urlParams,
                         ...(method === 'POST' ? { body: bodyConcrete } : {})
                     };
                 } catch (e) {

@@ -1,4 +1,4 @@
-import logger from '../../../logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 

@@ -57,6 +57,7 @@ export default function InvestigationScreen({
                         createInvestigation={createInvestigation}
                     />
                     <Graphistry
+                        key={`investigation:${activeInvestigation.id}:${datasetName || 'viz'}`}
                         className={iframeStyle.iframe}
                         vizClassName={iframeStyle.iframe}
                         {...uiTweaks[activeInvestigation.layout] || {}}

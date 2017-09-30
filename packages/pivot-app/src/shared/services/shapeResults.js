@@ -2,7 +2,7 @@ import { simpleflake } from 'simpleflakes';
 import _ from 'underscore';
 import { categoryToColorInt, intToHex } from '../services/support/palette.js';
 import { dedupeHyperedges, inference } from './shape/inference.js';
-import logger from '../../shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 
@@ -52,7 +52,7 @@ function encodeGraph({ app, pivot }) {
     const { encodings } = pivot.template;
     const { nodes, edges } = pivot.results;
 
-    
+
     //TODO make node, edge encoding calls functional
     if (encodings && encodings.point) {
         nodes.map(
@@ -76,11 +76,11 @@ function encodeGraph({ app, pivot }) {
                 )
             )
         );
-    }    
+    }
 
 
-    return { 
-        app, 
+    return {
+        app,
         pivot: {
             ...pivot,
             results: { nodes, edges },
@@ -101,19 +101,19 @@ function extractAllNodes(connections) {
 //   -- if generic nodes/edges, merge in
 //   -- track which columns are used
 function shapeHyperGraph({ app, pivot } ) {
-    const { 
-        events = [], 
-        graph: { nodes: pivotNodes = [], edges: pivotEdges = [] } = {}, 
-        attributes = [], attributesBlacklist = [], 
+    const {
+        events = [],
+        graph: { nodes: pivotNodes = [], edges: pivotEdges = [] } = {},
+        attributes = [], attributesBlacklist = [],
         connections = [], connectionsBlacklist = [] } = pivot;
     const isStar = extractAllNodes(connections);
 
     const edges = [];
     const nodeLabels = [];
 
-    const generatedEntities = {};    
+    const generatedEntities = {};
 
-    
+
     for(let i = 0; i < events.length; i++) {
         const row = events[i];
         const eventID = row.EventID || simpleflake().toJSON();
@@ -126,10 +126,10 @@ function shapeHyperGraph({ app, pivot } ) {
                 .filter((field) => row[field] !== undefined)
                 .filter((field) => connectionsBlacklist.indexOf(field) === -1);
 
-        const attribs = 
+        const attribs =
             Object.keys(row)
                 .filter((field) => row[field] !== undefined)
-                .filter((field) => 
+                .filter((field) =>
                     field === 'EventID'
                     || !attributes.length
                     || attributes.indexOf(field) > -1)
@@ -176,8 +176,8 @@ function shapeHyperGraph({ app, pivot } ) {
     }
 
     const combinedNodes = nodeLabels.concat(pivotNodes)
-        .filter(({type}) => 
-                isStar 
+        .filter(({type}) =>
+                isStar
                 || type === 'EventID'
                 || (connections.indexOf(type) > -1));
 
@@ -185,17 +185,17 @@ function shapeHyperGraph({ app, pivot } ) {
     //  (for case where just edges here, and enriched nodes from earlier)
     const combinedEdges = edges
         .concat(pivotEdges
-            .map((edge, i) => 'edge' in edge ? 
-                edge 
+            .map((edge, i) => 'edge' in edge ?
+                edge
                 : {...edge, 'edge': `edge_${pivot.id}_${i}`}));
 
-    return ({ app, 
+    return ({ app,
         pivot: {
             ...pivot,
             results: {
                 edges: combinedEdges,
                 nodes: combinedNodes
-            } 
+            }
     }});
 }
 
@@ -210,15 +210,15 @@ function globalInference({ app, pivot }) {
 
     const newEdges = inference({nodes, edges: dedupedHyperedges, encodings: pivot.template.encodings });
 
-   return ({ app, 
+   return ({ app,
         pivot: {
             ...pivot,
             results: {
                 graph: dedupedHyperedges.concat(newEdges),
                 labels: nodes
-            } 
+            }
     }});
-}    
+}
 
 export function shapeResults({ app, pivot }) {
     return globalInference(encodeGraph(shapeHyperGraph({ app, pivot })));

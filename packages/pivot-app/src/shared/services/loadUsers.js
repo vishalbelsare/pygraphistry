@@ -1,14 +1,39 @@
-export function userStore(loadApp) {
+import { ReplaySubject } from 'rxjs';
+import { makeTestUser } from 'pivot-shared/models';
+import { listInvestigations } from './investigationStore';
+
+export function userStore({
+    loadApp,
+    convict,
+    listTemplates,
+    listConnectors,
+    listInvestigations,
+}) {
+
+    const templates = listTemplates();
+    const connectors = listConnectors();
+    const investigationsObs = listInvestigations()
+        .take(1)
+        .multicast(new ReplaySubject(1))
+        .refCount();
+
     function loadUsersById({ userIds }) {
-        return loadApp()
-            .mergeMap(
-                (app) => userIds.filter((userId) => (
-                    userId in app.usersById
-                )),
-                (app, userId) => ({
-                    app, user: app.usersById[userId]
+        return loadApp().zip(investigationsObs).mergeMap(
+            ([app, investigations]) => userIds,
+            ([app, investigations], userId) => ({
+                app,
+                user: app.usersById[userId] || (
+                      app.usersById[userId] = {
+                        ...makeTestUser(
+                            investigations,
+                            templates, connectors,
+                            convict.get('graphistry.key'),
+                            convict.get('graphistry.host')
+                        ),
+                        id: userId
                 })
-            );
+            })
+        );
     }
 
     return {

@@ -62,12 +62,14 @@ class BrowserForwarderStream{
 let parentLogger;
 
 if (__SERVER__) {
-    const conf = require('../server/config.js');
-    parentLogger = createServerLogger({
-        LOG_FILE: conf.get('log.file'),
-        LOG_LEVEL: conf.get('log.level'),
-        LOG_SOURCE: conf.get('log.logSource'),
-    });
+    if (!(parentLogger = global.__graphistry_server_logger__)) {
+        const conf = global.__graphistry_convict_conf__;
+        parentLogger = createServerLogger({
+            LOG_FILE: conf.get('log.file'),
+            LOG_LEVEL: conf.get('log.level'),
+            LOG_SOURCE: conf.get('log.logSource'),
+        });
+    }
 } else {
     let logLevel;
     try {
@@ -143,8 +145,10 @@ function createClientLogger({ LOG_LEVEL }) {
 // functions for creating error handler functions that log the error and rethrow it.
 ////////////////////////////////////////////////////////////////////////////////
 
-module.exports = {
-    createLogger: function(fileName) {
-        return parentLogger.child({fileName});
-    },
-};
+export function createLogger(fileName, parent) {
+    return (parent || parentLogger).child({fileName});
+}
+
+createLogger.createLogger = createLogger;
+
+export default createLogger;

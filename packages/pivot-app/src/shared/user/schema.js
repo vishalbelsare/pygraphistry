@@ -2,7 +2,7 @@ import _ from 'underscore';
 import { Observable } from 'rxjs';
 import { withSchema } from '@graphistry/falcor-react-schema';
 import { $ref, $value, $invalidation } from '@graphistry/falcor-json-graph';
-import logger from 'pivot-shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 export default withSchema((QL, { get, set }, services) => {

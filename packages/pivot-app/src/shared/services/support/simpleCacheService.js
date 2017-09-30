@@ -5,7 +5,7 @@ export class SimpleCacheService {
         this.loadApp = loadApp;
         this.resultName = resultName;
         this.loadById = loadById;
-        this.createModel = createModel
+        this.createModel = createModel;
         this.cache = cache;
     }
 
@@ -54,14 +54,12 @@ export class SimpleCacheService {
             (app) => {
                 return Observable.from(reqIds)
                     .flatMap((id) => {
-                        if (id in app[index]) {
+                        if (app[index] && app[index][id]) {
                             return Observable.from([app[index][id]]);
                         } else {
                             return this.lookupId(id)
                                 .map(this.createModel)
-                                .do(result => {
-                                    app[index][id] = result
-                                })
+                                .do(result => app[index][id] = result)
                         }
                     })
             },

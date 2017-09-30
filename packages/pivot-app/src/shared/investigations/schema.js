@@ -3,7 +3,7 @@ import { logErrorWithCode } from 'pivot-shared/util';
 import { withSchema } from '@graphistry/falcor-react-schema';
 import { $pathValue, $invalidation } from '@graphistry/falcor-json-graph';
 
-import logger from 'pivot-shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 export default withSchema((QL, { get, set }, services) => {

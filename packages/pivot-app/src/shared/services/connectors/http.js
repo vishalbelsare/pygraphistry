@@ -4,12 +4,12 @@ import request from 'request';
 const get = Observable.bindNodeCallback(request.get.bind(request));
 const post = Observable.bindNodeCallback(request.post.bind(request));
 
-import logger from '../../../shared/logger.js';
+import logger from 'pivot-shared/logger';
 import { Connector } from './connector.js';
 const log = logger.createLogger(__filename);
 
 
-class HttpConnector extends Connector {    
+class HttpConnector extends Connector {
 
     constructor({timeout_s = 20, ...config}) {
         super(config);
@@ -22,7 +22,7 @@ class HttpConnector extends Connector {
         log.debug('Using timeout: ', (timeout || this.timeout_s) * 1000);
 
         const reqBase = {url, headers, gzip: true};
-        const req = 
+        const req =
             method === 'GET' ? get(reqBase)
                 : post({...reqBase, body});
 
@@ -42,11 +42,11 @@ class HttpConnector extends Connector {
                 log.trace(response);
                 const statusCode = (response||{}).statusCode;
                 if (statusCode !== 200) {
-                    log.error({msg: 'error', statusCode, 
+                    log.error({msg: 'error', statusCode,
                         method,
                         headers,
                         requestBody: body,
-                        responseBody: (response||{}).body});                    
+                        responseBody: (response||{}).body});
 
                 }
                 if (statusCode === 401) {
@@ -60,10 +60,10 @@ class HttpConnector extends Connector {
                     throw new VError({
                             name: 'HttpStatusError',
                             info: info,
-                        }, 'URL gave an unexpected response code: ' 
+                        }, 'URL gave an unexpected response code: '
                             + (statusCode || 'none available'), info);
                 }
-            })            
+            })
             .timeoutWith((timeout || this.timeout_s) * 1000, Observable.throw(new VError({
                     name: 'Timeout',
                     info: `Max wait: ${this.timeout_s} seconds`

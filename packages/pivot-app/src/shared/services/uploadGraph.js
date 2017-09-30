@@ -7,10 +7,10 @@ import request from 'request';
 import VError from 'verror';
 import { layouts } from './layouts.js';
 
-import conf from '../../server/config.js';
+const conf = global.__graphistry_convict_conf__;
 import { graphUnion, sortNodesInplaceByPivotAndID, sortEdgesInplaceByPivotAndID} from './shape/graph.js';
 
-import logger from '../../shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 
@@ -90,11 +90,11 @@ export const bindings = {
     "destinationField": "destination",
     "typeField": "type",
     "idField": "node",
-    "idEdgeField": "edge"    
+    "idEdgeField": "edge"
 }
 
 function synthesizeMissingNodes(edges, nodes) {
-    
+
     const inNodes = {};
     nodes.forEach((node) => { inNodes[node[bindings.idField]] = true });
 
@@ -121,7 +121,7 @@ export function createGraph(pivots) {
         pivots.reduce(
             ({nodes, edges}, {enabled, results: {graph = [], labels = []} = {} }, index) =>
                 !enabled ? {nodes, edges}
-                : graphUnion(                    
+                : graphUnion(
                     {nodes: labels.map((node) => ({'Pivot': index, ...node})),
                      edges: graph.map((edge) => ({'Pivot': index, ...edge})) },
                     {nodes, edges}, //don't clobber earlier Pivot #
@@ -321,7 +321,7 @@ export function stackedBushyGraph(graph, fudgeX = 250, fudgeY = -250 * Math.pow(
 
 // [{Pivot: Int, bindings.sourceField: nodeName, bindings.destinationField: nodeName}] -> {nodeName: Int}
 export function edgesToRows(edges, nodes) {
-    const allEdgeRows = 
+    const allEdgeRows =
         _.flatten(
             edges
                 .filter((e) => e.edgeType && e.edgeType.indexOf('EventID->') === 0)

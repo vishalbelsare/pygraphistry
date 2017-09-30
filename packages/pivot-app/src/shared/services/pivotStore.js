@@ -3,7 +3,7 @@ import {
     createPivotModel,
     serializePivotModel
 } from '../models';
-import logger from '../logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 
@@ -25,7 +25,7 @@ export function pivotStore(loadApp, pathPrefix, loadTemplatesById, pivotsByIdCac
                         templateIds: [pivot.pivotTemplate.value[1]]
                     }),
                     (pivot, { template }) => ({ pivot, template }))
-                .map(({pivot, template}) => {                    
+                .map(({pivot, template}) => {
                     // Must reuse original pivot object
                     for (const fld in template.pivotParametersUI.value) {
                         if (!(fld in pivot.pivot.pivotParameters)) {

@@ -6,10 +6,10 @@ import { PivotTemplate } from './template.js';
 import { flattenJson } from '../support/flattenJson.js';
 import { template } from '../support/template';
 import { jqSafe } from '../support/jq';
-import logger from '../../../shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
-import { demoEncodings } from './http/common.js';
+import { encodings } from './http/common.js';
 
 
 export class ManualPivot extends PivotTemplate {
@@ -41,19 +41,19 @@ export class ManualPivot extends PivotTemplate {
         });
         const { jq = '.', events, nodes, attributes } = params;
 
-        const a = 
-            Observable.defer(() => jqSafe(events, template(jq, params)))            
+        const a =
+            Observable.defer(() => jqSafe(events, template(jq, params)))
             .map( (json) => {
                 log.debug('==== JQ TRANSFORMED JSON', json);
-                const rows = json instanceof Array 
-                    ? json.map(flattenJson) 
+                const rows = json instanceof Array
+                    ? json.map(flattenJson)
                     : [flattenJson(json)];
                 if (rows.length) {
                     if (!('EventID' in rows[0])) {
                         for (let i = 0; i < rows.length; i++) {
                             rows[i].EventID = pivot.id + ':' + i;
                         }
-                    }                    
+                    }
                 }
                 return rows;
             });
@@ -93,7 +93,7 @@ export const MANUAL = new ManualPivot({
     name: 'Enter data',
     tags: ['Demo', 'Splunk'],
     attributes: [ ],
-    connections: [ ],    
+    connections: [ ],
     parameters: [
         {
             name: 'events',
@@ -119,5 +119,5 @@ export const MANUAL = new ManualPivot({
             options: [],
         }
     ],
-    encodings: demoEncodings
+    encodings: encodings
 });

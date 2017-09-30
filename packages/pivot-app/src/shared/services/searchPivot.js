@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import { listTemplates } from '.';
 import _ from 'underscore';
-import logger from '../logger.js';
+import logger from 'pivot-shared/logger';
 import VError from 'verror';
 
 const log = logger.createLogger(__filename);

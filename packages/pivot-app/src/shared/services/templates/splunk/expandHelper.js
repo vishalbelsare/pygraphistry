@@ -1,6 +1,6 @@
 import _ from 'underscore';
 
-import logger from '../../../../shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 function getFields (str, events) {
@@ -17,8 +17,8 @@ function getFields (str, events) {
             }
         });
         return Object.keys(hits);
-    } else { 
-        return fields; 
+    } else {
+        return fields;
     }
 
 }
@@ -46,7 +46,7 @@ export function expandArrow(text, pivotCache, colMatch = true) {
             const fields = getFields(fieldsStr, pivotCache[pivotId].events);
             for (let i = 0; i < fields.length; i++) {
                 const field = fields[i];
-                const vals = 
+                const vals =
                     _.uniq(_.map(pivotCache[pivotId].events, (row) => row[field]))
                     .filter((v) => v !== null && v !== undefined)
                     .map((v) => String(v).replace(/([\r\n])/gm,"").replace(/"/g,'\\"').trim())
@@ -55,7 +55,7 @@ export function expandArrow(text, pivotCache, colMatch = true) {
                 const joiner = `" OR "${colMatch ? `${ field }"="` : ''}`;
                 const fieldMatch = `${ prefix }${ vals.join(joiner) }"`;
                 if (fieldMatch !== "" && fieldMatch !== `""`) {
-                    match = match + (match ? ' OR ' : '') + fieldMatch;            
+                    match = match + (match ? ' OR ' : '') + fieldMatch;
                 }
             }
         });

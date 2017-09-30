@@ -3,7 +3,7 @@ import mainStyles from '../../styles.less';
 import InvestigationTags from './investigation-tags';
 import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
 
-import logger from 'pivot-shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 export default function InvestigationTable({

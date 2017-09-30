@@ -2,48 +2,48 @@ import { v1 as neo4j } from 'neo4j-driver';
 import { Observable } from 'rxjs';
 import VError from 'verror';
 
-import conf from '../../../server/config.js';
-import logger from '../../../shared/logger.js';
+import logger from 'pivot-shared/logger';
 import { Connector } from './connector.js';
 
+const conf = global.__graphistry_convict_conf__;
 
 export function toGraph(records) {
     const nodes = [];
     const edges = [];
     records.records.forEach(function (record) {
         record.forEach(function (v) {
-            const item = {}; 
-            
+            const item = {};
+
             const maybeTitle =
                 v.properties ?
                     ('name' in v.properties ? v.properties.name
-                     : 'title' in v.properties ? v.properties.title 
+                     : 'title' in v.properties ? v.properties.title
                      : undefined)
                 : undefined;
-                
+
             if ('type' in v) {
                 item.type = v.type;
             } else if (v.labels && v.labels.length) {
                 item.type = v.labels[0];
-            }            
-            if (v.constructor.name === 'Node') {            
+            }
+            if (v.constructor.name === 'Node') {
                 item.node = v.identity.toString();
                 item.pointTitle = maybeTitle === undefined ? item.id : maybeTitle;
-                nodes.push(item);                
+                nodes.push(item);
             } else {
                 item.source = v.start.toString();
                 item.destination = v.end.toString();
                 edges.push(item);
             }
             if (v.labels) {
-                v.labels.forEach(function (label) { 
+                v.labels.forEach(function (label) {
                     item[label] = true;
                 });
             }
             if (v.properties) {
                 for (const i in v.properties) {
                     if (v.properties[i] && v.properties[i].constructor.name === 'Integer') {
-                        item[i] = v.properties[i].toNumber();   
+                        item[i] = v.properties[i].toNumber();
                     } else {
                         item[i] = v.properties[i];
                     }
@@ -63,9 +63,9 @@ class Neo4jConnector extends Connector {
         this.driver = neo4j.driver(
             config.bolt,
             neo4j.auth.basic(config.user, config.password));
-        
+
         const metadata = { neo4jServer: config.bolt, neo4jUser: config.user };
-        this.log = logger.createLogger(__filename).child(metadata);        
+        this.log = logger.createLogger(__filename).child(metadata);
 
     }
 
@@ -84,7 +84,7 @@ class Neo4jConnector extends Connector {
                     new VError({
                         name: 'ConnectionError',
                         cause: exn instanceof Error ? exn : new Error(exn),
-                        info: this.metadata,                        
+                        info: this.metadata,
                     })))
             .take(1)
 
@@ -114,7 +114,6 @@ class Neo4jConnector extends Connector {
 }
 
 Neo4jConnector.searchParamDefaults = { };
-
 
 export const neo4jConnector0 = new Neo4jConnector({
     id:'neo4j-connector',

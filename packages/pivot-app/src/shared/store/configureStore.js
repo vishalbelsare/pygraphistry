@@ -7,7 +7,7 @@ import { investigation } from '../reducers/investigation';
 import { connectorScreen } from '../reducers/connectorScreen';
 import { pivot } from '../reducers/pivotRow';
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
-
+import { createLogger as ReduxLogger } from 'redux-logger';
 
 export function configureStore() {
     const epicsMiddleware = createEpicMiddleware(
@@ -16,7 +16,7 @@ export function configureStore() {
 
     const enhancer = __DEV__ ?
         compose(
-            applyMiddleware(epicsMiddleware, require('redux-logger')({ collapsed: true })),
+            applyMiddleware(epicsMiddleware, ReduxLogger({ collapsed: true })),
             DevTools.instrument()
         ) :
         applyMiddleware(epicsMiddleware);

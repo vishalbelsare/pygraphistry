@@ -1,7 +1,7 @@
 import { template } from '../../support/template';
 import { HttpPivot } from './httpPivot';
 import { PARAMETERS } from './common.js';
-import logger from '../../../../shared/logger.js';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 import { encodings, flattenParams } from './common.js';
@@ -24,13 +24,13 @@ export const HTTP_SEARCH = new HttpPivot({
 
         log.debug('url', url);
 
-        return [ { 
-            url, 
-            params: urlParams, 
+        return [ {
+            url,
+            params: urlParams,
             ...(method === 'POST'? { body: bodyConcrete } : {})
         }];
     },
-    parameters: 
+    parameters:
         [{
             name: 'instructions',
             inputType: 'label',

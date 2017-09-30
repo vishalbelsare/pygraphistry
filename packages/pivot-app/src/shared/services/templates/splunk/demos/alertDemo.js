@@ -1,5 +1,5 @@
 import stringhash from 'string-hash';
-import logger from '../../../../logger';
+import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 import { SplunkPivot } from '../splunkPivot';
@@ -108,7 +108,7 @@ export const searchAlertDemo = new SplunkPivot({
         },
         {
             name: 'time',
-            label: 'Time',            
+            label: 'Time',
             inputType: 'daterange',
             default: { from: null, to: null }
         }
@@ -135,7 +135,7 @@ function makeSearchIndex (indexName) {
             searchQuery: query,
             searchParams: this.dayRangeToSplunkParams((args.time||{}).value, time)
         };
-    }; 
+    };
 }
 
 function makeExpandIndex (indexName) {
@@ -166,7 +166,7 @@ const EXPAND_PARAMS = [
         },
         {
             name: 'time',
-            label: 'Time',            
+            label: 'Time',
             inputType: 'daterange',
             default: { from: null, to: null }
         }
@@ -187,13 +187,13 @@ export const searchFireeyeDemo = new SplunkPivot({
         },
         {
             name: 'time',
-            label: 'Time',            
+            label: 'Time',
             inputType: 'daterange',
             default: { from: null, to: null }
         }
     ],
     connections: FIREEYE_FIELDS,
-    attributesBlacklist: attributesBlacklist,    
+    attributesBlacklist: attributesBlacklist,
     encodings: alertDemoEncodings,
     toSplunk: makeSearchIndex('FIREEYE')
 });
@@ -204,7 +204,7 @@ export const expandFireeyeDemo = new SplunkPivot({
     tags: ['Demo'],
     parameters: EXPAND_PARAMS,
     connections: FIREEYE_FIELDS,
-    attributesBlacklist: attributesBlacklist,    
+    attributesBlacklist: attributesBlacklist,
     encodings: alertDemoEncodings,
     toSplunk: makeExpandIndex('FIREEYE')
 });
@@ -215,7 +215,7 @@ export const expandBlueCoatDemo = new SplunkPivot({
     tags: ['Demo'],
     parameters: EXPAND_PARAMS,
     connections: [ 'Fire Eye URL', 'External IPs' ],
-    attributesBlacklist: attributesBlacklist,    
+    attributesBlacklist: attributesBlacklist,
     encodings: alertDemoEncodings,
     toSplunk: makeExpandIndex('BLUECOAT')
 });
@@ -226,7 +226,7 @@ export const expandFirewallDemo = new SplunkPivot({
     tags: ['Demo'],
     parameters: EXPAND_PARAMS,
     connections: [ 'External IPs', 'Internal IPs' ],
-    attributesBlacklist: attributesBlacklist,    
+    attributesBlacklist: attributesBlacklist,
     encodings: alertDemoEncodings,
     toSplunk: makeExpandIndex('FIREWALL')
 });
@@ -237,7 +237,7 @@ export const expandIDSDemo = new SplunkPivot({
     tags: ['Demo'],
     parameters: EXPAND_PARAMS,
     connections: [ 'Internal IPs', 'Message' ],
-    attributesBlacklist: attributesBlacklist,    
+    attributesBlacklist: attributesBlacklist,
     encodings: alertDemoEncodings,
     toSplunk: makeExpandIndex('IDS')
 });
