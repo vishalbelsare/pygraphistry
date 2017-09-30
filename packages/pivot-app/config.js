@@ -2,7 +2,6 @@ const path = require('path');
 const glob = require('glob');
 const convict = require('convict');
 
-
 // Define a schema
 const conf = convict({
     env: {
@@ -200,10 +199,13 @@ if (process.env.CONFIG_FILES) {
 }
 
 // eslint-disable-next-line no-console
-console.log(`Loading node-convict configuration files: [\n  "${configFiles.join('",\n  "')}"\n]`);
-
-conf.loadFile(configFiles);
-conf.validate({allowed: 'strict'});
+if (configFiles && configFiles.length > 0) {
+    console.log(`Loading node-convict configuration files: [\n  "${configFiles.join('",\n  "')}"\n]`);
+    conf.loadFile(configFiles);
+    conf.validate({allowed: 'strict'});
+} else {
+    console.log('No config files found, skipping...');
+}
 
 module.exports = conf;
 module.exports.conf = conf;

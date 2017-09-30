@@ -1,10 +1,13 @@
 const cookieParser = require('cookie-parser');
 const SocketIOServer = require('socket.io');
 const compression = require('compression');
+const bodyParser = require('body-parser');
 const convict = require('./config');
 const express = require('express');
+const bunyan = require('bunyan');
 const helmet = require('helmet');
 const mkdirp = require('mkdirp');
+const http = require('http');
 const path = require('path');
 const hpp = require('hpp');
 const fs = require('fs');
@@ -18,10 +21,10 @@ mkdirp.sync(pivotPath);
 const app = express();
 const port = convict.get('port');
 const host = convict.get('host');
+const server = http.createServer(app);
 const logger = require('./logger')(__filename);
 const mountPoint = convict.get('pivotApp.mountPoint');
-const io = app.io = new SocketIOServer({
-    serveClient: false,
+const io = app.io = new SocketIOServer(server, {
     path: `${mountPoint}/socket.io`
 });
 
@@ -39,6 +42,7 @@ app.use(helmet({
 }));
 
 // Prevent HTTP parameter pollution.
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(hpp());
 
 // Compress all requests
@@ -52,16 +56,28 @@ app.use(cookieParser());
 app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
 // Log all requests as the first action
-// app.use(function(req, res, next) {
-//     logger.info({req, res}, 'HTTP request received by Express.js');
-//     next();
-// });
+app.use(function(req, res, next) {
+    logger.info({req, res}, 'HTTP request received by Express.js');
+    next();
+});
 
 //useful for testing
 app.get(`${mountPoint}/echo`, function(req, res) {
     logger.info('echo', { ...(req.query||{}) });
     res.status(200).json(req.query);
 });
+
+// Install client error-logger route
+app.post(`${mountPoint}/error`,
+    bodyParser.json({ extended: true, limit: '512kb' }),
+    (req, res) => {
+        const record = req.body;
+        logger[bunyan.nameFromLevel[record.level]](record, record.msg);
+        res.status(204).send();
+    }
+);
+
+let pivotAppMiddleware;
 
 // Run express as webpack dev server
 if (process.env.NODE_ENV === 'development') {
@@ -70,49 +86,44 @@ if (process.env.NODE_ENV === 'development') {
     const clientWebpackConfig = require('./tools/webpack/webpack.config.client');
     const serverWebpackConfig = require('./tools/webpack/webpack.config.server');
     const compiler = webpack([clientWebpackConfig, serverWebpackConfig]);
-    app.use(require('webpack-universal-middleware')(compiler, {
-        webpackHotMiddlware: { path: `${mountPoint}_hmr/` },
+    app.get('*.hot-update.json', express.static(path.join(process.cwd(), './www/public')));
+    pivotAppMiddleware = require('webpack-universal-middleware')(compiler, {
+        webpackHotMiddlware: { path: `/_hmr/` },
         webpackDevMiddleware: { serverSideRender: true },
         reporter: require('./src/webpack-dev-reporter')({
             logger, logWarnings: false
-        }),
-    }));
+        })
+    });
 } else {
     const SERVER_STATS = require('./www/server-assets.json');
-    app.use(require(`./www/${SERVER_STATS.server.js}`).default);
+    pivotAppMiddleware = require(`./www/${SERVER_STATS.server.js}`).default;
 }
 
+app.get('/', (req, res) => res.redirect(`${mountPoint}/`));
+app.use(mountPoint, pivotAppMiddleware);
 app.get('*', (req, res) => res.status(404).send('Not found'));
 
 if (port) {
-    io.listen(app.listen(port, host, function (err) {
+    server.listen(port, host, function (err) {
         if (err) {
             logger.error({ err }, `😭  Failed to start pivot-app:server`);
         } else {
-            logger.info(`Started pivot-app:server at http://${host}:${port}`);
-            console.log(
-                [
-                    ``,
-                    `***********************************************************`,
-                    `Express app listening at http://${host}:${port}`,
-                    `Time        : ${(new Date()).toDateString()}`,
-                    convict.get('env') !== 'development' ? '' :
-                    `args        : "${process.argv.slice(2).join('", "')}"`,
-                    `NODE_ENV    : ${process.env.NODE_ENV}`,
-                    `process.pid : ${process.pid}`,
-                    `__dirname   : ${__dirname}`,
-                    `root        : ${path.resolve()}`,
-                    `***********************************************************`,
-                    ``,
-                ].join("\n")
-            );
-
-            // if (config.ENVIRONMENT === 'local') {
-            //     // Open a browser window
-            //     require('./tools/openBrowser').default(port);
-            // }
+            const { port: _port, address: _host } = this.address();
+            logger.info(`Started pivot-app:server at http://${_host}:${_port}`);
+            logger.info({
+                'host': _host,
+                'port': _port,
+                '__dirname': __dirname,
+                'process.pid:': process.pid,
+                'NODE_ENV': process.env.NODE_ENV,
+                'time': new Date().toISOString(),
+                'root': require('path').resolve(),
+                'convict.env': convict.get('env'),
+                'convict.host': convict.get('host'),
+                'convict.port': convict.get('port'),
+            }, 'Environment constants');
         }
-    }));
+    });
 } else {
     logger.error(`😭  Failed to start pivot-app:server. No PORT environment variable specified`);
 }

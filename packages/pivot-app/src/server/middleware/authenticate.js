@@ -14,14 +14,14 @@ export function authenticateMiddleware(convict) {
 
         return noAuthMiddleware(convict);
     } else {
-        passport.use(new BasicStrategy(checkLoginCredentials(convict)));
+        passport.use(new BasicStrategy(checkLoginCredentialsMiddleware(convict)));
         return passport.authenticate('basic', { session: false });
     }
 }
 
 // Called by the Passport strategy to check if a given username+password is valid
-function checkLoginCredentials(convict) {
-    return function checkLoginCredentials(providedUsername, providedPassword, authResultsCb) {
+function checkLoginCredentialsMiddleware(convict) {
+    return function checkLoginCredentialsMiddlewareHandler(providedUsername, providedPassword, authResultsCb) {
         const authorizedUsername = convict.get('authentication.username');
         const authorizedPassword = convict.get('authentication.passwordHash');
 
@@ -56,7 +56,7 @@ function checkLoginCredentials(convict) {
 
 // Middleware that allows all requests, setting the `req.user` field to default values
 function noAuthMiddleware(convict) {
-    return function noAuthMiddleware(req, res, next) {
+    return function noAuthMiddlewareHandler(req, res, next) {
         req.user = {
             username: convict.get('authentication.username'),
             userId: defaultUserId

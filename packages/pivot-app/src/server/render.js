@@ -24,10 +24,8 @@ export function configureRenderMiddleware(convict, getServerFalcorModel) {
     return function renderMiddleware(req, res) {
 
         const model = getServerFalcorModel(req);
-        const clientAssets = (res.locals &&
-                              res.locals.webpackStats &&
-                              res.locals.webpackStats.toJson() ||
-                              require('./client-stats.json')).assetsByChunkName
+        const mountPoint = convict.get('pivotApp.mountPoint');
+        const clientAssets = devClientAssets(mountPoint, res) || require('./client-assets.json');
 
         // Wrap in Observable.defer in case `template` or `AppContainer.load` throws an error
         return Observable.defer(() => {
@@ -39,40 +37,37 @@ export function configureRenderMiddleware(convict, getServerFalcorModel) {
             }
             return AppContainer.load({ falcor: model }).map(() => ({
                 status: 200, payload: template({
-                    clientAssets,
-                    initialState: model.getCache(),
-                    mountPoint: convict.get('pivotApp.mountPoint'),
-                    // reactRoot: renderToString(
-                    //     <AppContainer falcor={model} params={req.query} store={{
-                    //         dispatch() {},
-                    //         subscribe() { return () => {}; },
-                    //         getState() { return ((model || {})._seed || {}).json || {}; },
-                    //     }}/>
-                    // )
+                    clientAssets, mountPoint,
+                    initialState: model.getCache()
                 })
             }));
         })
         .catch((err) => {
-            log.error({ err }, `error rendering graph.html`);
+            log.error({ err }, `error rendering ${req.originalUrl}`);
+            if (convict.get('env') === 'development') {
+                // If in local dev mode, render an error page
+                return Observable.of({
+                    status: 500, payload: renderToString(<RedBox error={err}/>)
+                });
+            }
             // If not in local dev mode, re-throw the error so we can 502 the request.
-            if (convict.get('env') !== 'development') {
-                return Observable.throw(err);
-            }
-            // If in local dev mode, render an error page
-            return Observable.of({
-                status: 500, payload: renderToString(<RedBox error={err}/>)
-            });
-        })
-        .subscribe(({ status, payload }) => {
-            if(convict.get('env') === 'development') {
-                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-            }
-            res.status(status).send(payload);
+            return Observable.throw(err);
         });
     }
 }
 
 export default configureRenderMiddleware;
+
+function devClientAssets(mountPoint, res) {
+    let assets;
+    return res.locals &&
+           res.locals.webpackStats && (assets =
+           res.locals.webpackStats.toJson().assetsByChunkName) && {
+               client: assetsFromStats(assets.client, mountPoint),
+               vendor: assetsFromStats(assets.vendor, mountPoint),
+               manifest: assetsFromStats(assets.manifest, mountPoint),
+           } || undefined;
+}
 
 function assetsFromStats(stats = [], mountPoint) {
     return stats.reduce((assets, asset) => {
@@ -90,12 +85,8 @@ function template({
     initialState = {}, clientAssets = {},
 } = {}) {
 
-    let { client, vendor, manifest } = clientAssets;
+    const { client, vendor, manifest } = clientAssets;
     const { html: iconsHTML } = require('./favicon-assets.json');
-
-    client = assetsFromStats(client, mountPoint);
-    vendor = assetsFromStats(vendor, mountPoint);
-    manifest = assetsFromStats(manifest, mountPoint);
 
     return (`
 <!DOCTYPE html>

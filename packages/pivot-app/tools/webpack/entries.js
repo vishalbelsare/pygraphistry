@@ -9,7 +9,7 @@ function addEntries({ type, isDev, vendor }, appConfig) {
     if (type === 'client' && isDev) {
         appConfig.entry[type].unshift(
             'react-hot-loader/patch',
-            `webpack-hot-middleware/client?path=${mountPoint}_hmr/`
+            `webpack-hot-middleware/client?path=${mountPoint}/_hmr/`
         );
     }
 
