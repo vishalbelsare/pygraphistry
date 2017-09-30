@@ -2,6 +2,7 @@ const cookieParser = require('cookie-parser');
 const SocketIOServer = require('socket.io');
 const compression = require('compression');
 const bodyParser = require('body-parser');
+const { VError } = require('verror');
 const convict = require('./config');
 const express = require('express');
 const bunyan = require('bunyan');
@@ -53,7 +54,7 @@ app.use(cookieParser());
 
 // Tell Express to trust reverse-proxy connections from localhost, linklocal, and private IP ranges.
 // This allows Express to expose the client's real IP and protocol, not the proxy's.
-app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
+// app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
 // Log all requests as the first action
 app.use(function(req, res, next) {
@@ -100,7 +101,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 app.get('/', (req, res) => res.redirect(`${mountPoint}/`));
-app.use(mountPoint, pivotAppMiddleware);
+app.use(mountPoint, pivotAppMiddleware, requestErrorHandler);
 app.get('*', (req, res) => res.status(404).send('Not found'));
 
 if (port) {
@@ -126,4 +127,20 @@ if (port) {
     });
 } else {
     logger.error(`😭  Failed to start pivot-app:server. No PORT environment variable specified`);
+}
+
+function requestErrorHandler(err, req, res, next) {
+    logger.warn({ req, res, err }, 'An error occured while processing the HTTP request. Responding to the request with an error code and message, if possible.');
+    if(res.headersSent) {
+        logger.info({ req, res }, 'requestErrorHandler not sending error to client, because headers (and likely data) has already been sent to the client. The error will only be logged server-side, and the request will be ended in its current state.');
+        res.end();
+        return;
+    }
+    const { httpStatus = 500 } = VError.info(err);
+    // Whether the client prefers JSON over text/HTML, given any `Accepts` headers in the request
+    const wantsJsonResponse = req.is('json') || req.accepts([
+        'text/html', 'text/*', 'application/json'
+    ]) === 'application/json';
+
+    res.status(httpStatus).send(wantsJsonResponse && { success: false, msg: err.message } || err.message);
 }

@@ -31,6 +31,7 @@ docker run --rm \
     npm run build &&
     rm -rf node_modules &&
     npm install --production &&
+    npm rebuild bcrypt --build-from-source &&
     tar -cf /artifacts/artifact.tar ${ARTIFACTS}"
 
 #######################################
