@@ -2,6 +2,8 @@ FROM node:8.6.0-alpine
 
 WORKDIR /pivot-app
 RUN apk add --no-cache jq openjdk8-jre
+RUN apk add --no-cache --virtual native-deps g++ gcc libgcc libstdc++ linux-headers make python
+
 ARG DEPS
 RUN echo "$DEPS" > ./package.json
 
