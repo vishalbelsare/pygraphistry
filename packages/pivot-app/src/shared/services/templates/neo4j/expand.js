@@ -1,4 +1,3 @@
-import stringhash from 'string-hash';
 import logger from '../../../logger.js';
 const log = logger.createLogger(__filename);
 
@@ -25,7 +24,7 @@ export const expandNeo4j = new Neo4jPivot({
     ],
     encodings,
     toNeo4j: function (args, pivotCache) {
-    
+
         log.info('Neo4j args', args);
 
         const fields = (args.fields||{}).value || [];
@@ -36,7 +35,7 @@ export const expandNeo4j = new Neo4jPivot({
         if (fields.length) {
             for (let i = 0; i < fields.length; i++) {
                 const field = fields[i];
-                const vals = 
+                const vals =
                     pivot
                         .filter((node) => node.node && (node.type === field))
                         .map((node) => node.node);
@@ -47,7 +46,7 @@ export const expandNeo4j = new Neo4jPivot({
                 }
             }
         } else {
-            const vals = 
+            const vals =
                 pivot
                     .filter((node) => node.node)
                     .map((node) => node.node);
@@ -55,10 +54,10 @@ export const expandNeo4j = new Neo4jPivot({
             const fieldMatchRight = ` OR ID(c) = ${ vals.join(` OR ID(c) =`) }`;
             if (vals.length) {
                 whereClause = whereClause + fieldMatchLeft + fieldMatchRight;
-            }            
+            }
         }
 
         return `MATCH (s)-[b]->(c) WHERE false ${ whereClause } RETURN s, b, c`;
-        
+
     },
 });

@@ -1,7 +1,6 @@
 import path from 'path';
 import express from 'express';
-import bodyParser from 'body-parser';
-import { VError, WError } from 'verror';
+import { VError } from 'verror';
 import createLogger from 'pivot-shared/logger';
 import configureRenderMiddleware from './render';
 import { createAppModel } from 'pivot-shared/models';
@@ -24,23 +23,21 @@ const buildDesc = {branch:__GITBRANCH__, commit:__GITCOMMIT__, build:__BUILDNUMB
 
 log.info(buildDesc, `Starting ${buildNum}`);
 
-let services, getDataSource, servicesConfig = {
+const servicesConfig = {
     pivotPath,
     investigationPath,
     app: createAppModel(),
     investigationsByIdCache: {}
 };
 
-getDataSource = configureFalcorRouter(
-     services = configureServices(convict, servicesConfig));
+let getDataSource = configureFalcorRouter(configureServices(convict, servicesConfig));
 
 // Hot reload the Falcor Router services
 if (module.hot) {
     require('./hot-server.js');
     module.hot.accept('pivot-shared/services', () => {
-        let nextConfigureServices = require('pivot-shared/services').default; // eslint-disable-line global-require
-        getDataSource = configureFalcorRouter(
-             services = nextConfigureServices(convict, servicesConfig));
+        const nextConfigureServices = require('pivot-shared/services').default; // eslint-disable-line global-require
+        getDataSource = configureFalcorRouter(nextConfigureServices(convict, servicesConfig));
     });
 }
 

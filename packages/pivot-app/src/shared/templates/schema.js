@@ -1,6 +1,6 @@
 import { withSchema } from '@graphistry/falcor-react-schema';
 
-export default withSchema((QL, { get, set }, services) => {
+export default withSchema((QL, { get }, services) => {
 
     const { loadTemplatesById } = services;
     const readOnlyHandler = {

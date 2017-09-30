@@ -38,7 +38,7 @@ export const searchSplunk = new SplunkPivot({
             default: { from: null, to: null }
         }
     ],
-    toSplunk: function (args, pivotCache = {}, { time } = {}) {
+    toSplunk: function (args, { time } = {}) {
 
         this.connections = args.fields.value;
 

@@ -1,3 +1,4 @@
+/* eslint-disable */
 if (process.env.NODE_ENV === 'development') {
     require('source-map-support');
 }
@@ -42,9 +43,9 @@ function renderApp() {
                 <App key='pivot-app' falcor={model}/>
             </Provider>
         </AppContainer>,
-        getRootDOMNode(),
+        getRootDOMNode()
     );
-};
+}
 
 // Hot reload the client App container
 if (module.hot) {
@@ -117,8 +118,8 @@ function configureClient() {
         }).socket('/');
 
         const socketIoEmit = socket.emit;
-        socket.emit = function emitWithoutCompression() {
-            return socketIoEmit.apply(this.compress(false), arguments);
+        socket.emit = function emitWithoutCompression(...args) {
+            return socketIoEmit.apply(this.compress(false), args);
         };
 
         return socket;

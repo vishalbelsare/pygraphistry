@@ -1,4 +1,6 @@
-var context = global.webpackUniversalServerMiddlewareContext;
+/* eslint-disable */
+
+const context = global.webpackUniversalServerMiddlewareContext;
 
 if (context) {
     if (!module.hot) {
@@ -11,7 +13,7 @@ if (context) {
         function checkAndApply(resolve, reject) {
             return module.hot.check(false)
                 .then(updated => {
-                    if (updated && module.hot.status() == 'ready') {
+                    if (updated && module.hot.status() === 'ready') {
                         return module.hot.apply({ ignoreErrored: true })
                             .then(() => checkAndApply(resolve, reject))
                             .catch(reject)

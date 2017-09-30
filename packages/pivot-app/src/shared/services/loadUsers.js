@@ -1,6 +1,5 @@
 import { ReplaySubject } from 'rxjs';
 import { makeTestUser } from 'pivot-shared/models';
-import { listInvestigations } from './investigationStore';
 
 export function userStore({
     loadApp,
@@ -19,8 +18,7 @@ export function userStore({
 
     function loadUsersById({ userIds }) {
         return loadApp().zip(investigationsObs).mergeMap(
-            ([app, investigations]) => userIds,
-            ([app, investigations], userId) => ({
+            ([app, investigations]) => userIds.map((userId) => ({
                 app,
                 user: app.usersById[userId] || (
                       app.usersById[userId] = {
@@ -32,7 +30,7 @@ export function userStore({
                         ),
                         id: userId
                 })
-            })
+            }))
         );
     }
 

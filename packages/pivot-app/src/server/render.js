@@ -1,8 +1,6 @@
-import { inspect } from 'util';
 import { Observable } from 'rxjs';
 import { App } from 'pivot-shared/main';
 import stringify from 'json-stable-stringify';
-import { Model } from '@graphistry/falcor-model-rxjs';
 
 import createLogger from 'pivot-shared/logger';
 const log = createLogger(__filename);

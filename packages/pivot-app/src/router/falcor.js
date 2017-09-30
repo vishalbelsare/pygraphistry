@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { Observable } from 'rxjs';
 import { App } from 'pivot-shared/main';
 import Router from '@graphistry/falcor-router';
@@ -20,7 +22,7 @@ function configureFalcorRouter(services, env = { bufferTime: 10, streaming: fals
             const nextApp = require('pivot-shared/main').App; // eslint-disable-line global-require
             AppRouter = createAppRouter(
                 env,
-                App.schema(services).toArray().map(wrapRouteHandlers)
+                nextApp.schema(services).toArray().map(wrapRouteHandlers)
             );
         });
     }

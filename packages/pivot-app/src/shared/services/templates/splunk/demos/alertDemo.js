@@ -113,7 +113,7 @@ export const searchAlertDemo = new SplunkPivot({
             default: { from: null, to: null }
         }
     ],
-    toSplunk: function (args, pivotCache = {}, { time } = {}) {
+    toSplunk: function (args, { time } = {}) {
         const query = `search ${splunkIndices.ALL} ${args.query}`;
 
         return {
@@ -128,7 +128,7 @@ export const searchAlertDemo = new SplunkPivot({
 //===================
 
 function makeSearchIndex (indexName) {
-    return function (args, pivotCache = {}, { time } = {}) {
+    return function (args, { time } = {}) {
         const query = `search EventID=${args.event} ${splunkIndices[indexName]} ${this.constructFieldString()}`;
 
         return {

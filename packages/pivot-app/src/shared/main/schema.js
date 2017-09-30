@@ -6,7 +6,7 @@ import { Template } from 'pivot-shared/templates';
 import { Connector } from 'pivot-shared/connectors';
 import { Investigation } from 'pivot-shared/investigations';
 
-export default withSchema((QL, { get, set }, services) => {
+export default withSchema((QL, { get }, services) => {
 
     const { loadApp } = services;
     const readOnlyHandler = {
