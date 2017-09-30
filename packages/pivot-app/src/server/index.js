@@ -51,9 +51,9 @@ app.get(`/healthcheck`, ((healthcheck) => (req, res) => {
 })(HealthChecker()));
 
 // Use authentication middleware
-app.use(authenticateMiddleware(convict));
-app.use(express.static(path.join(process.cwd(), './www/public')));
-app.use('/public', express.static(path.join(process.cwd(), './www/public')));
+app.use(authenticateMiddleware(convict), requestErrorHandler);
+app.use(express.static(path.join(process.cwd(), './www/public')), requestErrorHandler);
+app.use('/public', express.static(path.join(process.cwd(), './www/public')), requestErrorHandler);
 
 const renderPageRouter = new express.Router();
 const renderPageMiddleware = configureRenderMiddleware(
@@ -65,13 +65,13 @@ const renderPageMiddleware = configureRenderMiddleware(
     renderPageRouter.get(`/${renderPath}`, renderPageHandler);
 });
 
-app.use(renderPageRouter);
+app.use(renderPageRouter, requestErrorHandler);
 
 export default app;
 
 function renderPageHandler(req, res) {
     renderPageMiddleware(req, res).subscribe({
-        error: requestErrorHandler.bind(null, req, res),
+        error(err) { requestErrorHandler(err, req, res) },
         next({ status, payload }) {
             if(convict.get('env') === 'development') {
                 res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -81,7 +81,7 @@ function renderPageHandler(req, res) {
     });
 }
 
-function requestErrorHandler(req, res, err) {
+function requestErrorHandler(err, req, res, next) {
     log.warn({ req, res, err }, 'An error occured while processing the HTTP request. Responding to the request with an error code and message, if possible.');
     if(res.headersSent) {
         log.info({ req, res }, 'requestErrorHandler not sending error to client, because headers (and likely data) has already been sent to the client. The error will only be logged server-side, and the request will be ended in its current state.');
