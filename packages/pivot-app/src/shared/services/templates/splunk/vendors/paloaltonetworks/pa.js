@@ -21,16 +21,14 @@ export const defaultFields = [
 ].concat(_.range(0,10).map((v) => `devicegroup_level${v}`));
 
 export const desiredEntities = [ 
-	'client_ip', 'client_location',
-	'rule', 'server_location',
+	'client_ip',
+	'rule', 
 	'threat_name'];
 export const desiredAttributes = defaultFields;
 export const colTypes = {
 	'client_ip': 'ip',
-	'client_location': 'geo',	
 	'pcap_id': 'id',
 	'rule': 'alert',
-	'server_location': 'geo',
 	'session_id': 'id',
 	'signature_id': 'id',
 	'threat_name': 'alert',
@@ -38,10 +36,8 @@ export const colTypes = {
 };	
 export const refTypes = {
 	'client_ip': 'src',
-	'client_location': 'src',
 	'pcap_id': 'payload',
 	'rule': 'payload',
-	'server_location': 'dst',
 	'session_id': 'session',
 	'signature_id': 'payload',
 	'threat_name': 'payload',
