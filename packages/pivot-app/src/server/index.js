@@ -1,6 +1,7 @@
 import path from 'path';
 import express from 'express';
 import { VError } from 'verror';
+import bodyParser from 'body-parser';
 import createLogger from 'pivot-shared/logger';
 import configureRenderMiddleware from './render';
 import { createAppModel } from 'pivot-shared/models';
@@ -43,6 +44,25 @@ if (module.hot) {
 
 configureSocketListeners(io, (req) => getDataSource(req, { streaming: true }));
 
+// Use authentication middleware
+app.use(authenticateMiddleware(convict), requestErrorHandler);
+
+//useful for testing
+app.get(`/echo`, function(req, res) {
+    logger.info('echo', { ...(req.query||{}) });
+    res.status(200).json(req.query);
+});
+
+// Install client error-logger route
+app.post(`/error`,
+    bodyParser.json({ extended: true, limit: '512kb' }),
+    (req, res) => {
+        const record = req.body;
+        logger[bunyan.nameFromLevel[record.level]](record, record.msg);
+        res.status(204).send();
+    }
+);
+
 // Install healthcheck route
 app.get(`/healthcheck`, ((healthcheck) => (req, res) => {
     const health = healthcheck();
@@ -50,33 +70,28 @@ app.get(`/healthcheck`, ((healthcheck) => (req, res) => {
     res.status(health.clear.success ? 200 : 500).json({...health.clear});
 })(HealthChecker()));
 
-// Use authentication middleware
-app.use(authenticateMiddleware(convict), requestErrorHandler);
 app.use(express.static(path.join(process.cwd(), './www/public')), requestErrorHandler);
 app.use('/public', express.static(path.join(process.cwd(), './www/public')), requestErrorHandler);
+app.use('/icons', express.static(path.join(process.cwd(), './www/public/icons')), requestErrorHandler);
 
-const renderPageRouter = new express.Router();
 const renderPageMiddleware = configureRenderMiddleware(
     convict, configureFalcorModelFactory(
         (req) => getDataSource(req, { streaming: false })));
 
 // Add render routes
 ['', ':activeScreen', ':activeScreen/:investigationId'].forEach((renderPath) => {
-    renderPageRouter.get(`/${renderPath}`, renderPageHandler);
+    app.get(`/${renderPath}`, renderPageHandler, requestErrorHandler);
 });
-
-app.use(renderPageRouter, requestErrorHandler);
 
 export default app;
 
 function renderPageHandler(req, res) {
     renderPageMiddleware(req, res).subscribe({
-        error(err) { requestErrorHandler(err, req, res) },
         next({ status, payload }) {
-            if(convict.get('env') === 'development') {
-                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-            }
             res.status(status).send(payload);
+        },
+        error(err) {
+            requestErrorHandler(err, req, res)
         },
     });
 }

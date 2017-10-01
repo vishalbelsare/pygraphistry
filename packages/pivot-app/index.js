@@ -54,29 +54,13 @@ app.use(cookieParser());
 
 // Tell Express to trust reverse-proxy connections from localhost, linklocal, and private IP ranges.
 // This allows Express to expose the client's real IP and protocol, not the proxy's.
-// app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
+app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
 // Log all requests as the first action
 app.use(function(req, res, next) {
     logger.info({req, res}, 'HTTP request received by Express.js');
     next();
 });
-
-//useful for testing
-app.get(`${mountPoint}/echo`, function(req, res) {
-    logger.info('echo', { ...(req.query||{}) });
-    res.status(200).json(req.query);
-});
-
-// Install client error-logger route
-app.post(`${mountPoint}/error`,
-    bodyParser.json({ extended: true, limit: '512kb' }),
-    (req, res) => {
-        const record = req.body;
-        logger[bunyan.nameFromLevel[record.level]](record, record.msg);
-        res.status(204).send();
-    }
-);
 
 let pivotAppMiddleware;
 
@@ -100,8 +84,8 @@ if (process.env.NODE_ENV === 'development') {
     pivotAppMiddleware = require(`./www/${SERVER_STATS.server.js}`).default;
 }
 
-app.get('/', (req, res) => res.redirect(`${mountPoint}/`));
 app.use(mountPoint, pivotAppMiddleware, requestErrorHandler);
+app.get('/', (req, res) => res.redirect(`${mountPoint}/`));
 app.get('*', (req, res) => res.status(404).send('Not found'));
 
 if (port) {
