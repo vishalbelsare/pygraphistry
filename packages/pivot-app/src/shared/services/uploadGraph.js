@@ -234,12 +234,13 @@ export function decorateInsideness(graph) {
 export function insideOut(graph) {
     const zoneTypenodes = {};
     const idField = bindings.idField;
+    const canonicalTypeField = "canonicalType";
     const typeField = bindings.typeField;
     graph.data.labels.forEach((n) => {
         const zoneIdx = n.canonicalInsideness || "";
         if(zoneTypenodes[zoneIdx] === undefined) { zoneTypenodes[zoneIdx] = {}; }
         const zone = zoneTypenodes[zoneIdx];
-        const typeIdx = n[typeField];
+        const typeIdx = n[canonicalTypeField] || n[typeField];
         if(zone[typeIdx] === undefined) { zone[typeIdx] = []; }
         const zoneType = zone[typeIdx];
         zoneType.push(n);
