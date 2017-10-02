@@ -121,17 +121,53 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
             : 0
         ));
 
+        const importantColumns = !canHaveImportantKeys(columns) ? [] :
+            columns.map((kv) => {
+                const topKeyIndex = mostImportantKeys.indexOf(kv.key);
+                return (topKeyIndex > -1) ? {topKeyIndex, ...kv} : null;
+            }).filter(kv => kv).sort(({topKeyIndex: k1}, {topKeyIndex: k2}) => k1 - k2);
+
         return {
             workbook, view, label: {
                 type: labelType,
                 index: labelIndexes[index],
                 data: {
-                    title, columns,
+                    title, columns, importantColumns,
                     globalIndex: row._index
                 },
             }
         };
     });
+}
+
+const mostImportantKeys = [
+  "Source", "Destination",
+
+  "time",
+  "Pivot",
+
+  "src", "src_hostname", "src_ip", "src_mac", "src_port", "src_user",
+  "dest", "dest_hostname", "dest_ip", "dest_location", "dest_mac", "dest_port", "dest_user",
+  "user",
+
+  "type",
+  "edgeType",
+  "cols",
+  "vendor",
+  "product",
+  "externalId",
+
+  "msg",
+  "fname",
+  "filename",
+  "fileHash",
+  "filePath",
+  "link",
+  "url",
+];
+
+function canHaveImportantKeys(columns) {
+    return columns.some(({ key, value }) => (key === "type" && value === "EventID") || (key === "edgeType" && value.match(/^EventID->/)));
 }
 
 function decodeAndSanitize(input) {

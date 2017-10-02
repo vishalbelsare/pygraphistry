@@ -15,7 +15,7 @@ let Label = container({
     fragment: (fragment, { pinned, showFull } = {}) => {
         return (false && !pinned && !showFull) &&
             `{ type, index, title, globalIndex }` ||
-            `{ type, index, title, globalIndex, columns }`;
+            `{ type, index, title, globalIndex, columns, importantColumns }`;
     },
     dispatchers: {
         onFilter: addFilter,

@@ -52,7 +52,7 @@ export function labels(path, base) {
         }, {
             get: getLabelsByTypeAndIndexHandler,
             route: `${base}['labelsByType']['edge', 'point'][{integers}][
-                'type', 'index', 'title', 'columns', 'globalIndex'
+                'type', 'index', 'title', 'columns', 'importantColumns', 'globalIndex'
             ]`
         }, {
             route: `${base}['labelsByType']['edge', 'point'][{integers}]['filters', 'exclusions']`,
