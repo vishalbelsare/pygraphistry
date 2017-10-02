@@ -72,7 +72,6 @@ export default function InvestigationScreen({
                         graphistryHost={graphistryHost || ''}
                         loadingMessage={loadingMessage}
                         showLoadingIndicator={showLoadingIndicator}
-                        workbook={activeInvestigation.id}
                         edgeOpacity={activeInvestigation.edgeOpacity}
                     />
                </SplitPane>
