@@ -249,6 +249,9 @@ export function insideOut(graph) {
     const xys = {};
     const subaxes = {};
     const allOrderedZones = ["inside", "inside->outside", "mixed", "", "outside->inside", "outside"];
+    const insideOrder = ["mac", "ip", "user", "event", "alert", "hash", "filepath", "file"];
+    const outsideOrder = ["mac", "ip", "user", "alert", "event", "hash", "filepath", "file"];
+    const mixedOrder = ["alert", "event", "hash", "file", "filepath"];
     let currentRadius = 0;
     let insideLatch = false;
     let outsideLatch = false;
@@ -272,7 +275,8 @@ export function insideOut(graph) {
             }
         }
         currentRadius += spacerSeparator - typeSeparator;
-        Object.keys(zoneTypenodes[zone]).sort().forEach((type) => {
+        const typeSortOrder = zoneIdx === 0 ? insideOrder : (zoneIdx === 5 ? outsideOrder : mixedOrder);
+        _.sortBy(Object.keys(zoneTypenodes[zone]), (t) => typeSortOrder.indexOf(t)).forEach((type) => {
             currentRadius += typeSeparator;
             zoneTypenodes[zone][type].forEach((node, nodeIdx) => {
                 const r = currentRadius;
