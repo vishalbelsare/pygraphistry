@@ -11,7 +11,7 @@ var logger      = log.createLogger('graphistry:common:s3');
 
 module.exports = {
     upload: function upload(S3, bucket, metadata, binaryBuffer, params) {
-        if (!config.S3UPLOADS) {
+        if (!config.S3_ACCESS || !config.S3_SECRET) {
             logger.warn('Not uploading to S3 (disabled by config)');
             return Q();
         }
