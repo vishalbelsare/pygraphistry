@@ -170,3 +170,5 @@ export const searchGraphviz = new SplunkPivot({
     connections: _.without(_.keys(graphistryLogOntology), 'time', 'EventID'),
     attributes: ['time']
 });
+
+export const pivots = [searchSplunkMap, searchGraphviz];

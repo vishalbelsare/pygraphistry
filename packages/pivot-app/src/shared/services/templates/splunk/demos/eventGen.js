@@ -165,3 +165,5 @@ export const PAN_EXPAND = new SplunkPivot({
         };
     },
 });
+
+export const pivots = [ PAN_SEARCH, PAN_EXPAND ];

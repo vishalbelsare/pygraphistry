@@ -9,7 +9,7 @@ import { encodings, flattenParams } from './common.js';
 
 export const HTTP_SEARCH = new HttpPivot({
     id: 'http-search',
-    name: 'Search through a URL',
+    name: 'URL: Search',
     tags: ['Demo', 'Splunk'],
     toUrls: function (params) {
 
@@ -38,3 +38,5 @@ export const HTTP_SEARCH = new HttpPivot({
         }].concat(PARAMETERS),
     encodings: encodings
 });
+
+export const pivots = [HTTP_SEARCH];

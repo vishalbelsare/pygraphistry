@@ -121,3 +121,5 @@ export const MANUAL = new ManualPivot({
     ],
     encodings: encodings
 });
+
+export const pivots = [ MANUAL ];

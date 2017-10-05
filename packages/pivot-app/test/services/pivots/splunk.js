@@ -3,7 +3,8 @@ import { assert } from 'chai';
 import moment from 'moment-timezone';
 
 import { SplunkPivot } from '../../../src/shared/services/templates/splunk/splunkPivot';
-import { searchSplunk } from '../../../src/shared/services/templates/splunk/search';
+import { pivots } from '../../../src/shared/services/templates/splunk/search';
+const searchSplunk = pivots.filter((o) => o.id==='search-splunk-plain')[0];
 import { 
     colTypes, typeColors, typeSizes, typeIcons,
     typesToSizes, typesToIcons } from '../../../src/shared/services/templates/splunk/settings';

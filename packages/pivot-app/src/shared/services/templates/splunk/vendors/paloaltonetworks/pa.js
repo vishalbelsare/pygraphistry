@@ -44,7 +44,7 @@ export const refTypes = {
 	'url': 'payload'
 };
 
-export const product = "Palo Alto Networks Firewall";
+export const product = "PAN";
 export const productIdentifier = {
 	vendor_product: "Palo Alto Networks Firewall",
 	vendor: "Palo Alto Networks"

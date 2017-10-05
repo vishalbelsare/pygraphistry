@@ -75,7 +75,7 @@ export const refTypes = {
 	'signature': 'payload'
 }
 
-export const product = "Web MPS";
+export const product = "FireEye Web MPS";
 export const productIdentifier = {
 	product: "Web MPS",
 	vendor: "FireEye"

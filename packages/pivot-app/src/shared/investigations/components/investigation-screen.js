@@ -18,12 +18,17 @@ export default function InvestigationScreen({
 }) {
 
     const { tags: activeTags = [] } = activeInvestigation || {};
+    const demoSingletons = ['Demo', 'Blazegraph', 'PAN', 'Graphviz', 'HealthDemo'];
     const relevantTemplates =
         activeTags.length > 0 ?
-            templates.filter(({ tags: templateTags = [] }) =>
-                _.intersection(templateTags, activeTags).length > 0
-            ) :
-            templates;
+        
+            templates.filter(({ tags: templateTags = [] }) =>                            
+                _.intersection(templateTags, activeTags).length > 0)
+            
+            //Hide demo pivots for *
+            : templates.filter(({ tags: templateTags = [] }) =>
+                !(templateTags.length === 1 
+                    && demoSingletons.indexOf(templateTags[0]) > -1));
 
     let showLoadingIndicator = true;
     const { graphistryHost = `` } = user;

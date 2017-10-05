@@ -1,10 +1,7 @@
 import { Observable } from 'rxjs';
 import { SimpleCacheService } from './support';
 import { createTemplateModel } from '../models';
-import * as templates from './templates';
-
-const { derivedTemplates, ...systemTemplates } = templates;
-const allTemplates = { ...systemTemplates, ...derivedTemplates };
+import { pivots as allTemplates } from './templates';
 
 export function templateStore(loadApp) {
     const templatesMap = listTemplates();
@@ -33,7 +30,7 @@ export function templateStore(loadApp) {
 }
 
 export function listTemplates() {
-    return Object.values(allTemplates || {})
+    return allTemplates
         .reduce(function(templatesById, template) {
             templatesById[template.id] = template;
             return templatesById;

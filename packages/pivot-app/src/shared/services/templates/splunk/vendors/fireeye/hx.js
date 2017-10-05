@@ -53,7 +53,7 @@ export const refTypes = { //device, dst, payload, src
     'ioc_name': 'payload'
 }
 
-export const product = 'HX';
+export const product = 'FireEye HX';
 export const productIdentifier = {
     product: 'HX',
     vendor: 'fireeye'

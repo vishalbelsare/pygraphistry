@@ -110,3 +110,6 @@ export const fieldsBlacklist = defaultFields.filter(
 	x => (desiredAttributes.indexOf(x) === -1) && (desiredEntities.indexOf(x) === -1));
 export const attributesBlacklist = defaultFields.filter(x => desiredAttributes.indexOf(x) === -1);
 export const entitiesBlacklist = defaultFields.filter(x => desiredEntities.indexOf(x) === -1);
+
+export const product = 'Splunk';
+export const productIdentifier = {};

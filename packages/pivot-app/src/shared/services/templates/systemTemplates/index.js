@@ -5,7 +5,7 @@ import { deriveTemplate } from './systemTemplates';
 
 
 // {id -> template}
-export const derivedTemplates = conf
+const derivedTemplates = conf
 	.get('systemTemplates.pivots')
 	.reduce((mod, {template, ...settings}) => {
 		const { id, name } = settings;
@@ -17,3 +17,5 @@ export const derivedTemplates = conf
 		}
 		return mod;
 	}, {});
+
+export const pivots = Object.values(derivedTemplates);

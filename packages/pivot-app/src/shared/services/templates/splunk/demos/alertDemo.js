@@ -241,3 +241,9 @@ export const expandIDSDemo = new SplunkPivot({
     encodings: alertDemoEncodings,
     toSplunk: makeExpandIndex('IDS')
 });
+
+
+export const pivots = [
+    searchAlertDemo, searchFireeyeDemo, expandFireeyeDemo, 
+    expandBlueCoatDemo, expandFirewallDemo, expandIDSDemo
+];

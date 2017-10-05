@@ -9,7 +9,7 @@ import { encodings, flattenParams } from './common.js';
 
 export const HTTP_EXPAND = new HttpPivot({
     id: 'http-expand',
-    name: 'Expand with a URL',
+    name: 'URL: Expand',
     tags: ['Demo', 'Splunk'],
     parameters:
         [{
@@ -54,3 +54,6 @@ export const HTTP_EXPAND = new HttpPivot({
     encodings: encodings
 });
 
+
+
+export const pivots = [HTTP_EXPAND];

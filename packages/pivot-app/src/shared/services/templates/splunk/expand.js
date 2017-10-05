@@ -4,9 +4,10 @@ const log = logger.createLogger(__filename);
 
 import { defaultFields as FIELDS } from './settings.js';
 import { SplunkPivot } from './splunkPivot.js';
-import { desiredAttributes, encodings } from './settings.js';
+import { encodings } from './settings.js';
+import { products } from './vendors';
 
-
+    
 
 //remove line breaks and escape double quotes
 // a -> str
@@ -101,90 +102,103 @@ export function expand({pivotIds=[], pivotCache={}, fields=[], filter='', filter
 
 
 
-export const expandSplunk = new SplunkPivot({
-    id: 'expand-splunk-plain',
-    name: 'Expand Splunk',
-    tags: ['Splunk'],
-    parameters: [
-        {
-            name: 'ref',
-            inputType: 'pivotCombo',
-            label: 'Any entity in:',
-        },
-        {
-            name: 'filter',
-            inputType: 'textarea',
-            label: 'Filter:',
-            placeholder: 'index=*',
-            defaultValue: '',
-        },
-        {
-            name: 'filterPost',
-            inputType: 'textarea',
-            label: 'Filter (post):',
-            placeholder: 'head 10',
-            defaultValue: '',
-        },
-        {
-            name: 'pivotFields',
-            inputType: 'multi',
-            label: 'Expand on:',
-            placeholder: '(all)',
-            options: FIELDS.map(x => ({id:x, name:x})),
-        },
-        {
-            name: 'matchAttributes',
-            inputType: 'bool',
-            label: 'Expand on attributes',
-            defaultValue: false
-        },
-        {
-            name: 'colMatch',
-            inputType: 'bool',
-            label: 'Match column name',
-            defaultValue: false
-        },
-        {
-            name: 'fields',
-            inputType: 'multi',
-            label: 'Entities:',
-            options: desiredAttributes.map(x => ({id:x, name:x})),
-            defaultValue: []
-        },
-        {
-            name: 'attributes',
-            inputType: 'multi',
-            label: 'Attributes:',
-            options: desiredAttributes.map(x => ({id:x, name:x}))
-        },
-        {
-            name: 'time',
-            label: 'Time',
-            inputType: 'daterange',
-            default: { from: null, to: null }
-        }
-    ],
-    toSplunk: function (
-            {ref, pivotFields = {value: []}, fields = {value: []}, filter = '', filterPost = '', colMatch = false, matchAttributes = false},
-            pivotCache = {}, { time } = {}) {
+function expandPivot({product, productIdentifier, desiredEntities, desiredAttributes}) {
 
-        log.info('PARAMS', colMatch, matchAttributes);
+    const productId = product === 'Splunk' ? '' : '-' + product.replace(/ /g,'');
 
-        this.connections = fields.value;
+    return new SplunkPivot({
+        id: `expand-splunk-plain${productId}`,
+        name: `${product}: Expand`,
+        tags: ['Splunk'],
+        parameters: [
+            {
+                name: 'ref',
+                inputType: 'pivotCombo',
+                label: 'Any entity in:',
+            },
+            {
+                name: 'filter',
+                inputType: 'textarea',
+                label: 'Filter:',
+                placeholder: 'index=*',
+                defaultValue: '',
+            },
+            {
+                name: 'filterPost',
+                inputType: 'textarea',
+                label: 'Filter (post):',
+                placeholder: 'head 10',
+                defaultValue: '',
+            },
+            {
+                name: 'pivotFields',
+                inputType: 'multi',
+                label: 'Expand on:',
+                placeholder: '(all)',
+                options: FIELDS.map(x => ({id:x, name:x})),
+            },
+            {
+                name: 'matchAttributes',
+                inputType: 'bool',
+                label: 'Expand on attributes',
+                defaultValue: false
+            },
+            {
+                name: 'colMatch',
+                inputType: 'bool',
+                label: 'Match column name',
+                defaultValue: false
+            },
+            {
+                name: 'fields',
+                inputType: 'multi',
+                label: 'Entities:',
+                options: desiredEntities.map(x => ({id:x, name:x})),
+                defaultValue: desiredEntities
+            },
+            {
+                name: 'attributes',
+                inputType: 'multi',
+                label: 'Attributes:',
+                options: desiredAttributes.map(x => ({id:x, name:x}))
+            },
+            {
+                name: 'time',
+                label: 'Time',
+                inputType: 'daterange',
+                default: { from: null, to: null }
+            }
+        ],
+        toSplunk: function (
+                {ref, pivotFields = {value: []}, fields = {value: []}, filter = '', filterPost = '', colMatch = false, matchAttributes = false},
+                pivotCache = {}, { time } = {}) {
 
-        const expanded = expand({
-            pivotCache, filter, filterPost, colMatch, matchAttributes,
-            pivotIds: ref.value || [],
-            fields: pivotFields.value || []});
+            log.info('PARAMS', colMatch, matchAttributes);
 
-        const query = `search ${expanded} ${this.constructFieldString()}`;
+            this.connections = fields.value;
 
-        log.info('Expansion query', query);
+            const indexFilter =
+                Object.keys(productIdentifier || {})
+                    .map((key) => ` "${key}"="${productIdentifier[key]}" `)
+                    .join(' AND ');
 
-        return {
-            searchQuery: query,
-            searchParams: this.dayRangeToSplunkParams((time||{}).value, time)
-        };
-    },
-    encodings
-});
+
+            const expanded = expand({
+                pivotCache, filter, filterPost, colMatch, matchAttributes,
+                pivotIds: ref.value || [],
+                fields: pivotFields.value || []});
+
+            const query = `search ${indexFilter}${expanded} ${this.constructFieldString()}`;
+
+            log.info('Expansion query', query);
+
+            return {
+                searchQuery: query,
+                searchParams: this.dayRangeToSplunkParams((time||{}).value, time)
+            };
+        },
+        encodings
+    });
+}
+
+export const pivots = Object.values(products).map(expandPivot);

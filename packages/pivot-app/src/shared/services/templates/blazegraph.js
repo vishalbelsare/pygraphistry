@@ -97,3 +97,6 @@ export const BLAZE_EXPAND = new BlazePivot({
         }
     }
 });
+
+
+export const pivots = [ COMMUNITY_DETECTION, BLAZE_EXPAND ];

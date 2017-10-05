@@ -24,3 +24,6 @@ export const searchNeo4j = new Neo4jPivot({
     },
     encodings
 });
+
+
+export const pivots = [searchNeo4j];

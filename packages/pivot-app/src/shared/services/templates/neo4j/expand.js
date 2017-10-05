@@ -61,3 +61,6 @@ export const expandNeo4j = new Neo4jPivot({
 
     },
 });
+
+
+export const pivots = [Neo4jPivot];
