@@ -2,6 +2,7 @@ import { simpleflake } from 'simpleflakes';
 import _ from 'underscore';
 import { categoryToColorInt, intToHex } from '../services/support/palette.js';
 import { dedupeHyperedges, inference } from './shape/inference.js';
+import { normalizeGraph } from './shape/normalizeGraph.js';
 import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
@@ -83,8 +84,7 @@ function encodeGraph({ app, pivot }) {
         app,
         pivot: {
             ...pivot,
-            results: { nodes, edges },
-            resultSummary: summarizeOutput({labels: nodes})
+            results: { nodes, edges }
          }
      };
 }
@@ -206,6 +206,9 @@ function globalInference({ app, pivot }) {
 
     const { nodes = [], edges = [] } = pivot.results;
 
+    //Does not dedupe so relies on downstream graph merge
+    normalizeGraph({data: {labels: nodes, graph: edges}});
+
     const dedupedHyperedges = dedupeHyperedges(edges);
 
     const newEdges = inference({nodes, edges: dedupedHyperedges, encodings: pivot.template.encodings });
@@ -216,7 +219,8 @@ function globalInference({ app, pivot }) {
             results: {
                 graph: dedupedHyperedges.concat(newEdges),
                 labels: nodes
-            }
+            },
+            resultSummary: summarizeOutput({labels: nodes})
     }});
 }
 
