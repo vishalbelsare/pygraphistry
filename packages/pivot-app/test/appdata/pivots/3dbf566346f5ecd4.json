@@ -7,13 +7,13 @@
             "3dbf563fa4ebcfd4"
         ],
         "fields": [
-            "External IPs"
+            "dest_ip"
         ],
         "expand-firewall-botnet-demo$$$pRef": [
             "3dbf563fa4ebcfd4"
         ],
         "expand-firewall-botnet-demo$$$fields": [
-            "External IPs"
+            "dest_ip"
         ],
         "expand-firewall-botnet-demo$$$ref": [
             "3dbf563fa4ebcfd4"

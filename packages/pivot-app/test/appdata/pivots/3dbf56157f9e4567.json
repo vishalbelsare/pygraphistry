@@ -14,11 +14,11 @@
             "3dbf55904a77e964"
         ],
         "expand-fireeye-botnet-demo$$$fields": [
-            "Fire Eye MD5",
-            "Fire Eye URL",
-            "Internal IPs",
-            "Message",
-            "External IPs"
+            "src_ip",
+            "dest_ip",
+            "fileHash",
+            "msg",
+            "dest_hostname"
         ]
     },
     "pivotTemplate": "expand-fireeye-botnet-demo"

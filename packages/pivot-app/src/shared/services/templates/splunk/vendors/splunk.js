@@ -64,6 +64,7 @@ export const colTypes = {
 	'dest': 'ip',
 	'dest_hostname': 'url',
 	'dest_ip': 'ip',
+        'dest_location': 'url',
 	'dest_mac': 'mac',
 	'dest_user': 'user',
 	'dst': 'ip',
@@ -78,15 +79,10 @@ export const colTypes = {
 	'src_host': 'url',
 	'src_hostname': 'url',
 	'src_ip': 'ip',
+        'src_location': 'url',
 	'src_mac': 'mac',
 	'src_user': 'user',
 
-        // --v-- BOTNET --v--
-        'External IPs': 'ip',
-        'Internal IPs': 'ip',
-        'Message': 'alert',
-        'Fire Eye URL': 'url',
-        'Fire Eye MD5': 'hash',
 };
 
 export const refTypes = {

@@ -7,15 +7,16 @@
             "3dbf56157f9e4567"
         ],
         "fields": [
-            "Fire Eye URL"
+            "dest_location"
         ],
         "expand-bluecoat-botnet-demo$$$pivotRef": [
             "3dbf56157f9e4567"
         ],
         "expand-bluecoat-botnet-demo$$$fields": [
-            "Fire Eye URL"
+            "dest_hostname"
         ],
         "expand-bluecoat-botnet-demo$$$ref": [
+            "3dbf55904a77e964",
             "3dbf56157f9e4567"
         ]
     },
