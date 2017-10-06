@@ -166,8 +166,8 @@ export function decorateInsideness(graph) {
         if(id && isIP(id)) {
             io[id][isPrivateIP(id) ? 'i' : 'o'] = true
         }});
-    // 2. All events that have attributes /^(dest|dst|src|source)/ that have an insideness
-    //    have a corresponding insideness which propagates to their attributes.
+    // 2. All events that have srcs/dsts matching /^(dest|dst|src|source)/ that have an insideness
+    //    propagate the insideness to their srcs/dsts.
     graph.data.labels.filter(({ [ontologyType]: canonicalType }) => canonicalType === 'event').forEach((e) => {
         const ks = Object.keys(e);
         const ks_srcs = ks.filter((k) => k.match(/^(?:src|source)/));
@@ -180,35 +180,38 @@ export function decorateInsideness(graph) {
         const s_o = srcs.includes('o');
         const d_i = dsts.includes('i');
         const d_o = dsts.includes('o');
-        if((s_i ^ s_o) && (d_i ^ d_o)) { // This only makes sense if the event has a src/dst from a known insideness
-            if((s_i && d_i) || (s_o && d_o)) {
-                // Everything is either inside or outside.
-                const insideness = s_i ? "i" : "o";
-                Object.keys(e).forEach((k) => { if(io[e[k]]) { io[e[k]][insideness] = true } });
-            } else {
-                // All the srcs go inside|outside, all the dsts go outside|inside, all the rest goes io|oi.
-                const reassigned_src_i = s_i ? "i" : "o";
-                const reassigned_src_keys = {};
-                const reassigned_dst_i = d_i ? "i" : "o";
-                const reassigned_dst_keys = {}
-                const remaining_insideness = s_i ? "io" : "oi";
-                ks_srcs.forEach(k => {
-                    if(io[e[k]]) {
-                        io[e[k]][reassigned_src_i] = true;
-                        reassigned_src_keys[e[k]] = true;
-                    }});
-                ks_dsts.forEach(k => {
-                    if(io[e[k]]) {
-                        io[e[k]][reassigned_dst_i] = true;
-                        reassigned_dst_keys[e[k]] = true;
-                    }});
-                Object.keys(e).forEach((k) => {
-                    if(io[e[k]] && !reassigned_src_keys[e[k]] && !reassigned_dst_keys[e[k]]) {
-                        io[e[k]][remaining_insideness] = true;
-                    }});
-            }
-        } else {
+        if((s_i && s_o) || (d_i && d_o)) { // If the event does not have a uniform src/dst insideness, call it mixed
             e.mixedInsideness = true; // Is this a warning? This graph is weird
+        } else {
+            const reassigned_src_i = s_i ? "i" : "o";
+            const reassigned_dst_i = d_i ? "i" : "o";
+            ks_srcs.forEach(k => {
+                if(io[e[k]]) {
+                    io[e[k]][reassigned_src_i] = true;
+                }});
+            ks_dsts.forEach(k => {
+                if(io[e[k]]) {
+                    io[e[k]][reassigned_dst_i] = true;
+                }});
+        }});
+    // 3. The only keys in io{} are sources and dests, over the entire dataset.
+    //     Recompute the insideness of events, and every node without an insideness gets the insideness of the event.
+    graph.data.labels.filter(({[ontologyType]: canonicalType }) => canonicalType === 'event').forEach((e) => {
+        const ks = Object.keys(e);
+        const ks_srcs = ks.filter((k) => k.match(/^(?:src|source)/));
+        const ks_dsts = ks.filter((k) => k.match(/^(?:dst|dest)/));
+        const ks_srcios = ks_srcs.map((k) => Object.keys(io[e[k]] || {}));
+        const ks_dstios = ks_dsts.map((k) => Object.keys(io[e[k]] || {}));
+        const srcs = Array.prototype.concat(...ks_srcios);
+        const dsts = Array.prototype.concat(...ks_dstios);
+        const s_i = srcs.includes('i');
+        const s_o = srcs.includes('o');
+        const d_i = dsts.includes('i');
+        const d_o = dsts.includes('o');
+        if(!e.mixedInsideness) {
+            const uniform_src_dst = (s_i && d_i) || (s_o && d_o);
+            const insideness = uniform_src_dst ? (s_i ? "i" : "o") : (s_i ? "io" : "oi");
+            Object.keys(e).forEach((k) => { if(io[e[k]] && Object.keys(io[e[k]]).length === 0) { io[e[k]][insideness] = true } });
         }});
     // 3. Decorate nodes in the graph accordingly.
     graph.data.labels.forEach((n) => {

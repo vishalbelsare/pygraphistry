@@ -80,6 +80,13 @@ export const colTypes = {
 	'src_ip': 'ip',
 	'src_mac': 'mac',
 	'src_user': 'user',
+
+        // --v-- BOTNET --v--
+        'External IPs': 'ip',
+        'Internal IPs': 'ip',
+        'Message': 'alert',
+        'Fire Eye URL': 'url',
+        'Fire Eye MD5': 'hash',
 };
 
 export const refTypes = {

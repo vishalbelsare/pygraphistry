@@ -3,7 +3,7 @@ import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 import { SplunkPivot } from '../splunkPivot';
-import { attributesBlacklist as splunkAttributesBlacklist } from '../settings.js';
+import { attributesBlacklist as splunkAttributesBlacklist, colTypes } from '../settings.js';
 
 
 
@@ -71,6 +71,10 @@ const alertDemoEncodings = {
         pointSizes: function(node) {
             node.pointSize = ALERT_DEMO_NODE_SIZES[node.type];
         },
+        pointCanonicalType: function(node) {
+            //log.debug({ pointCanonicalType: node, newType: colTypes[node.type] });
+            node.canonicalType = colTypes[node.type];
+        },
         pointIcon: function (node) {
             node.pointIcon = ALERT_DEMO_NODE_ICONS[node.type];
             if (node.pointIcon === undefined) {
@@ -129,7 +133,7 @@ export const searchAlertDemo = new SplunkPivot({
 
 function makeSearchIndex (indexName) {
     return function (args, pivotCache = {}, { time } = {}) {
-        const query = `search EventID=${args.event} ${splunkIndices[indexName]} ${this.constructFieldString()}`;
+        const query = `search EventID=${args.event} ${splunkIndices[indexName]} ${this.constructFieldString()} | eval destination_url='Fire Eye URL'`;
 
         return {
             searchQuery: query,
@@ -143,7 +147,7 @@ function makeExpandIndex (indexName) {
         const refPivot = args.ref.value;
         const rawSearch =
             `[{{${refPivot}}}] -[${args.fields.value.join(', ')}]-> [${splunkIndices[indexName]}]`;
-        const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()}`;
+        const query = `search ${this.expandTemplate(rawSearch, pivotCache)} ${this.constructFieldString()} | eval dest_ip='External IPs' | eval src_ip='Internal IPs' ${indexName === "BLUECOAT" ? " | eval dest_url='destination'" : ""}`;
 
         return {
             searchQuery: query,
