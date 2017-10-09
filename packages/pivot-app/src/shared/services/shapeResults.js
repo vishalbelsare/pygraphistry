@@ -144,7 +144,10 @@ function shapeHyperGraph({ app, pivot } ) {
         for (let j = 0; j < entityTypes.length; j++) {
             const field = entityTypes[j];
 
-            if (field in row && (row[field] !== undefined) && (row[field] !== null)) {
+            const stringified = String(row[field]).trim();
+            if (field in row && (row[field] !== undefined) && (row[field] !== null) 
+                && (stringified !== '' && stringified !== '""' && stringified !== "''")) {
+
                 let entity = generatedEntities[row[field]];
                 if (!entity) {
                     entity = {'node': row[field], type: field, cols: [field]};

@@ -1,4 +1,3 @@
-import stringhash from 'string-hash';
 import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
@@ -41,7 +40,7 @@ const renames = `
 `;
 
 function makeSearchIndex (indexName) {
-    return function (args, pivotCache = {}, { time } = {}) {
+    return function (args, pivotCache, { time } = {}) {
         const query = `search EventID=${args.event} ${splunkIndices[indexName]} ${this.constructFieldString()} ${renames}`
 
         return {

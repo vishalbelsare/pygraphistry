@@ -14,6 +14,7 @@ export const typesToSizes = {
     'id': 9.9,
     'ip': 9.9,
     'mac': 9.9,
+    'port': 9.9,
     'tag': 9.9,
     'url': 9.9,
     'user': 9.9
@@ -28,13 +29,16 @@ export const typesToIcons = {
     'id': 'barcode',
     'ip': 'laptop',
     'mac': 'laptop',
+    'port': 'microchip',
     'tag': 'tag',
     'url': 'globe',
     'user': 'user'
 };
 
+const colNames = Object.keys(colTypes);
+
 export const typeColors = 
-    desiredEntities.reduce((acc, col) => {      
+    colNames.reduce((acc, col) => {      
             acc[col] = typesToColors[colTypes[col]];
             if (acc[col] === undefined) {
                 acc[col] = colorShorthands.gray;
@@ -42,7 +46,7 @@ export const typeColors =
             return acc;
         }, {});
 export const typeSizes = 
-    desiredEntities.reduce((acc, col) => {      
+    colNames.reduce((acc, col) => {      
             acc[col] = typesToSizes[colTypes[col]];
             if (acc[col] === undefined) {
                 acc[col] = 2;
@@ -50,7 +54,7 @@ export const typeSizes =
             return acc;
         }, {});
 export const typeIcons = 
-    desiredEntities.reduce((acc, col) => {      
+    colNames.reduce((acc, col) => {      
             acc[col] = typesToIcons[colTypes[col]];
             return acc;
         }, {});

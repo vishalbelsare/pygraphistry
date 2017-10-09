@@ -43,7 +43,7 @@ function searchPivot ( {product, productIdentifier, desiredEntities, desiredAttr
                 default: { from: null, to: null }
             }
         ],
-        toSplunk: function (args, pivotCache = {}, { time } = {}) {
+        toSplunk: function (args, pivotCache, { time } = {}) {
 
             this.connections = args.fields.value;
 

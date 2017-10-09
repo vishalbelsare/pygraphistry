@@ -140,7 +140,7 @@ export const searchGraphviz = new SplunkPivot({
             }
         }
     ],
-    toSplunk: function (args, pivotCache = {}, { time }) {
+    toSplunk: function (args, pivotCache, { time }) {
         const q = args.query;
         const l = args.level;
         const query = `search (host=staging* OR host=labs*) source="/var/log/graphistry-json/*.log" ${q} level >= ${l}

@@ -49,31 +49,47 @@ function addNodeByVal(hash, k, vRaw) {
 }
 
 
+
+export function intersectionMatch(a, b) {
+    if (!a || !b) { return false; }
+    const len = a.length;
+    for (let i = 0; i < len; i++) {
+        if (b.indexOf(a[i]) !== -1) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Use all fields if a field is "*", or fields empty
 // ... -> str
-export function expand({pivotIds=[], pivotCache={}, fields=[], filter='', filterPost='', colMatch=true, matchAttributes=true}) {
+export function expand({pivotIds=[], pivotCache={}, pivotFields=[], filter='', filterPost='', colMatch=true, matchAttributes=true}) {
 
 
     log.info('EXPAND RECV', {colMatch, matchAttributes});
 
-    const isAllFields = !fields.length || fields.filter((fld) => fld === '*').length;
+    const isAllFields = !pivotFields.length || pivotFields.filter((fld) => fld === '*').length;
 
     //{v->bool} or {k->{v->bool}}
     const matches = {};
     const adder = colMatch ? addNodeByKey : addNodeByVal;
     const reserved = ['pointTitle', 'pointIcon', 'pointSize', 'pointColor', 'type', 'node'];
     pivotIds.forEach((pivotId)=> {
-        const pivot = pivotCache[pivotId];
-        pivot.results.labels.forEach((node) => {
+        const {results = {}} = pivotCache[pivotId] || {};
+        (results.labels || []).forEach((node) => {
 
-            if (isAllFields || fields.indexOf(node.type) > -1) {
+            if (isAllFields 
+                    || pivotFields.indexOf(node.type) > -1 
+                    || pivotFields.indexOf(node.canonicalType) > -1 
+                    || intersectionMatch(pivotFields, node.refTypes)
+                    || intersectionMatch(pivotFields, node.cols)) {
                 adder(matches, node.type, node.node);
             }
 
             if (matchAttributes) {
                 for (const fld in node) {
                     if ((isAllFields && reserved.indexOf(fld) === -1)
-                        || fields.indexOf(fld) > -1) { //explicitly opt into reserved fields
+                        || pivotFields.indexOf(fld) > -1) { //explicitly opt into reserved fields
                             adder(matches, fld, node[fld]);
                     }
                 }
@@ -186,7 +202,8 @@ function expandPivot({product, productIdentifier, desiredEntities, desiredAttrib
             const expanded = expand({
                 pivotCache, filter, filterPost, colMatch, matchAttributes,
                 pivotIds: ref.value || [],
-                fields: pivotFields.value || []});
+                pivotFields: pivotFields.value || [],
+                fields: fields.value || []});
 
             const query = `search ${indexFilter}${expanded} ${this.constructFieldString()}`;
 

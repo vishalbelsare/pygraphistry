@@ -26,6 +26,7 @@ export const typeColorsAliases = {
 	'id': 'gray',
 	'ip': 'blue',
 	'mac': 'lightblue',
+	'port': 'gray',
 	'tag': 'pink',
 	'url': 'lightgreen',
 	'user': 'blue'

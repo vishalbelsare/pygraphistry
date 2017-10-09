@@ -16,14 +16,15 @@ export const defaultFields = [
 	'receive_time', 'repeat_count', 'report_id', 'rule',
 	'sequence_number', 'server_location',
 	'session_id', 'serial_number', 'signature_id', 'src_translated_ip', 'src_translated_port',
-	'tag__eventtype', 'threat_name', 'threat_id', 'type', 'url', 'url_index',
+	'tag__eventtype', 'threat_name', 'threat_id', 'type', 'url', 'url_index', 'user',
 	'vendor_action', 'vendor_product', 'vendor_protocol', 'virtual_system', 'vsys'
 ].concat(_.range(0,10).map((v) => `devicegroup_level${v}`));
 
 export const desiredEntities = [ 
 	'client_ip',
 	'rule', 
-	'threat_name'];
+	'threat_name',
+	'user'];
 export const desiredAttributes = defaultFields;
 export const colTypes = {
 	'client_ip': 'ip',
@@ -32,10 +33,10 @@ export const colTypes = {
 	'session_id': 'id',
 	'signature_id': 'id',
 	'threat_name': 'alert',
-	'url': 'url'
+	'url': 'url',
+	'user': 'user'
 };	
 export const refTypes = {
-	'client_ip': 'src',
 	'pcap_id': 'payload',
 	'rule': 'payload',
 	'session_id': 'session',

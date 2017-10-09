@@ -66,6 +66,7 @@ export const colTypes = {
 	'dest_ip': 'ip',
         'dest_location': 'url',
 	'dest_mac': 'mac',
+	'dest_port': 'port',
 	'dest_user': 'user',
 	'dst': 'ip',
 	'EventID': 'event',
@@ -81,6 +82,7 @@ export const colTypes = {
 	'src_ip': 'ip',
         'src_location': 'url',
 	'src_mac': 'mac',
+	'src_port': 'port',
 	'src_user': 'user',
 
 };
@@ -92,20 +94,22 @@ export const refTypes = {
 	'dest_hostname': 'dst',
 	'dest_ip': 'dst',
 	'dest_mac': 'dst',
+	'dest_port': 'dst',
 	'dest_user': 'dst',
 	'dst': 'dst',
 	'EventID': 'event',
 	'file': 'payload',
 	'filename': 'payload',
-	'host': '?',
+	'host': 'session',
 	'msg': 'payload',
-	'sequence_number': '?',
+	'sequence_number': 'session',
 	'smac': 'src',
 	'src': 'src',
 	'src_host': 'src',
 	'src_hostname': 'src',
 	'src_ip': 'src',
 	'src_mac': 'src',
+	'src_port': 'src',
 	'src_user': 'src'
 }
 

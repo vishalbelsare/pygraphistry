@@ -1,5 +1,12 @@
 import { mergeByKey } from '../support/mergeByKey';
 
+export const bindings = {
+    "sourceField": "source",
+    "destinationField": "destination",
+    "typeField": "type",
+    "idField": "node",
+    "idEdgeField": "edge"
+};
 
 function arrUnion (arr1 = [], arr2 = []) {
     return arr1.concat(arr2.filter((x) => arr1.indexOf(x) === -1));

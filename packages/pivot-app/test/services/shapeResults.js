@@ -45,6 +45,27 @@ describe('shapeResults', function() {
         compareGraph(pivot, expected, done);
     });
 
+    it('hypergraph does not create nulls', function (done) {
+
+        const pivot = { events: [{'EventID': 'xx', 'y': 'z', 'a': undefined, 'b': null, 'c': '', 'd': '""'}] };
+        const pivotWithoutUndefined = JSON.parse(JSON.stringify(pivot));
+        const expected = {
+            graph: [
+                {
+                    ...(pivotWithoutUndefined.events[0]),
+                    edge: 'xx:y', 'col': 'y', 'EventID': 'xx', 'source': 'xx', 'destination': 'z', 'edgeType': 'EventID->y', 'edgeTitle': 'xx->z'
+                }
+            ], 
+            labels: [
+                {...(pivotWithoutUndefined.events[0]),'node': 'xx', 'EventID': 'xx', 'type': 'EventID'}, 
+                {'node': 'z', 'type': 'y', 'cols': ['y']}
+            ]
+        };
+
+        compareGraph(pivot, expected, done);
+    });
+
+
     it('hypergraph handles multiple non-overlapping events', function (done) {
 
         const pivot = {events: [

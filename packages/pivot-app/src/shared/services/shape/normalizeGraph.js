@@ -1,3 +1,20 @@
+import { bindings } from './graph';
+
+export function generateEdgeOpacity(nodeDegrees) {
+    const edgeCount = Object.values(nodeDegrees).length;
+    return 2.0 / Math.log10(100 + edgeCount);
+}
+
+// [{idField: n}] -> () // [{idField: n, x: Int, y: Int}]
+export function decorateGraphLabelsWithXY(labels, xy) {
+    const i = bindings.idField;
+    _.each(labels, function(label) {
+            label.x = xy[label[i]].x;
+            label.y = xy[label[i]].y;
+        });
+}
+
+
 export function isMac(e) {
     return e.canonicalType === "mac";
 }

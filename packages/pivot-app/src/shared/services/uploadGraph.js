@@ -6,9 +6,11 @@ import zlib from 'zlib';
 import request from 'request';
 import VError from 'verror';
 import { layouts } from './layouts.js';
+import { decorateInsideness, network } from './layouts/network';
 
 const conf = global.__graphistry_convict_conf__;
-import { graphUnion, sortNodesInplaceByPivotAndID, sortEdgesInplaceByPivotAndID} from './shape/graph.js';
+import { graphUnion, bindings, sortNodesInplaceByPivotAndID, sortEdgesInplaceByPivotAndID} from './shape/graph.js';
+import { decorateGraphLabelsWithXY, generateEdgeOpacity } from './shape/normalizeGraph';
 
 import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
@@ -85,28 +87,29 @@ function getQuery(key) {
     };
 }
 
-export const bindings = {
-    "sourceField": "source",
-    "destinationField": "destination",
-    "typeField": "type",
-    "idField": "node",
-    "idEdgeField": "edge"
+
+function updatePivot(edges, nodeID, pivot = 0) {
+    const current = edges[nodeID];
+    if (current !== undefined) {
+        return;
+    }
+    edges[nodeID] = pivot;
 }
 
 function synthesizeMissingNodes(edges, nodes) {
 
     const inNodes = {};
-    nodes.forEach((node) => { inNodes[node[bindings.idField]] = true });
+    nodes.forEach((node) => { inNodes[node[bindings.idField]] = node });
 
-    const inEdges = {};
+    const inEdges = {}; // {[src,dst] -> pivot:int}
     edges.forEach((edge) => {
-        inEdges[edge[bindings.sourceField]] = true;
-        inEdges[edge[bindings.destinationField]] = true;
+        updatePivot(inEdges, edge[bindings.sourceField], edge.Pivot);
+        updatePivot(inEdges, edge[bindings.destinationField], edge.Pivot);
     });
 
     return Object.keys(inEdges)
         .filter((id) => !(id in inNodes))
-        .map((id) => ({[bindings.idField]: id}));
+        .map((id) => ({[bindings.idField]: id, Pivot: inEdges[id]}));
 }
 
 export function createGraph(pivots) {
@@ -143,159 +146,6 @@ export function createGraph(pivots) {
     return { pivots, data: uploadData };
 }
 
-export function isPrivateIP(ip) {
-    // RFC 1918: 10/8, 172.16/12, 192.168/16
-    // TODO: use ipaddr.js
-    return String(ip).match(/^10[.][^.]+[.][^.]+[.][^.]+$|172[.](?:1[6-9]|2\d|3[01])[.][^.]+[.][^.]+$|192[.]168[.][^.]+[.][^.]+$/) !== null;
-}
-
-export function isIP(ip) {
-    // TODO: use ipaddr.js
-    return String(ip).match(/^\d+[.]\d+[.]\d+[.]\d+$/);
-}
-
-export function decorateInsideness(graph) {
-    const ontologyType = "canonicalType"; // comes from colTypes[] in src/shared/services/templates/splunk/vendors/splunk
-    // ontology type is one of %w[event file id ip mac url user]
-    // 1. Decorate nodes with IP-address names as either inside or outside.
-    const io = {};
-    graph.data.labels.forEach(({node: id}) => {
-        if(!io[id]) {
-            io[id] = {};
-        }
-        if(id && isIP(id)) {
-            io[id][isPrivateIP(id) ? 'i' : 'o'] = true
-        }});
-    // 2. All events that have srcs/dsts matching /^(dest|dst|src|source)/ that have an insideness
-    //    propagate the insideness to their srcs/dsts.
-    graph.data.labels.filter(({ [ontologyType]: canonicalType }) => canonicalType === 'event').forEach((e) => {
-        const ks = Object.keys(e);
-        const ks_srcs = ks.filter((k) => k.match(/^(?:src|source)/));
-        const ks_dsts = ks.filter((k) => k.match(/^(?:dst|dest)/));
-        const ks_srcios = ks_srcs.map((k) => Object.keys(io[e[k]] || {}));
-        const ks_dstios = ks_dsts.map((k) => Object.keys(io[e[k]] || {}));
-        const srcs = Array.prototype.concat(...ks_srcios);
-        const dsts = Array.prototype.concat(...ks_dstios);
-        const s_i = srcs.includes('i');
-        const s_o = srcs.includes('o');
-        const d_i = dsts.includes('i');
-        const d_o = dsts.includes('o');
-        if((s_i && s_o) || (d_i && d_o)) { // If the event does not have a uniform src/dst insideness, call it mixed
-            e.mixedInsideness = true; // Is this a warning? This graph is weird
-        } else {
-            const reassigned_src_i = s_i ? "i" : "o";
-            const reassigned_dst_i = d_i ? "i" : "o";
-            ks_srcs.forEach(k => {
-                if(io[e[k]]) {
-                    io[e[k]][reassigned_src_i] = true;
-                }});
-            ks_dsts.forEach(k => {
-                if(io[e[k]]) {
-                    io[e[k]][reassigned_dst_i] = true;
-                }});
-        }});
-    // 3. The only keys in io{} are sources and dests, over the entire dataset.
-    //     Recompute the insideness of events, and every node without an insideness gets the insideness of the event.
-    graph.data.labels.filter(({[ontologyType]: canonicalType }) => canonicalType === 'event').forEach((e) => {
-        const ks = Object.keys(e);
-        const ks_srcs = ks.filter((k) => k.match(/^(?:src|source)/));
-        const ks_dsts = ks.filter((k) => k.match(/^(?:dst|dest)/));
-        const ks_srcios = ks_srcs.map((k) => Object.keys(io[e[k]] || {}));
-        const ks_dstios = ks_dsts.map((k) => Object.keys(io[e[k]] || {}));
-        const srcs = Array.prototype.concat(...ks_srcios);
-        const dsts = Array.prototype.concat(...ks_dstios);
-        const s_i = srcs.includes('i');
-        const s_o = srcs.includes('o');
-        const d_i = dsts.includes('i');
-        const d_o = dsts.includes('o');
-        if(!e.mixedInsideness) {
-            const uniform_src_dst = (s_i && d_i) || (s_o && d_o);
-            const insideness = uniform_src_dst ? (s_i ? "i" : "o") : (s_i ? "io" : "oi");
-            Object.keys(e).forEach((k) => { if(io[e[k]] && Object.keys(io[e[k]]).length === 0) { io[e[k]][insideness] = true } });
-        }});
-    // 3. Decorate nodes in the graph accordingly.
-    graph.data.labels.forEach((n) => {
-        const nio = io[n.node];
-        if((nio.i || nio.io) && (nio.o || nio.oi)) {
-            n.canonicalInsideness = "mixed";
-        } else if(nio.io) {
-            n.canonicalInsideness = "inside->outside";
-        } else if(nio.oi) {
-            n.canonicalInsideness = "outside->inside";
-        } else if(nio.o) {
-            n.canonicalInsideness = "outside";
-        } else if(nio.i) {
-            n.canonicalInsideness = "inside";
-        }});
-    return graph;
-}
-
-// V0.
-// For all nodes n, set a ternary to labels[n[bindings.idField]].typeField ~ /Internal/ | /External/.
-// Internal is 1xx level, External is 5xx level, Neither is 3xx.
-// For each ternary t, for each type, r = t.level + typeidx * 100 / |types|; for each node, ϕ = nodeidx * 360 / |nodes|.
-export function insideOut(graph) {
-    const zoneTypenodes = {};
-    const idField = bindings.idField;
-    const canonicalTypeField = "canonicalType";
-    const typeField = bindings.typeField;
-    graph.data.labels.forEach((n) => {
-        const zoneIdx = n.canonicalInsideness || "";
-        if(zoneTypenodes[zoneIdx] === undefined) { zoneTypenodes[zoneIdx] = {}; }
-        const zone = zoneTypenodes[zoneIdx];
-        const typeIdx = n[canonicalTypeField] || n[typeField];
-        if(zone[typeIdx] === undefined) { zone[typeIdx] = []; }
-        const zoneType = zone[typeIdx];
-        zoneType.push(n);
-    });
-
-    const xys = {};
-    const subaxes = {};
-    const allOrderedZones = ["inside", "inside->outside", "mixed", "", "outside->inside", "outside"];
-    const insideOrder = ["mac", "ip", "user", "event", "alert", "hash", "filepath", "file"];
-    const outsideOrder = ["mac", "ip", "user", "alert", "event", "hash", "filepath", "file"];
-    const mixedOrder = ["alert", "event", "hash", "file", "filepath"];
-    let currentRadius = 0;
-    let insideLatch = false;
-    let outsideLatch = false;
-    const spacerSeparator = 400;
-    const typeSeparator = 200;
-
-    allOrderedZones.forEach((zone, zoneIdx) => {
-        if(!zoneTypenodes[zone]) { return; }
-        if(zoneIdx === 0) { insideLatch = true; }
-        if(zoneIdx === 5) { outsideLatch = true; }
-        if(zoneIdx > 0) {
-            currentRadius += spacerSeparator;
-            if(insideLatch) {
-                subaxes[currentRadius] = {r: currentRadius, label: "Internal Network", internal: true};
-                insideLatch = null;
-            } else if(outsideLatch) {
-                subaxes[currentRadius] = {r: currentRadius, label: "External Communications", external: true};
-                outsideLatch = null;
-            } else {
-                subaxes[currentRadius] = {r: currentRadius, space: true};
-            }
-        }
-        currentRadius += spacerSeparator - typeSeparator;
-        const typeSortOrder = zoneIdx === 0 ? insideOrder : (zoneIdx === 5 ? outsideOrder : mixedOrder);
-        _.sortBy(Object.keys(zoneTypenodes[zone]), (t) => typeSortOrder.indexOf(t)).forEach((type) => {
-            currentRadius += typeSeparator;
-            zoneTypenodes[zone][type].forEach((node, nodeIdx) => {
-                const r = currentRadius;
-                const ϕ = nodeIdx * Math.PI * 2 / zoneTypenodes[zone][type].length;
-                xys[node[idField]] = {x: r * Math.cos(ϕ), y: r * Math.sin(ϕ)};
-                subaxes[r] = {r};
-                });
-            });
-        });
-
-    decorateGraphLabelsWithXY(graph.data.labels, xys);
-
-    graph.data.edgeOpacity = generateEdgeOpacity(graph.data.graph);
-    graph.data.axes = Object.values(subaxes);
-    return graph;
-}
 
 
 // {data: {bindings: {sourceField: s, destinationField: d, idField: i}, graph: [{Pivot: pivotId, s: n1, d: n2}], labels: [{i: nName, __x: x, y: y__}]}, pivots: ...}
@@ -412,19 +262,7 @@ export function mergeRowsColumnsToXY(rows, columns, fudgeX, fudgeY, spacerY) {
                        }));
 }
 
-// [{idField: n}] -> () // [{idField: n, x: Int, y: Int}]
-export function decorateGraphLabelsWithXY(labels, xy) {
-    const i = bindings.idField;
-    _.each(labels, function(label) {
-            label.x = xy[label[i]].x;
-            label.y = xy[label[i]].y;
-        });
-}
 
-export function generateEdgeOpacity(nodeDegrees) {
-    const edgeCount = Object.values(nodeDegrees).length;
-    return 2.0 / Math.log10(100 + edgeCount);
-}
 
 export function generateAxes(rows, fudgeY, spacerY) {
     // v1: axes just for each major pivot.
@@ -437,7 +275,7 @@ export function generateAxes(rows, fudgeY, spacerY) {
 
 const shapers = {stackedBushyGraph: stackedBushyGraph,
                  atlasbarnes: ((x) => x),
-                 insideout: insideOut,
+                 insideout: network,
                  weirdRandomSquare: ((x) => x)};
 
 function makeEventTable({pivots}) {

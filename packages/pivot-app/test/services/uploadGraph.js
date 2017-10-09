@@ -1,5 +1,7 @@
 import { assert } from 'chai';
 import * as uploadGraph from '../../src/shared/services/uploadGraph';
+import { bindings } from '../../src/shared/services/shape/graph';
+import { decorateGraphLabelsWithXY } from '../../src/shared/services/shape/normalizeGraph';
 
 // 1. Stacked Bushy Graph tests.
 
@@ -13,12 +15,12 @@ describe('nonuniqueInvert', function() {
 
 describe('bindings', function() {
         it("should be backwards compatible", function() {
-                assert.deepEqual(uploadGraph.bindings.sourceField, "source");
-                assert.deepEqual(uploadGraph.bindings.destinationField, "destination");
+                assert.deepEqual(bindings.sourceField, "source");
+                assert.deepEqual(bindings.destinationField, "destination");
             }); });  // this is used elsewhere in the codebase as literals!
 
-const s = uploadGraph.bindings.sourceField;
-const d = uploadGraph.bindings.destinationField;
+const s = bindings.sourceField;
+const d = bindings.destinationField;
 const n1 = 'a';
 const n2 = 'b';
 const n3 = 'c';
@@ -103,7 +105,7 @@ describe('decorateGraphLabelsWithXY', function() {
         it('should destructively update x and y', function() {
                 const decoratee = [{node: n1}];
                 const decorated = [{node: n1, x: xys[n1].x, y: xys[n1].y}];
-                uploadGraph.decorateGraphLabelsWithXY(decoratee, xys);
+                decorateGraphLabelsWithXY(decoratee, xys);
                 assert.deepEqual(decoratee, decorated);
             });
     });
@@ -158,55 +160,3 @@ describe('createGraph', function() {
             assert(createdGraph, idealGraphDataLarge);
         });
     });
-
-
-describe('helpers', function () {
-    
-    describe('isPrivateIP', function () {
-
-        it('matches 10.*', (done) => {
-            assert.deepEqual(uploadGraph.isPrivateIP('10.0.0.0'), true);
-            done();
-        });
-        
-        it('matches 172.16', (done) => {
-            assert.deepEqual(uploadGraph.isPrivateIP('172.16.0.0'), true);
-            done();
-        });
-
-        it('matches 192.168.*', (done) => {
-            assert.deepEqual(uploadGraph.isPrivateIP('192.168.0.0'), true);
-            done();
-        });
-
-        it('rejects non-local', (done) => {
-            assert.deepEqual(uploadGraph.isPrivateIP('100.0.0.0'), false);
-            done();
-        });
-
-        it('rejects non-strings', (done) => {
-            assert.deepEqual(uploadGraph.isPrivateIP(1), false);            
-            done();
-        });
-    });
-
-    describe('isIP', function () {
-
-        it('matches 10.0.0.1', (done) => {
-            assert.deepEqual(!!uploadGraph.isIP('10.0.0.0'), true);
-            done();
-        });
-
-        it('rejects 10.0.0', (done) => {
-            assert.deepEqual(!!uploadGraph.isIP('10.0.0'), false);
-            done();
-        });
-
-        it('rejects non-strings', (done) => {
-            assert.deepEqual(!!uploadGraph.isIP(1), false)
-            done();
-        });
-    });
-
-
-});

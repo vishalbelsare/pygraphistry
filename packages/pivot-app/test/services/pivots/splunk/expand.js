@@ -1,9 +1,53 @@
 import { assert } from 'chai';
 
-import { expand } from '../../../../src/shared/services/templates/splunk/expand.js';
+import { expand, intersectionMatch	 } from '../../../../src/shared/services/templates/splunk/expand.js';
 
 
 describe('Splunk:expand', () => {
+
+
+	describe('helpers', () => {
+
+		describe('intersectionMatch', () => {
+
+			it ('handles nulls', () => {
+
+				assert.deepEqual(intersectionMatch(), false);
+				assert.deepEqual(intersectionMatch(null, null), false);
+				assert.deepEqual(intersectionMatch(undefined, undefined), false);
+				assert.deepEqual(intersectionMatch(undefined, undefined), false);
+
+			});
+
+			it ('handles empty', () => {
+
+				assert.deepEqual(intersectionMatch([]), false);
+				assert.deepEqual(intersectionMatch(undefined, []), false);
+				assert.deepEqual(intersectionMatch([], []), false);
+
+			});
+
+			it ('matches', () => {
+
+				assert.deepEqual(intersectionMatch(['a'], ['a']), true);
+				assert.deepEqual(intersectionMatch(['b', 'a'], ['a']), true);
+				assert.deepEqual(intersectionMatch(['a', 'b'], ['a']), true);
+				assert.deepEqual(intersectionMatch(['a'], ['b', 'a']), true);
+				assert.deepEqual(intersectionMatch(['a'], ['a', 'b']), true);
+
+			});
+
+			it ('rejects', () => {
+
+				assert.deepEqual(intersectionMatch(['a', 'b'], ['c']), false);
+				assert.deepEqual(intersectionMatch(['c'], ['a', 'b']), false);
+
+			});
+
+
+		});
+
+	});
 
 
 	it('handles empty', () => {
@@ -78,7 +122,7 @@ describe('Splunk:expand', () => {
 		assert.deepEqual(
 			expand({
 				matchAttributes: false,
-				fields: [field],				
+				pivotFields: [field],				
 				filter, 
 				pivotIds: [pivot], 
 				pivotCache: {[pivot]: { results: {labels: 
@@ -214,7 +258,7 @@ describe('Splunk:expand', () => {
 		assert.deepEqual(
 			expand({
 				filter,
-				fields: ['*', 'node'] ,
+				pivotFields: ['*', 'node'] ,
 				pivotIds: [pivot], 
 				pivotCache: {[pivot]: { results: {labels: [ {
 					node: 'x', type: 'y', 
@@ -244,6 +288,82 @@ describe('Splunk:expand', () => {
 	});
 
 
+	it('can do col expand (miss),', () => {
+
+		const filter = 'mySource';
+		const pivot = 'asdf';
+		const field = 'myField';
+		const val = 'myVal';
+
+		assert.deepEqual(
+			expand({
+				colMatch: false,				
+				filter, 
+				pivotIds: [pivot], 
+				pivotFields: [field],
+				pivotCache: {[pivot]: { results: {labels: 
+					[ {type: field + "X", node: val, cols: []}, {type: field + "X", node: val} ]} }}
+			}),
+			`${filter}  | head 10000 `);
+	});
+
+	it('can do col expand (hit),', () => {
+
+		const filter = 'mySource';
+		const pivot = 'asdf';
+		const field = 'myField';
+		const val = 'myVal';
+
+		assert.deepEqual(
+			expand({
+				colMatch: false,							
+				filter, 
+				pivotIds: [pivot], 
+				pivotFields: [field],
+				pivotCache: {[pivot]: { results: {labels: 
+					[ {type: field + "X", node: val, cols: [field]}, {type: field + "X", node: val} ]} }}
+			}),
+			`${filter} "${val}" | head 10000 `);
+	});
+
+	it('can do refTypes expand (miss),', () => {
+
+		const filter = 'mySource';
+		const pivot = 'asdf';
+		const field = 'myField';
+		const val = 'myVal';
+
+		assert.deepEqual(
+			expand({
+				colMatch: false,				
+				filter, 
+				pivotIds: [pivot], 
+				pivotFields: [field],
+				pivotCache: {[pivot]: { results: {labels: 
+					[ {type: field + "X", node: val, refTypes: []}, {type: field + "X", node: val} ]} }}
+			}),
+			`${filter}  | head 10000 `);
+	});
+
+	it('can do refTypes expand (hit),', () => {
+
+		const filter = 'mySource';
+		const pivot = 'asdf';
+		const field = 'myField';
+		const val = 'myVal';
+
+		assert.deepEqual(
+			expand({
+				colMatch: false,				
+				filter, 
+				pivotIds: [pivot], 
+				pivotFields: [field],
+				pivotCache: {[pivot]: { results: {labels: 
+					[ {type: field + "X", node: val, refTypes: [field]}, {type: field + "X", node: val} ]} }}
+			}),
+			`${filter} "${val}" | head 10000 `);
+	});
+
 	it('handles matchAttributes=true 1', () => {
 
 		const filter = 'mySource';
@@ -258,7 +378,7 @@ describe('Splunk:expand', () => {
 				filter,
 				matchAttributes: true,
 				pivotIds: [pivot], 
-				fields: [field1],
+				pivotFields: [field1],
 				pivotCache: {[pivot]: { results: {labels: [ 
 					{[field1]: val1}, 
 					{[field2]: val2} ]} }}
@@ -280,7 +400,7 @@ describe('Splunk:expand', () => {
 				filter,
 				matchAttributes: true,
 				pivotIds: [pivot], 
-				fields: [field1, field2],
+				pivotFields: [field1, field2],
 				pivotCache: {[pivot]: { results: {labels: [ 
 					{[field1]: val1}, 
 					{[field2]: val2} ]} }}
@@ -352,6 +472,7 @@ describe('Splunk:expand', () => {
 				pivotCache: {[pivot]: { results: {labels: [ {[field1]: val1}, {[field2]: val2} ]} }}
 			}),
 			`${filter}  | head 10000 `);
-	});	
+	});
+
 
 });
