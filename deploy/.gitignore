@@ -1,0 +1,7 @@
+.DS_Store
+.vagrant/
+npm-debug.log
+node_modules
+bundler/build
+bundle.tar.gz
+bundler/dist
