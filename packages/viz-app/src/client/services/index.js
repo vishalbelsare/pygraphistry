@@ -10,21 +10,16 @@ import { loadLabels } from './labels';
 import { loadResource } from './resource';
 import { loadWorkbooks } from './workbooks';
 
-export function services({
-        workbooksById = {},
-        labelsByIndex = {},
-        labelOffsetsByType = {}
-    } = {}) {
+export function services({ workbooksById = {}, labelsByIndex = {}, labelOffsetsByType = {} } = {}) {
+  const loadWorkbooksById = loadWorkbooks(workbooksById);
+  const loadViewsById = loadViews(loadWorkbooksById);
+  const loadLabelsByIndexAndType = loadLabels(loadViewsById, labelsByIndex, labelOffsetsByType);
 
-    const loadWorkbooksById = loadWorkbooks(workbooksById);
-    const loadViewsById = loadViews(loadWorkbooksById);
-    const loadLabelsByIndexAndType = loadLabels(loadViewsById, labelsByIndex, labelOffsetsByType);
-
-    return {
-        loadConfig,
-        loadResource,
-        loadViewsById,
-        loadWorkbooksById,
-        loadLabelsByIndexAndType
-    };
+  return {
+    loadConfig,
+    loadResource,
+    loadViewsById,
+    loadWorkbooksById,
+    loadLabelsByIndexAndType
+  };
 }

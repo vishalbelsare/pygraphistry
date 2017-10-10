@@ -2,56 +2,58 @@
 @import './mixins.less';
 
 :global {
-    .rc-slider-tooltip, .tooltip, .rc-color-picker {
-        z-index: @tooltip-z;
-    }
-    .rc-switch-inner {
-        left: 23px;
-        font-size: 11px;
-    }
-    .graphistry-body {
-        height: 100%;
-        overflow: hidden;
-        background-color: #fff;
+  .rc-slider-tooltip,
+  .tooltip,
+  .rc-color-picker {
+    z-index: @tooltip-z;
+  }
+  .rc-switch-inner {
+    left: 23px;
+    font-size: 11px;
+  }
+  .graphistry-body {
+    height: 100%;
+    overflow: hidden;
+    background-color: #fff;
 
-        .heading {
-            background: none;
-        }
+    .heading {
+      background: none;
     }
+  }
 
-    /* react-split-pane styles */
-    .Resizer {
-        z-index: 1;
-        opacity: 1;
-        background: #ccc;
-        box-sizing: border-box;
-        background-clip: padding-box;
-    }
+  /* react-split-pane styles */
+  .Resizer {
+    z-index: 1;
+    opacity: 1;
+    background: #ccc;
+    box-sizing: border-box;
+    background-clip: padding-box;
+  }
 
-     .Resizer.horizontal {
-        width: 100%;
-        height: 0px;
-        margin: -6px 0;
-        padding: 1px 0 0 0;
-        cursor: row-resize;
-        border-top: 5px solid rgba(0, 0, 0, 0);
-        border-bottom: 5px solid rgba(0, 0, 0, 0);
-    }
+  .Resizer.horizontal {
+    width: 100%;
+    height: 0px;
+    margin: -6px 0;
+    padding: 1px 0 0 0;
+    cursor: row-resize;
+    border-top: 5px solid rgba(0, 0, 0, 0);
+    border-bottom: 5px solid rgba(0, 0, 0, 0);
+  }
 
-    .Resizer.vertical {
-        width: 0px;
-        margin: 0 -6px;
-        padding: 0 0 0 1px;
-        cursor: col-resize;
-        border-left: 5px solid rgba(0, 0, 0, 0);
-        border-right: 5px solid rgba(0, 0, 0, 0);
-    }
+  .Resizer.vertical {
+    width: 0px;
+    margin: 0 -6px;
+    padding: 0 0 0 1px;
+    cursor: col-resize;
+    border-left: 5px solid rgba(0, 0, 0, 0);
+    border-right: 5px solid rgba(0, 0, 0, 0);
+  }
 
-    .Resizer.disabled {
-      cursor: initial !important;
-    }
+  .Resizer.disabled {
+    cursor: initial !important;
+  }
 
-    .Resizer.disabled:hover {
-      border-color: transparent;
-    }
+  .Resizer.disabled:hover {
+    border-color: transparent;
+  }
 }

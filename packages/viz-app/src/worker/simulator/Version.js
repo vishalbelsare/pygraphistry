@@ -5,26 +5,30 @@
 //   release -- user-friendly name, via config (and thus docker)
 //   build -- source code version; via viz-server package version
 
-const config      = require('@graphistry/config')();
-const log         = require('@graphistry/common').logger;
-const logger      = log.createLogger('graph-viz', 'graph-viz/Version.js');
+const config = require('@graphistry/config')();
+const log = require('@graphistry/common').logger;
+const logger = log.createLogger('graph-viz', 'graph-viz/Version.js');
 
 class Version {
+  static get artifact() {
+    return config.ARTIFACT;
+  }
 
-    static get artifact () { return config.ARTIFACT; }
+  static get build() {
+    return process.env.npm_package_version;
+  }
 
-    static get build () { return process.env.npm_package_version; }
+  static get release() {
+    return config.RELEASE;
+  }
 
-    static get release () { return config.RELEASE; }
-
-    static get all () {
-        return Object.freeze({
-            artifact: Version.artifact,
-            build: Version.build,
-            release: Version.release
-        });
-    }
-
+  static get all() {
+    return Object.freeze({
+      artifact: Version.artifact,
+      build: Version.build,
+      release: Version.release
+    });
+  }
 }
 
 logger.info(Version.all, 'Running graph-viz @ the listed version');

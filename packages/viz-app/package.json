@@ -17,7 +17,8 @@
     "build:client:dev": "npm run clean:client && better-npm-run -s build:client:dev",
     "build:server:dev": "npm run clean:server && better-npm-run -s build:server:dev",
     "test": "better-npm-run -s test",
-    "test:ci": "better-npm-run -s test:ci || better-npm-run -s test:ci || better-npm-run -s test:ci",
+    "test:ci":
+      "better-npm-run -s test:ci || better-npm-run -s test:ci || better-npm-run -s test:ci",
     "test:watch": "npm test -- --no-single-run",
     "clean:all": "npm run clean:client && npm run clean:server && npm run clean:coverage",
     "clean:client": "better-npm-run -s clean:client",
@@ -29,50 +30,58 @@
   },
   "betterScripts": {
     "start:dev": {
-      "command": "nodemon ./index.js '{\"LOG_LEVEL\": \"INFO\" }' | ./node_modules/.bin/bunyan -o short",
+      "command":
+        "nodemon ./index.js '{\"LOG_LEVEL\": \"INFO\" }' | ./node_modules/.bin/bunyan -o short",
       "env": {
         "NODE_ENV": "development",
         "IS_NODEMON_WATCHING": true
       }
     },
     "start:dev-cpu": {
-      "command": "node ./index.js '{\"VIZ_LISTEN_ADDRESS\": \"0.0.0.0\", \"LOG_LEVEL\": \"DEBUG\", \"GPU_OPTIONS\": { \"device\":\"Core\", \"WARPSIZE\": 1, \"SIZES\": { \"toBarnesLayout\": [1, 1], \"boundBox\": [1, 1], \"buildTree\": [1, 1], \"computeSums\": [1, 1], \"sort\": [1, 1], \"edgeForces\": [1, 1], \"segReduce\": [1, 1], \"calculateForces\": [1, 1] } } }'",
+      "command":
+        "node ./index.js '{\"VIZ_LISTEN_ADDRESS\": \"0.0.0.0\", \"LOG_LEVEL\": \"DEBUG\", \"GPU_OPTIONS\": { \"device\":\"Core\", \"WARPSIZE\": 1, \"SIZES\": { \"toBarnesLayout\": [1, 1], \"boundBox\": [1, 1], \"buildTree\": [1, 1], \"computeSums\": [1, 1], \"sort\": [1, 1], \"edgeForces\": [1, 1], \"segReduce\": [1, 1], \"calculateForces\": [1, 1] } } }'",
       "env": {
         "NODE_ENV": "development"
       }
     },
     "start:debug": {
-      "command": "node --inspect-brk ./index.js '{\"LOG_LEVEL\": \"DEBUG\" }' | ./node_modules/.bin/bunyan -o short",
+      "command":
+        "node --inspect-brk ./index.js '{\"LOG_LEVEL\": \"DEBUG\" }' | ./node_modules/.bin/bunyan -o short",
       "env": {
         "NODE_ENV": "production"
       }
     },
     "start:prod": {
-      "command": "node ./index.js '{\"LOG_LEVEL\": \"ERROR\" }' | ./node_modules/.bin/bunyan -o short",
+      "command":
+        "node ./index.js '{\"LOG_LEVEL\": \"ERROR\" }' | ./node_modules/.bin/bunyan -o short",
       "env": {
         "NODE_ENV": "production"
       }
     },
     "build:client:dev": {
-      "command": "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.client.js",
+      "command":
+        "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.client.js",
       "env": {
         "NODE_ENV": "development"
       }
     },
     "build:server:dev": {
-      "command": "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.server.js",
+      "command":
+        "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.server.js",
       "env": {
         "NODE_ENV": "development"
       }
     },
     "build:client": {
-      "command": "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.client.js",
+      "command":
+        "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.client.js",
       "env": {
         "NODE_ENV": "production"
       }
     },
     "build:server": {
-      "command": "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.server.js",
+      "command":
+        "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.server.js",
       "env": {
         "NODE_ENV": "production"
       }
@@ -93,7 +102,8 @@
       "command": "rimraf ./www/*.js ./www/*.map ./www/*.hot-update.json"
     },
     "clean:client": {
-      "command": "rimraf ./www/public/**/*.js ./www/public/**/*.hot-update.json ./www/public/**/*.css ./www/public/**/*.map ./www/public/**/*.json ./www/public/**/*.eot ./www/public/**/*.svg ./www/public/**/*.ttf ./www/public/**/*.woff ./www/public/**/*.woff2"
+      "command":
+        "rimraf ./www/public/**/*.js ./www/public/**/*.hot-update.json ./www/public/**/*.css ./www/public/**/*.map ./www/public/**/*.json ./www/public/**/*.eot ./www/public/**/*.svg ./www/public/**/*.ttf ./www/public/**/*.woff ./www/public/**/*.woff2"
     },
     "clean:coverage": {
       "command": "rimraf ./coverage"
@@ -106,14 +116,7 @@
     "type": "git",
     "url": "git+https://github.com/graphistry/viz-app.git"
   },
-  "files": [
-    "kernels",
-    "textures",
-    "www",
-    "index.js",
-    "config.js",
-    "config-schema.js"
-  ],
+  "files": ["kernels", "textures", "www", "index.js", "config.js", "config-schema.js"],
   "author": "",
   "license": "ISC",
   "bugs": {

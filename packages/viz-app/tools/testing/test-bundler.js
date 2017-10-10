@@ -13,5 +13,4 @@ global.assert = chai.assert;
 const context = require.context('../../src', true, /-test\.jsx?$/);
 context.keys().forEach(context);
 
-
 require('../../tests/src/index.js');

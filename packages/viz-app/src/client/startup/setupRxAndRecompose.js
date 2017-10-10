@@ -1,12 +1,17 @@
 import {
-    Observable, Subscriber, Subscription,
-    Subject, AsyncSubject, BehaviorSubject, ReplaySubject
+  Observable,
+  Subscriber,
+  Subscription,
+  Subject,
+  AsyncSubject,
+  BehaviorSubject,
+  ReplaySubject
 } from 'rxjs';
 
 import setObservableConfig from 'recompose/setObservableConfig';
 import rxjsObservableConfig from 'recompose/rxjsObservableConfig';
 
-Observable.return = (value) => Observable.of(value);
+Observable.return = value => Observable.of(value);
 
 Subject.prototype.onNext = Subject.prototype.next;
 Subject.prototype.onError = Subject.prototype.error;

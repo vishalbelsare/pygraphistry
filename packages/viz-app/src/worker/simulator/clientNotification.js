@@ -1,5 +1,5 @@
-"use strict";
-var Q = require("q");
+'use strict';
+var Q = require('q');
 
 // Passthrough value is the value that the returned promise will be
 // resolved with. You should wait on the returned promise if you want
@@ -10,7 +10,7 @@ function loadingStatus(socket, message, percentage, passThroughValue) {
     percentage: percentage
   };
 
-  socket.emit("update_loading_status", payload);
+  socket.emit('update_loading_status', payload);
 
   // Because we want the timing of this to match that of initialization,
   // we need to allow the nodejs event loop to handle the socket.emit io

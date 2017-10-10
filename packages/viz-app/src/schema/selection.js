@@ -4,57 +4,63 @@ import { getHandler, setHandler } from 'viz-app/router';
 import { $value, $invalidate } from '@graphistry/falcor-json-graph';
 
 export function selection(path, base) {
-    return function selection({ loadViewsById, loadHistogramsById }) {
+  return function selection({ loadViewsById, loadHistogramsById }) {
+    const getValues = getHandler(path, loadViewsById);
+    const setValues = setHandler(path, loadViewsById);
+    const setSelectionMask = setHandler(
+      path,
+      loadViewsById,
+      (node, key, value, path, { workbook, view }) => {
+        const invalidations = [];
+        const { selection = {} } = view;
 
-        const getValues = getHandler(path, loadViewsById);
-        const setValues = setHandler(path, loadViewsById);
-        const setSelectionMask = setHandler(path, loadViewsById,
-            (node, key, value, path, { workbook, view }) => {
+        if (selection.type === 'window' && !shallowEqual(node[key], value)) {
+          const { nBody: { dataframe = {} } = {} } = view;
+          const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
 
-                const invalidations = [];
-                const { selection = {} } = view;
+          view.inspector.rows = undefined;
+          view.componentsByType = undefined;
+          dataframe.lastTaggedSelectionMasks = undefined;
 
-                if (selection.type === 'window' && !shallowEqual(node[key], value)) {
+          invalidations.push(
+            $invalidate(`${viewPath}.inspector.rows`),
+            $invalidate(`${viewPath}.componentsByType`),
+            $invalidate(`${viewPath}.selection.histogramsById`)
+          );
+        }
 
-                    const { nBody: { dataframe = {} } = {} } = view;
-                    const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
+        return Observable.of(...invalidations, $value(path, (node[key] = value)));
+      }
+    );
 
-                    view.inspector.rows = undefined;
-                    view.componentsByType = undefined;
-                    dataframe.lastTaggedSelectionMasks = undefined;
-
-                    invalidations.push(
-                        $invalidate(`${viewPath}.inspector.rows`),
-                        $invalidate(`${viewPath}.componentsByType`),
-                        $invalidate(`${viewPath}.selection.histogramsById`),
-                    );
-                }
-
-                return Observable.of(...invalidations, $value(path, node[key] = value));
-            }
-        );
-
-        return [{
-            get: getValues,
-            route: `${base}['highlight', 'selection'][{keys}]`
-        }, {
-            set: setValues,
-            route: `${base}['highlight']['mask']`
-        }, {
-            set: setSelectionMask,
-            route: `${base}['selection']['mask']`
-        }, {
-            set: setValues,
-            route: `${base}['highlight', 'selection'][
+    return [
+      {
+        get: getValues,
+        route: `${base}['highlight', 'selection'][{keys}]`
+      },
+      {
+        set: setValues,
+        route: `${base}['highlight']['mask']`
+      },
+      {
+        set: setSelectionMask,
+        route: `${base}['selection']['mask']`
+      },
+      {
+        set: setValues,
+        route: `${base}['highlight', 'selection'][
                 'type', 'edge', 'label', 'cursor', 'point', 'darken'
             ]`
-        }, {
-            get: getValues,
-            route: `${base}['selection'].controls[{keys}]`
-        }, {
-            get: getValues,
-            set: setValues,
-            route: `${base}['selection'].controls[{keys}][{keys}]`
-        }];
-    }
+      },
+      {
+        get: getValues,
+        route: `${base}['selection'].controls[{keys}]`
+      },
+      {
+        get: getValues,
+        set: setValues,
+        route: `${base}['selection'].controls[{keys}][{keys}]`
+      }
+    ];
+  };
 }

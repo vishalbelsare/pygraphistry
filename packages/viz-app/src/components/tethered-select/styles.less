@@ -1,26 +1,26 @@
 :global(.Select > .Select-menu-outer) {
-    z-index: 100;
+  z-index: 100;
 }
 
 .is-menu-flipped {
-    :global(.Select-menu-outer) {
-        top: auto;
-        bottom: 100%;
-        border-top-left-radius: 4px;
-        border-top-right-radius: 4px;
-        border-bottom-left-radius: 0px;
-        border-bottom-right-radius: 0px;
-    }
-    &:global(.is-open > .Select-control) {
-        background: #fff;
-        border-top-left-radius: 0px;
-        border-top-right-radius: 0px;
-        border-color: darken(#ccc, 10%) #ccc lighten(#ccc, 5%);
+  :global(.Select-menu-outer) {
+    top: auto;
+    bottom: 100%;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+  }
+  &:global(.is-open > .Select-control) {
+    background: #fff;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+    border-color: darken(#ccc, 10%) #ccc lighten(#ccc, 5%);
 
-        // flip the arrow so its pointing down when the menu is open and flipped
-        :global(> .Select-arrow) {
-            border-color: #999 transparent transparent;
-            border-width: 5px 5px 2.5px;
-        }
+    // flip the arrow so its pointing down when the menu is open and flipped
+    :global(> .Select-arrow) {
+      border-color: #999 transparent transparent;
+      border-width: 5px 5px 2.5px;
     }
+  }
 }

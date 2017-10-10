@@ -1,15 +1,11 @@
 module.exports = addEntries;
 
 function addEntries({ type, isDev, vendor }, appConfig) {
+  appConfig.entry = { [type]: [`./src/${type}/index.js`] };
 
-    appConfig.entry = { [type]: [`./src/${type}/index.js`] };
+  if (type === 'client' && isDev) {
+    appConfig.entry[type].unshift('react-hot-loader/patch', 'webpack-hot-middleware/client');
+  }
 
-    if (type === 'client' && isDev) {
-        appConfig.entry[type].unshift(
-            'react-hot-loader/patch',
-            'webpack-hot-middleware/client'
-        );
-    }
-
-    return appConfig;
+  return appConfig;
 }

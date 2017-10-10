@@ -5,8 +5,8 @@ import * as palettes from './palettes';
 import * as dataTypeUtil from './dataTypes.js';
 
 const DimCodes = {
-    point: 1,
-    edge: 2
+  point: 1,
+  edge: 2
 };
 
 /** @typedef {Object} LabelCell
@@ -23,63 +23,68 @@ const DimCodes = {
  * @param {String[]} columnNames
  * @returns {{title: String, columns: LabelCell[]}}[]
  */
-function defaultLabels (dataframe, indices, type, columnNames = dataframe.publicColumnNamesByType(type)) {
-    const rows = dataframe.getRows(indices, type, columnNames);
-    const dataTypesByColumnName = {};
-    const colorMappedByColumnName = {};
-    if (columnNames) {
-        columnNames.forEach((columnName) => {
-            dataTypesByColumnName[columnName] = dataframe.getDataType(columnName, type);
-            if (dataframe.doesColumnRepresentColorPaletteMap(type, columnName)) {
-                colorMappedByColumnName[columnName] = true;
-            }
-        });
-    }
-
-    const titleColumnName = '_title';
-
-    return rows.map((row) => {
-        const columnValuesInRow = [];
-        (columnNames || _.keys(row)).forEach((columnName) => {
-            if (columnName === titleColumnName) { return; }
-            const value = row[columnName];
-            if (dataTypeUtil.valueSignifiesUndefined(value)) { return; }
-            let displayName;
-            if (colorMappedByColumnName.hasOwnProperty(columnName)) {
-                displayName = palettes.intToHex(palettes.bindings[value]);
-            }
-
-            columnValuesInRow.push({
-                value: value,
-                displayName: displayName,
-                key: columnName,
-                dataType: dataTypesByColumnName[columnName]
-            });
-        });
-
-        return {
-            title: row[titleColumnName],
-            columns: columnValuesInRow
-        };
+function defaultLabels(
+  dataframe,
+  indices,
+  type,
+  columnNames = dataframe.publicColumnNamesByType(type)
+) {
+  const rows = dataframe.getRows(indices, type, columnNames);
+  const dataTypesByColumnName = {};
+  const colorMappedByColumnName = {};
+  if (columnNames) {
+    columnNames.forEach(columnName => {
+      dataTypesByColumnName[columnName] = dataframe.getDataType(columnName, type);
+      if (dataframe.doesColumnRepresentColorPaletteMap(type, columnName)) {
+        colorMappedByColumnName[columnName] = true;
+      }
     });
-}
+  }
 
+  const titleColumnName = '_title';
 
-function labelBufferNameForType (type) {
-    return DimCodes.hasOwnProperty(type) ? type + 'Labels' : '';
-}
+  return rows.map(row => {
+    const columnValuesInRow = [];
+    (columnNames || _.keys(row)).forEach(columnName => {
+      if (columnName === titleColumnName) {
+        return;
+      }
+      const value = row[columnName];
+      if (dataTypeUtil.valueSignifiesUndefined(value)) {
+        return;
+      }
+      let displayName;
+      if (colorMappedByColumnName.hasOwnProperty(columnName)) {
+        displayName = palettes.intToHex(palettes.bindings[value]);
+      }
 
-function presetLabels (dataframe, indices, type) {
-
-    const name = labelBufferNameForType(type);
-
-    return indices.map((idx) => {
-        const label = dataframe.getCell(idx, 'hostBuffer', name);
-        return { formatted: label };
+      columnValuesInRow.push({
+        value: value,
+        displayName: displayName,
+        key: columnName,
+        dataType: dataTypesByColumnName[columnName]
+      });
     });
 
+    return {
+      title: row[titleColumnName],
+      columns: columnValuesInRow
+    };
+  });
 }
 
+function labelBufferNameForType(type) {
+  return DimCodes.hasOwnProperty(type) ? type + 'Labels' : '';
+}
+
+function presetLabels(dataframe, indices, type) {
+  const name = labelBufferNameForType(type);
+
+  return indices.map(idx => {
+    const label = dataframe.getCell(idx, 'hostBuffer', name);
+    return { formatted: label };
+  });
+}
 
 /**
  * @param {Dataframe} dataframe
@@ -88,16 +93,16 @@ function presetLabels (dataframe, indices, type) {
  * @param {String[]} columnNames
  * @returns {{title: String, columns: LabelCell[]}}[]
  */
-export function getLabels (dataframe, indices, dim, columnNames = undefined) {
-    const type = _.findKey(DimCodes, (dimCode) => dimCode === dim);
+export function getLabels(dataframe, indices, dim, columnNames = undefined) {
+  const type = _.findKey(DimCodes, dimCode => dimCode === dim);
 
-    const hasPrecomputedLabels = dataframe.hasHostBuffer(labelBufferNameForType(type));
+  const hasPrecomputedLabels = dataframe.hasHostBuffer(labelBufferNameForType(type));
 
-    if (hasPrecomputedLabels) {
-        return presetLabels(dataframe, indices, type);
-    }
+  if (hasPrecomputedLabels) {
+    return presetLabels(dataframe, indices, type);
+  }
 
-    return defaultLabels(dataframe, indices, type, columnNames);
+  return defaultLabels(dataframe, indices, type, columnNames);
 }
 
 export const getDefaultLabels = defaultLabels;
