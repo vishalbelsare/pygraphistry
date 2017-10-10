@@ -1,18 +1,16 @@
 {
-    "plugins": [
-        "mocha"
-    ],
-    "env": {
-        "mocha": true
-    },
-    "rules": {
-        "mocha/no-identical-title": "error",
-        "mocha/no-mocha-arrows": "error",
-        "mocha/no-global-tests": "error",
-        "mocha/no-nested-tests": "error",
-        "mocha/no-return-and-callback": "error",
-        "mocha/no-exclusive-tests": "warn",
-        "mocha/handle-done-callback": "warn",
-        "mocha/no-sibling-hooks": "warn"
-    }
+  "plugins": ["mocha"],
+  "env": {
+    "mocha": true
+  },
+  "rules": {
+    "mocha/no-identical-title": "error",
+    "mocha/no-mocha-arrows": "error",
+    "mocha/no-global-tests": "error",
+    "mocha/no-nested-tests": "error",
+    "mocha/no-return-and-callback": "error",
+    "mocha/no-exclusive-tests": "warn",
+    "mocha/handle-done-callback": "warn",
+    "mocha/no-sibling-hooks": "warn"
+  }
 }

@@ -1,22 +1,15 @@
 {
-    "id": "3e0f404be47ef90c",
-    "enabled": false,
-    "pivotParameters": {
-        "query": "(severity=\"critical\" OR severity=\"medium\" OR severity=\"low\")",
-        "source": [
-            "3e0eabc5a48bbbbc"
-        ],
-        "sourceAttribute": "user",
-        "nodes": "threat_name, user",
-        "pan-expand$$$source": [
-            "3e0eabc5a48bbbbc"
-        ],
-        "pan-expand$$$sourceAttribute": "user",
-        "pan-expand$$$query": "(severity=\"critical\" OR severity=\"medium\" OR severity=\"low\")",
-        "pan-expand$$$nodes": [
-            "user",
-            "threat_name"
-        ]
-    },
-    "pivotTemplate": "pan-expand"
+  "id": "3e0f404be47ef90c",
+  "enabled": false,
+  "pivotParameters": {
+    "query": "(severity=\"critical\" OR severity=\"medium\" OR severity=\"low\")",
+    "source": ["3e0eabc5a48bbbbc"],
+    "sourceAttribute": "user",
+    "nodes": "threat_name, user",
+    "pan-expand$$$source": ["3e0eabc5a48bbbbc"],
+    "pan-expand$$$sourceAttribute": "user",
+    "pan-expand$$$query": "(severity=\"critical\" OR severity=\"medium\" OR severity=\"low\")",
+    "pan-expand$$$nodes": ["user", "threat_name"]
+  },
+  "pivotTemplate": "pan-expand"
 }

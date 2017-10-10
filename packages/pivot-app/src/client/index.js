@@ -1,6 +1,6 @@
 /* eslint-disable */
 if (process.env.NODE_ENV === 'development') {
-    require('source-map-support');
+  require('source-map-support');
 }
 
 import 'react-tag-input/example/reactTags.css';
@@ -36,117 +36,113 @@ const log = createLogger(__filename);
 const { store, socket, model } = configureClient();
 
 function renderApp() {
-    const App = require('pivot-shared/main').App; // eslint-disable-line global-require
-    render(
-        <AppContainer>
-            <Provider store={store}>
-                <App key='pivot-app' falcor={model}/>
-            </Provider>
-        </AppContainer>,
-        getRootDOMNode()
-    );
+  const App = require('pivot-shared/main').App; // eslint-disable-line global-require
+  render(
+    <AppContainer>
+      <Provider store={store}>
+        <App key="pivot-app" falcor={model} />
+      </Provider>
+    </AppContainer>,
+    getRootDOMNode()
+  );
 }
 
 // Hot reload the client App container
 if (module.hot) {
-    const reRenderApp = () => {
-        try { renderApp(); }
-        catch (error) {
-            const RedBox = require('redbox-react').default;
-            render(<RedBox error={error} />, getRootDOMNode());
-        }
-    };
-    module.hot.accept('pivot-shared/main', () => {
-        setImmediate(() => {
-            // Preventing the hot reloading error from react-router
-            // unmountComponentAtNode(getRootDOMNode());
-            reRenderApp();
-        });
+  const reRenderApp = () => {
+    try {
+      renderApp();
+    } catch (error) {
+      const RedBox = require('redbox-react').default;
+      render(<RedBox error={error} />, getRootDOMNode());
+    }
+  };
+  module.hot.accept('pivot-shared/main', () => {
+    setImmediate(() => {
+      // Preventing the hot reloading error from react-router
+      // unmountComponentAtNode(getRootDOMNode());
+      reRenderApp();
     });
+  });
 }
 
 renderApp();
 
 if (process.env.NODE_ENV !== 'production') {
+  // Enable the React debugger in the console after the first mount
+  window.React = React;
 
-    // Enable the React debugger in the console after the first mount
-    window.React = React;
-
-    /**
+  /**
      * This adds the Perf addons to the global window so you can debug
      * the performance from within your console
      */
-    // eslint-disable-next-line global-require,import/newline-after-import
-    // window.Perf = require('react-addons-perf');
+  // eslint-disable-next-line global-require,import/newline-after-import
+  // window.Perf = require('react-addons-perf');
 }
 
 function getRootDOMNode(appDomNode) {
-    return appDomNode = (
-        document.getElementById('app') ||
-        document.body.appendChild((
-            appDomNode = document.createElement('article')) && (
-            appDomNode.id = 'app') && (
-            appDomNode)
-        )
-    );
+  return (appDomNode =
+    document.getElementById('app') ||
+    document.body.appendChild(
+      (appDomNode = document.createElement('article')) && (appDomNode.id = 'app') && appDomNode
+    ));
 }
 
 function configureClient() {
+  const buildNum = __BUILDNUMBER__ === undefined ? 'Local build' : `Build #${__BUILDNUMBER__}`;
+  const buildDate = new Date(__BUILDDATE__).toLocaleString();
+  log.info(`[PivotApp] ${buildNum} of ${__GITBRANCH__}@${__GITCOMMIT__} (on ${buildDate})`);
 
-    const buildNum = __BUILDNUMBER__ === undefined ? 'Local build' : `Build #${__BUILDNUMBER__}`;
-    const buildDate = (new Date(__BUILDDATE__)).toLocaleString();
-    log.info(`[PivotApp] ${buildNum} of ${__GITBRANCH__}@${__GITCOMMIT__} (on ${buildDate})`);
+  const store = configureStore();
+  const socket = initAppSocket();
+  const model = getAppModel(socket);
 
-    const store = configureStore();
-    const socket = initAppSocket();
-    const model = getAppModel(socket);
+  const tmp_vars_script = document.getElementById('tmp_vars');
+  if (tmp_vars_script && tmp_vars_script.parentNode) {
+    tmp_vars_script.parentNode.removeChild(tmp_vars_script);
+  }
 
-    const tmp_vars_script = document.getElementById('tmp_vars');
-    if (tmp_vars_script && tmp_vars_script.parentNode) {
-        tmp_vars_script.parentNode.removeChild(tmp_vars_script);
+  return { store, socket, model };
+
+  function initAppSocket() {
+    const socket = io
+      .Manager({
+        reconnection: false,
+        perMessageDeflate: false,
+        path: `${window.pivotMountPoint}/socket.io`,
+        query: { userId: 0 } // <-- TODO: get the user ID from falcor
+      })
+      .socket('/');
+
+    const socketIoEmit = socket.emit;
+    socket.emit = function emitWithoutCompression(...args) {
+      return socketIoEmit.apply(this.compress(false), args);
+    };
+
+    return socket;
+  }
+
+  function getAppModel(socket) {
+    window.appModel = new Model({
+      recycleJSON: true,
+      cache: getAppCache(),
+      scheduler: Scheduler.asap,
+      allowFromWhenceYouCame: true
+    });
+    window.appModel._source = new FalcorPubSubDataSource(socket, window.appModel);
+    return window.appModel;
+  }
+
+  function getAppCache() {
+    let appCache;
+
+    if (window.appCache) {
+      appCache = window.appCache;
+      delete window.appCache;
+    } else {
+      appCache = {};
     }
 
-    return { store, socket, model };
-
-    function initAppSocket() {
-
-        const socket = io.Manager({
-            reconnection: false,
-            perMessageDeflate: false,
-            path: `${window.pivotMountPoint}/socket.io`,
-            query: { userId: 0 } // <-- TODO: get the user ID from falcor
-        }).socket('/');
-
-        const socketIoEmit = socket.emit;
-        socket.emit = function emitWithoutCompression(...args) {
-            return socketIoEmit.apply(this.compress(false), args);
-        };
-
-        return socket;
-    }
-
-    function getAppModel(socket) {
-        window.appModel = new Model({
-            recycleJSON: true,
-            cache: getAppCache(),
-            scheduler: Scheduler.asap,
-            allowFromWhenceYouCame: true,
-        });
-        window.appModel._source = new FalcorPubSubDataSource(socket, window.appModel);
-        return window.appModel;
-    }
-
-    function getAppCache() {
-
-        let appCache;
-
-        if (window.appCache) {
-            appCache = window.appCache;
-            delete window.appCache;
-        } else {
-            appCache = {};
-        }
-
-        return appCache;
-    }
+    return appCache;
+  }
 }

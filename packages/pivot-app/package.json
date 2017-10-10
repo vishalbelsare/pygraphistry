@@ -23,10 +23,8 @@
     "clean:server": "bnr -s clean:server",
     "clean:coverage": "bnr -s clean:coverage",
     "eslint": "./node_modules/eslint/bin/eslint.js -c .eslintrc.json src",
-    "analyze:server":
-      "webpack-bundle-analyzer -m server ./www/server-stats.json ./www",
-    "analyze:client":
-      "webpack-bundle-analyzer -m server ./www/client-stats.json ./www/public"
+    "analyze:server": "webpack-bundle-analyzer -m server ./www/server-stats.json ./www",
+    "analyze:client": "webpack-bundle-analyzer -m server ./www/client-stats.json ./www/public"
   },
   "keywords": [],
   "author": "",
@@ -214,8 +212,7 @@
         "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.server.js"
     },
     "watch": {
-      "command":
-        "nodemon --inspect ./index.js | ./node_modules/.bin/bunyan -o short",
+      "command": "nodemon --inspect ./index.js | ./node_modules/.bin/bunyan -o short",
       "env": {
         "NODE_ENV": "development",
         "IS_NODEMON_WATCHING": true

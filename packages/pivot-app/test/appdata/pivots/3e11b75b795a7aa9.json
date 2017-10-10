@@ -1,18 +1,14 @@
 {
-    "id": "3e11b75b795a7aa9",
-    "enabled": true,
-    "pivotParameters": {
-        "query": "Enter search query",
-        "pivot": [
-            "3e11aaf23d0602dc"
-        ],
-        "src": "\"err.message\"",
-        "dst": "\"err.stackArray{}.file\"",
-        "search-splunk-source-dest$$$pivot": [
-            "3e11aaf23d0602dc"
-        ],
-        "search-splunk-source-dest$$$src": "\"err.message\"",
-        "search-splunk-source-dest$$$dst": "\"err.stackArray{}.file\""
-    },
-    "pivotTemplate": "search-splunk-source-dest"
+  "id": "3e11b75b795a7aa9",
+  "enabled": true,
+  "pivotParameters": {
+    "query": "Enter search query",
+    "pivot": ["3e11aaf23d0602dc"],
+    "src": "\"err.message\"",
+    "dst": "\"err.stackArray{}.file\"",
+    "search-splunk-source-dest$$$pivot": ["3e11aaf23d0602dc"],
+    "search-splunk-source-dest$$$src": "\"err.message\"",
+    "search-splunk-source-dest$$$dst": "\"err.stackArray{}.file\""
+  },
+  "pivotTemplate": "search-splunk-source-dest"
 }

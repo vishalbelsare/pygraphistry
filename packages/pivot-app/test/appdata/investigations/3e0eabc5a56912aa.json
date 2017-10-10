@@ -1,13 +1,8 @@
 {
-    "name": "Palo Alto Network",
-    "id": "3e0eabc5a56912aa",
-    "description": "Correlating user activity in Palo Alto Network Logs",
-    "tags": [
-        "PAN"
-    ],
-    "modifiedOn": 1482475929459,
-    "pivots": [
-        "3e0eabc5a48bbbbc",
-        "3e0f404be47ef90c"
-    ]
+  "name": "Palo Alto Network",
+  "id": "3e0eabc5a56912aa",
+  "description": "Correlating user activity in Palo Alto Network Logs",
+  "tags": ["PAN"],
+  "modifiedOn": 1482475929459,
+  "pivots": ["3e0eabc5a48bbbbc", "3e0f404be47ef90c"]
 }

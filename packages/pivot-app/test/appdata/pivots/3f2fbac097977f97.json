@@ -1,20 +1,20 @@
 {
-    "id": "3f2fbac097977f97",
-    "enabled": true,
-    "pivotParameters": {
-        "search-splunk-plain$$$query": "error",
-        "search-splunk-plain$$$fields": [
-            "module",
-            "level",
-            "err.message",
-            "time",
-            "metadata.dataset",
-            "err.stackArray{}.file",
-            "err.stackArray{}.function",
-            "msg",
-            "fileName"
-        ],
-        "manual-data$$$events": "{\n  \"manual\": true,\n  'anArray': ['x', {'y': 2}]\n}"
-    },
-    "pivotTemplate": "manual-data"
+  "id": "3f2fbac097977f97",
+  "enabled": true,
+  "pivotParameters": {
+    "search-splunk-plain$$$query": "error",
+    "search-splunk-plain$$$fields": [
+      "module",
+      "level",
+      "err.message",
+      "time",
+      "metadata.dataset",
+      "err.stackArray{}.file",
+      "err.stackArray{}.function",
+      "msg",
+      "fileName"
+    ],
+    "manual-data$$$events": "{\n  \"manual\": true,\n  'anArray': ['x', {'y': 2}]\n}"
+  },
+  "pivotTemplate": "manual-data"
 }

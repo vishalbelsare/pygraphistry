@@ -1,14 +1,10 @@
 {
-    "name": "Graphviz OOM",
-    "url": "https://staging.graphistry.com/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&dataset=PivotApp/3e11ab2bd036a371",
-    "id": "3e0ead4122559a09",
-    "description": "Investigate out of memory errors in our production logs",
-    "tags": [
-        "Graphviz"
-    ],
-    "modifiedOn": 1481304700221,
-    "pivots": [
-        "3e0ead41218868bf",
-        "3e11a2724a2ce786"
-    ]
+  "name": "Graphviz OOM",
+  "url":
+    "https://staging.graphistry.com/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&dataset=PivotApp/3e11ab2bd036a371",
+  "id": "3e0ead4122559a09",
+  "description": "Investigate out of memory errors in our production logs",
+  "tags": ["Graphviz"],
+  "modifiedOn": 1481304700221,
+  "pivots": ["3e0ead41218868bf", "3e11a2724a2ce786"]
 }

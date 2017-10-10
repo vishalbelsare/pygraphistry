@@ -6,9 +6,7 @@ import { connect } from '@graphistry/falcor-react-redux';
 import { appContainer, mainScreenContainer } from './containers';
 
 const MainScreenContainer = mainScreenContainer(MainScreen);
-const AppContainer = compose(
-    connect, appSchema, appContainer
-)((props) => <App {...props}/>);
+const AppContainer = compose(connect, appSchema, appContainer)(props => <App {...props} />);
 
 export { AppContainer as App };
 export { MainScreenContainer as MainScreen };

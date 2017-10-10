@@ -10,20 +10,16 @@ import { createEpicMiddleware, combineEpics } from 'redux-observable';
 import { createLogger as ReduxLogger } from 'redux-logger';
 
 export function configureStore() {
-    const epicsMiddleware = createEpicMiddleware(
-        combineEpics(app, investigationScreen, connectorScreen, investigation, pivot)
-    );
+  const epicsMiddleware = createEpicMiddleware(
+    combineEpics(app, investigationScreen, connectorScreen, investigation, pivot)
+  );
 
-    const enhancer = __DEV__ ?
-        compose(
-            applyMiddleware(epicsMiddleware, ReduxLogger({ collapsed: true })),
-            DevTools.instrument()
-        ) :
-        applyMiddleware(epicsMiddleware);
+  const enhancer = __DEV__
+    ? compose(
+        applyMiddleware(epicsMiddleware, ReduxLogger({ collapsed: true })),
+        DevTools.instrument()
+      )
+    : applyMiddleware(epicsMiddleware);
 
-    return createStore(
-        rootReducer,
-        undefined,
-        enhancer
-	)
+  return createStore(rootReducer, undefined, enhancer);
 }

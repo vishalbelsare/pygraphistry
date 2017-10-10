@@ -1,28 +1,30 @@
 {
-    "id": "3fbd57a9500725be",
-    "enabled": true,
-    "pivotParameters": {
-        "search-splunk-plain$$$query": "error",
-        "search-splunk-plain$$$fields": [
-            "module",
-            "level",
-            "err.message",
-            "time",
-            "metadata.dataset",
-            "err.stackArray{}.file",
-            "err.stackArray{}.function",
-            "msg",
-            "fileName"
-        ],
-        "http-search$$$endpoint": "http://73.63.6.63:9999/bigdata/namespace/netflow300000/sparql",
-        "http-search$$$method": "POST",
-        "http-search$$$headers": [
-            "Accept:application/sparql-results+json",
-            "Content-Type: application/x-www-form-urlencoded"
-        ],
-        "http-search$$$body": "query=PREFIX%20cybox%3A%20%3Chttp%3A//cybox.mitre.org/objects/%3E%20SELECT%20%20%3Faddress%20%3Fport%20%3FprocName%20%3Fpagerank%20where%20%7B%7B%20select%20%3Fnode%20%3Fpagerank%20where%20%7B%20SERVICE%20%3Chttp%3A//127.0.0.1%3A5000/pyNVGraph/analysis/pagerank%3Flimit%3D10%26node_match%3D%253A%2528%255B1%255D%255B0%252C1%255D%255B2-9%255D%255B0-9%255D%257C%255B1%255D%255B3-9%255D%255B0-9%255D%257B2%257D%257C%255B2-9%255D%255B0-9%255D%257B3%257D%257C%255B1-5%255D%255B0-9%255D%257B4%257D%257C6%255B0-4%255D%255B0-9%255D%257B3%257D%257C65%255B0-4%255D%255B0-9%255D%257B2%257D%257C655%255B0-2%255D%255B0-9%255D%257C6553%255B0-5%255D%2529%2524%3E%20%7B%20%3Fnode%20%3Fpagerank%20%3Fempty%20%7D%20%7D%20%7D%20hint%3APrior%20hint%3ArunFirst%20true%20.%20%20BIND%20%28STRBEFORE%28%3Fnode%2C%20%22%3A%22%29%20AS%20%3Faddress%29%20BIND%28xsd%3Ainteger%28STRAFTER%28%3Fnode%2C%20%22%3A%22%29%29%20AS%20%3Fport%29%20%3FsocketAddr%20cybox%3A%3AipAddress%20%3FdstAddrObj%20%3B%20cybox%3A%3Aport%20%3FdstPortObj%20.%20%3FdstPortObj%20cybox%3A%3AportValue%20%3Fport%20.%20%3FdstAddrObj%20cybox%3A%3AaddressValue%20%3Faddress%20.%20%3Fproc%20rdf%3Atype%20cybox%3AProcess%20%3B%20cybox%3A%3Aport%20%3FdstPortObj%20%3B%20cybox%3A%3AprocessName%20%3FprocName%20.%20%7Dorder%20by%20desc%28%3Fpagerank%29",
-        "http-search$$$jq": "{edges: [], nodes: [.results.bindings[] | {procName: .procName.value, port: .port.value, node: .address.value, pagerank: .pagerank.value}]}",
-        "http-search$$$outputType": "graph"
-    },
-    "pivotTemplate": "http-search"
+  "id": "3fbd57a9500725be",
+  "enabled": true,
+  "pivotParameters": {
+    "search-splunk-plain$$$query": "error",
+    "search-splunk-plain$$$fields": [
+      "module",
+      "level",
+      "err.message",
+      "time",
+      "metadata.dataset",
+      "err.stackArray{}.file",
+      "err.stackArray{}.function",
+      "msg",
+      "fileName"
+    ],
+    "http-search$$$endpoint": "http://73.63.6.63:9999/bigdata/namespace/netflow300000/sparql",
+    "http-search$$$method": "POST",
+    "http-search$$$headers": [
+      "Accept:application/sparql-results+json",
+      "Content-Type: application/x-www-form-urlencoded"
+    ],
+    "http-search$$$body":
+      "query=PREFIX%20cybox%3A%20%3Chttp%3A//cybox.mitre.org/objects/%3E%20SELECT%20%20%3Faddress%20%3Fport%20%3FprocName%20%3Fpagerank%20where%20%7B%7B%20select%20%3Fnode%20%3Fpagerank%20where%20%7B%20SERVICE%20%3Chttp%3A//127.0.0.1%3A5000/pyNVGraph/analysis/pagerank%3Flimit%3D10%26node_match%3D%253A%2528%255B1%255D%255B0%252C1%255D%255B2-9%255D%255B0-9%255D%257C%255B1%255D%255B3-9%255D%255B0-9%255D%257B2%257D%257C%255B2-9%255D%255B0-9%255D%257B3%257D%257C%255B1-5%255D%255B0-9%255D%257B4%257D%257C6%255B0-4%255D%255B0-9%255D%257B3%257D%257C65%255B0-4%255D%255B0-9%255D%257B2%257D%257C655%255B0-2%255D%255B0-9%255D%257C6553%255B0-5%255D%2529%2524%3E%20%7B%20%3Fnode%20%3Fpagerank%20%3Fempty%20%7D%20%7D%20%7D%20hint%3APrior%20hint%3ArunFirst%20true%20.%20%20BIND%20%28STRBEFORE%28%3Fnode%2C%20%22%3A%22%29%20AS%20%3Faddress%29%20BIND%28xsd%3Ainteger%28STRAFTER%28%3Fnode%2C%20%22%3A%22%29%29%20AS%20%3Fport%29%20%3FsocketAddr%20cybox%3A%3AipAddress%20%3FdstAddrObj%20%3B%20cybox%3A%3Aport%20%3FdstPortObj%20.%20%3FdstPortObj%20cybox%3A%3AportValue%20%3Fport%20.%20%3FdstAddrObj%20cybox%3A%3AaddressValue%20%3Faddress%20.%20%3Fproc%20rdf%3Atype%20cybox%3AProcess%20%3B%20cybox%3A%3Aport%20%3FdstPortObj%20%3B%20cybox%3A%3AprocessName%20%3FprocName%20.%20%7Dorder%20by%20desc%28%3Fpagerank%29",
+    "http-search$$$jq":
+      "{edges: [], nodes: [.results.bindings[] | {procName: .procName.value, port: .port.value, node: .address.value, pagerank: .pagerank.value}]}",
+    "http-search$$$outputType": "graph"
+  },
+  "pivotTemplate": "http-search"
 }

@@ -1,20 +1,20 @@
 {
-    "id": "3e11aaf23d0602dc",
-    "enabled": true,
-    "pivotParameters": {
-        "query": "Enter search query",
-        "query2": "\"metadata.dataset\"=Facebook",
-        "level": "50",
-        "time": {
-            "startDate": "2016-11-21T20:00:00.000Z",
-            "endDate": "2016-11-28T20:00:00.000Z"
-        },
-        "search-graphviz-logs$$$level": "50",
-        "search-graphviz-logs$$$time": {
-            "startDate": "2016-10-21T19:00:00.000Z",
-            "endDate": "2016-11-21T20:00:00.000Z"
-        },
-        "search-graphviz-logs$$$query2": "\"metadata.dataset\"=Facebook"
+  "id": "3e11aaf23d0602dc",
+  "enabled": true,
+  "pivotParameters": {
+    "query": "Enter search query",
+    "query2": "\"metadata.dataset\"=Facebook",
+    "level": "50",
+    "time": {
+      "startDate": "2016-11-21T20:00:00.000Z",
+      "endDate": "2016-11-28T20:00:00.000Z"
     },
-    "pivotTemplate": "search-graphviz-logs"
+    "search-graphviz-logs$$$level": "50",
+    "search-graphviz-logs$$$time": {
+      "startDate": "2016-10-21T19:00:00.000Z",
+      "endDate": "2016-11-21T20:00:00.000Z"
+    },
+    "search-graphviz-logs$$$query2": "\"metadata.dataset\"=Facebook"
+  },
+  "pivotTemplate": "search-graphviz-logs"
 }

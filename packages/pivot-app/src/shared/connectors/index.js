@@ -5,9 +5,7 @@ import ConnectorScreen from './components/connector-screen';
 import { connectorContainer, connectorScreenContainer } from './containers';
 
 const ConnectorScreenContainer = connectorScreenContainer(ConnectorScreen);
-const ConnectorContainer = compose(
-    connectorSchema, connectorContainer
-)(ConnectorRow);
+const ConnectorContainer = compose(connectorSchema, connectorContainer)(ConnectorRow);
 
 export { ConnectorContainer as Connector };
 export { ConnectorContainer as ConnectorRow };

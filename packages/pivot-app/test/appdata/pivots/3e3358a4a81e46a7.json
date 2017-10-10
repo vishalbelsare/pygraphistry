@@ -1,9 +1,9 @@
 {
-    "id": "3e3358a4a81e46a7",
-    "enabled": true,
-    "pivotParameters": {
-        "query": "Enter search query",
-        "communities": "2"
-    },
-    "pivotTemplate": "blazegraph-community-detection"
+  "id": "3e3358a4a81e46a7",
+  "enabled": true,
+  "pivotParameters": {
+    "query": "Enter search query",
+    "communities": "2"
+  },
+  "pivotTemplate": "blazegraph-community-detection"
 }
