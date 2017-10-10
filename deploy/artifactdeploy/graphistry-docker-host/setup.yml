@@ -1,0 +1,42 @@
+---
+- hosts: all
+  tasks:
+    - name: Directories for Graphistry config and logs
+      file: state=directory owner={{ ansible_ssh_user }} path={{ item }}
+      with_items: ["/etc/graphistry", "/var/graphistry", "/etc/graphistry/splunk", "/etc/graphistry/ssl"]
+      become: yes
+      become_user: root
+
+    - name: Splunk host name
+      template: src=inputs.conf.j2
+                dest=/etc/graphistry/splunk/inputs.conf
+
+    - name: Splunk server name
+      template: src=server.conf.j2
+                dest=/etc/graphistry/splunk/server.conf
+
+    - name: Splunk deployment client
+      template: src=deploymentclient.conf.j2
+                dest=/etc/graphistry/splunk/deploymentclient.conf
+
+    - name: Splunk outputs
+      template: src=outputs.conf.j2
+                dest=/etc/graphistry/splunk/outputs.conf
+
+    - name: Place environment variables
+      template: src=graphistry-docker-host.sh.j2
+                dest=/etc/profile.d/graphistry-docker-host.sh
+      become: yes
+      become_user: root
+
+    - name: Place viz-app box configuration
+      template: src=viz-app.json.j2
+                dest=/var/graphistry/httpd-config.json
+
+    - name: Place pivot-app box configuration
+      template: src=pivot-app.json.j2
+                dest=/var/graphistry/pivot-config.json
+
+    - name: Place vizapp-app convict box configuration
+      template: src=viz-app-config.json.j2
+                dest=/var/graphistry/viz-app-config.json

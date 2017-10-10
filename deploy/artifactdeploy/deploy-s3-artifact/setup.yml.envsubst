@@ -1,0 +1,36 @@
+---
+- hosts: all
+  tasks:
+    - name: Make directory
+      file: state=directory owner={{ ansible_ssh_user }} path=/var/graphistry/{{ deploy_directory }}
+      become: yes
+      become_user: root
+
+    - name: Copy release to deploy directory
+      copy: src=release.tar.gz
+            dest=/var/graphistry/{{ deploy_directory }}
+
+    - name: Unpack release
+      args:
+        chdir: /var/graphistry/{{ deploy_directory }}
+      command: tar -xvzf release.tar.gz
+
+    - name: Load containers
+      args:
+        chdir: /var/graphistry/{{ deploy_directory }}
+      command: ./load.sh
+
+    - name: Launch containers with arbitrary bash parameters
+      args:
+        chdir: /var/graphistry/{{ deploy_directory }}
+      command: bash -c '$ARBITRARY_PARAMETERS ./launch.sh'
+
+    - name: GC old directories (keep last 2)
+      args:
+        chdir: /var/graphistry
+      command: bash -c "ls -dt */ | tail -n +3 | xargs --no-run-if-empty rm -r"
+      become: yes
+      become_user: root
+
+    - name: GC old containers
+      command: docker system prune -af
