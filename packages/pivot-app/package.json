@@ -9,7 +9,7 @@
     "watch": "cross-env NODE_ENV=development run-s --silent clean start:watch",
     "clean": "run-p --silent clean:client clean:server clean:coverage",
     "format":
-      "./node_modules/.bin/prettier --config .prettierrc --write ./**/*.{js,json,css,less}",
+      "./node_modules/.bin/prettier --config .prettierrc --write './**/*.{js,json,less,css}'",
     "test": "cross-env GRAPHISTRY_LOG_LEVEL=warn bnr test",
     "test:ci":
       "cross-env GRAPHISTRY_LOG_LEVEL=warn bnr -s test:ci || bnr -s test:ci || bnr -s test:ci",
