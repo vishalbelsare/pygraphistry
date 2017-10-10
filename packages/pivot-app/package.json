@@ -9,7 +9,7 @@
     "watch": "cross-env NODE_ENV=development run-s --silent clean start:watch",
     "clean": "run-p --silent clean:client clean:server clean:coverage",
     "format":
-      "./node_modules/.bin/prettier --config .prettierrc --write './**/*.{js,json,less,css}'",
+      "prettier --config .prettierrc --write './**/*.{js,json,less,css}'",
     "test": "cross-env GRAPHISTRY_LOG_LEVEL=warn bnr test",
     "test:ci":
       "cross-env GRAPHISTRY_LOG_LEVEL=warn bnr -s test:ci || bnr -s test:ci || bnr -s test:ci",
@@ -23,8 +23,10 @@
     "clean:server": "bnr -s clean:server",
     "clean:coverage": "bnr -s clean:coverage",
     "eslint": "./node_modules/eslint/bin/eslint.js -c .eslintrc.json src",
-    "analyze:server": "webpack-bundle-analyzer -m server ./www/server-stats.json ./www",
-    "analyze:client": "webpack-bundle-analyzer -m server ./www/client-stats.json ./www/public"
+    "analyze:server":
+      "webpack-bundle-analyzer -m server ./www/server-stats.json ./www",
+    "analyze:client":
+      "webpack-bundle-analyzer -m server ./www/client-stats.json ./www/public"
   },
   "keywords": [],
   "author": "",
@@ -212,7 +214,8 @@
         "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.server.js"
     },
     "watch": {
-      "command": "nodemon --inspect ./index.js | ./node_modules/.bin/bunyan -o short",
+      "command":
+        "nodemon --inspect ./index.js | ./node_modules/.bin/bunyan -o short",
       "env": {
         "NODE_ENV": "development",
         "IS_NODEMON_WATCHING": true
