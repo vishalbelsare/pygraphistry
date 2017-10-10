@@ -7,40 +7,27 @@ import { Connector } from 'pivot-shared/connectors';
 import { Investigation } from 'pivot-shared/investigations';
 
 export default withSchema((QL, { get, set }, services) => {
+  const { loadApp } = services;
+  const readOnlyHandler = {
+    get: get(loadApp)
+  };
 
-    const { loadApp } = services;
-    const readOnlyHandler = {
-        get: get(loadApp)
-    };
-
-    return QL`{
-        ['title', 'currentUser', 'serverStatus']: ${
-            readOnlyHandler
-        },
+  return QL`{
+        ['title', 'currentUser', 'serverStatus']: ${readOnlyHandler},
         usersById: {
-            [{ keys: userIds }]: ${
-                User.schema(services)
-            }
+            [{ keys: userIds }]: ${User.schema(services)}
         },
         pivotsById: {
-            [{ keys: pivotIds }]: ${
-                Pivot.schema(services)
-            }
+            [{ keys: pivotIds }]: ${Pivot.schema(services)}
         },
         templatesById: {
-            [{ keys: templateIds }]: ${
-                Template.schema(services)
-            }
+            [{ keys: templateIds }]: ${Template.schema(services)}
         },
         connectorsById: {
-            [{ keys: connectorIds }]: ${
-                Connector.schema(services)
-            }
+            [{ keys: connectorIds }]: ${Connector.schema(services)}
         },
         investigationsById: {
-            [{ keys: investigationIds }]: ${
-                Investigation.schema(services)
-            }
+            [{ keys: investigationIds }]: ${Investigation.schema(services)}
         }
     }`;
 });

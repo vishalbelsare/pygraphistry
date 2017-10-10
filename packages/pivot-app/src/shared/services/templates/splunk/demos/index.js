@@ -3,5 +3,9 @@ import { pivots as eventPivots } from './eventGen.js';
 import { pivots as healthPivots } from './health.js';
 import { pivots as miscPivots } from './misc.js';
 
-export const pivots = 
-	[].concat(alertPivots||[], eventPivots||[], healthPivots||[], miscPivots||[]);
+export const pivots = [].concat(
+  alertPivots || [],
+  eventPivots || [],
+  healthPivots || [],
+  miscPivots || []
+);

@@ -1,27 +1,25 @@
 {
-    "id": "3f22f0c5cbf227b9",
-    "enabled": true,
-    "pivotParameters": {
-        "search-splunk-plain$$$query": "error",
-        "search-splunk-plain$$$fields": [
-            "module",
-            "level",
-            "err.message",
-            "time",
-            "metadata.dataset",
-            "err.stackArray{}.file",
-            "err.stackArray{}.function",
-            "msg",
-            "fileName"
-        ],
-        "http-search$$$endpoint": "http://localhost:3000/pivot/echo?x=1&x=2",
-        "http-search$$$jq": ". | [{\"ip\": .x[0]}, {\"ip\": .x[1]}]",
-        "http-search$$$nodes": [
-            "ip"
-        ],
-        "http-search$$$method": "GET",
-        "http-search$$$timeout": 10,
-        "http-search$$$outputType": "table"
-    },
-    "pivotTemplate": "http-search"
+  "id": "3f22f0c5cbf227b9",
+  "enabled": true,
+  "pivotParameters": {
+    "search-splunk-plain$$$query": "error",
+    "search-splunk-plain$$$fields": [
+      "module",
+      "level",
+      "err.message",
+      "time",
+      "metadata.dataset",
+      "err.stackArray{}.file",
+      "err.stackArray{}.function",
+      "msg",
+      "fileName"
+    ],
+    "http-search$$$endpoint": "http://localhost:3000/pivot/echo?x=1&x=2",
+    "http-search$$$jq": ". | [{\"ip\": .x[0]}, {\"ip\": .x[1]}]",
+    "http-search$$$nodes": ["ip"],
+    "http-search$$$method": "GET",
+    "http-search$$$timeout": 10,
+    "http-search$$$outputType": "table"
+  },
+  "pivotTemplate": "http-search"
 }

@@ -8,70 +8,72 @@ const FaviconsWebpackPlugin = require('favicons-webpack-plugin');
 const makeWebpackConfig = require('./webpack.config');
 const isDev = process.env.NODE_ENV !== 'production';
 const serverWebpackConfig = makeWebpackConfig({
-    type: 'server',
-    environment: process.env.NODE_ENV,
-    output: {
-        publicPath: '',
-        libraryTarget: 'commonjs2',
-        path: path.join(process.cwd(), './www'),
-    }
+  type: 'server',
+  environment: process.env.NODE_ENV,
+  output: {
+    publicPath: '',
+    libraryTarget: 'commonjs2',
+    path: path.join(process.cwd(), './www')
+  }
 });
 
 serverWebpackConfig.devtool = isDev ? 'cheap-module-eval-source-map' : 'source-map';
 serverWebpackConfig.devServer = {
-    outputPath: path.join(process.cwd(), './www')
+  outputPath: path.join(process.cwd(), './www')
 };
 
 serverWebpackConfig.externals = [
-    // these assets produced by webpack and assets-webpack-plugin
-    /^.+(stats|assets)\.json$/i,
-    // native modules will be excluded, e.g require('react/server')
-    WebpackNodeExternals({
-        whitelist: [
-            // Load non-javascript files with extensions, presumably via loaders
-            /\.(?!(?:jsx?|json)$).{1,5}$/i
-        ],
-    }),
+  // these assets produced by webpack and assets-webpack-plugin
+  /^.+(stats|assets)\.json$/i,
+  // native modules will be excluded, e.g require('react/server')
+  WebpackNodeExternals({
+    whitelist: [
+      // Load non-javascript files with extensions, presumably via loaders
+      /\.(?!(?:jsx?|json)$).{1,5}$/i
+    ]
+  })
 ];
 
 serverWebpackConfig.node = {
-    Buffer: false, global: false,
-    console: false, process: false,
-    __dirname: true, __filename: true,
+  Buffer: false,
+  global: false,
+  console: false,
+  process: false,
+  __dirname: true,
+  __filename: true
 };
 
 if (isDev) {
-    serverWebpackConfig.plugins.push(
-        // Prints more readable module names in the browser console on HMR updates
-        new webpack.NamedModulesPlugin(),
-        new webpack.HotModuleReplacementPlugin({ multiStep: false })
-    );
+  serverWebpackConfig.plugins.push(
+    // Prints more readable module names in the browser console on HMR updates
+    new webpack.NamedModulesPlugin(),
+    new webpack.HotModuleReplacementPlugin({ multiStep: false })
+  );
 }
 
 serverWebpackConfig.plugins.push(
-    new webpack.DefinePlugin({
-        window: `global`,
-        navigator: `global`
-    }),
-    new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
-    new webpack.BannerPlugin({
-        raw: true,
-        entryOnly: true,
-        banner: isDev ?                                             `require('raf').polyfill();` :
-        `require('source-map-support').install({environment:'node'});require('raf').polyfill();`
-    }),
-    new FaviconsWebpackPlugin({
-        emitStats: true,
-        prefix: 'public/icons/',
-        statsFilename: 'favicon-assets.json',
-        logo: path.resolve(process.cwd(), './src/client/favicon.png'),
-    }),
-    new CopyWebpackPlugin([
-        { from: 'src/static/img', to: 'public/img' },
-    ], {
-        copyUnmodified: false,
-        ignore: ['.DS_STORE']
-    })
+  new webpack.DefinePlugin({
+    window: `global`,
+    navigator: `global`
+  }),
+  new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
+  new webpack.BannerPlugin({
+    raw: true,
+    entryOnly: true,
+    banner: isDev
+      ? `require('raf').polyfill();`
+      : `require('source-map-support').install({environment:'node'});require('raf').polyfill();`
+  }),
+  new FaviconsWebpackPlugin({
+    emitStats: true,
+    prefix: 'public/icons/',
+    statsFilename: 'favicon-assets.json',
+    logo: path.resolve(process.cwd(), './src/client/favicon.png')
+  }),
+  new CopyWebpackPlugin([{ from: 'src/static/img', to: 'public/img' }], {
+    copyUnmodified: false,
+    ignore: ['.DS_STORE']
+  })
 );
 
 module.exports = serverWebpackConfig;

@@ -8,8 +8,10 @@
     "build": "cross-env NODE_ENV=production run-s --silent clean build:app",
     "watch": "cross-env NODE_ENV=development run-s --silent clean start:watch",
     "clean": "run-p --silent clean:client clean:server clean:coverage",
+    "format": "prettier --config .prettierrc --write './**/*.{js,json,less,css}'",
     "test": "cross-env GRAPHISTRY_LOG_LEVEL=warn bnr test",
-    "test:ci": "cross-env GRAPHISTRY_LOG_LEVEL=warn bnr -s test:ci || bnr -s test:ci || bnr -s test:ci",
+    "test:ci":
+      "cross-env GRAPHISTRY_LOG_LEVEL=warn bnr -s test:ci || bnr -s test:ci || bnr -s test:ci",
     "posttest": "rimraf .tmp",
     "posttest:ci": "rimraf .tmp",
     "start:watch": "bnr -s watch",
@@ -75,6 +77,7 @@
     "parse-whois": "1.0.0",
     "passport": "0.4.0",
     "passport-http": "0.3.0",
+    "prettier": "1.7.4",
     "querystring": "0.2.0",
     "raf": "3.3.2",
     "rc-switch": "1.5.3",
@@ -189,24 +192,23 @@
     "pre-git": {
       "allow-untracked-files": true,
       "enabled": true,
-      "pre-commit": [],
-      "pre-push": [
-        "./tools/eslint_precommit.sh"
-      ],
-      "post-merge": [
-        "./tools/npminstall_postmerge.sh"
-      ]
+      "pre-commit": ["npm run format"],
+      "pre-push": ["./tools/eslint_precommit.sh"],
+      "post-merge": ["./tools/npminstall_postmerge.sh"]
     }
   },
   "betterScripts": {
     "build:app": {
-      "command": "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.app.js"
+      "command":
+        "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.app.js"
     },
     "build:client": {
-      "command": "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.client.js"
+      "command":
+        "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.client.js"
     },
     "build:server": {
-      "command": "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.server.js"
+      "command":
+        "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.server.js"
     },
     "watch": {
       "command": "nodemon --inspect ./index.js | ./node_modules/.bin/bunyan -o short",
@@ -216,13 +218,15 @@
       }
     },
     "test": {
-      "command": "mocha-webpack --exit --webpack-config ./tools/webpack/webpack.config.server.test.js test/unit.js",
+      "command":
+        "mocha-webpack --exit --webpack-config ./tools/webpack/webpack.config.server.test.js test/unit.js",
       "env": {
         "NODE_ENV": "test"
       }
     },
     "test:ci": {
-      "command": "mocha-webpack --exit --webpack-config ./tools/webpack/webpack.config.server.test.js --reporter mocha-jenkins-reporter --reporter-options junit_report_path=./coverage/junit/report.xml,junit_report_stack=1 test/unit.js",
+      "command":
+        "mocha-webpack --exit --webpack-config ./tools/webpack/webpack.config.server.test.js --reporter mocha-jenkins-reporter --reporter-options junit_report_path=./coverage/junit/report.xml,junit_report_stack=1 test/unit.js",
       "env": {
         "NODE_ENV": "test"
       }
@@ -231,7 +235,8 @@
       "command": "rimraf ./www/*.js ./www/*.map ./www/*.hot-update.json"
     },
     "clean:client": {
-      "command": "rimraf ./www/public/**/*.js ./www/public/**/*.hot-update.json ./www/public/**/*.css ./www/public/**/*.map ./www/public/**/*.json ./www/public/**/*.eot ./www/public/**/*.svg ./www/public/**/*.ttf ./www/public/**/*.woff ./www/public/**/*.woff2"
+      "command":
+        "rimraf ./www/public/**/*.js ./www/public/**/*.hot-update.json ./www/public/**/*.css ./www/public/**/*.map ./www/public/**/*.json ./www/public/**/*.eot ./www/public/**/*.svg ./www/public/**/*.ttf ./www/public/**/*.woff ./www/public/**/*.woff2"
     },
     "clean:coverage": {
       "command": "rimraf ./coverage"

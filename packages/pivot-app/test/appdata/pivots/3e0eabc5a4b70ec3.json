@@ -1,15 +1,15 @@
 {
-    "id": "3e0eabc5a4b70ec3",
-    "enabled": false,
-    "pivotParameters": {
-        "query": "(severity=\"critical\" OR severity=\"medium\" OR severity=\"low\")",
-        "pivot": "*",
-        "src": "url",
-        "dst": "external IP address",
-        "pivotRef": "3e0eabc5a48bbbbc",
-        "source": "3e0eabc5a48bbbbc",
-        "sourceAttribute": "user",
-        "nodes": "threat_name, user"
-    },
-    "pivotTemplate": "pan-expand"
+  "id": "3e0eabc5a4b70ec3",
+  "enabled": false,
+  "pivotParameters": {
+    "query": "(severity=\"critical\" OR severity=\"medium\" OR severity=\"low\")",
+    "pivot": "*",
+    "src": "url",
+    "dst": "external IP address",
+    "pivotRef": "3e0eabc5a48bbbbc",
+    "source": "3e0eabc5a48bbbbc",
+    "sourceAttribute": "user",
+    "nodes": "threat_name, user"
+  },
+  "pivotTemplate": "pan-expand"
 }

@@ -3,43 +3,39 @@ import { container } from '@graphistry/falcor-react-redux';
 import { setPivotAttributes } from 'pivot-shared/actions/pivotRow';
 
 export const pivotContainer = container({
-    renderLoading: false,
-    fragment: ({ pivotTemplate = {} } = {}) => {
-        const { pivotParameterKeys = [] } = pivotTemplate;
-        if (pivotParameterKeys.length === 0) {
-            return `{
+  renderLoading: false,
+  fragment: ({ pivotTemplate = {} } = {}) => {
+    const { pivotParameterKeys = [] } = pivotTemplate;
+    if (pivotParameterKeys.length === 0) {
+      return `{
                 id, status, enabled, description,
                 resultCount, resultSummary,
-                pivotTemplate: ${
-                    Template.fragment(pivotTemplate)
-                }
-            }`
-        }
-        return `{
+                pivotTemplate: ${Template.fragment(pivotTemplate)}
+            }`;
+    }
+    return `{
             id, status, enabled, description,
             resultCount, resultSummary,
             pivotParameters: {
-                ${ pivotParameterKeys }
+                ${pivotParameterKeys}
             },
-            pivotTemplate: ${
-                Template.fragment(pivotTemplate)
-            }
+            pivotTemplate: ${Template.fragment(pivotTemplate)}
         }`;
-    },
-    mapFragment: (pivot = {}, props, $falcor) => {
-        return {
-            $falcor,
-            id: pivot.id,
-            status: pivot.status,
-            enabled: pivot.enabled,
-            description: pivot.description,
-            resultCount: pivot.resultCount,
-            resultSummary: pivot.resultSummary,
-            pivotTemplate: pivot.pivotTemplate,
-            pivotParameters: pivot.pivotParameters || {}
-        };
-    },
-    dispatchers: {
-        setPivotAttributes: setPivotAttributes,
-    }
+  },
+  mapFragment: (pivot = {}, props, $falcor) => {
+    return {
+      $falcor,
+      id: pivot.id,
+      status: pivot.status,
+      enabled: pivot.enabled,
+      description: pivot.description,
+      resultCount: pivot.resultCount,
+      resultSummary: pivot.resultSummary,
+      pivotTemplate: pivot.pivotTemplate,
+      pivotParameters: pivot.pivotParameters || {}
+    };
+  },
+  dispatchers: {
+    setPivotAttributes: setPivotAttributes
+  }
 });
