@@ -1,63 +1,62 @@
 @import '~viz-app/vars.less';
 
 .selection-container {
-    &.cursor-down {
-        cursor: crosshair;
+  &.cursor-down {
+    cursor: crosshair;
+  }
+  &.cursor-auto {
+    &:hover {
+      cursor: auto;
     }
-    &.cursor-auto {
-        &:hover {
-            cursor: auto;
-        }
+  }
+  &.cursor-auto .selection-area {
+    &:hover {
+      cursor: pointer;
     }
-    &.cursor-auto .selection-area {
-        &:hover {
-            cursor: pointer;
-        }
+  }
+  &.cursor-edge,
+  &.cursor-auto .selection-point {
+    &:hover {
+      cursor: pointer;
     }
-    &.cursor-edge,
-    &.cursor-auto .selection-point {
-        &:hover {
-            cursor: pointer;
-        }
+  }
+  &.cursor-auto .selection-point.is-selected {
+    &:hover {
+      cursor: grab;
     }
-    &.cursor-auto .selection-point.is-selected {
-        &:hover {
-            cursor: grab;
-        }
+  }
+  &.cursor-auto,
+  &.cursor-auto .selection-point.is-selected,
+  &.cursor-down .selection-area {
+    &:active {
+      cursor: grabbing;
     }
-    &.cursor-auto,
-    &.cursor-auto .selection-point.is-selected,
-    &.cursor-down .selection-area {
-        &:active {
-            cursor: grabbing;
-        }
-    }
+  }
 }
 
 .selection-point {
+  top: 0;
+  left: 0;
+  position: absolute;
+  backface-visibility: hidden;
+  background-color: rgba(0, 0, 0, 0);
+  will-change: width, height, transform;
 
+  .selection-point-center {
     top: 0;
     left: 0;
     position: absolute;
     backface-visibility: hidden;
-    background-color: rgba(0, 0, 0, 0);
-    will-change: width, height, transform;
-
-    .selection-point-center {
-        top: 0;
-        left: 0;
-        position: absolute;
-        backface-visibility: hidden;
-        will-change: width, height, border-radius;
-    }
+    will-change: width, height, border-radius;
+  }
 }
 
 .selection-area {
-    top: 0;
-    left: 0;
-    opacity: 0.25;
-    position: absolute;
-    background-color: white;
-    border: 1px dashed black;
-    will-change: width, height, transform;
+  top: 0;
+  left: 0;
+  opacity: 0.25;
+  position: absolute;
+  background-color: white;
+  border: 1px dashed black;
+  will-change: width, height, transform;
 }

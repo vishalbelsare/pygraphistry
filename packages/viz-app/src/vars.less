@@ -2,14 +2,14 @@
 // Constants
 //////////////////////////////////////////////////////////////////////////////
 
-@light-grey-blue: #F0F4F7;
-@light-grey-background: rgba(252, 252, 252, 1.0);
-@light-grey-background-2: #F9F9F9;
-@medium-grey: rgba(200,200,200,1.0);
-@medium-dark-grey: rgba(160,160,160,1.0);
-@dark-grey: rgba(100,100,100,1.0);
-@floating-box-shadow: 0 1.2em 1.2em rgba(0,0,0,0.7);
-@floating-box-shadow-bottom: -0.3em 0em 0.3em rgba(0,0,0,0.2);
+@light-grey-blue: #f0f4f7;
+@light-grey-background: rgba(252, 252, 252, 1);
+@light-grey-background-2: #f9f9f9;
+@medium-grey: rgba(200, 200, 200, 1);
+@medium-dark-grey: rgba(160, 160, 160, 1);
+@dark-grey: rgba(100, 100, 100, 1);
+@floating-box-shadow: 0 1.2em 1.2em rgba(0, 0, 0, 0.7);
+@floating-box-shadow-bottom: -0.3em 0em 0.3em rgba(0, 0, 0, 0.2);
 @floating-border-radius: 3px;
 
 @graphistry-lightblue: rgb(15, 165, 197);
@@ -24,65 +24,63 @@
 //////////////////////////////////////////////////////////////////////////////
 
 //canvas
-@meter-z:                       2100;
-@highlighted-point-z:           2200;
-@marquee-z:                     2300;
-
+@meter-z: 2100;
+@highlighted-point-z: 2200;
+@marquee-z: 2300;
 
 //menu & labels
-@graph-label-z:                 3300;
-@graph-label-clicked-z:         3400;
-@graph-label-hover-z:           3450;
-@graph-label-hover-clicked-z:   3500;
-@graph-label-modal-z:           3550;
-@menu-z:                        3600;
-@menus-z:                       3700;
-@legend-z:                      3800;
+@graph-label-z: 3300;
+@graph-label-clicked-z: 3400;
+@graph-label-hover-z: 3450;
+@graph-label-hover-clicked-z: 3500;
+@graph-label-modal-z: 3550;
+@menu-z: 3600;
+@menus-z: 3700;
+@legend-z: 3800;
 
 //panels
-@histogram-z:                  40100;
-@histogram-btn-z:              40200;
-@histogram-name-z:             40300;
-@inspector-z:                  41100;
-@inspector-tabs-z:             41200;
-@inspector-overlay-z:          41300;
-@timeexplorer-z:               42100;
-@timeexplorer-main-z:          42200;
-@timeexplorer-box-z:           42300;
-@timeexplorer-line-z:          42500;
-
+@histogram-z: 40100;
+@histogram-btn-z: 40200;
+@histogram-name-z: 40300;
+@inspector-z: 41100;
+@inspector-tabs-z: 41200;
+@inspector-overlay-z: 41300;
+@timeexplorer-z: 42100;
+@timeexplorer-main-z: 42200;
+@timeexplorer-box-z: 42300;
+@timeexplorer-line-z: 42500;
 
 //what is this?
-@status-bar-z:                 99999;
+@status-bar-z: 99999;
 
-@tooltip-z:                  1000001;
-@persist-z:                  1001000;
+@tooltip-z: 1000001;
+@persist-z: 1001000;
 
-@modal-z:                    2000000;
-@colorpicker-z:              2002000;
+@modal-z: 2000000;
+@colorpicker-z: 2002000;
 
 //== Typography
 //
 //## Font, line-height, and color for body text, headings, and more.
 
-@font-family-sans-serif:  "Helvetica Neue", Helvetica, Arial, sans-serif;
-@font-family-serif:       Georgia, "Times New Roman", Times, serif;
+@font-family-sans-serif: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+@font-family-serif: Georgia, 'Times New Roman', Times, serif;
 //** Default monospace fonts for `<code>`, `<kbd>`, and `<pre>`.
-@font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace;
-@font-family-base:        @font-family-sans-serif;
+@font-family-monospace: Menlo, Monaco, Consolas, 'Courier New', monospace;
+@font-family-base: @font-family-sans-serif;
 
-@font-size-base:          14px;
-@font-size-large:         ceil((@font-size-base * 1.25)); // ~18px
-@font-size-small:         ceil((@font-size-base * 0.85)); // ~12px
+@font-size-base: 14px;
+@font-size-large: ceil((@font-size-base * 1.25)); // ~18px
+@font-size-small: ceil((@font-size-base * 0.85)); // ~12px
 
-@font-size-h1:            floor((@font-size-base * 2.6)); // ~36px
-@font-size-h2:            floor((@font-size-base * 2.15)); // ~30px
-@font-size-h3:            ceil((@font-size-base * 1.7)); // ~24px
-@font-size-h4:            ceil((@font-size-base * 1.25)); // ~18px
-@font-size-h5:            @font-size-base;
-@font-size-h6:            ceil((@font-size-base * 0.85)); // ~12px
+@font-size-h1: floor((@font-size-base * 2.6)); // ~36px
+@font-size-h2: floor((@font-size-base * 2.15)); // ~30px
+@font-size-h3: ceil((@font-size-base * 1.7)); // ~24px
+@font-size-h4: ceil((@font-size-base * 1.25)); // ~18px
+@font-size-h5: @font-size-base;
+@font-size-h6: ceil((@font-size-base * 0.85)); // ~12px
 
 //** Unit-less `line-height` for use in components like buttons.
-@line-height-base:        1.428571429; // 20/14
+@line-height-base: 1.428571429; // 20/14
 //** Computed "line-height" (`font-size` * `line-height`) for use with `margin`, `padding`, etc.
-@line-height-computed:    floor((@font-size-base * @line-height-base)); // ~20px
+@line-height-computed: floor((@font-size-base * @line-height-base)); // ~20px

@@ -1,13 +1,15 @@
 /* global ace */
 import ace from 'brace';
 
-ace.define('ace/snippets/graphistry',
-    ['require','exports','module'],
-    function(require, exports/*, module*/) {
-        'use strict';
+ace.define('ace/snippets/graphistry', ['require', 'exports', 'module'], function(
+  require,
+  exports /*, module*/
+) {
+  'use strict';
 
-        /*jshint multistr: true */
-        exports.snippetText = '# CAST\n\
+  /*jshint multistr: true */
+  exports.snippetText =
+    '# CAST\n\
 snippet cast\n\
 	CAST(${1:expression} AS ${2:data_type})\n\
 # CASE\n\
@@ -85,6 +87,5 @@ snippet coalesce\n\
 snippet nullif\n\
 	NULLIF(${1:value}, ${2:nullSignifier})\n\
 ';
-        exports.scope = 'graphistry';
-
-    });
+  exports.scope = 'graphistry';
+});

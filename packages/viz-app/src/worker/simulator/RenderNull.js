@@ -6,55 +6,57 @@
 const RenderBase = require('./RenderBase.js');
 const Q = require('q');
 
-const log         = require('@graphistry/common').logger;
-const logger      = log.createLogger('graph-viz', 'graph-viz/js/RenderNull.js');
+const log = require('@graphistry/common').logger;
+const logger = log.createLogger('graph-viz', 'graph-viz/js/RenderNull.js');
 
 const createBuffer = Q.promised((renderer, data) => {
-    logger.trace('Creating (fake) null renderer buffer of type %s. Constructor: %o',
-        typeof(data), (data||{}).constructor);
+  logger.trace(
+    'Creating (fake) null renderer buffer of type %s. Constructor: %o',
+    typeof data,
+    (data || {}).constructor
+  );
 
-    const bufObj = {
-        'buffer': null,
-        'gl': null,
-        'len': (typeof data === 'number' ? data : data.byteLength),
-        'data': (typeof data === 'number' ? null : data)
-    };
+  const bufObj = {
+    buffer: null,
+    gl: null,
+    len: typeof data === 'number' ? data : data.byteLength,
+    data: typeof data === 'number' ? null : data
+  };
 
-    return bufObj;
+  return bufObj;
 });
 
+const noopWrite = function(buffer /* , data */) {
+  return Q(buffer);
+};
 
-const noopWrite = function(buffer/* , data */) { return Q(buffer); };
-
-
-function noop () {
-    return true;
+function noop() {
+  return true;
 }
 
-
 const noopPromise = Q.promised(() => {
-    return;
+  return;
 });
 
 export function createSync(document) {
-    const renderer = RenderBase.create();
-    logger.trace('Created renderer RenderNull');
+  const renderer = RenderBase.create();
+  logger.trace('Created renderer RenderNull');
 
-    renderer.document = document;
+  renderer.document = document;
 
-    renderer.createBuffer = createBuffer.bind(this, renderer);
-    renderer.setVisible = noop;
-    renderer.setColorMap = noopPromise;
-    renderer.finish = noop;
-    renderer.render = noopPromise;
+  renderer.createBuffer = createBuffer.bind(this, renderer);
+  renderer.setVisible = noop;
+  renderer.setColorMap = noopPromise;
+  renderer.finish = noop;
+  renderer.render = noopPromise;
 
-    renderer.elementsPerPoint = 2;
-    renderer.numPoints = 0;
-    renderer.numEdges = 0;
-    renderer.numMidPoints = 0;
-    renderer.numMidEdges = 0;
+  renderer.elementsPerPoint = 2;
+  renderer.numPoints = 0;
+  renderer.numEdges = 0;
+  renderer.numMidPoints = 0;
+  renderer.numMidEdges = 0;
 
-    return renderer;
+  return renderer;
 }
 
 /**

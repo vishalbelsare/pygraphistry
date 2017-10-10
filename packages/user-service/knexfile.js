@@ -1,12 +1,6 @@
 require('dotenv').config();
 
-const {
-  DBUSER,
-  DBPASSWORD,
-  DBHOST,
-  DBPORT,
-  DBNAME
-} = process.env;
+const { DBUSER, DBPASSWORD, DBHOST, DBPORT, DBNAME } = process.env;
 
 const configurations = {
   test: {

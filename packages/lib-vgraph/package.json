@@ -16,17 +16,21 @@
     "build": "npm-run-all clean compile typings",
     "clean": "shx rm -rf ./lib",
     "compile": "tsc -p ./tsconfig/tsconfig.json",
-    "typings": "tsc -p ./tsconfig/tsconfig.typings.json && shx cp ./src/vgraph/vgraph.d.ts ./lib/vgraph/vgraph.d.ts",
+    "typings":
+      "tsc -p ./tsconfig/tsconfig.typings.json && shx cp ./src/vgraph/vgraph.d.ts ./lib/vgraph/vgraph.d.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --env jest-environment-node-debug",
+    "test:debug":
+      "node --inspect-brk ./node_modules/.bin/jest --runInBand --env jest-environment-node-debug",
     "build:proto": "npm-run-all compile:proto:static compile:proto:typings",
     "compile:pbf": "pbf ./src/vgraph/vgraph.proto > ./src/pbf/vgraph.js",
     "compile:proto:3": "pbjs -t proto3 -o ./src/vgraph/vgraph.3.proto ./src/vgraph/vgraph.proto",
-    "compile:proto:static": "pbjs -t static-module -w es6 --keep-case --force-long --no-create --no-verify --no-convert --no-delimited -o ./src/vgraph/vgraph.js ./src/vgraph/vgraph.proto",
+    "compile:proto:static":
+      "pbjs -t static-module -w es6 --keep-case --force-long --no-create --no-verify --no-convert --no-delimited -o ./src/vgraph/vgraph.js ./src/vgraph/vgraph.proto",
     "compile:proto:typings": "pbts -o ./src/vgraph/vgraph.d.ts ./src/vgraph/vgraph.js",
-    "lint": "tslint --fix --type-check --project ./tsconfig/tsconfig.tslint.json  --config ./tslint.json \"src/index.ts\""
+    "lint":
+      "tslint --fix --type-check --project ./tsconfig/tsconfig.tslint.json  --config ./tslint.json \"src/index.ts\""
   },
   "author": "Graphistry, Inc",
   "license": "ISC",
@@ -38,13 +42,7 @@
     "type": "git",
     "url": "git@github.com:graphistry/vgraph-to-mapd.git"
   },
-  "files": [
-    "src",
-    "lib",
-    "tsconfig",
-    "README.md",
-    "CHANGELOG.md"
-  ],
+  "files": ["src", "lib", "tsconfig", "README.md", "CHANGELOG.md"],
   "dependencies": {
     "@graphistry/common": "^3.1.0",
     "@std/esm": "~0.8.1",
@@ -83,14 +81,8 @@
   "typings": "./lib/index.d.ts",
   "jest": {
     "verbose": true,
-    "roots": [
-      "<rootDir>/src/"
-    ],
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js"
-    ],
+    "roots": ["<rootDir>/src/"],
+    "moduleFileExtensions": ["ts", "tsx", "js"],
     "transform": {
       ".(ts|tsx)": "<rootDir>/node_modules/ts-jest/preprocessor.js"
     },

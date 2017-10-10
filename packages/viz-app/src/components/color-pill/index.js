@@ -1,1 +1,1 @@
-export * from './colorPill'
+export * from './colorPill';

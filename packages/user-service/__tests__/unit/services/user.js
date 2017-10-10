@@ -1,5 +1,4 @@
 describe('services/user.js', () => {
-  
   describe('createUser', () => {
     it('does something', () => {
       expect(1).toBe(1);
@@ -17,4 +16,4 @@ describe('services/user.js', () => {
       expect(1).toBe(1);
     });
   });
-})
+});

@@ -3,21 +3,20 @@ import { pickPointsOfInterest } from './pickPointsOfInterest';
 import { resetHighlightedLabel } from './resetHighlightedLabel';
 
 export function labels(action$) {
-    return Observable.merge(
-        pickPointsOfInterest(action$).switchMap(commitReducerResults),
-        resetHighlightedLabel(action$).switchMap(commitReducerResults),
-    )
-    .ignoreElements();
+  return Observable.merge(
+    pickPointsOfInterest(action$).switchMap(commitReducerResults),
+    resetHighlightedLabel(action$).switchMap(commitReducerResults)
+  ).ignoreElements();
 }
 
 function commitReducerResults({ falcor, values, invalidations }) {
-    if (falcor) {
-        if (invalidations && invalidations.length) {
-            falcor.invalidate(...invalidations);
-        }
-        if (values && values.length) {
-            return falcor.set(...values);
-        }
+  if (falcor) {
+    if (invalidations && invalidations.length) {
+      falcor.invalidate(...invalidations);
     }
-    return Observable.never();
+    if (values && values.length) {
+      return falcor.set(...values);
+    }
+  }
+  return Observable.never();
 }

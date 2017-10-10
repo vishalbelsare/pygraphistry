@@ -1,4 +1,4 @@
 {
-    "extends": "./tsconfig",
-    "exclude": ["../src/**/*.d.ts", "../src/arrow/*", "../src/mapd/*"]
+  "extends": "./tsconfig",
+  "exclude": ["../src/**/*.d.ts", "../src/arrow/*", "../src/mapd/*"]
 }

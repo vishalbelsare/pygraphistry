@@ -1,11 +1,11 @@
 describe('services/session', () => {
-  describe("login", () => {
+  describe('login', () => {
     it('does something', () => {
       expect(1).toBe(1);
     });
   });
 
-  describe("logout", () => {
+  describe('logout', () => {
     it('does something', () => {
       expect(1).toBe(1);
     });

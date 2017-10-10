@@ -31,5 +31,7 @@ export const selectedEdgeIndexes = new ReplaySubject(1);
 export const selectedPointIndexes = new ReplaySubject(1);
 
 export const isAnimatingOrSimulating = Observable.combineLatest(
-    isAnimating, simulateOn, (x, y) => x || y
+  isAnimating,
+  simulateOn,
+  (x, y) => x || y
 );

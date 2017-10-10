@@ -5,7 +5,7 @@ const coverageDir = path.join(process.cwd(), './coverage');
 const junitCoverageDir = path.join(coverageDir, './junit');
 const webpackConfig = require('../webpack/webpack.config.karma');
 
-module.exports = (config) => {
+module.exports = config => {
   config.set({
     browsers: ['PhantomJS'],
 
@@ -13,13 +13,10 @@ module.exports = (config) => {
 
     frameworks: ['mocha'],
 
-    files: [
-      '../../node_modules/babel-polyfill/dist/polyfill.js',
-      './test-bundler.js'
-    ],
+    files: ['../../node_modules/babel-polyfill/dist/polyfill.js', './test-bundler.js'],
 
     preprocessors: {
-      './test-bundler.js': ['webpack', 'sourcemap'],
+      './test-bundler.js': ['webpack', 'sourcemap']
     },
 
     reporters: ['mocha', 'coverage'],
@@ -30,7 +27,7 @@ module.exports = (config) => {
     webpackMiddleware: {
       quiet: true,
       noInfo: true,
-      stats: 'errors-only',
+      stats: 'errors-only'
     },
 
     junitReporter: {
@@ -44,8 +41,8 @@ module.exports = (config) => {
       reporters: [
         { type: 'html', subdir: 'html' },
         { type: 'lcov', subdir: 'lcov' },
-        { type: 'text-summary', subdir: '.', file: 'text-summary.txt' },
-      ],
-    },
+        { type: 'text-summary', subdir: '.', file: 'text-summary.txt' }
+      ]
+    }
   });
 };
