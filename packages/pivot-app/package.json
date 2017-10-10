@@ -195,7 +195,7 @@
     "pre-git": {
       "allow-untracked-files": true,
       "enabled": true,
-      "pre-commit": [],
+      "pre-commit": ["npm run format"],
       "pre-push": ["./tools/eslint_precommit.sh"],
       "post-merge": ["./tools/npminstall_postmerge.sh"]
     }
