@@ -36,7 +36,15 @@ export default function InvestigationScreen({
   const { axes, controls } = activeInvestigation;
   let { datasetName, datasetType } = activeInvestigation;
 
-  if (uploadStatus && (uploadStatus.searching || uploadStatus.etling)) {
+  const eventTable = activeInvestigation.eventTable || null;
+  const table = eventTable ? eventTable.table : null;
+  const eventTableExistsButIsEmpty = table && table.length === 0;
+
+  if (eventTableExistsButIsEmpty) {
+    showLoadingIndicator = false;
+    datasetName = datasetType = ``;
+    loadingMessage = `Your current investigation settings didn't surface any events. Try adjusting dates or pivots.`;
+  } else if (uploadStatus && (uploadStatus.searching || uploadStatus.etling)) {
     datasetName = datasetType = ``;
     loadingMessage = uploadStatus.searching ? `Running Pivots` : `Uploading Results`;
   } else if (!datasetName || !datasetType) {
