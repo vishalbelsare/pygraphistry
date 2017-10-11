@@ -9,7 +9,7 @@
 #define IS_LOCKED_Y(flags)        ((flags >> 5) & 1)
 #define IS_LOCKED_R(flags)        ((flags >> 6) & 1)
 
-inline float repulsionForce(const float distSquared, const uint n1DegreePlusOne, const uint n2DegreePlusOne,
+inline float repulsionForce(const float distSquared, const float n1DegreePlusOne, const float n2DegreePlusOne,
                             const float scalingRatio) {
     const int degreeProd = (n1DegreePlusOne * n2DegreePlusOne);
     float force;
@@ -50,7 +50,7 @@ float attractionForce(const float2 distVec, const float n1Size, const float n2Si
 #endif
 }
 
-inline float gravityForce(const float gravity, const uint n1Degree, const float2 centerVec,
+inline float gravityForce(const float gravity, const float n1Degree, const float2 centerVec,
                           const bool strong) {
 
     float gForce = gravity * (n1Degree + 1.0f);

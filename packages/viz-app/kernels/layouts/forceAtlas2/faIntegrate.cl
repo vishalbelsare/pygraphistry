@@ -22,14 +22,14 @@ __kernel void faIntegrate (
     float maxSpeed = maxSpeedFactor / length(curForces[n1Idx]);
 
     float2 delta = *globalSpeed * min(maxSpeed, speed) * curForces[n1Idx];
-    delta.x = delta.x * (1 - IS_LOCKED_X(flags));
-    delta.y = delta.y * (1 - IS_LOCKED_Y(flags));
+    delta.x = delta.x * ((1 - IS_LOCKED_X(flags)) * 1.0f);
+    delta.y = delta.y * ((1 - IS_LOCKED_Y(flags)) * 1.0f);
     debug4("Speed (%d) %f max: %f\n", n1Idx, speed, maxSpeed);
     debug4("Delta (%d) %f\t%f\n", n1Idx, delta.x, delta.y);
 
     float2 newPosition = inputPositions[n1Idx] + delta;
 
-    float radiusMultiplier = IS_LOCKED_R(flags) * (length(inputPositions[n1Idx]) / length(newPosition)) + (1 - IS_LOCKED_R(flags)) * 1;
+    float radiusMultiplier = !IS_LOCKED_R(flags) ? 1.0f : length(inputPositions[n1Idx]) / length(newPosition);
 
     outputPositions[n1Idx] = newPosition * radiusMultiplier;
     return;
