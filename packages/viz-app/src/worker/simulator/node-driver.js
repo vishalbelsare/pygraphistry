@@ -326,6 +326,7 @@ export function createInteractionsLoop({
               return nBody.tick(x);
             },
             x => {
+              x.play = false;
               perf.endTiming('tick_durationMS');
               return nBody;
             }
