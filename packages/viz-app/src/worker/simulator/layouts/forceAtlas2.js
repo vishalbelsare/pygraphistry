@@ -317,7 +317,7 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
   // Set the flags arguement for those kernels that have it.
   _.each(
     _.filter(this.kernels, function(k) {
-      return k.argNames.indexOf('flags') > 0;
+      return k.argNames.indexOf('flags') > -1;
     }),
     function(k) {
       k.set({ flags: layoutFlags });
