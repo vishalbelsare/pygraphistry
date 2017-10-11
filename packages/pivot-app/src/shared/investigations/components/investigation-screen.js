@@ -1,11 +1,11 @@
-import _ from "underscore";
-import SplitPane from "react-split-pane";
-import styles from "./investigation-screen.less";
-import { Investigation } from "pivot-shared/investigations";
+import _ from 'underscore';
+import SplitPane from 'react-split-pane';
+import styles from './investigation-screen.less';
+import { Investigation } from 'pivot-shared/investigations';
 
-import { Graphistry } from "@graphistry/client-api-react";
-import { uiTweaks } from "../../services/layouts.js";
-import iframeStyle from "./iframe-style.less";
+import { Graphistry } from '@graphistry/client-api-react';
+import { uiTweaks } from '../../services/layouts.js';
+import iframeStyle from './iframe-style.less';
 
 export default function InvestigationScreen({
   templates = [],
@@ -17,26 +17,16 @@ export default function InvestigationScreen({
   user
 }) {
   const { tags: activeTags = [] } = activeInvestigation || {};
-  const demoSingletons = [
-    "Demo",
-    "Blazegraph",
-    "PAN",
-    "Graphviz",
-    "HealthDemo"
-  ];
+  const demoSingletons = ['Demo', 'Blazegraph', 'PAN', 'Graphviz', 'HealthDemo'];
   const relevantTemplates =
     activeTags.length > 0
       ? templates.filter(
-          ({ tags: templateTags = [] }) =>
-            _.intersection(templateTags, activeTags).length > 0
+          ({ tags: templateTags = [] }) => _.intersection(templateTags, activeTags).length > 0
         )
       : //Hide demo pivots for *
         templates.filter(
           ({ tags: templateTags = [] }) =>
-            !(
-              templateTags.length === 1 &&
-              demoSingletons.indexOf(templateTags[0]) > -1
-            )
+            !(templateTags.length === 1 && demoSingletons.indexOf(templateTags[0]) > -1)
         );
 
   let showLoadingIndicator = true;
@@ -56,17 +46,15 @@ export default function InvestigationScreen({
     loadingMessage = `Your current investigation settings didn't surface any events. Try adjusting dates or pivots.`;
   } else if (uploadStatus && (uploadStatus.searching || uploadStatus.etling)) {
     datasetName = datasetType = ``;
-    loadingMessage = uploadStatus.searching
-      ? `Running Pivots`
-      : `Uploading Results`;
+    loadingMessage = uploadStatus.searching ? `Running Pivots` : `Uploading Results`;
   } else if (!datasetName || !datasetType) {
     showLoadingIndicator = false;
     loadingMessage = `Run a Pivot to get started`;
   }
 
   return (
-    <div className={styles["investigation-all"]}>
-      <div className={styles["investigation-split"]}>
+    <div className={styles['investigation-all']}>
+      <div className={styles['investigation-split']}>
         <SplitPane split="vertical" minSize={300} defaultSize={300}>
           <Investigation
             key={`investigation:${activeInvestigation.id}`}
@@ -79,8 +67,7 @@ export default function InvestigationScreen({
             createInvestigation={createInvestigation}
           />
           <Graphistry
-            key={`investigation:${activeInvestigation.id}:${datasetName ||
-              "viz"}`}
+            key={`investigation:${activeInvestigation.id}:${datasetName || 'viz'}`}
             className={iframeStyle.iframe}
             vizClassName={iframeStyle.iframe}
             {...uiTweaks[activeInvestigation.layout] || {}}
@@ -92,7 +79,7 @@ export default function InvestigationScreen({
             controls={controls}
             type={datasetType}
             dataset={datasetName}
-            graphistryHost={graphistryHost || ""}
+            graphistryHost={graphistryHost || ''}
             loadingMessage={loadingMessage}
             showLoadingIndicator={showLoadingIndicator}
             edgeOpacity={activeInvestigation.edgeOpacity}
