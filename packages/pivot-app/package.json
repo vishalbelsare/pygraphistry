@@ -9,7 +9,8 @@
     "watch": "cross-env NODE_ENV=development run-s --silent clean start:watch",
     "clean": "run-p --silent clean:client clean:server clean:coverage",
     "test": "cross-env GRAPHISTRY_LOG_LEVEL=warn bnr test",
-    "test:ci": "cross-env GRAPHISTRY_LOG_LEVEL=warn bnr -s test:ci || bnr -s test:ci || bnr -s test:ci",
+    "test:ci":
+      "cross-env GRAPHISTRY_LOG_LEVEL=warn bnr -s test:ci || bnr -s test:ci || bnr -s test:ci",
     "posttest": "rimraf .tmp",
     "posttest:ci": "rimraf .tmp",
     "start:watch": "bnr -s watch",
@@ -197,13 +198,16 @@
   },
   "betterScripts": {
     "build:app": {
-      "command": "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.app.js"
+      "command":
+        "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.app.js"
     },
     "build:client": {
-      "command": "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.client.js"
+      "command":
+        "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.client.js"
     },
     "build:server": {
-      "command": "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.server.js"
+      "command":
+        "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.server.js"
     },
     "watch": {
       "command": "nodemon --inspect ./index.js | ./node_modules/.bin/bunyan -o short",
@@ -213,13 +217,15 @@
       }
     },
     "test": {
-      "command": "mocha-webpack --exit --webpack-config ./tools/webpack/webpack.config.server.test.js test/unit.js",
+      "command":
+        "mocha-webpack --exit --webpack-config ./tools/webpack/webpack.config.server.test.js test/unit.js",
       "env": {
         "NODE_ENV": "test"
       }
     },
     "test:ci": {
-      "command": "mocha-webpack --exit --webpack-config ./tools/webpack/webpack.config.server.test.js --reporter mocha-jenkins-reporter --reporter-options junit_report_path=./coverage/junit/report.xml,junit_report_stack=1 test/unit.js",
+      "command":
+        "mocha-webpack --exit --webpack-config ./tools/webpack/webpack.config.server.test.js --reporter mocha-jenkins-reporter --reporter-options junit_report_path=./coverage/junit/report.xml,junit_report_stack=1 test/unit.js",
       "env": {
         "NODE_ENV": "test"
       }
@@ -228,7 +234,8 @@
       "command": "rimraf ./www/*.js ./www/*.map ./www/*.hot-update.json"
     },
     "clean:client": {
-      "command": "rimraf ./www/public/**/*.js ./www/public/**/*.hot-update.json ./www/public/**/*.css ./www/public/**/*.map ./www/public/**/*.json ./www/public/**/*.eot ./www/public/**/*.svg ./www/public/**/*.ttf ./www/public/**/*.woff ./www/public/**/*.woff2"
+      "command":
+        "rimraf ./www/public/**/*.js ./www/public/**/*.hot-update.json ./www/public/**/*.css ./www/public/**/*.map ./www/public/**/*.json ./www/public/**/*.eot ./www/public/**/*.svg ./www/public/**/*.ttf ./www/public/**/*.woff ./www/public/**/*.woff2"
     },
     "clean:coverage": {
       "command": "rimraf ./coverage"
