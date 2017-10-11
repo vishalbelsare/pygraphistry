@@ -59,8 +59,8 @@ export function handleVboUpdates(socket, uri, renderState, sceneModel, renderer)
     })
     .do(({ versions }) => vboUpdates.next('start') || vboVersions.next(versions))
     .do(({ buffers, textures }) => socket.emit('planned_binary_requests', { buffers, textures }))
+    // todo: do we want to switchMap here?
     .mergeMap(
-      // <-- todo: do we want to switchMap here?
       xs =>
         setSessionStatus.merge(
           Observable.zip(
@@ -142,8 +142,8 @@ function getUpdatedNames(names, originalVersions, newVersions) {
 function scanVersionChanges(memo, next) {
   const { allBufferNames, allTextureNames } = memo;
   const { versions = {}, textures: textureNFOs = {} } = next;
-  const buffers = getUpdatedNames(allBufferNames, memo.buffers, versions.buffers);
-  const textures = getUpdatedNames(allTextureNames, memo.textures, versions.textures);
+  const buffers = getUpdatedNames(allBufferNames, memo.versions.buffers, versions.buffers);
+  const textures = getUpdatedNames(allTextureNames, memo.versions.textures, versions.textures);
   const textureByteLengths = textures.reduce(
     (lengths, name) => ({
       ...lengths,
