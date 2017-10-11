@@ -21,8 +21,10 @@
     "clean:server": "bnr -s clean:server",
     "clean:coverage": "bnr -s clean:coverage",
     "eslint": "./node_modules/eslint/bin/eslint.js -c .eslintrc.json src",
-    "analyze:server": "webpack-bundle-analyzer -m server ./www/server-stats.json ./www",
-    "analyze:client": "webpack-bundle-analyzer -m server ./www/client-stats.json ./www/public"
+    "analyze:server":
+      "webpack-bundle-analyzer -m server ./www/server-stats.json ./www",
+    "analyze:client":
+      "webpack-bundle-analyzer -m server ./www/client-stats.json ./www/public"
   },
   "keywords": [],
   "author": "",
@@ -165,7 +167,6 @@
     "postcss-import": "11.0.0",
     "postcss-loader": "2.0.6",
     "postcss-nesting": "4.2.1",
-    "pre-git": "3.15.3",
     "react-hot-loader": "3.0.0-beta.6",
     "react-test-renderer": "16.0.0",
     "redux-devtools": "3.4.0",
@@ -187,15 +188,6 @@
     "webpack-universal-middleware": "1.0.1",
     "write-file-webpack-plugin": "4.2.0"
   },
-  "config": {
-    "pre-git": {
-      "allow-untracked-files": true,
-      "enabled": true,
-      "pre-commit": [""],
-      "pre-push": ["./tools/eslint_precommit.sh"],
-      "post-merge": ["./tools/npminstall_postmerge.sh"]
-    }
-  },
   "betterScripts": {
     "build:app": {
       "command":
@@ -210,7 +202,8 @@
         "mkdir -p www && webpack --hide-modules --config ./tools/webpack/webpack.config.server.js"
     },
     "watch": {
-      "command": "nodemon --inspect ./index.js | ./node_modules/.bin/bunyan -o short",
+      "command":
+        "nodemon --inspect ./index.js | ./node_modules/.bin/bunyan -o short",
       "env": {
         "NODE_ENV": "development",
         "IS_NODEMON_WATCHING": true
