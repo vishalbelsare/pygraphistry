@@ -1,0 +1,23 @@
+{
+  "id": "3f303fa2d3f27144",
+  "enabled": true,
+  "pivotParameters": {
+    "search-splunk-plain$$$query": "error",
+    "search-splunk-plain$$$fields": [
+      "module",
+      "level",
+      "err.message",
+      "time",
+      "metadata.dataset",
+      "err.stackArray{}.file",
+      "err.stackArray{}.function",
+      "msg",
+      "fileName"
+    ],
+    "http-expand$$$pRef": ["3f302c64dda2536f"],
+    "http-expand$$$endpoint":
+      "http://localhost:3000/pivot/echo?site={site}&host=user12&host=user13&host=user14&host=15",
+    "http-expand$$$jq": "[. as $root | .host[] | {\"host\": ., \"site\": $root.site}]"
+  },
+  "pivotTemplate": "http-expand"
+}

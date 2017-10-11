@@ -1,0 +1,13 @@
+{
+  "id": "3dbf563fa4ebcfd4",
+  "enabled": true,
+  "pivotParameters": {
+    "query": "Enter search query",
+    "pivotRef": ["3dbf56157f9e4567"],
+    "fields": ["dest_location"],
+    "expand-bluecoat-botnet-demo$$$pivotRef": ["3dbf56157f9e4567"],
+    "expand-bluecoat-botnet-demo$$$fields": ["dest_hostname"],
+    "expand-bluecoat-botnet-demo$$$ref": ["3dbf55904a77e964", "3dbf56157f9e4567"]
+  },
+  "pivotTemplate": "expand-bluecoat-botnet-demo"
+}

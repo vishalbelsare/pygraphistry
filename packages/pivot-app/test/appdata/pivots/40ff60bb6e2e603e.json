@@ -1,0 +1,25 @@
+{
+  "id": "40ff60bb6e2e603e",
+  "enabled": true,
+  "pivotParameters": {
+    "search-splunk-plain$$$query": "index=jerry-7sept  product=\"Web MPS\"",
+    "search-splunk-plain$$$fields": [],
+    "expand-splunk-plain$$$ref": ["40ff607091cb3846", "410043db88e7034c"],
+    "expand-splunk-plain$$$filter": "vendor=FireEye index=jerry-7sept",
+    "expand-splunk-plain$$$pivotFields": [
+      "rule",
+      "threat_name",
+      "devicePayloadId",
+      "dest",
+      "dest_mac",
+      "externalId",
+      "fileHash",
+      "filePath",
+      "fname"
+    ],
+    "expand-splunk-plain$$$matchAttributes": false,
+    "expand-splunk-plain$$$colMatch": false,
+    "expand-splunk-plain$$$fields": []
+  },
+  "pivotTemplate": "expand-splunk-plain"
+}

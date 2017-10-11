@@ -1,0 +1,10 @@
+{
+  "id": "3e3358c5b5e22ba7",
+  "enabled": false,
+  "pivotParameters": {
+    "query": "Enter search query",
+    "depth": "4",
+    "ip": "194.27.251.21"
+  },
+  "pivotTemplate": "blazegraph-bfs"
+}
