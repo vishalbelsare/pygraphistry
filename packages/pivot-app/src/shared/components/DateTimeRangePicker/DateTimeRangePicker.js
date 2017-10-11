@@ -29,39 +29,43 @@ export const withTimeRanges = mapPropsStream(propsStream => {
   const handleToChange = val => onToChange({ val, dir: 'to' });
   const handleFromChange = val => onFromChange({ val, dir: 'from' });
 
-  return propsStream.switchMap(({ $falcor, baseid, range = {}, timeKey = 'time', ...props }) => {
-    const ranges = changes.scan(
-      (acc, { dir, val }) => ({
-        ...acc,
-        [dir]: { ...acc[dir], ...val }
-      }),
-      range
-    );
-    const rangesCommitted = ranges.switchMap(
-      range =>
-        $falcor
-          .set({
-            json: {
-              [timeKey]: $atom(range)
-            }
-          })
-          .progressively(),
-      (range, { json }) => json[timeKey]
-    );
-    return rangesCommitted.startWith(range).map(range => ({
-      ...props,
-      toProps: {
-        ...getTimeProps(range, baseid, 'to', defaultToTime),
-        ...props.toProps,
-        onValueChange: handleToChange
-      },
-      fromProps: {
-        ...getTimeProps(range, baseid, 'from', defaultFromTime),
-        ...props.fromProps,
-        onValueChange: handleFromChange
-      }
-    }));
-  });
+  return propsStream.switchMap(
+    ({ $falcor, baseid, range = {}, rangeChanged = () => {}, timeKey = 'time', ...props }) => {
+      const ranges = changes
+        .scan(
+          (acc, { dir, val }) => ({
+            ...acc,
+            [dir]: { ...acc[dir], ...val }
+          }),
+          range
+        )
+        .do(rangeChanged);
+      const rangesCommitted = ranges.switchMap(
+        range =>
+          $falcor
+            .set({
+              json: {
+                [timeKey]: $atom(range)
+              }
+            })
+            .progressively(),
+        (range, { json }) => json[timeKey]
+      );
+      return rangesCommitted.startWith(range).map(range => ({
+        ...props,
+        toProps: {
+          ...getTimeProps(range, baseid, 'to', defaultToTime),
+          ...props.toProps,
+          onValueChange: handleToChange
+        },
+        fromProps: {
+          ...getTimeProps(range, baseid, 'from', defaultFromTime),
+          ...props.fromProps,
+          onValueChange: handleFromChange
+        }
+      }));
+    }
+  );
 });
 
 const defaultLabelColumns = { xs: 4, sm: 4, md: 4, lg: 4 };

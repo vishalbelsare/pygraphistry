@@ -1,6 +1,10 @@
 import Select from 'react-select';
 import { layouts } from '../../services/layouts';
+import { pathValue as $value } from '@graphistry/falcor-json-graph';
 import styles from './investigation-details.less';
+import mapPropsStream from 'recompose/mapPropsStream';
+import createEventHandler from 'recompose/createEventHandler';
+import shallowEqual from 'recompose/shallowEqual';
 import { DateTimeRangePicker, DescriptionFormControl } from 'pivot-shared/components';
 import {
   Col,
@@ -33,6 +37,27 @@ const cellFullCols = {
 };
 
 const dateRangeTimePickerProps = { className: styles['global-time-picker'] };
+
+const withInvalidationLogic = mapPropsStream(propsStream => {
+  const { handler: rangeChanged, stream: rangeChanges } = createEventHandler();
+  return propsStream.switchMap(props => {
+    return rangeChanges
+      .distinctUntilChanged(shallowEqual)
+      .switchMap(range =>
+        props.$falcor.withoutDataSource().set(
+          $value('status', {
+            msgStyle: 'warning',
+            ok: false,
+            message: 'Please re-run pivots to reflect date changes.'
+          })
+        )
+      )
+      .startWith(props)
+      .mapTo({ rangeChanged, ...props });
+  });
+});
+
+const InvalidatingDateTimeRangePicker = withInvalidationLogic(DateTimeRangePicker);
 
 export function InvestigationDetails({ layout, saveLayout, $falcor, description = '', time = {} }) {
   return (
@@ -76,7 +101,7 @@ export function InvestigationDetails({ layout, saveLayout, $falcor, description 
             />
           </Col>
         </FormGroup>
-        <DateTimeRangePicker
+        <InvalidatingDateTimeRangePicker
           range={time}
           timeKey="time"
           $falcor={$falcor}
