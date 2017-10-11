@@ -138,7 +138,7 @@ HistogramKernel.prototype = {
         // numWorkItems = numWorkItems + (VT - (numWorkItems % VT));
         // console.log(numWorkItems, workGroupSize, simulator.cl.deviceProps.MAX_WORK_GROUP_SIZE);
         return that.histogramKernel
-          .exec([numWorkItems], [], [workGroupSize])
+          .exec([numWorkItems], [workGroupSize])
           .then(() => {
             const retOutput = new Int32Array(MAX_NUM_BINS * Int32Array.BYTES_PER_ELEMENT);
 

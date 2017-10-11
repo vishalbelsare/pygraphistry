@@ -13,8 +13,7 @@ __kernel void to_barnes_layout(
         __global float* mass,
         __global volatile int* blocked,
         __global volatile int* maxdepthd,
-        const __global uint* pointDegrees,
-        const uint step_number
+        const __global uint* pointDegrees
 ){
     debugonce("to barnes layout\n");
     size_t gid = get_global_id(0);

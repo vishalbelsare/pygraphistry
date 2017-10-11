@@ -40,10 +40,6 @@ function MoveNodes(clContext, kernelCache) {
 MoveNodes.prototype.run = function(simulator, selection, delta) {
   logger.trace('Moving nodes');
   var numPoints = simulator.dataframe.getNumElements('point');
-  var resources = [
-    simulator.dataframe.getBuffer('curPoints', 'simulator'),
-    simulator.dataframe.getBuffer('nextPoints', 'simulator')
-  ];
 
   this.moveNodes.set({
     top: selection.tl.y,
@@ -60,7 +56,7 @@ MoveNodes.prototype.run = function(simulator, selection, delta) {
 
   logger.trace('Running moveNodes');
   return this.moveNodes
-    .exec([numPoints], resources)
+    .exec([numPoints])
     .then(function() {
       var nextPoints = simulator.dataframe.getBuffer('nextPoints', 'simulator');
       var curPoints = simulator.dataframe.getBuffer('curPoints', 'simulator');

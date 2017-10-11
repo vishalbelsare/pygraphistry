@@ -173,7 +173,7 @@ export default function Kernel(name, argNames, argTypes, file, clContext) {
     }
   }
 
-  function call(kernel, workItems, buffers, workGroupSize) {
+  function call(kernel, workItems, workGroupSize) {
     // TODO: Consider acquires and releases of buffers.
 
     const queue = clContext.queue;
@@ -195,14 +195,14 @@ export default function Kernel(name, argNames, argTypes, file, clContext) {
   }
 
   // [Int] * [String] -> Promise[Kernel]
-  this.exec = function(numWorkItems, resources, workGroupSize) {
+  this.exec = function(numWorkItems, workGroupSize) {
     return qKernel.then(kernel => {
       if (kernel === null) {
         logger.error('Kernel is not compiled, aborting');
         return Q();
       } else {
         setAllArgs(kernel);
-        return call(kernel, numWorkItems, resources, workGroupSize);
+        return call(kernel, numWorkItems, workGroupSize);
       }
     });
   };
