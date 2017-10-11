@@ -76,8 +76,8 @@ __kernel void build_tree(
             ch = child[n*4+j];
         }
 
-        // Skip duplicate points or points below max depth
-        if (depth >= MAXDEPTH || (fabs(px - x_cords[n]) <= FLT_EPSILON) && (fabs(py - y_cords[n]) <= FLT_EPSILON)) {
+        // Skip points below max depth
+        if (depth >= MAXDEPTH) {
           i += inc;  // move on to next body
           skip = 1;
           continue;
