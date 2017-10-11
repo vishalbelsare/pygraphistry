@@ -589,8 +589,7 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
         tractions.write(tractionOnes),
         prevForces.write(forcesZeros),
         pointForces.write(forcesZeros)
-      ])
-      .then(function() {
+      ]).then(function() {
         return layoutBuffers;
       });
     })
