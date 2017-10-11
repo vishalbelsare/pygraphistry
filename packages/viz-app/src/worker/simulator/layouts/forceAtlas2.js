@@ -486,8 +486,7 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
       'mem_host_no_access'
     ]),
     simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'pointForces', [
-      'mem_read_write',
-      'mem_host_no_access'
+      'mem_read_write'
     ]),
     simulator.cl.createBuffer(2 * numPoints * Float32Array.BYTES_PER_ELEMENT, 'partialForces', [
       'mem_read_write',
@@ -588,8 +587,10 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
       return Q.all([
         swings.write(swingZeros),
         tractions.write(tractionOnes),
-        prevForces.write(forcesZeros)
-      ]).then(function() {
+        prevForces.write(forcesZeros),
+        pointForces.write(forcesZeros)
+      ])
+      .then(function() {
         return layoutBuffers;
       });
     })
