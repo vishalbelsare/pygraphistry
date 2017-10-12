@@ -7,7 +7,7 @@ Unit tests run against specific functions, and integration tests run against a d
 
 This service really does two things, at a high level:
   1. It supports CRUD operations for users,
-  2. It enables session support, using those users and `JWT`.
+  2. It enables session support, using a sessions table. It's possible these services should be decoupled.
 
 ### Database Migrations and Seed Data
 Migrations and Seeds handled gracefully. See the `migrations/` and `seeds/` folder, respectively, for examples. To create new migrations, do `npm run migrate:make`. To run the latest migrations, do `npm run migrate:latest`.

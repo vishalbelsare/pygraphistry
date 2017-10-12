@@ -9,12 +9,7 @@
     "restart": "pm2 restart user-service",
     "test": "NODE_ENV=test DBNAME=graphistry-test jest --watchAll",
     "test:coverage": "NODE_ENV=test DBNAME=graphistry-test jest --coverage",
-    "test:ci": "jest --ci",
-    "migrate:make": "NODE_ENV=development knex migrate:make",
-    "migrate:latest": "NODE_ENV=development knex migrate:latest",
-    "migrate:rollback": "NODE_ENV=development knex migrate:rollback",
-    "seed:make": "NODE_ENV=development knex seed:make",
-    "seed:run": "NODE_ENV=development knex seed:run"
+    "test:ci": "jest --ci"
   },
   "jest": {
     "testResultsProcessor": "jest-junit"
@@ -25,8 +20,9 @@
   "author": "@mykola",
   "license": "ISC",
   "dependencies": {
+    "@graphistry/db": "*",
     "bcryptjs": "^2.4.3",
-    "dotenv": "^4.0.0",
+    "convict": "^4.0.1",
     "knex": "^0.13.0",
     "micro": "^8.0.4",
     "micro-cookie-session": "^2.0.0-beta.1",

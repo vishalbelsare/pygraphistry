@@ -1,5 +1,4 @@
 const { send, json } = require('micro');
-const db = require('../database');
 const { updateUser } = require('../services/user');
 const visualize = require('micro-visualize');
 const microCors = require('micro-cors');

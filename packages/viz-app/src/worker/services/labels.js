@@ -2,6 +2,7 @@ import sanitizeHTML from 'sanitize-html';
 import DataframeMask from 'viz-app/worker/simulator/DataframeMask';
 import { valueSignifiesUndefined } from 'viz-app/worker/simulator/dataTypes';
 import { intToHex, bindings as paletteBindings } from 'viz-app/worker/simulator/palettes';
+import { selectImportantKeys } from './labels/sort';
 
 import { Observable, ReplaySubject } from 'rxjs';
 import { cache as Cache } from '@graphistry/common';
@@ -136,15 +137,8 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
             : a.key.toLowerCase() > b.key.toLowerCase() ? 1 : 0
       );
 
-    const importantColumns = !canHaveImportantKeys(columns)
-      ? []
-      : columns
-          .map(kv => {
-            const topKeyIndex = mostImportantKeys.indexOf(kv.key);
-            return topKeyIndex > -1 ? { topKeyIndex, ...kv } : null;
-          })
-          .filter(kv => kv)
-          .sort(({ topKeyIndex: k1 }, { topKeyIndex: k2 }) => k1 - k2);
+    const importantColumns = selectImportantKeys(columns) || [];
+          
 
     return {
       workbook,
@@ -163,50 +157,8 @@ function getLabelsForType(workbook, view, labelType, labelIndexes) {
   });
 }
 
-const mostImportantKeys = [
-  'Source',
-  'Destination',
 
-  'time',
-  'Pivot',
 
-  'src',
-  'src_hostname',
-  'src_ip',
-  'src_mac',
-  'src_port',
-  'src_user',
-  'dest',
-  'dest_hostname',
-  'dest_ip',
-  'dest_location',
-  'dest_mac',
-  'dest_port',
-  'dest_user',
-  'user',
-
-  'type',
-  'edgeType',
-  'cols',
-  'vendor',
-  'product',
-  'externalId',
-
-  'msg',
-  'fname',
-  'filename',
-  'fileHash',
-  'filePath',
-  'link',
-  'url'
-];
-
-function canHaveImportantKeys(columns) {
-  return columns.some(
-    ({ key, value }) =>
-      (key === 'type' && value === 'EventID') || (key === 'edgeType' && value.match(/^EventID->/))
-  );
-}
 
 function decodeAndSanitize(input) {
   let decoded = input,
